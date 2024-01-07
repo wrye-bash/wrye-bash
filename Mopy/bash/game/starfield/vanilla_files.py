@@ -22,8 +22,9 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Starfield setup."""
+import os
 
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     'BlueprintShips-Starfield - Localization.ba2',
     'BlueprintShips-Starfield.esm',
     'Constellation - Localization.ba2',
@@ -120,4 +121,4 @@ vanilla_files = {
     'video\\PowerVision_SunlessSpace.bk2',
     'video\\PowerVision_Supernova.bk2',
     'video\\PowerVision_VoidForm.bk2',
-}
+}}

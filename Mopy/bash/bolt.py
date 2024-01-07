@@ -2780,7 +2780,7 @@ if reflink is not None:
         a, b = os.fspath(a), os.fspath(b) # reflink needs strings
         try:
             reflink(a, b)
-        except (OSError, ReflinkImpossibleError):
+        except (OSError, ReflinkImpossibleError, NotImplementedError):
             shutil.copyfile(a, b)
     def copy_or_reflink2(a: str | os.PathLike, b: str | os.PathLike):
         """Behaves like shutil.copy2, but uses a reflink if possible. See
@@ -2793,7 +2793,7 @@ if reflink is not None:
                 final_b = os.path.join(final_b, os.path.basename(a))
             reflink(a, final_b)
             shutil.copystat(a, final_b)
-        except (OSError, ReflinkImpossibleError):
+        except (OSError, ReflinkImpossibleError, NotImplementedError):
             shutil.copy2(a, b)
 else:
     def copy_or_reflink(a: str | os.PathLike, b: str | os.PathLike):

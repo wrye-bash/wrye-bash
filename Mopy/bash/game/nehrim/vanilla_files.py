@@ -22,8 +22,9 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Nehrim setup."""
+import os
 
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     'Credits.txt',
     'Music\\Battle\\Battle_01.mp3',
     'Music\\Battle\\Battle_02.mp3',
@@ -136,4 +137,4 @@ vanilla_files = {
     'Video\\Nehrim Outro.bik',
     'Video\\Oblivion iv logo.bik',
     'Video\\OblivionIntro.bik',
-}
+}}

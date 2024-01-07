@@ -22,12 +22,13 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Skyrim SE setup."""
+import os
 
 # Import vanilla_files from Skyrim, then edit as needed
 from ..skyrim.vanilla_files import vanilla_files
 
 # remove removed files
-vanilla_files -= {
+vanilla_files -= {f.replace('\\', os.sep) for f in {
     'Interface\\Translate_ENGLISH.txt',
     'LSData\\DtC6dal.dat',
     'LSData\\DtC6dl.dat',
@@ -55,10 +56,10 @@ vanilla_files -= {
     'Strings\\Update_English.DLSTRINGS',
     'Strings\\Update_English.ILSTRINGS',
     'Strings\\Update_English.STRINGS',
-}
+}}
 
 # add new ones
-vanilla_files |= {
+vanilla_files |= {f.replace('\\', os.sep) for f in {
     'Scripts\\Source\\Backup\\QF_C00_0004B2D9_BACKUP_05272016_113428AM.psc',
     'Scripts\\Source\\Backup\\QF_C00JorrvaskrFight_000BC0BD_BACKUP_05272016_113715AM.psc',
-}
+}}

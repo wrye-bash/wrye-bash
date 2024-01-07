@@ -22,8 +22,9 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Fallout NV setup."""
+import os
 
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     'Credits.txt',
     'CreditsWacky.txt',
     'DLCList.txt',
@@ -291,4 +292,4 @@ vanilla_files = {
     'Sound\\songs\\radionv\\MUS_Where_Have_You_Been_All_My_Life.mp3',
     'Sound\\songs\\radionv\\MUS_Why_Dont_You_Do_Right.mp3',
     'Video\\FNVIntro.bik',
-}
+}}
