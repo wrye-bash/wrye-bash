@@ -34,8 +34,8 @@ sys.path.insert(0, MOPY_PATH)
 from bash import bass
 
 def setup_parser(parser):
-    parser.add_argument('new_version', type=int, nargs='?', metavar='ver',
-        default=int(bass.AppVersion) + 1,
+    parser.add_argument('new_version', type=str, nargs='?', metavar='ver',
+        default=str(int(bass.AppVersion) + 1),
         help='The version to bump to. Defaults to the current version plus '
              'one.')
 
