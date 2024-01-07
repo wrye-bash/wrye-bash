@@ -31,11 +31,11 @@ import sys
 from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, commit_changes
 
 def setup_parser(parser):
-    parser.add_argument('new_version', type=int, metavar='ver',
+    parser.add_argument('new_version', type=str, metavar='ver',
         help='The new version that is to be released.')
 
 def main(args):
-    new_ver = f'{args.new_version}'
+    new_ver = args.new_version
     wanted_path = os.path.join(CHANGELOGS_PATH, f'Changelog - {new_ver}.b64')
     try:
         with open(wanted_path, 'r', encoding='utf-8') as ins:
