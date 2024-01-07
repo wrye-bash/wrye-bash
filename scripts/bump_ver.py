@@ -35,7 +35,7 @@ from bash import bass
 
 def setup_parser(parser):
     parser.add_argument('new_version', type=str, nargs='?', metavar='ver',
-        default=str(int(bass.AppVersion) + 1),
+        default=str(int(float(bass.AppVersion)) + 1),
         help='The version to bump to. Defaults to the current version plus '
              'one.')
 
@@ -77,7 +77,7 @@ def main(args):
     def edit_bass(bass_ma):
         return f"AppVersion = '{new_ver}'{bass_ma.group(1)}"
     edit_wb_file('bash', 'bass.py',
-        trigger_regex=re.compile(r"^AppVersion = '\d+'(.+)$"),
+        trigger_regex=re.compile(r"^AppVersion = '\d+(?:\.\d+)?'(.*)$"),
         edit_callback=edit_bass)
     files_bumped.append(os.path.join(MOPY_PATH, 'bash', 'bass.py'))
     # Docs/*.html: Bump the version footers
@@ -90,7 +90,7 @@ def main(args):
                         'Wrye Bash Version History.html'):
         edit_wb_file('Docs', readme_name,
             trigger_regex=re.compile(r'^(\s+)<div id=\"version\">Wrye Bash '
-                                     r'v\d+</div>'),
+                                     r'v\d+(?:\.\d+)?</div>'),
             edit_callback=edit_readme)
         files_bumped.append(os.path.join(MOPY_PATH, 'Docs', readme_name))
     # bash_default.ini and bash_default_russian.ini: Use pyfiglet to generate a
