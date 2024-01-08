@@ -729,7 +729,7 @@ msgid "Weakness to Shock"
 msgstr "Anfälligkeit für Blitz"
 
 #: bash\bush.py:507
-msgid "Summon Rufio\'s Ghost"
+msgid "Summon Rufio's Ghost"
 msgstr "Beschwören: Rufios Geist"
 
 #: bash\bush.py:508
@@ -1892,12 +1892,6 @@ msgid "%s: Extraction failed"
 msgstr "%s: Entpacken fehlgeschlagen"
 "%s"
 
-#: bash\bosh.py:10609
-msgid ""
-"Moving files"
-msgstr ""
-"Verschiebe Dateien"
-
 #: bash\bosh.py:10653
 msgid "Package Structure"
 msgstr "Paketstruktur"
@@ -2056,7 +2050,7 @@ msgstr "Lese"
 
 #: bash\bosh.py:11947
 msgid "Saving"
-msgstr "Speichere"
+msgstr "Speichern"
 
 #: bash\bosh.py:12106
 msgid "Script"
@@ -5035,12 +5029,6 @@ msgstr "Aktualisiere Konverter"
 msgid "Packages: %d/%d"
 msgstr "Pakete:  %d/%d"
 
-#: bash\basher.py:2678
-msgid "Overview"
-""
-msgstr "Übersicht"
-""
-
 #: bash\basher.py:2681
 msgid "Project"
 msgstr "Projekt"
@@ -5091,12 +5079,6 @@ msgstr "Structure: Fehlerhaft/Unvollständig"
 msgid "Structure: Unrecognized"
 ""
 msgstr "Structure: Unbekannt"
-""
-
-#: bash\basher.py:2706
-msgid "Size: %s KB"
-""
-msgstr "Größe: %s KB"
 ""
 
 #: bash\basher.py:2708
@@ -5532,12 +5514,6 @@ msgstr "Patchkonfiguration exportieren"
 #: bash\basher.py:4819
 msgid "Import Patch Configuration"
 msgstr "Patchkonfiguration importieren"
-
-#: bash\basher.py:4908
-msgid ""
-"Saving"
-msgstr ""
-"Speichern"
 
 #: bash\basher.py:4930
 msgid "Activate %s?"
@@ -6142,7 +6118,7 @@ msgid "Create"
 msgstr "Erstellen"
 
 #: bash\basher.py:7659
-msgid "Select the BAIN\'ed Archive"
+msgid "Select the BAIN'ed Archive"
 msgstr "Wähle das BAIN-Archiv"
 
 #: bash\basher.py:7667

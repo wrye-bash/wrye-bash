@@ -555,7 +555,7 @@ modeling_tools_buttons = {
     'Sculptris': ('Sculptris.exe', _('Launch Sculptris'), {
         'subfolders': 'sculptris'}),
     'SpeedTree': (None, _('Launch SpeedTree'), {}),
-    'Treed': ('tree[d].exe', _(r'Launch Tree\[d\]'), {
+    'Treed': ('tree[d].exe', _('Launch Tree[d]'), {
         'subfolders': ('gile[s]', 'plugins', 'tree[d]')}),
     'Wings3D': ('Wings3D.exe', _('Launch Wings 3D'), {
         'subfolders': 'wings3d_1.2'}),

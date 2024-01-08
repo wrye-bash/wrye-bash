@@ -506,10 +506,6 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: bash/bash.py:432
-msgid ""
-msgstr ""
-
 #: bash/bash.py:436
 msgid "Wrye Bash encountered an error."
 msgstr ""
@@ -2233,7 +2229,7 @@ msgid "Launch SpeedTree"
 msgstr ""
 
 #: bash/basher/constants.py:558
-msgid "Launch Tree\\[d\\]"
+msgid "Launch Tree[d]"
 msgstr ""
 
 #: bash/basher/constants.py:560

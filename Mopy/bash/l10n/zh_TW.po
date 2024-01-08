@@ -64,7 +64,7 @@ msgstr "無法識別的標識：'%s'，類型：%s"
 
 #: bash\ScriptParser.py:715
 msgid "Too many values left at the end of evaluation."
-msgstr "運\算式結果剩餘太多數值。"
+msgstr "運算式結果剩餘太多數值。"
 
 #: bash\ScriptParser.py:786
 msgid "Invalid character: '%s'"
@@ -9472,7 +9472,7 @@ msgstr "魅力"
 
 #: bash\bush.py:479
 msgid "Luck"
-msgstr "運\氣"
+msgstr "運氣"
 
 #: bash\bush.py:480 bash\game\oblivion.py:1643 bash\game\oblivion.py:1679
 msgid "Health"
@@ -9496,7 +9496,7 @@ msgstr "鍛造"
 
 #: bash\bush.py:486
 msgid "Athletics"
-msgstr "運\動"
+msgstr "運動"
 
 #: bash\bush.py:487
 msgid "Blade"
@@ -9740,27 +9740,27 @@ msgstr "時間表將被修改為："
 
 #: bash\game\oblivion.py:982
 msgid "The penalty (in Septims) for stealing while doing a Thieves Guild job:"
-msgstr "參加盜賊\公會任務的過程中，偷竊東西的罰金："
+msgstr "參加盜賊公會任務的過程中，偷竊東西的罰金："
 
 #: bash\game\oblivion.py:982
 msgid "Thieves Guild: Quest Stealing Penalty"
-msgstr "盜賊\工會：任務偷竊罰金"
+msgstr "盜賊工會：任務偷竊罰金"
 
 #: bash\game\oblivion.py:991
 msgid "The penalty (in Septims) for killing while doing a Thieves Guild job:"
-msgstr "完成盜賊\工會任務的過程中，殺死NPC的罰金。"
+msgstr "完成盜賊工會任務的過程中，殺死NPC的罰金。"
 
 #: bash\game\oblivion.py:991
 msgid "Thieves Guild: Quest Killing Penalty"
-msgstr "盜賊\工會：任務殺人罰金"
+msgstr "盜賊工會：任務殺人罰金"
 
 #: bash\game\oblivion.py:1000
 msgid "The penalty (in Septims) for attacking while doing a Thieves Guild job:"
-msgstr "完成盜賊\工會任務的過程中，攻擊NPC的罰金："
+msgstr "完成盜賊工會任務的過程中，攻擊NPC的罰金："
 
 #: bash\game\oblivion.py:1000
 msgid "Thieves Guild: Quest Attacking Penalty"
-msgstr "盜賊\工會：任務攻擊罰金"
+msgstr "盜賊工會：任務攻擊罰金"
 
 #: bash\game\oblivion.py:1009
 msgid "Crime: Force Jail"
@@ -10674,11 +10674,11 @@ msgstr "犯罪：越獄加成"
 
 #: bash\game\skyrim.py:1634
 msgid "Bounty for committing a witnessed murder."
-msgstr "謀\殺被抓的罰金"
+msgstr "謀殺被抓的罰金"
 
 #: bash\game\skyrim.py:1634
 msgid "Crime: Murder Bounty"
-msgstr "犯罪：謀\殺罰金"
+msgstr "犯罪：謀殺罰金"
 
 #: bash\game\skyrim.py:1643
 msgid "Fine in septims for picpocketing."

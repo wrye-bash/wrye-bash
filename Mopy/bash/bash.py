@@ -428,8 +428,7 @@ def main(opts):
         try:
             # Check if localize succeeded in setting up translations, otherwise
             # monkey patch in a noop underscore
-            # noinspection PyUnboundLocalVariable
-            _(u'')
+            _(_a := '') # Hide this from gettext
         except NameError:
             def _(x): return x
         msg = u'\n'.join([

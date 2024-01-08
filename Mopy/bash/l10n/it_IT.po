@@ -1344,7 +1344,7 @@ msgid "Reset Abomb counter from 0x%08X to 0x%08X?"
 ""
 "Abomb related animation slowing typically becomes noticeable after Abomb counter reaches 0x49000000."
 ""
-"NOTE: While this action should repair animation slowing, it\'s possible that it may break something else, perhaps rendering your game unplayable in some other way."
+"NOTE: While this action should repair animation slowing, it's possible that it may break something else, perhaps rendering your game unplayable in some other way."
 msgstr ""
 
 #: bash\basher.py:4325

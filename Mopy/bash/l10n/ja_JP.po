@@ -10,7 +10,7 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: utf8\n"
 "Generated-By: pygettext.py 1.5\n"
 
@@ -821,7 +821,7 @@ msgid "Weakness to Shock"
 msgstr ""
 
 #: bash\bash\bush.py:826
-msgid "Summon Rufio\'s Ghost"
+msgid "Summon Rufio's Ghost"
 msgstr ""
 
 #: bash\bash\bush.py:827
@@ -2105,12 +2105,6 @@ msgid "%s: Extraction failed"
 msgstr "%s: 抽出に失敗しました"
 "%s"
 
-#: bash\bash\bosh.py:13304
-msgid ""
-"Moving files"
-msgstr ""
-"ファイルを移動中"
-
 #: bash\bash\bosh.py:13370
 msgid "Package Structure"
 msgstr "パッケージ構造"
@@ -2832,7 +2826,7 @@ msgstr "マージをサポートしていないタイプ"
 
 #: bash\bash\bosh.py:19854
 msgid "Overview"
-msgstr ""
+msgstr "概略"
 
 #: bash\bash\bosh.py:19855
 msgid "Date/Time"
@@ -3364,7 +3358,7 @@ msgid "All Guns Use Ironsight Animation"
 msgstr ""
 
 #: bash\bash\bosh.py:28405
-msgid "Remove\"Don\'t use 1st person IS animatio\" flag from all guns"
+msgid "Remove\"Don't use 1st person IS animatio\" flag from all guns"
 msgstr ""
 
 #: bash\bash\bosh.py:28441
@@ -4771,12 +4765,6 @@ msgstr "オン: %d/全: %d"
 msgid "[None]"
 msgstr "[なし]"
 
-#: bash\bash\basher.py:3427
-msgid "Overview"
-""
-msgstr "概略"
-""
-
 #: bash\bash\basher.py:3430
 msgid "Project"
 msgstr "プロジェクト"
@@ -4827,12 +4815,6 @@ msgstr "構造: 破損あるいは不完全な状態"
 msgid "Structure: Unrecognized"
 ""
 msgstr "構造: 認識できませんでした"
-""
-
-#: bash\bash\basher.py:3455
-msgid "Size: %s KB"
-""
-msgstr "サイズ: %s KB"
 ""
 
 #: bash\bash\basher.py:3457
@@ -5292,12 +5274,6 @@ msgstr "パッチ設定を保存する"
 msgid "Import Patch Configuration"
 msgstr "パッチ設定をインポート"
 
-#: bash\bash\basher.py:5836
-msgid ""
-"Saving"
-msgstr ""
-"セーブ中"
-
 #: bash\bash\basher.py:5841
 msgid "Bash encountered an error when saving %s."
 ""
@@ -5459,7 +5435,7 @@ msgstr "ファイルを隔離する"
 
 #: bash\bash\basher.py:7126
 msgid "A file named %s already exists in the hidden files directory. Overwrite it?"
-msgstr "%sという名前のファイルは隔離ディレクトリ(Bash Mod Data\Hidden)に既に存在します. 上書きしますか？"
+msgstr "%sという名前のファイルは隔離ディレクトリ(Bash Mod Data\\Hidden)に既に存在します. 上書きしますか？"
 
 #: bash\bash\basher.py:7139
 msgid "List Masters"
@@ -6150,7 +6126,7 @@ msgid "Create"
 msgstr "生成"
 
 #: bash\bash\basher.py:9288
-msgid "Select the BAIN\'ed Archive"
+msgid "Select the BAIN'ed Archive"
 msgstr "BAIN化アーカイブを選択してください"
 
 #: bash\bash\basher.py:9296
@@ -6190,7 +6166,7 @@ msgstr ""
 
 #: bash\bash\basher.py:9341
 msgid "Size: %s KB"
-msgstr ""
+msgstr "サイズ: %s KB"
 
 #: bash\bash\basher.py:9342
 msgid "Remapped: %s file"
@@ -8081,8 +8057,8 @@ msgid "Launch SpeedTree"
 msgstr "SpeedTreeを起動"
 
 #: bash\bash\basher.py:14694
-msgid "Launch Tree\[d\]"
-msgstr "Tree\[d\]を起動"
+msgid "Launch Tree[d]"
+msgstr "Tree[d]を起動"
 
 #: bash\bash\basher.py:14699
 msgid "Launch Wings 3D"
