@@ -239,6 +239,7 @@ def dump_translator(out_path, lang):
                     if re_msg_ids_start.match(old_line):
                         break # Break once we hit the first translatable string
                     out.write(old_line)
+            linesep_bytes = os.linesep.encode(target_enc)
             # Read through the new translation file, fill in any already
             # translated strings
             with open(new_po, u'rb') as ins:
@@ -280,10 +281,10 @@ def dump_translator(out_path, lang):
                                 sub_quote, final_ln)
                             final_ln = final_ln.encode(target_enc)
                             out.write(final_ln)
-                            out.write(b'"\r\n')
+                            out.write(b'"' + linesep_bytes)
                         else:
                             # Not translated, write out an empty msgstr
-                            out.write(b'msgstr ""\r\n')
+                            out.write(b'msgstr ""' + linesep_bytes)
                     elif new_line.startswith(b'msgstr "'):
                         # Skip all msgstr lines from new_po (handled above)
                         continue
