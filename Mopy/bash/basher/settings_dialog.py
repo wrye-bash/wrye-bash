@@ -1259,7 +1259,7 @@ class GeneralPage(_AScrollablePage):
         _(u'Chinese (Traditional)'): u'big5',
         _(u'Russian'): u'cp1251',
         _(u'Japanese (Shift_JIS)'): u'cp932',
-        _(u'UTF-8'): u'utf-8',
+        'UTF-8': 'utf-8',
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
     _encodings_reverse = reverse_dict(_all_encodings)

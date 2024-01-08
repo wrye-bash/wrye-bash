@@ -8068,10 +8068,6 @@ msgstr ""
 msgid "Japanese (Shift_JIS)"
 msgstr ""
 
-#: bash/basher/settings_dialog.py:1262
-msgid "UTF-8"
-msgstr ""
-
 #: bash/basher/settings_dialog.py:1263
 msgid "Western European (English, French, German, etc)"
 msgstr ""

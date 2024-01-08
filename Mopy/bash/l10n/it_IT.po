@@ -10,8 +10,8 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=cp1252\n"
-"Content-Transfer-Encoding: utf8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
 #: bash\bush.py:73
@@ -224,7 +224,7 @@ msgstr ""
 
 #: bash\bosh.py:757
 msgid "Scale must not equal zero!"
-msgstr "La scala non puÚ essere zero!"
+msgstr "La scala non pu√≤ essere zero!"
 
 #: bash\bosh.py:801
 msgid "%s: Attempted to read before (%d) beginning of file/buffer."
@@ -550,7 +550,7 @@ msgstr "Informazione"
 
 #: bash\basher.py:291
 msgid "Don't show this in the future."
-msgstr "Non mostrare pi˘ queste informazioni."
+msgstr "Non mostrare pi√π queste informazioni."
 
 #: bash\basher.py:306
 msgid "Choose a directory."
@@ -562,7 +562,7 @@ msgstr "Avanzamento"
 
 #: bash\basher.py:341
 msgid "Dialog already destroyed."
-msgstr "Finestra di dialogo gi‡ eliminata."
+msgstr "Finestra di dialogo gi√† eliminata."
 
 #: bash\basher.py:611
 msgid "Add"
@@ -638,7 +638,7 @@ msgstr "Estensione file errata:"
 
 #: bash\basher.py:1466
 msgid "File %s already exists."
-msgstr "Il file %s È gi‡ presente."
+msgstr "Il file %s √© gi√† presente."
 
 #: bash\basher.py:1488
 msgid "Unrecognized date: "
@@ -699,7 +699,7 @@ msgstr "I file mancanti sono stati rimossi dalla lista di caricamento. (%s)"
 
 #: bash\basher.py:2018
 msgid "Load list has been truncated because it was too long. (%s)"
-msgstr "La lista di caricamento È stata troncata perchÈ troppo lunga. (%s)"
+msgstr "La lista di caricamento √© stata troncata perch√© troppo lunga. (%s)"
 
 #: bash\basher.py:2026
 msgid "The following mod files have corrupted headers: "
@@ -771,7 +771,7 @@ msgstr "Non puoi recuperare i file in questa cartella. "
 
 #: bash\basher.py:2559
 msgid "File skipped: %s. File is already present."
-msgstr "File saltato: %s. Il file È gi‡ presente."
+msgstr "File saltato: %s. Il file √© gi√† presente."
 
 #: bash\basher.py:2573
 msgid "Delete"
@@ -807,7 +807,7 @@ msgstr "Duplica come:"
 
 #: bash\basher.py:2631
 msgid "Files cannot be duplicated to themselves!"
-msgstr "Un file non puÚ essere duplicato con lo stesso nome!"
+msgstr "Un file non pu√≤ essere duplicato con lo stesso nome!"
 
 #: bash\basher.py:2648
 msgid "Hide"
@@ -819,7 +819,7 @@ msgstr "Nascondi file"
 
 #: bash\basher.py:2675
 msgid "A file named %s already exists in the hidden files directory. Overwrite it?"
-msgstr "Un file %s È gi‡ presente nella cartella file nascosti. Lo sovrascrivo?"
+msgstr "Un file %s √© gi√† presente nella cartella file nascosti. Lo sovrascrivo?"
 
 #: bash\basher.py:2693
 msgid "Redate..."
@@ -835,7 +835,7 @@ msgstr "Cambia data ai mod"
 
 #: bash\basher.py:2713
 msgid "Bash cannot handle dates greater than January 19, 2038.)"
-msgstr "Mash non puÚ gestire date successive al 19 Gennaio 2038.)"
+msgstr "Mash non pu√≤ gestire date successive al 19 Gennaio 2038.)"
 
 #: bash\basher.py:2730
 msgid "Sort"
@@ -877,7 +877,7 @@ msgstr "Ripristina istantanea"
 
 #: bash\basher.py:2827
 msgid "Snapshot file is corrupt!"
-msgstr "Il file istantanea È rovinato!"
+msgstr "Il file istantanea √© rovinato!"
 
 #: bash\basher.py:2837
 msgid "Backup"
@@ -897,7 +897,7 @@ msgstr "Ripristina %s al backup del %s?"
 
 #: bash\basher.py:2888
 msgid "Old file is corrupt!"
-msgstr "Il file vecchio È rovinato!"
+msgstr "Il file vecchio √© rovinato!"
 
 #: bash\basher.py:2914
 msgid "Name must be between 1 and 64 characters long."
@@ -917,7 +917,7 @@ msgstr "Modifica liste..."
 
 #: bash\basher.py:2974
 msgid "Unable to add mod %s because load list is full."
-msgstr "Non posso aggiungere il mod %s perchÈ la lista di caricamento È piena."
+msgstr "Non posso aggiungere il mod %s perch√© la lista di caricamento √© piena."
 
 #: bash\basher.py:2984
 msgid "All load list slots are full. Please delete an existing load list before adding another."
@@ -1214,7 +1214,7 @@ msgstr "Inserisci un nome profilo:"
 
 #: bash\basher.py:3793
 msgid "Active profile cannot be removed."
-msgstr "Il profilo attivo non puÚ essere rimosso"
+msgstr "Il profilo attivo non pu√≤ essere rimosso"
 
 #: bash\basher.py:3799
 msgid "Delete profile %s and the %d save files it contains?"

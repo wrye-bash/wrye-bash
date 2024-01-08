@@ -10,8 +10,8 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=cp1252\n"
-"Content-Transfer-Encoding: utf8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
 #: bash\bolt.py:115
@@ -20,11 +20,11 @@ msgstr "Abstrakter Abschnitt wurde aufgerufen"
 
 #: bash\bolt.py:121
 msgid "Argument is out of allowed ranged of values"
-msgstr "Argument ist außerhalb des erlaubten Wertebereichs"
+msgstr "Argument ist auÃŸerhalb des erlaubten Wertebereichs"
 
 #: bash\bolt.py:127
 msgid "Object is in a bad state"
-msgstr "Objekt ist in einem ungültigen Zustand"
+msgstr "Objekt ist in einem ungÃ¼ltigen Zustand"
 
 #: bash\bolt.py:133
 msgid "Section is not coded yet"
@@ -44,7 +44,7 @@ msgstr "Fehlende Ressourcedatei: %s"
 
 #: bash\balt.py:319
 msgid "Choose a directory"
-msgstr "Wähle ein Verzeichnis"
+msgstr "WÃ¤hle ein Verzeichnis"
 
 #: bash\balt.py:331
 msgid "Warning"
@@ -74,7 +74,7 @@ msgstr "Aktion"
 
 #: bash\balt.py:735
 msgid "Add"
-msgstr "Hinzufügen"
+msgstr "HinzufÃ¼gen"
 
 #: bash\balt.py:736
 msgid "Edit"
@@ -110,19 +110,19 @@ msgstr "Fortschritt"
 
 #: bash\balt.py:945
 msgid "Dialog already destroyed"
-msgstr "Dialog bereits zerstört"
+msgstr "Dialog bereits zerstÃ¶rt"
 
 #: bash\balt.py:1441
 msgid "Delete Items"
-msgstr "Gegenstände löschen"
+msgstr "GegenstÃ¤nde lÃ¶schen"
 
 #: bash\balt.py:1535
 msgid "Open"
-msgstr "Öffnen"
+msgstr "Ã–ffnen"
 
 #: bash\balt.py:1550
 msgid "Delete"
-msgstr "Löschen"
+msgstr "LÃ¶schen"
 
 #: bash\balt.py:1580
 msgid "Duplicate"
@@ -134,7 +134,7 @@ msgstr "Duplizieren als"
 
 #: bash\balt.py:1593
 msgid "Files cannot be duplicated to themselves!"
-msgstr "Dateien können nicht auf sich selbst dupliziert werden!"
+msgstr "Dateien kÃ¶nnen nicht auf sich selbst dupliziert werden!"
 
 #: bash\bush.py:74
 msgid "Top (Type)"
@@ -226,19 +226,19 @@ msgstr "Waldelf"
 
 #: bash\bush.py:377
 msgid "Blade (1 Handed)"
-msgstr "Klinge - einhändig"
+msgstr "Klinge - einhÃ¤ndig"
 
 #: bash\bush.py:378
 msgid "Blade (2 Handed)"
-msgstr "Klinge - zweihändig"
+msgstr "Klinge - zweihÃ¤ndig"
 
 #: bash\bush.py:379
 msgid "Blunt (1 Handed)"
-msgstr "Stumpf - einhändig"
+msgstr "Stumpf - einhÃ¤ndig"
 
 #: bash\bush.py:380
 msgid "Blunt (2 Handed)"
-msgstr "Stumpf - zweihändig"
+msgstr "Stumpf - zweihÃ¤ndig"
 
 #: bash\bush.py:381
 msgid "Staff"
@@ -262,7 +262,7 @@ msgstr "Absorbieren: Gesundheit"
 
 #: bash\bush.py:389
 msgid "Absorb Skill"
-msgstr "Absorbieren: Fähigkeit"
+msgstr "Absorbieren: FÃ¤higkeit"
 
 #: bash\bush.py:390
 msgid "Absorb Magicka"
@@ -270,43 +270,43 @@ msgstr "Absorbieren: Magie"
 
 #: bash\bush.py:391
 msgid "Bound Armor Extra 01"
-msgstr "Gebundene Rüstung Extra 01"
+msgstr "Gebundene RÃ¼stung Extra 01"
 
 #: bash\bush.py:392
 msgid "Bound Armor Extra 02"
-msgstr "Gebundene Rüstung Extra 02"
+msgstr "Gebundene RÃ¼stung Extra 02"
 
 #: bash\bush.py:393
 msgid "Bound Armor Extra 03"
-msgstr "Gebundene Rüstung Extra 03"
+msgstr "Gebundene RÃ¼stung Extra 03"
 
 #: bash\bush.py:394
 msgid "Bound Armor Extra 04"
-msgstr "Gebundene Rüstung Extra 04"
+msgstr "Gebundene RÃ¼stung Extra 04"
 
 #: bash\bush.py:395
 msgid "Bound Armor Extra 05"
-msgstr "Gebundene Rüstung Extra 05"
+msgstr "Gebundene RÃ¼stung Extra 05"
 
 #: bash\bush.py:396
 msgid "Bound Armor Extra 06"
-msgstr "Gebundene Rüstung Extra 06"
+msgstr "Gebundene RÃ¼stung Extra 06"
 
 #: bash\bush.py:397
 msgid "Bound Armor Extra 07"
-msgstr "Gebundene Rüstung Extra 07"
+msgstr "Gebundene RÃ¼stung Extra 07"
 
 #: bash\bush.py:398
 msgid "Bound Armor Extra 08"
-msgstr "Gebundene Rüstung Extra 08"
+msgstr "Gebundene RÃ¼stung Extra 08"
 
 #: bash\bush.py:399
 msgid "Bound Armor Extra 09"
-msgstr "Gebundene Rüstung Extra 09"
+msgstr "Gebundene RÃ¼stung Extra 09"
 
 #: bash\bush.py:400
 msgid "Bound Armor Extra 10"
-msgstr "Gebundene Rüstung Extra 10"
+msgstr "Gebundene RÃ¼stung Extra 10"
 
 #: bash\bush.py:401
 msgid "Bound Boots"
@@ -362,7 +362,7 @@ msgstr "Gebundene Ordenswaffe 6"
 
 #: bash\bush.py:414
 msgid "Summon Staff of Sheogorath"
-msgstr "Beschwören: Stab des Sheogorath"
+msgstr "BeschwÃ¶ren: Stab des Sheogorath"
 
 #: bash\bush.py:415
 msgid "Bound Priest Dagger"
@@ -402,7 +402,7 @@ msgstr "Beruhigen"
 
 #: bash\bush.py:424
 msgid "Chameleon"
-msgstr "Chamäleon"
+msgstr "ChamÃ¤leon"
 
 #: bash\bush.py:425
 msgid "Charm"
@@ -422,7 +422,7 @@ msgstr "Heilung: Krankheit"
 
 #: bash\bush.py:429
 msgid "Cure Paralysis"
-msgstr "Heilung: Lähmung"
+msgstr "Heilung: LÃ¤hmung"
 
 #: bash\bush.py:430
 msgid "Cure Poison"
@@ -454,7 +454,7 @@ msgstr "Schaden: Magie"
 
 #: bash\bush.py:437
 msgid "Disintegrate Armor"
-msgstr "Korrosion: Rüstung"
+msgstr "Korrosion: RÃ¼stung"
 
 #: bash\bush.py:438
 msgid "Disease Info"
@@ -478,7 +478,7 @@ msgstr "Entziehen: Gesundheit"
 
 #: bash\bush.py:443
 msgid "Drain Skill"
-msgstr "Entziehen: Fähigkeit"
+msgstr "Entziehen: FÃ¤higkeit"
 
 #: bash\bush.py:444
 msgid "Drain Magicka"
@@ -522,7 +522,7 @@ msgstr "Festigen: Magie-Multiplikator"
 
 #: bash\bush.py:454
 msgid "Fortify Skill"
-msgstr "Festigen: Fähigkeit"
+msgstr "Festigen: FÃ¤higkeit"
 
 #: bash\bush.py:455
 msgid "Fortify Magicka"
@@ -534,7 +534,7 @@ msgstr "Frostschaden"
 
 #: bash\bush.py:457
 msgid "Frenzy"
-msgstr "Erzürnen"
+msgstr "ErzÃ¼rnen"
 
 #: bash\bush.py:458
 msgid "Frost Shield"
@@ -562,11 +562,11 @@ msgstr "NICHT VERWENDEN - Schloss"
 
 #: bash\bush.py:464
 msgid "Summon Mythic Dawn Helm"
-msgstr "Beschwören: Helm der Mytischen Morgenröte"
+msgstr "BeschwÃ¶ren: Helm der Mytischen MorgenrÃ¶te"
 
 #: bash\bush.py:465
 msgid "Summon Mythic Dawn Armor"
-msgstr "Beschwören: Rüstung der Mytischen Morgenröte"
+msgstr "BeschwÃ¶ren: RÃ¼stung der Mytischen MorgenrÃ¶te"
 
 #: bash\bush.py:466
 msgid "Night-Eye"
@@ -574,7 +574,7 @@ msgstr "Nachtauge"
 
 #: bash\bush.py:468
 msgid "Paralyze"
-msgstr "Lähmen"
+msgstr "LÃ¤hmen"
 
 #: bash\bush.py:469
 msgid "Poison Info"
@@ -634,7 +634,7 @@ msgstr "Widerstehen: Normale Waffen"
 
 #: bash\bush.py:483
 msgid "Resist Paralysis"
-msgstr "Widerstehen: Lähmung"
+msgstr "Widerstehen: LÃ¤hmung"
 
 #: bash\bush.py:484
 msgid "Resist Poison"
@@ -670,7 +670,7 @@ msgstr "Stille"
 
 #: bash\bush.py:492
 msgid "Stunted Magicka"
-msgstr "Verkümmerte Magie"
+msgstr "VerkÃ¼mmerte Magie"
 
 #: bash\bush.py:493
 msgid "Soul Trap"
@@ -702,195 +702,195 @@ msgstr "Auf Wasser laufen"
 
 #: bash\bush.py:500
 msgid "Weakness to Disease"
-msgstr "Anfälligkeit für Krankheit"
+msgstr "AnfÃ¤lligkeit fÃ¼r Krankheit"
 
 #: bash\bush.py:501
 msgid "Weakness to Fire"
-msgstr "Anfälligkeit für Feuer"
+msgstr "AnfÃ¤lligkeit fÃ¼r Feuer"
 
 #: bash\bush.py:502
 msgid "Weakness to Frost"
-msgstr "Anfälligkeit für Frost"
+msgstr "AnfÃ¤lligkeit fÃ¼r Frost"
 
 #: bash\bush.py:503
 msgid "Weakness to Magic"
-msgstr "Anfälligkeit für Magie"
+msgstr "AnfÃ¤lligkeit fÃ¼r Magie"
 
 #: bash\bush.py:504
 msgid "Weakness to Normal Weapons"
-msgstr "Anfälligkeit für Normale Waffen"
+msgstr "AnfÃ¤lligkeit fÃ¼r Normale Waffen"
 
 #: bash\bush.py:505
 msgid "Weakness to Poison"
-msgstr "Anfälligkeit für Gift"
+msgstr "AnfÃ¤lligkeit fÃ¼r Gift"
 
 #: bash\bush.py:506
 msgid "Weakness to Shock"
-msgstr "Anfälligkeit für Blitz"
+msgstr "AnfÃ¤lligkeit fÃ¼r Blitz"
 
 #: bash\bush.py:507
 msgid "Summon Rufio's Ghost"
-msgstr "Beschwören: Rufios Geist"
+msgstr "BeschwÃ¶ren: Rufios Geist"
 
 #: bash\bush.py:508
 msgid "Summon Ancestor Guardian"
-msgstr "Beschwören: Urahnen-Wächter"
+msgstr "BeschwÃ¶ren: Urahnen-WÃ¤chter"
 
 #: bash\bush.py:509
 msgid "Summon Spiderling"
-msgstr "Beschwören: Spiderling"
+msgstr "BeschwÃ¶ren: Spiderling"
 
 #: bash\bush.py:510
 msgid "Summon Flesh Atronach"
-msgstr "Beschwören: Fleisch-Atronach"
+msgstr "BeschwÃ¶ren: Fleisch-Atronach"
 
 #: bash\bush.py:511
 msgid "Summon Bear"
-msgstr "Beschwören: Bär"
+msgstr "BeschwÃ¶ren: BÃ¤r"
 
 #: bash\bush.py:512
 msgid "Summon Gluttonous Hunger"
-msgstr "Beschwören: Gefräßiger Hunger"
+msgstr "BeschwÃ¶ren: GefrÃ¤ÃŸiger Hunger"
 
 #: bash\bush.py:513
 msgid "Summon Ravenous Hunger"
-msgstr "Beschwören: Heißhungriger Hunger"
+msgstr "BeschwÃ¶ren: HeiÃŸhungriger Hunger"
 
 #: bash\bush.py:514
 msgid "Summon Voracious Hunger"
-msgstr "Beschwören: Gieriger Hunger"
+msgstr "BeschwÃ¶ren: Gieriger Hunger"
 
 #: bash\bush.py:515
 msgid "Summon Dark Seducer"
-msgstr "Beschwören: Dunkler Verführer"
+msgstr "BeschwÃ¶ren: Dunkler VerfÃ¼hrer"
 
 #: bash\bush.py:516
 msgid "Summon Golden Saint"
-msgstr "Beschwören: Goldene Heilige"
+msgstr "BeschwÃ¶ren: Goldene Heilige"
 
 #: bash\bush.py:517
 msgid "Wabba Summon"
-msgstr "Beschwören: Wabba"
+msgstr "BeschwÃ¶ren: Wabba"
 
 #: bash\bush.py:518
 msgid "Summon Decrepit Shambles"
-msgstr "Beschwören: Klapprige Klapperscheuche"
+msgstr "BeschwÃ¶ren: Klapprige Klapperscheuche"
 
 #: bash\bush.py:519
 msgid "Summon Shambles"
-msgstr "Beschwören: Klapperscheuche"
+msgstr "BeschwÃ¶ren: Klapperscheuche"
 
 #: bash\bush.py:520
 msgid "Summon Replete Shambles"
-msgstr "Beschwören: Verstörte Klapperscheuche"
+msgstr "BeschwÃ¶ren: VerstÃ¶rte Klapperscheuche"
 
 #: bash\bush.py:521
 msgid "Summon Hunger"
-msgstr "Beschwören: Hunger"
+msgstr "BeschwÃ¶ren: Hunger"
 
 #: bash\bush.py:522
 msgid "Summon Mangled Flesh Atronach"
-msgstr "Beschwören: Verstümmelter Fleisch-Atronach"
+msgstr "BeschwÃ¶ren: VerstÃ¼mmelter Fleisch-Atronach"
 
 #: bash\bush.py:523
 msgid "Summon Torn Flesh Atronach"
-msgstr "Beschwören: Zerfetzter Fleisch-Atronach"
+msgstr "BeschwÃ¶ren: Zerfetzter Fleisch-Atronach"
 
 #: bash\bush.py:524
 msgid "Summon Stitched Flesh Atronach"
-msgstr "Beschwören: Geflickter Fleisch-Atronach"
+msgstr "BeschwÃ¶ren: Geflickter Fleisch-Atronach"
 
 #: bash\bush.py:525
 msgid "Summon Sewn Flesh Atronach"
-msgstr "Beschwören: Genähter Fleisch-Atronach"
+msgstr "BeschwÃ¶ren: GenÃ¤hter Fleisch-Atronach"
 
 #: bash\bush.py:526
 msgid "Extra Summon 20"
-msgstr "Beschwören: Extra 20"
+msgstr "BeschwÃ¶ren: Extra 20"
 
 #: bash\bush.py:527
 msgid "Summon Clannfear"
-msgstr "Beschwören: Clannfear"
+msgstr "BeschwÃ¶ren: Clannfear"
 
 #: bash\bush.py:528
 msgid "Summon Daedroth"
-msgstr "Beschwören: Daedroth"
+msgstr "BeschwÃ¶ren: Daedroth"
 
 #: bash\bush.py:529
 msgid "Summon Dremora"
-msgstr "Beschwören: Dremora"
+msgstr "BeschwÃ¶ren: Dremora"
 
 #: bash\bush.py:530
 msgid "Summon Dremora Lord"
-msgstr "Beschwören: Dremora-Fürst"
+msgstr "BeschwÃ¶ren: Dremora-FÃ¼rst"
 
 #: bash\bush.py:531
 msgid "Summon Flame Atronach"
-msgstr "Beschwören: Flammen-Atronach"
+msgstr "BeschwÃ¶ren: Flammen-Atronach"
 
 #: bash\bush.py:532
 msgid "Summon Frost Atronach"
-msgstr "Beschwören: Frost-Atronach"
+msgstr "BeschwÃ¶ren: Frost-Atronach"
 
 #: bash\bush.py:533
 msgid "Summon Ghost"
-msgstr "Beschwören: Geist"
+msgstr "BeschwÃ¶ren: Geist"
 
 #: bash\bush.py:534
 msgid "Summon Headless Zombie"
-msgstr "Beschwören: Kopfloser Zombie"
+msgstr "BeschwÃ¶ren: Kopfloser Zombie"
 
 #: bash\bush.py:535
 msgid "Summon Lich"
-msgstr "Beschwören: Lich"
+msgstr "BeschwÃ¶ren: Lich"
 
 #: bash\bush.py:536
 msgid "Summon Scamp"
-msgstr "Beschwören: Skamp"
+msgstr "BeschwÃ¶ren: Skamp"
 
 #: bash\bush.py:537
 msgid "Summon Skeleton Guardian"
-msgstr "Beschwören: Skelett-Wächter"
+msgstr "BeschwÃ¶ren: Skelett-WÃ¤chter"
 
 #: bash\bush.py:538
 msgid "Summon Skeleton Champion"
-msgstr "Beschwören: Skelett-Champion"
+msgstr "BeschwÃ¶ren: Skelett-Champion"
 
 #: bash\bush.py:539
 msgid "Summon Skeleton"
-msgstr "Beschwören: Skelett"
+msgstr "BeschwÃ¶ren: Skelett"
 
 #: bash\bush.py:540
 msgid "Summon Skeleton Hero"
-msgstr "Beschwören: Skelett-Held"
+msgstr "BeschwÃ¶ren: Skelett-Held"
 
 #: bash\bush.py:541
 msgid "Summon Spider Daedra"
-msgstr "Beschwören: Spinnen-Daedra"
+msgstr "BeschwÃ¶ren: Spinnen-Daedra"
 
 #: bash\bush.py:542
 msgid "Summon Storm Atronach"
-msgstr "Beschwören: Sturm-Atronach"
+msgstr "BeschwÃ¶ren: Sturm-Atronach"
 
 #: bash\bush.py:543
 msgid "Summon Faded Wraith"
-msgstr "Beschwören: Verblichenes Gespenst"
+msgstr "BeschwÃ¶ren: Verblichenes Gespenst"
 
 #: bash\bush.py:544
 msgid "Summon Gloom Wraith"
-msgstr "Beschwören: Düstergespenst"
+msgstr "BeschwÃ¶ren: DÃ¼stergespenst"
 
 #: bash\bush.py:545
 msgid "Summon Xivilai"
-msgstr "Beschwören: Xivilai"
+msgstr "BeschwÃ¶ren: Xivilai"
 
 #: bash\bush.py:546
 msgid "Summon Zombie"
-msgstr "Beschwören: Zombie"
+msgstr "BeschwÃ¶ren: Zombie"
 
 #: bash\bush.py:602
 msgid "Strength"
-msgstr "Stärke"
+msgstr "StÃ¤rke"
 
 #: bash\bush.py:603
 msgid "Intelligence"
@@ -918,7 +918,7 @@ msgstr "Charisma"
 
 #: bash\bush.py:609
 msgid "Luck"
-msgstr "Glück"
+msgstr "GlÃ¼ck"
 
 #: bash\bush.py:610
 msgid "Health"
@@ -962,7 +962,7 @@ msgstr "Nahkampf"
 
 #: bash\bush.py:621
 msgid "Heavy Armor"
-msgstr "Schwere Rüstung"
+msgstr "Schwere RÃ¼stung"
 
 #: bash\bush.py:622
 msgid "Alchemy"
@@ -970,15 +970,15 @@ msgstr "Alchemie"
 
 #: bash\bush.py:624
 msgid "Alteration"
-msgstr "Veränderung"
+msgstr "VerÃ¤nderung"
 
 #: bash\bush.py:625
 msgid "Conjuration"
-msgstr "Beschwörung"
+msgstr "BeschwÃ¶rung"
 
 #: bash\bush.py:626
 msgid "Destruction"
-msgstr "Zerstörung"
+msgstr "ZerstÃ¶rung"
 
 #: bash\bush.py:627
 msgid "Illusion"
@@ -998,11 +998,11 @@ msgstr "Akrobatik"
 
 #: bash\bush.py:631
 msgid "Light Armor"
-msgstr "Leichte Rüstung"
+msgstr "Leichte RÃ¼stung"
 
 #: bash\bush.py:632
 msgid "Marksman"
-msgstr "Schütze"
+msgstr "SchÃ¼tze"
 
 #: bash\bush.py:633
 msgid "Mercantile"
@@ -1026,11 +1026,11 @@ msgstr "Fraktion"
 
 #: bash\bush.py:719
 msgid "Apparatus"
-msgstr "Gerät"
+msgstr "GerÃ¤t"
 
 #: bash\bush.py:720
 msgid "Armor"
-msgstr "Rüstung"
+msgstr "RÃ¼stung"
 
 #: bash\bush.py:721
 msgid "Book"
@@ -1062,7 +1062,7 @@ msgstr "Kreatur"
 
 #: bash\bush.py:729
 msgid "Key"
-msgstr "Schlüssel"
+msgstr "SchlÃ¼ssel"
 
 #: bash\bush.py:730
 msgid "Potion"
@@ -1146,11 +1146,11 @@ msgstr "%s: Leseversuch nach (%d) Ende (%d) der Datei oder des Dateipuffers"
 
 #: bash\bosh.py:399
 msgid "%s: Expected size == %d, but got: %d"
-msgstr "%s: Erwartete Größe == %d, aber erhalten: %d"
+msgstr "%s: Erwartete GrÃ¶ÃŸe == %d, aber erhalten: %d"
 
 #: bash\bosh.py:401
 msgid "%s: Expected size <= %d, but got: %d"
-msgstr "%s: Erwartete Größe <= %d, aber erhalten: %d"
+msgstr "%s: Erwartete GrÃ¶ÃŸe <= %d, aber erhalten: %d"
 
 #: bash\bosh.py:409
 msgid "Extraneous subrecord (%s) in %s record"
@@ -1158,11 +1158,11 @@ msgstr "Untypischer subrecord (%s) im %s Datensatz"
 
 #: bash\bosh.py:453
 msgid "Exceeded limit of"
-msgstr "Grenze überschritten von "
+msgstr "Grenze Ã¼berschritten von "
 
 #: bash\bosh.py:489
 msgid "Bad header type"
-msgstr "Ungültiger Headertyp"
+msgstr "UngÃ¼ltiger Headertyp"
 
 #: bash\bosh.py:502
 msgid "Bad Top GRUP type"
@@ -1186,7 +1186,7 @@ msgstr "Fids nicht im langen Format"
 
 #: bash\bosh.py:1546
 msgid "Data changed"
-msgstr "Daten geändert"
+msgstr "Daten geÃ¤ndert"
 
 #: bash\bosh.py:1547
 msgid "Data undefined"
@@ -1194,7 +1194,7 @@ msgstr "Daten nicht definiert"
 
 #: bash\bosh.py:1631
 msgid "Mis-sized compressed data. Expected %d, got %d"
-msgstr "Komprimierte Daten in falscher Größe. Erwartet: %d, erhalten: %d"
+msgstr "Komprimierte Daten in falscher GrÃ¶ÃŸe. Erwartet: %d, erhalten: %d"
 
 #: bash\bosh.py:1705
 msgid "Packing Error: %s %s: Fids in long format"
@@ -1202,7 +1202,7 @@ msgstr "Packfehler: %s %s: Fids im langen Format"
 
 #: bash\bosh.py:1979
 msgid "(Attribute|Skill)"
-msgstr "(Attribut|Fähigkeit)"
+msgstr "(Attribut|FÃ¤higkeit)"
 
 #: bash\bosh.py:2460
 msgid "Unexpected %s record in %s group"
@@ -1210,11 +1210,11 @@ msgstr "Unerwarteter %s Datensatz in %s Gruppe"
 
 #: bash\bosh.py:3867
 msgid "No valid mapping for mod index 0x%02X"
-msgstr "Keine gültige Abbildung für Modindex 0x%02X"
+msgstr "Keine gÃ¼ltige Abbildung fÃ¼r Modindex 0x%02X"
 
 #: bash\bosh.py:4966
 msgid "Invalid top group type"
-msgstr "Ungültiger oberster Gruppen-Typ"
+msgstr "UngÃ¼ltiger oberster Gruppen-Typ"
 
 #: bash\bosh.py:4986
 msgid "Improperly grouped file"
@@ -1242,7 +1242,7 @@ msgstr "Lese Erstellung"
 
 #: bash\bosh.py:5746
 msgid "Reading records"
-msgstr "Lese Datensätze"
+msgstr "Lese DatensÃ¤tze"
 
 #: bash\bosh.py:5752
 msgid "Reading fids, worldids"
@@ -1262,7 +1262,7 @@ msgstr "Schreibe Erstellung"
 
 #: bash\bosh.py:5816
 msgid "Writing records"
-msgstr "Schreibe Datensätze"
+msgstr "Schreibe DatensÃ¤tze"
 
 #: bash\bosh.py:5824
 msgid "Writing fids, worldids"
@@ -1278,7 +1278,7 @@ msgstr "Fehlende Masterdatei"
 
 #: bash\bosh.py:5941
 msgid "Abomb Counter"
-msgstr "Abomb Zähler"
+msgstr "Abomb ZÃ¤hler"
 
 #: bash\bosh.py:5942
 msgid "Integer:\t0x%08X"
@@ -1290,11 +1290,11 @@ msgstr ""
 
 #: bash\bosh.py:5945
 msgid "Fbomb Counter"
-msgstr "Fbomb-Zähler"
+msgstr "Fbomb-ZÃ¤hler"
 
 #: bash\bosh.py:5946
 msgid "Next in-game object: %08X"
-msgstr "Nächstes in-game-Objekt: %08X"
+msgstr "NÃ¤chstes in-game-Objekt: %08X"
 
 #: bash\bosh.py:5949
 msgid "Created Items"
@@ -1302,7 +1302,7 @@ msgstr "Erstellte Objekte"
 
 #: bash\bosh.py:5950
 msgid "Records"
-msgstr "Datensätze"
+msgstr "DatensÃ¤tze"
 
 #: bash\bosh.py:5951
 msgid "Fids"
@@ -1310,7 +1310,7 @@ msgstr ""
 
 #: bash\bosh.py:6018
 msgid "LostChanges"
-msgstr "Änderungsverluste"
+msgstr "Ã„nderungsverluste"
 
 #: bash\bosh.py:6024
 msgid "Unknown"
@@ -1386,7 +1386,7 @@ msgstr "%02X (Datei speichern)"
 
 #: bash\bosh.py:6106
 msgid "Size:  %u"
-msgstr "Größe:  %u"
+msgstr "GrÃ¶ÃŸe:  %u"
 
 #: bash\bosh.py:6135
 msgid "Pluggy ESPs"
@@ -1426,7 +1426,7 @@ msgstr ""
 
 #: bash\bosh.py:6163
 msgid "Size  : %u"
-msgstr "Größe  : %u"
+msgstr "GrÃ¶ÃŸe  : %u"
 
 #: bash\bosh.py:6178
 msgid "Pluggy Name"
@@ -1442,7 +1442,7 @@ msgstr ""
 
 #: bash\bosh.py:6189
 msgid "Pluggy ScreenSize"
-msgstr "Pluggy-Bildschirmgröße"
+msgstr "Pluggy-BildschirmgrÃ¶ÃŸe"
 
 #: bash\bosh.py:6193
 msgid "Width  : %u"
@@ -1450,7 +1450,7 @@ msgstr "Breite : %u"
 
 #: bash\bosh.py:6194
 msgid "Height : %u"
-msgstr "Höhe   : %u"
+msgstr "HÃ¶he   : %u"
 
 #: bash\bosh.py:6197
 msgid "Pluggy HudS"
@@ -1550,7 +1550,7 @@ msgstr "Untersuche erstellte Objekte"
 
 #: bash\bosh.py:6271
 msgid "Scanning change records"
-msgstr "Untersuche geänderte Datensätze"
+msgstr "Untersuche geÃ¤nderte DatensÃ¤tze"
 
 #: bash\bosh.py:6294
 msgid "full"
@@ -1566,7 +1566,7 @@ msgstr "Ladeliste ist voll"
 
 #: bash\bosh.py:7176
 msgid "Can't get snapshot parameters for file outside main directory"
-msgstr "Bekomme keine Snapshot-Parameter für eine Datei außerhalb des Hauptverzeichnisses"
+msgstr "Bekomme keine Snapshot-Parameter fÃ¼r eine Datei auÃŸerhalb des Hauptverzeichnisses"
 
 #: bash\bosh.py:7348
 msgid "Expected TES4, but got"
@@ -1578,7 +1578,7 @@ msgstr ""
 
 #: bash\bosh.py:7786
 msgid "Getting sizes"
-msgstr "Erhalte Größen"
+msgstr "Erhalte GrÃ¶ÃŸen"
 
 #: bash\bosh.py:7951
 msgid "247388848"
@@ -1595,13 +1595,13 @@ msgstr "Balo-Gruppen-Header"
 #: bash\bosh.py:8382
 msgid "Some mods were unavailable and were skipped:"
 "*"
-msgstr "Einige Mods waren nicht verfügbar und wurden übersprungen:"
+msgstr "Einige Mods waren nicht verfÃ¼gbar und wurden Ã¼bersprungen:"
 "*"
 
 #: bash\bosh.py:8386
 msgid "Mod list is full, so some mods were skipped:"
 ""
-msgstr "Modliste ist voll, weshalb einige Mods übersprungen wurden:"
+msgstr "Modliste ist voll, weshalb einige Mods Ã¼bersprungen wurden:"
 ""
 
 #: bash\bosh.py:8399
@@ -1622,11 +1622,11 @@ msgstr "* __Zeitversetzte Masterdatei:__"
 
 #: bash\bosh.py:8406
 msgid "Missing Masters for"
-msgstr "Fehlende Masterdateien für"
+msgstr "Fehlende Masterdateien fÃ¼r"
 
 #: bash\bosh.py:8409
 msgid "Masters for"
-msgstr "Masterdateien für"
+msgstr "Masterdateien fÃ¼r"
 
 #: bash\bosh.py:8415
 msgid "Active Mod Files"
@@ -1654,7 +1654,7 @@ msgstr "Kann nicht austauschen: %s nicht vorhanden"
 
 #: bash\bosh.py:8990
 msgid "ONLYONE does not support %s operators"
-msgstr "NUREINER unterstützt keine %s Operatoren"
+msgstr "NUREINER unterstÃ¼tzt keine %s Operatoren"
 
 #: bash\bosh.py:9084
 msgid "<font color=red>WARNING:</font>"
@@ -1662,11 +1662,11 @@ msgstr "<font color=red>WARNUNG:</font>"
 
 #: bash\bosh.py:9087
 msgid "Check Mods"
-msgstr "Prüfe Mods"
+msgstr "PrÃ¼fe Mods"
 
 #: bash\bosh.py:9088
 msgid "This is a report on your currently active/merged mods"
-msgstr "Dies ist ein Bericht über deine derzeit aktiven/gemergten Mods"
+msgstr "Dies ist ein Bericht Ã¼ber deine derzeit aktiven/gemergten Mods"
 
 #: bash\bosh.py:9097
 msgid "Mergeable"
@@ -1674,7 +1674,7 @@ msgstr "Mergebar"
 
 #: bash\bosh.py:9098
 msgid "Following mods are active, but could be merged into the bashed patch"
-msgstr "Folgende Mods sind aktiv, könnten aber in den Bashed Patch gemergt werden"
+msgstr "Folgende Mods sind aktiv, kÃ¶nnten aber in den Bashed Patch gemergt werden"
 
 #: bash\bosh.py:9102
 msgid "NoMerge Tagged Mods"
@@ -1718,7 +1718,7 @@ msgstr "KONFIGURATION"
 
 #: bash\bosh.py:9165
 msgid "SUGGESTIONS"
-msgstr "VORSCHLÄGE"
+msgstr "VORSCHLÃ„GE"
 
 #: bash\bosh.py:9172
 msgid "* __%s__ -- %s"
@@ -1813,7 +1813,7 @@ msgstr "%s: Fehlende Quelldatei:"
 #: bash\bosh.py:10258
 msgid "%s: Unable to determine file destination for:"
 "%s"
-msgstr "%s: Dateiziel kann nicht bestimmt werden für:"
+msgstr "%s: Dateiziel kann nicht bestimmt werden fÃ¼r:"
 "%s"
 
 #: bash\bosh.py:10263
@@ -1870,12 +1870,12 @@ msgstr "%s: Komprimierung fehlgeschlagen:"
 
 #: bash\bosh.py:10437
 msgid "No files to extract for %s"
-msgstr "Keine Dateien zum Entpacken für %s"
+msgstr "Keine Dateien zum Entpacken fÃ¼r %s"
 
 #: bash\bosh.py:10444
 msgid "Error creating file list for 7z:"
 "Error Code: %s"
-msgstr "Fehler beim Erstellen der Dateiliste für 7z:"
+msgstr "Fehler beim Erstellen der Dateiliste fÃ¼r 7z:"
 "Fehlernummer: %s"
 
 #: bash\bosh.py:10476
@@ -1910,7 +1910,7 @@ msgstr "Datum"
 
 #: bash\bosh.py:10904
 msgid "Size"
-msgstr "Größe"
+msgstr "GrÃ¶ÃŸe"
 
 #: bash\bosh.py:10904
 msgid "Files"
@@ -1950,11 +1950,11 @@ msgstr "Niedriger"
 
 #: bash\bosh.py:11576
 msgid "Higher"
-msgstr "Höher"
+msgstr "HÃ¶her"
 
 #: bash\bosh.py:11584
 msgid "No Underrides. Mod is not completely un-installed"
-msgstr "Keine Unterschreibungen. Mod wurde nicht vollständig deinstalliert"
+msgstr "Keine Unterschreibungen. Mod wurde nicht vollstÃ¤ndig deinstalliert"
 
 #: bash\bosh.py:11592
 msgid "Bain Packages"
@@ -2134,7 +2134,7 @@ msgstr ""
 
 #: bash\bosh.py:12868
 msgid "Quality"
-msgstr "Qualität"
+msgstr "QualitÃ¤t"
 
 #: bash\bosh.py:12872
 msgid "AR"
@@ -2226,7 +2226,7 @@ msgstr "Skripte importieren"
 
 #: bash\bosh.py:13675
 msgid "skipping file %s"
-msgstr "überspringe Datei %s"
+msgstr "Ã¼berspringe Datei %s"
 
 #: bash\bosh.py:13677
 msgid "reading file %s"
@@ -2239,7 +2239,7 @@ msgstr "exportiere Skripte %s"
 #: bash\bosh.py:13719
 msgid "Exported %d scripts from %s:"
 ""
-msgstr "%d geänderte Skripte aus %s exportiert:"
+msgstr "%d geÃ¤nderte Skripte aus %s exportiert:"
 ""
 
 #: bash\bosh.py:13799
@@ -2296,7 +2296,7 @@ msgstr ""
 msgid ""
 ".    Unsupported types"
 msgstr ""
-".    Nicht unterstützte Typen"
+".    Nicht unterstÃ¼tzte Typen"
 
 #: bash\bosh.py:14883
 msgid ""
@@ -2308,7 +2308,7 @@ msgstr ""
 msgid ""
 ".    New record(s) in block(s)"
 msgstr ""
-".    Neuer/Neue Eintrag/Einträge in Block/Blöcken"
+".    Neuer/Neue Eintrag/EintrÃ¤ge in Block/BlÃ¶cken"
 
 #: bash\bosh.py:14897
 msgid ""
@@ -2363,11 +2363,11 @@ msgstr "Geladene Mods untersucht"
 
 #: bash\bosh.py:15033
 msgid "Merge unsupported for type"
-msgstr "Mergen nicht unterstützt für Typ"
+msgstr "Mergen nicht unterstÃ¼tzt fÃ¼r Typ"
 
 #: bash\bosh.py:15069
 msgid "Overview"
-msgstr "Übersicht"
+msgstr "Ãœbersicht"
 
 #: bash\bosh.py:15070
 msgid "Date/Time"
@@ -2408,19 +2408,19 @@ msgstr ""
 #: bash\bosh.py:15110
 msgid "Completing"
 "%s"
-msgstr "Vervollständige"
+msgstr "VervollstÃ¤ndige"
 "%s"
 
 #: bash\bosh.py:15113
 msgid "Completing"
 "Trimming records"
-msgstr "Vervollständige"
+msgstr "VervollstÃ¤ndige"
 "Trimme Records"
 
 #: bash\bosh.py:15116
 msgid "Completing"
 "Converting fids"
-msgstr "Vervollständige"
+msgstr "VervollstÃ¤ndige"
 "Konvertiere fids"
 
 #: bash\bosh.py:15123
@@ -2429,7 +2429,7 @@ msgid "Updated: %s"
 "Records Changed: %d"
 msgstr "Aktualisiert: %s"
 ""
-"Records verändert: %d"
+"Records verÃ¤ndert: %d"
 
 #: bash\bosh.py:15172
 msgid ""
@@ -2571,7 +2571,7 @@ msgstr "Importiert Grafik (Models, Icons usw.) aus den Quellmods"
 msgid ""
 "=== Modified Records"
 msgstr ""
-"=== Veränderte Records"
+"=== VerÃ¤nderte Records"
 
 #: bash\bosh.py:16900
 msgid "* Modified %s Records: %d"
@@ -2603,29 +2603,29 @@ msgstr "Import: Actor-AI-Pakete"
 
 #: bash\bosh.py:17345
 msgid "Import Actor AIPackage links from source mods"
-msgstr "Importiert Actor-AI-Paket-Verknüpfungen aus Quellmods"
+msgstr "Importiert Actor-AI-Paket-VerknÃ¼pfungen aus Quellmods"
 
 #: bash\bosh.py:17526
 msgid ""
 "=== AI Package Lists Changed: %d"
 msgstr ""
-"=== AI-Paketlisten geändert: %d"
+"=== AI-Paketlisten geÃ¤ndert: %d"
 
 #: bash\bosh.py:17615
 msgid "* AI Package Lists Changed: %d"
-msgstr "* Veränderte AI-Paket-Listen: %d"
+msgstr "* VerÃ¤nderte AI-Paket-Listen: %d"
 
 #: bash\bosh.py:17623
 msgid "Import Actors: Death Items"
-msgstr "Import: Actor-Todesgegenstände"
+msgstr "Import: Actor-TodesgegenstÃ¤nde"
 
 #: bash\bosh.py:17624
 msgid "Import Actor death items from source mods"
-msgstr "Importiert Todesgegenstände von Actors aus den Quellmods"
+msgstr "Importiert TodesgegenstÃ¤nde von Actors aus den Quellmods"
 
 #: bash\bosh.py:17802
 msgid "* Imported Death Items: %d"
-msgstr "* Importierte Todesgegenstände: %d"
+msgstr "* Importierte TodesgegenstÃ¤nde: %d"
 
 #: bash\bosh.py:17810
 msgid "Import Factions"
@@ -2669,11 +2669,11 @@ msgstr "* Re-Relationierte Records: %d"
 
 #: bash\bosh.py:18198
 msgid "Import Scripts on containers, plants, misc, weapons etc. from source mods"
-msgstr "Importiert Skripte auf Behältern, Pflanzen, Misc, Waffen usw. aus den Quellmods"
+msgstr "Importiert Skripte auf BehÃ¤ltern, Pflanzen, Misc, Waffen usw. aus den Quellmods"
 
 #: bash\bosh.py:18331
 msgid "Import Scripts on containers, plants, misc, weapons etc from source mods"
-msgstr "Importiert Skripte auf Behälter, Pflanzen, MISC, Waffen etc. aus Quellmods"
+msgstr "Importiert Skripte auf BehÃ¤lter, Pflanzen, MISC, Waffen etc. aus Quellmods"
 
 #: bash\bosh.py:18390
 msgid "Import Script Contents"
@@ -2689,17 +2689,17 @@ msgstr "Import: Inventar"
 
 #: bash\bosh.py:18541
 msgid "Merges changes to NPC, creature and container inventories"
-msgstr "Mergt Änderungen an NPC-, Kreaturen- und Behälter-Inventaren"
+msgstr "Mergt Ã„nderungen an NPC-, Kreaturen- und BehÃ¤lter-Inventaren"
 
 #: bash\bosh.py:18663
 msgid ""
 "=== Inventories Changed: %d"
 msgstr ""
-"=== Geänderte Inventare: %d"
+"=== GeÃ¤nderte Inventare: %d"
 
 #: bash\bosh.py:18766
 msgid "* %s Inventories Changed: %d"
-msgstr "* %s Inventare geändert: %d"
+msgstr "* %s Inventare geÃ¤ndert: %d"
 
 #: bash\bosh.py:18773
 msgid "Import Actors: Spells"
@@ -2707,13 +2707,13 @@ msgstr "Import Actors: Zauber"
 
 #: bash\bosh.py:18774
 msgid "Merges changes to NPC and creature spell lists"
-msgstr "Mergt Änderungen an NPC- und Kreatur-Zauber-Listen"
+msgstr "Mergt Ã„nderungen an NPC- und Kreatur-Zauber-Listen"
 
 #: bash\bosh.py:18945
 msgid ""
 "=== Spell Lists Changed: %d"
 msgstr ""
-"=== Geänderte Zauberlisten: %d"
+"=== GeÃ¤nderte Zauberlisten: %d"
 
 #: bash\bosh.py:18951
 msgid "Import Names"
@@ -2735,7 +2735,7 @@ msgstr "Import: NPC-Gesichter"
 
 #: bash\bosh.py:19147
 msgid "Import NPC face/eyes/hair from source mods. For use with TNR and similar mods"
-msgstr "Importiert NPC-Gesichter/Augen/Haare aus Quellmods. Für TNR und ähnliche Mods"
+msgstr "Importiert NPC-Gesichter/Augen/Haare aus Quellmods. FÃ¼r TNR und Ã¤hnliche Mods"
 
 #: bash\bosh.py:19242
 msgid ""
@@ -2749,11 +2749,11 @@ msgstr "* Gepatchte Gesichter: %d"
 
 #: bash\bosh.py:19317
 msgid "Import Roads"
-msgstr "Import: Straßen"
+msgstr "Import: StraÃŸen"
 
 #: bash\bosh.py:19318
 msgid "Import roads from source mods"
-msgstr "Importiert Straßen aus Quellmods"
+msgstr "Importiert StraÃŸen aus Quellmods"
 
 #: bash\bosh.py:19390
 msgid ""
@@ -2763,7 +2763,7 @@ msgstr ""
 
 #: bash\bosh.py:19452
 msgid "* Roads Imported: %d"
-msgstr "* Importierte Straßen: %d"
+msgstr "* Importierte StraÃŸen: %d"
 
 #: bash\bosh.py:19460
 msgid "Import Sounds"
@@ -2771,11 +2771,11 @@ msgstr "Import: Sounds"
 
 #: bash\bosh.py:19461
 msgid "Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods"
-msgstr "Importiert Sounds (von Magieeffekten, Behältern, Activators, Lichtern, Wetter und Türen) aus Quellmods"
+msgstr "Importiert Sounds (von Magieeffekten, BehÃ¤ltern, Activators, Lichtern, Wetter und TÃ¼ren) aus Quellmods"
 
 #: bash\bosh.py:19604
 msgid "Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods"
-msgstr "Importiert Sounds (von Magieeffekten, Behältern, Activators, Lichtern, Wetter, Kreaturen und Türen) aus Quellmods"
+msgstr "Importiert Sounds (von Magieeffekten, BehÃ¤ltern, Activators, Lichtern, Wetter, Kreaturen und TÃ¼ren) aus Quellmods"
 
 #: bash\bosh.py:19676
 msgid "Import Stats"
@@ -2783,13 +2783,13 @@ msgstr "Import: Eigenschaften"
 
 #: bash\bosh.py:19677
 msgid "Import stats from any pickupable items from source mods/files"
-msgstr "Importiert Eigenschaften von aufhebbaren Gegenständen aus Quellmods/Dateien"
+msgstr "Importiert Eigenschaften von aufhebbaren GegenstÃ¤nden aus Quellmods/Dateien"
 
 #: bash\bosh.py:19776
 msgid ""
 "=== Modified Stats"
 msgstr ""
-"===Geänderte Eigenschaften"
+"===GeÃ¤nderte Eigenschaften"
 
 #: bash\bosh.py:19779
 msgid "alch"
@@ -2825,7 +2825,7 @@ msgstr "Lichter"
 
 #: bash\bosh.py:19779
 msgid "Keys"
-msgstr "Schlüssel"
+msgstr "SchlÃ¼ssel"
 
 #: bash\bosh.py:19779
 msgid "Clothes"
@@ -2833,7 +2833,7 @@ msgstr "Kleidung"
 
 #: bash\bosh.py:19779
 msgid "Books"
-msgstr "Bücher"
+msgstr "BÃ¼cher"
 
 #: bash\bosh.py:19874
 msgid ""
@@ -2859,15 +2859,15 @@ msgstr "* Modifizierte SPEL-Eigenschaften: %d"
 
 #: bash\bosh.py:20128
 msgid "* Armor Pieces Tweaked: %d"
-msgstr "* Optimierte Rüstungsstücke: %d"
+msgstr "* Optimierte RÃ¼stungsstÃ¼cke: %d"
 
 #: bash\bosh.py:20136
 msgid "Armor Tweaks"
-msgstr "Rüstungs-Tweaks"
+msgstr "RÃ¼stungs-Tweaks"
 
 #: bash\bosh.py:20213
 msgid "* Clothing Pieces Tweaked: %d"
-msgstr "* Optimierte Kleidungsstücke: %d"
+msgstr "* Optimierte KleidungsstÃ¼cke: %d"
 
 #: bash\bosh.py:20221
 msgid "Clothing Tweaks"
@@ -2879,11 +2879,11 @@ msgstr "Bogen-Reichweitenfix"
 
 #: bash\bosh.py:20262
 msgid "Fix bows with zero reach. (Zero reach causes CTDs.)"
-msgstr "Fixt Bögen mit Reichweite 0 (0 verursacht CTDs.)"
+msgstr "Fixt BÃ¶gen mit Reichweite 0 (0 verursacht CTDs.)"
 
 #: bash\bosh.py:20298
 msgid "* Bows fixed: %d"
-msgstr "* Gefixte Bögen: %d"
+msgstr "* Gefixte BÃ¶gen: %d"
 
 #: bash\bosh.py:20348
 msgid "Right Hand Rings"
@@ -2915,35 +2915,35 @@ msgstr "* Kleidung spielbar gesetzt: %d"
 
 #: bash\bosh.py:20537
 msgid "All Armor Playable"
-msgstr "Jede Rüstung spielbar"
+msgstr "Jede RÃ¼stung spielbar"
 
 #: bash\bosh.py:20538
 msgid "Sets all armor to be playable"
-msgstr "Setzt jede Rüstung auf spielbar"
+msgstr "Setzt jede RÃ¼stung auf spielbar"
 
 #: bash\bosh.py:20580
 msgid "Playable Armor"
-msgstr "Spielbare Rüstung"
+msgstr "Spielbare RÃ¼stung"
 
 #: bash\bosh.py:20581
 msgid "* Armor pieces set as playable: %d"
-msgstr "* Rüstungsstücke spielbar gesetzt: %d"
+msgstr "* RÃ¼stungsstÃ¼cke spielbar gesetzt: %d"
 
 #: bash\bosh.py:20638
 msgid "DarNified Books"
-msgstr "DarNifizierte Bücher"
+msgstr "DarNifizierte BÃ¼cher"
 
 #: bash\bosh.py:20639
 msgid "Books will be reformatted for DarN UI"
-msgstr "Bücher werden für DarN UI umformatiert"
+msgstr "BÃ¼cher werden fÃ¼r DarN UI umformatiert"
 
 #: bash\bosh.py:20719
 msgid "* Books DarNified: %d"
-msgstr "* Bücher DarNifiziert: %d"
+msgstr "* BÃ¼cher DarNifiziert: %d"
 
 #: bash\bosh.py:20727
 msgid "Books DarNified"
-msgstr "DarNifizierte Bücher"
+msgstr "DarNifizierte BÃ¼cher"
 
 #: bash\bosh.py:20811
 msgid "Nvidia Fog Fix"
@@ -2959,7 +2959,7 @@ msgstr "Kein Lichtflackern"
 
 #: bash\bosh.py:20899
 msgid "Remove flickering from lights. For use on low-end machines"
-msgstr "Entfernt das Flackern von Lichtern. Für low-end-Rechner"
+msgstr "Entfernt das Flackern von Lichtern. FÃ¼r low-end-Rechner"
 
 #: bash\bosh.py:20940
 msgid "* Lights unflickered: %d"
@@ -2995,19 +2995,19 @@ msgstr "Frei definiert"
 
 #: bash\bosh.py:21038
 msgid "Reweigh Potions to Maximum Weight"
-msgstr "Setze Tränke aufs maximale Gewicht"
+msgstr "Setze TrÃ¤nke aufs maximale Gewicht"
 
 #: bash\bosh.py:21039
 msgid "* Potions Reweighed by max weight potions: %d"
-msgstr "* Tränke, die aufs Maximalgewicht gesetzt wurden: %d"
+msgstr "* TrÃ¤nke, die aufs Maximalgewicht gesetzt wurden: %d"
 
 #: bash\bosh.py:21047
 msgid "Potions Max Weight"
-msgstr "Tränke: Maximalgewicht"
+msgstr "TrÃ¤nke: Maximalgewicht"
 
 #: bash\bosh.py:21097
 msgid "Minimum Weight Potions"
-msgstr "Minimalgewicht der Tränke"
+msgstr "Minimalgewicht der TrÃ¤nke"
 
 #: bash\bosh.py:21098
 msgid "Potion weight will be floored"
@@ -3031,19 +3031,19 @@ msgstr ""
 
 #: bash\bosh.py:21141
 msgid "Potions Reweighed to Mimimum Weight"
-msgstr "Tränke aufs Minimumgewicht setzen"
+msgstr "TrÃ¤nke aufs Minimumgewicht setzen"
 
 #: bash\bosh.py:21142
 msgid "* Potions Reweighed by Minimum Weight Potions: %d"
-msgstr "* Tränke, die aufs Minimumgewicht gesetzt wurden: %d"
+msgstr "* TrÃ¤nke, die aufs Minimumgewicht gesetzt wurden: %d"
 
 #: bash\bosh.py:21150
 msgid "Potions Min Weight"
-msgstr "Tränle: Minimalgewicht"
+msgstr "TrÃ¤nle: Minimalgewicht"
 
 #: bash\bosh.py:21185
 msgid "Potions Reweighed to Minimum Weight"
-msgstr "Tränke aufs Minimalgewicht reduziert"
+msgstr "TrÃ¤nke aufs Minimalgewicht reduziert"
 
 #: bash\bosh.py:21197
 msgid "Max Weight Staffs"
@@ -3075,15 +3075,15 @@ msgstr "Stabgewicht neu berechnen"
 
 #: bash\bosh.py:21246
 msgid "* Staffs Reweighed: %d"
-msgstr "* Stäbe mit neuem Gewicht: %d"
+msgstr "* StÃ¤be mit neuem Gewicht: %d"
 
 #: bash\bosh.py:21306
 msgid "Number of uses for pre-enchanted weapons and staffs"
-msgstr "Anzahl von Anwendungen von vor-verzauberten Waffen und Stäben"
+msgstr "Anzahl von Anwendungen von vor-verzauberten Waffen und StÃ¤ben"
 
 #: bash\bosh.py:21307
 msgid "The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons"
-msgstr "Die Aufladungen und Zauberkosten werden editiert, so dass alle verzauberten Waffen und Stäbe die angegebene Anzahl an Anwendungen haben. Kosten werden auf 1 aufgerundet (außer sie sind unbegrenzt), so dass die Anzahl von Anwendungen vielleicht nicht auf alle Waffen passt"
+msgstr "Die Aufladungen und Zauberkosten werden editiert, so dass alle verzauberten Waffen und StÃ¤be die angegebene Anzahl an Anwendungen haben. Kosten werden auf 1 aufgerundet (auÃŸer sie sind unbegrenzt), so dass die Anzahl von Anwendungen vielleicht nicht auf alle Waffen passt"
 
 #: bash\bosh.py:21311
 msgid "10"
@@ -3143,19 +3143,19 @@ msgstr "Verschiedene Records auf andere Arten optimieren"
 
 #: bash\bosh.py:21433
 msgid "Armor Shows Amulets"
-msgstr "Rüstung zeigt Amulette"
+msgstr "RÃ¼stung zeigt Amulette"
 
 #: bash\bosh.py:21434
 msgid "Prevents armor from hiding amulets"
-msgstr "Hindert Rüstung daran, Amulette zu verstecken"
+msgstr "Hindert RÃ¼stung daran, Amulette zu verstecken"
 
 #: bash\bosh.py:21437
 msgid "Armor Shows Rings"
-msgstr "Rüstung zeigt Ringe"
+msgstr "RÃ¼stung zeigt Ringe"
 
 #: bash\bosh.py:21438
 msgid "Prevents armor from hiding rings"
-msgstr "Hindert Rüstung daran, Ringe zu verstecken"
+msgstr "Hindert RÃ¼stung daran, Ringe zu verstecken"
 
 #: bash\bosh.py:21441
 msgid "Clothing Shows Amulets"
@@ -3211,7 +3211,7 @@ msgstr "Diebesgilde: Quest-Diebstahlstrafe"
 
 #: bash\bosh.py:21601
 msgid "The penalty (in Septims) for stealing while doing a Thieves Guild job"
-msgstr "Die Strafe (in Septimen) fürs Stehlen während einer Diebesgildenaufgabe"
+msgstr "Die Strafe (in Septimen) fÃ¼rs Stehlen wÃ¤hrend einer Diebesgildenaufgabe"
 
 #: bash\bosh.py:21604
 msgid "150"
@@ -3235,7 +3235,7 @@ msgstr "Diebesgilde: Quest-Mordstrafe"
 
 #: bash\bosh.py:21611
 msgid "The penalty (in Septims) for killing while doing a Thieves Guild job"
-msgstr "Die Strafe (in Septimen) fürs Töten während einer Diebesgildenaufgabe"
+msgstr "Die Strafe (in Septimen) fÃ¼rs TÃ¶ten wÃ¤hrend einer Diebesgildenaufgabe"
 
 #: bash\bosh.py:21615
 msgid "[1000]"
@@ -3255,7 +3255,7 @@ msgstr "Diebesgilde: Quest-Angriffsstrafe"
 
 #: bash\bosh.py:21621
 msgid "The penalty (in Septims) for attacking while doing a Thieves Guild job"
-msgstr "Die Strafe (in Septimen) fürs Angreifen während einer Diebesgildenaufgabe"
+msgstr "Die Strafe (in Septimen) fÃ¼rs Angreifen wÃ¤hrend einer Diebesgildenaufgabe"
 
 #: bash\bosh.py:21625
 msgid "[500]"
@@ -3271,11 +3271,11 @@ msgstr ""
 
 #: bash\bosh.py:21630
 msgid "Crime: Force Jail"
-msgstr "Verbrechen: Gefängnis erzwingen"
+msgstr "Verbrechen: GefÃ¤ngnis erzwingen"
 
 #: bash\bosh.py:21631
 msgid "The amount of Bounty at which a jail sentence is mandatory"
-msgstr "Die Kopfgeldhöhe, ab der Gefängnis zwingend ist"
+msgstr "Die KopfgeldhÃ¶he, ab der GefÃ¤ngnis zwingend ist"
 
 #: bash\bosh.py:21634
 msgid "2500"
@@ -3339,7 +3339,7 @@ msgstr "Roben zeigen Hosen"
 
 #: bash\bosh.py:21962
 msgid "Robes will allow pants, greaves, skirts - but they'll clip"
-msgstr "Roben erlauben Hosen, Beinschienen, Röcke - aber sie clippen"
+msgstr "Roben erlauben Hosen, Beinschienen, RÃ¶cke - aber sie clippen"
 
 #: bash\bosh.py:21964
 msgid "Robes Show Amulets"
@@ -3515,11 +3515,11 @@ msgstr "Frei definiert (Basis ist 1500)"
 
 #: bash\bosh.py:22225
 msgid "Camera: Chase Tightness"
-msgstr "Kamera: Verfolgungsnähe"
+msgstr "Kamera: VerfolgungsnÃ¤he"
 
 #: bash\bosh.py:22226
 msgid "Tightness of chase camera to player turning"
-msgstr "Nähe der Verfolgungskamera beim Umdrehen des Spielers"
+msgstr "NÃ¤he der Verfolgungskamera beim Umdrehen des Spielers"
 
 #: bash\bosh.py:22228
 msgid "x 1.5"
@@ -3555,11 +3555,11 @@ msgstr ""
 
 #: bash\bosh.py:22242
 msgid "Magic: Chameleon Refraction"
-msgstr "Magie: Chamäleon-Brechung"
+msgstr "Magie: ChamÃ¤leon-Brechung"
 
 #: bash\bosh.py:22243
 msgid "Chameleon with transparency instead of refraction effect"
-msgstr "Chamäleon mit Transparenz- statt Brechungseffekt"
+msgstr "ChamÃ¤leon mit Transparenz- statt Brechungseffekt"
 
 #: bash\bosh.py:22249
 msgid "Compass: Disable"
@@ -3651,11 +3651,11 @@ msgstr "Frei definiert (Basis ist 45)"
 
 #: bash\bosh.py:22293
 msgid "Jump Higher"
-msgstr "Höher springen"
+msgstr "HÃ¶her springen"
 
 #: bash\bosh.py:22294
 msgid "Maximum height player can jump to"
-msgstr "Maximale Höhe, die ein Spieler springen kann"
+msgstr "Maximale HÃ¶he, die ein Spieler springen kann"
 
 #: bash\bosh.py:22296
 msgid "x 1.1"
@@ -3671,7 +3671,7 @@ msgstr "Kamera: PC-Todeszeit"
 
 #: bash\bosh.py:22306
 msgid "Time after player's death before reload menu appears"
-msgstr "Zeit nach Spielertod, bevor das Lademenü erscheint"
+msgstr "Zeit nach Spielertod, bevor das LademenÃ¼ erscheint"
 
 #: bash\bosh.py:22308
 msgid "15 Seconds"
@@ -3687,7 +3687,7 @@ msgstr "Respawn-Zeit (Zellen)"
 
 #: bash\bosh.py:22316
 msgid "Time before unvisited cell respawns. But longer times increase save sizes"
-msgstr "Zeit bevor unbesuchte Zellen respawnen. Aber längere Zeiten erhöhen Savegame-Größen"
+msgstr "Zeit bevor unbesuchte Zellen respawnen. Aber lÃ¤ngere Zeiten erhÃ¶hen Savegame-GrÃ¶ÃŸen"
 
 #: bash\bosh.py:22318
 msgid "1 Day"
@@ -3731,7 +3731,7 @@ msgstr "Kampf: Waffen wiederaufladen"
 
 #: bash\bosh.py:22329
 msgid "Allow recharging weapons during combat"
-msgstr "Erlaubt das Wiederaufladen von Waffen während dem Kampf"
+msgstr "Erlaubt das Wiederaufladen von Waffen wÃ¤hrend dem Kampf"
 
 #: bash\bosh.py:22331
 msgid "[Allow]"
@@ -3755,11 +3755,11 @@ msgstr "Frei definiert (Basis 1000)"
 
 #: bash\bosh.py:22349
 msgid "Msg: Equip Misc. Item"
-msgstr "Nachricht: Ausrüsten von Misc"
+msgstr "Nachricht: AusrÃ¼sten von Misc"
 
 #: bash\bosh.py:22350
 msgid "Message upon equipping misc. item"
-msgstr "Nachricht beim Ausrüsten eines Misc-Gegenstandes"
+msgstr "Nachricht beim AusrÃ¼sten eines Misc-Gegenstandes"
 
 #: bash\bosh.py:22352
 msgid "[None]"
@@ -3779,15 +3779,15 @@ msgstr "Kostenmultiplikator: Reparatur"
 
 #: bash\bosh.py:22357
 msgid "Cost factor for repairing items"
-msgstr "Kostenfaktor fürs Reparieren von Gegenständen"
+msgstr "Kostenfaktor fÃ¼rs Reparieren von GegenstÃ¤nden"
 
 #: bash\bosh.py:22371
 msgid "Greeting Distance"
-msgstr "Grußdistanz"
+msgstr "GruÃŸdistanz"
 
 #: bash\bosh.py:22372
 msgid "Distance at which NPCs will greet the player. Default: 150"
-msgstr "Distanz, ab der NPCs den Spieler grüßen. Default: 150"
+msgstr "Distanz, ab der NPCs den Spieler grÃ¼ÃŸen. Default: 150"
 
 #: bash\bosh.py:22379
 msgid "Cost Multiplier: Recharge"
@@ -3795,7 +3795,7 @@ msgstr "Kostenmultiplikator: Wiederaufladen"
 
 #: bash\bosh.py:22380
 msgid "Cost factor for recharging items"
-msgstr "Kostenfaktor fürs Aufladen von Gegenständen"
+msgstr "Kostenfaktor fÃ¼rs Aufladen von GegenstÃ¤nden"
 
 #: bash\bosh.py:22392
 msgid "Master of Mercantile extra gold amount"
@@ -3803,7 +3803,7 @@ msgstr "Extra Goldmenge des Meisters des Handelsgeschicks"
 
 #: bash\bosh.py:22393
 msgid "How much more barter gold all merchants have for a master of mercantile"
-msgstr "Wie viel mehr Gold Händler für einen Meister des Handelsgeschicks haben"
+msgstr "Wie viel mehr Gold HÃ¤ndler fÃ¼r einen Meister des Handelsgeschicks haben"
 
 #: bash\bosh.py:22403
 msgid "Combat: Max Actors"
@@ -3811,7 +3811,7 @@ msgstr "Kampf: Max. Actors"
 
 #: bash\bosh.py:22404
 msgid "Maximum number of actors that can actively be in combat with the player"
-msgstr "Maximale Anzahl an Actors, die aktiv mit dem Spieler kämpfen"
+msgstr "Maximale Anzahl an Actors, die aktiv mit dem Spieler kÃ¤mpfen"
 
 #: bash\bosh.py:22415
 msgid "Crime Alarm Distance"
@@ -3819,7 +3819,7 @@ msgstr "Verbrechens-Alarmdistanz"
 
 #: bash\bosh.py:22416
 msgid "Distance from player that NPCs(guards) will be alerted of a crime"
-msgstr "Distanz vom Spieler, in der NPCs (Wächter) ein Verbrechen melden"
+msgstr "Distanz vom Spieler, in der NPCs (WÃ¤chter) ein Verbrechen melden"
 
 #: bash\bosh.py:22426
 msgid "Cost Multiplier: Enchantment"
@@ -3827,7 +3827,7 @@ msgstr "Kostenmultiplikator: Verzauberung"
 
 #: bash\bosh.py:22427
 msgid "Cost factor for enchanting items, OOO default is 120, vanilla 10"
-msgstr "Kostenfaktor fürs Verzaubern von Gegenständen, OOO-Default ist 120, Vanilla 10"
+msgstr "Kostenfaktor fÃ¼rs Verzaubern von GegenstÃ¤nden, OOO-Default ist 120, Vanilla 10"
 
 #: bash\bosh.py:22439
 msgid "Cost Multiplier: Spell Making"
@@ -3835,7 +3835,7 @@ msgstr "Kostenmultiplikator: Zaubererstellung"
 
 #: bash\bosh.py:22440
 msgid "Cost factor for making spells"
-msgstr "Kostenfaktor fürs Erstellen von Zaubern"
+msgstr "Kostenfaktor fÃ¼rs Erstellen von Zaubern"
 
 #: bash\bosh.py:22449
 msgid "AI: Max Active Actors"
@@ -3843,7 +3843,7 @@ msgstr "AI: Maximal aktive Actors"
 
 #: bash\bosh.py:22450
 msgid "Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"
-msgstr "Maximum Actors, deren AI aktiv sein kann. Muss höher als bei Kampf: Max Actors sein"
+msgstr "Maximum Actors, deren AI aktiv sein kann. Muss hÃ¶her als bei Kampf: Max Actors sein"
 
 #: bash\bosh.py:22456
 msgid "MMM Default: 40"
@@ -3851,19 +3851,19 @@ msgstr ""
 
 #: bash\bosh.py:22462
 msgid "Magic: Max Player Summons"
-msgstr "Magie: Maximale Spieler-Beschwörungen"
+msgstr "Magie: Maximale Spieler-BeschwÃ¶rungen"
 
 #: bash\bosh.py:22463
 msgid "Maximum number of creatures the player can summon"
-msgstr "Maximale Anzahl an Kreaturen, die ein Spieler beschwören kann"
+msgstr "Maximale Anzahl an Kreaturen, die ein Spieler beschwÃ¶ren kann"
 
 #: bash\bosh.py:22472
 msgid "Magic: Max NPC Summons"
-msgstr "Magie: Max. NPC-Beschwörungen"
+msgstr "Magie: Max. NPC-BeschwÃ¶rungen"
 
 #: bash\bosh.py:22473
 msgid "Maximum number of creatures that each NPC can summon"
-msgstr "Maximale Anzahl an Kreaturen, die ein NPC beschwören kann"
+msgstr "Maximale Anzahl an Kreaturen, die ein NPC beschwÃ¶ren kann"
 
 #: bash\bosh.py:22483
 msgid "Bounty: Attack"
@@ -3871,7 +3871,7 @@ msgstr "Kopfgeld: Angriff"
 
 #: bash\bosh.py:22484
 msgid "Bounty for attacking a 'good' npc"
-msgstr "Kopfgeld für einen Angriff auf einen 'guten' NPC"
+msgstr "Kopfgeld fÃ¼r einen Angriff auf einen 'guten' NPC"
 
 #: bash\bosh.py:22493
 msgid "Bounty: Horse Theft"
@@ -3879,7 +3879,7 @@ msgstr "Kopfgeld: Pferdediebstahl"
 
 #: bash\bosh.py:22494
 msgid "Bounty for horse theft"
-msgstr "Kopfgeld fürs Stehlen eines Pferdes"
+msgstr "Kopfgeld fÃ¼rs Stehlen eines Pferdes"
 
 #: bash\bosh.py:22503
 msgid "Bounty: Theft"
@@ -3887,7 +3887,7 @@ msgstr "Kopfgeld: Diebstahl"
 
 #: bash\bosh.py:22504
 msgid "Bounty for stealing, as fraction of item value"
-msgstr "Kopfgeld fürs Stehlen, als Bruchteil des Gegenstandwertes"
+msgstr "Kopfgeld fÃ¼rs Stehlen, als Bruchteil des Gegenstandwertes"
 
 #: bash\bosh.py:22512
 msgid "Combat: Alchemy"
@@ -3895,7 +3895,7 @@ msgstr "Kampf: Alchemie"
 
 #: bash\bosh.py:22513
 msgid "Allow alchemy during combat"
-msgstr "Erlaubt Alchemie während dem Kampf"
+msgstr "Erlaubt Alchemie wÃ¤hrend dem Kampf"
 
 #: bash\bosh.py:22515
 msgid "Allow"
@@ -3911,7 +3911,7 @@ msgstr "Kampf: Reparieren"
 
 #: bash\bosh.py:22519
 msgid "Allow repairing armor/weapons during combat"
-msgstr "Erlaubt das Reparieren von Rüstung/Waffen während dem Kampf"
+msgstr "Erlaubt das Reparieren von RÃ¼stung/Waffen wÃ¤hrend dem Kampf"
 
 #: bash\bosh.py:22524
 msgid "Companions: Max Number"
@@ -3931,11 +3931,11 @@ msgstr "Maximale Trainingsanzahl, die bei Trainern erlaubt ist"
 
 #: bash\bosh.py:22545
 msgid "Combat: Maximum Armor Rating"
-msgstr "Kampf: Maximaler Rüstungswert"
+msgstr "Kampf: Maximaler RÃ¼stungswert"
 
 #: bash\bosh.py:22546
 msgid "The Maximun amount of protection you will get from armor"
-msgstr "Der Maximalwert des Schutzes, den man durch Rüstung erhalten kann"
+msgstr "Der Maximalwert des Schutzes, den man durch RÃ¼stung erhalten kann"
 
 #: bash\bosh.py:22555
 msgid "Warning: Interior Distance to Hostiles"
@@ -3943,7 +3943,7 @@ msgstr "Warnung: Interior-Distanz zu Feinden"
 
 #: bash\bosh.py:22556
 msgid "The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors"
-msgstr "Die minimale Distanz feindlicher Actors, in der sie schlafen, reisen usw. dürfen, wenn sie in Interiors sind"
+msgstr "Die minimale Distanz feindlicher Actors, in der sie schlafen, reisen usw. dÃ¼rfen, wenn sie in Interiors sind"
 
 #: bash\bosh.py:22567
 msgid "Warning: Exterior Distance to Hostiles"
@@ -3951,7 +3951,7 @@ msgstr "Warnung: Exterior-Distanz zu Feinden"
 
 #: bash\bosh.py:22568
 msgid "The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside"
-msgstr "Die minimale Distanz feindlicher Actors, in der sie schlafen, reisen usw. dürfen, wenn sie in Exteriors sind"
+msgstr "Die minimale Distanz feindlicher Actors, in der sie schlafen, reisen usw. dÃ¼rfen, wenn sie in Exteriors sind"
 
 #: bash\bosh.py:22581
 msgid "UOP Vampire Aging and Face Fix.esp"
@@ -4003,11 +4003,11 @@ msgstr "Reparieren!"
 
 #: bash\bosh.py:23060
 msgid "Body Part Codes"
-msgstr "Körperteil-Codes"
+msgstr "KÃ¶rperteil-Codes"
 
 #: bash\bosh.py:23061
 msgid "Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc"
-msgstr "Setzt Körperteil-Codes, die von Rüstungs-/Kleidungsnamens-Tweaks verwendet werden. A: Amulett, R: Ring usw"
+msgstr "Setzt KÃ¶rperteil-Codes, die von RÃ¼stungs-/Kleidungsnamens-Tweaks verwendet werden. A: Amulett, R: Ring usw"
 
 #: bash\bosh.py:23159
 msgid "* %s: %d"
@@ -4019,11 +4019,11 @@ msgstr "* %s Umbenannt: %d"
 
 #: bash\bosh.py:23219
 msgid "Potions"
-msgstr "Tränke"
+msgstr "TrÃ¤nke"
 
 #: bash\bosh.py:23220
 msgid "Label potions to sort by type and effect"
-msgstr "Beschrifte Tränke zum Sortieren nach Typ und Effekt"
+msgstr "Beschrifte TrÃ¤nke zum Sortieren nach Typ und Effekt"
 
 #: bash\bosh.py:23222
 msgid "XD Illness"
@@ -4047,7 +4047,7 @@ msgstr "Notizen und Schriftrollen"
 
 #: bash\bosh.py:23371
 msgid "Mark notes and scrolls to sort separately from books"
-msgstr "Markiere Notizen und Schriftrollen, damit sie separat von Büchern sortiert werden"
+msgstr "Markiere Notizen und Schriftrollen, damit sie separat von BÃ¼chern sortiert werden"
 
 #: bash\bosh.py:23373
 msgid "~Fire Ball"
@@ -4091,7 +4091,7 @@ msgstr "(D) Feuerball"
 
 #: bash\bosh.py:23538
 msgid "* Items Renamed: %d"
-msgstr "* Umbenannte Gegenstände: %d"
+msgstr "* Umbenannte GegenstÃ¤nde: %d"
 
 #: bash\bosh.py:23547
 msgid "Label spells to sort by school and level"
@@ -4119,7 +4119,7 @@ msgstr "* Umbenannte Zauber: %d"
 
 #: bash\bosh.py:23698
 msgid "Label ammo and weapons to sort by type and damage"
-msgstr "Beschrifte Rüstung und Waffen, damit sie nach Typ und Schaden sortiert werden"
+msgstr "Beschrifte RÃ¼stung und Waffen, damit sie nach Typ und Schaden sortiert werden"
 
 #: bash\bosh.py:23700
 msgid "B Iron Bow"
@@ -4171,11 +4171,11 @@ msgstr "Tweak: Namen"
 
 #: bash\bosh.py:24156
 msgid "Tweak object names in various ways such as lore friendlyness or show type/quality"
-msgstr "Tweakt Objektnamen auf verschiedene Weise, um Lore-freundlicher zu sein, oder Typ/Qualität anzuzeigen"
+msgstr "Tweakt Objektnamen auf verschiedene Weise, um Lore-freundlicher zu sein, oder Typ/QualitÃ¤t anzuzeigen"
 
 #: bash\bosh.py:24158
 msgid "Rename armor to sort by type"
-msgstr "Rüstung umbenennen, damit sie nach Typ sortiert ist"
+msgstr "RÃ¼stung umbenennen, damit sie nach Typ sortiert ist"
 
 #: bash\bosh.py:24159
 msgid "BL Leather Boots"
@@ -4243,7 +4243,7 @@ msgstr "Mayus Animations-Overhaul-Skelett-Tweaker"
 
 #: bash\bosh.py:24364
 msgid "Changes all (modded and vanilla) NPCs to use the MAO skeletons"
-msgstr "Ändert alle (Mods und Vanilla) NPCs, um MAO-Skelette zu verwenden"
+msgstr "Ã„ndert alle (Mods und Vanilla) NPCs, um MAO-Skelette zu verwenden"
 
 #: bash\bosh.py:24391
 msgid "MAO Skeleton Setter"
@@ -4263,7 +4263,7 @@ msgstr "Vanilla Tierskelett-Tweak"
 
 #: bash\bosh.py:24451
 msgid "Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected"
-msgstr "Vermeidet Bugs, wenn ein NPC eine Tierrasse hat, aber die reguläre skeleton.nif ausgewählt ist"
+msgstr "Vermeidet Bugs, wenn ein NPC eine Tierrasse hat, aber die regulÃ¤re skeleton.nif ausgewÃ¤hlt ist"
 
 #: bash\bosh.py:24498
 msgid "Vanilla Beast Skeleton"
@@ -4275,7 +4275,7 @@ msgstr "Rothwardone-FGTS-Nuller"
 
 #: bash\bosh.py:24556
 msgid "Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards"
-msgstr "Nullt FGTS aller Rothwardonen-NPCs - für Kompatibilität mit Better Redguards"
+msgstr "Nullt FGTS aller Rothwardonen-NPCs - fÃ¼r KompatibilitÃ¤t mit Better Redguards"
 
 #: bash\bosh.py:24573
 msgid "Redguard FGTS Patcher"
@@ -4295,7 +4295,7 @@ msgstr "Keine blutigen Kreaturen"
 
 #: bash\bosh.py:24627
 msgid "Set all creatures to have no blood records"
-msgstr "Deaktiviert alle Bluteinträge bei Kreaturen"
+msgstr "Deaktiviert alle BluteintrÃ¤ge bei Kreaturen"
 
 #: bash\bosh.py:24647
 msgid "* %d Creatures Tweaked"
@@ -4311,7 +4311,7 @@ msgstr "Wie vorgesehen: Kobolde"
 
 #: bash\bosh.py:24701
 msgid "Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon"
-msgstr "Weist Kobolden die nicht zugewiesenen Bethesda-Kobold-Zauber zu, wie das UOP-Team herausfand und wofür Tejon eine Mod erstellte"
+msgstr "Weist Kobolden die nicht zugewiesenen Bethesda-Kobold-Zauber zu, wie das UOP-Team herausfand und wofÃ¼r Tejon eine Mod erstellte"
 
 #: bash\bosh.py:24703
 msgid "All imps"
@@ -4319,11 +4319,11 @@ msgstr "Alle Kobolde"
 
 #: bash\bosh.py:24704
 msgid "Only fullsize imps"
-msgstr "Nur große Kobolde"
+msgstr "Nur groÃŸe Kobolde"
 
 #: bash\bosh.py:24705
 msgid "Only implings"
-msgstr "Nur Koböldchen"
+msgstr "Nur KobÃ¶ldchen"
 
 #: bash\bosh.py:24739
 msgid "* %d Imps Tweaked"
@@ -4339,7 +4339,7 @@ msgstr "Wie vorgesehen: Wildschweine"
 
 #: bash\bosh.py:24812
 msgid "Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon"
-msgstr "Weist Wildschweinen die nicht zugewiesenen Bethesda-Wildschwein-Zauber zu, wie das UOP-Team herausfand und wofür Tejon eine Mod erstellte"
+msgstr "Weist Wildschweinen die nicht zugewiesenen Bethesda-Wildschwein-Zauber zu, wie das UOP-Team herausfand und wofÃ¼r Tejon eine Mod erstellte"
 
 #: bash\bosh.py:24843
 msgid "* %d Boars Tweaked"
@@ -4351,15 +4351,15 @@ msgstr "* Getweakte Wildschweine: %d"
 
 #: bash\bosh.py:24907
 msgid "Use Mur Zuk's Sexy Walk on all female NPCs"
-msgstr "Nutze Mur Zuks Sexy Walk für alle weiblichen NPCs"
+msgstr "Nutze Mur Zuks Sexy Walk fÃ¼r alle weiblichen NPCs"
 
 #: bash\bosh.py:24908
 msgid "Changes all female NPCs to use Mur Zuk's Sexy Walk"
-msgstr "Ändert alle weiblichen NPCs, dass sie Mur Zuks Sexy Walk nutzen"
+msgstr "Ã„ndert alle weiblichen NPCs, dass sie Mur Zuks Sexy Walk nutzen"
 
 #: bash\bosh.py:24924
 msgid "SWalk for Female NPCs"
-msgstr "SWalk für Weibliche NPCs"
+msgstr "SWalk fÃ¼r Weibliche NPCs"
 
 #: bash\bosh.py:24925
 msgid "* %d NPCs Tweaked"
@@ -4367,15 +4367,15 @@ msgstr "* %d NPCs optimiert"
 
 #: bash\bosh.py:24934
 msgid "Use Mur Zuk's Real Walk on all female NPCs"
-msgstr "Nutze Mur Zuks Real Walk für alle weiblichen NPCs"
+msgstr "Nutze Mur Zuks Real Walk fÃ¼r alle weiblichen NPCs"
 
 #: bash\bosh.py:24935
 msgid "Changes all female NPCs to use Mur Zuk's Real Walk"
-msgstr "Ändert alle weiblichen NPCs, dass sie Mur Zuks Real Walk nutzen"
+msgstr "Ã„ndert alle weiblichen NPCs, dass sie Mur Zuks Real Walk nutzen"
 
 #: bash\bosh.py:24951
 msgid "RWalk for Female NPCs"
-msgstr "RWalk für weibliche NPCs"
+msgstr "RWalk fÃ¼r weibliche NPCs"
 
 #: bash\bosh.py:24958
 msgid "Tweak Actors"
@@ -4383,7 +4383,7 @@ msgstr "Tweak: Actors"
 
 #: bash\bosh.py:24959
 msgid "Tweak NPC and Creatures records in specified ways"
-msgstr "Tweakt NPC- und Kreaturen-Einträge auf angegebene Weise"
+msgstr "Tweakt NPC- und Kreaturen-EintrÃ¤ge auf angegebene Weise"
 
 #: bash\bosh.py:25030
 msgid "Special"
@@ -4399,7 +4399,7 @@ msgid "Update COBL's catalogs of alchemical ingredients and effects."
 "Will only run if Cobl Main.esm is loaded"
 msgstr "Aktualisiert COBL-Verzeichnisse der Alchemiezutaten und -effekte."
 ""
-"Läuft nur, wenn Cobl Main.esm geladen ist"
+"LÃ¤uft nur, wenn Cobl Main.esm geladen ist"
 
 #: bash\bosh.py:25091
 msgid "Salan's Catalog of %s\r"
@@ -4435,23 +4435,23 @@ msgstr "Katalogisiere Effekte..."
 
 #: bash\bosh.py:25254
 msgid "Cobl Exhaustion"
-msgstr "Cobl-Ermüdung"
+msgstr "Cobl-ErmÃ¼dung"
 
 #: bash\bosh.py:25255
 msgid "Modify greater powers to use Cobl's Power Exhaustion feature."
 ""
 "Will only run if Cobl Main v1.66 (or higher) is active"
-msgstr "Modifiziert größere Mächte, um Cobls Machtermüdungsfeature zu nutzen."
+msgstr "Modifiziert grÃ¶ÃŸere MÃ¤chte, um Cobls MachtermÃ¼dungsfeature zu nutzen."
 ""
-"Läuft nur, wenn Cobl Main v1.66 (oder höher) aktiv ist"
+"LÃ¤uft nur, wenn Cobl Main v1.66 (oder hÃ¶her) aktiv ist"
 
 #: bash\bosh.py:25340
 msgid "Power Exhaustion"
-msgstr "Machtermüdung"
+msgstr "MachtermÃ¼dung"
 
 #: bash\bosh.py:25352
 msgid "* Powers Tweaked: %d"
-msgstr "* Optimierte Mächte: %d"
+msgstr "* Optimierte MÃ¤chte: %d"
 
 #: bash\bosh.py:25449
 msgid "Leveled Lists"
@@ -4461,13 +4461,13 @@ msgstr "Leveled-Listen"
 msgid "Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY."
 ""
 "Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below"
-msgstr "Mergt Veränderungen an Leveled-Listen von AKTIVEN/GEMERGTEN MODS."
+msgstr "Mergt VerÃ¤nderungen an Leveled-Listen von AKTIVEN/GEMERGTEN MODS."
 ""
-"Fortgeschrittene Anwender können die Relev/Delev-Tags von Mods (aktiv oder inaktiv) durch Nutzung der Liste unten überschreiben"
+"Fortgeschrittene Anwender kÃ¶nnen die Relev/Delev-Tags von Mods (aktiv oder inaktiv) durch Nutzung der Liste unten Ã¼berschreiben"
 
 #: bash\bosh.py:25451
 msgid "Merges changes to leveled lists from all active mods"
-msgstr "Mergt Änderungen an Leveled-Listen von allen aktiven Mods"
+msgstr "Mergt Ã„nderungen an Leveled-Listen von allen aktiven Mods"
 
 #: bash\bosh.py:25576
 msgid "Delevelers/Relevelers"
@@ -4511,9 +4511,9 @@ msgstr "Morph-Fraktionen"
 msgid "Mark factions that player can acquire while morphing."
 ""
 "Requires Cobl 1.28 and Wrye Morph or similar"
-msgstr "Markiere Fraktionen, die Spieler beim Morphen werden können."
+msgstr "Markiere Fraktionen, die Spieler beim Morphen werden kÃ¶nnen."
 ""
-"Benötigt Cobl 1.28 und Wrye Morph oder Ähnliches"
+"BenÃ¶tigt Cobl 1.28 und Wrye Morph oder Ã„hnliches"
 
 #: bash\bosh.py:25868
 msgid "Member"
@@ -4535,9 +4535,9 @@ msgstr "Markiere Morphbare Fraktionen..."
 msgid "Modify greater powers to work with Power Exhaustion mod."
 ""
 "Will only run if Power Exhaustion mod is installed and active"
-msgstr "Modifiziert größere Mächte, um mit der Machtermüdungsmod zu laufen."
+msgstr "Modifiziert grÃ¶ÃŸere MÃ¤chte, um mit der MachtermÃ¼dungsmod zu laufen."
 ""
-"Läuft nur, wenn die Machtermüdungsmod installiert und aktiv ist"
+"LÃ¤uft nur, wenn die MachtermÃ¼dungsmod installiert und aktiv ist"
 
 #: bash\bosh.py:26214
 msgid "Race Records"
@@ -4547,13 +4547,13 @@ msgstr "Rassen-Records"
 msgid "Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED."
 ""
 "Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them"
-msgstr "Merge Rassenaugen, -haare, -körper, -stimmen aus AKTIVEN UND/ODER GEMERGTEN Mods. Alle nicht-aktivieven, nicht-gemergten Mods der folgenden Liste werden IGNORIERT."
+msgstr "Merge Rassenaugen, -haare, -kÃ¶rper, -stimmen aus AKTIVEN UND/ODER GEMERGTEN Mods. Alle nicht-aktivieven, nicht-gemergten Mods der folgenden Liste werden IGNORIERT."
 ""
-"Selbst wenn keine der unteren Mods an ist, werden Haare und Augen sortiert und versucht, komische Augen aller aktiven Mods zu entfernen. Es werden zusätzlich zufällig Haare und Augen an NPCs verteilt, die sonst keine hätten."
+"Selbst wenn keine der unteren Mods an ist, werden Haare und Augen sortiert und versucht, komische Augen aller aktiven Mods zu entfernen. Es werden zusÃ¤tzlich zufÃ¤llig Haare und Augen an NPCs verteilt, die sonst keine hÃ¤tten."
 
 #: bash\bosh.py:26216
 msgid "Merge race eyes, hair, body, voice from mods"
-msgstr "Mergt Rassenaugen, -haare, -körper, -stimmen aus Mods"
+msgstr "Mergt Rassenaugen, -haare, -kÃ¶rper, -stimmen aus Mods"
 
 #: bash\bosh.py:26271
 msgid "WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time"
@@ -4569,7 +4569,7 @@ msgstr "Sehr seltsame Rasse % gefunden - kein linkes Auge zugewiesen"
 
 #: bash\bosh.py:26501
 msgid "Mesh undefined for eye %s in race %s"
-msgstr "Mesh für Auge %s in Rasse %s nicht definiert"
+msgstr "Mesh fÃ¼r Auge %s in Rasse %s nicht definiert"
 
 #: bash\bosh.py:26588
 msgid ""
@@ -4597,7 +4597,7 @@ msgstr "Um 'komische Augen' zu vermeiden, wurden inkompatible Augen aus folgende
 msgid ""
 "=== Eyes/Hair Assigned for NPCs"
 msgstr ""
-"=== Zugewiesene Augen/Haare für NPCs"
+"=== Zugewiesene Augen/Haare fÃ¼r NPCs"
 
 #: bash\bosh.py:26960
 msgid "Filtering eyes..."
@@ -4608,16 +4608,16 @@ msgstr "Filtere Augen..."
 #: bash\bosh.py:27062
 msgid "Assigning random eyes and hairs to npcs missing them..."
 ""
-msgstr "Zuweisung von zufälligen Augen und Haaren zu NPCs, die keine haben..."
+msgstr "Zuweisung von zufÃ¤lligen Augen und Haaren zu NPCs, die keine haben..."
 ""
 
 #: bash\bosh.py:27096
 msgid "Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods."
 ""
 "Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them"
-msgstr "Merge Rassenaugen, -haare, -körper, -stimmen aus AKTIVEN UND/ODER GEMERGTEN Mods."
+msgstr "Merge Rassenaugen, -haare, -kÃ¶rper, -stimmen aus AKTIVEN UND/ODER GEMERGTEN Mods."
 ""
-"Selbst wenn keine der unteren Mods an ist, werden Haare und Augen sortiert und versucht, komische Augen aller aktiven Mods zu entfernen. Es werden zusätzlich zufällig Haare und Augen an NPCs verteilt, die sonst keine hätten."
+"Selbst wenn keine der unteren Mods an ist, werden Haare und Augen sortiert und versucht, komische Augen aller aktiven Mods zu entfernen. Es werden zusÃ¤tzlich zufÃ¤llig Haare und Augen an NPCs verteilt, die sonst keine hÃ¤tten."
 
 #: bash\bosh.py:27184
 msgid "SEWorld Tests"
@@ -4625,7 +4625,7 @@ msgstr "SEWorld-Tests"
 
 #: bash\bosh.py:27185
 msgid "Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary"
-msgstr "Hält Cyrodiil-Quests auf den Shivering Isles an. Aktiviert GetPlayerInSEWorld-Tests, da wo sie nötig sind"
+msgstr "HÃ¤lt Cyrodiil-Quests auf den Shivering Isles an. Aktiviert GetPlayerInSEWorld-Tests, da wo sie nÃ¶tig sind"
 
 #: bash\bosh.py:27251
 msgid "Quests Patched: %d"
@@ -4639,11 +4639,11 @@ msgstr ""
 
 #: bash\bosh.py:27318
 msgid "Contents Checker"
-msgstr "Prüfen von Inhalten"
+msgstr "PrÃ¼fen von Inhalten"
 
 #: bash\bosh.py:27319
 msgid "Checks contents of leveled lists, inventories and containers for correct types"
-msgstr "Prüft den Inhalt von Leveled-Listen, Inventaren und Behältern auf korrekte Typen"
+msgstr "PrÃ¼ft den Inhalt von Leveled-Listen, Inventaren und BehÃ¤ltern auf korrekte Typen"
 
 #: bash\bosh.py:27467
 msgid "NONE"
@@ -4700,9 +4700,9 @@ msgid "Personal folder does not exist"
 "Personal folder: %s"
 "Additional info:"
 "%s"
-msgstr "Persönlicher Ordner existiert nicht"
-"Persönlicher Ordner: %s"
-"Zusätzliche Info:"
+msgstr "PersÃ¶nlicher Ordner existiert nicht"
+"PersÃ¶nlicher Ordner: %s"
+"ZusÃ¤tzliche Info:"
 "%s"
 
 #: bash\bosh.py:27603
@@ -4712,7 +4712,7 @@ msgid "Local app data folder does not exist."
 "%s"
 msgstr "Lokaler Applikationsordner existiert nicht"
 "Lokaler Applikationsordner: %s"
-"Zusätzliche Info:"
+"ZusÃ¤tzliche Info:"
 "%s"
 
 #: bash\bosh.py:27882
@@ -4795,11 +4795,11 @@ msgstr "${count} Masterdateien aktiviert"
 
 #: bash\basher.py:922
 msgid "Unrecognized sort key"
-msgstr "Unerkannter Sortierschlüssel"
+msgstr "Unerkannter SortierschlÃ¼ssel"
 
 #: bash\basher.py:980
 msgid "Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving"
-msgstr "Bearbeiten/aktualisieren der Master-Liste? Beachte, dass der Aktualisierungsprozess einige Dateien automatisch umbenennen könnte. Stelle sicher, die Änderungen vor dem speichern zu überprüfen"
+msgstr "Bearbeiten/aktualisieren der Master-Liste? Beachte, dass der Aktualisierungsprozess einige Dateien automatisch umbenennen kÃ¶nnte. Stelle sicher, die Ã„nderungen vor dem speichern zu Ã¼berprÃ¼fen"
 
 #: bash\basher.py:981
 msgid "Update Masters"
@@ -4815,19 +4815,19 @@ msgstr "Tweak ist gerade angewandt"
 
 #: bash\basher.py:1105
 msgid "Some settings are applied.  Some are overwritten by another tweak from the same installer"
-msgstr "Einige Einstellungen werden angewandt. Einige werden durch einen anderen Tweak des gleichen Installers überschrieben"
+msgstr "Einige Einstellungen werden angewandt. Einige werden durch einen anderen Tweak des gleichen Installers Ã¼berschrieben"
 
 #: bash\basher.py:1110
 msgid "Some settings are changed"
-msgstr "Einige Einstellungen werden geändert"
+msgstr "Einige Einstellungen werden geÃ¤ndert"
 
 #: bash\basher.py:1114
 msgid "Tweak is invalid"
-msgstr "Tweak ist ungültig"
+msgstr "Tweak ist ungÃ¼ltig"
 
 #: bash\basher.py:1204
 msgid "Auto-ordered files cannot be manually moved"
-msgstr "Auto-sortierte Dateien können nicht manuell verschoben werden"
+msgstr "Auto-sortierte Dateien kÃ¶nnen nicht manuell verschoben werden"
 
 #: bash\basher.py:1325
 msgid "Master file"
@@ -4871,7 +4871,7 @@ msgstr "Mod sollte importiert und deaktiviert werden"
 
 #: bash\basher.py:1355
 msgid "WARNING: Exclusion group is overloaded"
-msgstr "WARNUNG: Ausschlussgruppe ist überladen"
+msgstr "WARNUNG: Ausschlussgruppe ist Ã¼berladen"
 
 #: bash\basher.py:1358
 msgid "Has same time as another (unloaded) mod"
@@ -4913,25 +4913,25 @@ msgstr "Bash kann nicht mit einem Dateidatum nach dem 19.Januar 2038 arbeiten"
 msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed."
 ""
 "Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted"
-msgstr "Diese Mod hat ein zugehöriges Archiv (%s.bsa) und einen zugehörigen voice-Ordner (Sound\\Voices\\%s), welche bei einer Umbennennung der Mod abgetrennt werden."
+msgstr "Diese Mod hat ein zugehÃ¶riges Archiv (%s.bsa) und einen zugehÃ¶rigen voice-Ordner (Sound\\Voices\\%s), welche bei einer Umbennennung der Mod abgetrennt werden."
 ""
-"Beachte, dass das BSA auch einen voice-Ordner enthalten könnte (Sound\\Voices\\%s), welcher auch bei einer Angleichung des Archivnamens abgetrennt bleiben würde"
+"Beachte, dass das BSA auch einen voice-Ordner enthalten kÃ¶nnte (Sound\\Voices\\%s), welcher auch bei einer Angleichung des Archivnamens abgetrennt bleiben wÃ¼rde"
 
 #: bash\basher.py:1724
 msgid "This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed."
 ""
 "Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted"
-msgstr "Diese Mod hat ein zugehöriges Archiv (%s.bsa), welches bei einer Umbennennung der Mod abgetrennt wird."
+msgstr "Diese Mod hat ein zugehÃ¶riges Archiv (%s.bsa), welches bei einer Umbennennung der Mod abgetrennt wird."
 ""
-"Beachte, dass das BSA auch einen voice-Ordner enthalten könnte (Sound\\Voices\\%s), welcher auch bei einer Angleichung des Archivnamens abgetrennt bleiben würde"
+"Beachte, dass das BSA auch einen voice-Ordner enthalten kÃ¶nnte (Sound\\Voices\\%s), welcher auch bei einer Angleichung des Archivnamens abgetrennt bleiben wÃ¼rde"
 
 #: bash\basher.py:1726
 msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed"
-msgstr "Diese Mod hat einen zugehörigen voice-Ordner (Sound\\Voice\\%s), welcher bei einer Umbennennung der Mod abgetrennt wird"
+msgstr "Diese Mod hat einen zugehÃ¶rigen voice-Ordner (Sound\\Voice\\%s), welcher bei einer Umbennennung der Mod abgetrennt wird"
 
 #: bash\basher.py:1767
 msgid "File corrupted on save!"
-msgstr "Datei beim Speichern beschädigt!"
+msgstr "Datei beim Speichern beschÃ¤digt!"
 
 #: bash\basher.py:1786
 msgid "Automatic"
@@ -4967,7 +4967,7 @@ msgstr "Notizen"
 
 #: bash\basher.py:2381
 msgid "Saves: %d"
-msgstr "Spielstände: %d"
+msgstr "SpielstÃ¤nde: %d"
 
 #: bash\basher.py:2487
 msgid "Matched"
@@ -4995,7 +4995,7 @@ msgstr "Unsauber"
 
 #: bash\basher.py:2493
 msgid "Skipped"
-msgstr "Übersprungen"
+msgstr "Ãœbersprungen"
 
 #: bash\basher.py:2519
 msgid "Sub-Packages"
@@ -5013,9 +5013,9 @@ msgstr "Kommentare"
 msgid "Do you want to enable Installers If you do, Bash will first need to initialize some data. If you have many mods installed, this can take on the order of five minutes."
 ""
 "If you prefer to not enable Installers at this time, you can always enable it later from the column header context menu"
-msgstr "Willst du den Installer aktivieren? Wenn ja, muss Bash erstmal einige Daten initialisieren. Wenn du viele Mods installiert hast, kann das bis zu fünf Minuten dauern."
+msgstr "Willst du den Installer aktivieren? Wenn ja, muss Bash erstmal einige Daten initialisieren. Wenn du viele Mods installiert hast, kann das bis zu fÃ¼nf Minuten dauern."
 ""
-"Wenn du den Installer jetzt nicht aktivieren willst, kannst du ihn später immer über das Spaltenkopf-Kontextmenü aktivieren"
+"Wenn du den Installer jetzt nicht aktivieren willst, kannst du ihn spÃ¤ter immer Ã¼ber das Spaltenkopf-KontextmenÃ¼ aktivieren"
 
 #: bash\basher.py:2546
 msgid "Refreshing Installers"
@@ -5072,7 +5072,7 @@ msgstr "Structure: Komplex"
 #: bash\basher.py:2699
 msgid "Structure: Corrupt/Incomplete"
 ""
-msgstr "Structure: Fehlerhaft/Unvollständig"
+msgstr "Structure: Fehlerhaft/UnvollstÃ¤ndig"
 ""
 
 #: bash\basher.py:2701
@@ -5084,7 +5084,7 @@ msgstr "Structure: Unbekannt"
 #: bash\basher.py:2708
 msgid "Size: N/A"
 ""
-msgstr "Größe: N/A"
+msgstr "GrÃ¶ÃŸe: N/A"
 ""
 
 #: bash\basher.py:2710
@@ -5098,13 +5098,13 @@ msgstr ""
 #: bash\basher.py:2711
 msgid "Size: %s kb (%s)"
 ""
-msgstr "Größe: %s kb (%s)"
+msgstr "GrÃ¶ÃŸe: %s kb (%s)"
 ""
 
 #: bash\basher.py:2713
 msgid "Size: Unrecognized"
 ""
-msgstr "Größe: Unbekannt"
+msgstr "GrÃ¶ÃŸe: Unbekannt"
 ""
 
 #: bash\basher.py:2714
@@ -5155,15 +5155,15 @@ msgstr "Konfigurierte Dateien"
 
 #: bash\basher.py:2748
 msgid "Skipped (Extension)"
-msgstr "Übersprungen (Endung)"
+msgstr "Ãœbersprungen (Endung)"
 
 #: bash\basher.py:2749
 msgid "Skipped (Dir)"
-msgstr "Übersprungen (Dir)"
+msgstr "Ãœbersprungen (Dir)"
 
 #: bash\basher.py:2929
 msgid "Automatically update Textures BSA after adding/removing a replacer"
-msgstr "Automatisches Update der Texturen-BSA nach zufügen/entfernen eines Replacers"
+msgstr "Automatisches Update der Texturen-BSA nach zufÃ¼gen/entfernen eines Replacers"
 
 #: bash\basher.py:2931
 msgid "Update"
@@ -5205,13 +5205,13 @@ msgstr "Bearbeite Texturen-BSA?"
 msgid "BSA Hashes reset: %d"
 "BSA Hashes Invalidated: %d."
 "AIText entries: %d"
-msgstr "BSA Hashes zurückgesetzt: %d"
-"BSA Hashes ungültig gemacht: %d."
-"AITexteinträge: %d"
+msgstr "BSA Hashes zurÃ¼ckgesetzt: %d"
+"BSA Hashes ungÃ¼ltig gemacht: %d."
+"AITexteintrÃ¤ge: %d"
 
 #: bash\basher.py:3006
 msgid "BSA Hashes reset: %d"
-msgstr "BSA-Hashes zurückgesetzt: %d"
+msgstr "BSA-Hashes zurÃ¼ckgesetzt: %d"
 
 #: bash\basher.py:3137
 msgid "Screens: %d"
@@ -5227,7 +5227,7 @@ msgstr "Suche"
 
 #: bash\basher.py:3628
 msgid "Clear"
-msgstr "Löschen"
+msgstr "LÃ¶schen"
 
 #: bash\basher.py:3653
 msgid "PMs: %d/%d"
@@ -5263,11 +5263,11 @@ msgstr ""
 
 #: bash\basher.py:3869
 msgid "Saves"
-msgstr "Spielstände"
+msgstr "SpielstÃ¤nde"
 
 #: bash\basher.py:3870
 msgid "INI Edits"
-msgstr "INI-Änderungen"
+msgstr "INI-Ã„nderungen"
 
 #: bash\basher.py:3871
 msgid "Screenshots"
@@ -5279,7 +5279,7 @@ msgstr "PM-Archiv"
 
 #: bash\basher.py:3877
 msgid "PM Archive panel disabled due to Import Error (most likely comtypes)"
-msgstr "PM-Archiv wegen Importfehler deaktiviert (höchstwahrscheinlich Comtypes)"
+msgstr "PM-Archiv wegen Importfehler deaktiviert (hÃ¶chstwahrscheinlich Comtypes)"
 
 #: bash\basher.py:3981
 msgid "Default"
@@ -5293,7 +5293,7 @@ msgstr ""
 
 #: bash\basher.py:4012
 msgid "Modified dates have been reset for some mod files"
-msgstr "Modifizierte Daten wurden für einige Moddateien zurückgesetzt"
+msgstr "Modifizierte Daten wurden fÃ¼r einige Moddateien zurÃ¼ckgesetzt"
 
 #: bash\basher.py:4019
 msgid "Some mods have been auto-grouped"
@@ -5305,15 +5305,15 @@ msgstr "Fehlende Dateien wurden von der Ladeliste entfernt"
 
 #: bash\basher.py:4052
 msgid "Load list is overloaded. Some files have been de-activated"
-msgstr "Ladeliste ist überladen. Einige Dateien wurden deaktiviert"
+msgstr "Ladeliste ist Ã¼berladen. Einige Dateien wurden deaktiviert"
 
 #: bash\basher.py:4061
 msgid "The following mod files have corrupted headers"
-msgstr "Die folgenden Mod-Dateien haben beschädigte Kopfzeilen"
+msgstr "Die folgenden Mod-Dateien haben beschÃ¤digte Kopfzeilen"
 
 #: bash\basher.py:4067
 msgid "The following save files have corrupted headers"
-msgstr "Die folgenden Save-Dateien haben beschädigte Kopfzeilen"
+msgstr "Die folgenden Save-Dateien haben beschÃ¤digte Kopfzeilen"
 
 #: bash\basher.py:4075
 msgid "Your Oblivion.ini should begin with a section header (e.g.\"[General]"
@@ -5321,7 +5321,7 @@ msgstr "Deine Oblivion.ini sollte mit einem Abschnittsheader beginnen (z.B. [Gen
 
 #: bash\basher.py:4079
 msgid "Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date"
-msgstr "Bash kann nicht mit einem Dateidatum nach dem 19.Januar 2038 arbeiten. Dementsprechend wurden die Daten der folgenden Dateien zu einem früheren Datum zurückgesetzt"
+msgstr "Bash kann nicht mit einem Dateidatum nach dem 19.Januar 2038 arbeiten. Dementsprechend wurden die Daten der folgenden Dateien zu einem frÃ¼heren Datum zurÃ¼ckgesetzt"
 
 #: bash\basher.py:4086
 msgid "Turn Lock Times Off?"
@@ -5329,7 +5329,7 @@ msgid "Turn Lock Times Off?"
 "Lock Times a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM"
 msgstr "Gesperrte Zeiten abschalten?"
 ""
-"Sperre Zeiten ist eine Einrichtung, die die Ladereihenfolge zu einem vorher gespeicherten Zustand zurücksetzt. Während diese Maßnahme zwar gut für die Beibehaltung der Ladereihenfolge ist, würde sie ebenfalls in OBMM gemachte Änderungen an der Ladereihenfolge zurücknehmen"
+"Sperre Zeiten ist eine Einrichtung, die die Ladereihenfolge zu einem vorher gespeicherten Zustand zurÃ¼cksetzt. WÃ¤hrend diese MaÃŸnahme zwar gut fÃ¼r die Beibehaltung der Ladereihenfolge ist, wÃ¼rde sie ebenfalls in OBMM gemachte Ã„nderungen an der Ladereihenfolge zurÃ¼cknehmen"
 
 #: bash\basher.py:4087
 msgid "Lock Times"
@@ -5337,7 +5337,7 @@ msgstr "Sperre Zeiten"
 
 #: bash\basher.py:4093
 msgid "Lock Times is now %s. To change it in the future, right click on the main list header on the Mods tab and select 'Lock Times'"
-msgstr "Sperre Zeiten ist jetzt %s. Um es in Zukunft zu ändern, rechtsklicke auf den Header der Hauptliste auf der Mods-Seite und wähle 'Sperre Zeiten'"
+msgstr "Sperre Zeiten ist jetzt %s. Um es in Zukunft zu Ã¤ndern, rechtsklicke auf den Header der Hauptliste auf der Mods-Seite und wÃ¤hle 'Sperre Zeiten'"
 
 #: bash\basher.py:4094
 msgid "off"
@@ -5351,13 +5351,13 @@ msgstr "an"
 msgid "Installation appears incomplete. Please re-unzip bash to Oblivion directory so that ALL files are installed."
 ""
 "Correct installation will create Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblivion\\Data\\INI Tweaks directories"
-msgstr "Installation scheint unvollständig zu sein. Bitte entpacke Bash nochmals ins Oblivion-Verzeichnis, so dass ALLE Dateien installiert sind."
+msgstr "Installation scheint unvollstÃ¤ndig zu sein. Bitte entpacke Bash nochmals ins Oblivion-Verzeichnis, so dass ALLE Dateien installiert sind."
 ""
 "Eine korrekte Installation erstellt die Verzeichnisse Oblivion\\Mopy, Oblivion\\Data\\Docs und Oblivion\\Data\\INI Tweaks"
 
 #: bash\basher.py:4100
 msgid "Incomplete Installation"
-msgstr "Unvollständige Installation"
+msgstr "UnvollstÃ¤ndige Installation"
 
 #: bash\basher.py:4106
 msgid "Mark Mergeable"
@@ -5373,7 +5373,7 @@ msgstr "Setze Dokument"
 
 #: bash\basher.py:4186
 msgid "Forget Doc"
-msgstr "Löse Dokument"
+msgstr "LÃ¶se Dokument"
 
 #: bash\basher.py:4188
 msgid "Rename Doc"
@@ -5385,15 +5385,15 @@ msgstr "Dokument bearbeiten"
 
 #: bash\basher.py:4192
 msgid "Open Doc"
-msgstr "Öffne Dokument"
+msgstr "Ã–ffne Dokument"
 
 #: bash\basher.py:4192
 msgid "Open doc in external editor"
-msgstr "Öffne Dokument im externen Editor"
+msgstr "Ã–ffne Dokument im externen Editor"
 
 #: bash\basher.py:4301
 msgid "Select doc for %s"
-msgstr "Wähle Dokument für %s"
+msgstr "WÃ¤hle Dokument fÃ¼r %s"
 
 #: bash\basher.py:4316
 msgid "Rename file to"
@@ -5413,7 +5413,7 @@ msgstr ""
 
 #: bash\basher.py:4454
 msgid "Mod Checker"
-msgstr "Mod-Prüfer"
+msgstr "Mod-PrÃ¼fer"
 
 #: bash\basher.py:4471
 msgid "Mod List"
@@ -5421,7 +5421,7 @@ msgstr "Modliste"
 
 #: bash\basher.py:4472
 msgid "Rule Sets"
-msgstr "Regelsätze"
+msgstr "RegelsÃ¤tze"
 
 #: bash\basher.py:4474
 msgid "Configuration"
@@ -5429,7 +5429,7 @@ msgstr "Konfiguration"
 
 #: bash\basher.py:4475
 msgid "Suggestions"
-msgstr "Vorschläge"
+msgstr "VorschlÃ¤ge"
 
 #: bash\basher.py:4476
 msgid "Copy Text"
@@ -5497,15 +5497,15 @@ msgstr "Patch erstellen"
 
 #: bash\basher.py:4815
 msgid "Revert To Saved"
-msgstr "Auf Sicherung zurücksetzen"
+msgstr "Auf Sicherung zurÃ¼cksetzen"
 
 #: bash\basher.py:4816
 msgid "Select All"
-msgstr "Alles auswählen"
+msgstr "Alles auswÃ¤hlen"
 
 #: bash\basher.py:4817
 msgid "Deselect All"
-msgstr "Alles abwählen"
+msgstr "Alles abwÃ¤hlen"
 
 #: bash\basher.py:4818
 msgid "Export Patch Configuration"
@@ -5559,13 +5559,13 @@ msgstr ""
 msgid "Enter the desired custom tweak value."
 "Due to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal."
 "If you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead"
-msgstr "Gib den gewünschten Tweakwert ein."
-"Gib bitte eine zusätzliche Null nach deiner Auswahl ein, wenn es keine Dezimalzahl sein soll, weil man keine Dezimalzahlen von wxPythons Eingabe erhalten kann."
-"Wenn du eine Dezimalzahl eingeben willst, multipliziere sie mit 10, z.B. für 0.3 3"
+msgstr "Gib den gewÃ¼nschten Tweakwert ein."
+"Gib bitte eine zusÃ¤tzliche Null nach deiner Auswahl ein, wenn es keine Dezimalzahl sein soll, weil man keine Dezimalzahlen von wxPythons Eingabe erhalten kann."
+"Wenn du eine Dezimalzahl eingeben willst, multipliziere sie mit 10, z.B. fÃ¼r 0.3 3"
 
 #: bash\basher.py:5573
 msgid "Enter the desired custom tweak value"
-msgstr "Gib den gewünschten freien Tweakwert ein"
+msgstr "Gib den gewÃ¼nschten freien Tweakwert ein"
 
 #: bash\basher.py:5574
 msgid "Custom Tweak Value"
@@ -5581,7 +5581,7 @@ msgstr "Rassen-Mods"
 
 #: bash\basher.py:5675
 msgid "Override Delev/Relev Tags"
-msgstr "Überschreibe Delev-/Relev-Tags"
+msgstr "Ãœberschreibe Delev-/Relev-Tags"
 
 #: bash\basher.py:5812
 msgid "Unhide"
@@ -5597,31 +5597,31 @@ msgstr "Du kannst Dateien aus diesem Verzeichnis nicht einblenden"
 
 #: bash\basher.py:5855
 msgid "File skipped: %s. File is already present"
-msgstr "Datei übersprungen: %s. Datei ist bereits vorhanden"
+msgstr "Datei Ã¼bersprungen: %s. Datei ist bereits vorhanden"
 
 #: bash\basher.py:5876
 msgid "Delete Files"
-msgstr "Dateien löschen"
+msgstr "Dateien lÃ¶schen"
 
 #: bash\basher.py:5905
 msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod."
 ""
 "Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created"
-msgstr "Diese Mod hat ein zugehöriges Archiv (%s.bsa) und einen zugehörigen voice-Ordner (Sound\\Voices\\%s), welche nicht an das Mod-Duplikat angehängt werden."
+msgstr "Diese Mod hat ein zugehÃ¶riges Archiv (%s.bsa) und einen zugehÃ¶rigen voice-Ordner (Sound\\Voices\\%s), welche nicht an das Mod-Duplikat angehÃ¤ngt werden."
 ""
-"Beachte, dass das BSA auch einen voice-Ordner enthalten könnte (Sound\\Voices\\%s), welcher auch bei einer Erzeugung eines Archiv-Duplikats abgetrennt bleiben würde"
+"Beachte, dass das BSA auch einen voice-Ordner enthalten kÃ¶nnte (Sound\\Voices\\%s), welcher auch bei einer Erzeugung eines Archiv-Duplikats abgetrennt bleiben wÃ¼rde"
 
 #: bash\basher.py:5907
 msgid "This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod."
 ""
 "Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created"
-msgstr "Diese Mod hat ein zugehöriges Archiv (%s.bsa), welches nicht an das Mod-Duplikat angehängt wird."
+msgstr "Diese Mod hat ein zugehÃ¶riges Archiv (%s.bsa), welches nicht an das Mod-Duplikat angehÃ¤ngt wird."
 ""
-"Beachte, dass das BSA auch einen voice-Ordner enthalten könnte (Sound\\Voices\\%s), welcher auch bei einer Erzeugung eines Archiv-Duplikats abgetrennt bleiben würde"
+"Beachte, dass das BSA auch einen voice-Ordner enthalten kÃ¶nnte (Sound\\Voices\\%s), welcher auch bei einer Erzeugung eines Archiv-Duplikats abgetrennt bleiben wÃ¼rde"
 
 #: bash\basher.py:5909
 msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod"
-msgstr "Diese Mod hat einen zugehörigen voice-Ordner (Sound\\Voice\\%s), welcher nicht an das Mod-Duplikat angehängt wird"
+msgstr "Diese Mod hat einen zugehÃ¶rigen voice-Ordner (Sound\\Voice\\%s), welcher nicht an das Mod-Duplikat angehÃ¤ngt wird"
 
 #: bash\basher.py:5940
 msgid "Hide"
@@ -5633,7 +5633,7 @@ msgstr "Dateien ausblenden"
 
 #: bash\basher.py:5963
 msgid "A file named %s already exists in the hidden files directory. Overwrite it?"
-msgstr "Eine Datei namens %s gibt es bereits im Verzeichnis versteckter Dateien. Soll sie überschrieben werden?"
+msgstr "Eine Datei namens %s gibt es bereits im Verzeichnis versteckter Dateien. Soll sie Ã¼berschrieben werden?"
 
 #: bash\basher.py:5976
 msgid "List Masters"
@@ -5645,7 +5645,7 @@ msgstr "Umdatieren"
 
 #: bash\basher.py:6003
 msgid "Redate selected mods starting at"
-msgstr "Umdatieren ausgewählter Mods beginnend mit"
+msgstr "Umdatieren ausgewÃ¤hlter Mods beginnend mit"
 
 #: bash\basher.py:6004
 msgid "Redate Mods"
@@ -5663,9 +5663,9 @@ msgstr "Sortiere"
 msgid "Reorder selected mods in alphabetical order? The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments."
 ""
 "Note that this operation cannot be undone. Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order"
-msgstr "Sortierung der ausgewählten Mods in alphabetischer Reihenfolge? Der ersten Datei wird das Datum/die Zeit der momentan frühesten Datei in der Gruppe gegeben mit aufeinanderfolgenden Dateien im Abstand von 1 min."
+msgstr "Sortierung der ausgewÃ¤hlten Mods in alphabetischer Reihenfolge? Der ersten Datei wird das Datum/die Zeit der momentan frÃ¼hesten Datei in der Gruppe gegeben mit aufeinanderfolgenden Dateien im Abstand von 1 min."
 ""
-"Beachte, dass diese Operation nicht rückgängig gemacht werden kann. Beachte außerdem, dass einige Mods eine bestimmte Ladereihenfolge zur richtigen Funktion benötigen; diese Sortierfunktion könnte solche Reihenfolgen verändern"
+"Beachte, dass diese Operation nicht rÃ¼ckgÃ¤ngig gemacht werden kann. Beachte auÃŸerdem, dass einige Mods eine bestimmte Ladereihenfolge zur richtigen Funktion benÃ¶tigen; diese Sortierfunktion kÃ¶nnte solche Reihenfolgen verÃ¤ndern"
 
 #: bash\basher.py:6037
 msgid "Sort Mods"
@@ -5681,19 +5681,19 @@ msgstr "Speichere Snapshot als"
 
 #: bash\basher.py:6104
 msgid "Revert to Snapshot"
-msgstr "Rückkehr zu Snapshot"
+msgstr "RÃ¼ckkehr zu Snapshot"
 
 #: bash\basher.py:6118
 msgid "Revert %s to snapshot"
-msgstr "Rückkehr %s zu Snapshot"
+msgstr "RÃ¼ckkehr %s zu Snapshot"
 
 #: bash\basher.py:6123
 msgid "Revert %s to snapshot %s dated %s?"
-msgstr "Rückkehr %s zu Snapshot %s datiert mit %s?"
+msgstr "RÃ¼ckkehr %s zu Snapshot %s datiert mit %s?"
 
 #: bash\basher.py:6133
 msgid "Snapshot file is corrupt!"
-msgstr "Snapshot-Datei ist beschädigt!"
+msgstr "Snapshot-Datei ist beschÃ¤digt!"
 
 #: bash\basher.py:6143
 msgid "Backup"
@@ -5701,23 +5701,23 @@ msgstr ""
 
 #: bash\basher.py:6162
 msgid "Revert to Backup"
-msgstr "Rückkehr zu Backup"
+msgstr "RÃ¼ckkehr zu Backup"
 
 #: bash\basher.py:6168
 msgid "Revert to First Backup"
-msgstr "Rückkehr zum allerersten Backup"
+msgstr "RÃ¼ckkehr zum allerersten Backup"
 
 #: bash\basher.py:6182
 msgid "Revert %s to backup dated %s?"
-msgstr "Rückkehr %s zu Backup datiert mit %s?"
+msgstr "RÃ¼ckkehr %s zu Backup datiert mit %s?"
 
 #: bash\basher.py:6194
 msgid "Old file is corrupt!"
-msgstr "Alte Datei ist beschädigt!"
+msgstr "Alte Datei ist beschÃ¤digt!"
 
 #: bash\basher.py:6217
 msgid "Add Marker"
-msgstr "Marker hinzufügen"
+msgstr "Marker hinzufÃ¼gen"
 
 #: bash\basher.py:6222
 msgid "Enter a title"
@@ -5749,7 +5749,7 @@ msgstr "Aktiviert"
 
 #: bash\basher.py:6298
 msgid "Do you want to enable Installers? If you do, Bash will first need to initialize some data. If there are many new mods to process, then this may take on the order of five minutes"
-msgstr "Willst du den Installer aktivieren? Wenn ja, muss Bash erstmal einige Daten initialisieren. Wenn viele neue Mods da sind, kann das bis zu fünf Minuten dauern"
+msgstr "Willst du den Installer aktivieren? Wenn ja, muss Bash erstmal einige Daten initialisieren. Wenn viele neue Mods da sind, kann das bis zu fÃ¼nf Minuten dauern"
 
 #: bash\basher.py:6314
 msgid "BSA Redirection"
@@ -5777,7 +5777,7 @@ msgstr "Volle Aktualisierung"
 
 #: bash\basher.py:6387
 msgid "Refresh ALL data from scratch? This may take five to ten minutes (or more) depending on the number of mods you have installed"
-msgstr "ALLE Daten von Grund auf aktualisieren? Das kann 5-10 Minuten oder länger dauern, je nach Anzahl der installierten Mods"
+msgstr "ALLE Daten von Grund auf aktualisieren? Das kann 5-10 Minuten oder lÃ¤nger dauern, je nach Anzahl der installierten Mods"
 
 #: bash\basher.py:6398
 msgid "Clean Data Directory"
@@ -5789,23 +5789,23 @@ msgstr "Zeige Replacer-Tab"
 
 #: bash\basher.py:6419
 msgid "This option will take effect when Bash is restarted. Note that if any files are present in Data\\Replacers, then the Replacers tab will be shown regardless of this setting"
-msgstr "Diese Option wird nach Neustart von Bash aktiv. Beachte, dass der Replacer-Tab unabhängig von dieser Einstellung gezeigt wird, wenn Dateien unter Data\\Replacers vorhanden sind"
+msgstr "Diese Option wird nach Neustart von Bash aktiv. Beachte, dass der Replacer-Tab unabhÃ¤ngig von dieser Einstellung gezeigt wird, wenn Dateien unter Data\\Replacers vorhanden sind"
 
 #: bash\basher.py:6427
 msgid "Skip Screenshots"
-msgstr "Screenshots überspringen"
+msgstr "Screenshots Ã¼berspringen"
 
 #: bash\basher.py:6444
 msgid "Skip Images"
-msgstr "Bilder überspringen"
+msgstr "Bilder Ã¼berspringen"
 
 #: bash\basher.py:6461
 msgid "Skip Docs"
-msgstr "Docs überspringen"
+msgstr "Docs Ã¼berspringen"
 
 #: bash\basher.py:6478
 msgid "Skip DistantLOD"
-msgstr "DistantLOD überspringen"
+msgstr "DistantLOD Ã¼berspringen"
 
 #: bash\basher.py:6495
 msgid "Sort by Active"
@@ -5849,7 +5849,7 @@ msgstr "Dupliziere %s nach"
 
 #: bash\basher.py:6718
 msgid "%s is not a valid name"
-msgstr "%s ist kein gültiger Name"
+msgstr "%s ist kein gÃ¼ltiger Name"
 
 #: bash\basher.py:6721
 msgid "%s already exists"
@@ -5873,7 +5873,7 @@ msgstr "Neuen Namen eingeben. Z.B. VASE"
 
 #: bash\basher.py:6811
 msgid "Enter new name, '==' will be added for you.  E.g.  WEATHER"
-msgstr "Neuen Namen eingeben, '==' wird für dich hinzugefügt. Z.B. WETTER"
+msgstr "Neuen Namen eingeben, '==' wird fÃ¼r dich hinzugefÃ¼gt. Z.B. WETTER"
 
 #: bash\basher.py:6817
 msgid "Bad extension or file root"
@@ -5881,7 +5881,7 @@ msgstr "Fehlerhafter Dateistamm oder -erweiterung"
 
 #: bash\basher.py:6877
 msgid "Has Extra Directories"
-msgstr "Hat zusätzliche Verzeichnisse"
+msgstr "Hat zusÃ¤tzliche Verzeichnisse"
 
 #: bash\basher.py:6898
 msgid "Install"
@@ -5925,7 +5925,7 @@ msgstr "Verschieben nach"
 msgid "Move selected archives to what position?"
 "Enter position number."
 "Last: -1; First of Last: -2; Semi-Last: -3"
-msgstr "An welche Position ausgewählte Archive verschieben?"
+msgstr "An welche Position ausgewÃ¤hlte Archive verschieben?"
 "Positionsnummer eingeben."
 "Letzte: -1; Vorletzte: -2; Vorvorletzte: -3"
 
@@ -5935,31 +5935,31 @@ msgstr "Position muss eine Ganzzahl sein"
 
 #: bash\basher.py:7008
 msgid "Open at TesNexus"
-msgstr "Auf TesNexus öffnen"
+msgstr "Auf TesNexus Ã¶ffnen"
 
 #: bash\basher.py:7014
 msgid "Attempt to open this as a mod at TesNexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesNexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesNexus"
-msgstr "Soll diese Mod auf TesNexus geöffnet werden? Das geht davon aus, dass die letzten Zeichen im Paketnamen die ID-Nummer der Mod auf TesNexus sind. Wenn diese Annahme falsch ist, bekommst du eine zufällige Mod (oder Fehlermeldung) auf TesNexus"
+msgstr "Soll diese Mod auf TesNexus geÃ¶ffnet werden? Das geht davon aus, dass die letzten Zeichen im Paketnamen die ID-Nummer der Mod auf TesNexus sind. Wenn diese Annahme falsch ist, bekommst du eine zufÃ¤llige Mod (oder Fehlermeldung) auf TesNexus"
 
 #: bash\basher.py:7023
 msgid "Open Google search for file"
-msgstr "Öffne Googlesuche für Datei"
+msgstr "Ã–ffne Googlesuche fÃ¼r Datei"
 
 #: bash\basher.py:7029
 msgid "Open a search for this on Google?"
-msgstr "Soll eine Suche danach bei Google geöffnet werden?"
+msgstr "Soll eine Suche danach bei Google geÃ¶ffnet werden?"
 
 #: bash\basher.py:7030
 msgid "Open a search"
-msgstr "Eine Suche öffnen"
+msgstr "Eine Suche Ã¶ffnen"
 
 #: bash\basher.py:7042
 msgid "Open at TesAlliance"
-msgstr "Öffne auf TesAlliance"
+msgstr "Ã–ffne auf TesAlliance"
 
 #: bash\basher.py:7048
 msgid "Attempt to open this as a mod at TesAlliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesAlliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesAlliance"
-msgstr "Soll diese Mod auf TesAlliance geöffnet werden? Das geht davon aus, dass die letzten Zeichen im Paketnamen die ID-Nummer der Mod auf TesAlliance sind. Wenn diese Annahme falsch ist, bekommst du eine zufällige Modseite (oder Fehlermeldung) auf TesAlliance"
+msgstr "Soll diese Mod auf TesAlliance geÃ¶ffnet werden? Das geht davon aus, dass die letzten Zeichen im Paketnamen die ID-Nummer der Mod auf TesAlliance sind. Wenn diese Annahme falsch ist, bekommst du eine zufÃ¤llige Modseite (oder Fehlermeldung) auf TesAlliance"
 
 #: bash\basher.py:7057
 msgid "Refresh"
@@ -5977,7 +5977,7 @@ msgstr "Aktualisiere Pakete..."
 
 #: bash\basher.py:7083
 msgid "Skip Voices"
-msgstr "Überspringe Voices"
+msgstr "Ãœberspringe Voices"
 
 #: bash\basher.py:7105
 msgid "Uninstall"
@@ -6013,7 +6013,7 @@ msgstr "Entpacke %s ins Projekt"
 
 #: bash\basher.py:7265
 msgid "%s is not a valid project name"
-msgstr "%s ist kein gültiger Projektname"
+msgstr "%s ist kein gÃ¼ltiger Projektname"
 
 #: bash\basher.py:7268
 msgid "%s is a file"
@@ -6021,7 +6021,7 @@ msgstr "%s ist eine Datei"
 
 #: bash\basher.py:7271
 msgid "%s already exists. Overwrite it?"
-msgstr "%s existiert bereits. Überschreiben?"
+msgstr "%s existiert bereits. Ãœberschreiben?"
 
 #: bash\basher.py:7274
 msgid "Unpacking to Project"
@@ -6052,7 +6052,7 @@ msgid "Update %s according to data directory?"
 "Files to delete: %d"
 "Files to update: %d"
 msgstr "Aktualisiere %s anhand des Data-Verzeichnisses?"
-"Dateien zu löschen: %d"
+"Dateien zu lÃ¶schen: %d"
 "Dateien zu aktualisieren: %d"
 
 #: bash\basher.py:7411
@@ -6073,7 +6073,7 @@ msgstr "Packe %s als Archiv"
 
 #: bash\basher.py:7457
 msgid "%s is not a valid archive name"
-msgstr "%s ist kein gültiger Archivname"
+msgstr "%s ist kein gÃ¼ltiger Archivname"
 
 #: bash\basher.py:7460
 msgid "%s is a directory"
@@ -6081,11 +6081,11 @@ msgstr "%s ist ein Verzeichnis"
 
 #: bash\basher.py:7463
 msgid "The %s extension is unsupported. Using %s instead"
-msgstr "Die %s-Erweiterung wird nicht unterstützt. Verwende stattdessen %s"
+msgstr "Die %s-Erweiterung wird nicht unterstÃ¼tzt. Verwende stattdessen %s"
 
 #: bash\basher.py:7471
 msgid "Use solid compression for %s?"
-msgstr "Hohe Komprimierung für %s nutzen?"
+msgstr "Hohe Komprimierung fÃ¼r %s nutzen?"
 
 #: bash\basher.py:7472
 msgid "Packing to Archive"
@@ -6119,7 +6119,7 @@ msgstr "Erstellen"
 
 #: bash\basher.py:7659
 msgid "Select the BAIN'ed Archive"
-msgstr "Wähle das BAIN-Archiv"
+msgstr "WÃ¤hle das BAIN-Archiv"
 
 #: bash\basher.py:7667
 msgid "%s must be in the Bash Installers directory"
@@ -6149,7 +6149,7 @@ msgstr ""
 
 #: bash\basher.py:7687
 msgid "BCF's only support %s. The %s extension will be discarded"
-msgstr "BCFs unterstützen nur %s. Die %s-Erweiterung wird verworfen"
+msgstr "BCFs unterstÃ¼tzen nur %s. Die %s-Erweiterung wird verworfen"
 
 #: bash\basher.py:7694
 msgid "Creating %s"
@@ -6161,7 +6161,7 @@ msgstr ""
 
 #: bash\basher.py:7708
 msgid "Size: %s KB"
-msgstr "Größe: %s KB"
+msgstr "GrÃ¶ÃŸe: %s KB"
 
 #: bash\basher.py:7709
 msgid "Remapped: %s file"
@@ -6173,7 +6173,7 @@ msgstr ""
 
 #: bash\basher.py:7710
 msgid "Requires: %s file"
-msgstr "Benötigt: %s Datei"
+msgstr "BenÃ¶tigt: %s Datei"
 
 #: bash\basher.py:7712
 msgid "Options"
@@ -6181,7 +6181,7 @@ msgstr "Einstellungen"
 
 #: bash\basher.py:7713
 msgid "*  Skip Voices   = %s"
-msgstr "*  Überspringe Voices   = %s"
+msgstr "*  Ãœberspringe Voices   = %s"
 
 #: bash\basher.py:7714
 msgid "*  Solid Archive = %s"
@@ -6197,15 +6197,15 @@ msgstr "*  Hat extra Verzeichnisse = %s"
 
 #: bash\basher.py:7717
 msgid "*  Has Esps Unselected   = %s"
-msgstr "*  Hat abgewählte esps    = %s"
+msgstr "*  Hat abgewÃ¤hlte esps    = %s"
 
 #: bash\basher.py:7718
 msgid "*  Has Packages Selected = %s"
-msgstr "*  Hat gewählte Pakete = %s"
+msgstr "*  Hat gewÃ¤hlte Pakete = %s"
 
 #: bash\basher.py:7719
 msgid "Contains: %s file"
-msgstr "Enthält: %s Datei"
+msgstr "EnthÃ¤lt: %s Datei"
 
 #: bash\basher.py:7724
 msgid "BCF Information"
@@ -6213,7 +6213,7 @@ msgstr "BCF-Information"
 
 #: bash\basher.py:7773
 msgid "Name must be between 1 and 64 characters long"
-msgstr "Name muß zwischen 1 und 64 Zeichen lang sein"
+msgstr "Name muÃŸ zwischen 1 und 64 Zeichen lang sein"
 
 #: bash\basher.py:7803
 msgid "None"
@@ -6229,7 +6229,7 @@ msgstr "Listen bearbeiten"
 
 #: bash\basher.py:7835
 msgid "All load list slots are full. Please delete an existing load list before adding another"
-msgstr "Alle Ladelisten-Plätze sind belegt. Bitte lösche eine bestehende Ladeliste vor dem Hinzufügen einer weiteren"
+msgstr "Alle Ladelisten-PlÃ¤tze sind belegt. Bitte lÃ¶sche eine bestehende Ladeliste vor dem HinzufÃ¼gen einer weiteren"
 
 #: bash\basher.py:7838
 msgid "Save current load list as"
@@ -6237,7 +6237,7 @@ msgstr "Speichere aktuelle Ladeliste als"
 
 #: bash\basher.py:7841
 msgid "Load list name must be between 1 and 64 characters long"
-msgstr "Name der Ladeliste muß zwischen 1 und 64 Zeichen lang sein"
+msgstr "Name der Ladeliste muÃŸ zwischen 1 und 64 Zeichen lang sein"
 
 #: bash\basher.py:7848
 msgid "Load Lists"
@@ -6245,7 +6245,7 @@ msgstr "Ladelisten"
 
 #: bash\basher.py:7857
 msgid "Valid Tweaks First"
-msgstr "Gültige Tweaks zuerst"
+msgstr "GÃ¼ltige Tweaks zuerst"
 
 #: bash\basher.py:7869
 msgid "List Errors"
@@ -6265,7 +6265,7 @@ msgid "Apply an ini tweak to Oblivion.ini?"
 "WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!"
 msgstr "Anwenden eines ini tweaks auf die Oblivion.ini?"
 ""
-"WARNUNG: Fehlerhafte tweaks können CTDs verursachen und sogar deinen Computer beschädigen!"
+"WARNUNG: Fehlerhafte tweaks kÃ¶nnen CTDs verursachen und sogar deinen Computer beschÃ¤digen!"
 
 #: bash\basher.py:7910
 msgid "INI Tweaks"
@@ -6297,15 +6297,15 @@ msgstr "Debugausgabe: An"
 
 #: bash\basher.py:8003
 msgid "Full Balo"
-msgstr "Vollständiges Balo"
+msgstr "VollstÃ¤ndiges Balo"
 
 #: bash\basher.py:8009
 msgid "Activate Full Balo?"
 ""
 "Full Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order. Full Balo is still in development and may have some rough edges"
-msgstr "Vollständiges Balo aktivieren?"
+msgstr "VollstÃ¤ndiges Balo aktivieren?"
 ""
-"Vollständiges Balo isoliert Mods nach Gruppen und autosortiert Mods innerhalb dieser Gruppe alphabetisch. Vollständiges Balo ist noch in Entwicklung und kann Ecken und Kanten haben"
+"VollstÃ¤ndiges Balo isoliert Mods nach Gruppen und autosortiert Mods innerhalb dieser Gruppe alphabetisch. VollstÃ¤ndiges Balo ist noch in Entwicklung und kann Ecken und Kanten haben"
 
 #: bash\basher.py:8010
 msgid "Balo Groups"
@@ -6313,19 +6313,19 @@ msgstr "Balo-Gruppen"
 
 #: bash\basher.py:8025
 msgid "Dump Translator"
-msgstr "Übersetzungsausleitung"
+msgstr "Ãœbersetzungsausleitung"
 
 #: bash\basher.py:8029
 msgid "Generate Bash program translator file?"
 ""
 "This function is for translating Bash itself (NOT mods) into non-English languages. For more info, see Internationalization section of Bash readme"
-msgstr "Erzeuge Bash-Programmübersetzungsausleitung?"
+msgstr "Erzeuge Bash-ProgrammÃ¼bersetzungsausleitung?"
 ""
-"Diese Funktion ist für die Übersetzung von Bash selbst (NICHT für Mods) in nicht-Englische Sprachen. Für Details, siehe Internationalierungs-Abschnitt der Bash Readme"
+"Diese Funktion ist fÃ¼r die Ãœbersetzung von Bash selbst (NICHT fÃ¼r Mods) in nicht-Englische Sprachen. FÃ¼r Details, siehe Internationalierungs-Abschnitt der Bash Readme"
 
 #: bash\basher.py:8059
 msgid "%d translation keys written to Mopy\\Data\\%s"
-msgstr "%d Übersetzungseinträge nach Mopy\\Data\\%s geschrieben"
+msgstr "%d ÃœbersetzungseintrÃ¤ge nach Mopy\\Data\\%s geschrieben"
 
 #: bash\basher.py:8067
 msgid "List Mods"
@@ -6341,7 +6341,7 @@ msgstr "Aktualisiere ArchiveInvalidation"
 
 #: bash\basher.py:8141
 msgid "Update ArchiveInvalidation.txt? This updates the file that forces the game engine to recognize replaced textures. Note that this feature is experimental and most probably somewhat incomplete. You may prefer to use another program to do AI.txt file updating"
-msgstr "ArchiveInvalidation.txt aktualisieren? Dies aktualisiert die Datei, die die game engine dazu zwingt, ersetzte Texturen zu erkennen. Beachte: Diese Funktion ist experimentell und höchstwahrscheinlich etwas unfertig. Andere Programme zum AI.txt-Dateiupdate mögen vorzugsweise benutzt werden"
+msgstr "ArchiveInvalidation.txt aktualisieren? Dies aktualisiert die Datei, die die game engine dazu zwingt, ersetzte Texturen zu erkennen. Beachte: Diese Funktion ist experimentell und hÃ¶chstwahrscheinlich etwas unfertig. Andere Programme zum AI.txt-Dateiupdate mÃ¶gen vorzugsweise benutzt werden"
 
 #: bash\basher.py:8142
 msgid "ArchiveInvalidation.txt"
@@ -6355,9 +6355,9 @@ msgstr "NPC-Level"
 msgid "This command will export the level info for NPCs whose level is offset with respect to the PC. The exported file can be edited with most spreadsheet programs and then reimported."
 ""
 "See the Bash help file for more info"
-msgstr "Dieser Befehl wird die Level-Info für NPCs exportieren, deren Level einen (offset-) Bezug zum Spieler haben. Die Exportdatei kann mit den meisten Tabellenkalkulationsprogrammen bearbeitet und danach zurückimportiert werden."
+msgstr "Dieser Befehl wird die Level-Info fÃ¼r NPCs exportieren, deren Level einen (offset-) Bezug zum Spieler haben. Die Exportdatei kann mit den meisten Tabellenkalkulationsprogrammen bearbeitet und danach zurÃ¼ckimportiert werden."
 ""
-"Siehe auch die Bash-Hilfe für weitere Informationen"
+"Siehe auch die Bash-Hilfe fÃ¼r weitere Informationen"
 
 #: bash\basher.py:8159
 msgid "Export NPC Levels"
@@ -6377,7 +6377,7 @@ msgid "This command will import NPC level info from a previously exported file."
 "See the Bash help file for more info"
 msgstr "Dieser Befehl wird die NPC-Level-Info aus einer zuvor exportierten Datei importieren."
 ""
-"Siehe auch die Bash-Hilfe für weitere Informationen"
+"Siehe auch die Bash-Hilfe fÃ¼r weitere Informationen"
 
 #: bash\basher.py:8189
 msgid "Import NPC Levels"
@@ -6385,11 +6385,11 @@ msgstr "Import: NPC-Level"
 
 #: bash\basher.py:8213
 msgid "Add Master"
-msgstr "Masterdateien hinzufügen"
+msgstr "Masterdateien hinzufÃ¼gen"
 
 #: bash\basher.py:8218
 msgid "WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs"
-msgstr "WARNUNG! Nur für fortgeschrittene Modder! Fügt eine bestimmte Masterdatei zu einer Masterliste hinzu, dementsprechend wird die Abhängigkeit neuen Inhalts von dieser Mod an den neuen Master übergehen. Nützlich für die Teilung von Mods in esm/esp-Paare"
+msgstr "WARNUNG! Nur fÃ¼r fortgeschrittene Modder! FÃ¼gt eine bestimmte Masterdatei zu einer Masterliste hinzu, dementsprechend wird die AbhÃ¤ngigkeit neuen Inhalts von dieser Mod an den neuen Master Ã¼bergehen. NÃ¼tzlich fÃ¼r die Teilung von Mods in esm/esp-Paare"
 
 #: bash\basher.py:8223
 msgid "Oblivion Masters"
@@ -6397,11 +6397,11 @@ msgstr "Oblivion Masterdateien"
 
 #: bash\basher.py:8224
 msgid "Add master"
-msgstr "Master hinzufügen"
+msgstr "Master hinzufÃ¼gen"
 
 #: bash\basher.py:8229
 msgid "File must be selected from Oblivion Data Files directory"
-msgstr "Datei muss aus dem Oblivion\\Data Ordner ausgewählt werden"
+msgstr "Datei muss aus dem Oblivion\\Data Ordner ausgewÃ¤hlt werden"
 
 #: bash\basher.py:8231
 msgid "%s is already a master!"
@@ -6429,11 +6429,11 @@ msgstr "Gruppe %s existiert bereits"
 
 #: bash\basher.py:8309
 msgid "Group names must be less than forty characters"
-msgstr "Gruppennamen müssen kleiner als 40 Zeichen sein"
+msgstr "Gruppennamen mÃ¼ssen kleiner als 40 Zeichen sein"
 
 #: bash\basher.py:8362
 msgid "Add Balo Group"
-msgstr "Balo-Gruppe hinzufügen"
+msgstr "Balo-Gruppe hinzufÃ¼gen"
 
 #: bash\basher.py:8367
 msgid "Name of new group (spaces and letters only)"
@@ -6479,7 +6479,7 @@ msgstr "Gefixte Cells:"
 
 #: bash\basher.py:8621
 msgid "No changes required"
-msgstr "Keine Änderungen erforderlich"
+msgstr "Keine Ã„nderungen erforderlich"
 
 #: bash\basher.py:8631
 msgid "New Mod"
@@ -6531,7 +6531,7 @@ msgstr "Markiere Levelers"
 
 #: bash\basher.py:8741
 msgid "Obsolete. Mods are now automatically tagged when possible"
-msgstr "Veraltet. Mods werden jetzt automatisch getaggt, wenn möglich"
+msgstr "Veraltet. Mods werden jetzt automatisch getaggt, wenn mÃ¶glich"
 
 #: bash\basher.py:8778
 msgid "Mergeable"
@@ -6579,7 +6579,7 @@ msgstr "ESPifiziere Masterdateien"
 
 #: bash\basher.py:8890
 msgid "WARNING! For advanced modders only! Flips esp/esm bit of esp masters to convert them to/from esm state. Useful for building/analyzing esp mastered mods"
-msgstr "WARNUNG! Nur für fortgeschrittene Modders! Vertauscht esp/esm-Bit von esp-Masterdateien, um sie zum/aus dem esm-Status zu konvertieren. Nützlich, um esp-gemasterte Mods zu erstellen/analysieren"
+msgstr "WARNUNG! Nur fÃ¼r fortgeschrittene Modders! Vertauscht esp/esm-Bit von esp-Masterdateien, um sie zum/aus dem esm-Status zu konvertieren. NÃ¼tzlich, um esp-gemasterte Mods zu erstellen/analysieren"
 
 #: bash\basher.py:8913
 msgid "Esmify Self"
@@ -6593,7 +6593,7 @@ msgstr "Espifizieren"
 msgid "WARNING! For advanced modders only!"
 ""
 "This command flips an internal bit in the mod, converting an esp to an esm and vice versa. Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod"
-msgstr "WARNUNG! Nur für fortgeschrittene Modders!"
+msgstr "WARNUNG! Nur fÃ¼r fortgeschrittene Modders!"
 ""
 "Dieser Befehl vertauscht das interne Bit in der Mod, konvertiert eine esp zu einer esm und umgekehrt. Beachte, dass es dieses Bit und NICHT die Dateiendung ist, die den esp/esm-Status einer Mod bestimmt"
 
@@ -6611,7 +6611,7 @@ msgstr "Gruppen"
 
 #: bash\basher.py:9073
 msgid "Add group"
-msgstr "Gruppe hinzufügen"
+msgstr "Gruppe hinzufÃ¼gen"
 
 #: bash\basher.py:9100
 msgid "Export groups to"
@@ -6643,7 +6643,7 @@ msgstr "Quelldatei muss eine CSV-Datei sein"
 
 #: bash\basher.py:9143
 msgid "Imported %d mod/groups (%d changed)"
-msgstr "Importierte %d Mod/Gruppen (%d geändert)"
+msgstr "Importierte %d Mod/Gruppen (%d geÃ¤ndert)"
 
 #: bash\basher.py:9151
 msgid "Editor Ids"
@@ -6675,7 +6675,7 @@ msgstr "Anwendung auf %s"
 
 #: bash\basher.py:9228
 msgid "Objects Changed"
-msgstr "Objekte geändert"
+msgstr "Objekte geÃ¤ndert"
 
 #: bash\basher.py:9237
 msgid "Decompile All"
@@ -6683,21 +6683,21 @@ msgstr "Alles dekompilieren"
 
 #: bash\basher.py:9243
 msgid "This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override"
-msgstr "Dieser Befehl entfernt den Effekt von einem 'compile all', indem alle Skripte mit gleichem Text zu der Version, die sie überschreiben, entfernt werden"
+msgstr "Dieser Befehl entfernt den Effekt von einem 'compile all', indem alle Skripte mit gleichem Text zu der Version, die sie Ã¼berschreiben, entfernt werden"
 
 #: bash\basher.py:9249
 msgid "Skipping %s"
-msgstr "Überspringe %s"
+msgstr "Ãœberspringe %s"
 
 #: bash\basher.py:9283
 msgid "Scripts removed: %d."
 "Scripts remaining: %d"
 msgstr "Entfernte Skripts: %d."
-"Übrige Skripte: %d"
+"Ãœbrige Skripte: %d"
 
 #: bash\basher.py:9285
 msgid "Only %d scripts were identical. This is probably intentional, so no changes have been made"
-msgstr "Nur %d Skripte waren identisch. Das ist wahrscheinlich Absicht, also wurden keine Änderungen gemacht"
+msgstr "Nur %d Skripte waren identisch. Das ist wahrscheinlich Absicht, also wurden keine Ã„nderungen gemacht"
 
 #: bash\basher.py:9294
 msgid "Form IDs"
@@ -6705,7 +6705,7 @@ msgstr "Form-IDs"
 
 #: bash\basher.py:9299
 msgid "For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file"
-msgstr "Nur für fortgeschrittene Modders! Ersetzt systematisch Form-IDs bei NPCs, Kreaturen, Behältern und Leveled-Listen anhand einer replacers.csv-Datei"
+msgstr "Nur fÃ¼r fortgeschrittene Modders! Ersetzt systematisch Form-IDs bei NPCs, Kreaturen, BehÃ¤ltern und Leveled-Listen anhand einer replacers.csv-Datei"
 
 #: bash\basher.py:9301
 msgid "Import Form IDs"
@@ -6733,7 +6733,7 @@ msgstr "Exportiere Namen"
 
 #: bash\basher.py:9385
 msgid "Import record names from a text file. This will replace existing names and is not reversible!"
-msgstr "Importiert Record-Namen aus einer Textdatei. Das ersetzt existierende Namen und ist nicht rückgängig zu machen!"
+msgstr "Importiert Record-Namen aus einer Textdatei. Das ersetzt existierende Namen und ist nicht rÃ¼ckgÃ¤ngig zu machen!"
 
 #: bash\basher.py:9401
 msgid "Source file must be mod (.esp or .esm) or csv file"
@@ -6760,19 +6760,19 @@ msgstr "Existentieller Fehler"
 #: bash\basher.py:9467
 msgid "The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build."
 "*%s"
-msgstr "Die folgenden Mods sind mit 'Deaktiviert' getagged. Sie sollten vor dem Neuerstellen des Bashed Patches deaktiviert werden und dann während dem Erstellen importiert."
+msgstr "Die folgenden Mods sind mit 'Deaktiviert' getagged. Sie sollten vor dem Neuerstellen des Bashed Patches deaktiviert werden und dann wÃ¤hrend dem Erstellen importiert."
 "*%s"
 
 #: bash\basher.py:9468
 msgid "The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build."
 "*%s"
-msgstr "Die folgenden Mods sind mit 'Filter' getagged. Sie sollten vor dem Neuerstellen des Bashed Patches deaktiviert werden und dann während dem Erstellen importiert."
+msgstr "Die folgenden Mods sind mit 'Filter' getagged. Sie sollten vor dem Neuerstellen des Bashed Patches deaktiviert werden und dann wÃ¤hrend dem Erstellen importiert."
 "*%s"
 
 #: bash\basher.py:9469
 msgid "The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Oblivion maximum esp/m limit."
 "*%s"
-msgstr "Die folgenden Mods sind mergebar. Auch wenn es nicht wichtig für die Funktionalität von Wrye Bash oder dem Inhalt des Bashed Patches ist, wird vorgeschlagen, sie zu deaktivieren und in den Patch zu mergen; das hilft beim Vermeiden des maximalen esp/m-Limits."
+msgstr "Die folgenden Mods sind mergebar. Auch wenn es nicht wichtig fÃ¼r die FunktionalitÃ¤t von Wrye Bash oder dem Inhalt des Bashed Patches ist, wird vorgeschlagen, sie zu deaktivieren und in den Patch zu mergen; das hilft beim Vermeiden des maximalen esp/m-Limits."
 "*%s"
 
 #: bash\basher.py:9470
@@ -6815,7 +6815,7 @@ msgstr "Bewertungen"
 
 #: bash\basher.py:9524
 msgid "Add rating"
-msgstr "Bewertung hinzufügen"
+msgstr "Bewertung hinzufÃ¼gen"
 
 #: bash\basher.py:9534
 msgid "Version 0.8"
@@ -6823,7 +6823,7 @@ msgstr ""
 
 #: bash\basher.py:9540
 msgid "WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way"
-msgstr "WARNUNG! Nur für fortgeschrittene Modder! Diese Funktion erlaubt es dir, neuere offizielle Mods im TESCS zu bearbeiten, indem die interne Dateiversionsnr. auf 0.8 zurückgesetzt wird. Die Mod wird dadurch editierbar, es könnte aber auch zu noch unbekannten Komplikationen führen"
+msgstr "WARNUNG! Nur fÃ¼r fortgeschrittene Modder! Diese Funktion erlaubt es dir, neuere offizielle Mods im TESCS zu bearbeiten, indem die interne Dateiversionsnr. auf 0.8 zurÃ¼ckgesetzt wird. Die Mod wird dadurch editierbar, es kÃ¶nnte aber auch zu noch unbekannten Komplikationen fÃ¼hren"
 
 #: bash\basher.py:9541
 msgid "Set File Version"
@@ -6841,7 +6841,7 @@ msgstr "Sortiere Records"
 msgid "(Details not provided for this record type.)"
 ""
 ""
-msgstr "(Details für diesen Record-Typ nicht vorhanden.)"
+msgstr "(Details fÃ¼r diesen Record-Typ nicht vorhanden.)"
 ""
 ""
 
@@ -6851,7 +6851,7 @@ msgstr "World-Orphans entfernen"
 
 #: bash\basher.py:9596
 msgid "In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans"
-msgstr "Unter ein paar Umständen kann das Editieren einer Mod verwaiste Cell-Records in einer World-Gruppe hinterlassen. Dieser Befehl entfernt solche Orphans"
+msgstr "Unter ein paar UmstÃ¤nden kann das Editieren einer Mod verwaiste Cell-Records in einer World-Gruppe hinterlassen. Dieser Befehl entfernt solche Orphans"
 
 #: bash\basher.py:9615
 msgid "Saving %s"
@@ -6859,7 +6859,7 @@ msgstr "Speichere %s"
 
 #: bash\basher.py:9622
 msgid "Orphan cell blocks removed: %d"
-msgstr "Orphan-Cell-Einträge entfernt: %d"
+msgstr "Orphan-Cell-EintrÃ¤ge entfernt: %d"
 
 #: bash\basher.py:9631
 msgid "Readme"
@@ -6871,11 +6871,11 @@ msgstr "Skripts"
 
 #: bash\basher.py:9658
 msgid "Skip prefix (leave blank to not skip any), non-case sensitive)"
-msgstr "Überspringe Prefix (leer lassen, um keine zu überspringen, nicht case-sensitiv)"
+msgstr "Ãœberspringe Prefix (leer lassen, um keine zu Ã¼berspringen, nicht case-sensitiv)"
 
 #: bash\basher.py:9659
 msgid "Skip Prefix?"
-msgstr "Prefix überspringen?"
+msgstr "Prefix Ã¼berspringen?"
 
 #: bash\basher.py:9661
 msgid "Remove prefix from file names f.e. enter cob to save script cobDenockInit"
@@ -6889,15 +6889,15 @@ msgstr "Prefix aus Dateinamen entfernen?"
 
 #: bash\basher.py:9667
 msgid "Choose directory to export scripts to"
-msgstr "Wähle Verzeichnis, in das die Skripts importiert werden"
+msgstr "WÃ¤hle Verzeichnis, in das die Skripts importiert werden"
 
 #: bash\basher.py:9691
 msgid "Import script from a text file. This will replace existing scripts and is not reversible (except by restoring from backup)!"
-msgstr "Importiert Skripte aus einer Textdatei. Das ersetzt existierende Skripte und kann nicht rückgängig (außer durch Backup) gemacht werden!"
+msgstr "Importiert Skripte aus einer Textdatei. Das ersetzt existierende Skripte und kann nicht rÃ¼ckgÃ¤ngig (auÃŸer durch Backup) gemacht werden!"
 
 #: bash\basher.py:9698
 msgid "Choose directory to import scripts from"
-msgstr "Wähle Verzeichnis, aus dem Skripte importiert werden sollen"
+msgstr "WÃ¤hle Verzeichnis, aus dem Skripte importiert werden sollen"
 
 #: bash\basher.py:9700
 msgid "Source folder must be selected"
@@ -6907,7 +6907,7 @@ msgstr "Quellordner muss selektiert werden"
 msgid "Import scripts that don't exist in the esp as new scripts?"
 "(If not they will just be skipped)"
 msgstr "Importiert Skripts, die nicht in der esp als neue Skripts existieren?"
-"(Wenn nicht, werden sie einfach übersprungen)"
+"(Wenn nicht, werden sie einfach Ã¼bersprungen)"
 
 #: bash\basher.py:9709
 msgid "No changed scripts to import"
@@ -6916,7 +6916,7 @@ msgstr "Keine Skripte zum Importieren"
 #: bash\basher.py:9711
 msgid "Imported %d changed scripts from %s:"
 "%s"
-msgstr "Import von %d geänderten Skripts aus %s:"
+msgstr "Import von %d geÃ¤nderten Skripts aus %s:"
 "%s"
 
 #: bash\basher.py:9726
@@ -6933,7 +6933,7 @@ msgstr "Exportiere Eigenschaften"
 
 #: bash\basher.py:9763
 msgid "Import item stats from a text file. This will replace existing stats and is not reversible!"
-msgstr "Importiert Gegenstandseigenschaften aus Textdatei. Das ersetzt vorhandene Eigenschaften und kann nicht rückgängig gemacht werden!"
+msgstr "Importiert Gegenstandseigenschaften aus Textdatei. Das ersetzt vorhandene Eigenschaften und kann nicht rÃ¼ckgÃ¤ngig gemacht werden!"
 
 #: bash\basher.py:9772
 msgid "Import stats from"
@@ -6965,7 +6965,7 @@ msgstr "Exportiere Gegenstandsdaten"
 
 #: bash\basher.py:9855
 msgid "Import pretty much complete item data from a text file. This will replace existing data and is not reversible!"
-msgstr "Importiert ziemlich vollständige Gegenstandsdaten aus einer Textdatei. Das ersetzt vorhandene Daten und kann nicht rückgängig gemacht werden!"
+msgstr "Importiert ziemlich vollstÃ¤ndige Gegenstandsdaten aus einer Textdatei. Das ersetzt vorhandene Daten und kann nicht rÃ¼ckgÃ¤ngig gemacht werden!"
 
 #: bash\basher.py:9857
 msgid "Import Item Data"
@@ -7001,7 +7001,7 @@ msgstr "Exportiere Preise"
 
 #: bash\basher.py:9944
 msgid "Import item prices from a text file. This will replace existing prices and is not reversible!"
-msgstr "Importiert Gegenstandspreise aus einer Textdatei. Das wird existierende Preise ersetzen und kann nicht rückgängig gemacht werden!"
+msgstr "Importiert Gegenstandspreise aus einer Textdatei. Das wird existierende Preise ersetzen und kann nicht rÃ¼ckgÃ¤ngig gemacht werden!"
 
 #: bash\basher.py:9946
 msgid "Import prices"
@@ -7017,7 +7017,7 @@ msgstr "Importiere Preise aus"
 
 #: bash\basher.py:9960
 msgid "Source file must be a Prices.csv file or esp/m"
-msgstr "Quelldateien müssen prices.csv oder esp/m sein"
+msgstr "Quelldateien mÃ¼ssen prices.csv oder esp/m sein"
 
 #: bash\basher.py:9963
 msgid "Import Prices"
@@ -7033,11 +7033,11 @@ msgstr "Referenzen wiederherstellen"
 
 #: bash\basher.py:9997
 msgid "Changes deleted refs to ignored. This is a very advanced feature and should only be used by modders who know exactly what they're doing"
-msgstr "Ändert gelöschte Referenzen zu ignorierten. Dies ist ein sehr fortgeschrittenes Feature und sollte nur von Moddern angewandt werden, die genau wissen, was sie tun"
+msgstr "Ã„ndert gelÃ¶schte Referenzen zu ignorierten. Dies ist ein sehr fortgeschrittenes Feature und sollte nur von Moddern angewandt werden, die genau wissen, was sie tun"
 
 #: bash\basher.py:10056
 msgid "About %s"
-msgstr "Über %s"
+msgstr "Ãœber %s"
 
 #: bash\basher.py:10064
 msgid "Enter profile name"
@@ -7049,15 +7049,15 @@ msgstr "Aktives Profil kann nicht entfernt werden"
 
 #: bash\basher.py:10112
 msgid "Delete profile %s and the %d save files it contains?"
-msgstr "Löschen des Profils %s und der %d saves, die es enthält?"
+msgstr "LÃ¶schen des Profils %s und der %d saves, die es enthÃ¤lt?"
 
 #: bash\basher.py:10113
 msgid "Delete Profile"
-msgstr "Profil löschen"
+msgstr "Profil lÃ¶schen"
 
 #: bash\basher.py:10117
 msgid "Sanity check failed: No\"Oblivion\\Save\" in %s"
-msgstr "Plausibilitätsprüfung fehlgeschlagen: Kein\"Oblivion\\Save\" in %s"
+msgstr "PlausibilitÃ¤tsprÃ¼fung fehlgeschlagen: Kein\"Oblivion\\Save\" in %s"
 
 #: bash\basher.py:10136
 msgid "Edit Profiles"
@@ -7100,13 +7100,13 @@ msgstr "Entfernte Masterdateien (%s):"
 #: bash\basher.py:10310
 msgid "Added Masters (%s):"
 "*"
-msgstr "Hinzugefügte Masterdateien (%s):"
+msgstr "HinzugefÃ¼gte Masterdateien (%s):"
 "*"
 
 #: bash\basher.py:10354
 msgid "Armor"
 "Flags"
-msgstr "Rüstung"
+msgstr "RÃ¼stung"
 "Flags"
 
 #: bash\basher.py:10359
@@ -7125,7 +7125,7 @@ msgstr "Name schon in Verwendung"
 
 #: bash\basher.py:10394
 msgid "No changes made"
-msgstr "Keine Änderungen durchgeführt"
+msgstr "Keine Ã„nderungen durchgefÃ¼hrt"
 
 #: bash\basher.py:10406
 msgid "Names modified: %d"
@@ -7141,7 +7141,7 @@ msgstr "Zauber umbenennen"
 
 #: bash\basher.py:10411
 msgid "Rename Potions"
-msgstr "Tränke umbenennen"
+msgstr "TrÃ¤nke umbenennen"
 
 #: bash\basher.py:10443
 msgid "No items to edit"
@@ -7153,7 +7153,7 @@ msgstr "Lade Masterdateien"
 
 #: bash\basher.py:10498
 msgid "Delete Spells"
-msgstr "Zauber löschen"
+msgstr "Zauber lÃ¶schen"
 
 #: bash\basher.py:10506
 msgid "Player Spells"
@@ -7166,16 +7166,16 @@ msgstr "Setze Anzahl an Verwendungen von Waffenverzauberungen"
 #: bash\basher.py:10523
 msgid "Enter the number of uses you desire per recharge for all custom made enchantements."
 "(Enter 0 for unlimited uses)"
-msgstr "Gib die gewünschte Anzahl an Verwendungen pro Aufladung für alle selbst erstellten Verzauberungen ein."
-"(Gib 0 für unlimitierten Nutzen ein)"
+msgstr "Gib die gewÃ¼nschte Anzahl an Verwendungen pro Aufladung fÃ¼r alle selbst erstellten Verzauberungen ein."
+"(Gib 0 fÃ¼r unlimitierten Nutzen ein)"
 
 #: bash\basher.py:10573
 msgid "You can't move saves to the current profile!"
-msgstr "Du kannst keine Speicherstände in das derzeitige Profile verschieben!"
+msgstr "Du kannst keine SpeicherstÃ¤nde in das derzeitige Profile verschieben!"
 
 #: bash\basher.py:10581
 msgid "A file named %s already exists in %s. Overwrite it?"
-msgstr "Eine Datei namens %s existiert bereits in %s. Überschreiben?"
+msgstr "Eine Datei namens %s existiert bereits in %s. Ãœberschreiben?"
 
 #: bash\basher.py:10583
 msgid "Move File"
@@ -7195,19 +7195,19 @@ msgstr "Abomb reparieren"
 
 #: bash\basher.py:10617
 msgid "Abomb counter is too low to reset"
-msgstr "Abomb-Zähler ist zu niedrig zum Zurücksetzen"
+msgstr "Abomb-ZÃ¤hler ist zu niedrig zum ZurÃ¼cksetzen"
 
 #: bash\basher.py:10619
 msgid "Reset Abomb counter? (Current progress: %.0f%%.)"
 ""
 "Note: Abomb animation slowing won't occur until progress is near 100%%"
-msgstr "Abomb-Zähler zurücksetzen? (Derzeitiger Fortschritt: %.0f%%."
+msgstr "Abomb-ZÃ¤hler zurÃ¼cksetzen? (Derzeitiger Fortschritt: %.0f%%."
 ""
 "Anmerkung: Abomb-Animationsverlangsamung tritt nicht auf, bevor der Fortschritt fast bei 100%% ist"
 
 #: bash\basher.py:10623
 msgid "Abomb counter reset"
-msgstr "Abomb-Zähler zurückgesetzt"
+msgstr "Abomb-ZÃ¤hler zurÃ¼ckgesetzt"
 
 #: bash\basher.py:10630
 msgid "Repair Factions"
@@ -7217,9 +7217,9 @@ msgstr "Fraktionen reparieren"
 msgid "This will (mostly) repair faction membership errors due to Wrye Bash v 105 bug and/or faction changes in underlying mods."
 ""
 "WARNING! This repair is NOT perfect! Do not use it unless you have to!"
-msgstr "Dies repariert (meistens) die Fraktionsmitgliedschaftsfehler durch den Wrye-Bash-Bug in v105 und/oder durch Fraktionsänderungen in unterliegenden Mods."
+msgstr "Dies repariert (meistens) die Fraktionsmitgliedschaftsfehler durch den Wrye-Bash-Bug in v105 und/oder durch FraktionsÃ¤nderungen in unterliegenden Mods."
 ""
-"WARNUNG! Diese Reparatur ist nicht perfekt! Nicht nutzen, sofern nicht unbedingt nötig!"
+"WARNUNG! Diese Reparatur ist nicht perfekt! Nicht nutzen, sofern nicht unbedingt nÃ¶tig!"
 
 #: bash\basher.py:10637
 msgid "Update NPC Levels"
@@ -7227,7 +7227,7 @@ msgstr "NPC-Levels aktualisieren"
 
 #: bash\basher.py:10639
 msgid "Restore dropped factions too? WARNING: This may involve clicking through a LOT of yes/no dialogs"
-msgstr "Verlassene Fraktionen ebenfalls wiederherstellen? WARNUNG: Das kann zu einem massiven Klicken durch VIELE Ja/Nein-Dialoge führen"
+msgstr "Verlassene Fraktionen ebenfalls wiederherstellen? WARNUNG: Das kann zu einem massiven Klicken durch VIELE Ja/Nein-Dialoge fÃ¼hren"
 
 #: bash\basher.py:10677
 msgid "NPC Factions Restored/UnNulled"
@@ -7251,27 +7251,27 @@ msgstr "Haare repariert"
 
 #: bash\basher.py:10777
 msgid "No repair necessary"
-msgstr "Reparatur unnötig"
+msgstr "Reparatur unnÃ¶tig"
 
 #: bash\basher.py:10784
 msgid "Reweigh Potions"
-msgstr "Gewichtsänderung von Tränken"
+msgstr "GewichtsÃ¤nderung von TrÃ¤nken"
 
 #: bash\basher.py:10791
 msgid "Set weight of all player potions to"
-msgstr "Setze Gewicht aller Spieler-Tränke auf"
+msgstr "Setze Gewicht aller Spieler-TrÃ¤nke auf"
 
 #: bash\basher.py:10797
 msgid "Invalid weight: %f"
-msgstr "Unzulässiges Gewicht: %f"
+msgstr "UnzulÃ¤ssiges Gewicht: %f"
 
 #: bash\basher.py:10819
 msgid "Potions reweighed: %d"
-msgstr "Trankgewichte geändert: %d"
+msgstr "Trankgewichte geÃ¤ndert: %d"
 
 #: bash\basher.py:10822
 msgid "No potions to reweigh!"
-msgstr "Keine Tränke zur Gewichtsänderung!"
+msgstr "Keine TrÃ¤nke zur GewichtsÃ¤nderung!"
 
 #: bash\basher.py:10831
 msgid "Statistics"
@@ -7313,7 +7313,7 @@ msgid "Remove savegame bloating?"
 "WARNING: This is a risky procedure that may corrupt your savegame! Use only if necessary!"
 msgstr "Datenblasen aus dem save entfernen?"
 "%s"
-"WARNUNG: Dies ist eine riskante Prozedur, die zu einem korrupten save führen könnte! Nur im absoluten Notfall verwenden!"
+"WARNUNG: Dies ist eine riskante Prozedur, die zu einem korrupten save fÃ¼hren kÃ¶nnte! Nur im absoluten Notfall verwenden!"
 
 #: bash\basher.py:10916
 msgid "Remove bloating?"
@@ -7333,7 +7333,7 @@ msgstr "Nicht erzeugte Objekte: %d"
 
 #: bash\basher.py:10943
 msgid "This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods. This supercedes the older\"Import NPC Level\" command"
-msgstr "Das relevelt NPCs in den ausgewählten Speicherständen anhand der NPC-Levels aus den derzeit aktiven Mods. Dies ersetzt den älteren\"Importiere NPC-Level\"-Befehl"
+msgstr "Das relevelt NPCs in den ausgewÃ¤hlten SpeicherstÃ¤nden anhand der NPC-Levels aus den derzeit aktiven Mods. Dies ersetzt den Ã¤lteren\"Importiere NPC-Level\"-Befehl"
 
 #: bash\basher.py:10973
 msgid "NPCs Releveled"
@@ -7346,17 +7346,17 @@ msgid ""
 "*"
 msgstr ""
 ""
-"Einige Mods haben Ladefehler und wurden übersprungen:"
+"Einige Mods haben Ladefehler und wurden Ã¼bersprungen:"
 "*"
 
 #: bash\basher.py:11026
 msgid "Next Shot"
-msgstr "Nächste Aufnahme"
+msgstr "NÃ¤chste Aufnahme"
 
 #: bash\basher.py:11034
 msgid "Screenshot base name, optionally with next screenshot number."
 "E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201"
-msgstr "Screenshot-Grundname, optional mit nächster Screenshot-Nummer."
+msgstr "Screenshot-Grundname, optional mit nÃ¤chster Screenshot-Nummer."
 "Z.B. ScreenShot oder ScreenShot_101 oder Subdir\\ScreenShot_201"
 
 #: bash\basher.py:11061
@@ -7381,15 +7381,15 @@ msgstr "Importiert Nachrichtenarchiv(e)"
 
 #: bash\basher.py:11149
 msgid "Delete Messages"
-msgstr "Nachrichten löschen"
+msgstr "Nachrichten lÃ¶schen"
 
 #: bash\basher.py:11165
 msgid "Add New Person"
-msgstr "Neue Person hinzufügen"
+msgstr "Neue Person hinzufÃ¼gen"
 
 #: bash\basher.py:11168
 msgid "Add new person"
-msgstr "Neue Person hinzufügen"
+msgstr "Neue Person hinzufÃ¼gen"
 
 #: bash\basher.py:11171
 msgid "already exists"
@@ -7425,11 +7425,11 @@ msgstr "Personen importiert: %d"
 
 #: bash\basher.py:11247
 msgid "Change to"
-msgstr "Ändern zu"
+msgstr "Ã„ndern zu"
 
 #: bash\basher.py:11257
 msgid "Change master name to"
-msgstr "Ändere Masterdateinamen zu"
+msgstr "Ã„ndere Masterdateinamen zu"
 
 #: bash\basher.py:11280
 msgid "Disable"
@@ -7437,7 +7437,7 @@ msgstr "Deaktivieren"
 
 #: bash\basher.py:11458
 msgid "Executing BOSS"
-msgstr "BOSS ausführen"
+msgstr "BOSS ausfÃ¼hren"
 
 #: bash\basher.py:11460
 msgid "Processing... deghosting mods"
@@ -7765,11 +7765,11 @@ msgstr "Oblivion.ini ist belegt"
 
 #: bash\belt.py:16
 msgid "Extra arguments to '%s'"
-msgstr "Zusätzliche Argumente für '%s'"
+msgstr "ZusÃ¤tzliche Argumente fÃ¼r '%s'"
 
 #: bash\belt.py:17
 msgid "Missing arguments to '%s'"
-msgstr "Fehlende Argumente für '%s'"
+msgstr "Fehlende Argumente fÃ¼r '%s'"
 
 #: bash\belt.py:18
 msgid "Unexpected '%s'"
@@ -7781,7 +7781,7 @@ msgstr "Installer-Wizard"
 
 #: bash\belt.py:356
 msgid "The installer script has finished, and selected the following sub-packages, esps, and esms to be installed"
-msgstr "Das Installationsskript ist fertig und hat die folgenden Subpakete, esps und esms zum Installieren ausgewählt"
+msgstr "Das Installationsskript ist fertig und hat die folgenden Subpakete, esps und esms zum Installieren ausgewÃ¤hlt"
 
 #: bash\belt.py:363
 msgid "Esp/ms"
@@ -7793,7 +7793,7 @@ msgstr "Diese Auswahl anwenden"
 
 #: bash\belt.py:440
 msgid "WARNING: The following version requirements are not met for using this installer"
-msgstr "WARNUNG: Die folgenden Versionsvoraussetzungen werden für diesen Installer nicht erfüllt"
+msgstr "WARNUNG: Die folgenden Versionsvoraussetzungen werden fÃ¼r diesen Installer nicht erfÃ¼llt"
 
 #: bash\belt.py:444
 msgid "Version Requirements"
@@ -7801,7 +7801,7 @@ msgstr "Versionsvoraussetzungen"
 
 #: bash\belt.py:449
 msgid "Need"
-msgstr "Benötigt"
+msgstr "BenÃ¶tigt"
 
 #: bash\belt.py:450
 msgid "Have"
@@ -7813,7 +7813,7 @@ msgstr "Trotzdem installieren"
 
 #: bash\belt.py:627
 msgid "Could not open wizard file"
-msgstr "Konnte Wizarddatei nicht öffnen"
+msgstr "Konnte Wizarddatei nicht Ã¶ffnen"
 
 #: bash\belt.py:637
 msgid "An error occured in the wizard script:"

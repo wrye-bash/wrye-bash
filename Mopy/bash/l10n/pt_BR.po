@@ -10,25 +10,25 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=cp1252\n"
-"Content-Transfer-Encoding: utf8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
 #: bash\bolt.py:119
 msgid "Abstract section called"
-msgstr "SeÁ„o abstrata chamada"
+msgstr "Se√ß√£o abstrata chamada"
 
 #: bash\bolt.py:125
 msgid "Argument is out of allowed ranged of values"
-msgstr "Argumento est· longe do permitido em variaÁıes de valores"
+msgstr "Argumento est√° longe do permitido em varia√ß√µes de valores"
 
 #: bash\bolt.py:131
 msgid "Object is in a bad state"
-msgstr "Objeto est· em condiÁ„o ruim"
+msgstr "Objeto est√° em condi√ß√£o ruim"
 
 #: bash\bolt.py:137
 msgid "Section is not coded yet"
-msgstr "SeÁ„o ainda n„o est· codificada"
+msgstr "Se√ß√£o ainda n√£o est√° codificada"
 
 #: bash\balt.py:132
 msgid "Missing resource file: %s"
@@ -40,11 +40,11 @@ msgstr "Escolha um diretorio"
 
 #: bash\balt.py:313
 msgid "Warning"
-msgstr "AtenÁ„o"
+msgstr "Aten√ß√£o"
 
 #: bash\balt.py:322
 msgid "Don't show this in the future"
-msgstr "N„o exibir isso no futuro"
+msgstr "N√£o exibir isso no futuro"
 
 #: bash\balt.py:399
 msgid "Error"
@@ -52,7 +52,7 @@ msgstr "Erro"
 
 #: bash\balt.py:407
 msgid "Information"
-msgstr "InformaÁ„o"
+msgstr "Informa√ß√£o"
 
 #: bash\balt.py:418
 msgid ""
@@ -62,7 +62,7 @@ msgstr ""
 
 #: bash\balt.py:633
 msgid "Action"
-msgstr "AÁ„o"
+msgstr "A√ß√£o"
 
 #: bash\balt.py:634
 msgid "Add"
@@ -94,7 +94,7 @@ msgstr "Renomear como"
 
 #: bash\balt.py:713
 msgid "Name must be unique"
-msgstr "Nome tem que ser ˙nico"
+msgstr "Nome tem que ser √∫nico"
 
 #: bash\balt.py:814
 msgid "Progress"
@@ -102,7 +102,7 @@ msgstr "Progresso"
 
 #: bash\balt.py:827
 msgid "Dialog already destroyed"
-msgstr "Di·logo j· destroÌdo"
+msgstr "Di√°logo j√° destro√≠do"
 
 #: bash\balt.py:1156
 msgid "Delete Items"
@@ -130,31 +130,31 @@ msgstr "Int Cela Substituto-bloco"
 
 #: bash\bush.py:55
 msgid "Ext Cell Block"
-msgstr "Extens„o Cela Bloco"
+msgstr "Extens√£o Cela Bloco"
 
 #: bash\bush.py:56
 msgid "Ext Cell Sub-Block"
-msgstr "Extens„o de CÈlula Substituto-bloco"
+msgstr "Extens√£o de C√©lula Substituto-bloco"
 
 #: bash\bush.py:57
 msgid "Cell Children"
-msgstr "CÈlula CrianÁa"
+msgstr "C√©lula Crian√ßa"
 
 #: bash\bush.py:58
 msgid "Topic Children"
-msgstr "TÛpico Seguidor"
+msgstr "T√≥pico Seguidor"
 
 #: bash\bush.py:59
 msgid "Cell Persistent Childen"
-msgstr "CÈlula Persitente"
+msgstr "C√©lula Persitente"
 
 #: bash\bush.py:60
 msgid "Cell Temporary Children"
-msgstr "CÈlula Tempor·rias"
+msgstr "C√©lula Tempor√°rias"
 
 #: bash\bush.py:61
 msgid "Cell Visible Distant Children"
-msgstr "Distancia VisÌvel de CÈlula"
+msgstr "Distancia Vis√≠vel de C√©lula"
 
 #: bash\bush.py:77
 msgid "Argonian"
@@ -202,19 +202,19 @@ msgstr ""
 
 #: bash\bush.py:338
 msgid "Blade (1 Handed)"
-msgstr "L‚mina (1 M„o)"
+msgstr "L√¢mina (1 M√£o)"
 
 #: bash\bush.py:339
 msgid "Blade (2 Handed)"
-msgstr "L‚mina (2 M„os)"
+msgstr "L√¢mina (2 M√£os)"
 
 #: bash\bush.py:340
 msgid "Blunt (1 Handed)"
-msgstr "Clava (1 M„o)"
+msgstr "Clava (1 M√£o)"
 
 #: bash\bush.py:341
 msgid "Blunt (2 Handed)"
-msgstr "Clava (2 M„os)"
+msgstr "Clava (2 M√£os)"
 
 #: bash\bush.py:342
 msgid "Staff"
@@ -226,7 +226,7 @@ msgstr "Arco"
 
 #: bash\bush.py:676
 msgid "Faction"
-msgstr "FacÁ„o"
+msgstr "Fac√ß√£o"
 
 #: bash\bush.py:677
 msgid "Armor"
@@ -266,7 +266,7 @@ msgstr "Chave"
 
 #: bash\bush.py:686
 msgid "Cell"
-msgstr "CÈlula"
+msgstr "C√©lula"
 
 #: bash\bush.py:687
 msgid "Object Ref"
@@ -282,7 +282,7 @@ msgstr "Criatura Ref"
 
 #: bash\bush.py:690
 msgid "Dialog Entry"
-msgstr "Entrada do Di·logo"
+msgstr "Entrada do Di√°logo"
 
 #: bash\bush.py:691
 msgid "Quest"
@@ -294,27 +294,27 @@ msgstr "AI Pacote"
 
 #: bash\bush.py:697
 msgid "Alchemical Ingredients I"
-msgstr "Ingredientes AlquÌmicos I"
+msgstr "Ingredientes Alqu√≠micos I"
 
 #: bash\bush.py:698
 msgid "Alchemical Ingredients II"
-msgstr "Ingredientes AlquÌmicos II"
+msgstr "Ingredientes Alqu√≠micos II"
 
 #: bash\bush.py:699
 msgid "Alchemical Ingredients III"
-msgstr "Ingredientes AlquÌmicos III"
+msgstr "Ingredientes Alqu√≠micos III"
 
 #: bash\bush.py:700
 msgid "Alchemical Ingredients IV"
-msgstr "Ingredientes AlquÌmicos IV"
+msgstr "Ingredientes Alqu√≠micos IV"
 
 #: bash\bush.py:703
 msgid "Alchemical Effects I"
-msgstr "Efeitos AlquÌmicos I"
+msgstr "Efeitos Alqu√≠micos I"
 
 #: bash\bush.py:704
 msgid "Alchemical Effects II"
-msgstr "Efeitos AlquÌmicos II"
+msgstr "Efeitos Alqu√≠micos II"
 
 #: bash\bush.py:705
 msgid "Alchemical Effects III"
@@ -322,7 +322,7 @@ msgstr "Efeitos Alquimicos III"
 
 #: bash\bush.py:706
 msgid "Alchemical Effects IV"
-msgstr "Efeitos AlquÌmicos IV"
+msgstr "Efeitos Alqu√≠micos IV"
 
 #: bash\bosh.py:95
 msgid "Unknown File"
@@ -338,7 +338,7 @@ msgstr "%s: Tentou ler antes (%d) do inicio do file/buffer"
 
 #: bash\bosh.py:338
 msgid "%s: Attempted to read past (%d) end (%d) of file/buffer"
-msgstr "%s: Tentou ler apÛs o (%d) fim (%d) do file/buffer"
+msgstr "%s: Tentou ler ap√≥s o (%d) fim (%d) do file/buffer"
 
 #: bash\bosh.py:351
 msgid "%s: Expected size == %d, but got: %d"
@@ -350,7 +350,7 @@ msgstr "%s: Tamanho esperado <= %d, mas adquiriu: %d"
 
 #: bash\bosh.py:361
 msgid "Extraneous subrecord (%s) in %s record"
-msgstr "Sub-GravaÁ„o estranha (%s) em %s gravado"
+msgstr "Sub-Grava√ß√£o estranha (%s) em %s gravado"
 
 #: bash\bosh.py:405
 msgid "Exceded limit of"
@@ -362,19 +362,19 @@ msgstr "Topo Ruim tipo GRUPO"
 
 #: bash\bosh.py:460
 msgid "%s: Expected %s subrecord, but found %s instead"
-msgstr "%s: Esperado %s sub-gravado, mas achou %s ao invÈs"
+msgstr "%s: Esperado %s sub-gravado, mas achou %s ao inv√©s"
 
 #: bash\bosh.py:1039
 msgid "Unknown condition function: %d"
-msgstr "Desconhecida a condiÁ„o de funÁ„o: %d"
+msgstr "Desconhecida a condi√ß√£o de fun√ß√£o: %d"
 
 #: bash\bosh.py:1240
 msgid "Unexpected subrecord"
-msgstr "Sub-gravaÁ„o inesperada"
+msgstr "Sub-grava√ß√£o inesperada"
 
 #: bash\bosh.py:1281
 msgid "FormIds not in long format"
-msgstr "FormIds n„o em longo formato"
+msgstr "FormIds n√£o em longo formato"
 
 #: bash\bosh.py:1347
 msgid "Data changed"
@@ -398,15 +398,15 @@ msgstr "Inesperado %s registre em grupo de %s"
 
 #: bash\bosh.py:2953
 msgid "No valid mapping for mod index 0x%02X"
-msgstr "N„o h· mapeamento v·lido para indexar mÛdulo 0x%02X"
+msgstr "N√£o h√° mapeamento v√°lido para indexar m√≥dulo 0x%02X"
 
 #: bash\bosh.py:3343
 msgid "Invalid top group type"
-msgstr "Tipo de grupo de topo inv·lido"
+msgstr "Tipo de grupo de topo inv√°lido"
 
 #: bash\bosh.py:3357
 msgid "Improperly grouped file"
-msgstr "Agrupamento de arquivo imprÛprio"
+msgstr "Agrupamento de arquivo impr√≥prio"
 
 #: bash\bosh.py:3403
 msgid "Insufficient data to write file"
@@ -414,19 +414,19 @@ msgstr "Dados insuficientes para escrever arquivo"
 
 #: bash\bosh.py:3766
 msgid "File header is corrupted"
-msgstr "CabeÁalho de arquivo esta corrompido"
+msgstr "Cabe√ßalho de arquivo esta corrompido"
 
 #: bash\bosh.py:3773
 msgid "File does not exist"
-msgstr "Arquivo n„o existe"
+msgstr "Arquivo n√£o existe"
 
 #: bash\bosh.py:3864
 msgid "Reading Header"
-msgstr "Lendo CabeÁalho"
+msgstr "Lendo Cabe√ßalho"
 
 #: bash\bosh.py:3903
 msgid "Reading created"
-msgstr "Criando CabeÁalho"
+msgstr "Criando Cabe√ßalho"
 
 #: bash\bosh.py:3915
 msgid "Reading records"
@@ -442,7 +442,7 @@ msgstr "Finalizando leitura"
 
 #: bash\bosh.py:3952
 msgid "Writing Header"
-msgstr "Escrevendo CabeÁalho"
+msgstr "Escrevendo Cabe√ßalho"
 
 #: bash\bosh.py:3977
 msgid "Writing created"
@@ -474,7 +474,7 @@ msgstr "Qualidade:\t0x%08X"
 
 #: bash\bosh.py:4112
 msgid "Float:\t%.2f"
-msgstr "FlutuaÁ„o: \t%. 2f"
+msgstr "Flutua√ß√£o: \t%. 2f"
 
 #: bash\bosh.py:4114
 msgid "Fbomb Counter"
@@ -482,7 +482,7 @@ msgstr "Contador Fbomb"
 
 #: bash\bosh.py:4115
 msgid "Next in-game object: %08X"
-msgstr "PrÛximo objeto de em-jogo: %08X"
+msgstr "Pr√≥ximo objeto de em-jogo: %08X"
 
 #: bash\bosh.py:4118
 msgid "Created Items"
@@ -490,7 +490,7 @@ msgstr "Artigos criados"
 
 #: bash\bosh.py:4119
 msgid "Records"
-msgstr "RegÌstros"
+msgstr "Reg√≠stros"
 
 #: bash\bosh.py:4120
 msgid "FormIds"
@@ -498,7 +498,7 @@ msgstr "Forma Ids"
 
 #: bash\bosh.py:4187
 msgid "LostChanges"
-msgstr "AlteraÁıesPerdidas"
+msgstr "Altera√ß√µesPerdidas"
 
 #: bash\bosh.py:4193
 msgid "Unknown"
@@ -510,7 +510,7 @@ msgstr "Objeto novo Bases de Referencia"
 
 #: bash\bosh.py:4202
 msgid "Count IRef     BaseId"
-msgstr "Conta IRef     B·sico Id"
+msgstr "Conta IRef     B√°sico Id"
 
 #: bash\bosh.py:4218
 msgid "Scanning created objects"
@@ -518,19 +518,19 @@ msgstr "Examinando objetos criados"
 
 #: bash\bosh.py:4234
 msgid "Scanning change records"
-msgstr "Examinando mudanÁas no regÌstro"
+msgstr "Examinando mudan√ßas no reg√≠stro"
 
 #: bash\bosh.py:4436
 msgid "Backing up BSA file. This will take a while"
-msgstr "Backing up arquivo de BSA. Isto demorar· um tempo"
+msgstr "Backing up arquivo de BSA. Isto demorar√° um tempo"
 
 #: bash\bosh.py:4646
 msgid "Load list is full"
-msgstr "Lista de carga est· cheia"
+msgstr "Lista de carga est√° cheia"
 
 #: bash\bosh.py:4932
 msgid "Can't get snapshot parameters for file outside main directory"
-msgstr "N„o possa adquirir par‚metros de instant‚neo para arquivo fora de diretÛrio principal"
+msgstr "N√£o possa adquirir par√¢metros de instant√¢neo para arquivo fora de diret√≥rio principal"
 
 #: bash\bosh.py:5021
 msgid "Expected TES4, but got"
@@ -538,7 +538,7 @@ msgstr "TES4 esperado, mas adquiriu"
 
 #: bash\bosh.py:5026
 msgid "Struct.error"
-msgstr "Erro de construÁ„o"
+msgstr "Erro de constru√ß√£o"
 
 #: bash\bosh.py:5382
 msgid "Getting sizes"
@@ -554,18 +554,18 @@ msgstr ""
 
 #: bash\bosh.py:5729
 msgid "Balo group header"
-msgstr "Grupo LÌder Balo"
+msgstr "Grupo L√≠der Balo"
 
 #: bash\bosh.py:5897
 msgid "Some mods were unavailable and were skipped:"
 "*"
-msgstr "Alguns Mods est„o indisponiveis e foram pulados: "
+msgstr "Alguns Mods est√£o indisponiveis e foram pulados: "
 "*"
 
 #: bash\bosh.py:5901
 msgid "Mod list is full, so some mods were skipped:"
 ""
-msgstr "Lista de Mod est· cheia, assim algum mods foram pulados: "
+msgstr "Lista de Mod est√° cheia, assim algum mods foram pulados: "
 ""
 
 #: bash\bosh.py:5916
@@ -582,7 +582,7 @@ msgstr "Arquivos de Modulo ativos"
 
 #: bash\bosh.py:5951
 msgid "%s  %s  [Version %s]"
-msgstr "%s %s [Vers„o %s]"
+msgstr "%s %s [Vers√£o %s]"
 
 #: bash\bosh.py:5957
 msgid "----> MISSING MASTER"
@@ -590,7 +590,7 @@ msgstr "----> MESTRE PERDIDO"
 
 #: bash\bosh.py:5959
 msgid "----> DELINQUENT MASTER"
-msgstr "----> MESTRE DELINQ‹ENTE"
+msgstr "----> MESTRE DELINQ√úENTE"
 
 #: bash\bosh.py:5985
 msgid "Circular Masters"
@@ -598,19 +598,19 @@ msgstr "Mestres Circulares"
 
 #: bash\bosh.py:6094
 msgid "Can't match current Oblivion.esm to known version"
-msgstr "N„o È possivel emparelhar Oblivion atual. esm para vers„o conhecida"
+msgstr "N√£o √© possivel emparelhar Oblivion atual. esm para vers√£o conhecida"
 
 #: bash\bosh.py:6097
 msgid "Can't swap: %s already exists"
-msgstr "N„o possa trocar: %s j· existe"
+msgstr "N√£o possa trocar: %s j√° existe"
 
 #: bash\bosh.py:6100
 msgid "Can't swap: %s doesn't exist"
-msgstr "N„o possa trocar: %s n„o existe"
+msgstr "N√£o possa trocar: %s n√£o existe"
 
 #: bash\bosh.py:6283
 msgid "Builds"
-msgstr "ContruÁ„o"
+msgstr "Contru√ß√£o"
 
 #: bash\bosh.py:6520
 msgid "ModBase"
@@ -642,23 +642,23 @@ msgstr "EditarId"
 
 #: bash\bosh.py:6707
 msgid "Offset"
-msgstr "CompensaÁ„o"
+msgstr "Compensa√ß√£o"
 
 #: bash\bosh.py:6707
 msgid "CalcMin"
-msgstr "C·lculoMin"
+msgstr "C√°lculoMin"
 
 #: bash\bosh.py:6707
 msgid "CalcMax"
-msgstr "C·lculoMax"
+msgstr "C√°lculoMax"
 
 #: bash\bosh.py:6708
 msgid "Old bOffset"
-msgstr "Obsoleto bCompensaÁ„o"
+msgstr "Obsoleto bCompensa√ß√£o"
 
 #: bash\bosh.py:6708
 msgid "Old Offset"
-msgstr "Obsoleto CompensaÁ„o"
+msgstr "Obsoleto Compensa√ß√£o"
 
 #: bash\bosh.py:6708
 msgid "Old CalcMin"
@@ -694,7 +694,7 @@ msgstr "Modulo Nome"
 
 #: bash\bosh.py:6877
 msgid "ObjectIndex"
-msgstr "Õndice de objeto"
+msgstr "√çndice de objeto"
 
 #: bash\bosh.py:6877
 msgid "Editor Id"
@@ -726,7 +726,7 @@ msgstr "EPontos"
 
 #: bash\bosh.py:7136
 msgid "Health"
-msgstr "Sa˙de"
+msgstr "Sa√∫de"
 
 #: bash\bosh.py:7136
 msgid "AR"
@@ -742,7 +742,7 @@ msgstr "Examinando"
 
 #: bash\bosh.py:7247
 msgid "Mod"
-msgstr "MÛdulo"
+msgstr "M√≥dulo"
 
 #: bash\bosh.py:7247
 msgid "Group"
@@ -754,7 +754,7 @@ msgstr "Falha para encontrar pcNome em PC registro de ACRH"
 
 #: bash\bosh.py:7655
 msgid "Face dump from save game"
-msgstr "Entulho de Rosto em gravaÁ„o de jogo"
+msgstr "Entulho de Rosto em grava√ß√£o de jogo"
 
 #: bash\bosh.py:7859
 msgid "Has BSA archive"
@@ -762,11 +762,11 @@ msgstr "Tem arquivo de BSA"
 
 #: bash\bosh.py:7868
 msgid "Marked NoMerge"
-msgstr "Marcado N„oFundido"
+msgstr "Marcado N√£oFundido"
 
 #: bash\bosh.py:7871
 msgid "Unsupported types"
-msgstr "Tipos sem assistÍncia"
+msgstr "Tipos sem assist√™ncia"
 
 #: bash\bosh.py:7874
 msgid "Empty mod"
@@ -798,15 +798,15 @@ msgstr "FUNDIR/SCAN ERRO"
 
 #: bash\bosh.py:7975
 msgid "Load mods scanned"
-msgstr "Carregando mÛdulos examinados"
+msgstr "Carregando m√≥dulos examinados"
 
 #: bash\bosh.py:7992
 msgid "Merge unsupported for type"
-msgstr "Tipo de junÁ„o n„o suportado"
+msgstr "Tipo de jun√ß√£o n√£o suportado"
 
 #: bash\bosh.py:8024
 msgid "Overview"
-msgstr "AvaliaÁ„o"
+msgstr "Avalia√ß√£o"
 
 #: bash\bosh.py:8025
 msgid "Date/Time"
@@ -818,11 +818,11 @@ msgstr "Modulos Ativos"
 
 #: bash\bosh.py:8029
 msgid "**Note: Some mods had loading errors and were skipped.**"
-msgstr "**Nota: Algum mÛdulos tiveram erros de leitura ao carregar e foram saltados. **"
+msgstr "**Nota: Algum m√≥dulos tiveram erros de leitura ao carregar e foram saltados. **"
 
 #: bash\bosh.py:8037
 msgid "%s  [Version %s]"
-msgstr "%s [Vers„o %s]"
+msgstr "%s [Vers√£o %s]"
 
 #: bash\bosh.py:8041
 msgid "**Load Error -- Skipped**"
@@ -830,7 +830,7 @@ msgstr "**Erro de Leitura -- Omitir**"
 
 #: bash\bosh.py:8045
 msgid "Mod Aliases"
-msgstr "PseudÙnimos de Modulo"
+msgstr "Pseud√¥nimos de Modulo"
 
 #: bash\bosh.py:8051
 msgid "Completing %s"
@@ -846,11 +846,11 @@ msgstr "Convertendo formids"
 
 #: bash\bosh.py:8164
 msgid "+('|'.join(autoKey))+r"
-msgstr "+('|'.uni„o(Chaveautomatica))+r"
+msgstr "+('|'.uni√£o(Chaveautomatica))+r"
 
 #: bash\bosh.py:8266
 msgid "Tweakers"
-msgstr "ForÁadores"
+msgstr "For√ßadores"
 
 #: bash\bosh.py:8294
 msgid "General"
@@ -858,11 +858,11 @@ msgstr "Geral"
 
 #: bash\bosh.py:8295
 msgid "Alias Mod Names"
-msgstr "PseudÙnimo Nomes de Modulos"
+msgstr "Pseud√¥nimo Nomes de Modulos"
 
 #: bash\bosh.py:8296
 msgid "Specify mod aliases for reading CSV source files"
-msgstr "Especifique pseudÙnimos de mÛdulo por ler CSV fonte de arquivos"
+msgstr "Especifique pseud√¥nimos de m√≥dulo por ler CSV fonte de arquivos"
 
 #: bash\bosh.py:8320
 msgid "Merge Patches"
@@ -870,7 +870,7 @@ msgstr "Fundir Patches"
 
 #: bash\bosh.py:8321
 msgid "Merge patch mods into Bashed Patch"
-msgstr "Fundir patch mÛdulo em Bashed Patch"
+msgstr "Fundir patch m√≥dulo em Bashed Patch"
 
 #: bash\bosh.py:8339
 msgid "Importers"
@@ -878,15 +878,15 @@ msgstr "Importadores"
 
 #: bash\bosh.py:8353
 msgid "Import Graphics"
-msgstr "Importe Gr·ficos"
+msgstr "Importe Gr√°ficos"
 
 #: bash\bosh.py:8354
 msgid "Import graphics (models, icons, etc.) from source mods"
-msgstr "Importe gr·ficos (modelos, Ìcones, etc. ) de mÛdulos de fonte"
+msgstr "Importe gr√°ficos (modelos, √≠cones, etc. ) de m√≥dulos de fonte"
 
 #: bash\bosh.py:8465
 msgid "Source Mods"
-msgstr "MÛdulos Fontes"
+msgstr "M√≥dulos Fontes"
 
 #: bash\bosh.py:8468
 msgid ""
@@ -896,25 +896,25 @@ msgstr ""
 
 #: bash\bosh.py:8480
 msgid "Import Inventory"
-msgstr "ImportaÁ„o de Invent·rio"
+msgstr "Importa√ß√£o de Invent√°rio"
 
 #: bash\bosh.py:8481
 msgid "Merges changes to NPC and creature inventories"
-msgstr "Fundir mudanÁas para NPC e invent·rios de criaturas"
+msgstr "Fundir mudan√ßas para NPC e invent√°rios de criaturas"
 
 #: bash\bosh.py:8578
 msgid ""
 "=== Inventories Changed: %d"
 msgstr ""
-"=== Invent·rios Alterados: %d"
+"=== Invent√°rios Alterados: %d"
 
 #: bash\bosh.py:8585
 msgid "Import Names"
-msgstr "Nomes de importaÁ„o"
+msgstr "Nomes de importa√ß√£o"
 
 #: bash\bosh.py:8586
 msgid "Import names from source mods/files"
-msgstr "Nomes de importaÁ„o de mÛdulos/arquivos de fonte"
+msgstr "Nomes de importa√ß√£o de m√≥dulos/arquivos de fonte"
 
 #: bash\bosh.py:8675
 msgid "Source Mods/Files"
@@ -928,11 +928,11 @@ msgstr ""
 
 #: bash\bosh.py:8690
 msgid "Import NPC Faces"
-msgstr "ImportaÁao NPC Rostos"
+msgstr "Importa√ßao NPC Rostos"
 
 #: bash\bosh.py:8691
 msgid "Import NPC face/eyes/hair from source mods. For use with TNR and similar mods"
-msgstr "ImportaÁ„o NPC rosto/olhos/cabelo de fonte de mÛdulos. Para uso com TNR e mÛdulos semelhantes"
+msgstr "Importa√ß√£o NPC rosto/olhos/cabelo de fonte de m√≥dulos. Para uso com TNR e m√≥dulos semelhantes"
 
 #: bash\bosh.py:8756
 msgid ""
@@ -946,17 +946,17 @@ msgstr "Importe Classes"
 
 #: bash\bosh.py:8767
 msgid "Import ammo, armor and weapon stats from source mods/files"
-msgstr "Importe muniÁıes, armadura e estados de arma de mÛdulos/arquivos de fonte"
+msgstr "Importe muni√ß√µes, armadura e estados de arma de m√≥dulos/arquivos de fonte"
 
 #: bash\bosh.py:8872
 msgid ""
 "=== Modified Stats"
 msgstr ""
-"=== Modificando CondiÁıes"
+"=== Modificando Condi√ß√µes"
 
 #: bash\bosh.py:8875
 msgid "Ammo"
-msgstr "MuniÁ„o"
+msgstr "Muni√ß√£o"
 
 #: bash\bosh.py:8875
 msgid "Weapons"
@@ -964,7 +964,7 @@ msgstr "Armas"
 
 #: bash\bosh.py:8928
 msgid "* Armor Pieces Tweaked: %d"
-msgstr "* PedaÁos de Amaduras ForÁados: %d"
+msgstr "* Peda√ßos de Amaduras For√ßados: %d"
 
 #: bash\bosh.py:8938
 msgid "Bow Reach Fix"
@@ -976,19 +976,19 @@ msgstr "Reparar Arcos com alcance zero. (o alcance zero causa CTDs.)"
 
 #: bash\bosh.py:8975
 msgid "* Bows fixed: %d"
-msgstr "* CorreÁ„o de Arcos: %d"
+msgstr "* Corre√ß√£o de Arcos: %d"
 
 #: bash\bosh.py:8985
 msgid "Right Hand Rings"
-msgstr "AnÈis de m„o direita"
+msgstr "An√©is de m√£o direita"
 
 #: bash\bosh.py:8986
 msgid "Fixes rings to unequip consistently by making them prefer the right hand"
-msgstr "Corrige anÈis constantemente ao se tirar fazendo preferir a m„o direita"
+msgstr "Corrige an√©is constantemente ao se tirar fazendo preferir a m√£o direita"
 
 #: bash\bosh.py:9023
 msgid "* Rings fixed: %d"
-msgstr "* CorreÁ„o de AnÈis: %d"
+msgstr "* Corre√ß√£o de An√©is: %d"
 
 #: bash\bosh.py:9033
 msgid "DarNified Books"
@@ -996,7 +996,7 @@ msgstr "Livros DarNified"
 
 #: bash\bosh.py:9034
 msgid "Books will be reformatted for DarN UI"
-msgstr "Livros ser„o reformatados para DarN UI"
+msgstr "Livros ser√£o reformatados para DarN UI"
 
 #: bash\bosh.py:9094
 msgid "* Books DarNified: %d"
@@ -1004,11 +1004,11 @@ msgstr "* Livros DarNified: %d"
 
 #: bash\bosh.py:9104
 msgid "No Light Flicker"
-msgstr "Nenhuma CintilaÁ„o Clara"
+msgstr "Nenhuma Cintila√ß√£o Clara"
 
 #: bash\bosh.py:9105
 msgid "Remove flickering from lights. For use on low-end machines"
-msgstr "Remova cintilar das luzes. Para o uso em m·quinas da baixa-performance"
+msgstr "Remova cintilar das luzes. Para o uso em m√°quinas da baixa-performance"
 
 #: bash\bosh.py:9146
 msgid "* Lights unflickered: %d"
@@ -1016,11 +1016,11 @@ msgstr "* Luzes cintilantes: %d"
 
 #: bash\bosh.py:9156
 msgid "Max Weight Potions"
-msgstr "Peso M·ximo de PoÁıes"
+msgstr "Peso M√°ximo de Po√ß√µes"
 
 #: bash\bosh.py:9157
 msgid "Potion weight will be capped"
-msgstr "Peso de poÁıes ficara ocultado"
+msgstr "Peso de po√ß√µes ficara ocultado"
 
 #: bash\bosh.py:9159
 msgid "0.1"
@@ -1040,19 +1040,19 @@ msgstr ""
 
 #: bash\bosh.py:9199
 msgid "Reweigh Potions"
-msgstr "Reajustando Peso em PoÁıes"
+msgstr "Reajustando Peso em Po√ß√µes"
 
 #: bash\bosh.py:9200
 msgid "* Potions Reweighed: %d"
-msgstr "* PoÁıes Reajustadas: %d"
+msgstr "* Po√ß√µes Reajustadas: %d"
 
 #: bash\bosh.py:9210
 msgid "Max Weight Staffs"
-msgstr "M·ximo Peso de Cajados"
+msgstr "M√°ximo Peso de Cajados"
 
 #: bash\bosh.py:9211
 msgid "Staff weight will be capped"
-msgstr "Peso de cajados ser· ocultado"
+msgstr "Peso de cajados ser√° ocultado"
 
 #: bash\bosh.py:9213
 msgid "1"
@@ -1096,11 +1096,11 @@ msgstr "* Reajustando Cajados: %d"
 
 #: bash\bosh.py:9265
 msgid "Tweak Assorted"
-msgstr "ForÁar Sortido"
+msgstr "For√ßar Sortido"
 
 #: bash\bosh.py:9266
 msgid "Tweak various records in miscellaneous ways"
-msgstr "ForÁar v·rios registros de modos misturados"
+msgstr "For√ßar v√°rios registros de modos misturados"
 
 #: bash\bosh.py:9268
 msgid "Armor Shows Amulets"
@@ -1112,19 +1112,19 @@ msgstr "Impede que armadura oculte amuletos"
 
 #: bash\bosh.py:9272
 msgid "Armor Shows Rings"
-msgstr "Mostrar AnÈis em Armadura"
+msgstr "Mostrar An√©is em Armadura"
 
 #: bash\bosh.py:9273
 msgid "Prevents armor from hiding rings"
-msgstr "Impede que armadura oculte anÈis"
+msgstr "Impede que armadura oculte an√©is"
 
 #: bash\bosh.py:9381
 msgid "Tweak Clothes"
-msgstr "ForÁar Roupas"
+msgstr "For√ßar Roupas"
 
 #: bash\bosh.py:9382
 msgid "Tweak clothing weight and blocking"
-msgstr "ForÁar peso de vestimenta e bloqueio"
+msgstr "For√ßar peso de vestimenta e bloqueio"
 
 #: bash\bosh.py:9384
 msgid "Unlimited Amulets"
@@ -1132,39 +1132,39 @@ msgstr "Amuletos ilimitados"
 
 #: bash\bosh.py:9385
 msgid "Wear unlimited number of amulets - but they won't display"
-msgstr "Use n˙mero ilimitado de amuletos - mas eles n„o exibir„o"
+msgstr "Use n√∫mero ilimitado de amuletos - mas eles n√£o exibir√£o"
 
 #: bash\bosh.py:9387
 msgid "Unlimited Rings"
-msgstr "AnÈis ilimitados"
+msgstr "An√©is ilimitados"
 
 #: bash\bosh.py:9388
 msgid "Wear unlimited number of rings - but they won't display"
-msgstr "Use n˙mero ilimitado de anÈis - mas eles n„o exibir„o"
+msgstr "Use n√∫mero ilimitado de an√©is - mas eles n√£o exibir√£o"
 
 #: bash\bosh.py:9390
 msgid "Gloves Show Rings"
-msgstr "Exibir AnÈis em Luvas"
+msgstr "Exibir An√©is em Luvas"
 
 #: bash\bosh.py:9391
 msgid "Gloves will always show rings. (Conflicts with Unlimited Rings.)"
-msgstr "AnÈis sempre ser„o exibidos em luvas. ( Conflito com AnÈis Ilimitados. )"
+msgstr "An√©is sempre ser√£o exibidos em luvas. ( Conflito com An√©is Ilimitados. )"
 
 #: bash\bosh.py:9393
 msgid "Robes Show Pants"
-msgstr "Mostrar CalÁas em Roupıes"
+msgstr "Mostrar Cal√ßas em Roup√µes"
 
 #: bash\bosh.py:9394
 msgid "Robes will allow pants, greaves, skirts - but they'll clip"
-msgstr "Roupıes permitir„o calÁas, greaves, saias - mas eles cortar„o"
+msgstr "Roup√µes permitir√£o cal√ßas, greaves, saias - mas eles cortar√£o"
 
 #: bash\bosh.py:9396
 msgid "Robes Show Amulets"
-msgstr "Mostrar Amuletos em Roupıes"
+msgstr "Mostrar Amuletos em Roup√µes"
 
 #: bash\bosh.py:9397
 msgid "Robes will always show amulets. (Conflicts with Unlimited Amulets.)"
-msgstr "Roupıes sempre mostrar„o amuletos. (Conflitos com Amuletos Ilimitados. )"
+msgstr "Roup√µes sempre mostrar√£o amuletos. (Conflitos com Amuletos Ilimitados. )"
 
 #: bash\bosh.py:9399
 msgid "Max Weight Amulets"
@@ -1172,7 +1172,7 @@ msgstr "Maximo Peso em Amuletos"
 
 #: bash\bosh.py:9400
 msgid "Amulet weight will be capped"
-msgstr "Peso de amuleto ser· ocultado"
+msgstr "Peso de amuleto ser√° ocultado"
 
 #: bash\bosh.py:9402
 msgid "0.0"
@@ -1184,19 +1184,19 @@ msgstr ""
 
 #: bash\bosh.py:9407
 msgid "Max Weight Rings"
-msgstr "M·ximo Peso de AnÈis"
+msgstr "M√°ximo Peso de An√©is"
 
 #: bash\bosh.py:9408
 msgid "Ring weight will be capped"
-msgstr "Peso de anel ser· ocultado"
+msgstr "Peso de anel ser√° ocultado"
 
 #: bash\bosh.py:9415
 msgid "Max Weight Hoods"
-msgstr "M·ximo Peso de Capuzes"
+msgstr "M√°ximo Peso de Capuzes"
 
 #: bash\bosh.py:9416
 msgid "Hood weight will be capped"
-msgstr "Peso de capuz ser· ocultado"
+msgstr "Peso de capuz ser√° ocultado"
 
 #: bash\bosh.py:9420
 msgid "1.0"
@@ -1204,11 +1204,11 @@ msgstr ""
 
 #: bash\bosh.py:9480
 msgid "Tweak Settings"
-msgstr "ForÁar ConfiguraÁıes"
+msgstr "For√ßar Configura√ß√µes"
 
 #: bash\bosh.py:9481
 msgid "Tweak game settings"
-msgstr "ForÁar configuraÁıes de jogo"
+msgstr "For√ßar configura√ß√µes de jogo"
 
 #: bash\bosh.py:9483
 msgid "Arrow Litter Count"
@@ -1216,7 +1216,7 @@ msgstr "Contagem de Flecha em Cesta"
 
 #: bash\bosh.py:9484
 msgid "Maximum number of spent arrows allowed in cell"
-msgstr "N˙mero m·ximo de flechas gastas permitido em cela"
+msgstr "N√∫mero m√°ximo de flechas gastas permitido em cela"
 
 #: bash\bosh.py:9491
 msgid "Arrow Litter Time"
@@ -1256,7 +1256,7 @@ msgstr "1 Hora"
 
 #: bash\bosh.py:9502
 msgid "Arrow Recovery from Actor"
-msgstr "RecuperaÁ„o de flecha de Ator"
+msgstr "Recupera√ß√£o de flecha de Ator"
 
 #: bash\bosh.py:9503
 msgid "Chance that an arrow shot into an actor can be recovered"
@@ -1312,11 +1312,11 @@ msgstr ""
 
 #: bash\bosh.py:9525
 msgid "Chase Camera Tightness"
-msgstr "Persiga Tens„o de Camera"
+msgstr "Persiga Tens√£o de Camera"
 
 #: bash\bosh.py:9526
 msgid "Tightness of chase camera to player turning"
-msgstr "Tens„o da c‚mera de perseguiÁ„o para torneamento de jogador"
+msgstr "Tens√£o da c√¢mera de persegui√ß√£o para torneamento de jogador"
 
 #: bash\bosh.py:9528
 msgid "x 1.5"
@@ -1328,11 +1328,11 @@ msgstr ""
 
 #: bash\bosh.py:9533
 msgid "Chase Camera Distance"
-msgstr "Persiga Dist‚ncia de C‚mera"
+msgstr "Persiga Dist√¢ncia de C√¢mera"
 
 #: bash\bosh.py:9534
 msgid "Distance camera can be moved away from PC using mouse wheel"
-msgstr "Dist‚ncia da c‚mera que pode ser movida longe de PC que usa roda de rato"
+msgstr "Dist√¢ncia da c√¢mera que pode ser movida longe de PC que usa roda de rato"
 
 #: bash\bosh.py:9537
 msgid "x 2"
@@ -1352,19 +1352,19 @@ msgstr ""
 
 #: bash\bosh.py:9542
 msgid "Chameleon: No Refraction"
-msgstr "Camale„o: Nenhuma RefraÁ„o"
+msgstr "Camale√£o: Nenhuma Refra√ß√£o"
 
 #: bash\bosh.py:9543
 msgid "Chameleon with transparency instead of refraction effect"
-msgstr "Camale„o com transparÍncia em vez de efeito de refraÁ„o"
+msgstr "Camale√£o com transpar√™ncia em vez de efeito de refra√ß√£o"
 
 #: bash\bosh.py:9547
 msgid "Compass: Disable"
-msgstr "B˙ssola: Desabilitada"
+msgstr "B√∫ssola: Desabilitada"
 
 #: bash\bosh.py:9548
 msgid "No quest and/or points of interest markers on compass"
-msgstr "Nenhum Quest e/ou aponta de marcadores de interesse em b˙ssola"
+msgstr "Nenhum Quest e/ou aponta de marcadores de interesse em b√∫ssola"
 
 #: bash\bosh.py:9550
 msgid "Quests"
@@ -1380,11 +1380,11 @@ msgstr "Quests e POIs"
 
 #: bash\bosh.py:9554
 msgid "Compass: POI Recognition"
-msgstr "B˙ssola: Reconhecimento de POI"
+msgstr "B√∫ssola: Reconhecimento de POI"
 
 #: bash\bosh.py:9555
 msgid "Distance at which POI markers begin to show on compass"
-msgstr "Distancie a qual marcadores de POI comeÁam mostrar em b˙ssola"
+msgstr "Distancie a qual marcadores de POI come√ßam mostrar em b√∫ssola"
 
 #: bash\bosh.py:9557
 msgid "x 0.25"
@@ -1400,7 +1400,7 @@ msgstr ""
 
 #: bash\bosh.py:9561
 msgid "Essential NPC Unconsciousness"
-msgstr "InconsciÍncia de NPC essencial"
+msgstr "Inconsci√™ncia de NPC essencial"
 
 #: bash\bosh.py:9562
 msgid "Time which essential NPCs stay unconscious"
@@ -1416,11 +1416,11 @@ msgstr "30 Segundos"
 
 #: bash\bosh.py:9570
 msgid "Fatigue from Running/Encumbrance"
-msgstr "CansaÁo de Corrida/Dificuldade"
+msgstr "Cansa√ßo de Corrida/Dificuldade"
 
 #: bash\bosh.py:9571
 msgid "Fatigue cost of running and encumbrance"
-msgstr "Custo de CansaÁo de correndo e dificuldade"
+msgstr "Custo de Cansa√ßo de correndo e dificuldade"
 
 #: bash\bosh.py:9578
 msgid "Horse Turning Speed"
@@ -1428,7 +1428,7 @@ msgstr "Cavalo que Vira Velocidade"
 
 #: bash\bosh.py:9579
 msgid "Speed at which horses turn"
-msgstr "AceleraÁ„o a qual cavalos viram"
+msgstr "Acelera√ß√£o a qual cavalos viram"
 
 #: bash\bosh.py:9584
 msgid "Jump Higher"
@@ -1436,7 +1436,7 @@ msgstr "Salto mais Alto"
 
 #: bash\bosh.py:9585
 msgid "Maximum height player can jump to"
-msgstr "M·ximo de altura em que jogador pode saltar"
+msgstr "M√°ximo de altura em que jogador pode saltar"
 
 #: bash\bosh.py:9587
 msgid "x 1.1"
@@ -1448,7 +1448,7 @@ msgstr "Camera PC Morto"
 
 #: bash\bosh.py:9593
 msgid "Time after player's death before reload menu appears"
-msgstr "Tempo apÛs a morte do jogador antes do menu de recarga aparecer"
+msgstr "Tempo ap√≥s a morte do jogador antes do menu de recarga aparecer"
 
 #: bash\bosh.py:9595
 msgid "15 Seconds"
@@ -1464,11 +1464,11 @@ msgstr "Ilimitado"
 
 #: bash\bosh.py:9601
 msgid "Cell Respawn Time"
-msgstr "Tempo restauraÁ„o celula"
+msgstr "Tempo restaura√ß√£o celula"
 
 #: bash\bosh.py:9602
 msgid "Time before unvisited cell respawns. But longer times increase save sizes"
-msgstr "Tempo antes da restauraÁ„o de cÈlula de revis„o. Mas quanto mais longo o tempo maior o save"
+msgstr "Tempo antes da restaura√ß√£o de c√©lula de revis√£o. Mas quanto mais longo o tempo maior o save"
 
 #: bash\bosh.py:9604
 msgid "1 Day"
@@ -1492,7 +1492,7 @@ msgstr "20 Dias"
 
 #: bash\bosh.py:9609
 msgid "1 Month"
-msgstr "1 MÍs"
+msgstr "1 M√™s"
 
 #: bash\bosh.py:9610
 msgid "6 Months"
@@ -1520,19 +1520,19 @@ msgstr "Desaprove"
 
 #: bash\bosh.py:9620
 msgid "Magic Bolt Speed"
-msgstr "Velocidade de dardo m·gica"
+msgstr "Velocidade de dardo m√°gica"
 
 #: bash\bosh.py:9621
 msgid "Speed of magic bolt/projectile"
-msgstr "Velocidade de dardo/projÈtil m·gico"
+msgstr "Velocidade de dardo/proj√©til m√°gico"
 
 #: bash\bosh.py:9634
 msgid "Msg: Equip Misc. Item"
-msgstr "Msg: Equipar Miscel‚nea. Item"
+msgstr "Msg: Equipar Miscel√¢nea. Item"
 
 #: bash\bosh.py:9635
 msgid "Message upon equipping misc. item"
-msgstr "Mensagem ao equipar miscel‚nea. item"
+msgstr "Mensagem ao equipar miscel√¢nea. item"
 
 #: bash\bosh.py:9637
 msgid "[None]"
@@ -1552,27 +1552,27 @@ msgstr ""
 
 #: bash\bosh.py:9717
 msgid "Potions"
-msgstr "PoÁıes"
+msgstr "Po√ß√µes"
 
 #: bash\bosh.py:9718
 msgid "Label potions to sort by type and effect"
-msgstr "Etiquete poÁıes para ordenar por tipo e efeito"
+msgstr "Etiquete po√ß√µes para ordenar por tipo e efeito"
 
 #: bash\bosh.py:9720
 msgid "XD Illness"
-msgstr "XD DoenÁa"
+msgstr "XD Doen√ßa"
 
 #: bash\bosh.py:9721
 msgid "XD. Illness"
-msgstr "XD.DoenÁa"
+msgstr "XD.Doen√ßa"
 
 #: bash\bosh.py:9722
 msgid "XD - Illness"
-msgstr "XD - DoenÁa"
+msgstr "XD - Doen√ßa"
 
 #: bash\bosh.py:9723
 msgid "(XD) Illness"
-msgstr "(XD) DoenÁa"
+msgstr "(XD) Doen√ßa"
 
 #: bash\bosh.py:9795
 msgid "Notes and Scrolls"
@@ -1624,11 +1624,11 @@ msgstr ""
 
 #: bash\bosh.py:9888
 msgid "Spells"
-msgstr "FeitiÁos"
+msgstr "Feiti√ßos"
 
 #: bash\bosh.py:9889
 msgid "Label spells to sort by school and level"
-msgstr "Rotule FeitiÁos para ordenar por escola e nÌvel"
+msgstr "Rotule Feiti√ßos para ordenar por escola e n√≠vel"
 
 #: bash\bosh.py:9898
 msgid "D2 Fire Ball"
@@ -1648,7 +1648,7 @@ msgstr ""
 
 #: bash\bosh.py:9966
 msgid "Label ammo and weapons to sort by type and damage"
-msgstr "Rotule muniÁıes e armas para ordenar por tipo e dano"
+msgstr "Rotule muni√ß√µes e armas para ordenar por tipo e dano"
 
 #: bash\bosh.py:9968
 msgid "B Iron Bow"
@@ -1684,15 +1684,15 @@ msgstr ""
 
 #: bash\bosh.py:10034
 msgid "Tweak Names"
-msgstr "ForÁar Nomes"
+msgstr "For√ßar Nomes"
 
 #: bash\bosh.py:10035
 msgid "Tweak object names to show type and/or quality"
-msgstr "ForÁar nomes de objeto para mostrar o tipo de e/ou qualidade"
+msgstr "For√ßar nomes de objeto para mostrar o tipo de e/ou qualidade"
 
 #: bash\bosh.py:10037
 msgid "Rename armor to sort by type"
-msgstr "Renomeie armadura para ordenar atravÈs de tipo"
+msgstr "Renomeie armadura para ordenar atrav√©s de tipo"
 
 #: bash\bosh.py:10038
 msgid "BL Leather Boots"
@@ -1732,7 +1732,7 @@ msgstr "Roupas"
 
 #: bash\bosh.py:10048
 msgid "Rename clothes to sort by type"
-msgstr "Renomeie roupas para ordenar atravÈs de tipo"
+msgstr "Renomeie roupas para ordenar atrav√©s de tipo"
 
 #: bash\bosh.py:10049
 msgid "P Grey Trowsers"
@@ -1756,21 +1756,21 @@ msgstr "Especial"
 
 #: bash\bosh.py:10102
 msgid "Alchemical Catalogs"
-msgstr "Cat·logos alquÌmicos"
+msgstr "Cat√°logos alqu√≠micos"
 
 #: bash\bosh.py:10103
 msgid "Update COBL's catalogs of alchemical ingredients and effects."
 ""
 "Will only run if Cobl Main.esm is loaded"
-msgstr "Atualize os cat·logos de COBL de ingredientes alquÌmicos e efeitos."
+msgstr "Atualize os cat√°logos de COBL de ingredientes alqu√≠micos e efeitos."
 ""
-" SÛ ative se Cobl Main.esm est· carregado"
+" S√≥ ative se Cobl Main.esm est√° carregado"
 
 #: bash\bosh.py:10156
 msgid "Salan's Catalog of %s\r"
 "\r"
 ""
-msgstr "Salan's cat·logo de %s\r"
+msgstr "Salan's cat√°logo de %s\r"
 "\r"
 ""
 
@@ -1790,13 +1790,13 @@ msgstr "Listas Niveladas"
 msgid "Merges changes to leveled lists from ALL ACTIVE MODS."
 ""
 "Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below"
-msgstr "Funde mudanÁas a listas niveladas de TODOS OS MODULOS ATIVOS. "
+msgstr "Funde mudan√ßas a listas niveladas de TODOS OS MODULOS ATIVOS. "
 ""
-" Usu·rios AvanÁados podem anular Renivel/Denivel acresentando para qualquer mÛdulo (se ativo ou inativo) usando a lista debaixo"
+" Usu√°rios Avan√ßados podem anular Renivel/Denivel acresentando para qualquer m√≥dulo (se ativo ou inativo) usando a lista debaixo"
 
 #: bash\bosh.py:10217
 msgid "Merges changes to leveled lists from all active mods"
-msgstr "Funde mudanÁas a listas niveladas de todo o mÛdulos ativo"
+msgstr "Funde mudan√ßas a listas niveladas de todo o m√≥dulos ativo"
 
 #: bash\bosh.py:10340
 msgid "Delevelers/Relevelers"
@@ -1816,23 +1816,23 @@ msgstr "Fundir %s Listas"
 
 #: bash\bosh.py:10364
 msgid "Morph Factions"
-msgstr "FacÁıes Morphe (Aspecto)"
+msgstr "Fac√ß√µes Morphe (Aspecto)"
 
 #: bash\bosh.py:10365
 msgid "Mark factions that player can acquire while morphing."
 ""
 "Requires Cobl 2.18 and Wrye Morph or similar"
-msgstr "Marque facÁıes que o jogador pode adquirir enquanto transmuta. Requer Cobl 2.18 e Wrye Morph ou semelhante"
+msgstr "Marque fac√ß√µes que o jogador pode adquirir enquanto transmuta. Requer Cobl 2.18 e Wrye Morph ou semelhante"
 
 #: bash\bosh.py:10396
 msgid "Member"
-msgstr "SÛcio"
+msgstr "S√≥cio"
 
 #: bash\bosh.py:10473
 msgid ""
 "=== Morphable Factions"
 msgstr ""
-"===Metamorfose de FacÁıes"
+"===Metamorfose de Fac√ß√µes"
 
 #: bash\bosh.py:10485
 msgid "Power Exhaustion"
@@ -1842,35 +1842,35 @@ msgstr ""
 msgid "Modify greater powers to work with Power Exhaustion mod."
 ""
 "Will only run if Power Exhaustion mod is installed and active"
-msgstr "Modificar maiores poderes para trabalhar com o mÛdulo Power Exhaustion. "
+msgstr "Modificar maiores poderes para trabalhar com o m√≥dulo Power Exhaustion. "
 ""
-" SÛ ative se Power Exhaustion est· instalado e ativo"
+" S√≥ ative se Power Exhaustion est√° instalado e ativo"
 
 #: bash\bosh.py:10558
 msgid "* Powers Tweaked: %d"
-msgstr "* Poderes ForÁados: %d"
+msgstr "* Poderes For√ßados: %d"
 
 #: bash\bosh.py:10565
 msgid "Race Records"
-msgstr "Registros de RaÁas"
+msgstr "Registros de Ra√ßas"
 
 #: bash\bosh.py:10566
 msgid "Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED"
-msgstr "Incorporar olhos, cabelos, corpos, vozes de raÁas dos ATIVOS E/OU FUNDIDO M”DULOS. Ser„o IGNORADOS qualquer mÛdulos N√O-ativo, N√O-fundido na lista seguinte"
+msgstr "Incorporar olhos, cabelos, corpos, vozes de ra√ßas dos ATIVOS E/OU FUNDIDO M√ìDULOS. Ser√£o IGNORADOS qualquer m√≥dulos N√ÉO-ativo, N√ÉO-fundido na lista seguinte"
 
 #: bash\bosh.py:10567
 msgid "Merge race eyes, hair, body, voice from mods"
-msgstr "Incorporar olhos, cabelos, corpos, vozes de raÁas para os mÛdulos"
+msgstr "Incorporar olhos, cabelos, corpos, vozes de ra√ßas para os m√≥dulos"
 
 #: bash\bosh.py:10728
 msgid "Mesh undefined for eye %s in race %s"
-msgstr "Malha indefinido para olho %s em raÁa %s"
+msgstr "Malha indefinido para olho %s em ra√ßa %s"
 
 #: bash\bosh.py:10772
 msgid ""
 "=== Merged Races"
 msgstr ""
-"=== RaÁas Incorporadas"
+"=== Ra√ßas Incorporadas"
 
 #: bash\bosh.py:10774
 msgid "~~None~~"
@@ -1884,7 +1884,7 @@ msgstr ""
 
 #: bash\bosh.py:10782
 msgid "In order to prevent 'googly eyes', incompatible eyes have been removed from the following races"
-msgstr "Em ordem para evitar 'googly eyes¥, olhos incompatÌveis foram removidos das seguintes raÁas"
+msgstr "Em ordem para evitar 'googly eyes¬¥, olhos incompat√≠veis foram removidos das seguintes ra√ßas"
 
 #: bash\bosh.py:10794
 msgid "SEWorld Tests"
@@ -1892,7 +1892,7 @@ msgstr "SEMundos Gerais"
 
 #: bash\bosh.py:10795
 msgid "Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary"
-msgstr "Suspende procura de Quests em Cyrodiil enquanto joga Shivering Isles. I.e. reajustes que Entre o Jogador e SEMundo testa como necess·rio"
+msgstr "Suspende procura de Quests em Cyrodiil enquanto joga Shivering Isles. I.e. reajustes que Entre o Jogador e SEMundo testa como necess√°rio"
 
 #: bash\bosh.py:10861
 msgid "Quests Patched: %d"
@@ -1900,38 +1900,38 @@ msgstr "Consertando Quests: %d"
 
 #: bash\bosh.py:10875
 msgid "-p command line argument is missing"
-msgstr "-p argumento da linha de comando est· faltando"
+msgstr "-p argumento da linha de comando est√° faltando"
 
 #: bash\bosh.py:10876
 msgid "-l command line argument is missing"
-msgstr "-l argumento da linha de comando est· faltando"
+msgstr "-l argumento da linha de comando est√° faltando"
 
 #: bash\bosh.py:10881
 msgid "Error in %s argument: Non-existent directory:"
 ">> %s"
-msgstr "Erro em %s argumento: diretÛrio N„o-presente: "
+msgstr "Erro em %s argumento: diret√≥rio N√£o-presente: "
 ">> %s"
 
 #: bash\bosh.py:10882
 msgid "Folder paths specified on command line"
-msgstr "Atalho de diretÛrio especÌfico na linha de comando"
+msgstr "Atalho de diret√≥rio espec√≠fico na linha de comando"
 
 #: bash\bosh.py:10891
 msgid "Folder paths extracted from win32com.shell"
-msgstr "Atalho de diretÛrio extraido de Win32com.shell"
+msgstr "Atalho de diret√≥rio extraido de Win32com.shell"
 
 #: bash\bosh.py:10899
 msgid "Can't find user directories in windows registry."
 ">> See \"If Bash Won't Start\" in bash docs for help"
-msgstr "N„o È possÌvel achar diretÛrios de usu·rio em registro de janelas. "
-">> Veja \" Se Bash N„o Iniciar \" v· em documentos de Bash para ajuda"
+msgstr "N√£o √© poss√≠vel achar diret√≥rios de usu√°rio em registro de janelas. "
+">> Veja \" Se Bash N√£o Iniciar \" v√° em documentos de Bash para ajuda"
 
 #: bash\bosh.py:10928
 msgid "Personal folder does not exist"
 "Personal folder: %s"
 "Additional info:"
 "%s"
-msgstr "Pasta pessoal n„o existe"
+msgstr "Pasta pessoal n√£o existe"
 "pessoal pasta: %s"
 "Adicional info: "
 "%s"
@@ -1941,16 +1941,16 @@ msgid "Local app data folder does not exist."
 "Local app data folder: %s"
 "Additional info:"
 "%s"
-msgstr "Data local de atalho app n„o existe."
+msgstr "Data local de atalho app n√£o existe."
 "Local app de arquivo de dados: %s"
-"Adicional informaÁ„o: "
+"Adicional informa√ß√£o: "
 "%s"
 
 #: bash\bosh.py:10935
 msgid "Install Error"
 "Failed to find Oblivion.exe in %s."
 "Note that the Mopy folder should be in the same folder as Oblivion.exe"
-msgstr "Erro de instalaÁ„o"
+msgstr "Erro de instala√ß√£o"
 "falha em verificar oblivion.exe no %s."
 "lembrete que a pasta Mopy deve se encontrar no mesmo diretorio de Oblivion.exe"
 
@@ -1996,11 +1996,11 @@ msgstr "Jogador"
 
 #: bash\basher.py:136
 msgid "Rating"
-msgstr "AvaliaÁ„o"
+msgstr "Avalia√ß√£o"
 
 #: bash\basher.py:138
 msgid "Save Order"
-msgstr "Ordem de GravaÁ„o"
+msgstr "Ordem de Grava√ß√£o"
 
 #: bash\basher.py:139
 msgid "Size"
@@ -2008,11 +2008,11 @@ msgstr "Tamanho"
 
 #: bash\basher.py:140
 msgid "Status"
-msgstr "CondiÁ„o"
+msgstr "Condi√ß√£o"
 
 #: bash\basher.py:141
 msgid "Subject"
-msgstr "TÛpico"
+msgstr "T√≥pico"
 
 #: bash\basher.py:761
 msgid "Unrecognized sort key"
@@ -2020,7 +2020,7 @@ msgstr "Tipo de chave desconhecida"
 
 #: bash\basher.py:819
 msgid "Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving"
-msgstr "Edit/atualizar a lista de Mestre? Anote que o processo de atualizaÁ„o pode renomear alguns arquivos. Esteja certo de rever as mudanÁas antes de salvar"
+msgstr "Edit/atualizar a lista de Mestre? Anote que o processo de atualiza√ß√£o pode renomear alguns arquivos. Esteja certo de rever as mudan√ßas antes de salvar"
 
 #: bash\basher.py:820
 msgid "Update Masters"
@@ -2028,7 +2028,7 @@ msgstr "Atualizar Masters"
 
 #: bash\basher.py:842
 msgid "File\"%\" does not exist"
-msgstr "Arquivo\"%\" n„o mais existe"
+msgstr "Arquivo\"%\" n√£o mais existe"
 
 #: bash\basher.py:957
 msgid "Master file"
@@ -2060,23 +2060,23 @@ msgstr "Mestres foram re-organizados"
 
 #: bash\basher.py:972
 msgid "WARNING: Has same load order as another mod"
-msgstr "AVISO: Tem a mesma ordem de carga como outro mÛdulo"
+msgstr "AVISO: Tem a mesma ordem de carga como outro m√≥dulo"
 
 #: bash\basher.py:975
 msgid "WARNING: Exclusion group is overloaded"
-msgstr "AVISO: Exclus„o de grupo est· sobrecarregado"
+msgstr "AVISO: Exclus√£o de grupo est√° sobrecarregado"
 
 #: bash\basher.py:978
 msgid "Has same time as another (unloaded) mod"
-msgstr "Tem mesmo tempo que outro (descarregado) mÛdulo"
+msgstr "Tem mesmo tempo que outro (descarregado) m√≥dulo"
 
 #: bash\basher.py:981
 msgid "Group header"
-msgstr "Grupo LÌder"
+msgstr "Grupo L√≠der"
 
 #: bash\basher.py:1060
 msgid "Auto-ordered files cannot be manually moved"
-msgstr "N„o podem ser movidos arquivos auto-ordenados manualmente"
+msgstr "N√£o podem ser movidos arquivos auto-ordenados manualmente"
 
 #: bash\basher.py:1096
 msgid "${count} Children deactivated"
@@ -2096,7 +2096,7 @@ msgstr "Mestres ativados"
 
 #: bash\basher.py:1184
 msgid "Description"
-msgstr "DescriÁ„o"
+msgstr "Descri√ß√£o"
 
 #: bash\basher.py:1186
 msgid "Masters"
@@ -2104,39 +2104,39 @@ msgstr "Mestres"
 
 #: bash\basher.py:1260
 msgid "Incorrect file extension"
-msgstr "ExtenÁ„o incorreta de arquivo"
+msgstr "Exten√ß√£o incorreta de arquivo"
 
 #: bash\basher.py:1264
 msgid "File %s already exists"
-msgstr "Arquivo %s j· existe"
+msgstr "Arquivo %s j√° existe"
 
 #: bash\basher.py:1286
 msgid "Unrecognized date"
-msgstr "Data n„o reconhecida"
+msgstr "Data n√£o reconhecida"
 
 #: bash\basher.py:1290
 msgid "Bash cannot handle files dates greater than January 19, 2038.)"
-msgstr "Bash n„o pode suportar arquivos datados acima de Janeiro 19, 2038.)"
+msgstr "Bash n√£o pode suportar arquivos datados acima de Janeiro 19, 2038.)"
 
 #: bash\basher.py:1319
 msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed."
 ""
 "Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted"
-msgstr "Este mÛdulo tem um arquivo associado (%s. bsa) e um diretÛrio de voz associado (Sound\\Voices\\%s), que ser· separado quando o mÛdulo È renomeado. "
+msgstr "Este m√≥dulo tem um arquivo associado (%s. bsa) e um diret√≥rio de voz associado (Sound\\Voices\\%s), que ser√° separado quando o m√≥dulo √© renomeado. "
 ""
-"Note que o arquivo de BSA tambÈm pode conter um diretÛrio de voz (Sound\\Voices\\%s), que permaneceria destacado atÈ mesmo se o nome de arquivo È ajustado"
+"Note que o arquivo de BSA tamb√©m pode conter um diret√≥rio de voz (Sound\\Voices\\%s), que permaneceria destacado at√© mesmo se o nome de arquivo √© ajustado"
 
 #: bash\basher.py:1321
 msgid "This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed."
 ""
 "Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted"
-msgstr "Este mÛdulo tem um arquivo associado (%s. bsa) que ser· separado quando o mÛdulo È renomeado. "
+msgstr "Este m√≥dulo tem um arquivo associado (%s. bsa) que ser√° separado quando o m√≥dulo √© renomeado. "
 ""
-"Note que este arquivo de BSA pode conter um diretÛrio de voz (Sound\\Voices\\%s) que permaneceria destacado atÈ mesmo se o nome de arquivo de arquivo È ajustado"
+"Note que este arquivo de BSA pode conter um diret√≥rio de voz (Sound\\Voices\\%s) que permaneceria destacado at√© mesmo se o nome de arquivo de arquivo √© ajustado"
 
 #: bash\basher.py:1323
 msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed"
-msgstr "Este mÛdulo tem um diretÛrio de voz associado (Sound\\Voice\\%s) que ser· separado quando o mÛdulo È renomeado"
+msgstr "Este m√≥dulo tem um diret√≥rio de voz associado (Sound\\Voice\\%s) que ser√° separado quando o m√≥dulo √© renomeado"
 
 #: bash\basher.py:1364
 msgid "File corrupted on save!"
@@ -2156,7 +2156,7 @@ msgstr "%s"
 
 #: bash\basher.py:1732
 msgid "Saves: %d"
-msgstr "GravaÁ„o: %d"
+msgstr "Grava√ß√£o: %d"
 
 #: bash\basher.py:1867
 msgid "Automatic"
@@ -2164,7 +2164,7 @@ msgstr "Automatico"
 
 #: bash\basher.py:1868
 msgid "Automatically update Textures BSA after adding/removing a replacer"
-msgstr "Atualize automaticamente Texturas BSA apÛs adicionar/remover Substitutos"
+msgstr "Atualize automaticamente Texturas BSA ap√≥s adicionar/remover Substitutos"
 
 #: bash\basher.py:1870
 msgid "Update"
@@ -2192,7 +2192,7 @@ msgstr ""
 
 #: bash\basher.py:1909
 msgid "BSA editing disabled becase OBMM or BSAPatch is in use"
-msgstr "Desabilitado ediÁ„o de BSA caso OBMM ou BSAPatch est· em uso"
+msgstr "Desabilitado edi√ß√£o de BSA caso OBMM ou BSAPatch est√° em uso"
 
 #: bash\basher.py:1915
 msgid "Edit Textures BSA?"
@@ -2200,13 +2200,13 @@ msgid "Edit Textures BSA?"
 "This command directly edits the Oblivion - Textures - Compressed.bsa file. If the file becomes corrupted (very unlikely), you will need to reinstall Oblivion or restore it from another source"
 msgstr "Editar Texturas BSA? "
 ""
-"Isto comandam diretamente e edita o Oblivion - Texturas - Comprimido. bsa arquivam. Se o arquivo È corrompido (muito improv·vel), vocÍ precisar· reinstalar Oblivion ou restabelecer isto de outra fonte"
+"Isto comandam diretamente e edita o Oblivion - Texturas - Comprimido. bsa arquivam. Se o arquivo √© corrompido (muito improv√°vel), voc√™ precisar√° reinstalar Oblivion ou restabelecer isto de outra fonte"
 
 #: bash\basher.py:1935
 msgid "BSA Hashes reset: %d"
 "BSA Hashes Invalidated: %d."
 "AIText entries: %d"
-msgstr "BSA Misturado a restauraÁ„o: %d"
+msgstr "BSA Misturado a restaura√ß√£o: %d"
 "BSA Mistura Invalidada: %d."
 "AI Texto de entradas: %d"
 
@@ -2240,7 +2240,7 @@ msgstr "Pacotes"
 
 #: bash\basher.py:2407
 msgid "Version"
-msgstr "Vers„o"
+msgstr "Vers√£o"
 
 #: bash\basher.py:2409
 msgid "Tags"
@@ -2260,11 +2260,11 @@ msgstr "Substituir"
 
 #: bash\basher.py:2461
 msgid "Mods"
-msgstr "MÛdulos"
+msgstr "M√≥dulos"
 
 #: bash\basher.py:2462
 msgid "Saves"
-msgstr "GravaÁ„o"
+msgstr "Grava√ß√£o"
 
 #: bash\basher.py:2463
 msgid "Screenshots"
@@ -2276,7 +2276,7 @@ msgstr "PM Arquivo"
 
 #: bash\basher.py:2557
 msgid "Default"
-msgstr "Padr„o"
+msgstr "Padr√£o"
 
 #: bash\basher.py:2574
 msgid ""
@@ -2286,11 +2286,11 @@ msgstr ""
 
 #: bash\basher.py:2585
 msgid "Modified dates have been reset for some mod files"
-msgstr "Foram reajustadas datas modificadas para alguns arquivos de mÛdulos"
+msgstr "Foram reajustadas datas modificadas para alguns arquivos de m√≥dulos"
 
 #: bash\basher.py:2592
 msgid "Some mods have been auto-grouped"
-msgstr "Alguns mÛdulos se reorganizaram automaticamente"
+msgstr "Alguns m√≥dulos se reorganizaram automaticamente"
 
 #: bash\basher.py:2612
 msgid "Missing files have been removed from load list"
@@ -2298,11 +2298,11 @@ msgstr "Arquivos perdidos foram afastados da lista de carga"
 
 #: bash\basher.py:2619
 msgid "Load list is overloaded. Some files have been de-activated"
-msgstr "Leituara da lista est· sobrecarregada. Alguns arquivos ser„o desativados"
+msgstr "Leituara da lista est√° sobrecarregada. Alguns arquivos ser√£o desativados"
 
 #: bash\basher.py:2628
 msgid "The following mod files have corrupted headers"
-msgstr "Os arquivos de mÛdulos seguintes corromperam os cabeÁalhos"
+msgstr "Os arquivos de m√≥dulos seguintes corromperam os cabe√ßalhos"
 
 #: bash\basher.py:2634
 msgid "The following save files have corrupted headers"
@@ -2310,11 +2310,11 @@ msgstr "O seguinte arquivo de save corrompeu a unidade"
 
 #: bash\basher.py:2642
 msgid "Your Oblivion.ini should begin with a section header (e.g.\"[General]"
-msgstr "Seu Oblivion.ini deveriam comeÁar com um cabeÁalho de seÁ„o (e. g.\"[Geral]"
+msgstr "Seu Oblivion.ini deveriam come√ßar com um cabe√ßalho de se√ß√£o (e. g.\"[Geral]"
 
 #: bash\basher.py:2646
 msgid "Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date"
-msgstr "Bash n„o pode controlar data maior que 19 de janeiro de 2038. Adequadamente, foram reajustadas as datas para os arquivos seguintes a uma data mais cedo"
+msgstr "Bash n√£o pode controlar data maior que 19 de janeiro de 2038. Adequadamente, foram reajustadas as datas para os arquivos seguintes a uma data mais cedo"
 
 #: bash\basher.py:2653
 msgid "Turn Lock Times Off?"
@@ -2322,7 +2322,7 @@ msgid "Turn Lock Times Off?"
 "Lock Times a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM"
 msgstr "Alterar Travar Datas a desligado? "
 ""
-"Travar Datas uma caracterÌstica que reajusta ordem de carga a um estado previamente memorizado. Enquanto esta caracterÌstica for boa para manter sua ordem de carga, tambÈm desfar· qualquer mudanÁa de ordem de carga que vocÍ fez em OBMM"
+"Travar Datas uma caracter√≠stica que reajusta ordem de carga a um estado previamente memorizado. Enquanto esta caracter√≠stica for boa para manter sua ordem de carga, tamb√©m desfar√° qualquer mudan√ßa de ordem de carga que voc√™ fez em OBMM"
 
 #: bash\basher.py:2654
 msgid "Lock Times"
@@ -2330,7 +2330,7 @@ msgstr "Travar Datas"
 
 #: bash\basher.py:2660
 msgid "Lock Times is now %s. To change it in the future, right click on the main list header on the Mods tab and select 'Lock Times'"
-msgstr "Travar Datas È agora %s. Para Mudar isto no futuro, clique certo no cabeÁalho de lista principal na aba de Modulos e selecione 'Travar Datas'"
+msgstr "Travar Datas √© agora %s. Para Mudar isto no futuro, clique certo no cabe√ßalho de lista principal na aba de Modulos e selecione 'Travar Datas'"
 
 #: bash\basher.py:2661
 msgid "off"
@@ -2344,13 +2344,13 @@ msgstr "Ligado"
 msgid "Installation appears incomplete. Please re-unzip bash to Oblivion directory so that ALL files are installed."
 ""
 "Correct installation will create Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblvion\\Data\\INI Tweaks directories"
-msgstr "A instalaÁ„o parece estar incompleta. Por favor, re-extraia bash ao diretorio de Oblivion onde TODOS os arquivos s„o instalados."
+msgstr "A instala√ß√£o parece estar incompleta. Por favor, re-extraia bash ao diretorio de Oblivion onde TODOS os arquivos s√£o instalados."
 ""
-"Correta instalaÁ„o ira criar Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblvion\\Data\\INI Tweaks diretorios"
+"Correta instala√ß√£o ira criar Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblvion\\Data\\INI Tweaks diretorios"
 
 #: bash\basher.py:2667
 msgid "Incomplete Installation"
-msgstr "InstalaÁ„o Incompleta"
+msgstr "Instala√ß√£o Incompleta"
 
 #: bash\basher.py:2724
 msgid "Doc Browser"
@@ -2390,7 +2390,7 @@ msgstr "Renomear arquivo para"
 
 #: bash\basher.py:2887
 msgid "Filename not defined"
-msgstr "Nome de arquivo n„o definido"
+msgstr "Nome de arquivo n√£o definido"
 
 #: bash\basher.py:2926
 msgid "My Readme Template.txt"
@@ -2406,7 +2406,7 @@ msgstr "Iniciando Dados"
 
 #: bash\basher.py:3008
 msgid "Initializing Version"
-msgstr "Iniciando Vers„o"
+msgstr "Iniciando Vers√£o"
 
 #: bash\basher.py:3012
 msgid "Initializing Windows"
@@ -2426,7 +2426,7 @@ msgstr "Gerando Patch Bashed Limpo"
 
 #: bash\basher.py:3111
 msgid "Race"
-msgstr "RaÁa"
+msgstr "Ra√ßa"
 
 #: bash\basher.py:3112
 msgid "Gender"
@@ -2442,7 +2442,7 @@ msgstr "Classe"
 
 #: bash\basher.py:3128
 msgid "Import"
-msgstr "ImportaÁ„o"
+msgstr "Importa√ß√£o"
 
 #: bash\basher.py:3199
 msgid "Face imported"
@@ -2462,7 +2462,7 @@ msgstr "Erro Arquivo Editor"
 
 #: bash\basher.py:3541
 msgid "Oblivion Mod Files"
-msgstr "Oblivion MÛdulos de Arquivos"
+msgstr "Oblivion M√≥dulos de Arquivos"
 
 #: bash\basher.py:3543
 msgid "Get"
@@ -2470,7 +2470,7 @@ msgstr "Adquira"
 
 #: bash\basher.py:3619
 msgid "Tweaks"
-msgstr "ForÁados"
+msgstr "For√ßados"
 
 #: bash\basher.py:3733
 msgid "Mergeable Mods"
@@ -2478,7 +2478,7 @@ msgstr "Modulos Fundidos"
 
 #: bash\basher.py:3745
 msgid "Race Mods"
-msgstr "RaÁa Modulos"
+msgstr "Ra√ßa Modulos"
 
 #: bash\basher.py:3762
 msgid "Override Delev/Relev Tags"
@@ -2498,11 +2498,11 @@ msgstr "Mostrar arquivos"
 
 #: bash\basher.py:3857
 msgid "You can't unhide files from this directory"
-msgstr "VocÍ n„o pode mostrar arquivos deste diretÛrio"
+msgstr "Voc√™ n√£o pode mostrar arquivos deste diret√≥rio"
 
 #: bash\basher.py:3862
 msgid "File skipped: %s. File is already present"
-msgstr "Arquivo pulado: %s. Arquivo j· est· presente"
+msgstr "Arquivo pulado: %s. Arquivo j√° est√° presente"
 
 #: bash\basher.py:3883
 msgid "Delete Files"
@@ -2516,21 +2516,21 @@ msgstr "Duplicar"
 msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod."
 ""
 "Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created"
-msgstr "Este mod tem um arquivo associado (%s. bsa) e um diretÛrio de voz associado (Sound\\Voices\\%s) que n„o ser· prendido ao mod duplicado. "
+msgstr "Este mod tem um arquivo associado (%s. bsa) e um diret√≥rio de voz associado (Sound\\Voices\\%s) que n√£o ser√° prendido ao mod duplicado. "
 ""
-"Note que o arquivo de BSA tambÈm pode conter um diretÛrio de voz (Sound\\Voices\\%s) que permaneceria destacado atÈ mesmo se um arquivo duplicado tambÈm foi criado"
+"Note que o arquivo de BSA tamb√©m pode conter um diret√≥rio de voz (Sound\\Voices\\%s) que permaneceria destacado at√© mesmo se um arquivo duplicado tamb√©m foi criado"
 
 #: bash\basher.py:3913
 msgid "This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod."
 ""
 "Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created"
-msgstr "Este mod tem um arquivo associado (%s. bsa) que n„o ser· prendido ao mod duplicado. "
+msgstr "Este mod tem um arquivo associado (%s. bsa) que n√£o ser√° prendido ao mod duplicado. "
 ""
-"Note que este arquivo de BSA pode conter um diretÛrio de voz (Sound\\Voices\\%s) que permaneceria destacado atÈ mesmo se um arquivo duplicado tambÈm foi criado"
+"Note que este arquivo de BSA pode conter um diret√≥rio de voz (Sound\\Voices\\%s) que permaneceria destacado at√© mesmo se um arquivo duplicado tamb√©m foi criado"
 
 #: bash\basher.py:3915
 msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod"
-msgstr "Este mÛdulo tem um diretÛrio de voz associado (Sound\\Voice\\%s) que n„o ser· prendido ao mÛdulo duplicado"
+msgstr "Este m√≥dulo tem um diret√≥rio de voz associado (Sound\\Voice\\%s) que n√£o ser√° prendido ao m√≥dulo duplicado"
 
 #: bash\basher.py:3923
 msgid "Duplicate as"
@@ -2538,7 +2538,7 @@ msgstr "Duplique como"
 
 #: bash\basher.py:3928
 msgid "Files cannot be duplicated to themselves!"
-msgstr "N„o podem ser duplicados arquivos a eles!"
+msgstr "N√£o podem ser duplicados arquivos a eles!"
 
 #: bash\basher.py:3945
 msgid "Hide"
@@ -2550,7 +2550,7 @@ msgstr "Ocultar Arquivos"
 
 #: bash\basher.py:3967
 msgid "A file named %s already exists in the hidden files directory. Overwrite it?"
-msgstr "Um arquivo j· nomeado %s existe no diretÛrio de arquivos ocultos. Escrever elaboradamente?"
+msgstr "Um arquivo j√° nomeado %s existe no diret√≥rio de arquivos ocultos. Escrever elaboradamente?"
 
 #: bash\basher.py:3980
 msgid "List Masters"
@@ -2562,7 +2562,7 @@ msgstr "Redatar"
 
 #: bash\basher.py:4007
 msgid "Redate selected mods starting at"
-msgstr "Redatar MÛdulos selecionados para comeÁar como"
+msgstr "Redatar M√≥dulos selecionados para come√ßar como"
 
 #: bash\basher.py:4008
 msgid "Redate Mods"
@@ -2570,7 +2570,7 @@ msgstr "Datar Modulos"
 
 #: bash\basher.py:4017
 msgid "Bash cannot handle dates greater than January 19, 2038.)"
-msgstr "Bash n„o pode controlar data maior que 19 de janeiro de 2038. )"
+msgstr "Bash n√£o pode controlar data maior que 19 de janeiro de 2038. )"
 
 #: bash\basher.py:4035
 msgid "Sort"
@@ -2580,9 +2580,9 @@ msgstr "Tipo"
 msgid "Reorder selected mods in alphabetical order? The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments."
 ""
 "Note that this operation cannot be undone. Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order"
-msgstr "Ordenar mÛdulos selecionados em ordem alfabÈtica? O primeiro arquivo ser· dado o data/tempo do arquivo mais cedo atual no grupo, com arquivos sucessivos que seguem a 1 incrementos de minuto. "
+msgstr "Ordenar m√≥dulos selecionados em ordem alfab√©tica? O primeiro arquivo ser√° dado o data/tempo do arquivo mais cedo atual no grupo, com arquivos sucessivos que seguem a 1 incrementos de minuto. "
 ""
-"Note que esta operaÁ„o n„o pode ser desfeita. TambÈm note que algum mÛdulos precisam estar em uma ordem especÌfica trabalhar corretamente, e esta operaÁ„o de tipo pode quebrar aquela ordem"
+"Note que esta opera√ß√£o n√£o pode ser desfeita. Tamb√©m note que algum m√≥dulos precisam estar em uma ordem espec√≠fica trabalhar corretamente, e esta opera√ß√£o de tipo pode quebrar aquela ordem"
 
 #: bash\basher.py:4041
 msgid "Sort Mods"
@@ -2590,27 +2590,27 @@ msgstr "Tipos de Modulos"
 
 #: bash\basher.py:4068
 msgid "Snapshot"
-msgstr "Instant‚neo"
+msgstr "Instant√¢neo"
 
 #: bash\basher.py:4078
 msgid "Save snapshot as"
-msgstr "Gravar instant‚neo como"
+msgstr "Gravar instant√¢neo como"
 
 #: bash\basher.py:4106
 msgid "Revert to Snapshot"
-msgstr "Reverta para Instant‚neo"
+msgstr "Reverta para Instant√¢neo"
 
 #: bash\basher.py:4120
 msgid "Revert %s to snapshot"
-msgstr "Revertendo %s para instant‚neo"
+msgstr "Revertendo %s para instant√¢neo"
 
 #: bash\basher.py:4125
 msgid "Revert %s to snapshot %s dated %s?"
-msgstr "Revertendo %spara instant‚neo %s datado %s?"
+msgstr "Revertendo %spara instant√¢neo %s datado %s?"
 
 #: bash\basher.py:4135
 msgid "Snapshot file is corrupt!"
-msgstr "Arquivo instant‚neo est· quebrado!"
+msgstr "Arquivo instant√¢neo est√° quebrado!"
 
 #: bash\basher.py:4145
 msgid "Backup"
@@ -2630,11 +2630,11 @@ msgstr "Reverta %s o backup datado posterior %s?"
 
 #: bash\basher.py:4196
 msgid "Old file is corrupt!"
-msgstr "Arquivo velho È corrupto!"
+msgstr "Arquivo velho √© corrupto!"
 
 #: bash\basher.py:4246
 msgid "Name must be between 1 and 64 characters long"
-msgstr "Nome deve estar muito tempo entre 1 e 64 car·ter"
+msgstr "Nome deve estar muito tempo entre 1 e 64 car√°ter"
 
 #: bash\basher.py:4276
 msgid "None"
@@ -2650,7 +2650,7 @@ msgstr "Edite Listas"
 
 #: bash\basher.py:4308
 msgid "All load list slots are full. Please delete an existing load list before adding another"
-msgstr "Todas as aberturas de lista de carga est„o cheias. Por favor apague uma lista de carga existente antes de somar outro"
+msgstr "Todas as aberturas de lista de carga est√£o cheias. Por favor apague uma lista de carga existente antes de somar outro"
 
 #: bash\basher.py:4311
 msgid "Save current load list as"
@@ -2658,7 +2658,7 @@ msgstr "Salvar lista de carga atual como"
 
 #: bash\basher.py:4314
 msgid "Load list name must be between 1 and 64 characters long"
-msgstr "Nome de lista de carga deve estar muito tempo entre 1 e 64 car·ter"
+msgstr "Nome de lista de carga deve estar muito tempo entre 1 e 64 car√°ter"
 
 #: bash\basher.py:4321
 msgid "Load Lists"
@@ -2666,7 +2666,7 @@ msgstr "Carregar Listas"
 
 #: bash\basher.py:4351
 msgid "Selection"
-msgstr "SeleÁ„o"
+msgstr "Sele√ß√£o"
 
 #: bash\basher.py:4364
 msgid "Auto Group"
@@ -2674,7 +2674,7 @@ msgstr "Auto Grupo"
 
 #: bash\basher.py:4377
 msgid "Debug Mode"
-msgstr "Modo de DepuraÁ„o"
+msgstr "Modo de Depura√ß√£o"
 
 #: bash\basher.py:4382
 msgid "Debug Printing: Off"
@@ -2686,15 +2686,15 @@ msgstr "Depurador de Texto: Ligado"
 
 #: bash\basher.py:4391
 msgid "Full Balo"
-msgstr "Balo M·ximo"
+msgstr "Balo M√°ximo"
 
 #: bash\basher.py:4397
 msgid "Activate Full Balo?"
 ""
 "Full Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order. Full Balo is still in development and may have some rough edges"
-msgstr "Ativar Balo M·ximo?"
+msgstr "Ativar Balo M√°ximo?"
 ""
-"Balo M·ximo isola mÛdulos atravÈs de grupos, e ent„o automaticamente ordena mÛdulos dentro desses grupos atravÈs da ordem alfabÈtica. Balo M·ximo ainda est· em desenvolvimento e pode conter algumas pÈssimas falhas"
+"Balo M√°ximo isola m√≥dulos atrav√©s de grupos, e ent√£o automaticamente ordena m√≥dulos dentro desses grupos atrav√©s da ordem alfab√©tica. Balo M√°ximo ainda est√° em desenvolvimento e pode conter algumas p√©ssimas falhas"
 
 #: bash\basher.py:4398
 msgid "Balo Groups"
@@ -2708,21 +2708,21 @@ msgstr "Esvazie o Tradutor"
 msgid "Generate Bash program translator file?"
 ""
 "This function is for translating Bash itself (NOT mods) into non-English languages. For more info, see Internationalization section of Bash readme"
-msgstr "Gere Golpe esmagador (Bash) FunÁ„o de programa arquivo de tradutor?  "
+msgstr "Gere Golpe esmagador (Bash) Fun√ß√£o de programa arquivo de tradutor?  "
 ""
-"Isto È para traduzir Golpe esmagador este (N√O mods) em idiomas de n„o-inglÍs. Para mais informaÁ„o, veja seÁ„o de InternacionalizaÁ„o de readme de Bash"
+"Isto √© para traduzir Golpe esmagador este (N√ÉO mods) em idiomas de n√£o-ingl√™s. Para mais informa√ß√£o, veja se√ß√£o de Internacionaliza√ß√£o de readme de Bash"
 
 #: bash\basher.py:4455
 msgid "INI Tweaks"
-msgstr "ForÁar INI"
+msgstr "For√ßar INI"
 
 #: bash\basher.py:4461
 msgid "Apply an ini tweak to Oblivion.ini?"
 ""
 "WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!"
-msgstr "Aplique um ini forÁado a Oblivion. ini? "
+msgstr "Aplique um ini for√ßado a Oblivion. ini? "
 ""
-"CUIDADO: Incorreto forÁador pode resultar em CTDs e atÈ mesmo pode danificar o seu computador!"
+"CUIDADO: Incorreto for√ßador pode resultar em CTDs e at√© mesmo pode danificar o seu computador!"
 
 #: bash\basher.py:4470
 msgid "applied"
@@ -2742,7 +2742,7 @@ msgstr "Atualize Arquivo Invalidator"
 
 #: bash\basher.py:4552
 msgid "Update ArchiveInvalidation.txt? This updates the file that forces the game engine to recognize replaced textures. Note that this feature is experimental and most probably somewhat incomplete. You may prefer to use another program to do AI.txt file updating"
-msgstr "Atualize ArchiveInvalidation. txt? Isto atualiza o arquivo que forÁa a m·quina de jogo a reconhecer texturas substituÌdas. Note que esta caracterÌstica È experimental e provavelmente um pouco incompleto. VocÍ pode preferir usar outro programa para fazer AI. txt arquivam atualizando"
+msgstr "Atualize ArchiveInvalidation. txt? Isto atualiza o arquivo que for√ßa a m√°quina de jogo a reconhecer texturas substitu√≠das. Note que esta caracter√≠stica √© experimental e provavelmente um pouco incompleto. Voc√™ pode preferir usar outro programa para fazer AI. txt arquivam atualizando"
 
 #: bash\basher.py:4553
 msgid "ArchiveInvalidation.txt"
@@ -2750,39 +2750,39 @@ msgstr ""
 
 #: bash\basher.py:4564
 msgid "NPC Levels"
-msgstr "NPC NÌveis"
+msgstr "NPC N√≠veis"
 
 #: bash\basher.py:4569
 msgid "This command will export the level info for NPCs whose level is offset with respect to the PC. The exported file can be edited with most spreadsheet programs and then reimported."
 ""
 "See the Bash help file for more info"
-msgstr "Este comando exportar· a informaÁ„o nivelado para NPCs cujo nÌvel È compensado com respeito ao PC. O arquivo exportado pode ser editado com a maioria planilha eletrÙnica programa e ent„o re-importado. "
+msgstr "Este comando exportar√° a informa√ß√£o nivelado para NPCs cujo n√≠vel √© compensado com respeito ao PC. O arquivo exportado pode ser editado com a maioria planilha eletr√¥nica programa e ent√£o re-importado. "
 ""
 "Veja o arquivo de ajuda de Golpe esmagador (Bash) para mais detalhes"
 
 #: bash\basher.py:4570
 msgid "Export NPC Levels"
-msgstr "ExportaÁ„o NÌveis de NPC"
+msgstr "Exporta√ß√£o N√≠veis de NPC"
 
 #: bash\basher.py:4574
 msgid "_NPC_Levels.csv"
-msgstr "_NPC_NÌveis.csv"
+msgstr "_NPC_N√≠veis.csv"
 
 #: bash\basher.py:4577
 msgid "Export NPC levels to"
-msgstr "Exportar NPC nÌveis para"
+msgstr "Exportar NPC n√≠veis para"
 
 #: bash\basher.py:4599
 msgid "This command will import NPC level info from a previously exported file."
 ""
 "See the Bash help file for more info"
-msgstr "Este comando importar· NPC informaÁ„o nivelado de um arquivo previamente exportado. "
+msgstr "Este comando importar√° NPC informa√ß√£o nivelado de um arquivo previamente exportado. "
 ""
 "Veja o arquivo de ajuda de Golpe esmagador (Bash) para mais detalhes"
 
 #: bash\basher.py:4600
 msgid "Import NPC Levels"
-msgstr "ImportaÁ„o NÌveis de NPC"
+msgstr "Importa√ß√£o N√≠veis de NPC"
 
 #: bash\basher.py:4624
 msgid "Add Master"
@@ -2790,7 +2790,7 @@ msgstr "Juntar ao Mestre"
 
 #: bash\basher.py:4629
 msgid "WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs"
-msgstr "ADVERTINDO! Apenas para programadores avanÁados! Soma o mestre especificado para listar de mestres, enquanto cedendo propriedade de conte˙do novo deste mÛdulo assim ao mestre novo. ⁄til para intenso mÛdulos em pares de esm/esp"
+msgstr "ADVERTINDO! Apenas para programadores avan√ßados! Soma o mestre especificado para listar de mestres, enquanto cedendo propriedade de conte√∫do novo deste m√≥dulo assim ao mestre novo. √ötil para intenso m√≥dulos em pares de esm/esp"
 
 #: bash\basher.py:4634
 msgid "Oblivion Masters"
@@ -2802,11 +2802,11 @@ msgstr "Adicionar Mestre"
 
 #: bash\basher.py:4640
 msgid "File must be selected from Oblivion Data Files directory"
-msgstr "Arquivo deve ser selecionado de Oblivion Dados Arquivos diretÛrio"
+msgstr "Arquivo deve ser selecionado de Oblivion Dados Arquivos diret√≥rio"
 
 #: bash\basher.py:4642
 msgid "%s is already a master!"
-msgstr "%s j· È um mestre!"
+msgstr "%s j√° √© um mestre!"
 
 #: bash\basher.py:4675
 msgid "Move Up"
@@ -2822,11 +2822,11 @@ msgstr "Compensar"
 
 #: bash\basher.py:4714
 msgid "Group name must be letters, spaces, underscores only!"
-msgstr "Nome de grupo deve ser apenas formado por letras, espaÁos, sublinhados!"
+msgstr "Nome de grupo deve ser apenas formado por letras, espa√ßos, sublinhados!"
 
 #: bash\basher.py:4717
 msgid "group %s already exists"
-msgstr "grupo %s j· existente"
+msgstr "grupo %s j√° existente"
 
 #: bash\basher.py:4720
 msgid "Group names must be less than forty characters"
@@ -2838,7 +2838,7 @@ msgstr "Adicionar a Balo Grupo"
 
 #: bash\basher.py:4778
 msgid "Name of new group (spaces and letters only)"
-msgstr "Nomeie o novo grupo (apenas espaÁo e letras)"
+msgstr "Nomeie o novo grupo (apenas espa√ßo e letras)"
 
 #: bash\basher.py:4802
 msgid "Rename Balo Group"
@@ -2846,27 +2846,27 @@ msgstr "Renomeie Balo Grupo"
 
 #: bash\basher.py:4807
 msgid "Rename %s to (spaces, letters and underscores only)"
-msgstr "Renomeie %s para (sÛ espaÁo, letras e sublinhados)"
+msgstr "Renomeie %s para (s√≥ espa√ßo, letras e sublinhados)"
 
 #: bash\basher.py:4921
 msgid "Nvidia Fog Fix"
-msgstr "Nvidia NÈvoa Fixador"
+msgstr "Nvidia N√©voa Fixador"
 
 #: bash\basher.py:4926
 msgid "Apply Nvidia fog fix. This modify fog values in interior cells to avoid the Nvidia black screen bug"
-msgstr "Aplicar Nvidia fixador de nÈvoa. Isto modifica os valores do interios das cÈlulas a ponto de evitar o defeito da tela preta na Nvidia"
+msgstr "Aplicar Nvidia fixador de n√©voa. Isto modifica os valores do interios das c√©lulas a ponto de evitar o defeito da tela preta na Nvidia"
 
 #: bash\basher.py:4938
 msgid "Cells fixed: %d"
-msgstr "CÈlulas ajustadas: %d"
+msgstr "C√©lulas ajustadas: %d"
 
 #: bash\basher.py:4940
 msgid "No changes required"
-msgstr "Nenhuma mudanÁa requereu"
+msgstr "Nenhuma mudan√ßa requereu"
 
 #: bash\basher.py:4951
 msgid "New Mod"
-msgstr "Novo MÛdulo"
+msgstr "Novo M√≥dulo"
 
 #: bash\basher.py:4980
 msgid "Mark Levelers"
@@ -2883,13 +2883,13 @@ msgstr "Marcar Unificador"
 #: bash\basher.py:5034
 msgid "Mergeable"
 "*"
-msgstr "UnificaÁ„o"
+msgstr "Unifica√ß√£o"
 "*"
 
 #: bash\basher.py:5038
 msgid "Not Mergeable"
 "*"
-msgstr "N„o È Combin·vel"
+msgstr "N√£o √© Combin√°vel"
 "*"
 
 #: bash\basher.py:5049
@@ -2926,7 +2926,7 @@ msgstr ""
 
 #: bash\basher.py:5139
 msgid "WARNING! For advanced modders only! Flips esp/esm bit of esp masters to convert them to/from esm state. Useful for building/analyzing esp mastered mods"
-msgstr "AVISO! Apenas para programadores avanÁados! Mexer em esp/esm mestres para converter o para/de condiÁ„o de esm. ⁄til para reconstruÁ„o/analize de esp mÛdulos mestre"
+msgstr "AVISO! Apenas para programadores avan√ßados! Mexer em esp/esm mestres para converter o para/de condi√ß√£o de esm. √ötil para reconstru√ß√£o/analize de esp m√≥dulos mestre"
 
 #: bash\basher.py:5160
 msgid "Esmify Self"
@@ -2940,9 +2940,9 @@ msgstr ""
 msgid "WARNING! For advanced modders only!"
 ""
 "This command flips an internal bit in the mod, converting an esp to an esm and vice versa. Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod"
-msgstr "AVISO! Apenas para programadores avanÁados! "
+msgstr "AVISO! Apenas para programadores avan√ßados! "
 ""
-" Este comando mexe na partÌcula interna do mÛdulo, converte um esp para um esm e vice-versa. Lembrando que isto È uma partÌculo e N√O a extens„o de arquivo que determina o esp/esm de condiÁ„o do mÛdulo"
+" Este comando mexe na part√≠cula interna do m√≥dulo, converte um esp para um esm e vice-versa. Lembrando que isto √© uma part√≠culo e N√ÉO a extens√£o de arquivo que determina o esp/esm de condi√ß√£o do m√≥dulo"
 
 #: bash\basher.py:5170
 msgid "Flip to Esm"
@@ -2962,27 +2962,27 @@ msgstr "Adicionar grupo"
 
 #: bash\basher.py:5345
 msgid "Export groups to"
-msgstr "ExportaÁ„o de grupos para"
+msgstr "Exporta√ß√£o de grupos para"
 
 #: bash\basher.py:5353
 msgid "Exported %d mod/groups"
-msgstr "Exportado %d grupos/mÛdulos"
+msgstr "Exportado %d grupos/m√≥dulos"
 
 #: bash\basher.py:5354
 msgid "Export Groups"
-msgstr "ExportaÁ„o de Grupos"
+msgstr "Exporta√ß√£o de Grupos"
 
 #: bash\basher.py:5367
 msgid "Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered"
-msgstr "Grupos de importaÁ„o a partir de um arquivo de texto. Qualquer mÛdulo ser· movido para a nova seleÁ„o de grupos e imediatamente reordenado"
+msgstr "Grupos de importa√ß√£o a partir de um arquivo de texto. Qualquer m√≥dulo ser√° movido para a nova sele√ß√£o de grupos e imediatamente reordenado"
 
 #: bash\basher.py:5369
 msgid "Import Groups"
-msgstr "ImportaÁ„o de Grupos"
+msgstr "Importa√ß√£o de Grupos"
 
 #: bash\basher.py:5373
 msgid "Import names from"
-msgstr "Nomes de importaÁ„o de"
+msgstr "Nomes de importa√ß√£o de"
 
 #: bash\basher.py:5379
 msgid "Source file must be a csv file"
@@ -2990,7 +2990,7 @@ msgstr "Arquivo de fonte deve ser um arquivo de csv"
 
 #: bash\basher.py:5388
 msgid "Imported %d mod/groups (%d changed)"
-msgstr "Importando %d grupos/mÛdulo (%d mudado)"
+msgstr "Importando %d grupos/m√≥dulo (%d mudado)"
 
 #: bash\basher.py:5396
 msgid "Editor Ids"
@@ -3018,7 +3018,7 @@ msgstr "Exportando a %s"
 
 #: bash\basher.py:5436
 msgid "Import editor ids from a text file. This will replace existing ids and is not reversible!"
-msgstr "Importe id de editor de um arquivo de texto. Isto substituir· id existentes e n„o ser· reversÌvel!"
+msgstr "Importe id de editor de um arquivo de texto. Isto substituir√° id existentes e n√£o ser√° revers√≠vel!"
 
 #: bash\basher.py:5438
 msgid "Import Editor Ids"
@@ -3038,7 +3038,7 @@ msgstr "Forma ids"
 
 #: bash\basher.py:5485
 msgid "For advanced modders only! Systematically replaces one set of formids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file"
-msgstr "SÛ para programadores avanÁados! Sistematicamente substitui fixado de formids com outro em npcs, criaturas, recipientes e nivelou listas de acordo com um arquivo Substituto.csv"
+msgstr "S√≥ para programadores avan√ßados! Sistematicamente substitui fixado de formids com outro em npcs, criaturas, recipientes e nivelou listas de acordo com um arquivo Substituto.csv"
 
 #: bash\basher.py:5487
 msgid "Import Formids"
@@ -3058,19 +3058,19 @@ msgstr "_Nomes.csv"
 
 #: bash\basher.py:5535
 msgid "Export names to"
-msgstr "Nomes de exportaÁ„o para"
+msgstr "Nomes de exporta√ß√£o para"
 
 #: bash\basher.py:5540
 msgid "Export Names"
-msgstr "Nomes de exportaÁ„o"
+msgstr "Nomes de exporta√ß√£o"
 
 #: bash\basher.py:5565
 msgid "Import record names from a text file. This will replace existing names and is not reversible!"
-msgstr "Nomes de registro de importaÁ„o de um arquivo de texto. Isto substituir· nomes existentes e n„o ser· reversÌvel!"
+msgstr "Nomes de registro de importa√ß√£o de um arquivo de texto. Isto substituir√° nomes existentes e n√£o ser√° revers√≠vel!"
 
 #: bash\basher.py:5581
 msgid "Source file must be mod (.esp or .esm) or csv file"
-msgstr "Arquivo de fonte deve ser mÛdulo (. esp ou. esm) ou arquivo de csv"
+msgstr "Arquivo de fonte deve ser m√≥dulo (. esp ou. esm) ou arquivo de csv"
 
 #: bash\basher.py:5609
 msgid "Objects Renamed"
@@ -3083,8 +3083,8 @@ msgstr "Reconstrua Patch"
 #: bash\basher.py:5628
 msgid "That which does not exist cannot be patched."
 "Load some mods and try again"
-msgstr "N„o È possÌvel consertar o que n„o existe. "
-" carregue alguns mÛdulos e tente novamente"
+msgstr "N√£o √© poss√≠vel consertar o que n√£o existe. "
+" carregue alguns m√≥dulos e tente novamente"
 
 #: bash\basher.py:5628
 msgid "Existential Error"
@@ -3092,27 +3092,27 @@ msgstr "Erro existencial"
 
 #: bash\basher.py:5641
 msgid "Edit Ratings"
-msgstr "Editar AvaliaÁıes"
+msgstr "Editar Avalia√ß√µes"
 
 #: bash\basher.py:5642
 msgid "Ratings"
-msgstr "AvaliaÁıes"
+msgstr "Avalia√ß√µes"
 
 #: bash\basher.py:5643
 msgid "Add rating"
-msgstr "Adicionar AvaliaÁıes"
+msgstr "Adicionar Avalia√ß√µes"
 
 #: bash\basher.py:5653
 msgid "Version 0.8"
-msgstr "Vers„o 0.8"
+msgstr "Vers√£o 0.8"
 
 #: bash\basher.py:5659
 msgid "WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way"
-msgstr "AVISO! Apenas para programadores avanÁados! Esta caracterÌstica lhe permite editar mods oficial mais novo na ConstruÁ„o de TES Fixe atr·s atravÈs do reajuste do n˙mero de vers„o de arquivo interno para 0.8. Enquanto isto far· o editavel do mÛdulo, tambÈm pode quebrar o mÛdulo de algum modo"
+msgstr "AVISO! Apenas para programadores avan√ßados! Esta caracter√≠stica lhe permite editar mods oficial mais novo na Constru√ß√£o de TES Fixe atr√°s atrav√©s do reajuste do n√∫mero de vers√£o de arquivo interno para 0.8. Enquanto isto far√° o editavel do m√≥dulo, tamb√©m pode quebrar o m√≥dulo de algum modo"
 
 #: bash\basher.py:5660
 msgid "Set File Version"
-msgstr "Fixar Vers„o do Arquivo"
+msgstr "Fixar Vers√£o do Arquivo"
 
 #: bash\basher.py:5674
 msgid "Details"
@@ -3126,7 +3126,7 @@ msgstr "Ordenando registros"
 msgid "(Details not provided for this record type.)"
 ""
 ""
-msgstr "(Detalhes n„o proveram para este tipo de registro.)"
+msgstr "(Detalhes n√£o proveram para este tipo de registro.)"
 ""
 ""
 
@@ -3140,19 +3140,19 @@ msgstr "_Estado.csv"
 
 #: bash\basher.py:5739
 msgid "Export stats to"
-msgstr "Exporte condiÁ„o para"
+msgstr "Exporte condi√ß√£o para"
 
 #: bash\basher.py:5744
 msgid "Export Stats"
-msgstr "Exporte CondiÁ„o"
+msgstr "Exporte Condi√ß√£o"
 
 #: bash\basher.py:5769
 msgid "Import item stats from a text file. This will replace existing stats and is not reversible!"
-msgstr "Importe condiÁ„o de artigo de um arquivo de texto. Isto substituir· o estado existente e n„o ser· reversÌvel!"
+msgstr "Importe condi√ß√£o de artigo de um arquivo de texto. Isto substituir√° o estado existente e n√£o ser√° revers√≠vel!"
 
 #: bash\basher.py:5778
 msgid "Import stats from"
-msgstr "Importar condiÁ„o de"
+msgstr "Importar condi√ß√£o de"
 
 #: bash\basher.py:5785
 msgid "Source file must be a Stats.csv file"
@@ -3168,11 +3168,11 @@ msgstr "Entre com nome de perfil"
 
 #: bash\basher.py:5876
 msgid "Active profile cannot be removed"
-msgstr "Perfil ativo n„o pode ser removido"
+msgstr "Perfil ativo n√£o pode ser removido"
 
 #: bash\basher.py:5882
 msgid "Delete profile %s and the %d save files it contains?"
-msgstr "Apagar perfil %s e o %d contÈm salvos arquivos?"
+msgstr "Apagar perfil %s e o %d cont√©m salvos arquivos?"
 
 #: bash\basher.py:5883
 msgid "Delete Profile"
@@ -3220,15 +3220,15 @@ msgstr "Roupas"
 
 #: bash\basher.py:6111
 msgid "Name is too long"
-msgstr "Nome È muito longo"
+msgstr "Nome √© muito longo"
 
 #: bash\basher.py:6114
 msgid "Name is already used"
-msgstr "Nome j· È usado"
+msgstr "Nome j√° √© usado"
 
 #: bash\basher.py:6124
 msgid "No changes made"
-msgstr "Nenhuma mudanÁa feita"
+msgstr "Nenhuma mudan√ßa feita"
 
 #: bash\basher.py:6135
 msgid "Names modified: %d"
@@ -3244,7 +3244,7 @@ msgstr "Renomeie Magias"
 
 #: bash\basher.py:6140
 msgid "Rename Potions"
-msgstr "Renomeie PoÁıes"
+msgstr "Renomeie Po√ß√µes"
 
 #: bash\basher.py:6172
 msgid "No items to edit"
@@ -3264,11 +3264,11 @@ msgstr "Magias do Jogador"
 
 #: bash\basher.py:6282
 msgid "You can't move saves to the current profile!"
-msgstr "VocÍ n„o pode mover gravaÁıes ao atual perfil!"
+msgstr "Voc√™ n√£o pode mover grava√ß√µes ao atual perfil!"
 
 #: bash\basher.py:6286
 msgid "A file named %s already exists in %s. Overwrite it?"
-msgstr "Um arquivo com o nome %s j· existe em %s. VocÍ quer Sobrepor este?"
+msgstr "Um arquivo com o nome %s j√° existe em %s. Voc√™ quer Sobrepor este?"
 
 #: bash\basher.py:6288
 msgid "Move File"
@@ -3280,7 +3280,7 @@ msgstr "Consertar Abomb"
 
 #: bash\basher.py:6313
 msgid "Abomb counter is too low to reset"
-msgstr "Contagem de Abomb est· baixa para reajustar"
+msgstr "Contagem de Abomb est√° baixa para reajustar"
 
 #: bash\basher.py:6315
 msgid "Reset Abomb counter? (Current progress: %.0f%%.)"
@@ -3288,7 +3288,7 @@ msgid "Reset Abomb counter? (Current progress: %.0f%%.)"
 "Note: Abomb animation slowing won't occur until progress is near 100%%"
 msgstr "Reajustar contador Abomb? (Progresso atual: %.0f%%.)"
 ""
-"Nota: Perda de velociade em animaÁ„o sÛ passa a ser notada quando Abomb atinge um progresso perto de 100%%"
+"Nota: Perda de velociade em anima√ß√£o s√≥ passa a ser notada quando Abomb atinge um progresso perto de 100%%"
 
 #: bash\basher.py:6319
 msgid "Abomb counter reset"
@@ -3296,27 +3296,27 @@ msgstr "Contador Abomb foi reajustado"
 
 #: bash\basher.py:6326
 msgid "Repair Factions"
-msgstr "Consertar FacÁıes"
+msgstr "Consertar Fac√ß√µes"
 
 #: bash\basher.py:6332
 msgid "This will (mostly) repair faction membership errors due to Wrye Bash v 105 bug and/or faction changes in underlying mods."
 ""
 "WARNING! This repair is NOT perfect! Do not use it unless you have to!"
-msgstr "Isto vai (principalmente) consertar facÁ„o de sociedade erros devido a um defeito em Wrye Bash v 105 e/ou facÁ„o  mudanÁa em mÛdulos subjacente. "
+msgstr "Isto vai (principalmente) consertar fac√ß√£o de sociedade erros devido a um defeito em Wrye Bash v 105 e/ou fac√ß√£o  mudan√ßa em m√≥dulos subjacente. "
 ""
-"ADVERTINDO! Este conserto n„o est· perfeito! N„o use a menos que seja necess·rio!"
+"ADVERTINDO! Este conserto n√£o est√° perfeito! N√£o use a menos que seja necess√°rio!"
 
 #: bash\basher.py:6333
 msgid "Update NPC Levels"
-msgstr "AtualizaÁ„o NÌveis de NPC"
+msgstr "Atualiza√ß√£o N√≠veis de NPC"
 
 #: bash\basher.py:6335
 msgid "Restore dropped factions too? WARNING: This may involve clicking through a LOT of yes/no dialogs"
-msgstr "RestabeleÁa facÁıes derrubadas tambÈm? ADVERTINDO: Isto pode envolver fazendo tique-taque por muitos di·logos de sim/n„o"
+msgstr "Restabele√ßa fac√ß√µes derrubadas tamb√©m? ADVERTINDO: Isto pode envolver fazendo tique-taque por muitos di√°logos de sim/n√£o"
 
 #: bash\basher.py:6373
 msgid "NPC Factions Restored/UnNulled"
-msgstr "FacÁıes de NPC Restauradas/UnNulo"
+msgstr "Fac√ß√µes de NPC Restauradas/UnNulo"
 
 #: bash\basher.py:6376
 msgid "Updating"
@@ -3324,7 +3324,7 @@ msgstr "Atualizando"
 
 #: bash\basher.py:6433
 msgid "Restore %s to %s faction?"
-msgstr "Restaurar %s para %s facÁ„o?"
+msgstr "Restaurar %s para %s fac√ß√£o?"
 
 #: bash\basher.py:6462
 msgid "Repair Hair"
@@ -3336,31 +3336,31 @@ msgstr "Cabelos consertados"
 
 #: bash\basher.py:6473
 msgid "No repair necessary"
-msgstr "Nenhum conserto necess·rio"
+msgstr "Nenhum conserto necess√°rio"
 
 #: bash\basher.py:6487
 msgid "Set weight of all player potions to"
-msgstr "Peso fixo de todas as poÁıes de jogador para"
+msgstr "Peso fixo de todas as po√ß√µes de jogador para"
 
 #: bash\basher.py:6493
 msgid "Invalid weight: %f"
-msgstr "Peso inv·lido: %f"
+msgstr "Peso inv√°lido: %f"
 
 #: bash\basher.py:6515
 msgid "Potions reweighed: %d"
-msgstr "Reajustando peso de poÁıes: %d"
+msgstr "Reajustando peso de po√ß√µes: %d"
 
 #: bash\basher.py:6518
 msgid "No potions to reweigh!"
-msgstr "N„o h· poÁıes para reajustar peso!"
+msgstr "N√£o h√° po√ß√µes para reajustar peso!"
 
 #: bash\basher.py:6527
 msgid "Statistics"
-msgstr "EstatÌsticas"
+msgstr "Estat√≠sticas"
 
 #: bash\basher.py:6539
 msgid "Calculating statistics"
-msgstr "Calculando estatÌsticas"
+msgstr "Calculando estat√≠sticas"
 
 #: bash\basher.py:6552
 msgid "Remove Bloat"
@@ -3386,7 +3386,7 @@ msgid "Remove savegame bloating?"
 "WARNING: This is a risky procedure that may corrupt your savegame! Use only if necessary!"
 msgstr "Remova savegame inchando? "
 "%s"
-"ADVERTINDO: Este È um procedimento arriscado que pode corromper seu savegame! SÛ use se necess·rio!"
+"ADVERTINDO: Este √© um procedimento arriscado que pode corromper seu savegame! S√≥ use se necess√°rio!"
 
 #: bash\basher.py:6580
 msgid "Remove bloating?"
@@ -3400,13 +3400,13 @@ msgstr "Removendo Incham"
 msgid "Uncreated Objects: %d"
 "Uncreated Refs: %d"
 "UnNulled Refs: %d"
-msgstr "Sem criaÁ„o de Objetos: %d"
+msgstr "Sem cria√ß√£o de Objetos: %d"
 "Semforma referente: %d"
 "Anulou referencia: %d"
 
 #: bash\basher.py:6607
 msgid "This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods. This supercedes the older\"Import NPC Level\" command"
-msgstr "Isto vai re-Nivelar o NPCs nos save game(s) selecionado de acordo com os nÌveis de npc no atualmente mÛdulos ativo. Este extranumer·rio cede a mais velha\" ImportaÁ„o NPC NÌveis\" comando"
+msgstr "Isto vai re-Nivelar o NPCs nos save game(s) selecionado de acordo com os n√≠veis de npc no atualmente m√≥dulos ativo. Este extranumer√°rio cede a mais velha\" Importa√ß√£o NPC N√≠veis\" comando"
 
 #: bash\basher.py:6637
 msgid "NPCs Releveled"
@@ -3419,7 +3419,7 @@ msgid ""
 "*"
 msgstr ""
 ""
-" Alguns mÛdulos possuem erros de leitura e foram pulados: "
+" Alguns m√≥dulos possuem erros de leitura e foram pulados: "
 "*"
 
 #: bash\basher.py:6690
@@ -3429,12 +3429,12 @@ msgstr "Proxima Imagem"
 #: bash\basher.py:6698
 msgid "Screenshot base name, optionally with next screenshot number."
 "E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201"
-msgstr "Nome b·sico de imagem, opcional com prÛximo n˙mero de imagem. "
+msgstr "Nome b√°sico de imagem, opcional com pr√≥ximo n√∫mero de imagem. "
 "E.g. ScreenShot ou ScreenShot_101 ou Subdir\\ScreenShot_201"
 
 #: bash\basher.py:6716
 msgid "Convert to jpg"
-msgstr "Convers„o para jpg"
+msgstr "Convers√£o para jpg"
 
 #: bash\basher.py:6724
 msgid "Converting to Jpg"
@@ -3450,11 +3450,11 @@ msgstr "Renomeie Arquivos"
 
 #: bash\basher.py:6760
 msgid "Bad extension or file root"
-msgstr "Extens„o ruim ou raiz de arquivo"
+msgstr "Extens√£o ruim ou raiz de arquivo"
 
 #: bash\basher.py:6785
 msgid "Import Archives"
-msgstr "Arquivos de importaÁ„o"
+msgstr "Arquivos de importa√ß√£o"
 
 #: bash\basher.py:6791
 msgid "Import message archive(s)"
@@ -3474,7 +3474,7 @@ msgstr "Adicionar novo contato"
 
 #: bash\basher.py:6830
 msgid "is already in use"
-msgstr "J· est· em uso"
+msgstr "J√° est√° em uso"
 
 #: bash\basher.py:6841
 msgid "Export"
