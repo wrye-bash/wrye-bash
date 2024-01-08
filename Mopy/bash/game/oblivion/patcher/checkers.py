@@ -106,7 +106,7 @@ class CoblCatalogsPatcher(ExSpecial):
                 return None # This shouldn't happen, but just in case...
             book = patch_books.id_records[book_fid]
             book.book_text = '<div align="left"><font face=3 color=4444>'
-            book.book_text += (full + '\r\n\r\n') % full
+            book.book_text += full + '\r\n\r\n'
             if keep(book_fid, book):
                 return book
         #--Ingredients Catalog
