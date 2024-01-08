@@ -197,14 +197,12 @@ def _subEnv(ma_env):
 
 def _getShellPath(folderKey):
     regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                            r'Software\Microsoft\Windows\CurrentVersion'
-                            r'\Explorer\User Shell Folders')
+      r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders')
     try:
         path = winreg.QueryValueEx(regKey, folderKey)[0]
     except WindowsError:
-        raise BoltError(u"Can't find user directories in windows registry."
-                        u'.\n>> See "If Bash Won\'t Start" in bash docs '
-                        u'for help.')
+        raise BoltError("Can't find user directories in windows registry.\n>> "
+                        'See "If Bash Won\'t Start" in bash docs for help.')
     regKey.Close()
     path = _re_env.sub(_subEnv, path)
     return path
@@ -1632,6 +1630,7 @@ class TaskDialog(object):
         windll.user32.SendMessageW(self.__handle, _SETPBARPOS,
                                    self._progress_bar[u'pos'], 0)
 # END TASKDIALOG PART =========================================================
+
 class AppLauncher(_AppLauncher):
 
     def launch_app(self, exe_path, exe_args):
@@ -1653,7 +1652,7 @@ class AppLauncher(_AppLauncher):
 class ExeLauncher(AppLauncher):
 
     @set_cwd
-    def launch_app(self, exe_path, exe_args):
+    def launch_app(self, exe_path: _Path, exe_args):
         try:
             self._run_exe(exe_path, exe_args)
         except WindowsError as werr:
@@ -1674,7 +1673,6 @@ def in_mo2_vfs() -> bool:
     """Test if Wrye Bash appears be running with MO2's virtual filesystem
     hooked in."""
     for dll in ('hook.dll', 'usvfs_x64.dll'):
-        dll_handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
-        if dll_handle:
+        if ctypes.windll.kernel32.GetModuleHandleW(dll): # dll handle
             return True
     return False

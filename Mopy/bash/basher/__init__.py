@@ -77,7 +77,7 @@ from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property
-from ..bosh import ModInfo, omods
+from ..bosh import ModInfo, omods, RefrData
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -435,8 +435,8 @@ class MasterList(_ModsUIList):
             self._item_name(mi)),
         'Indices': lambda self, mi: self._save_lo_hex_string[
             self._item_name(mi)],
-        'Current Index': lambda self, mi: bosh.modInfos.real_index_strings[
-            self._item_name(mi)],
+        'Current Index': lambda self, mi: bosh.modInfos.real_indices[
+            self._item_name(mi)][1],
     }
     banned_columns = {'Indices', 'Current Index'} # These are Saves-specific
 
@@ -592,7 +592,7 @@ class MasterList(_ModsUIList):
             [v.curr_name for v in self.data_store.values()])
         self._curr_lo_index = {p: i for i, p in enumerate(file_order_names)}
         r_indices = bosh.modInfos.real_indices
-        self._curr_real_index = {p: r_indices[p] for p in file_order_names}
+        self._curr_real_index = {p: r_indices[p][0] for p in file_order_names}
 
     def _update_real_indices(self, new_file_info):
         """Updates the 'real' indices cache. Does nothing outside of saves."""
@@ -963,7 +963,7 @@ class ModList(_ModsUIList):
         u'Installer' : lambda self, a: self.data_store[a].get_table_prop(
                             u'installer', u''),
         u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
-        u'Indices'   : lambda self, a: self.data_store[a].real_index(),
+        u'Indices'   : lambda self, a: self.data_store[a].real_indices[a][0],
         u'Modified'  : lambda self, a: self.data_store[a].ftime,
         u'Size'      : lambda self, a: self.data_store[a].fsize,
         u'Status'    : lambda self, a: self.data_store[a].getStatus(),
@@ -976,7 +976,7 @@ class ModList(_ModsUIList):
     labels = {
         'File': lambda self, p: self.data_store.masterWithVersion(p),
         'Load Order': lambda self, p: self.data_store.hexIndexString(p),
-        'Indices': lambda self, p: self.data_store[p].real_index_string(),
+        'Indices': lambda self, p: self.data_store.real_indices[p][1],
         'Rating': lambda self, p: self.data_store[p].get_table_prop('rating',
                                                                     ''),
         'Group': lambda self, p: self.data_store[p].get_table_prop('group',
@@ -1005,11 +1005,7 @@ class ModList(_ModsUIList):
 
     def OnDropIndexes(self, indexes, newIndex):
         if self._dropIndexes(indexes, newIndex):
-            # Take all indices into account - we may be moving plugins up, in
-            # which case the smallest index is in indexes, or we may be moving
-            # plugins down, in which case the smallest index is newIndex
-            lowest_index = min(newIndex, min(indexes))
-            self._refreshOnDrop(lowest_index)
+            self._refreshOnDrop()
 
     def dndAllow(self, event):
         msg = u''
@@ -1029,15 +1025,14 @@ class ModList(_ModsUIList):
         return True
 
     @balt.conversation
-    def _refreshOnDrop(self, first_index):
+    def _refreshOnDrop(self):
         #--Save and Refresh
         try:
-            bosh.modInfos.cached_lo_save_all()
-        except (BoltError, NotImplementedError) as e:
+            ldiff = bosh.modInfos.cached_lo_save_all()
+            loch = ldiff.reordered | ldiff.act_reordered #no additions/removals
+            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
+        except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
             showError(self, f'{e}')
-        first_impacted = load_order.cached_lo_tuple()[first_index]
-        self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
-                       refresh_others=Store.SAVES.DO())
 
     #--Populate Item
     def _set_status_text(self, item_format, mod_info, mod_name):
@@ -1116,9 +1111,6 @@ class ModList(_ModsUIList):
                 chunks[chunk].append(dex)
             moveMod = 1 if kcode in balt.wxArrowDown else -1
             moved = False
-            # Initialize the lowest index to the smallest existing one (we
-            # won't ever beat this one if we are moving indices up)
-            lowest_index = min(indexes)
             for chunk in chunks:
                 if not chunk: continue # nothing to move, skip
                 newIndex = chunk[0] + moveMod
@@ -1126,9 +1118,8 @@ class ModList(_ModsUIList):
                     continue # trying to move last plugin past the list
                 # Check if moving hits a new lowest index (this is the case if
                 # we are moving indices down)
-                lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
-            if moved: self._refreshOnDrop(lowest_index)
+            if moved: self._refreshOnDrop()
         elif wrapped_evt.is_cmd_down and kcode == ord('Z'):
             if wrapped_evt.is_shift_down:
                 # Ctrl+Shift+Z - redo last load order or active plugins change
@@ -1188,31 +1179,6 @@ class ModList(_ModsUIList):
         return bosh.modInfos.plugin_wildcard()
 
     # Helpers -----------------------------------------------------------------
-    @staticmethod
-    def _lo_redraw_targets(impacted_plugins):
-        """Given a set of plugins (as paths) that were impacted by a load order
-        operation, returns a set UIList keys (as paths) for elements that need
-        to be redrawn."""
-        ui_impacted = impacted_plugins.copy()
-        ##: We have to refresh every active plugin that loads higher than
-        # the lowest-loading one that was (un)checked as well since their
-        # load order/index columns will change. A full refresh is complete
-        # overkill for this, but alas... -> #353
-        if len(ui_impacted) == 1:
-            lowest_impacted = next(iter(ui_impacted)) # fast path
-        else:
-            lowest_impacted = min(ui_impacted,
-                                  key=load_order.cached_lo_index_or_max)
-        ui_impacted.update(load_order.cached_higher_loading(lowest_impacted))
-        # If the touched plugins include BPs, we need to refresh their
-        # imported/merged plugins too (checkbox icons). Note that we can do
-        # this after the lowest-loading check above, because the
-        # imported/merged plugins will not affect any other plugins if they
-        # aren't active, and won't need an update if they are active.
-        ui_imported, ui_merged = bosh.modInfos.getSemiActive(
-            ui_impacted, skip_active=True)
-        return ui_impacted | ui_imported | ui_merged
-
     _activated_key = 0
     _deactivated_key = 1
     @balt.conversation
@@ -1282,34 +1248,22 @@ class ModList(_ModsUIList):
         if warn_msg:
             balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
         if touched:
-            bosh.modInfos.cached_lo_save_active()
+            ldiff = bosh.modInfos.cached_lo_save_active()
             # If we have no changes, pass - if we do have changes, only one of
             # these can be truthy at a time
             if ch := changes[self._activated_key]:
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            self.RefreshUI(redraw=self._lo_redraw_targets(touched),
-                           refresh_others=Store.SAVES.DO())
+            loch = ldiff.active_flips | ldiff.act_reordered
+            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
-        # Grab copies of the old LO/actives for find_first_difference
-        prev_lo = load_order.cached_lo_tuple()
-        prev_acti = load_order.cached_active_tuple()
-        if not undo_or_redo():
-            return # Nothing to do
-        curr_lo = load_order.cached_lo_tuple()
-        curr_acti = load_order.cached_active_tuple()
-        low_diff = load_order.find_first_difference(
-            prev_lo, prev_acti, curr_lo, curr_acti)
-        if low_diff is None:
-            return # Load orders were identical
-        # Finally, we pass to _lo_redraw_targets to take all other relevant
-        # details into account
-        self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
-                       refresh_others=Store.SAVES.DO())
+        ldiff = undo_or_redo() # no additions or removals
+        if changed := (ldiff.act_changed() | ldiff.reordered):
+            self.RefreshUI(redraw=changed, refresh_others=Store.SAVES.DO())
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -2127,10 +2081,10 @@ class INIPanel(BashTab):
         target_ch = self.detailsPanel.check_new_target()
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
-        target_ch |= changes and changes[3]
-        super(INIPanel, self).ShowPanel(target_changed=target_ch,
-                                        clean_targets=clean_targets)
-        if changes or target_ch: # we need this to be more granular
+        changes.ini_changed |= target_ch
+        super().ShowPanel(target_changed=changes.ini_changed,
+                          clean_targets=clean_targets)
+        if changes: # we need this to be more granular
             if detail_item is not self._ini_same_item:
                 self.uiList.RefreshUI(focus_list=focus_list,
                                       detail_item=detail_item)
@@ -3397,16 +3351,16 @@ class InstallersPanel(BashTab):
                     #with balt.Progress(_('Scanning Packages...')) as progress:
                     refresh_info = self.listData.update_installers(folders,
                         files, fullRefresh, progress=bolt.Progress())
-                    do_refresh = refresh_info.refresh_needed()
-            refreshui = False
+                    do_refresh = bool(refresh_info)
+            refreshui = refresh_info or RefrData()
             if do_refresh:
                 with balt.Progress(_('Refreshing Installers...'),
                                    abort=canCancel) as progress:
                     try:
                         what = 'DISC' if scan_data_dir else 'IC'
-                        refreshui |= self.listData.irefresh(progress, what,
-                                                            fullRefresh,
-                                                            refresh_info)
+                        refreshui = self.listData.irefresh(progress, what,
+                                                           fullRefresh,
+                                                           refresh_info)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh
@@ -3416,13 +3370,14 @@ class InstallersPanel(BashTab):
                 try:
                     # with balt.Progress(
                     #         _('Refreshing Converters...')) as progress:
-                    refreshui |= self.listData.irefresh(what='C',
+                    refreshui = self.listData.irefresh(what='C',
                         fullRefresh=fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
-            do_refresh = self.listData.refreshTracked()
-            refreshui |= do_refresh and self.listData.refreshInstallersStatus()
+            if self.listData.refreshTracked():
+                refreshui.redraw.update(
+                    self.listData.refreshInstallersStatus())
             if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
@@ -4070,13 +4025,8 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        def try_refresh(store):
-            refresh_result = store.refresh()
-            if isinstance(refresh_result, tuple):
-                return any(refresh_result)
-            return bool(refresh_result) # May be an int etc.
         ui_refresh: defaultdict[Store, bool] = defaultdict(bool, {
-            store.unique_store_key: not booting and try_refresh(store)
+            store.unique_store_key: not booting and bool(store.refresh()) # todo add the refr object here
             for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)})
         ui_refresh[Store.SAVES] |= ui_refresh[Store.MODS] # for save masters
         #--Repopulate, focus will be set in ShowPanel

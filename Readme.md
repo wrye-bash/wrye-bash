@@ -36,8 +36,12 @@ tested on (previous versions or latest versions may or may not work):
 
 ### Download
 
+#### Windows
 * [GitHub][3]
 * [NexusMods][2]
+
+#### Linux
+* [AUR][20]
 
 Docs are included in the download, but we are also setting them up online
  [here][4].
@@ -130,3 +134,4 @@ to contribute.
   [17]: https://github.com/wrye-bash/wrye-bash/tree/dev
   [18]: https://github.com/wrye-bash/wrye-bash/tree/master
   [19]: https://github.com/wrye-bash/wrye-bash/tree/nightly
+  [20]: https://aur.archlinux.org/packages/wrye-bash

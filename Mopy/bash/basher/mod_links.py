@@ -307,8 +307,9 @@ class Mod_Move(EnabledLink):
         bosh.modInfos.cached_lo_insert_at(active_plugins[target_index],
                                           self.selected)
         # Reorder the actives too to avoid bogus LO warnings
-        bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI(detail_item=self.selected[0],
+        ldiff = bosh.modInfos.cached_lo_save_all()
+        loch = ldiff.reordered | ldiff.act_reordered
+        self.window.RefreshUI(detail_item=self.selected[0], redraw=loch,
                               refresh_others=Store.SAVES.DO())
 
 #------------------------------------------------------------------------------
@@ -1562,7 +1563,7 @@ class _AFlipFlagLink(EnabledLink):
             self._exec_flip()
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
-            bosh.modInfos.refreshLoadOrder()
+            ldiff = bosh.modInfos.refreshLoadOrder()
             # converted to esps/esls - rescan mergeable
             bosh.modInfos.rescanMergeable(self.selected)
             # This will have changed the plugin, so let BAIN know
@@ -1570,10 +1571,8 @@ class _AFlipFlagLink(EnabledLink):
                 altered={p.abs_path for p in self.iselected_infos()})
             # We need to RefreshUI all higher-loading plugins than the lowest
             # plugin that was affected to update the Indices column
-            lowest_selected = min(self.selected,
-                                  key=load_order.cached_lo_index_or_max)
-            self.window.RefreshUI(refresh_others=Store.SAVES.DO(),
-                redraw=load_order.cached_higher_loading(lowest_selected))
+            self.window.RefreshUI(refresh_others=Store.SAVES.DO(), redraw={
+                *self.selected, *ldiff.reordered, *ldiff.act_reordered})
 
 class Mod_FlipEsm(_AFlipFlagLink):
     """Add or remove the ESM flag. Extension must be .esp or .esu."""

@@ -380,7 +380,15 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self):
         super(Mods_AutoGhost, self).Execute()
-        self.window.RefreshUI(redraw=bosh.modInfos.autoGhost(force=True))
+        flipped = []
+        toGhost = bass.settings['bash.mods.autoGhost']
+        allowGhosting = bosh.modInfos.table.getColumn('allowGhosting')
+        for mod, modInfo in bosh.modInfos.items():
+            modGhost = toGhost and not load_order.cached_is_active(
+                mod) and allowGhosting.get(mod, True)
+            if modInfo.setGhost(modGhost):
+                flipped.append(mod)
+        self.window.RefreshUI(redraw=flipped)
 
 class Mods_AutoESLFlagBP(BoolLink):
     """Automatically flags built Bashed Patches as ESLs. This is safe, since

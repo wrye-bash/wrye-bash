@@ -144,7 +144,7 @@ def _get_steam_path() -> _Path | None:
 
 # API - Functions =============================================================
 ##: Several of these should probably raise instead
-def drive_exists(dir_path):
+def drive_exists(dir_path: _Path):
     """Check if a drive exists by trying to create a dir."""
     try:
         dir_path.makedirs() # exist_ok=True - will create the directories!
@@ -190,9 +190,6 @@ def get_personal_path(submod):
               '~/Documents)'))
 
 def get_local_app_data_path(submod):
-    if sys.platform == 'darwin':
-        return _GPath(f'{os.path.expanduser("~")}/.local/share'), _(
-            'Fallback to ~/.local/share)')
     if submod.St.steam_ids:
         # Let it blow if this is None - don't create random folders on Linux
         # for Windows games installed via Proton
@@ -227,8 +224,8 @@ def is_uac():
 def getJava():
     # Prefer the version indicated by JAVA_HOME
     try:
-        java_home = _GPath(os.environ[u'JAVA_HOME'])
-        java_bin_path = java_home.join(u'bin', u'java')
+        java_home = _GPath(os.environ['JAVA_HOME'])
+        java_bin_path = java_home.join('bin', 'java')
         if java_bin_path.is_file(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass

@@ -268,7 +268,7 @@ class IniFileInfo(AIniInfo, AFile):
     # AIniInfo overrides ------------------------------------------------------
     def read_ini_content(self, as_unicode=True):
         try:
-            with self.abs_path.open(u'rb') as f:
+            with open(self.abs_path, mode='rb') as f:
                 content = f.read()
             if not as_unicode: return content
             decoded = str(content, self.ini_encoding)
