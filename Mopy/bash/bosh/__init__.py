@@ -3352,14 +3352,11 @@ class ModInfos(FileInfos):
         self._lo_caches_remove_mods([newName])
         self._lo_wip.insert(oldIndex, oldName)
         def _activate(active, mod):
-            if active:
-                self[mod].setGhost(False) # needed if autoGhost is False
-                self.lo_activate(mod)
-            else: self.lo_deactivate(mod)
+            (self.lo_activate if active else self.lo_deactivate)(mod)
         _activate(is_new_info_active, oldName)
         _activate(is_master_active, self._master_esm)
         # Save to disc (load order and plugins.txt)
-        self.cached_lo_save_all() # sets ghost as needed iff autoGhost is True
+        self.cached_lo_save_all() # sets ghost as needed
         self.voCurrent = newVersion
         self.voAvailable.add(current_version)
         self.voAvailable.remove(newVersion)

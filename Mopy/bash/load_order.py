@@ -329,12 +329,11 @@ def refresh_lo(cached: bool, cached_active: bool):
     as load_order_changed returns True - that's not slow, as getting the load
     order just involves getting ftime info from modInfos cache. This last one
     **must be up to date** for correct load order/active validation."""
-    ldiff_saved = LordDiff()
     if locked and _saved_load_orders:
         saved: LoadOrder = _saved_load_orders[_current_list_index].lord
         if cached_lord is not __lo_unset:
             if cached_lord != saved: # sanity check, should not happen
-                bolt.deprint(f'Bug: {cached_lord=} is different from {saved=}')
+                bolt.deprint(f'Bug: {cached_lord=} differs from {saved=}')
         # validate saved lo (remove/add deleted/added mods - new mods should
         # be appended - note fix_lo is None)
         lord, acti = _game_handle.set_load_order(
@@ -342,9 +341,12 @@ def refresh_lo(cached: bool, cached_active: bool):
         fixed = LoadOrder(lord, acti)
         if fixed != saved:
             bolt.deprint(f'*** Saved load order is no longer valid: {saved}\n'
-                         f'*** Corrected to {fixed}')
-            ldiff_saved = saved.lo_diff(fixed)
+                         f'*** Corrected to {fixed}: {saved.lo_diff(fixed)}')
             saved = fixed
+        # rest of Bash should only use _cached_lord so since we eventually
+        # might impose saved (to move new plugins at the end for instance)
+        # cache the diff from _cached_lord to saved to return in that case
+        ldiff_saved = cached_lord.lo_diff(saved)
     else: saved = __lo_unset
     if cached_lord is not __lo_unset:
         lo = cached_lord.loadOrder if (
@@ -353,9 +355,9 @@ def refresh_lo(cached: bool, cached_active: bool):
             cached_active and not _game_handle.active_changed()) else None
     else: active = lo = None
     ldiff = _update_cache(lo, active)
-    if locked and saved is not __lo_unset:
+    if saved is not __lo_unset:
         if cached_lord.loadOrder != saved.loadOrder or (
-           cached_lord.active != saved.active and # active order doesn't matter
+           cached_lord.active != saved.active and #active order doesn't matter
            bass.settings[u'bash.load_order.lock_active_plugins']):
             global warn_locked
             warn_locked = True
