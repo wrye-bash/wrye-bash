@@ -4302,13 +4302,13 @@ class BashApp(object):
         bosh.iniInfos.refresh(refresh_target=False)
         # screens/installers data are refreshed upon showing the panel
         #--Patch check
-        if bush.game.Esp.canBash:
-            if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
-                progress(0.68, _(u'Generating Blank Bashed Patch'))
-                try:
-                    bosh.modInfos.generateNextBashedPatch(selected_mods=())
-                except: # YAK but this may blow and has blown on whatever coding error, crashing Bash on boot
-                    deprint(u'Failed to create new bashed patch', traceback=True)
+        if bush.game.Esp.canBash and not bosh.modInfos.bashed_patches and \
+                bass.inisettings['EnsurePatchExists']:
+            progress(0.68, _('Generating Blank Bashed Patch'))
+            try:
+                bosh.modInfos.generateNextBashedPatch(selected_mods=())
+            except: # YAK but this may blow and has blown on whatever coding error, crashing Bash on boot
+                deprint('Failed to create new bashed patch', traceback=True)
 
     @staticmethod
     def InitVersion():

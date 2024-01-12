@@ -485,8 +485,8 @@ class CreateNewPlugin(DialogWindow):
             self._plugin_name.select_all_text()
             return EventResult.FINISH # leave the dialog open
         chosen_name = ModInfo.unique_name(newName)
-        windowSelected = pw.GetSelected()
-        pw.data_store.create_new_mod(chosen_name, windowSelected,
+        created_plugin = pw.data_store.create_new_mod(chosen_name,
+            windowSelected := pw.GetSelected(),
             with_esm_flag=self._esm_flag.is_checked,
             with_esl_flag=self._esl_flag.is_checked,
             with_overlay_flag=self._overlay_flag.is_checked,
@@ -494,7 +494,6 @@ class CreateNewPlugin(DialogWindow):
         # Check if we made a plugin with circular masters - we need the ModInfo
         # object itself to check this. A bit ugly from a UX perspective, but OK
         # because it's a  rare scenario anyways
-        created_plugin = pw.data_store[chosen_name]
         if created_plugin.has_circular_masters():
             showError(self, _('Creating a plugin named %(chosen_plugin_name)s '
                               'with the chosen masters will cause it to '

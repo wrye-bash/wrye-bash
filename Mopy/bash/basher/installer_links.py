@@ -590,11 +590,11 @@ class Installer_Install(_NoMarkerLink):
         self.window.issue_warnings(warn_others=ui_refresh)
 
     def _warn_mismatched_ini_tweaks_created(self, new_tweaks):
-        if not new_tweaks: return
-        msg = _(u'The following INI Tweaks were created, because the '
-            u'existing INI was different than what BAIN installed:') + \
-            u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in new_tweaks])
-        self._showInfo(msg, title=_(u'INI Tweaks'))
+        if new_tweaks:
+            msg = _('The following INI Tweaks were created, because the '
+                    'existing INI was different than what BAIN installed:') + \
+                '\n' + '\n'.join([f' * {x.stail}\n' for (x, y) in new_tweaks])
+            self._showInfo(msg, title=_('INI Tweaks'))
 
     def _warn_nothing_installed(self):
         inst_packages = [self.idata[i] for i in self._installables]

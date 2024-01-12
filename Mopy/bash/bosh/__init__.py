@@ -3034,13 +3034,11 @@ class ModInfos(FileInfos):
         except UnicodeEncodeError:
             return True
 
-    ##: This honestly does way too much. Look at the jumble of parameters and
-    # the giant docstring for evidence
     def create_new_mod(self, newName: str | FName,
             selected: tuple[FName, ...] = (),
             wanted_masters: list[FName] | None = None, dir_path=empty_path,
             is_bashed_patch=False, with_esm_flag=False, with_esl_flag=False,
-            with_overlay_flag=False):
+            with_overlay_flag=False) -> ModInfo | None:
         """Create a new plugin.
 
         :param newName: The name the created plugin will have.
@@ -3086,12 +3084,13 @@ class ModInfos(FileInfos):
             newFile.tes4.flags1.overlay_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
-            self.new_info(newName, notify_bain=True)  # notify just in case...
+            inf = self.new_info(newName, notify_bain=True) #notify just in case
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
             self.cached_lo_insert_after(last_selected, newName)
             self.cached_lo_save_lo()
             self.refresh(refresh_infos=False)
+            return inf
 
     def generateNextBashedPatch(self, selected_mods):
         """Attempt to create a new bashed patch, numbered from 0 to 9.  If

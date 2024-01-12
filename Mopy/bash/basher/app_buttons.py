@@ -80,7 +80,7 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
     def native_init(self, parent, recreate=True, on_drag_start=None,
                     on_drag_end=None, on_drag_end_forced=None, on_drag=None):
         """Create and return gui button."""
-        created = super().native_init(recreate=recreate, parent=parent,
+        created = super().native_init(parent, recreate=recreate,
             on_drag_start=on_drag_start, on_drag_end=on_drag_end,
             on_drag_end_forced=on_drag_end_forced, on_drag=on_drag)
         if created:

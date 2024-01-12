@@ -252,7 +252,7 @@ class Lazy(_AObject):
         """Check if the required resources to create the widget exist."""
         return True
 
-    def native_init(self, parent=_no_parent, recreate=True, **kwargs):
+    def native_init(self, parent=_no_parent, *, recreate=True, **kwargs):
         """Create the native Object - if freshly created return True."""
         if not self.allow_create(): return False
         if recreate:

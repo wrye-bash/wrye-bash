@@ -1313,22 +1313,22 @@ class _InstallerPackage(Installer, AFile):
         # Update relevant data stores, adding new/modified files
         refresh_ui = defaultdict(bool)
         for store, owned_files in store_to_paths.items():
-            mtimes = []
+            lo_append = []
             for (owned_file, dest) in owned_files:
                 try:
                     inf = store.new_info(owned_file, owner=self.fn_key,
                          # we refresh info sets in cached_lo_append_if_missing
                          _in_refresh=True)
                     data_sizeCrcDate_update[dest][2] = inf.ftime
-                    mtimes.append(owned_file)
+                    lo_append.append(owned_file)
                 except FileError as error: # repeated from refresh
                     store.corrupted[owned_file] = error.message
                     store.pop(owned_file, None)
-            if mtimes:
-                if store.unique_store_key is Store.MODS:
-                    store.cached_lo_append_if_missing(mtimes)
-                    store.refreshLoadOrder(unlock_lo=True)
+            if lo_append:
                 refresh_ui[store.unique_store_key] = True
+                if store.unique_store_key is Store.MODS:
+                    store.cached_lo_append_if_missing(lo_append)
+                    store.refreshLoadOrder(unlock_lo=True)
         #--Update Installers data
         return data_sizeCrcDate_update, refresh_ui
 
