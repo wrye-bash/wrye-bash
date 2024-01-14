@@ -1257,9 +1257,8 @@ class _InstallerPackage(Installer, AFile):
         raise NotImplementedError
 
     #--ABSTRACT ---------------------------------------------------------------
-    def install(self, destFiles, progress=None):
+    def install(self, destFiles: set[CIstr], progress=None):
         """Install specified files to Data directory."""
-        destFiles = set(destFiles)
         dest_src = self.refreshDataSizeCrc(True)
         for k in list(dest_src):
             if k not in destFiles: del dest_src[k]
@@ -1918,7 +1917,7 @@ class InstallersData(DataStore):
             changes |= bool(reordered)
         if u'N' in what or changes: changes |= self.refreshNorm()
         if 'S' in what or changes:
-            st_changed = self.refreshInstallersStatus()
+            st_changed = {k for k, v in self.items() if v.refreshStatus(self)}
             refresh_info.redraw.update(st_changed)
             changes |= bool(st_changed)
         if 'C' in what or changes:
@@ -2265,13 +2264,6 @@ class InstallersData(DataStore):
             ci_underrides_sizeCrc, self.ci_underrides_sizeCrc
         return ci_underrides_sizeCrc != oldAbnorm_sizeCrc
 
-    def refreshInstallersStatus(self):
-        """Refresh installer status."""
-        change = set()
-        for fn_inst, installer in self.items():
-            if installer.refreshStatus(self): change.add(fn_inst)
-        return change
-
     def _refresh_from_data_dir(self, progress, recalculate_all_crcs):
         """Update self.data_sizeCrcDate, using current data_sizeCrcDate as a
         cache.
@@ -2488,31 +2480,32 @@ class InstallersData(DataStore):
                     v for k, v in renamed.items() if k in renamed_keys)
 
     def refreshTracked(self):
-        del_paths, altered = set(InstallersData._externally_deleted), set(
-            InstallersData._externally_updated)
+        del_paths = set(InstallersData._externally_deleted)
+        altered = dict.fromkeys(InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
         for apath, tracked in list(InstallersData._miscTrackedFiles.items()):
             try:
                 if tracked.do_update(raise_on_error=True):
-                    altered.add(apath)
+                    altered[apath] = tracked.fsize, tracked.ftime
+                    # if we uninstalled then reinstalled without leaving Bash
+                    del_paths.discard(apath)
             except OSError: # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(apath, None)
                 del_paths.add(apath)
         do_refresh = False
-        for apath in altered | del_paths:
+        def _path_key():
             # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
-            relpath = apath.relpath(bass.dirs[u'mods'])
+            relpath = apath.relpath(bass.dirs['mods'])
             # ghosts...
-            path_key = (relpath.root.s if relpath.cs[-6:] == u'.ghost'
-                        else relpath.s)
-            if apath in del_paths:
-                do_refresh |= bool(self.data_sizeCrcDate.pop(path_key, None))
-            else:
-                s, m = apath.size_mtime()
-                self.data_sizeCrcDate[path_key] = (s, apath.crc, m)
-                do_refresh = True
+            return relpath.root.s if relpath.cs[-6:] == '.ghost' else relpath.s
+        for apath in del_paths:
+            do_refresh |= bool(self.data_sizeCrcDate.pop(_path_key(), None))
+        for apath, siz_tim in altered.items():
+            s, m = siz_tim or apath.size_mtime()
+            self.data_sizeCrcDate[_path_key()] = (s, apath.crc, m)
+            do_refresh = True
         return do_refresh #Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
@@ -2735,13 +2728,11 @@ class InstallersData(DataStore):
             ex = sys.exc_info()
             raise
         finally:
-            if ex:
-                ci_removes = [k for k, v in remove_paths.items() if
-                              not v.exists()]
-            #--Update InstallersData
-            data_sizeCrcDatePop = self.data_sizeCrcDate.pop
-            for ci_relPath in ci_removes:
-                data_sizeCrcDatePop(ci_relPath, None)
+            removed = (v for v in remove_paths.values() if not v.exists()) \
+                if ex else remove_paths.values()
+            # store.delete might have updated _externally_deleted so reset it
+            InstallersData._externally_deleted.update(removed)
+            self.refreshTracked()
 
     def __restore(self, installer, removes, restores, cede_ownership):
         """Populate restores dict with files to be restored by this

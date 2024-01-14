@@ -3350,11 +3350,18 @@ class InstallersPanel(BashTab):
                         files, fullRefresh, progress=bolt.Progress())
                     do_refresh = bool(refresh_info)
             refreshui = refresh_info or RefrData()
-            if do_refresh:
-                with balt.Progress(_('Refreshing Installers…'),
-                                   abort=canCancel) as progress:
+            what = prog = None
+            if (tracked := self.listData.refreshTracked()) or do_refresh:
+                what = 'DISC' if scan_data_dir else (
+                    'ISC' if tracked else 'IC')
+                prog = balt.Progress(_('Refreshing Installers…'), abort=canCancel)
+            elif self.frameActivated:
+                what = 'C' # setting progress leads to infinite refresh in MSW!
+                # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
+                prog = bolt.Progress()
+            if what:
+                with prog as progress:
                     try:
-                        what = 'DISC' if scan_data_dir else 'IC'
                         refreshui = self.listData.irefresh(progress, what,
                                                            fullRefresh,
                                                            refresh_info)
@@ -3363,18 +3370,6 @@ class InstallersPanel(BashTab):
                         self._user_cancelled = True # User canceled the refresh
                     finally:
                         self._data_dir_scanned = True
-            elif self.frameActivated:
-                try:
-                    # with balt.Progress(
-                    #         _('Refreshing Converters...')) as progress:
-                    refreshui = self.listData.irefresh(what='C',
-                        fullRefresh=fullRefresh)
-                    self.frameActivated = False
-                except CancelError:
-                    pass # User canceled the refresh
-            if self.listData.refreshTracked():
-                refreshui.redraw.update(
-                    self.listData.refreshInstallersStatus())
             if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
