@@ -280,10 +280,9 @@ class Mod_Move(EnabledLink):
     def Execute(self):
         entered_text = u''
         # Default to the index of the first selected active plugin, or 0
-        enabled_selected = [p for p in self.selected
-                            if load_order.cached_is_active(p)]
-        default_index = (load_order.cached_active_index(enabled_selected[0])
-                         if enabled_selected else 0)
+        for p in self.selected:  ##: order in load order?
+            if default_index := load_order.cached_active_index_str(p): break
+        else: default_index = f'{0:02X}'
         try:
             # Only accept hexadecimal numbers, trying to guess what they are
             # will just lead to sadness
@@ -291,8 +290,7 @@ class Mod_Move(EnabledLink):
                 _('Please enter the plugin index to which the selected '
                   'plugins should be moved.') + '\n' +
                 _('Note that it must be a hexadecimal number, as shown on '
-                  'the Mods tab.'),
-                default=f'{default_index:X}')
+                  'the Mods tab.'), default=default_index)
             if not entered_text: return # Abort if canceled or empty string
             target_index = int(entered_text, base=16)
         except (TypeError, ValueError):
@@ -801,7 +799,7 @@ class Mod_ListDependent(OneItemLink):
         text_list = u''
         for mod in load_order.get_ordered(
                 self._selected_info.get_dependents()):
-            hexIndex = modInfos.hexIndexString(mod)
+            hexIndex = load_order.cached_active_index_str(mod)
             if hexIndex:
                 prefix = bul + hexIndex
             elif mod in merged_:

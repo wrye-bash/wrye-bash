@@ -241,24 +241,20 @@ def cached_is_active(mod):
 # Load order and active indexes
 def cached_lo_index(mod): return _cached_lord.mod_lo_index[mod]
 
-def cached_lo_index_or_max(mod):
-    try:
-        return _cached_lord.mod_lo_index[mod]
-    except KeyError:
-        return sys.maxsize # sort mods that do not have a load order LAST
-
-def cached_active_index(mod): return _cached_lord.mod_act_index[mod]
+def cached_active_index_str(mod):
+    return f'{dex:02X}' if (dex := _cached_lord.mod_act_index.get(mod)) else ''
 
 def cached_lower_loading(mod):
     return _cached_lord.loadOrder[:_cached_lord.mod_lo_index[mod]]
 
-def get_ordered(mod_paths: Iterable[FName]) -> list[FName]:
+def get_ordered(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
     """Return a list containing mod_paths' elements sorted into load order.
 
     If some elements do not have a load order they are appended to the list
     in alphabetical, case insensitive order (used also to resolve
     modification time conflicts)."""
-    return sorted(mod_paths, key=lambda fn: (cached_lo_index_or_max(fn), fn))
+    return sorted(mod_paths, key=lambda fn: (
+        _cached_lord.mod_lo_index.get(fn, __m), fn))
 
 def filter_pinned(imods):
     pinn = _game_handle.pinned_mods()

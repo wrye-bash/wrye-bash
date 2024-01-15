@@ -2342,11 +2342,6 @@ class ModInfos(FileInfos):
         self._lo_wip.extend(new)
         self.cached_lo_save_lo()
 
-    @staticmethod
-    def hexIndexString(mod):
-        return '' if not load_order.cached_is_active(mod) else \
-            f'{load_order.cached_active_index(mod):02X}'
-
     def masterWithVersion(self, master_name):
         if master_name == 'Oblivion.esm' and self.voCurrent:
             master_name += f' [{self.voCurrent}]'

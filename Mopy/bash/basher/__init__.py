@@ -76,7 +76,7 @@ from ..bass import Store
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
-    fast_cached_property
+    fast_cached_property, attrgetter_cache
 from ..bosh import ModInfo, omods, RefrData
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
@@ -431,7 +431,7 @@ class MasterList(_ModsUIList):
         'File': lambda self, mi: bosh.modInfos.masterWithVersion(
             self._item_name(mi)),
         'Num': lambda self, mi: f'{mi:02X}',
-        'Current Order': lambda self, mi: bosh.modInfos.hexIndexString(
+        'Current Order': lambda self, mi: load_order.cached_active_index_str(
             self._item_name(mi)),
         'Indices': lambda self, mi: self._save_lo_hex_string[
             self._item_name(mi)],
@@ -659,24 +659,34 @@ class MasterList(_ModsUIList):
         return [v.curr_name for k, v in dict_sort(self.data_store)]
 
 #------------------------------------------------------------------------------
+def _ask_info(attr_name, func_args=None, wrap=None):
+    """Create a function that takes a UIList and the fn_key to a (present,
+    otherwise a KeyError is raised) list info and gets some info from the
+    info (an attribute or instance method result)."""
+    attget = attrgetter_cache[attr_name]
+    if func_args is None:
+        lm = lambda self, p: attget(self.data_store[p])
+    else:
+        lm = lambda self, p: attget(self.data_store[p])(*func_args)
+    if wrap is not None:
+        return lambda self, p: wrap(lm(self, p))
+    return lm
+
 class INIList(UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _sort_keys = {
-        u'File'     : None,
-        u'Installer': lambda self, a: self.data_store[a].get_table_prop(
-            u'installer', u''),
+        'File'     : None,
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
-    def _sortValidFirst(self, items):
+    def _sortValidFirst(self, items, *, __lm=_ask_info('tweak_status', ())):
         if settings[u'bash.ini.sortValid']:
-            items.sort(key=lambda a: self.data_store[a].tweak_status() < 0)
+            items.sort(key=lambda a: (__lm(self, a) < 0))
     _extra_sortings = [_sortValidFirst]
     #--Labels
-    labels = {
-        'File': lambda self, p: p,
-        'Installer': lambda self, p: self.data_store[p].get_table_prop(
-            'installer', ''),
+    labels = {'File': lambda self, p: p,
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
     _target_ini = True # pass the target_ini settings on PopulateItem
 
@@ -946,47 +956,42 @@ class TargetINILineCtrl(INIListCtrl):
         self.fit_column_to_header(0)
 
 #------------------------------------------------------------------------------
+_common_sort_keys = {'File': None,  # just sort by name
+    'Modified': _ask_info('ftime'), 'Size': _ask_info('fsize')}
+_common_labels = {'File': lambda self, p: p,
+    'Modified': _ask_info('ftime', wrap=format_date),
+    'Size': _ask_info('fsize', wrap=round_size)}
+
 class ModList(_ModsUIList):
     #--Class Data
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _sort_keys = {
-        u'File'      : None,
-        u'Author'    : lambda self, a:self.data_store[a].header.author.lower(),
-        u'Rating'    : lambda self, a: self.data_store[a].get_table_prop(
-                            u'rating', u''),
-        u'Group'     : lambda self, a: self.data_store[a].get_table_prop(
-                            u'group', u''),
-        u'Installer' : lambda self, a: self.data_store[a].get_table_prop(
-                            u'installer', u''),
-        u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
-        u'Indices'   : lambda self, a: self.data_store.real_indices[a][0],
-        u'Modified'  : lambda self, a: self.data_store[a].ftime,
-        u'Size'      : lambda self, a: self.data_store[a].fsize,
-        u'Status'    : lambda self, a: self.data_store[a].getStatus(),
-        u'Mod Status': lambda self, a: self.data_store[a].txt_status(),
-        u'CRC'       : lambda self, a: self.data_store[a].cached_mod_crc(),
+    _sort_keys = {**_common_sort_keys,
+        'Author'    : lambda self, a: _ask_info('header.author',
+                                                wrap=str.lower),
+        'Rating'    : _ask_info('get_table_prop', ('rating', '')),
+        'Group'     : _ask_info('get_table_prop', ('group', '')),
+        'Installer' : _ask_info('get_table_prop', ('installer', '')),
+        'Load Order': lambda self, a: load_order.cached_lo_index(a),
+        'Indices'   : lambda self, a: self.data_store.real_indices[a][0],
+        'Status'    : _ask_info('getStatus', ()),
+        'Mod Status': _ask_info('txt_status', ()),
+        'CRC'       : _ask_info('cached_mod_crc', ()),
     }
     _dndList, _dndColumns = True, [u'Load Order']
     _sunkenBorder = False
     #--Labels
-    labels = {
+    labels = {**_common_labels, # File is overwritten below
         'File': lambda self, p: self.data_store.masterWithVersion(p),
-        'Load Order': lambda self, p: self.data_store.hexIndexString(p),
+        'Load Order': lambda self, p: load_order.cached_active_index_str(p),
         'Indices': lambda self, p: self.data_store.real_indices[p][1],
-        'Rating': lambda self, p: self.data_store[p].get_table_prop('rating',
-                                                                    ''),
-        'Group': lambda self, p: self.data_store[p].get_table_prop('group',
-                                                                   ''),
-        'Installer': lambda self, p: self.data_store[p].get_table_prop(
-            'installer', ''),
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size': lambda self, p: round_size(self.data_store[p].fsize),
-        'Author': lambda self, p: self.data_store[p].header.author if
-        self.data_store[p].header else '-',
-        'CRC': lambda self, p: self.data_store[p].crc_string(),
-        'Mod Status': lambda self, p: self.data_store[p].txt_status(),
+        'Rating': _ask_info('get_table_prop', ('rating', '')),
+        'Group': _ask_info('get_table_prop', ('group', '')),
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
+        'Author': _ask_info('header.author'),
+        'CRC': _ask_info('crc_string', ()),
+        'Mod Status': _ask_info('txt_status', ()),
     }
     _copy_paths = True
 
@@ -2146,33 +2151,18 @@ class SaveList(UIList):
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _editLabels = _copy_paths = True
-    _sort_keys = {
-        u'File'    : None, # just sort by name
-        u'Modified': lambda self, a: self.data_store[a].ftime,
-        u'Size'    : lambda self, a: self.data_store[a].fsize,
-        u'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
-        u'Player'  : lambda self, a: self.data_store[a].header.pcName,
-        u'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
-        u'Status'  : lambda self, a: self.data_store[a].getStatus(),
+    _sort_keys = {**_common_sort_keys,
+        'PlayTime': _ask_info('header.gameTicks'),
+        'Player'  : _ask_info('header.pcName'),
+        'Cell'    : _ask_info('header.pcLocation'),
+        'Status'  : _ask_info('getStatus', ()),
     }
-    #--Labels, why checking for header here - is this called on corrupt saves ?
-    @staticmethod
-    def _headInfo(saveInfo, attr):
-        if not saveInfo.header: return u'-'
-        return getattr(saveInfo.header, attr)
-    @staticmethod
-    def _playTime(saveInfo):
-        if not saveInfo.header: return u'-'
-        playMinutes = saveInfo.header.gameTicks // 60000
-        return f'{playMinutes // 60}:{playMinutes % 60:02d}'
-    labels = {
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-        'PlayTime': lambda self, p: self._playTime(self.data_store[p]),
-        'Player': lambda self, p: self._headInfo(self.data_store[p], 'pcName'),
-        'Cell':     lambda self, p: self._headInfo(self.data_store[p],
-                                                   'pcLocation'),
+    #--Labels
+    labels = {**_common_labels,
+        'PlayTime': lambda self, p: f'{(playMinutes := self.data_store[
+            p].header.gameTicks // 60000) // 60}:{playMinutes % 60:02d}',
+        'Player': _ask_info('header.pcName'),
+        'Cell': _ask_info('header.pcLocation'),
     }
 
     @balt.conversation
@@ -2471,32 +2461,30 @@ class InstallersList(UIList):
     _sunkenBorder = False
     _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
-    _sort_keys = {
-        u'Package' : None,
-        u'Order'   : lambda self, x: self.data_store[x].order,
-        u'Modified': lambda self, x: self.data_store[x].ftime,
-        u'Size'    : lambda self, x: self.data_store[x].fsize,
-        u'Files'   : lambda self, x: self.data_store[x].num_of_files,
+    _sort_keys = {'Package': None,
+        'Order'   : _ask_info('order'),
+        'Modified': _ask_info('ftime'),
+        'Size'    : _ask_info('fsize'),
+        'Files'   : _ask_info('num_of_files'),
     }
     #--Special sorters
-    def _sortStructure(self, items):
+    def _sortStructure(self, items, *, __lm=_ask_info('bain_type')):
         if settings[u'bash.installers.sortStructure']:
-            items.sort(key=lambda x: self.data_store[x].bain_type)
-    def _sortActive(self, items):
+            items.sort(key=lambda x: __lm(self, x))
+    def _sortActive(self, items, *, __lm=_ask_info('is_active')):
         if settings[u'bash.installers.sortActive']:
-            items.sort(key=lambda x: not self.data_store[x].is_active)
-    def _sortProjects(self, items):
+            items.sort(key=lambda x: not __lm(self, x))
+    def _sortProjects(self, items, *, __lm=_ask_info('is_project')):
         if settings[u'bash.installers.sortProjects']:
-            items.sort(key=lambda x: not self.data_store[x].is_project)
+            items.sort(key=lambda x: not __lm(self, x))
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
-    labels = {
-        'Package':  lambda self, p: p,
-        'Order':    lambda self, p: f'{self.data_store[p].order}',
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: self.data_store[p].size_string(),
+    labels = {'Package': lambda self, p: p,
+        'Order':    _ask_info('order', wrap=str),
+        'Modified': _ask_info('ftime', wrap=format_date),
+        'Size':     _ask_info('size_string', ()),
         'Files':    lambda self, p: self.data_store[p].number_string(
-            self.data_store[p].num_of_files),
+            self.data_store[p].num_of_files),##:_ask_info('num_of_files')(self, p)
     }
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, [u'Order']
@@ -3456,16 +3444,9 @@ class ScreensList(UIList):
     global_links = defaultdict(lambda: Links()) # Global menu
     _editLabels = _copy_paths = True
 
-    _sort_keys = {u'File'    : None,
-                  u'Modified': lambda self, a: self.data_store[a].ftime,
-                  u'Size'    : lambda self, a: self.data_store[a].fsize,
-    }
+    _sort_keys = _common_sort_keys
     #--Labels
-    labels ={
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-    }
+    labels = _common_labels
 
     # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
@@ -3583,16 +3564,9 @@ class BSAList(UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _sort_keys = {'File'    : None,
-                  'Modified': lambda self, a: self.data_store[a].ftime,
-                  'Size'    : lambda self, a: self.data_store[a].fsize,
-    }
+    _sort_keys = _common_sort_keys
     #--Labels
-    labels = {
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-    }
+    labels = _common_labels
 
 #------------------------------------------------------------------------------
 class BSADetails(_EditableMixinOnFileInfos, SashPanel):
