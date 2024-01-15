@@ -38,7 +38,6 @@ def init_image_resources(images_dir):
     _image_resource_dir = images_dir
     if not os.path.isdir(images_dir): # CI Hack we could move to caller or add a param
         _image_resource_dir = _Path.getcwd().join('Mopy', 'bash', 'images')
-    arrows = {}
     from .images import GuiImage
     def _icc(fname, bm_px_size=16):
         """Creates an Image wrapper.
@@ -48,6 +47,7 @@ def init_image_resources(images_dir):
             device-independent pixels (DIP)."""
         return GuiImage.from_path(fname, iconSize=bm_px_size)
     # Up/Down arrows for UIList columns
+    arrows = {}
     for arr in ['up', 'down']:
         arrows[f'arrow.{arr}.16'] = _icc(f'arrow_{arr}.svg')
     # collect the installer icons
@@ -69,7 +69,7 @@ def init_image_resources(images_dir):
                 f'diamond_{col}_{img_st}_wiz.png')
     _installer_icons['corrupt'] = _icc('red_x.svg')
     _gui_images.update(_installer_icons)
-     # collect color checks for the rest of the UILists
+    # collect color checks for the rest of the UILists
     _color_checks = dict(arrows)
     for st in ['imp', 'inc', 'off', 'on']:
         for col in ('purple', 'blue', 'green', 'orange', 'yellow', 'red'):

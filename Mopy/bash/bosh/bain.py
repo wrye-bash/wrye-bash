@@ -140,9 +140,9 @@ class Installer(ListInfo):
         'blockSize', 'overrideSkips', '_remaps', 'skipRefresh', 'fileRootIdex')
     volatile = ( # used when copying the installer do *not* add _file_key here
         'ci_dest_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
-        'missingFiles', 'mismatchedFiles', 'project_refreshed',
-        'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
-        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', 'has_fomod_conf')
+        'missingFiles', 'mismatchedFiles', 'project_refreshed', 'unSize',
+        'espms', 'underrides', 'hasWizard', 'espmMap', 'hasReadme', 'hasBCF',
+        'hasBethFiles', 'has_fomod_conf')
 
     #--Package analysis/porting.
     type_string = _('Unrecognized')
@@ -305,7 +305,6 @@ class Installer(ListInfo):
         self.underrides = set()
         self.missingFiles = set()
         self.mismatchedFiles = set()
-        self.mismatchedEspms = set()
 
     @property
     def num_of_files(self): return len(self.fileSizeCrcs)
@@ -1107,8 +1106,9 @@ class Installer(ListInfo):
     def refreshStatus(self, installersData):
         """Updates missingFiles, mismatchedFiles and status.
         Status:
-        20: installed (green)
-        10: mismatches (yellow)
+        30: installed (green)
+        20: mismatches (yellow)
+        10: mismatches (orange)
         0: unconfigured (white)
         -10: missing files (red)
         -20: bad type (grey)
@@ -1118,12 +1118,10 @@ class Installer(ListInfo):
         ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
-        misEspmed = self.mismatchedEspms
         underrides = set()
         status = 0
         missing.clear()
         mismatched.clear()
-        misEspmed.clear()
         if not self.has_recognized_structure:
             status = -20
         elif data_sizeCrc:
@@ -1133,12 +1131,11 @@ class Installer(ListInfo):
                     missing.add(filename)
                 elif sizeCrc != sizeCrcDate[:2]:
                     mismatched.add(filename)
-                    if ModInfos.rightFileType(filename):
-                        misEspmed.add(filename)
                 if sizeCrc == ci_underrides_sizeCrc.get(filename):
                     underrides.add(filename)
             if missing: status = -10
-            elif misEspmed: status = 10
+            elif any(ModInfos.rightFileType(f) for f in mismatched):
+                status = 10
             elif mismatched: status = 20
             else: status = 30
         #--Clean Dirty
@@ -1150,9 +1147,9 @@ class Installer(ListInfo):
                 ):
                 del dirty_sizeCrc[filename]
         #--Done
-        (self.status,oldStatus) = (status,self.status)
-        (self.underrides,oldUnderrides) = (underrides,self.underrides)
-        return self.status != oldStatus or self.underrides != oldUnderrides
+        changed = self.status != status or self.underrides != underrides
+        self.status, self.underrides = status, underrides
+        return changed
 
     #--Utility methods --------------------------------------------------------
     def packToArchive(self, project, fn_archive, isSolid, blockSize,
@@ -2504,13 +2501,13 @@ class InstallersData(DataStore):
             InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
-        for abspath, tracked in list(InstallersData._miscTrackedFiles.items()):
+        for apath, tracked in list(InstallersData._miscTrackedFiles.items()):
             try:
                 if tracked.do_update(raise_on_error=True):
-                    altered.add(abspath)
+                    altered.add(apath)
             except OSError: # untrack - runs on first run !!
-                InstallersData._miscTrackedFiles.pop(abspath, None)
-                del_paths.add(abspath)
+                InstallersData._miscTrackedFiles.pop(apath, None)
+                del_paths.add(apath)
         do_refresh = False
         for apath in altered | del_paths:
             # the Data dir - will give correct relative path for both
@@ -2556,9 +2553,9 @@ class InstallersData(DataStore):
                 and os.path.split(x)[0].lower() != u'ini tweaks')
         for relPath in dest_files:
             try:
-                oldCrc = self.data_sizeCrcDate.get(relPath)[1]
-                newCrc = installer.ci_dest_sizeCrc.get(relPath)[1]
-            except TypeError: # get returned None
+                oldCrc = self.data_sizeCrcDate[relPath][1]
+                newCrc = installer.ci_dest_sizeCrc[relPath][1]
+            except KeyError:
                 continue
             if newCrc == oldCrc: continue
             iniAbsDataPath = bass.dirs[u'mods'].join(relPath)
@@ -2757,25 +2754,25 @@ class InstallersData(DataStore):
 
     def __restore(self, installer, removes, restores, cede_ownership):
         """Populate restores dict with files to be restored by this
-        installer, removing those from removes. In case a mod or ini belongs
-        to another package, we must make sure we cede ownership, even if the
-        mod or ini is not restored (restore takes care of that).
-
-        Returns all of the files this installer would install. Used by
-        'bain_uninstall' and 'bain_anneal'."""
+        installer, removing those from removes. Used by 'bain_uninstall' and
+        'bain_anneal'. In case a mod or ini belongs to another package,
+        we must make sure we cede ownership, even if the mod or ini is not
+        restored (restore takes care of that). Return *all* the files this
+        installer would install."""
         # get all destination files for this installer
-        files = set(installer.ci_dest_sizeCrc)
+        dest_sc = installer.ci_dest_sizeCrc
         # keep those to be removed while not restored by a higher order package
-        to_keep = (removes & files) - set(restores)
+        to_keep = (removes & dest_sc.keys()) - restores.keys()
         for ci_dest in to_keep:
-            if installer.ci_dest_sizeCrc[ci_dest] != \
-                    self.data_sizeCrcDate.get(ci_dest,(0, 0, 0))[:2]:
-                # restore it from this installer
-                restores[ci_dest] = installer.fn_key
-            else: # don't mind the FName(str()) below - done seldom
-                cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
             removes.discard(ci_dest) # don't remove it anyway
-        return files
+            try: # restore it from this installer?
+                if dest_sc[ci_dest] != self.data_sizeCrcDate[ci_dest][:2]:
+                    restores[ci_dest] = installer.fn_key
+                    continue
+            except KeyError: pass
+            # don't mind the FName(str()) below - done seldom
+            cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
+        return set(dest_sc)
 
     def bain_uninstall_all(self, refresh_ui, progress=None):
         """Uninstall all present packages."""
@@ -2787,7 +2784,6 @@ class InstallersData(DataStore):
             progress)
 
     def _do_uninstall(self, unArchives, refresh_ui, progress):
-        data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
         #  may block (mask) them from deleting files and/or may provide files
@@ -2803,10 +2799,13 @@ class InstallersData(DataStore):
             #--Uninstall archive?
             if installer in unArchives:
                 for data_sizeCrc in (installer.ci_dest_sizeCrc,installer.dirty_sizeCrc):
-                    for cistr_file,sizeCrc in data_sizeCrc.items():
-                        sizeCrcDate = data_sizeCrcDate.get(cistr_file)
-                        if cistr_file not in masked and sizeCrcDate and sizeCrcDate[:2] == sizeCrc:
-                            removes.add(cistr_file)
+                    for ci_file, sizeCrc in data_sizeCrc.items():
+                        try:
+                            if ci_file not in masked and self.data_sizeCrcDate[
+                                    ci_file][:2] == sizeCrc:
+                                removes.add(ci_file)
+                        except KeyError:
+                            pass
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.is_active:
@@ -2852,9 +2851,8 @@ class InstallersData(DataStore):
         for index, (fn_inst, destFiles) in enumerate(installer_destinations):
             progress(index, fn_inst)
             if destFiles:
-                installer = self[fn_inst]
                 refresh_ui.update(self._installer_install(
-                    installer, destFiles, index, progress))
+                    self[fn_inst], destFiles, index, progress))
 
     def bain_anneal(self, anPackages, refresh_ui, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.

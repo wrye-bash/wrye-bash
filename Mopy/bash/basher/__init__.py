@@ -2547,8 +2547,8 @@ class InstallersList(UIList):
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, [u'Order']
     #--GUI
-    _status_color = {-20: u'grey', -10: u'red', 0: u'white', 10: u'orange',
-                     20: u'yellow', 30: u'green'}
+    _status_color = {-20: 'grey', -10: 'red', 0: 'white', 10: 'orange',
+                     20: 'yellow', 30: 'green'}
 
     @fast_cached_property
     def icons(self):
@@ -3174,9 +3174,8 @@ class InstallersDetails(_SashDetailsPanel):
                            '== ' + _('Configured Files'))])
             gPage.text_content = u'\n'.join(inf_)
         elif pageName == u'gMatched':
-            gPage.text_content = _dumpFiles(set(
-                installer.ci_dest_sizeCrc) - installer.missingFiles -
-                                           installer.mismatchedFiles)
+            gPage.text_content = _dumpFiles(installer.ci_dest_sizeCrc.keys() -
+                installer.missingFiles - installer.mismatchedFiles)
         elif pageName == u'gMissing':
             gPage.text_content = _dumpFiles(installer.missingFiles)
         elif pageName == u'gMismatched':
@@ -3789,6 +3788,13 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         # default tabs order and default enabled state, keys as in tabInfo
         tabs_enabled_ordered = dict(e.value for e in Store)
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
+        if not isinstance(newOrder, dict): # convert, on updating to 306 ##: still needed
+            enabled = settings.get('bash.tabs',  # deprecated - never use
+                                   tabs_enabled_ordered)
+            newOrder = {x: enabled[x] for x in newOrder
+            # needed if user updates to 306+ that drops 'bash.tabs', the latter
+            # is unchanged from default and the new version also removes a tab
+            if x in enabled}
         # append any new tabs - appends last
         newTabs = set(tabInfo) - set(newOrder)
         for n in newTabs: newOrder[n] = tabs_enabled_ordered[n]
