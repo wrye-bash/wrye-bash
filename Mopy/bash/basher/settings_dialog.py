@@ -22,7 +22,6 @@
 # =============================================================================
 import io
 import os
-import subprocess
 import webbrowser
 from collections import defaultdict
 
@@ -42,7 +41,7 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
-    get_image
+    get_image, HyperlinkLabel
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -418,89 +417,42 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.UpdateUIButtons()
 
 # Languages -------------------------------------------------------------------
-class ConfigureEditorDialog(DialogWindow):
-    """A dialog for configuring a localization file editor."""
-    _min_size = _def_size = (400, 240)
+_WEBLATE_URL = 'https://hosted.weblate.org/engage/wrye-bash/'
 
-    def __init__(self, parent):
-        super(ConfigureEditorDialog, self).__init__(parent,
-            title=_(u'Configure Editor'), icon_bundle=Resources.bashBlue,
-            sizes_dict=bass.settings)
-        self._editor_location = TextField(self,
-            init_text=bass.settings[u'bash.l10n.editor.path'])
-        browse_editor_btn = ImageButton(self, get_image('folder.16'),
-            btn_tooltip=_('Open a file dialog to interactively choose the '
-                          'editor binary.'))
-        browse_editor_btn.on_clicked.subscribe(self._handle_browse)
-        self._params_field = TextField(self,
-            init_text=bass.settings[u'bash.l10n.editor.param_fmt'])
-        ok_btn = OkButton(self)
-        ok_btn.on_clicked.subscribe(self._handle_ok)
-        VLayout(border=6, spacing=4, item_expand=True, items=[
-            HBoxedLayout(self, title=_(u'Editor'), spacing=4, items=[
-                (self._editor_location, LayoutOptions(expand=True, weight=1)),
-                browse_editor_btn,
-            ]),
-            Spacer(12),
-            VBoxedLayout(self, title=_(u'Parameters'), spacing=4, items=[
-                (self._params_field, LayoutOptions(expand=True, weight=1)),
-                # Do *not* change this %s, it's on purpose
-                Label(self, _("Note: '%s' will be replaced by the path "
-                              'to the localization file.')),
-            ]),
-            Stretch(), HLayout(spacing=5, items=[
-                Stretch(), ok_btn, CancelButton(self),
-            ]),
-        ]).apply_to(self)
-
-    def _handle_browse(self):
-        """Opens a file dialog to choose the editor."""
-        # Don't use mustExist, we want to show an error message for that below
-        chosen_editor = FileOpen.display_dialog(self,
-            title=_(u'Choose Editor'),
-            defaultDir=os.environ.get(u'ProgramFiles', u''),
-            wildcard=u'*.exe')
-        if chosen_editor:
-            self._editor_location.text_content = chosen_editor.s
-
-    def _handle_ok(self):
-        """Stores all changes that have been made."""
-        bass.settings[u'bash.l10n.editor.path'] = \
-            self._editor_location.text_content
-        bass.settings[u'bash.l10n.editor.param_fmt'] = \
-            self._params_field.text_content
-
-##: Quite a bit of duplicate code with the Backups page here
 class _LangDict(dict):
     __slots__ = ()
     def __missing__(self, key):
         return self.setdefault(key, key)
+
+##: Quite a bit of duplicate code with the Backups page here
 class LanguagePage(_AScrollablePage):
     """Change the language that the GUI is displayed in."""
     _internal_to_localized = _LangDict({
-        u'zh_CN': _(u'Chinese (Simplified)') + u' (简体中文)',
-        u'zh_TW': _(u'Chinese (Traditional)') + u' (繁体中文)',
-        u'de_DE': _(u'German') + u' (Deutsch)',
+        'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
+        'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
+        'de_DE': _('German') + ' (Deutsch)',
         'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
-        u'it_IT': _(u'Italian') + u' (italiano)',
-        u'ja_JP': _(u'Japanese') + u' (日本語)',
-        u'ru_RU': _(u'Russian') + u' (ру́сский язы́к)',
-        u'en_US': _('American English') + ' (American English)',
+        'it_IT': _('Italian') + ' (italiano)',
+        'ja_JP': _('Japanese') + ' (日本語)',
+        'ru_RU': _('Russian') + ' (ру́сский язы́к)',
+        'en_US': _('American English') + ' (American English)',
     })
     _localized_to_internal = _LangDict(reverse_dict(_internal_to_localized))
 
     def __init__(self, parent, page_desc):
         super(LanguagePage, self).__init__(parent, page_desc)
-        # Gather all localizations in the l10n directory
+        # Gather all localizations in the l10n directory. Note that we don't
+        # use the 'de_DENEW' thing anymore, but people may still have those
+        # files sitting around in their l10n dirs, so keep filtering them
         all_langs = [f'{b}' for f in bass.dirs['l10n'].ilist()
                      if f.fn_ext == '.po'
                      and (b := f.fn_body)[-3:].lower() != 'new']
         # Insert English since there's no localization file for that
-        if u'en_US' not in all_langs:
-            all_langs.append(u'en_US')
+        if 'en_US' not in all_langs:
+            all_langs.append('en_US')
         localized_langs = [self._internal_to_localized[l] for l in all_langs]
         # If the user has an unknown language active
-        active_lang = self._internal_to_localized[u'en_US']
+        active_lang = self._internal_to_localized['en_US']
         for internal_name, localized_name in sorted(zip(
                 all_langs, localized_langs), key=lambda x: x[1]):
             if self._is_active_lang(internal_name):
@@ -514,94 +466,23 @@ class LanguagePage(_AScrollablePage):
             choices=localized_langs, dd_tooltip=_(
                 'Changes the language that Wrye Bash will be displayed in.'))
         self._lang_dropdown.on_combo_select.subscribe(self._handle_lang_select)
-        self._l10n_list = ListBox(self, isSort=True, isHScroll=True,
-            onSelect=self._handle_select_l10n)
-        configure_editor_btn = Button(self, _(u'Configure Editor...'),
-            btn_tooltip=_(u'Choose the editor to use for editing '
-                          u'localizations.'))
-        configure_editor_btn.on_clicked.subscribe(self._handle_editor_cfg_btn)
-        is_standalone_warning = Label(self,
-            _(u'Note: You are using the standalone version and will not able '
-              u'to dump localizations.'))
-        is_standalone_warning.set_foreground_color(colors[u'default.warn'])
-        is_standalone_warning.visible = bass.is_standalone
-        self._edit_l10n_btn = OpenButton(self, _(u'Edit...'),
-            btn_tooltip=_(u'Opens the selected localization in an editor. You '
-                          u'can configure which editor to use via the '
-                          u"'Configure Editor...' button."))
-        self._edit_l10n_btn.on_clicked.subscribe(self._edit_l10n)
-        self._rename_l10n_btn = Button(self, _(u'Rename...'),
-            btn_tooltip=_(u'Rename the selected localization.'))
-        self._rename_l10n_btn.on_clicked.subscribe(self._rename_l10n)
-        # Populate the list and disable the context buttons by default
-        self._populate_l10n_list()
-        self._set_context_buttons(btns_enabled=False)
         VLayout(border=6, spacing=4, item_expand=True, items=[
             self._page_desc_label,
             HorizontalLine(self),
-            HBoxedLayout(self, title=_(u'Change Language'),
-                items=[self._lang_dropdown]),
-            (VBoxedLayout(self, title=_(u'Manage Localizations'),
-                spacing=4, item_expand=True, items=[
-                    is_standalone_warning,
-                    (HLayout(spacing=4, item_expand=True, items=[
-                        (self._l10n_list, LayoutOptions(weight=1)),
-                        VLayout(spacing=4, item_expand=True, items=[
-                            configure_editor_btn, HorizontalLine(self),
-                            self._edit_l10n_btn, self._rename_l10n_btn,
-                        ]),
-                    ]), LayoutOptions(weight=1)),
-                ]), LayoutOptions(weight=1)),
+            VBoxedLayout(self, title=_('Change Language'), items=[
+                self._lang_dropdown,
+                Spacer(6),
+                Label(self, _('Want to help translate Wrye Bash into your '
+                              'language?')),
+                HyperlinkLabel(self, _('Visit our Weblate page!'),
+                    url=_WEBLATE_URL)
+            ]),
         ]).apply_to(self)
-
-    @property
-    def _chosen_l10n(self):
-        """Returns the localization file that the user has selected. Note that
-        this will raise an error if no hidden icon has been selected, so it is
-        only safe to call if that has already been checked."""
-        return self._l10n_list.lb_get_selected_strings()[0]
-
-    def _edit_l10n(self):
-        """Opens the selected localization file in an editor."""
-        chosen_editor = bass.settings[u'bash.l10n.editor.path']
-        # First, verify that the chosen editor is valid
-        if not chosen_editor:
-            msg = _("No localization editor has been chosen. Please click "
-                    "on 'Configure Editor' to set one up.")
-            showError(self, msg, title=_('Invalid Editor'))
-            return
-        elif not os.path.isfile(chosen_editor):
-            msg = _('The chosen editor (%(chosen_editor)s) does not exist or '
-                    'is not a file.') % {'chosen_editor': chosen_editor}
-            showError(self, msg, title=_('Invalid Editor'))
-            return
-        # Now we can move on to actually opening the editor
-        selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
-        # Construct the final command and pass it to subprocess
-        editor_arg_fmt = bass.settings[u'bash.l10n.editor.param_fmt']
-        subprocess.Popen(
-            [chosen_editor, *((a % selected_l10n if '%s' in a else a)
-            for a in editor_arg_fmt.split(u' '))], close_fds=True)
-
-    @staticmethod
-    def _gather_l10n():
-        """Returns a list of all localization files in the l10n directory."""
-        return [f'{f}' for f in bass.dirs['l10n'].ilist() if f.fn_ext == '.po']
-
-    def _handle_editor_cfg_btn(self):
-        """Internal callback, called when the 'Configure Editor...' button has
-        been clicked. Shows a dialog for configuring the editor."""
-        ConfigureEditorDialog.display_dialog(self)
 
     def _handle_lang_select(self, selected_lang):
         """Internal callback, called when a new language has been selected.
         Marks this page as changed or not."""
         self._mark_changed(self, selected_lang != self._initial_lang)
-
-    def _handle_select_l10n(self, _lb_dex, _item_text):
-        """Internal callback, enables the context buttons once a localization
-        has been selected."""
-        self._set_context_buttons(btns_enabled=True)
 
     @staticmethod
     def _is_active_lang(internal_name):
@@ -624,26 +505,6 @@ class LanguagePage(_AScrollablePage):
             self._request_restart(_('Language: %(selected_language)s') % {
                 'selected_language': selected_lang},
                 [('--Language', internal_name)])
-
-    def _populate_l10n_list(self):
-        """Clears and repopulates the localization list."""
-        self._l10n_list.lb_set_items(self._gather_l10n())
-
-    def _rename_l10n(self):
-        """Renames the currently selected localization file."""
-        if not self._rename_op(
-            self._chosen_l10n, self._l10n_dir, _(u'Rename Localization'),
-            _(u'Please enter the new name for this localization file.')):
-            return
-        self._populate_l10n_list()
-        # This is equivalent to removing the selected entry and adding a new
-        # one, so we need to disable localization-specific buttons
-        self._set_context_buttons(btns_enabled=False)
-
-    def _set_context_buttons(self, btns_enabled):
-        """Enables or disables all l10n-specific buttons."""
-        for ctx_btn in (self._edit_l10n_btn, self._rename_l10n_btn):
-            ctx_btn.enabled = btns_enabled
 
 # Misc Appearance -------------------------------------------------------------
 class MiscAppearancePage(_AFixedPage):
@@ -1096,8 +957,6 @@ class ConfirmationsPage(_AFixedPage):
             'bash.saves.askDisable.continue',
         _('[Saves] Updating NPC levels in a save based on current plugins'):
             'bash.updateNpcLevels.continue',
-        _('[Settings] Dumping a new translation file'):
-            'bash.dump_translator.continue',
         _('[Settings] Switching the currently managed game'):
             'bash.switch_games_warning.continue',
     }

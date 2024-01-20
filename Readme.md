@@ -5,6 +5,7 @@ Wrye Bash
 
 [![Wrye Bash CI](https://github.com/wrye-bash/wrye-bash/workflows/Wrye%20Bash%20CI/badge.svg)](https://github.com/wrye-bash/wrye-bash/actions?query=workflow%3A%22Wrye+Bash+CI%22)
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.md)
+[![Translation status](https://hosted.weblate.org/widget/wrye-bash/wrye-bash/svg-badge.svg)](https://hosted.weblate.org/engage/wrye-bash/)
 
 ### About
 
@@ -105,7 +106,7 @@ bugfixes and enhancements. Feedback appreciated!
 Please see our [dedicated Contributing.md][15] document for information on how
 to contribute.
 
-We are currently in the process of reworking our translations to use [Weblate][20]. Please see [issue #500][21] for more information.
+Translations for Wrye Bash are [done through Weblate][20]. Please ask on our [Discord][11] if you have questions regarding weblate and translations.
 
 #### Main Branches
 
@@ -136,6 +137,6 @@ We are currently in the process of reworking our translations to use [Weblate][2
   [17]: https://github.com/wrye-bash/wrye-bash/tree/dev
   [18]: https://github.com/wrye-bash/wrye-bash/tree/master
   [19]: https://github.com/wrye-bash/wrye-bash/tree/nightly
-  [20]: https://hosted.weblate.org/projects/wrye-bash/wrye-bash/
+  [20]: https://hosted.weblate.org/engage/wrye-bash/
   [21]: https://github.com/wrye-bash/wrye-bash/issues/500
   [22]: https://aur.archlinux.org/packages/wrye-bash
