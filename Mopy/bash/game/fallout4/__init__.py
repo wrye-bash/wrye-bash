@@ -119,6 +119,7 @@ class AFallout4GameInfo(PatchGame):
             'materials',
             'mcm', # 3P: FO4 MCM
             'misc',
+            'prkf', # 3P: LevelUpMenuEx
             'programs',
             'scripts',
             'seq',

@@ -36,8 +36,12 @@ tested on (previous versions or latest versions may or may not work):
 
 ### Download
 
+#### Windows
 * [GitHub][3]
 * [NexusMods][2]
+
+#### Linux
+* [AUR][22]
 
 Docs are included in the download, but we are also setting them up online
  [here][4].
@@ -134,3 +138,4 @@ We are currently in the process of reworking our translations to use [Weblate][2
   [19]: https://github.com/wrye-bash/wrye-bash/tree/nightly
   [20]: https://hosted.weblate.org/projects/wrye-bash/wrye-bash/
   [21]: https://github.com/wrye-bash/wrye-bash/issues/500
+  [22]: https://aur.archlinux.org/packages/wrye-bash
