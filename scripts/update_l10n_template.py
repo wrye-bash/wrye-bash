@@ -38,7 +38,7 @@ from helpers._i18n import pygettext
 from helpers.utils import MOPY_PATH, fatal_error, edit_wb_file
 
 # We need the AppVersion for the Project-Id-Version
-sys.path.insert(0, MOPY_PATH)
+sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
 def _find_all_bash_modules(bash_path, cur_dir, _files=None):

@@ -34,8 +34,6 @@ import warnings
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
-# We need the vendored i18n files
-from ._i18n import msgfmt
 
 def set_c_locale():
     # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
@@ -46,6 +44,8 @@ def set_c_locale():
 
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
+_WEBLATE_URL = 'https://hosted.weblate.org/engage/wrye-bash/'
+
 def setup_locale(cli_lang, _wx):
     """Set up wx Locale and Wrye Bash translations. If cli_lang is given,
     will validate it is a supported wx language code, otherwise will fallback
@@ -86,14 +86,24 @@ def setup_locale(cli_lang, _wx):
     # We now have a language that wx supports, but we don't know if WB supports
     # it - so check that next
     trans_path = __get_translations_dir()
+    def _advertise_weblate(base_msg: str):
+        """Small helper for advertising our weblate to users who may end up
+        reading the log."""
+        bolt.deprint('\n'.join([
+            base_msg,
+            '',
+            'Want to help translate Wrye Bash into your language? '
+            'Visit our Weblate page!',
+            '', f'  {_WEBLATE_URL}', '',
+        ]))
     # English is the default, so it doesn't have a translation file
     # For all other languages, check if we have a translation
-    po = mo = None
+    mo = None
     if not target_name or target_name.startswith('en_'): # en_ gives en_GB on my system
         target_name = 'en_US'
     else:
-        supported_l10ns = [f[:-3] for f in os.listdir(trans_path) if
-                           f[-3:] == '.po']
+        supported_l10ns = {f[:-3] for f in os.listdir(trans_path) if
+                           f[-3:] in ('.mo', '.po')}
         # Check if we support this exact language or any similar
         # languages (i.e. same prefix)
         wanted_prefix = target_name.split('_', 1)[0]
@@ -107,46 +117,57 @@ def setup_locale(cli_lang, _wx):
                 if target_name == f:
                     bolt.deprint(f"Found translation file for language "
                                  f"'{target_name}'")
-                else:  # Note we pick the first similar we run across
-                    bolt.deprint(f"No translation file for language "
-                                 f"'{target_name}', using similar language "
-                                 f"with translation file '{f}' instead")
+                else:  # Note we pick the first(!) similar we run across
+                    _advertise_weblate(f"No translation file for language "
+                                       f"'{target_name}', using similar "
+                                       f"language with translation file '{f}' "
+                                       f"instead")
                     target_name = f
-                po, mo = (os.path.join(trans_path, target_name + ext) for ext
-                          in (u'.po', u'.mo'))
+                mo = os.path.join(trans_path, target_name + '.mo')
                 break
         else:
-            if not matches: # TODO: is this any use? we set C locale anyway
-                bolt.deprint(f"Wrye Bash does not support the language "
-                             f"family '{wanted_prefix}', will however "
-                             f"try to set locale to '{target_name}'")
-            else: # TODO: needs more tweaking - probably we should unify with above
-                # If that didn't work, all we can do is complain
-                # about it and fall back to English
-                bolt.deprint(f"wxPython does not support the language family '"
-                             f"{wanted_prefix}', will fall back to "
-                             f"'{target_name := 'en_US'}'")
+            # We don't have a translation file for this any language in this
+            # family, fall back to English (and ask the user to contribute :))
+            target_name = 'en_US'
+            _advertise_weblate(f"wxPython does not support the language "
+                               f"family '{wanted_prefix}', will fall back "
+                               f"to '{target_name}'")
     lang_info = _wx.Locale.FindLanguageInfo(target_name)
     target_language = lang_info.Language
     target_locale = _wx.Locale(target_language)
     bolt.deprint(f"Set wxPython locale to '{target_name}'")
     # Next, set the Wrye Bash locale based on the one we grabbed from wx
-    if po is mo is None:
-        # We're using English or don't have a translation file - either way,
-        # prepare the English translation
-        trans = gettext.NullTranslations()
+    if mo is None:
+        trans = gettext.NullTranslations() # We're using English
     else:
+        po = mo[:-2] + 'po'
         try:
-            # We have a translation file, check if it has to be compiled
-            if not os.path.isfile(mo) or (os.path.getmtime(po) >
-                                          os.path.getmtime(mo)):
-                old_argv = sys.argv[:]
-                sys.argv = ['m', '-o', mo, po]
-                msgfmt.main()
-                sys.argv = old_argv
-            # We've successfully compiled the translation, read it into memory
-            with open(mo, u'rb') as trans_file:
-                trans = gettext.GNUTranslations(trans_file)
+            if os.path.isfile(mo):
+                if os.path.isfile(po) and (os.path.getmtime(mo) <
+                                           os.path.getmtime(po)):
+                    # .mo file older than .po file (dev env only)
+                    bolt.deprint('\n'.join([
+                        f'.mo file possibly outdated ({mo}). If you manually '
+                        f'edited the .po file, run scripts/compile_l10n.py',
+                        'Using possibly outdated .mo file regardless',
+                        '',
+                        'Note: if you are trying to translate Wrye Bash, '
+                        'please do so via our weblate page!',
+                        '', f'  {_WEBLATE_URL}', '',
+                    ]))
+                with open(mo, 'rb') as trans_file:
+                    trans = gettext.GNUTranslations(trans_file)
+            else:
+                if os.path.isfile(po):
+                    # .mo file missing, .po file exists (dev env only)
+                    bolt.deprint(f'Missing .mo file ({mo}), but .po file '
+                                 f'exists. Run scripts/compile_l10n.py')
+                else:
+                    # .mo file missing, no .po file (production only)
+                    bolt.deprint(f'Missing .mo file ({mo}) - this should '
+                                 f'really not happen, please report this!')
+                bolt.deprint('Falling back to English (en_US)')
+                trans = gettext.NullTranslations()
         except (UnicodeError, OSError):
             bolt.deprint('Error loading translation file:', traceback=True)
             trans = gettext.NullTranslations()

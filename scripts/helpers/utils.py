@@ -32,28 +32,29 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from urllib.request import urlopen
 
 import pygit2
 
 # Reusable path definitions
-SCRIPTS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD_LOGFILE = os.path.join(SCRIPTS_PATH, 'build.log')
-TAGINFO = os.path.join(SCRIPTS_PATH, 'taginfo.txt')
-WBSA_PATH = os.path.join(SCRIPTS_PATH, 'build', 'standalone')
-DIST_PATH = os.path.join(SCRIPTS_PATH, 'dist')
-ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, os.pardir))
-MOPY_PATH = os.path.join(ROOT_PATH, 'Mopy')
-APPS_PATH = os.path.join(MOPY_PATH, 'Apps')
-NSIS_PATH = os.path.join(SCRIPTS_PATH, 'build', 'nsis')
-TESTS_PATH = os.path.join(MOPY_PATH, 'bash', 'tests')
-TAGLISTS_PATH = os.path.join(MOPY_PATH, 'taglists')
-IDEA_PATH = os.path.join(ROOT_PATH, '.idea')
-VSCODE_PATH = os.path.join(ROOT_PATH, '.vscode')
-OUT_PATH = os.path.join(SCRIPTS_PATH, 'out')
-CHANGELOGS_PATH = os.path.join(SCRIPTS_PATH, 'changelogs')
-WB_STATUS_PATH = os.path.abspath(os.path.join(
-    ROOT_PATH, os.pardir, 'wb_status'))
+SCRIPTS_PATH = Path(__file__).absolute().parent.parent
+ROOT_PATH = SCRIPTS_PATH.parent
+WBSA_PATH = SCRIPTS_PATH / 'build' / 'standalone'
+DIST_PATH = SCRIPTS_PATH / 'dist'
+MOPY_PATH = ROOT_PATH / 'Mopy'
+APPS_PATH = MOPY_PATH / 'Apps'
+NSIS_PATH = SCRIPTS_PATH / 'build' / 'nsis'
+L10N_PATH = MOPY_PATH / 'bash' / 'l10n'
+TESTS_PATH = MOPY_PATH / 'bash' / 'tests'
+TAGLISTS_PATH = MOPY_PATH / 'taglists'
+IDEA_PATH = ROOT_PATH / '.idea'
+VSCODE_PATH = ROOT_PATH / '.vscode'
+OUT_PATH = SCRIPTS_PATH / 'out'
+CHANGELOGS_PATH = SCRIPTS_PATH / 'changelogs'
+WB_STATUS_PATH = ROOT_PATH.parent / 'wb_status'
+BUILD_LOGFILE = SCRIPTS_PATH / 'build.log'
+TAGINFO = SCRIPTS_PATH / 'taginfo.txt'
 
 # Other constants
 DEFAULT_MILESTONE_TITLE = 'Bug fixes and enhancements'
@@ -227,6 +228,14 @@ def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback):
         wbpy.seek(0, os.SEEK_SET)
         wbpy.truncate(0)
         wbpy.write('\n'.join(new_wbpy_lines) + '\n')
+
+def edit_bass_version(new_ver: str):
+    """Change the AppVersion in bass.py to the specified version."""
+    def edit_bass(bass_ma):
+        return f"AppVersion = '{new_ver}'{bass_ma.group(1)}"
+    edit_wb_file('bash', 'bass.py',
+        trigger_regex=re.compile(r"^AppVersion = '\d+(?:\.\d+)?'(.*)$"),
+        edit_callback=edit_bass)
 
 # Copy-pasted from bolt.py
 # We need to split every time we hit a new 'type' of component. So greedily

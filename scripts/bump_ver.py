@@ -28,9 +28,10 @@ import re
 import sys
 
 import pyfiglet
-from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, open_wb_file
+from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, \
+    open_wb_file, edit_bass_version
 
-sys.path.insert(0, MOPY_PATH)
+sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
 def setup_parser(parser):
@@ -43,11 +44,7 @@ def main(args):
     new_ver = args.new_version
     files_bumped = []
     # bash/bass.py: Bump the AppVersion definition
-    def edit_bass(bass_ma):
-        return f"AppVersion = '{new_ver}'{bass_ma.group(1)}"
-    edit_wb_file('bash', 'bass.py',
-        trigger_regex=re.compile(r"^AppVersion = '\d+(?:\.\d+)?'(.*)$"),
-        edit_callback=edit_bass)
+    edit_bass_version(new_ver)
     files_bumped.append(os.path.join(MOPY_PATH, 'bash', 'bass.py'))
     # Docs/*.html: Bump the version footers
     def edit_readme(readme_ma):
