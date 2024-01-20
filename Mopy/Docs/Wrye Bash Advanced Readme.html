@@ -128,11 +128,7 @@
                         <li><a href="#tools-shortcuts">Keyboard Shortcuts</a>
                         <li><a href="#tools-arguments">Command Line Arguments</a>
                     </ol>
-                <li class="list"><a href="#international">Internationalisation</a>
-                    <ol class="items">
-                        <li><a href="#international-overview">Overview</a>
-                        <li><a href="#international-format">Translator File Format</a>
-                    </ol>
+                </li>
             </ol>
         </div>
     </div>
@@ -11950,49 +11946,12 @@ iScreenShotIndex=0</code></td>
 
 <figure class="slideshow">
     <img alt="" src="../bash/images/readme/settings-language.png">
-    <img alt="" src="../bash/images/readme/settings-language-configure-editor.png">
     <figcaption style="padding-top: 519px;">The Language page.</figcaption>
 </figure>
 
 <p>The language page can be used to change the language that Wrye Bash will be
-    displayed in. It is also the place to create, edit and manage
-    localizations. See the <a href="#international">Internationalisation</a>
-    section for more information.</p>
-<p>The following buttons are available:</p>
-
-<table>
-    <thead>
-        <tr>
-            <th colspan="2">Language Buttons</th>
-        </tr>
-        <tr>
-            <th>Button</th>
-            <th>Function</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td id="settings-configure-editor">Configure Editor...</td>
-            <td>Launch the <q>Configure Editor</q> dialog, which allows you
-                to choose and configure a localization editor.</td>
-        </tr>
-        <tr>
-            <td id="settings-dump-localization">Dump Localization...</td>
-            <td>Generate a new translation file for your currently chosen
-                language.</td>
-        </tr>
-        <tr>
-            <td id="settings-edit-localization">Edit...</td>
-            <td>Launch the editor chosen via
-                <a href="#settings-configure-editor">Configure Editor...</a>
-                to edit the selected localization.</td>
-        </tr>
-        <tr>
-            <td id="settings-rename-localization">Rename...</td>
-            <td>Rename the selected localization file.</td>
-        </tr>
-    </tbody>
-</table>
+    displayed in. See the <a href="#international">Internationalisation</a>
+    section for more information on translating Wrye Bash.</p>
 
 <h3 id="settings-appearance-misc">Appearance: Misc <a class="back2top" href="#contents">Back to top</a></h3>
 
@@ -12735,90 +12694,6 @@ iScreenShotIndex=0</code></td>
             <td>Close Bash after creating or restoring backup and do not
                 display any prompts or message dialogs.
 </table>
-
-<h2 id="international">Internationalisation <a class="back2top" href="#contents">Back to top</a></h2>
-
-<h3 id="international-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
-
-<p>Wrye Bash has built-in support for translation into other languages,
-    using text files that tell it which English strings in the source code
-    should be translated, and into what. These text files are found in
-    <code>Mopy\bash\l10n\</code>. New translations or updates to existing
-    translations should be presented to the Wrye Bash team so that they may be
-    included in future releases.</p>
-<p>To begin translating, or to update an existing translation, use the
-    following steps:</p>
-<ol>
-    <li>Ensure you are running the Python version of Wrye Bash, as the
-        standalone version does not include the source code, which is necessary
-        for generating the translation file. See the
-        <a href="Wrye%20Bash%20General%20Readme.html#install">Installation</a>
-        section of the General Readme for a short overview of how to install
-        the Python version.</li>
-    <li>Open the <a href="#settings">Settings Menu</a> and navigate to the
-        <a href="#settings-appearance-language">Appearance: Language</a>
-        page.</li>
-    <li>If you haven't done so yet, click the
-        <a href="#settings-configure-editor">Configure Editor...</a> button to
-        set up an editor for editing localization files:
-        <ol>
-            <li>Click on <img src="../bash/images/folder.svg" width="16"
-                              height="16" alt="the Browse button"> and pick the
-                editor's executable.</li>
-            <li>If necessary, edit the <q>Parameters</q> section. For example,
-                if you're using Notepad++, you might want to add parameters
-                like <code>-multiInst -notabbar -nosession</code>.</li>
-            <li>If your editor does not support opening Wrye Bash's
-                <code>.txt</code> files (Poedit, for example, does not), try
-                checking the <q>Rename to .po</q> checkbox. This will make Wrye
-                Bash rename the localization file right before launching the
-                chosen editor, then rename it back to <code>.txt</code> after
-                you've finished editing to work around this.</li>
-            <li>Once you're done configuring the editor, click <q>OK</q>.</li>
-        </ol>
-    </li>
-    <li>Click the
-        <a href="#settings-dump-localization">Dump Localization...</a> button.
-        This generates a new version of the translation file for your locale.
-        The new file will be named appropriately, except for the trailing
-        "NEW", and will contain any translations already done.</li>
-    <li>Select the newly created localization and click the
-        <a href="#settings-rename-localization">Rename...</a> button. Remove
-        the trailing "NEW", but do not change the rest of the filename. Confirm
-        that you want to replace the existing file when prompted.</li>
-    <li>Select the now-renamed localization file again, and click the
-        <a href="#settings-edit-localization">Edit...</a> button. Your editor
-        will be launched, allowing you to add or edit translations.</li>
-    <li>Once you are done with editing, save and close the editor. Then click
-        the <q>OK</q> button on the popup in Wrye Bash.</li>
-    <li>To test a translation, make sure the matching language is selected in
-        the <q>Change Language</q> dropdown and restart Wrye Bash.</li>
-</ol>
-
-
-<h3 id="international-format">Translator File Format <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Below is an excerpt from a translator file.
-<div class="international-format-cdebox">
-<code class="box">#: bash\basher.py:10106
-msgid "Active profile cannot be removed"
-msgstr "Aktives Profil kann nicht entfernt werden"
-
-#: bash\basher.py:10112
-msgid "Delete profile %s and the %d save files it contains?"
-msgstr "Möchten Sie das Profil %s und die %d saves, die es enthält, löschen?"
-</code>
-</div>
-<p>The above contains two separate translation entries. Each entry begins with
-    the source code file and line number the string to be translated is found
-    on.</p>
-<p>The file line is followed by <code>msgid</code> and the original text
-    string. Lastly, <code>msgstr</code> introduces the translated text
-    string.</p>
-<p><strong>Note:</strong> It is important that the formatting characters are
-    not removed or moved or added to. Formatting characters are those that
-    start with a percentage sign, e.g. <code>%s</code>, <code>%u</code>,
-    <code>%08X</code>, etc. If a formatting character is missing or incorrect,
-    Wrye Bash will most likely crash.</p>
 
 <!-- Scrolling content end -->
 </div>
