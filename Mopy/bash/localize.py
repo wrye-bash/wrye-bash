@@ -239,6 +239,7 @@ def dump_translator(out_path, lang):
                     if re_msg_ids_start.match(old_line):
                         break # Break once we hit the first translatable string
                     out.write(old_line)
+            linesep_bytes = os.linesep.encode(target_enc)
             # Read through the new translation file, fill in any already
             # translated strings
             with open(new_po, u'rb') as ins:
@@ -266,6 +267,9 @@ def dump_translator(out_path, lang):
                         translated_line: str = _(stripped_line)
                         # We're going to need the msgid either way
                         out.write(new_line)
+                        if translated_line == stripped_line:
+                            translated_line = _fixup_old_translation(
+                                stripped_line, translated_line)
                         if translated_line != stripped_line:
                             # This has a translation, so write that one out
                             out.write(b'msgstr "')
@@ -277,10 +281,10 @@ def dump_translator(out_path, lang):
                                 sub_quote, final_ln)
                             final_ln = final_ln.encode(target_enc)
                             out.write(final_ln)
-                            out.write(b'"\r\n')
+                            out.write(b'"' + linesep_bytes)
                         else:
                             # Not translated, write out an empty msgstr
-                            out.write(b'msgstr ""\r\n')
+                            out.write(b'msgstr ""' + linesep_bytes)
                     elif new_line.startswith(b'msgstr "'):
                         # Skip all msgstr lines from new_po (handled above)
                         continue
@@ -301,6 +305,35 @@ def dump_translator(out_path, lang):
                 try: os.remove(tmp_po)
                 except OSError: pass
     return new_po
+
+_FMT_SPECIFIER_REGEX = re.compile(r'(%\([^)]+\)(\w))')
+_FMT_SPECIFIER_OLD_REGEX = re.compile(r'%(\w)')
+def _fixup_old_translation(stripped_line: str, translated_line: str):
+    # Try updating %s -> %(...)s
+    stripped_old = _FMT_SPECIFIER_REGEX.sub(
+        lambda m: f'%{m.group(2)}', stripped_line)
+    translated_old = _(stripped_old)
+    if translated_old != stripped_old:
+        # Add the %(...)s specifiers back in
+        new_specifiers = _FMT_SPECIFIER_REGEX.findall(
+            stripped_line)
+        spec_index = 0
+        i = 0
+        wip_translation = ''
+        while i < len(translated_old):
+            next_ma = _FMT_SPECIFIER_OLD_REGEX.search(
+                translated_old, i)
+            if next_ma:
+                wip_translation += translated_old[i:next_ma.start()]
+                wip_translation += new_specifiers[spec_index][0]
+                spec_index += 1
+                i = next_ma.end()
+            else:
+                # We've hit all specifiers, finish line
+                wip_translation += translated_old[i:]
+                break
+        return wip_translation
+    return translated_line
 
 #------------------------------------------------------------------------------
 # Formatting

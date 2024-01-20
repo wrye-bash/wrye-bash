@@ -4,8 +4,8 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2011-12-18 18:26+Alaskan Standard Time\n"
+"Project-Id-Version: Wrye Bash 312.1\n"
+"POT-Creation-Date: 2024-01-07 22:03+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -13,6 +13,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
+
 
 #: bash/ScriptParser.py:102
 msgid "Too few arguments to %(obj_type)s '%(obj_name)s': got %(got)s, expected %(expected)s."
@@ -112,7 +113,7 @@ msgstr ""
 
 #: bash/ScriptParser.py:1081 bash/basher/belt.py:883
 msgid "No reason given"
-msgstr "Kein Grund gegeben"
+msgstr ""
 
 #: bash/ScriptParser.py:1088
 msgid "Cannot assign a value to %(lhs_name)s, type is %(lhs_type)s."
@@ -136,7 +137,7 @@ msgstr ""
 
 #: bash/ScriptParser.py:1522
 msgid "Could not open wizard file"
-msgstr "Konnte Wizarddatei nicht öffnen"
+msgstr ""
 
 #: bash/archives.py:73 bash/archives.py:86
 msgid "Compressing files..."
@@ -151,7 +152,7 @@ msgstr ""
 #: bash/balt.py:109 bash/balt.py:1571 bash/balt.py:1579 bash/balt.py:1584
 #: bash/balt.py:1590 bash/gui/popups.py:747 bash/gui/popups.py:763
 msgid "Warning"
-msgstr "Warnung"
+msgstr ""
 
 #: bash/balt.py:121
 msgid "Don't show this for the rest of operation."
@@ -167,25 +168,25 @@ msgstr ""
 
 #: bash/balt.py:237 bash/basher/gui_patchers.py:312
 msgid "Add"
-msgstr "Hinzufügen"
+msgstr ""
 
 #: bash/balt.py:238 bash/balt.py:287
 msgid "Rename"
-msgstr "Umbenennen"
+msgstr ""
 
 #: bash/balt.py:239 bash/basher/__init__.py:1969
 #: bash/basher/gui_patchers.py:314
 msgid "Remove"
-msgstr "Entfernen"
+msgstr ""
 
 #: bash/balt.py:240 bash/gui/buttons.py:124
 msgid "Save"
-msgstr "Speichern"
+msgstr ""
 
 #: bash/balt.py:241 bash/basher/dialogs.py:672 bash/gui/buttons.py:116
 #: bash/gui/popups.py:438
 msgid "Cancel"
-msgstr "Abbrechen"
+msgstr ""
 
 #: bash/balt.py:287
 msgid "Rename to:"
@@ -198,7 +199,7 @@ msgstr ""
 
 #: bash/balt.py:432
 msgid "Progress"
-msgstr "Fortschritt"
+msgstr ""
 
 #: bash/balt.py:1052 bash/balt.py:1950
 msgid "The selected items cannot be renamed."
@@ -218,7 +219,7 @@ msgstr ""
 
 #: bash/balt.py:1378
 msgid "Delete Items"
-msgstr "Gegenstände löschen"
+msgstr ""
 
 #: bash/balt.py:1393 bash/balt.py:1927
 msgid "The selected items cannot be deleted."
@@ -226,11 +227,11 @@ msgstr ""
 
 #: bash/balt.py:1423
 msgid "A file named %(target_file_name)s already exists in the hidden files directory. Overwrite it?"
-msgstr "Eine Datei namens %(target_file_name)s gibt es bereits im Verzeichnis versteckter Dateien. Soll sie überschrieben werden?"
+msgstr ""
 
 #: bash/balt.py:1426 bash/balt.py:2039
 msgid "Hide Files"
-msgstr "Dateien ausblenden"
+msgstr ""
 
 #: bash/balt.py:1442
 msgid "Unhide files:"
@@ -238,7 +239,7 @@ msgstr ""
 
 #: bash/balt.py:1597 bash/gui/popups.py:757
 msgid "Error"
-msgstr "Fehler"
+msgstr ""
 
 #: bash/balt.py:1603 bash/gui/popups.py:768
 msgid "Information"
@@ -250,7 +251,7 @@ msgstr ""
 
 #: bash/balt.py:1904 bash/gui/popups.py:309
 msgid "Delete"
-msgstr "Löschen"
+msgstr ""
 
 #: bash/balt.py:1920
 msgid "Delete '%(filename)s'."
@@ -503,137 +504,137 @@ msgstr ""
 
 #: bash/bash.py:412 bash/basher/__init__.py:4351 bash/bosh/bain.py:1860
 msgid "Done"
-msgstr "Fertig"
-
-#: bash/bash.py:435
-msgid "Wrye Bash encountered an error."
 msgstr ""
 
 #: bash/bash.py:436
-msgid "Please post the information below to the official thread at"
+msgid "Wrye Bash encountered an error."
 msgstr ""
 
 #: bash/bash.py:437
-msgid "https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games"
+msgid "Please post the information below to the official thread at"
 msgstr ""
 
 #: bash/bash.py:438
-msgid "or to the Wrye Bash Discord at"
+msgid "https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games"
 msgstr ""
 
 #: bash/bash.py:439
+msgid "or to the Wrye Bash Discord at"
+msgstr ""
+
+#: bash/bash.py:440
 msgid "https://discord.gg/NwWvAFR"
 msgstr ""
 
-#: bash/bash.py:507
+#: bash/bash.py:508
 msgid "Error! Unable to start Wrye Bash."
 msgstr ""
 
-#: bash/bash.py:507
+#: bash/bash.py:508
 msgid "Please ensure Wrye Bash is correctly installed."
 msgstr ""
 
-#: bash/bash.py:528
+#: bash/bash.py:529
 msgid "Wrye Bash needs Administrator Privileges to make changes to the %(gameName)s directory.  If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges."
 msgstr ""
 
-#: bash/bash.py:552 bash/basher/settings_dialog.py:924
+#: bash/bash.py:553 bash/basher/settings_dialog.py:924
 msgid "Backup Bash Settings"
 msgstr ""
 
-#: bash/bash.py:564
+#: bash/bash.py:565
 msgid "There was an error while trying to backup the Bash settings!"
 msgstr ""
 
-#: bash/bash.py:566
+#: bash/bash.py:567
 msgid "If you continue, your current settings may be overwritten."
 msgstr ""
 
-#: bash/bash.py:568
+#: bash/bash.py:569
 msgid "Do you want to quit Wrye Bash now?"
 msgstr ""
 
-#: bash/bash.py:570
+#: bash/bash.py:571
 msgid "Unable to create backup!"
 msgstr ""
 
-#: bash/bash.py:600
+#: bash/bash.py:601
 msgid "The following (non-critical) warnings were found during initialization:"
 msgstr ""
 
-#: bash/bash.py:613
+#: bash/bash.py:614
 msgid "Wrye Bash could not find a game to manage. Make sure to launch games you installed through Steam once and enable mods on games you installed through the Windows Store."
 msgstr ""
 
-#: bash/bash.py:617
+#: bash/bash.py:618
 msgid "You can also use the -o command line argument or bash.ini to specify the path manually."
 msgstr ""
 
-#: bash/bash.py:643
+#: bash/bash.py:644
 msgid "Wrye Bash Error"
 msgstr ""
 
-#: bash/bash.py:644
+#: bash/bash.py:645
 msgid "Wrye Bash Warning"
 msgstr ""
 
-#: bash/bash.py:655 bash/bash.py:746
+#: bash/bash.py:656 bash/bash.py:747
 msgid "Quit"
 msgstr ""
 
-#: bash/bash.py:657
+#: bash/bash.py:658
 msgid "Continue"
 msgstr ""
 
-#: bash/bash.py:658
+#: bash/bash.py:659
 msgid "Abort"
 msgstr ""
 
-#: bash/bash.py:723
+#: bash/bash.py:724
 msgid "Select Game"
 msgstr ""
 
-#: bash/bash.py:737
+#: bash/bash.py:738
 msgid "Search Games"
 msgstr ""
 
-#: bash/bash.py:750 bash/env/windows.py:1082
+#: bash/bash.py:751 bash/env/windows.py:1082
 msgid "Launch"
 msgstr ""
 
-#: bash/bash.py:756
+#: bash/bash.py:757
 msgid "Please choose a game to manage."
 msgstr ""
 
-#: bash/bash.py:759
+#: bash/bash.py:760
 msgid "Game Details"
 msgstr ""
 
-#: bash/bash.py:762
+#: bash/bash.py:763
 msgid "Variant:"
 msgstr ""
 
-#: bash/bash.py:768
+#: bash/bash.py:769
 msgid "Install Path:"
 msgstr ""
 
-#: bash/bash.py:817 bash/bash.py:831
+#: bash/bash.py:818 bash/bash.py:832
 msgid "N/A"
 msgstr ""
 
-#: bash/bash.py:860
+#: bash/bash.py:861
 msgid "Warning: you appear to be using a non-supported version of wxPython (%(curr_wx_ver)s). This will cause problems! It is highly recommended you use a %(supported_wx_series)s version. Do you still want to run Wrye Bash?"
 msgstr ""
 
-#: bash/bash.py:866
+#: bash/bash.py:867
 msgid "Unsupported wxPython Version Detected"
 msgstr ""
 
-#: bash/bash.py:875
+#: bash/bash.py:876
 msgid "Only Python %(min_py_ver)s and newer is supported (%(curr_py_ver)s detected). If you know what you're doing, install the Python version of Wrye Bash and edit this warning out. Wrye Bash will now exit."
 msgstr ""
 
-#: bash/bash.py:881
+#: bash/bash.py:882
 msgid "Unsupported Python Version Detected"
 msgstr ""
 
@@ -651,11 +652,11 @@ msgstr ""
 
 #: bash/basher/__init__.py:149
 msgid "%(package_filename)s already exists. Overwrite it?"
-msgstr "%(package_filename)s existiert bereits. Überschreiben?"
+msgstr ""
 
 #: bash/basher/__init__.py:158 bash/basher/__init__.py:3366
 msgid "Installers"
-msgstr "Installer"
+msgstr ""
 
 #: bash/basher/__init__.py:159
 msgid "Mods"
@@ -663,11 +664,11 @@ msgstr ""
 
 #: bash/basher/__init__.py:160
 msgid "Saves"
-msgstr "Spielstände"
+msgstr ""
 
 #: bash/basher/__init__.py:161
 msgid "INI Edits"
-msgstr "INI-Änderungen"
+msgstr ""
 
 #: bash/basher/__init__.py:162
 msgid "Screenshots"
@@ -727,7 +728,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:489
 msgid "Update Masters"
-msgstr "Aktualisiere Masterdateien"
+msgstr ""
 
 #: bash/basher/__init__.py:554 bash/basher/__init__.py:1055
 msgid "Plugin name incompatible, will not load."
@@ -807,7 +808,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:859 bash/basher/installer_links.py:597
 msgid "INI Tweaks"
-msgstr "INI-Tweaks"
+msgstr ""
 
 #: bash/basher/__init__.py:1018
 msgid "Reordering mods is only allowed when they are sorted by Load Order."
@@ -859,7 +860,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:1457
 msgid "File corrupted on save!"
-msgstr "Datei beim Speichern beschädigt!"
+msgstr ""
 
 #: bash/basher/__init__.py:1495 bash/basher/__init__.py:2432
 msgid "Masters:"
@@ -944,7 +945,7 @@ msgstr ""
 #: bash/basher/__init__.py:1883 bash/basher/gui_patchers.py:309
 #: bash/basher/settings_dialog.py:1257
 msgid "Automatic"
-msgstr "Automatik"
+msgstr ""
 
 #: bash/basher/__init__.py:1884
 msgid "Use the tags from the description and masterlist/userlist."
@@ -960,7 +961,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:1919
 msgid "Copy to Description"
-msgstr "Zur Beschreibung kopieren"
+msgstr ""
 
 #: bash/basher/__init__.py:1920
 msgid "Copies currently applied tags to the plugin description."
@@ -974,7 +975,7 @@ msgstr ""
 #: bash/basher/gui_fomod.py:567 bash/basher/installer_links.py:990
 #: bash/basher/installer_links.py:1098 bash/gui/buttons.py:163
 msgid "Select All"
-msgstr "Alles auswählen"
+msgstr ""
 
 #: bash/basher/__init__.py:1936
 msgid "Selects all currently applied tags."
@@ -984,7 +985,7 @@ msgstr ""
 #: bash/basher/gui_fomod.py:574 bash/basher/installer_links.py:1000
 #: bash/basher/installer_links.py:1104 bash/gui/buttons.py:171
 msgid "Deselect All"
-msgstr "Alles abwählen"
+msgstr ""
 
 #: bash/basher/__init__.py:1941
 msgid "Deselects all currently applied tags."
@@ -1064,7 +1065,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:2499
 msgid "Saves: %(status_num)d"
-msgstr "Spielstände: %(status_num)d"
+msgstr ""
 
 #: bash/basher/__init__.py:2576
 msgid "Needs Annealing due to a change in configuration."
@@ -1148,7 +1149,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:2917 bash/basher/__init__.py:2923
 msgid "Refreshing Packages..."
-msgstr "Aktualisiere Pakete..."
+msgstr ""
 
 #: bash/basher/__init__.py:2933
 msgid "Refreshing from %(data_folder)s..."
@@ -1158,35 +1159,35 @@ msgstr ""
 #: bash/basher/settings_dialog.py:1722 bash/basher/settings_dialog.py:1746
 #: bash/basher/settings_dialog.py:1762
 msgid "General"
-msgstr "Allgemein"
+msgstr ""
 
 #: bash/basher/__init__.py:2979
 msgid "Matched"
-msgstr "Passend"
+msgstr ""
 
 #: bash/basher/__init__.py:2980
 msgid "Missing"
-msgstr "Fehlend"
+msgstr ""
 
 #: bash/basher/__init__.py:2981
 msgid "Mismatched"
-msgstr "Unpassend"
+msgstr ""
 
 #: bash/basher/__init__.py:2982
 msgid "Conflicts"
-msgstr "Konflikte"
+msgstr ""
 
 #: bash/basher/__init__.py:2983
 msgid "Underridden"
-msgstr "Unterschrieben"
+msgstr ""
 
 #: bash/basher/__init__.py:2984
 msgid "Dirty"
-msgstr "Unsauber"
+msgstr ""
 
 #: bash/basher/__init__.py:2985
 msgid "Skipped"
-msgstr "Übersprungen"
+msgstr ""
 
 #: bash/basher/__init__.py:3003
 msgid "FOMOD"
@@ -1199,7 +1200,7 @@ msgstr ""
 #: bash/basher/__init__.py:3007 bash/basher/__init__.py:3011
 #: bash/basher/belt.py:381
 msgid "Sub-Packages"
-msgstr "Subpakete"
+msgstr ""
 
 #: bash/basher/__init__.py:3008
 msgid "Use the regular BAIN sub-packages."
@@ -1211,7 +1212,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:3039
 msgid "Comments"
-msgstr "Kommentare"
+msgstr ""
 
 #: bash/basher/__init__.py:3149
 msgid "Type: %(package_type)s"
@@ -1220,11 +1221,11 @@ msgstr ""
 #: bash/basher/__init__.py:3149 bash/basher/installer_links.py:1462
 #: bash/patcher/patch_files.py:55
 msgid "Overview"
-msgstr "Übersicht"
+msgstr ""
 
 #: bash/basher/__init__.py:3158
 msgid "Modified: %(modified_date)s"
-msgstr "Modifiziert: %(modified_date)s"
+msgstr ""
 
 #: bash/basher/__init__.py:3161
 msgid "Data CRC: %(data_crc)s"
@@ -1232,7 +1233,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:3163
 msgid "Files: %(num_files)s"
-msgstr "Dateien: %(num_files)s"
+msgstr ""
 
 #: bash/basher/__init__.py:3165
 msgid "Configured: %(files_and_size)s"
@@ -1240,27 +1241,27 @@ msgstr ""
 
 #: bash/basher/__init__.py:3168
 msgid "Matched: %(num_files)s"
-msgstr "Passend: %(num_files)s"
+msgstr ""
 
 #: bash/basher/__init__.py:3170
 msgid "Missing: %(num_files)s"
-msgstr "Fehlend: %(num_files)s"
+msgstr ""
 
 #: bash/basher/__init__.py:3172
 msgid "Conflicts: %(num_files)s"
-msgstr "Konflikte: %(num_files)s"
+msgstr ""
 
 #: bash/basher/__init__.py:3176
 msgid "Configured Files"
-msgstr "Konfigurierte Dateien"
+msgstr ""
 
 #: bash/basher/__init__.py:3196
 msgid "Skipped (Extension)"
-msgstr "Übersprungen (Endung)"
+msgstr ""
 
 #: bash/basher/__init__.py:3198
 msgid "Skipped (Dir)"
-msgstr "Übersprungen (Dir)"
+msgstr ""
 
 #: bash/basher/__init__.py:3359 bash/basher/installers_links.py:448
 msgid "Do you want to enable Installers?"
@@ -1297,7 +1298,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:3502
 msgid "Packages: %(status_num)d/%(total_status_num)d"
-msgstr "Pakete:  %(status_num)d/%(total_status_num)d"
+msgstr ""
 
 #: bash/basher/__init__.py:3619
 msgid "Screenshots: %(status_num)d"
@@ -1359,7 +1360,7 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:1678
 #: bash/patcher/patchers/multitweak_settings.py:1681
 msgid "Default"
-msgstr "Standard"
+msgstr ""
 
 #: bash/basher/__init__.py:4103
 msgid "Load order has changed outside of Bash and has been reverted to the one saved in Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
@@ -1428,15 +1429,15 @@ msgstr ""
 
 #: bash/basher/__init__.py:4344
 msgid "Initializing Data"
-msgstr "Initialisiere Daten"
+msgstr ""
 
 #: bash/basher/__init__.py:4346
 msgid "Initializing Version"
-msgstr "Initialisiere Version"
+msgstr ""
 
 #: bash/basher/__init__.py:4349
 msgid "Initializing Windows"
-msgstr "Initialisiere Fenster"
+msgstr ""
 
 #: bash/basher/__init__.py:4367
 msgid "Initializing BSAs"
@@ -1456,7 +1457,7 @@ msgstr ""
 
 #: bash/basher/__init__.py:4384
 msgid "Generating Blank Bashed Patch"
-msgstr "Generiere leeren Bashed Patch"
+msgstr ""
 
 #: bash/basher/app_buttons.py:145
 msgid "Hide '%(status_btn_name)s'"
@@ -1568,11 +1569,11 @@ msgstr ""
 
 #: bash/basher/app_buttons.py:570
 msgid "Auto-Quit Disabled"
-msgstr "Automatisches Verlassen deaktiviert"
+msgstr ""
 
 #: bash/basher/app_buttons.py:570
 msgid "Auto-Quit Enabled"
-msgstr "Automatisches Verlassen aktiviert"
+msgstr ""
 
 #: bash/basher/app_buttons.py:575
 msgid "Help"
@@ -1580,7 +1581,7 @@ msgstr ""
 
 #: bash/basher/app_buttons.py:584 bash/basher/frames.py:58
 msgid "Doc Browser"
-msgstr "Dokument-Browser"
+msgstr ""
 
 #: bash/basher/app_buttons.py:594 bash/basher/links_init.py:376
 #: bash/basher/links_init.py:444 bash/basher/links_init.py:691
@@ -1604,7 +1605,7 @@ msgstr ""
 
 #: bash/basher/belt.py:80 bash/basher/belt.py:524 bash/basher/belt.py:535
 msgid "Installer Wizard"
-msgstr "Installer-Wizard"
+msgstr ""
 
 #: bash/basher/belt.py:201 bash/basher/installer_links.py:1474
 msgid "Options:"
@@ -1641,7 +1642,7 @@ msgstr ""
 
 #: bash/basher/belt.py:368
 msgid "Apply these selections"
-msgstr "Diese Auswahl anwenden"
+msgstr ""
 
 #: bash/basher/belt.py:372 bash/basher/gui_fomod.py:471
 msgid "Install this package"
@@ -1657,11 +1658,11 @@ msgstr ""
 
 #: bash/basher/belt.py:430
 msgid "Need"
-msgstr "Benötigt"
+msgstr ""
 
 #: bash/basher/belt.py:431
 msgid "Have"
-msgstr "Derzeit"
+msgstr ""
 
 #: bash/basher/belt.py:453
 msgid "Wrye Bash Download"
@@ -1669,7 +1670,7 @@ msgstr ""
 
 #: bash/basher/belt.py:454
 msgid "Version Requirements"
-msgstr "Versionsvoraussetzungen"
+msgstr ""
 
 #: bash/basher/belt.py:457
 msgid "WARNING: The following version requirements are not met for using this installer."
@@ -1677,7 +1678,7 @@ msgstr ""
 
 #: bash/basher/belt.py:461
 msgid "Install anyway"
-msgstr "Trotzdem installieren"
+msgstr ""
 
 #: bash/basher/belt.py:519
 msgid "An error occurred in the wizard script:"
@@ -1737,7 +1738,7 @@ msgstr ""
 
 #: bash/basher/bsa_links.py:68
 msgid "%(existing_proj)s already exists. Overwrite it?"
-msgstr "%(existing_proj)s existiert bereits. Überschreiben?"
+msgstr ""
 
 #: bash/basher/bsa_links.py:75
 msgid "Extracting BSAs..."
@@ -2034,7 +2035,7 @@ msgstr ""
 
 #: bash/basher/constants.py:204 bash/bosh/mods_metadata.py:647
 msgid "Mergeable"
-msgstr "Mergebar"
+msgstr ""
 
 #: bash/basher/constants.py:205
 msgid "This is the text color used for plugins that could be merged into the Bashed Patch."
@@ -2054,7 +2055,7 @@ msgstr ""
 
 #: bash/basher/constants.py:310
 msgid "Author"
-msgstr "Autor"
+msgstr ""
 
 #: bash/basher/constants.py:311
 msgid "Location"
@@ -2070,22 +2071,22 @@ msgstr ""
 
 #: bash/basher/constants.py:314
 msgid "Current LO"
-msgstr "Derzeite Ladereihenfolge"
+msgstr ""
 
 #: bash/basher/constants.py:315 bash/basher/dialogs.py:1041
 #: bash/basher/links_init.py:344 bash/basher/links_init.py:433
 #: bash/basher/links_init.py:653 bash/basher/links_init.py:781
 #: bash/basher/links_init.py:830 bash/basher/links_init.py:882
 msgid "File"
-msgstr "Datei"
+msgstr ""
 
 #: bash/basher/constants.py:316
 msgid "Files"
-msgstr "Dateien"
+msgstr ""
 
 #: bash/basher/constants.py:317 bash/basher/mod_links.py:485
 msgid "Group"
-msgstr "Gruppe"
+msgstr ""
 
 #: bash/basher/constants.py:318 bash/bosh/cosaves.py:696
 msgid "Index"
@@ -2097,11 +2098,11 @@ msgstr ""
 
 #: bash/basher/constants.py:320
 msgid "Load Order"
-msgstr "Ladereihenfolge"
+msgstr ""
 
 #: bash/basher/constants.py:321
 msgid "Modified"
-msgstr "Datum"
+msgstr ""
 
 #: bash/basher/constants.py:322 bash/bosh/_saves.py:511
 msgid "MI"
@@ -2109,27 +2110,27 @@ msgstr ""
 
 #: bash/basher/constants.py:323
 msgid "Order"
-msgstr "Sortierung"
+msgstr ""
 
 #: bash/basher/constants.py:324 bash/basher/dialogs.py:1006
 msgid "Package"
-msgstr "Paket"
+msgstr ""
 
 #: bash/basher/constants.py:325
 msgid "Hours"
-msgstr "Spielstunden"
+msgstr ""
 
 #: bash/basher/constants.py:326
 msgid "Player"
-msgstr "Spieler"
+msgstr ""
 
 #: bash/basher/constants.py:327
 msgid "Rating"
-msgstr "Bewertung"
+msgstr ""
 
 #: bash/basher/constants.py:328
 msgid "Size"
-msgstr "Größe"
+msgstr ""
 
 #: bash/basher/constants.py:329
 msgid "Status"
@@ -2137,23 +2138,23 @@ msgstr ""
 
 #: bash/basher/constants.py:505
 msgid "Launch OBMM"
-msgstr "OBMM starten"
+msgstr ""
 
 #: bash/basher/constants.py:507
 msgid "Launch InsanitySorrow's Oblivion Launcher"
-msgstr "InsanitySorrows Oblivionstarter starten"
+msgstr ""
 
 #: bash/basher/constants.py:509
 msgid "Launch InsanitySorrow's Readme Generator"
-msgstr "InsanitySorrows Readmegenerator starten"
+msgstr ""
 
 #: bash/basher/constants.py:511
 msgid "Launch InsanitySorrow's Random Name Generator"
-msgstr "InsanitySorrows Random-Name-Generator starten"
+msgstr ""
 
 #: bash/basher/constants.py:513
 msgid "Launch InsanitySorrow's Random NPC Generator"
-msgstr "InsanitySorrows Random-NPC-Generator starten"
+msgstr ""
 
 #: bash/basher/constants.py:515
 msgid "Oblivion Face Exchange Lite"
@@ -2165,7 +2166,7 @@ msgstr ""
 
 #: bash/basher/constants.py:519
 msgid "Launch BSA Commander"
-msgstr "BSA Commander starten"
+msgstr ""
 
 #: bash/basher/constants.py:521
 msgid "Launch Tabula"
@@ -2173,15 +2174,15 @@ msgstr ""
 
 #: bash/basher/constants.py:523
 msgid "Launch TES4Files"
-msgstr "TES4Files starten"
+msgstr ""
 
 #: bash/basher/constants.py:528
 msgid "Launch Tes4Gecko"
-msgstr "Tes4Gecko starten"
+msgstr ""
 
 #: bash/basher/constants.py:530
 msgid "Launch Oblivion Book Creator"
-msgstr "Oblivion Book Creator starten"
+msgstr ""
 
 #: bash/basher/constants.py:535
 msgid "Launch TesVGecko"
@@ -2189,31 +2190,31 @@ msgstr ""
 
 #: bash/basher/constants.py:540
 msgid "Launch AutoCad"
-msgstr "AutoCad starten"
+msgstr ""
 
 #: bash/basher/constants.py:542
 msgid "Launch Blender"
-msgstr "Blender starten"
+msgstr ""
 
 #: bash/basher/constants.py:544
 msgid "Launch Dogwaffle"
-msgstr "DogWaffle starten"
+msgstr ""
 
 #: bash/basher/constants.py:546
 msgid "Launch Gmax"
-msgstr "Gmax starten"
+msgstr ""
 
 #: bash/basher/constants.py:548
 msgid "Launch Maya"
-msgstr "Maya starten"
+msgstr ""
 
 #: bash/basher/constants.py:549
 msgid "Launch 3dsMax"
-msgstr "3dsMax starten"
+msgstr ""
 
 #: bash/basher/constants.py:551
 msgid "Launch Milkshape 3D"
-msgstr "Milkshape 3D starten"
+msgstr ""
 
 #: bash/basher/constants.py:553
 msgid "Launch Mudbox"
@@ -2233,7 +2234,7 @@ msgstr ""
 
 #: bash/basher/constants.py:560
 msgid "Launch Wings 3D"
-msgstr "Wings 3D starten"
+msgstr ""
 
 #: bash/basher/constants.py:562
 msgid "Launch Softimage Mod Tool"
@@ -2241,15 +2242,15 @@ msgstr ""
 
 #: bash/basher/constants.py:569
 msgid "Launch AniFX"
-msgstr "AniFX starten"
+msgstr ""
 
 #: bash/basher/constants.py:571
 msgid "Launch Art Of Illusion"
-msgstr "Art Of Illusion starten"
+msgstr ""
 
 #: bash/basher/constants.py:573
 msgid "Launch Artweaver"
-msgstr "Artweaver starten"
+msgstr ""
 
 #: bash/basher/constants.py:575
 msgid "Launch CrazyBump"
@@ -2257,7 +2258,7 @@ msgstr ""
 
 #: bash/basher/constants.py:577
 msgid "Launch DDSConverter"
-msgstr "DDSConverter starten"
+msgstr ""
 
 #: bash/basher/constants.py:579
 msgid "Launch DeepPaint"
@@ -2265,31 +2266,31 @@ msgstr ""
 
 #: bash/basher/constants.py:581
 msgid "Launch FastStone Image Viewer"
-msgstr "FastStone Image Viewer starten"
+msgstr ""
 
 #: bash/basher/constants.py:583
 msgid "Launch Genetica"
-msgstr "Genetica starten"
+msgstr ""
 
 #: bash/basher/constants.py:585
 msgid "Launch Genetica Viewer"
-msgstr "Genetica Viewer starten"
+msgstr ""
 
 #: bash/basher/constants.py:587
 msgid "Launch GIMP"
-msgstr "GIMP starten"
+msgstr ""
 
 #: bash/basher/constants.py:589
 msgid "Launch IcoFX"
-msgstr "IcoFX starten"
+msgstr ""
 
 #: bash/basher/constants.py:591
 msgid "Launch Inkscape"
-msgstr "Inkscape starten"
+msgstr ""
 
 #: bash/basher/constants.py:593
 msgid "Launch IrfanView"
-msgstr "IrfanView starten"
+msgstr ""
 
 #: bash/basher/constants.py:595
 msgid "Launch Krita"
@@ -2309,19 +2310,19 @@ msgstr ""
 
 #: bash/basher/constants.py:603
 msgid "Launch Paint.NET"
-msgstr "Paint.NET starten"
+msgstr ""
 
 #: bash/basher/constants.py:606
 msgid "Launch PaintShop Photo Pro"
-msgstr "PaintShop Photo Pro starten"
+msgstr ""
 
 #: bash/basher/constants.py:610
 msgid "Launch Photoshop"
-msgstr "Photoshop starten"
+msgstr ""
 
 #: bash/basher/constants.py:614
 msgid "Launch PhotoScape"
-msgstr "PhotoScape starten"
+msgstr ""
 
 #: bash/basher/constants.py:616
 msgid "Launch PhotoSEAM"
@@ -2329,15 +2330,15 @@ msgstr ""
 
 #: bash/basher/constants.py:618
 msgid "Launch Photobie"
-msgstr "Photobie starten"
+msgstr ""
 
 #: bash/basher/constants.py:620
 msgid "Launch PhotoFiltre"
-msgstr "PhotoFiltre starten"
+msgstr ""
 
 #: bash/basher/constants.py:622
 msgid "Launch Pixel Studio Pro"
-msgstr "Pixel Studio Pro starten"
+msgstr ""
 
 #: bash/basher/constants.py:624
 msgid "Launch Pixia"
@@ -2349,7 +2350,7 @@ msgstr ""
 
 #: bash/basher/constants.py:628
 msgid "Launch TwistedBrush"
-msgstr "TwistedBrush starten"
+msgstr ""
 
 #: bash/basher/constants.py:630
 msgid "Launch Windows Texture Viewer"
@@ -2361,19 +2362,19 @@ msgstr ""
 
 #: bash/basher/constants.py:634
 msgid "Launch XnView"
-msgstr "XnView starten"
+msgstr ""
 
 #: bash/basher/constants.py:638
 msgid "Launch Nifskope"
-msgstr "Nifskope starten"
+msgstr ""
 
 #: bash/basher/constants.py:642
 msgid "Launch Audacity"
-msgstr "Audacity starten"
+msgstr ""
 
 #: bash/basher/constants.py:645
 msgid "Launch ABC Amber Audio Converter"
-msgstr "ABC Amber Audio Converter starten"
+msgstr ""
 
 #: bash/basher/constants.py:647
 msgid "Launch Switch"
@@ -2381,39 +2382,39 @@ msgstr ""
 
 #: bash/basher/constants.py:652
 msgid "Launch Fraps"
-msgstr "Fraps starten"
+msgstr ""
 
 #: bash/basher/constants.py:655
 msgid "Interactive Map of Cyrodiil and Shivering Isles"
-msgstr "Interaktive Karte von Cyrodiil und den Shivering Isles"
+msgstr ""
 
 #: bash/basher/constants.py:658
 msgid "Launch LogitechKeyboard"
-msgstr "LogitechKeyboard starten"
+msgstr ""
 
 #: bash/basher/constants.py:661
 msgid "Launch MediaMonkey"
-msgstr "MediaMonkey starten"
+msgstr ""
 
 #: bash/basher/constants.py:663
 msgid "Launch Notepad++"
-msgstr "Notepad++ starten"
+msgstr ""
 
 #: bash/basher/constants.py:665
 msgid "Launch Steam"
-msgstr "Steam starten"
+msgstr ""
 
 #: bash/basher/constants.py:667
 msgid "Launch EVGA Precision"
-msgstr "EVGA Precision starten"
+msgstr ""
 
 #: bash/basher/constants.py:669
 msgid "Launch WinMerge"
-msgstr "WinMerge starten"
+msgstr ""
 
 #: bash/basher/constants.py:671
 msgid "Launch FreeMind"
-msgstr "FreeMind starten"
+msgstr ""
 
 #: bash/basher/constants.py:673
 msgid "Launch Freeplane"
@@ -2421,15 +2422,15 @@ msgstr ""
 
 #: bash/basher/constants.py:675
 msgid "Launch FileZilla"
-msgstr "FileZilla starten"
+msgstr ""
 
 #: bash/basher/constants.py:677
 msgid "Launch Egg Translator"
-msgstr "Egg-Translator starten"
+msgstr ""
 
 #: bash/basher/constants.py:679
 msgid "Launch RAD Video Tools"
-msgstr "RAD Video Tools starten"
+msgstr ""
 
 #: bash/basher/constants.py:681
 msgid "Launch WinSnap"
@@ -2441,7 +2442,7 @@ msgstr ""
 
 #: bash/basher/constants.py:687
 msgid "Launch BOSS"
-msgstr "BOSS starten"
+msgstr ""
 
 #: bash/basher/dialogs.py:72 bash/bosh/cosaves.py:908
 #: bash/brec/record_structs.py:70 bash/game/oblivion/records.py:295
@@ -2451,19 +2452,19 @@ msgstr ""
 
 #: bash/basher/dialogs.py:73
 msgid "Race"
-msgstr "Rasse"
+msgstr ""
 
 #: bash/basher/dialogs.py:74
 msgid "Gender"
-msgstr "Geschlecht"
+msgstr ""
 
 #: bash/basher/dialogs.py:76
 msgid "Stats"
-msgstr "Eigenschaften"
+msgstr ""
 
 #: bash/basher/dialogs.py:77
 msgid "Class"
-msgstr "Klasse"
+msgstr ""
 
 #: bash/basher/dialogs.py:86 bash/basher/patcher_dialog.py:103
 msgid "Import"
@@ -2472,7 +2473,7 @@ msgstr ""
 #: bash/basher/dialogs.py:112 bash/brec/record_structs.py:72
 #: bash/game/oblivion/records.py:213
 msgid "Health"
-msgstr "Gesundheit"
+msgstr ""
 
 #: bash/basher/dialogs.py:138
 msgid "Face imported."
@@ -2605,7 +2606,7 @@ msgstr ""
 
 #: bash/basher/dialogs.py:371
 msgid "Masters"
-msgstr "Masterdateien"
+msgstr ""
 
 #: bash/basher/dialogs.py:405
 msgid "Too many masters: %(count_checked)d checked, but only %(count_limit)d are allowed by the game."
@@ -2665,7 +2666,7 @@ msgstr ""
 
 #: bash/basher/dialogs.py:604 bash/basher/frames.py:447
 msgid "Update"
-msgstr "Aktualisieren"
+msgstr ""
 
 #: bash/basher/dialogs.py:609
 msgid "Clean Data - Preview"
@@ -2894,7 +2895,7 @@ msgstr ""
 
 #: bash/basher/dialogs.py:1046
 msgid "Options"
-msgstr "Einstellungen"
+msgstr ""
 
 #: bash/basher/dialogs.py:1049
 msgid "Import What?"
@@ -3014,11 +3015,11 @@ msgstr ""
 
 #: bash/basher/files_links.py:230
 msgid "Revert %(target_file_name)s to snapshot %(snapsnot_file_name)s dated %(snapshot_date)s?"
-msgstr "Rückkehr %(target_file_name)s zu Snapshot %(snapsnot_file_name)s datiert mit %(snapshot_date)s?"
+msgstr ""
 
 #: bash/basher/files_links.py:234
 msgid "Revert to Snapshot"
-msgstr "Rückkehr zu Snapshot"
+msgstr ""
 
 #: bash/basher/files_links.py:250
 msgid "Failed to revert %(target_file_name)s to snapshot %(snapshot_file_name)s. The snapshot file may be corrupt. Do you want to restore the original file again? 'No' keeps the reverted, possibly broken snapshot instead."
@@ -3054,7 +3055,7 @@ msgstr ""
 
 #: bash/basher/files_links.py:301
 msgid "Revert %(target_file_name)s to backup dated %(backup_date)s?"
-msgstr "Rückkehr %(target_file_name)s zu Backup datiert mit %(backup_date)s?"
+msgstr ""
 
 #: bash/basher/files_links.py:315
 msgid "Failed to revert %(target_file_name)s to backup dated %(backup_date)s. The backup file may be corrupt. Do you want to restore the original file again? 'No' keeps the reverted, possibly broken backup instead."
@@ -3094,7 +3095,7 @@ msgstr ""
 
 #: bash/basher/frames.py:84
 msgid "Forget Doc"
-msgstr "Löse Dokument"
+msgstr ""
 
 #: bash/basher/frames.py:85
 msgid "Removes the link between this plugin file and the matching document."
@@ -3170,7 +3171,7 @@ msgstr ""
 
 #: bash/basher/frames.py:444
 msgid "Copy Text"
-msgstr "Kopiere Text"
+msgstr ""
 
 #: bash/basher/frames.py:445
 msgid "Copy a text version of the report to the clipboard."
@@ -3210,7 +3211,7 @@ msgstr ""
 
 #: bash/basher/frames.py:572
 msgid "Abstract"
-msgstr "Abstrakt"
+msgstr ""
 
 #: bash/basher/gui_fomod.py:56
 msgid "The ModuleConfig.xml file used to specify the FOMOD installer for this package does not conform to the FOMOD specification. This should be reported to and fixed by the mod author. Please share the error log shown below with them as well. You can use the \"Copy Log\" button to easily copy it."
@@ -3280,7 +3281,7 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:236
 #: bash/patcher/patchers/multitweak_settings.py:1571
 msgid "None"
-msgstr "Keine"
+msgstr ""
 
 #: bash/basher/gui_fomod.py:384
 msgid "This option cannot be enabled."
@@ -3413,7 +3414,7 @@ msgstr ""
 #: bash/basher/gui_patchers.py:771 bash/brec/record_structs.py:126
 #: bash/parsers.py:1110
 msgid "Value"
-msgstr "Wert"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:780
 msgid "Enter the desired custom tweak text."
@@ -3437,7 +3438,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1007
 msgid "Import Graphics"
-msgstr "Import: Grafik"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1008
 msgid "Import graphics (models, icons, etc.) from source plugins."
@@ -3453,7 +3454,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1024
 msgid "Import Actors"
-msgstr "Import: Actors"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1025
 msgid "Import various actor attributes from source plugins."
@@ -3469,7 +3470,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1040
 msgid "Import Cells"
-msgstr "Import: Cells"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1041
 msgid "Import cells (climate, lighting, and water) from source plugins."
@@ -3485,7 +3486,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1057 bash/basher/mod_links.py:1984
 msgid "Import Relations"
-msgstr "Import: Beziehungen"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1058
 msgid "Import relations from source plugins/files."
@@ -3493,7 +3494,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1065
 msgid "Import Inventory"
-msgstr "Import: Inventar"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1066
 msgid "Merges changes to items in various inventories."
@@ -3509,7 +3510,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1081
 msgid "Import Actors: Spells"
-msgstr "Import Actors: Zauber"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1082
 msgid "Merges changes to actor spell / effect lists."
@@ -3517,7 +3518,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1089 bash/basher/mod_links.py:2381
 msgid "Import Names"
-msgstr "Import: Namen"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1090
 msgid "Import names from source plugins/files."
@@ -3533,7 +3534,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1106
 msgid "Import Sounds"
-msgstr "Import: Sounds"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1107
 msgid "Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source plugins."
@@ -3541,7 +3542,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1116 bash/basher/mod_links.py:2133
 msgid "Import Stats"
-msgstr "Import: Eigenschaften"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1117
 msgid "Import stats from any pickupable items from source plugins/files."
@@ -3551,7 +3552,7 @@ msgstr ""
 #: bash/basher/mod_links.py:2094 bash/basher/mod_links.py:2096
 #: bash/basher/mod_links.py:2102 bash/basher/mod_links.py:2114
 msgid "Import Scripts"
-msgstr "Skripte importieren"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1126
 msgid "Import scripts on various objects (e.g. containers, weapons, etc.) from source plugins."
@@ -3583,7 +3584,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1159
 msgid "Import Spell Stats"
-msgstr "Import: Zaubereigenschaften"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1160
 msgid "Import stats from spells from source plugins/files."
@@ -3647,7 +3648,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1219
 msgid "Tweak Assorted"
-msgstr "Tweak: Verschiedenes"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1220
 msgid "Tweak various records in miscellaneous ways."
@@ -3655,7 +3656,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1227
 msgid "Tweak Clothes"
-msgstr "Tweak: Kleidung"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1228
 msgid "Tweak clothing weight and blocking."
@@ -3663,7 +3664,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1234
 msgid "Tweak Settings"
-msgstr "Tweak: Einstellungen"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1235
 msgid "Tweak game settings."
@@ -3671,7 +3672,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1241
 msgid "Tweak Names"
-msgstr "Tweak: Namen"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1242
 msgid "Tweak object names to sort them by type/stats or to improve things like lore friendliness."
@@ -3679,7 +3680,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1249
 msgid "Tweak Actors"
-msgstr "Tweak: Actors"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1250
 msgid "Tweak NPC and Creatures records in specified ways."
@@ -3695,7 +3696,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1264
 msgid "Replace Form IDs"
-msgstr "Ersetze FormIDs"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1265
 msgid "Imports Form Id replacers from csv files into the Bashed Patch."
@@ -3703,7 +3704,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1283
 msgid "Leveled Lists"
-msgstr "Leveled-Listen"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1285
 msgid "Merges changes to leveled lists from all active and/or merged plugins."
@@ -3715,7 +3716,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1291
 msgid "Override Delev/Relev Tags"
-msgstr "Überschreibe Delev-/Relev-Tags"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1292
 msgid "Add Delev/Relev Tags to Plugin"
@@ -3743,7 +3744,7 @@ msgstr ""
 
 #: bash/basher/gui_patchers.py:1316
 msgid "Contents Checker"
-msgstr "Prüfen von Inhalten"
+msgstr ""
 
 #: bash/basher/gui_patchers.py:1317
 msgid "Checks contents of leveled lists, inventories and containers for correct types."
@@ -3783,7 +3784,7 @@ msgstr ""
 
 #: bash/basher/ini_links.py:36
 msgid "Valid Tweaks First"
-msgstr "Gültige Tweaks zuerst"
+msgstr ""
 
 #: bash/basher/ini_links.py:38
 msgid "Valid tweak files will be shown first."
@@ -3819,11 +3820,11 @@ msgstr ""
 
 #: bash/basher/ini_links.py:82
 msgid "INI Tweak Errors"
-msgstr "INI-Tweak-Fehler"
+msgstr ""
 
 #: bash/basher/ini_links.py:93 bash/gui/buttons.py:179
 msgid "Apply"
-msgstr "Anwenden"
+msgstr ""
 
 #: bash/basher/ini_links.py:99
 msgid "Applies '%(tweak)s' to '%(ini)s'."
@@ -3968,7 +3969,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:450
 msgid "Anneal"
-msgstr "Installation aktualisieren"
+msgstr ""
 
 #: bash/basher/installer_links.py:451
 msgid "Install any missing files (for active packages) and update the contents of the %(data_folder)s folder to account for install order and configuration changes in the selected packages."
@@ -3984,7 +3985,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:505
 msgid "Has Extra Directories"
-msgstr "Hat zusätzliche Verzeichnisse"
+msgstr ""
 
 #: bash/basher/installer_links.py:506
 msgid "Allow installation of files in non-standard directories."
@@ -4008,7 +4009,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:553
 msgid "Install Last"
-msgstr "Am Schluss installieren"
+msgstr ""
 
 #: bash/basher/installer_links.py:554
 msgid "Install Missing Files"
@@ -4076,7 +4077,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:694
 msgid "Package Structure"
-msgstr "Paketstruktur"
+msgstr ""
 
 #: bash/basher/installer_links.py:699
 msgid "Export Achlist"
@@ -4120,7 +4121,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:806
 msgid "Open a search for this on Google?"
-msgstr "Soll eine Suche danach bei Google geöffnet werden?"
+msgstr ""
 
 #: bash/basher/installer_links.py:807
 msgid "Open at Google"
@@ -4140,7 +4141,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:846 bash/basher/mod_links.py:592
 msgid "Refresh"
-msgstr "Aktualisieren"
+msgstr ""
 
 #: bash/basher/installer_links.py:847
 msgid "Rescan selected packages. Ignores \"Don't Refresh\" flag on projects. Will forcibly recalculate the CRCs of all files in any selected projects."
@@ -4156,7 +4157,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:868
 msgid "Skip Voices"
-msgstr "Überspringe Voices"
+msgstr ""
 
 #: bash/basher/installer_links.py:872
 msgid "Skip over any voice files in %(sel_pkg)s"
@@ -4164,7 +4165,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:883
 msgid "Uninstall"
-msgstr "Deinstallieren"
+msgstr ""
 
 #: bash/basher/installer_links.py:884
 msgid "Uninstall the selected packages, removing all their matched files from the %(data_folder)s folder."
@@ -4176,7 +4177,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:903
 msgid "Copy Conflicts to Project"
-msgstr "Konflikte zum Projekte kopieren"
+msgstr ""
 
 #: bash/basher/installer_links.py:904
 msgid "Copy all files that conflict with the selected package into a new project. Conflicts with inactive packages are included."
@@ -4189,7 +4190,7 @@ msgstr ""
 #: bash/basher/installer_links.py:919 bash/basher/installer_links.py:925
 #: bash/bosh/bain.py:1913 bash/bosh/bain.py:2214
 msgid "Scanning Packages..."
-msgstr "Untersuche Pakete..."
+msgstr ""
 
 #: bash/basher/installer_links.py:939
 msgid "No conflicts detected for %(sel_pkg)s"
@@ -4301,7 +4302,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:1161
 msgid "%(target_proj)s already exists. Overwrite it?"
-msgstr "%(target_proj)s existiert bereits. Überschreiben?"
+msgstr ""
 
 #: bash/basher/installer_links.py:1168
 msgid "Unpacking to project..."
@@ -4369,7 +4370,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:1280
 msgid "Use solid compression for %(new_archive)s?"
-msgstr "Hohe Komprimierung für %(new_archive)s nutzen?"
+msgstr ""
 
 #: bash/basher/installer_links.py:1287
 msgid "Packing to archive..."
@@ -4529,7 +4530,7 @@ msgstr ""
 
 #: bash/basher/installer_links.py:1497
 msgid "BCF Information"
-msgstr "BCF-Information"
+msgstr ""
 
 #: bash/basher/installer_links.py:1504
 msgid "Apply.."
@@ -4598,15 +4599,15 @@ msgstr ""
 
 #: bash/basher/installers_links.py:165
 msgid "Only Show Installed?"
-msgstr "Nur installierte anzeigen?"
+msgstr ""
 
 #: bash/basher/installers_links.py:169
 msgid "BAIN Packages"
-msgstr "BAIN-Pakete"
+msgstr ""
 
 #: bash/basher/installers_links.py:174
 msgid "Anneal All"
-msgstr "Alle aktualisieren"
+msgstr ""
 
 #: bash/basher/installers_links.py:175
 msgid "Install any missing files (for active packages) and update the contents of the %(data_folder)s folder to account for all install order and configuration changes."
@@ -4626,7 +4627,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:223
 msgid "Full Refresh"
-msgstr "Volle Aktualisierung"
+msgstr ""
 
 #: bash/basher/installers_links.py:224
 msgid "Perform a full refresh of all data files, recalculating all CRCs. This can take 5-15 minutes."
@@ -4638,7 +4639,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:237
 msgid "Refresh Data"
-msgstr "Daten aktualisieren"
+msgstr ""
 
 #: bash/basher/installers_links.py:238
 msgid "Rescan the %(data_folder)s folder and all project directories."
@@ -4735,7 +4736,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:359
 msgid "Auto-Anneal"
-msgstr "Auto-Aktualisieren"
+msgstr ""
 
 #: bash/basher/installers_links.py:360
 msgid "Enable/Disable automatic annealing of packages."
@@ -4743,7 +4744,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:364
 msgid "Auto-Anneal/Install Wizards"
-msgstr "Auto-Aktualisieren/Installations-Wizwards"
+msgstr ""
 
 #: bash/basher/installers_links.py:366
 msgid "Enable/Disable automatic installing or anneal (as applicable) of packages after running its wizard."
@@ -4759,7 +4760,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:380
 msgid "Auto-Refresh Projects"
-msgstr "Auto-Refresh von Projekten"
+msgstr ""
 
 #: bash/basher/installers_links.py:382
 msgid "Toggles whether or not Wrye Bash will automatically detect changes to projects in the installers folder."
@@ -4821,7 +4822,7 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:1533
 #: bash/patcher/patchers/multitweak_settings.py:1717
 msgid "Enabled"
-msgstr "Aktiviert"
+msgstr ""
 
 #: bash/basher/installers_links.py:447
 msgid "Enable Installers"
@@ -4829,7 +4830,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:468
 msgid "BSA Redirection"
-msgstr "BSA-Redirection"
+msgstr ""
 
 #: bash/basher/installers_links.py:469
 msgid "Use Quarn's BSA redirection technique."
@@ -4845,7 +4846,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:505
 msgid "Show Inactive Conflicts"
-msgstr "Inaktive Konflikte zeigen"
+msgstr ""
 
 #: bash/basher/installers_links.py:506
 msgid "In the conflicts tab also display conflicts with inactive (not installed) installers"
@@ -4853,7 +4854,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:513
 msgid "Show Lower Conflicts"
-msgstr "Kleinere Konflikte zeigen"
+msgstr ""
 
 #: bash/basher/installers_links.py:514
 msgid "In the conflicts tab also display conflicts with lower order installers (or lower loading active bsas)"
@@ -4869,7 +4870,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:529
 msgid "Avoid at Startup"
-msgstr "Beim Starten vermeiden"
+msgstr ""
 
 #: bash/basher/installers_links.py:530
 msgid "Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning."
@@ -4893,7 +4894,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:560
 msgid "Projects First"
-msgstr "Projekte zuerst"
+msgstr ""
 
 #: bash/basher/installers_links.py:562
 msgid "If checked, sort projects to the top of the list."
@@ -4917,7 +4918,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:615
 msgid "Skip Screenshots"
-msgstr "Screenshots überspringen"
+msgstr ""
 
 #: bash/basher/installers_links.py:616
 msgid "Skips the installation of files in screenshot directories."
@@ -4933,7 +4934,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:633
 msgid "Skip Images"
-msgstr "Bilder überspringen"
+msgstr ""
 
 #: bash/basher/installers_links.py:634
 msgid "Skips the installation of images (.png, .jpg, etc.)."
@@ -4941,7 +4942,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:640
 msgid "Skip Docs"
-msgstr "Docs überspringen"
+msgstr ""
 
 #: bash/basher/installers_links.py:641
 msgid "Skips the installation of documentation (.txt, .html, etc.)."
@@ -4949,7 +4950,7 @@ msgstr ""
 
 #: bash/basher/installers_links.py:647
 msgid "Skip DistantLOD"
-msgstr "DistantLOD überspringen"
+msgstr ""
 
 #: bash/basher/installers_links.py:648
 msgid "Skips the installation of files in the distantlod folder."
@@ -5053,15 +5054,15 @@ msgstr ""
 
 #: bash/basher/links_init.py:118
 msgid "Launch TES4View"
-msgstr "TES4View starten"
+msgstr ""
 
 #: bash/basher/links_init.py:122
 msgid "Launch TES4Trans"
-msgstr "TES4Trans starten"
+msgstr ""
 
 #: bash/basher/links_init.py:127
 msgid "Launch Tes4LODGen"
-msgstr "Tes4LODGen starten"
+msgstr ""
 
 #: bash/basher/links_init.py:191 bash/basher/links_init.py:409
 #: bash/basher/links_init.py:459 bash/basher/links_init.py:711
@@ -5122,7 +5123,7 @@ msgstr ""
 #: bash/basher/links_init.py:353 bash/basher/links_init.py:663
 #: bash/basher/links_init.py:787
 msgid "Edit"
-msgstr "Bearbeiten"
+msgstr ""
 
 #: bash/basher/links_init.py:367 bash/basher/links_init.py:438
 #: bash/basher/links_init.py:681 bash/basher/links_init.py:793
@@ -5237,11 +5238,11 @@ msgstr ""
 
 #: bash/basher/misc_links.py:95
 msgid "Convert to %(img_ext)s"
-msgstr "Zu %(img_ext)s konvertieren"
+msgstr ""
 
 #: bash/basher/misc_links.py:103
 msgid "Converting to %(img_ext)s"
-msgstr "Konvertiere zu %(img_ext)s"
+msgstr ""
 
 #: bash/basher/misc_links.py:123
 msgid "Sets JPG quality for saving."
@@ -5297,7 +5298,7 @@ msgstr ""
 
 #: bash/basher/misc_links.py:240
 msgid "Disable"
-msgstr "Deaktivieren"
+msgstr ""
 
 #: bash/basher/misc_links.py:241
 msgid "Renames the selected ESM to a non-existent ESP so it will get removed when you next load and save the game."
@@ -5430,7 +5431,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:418
 msgid "Groups"
-msgstr "Gruppen"
+msgstr ""
 
 #: bash/basher/mod_links.py:421
 msgid "Add group:"
@@ -5482,7 +5483,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:566 bash/basher/mod_links.py:586
 msgid "Import Groups"
-msgstr "Import: Gruppen"
+msgstr ""
 
 #: bash/basher/mod_links.py:570 bash/basher/mod_links.py:2379
 msgid "Import names from:"
@@ -5526,7 +5527,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:636
 msgid "Ratings"
-msgstr "Bewertungen"
+msgstr ""
 
 #: bash/basher/mod_links.py:639
 msgid "Add rating:"
@@ -5550,7 +5551,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:658
 msgid "(Details not provided for this record type.)"
-msgstr "(Details für diesen Record-Typ nicht vorhanden.)"
+msgstr ""
 
 #: bash/basher/mod_links.py:669
 msgid "Readme..."
@@ -5571,7 +5572,7 @@ msgstr ""
 #: bash/basher/mod_links.py:687 bash/basher/mods_links.py:351
 #: bash/basher/mods_links.py:482
 msgid "Bash Tags"
-msgstr "Bash-Tags"
+msgstr ""
 
 #: bash/basher/mod_links.py:711
 msgid "Create LOOT Entry..."
@@ -5623,7 +5624,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:843
 msgid "Allow Ghosting"
-msgstr "Erlaube Ghosting"
+msgstr ""
 
 #: bash/basher/mod_links.py:843
 msgid "Allow Ghosting for selected mods"
@@ -5631,7 +5632,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:849 bash/basher/mod_links.py:896
 msgid "Disallow Ghosting"
-msgstr "Verbiete Ghosting"
+msgstr ""
 
 #: bash/basher/mod_links.py:850
 msgid "Disallow Ghosting for selected mods"
@@ -5655,7 +5656,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:886
 msgid "Invert Ghosting"
-msgstr "Ghosting umkehren"
+msgstr ""
 
 #: bash/basher/mod_links.py:887
 msgid "Invert Ghosting for selected mods"
@@ -5743,7 +5744,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1028
 msgid "Activate %(bp_name)s?"
-msgstr "Aktiviere %(bp_name)s?"
+msgstr ""
 
 #: bash/basher/mod_links.py:1035
 msgid "Masters Activated: %(num_activated)d"
@@ -5763,7 +5764,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1063
 msgid "Existential Error"
-msgstr "Existentieller Fehler"
+msgstr ""
 
 #: bash/basher/mod_links.py:1069
 msgid "This patch was built in CBash mode. This is no longer supported. You can either use Wrye Bash 307 to convert it to PBash format, or you can click \"Yes\" below to make Wrye Bash reset the configuration to default. If you click \"No\", the patch building will abort now."
@@ -5893,7 +5894,7 @@ msgstr ""
 #: bash/basher/mod_links.py:1362 bash/basher/mod_links.py:1365
 #: bash/patcher/patch_files.py:107
 msgid "Remove World Orphans"
-msgstr "World-Orphans entfernen"
+msgstr ""
 
 #: bash/basher/mod_links.py:1349
 msgid "Remove orphaned cell records"
@@ -5935,7 +5936,7 @@ msgstr ""
 #: bash/basher/mod_links.py:1397
 #: bash/patcher/patchers/multitweak_assorted.py:268
 msgid "Nvidia Fog Fix"
-msgstr "Nvidia-Nebelfix"
+msgstr ""
 
 #: bash/basher/mod_links.py:1388
 msgid "Modify fog values in interior cells to avoid the Nvidia black screen bug"
@@ -5947,11 +5948,11 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1401 bash/basher/saves_links.py:926
 msgid "Scanning %(scanning_plugin)s"
-msgstr "Untersuche %(scanning_plugin)s"
+msgstr ""
 
 #: bash/basher/mod_links.py:1408
 msgid "Cells Fixed:"
-msgstr "Gefixte Cells:"
+msgstr ""
 
 #: bash/basher/mod_links.py:1423
 msgid "Creates a copy of the selected plugins with the extensions changed to %(new_plugin_ext)s."
@@ -5959,12 +5960,12 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1446
 msgid "Replace existing %(existing_plugin)s?"
-msgstr "Ersetze bestehende %(existing_plugin)s?"
+msgstr ""
 
 #: bash/basher/mod_links.py:1483 bash/basher/mod_links.py:1492
 #: bash/basher/mod_links.py:1497 bash/patcher/patch_files.py:121
 msgid "Decompile All"
-msgstr "Alles dekompilieren"
+msgstr ""
 
 #: bash/basher/mod_links.py:1484
 msgid "Removes effects of a \"recompile all\" on the mod"
@@ -5976,7 +5977,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1496
 msgid "Skipping %(skipping_plugin)s"
-msgstr "Überspringe %(skipping_plugin)s"
+msgstr ""
 
 #: bash/basher/mod_links.py:1530
 msgid "Scripts removed: %(num_scripts_removed)d."
@@ -6080,7 +6081,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1746 bash/basher/mod_links.py:1757
 msgid "Import Form IDs"
-msgstr "Importiere Form-IDs"
+msgstr ""
 
 #: bash/basher/mod_links.py:1749
 msgid "Form ID mapper file:"
@@ -6102,7 +6103,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1769 bash/basher/mod_links.py:2361
 msgid "Objects Changed"
-msgstr "Objekte geändert"
+msgstr ""
 
 #: bash/basher/mod_links.py:1774
 msgid "Face..."
@@ -6122,7 +6123,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1803
 msgid "Imported face to: %(target_npc_edid)s"
-msgstr "Gesicht importiert nach: %(target_npc_edid)s"
+msgstr ""
 
 #: bash/basher/mod_links.py:1835
 msgid "%(filename)s is missing one or more masters. Without these, a data export is not possible:"
@@ -6175,7 +6176,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1951
 msgid "Export NPC Levels"
-msgstr "Exportiere NPC-Level"
+msgstr ""
 
 #: bash/basher/mod_links.py:1956
 msgid "Import NPC levels from:"
@@ -6183,7 +6184,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1958
 msgid "Import NPC Levels"
-msgstr "Import: NPC-Level"
+msgstr ""
 
 #: bash/basher/mod_links.py:1960
 msgid "Import NPC level info from text file to mod"
@@ -6203,7 +6204,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:1973
 msgid "Export Relations"
-msgstr "Exportiere Beziehungen"
+msgstr ""
 
 #: bash/basher/mod_links.py:1974 bash/basher/mod_links.py:1985
 msgid "Relations..."
@@ -6235,7 +6236,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2000
 msgid "Export Factions"
-msgstr "Exportiere Fraktionen"
+msgstr ""
 
 #: bash/basher/mod_links.py:2001 bash/basher/mod_links.py:2012
 msgid "Factions..."
@@ -6251,7 +6252,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2011
 msgid "Import Factions"
-msgstr "Import: Fraktionen"
+msgstr ""
 
 #: bash/basher/mod_links.py:2013
 msgid "Import factions from text file to mod"
@@ -6284,11 +6285,11 @@ msgstr ""
 #: bash/basher/mod_links.py:2057 bash/basher/mod_links.py:2068
 #: bash/parsers.py:1031
 msgid "Export Scripts"
-msgstr "Skripte exportieren"
+msgstr ""
 
 #: bash/basher/mod_links.py:2063
 msgid "Exported %(num_exported_scripts)d scripts from %(script_export_target)s:"
-msgstr "%(num_exported_scripts)d geänderte Skripte aus %(script_export_target)s exportiert:"
+msgstr ""
 
 #: bash/basher/mod_links.py:2073
 msgid "Import scripts from text files."
@@ -6328,7 +6329,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2122
 msgid "Export Stats"
-msgstr "Exportiere Eigenschaften"
+msgstr ""
 
 #: bash/basher/mod_links.py:2123 bash/basher/mod_links.py:2134
 msgid "Stats..."
@@ -6348,7 +6349,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2136
 msgid "Import item stats from a text file. This will replace existing stats and is not reversible!"
-msgstr "Importiert Gegenstandseigenschaften aus Textdatei. Das ersetzt vorhandene Eigenschaften und kann nicht rückgängig gemacht werden!"
+msgstr ""
 
 #: bash/basher/mod_links.py:2139
 msgid "No relevant stats to import."
@@ -6360,7 +6361,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2152
 msgid "Export Prices"
-msgstr "Exportiere Preise"
+msgstr ""
 
 #: bash/basher/mod_links.py:2153 bash/basher/mod_links.py:2164
 msgid "Prices..."
@@ -6376,7 +6377,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2163
 msgid "Import Prices"
-msgstr "Import: Preise"
+msgstr ""
 
 #: bash/basher/mod_links.py:2165
 msgid "Import item prices from text file or other mod"
@@ -6572,7 +6573,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2370
 msgid "Export Names"
-msgstr "Exportiere Namen"
+msgstr ""
 
 #: bash/basher/mod_links.py:2371 bash/basher/mod_links.py:2386
 msgid "Names..."
@@ -6584,7 +6585,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2382
 msgid "Import record names from a text file. This will replace existing names and is not reversible!"
-msgstr "Importiert Record-Namen aus einer Textdatei. Das ersetzt existierende Namen und ist nicht rückgängig zu machen!"
+msgstr ""
 
 #: bash/basher/mod_links.py:2387
 msgid "Import full names from text file or other mod"
@@ -6592,7 +6593,7 @@ msgstr ""
 
 #: bash/basher/mod_links.py:2396
 msgid "Objects Renamed"
-msgstr "Objekte umbenannt"
+msgstr ""
 
 #: bash/basher/mod_links.py:2408
 msgid "Duplicate %(target_file_name)s"
@@ -6937,7 +6938,7 @@ msgstr ""
 
 #: bash/basher/patcher_dialog.py:84
 msgid "Build Patch"
-msgstr "Patch erstellen"
+msgstr ""
 
 #: bash/basher/patcher_dialog.py:101
 msgid "Export"
@@ -7037,11 +7038,11 @@ msgstr ""
 
 #: bash/basher/saves_links.py:153
 msgid "Delete profile %(save_profile)s and the %(num_contained_saves)d save files it contains?"
-msgstr "Löschen des Profils %(save_profile)s und der %(num_contained_saves)d saves, die es enthält?"
+msgstr ""
 
 #: bash/basher/saves_links.py:156
 msgid "Delete Profile"
-msgstr "Profil löschen"
+msgstr ""
 
 #: bash/basher/saves_links.py:182
 msgid "Set profile to %(save_profile_name)s (%(save_profile_dir)s)."
@@ -7061,7 +7062,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:229
 msgid "Save Profiles"
-msgstr "Profile speichern"
+msgstr ""
 
 #: bash/basher/saves_links.py:249
 msgid "Activate Masters"
@@ -7137,7 +7138,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:357
 msgid "Active Masters"
-msgstr "Aktive Masterdateien"
+msgstr ""
 
 #: bash/basher/saves_links.py:366
 msgid "Masters are the same."
@@ -7145,7 +7146,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:367 bash/basher/saves_links.py:377
 msgid "Diff Masters"
-msgstr "Masterdateien vergleichen"
+msgstr ""
 
 #: bash/basher/saves_links.py:371
 msgid "Removed Masters"
@@ -7181,11 +7182,11 @@ msgstr ""
 
 #: bash/basher/saves_links.py:451 bash/game/oblivion/__init__.py:520
 msgid "Clothing"
-msgstr "Kleidung"
+msgstr ""
 
 #: bash/basher/saves_links.py:452 bash/game/oblivion/__init__.py:518
 msgid "Armor"
-msgstr "Rüstung"
+msgstr ""
 
 #: bash/basher/saves_links.py:475
 msgid "Enchantment:"
@@ -7233,7 +7234,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:558
 msgid "Loading Masters"
-msgstr "Lade Masterdateien"
+msgstr ""
 
 #: bash/basher/saves_links.py:593
 msgid "Delete Spells..."
@@ -7245,7 +7246,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:599
 msgid "Player Spells"
-msgstr "Spieler-Zauber"
+msgstr ""
 
 #: bash/basher/saves_links.py:605
 msgid "Set Number of Uses for Weapon Enchantments..."
@@ -7269,7 +7270,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:612 bash/brec/record_structs.py:126
 msgid "Uses"
-msgstr "Verwendet"
+msgstr ""
 
 #: bash/basher/saves_links.py:627 bash/basher/saves_links.py:629
 msgid "Copy the selected saves to %(save_profile)s."
@@ -7277,7 +7278,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:662
 msgid "You can't move saves to the current profile!"
-msgstr "Du kannst keine Speicherstände in das derzeitige Profile verschieben!"
+msgstr ""
 
 #: bash/basher/saves_links.py:672
 msgid "%(num_save_files)d files copied to %(save_profile)s."
@@ -7297,15 +7298,15 @@ msgstr ""
 
 #: bash/basher/saves_links.py:691
 msgid "A file named %(conflicting_save)s already exists in %(save_profile)s. Overwrite it?"
-msgstr "Eine Datei namens %(conflicting_save)s existiert bereits in %(save_profile)s. Überschreiben?"
+msgstr ""
 
 #: bash/basher/saves_links.py:696
 msgid "Move File"
-msgstr "Verschiebe Datei"
+msgstr ""
 
 #: bash/basher/saves_links.py:716 bash/basher/saves_links.py:737
 msgid "Repair Abomb"
-msgstr "Abomb reparieren"
+msgstr ""
 
 #: bash/basher/saves_links.py:717
 msgid "Repair animation slowing"
@@ -7329,7 +7330,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:745
 msgid "Repair Hair"
-msgstr "Haare reparieren"
+msgstr ""
 
 #: bash/basher/saves_links.py:746
 msgid "Repair hair that has been zeroed due to removal of a hair mod."
@@ -7359,7 +7360,7 @@ msgstr ""
 #: bash/basher/saves_links.py:778 bash/basher/saves_links.py:794
 #: bash/basher/saves_links.py:798
 msgid "Reweigh Potions"
-msgstr "Gewichtsänderung von Tränken"
+msgstr ""
 
 #: bash/basher/saves_links.py:773
 msgid "Invalid weight: %(invalid_weight)s"
@@ -7375,11 +7376,11 @@ msgstr ""
 
 #: bash/basher/saves_links.py:797
 msgid "No potions to reweigh!"
-msgstr "Keine Tränke zur Gewichtsänderung!"
+msgstr ""
 
 #: bash/basher/saves_links.py:803 bash/basher/saves_links.py:808
 msgid "Statistics"
-msgstr "Statistiken"
+msgstr ""
 
 #: bash/basher/saves_links.py:804
 msgid "Show savefile statistics"
@@ -7415,7 +7416,7 @@ msgstr ""
 
 #: bash/basher/saves_links.py:868
 msgid "Scanning for Bloat"
-msgstr "Scanne nach Datenblasen"
+msgstr ""
 
 #: bash/basher/saves_links.py:875
 msgid "No bloating found."
@@ -7435,11 +7436,11 @@ msgstr ""
 
 #: bash/basher/saves_links.py:888
 msgid "Remove bloating?"
-msgstr "Datenblasen entfernen?"
+msgstr ""
 
 #: bash/basher/saves_links.py:891
 msgid "Removing Bloat"
-msgstr "Entferne Datenblasen"
+msgstr ""
 
 #: bash/basher/saves_links.py:895
 msgid "Uncreated Objects: %(num_uncreated_objs)d"
@@ -7468,7 +7469,7 @@ msgstr ""
 #: bash/basher/saves_links.py:917 bash/basher/saves_links.py:918
 #: bash/basher/saves_links.py:985
 msgid "Update NPC Levels"
-msgstr "NPC-Levels aktualisieren"
+msgstr ""
 
 #: bash/basher/saves_links.py:946
 msgid "NPCs Releveled:"
@@ -8690,7 +8691,7 @@ msgstr ""
 
 #: bash/bosh/_saves.py:442
 msgid "Abomb Counter"
-msgstr "Abomb Zähler"
+msgstr ""
 
 #: bash/bosh/_saves.py:443
 msgid "As integer: %(abomb_counter)s"
@@ -8702,7 +8703,7 @@ msgstr ""
 
 #: bash/bosh/_saves.py:448
 msgid "Fbomb Counter"
-msgstr "Fbomb-Zähler"
+msgstr ""
 
 #: bash/bosh/_saves.py:449
 msgid "Next in-game object: %(next_obj_id)s"
@@ -8714,11 +8715,11 @@ msgstr ""
 
 #: bash/bosh/_saves.py:453 bash/bosh/_saves.py:457
 msgid "Created Items"
-msgstr "Erstellte Objekte"
+msgstr ""
 
 #: bash/bosh/_saves.py:454
 msgid "Records"
-msgstr "Datensätze"
+msgstr ""
 
 #: bash/bosh/_saves.py:455 bash/bosh/_saves.py:510
 msgid "FormIDs"
@@ -8742,7 +8743,7 @@ msgstr ""
 
 #: bash/bosh/_saves.py:524 bash/bosh/faces.py:79
 msgid "Unknown"
-msgstr "Unbekannt"
+msgstr ""
 
 #: bash/bosh/_saves.py:527
 msgid "Total"
@@ -8750,7 +8751,7 @@ msgstr ""
 
 #: bash/bosh/_saves.py:529
 msgid "New ObjectRef Bases"
-msgstr "Neue ObjectRef-Basen"
+msgstr ""
 
 #: bash/bosh/_saves.py:531
 msgid "Null Bases"
@@ -8770,7 +8771,7 @@ msgstr ""
 
 #: bash/bosh/_saves.py:549 bash/bosh/_saves.py:583
 msgid "Scanning created objects"
-msgstr "Untersuche erstellte Objekte"
+msgstr ""
 
 #: bash/bosh/_saves.py:563 bash/bosh/_saves.py:598
 msgid "Scanning change records."
@@ -8778,7 +8779,7 @@ msgstr ""
 
 #: bash/bosh/bain.py:148
 msgid "Unrecognized"
-msgstr "Unbekannt"
+msgstr ""
 
 #: bash/bosh/bain.py:231
 msgid "Calculating CRCs..."
@@ -8790,15 +8791,15 @@ msgstr ""
 
 #: bash/bosh/bain.py:358
 msgid "Structure: Simple"
-msgstr "Structure: Einfach"
+msgstr ""
 
 #: bash/bosh/bain.py:361
 msgid "Structure: Complex/Simple"
-msgstr "Structure: Komplex/Einfach"
+msgstr ""
 
 #: bash/bosh/bain.py:363
 msgid "Structure: Complex"
-msgstr "Structure: Komplex"
+msgstr ""
 
 #: bash/bosh/bain.py:366
 msgid "Structure: Scattered (FOMOD)"
@@ -8806,11 +8807,11 @@ msgstr ""
 
 #: bash/bosh/bain.py:368
 msgid "Structure: Corrupt/Incomplete"
-msgstr "Structure: Fehlerhaft/Unvollständig"
+msgstr ""
 
 #: bash/bosh/bain.py:370
 msgid "Structure: Unrecognized"
-msgstr "Structure: Unbekannt"
+msgstr ""
 
 #: bash/bosh/bain.py:671 bash/bosh/bain.py:914 bash/bosh/bain.py:971
 msgid "[Vanilla Content]"
@@ -8846,15 +8847,15 @@ msgstr ""
 
 #: bash/bosh/bain.py:1446
 msgid "Size: N/A"
-msgstr "Größe: N/A"
+msgstr ""
 
 #: bash/bosh/bain.py:1448
 msgid "Structure: N/A"
-msgstr "Struktur: N/A"
+msgstr ""
 
 #: bash/bosh/bain.py:1456
 msgid "Archive"
-msgstr "Archiv"
+msgstr ""
 
 #: bash/bosh/bain.py:1463
 msgid "Solid, Block Size: %(block_size)s"
@@ -8894,7 +8895,7 @@ msgstr ""
 
 #: bash/bosh/bain.py:1668
 msgid "Project"
-msgstr "Projekt"
+msgstr ""
 
 #: bash/bosh/bain.py:1728 bash/bosh/bain.py:2339
 #: bash/patcher/patch_files.py:361
@@ -8932,11 +8933,11 @@ msgstr ""
 #: bash/bosh/bain.py:3122 bash/bosh/bain.py:3137 bash/bosh/bain.py:3142
 #: bash/bosh/bain.py:3155
 msgid "Lower"
-msgstr "Niedriger"
+msgstr ""
 
 #: bash/bosh/bain.py:3139 bash/bosh/bain.py:3157
 msgid "Higher"
-msgstr "Höher"
+msgstr ""
 
 #: bash/bosh/bain.py:3140
 msgid "Loose File Conflicts"
@@ -8956,7 +8957,7 @@ msgstr ""
 
 #: bash/bosh/converters.py:137
 msgid "Scanning Converter..."
-msgstr "Untersuche Konverter..."
+msgstr ""
 
 #: bash/bosh/converters.py:383
 msgid "%(bcf_rel)s: Missing source file:"
@@ -9274,7 +9275,7 @@ msgstr ""
 #: bash/parsers.py:856 bash/parsers.py:948 bash/parsers.py:1111
 #: bash/parsers.py:1235
 msgid "Type"
-msgstr "Typ"
+msgstr ""
 
 #: bash/bosh/faces.py:76
 msgid "Female"
@@ -9466,7 +9467,7 @@ msgstr ""
 
 #: bash/bosh/mods_metadata.py:679
 msgid "Circular Masters"
-msgstr "Zyklische Masterdateien"
+msgstr ""
 
 #: bash/bosh/mods_metadata.py:680
 msgid "The following plugins have circular masters, i.e. they depend on themselves. This can happen either directly (%(example_a)s has %(example_a)s as a master) or transitively (%(example_a)s has %(example_b)s as a master, which, in turn, has %(example_a)s as a master - such a chain may be even longer). Resolving this is impossible for the game, which will most likely crash when trying to load these plugins. You can try to investigate by using the 'Change To...' command to reassign the circular master so that the plugin can be opened in %(xedit_name)s."
@@ -9646,7 +9647,7 @@ msgstr ""
 
 #: bash/brec/record_structs.py:58
 msgid "Cost"
-msgstr "Kosten"
+msgstr ""
 
 #: bash/brec/record_structs.py:59
 msgid "Critical Damage"
@@ -9662,7 +9663,7 @@ msgstr ""
 
 #: bash/brec/record_structs.py:62
 msgid "Damage"
-msgstr "Schaden"
+msgstr ""
 
 #: bash/brec/record_structs.py:63
 msgid "Damage Resistance"
@@ -9674,12 +9675,12 @@ msgstr ""
 
 #: bash/brec/record_structs.py:65 bash/game/oblivion/records.py:295
 msgid "Duration"
-msgstr "Dauer"
+msgstr ""
 
 #: bash/brec/record_structs.py:66 bash/parsers.py:638 bash/parsers.py:856
 #: bash/parsers.py:1111
 msgid "Editor Id"
-msgstr "Editor-Id"
+msgstr ""
 
 #: bash/brec/record_structs.py:67
 msgid "Enchantment Points"
@@ -9695,7 +9696,7 @@ msgstr ""
 
 #: bash/brec/record_structs.py:73
 msgid "Icon Path"
-msgstr "Icon-Pfad"
+msgstr ""
 
 #: bash/brec/record_structs.py:74
 msgid "Impulse Distance"
@@ -9764,11 +9765,11 @@ msgstr ""
 
 #: bash/brec/record_structs.py:92
 msgid "Quality"
-msgstr "Qualität"
+msgstr ""
 
 #: bash/brec/record_structs.py:93
 msgid "Reach"
-msgstr "Reichweite"
+msgstr ""
 
 #: bash/brec/record_structs.py:94
 msgid "Regeneration Rate"
@@ -9816,7 +9817,7 @@ msgstr ""
 
 #: bash/brec/record_structs.py:109 bash/game/oblivion/records.py:209
 msgid "Speed"
-msgstr "Schnelligkeit"
+msgstr ""
 
 #: bash/brec/record_structs.py:110
 msgid "Spell Flags"
@@ -9852,7 +9853,7 @@ msgstr ""
 
 #: bash/brec/record_structs.py:121
 msgid "Spell Type"
-msgstr "Zaubertyp"
+msgstr ""
 
 #: bash/brec/record_structs.py:122
 msgid "Spread"
@@ -9864,7 +9865,7 @@ msgstr ""
 
 #: bash/brec/record_structs.py:124 bash/game/oblivion/records.py:205
 msgid "Strength"
-msgstr "Stärke"
+msgstr ""
 
 #: bash/brec/record_structs.py:125
 msgid "Strength Requirement"
@@ -9884,7 +9885,7 @@ msgstr ""
 
 #: bash/brec/record_structs.py:130
 msgid "Weight"
-msgstr "Gewicht"
+msgstr ""
 
 #: bash/bush.py:217
 msgid "No game support modules found in Mopy/bash/game."
@@ -10148,47 +10149,47 @@ msgstr ""
 
 #: bash/game/oblivion/__init__.py:217 bash/game/skyrim/__init__.py:220
 msgid "Blade (1 Handed)"
-msgstr "Klinge - einhändig"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:218 bash/game/skyrim/__init__.py:221
 msgid "Blade (2 Handed)"
-msgstr "Klinge - zweihändig"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:219 bash/game/skyrim/__init__.py:222
 msgid "Blunt (1 Handed)"
-msgstr "Stumpf - einhändig"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:220 bash/game/skyrim/__init__.py:223
 msgid "Blunt (2 Handed)"
-msgstr "Stumpf - zweihändig"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:221 bash/game/skyrim/__init__.py:224
 msgid "Staff"
-msgstr "Stab"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:222 bash/game/skyrim/__init__.py:225
 msgid "Bow"
-msgstr "Bogen"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:226 bash/game/skyrim/__init__.py:229
 msgid "Argonian"
-msgstr "Argonier"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:227 bash/game/skyrim/__init__.py:230
 msgid "Breton"
-msgstr "Bretone"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:228 bash/game/skyrim/__init__.py:231
 msgid "Dark Elf"
-msgstr "Dunkelelf"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:229 bash/game/skyrim/__init__.py:232
 msgid "High Elf"
-msgstr "Hochelf"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:230 bash/game/skyrim/__init__.py:233
 msgid "Imperial"
-msgstr "Kaiserlicher"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:231 bash/game/skyrim/__init__.py:234
 msgid "Khajiit"
@@ -10200,47 +10201,47 @@ msgstr ""
 
 #: bash/game/oblivion/__init__.py:233 bash/game/skyrim/__init__.py:236
 msgid "Orc"
-msgstr "Ork"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:234 bash/game/skyrim/__init__.py:237
 msgid "Redguard"
-msgstr "Rothwardone"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:235
 msgid "Vampire"
-msgstr "Vampir"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:236 bash/game/skyrim/__init__.py:238
 msgid "Wood Elf"
-msgstr "Waldelf"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:516
 msgid "Faction"
-msgstr "Fraktion"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:517
 msgid "Apparatus"
-msgstr "Gerät"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:519
 msgid "Book"
-msgstr "Buch"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:521
 msgid "Ingredient"
-msgstr "Zutat"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:522 bash/game/oblivion/records.py:1487
 msgid "Light"
-msgstr "Licht"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:523
 msgid "Misc. Item"
-msgstr "Sonstiges Objekt"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:524
 msgid "Weapon"
-msgstr "Waffe"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:525
 msgid "NPC"
@@ -10248,35 +10249,35 @@ msgstr ""
 
 #: bash/game/oblivion/__init__.py:526 bash/patcher/patchers/mergers.py:842
 msgid "Creature"
-msgstr "Kreatur"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:527
 msgid "Key"
-msgstr "Schlüssel"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:528
 msgid "Potion"
-msgstr "Trank"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:529
 msgid "Cell"
-msgstr "Zelle"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:530
 msgid "Object Ref"
-msgstr "Objekt-Referenz"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:531
 msgid "NPC Ref"
-msgstr "NPC-Referenz"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:532
 msgid "Creature Ref"
-msgstr "Kreatur-Referenz"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:533
 msgid "Dialog Entry"
-msgstr "Dialogeintrag"
+msgstr ""
 
 #: bash/game/oblivion/__init__.py:534 bash/parsers.py:709
 msgid "Quest"
@@ -10284,7 +10285,7 @@ msgstr ""
 
 #: bash/game/oblivion/__init__.py:535
 msgid "AI Package"
-msgstr "AI-Paket"
+msgstr ""
 
 #: bash/game/oblivion/patcher/checkers.py:35
 msgid "Salan's Catalog of Alchemical Ingredients I"
@@ -10320,7 +10321,7 @@ msgstr ""
 
 #: bash/game/oblivion/patcher/checkers.py:51
 msgid "Cobl Catalogs"
-msgstr "Cobl-Verzeichnisse"
+msgstr ""
 
 #: bash/game/oblivion/patcher/checkers.py:53
 msgid "Update COBL's catalogs of alchemical ingredients and effects."
@@ -10348,7 +10349,7 @@ msgstr ""
 
 #: bash/game/oblivion/patcher/checkers.py:164
 msgid "SEWorld Tests"
-msgstr "SEWorld-Tests"
+msgstr ""
 
 #: bash/game/oblivion/patcher/checkers.py:165
 msgid "Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary."
@@ -10356,11 +10357,11 @@ msgstr ""
 
 #: bash/game/oblivion/patcher/checkers.py:226
 msgid "Quests Patched: %(total_changed)d"
-msgstr "Gepatchte Quests: %(total_changed)d"
+msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:34
 msgid "Import Roads"
-msgstr "Import: Straßen"
+msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:35
 msgid "Import roads from source mods."
@@ -10372,7 +10373,7 @@ msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:114
 msgid "Cobl Exhaustion"
-msgstr "Cobl-Ermüdung"
+msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:116
 msgid "Modify greater powers to use Cobl's Power Exhaustion feature."
@@ -10388,7 +10389,7 @@ msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:185
 msgid "Morph Factions"
-msgstr "Morph-Fraktionen"
+msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:187
 msgid "Mark factions that player can acquire while morphing."
@@ -10404,7 +10405,7 @@ msgstr ""
 #: bash/patcher/patchers/preservers.py:374
 #: bash/patcher/patchers/preservers.py:389
 msgid "Source Mods/Files"
-msgstr "Quellmods/Dateien"
+msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:199
 msgid "Morphable Factions"
@@ -10412,87 +10413,87 @@ msgstr ""
 
 #: bash/game/oblivion/patcher/preservers.py:207
 msgid "Member"
-msgstr "Mitglied"
+msgstr ""
 
 #: bash/game/oblivion/records.py:206
 msgid "Intelligence"
-msgstr "Intelligenz"
+msgstr ""
 
 #: bash/game/oblivion/records.py:207
 msgid "Willpower"
-msgstr "Willenskraft"
+msgstr ""
 
 #: bash/game/oblivion/records.py:208
 msgid "Agility"
-msgstr "Geschicklichkeit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:210
 msgid "Endurance"
-msgstr "Konstitution"
+msgstr ""
 
 #: bash/game/oblivion/records.py:211
 msgid "Personality"
-msgstr "Charisma"
+msgstr ""
 
 #: bash/game/oblivion/records.py:212
 msgid "Luck"
-msgstr "Glück"
+msgstr ""
 
 #: bash/game/oblivion/records.py:214
 msgid "Magicka"
-msgstr "Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:215
 msgid "Fatigue"
-msgstr "Ausdauer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:216
 msgid "Encumbrance"
-msgstr "Belastung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:217
 msgid "Armorer"
-msgstr "Waffenschmied"
+msgstr ""
 
 #: bash/game/oblivion/records.py:218
 msgid "Athletics"
-msgstr "Athletik"
+msgstr ""
 
 #: bash/game/oblivion/records.py:219
 msgid "Blade"
-msgstr "Schwertkampf"
+msgstr ""
 
 #: bash/game/oblivion/records.py:220
 msgid "Block"
-msgstr "Blocken"
+msgstr ""
 
 #: bash/game/oblivion/records.py:221
 msgid "Blunt"
-msgstr "Stumpfe Waffe"
+msgstr ""
 
 #: bash/game/oblivion/records.py:222
 msgid "Hand To Hand"
-msgstr "Nahkampf"
+msgstr ""
 
 #: bash/game/oblivion/records.py:223
 msgid "Heavy Armor"
-msgstr "Schwere Rüstung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:224
 msgid "Alchemy"
-msgstr "Alchemie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:225
 msgid "Alteration"
-msgstr "Veränderung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:226
 msgid "Conjuration"
-msgstr "Beschwörung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:227
 msgid "Destruction"
-msgstr "Zerstörung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:228
 msgid "Illusion"
@@ -10500,39 +10501,39 @@ msgstr ""
 
 #: bash/game/oblivion/records.py:229
 msgid "Mysticism"
-msgstr "Mystik"
+msgstr ""
 
 #: bash/game/oblivion/records.py:230
 msgid "Restoration"
-msgstr "Wiederherstellung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:231
 msgid "Acrobatics"
-msgstr "Akrobatik"
+msgstr ""
 
 #: bash/game/oblivion/records.py:232
 msgid "Light Armor"
-msgstr "Leichte Rüstung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:233
 msgid "Marksman"
-msgstr "Schütze"
+msgstr ""
 
 #: bash/game/oblivion/records.py:234
 msgid "Mercantile"
-msgstr "Handelsgeschick"
+msgstr ""
 
 #: bash/game/oblivion/records.py:235
 msgid "Security"
-msgstr "Sicherheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:236
 msgid "Sneak"
-msgstr "Schleichen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:237
 msgid "Speechcraft"
-msgstr "Wortgewandheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:295
 msgid "Area"
@@ -10592,251 +10593,251 @@ msgstr ""
 
 #: bash/game/oblivion/records.py:357
 msgid "(Attribute|Skill)"
-msgstr "(Attribut|Fähigkeit)"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1412
 msgid "Absorb Attribute"
-msgstr "Absorbieren: Attribut"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1413
 msgid "Absorb Fatigue"
-msgstr "Absorbieren: Ausdauer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1414
 msgid "Absorb Health"
-msgstr "Absorbieren: Gesundheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1415
 msgid "Absorb Skill"
-msgstr "Absorbieren: Fähigkeit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1416
 msgid "Absorb Magicka"
-msgstr "Absorbieren: Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1417
 msgid "Bound Armor Extra 01"
-msgstr "Gebundene Rüstung Extra 01"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1418
 msgid "Bound Armor Extra 02"
-msgstr "Gebundene Rüstung Extra 02"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1419
 msgid "Bound Armor Extra 03"
-msgstr "Gebundene Rüstung Extra 03"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1420
 msgid "Bound Armor Extra 04"
-msgstr "Gebundene Rüstung Extra 04"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1421
 msgid "Bound Armor Extra 05"
-msgstr "Gebundene Rüstung Extra 05"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1422
 msgid "Bound Armor Extra 06"
-msgstr "Gebundene Rüstung Extra 06"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1423
 msgid "Bound Armor Extra 07"
-msgstr "Gebundene Rüstung Extra 07"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1424
 msgid "Bound Armor Extra 08"
-msgstr "Gebundene Rüstung Extra 08"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1425
 msgid "Bound Armor Extra 09"
-msgstr "Gebundene Rüstung Extra 09"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1426
 msgid "Bound Armor Extra 10"
-msgstr "Gebundene Rüstung Extra 10"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1427
 msgid "Bound Boots"
-msgstr "Gebundene Stiefel"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1428
 msgid "Bound Cuirass"
-msgstr "Gebundener Brustharnisch"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1429
 msgid "Bound Gauntlets"
-msgstr "Gebundene Handschuhe"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1430
 msgid "Bound Greaves"
-msgstr "Gebundene Beinschienen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1431
 msgid "Bound Helmet"
-msgstr "Gebundener Helm"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1432
 msgid "Bound Shield"
-msgstr "Gebundener Schild"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1433
 msgid "Burden"
-msgstr "Last"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1434
 msgid "Bound Order Weapon 1"
-msgstr "Gebundene Ordenswaffe 1"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1435
 msgid "Bound Order Weapon 2"
-msgstr "Gebundene Ordenswaffe 2"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1436
 msgid "Bound Order Weapon 3"
-msgstr "Gebundene Ordenswaffe 3"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1437
 msgid "Bound Order Weapon 4"
-msgstr "Gebundene Ordenswaffe 4"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1438
 msgid "Bound Order Weapon 5"
-msgstr "Gebundene Ordenswaffe 5"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1439
 msgid "Bound Order Weapon 6"
-msgstr "Gebundene Ordenswaffe 6"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1440
 msgid "Summon Staff of Sheogorath"
-msgstr "Beschwören: Stab des Sheogorath"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1441
 msgid "Bound Priest Dagger"
-msgstr "Gebundener Priesterdolch"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1442
 msgid "Bound Weapon Extra 09"
-msgstr "Gebundene Waffe Extra 09"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1443
 msgid "Bound Weapon Extra 10"
-msgstr "Gebundene Waffe Extra 10"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1444
 msgid "Bound Axe"
-msgstr "Gebundene Axt"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1445
 msgid "Bound Bow"
-msgstr "Gebundener Bogen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1446
 msgid "Bound Dagger"
-msgstr "Gebundener Dolch"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1447
 msgid "Bound Mace"
-msgstr "Gebundener Streitkolben"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1448
 msgid "Bound Sword"
-msgstr "Gebundenes Schwert"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1449
 msgid "Calm"
-msgstr "Beruhigen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1450
 msgid "Chameleon"
-msgstr "Chamäleon"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1451
 msgid "Charm"
-msgstr "Bezaubern"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1452
 msgid "Command Creature"
-msgstr "Beherrschung: Kreatur"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1453
 msgid "Command Humanoid"
-msgstr "Beherrschung: Humanoid"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1454
 msgid "Cure Disease"
-msgstr "Heilung: Krankheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1455
 msgid "Cure Paralysis"
-msgstr "Heilung: Lähmung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1456
 msgid "Cure Poison"
-msgstr "Heilung: Gift"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1457
 msgid "DO NOT USE - Darkness"
-msgstr "NICHT VERWENDEN - Dunkelheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1458
 msgid "Demoralize"
-msgstr "Demoralisieren"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1459
 msgid "Damage Attribute"
-msgstr "Schaden: Attribut"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1460
 msgid "Damage Fatigue"
-msgstr "Schaden: Ausdauer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1461
 msgid "Damage Health"
-msgstr "Schaden: Gesundheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1462
 msgid "Damage Magicka"
-msgstr "Schaden: Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1463
 msgid "Disintegrate Armor"
-msgstr "Korrosion: Rüstung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1464
 msgid "Disease Info"
-msgstr "Info: Krankheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1465
 msgid "Disintegrate Weapon"
-msgstr "Korrosion: Waffe"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1466
 msgid "Drain Attribute"
-msgstr "Entziehen: Attribut"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1467
 msgid "Drain Fatigue"
-msgstr "Entziehen: Ausdauer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1468
 msgid "Drain Health"
-msgstr "Entziehen: Gesundheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1469
 msgid "Drain Skill"
-msgstr "Entziehen: Fähigkeit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1470
 msgid "Drain Magicka"
-msgstr "Entziehen: Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1471
 msgid "Dispel"
-msgstr "Magie bannen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1472
 msgid "Detect Life"
-msgstr "Leben entdecken"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1473
 msgid "Mehrunes Dagon"
@@ -10844,395 +10845,395 @@ msgstr ""
 
 #: bash/game/oblivion/records.py:1474
 msgid "Fire Damage"
-msgstr "Feuerschaden"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1475
 msgid "Fire Shield"
-msgstr "Feuerschild"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1476
 msgid "Fortify Attribute"
-msgstr "Festigen: Attribut"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1477
 msgid "Fortify Fatigue"
-msgstr "Festigen: Ausdauer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1478
 msgid "Fortify Health"
-msgstr "Festigen: Gesundheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1479
 msgid "Fortify Magicka Multiplier"
-msgstr "Festigen: Magie-Multiplikator"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1480
 msgid "Fortify Skill"
-msgstr "Festigen: Fähigkeit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1481
 msgid "Fortify Magicka"
-msgstr "Festigen: Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1482
 msgid "Frost Damage"
-msgstr "Frostschaden"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1483
 msgid "Frenzy"
-msgstr "Erzürnen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1484
 msgid "Frost Shield"
-msgstr "Frostschild"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1485
 msgid "Feather"
-msgstr "Feder"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1486
 msgid "Invisibility"
-msgstr "Unsichtbarkeit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1488
 msgid "Shock Shield"
-msgstr "Blitzschild"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1489
 msgid "DO NOT USE - Lock"
-msgstr "NICHT VERWENDEN - Schloss"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1490
 msgid "Summon Mythic Dawn Helm"
-msgstr "Beschwören: Helm der Mytischen Morgenröte"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1491
 msgid "Summon Mythic Dawn Armor"
-msgstr "Beschwören: Rüstung der Mytischen Morgenröte"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1492
 msgid "Night-Eye"
-msgstr "Nachtauge"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1493 bash/gui/buttons.py:155
 msgid "Open"
-msgstr "Öffnen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1494
 msgid "Paralyze"
-msgstr "Lähmen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1495
 msgid "Poison Info"
-msgstr "Gift-Info"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1496
 msgid "Rally"
-msgstr "Ermutigen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1497
 msgid "Reanimate"
-msgstr "Wiederbeleben"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1498
 msgid "Restore Attribute"
-msgstr "Wiederherstellen: Attribut"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1499
 msgid "Reflect Damage"
-msgstr "Reflektieren: Schaden"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1500
 msgid "Restore Fatigue"
-msgstr "Wiederherstellen: Ausdauer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1501
 msgid "Restore Health"
-msgstr "Wiederherstellen: Gesundheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1502
 msgid "Restore Magicka"
-msgstr "Wiederherstellen: Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1503
 msgid "Reflect Spell"
-msgstr "Reflektieren: Zauber"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1504
 msgid "Resist Disease"
-msgstr "Widerstehen: Krankheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1505
 msgid "Resist Fire"
-msgstr "Widerstehen: Feuer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1506
 msgid "Resist Frost"
-msgstr "Widerstehen: Frost"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1507
 msgid "Resist Magic"
-msgstr "Widerstehen: Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1508
 msgid "Resist Normal Weapons"
-msgstr "Widerstehen: Normale Waffen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1509
 msgid "Resist Paralysis"
-msgstr "Widerstehen: Lähmung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1510
 msgid "Resist Poison"
-msgstr "Widerstehen: Gift"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1511
 msgid "Resist Shock"
-msgstr "Widerstehen: Blitz"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1512
 msgid "Resist Water Damage"
-msgstr "Widerstehen: Wasserschaden"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1513
 msgid "Spell Absorption"
-msgstr "Zauberabsorption"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1514
 msgid "Script Effect"
-msgstr "Skripteffekt"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1515
 msgid "Shock Damage"
-msgstr "Blitzschaden"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1516
 msgid "Shield"
-msgstr "Schild"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1517
 msgid "Silence"
-msgstr "Stille"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1518
 msgid "Stunted Magicka"
-msgstr "Verkümmerte Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1519
 msgid "Soul Trap"
-msgstr "Seelenfalle"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1520
 msgid "Sun Damage"
-msgstr "Sonnenschaden"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1521
 msgid "Telekinesis"
-msgstr "Telekinese"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1522
 msgid "Turn Undead"
-msgstr "Untote vertreiben"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1523
 msgid "Vampirism"
-msgstr "Vampirismus"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1524
 msgid "Water Breathing"
-msgstr "Unterwasseratmung"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1525
 msgid "Water Walking"
-msgstr "Auf Wasser laufen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1526
 msgid "Weakness to Disease"
-msgstr "Anfälligkeit für Krankheit"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1527
 msgid "Weakness to Fire"
-msgstr "Anfälligkeit für Feuer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1528
 msgid "Weakness to Frost"
-msgstr "Anfälligkeit für Frost"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1529
 msgid "Weakness to Magic"
-msgstr "Anfälligkeit für Magie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1530
 msgid "Weakness to Normal Weapons"
-msgstr "Anfälligkeit für Normale Waffen"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1531
 msgid "Weakness to Poison"
-msgstr "Anfälligkeit für Gift"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1532
 msgid "Weakness to Shock"
-msgstr "Anfälligkeit für Blitz"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1533
 msgid "Summon Rufio's Ghost"
-msgstr "Beschwören: Rufios Geist"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1534
 msgid "Summon Ancestor Guardian"
-msgstr "Beschwören: Urahnen-Wächter"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1535
 msgid "Summon Spiderling"
-msgstr "Beschwören: Spiderling"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1536
 msgid "Summon Flesh Atronach"
-msgstr "Beschwören: Fleisch-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1537
 msgid "Summon Bear"
-msgstr "Beschwören: Bär"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1538
 msgid "Summon Gluttonous Hunger"
-msgstr "Beschwören: Gefräßiger Hunger"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1539
 msgid "Summon Ravenous Hunger"
-msgstr "Beschwören: Heißhungriger Hunger"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1540
 msgid "Summon Voracious Hunger"
-msgstr "Beschwören: Gieriger Hunger"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1541
 msgid "Summon Dark Seducer"
-msgstr "Beschwören: Dunkler Verführer"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1542
 msgid "Summon Golden Saint"
-msgstr "Beschwören: Goldene Heilige"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1543
 msgid "Wabba Summon"
-msgstr "Beschwören: Wabba"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1544
 msgid "Summon Decrepit Shambles"
-msgstr "Beschwören: Klapprige Klapperscheuche"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1545
 msgid "Summon Shambles"
-msgstr "Beschwören: Klapperscheuche"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1546
 msgid "Summon Replete Shambles"
-msgstr "Beschwören: Verstörte Klapperscheuche"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1547
 msgid "Summon Hunger"
-msgstr "Beschwören: Hunger"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1548
 msgid "Summon Mangled Flesh Atronach"
-msgstr "Beschwören: Verstümmelter Fleisch-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1549
 msgid "Summon Torn Flesh Atronach"
-msgstr "Beschwören: Zerfetzter Fleisch-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1550
 msgid "Summon Stitched Flesh Atronach"
-msgstr "Beschwören: Geflickter Fleisch-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1551
 msgid "Summon Sewn Flesh Atronach"
-msgstr "Beschwören: Genähter Fleisch-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1552
 msgid "Extra Summon 20"
-msgstr "Beschwören: Extra 20"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1553
 msgid "Summon Clannfear"
-msgstr "Beschwören: Clannfear"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1554
 msgid "Summon Daedroth"
-msgstr "Beschwören: Daedroth"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1555
 msgid "Summon Dremora"
-msgstr "Beschwören: Dremora"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1556
 msgid "Summon Dremora Lord"
-msgstr "Beschwören: Dremora-Fürst"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1557
 msgid "Summon Flame Atronach"
-msgstr "Beschwören: Flammen-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1558
 msgid "Summon Frost Atronach"
-msgstr "Beschwören: Frost-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1559
 msgid "Summon Ghost"
-msgstr "Beschwören: Geist"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1560
 msgid "Summon Headless Zombie"
-msgstr "Beschwören: Kopfloser Zombie"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1561
 msgid "Summon Lich"
-msgstr "Beschwören: Lich"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1562
 msgid "Summon Scamp"
-msgstr "Beschwören: Skamp"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1563
 msgid "Summon Skeleton Guardian"
-msgstr "Beschwören: Skelett-Wächter"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1564
 msgid "Summon Skeleton Champion"
-msgstr "Beschwören: Skelett-Champion"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1565
 msgid "Summon Skeleton"
-msgstr "Beschwören: Skelett"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1566
 msgid "Summon Skeleton Hero"
-msgstr "Beschwören: Skelett-Held"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1567
 msgid "Summon Spider Daedra"
-msgstr "Beschwören: Spinnen-Daedra"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1568
 msgid "Summon Storm Atronach"
-msgstr "Beschwören: Sturm-Atronach"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1569
 msgid "Summon Faded Wraith"
-msgstr "Beschwören: Verblichenes Gespenst"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1570
 msgid "Summon Gloom Wraith"
-msgstr "Beschwören: Düstergespenst"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1571
 msgid "Summon Xivilai"
-msgstr "Beschwören: Xivilai"
+msgstr ""
 
 #: bash/game/oblivion/records.py:1572
 msgid "Summon Zombie"
-msgstr "Beschwören: Zombie"
+msgstr ""
 
 #: bash/game/patch_game.py:250
 msgid "Nirnroots"
@@ -11320,7 +11321,7 @@ msgstr ""
 
 #: bash/gui/popups.py:352
 msgid "Date"
-msgstr "Datum"
+msgstr ""
 
 #: bash/gui/popups.py:355
 msgid "Time"
@@ -11340,7 +11341,7 @@ msgstr ""
 
 #: bash/gui/text_components.py:226
 msgid "Search"
-msgstr "Suche"
+msgstr ""
 
 #: bash/gui/wizards.py:35
 msgid "Wizard"
@@ -11436,31 +11437,31 @@ msgstr ""
 
 #: bash/parsers.py:478 bash/parsers.py:533
 msgid "Actor Eid"
-msgstr "Actor-Eid"
+msgstr ""
 
 #: bash/parsers.py:478 bash/parsers.py:533
 msgid "Actor Mod"
-msgstr "Actor-Mod"
+msgstr ""
 
 #: bash/parsers.py:479
 msgid "Faction Eid"
-msgstr "Faction-Eid"
+msgstr ""
 
 #: bash/parsers.py:479
 msgid "Faction Mod"
-msgstr "Fraktions-Mod"
+msgstr ""
 
 #: bash/parsers.py:479 bash/parsers.py:533
 msgid "Actor Object"
-msgstr "Actor-Objekt"
+msgstr ""
 
 #: bash/parsers.py:480
 msgid "Faction Object"
-msgstr "Fraktions-Objekt"
+msgstr ""
 
 #: bash/parsers.py:480
 msgid "Rank"
-msgstr "Rang"
+msgstr ""
 
 #: bash/parsers.py:533
 msgid "Source Mod"
@@ -11472,20 +11473,20 @@ msgstr ""
 
 #: bash/parsers.py:535
 msgid "Old CalcMax"
-msgstr "Alter CalcMax"
+msgstr ""
 
 #: bash/parsers.py:535
 msgid "Old CalcMin"
-msgstr "Alter CalcMin"
+msgstr ""
 
 #: bash/parsers.py:535
 msgid "Old Offset"
-msgstr "Alter Offset"
+msgstr ""
 
 #: bash/parsers.py:638 bash/parsers.py:856 bash/parsers.py:948
 #: bash/parsers.py:1110 bash/parsers.py:1148
 msgid "Mod Name"
-msgstr "Mod-Name"
+msgstr ""
 
 #: bash/parsers.py:638 bash/parsers.py:856 bash/parsers.py:948
 #: bash/parsers.py:1110 bash/parsers.py:1148
@@ -11494,31 +11495,31 @@ msgstr ""
 
 #: bash/parsers.py:694
 msgid "Script"
-msgstr "Skript"
+msgstr ""
 
 #: bash/parsers.py:749
 msgid "Main Eid"
-msgstr "Main-Eid"
+msgstr ""
 
 #: bash/parsers.py:749
 msgid "Main Mod"
-msgstr "Main-Mod"
+msgstr ""
 
 #: bash/parsers.py:749
 msgid "Main Object"
-msgstr "Main-Objekt"
+msgstr ""
 
 #: bash/parsers.py:750
 msgid "Other Eid"
-msgstr "Andere Eid"
+msgstr ""
 
 #: bash/parsers.py:750
 msgid "Other Mod"
-msgstr "Andere Mod"
+msgstr ""
 
 #: bash/parsers.py:750
 msgid "Other Object"
-msgstr "Anderes Objekt"
+msgstr ""
 
 #: bash/parsers.py:990
 msgid "Exporting script %(script_fname)s."
@@ -11538,7 +11539,7 @@ msgstr ""
 
 #: bash/patcher/base.py:99
 msgid "Source Mods"
-msgstr "Quellmods"
+msgstr ""
 
 #: bash/patcher/base.py:423
 msgid "The values you entered (%(t_val)s) are not valid for the '%(t_name)s' tweak."
@@ -11558,7 +11559,7 @@ msgstr ""
 
 #: bash/patcher/patch_files.py:56
 msgid "Date/Time"
-msgstr "Datum/Zeit"
+msgstr ""
 
 #: bash/patcher/patch_files.py:58
 msgid "Elapsed Time: %(elapsed_time)s"
@@ -11610,7 +11611,7 @@ msgstr ""
 
 #: bash/patcher/patch_files.py:110
 msgid "Compiled All"
-msgstr "Alle kompiliert"
+msgstr ""
 
 #: bash/patcher/patch_files.py:111
 msgid "The following plugins have an empty compiled version of genericLoreScript. This is usually a sign that the plugin author did a %(compile_all)s while editing scripts. This may interfere with the behavior of other plugins that intentionally modify scripts from %(game_name)s (e.g. Cobl and Unofficial Oblivion Patch). You can use Wrye Bash's '%(link_decomp_all)s' command to repair the plugins."
@@ -11675,7 +11676,7 @@ msgstr ""
 
 #: bash/patcher/patchers/base.py:60
 msgid "Custom"
-msgstr "Frei definiert"
+msgstr ""
 
 #: bash/patcher/patchers/base.py:164
 msgid "%(merged_plugin)s is supposed to be merged into the Bashed Patch, but some of its masters (%(missing_masters)s) are missing."
@@ -11739,15 +11740,15 @@ msgstr ""
 
 #: bash/patcher/patchers/mergers.py:758
 msgid "Merged %(ll_label)s Lists"
-msgstr "Gemergte %(ll_label)s-Listen"
+msgstr ""
 
 #: bash/patcher/patchers/mergers.py:817
 msgid "Empty %(ll_label)s Sublists"
-msgstr "Leere %(ll_label)s-Sublisten"
+msgstr ""
 
 #: bash/patcher/patchers/mergers.py:821
 msgid "Empty %(ll_label)s Sublists Removed"
-msgstr "Leere %(ll_label)s-Sublisten entfernt"
+msgstr ""
 
 #: bash/patcher/patchers/mergers.py:843
 msgid "Actor"
@@ -11755,11 +11756,11 @@ msgstr ""
 
 #: bash/patcher/patchers/mergers.py:844
 msgid "Item"
-msgstr "Gegenstand"
+msgstr ""
 
 #: bash/patcher/patchers/mergers.py:845
 msgid "Spell"
-msgstr "Zauber"
+msgstr ""
 
 #: bash/patcher/patchers/mergers.py:847
 msgid "Delevelers/Relevelers"
@@ -11791,7 +11792,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:87
 msgid "Mayu's Animation Overhaul Skeleton Tweaker"
-msgstr "Mayus Animations-Overhaul-Skelett-Tweaker"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:88
 msgid "Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed."
@@ -11799,7 +11800,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:92
 msgid "MAO Skeleton Setter"
-msgstr "MAO-Skeletteinrichter"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:110
 msgid "VadersApp's Oblivion Real Bodies Skeleton Tweaker"
@@ -11815,7 +11816,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:158
 msgid "Vanilla Beast Skeleton Tweaker"
-msgstr "Vanilla Tierskelett-Tweak"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:159
 msgid "Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues."
@@ -11823,11 +11824,11 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:164
 msgid "Vanilla Beast Skeleton"
-msgstr "Vanilla Tierskelett"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:179
 msgid "Redguard FGTS Patcher"
-msgstr "Rothwardonen-FGTS-Patcher"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:180
 msgid "Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards."
@@ -11839,7 +11840,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:198
 msgid "No Bloody Creatures"
-msgstr "Keine blutigen Kreaturen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:199
 msgid "Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."
@@ -11853,7 +11854,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:219
 msgid "As Intended: Imps"
-msgstr "Wie vorgesehen: Kobolde"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:220
 msgid "Set imps to have the unassigned vanilla imp spells as discovered by the UOP team and made into a mod by Tejon."
@@ -11861,15 +11862,15 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:223
 msgid "All imps"
-msgstr "Alle Kobolde"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:224
 msgid "Only fullsize imps"
-msgstr "Nur große Kobolde"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:225
 msgid "Only implings"
-msgstr "Nur Koböldchen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:226
 msgid "Imps Tweaked: %(total_changed)d"
@@ -11877,7 +11878,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:249
 msgid "As Intended: Boars"
-msgstr "Wie vorgesehen: Wildschweine"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_actors.py:250
 msgid "Set boars to have the unassigned vanilla boar spells as discovered by the UOP team and made into a mod by Tejon."
@@ -11975,7 +11976,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:54
 msgid "Armor Shows Amulets"
-msgstr "Rüstung zeigt Amulette"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:55
 msgid "Prevents armor from hiding amulets."
@@ -11983,7 +11984,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:60
 msgid "Armor Shows Rings"
-msgstr "Rüstung zeigt Ringe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:61
 msgid "Prevents armor from hiding rings."
@@ -11996,7 +11997,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:72
 msgid "Clothing Shows Amulets"
-msgstr "Kleidung zeigt Amulette"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:73
 msgid "Prevents Clothing from hiding amulets."
@@ -12004,7 +12005,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:78
 msgid "Clothing Shows Rings"
-msgstr "Kleidung zeigt Ringe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:79
 msgid "Prevents Clothing from hiding rings."
@@ -12012,7 +12013,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:87
 msgid "Bow Reach Fix"
-msgstr "Bogen-Reichweitenfix"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:88
 msgid "Fix bows with zero reach (zero reach causes CTDs)."
@@ -12036,7 +12037,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:121
 msgid "Right Hand Rings"
-msgstr "Ringe an der rechten Hand"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:122
 msgid "Fixes rings to unequip consistently by making them prefer the right hand."
@@ -12048,7 +12049,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:179
 msgid "All Clothing Playable"
-msgstr "Jede Kleidung spielbar"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:180
 msgid "Sets all clothing to be playable."
@@ -12056,7 +12057,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:183
 msgid "Playable Clothes"
-msgstr "Spielbare Kleidung"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:184
 msgid "Clothes Set As Playable: %(total_changed)d"
@@ -12064,7 +12065,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:190
 msgid "All Armor Playable"
-msgstr "Jede Rüstung spielbar"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:191
 msgid "Sets all armor to be playable."
@@ -12072,7 +12073,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:194
 msgid "Playable Armor"
-msgstr "Spielbare Rüstung"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:195
 msgid "Armor Pieces Set As Playable: %(total_changed)d"
@@ -12080,7 +12081,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:201
 msgid "DarNified Books"
-msgstr "DarNifizierte Bücher"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:202
 msgid "Books will be reformatted for DarN UI."
@@ -12100,7 +12101,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:292
 msgid "No Light Flicker"
-msgstr "Kein Lichtflackern"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:293
 msgid "Remove flickering from lights. For use on low-end machines."
@@ -12304,11 +12305,11 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:935
 #: bash/patcher/patchers/multitweak_settings.py:1090
 msgid "Unlimited"
-msgstr "Unbegrenzt"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:596
 msgid "Set Enchantment Number of Uses"
-msgstr "Setze Anzahl von Anwendungen bei Verzauberungen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_assorted.py:597
 msgid "Enchantments Set: %(total_changed)d"
@@ -12460,7 +12461,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:81
 msgid "Max Weight Amulets"
-msgstr "Max. Gewicht Amulette"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:82
 msgid "Amulet weight will be capped."
@@ -12468,7 +12469,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:89
 msgid "Max Weight Rings"
-msgstr "Max. Gewicht Ringe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:90
 msgid "Ring weight will be capped."
@@ -12476,7 +12477,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:97
 msgid "Max Weight Hoods"
-msgstr "Max. Gewicht Kappen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:98
 msgid "Hood weight will be capped."
@@ -12484,7 +12485,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:126
 msgid "Unlimited Amulets"
-msgstr "Unbegrenzt Amulette"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:127
 msgid "Wear unlimited number of amulets - but they won't display. Will affect all clothes flagged as amulets."
@@ -12492,7 +12493,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:133
 msgid "Unlimited Rings"
-msgstr "Unbegrenzt Ringe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:134
 msgid "Wear unlimited number of rings - but they won't display. Will affect all clothes flagged as rings."
@@ -12500,7 +12501,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:140
 msgid "Gloves Show Rings"
-msgstr "Handschuhe zeigen Ringe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:141
 msgid "Gloves will always show rings (conflicts with Unlimited Rings)."
@@ -12508,7 +12509,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:147
 msgid "Robes Show Pants"
-msgstr "Roben zeigen Hosen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:148
 msgid "Robes will allow pants, greaves, skirts - but they'll clip."
@@ -12516,7 +12517,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:154
 msgid "Robes Show Amulets"
-msgstr "Roben zeigen Amulette"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_clothes.py:155
 msgid "Robes will always show amulets (conflicts with Unlimited Amulets)."
@@ -12540,7 +12541,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_names.py:187
 msgid "Body Part Codes"
-msgstr "Körperteil-Codes"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_names.py:188
 msgid "Sets body part codes used by Armor/Clothes name tweaks."
@@ -13005,7 +13006,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:77
 msgid "Thieves Guild: Quest Stealing Penalty"
-msgstr "Diebesgilde: Quest-Diebstahlstrafe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:78
 msgid "The penalty (in Septims) for stealing while doing a Thieves Guild job:"
@@ -13013,7 +13014,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:90
 msgid "Thieves Guild: Quest Killing Penalty"
-msgstr "Diebesgilde: Quest-Mordstrafe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:91
 msgid "The penalty (in Septims) for killing while doing a Thieves Guild job:"
@@ -13021,7 +13022,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:103
 msgid "Thieves Guild: Quest Attacking Penalty"
-msgstr "Diebesgilde: Quest-Angriffsstrafe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:104
 msgid "The penalty (in Septims) for attacking while doing a Thieves Guild job:"
@@ -13029,11 +13030,11 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:116
 msgid "Crime: Force Jail"
-msgstr "Verbrechen: Gefängnis erzwingen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:117
 msgid "The amount of Bounty at which a jail sentence is mandatory"
-msgstr "Die Kopfgeldhöhe, ab der Gefängnis zwingend ist"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:169
 msgid "Oblivion GMST values can't be negative"
@@ -13045,7 +13046,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:225
 msgid "Custom (in seconds)"
-msgstr "Frei definiert (in Sekunden)"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:229
 msgid "Custom (in units)"
@@ -13058,12 +13059,12 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:240
 #: bash/patcher/patchers/multitweak_settings.py:521
 msgid "Allow"
-msgstr "Erlauben"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:241
 #: bash/patcher/patchers/multitweak_settings.py:242
 msgid "Disallow"
-msgstr "Nicht erlauben"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:264
 #: bash/patcher/patchers/multitweak_settings.py:1504
@@ -13089,7 +13090,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:289
 msgid "Arrow: Litter Count"
-msgstr "Pfeil: Bodenanzahl"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:290
 msgid "Maximum number of spent arrows allowed in cell."
@@ -13097,7 +13098,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:302
 msgid "Arrow: Litter Time"
-msgstr "Pfeil: Bodenzeit"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:303
 msgid "Time before spent arrows fade away from cells and actors."
@@ -13121,32 +13122,32 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:396
 #: bash/patcher/patchers/multitweak_settings.py:455
 msgid "2 Minutes"
-msgstr "2 Minuten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:308
 #: bash/patcher/patchers/multitweak_settings.py:456
 #: bash/patcher/patchers/multitweak_settings.py:1392
 msgid "3 Minutes"
-msgstr "3 Minuten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:309
 #: bash/patcher/patchers/multitweak_settings.py:394
 #: bash/patcher/patchers/multitweak_settings.py:457
 #: bash/patcher/patchers/multitweak_settings.py:1393
 msgid "5 Minutes"
-msgstr "5 Minuten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:310
 msgid "10 Minutes"
-msgstr "10 Minuten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:311
 msgid "30 Minutes"
-msgstr "30 Minuten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:312
 msgid "1 Hour"
-msgstr "1 Stunde"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:317
 msgid "Arrow: Recovery From Actor"
@@ -13158,7 +13159,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:335
 msgid "Arrow: Speed"
-msgstr "Pfeil: Geschwindigkeit"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:336
 msgid "Speed of a full power arrow."
@@ -13166,7 +13167,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:353
 msgid "Camera: Chase Tightness"
-msgstr "Kamera: Verfolgungsnähe"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:354
 msgid "Tightness of chase camera to player turning."
@@ -13174,7 +13175,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:365
 msgid "Camera: Chase Distance"
-msgstr "Kamera: Verfolgungsentfernung"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:366
 msgid "Distance camera can be moved away from PC using mouse wheel."
@@ -13203,7 +13204,7 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:491
 #: bash/patcher/patchers/multitweak_settings.py:1390
 msgid "30 Seconds"
-msgstr "30 Sekunden"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:395
 msgid "Disabled"
@@ -13219,7 +13220,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:413
 msgid "Magic: Chameleon Refraction"
-msgstr "Magie: Chamäleon-Brechung"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:414
 msgid "Chameleon with transparency instead of refraction effect."
@@ -13227,7 +13228,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:416
 msgid "Zero"
-msgstr "Null"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:417
 #: bash/patcher/patchers/multitweak_settings.py:419
@@ -13236,11 +13237,11 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:418
 msgid "Full"
-msgstr "Voll"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:423
 msgid "Compass: Disable"
-msgstr "Kompass: Ausschalten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:424
 msgid "No quest and/or points of interest markers on compass."
@@ -13256,7 +13257,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:428
 msgid "Quests and POIs"
-msgstr "Quests und POIs"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:432
 msgid "Compass: Recognition Distance"
@@ -13302,11 +13303,11 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:1389
 #: bash/patcher/patchers/multitweak_settings.py:1690
 msgid "20 Seconds"
-msgstr "20 Sekunden"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:454
 msgid "1 1/2 Minutes"
-msgstr "1 1/2 Minuten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:462
 msgid "Movement: Fatigue From Running/Encumbrance"
@@ -13330,7 +13331,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:486
 msgid "Camera: PC Death Time"
-msgstr "Kamera: PC-Todeszeit"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:487
 msgid "Time after player's death before the last save is loaded/the reload menu appears."
@@ -13338,11 +13339,11 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:490
 msgid "15 Seconds"
-msgstr "15 Sekunden"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:493
 msgid "5 Minute"
-msgstr "5 Minuten"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:498
 msgid "World: Cell Respawn Time"
@@ -13355,7 +13356,7 @@ msgstr ""
 #: bash/patcher/patchers/multitweak_settings.py:502
 #: bash/patcher/patchers/multitweak_settings.py:1542
 msgid "1 Day"
-msgstr "1 Tag"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:503
 #: bash/patcher/patchers/multitweak_settings.py:510
@@ -13364,42 +13365,42 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:504
 msgid "5 Days"
-msgstr "5 Tage"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:505
 #: bash/patcher/patchers/multitweak_settings.py:514
 #: bash/patcher/patchers/multitweak_settings.py:1434
 msgid "10 Days"
-msgstr "10 Tage"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:506
 #: bash/patcher/patchers/multitweak_settings.py:1436
 msgid "20 Days"
-msgstr "20 Tage"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:507
 #: bash/patcher/patchers/multitweak_settings.py:1547
 msgid "1 Month"
-msgstr "1 Monat"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:508
 #: bash/patcher/patchers/multitweak_settings.py:1440
 msgid "6 Months"
-msgstr "6 Monate"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:509
 #: bash/patcher/patchers/multitweak_settings.py:1441
 msgid "1 Year"
-msgstr "1 Jahr"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:511
 #: bash/patcher/patchers/multitweak_settings.py:1443
 msgid "Custom (in hours)"
-msgstr "Frei definiert (in Stunden)"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:518
 msgid "Combat: Recharge Weapons"
-msgstr "Kampf: Waffen wiederaufladen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:519
 msgid "Allow recharging weapons during combat."
@@ -13407,7 +13408,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:525
 msgid "Magic: Bolt Speed"
-msgstr "Magie: Blitzgeschwindigkeit"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:526
 msgid "Speed of magic bolt/projectile."
@@ -13415,7 +13416,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:541
 msgid "Msg: Equip Misc. Item"
-msgstr "Nachricht: Ausrüsten von Misc"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:542
 msgid "Message upon equipping misc. item."
@@ -13495,7 +13496,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:605
 msgid "Cost Multiplier: Repair"
-msgstr "Kostenmultiplikator: Reparatur"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:606
 msgid "Cost factor for repairing items."
@@ -13511,7 +13512,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:646
 msgid "Cost Multiplier: Recharge"
-msgstr "Kostenmultiplikator: Wiederaufladen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:647
 msgid "Cost factor for recharging items."
@@ -13527,7 +13528,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:675
 msgid "Combat: Max Actors"
-msgstr "Kampf: Max. Actors"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:676
 msgid "Maximum number of actors that can actively be in combat with the player."
@@ -13551,7 +13552,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:721
 msgid "Cost Multiplier: Enchantment"
-msgstr "Kostenmultiplikator: Verzauberung"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:722
 msgid "Cost factor for enchanting items."
@@ -13563,7 +13564,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:736
 msgid "Cost Multiplier: Spell Making"
-msgstr "Kostenmultiplikator: Zaubererstellung"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:737
 msgid "Cost factor for making spells."
@@ -13571,11 +13572,11 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:748
 msgid "AI: Max Active Actors"
-msgstr "AI: Maximal aktive Actors"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:749
 msgid "Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"
-msgstr "Maximum Actors, deren AI aktiv sein kann. Muss höher als bei Kampf: Max Actors sein"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:756
 msgid "MMM Default: 40"
@@ -13583,7 +13584,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:767
 msgid "Magic: Max Player Summons"
-msgstr "Magie: Maximale Spieler-Beschwörungen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:768
 msgid "Maximum number of creatures the player can summon."
@@ -13636,11 +13637,11 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:842
 msgid "Magic: Max NPC Summons"
-msgstr "Magie: Max. NPC-Beschwörungen"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:843
 msgid "Maximum number of creatures that each NPC can summon"
-msgstr "Maximale Anzahl an Kreaturen, die ein NPC beschwören kann"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:855
 msgid "Bounty: Assault"
@@ -13652,7 +13653,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:874
 msgid "Bounty: Horse Theft"
-msgstr "Kopfgeld: Pferdediebstahl"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:875
 msgid "Bounty for horse theft."
@@ -13660,7 +13661,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:892
 msgid "Bounty: Theft"
-msgstr "Kopfgeld: Diebstahl"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:893
 msgid "Bounty for stealing, as fraction of item value."
@@ -13668,7 +13669,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:903
 msgid "Combat: Alchemy"
-msgstr "Kampf: Alchemie"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:904
 msgid "Allow alchemy during combat."
@@ -13676,7 +13677,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:909
 msgid "Combat: Repair"
-msgstr "Kampf: Reparieren"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:910
 msgid "Allow repairing armor/weapons during combat."
@@ -13700,7 +13701,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:943
 msgid "Combat: Maximum Armor Rating"
-msgstr "Kampf: Maximaler Rüstungswert"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:944
 msgid "The Maximum amount of protection you will get from armor."
@@ -13732,7 +13733,7 @@ msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:1002
 msgid "AI: Max Dead Actors"
-msgstr "AI: Max tote Actors"
+msgstr ""
 
 #: bash/patcher/patchers/multitweak_settings.py:1003
 msgid "Maximum number of dead actors allowed before they're removed."
