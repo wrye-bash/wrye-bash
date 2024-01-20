@@ -28,7 +28,7 @@ import re
 import sys
 
 import pyfiglet
-from helpers.utils import MOPY_PATH, commit_changes
+from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, open_wb_file
 
 sys.path.insert(0, MOPY_PATH)
 from bash import bass
@@ -38,37 +38,6 @@ def setup_parser(parser):
         default=str(int(float(bass.AppVersion)) + 1),
         help='The version to bump to. Defaults to the current version plus '
              'one.')
-
-def open_wb_file(*parts):
-    """Open a Wrye Bash source code file relative to the Mopy folder in
-    read-write mode."""
-    try:
-        return open(os.path.join(MOPY_PATH, *parts), 'r+', encoding='utf-8')
-    except FileNotFoundError:
-        print(f'File {os.path.join(*parts)} not found, bump_ver.py probably '
-              f'needs to be updated', file=sys.stderr)
-        sys.exit(1)
-
-def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback):
-    """Edit a Wrye Bash source code file relative to the Mopy folder. Look for
-    lines matching trigger_regex and replace them with the result of calling
-    edit_callback (with the resulting re.Match object passed to edit_callback
-    as an argument)."""
-    new_wbpy_lines = []
-    with open_wb_file(*parts) as wbpy:
-        wbpy_lines = wbpy.read().splitlines()
-        for wbpy_line in wbpy_lines:
-            if wbpy_ma := trigger_regex.match(wbpy_line):
-                new_wbpy_lines.append(edit_callback(wbpy_ma))
-            else:
-                new_wbpy_lines.append(wbpy_line)
-        if wbpy_lines == new_wbpy_lines:
-            print(f'Nothing edited in file {os.path.join(*parts)}, '
-                  f'bump_ver.py probably needs to be updated', file=sys.stderr)
-            sys.exit(1)
-        wbpy.seek(0, os.SEEK_SET)
-        wbpy.truncate(0)
-        wbpy.write('\n'.join(new_wbpy_lines) + '\n')
 
 def main(args):
     new_ver = args.new_version

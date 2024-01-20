@@ -43,7 +43,6 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
     get_image
-from ..localize import dump_translator
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -526,13 +525,6 @@ class LanguagePage(_AScrollablePage):
               u'to dump localizations.'))
         is_standalone_warning.set_foreground_color(colors[u'default.warn'])
         is_standalone_warning.visible = bass.is_standalone
-        dump_localization_btn = Button(self, _('Dump Localization...'),
-            btn_tooltip=_('Generates an up-to-date version of the '
-                          'localization file for the currently active '
-                          'language (%(active_language)s).') % {
-                'active_language': active_lang.split(' ')[0]})
-        dump_localization_btn.enabled = not bass.is_standalone
-        dump_localization_btn.on_clicked.subscribe(self._dump_localization)
         self._edit_l10n_btn = OpenButton(self, _(u'Edit...'),
             btn_tooltip=_(u'Opens the selected localization in an editor. You '
                           u'can configure which editor to use via the '
@@ -555,9 +547,8 @@ class LanguagePage(_AScrollablePage):
                     (HLayout(spacing=4, item_expand=True, items=[
                         (self._l10n_list, LayoutOptions(weight=1)),
                         VLayout(spacing=4, item_expand=True, items=[
-                            configure_editor_btn, dump_localization_btn,
-                            HorizontalLine(self), self._edit_l10n_btn,
-                            self._rename_l10n_btn,
+                            configure_editor_btn, HorizontalLine(self),
+                            self._edit_l10n_btn, self._rename_l10n_btn,
                         ]),
                     ]), LayoutOptions(weight=1)),
                 ]), LayoutOptions(weight=1)),
@@ -569,27 +560,6 @@ class LanguagePage(_AScrollablePage):
         this will raise an error if no hidden icon has been selected, so it is
         only safe to call if that has already been checked."""
         return self._l10n_list.lb_get_selected_strings()[0]
-
-    def _dump_localization(self):
-        """Dumps out an up-to-date version of the current l10n file."""
-        message = _(u'Generate Bash program translator file?') + u'\n\n' + _(
-            u'This function is for translating Bash itself (NOT mods) into '
-            u'non-English languages. For more info, '
-            u'see the Internationalization section of the Advanced Readme.')
-        if not balt.askContinue(self, message,
-                u'bash.dump_translator.continue', _(u'Dump Localization')):
-            return
-        outPath = bass.dirs[u'l10n']
-        with BusyCursor():
-            outFile = dump_translator(outPath, bass.active_locale)
-        showOk(self, _('Translation keys written to '
-                       '%(l10n_path)s.') % {'l10n_path': outFile},
-            title=_('Dump Localization: '
-                    '%(l10n_file)s') % {'l10n_file': outPath.stail})
-        # Make the new localization show up in the list
-        self._populate_l10n_list()
-        # wx unselects here, so disable the context buttons
-        self._set_context_buttons(btns_enabled=False)
 
     def _edit_l10n(self):
         """Opens the selected localization file in an editor."""

@@ -25,6 +25,8 @@
 from __future__ import annotations
 
 import logging
+import traceback
+
 import math
 import os
 import re
@@ -182,6 +184,49 @@ def out_path(dir_=OUT_PATH, name='out.txt'):
     :param name: a filename"""
     os.makedirs(dir_, exist_ok=True)
     return os.path.join(dir_, name)
+
+def fatal_error(msg: str, *, exit_code: int, print_traceback=False):
+    """Print a message to stderr and optionally print the current exception's
+    traceback, then exit with the provided exit code.
+
+    :param msg: The message to print to stderr.
+    :param exit_code: The exit code to terminate the script with.
+    :param print_traceback: If True, print the current exception's traceback
+        using traceback.print_exc."""
+    print(msg, file=sys.stderr)
+    if print_traceback:
+        traceback.print_exc()
+    sys.exit(exit_code)
+
+def open_wb_file(*parts):
+    """Open a Wrye Bash source code file relative to the Mopy folder in
+    read-write mode. Note that the file *must* have UTF-8 encoding!"""
+    try:
+        return open(os.path.join(MOPY_PATH, *parts), 'r+', encoding='utf-8')
+    except FileNotFoundError:
+        fatal_error(f'File {os.path.join(*parts)} not found, bump_ver.py '
+                    f'probably needs to be updated', exit_code=1)
+
+def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback):
+    """Edit a Wrye Bash source code file relative to the Mopy folder. Look for
+    lines matching trigger_regex and replace them with the result of calling
+    edit_callback (with the resulting re.Match object passed to edit_callback
+    as an argument)."""
+    new_wbpy_lines = []
+    with open_wb_file(*parts) as wbpy:
+        wbpy_lines = wbpy.read().splitlines()
+        for wbpy_line in wbpy_lines:
+            if wbpy_ma := trigger_regex.match(wbpy_line):
+                new_wbpy_lines.append(edit_callback(wbpy_ma))
+            else:
+                new_wbpy_lines.append(wbpy_line)
+        if wbpy_lines == new_wbpy_lines:
+            fatal_error(f'Nothing edited in file {os.path.join(*parts)}, '
+                        f'bump_ver.py probably needs to be updated',
+                exit_code=1)
+        wbpy.seek(0, os.SEEK_SET)
+        wbpy.truncate(0)
+        wbpy.write('\n'.join(new_wbpy_lines) + '\n')
 
 # Copy-pasted from bolt.py
 # We need to split every time we hit a new 'type' of component. So greedily
