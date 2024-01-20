@@ -795,7 +795,7 @@
         ; As of 311, Auto-Quit uses a checkmark instead of an X
         Delete "${Path}\Mopy\bash\images\checkbox_red_x_24.png"
         Delete "${Path}\Mopy\bash\images\checkbox_red_x_32.png"
-        ; as of 312 tool images were renamed to match their ini key
+        ; As of 312, tool images were renamed to match their ini key
         Delete "${Path}\Mopy\bash\images\tools\nifskope16.png"
         Delete "${Path}\Mopy\bash\images\tools\nifskope24.png"
         Delete "${Path}\Mopy\bash\images\tools\nifskope32.png"
@@ -874,8 +874,8 @@
         Delete "${Path}\Mopy\bash\images\tools\tes4files16.png"
         Delete "${Path}\Mopy\bash\images\tools\tes4files24.png"
         Delete "${Path}\Mopy\bash\images\tools\tes4files32.png"
-        ; as of 312 belt is moved in basher
-        Delete "${Path}\Mopy\bash\belt.p*"
+        ; As of 313, translations are done via weblate
+        Delete "${Path}\Mopy\bash\images\readme\settings-language-configure-editor.png"
     !macroend
 
 

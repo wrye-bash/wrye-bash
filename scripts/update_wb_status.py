@@ -26,9 +26,9 @@
 import argparse
 import json
 import os
-import sys
 
-from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, commit_changes
+from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, commit_changes, \
+    fatal_error
 
 def setup_parser(parser):
     parser.add_argument('new_version', type=str, metavar='ver',
@@ -41,18 +41,17 @@ def main(args):
         with open(wanted_path, 'r', encoding='utf-8') as ins:
             changelog_b64 = ins.read()
     except FileNotFoundError:
-        print(f'Could not find generated changelog. Please run '
-              f'generate_changelog.py and ensure it creates a file at '
-              f'{wanted_path}', file=sys.stderr)
-        sys.exit(1)
+        fatal_error(f'Could not find generated changelog. Please run '
+                    f'generate_changelog.py and ensure it creates a file at '
+                    f'{wanted_path}', exit_code=1)
     latest_json_path = os.path.join(WB_STATUS_PATH, 'latest.json')
     try:
         with open(latest_json_path, 'rb') as ins:
             latest_old = json.load(ins)
     except FileNotFoundError:
-        print('Could not find wb_status repo. Please clone it at the same '
-              'level as the wrye-bash repo.', file=sys.stderr)
-        sys.exit(2)
+        fatal_error(f'Could not find wb_status repo at {WB_STATUS_PATH}. '
+                    f'Please clone it at the same level as the wrye-bash '
+                    f'repo.', exit_code=2)
     # We have everything we need to construct the new latest.json
     latest_new = {
         'version': new_ver,

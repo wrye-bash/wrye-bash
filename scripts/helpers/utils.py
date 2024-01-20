@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -26,33 +25,36 @@
 from __future__ import annotations
 
 import logging
+import traceback
+
 import math
 import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from urllib.request import urlopen
 
 import pygit2
 
 # Reusable path definitions
-SCRIPTS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD_LOGFILE = os.path.join(SCRIPTS_PATH, 'build.log')
-TAGINFO = os.path.join(SCRIPTS_PATH, 'taginfo.txt')
-WBSA_PATH = os.path.join(SCRIPTS_PATH, 'build', 'standalone')
-DIST_PATH = os.path.join(SCRIPTS_PATH, 'dist')
-ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, os.pardir))
-MOPY_PATH = os.path.join(ROOT_PATH, 'Mopy')
-APPS_PATH = os.path.join(MOPY_PATH, 'Apps')
-NSIS_PATH = os.path.join(SCRIPTS_PATH, 'build', 'nsis')
-TESTS_PATH = os.path.join(MOPY_PATH, 'bash', 'tests')
-TAGLISTS_PATH = os.path.join(MOPY_PATH, 'taglists')
-IDEA_PATH = os.path.join(ROOT_PATH, '.idea')
-VSCODE_PATH = os.path.join(ROOT_PATH, '.vscode')
-OUT_PATH = os.path.join(SCRIPTS_PATH, 'out')
-CHANGELOGS_PATH = os.path.join(SCRIPTS_PATH, 'changelogs')
-WB_STATUS_PATH = os.path.abspath(os.path.join(
-    ROOT_PATH, os.pardir, 'wb_status'))
+SCRIPTS_PATH = Path(__file__).absolute().parent.parent
+ROOT_PATH = SCRIPTS_PATH.parent
+WBSA_PATH = SCRIPTS_PATH / 'build' / 'standalone'
+DIST_PATH = SCRIPTS_PATH / 'dist'
+MOPY_PATH = ROOT_PATH / 'Mopy'
+APPS_PATH = MOPY_PATH / 'Apps'
+NSIS_PATH = SCRIPTS_PATH / 'build' / 'nsis'
+L10N_PATH = MOPY_PATH / 'bash' / 'l10n'
+TESTS_PATH = MOPY_PATH / 'bash' / 'tests'
+TAGLISTS_PATH = MOPY_PATH / 'taglists'
+IDEA_PATH = ROOT_PATH / '.idea'
+VSCODE_PATH = ROOT_PATH / '.vscode'
+OUT_PATH = SCRIPTS_PATH / 'out'
+CHANGELOGS_PATH = SCRIPTS_PATH / 'changelogs'
+WB_STATUS_PATH = ROOT_PATH.parent / 'wb_status'
+BUILD_LOGFILE = SCRIPTS_PATH / 'build.log'
+TAGINFO = SCRIPTS_PATH / 'taginfo.txt'
 
 # Other constants
 DEFAULT_MILESTONE_TITLE = 'Bug fixes and enhancements'
@@ -183,6 +185,57 @@ def out_path(dir_=OUT_PATH, name='out.txt'):
     :param name: a filename"""
     os.makedirs(dir_, exist_ok=True)
     return os.path.join(dir_, name)
+
+def fatal_error(msg: str, *, exit_code: int, print_traceback=False):
+    """Print a message to stderr and optionally print the current exception's
+    traceback, then exit with the provided exit code.
+
+    :param msg: The message to print to stderr.
+    :param exit_code: The exit code to terminate the script with.
+    :param print_traceback: If True, print the current exception's traceback
+        using traceback.print_exc."""
+    print(msg, file=sys.stderr)
+    if print_traceback:
+        traceback.print_exc()
+    sys.exit(exit_code)
+
+def open_wb_file(*parts):
+    """Open a Wrye Bash source code file relative to the Mopy folder in
+    read-write mode. Note that the file *must* have UTF-8 encoding!"""
+    try:
+        return open(os.path.join(MOPY_PATH, *parts), 'r+', encoding='utf-8')
+    except FileNotFoundError:
+        fatal_error(f'File {os.path.join(*parts)} not found, bump_ver.py '
+                    f'probably needs to be updated', exit_code=1)
+
+def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback):
+    """Edit a Wrye Bash source code file relative to the Mopy folder. Look for
+    lines matching trigger_regex and replace them with the result of calling
+    edit_callback (with the resulting re.Match object passed to edit_callback
+    as an argument)."""
+    new_wbpy_lines = []
+    with open_wb_file(*parts) as wbpy:
+        wbpy_lines = wbpy.read().splitlines()
+        for wbpy_line in wbpy_lines:
+            if wbpy_ma := trigger_regex.match(wbpy_line):
+                new_wbpy_lines.append(edit_callback(wbpy_ma))
+            else:
+                new_wbpy_lines.append(wbpy_line)
+        if wbpy_lines == new_wbpy_lines:
+            fatal_error(f'Nothing edited in file {os.path.join(*parts)}, '
+                        f'bump_ver.py probably needs to be updated',
+                exit_code=1)
+        wbpy.seek(0, os.SEEK_SET)
+        wbpy.truncate(0)
+        wbpy.write('\n'.join(new_wbpy_lines) + '\n')
+
+def edit_bass_version(new_ver: str):
+    """Change the AppVersion in bass.py to the specified version."""
+    def edit_bass(bass_ma):
+        return f"AppVersion = '{new_ver}'{bass_ma.group(1)}"
+    edit_wb_file('bash', 'bass.py',
+        trigger_regex=re.compile(r"^AppVersion = '\d+(?:\.\d+)?'(.*)$"),
+        edit_callback=edit_bass)
 
 # Copy-pasted from bolt.py
 # We need to split every time we hit a new 'type' of component. So greedily

@@ -4,19 +4,18 @@
 # bash\bush.py:771 msgid "Luck" msgstr "運氣", Do not use "幸運", or Bash won't compile translator.
 # Especially do not use string "運", as dump translator will get "運\" instead.
 # Converted by MS Office Word gbk -> big5 tool. So might be some grammar mistake. I hope someone will fix the error.
-
 msgid ""
 msgstr ""
 "Project-Id-Version: Wrye Bash\n"
-"POT-Creation-Date: 2011-12-11 12:53+China Standard Time\n"
+"POT-Creation-Date: 2024-01-07 22:03+0100\n"
 "PO-Revision-Date: 2014-08-20 21:46+China Standard Time\n"
 "Last-Translator: bluesky404 aka icedream <icedream@tesfans.org>\n"
 "Language-Team: Chinese (Simplified) <icedream@tesfans.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-
 
 #: bash/ScriptParser.py:102
 msgid "Too few arguments to %(obj_type)s '%(obj_name)s': got %(got)s, expected %(expected)s."
@@ -195,8 +194,7 @@ msgstr "取消"
 msgid "Rename to:"
 msgstr "重命名為："
 
-#: bash/balt.py:291 bash/basher/mod_links.py:353
-#: bash/basher/saves_links.py:122
+#: bash/balt.py:291 bash/basher/mod_links.py:353 bash/basher/saves_links.py:122
 msgid "Name must be unique."
 msgstr "名字不能重複。"
 
@@ -509,135 +507,135 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: bash/bash.py:435
+#: bash/bash.py:436
 msgid "Wrye Bash encountered an error."
 msgstr ""
 
-#: bash/bash.py:436
+#: bash/bash.py:437
 msgid "Please post the information below to the official thread at"
 msgstr ""
 
-#: bash/bash.py:437
+#: bash/bash.py:438
 msgid "https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games"
 msgstr ""
 
-#: bash/bash.py:438
+#: bash/bash.py:439
 msgid "or to the Wrye Bash Discord at"
 msgstr ""
 
-#: bash/bash.py:439
+#: bash/bash.py:440
 msgid "https://discord.gg/NwWvAFR"
 msgstr ""
 
-#: bash/bash.py:507
+#: bash/bash.py:508
 msgid "Error! Unable to start Wrye Bash."
 msgstr "錯誤！Wrye Bash 無法啟動。"
 
-#: bash/bash.py:507
+#: bash/bash.py:508
 msgid "Please ensure Wrye Bash is correctly installed."
 msgstr "請確保 Wrye Bash 已正確安裝。"
 
-#: bash/bash.py:528
+#: bash/bash.py:529
 msgid "Wrye Bash needs Administrator Privileges to make changes to the %(gameName)s directory.  If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges."
 msgstr "Wrye Bash 需要管理員許可權才能對 %(gameName)s 目錄進行修改。建議以管理員身份執行 Wrye Bash ，不然接下來的操作您會一直收到需要許可權的提示。"
 
-#: bash/bash.py:552 bash/basher/settings_dialog.py:924
+#: bash/bash.py:553 bash/basher/settings_dialog.py:924
 msgid "Backup Bash Settings"
 msgstr "備份 Bash 配置"
 
-#: bash/bash.py:564
+#: bash/bash.py:565
 msgid "There was an error while trying to backup the Bash settings!"
 msgstr "備份 Bash 配置時發生錯誤！"
 
-#: bash/bash.py:566
+#: bash/bash.py:567
 msgid "If you continue, your current settings may be overwritten."
 msgstr "如果繼續，您的當前配置將被替換。"
 
-#: bash/bash.py:568
+#: bash/bash.py:569
 msgid "Do you want to quit Wrye Bash now?"
 msgstr "是否退出 Wrye Bash ？"
 
-#: bash/bash.py:570
+#: bash/bash.py:571
 msgid "Unable to create backup!"
 msgstr "無法備份 Bash 配置！"
 
-#: bash/bash.py:600
+#: bash/bash.py:601
 msgid "The following (non-critical) warnings were found during initialization:"
 msgstr ""
 
-#: bash/bash.py:613
+#: bash/bash.py:614
 msgid "Wrye Bash could not find a game to manage. Make sure to launch games you installed through Steam once and enable mods on games you installed through the Windows Store."
 msgstr ""
 
-#: bash/bash.py:617
+#: bash/bash.py:618
 msgid "You can also use the -o command line argument or bash.ini to specify the path manually."
 msgstr ""
 
-#: bash/bash.py:643
+#: bash/bash.py:644
 msgid "Wrye Bash Error"
 msgstr ""
 
-#: bash/bash.py:644
+#: bash/bash.py:645
 msgid "Wrye Bash Warning"
 msgstr ""
 
-#: bash/bash.py:655 bash/bash.py:746
+#: bash/bash.py:656 bash/bash.py:747
 msgid "Quit"
 msgstr "退出"
 
-#: bash/bash.py:657
+#: bash/bash.py:658
 msgid "Continue"
 msgstr ""
 
-#: bash/bash.py:658
+#: bash/bash.py:659
 msgid "Abort"
 msgstr ""
 
-#: bash/bash.py:723
+#: bash/bash.py:724
 msgid "Select Game"
 msgstr ""
 
-#: bash/bash.py:737
+#: bash/bash.py:738
 msgid "Search Games"
 msgstr ""
 
-#: bash/bash.py:750 bash/env/windows.py:1082
+#: bash/bash.py:751 bash/env/windows.py:1082
 msgid "Launch"
 msgstr "執行"
 
-#: bash/bash.py:756
+#: bash/bash.py:757
 msgid "Please choose a game to manage."
 msgstr ""
 
-#: bash/bash.py:759
+#: bash/bash.py:760
 msgid "Game Details"
 msgstr ""
 
-#: bash/bash.py:762
+#: bash/bash.py:763
 msgid "Variant:"
 msgstr ""
 
-#: bash/bash.py:768
+#: bash/bash.py:769
 msgid "Install Path:"
 msgstr ""
 
-#: bash/bash.py:817 bash/bash.py:831
+#: bash/bash.py:818 bash/bash.py:832
 msgid "N/A"
 msgstr ""
 
-#: bash/bash.py:860
+#: bash/bash.py:861
 msgid "Warning: you appear to be using a non-supported version of wxPython (%(curr_wx_ver)s). This will cause problems! It is highly recommended you use a %(supported_wx_series)s version. Do you still want to run Wrye Bash?"
 msgstr ""
 
-#: bash/bash.py:866
+#: bash/bash.py:867
 msgid "Unsupported wxPython Version Detected"
 msgstr ""
 
-#: bash/bash.py:875
+#: bash/bash.py:876
 msgid "Only Python %(min_py_ver)s and newer is supported (%(curr_py_ver)s detected). If you know what you're doing, install the Python version of Wrye Bash and edit this warning out. Wrye Bash will now exit."
 msgstr ""
 
-#: bash/bash.py:881
+#: bash/bash.py:882
 msgid "Unsupported Python Version Detected"
 msgstr ""
 
@@ -7858,8 +7856,8 @@ msgstr "保存配置"
 msgid "Ask every time"
 msgstr ""
 
-#: bash/basher/settings_dialog.py:1030 bash/bolt.py:1791
-#: bash/bosh/bain.py:1417 bash/gui/popups.py:65
+#: bash/basher/settings_dialog.py:1030 bash/bolt.py:1791 bash/bosh/bain.py:1417
+#: bash/gui/popups.py:65
 msgid "Copy"
 msgstr "複製"
 

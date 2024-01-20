@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -49,14 +49,17 @@ except ImportError:
     winreg = None
 import zipfile
 from contextlib import contextmanager, suppress
+from pathlib import Path
 
+import compile_l10n
 import pygit2
 import PyInstaller.__main__
 import update_taglist
 from helpers import utils
 from helpers.utils import APPS_PATH, BUILD_LOGFILE, DIST_PATH, IDEA_PATH, \
     MOPY_PATH, NSIS_PATH, ROOT_PATH, SCRIPTS_PATH, TAGINFO, TAGLISTS_PATH, \
-    VSCODE_PATH, WBSA_PATH, LooseVersion, commit_changes, get_repo_sig
+    VSCODE_PATH, WBSA_PATH, LooseVersion, commit_changes, get_repo_sig, \
+    L10N_PATH, edit_bass_version
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,7 +74,7 @@ LOGGER = logging.getLogger(__name__)
 TO_PRESERVE = [NSIS_PATH, TAGLISTS_PATH, TAGINFO, update_taglist.LOGFILE,
                IDEA_PATH, VSCODE_PATH]
 
-sys.path.insert(0, MOPY_PATH)
+sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
 # Linux or macOS, we don't support anything but building the source
@@ -187,7 +190,7 @@ def mv(node, dst):
     if os.path.exists(node):
         shutil.move(node, dst)
 
-def cpy(src, dst):
+def cp(src, dst):
     """Moves a file to a destination, creating the target
        directory as needed."""
     if os.path.isdir(src):
@@ -252,7 +255,7 @@ def pack_manual(version):
         u'Mopy/redist',
     )
     for orig, target in files_to_include.items():
-        cpy(orig, target)
+        cp(orig, target)
     try:
         pack_7z(archive_, *[u'-xr!' + a for a in ignores])
     finally:
@@ -276,7 +279,7 @@ def build_executable():
         spec_path,
     ])
     # Copy the exe to the Mopy folder
-    cpy(orig_exe, dest_exe)
+    cp(orig_exe, dest_exe)
     try:
         yield
     finally:
@@ -329,26 +332,18 @@ def pack_installer(nsis_path, version, file_version):
 
 @contextmanager
 def update_file_version(version, commit=False):
-    fname = u'bass.py'
-    orig_path = os.path.join(MOPY_PATH, u'bash', fname)
-    tmpdir = tempfile.mkdtemp()
-    bck_path = os.path.join(tmpdir, fname)
-    cpy(orig_path, bck_path)
-    with open(orig_path, 'r+', encoding='utf-8') as fopen:
-        content = fopen.read().replace(f"\nAppVersion = '{bass.AppVersion}'",
-                                       f"\nAppVersion = '{version}'")
-        fopen.seek(0)
-        fopen.truncate(0)
-        fopen.write(content)
-        fopen.flush()
-        os.fsync(fopen.fileno())
+    bass_path = MOPY_PATH / 'bash' / 'bass.py'
+    tmpdir = Path(tempfile.mkdtemp())
+    bck_path = tmpdir / 'bass.py'
+    cp(bass_path, bck_path)
+    edit_bass_version(version)
     if commit:
-        commit_changes(changed_paths=[orig_path], commit_msg=version)
+        commit_changes(changed_paths=[bass_path], commit_msg=version)
     try:
         yield
     finally:
         if not commit:
-            cpy(bck_path, orig_path)
+            cp(bck_path, bass_path)
         rm(tmpdir)
 
 @contextmanager
@@ -416,13 +411,29 @@ def taglists_need_update():
     LOGGER.debug(u'All taglists present, no update needed')
     return False
 
+@contextmanager
+def compile_translations():
+    """Compile .po files to .mo files and hide the .po files temporarily."""
+    compile_l10n.main()
+    hidden_folder = Path(tempfile.mkdtemp())
+    for f in L10N_PATH.iterdir():
+        if f.suffix == '.po':
+            mv(f, hidden_folder / f.name)
+    try:
+        yield
+    finally:
+        for f in hidden_folder.iterdir():
+            mv(f, L10N_PATH / f.name)
+        rm(hidden_folder)
+
 def main(args):
     setup_pyinstaller_logger(BUILD_LOGFILE)
     utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=BUILD_LOGFILE)
     # check nightly timestamp is different than previous
     if not check_timestamp(args.version):
         raise OSError(u'Aborting build due to equal nightly timestamps.')
-    with handle_apps_folder(), update_file_version(args.version, args.commit):
+    with (handle_apps_folder(), update_file_version(args.version, args.commit),
+          compile_translations()):
         # Get repository files
         version_info = get_version_info(args.version)
         # create distributable directory
@@ -431,7 +442,7 @@ def main(args):
         license_real = os.path.join(ROOT_PATH, u'LICENSE.md')
         license_temp = os.path.join(MOPY_PATH, u'LICENSE.md')
         try:
-            cpy(license_real, license_temp)
+            cp(license_real, license_temp)
             # Check if we need to update the LOOT taglists
             if args.force_tl_update or taglists_need_update():
                 update_taglist.main()
