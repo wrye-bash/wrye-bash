@@ -32,10 +32,9 @@ import os
 import pkgutil
 import re
 import sys
-from pathlib import Path
 
 from helpers._i18n import pygettext
-from helpers.utils import MOPY_PATH, fatal_error, edit_wb_file
+from helpers.utils import L10N_PATH, MOPY_PATH, fatal_error, edit_wb_file
 
 # We need the AppVersion for the Project-Id-Version
 sys.path.insert(0, str(MOPY_PATH))
@@ -64,10 +63,9 @@ def _find_all_bash_modules(bash_path, cur_dir, _files=None):
     return _files
 
 def main():
-    out_path = Path(MOPY_PATH) / 'bash' / 'l10n'
-    old_pot = out_path / 'template.pot'
-    new_pot = out_path / 'template_new.pot'
-    gt_args = ['p', '-a', '-o', new_pot]
+    old_pot = L10N_PATH / 'template.pot'
+    new_pot = L10N_PATH / 'template_new.pot'
+    gt_args = ['_ignored', '-a', '-o', new_pot]
     gt_args.extend(_find_all_bash_modules('Mopy', MOPY_PATH))
     old_argv = sys.argv[:]
     sys.argv = gt_args

@@ -23,9 +23,4 @@ send2trash==1.8.2; sys_platform != 'win32'
 # For Nexus Mods integration
 websocket-client==1.7.0
 # Compile/Build-time ----------------------------------------------------------
-isort==5.13.2
-pyfiglet==1.0.2
-pygit2==1.13.3
-PyGithub==2.1.1
-pyinstaller==6.3.0
-pytest==7.4.4
+-r requirements-scripts.txt

@@ -1,0 +1,44 @@
+name: Update template.pot
+
+on:
+  push:
+    branches: [dev]
+
+permissions:
+  contents: write
+
+jobs:
+  update_pot:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout commit
+      uses: actions/checkout@v4
+      with:
+        # We need full history for the rebase we'll be doing
+        fetch-depth: 0
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        architecture: 'x64'
+    - name: Restore dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements-scripts.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Install dependencies
+      run: |
+        python -m pip install -U pip setuptools wheel
+        python -m pip install -r requirements-scripts.txt
+    - name: Update template
+      run: |
+        python scripts/ci_update_l10n_template.py
+    - name: Push changes to weblate-in
+      run: |
+        # From https://github.com/orgs/community/discussions/26560
+        # These make the commit have the nice black avatar and everything
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        ./scripts/ci_push_l10n_update.sh
