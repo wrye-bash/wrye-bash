@@ -44,6 +44,4 @@ jobs:
         python scripts/update_l10n_template.py
     - name: Push updated template.pot
       run: |
-        # First -m is title, second -m is body
-        git commit -a -m "Update template.pot" -m "Corresponds to ${GITHUB_SHA}."
-        git push --force-with-lease origin weblate-in
+        ./scripts/ci/push_pot_changes.sh

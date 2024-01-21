@@ -71,11 +71,19 @@ def main():
     sys.argv = gt_args
     pygettext.main()
     sys.argv = old_argv
+    # Add the project name and current version
     def edit_project_id(_ma):
         return fr'"Project-Id-Version: Wrye Bash v{bass.AppVersion}\n"'
     edit_wb_file('bash', 'l10n', 'template_new.pot',
-        trigger_regex=re.compile(r'"Project-Id-Version: PACKAGE VERSION\\n"'),
+        trigger_regex=re.compile(r'^"Project-Id-Version: PACKAGE '
+                                 r'VERSION\\n"$'),
         edit_callback=edit_project_id)
+    # Fix the POT creation date in place to avoid tons of commits
+    def edit_pot_creation_date(_ma):
+        return r'"POT-Creation-Date: 2024-01-07 22:03+0100\n"'
+    edit_wb_file('bash', 'l10n', 'template_new.pot',
+        trigger_regex=re.compile(r'^"POT-Creation-Date: [^\\]+\\n"$'),
+        edit_callback=edit_pot_creation_date)
     # pygettext always throws an extra newline at the end, get rid of that
     # (otherwise git's newline checks prevent you from committing it)
     with new_pot.open('r+', encoding='utf-8') as pot:
