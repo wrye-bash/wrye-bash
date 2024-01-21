@@ -65,7 +65,7 @@ def _find_all_bash_modules(bash_path, cur_dir, _files=None):
             os.path.join(cur_dir, pkg_name), _files)
     return _files
 
-def main(_args):
+def main(args):
     setup_log(_LOGGER, args)
     old_pot = L10N_PATH / 'template.pot'
     new_pot = L10N_PATH / 'template_new.pot'
