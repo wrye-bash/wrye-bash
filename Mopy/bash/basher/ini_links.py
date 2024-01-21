@@ -55,7 +55,7 @@ class INI_AllowNewLines(BoolLink):
 #------------------------------------------------------------------------------
 class INI_ListINIs(ItemLink):
     """List errors that make an INI Tweak invalid."""
-    _text = _(u'List Active INI Tweaks...')
+    _text = _('List Active INI Tweaks…')
     _help = _(u'Lists all fully applied tweak files.')
 
     def Execute(self):
@@ -67,7 +67,7 @@ class INI_ListINIs(ItemLink):
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
     """List errors that make an INI Tweak invalid."""
-    _text = _(u'List Errors...')
+    _text = _('List Errors…')
     _help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
@@ -114,7 +114,7 @@ class INI_Apply(EnabledLink):
 class INI_CreateNew(OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
-    _text = _('Create Tweak With Current Settings...')
+    _text = _('Create Tweak With Current Settings…')
 
     @property
     def link_help(self):

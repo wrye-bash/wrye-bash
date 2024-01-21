@@ -77,7 +77,7 @@ class DocBrowser(WindowFrame):
              choices=sorted(self._db_doc_paths),
              isSort=True, onSelect=self._do_select_existing)
         # Buttons
-        self._set_btn = Button(main_window, _('Set Doc...'),
+        self._set_btn = Button(main_window, _('Set Doc…'),
                                btn_tooltip=_('Associates this plugin file '
                                              'with a document.'))
         self._set_btn.on_clicked.subscribe(self._do_set)
@@ -86,7 +86,7 @@ class DocBrowser(WindowFrame):
                                                 'this plugin file and the '
                                                 'matching document.'))
         self._forget_btn.on_clicked.subscribe(self._do_forget)
-        self._rename_btn = Button(main_window, _('Rename Doc...'),
+        self._rename_btn = Button(main_window, _('Rename Doc…'),
                                   btn_tooltip=_('Renames the document.'))
         self._rename_btn.on_clicked.subscribe(self._do_rename)
         self._edit_box = CheckBox(main_window, _('Allow Editing'),
@@ -94,7 +94,7 @@ class DocBrowser(WindowFrame):
                                                   'editing in the text field '
                                                   'below.'))
         self._edit_box.on_checked.subscribe(self._do_edit)
-        self._open_btn = Button(main_window, _('Open Doc...'),
+        self._open_btn = Button(main_window, _('Open Doc…'),
                                 btn_tooltip=_('Opens the document in your '
                                               'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
@@ -491,7 +491,7 @@ class PluginChecker(WindowFrame):
         self.__merged = bosh.modInfos.merged.copy()
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
-        with balt.Progress(_('Checking Plugins...'), parent=self,
+        with balt.Progress(_('Checking Plugins…'), parent=self,
                            abort=True) as prog:
             try:
                 args = prog, bosh.modInfos, *(

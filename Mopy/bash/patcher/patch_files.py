@@ -339,7 +339,7 @@ class PatchFile(ModFile):
             iiMode = modName in self.ii_mode
             try:
                 scan_factory = (self.readFactory, self.mergeFactory)[is_merged]
-                progress(index, f'{modName}\n' + _('Loading...'))
+                progress(index, f'{modName}\n' + _('Loading…'))
                 modFile = ModFile(modInfo, scan_factory)
                 modFile.load_plugin(SubProgress(progress, index, index + 0.5))
             except ModError as e:
@@ -352,13 +352,13 @@ class PatchFile(ModFile):
                 pstate = index+0.5
                 if is_merged:
                     # If the plugin is to be merged, merge it
-                    progress(pstate, f'{modName}\n' + _('Merging...'))
+                    progress(pstate, f'{modName}\n' + _('Merging…'))
                     self.mergeModFile(modFile,
                         # loaded_mods = None -> signal we won't "filter"
                         load_set if is_filter else None, iiMode)
                 elif modName in self.load_dict:
                     # Else, if the plugin is active, update records from it
-                    progress(pstate, f'{modName}\n' + _('Scanning...'))
+                    progress(pstate, f'{modName}\n' + _('Scanning…'))
                     self.update_patch_records_from_mod(modFile)
                 elif is_filter:
                     # Else, if the plugin is a Filter plugin, filter it but
@@ -433,13 +433,13 @@ class PatchFile(ModFile):
                 len(self._patcher_instances))
             for i, patcher in enumerate(sorted(self._patcher_instances,
                     key=attrgetter('patcher_order'))):
-                subProgress(i, _('Completing') + f'\n{patcher.getName()}...')
+                subProgress(i, _('Completing') + f'\n{patcher.getName()}…')
                 patcher.buildPatch(log, SubProgress(subProgress, i))
         # Trim records to only keep ones we actually changed
-        progress(0.9, _('Completing') + '\n' + _('Trimming records...'))
+        progress(0.9, _('Completing') + '\n' + _('Trimming records…'))
         for block in self.tops.values():
             block.keepRecords(self.keepIds)
-        progress(0.95, _('Completing') + '\n' + _('Converting FormIDs...'))
+        progress(0.95, _('Completing') + '\n' + _('Converting FormIDs…'))
 
     def set_attributes(self, *, was_split=False, split_part=0):
         """Create the description, set appropriate flags, etc."""

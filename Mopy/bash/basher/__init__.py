@@ -1967,7 +1967,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.removeButton = Button(right, _(u'Remove'))
         self.removeButton.on_clicked.subscribe(self._OnRemove)
         #--Edit button
-        self.editButton = Button(right, _(u'Edit...'))
+        self.editButton = Button(right, _('Edit…'))
         self.editButton.on_clicked.subscribe(lambda:
                                              self.current_ini_path.start())
         #--Ini file
@@ -2717,7 +2717,7 @@ class InstallersList(UIList):
                 'a file IO error, or an unsupported OMOD format:') + '\n\n'
                     + '\n'.join(failed), _('OMOD Extraction Complete'))
         finally:
-            progress(len(omodnames), _(u'Refreshing...'))
+            progress(len(omodnames), _('Refreshing…'))
 
     def _askCopyOrMove(self, packages, converters):
         action = settings[u'bash.installers.onDropFiles.action']
@@ -2768,7 +2768,7 @@ class InstallersList(UIList):
                     (p in dirs or p.cext in archives.readExts)}
         if not (omod_paths or converters or packages): return
         if omod_paths:
-            with balt.Progress(_(u'Extracting OMODs...'), abort=True) as prog:
+            with balt.Progress(_('Extracting OMODs…'), abort=True) as prog:
                 self._extractOmods(omod_paths, prog)
         if packages or converters:
             action = self._askCopyOrMove(packages, converters)
@@ -2912,13 +2912,13 @@ class InstallersList(UIList):
             self.data_store.ipackages(toRefresh))
         if not toRefresh: return
         try:
-            with balt.Progress(_('Refreshing Packages...'),
+            with balt.Progress(_('Refreshing Packages…'),
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
                 for index, installer in enumerate(toRefresh):
                     progress(index,
-                             _('Refreshing Packages...') + f'\n{installer}')
+                             _('Refreshing Packages…') + f'\n{installer}')
                     if shallow:
                         op = installer.refreshDataSizeCrc
                     else:
@@ -2928,7 +2928,7 @@ class InstallersList(UIList):
                     dest.update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
-                    progress(0, _('Refreshing from %(data_folder)s...') % {
+                    progress(0, _('Refreshing from %(data_folder)s…') % {
                         'data_folder': bush.game.mods_dir} + f'\n{" " * 60}')
                     self.data_store.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
@@ -3397,7 +3397,7 @@ class InstallersPanel(BashTab):
                     do_refresh = refresh_info.refresh_needed()
             refreshui = False
             if do_refresh:
-                with balt.Progress(_('Refreshing Installers...'),
+                with balt.Progress(_('Refreshing Installers…'),
                                    abort=canCancel) as progress:
                     try:
                         what = 'DISC' if scan_data_dir else 'IC'
@@ -3427,7 +3427,7 @@ class InstallersPanel(BashTab):
 
     def __extractOmods(self, omds):
         omod_projects = []
-        with balt.Progress(_('Extracting OMODs...')) as progress:
+        with balt.Progress(_('Extracting OMODs…')) as progress:
             dirInstallersJoin = bass.dirs[u'installers'].join
             progress.setFull(max(len(omds), 1))
             omodMoves, omodRemoves = set(), set()

@@ -130,11 +130,11 @@ class ConvertersData(DataDict):
         if pending_:
             progress = progress or bolt.Progress()
             with progress:
-                progress(0, _('Scanning Converters...'))
+                progress(0, _('Scanning Converters…'))
                 progress.setFull(len(pending_))
                 for index, bcfPath in enumerate(sorted(pending_)):
                     progress(index,
-                             _('Scanning Converter...') + f'\n{bcfPath}')
+                             _('Scanning Converter…') + f'\n{bcfPath}')
                     path_crc = not fullRefresh and bcf_scd[bcfPath][1]
                     try:
                         converter = InstallerConverter.from_path(bcfPath,
@@ -315,7 +315,7 @@ class InstallerConverter(object):
         self.load(True)
         #--Extract BCF
         if progress:
-            progress(0, self.fullPath.stail + '\n' + _('Extracting files...'))
+            progress(0, self.fullPath.stail + '\n' + _('Extracting files…'))
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -335,7 +335,7 @@ class InstallerConverter(object):
                 files = bolt.sortFiles(
                     [x[0] for x in srcInstaller.fileSizeCrcs])
                 if not files: continue
-                progress(0, f'{srcInstaller}\n' + _(u'Extracting files...'))
+                progress(0, f'{srcInstaller}\n' + _('Extracting files…'))
                 tempCRC = srcInstaller.crc
                 srcInstaller.crc = realCRC
                 self._unpack(srcInstaller, files, tmp_extract,
@@ -366,7 +366,7 @@ class InstallerConverter(object):
         Needs two temporary directories as arguments: a source directory
         containing the files to be arranged and a destination directory where
         the arranged files will be placed."""
-        progress(0, _(u'Moving files...'))
+        progress(0, _('Moving files…'))
         progress.setFull(1 + len(self.convertedFiles))
         dupes = self.dupeCount.copy()
         tempJoin = GPath_no_norm(src_temp).join
@@ -393,12 +393,12 @@ class InstallerConverter(object):
             # file operations up
             dest_full = destJoin(destFile)
             if numDupes > 1:
-                progress(index, _('Copying file...') + f'\n{destFile}')
+                progress(index, _('Copying file…') + f'\n{destFile}')
                 # Decrement so that the last usage can be a move
                 dupes[crcValue] = numDupes - 1
                 src_full.copyTo(dest_full)
             else:
-                progress(index, _('Moving file...') + f'\n{destFile}')
+                progress(index, _('Moving file…') + f'\n{destFile}')
                 src_full.moveTo(dest_full)
 
     def build(self, srcArchives, idata, destArchive, bcf_archive, blockSize,
@@ -485,10 +485,10 @@ class InstallerConverter(object):
                 #--No files to pack, but subArchives were unpacked
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.5)
                 lastStep += 0.5
-        sProgress(0, f'{bcf_archive}\n' + _(u'Mapping files...'))
+        sProgress(0, f'{bcf_archive}\n' + _('Mapping files…'))
         sProgress.setFull(1 + len(destFiles))
         #--Map the files
-        sprog_msg = f'{bcf_archive}\n' + _('Mapping files...') + '\n'
+        sprog_msg = f'{bcf_archive}\n' + _('Mapping files…') + '\n'
         for index, (fileCRC, fileName) in enumerate(destFiles):
             convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
             sProgress(index, sprog_msg + fileName)
@@ -536,7 +536,7 @@ class InstallerConverter(object):
                 srcInstaller, Path) else srcInstaller.abs_path
             tmp_sub = GPath_no_norm(temp_dir).join(f'{installerCRC:08X}')
             if progress:
-                progress(0, f"{apath}\n{_('Extracting files...')}")
+                progress(0, f"{apath}\n{_('Extracting files…')}")
                 progress.setFull(1 + len(fileNames))
             try:
                 subArchives = archives.extract7z(apath, tmp_sub, progress,

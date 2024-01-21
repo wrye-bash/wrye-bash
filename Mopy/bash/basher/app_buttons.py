@@ -233,7 +233,7 @@ class _ExeButton(ExeLauncher, AppButton):
     def _run_exe(self, exe_path, exe_args):
         popen = super()._run_exe(exe_path, exe_args)
         if self.wait:
-            with balt.Progress(_('Waiting for %(other_process)s...') % {
+            with balt.Progress(_('Waiting for %(other_process)s…') % {
                     'other_process': exe_path.stail}) as progress:
                 progress(0, bolt.text_wrap(
                     _('Wrye Bash will be paused until you have completed '

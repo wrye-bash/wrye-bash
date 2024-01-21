@@ -281,7 +281,7 @@ class CreateNewProject(DialogWindow):
         if sel_installers:
             new_installer_order = sel_installers[-1].order + 1
         ##: This is mostly copy-pasted from InstallerArchive_Unpack
-        with balt.Progress(_('Creating Project...')) as prog:
+        with balt.Progress(_('Creating Project…')) as prog:
             self._parent.data_store.new_info(fn_result_proj, progress=prog,
                 install_order=new_installer_order)
         self._parent.RefreshUI(detail_item=fn_result_proj)
@@ -660,7 +660,7 @@ class MonitorExternalInstallationEditor(_ABainMLE):
             mlel_desc=_("These files were deleted. BAIN does not have the "
                         "capability to remove files when installing, so these "
                         "deletions cannot be packaged into a BAIN project. "
-                        "You may want to use 'Sync From Data...' to remove "
+                        "You may want to use 'Sync From Data…' to remove "
                         "them from their origin packages."),
             mlel_items=list(map(str, deleted_files)))
         mei_desc = _('The following changes were detected in the '

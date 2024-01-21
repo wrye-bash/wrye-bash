@@ -70,7 +70,7 @@ def compress7z(full_dest, srcDir, progress=None, *, is_solid=None,
             *out_args, '-scsUTF-8', '-sccUTF-8']  # encode output in UTF-8
         if progress is not None: #--Used solely for the progress bar
             length = sum(map(len, (files for x, y, files in os.walk(srcDir))))
-            progress(0, f'{rel_dest}\n' + _('Compressing files...'))
+            progress(0, f'{rel_dest}\n' + _('Compressing files…'))
             progress.setFull(1 + length)
         #--Pack the files
         proc = popen_common(command, bufsize=1, encoding='utf-8')
@@ -83,7 +83,7 @@ def compress7z(full_dest, srcDir, progress=None, *, is_solid=None,
                 maCompressing = regCompressMatch(line)
                 if maCompressing:
                     progress(index, '\n'.join(
-                        [f'{rel_dest}', _('Compressing files...'),
+                        [f'{rel_dest}', _('Compressing files…'),
                          maCompressing.group(1).strip()]))
                     index += 1
         returncode = proc.wait()
@@ -112,7 +112,7 @@ def extract7z(src_archive, extract_dir, progress=None, read_exts=None,
                     subArchives.append(extracted)
                 if not progress: continue
                 progress(index, f'{src_archive.tail}\n' + _(
-                    u'Extracting files...') + f'\n{extracted}')
+                    'Extracting files…') + f'\n{extracted}')
                 index += 1
     returncode = proc.wait()
     if returncode:

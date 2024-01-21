@@ -352,7 +352,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             # below is far too hot. Instead, at least make sure the progress
             # bar updates on each collision by bumping the state.
             collision_progress.setFull(len(all_record_versions))
-            prog_msg = f'{_("Looking for collisions...")}\n'
+            prog_msg = f'{_("Looking for collisions…")}\n'
             num_collisions = 0
             collision_progress(num_collisions, prog_msg + game_master_name)
             for r_fid, r_versions in all_record_versions.items():
@@ -684,7 +684,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
               "%(example_a)s as a master - such a chain may be even longer). "
               "Resolving this is impossible for the game, which will most "
               "likely crash when trying to load these plugins. You can try to "
-              "investigate by using the 'Change To...' command to reassign "
+              "investigate by using the 'Change To…' command to reassign "
               "the circular master so that the plugin can be opened in "
               "%(xedit_name)s.") % {
             'example_a': 'foo.esp',
