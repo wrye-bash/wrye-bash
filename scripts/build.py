@@ -418,7 +418,7 @@ def compile_translations():
     compile_l10n.main(verbosity=logging.WARNING, logfile=BUILD_LOGFILE)
     hidden_folder = Path(tempfile.mkdtemp())
     for f in L10N_PATH.iterdir():
-        if f.suffix == '.po':
+        if f.suffix in ('.po', '.pot'):
             mv(f, hidden_folder / f.name)
     try:
         yield

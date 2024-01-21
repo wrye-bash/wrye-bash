@@ -876,6 +876,9 @@
         Delete "${Path}\Mopy\bash\images\tools\tes4files32.png"
         ; As of 313, translations are done via weblate
         Delete "${Path}\Mopy\bash\images\readme\settings-language-configure-editor.png"
+        ; As of 313, we only ship the .mo files
+        Delete "${Path}\Mopy\bash\l10n\*.po"
+        Delete "${Path}\Mopy\bash\l10n\template.pot"
     !macroend
 
 
