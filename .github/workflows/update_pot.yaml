@@ -37,8 +37,6 @@ jobs:
         python scripts/ci_update_l10n_template.py
     - name: Push changes to weblate-in
       run: |
-        # From https://github.com/orgs/community/discussions/26560
-        # These make the commit have the nice black avatar and everything
-        git config --local user.name "github-actions[bot]"
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "wryebot"
+        git config --local user.email "wryebot@gmail.com"
         ./scripts/ci_push_l10n_update.sh

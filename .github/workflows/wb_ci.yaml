@@ -31,10 +31,9 @@ jobs:
         python -m pytest
     - name: Build Wrye Bash
       # Note the configs - needed for build.py
-      # Values from https://github.com/orgs/community/discussions/26560
       run: |
-        git config --local user.name "github-actions[bot]"
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "wryebot"
+        git config --local user.email "wryebot@gmail.com"
         python scripts/build.py --verbose
     - name: Copy executable/license files
       run: |
@@ -66,3 +65,5 @@ jobs:
           !Mopy/bash/gui
           !Mopy/bash/patcher
           !Mopy/bash/tests
+          !Mopy/bash/l10n/*.po
+          !Mopy/bash/l10n/template.pot
