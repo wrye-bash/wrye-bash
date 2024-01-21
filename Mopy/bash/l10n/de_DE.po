@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "POT-Creation-Date: 2024-01-07 22:03+0100\n"
-"PO-Revision-Date: 2024-01-20 16:32+0000\n"
+"PO-Revision-Date: 2024-01-21 18:03+0000\n"
 "Last-Translator: Infernio <infernio@icloud.com>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/wrye-bash/wrye-bash/de/>\n"
 "Language: de_DE\n"
@@ -19,7 +19,7 @@ msgstr ""
 
 #: Mopy/bash/ScriptParser.py:102
 msgid "Too few arguments to %(obj_type)s '%(obj_name)s': got %(got)s, expected %(expected)s."
-msgstr ""
+msgstr "Zu wenige Argumente für %(obj_type)s \"%(obj_name)s\": habe %(got)s, erwarte %(expected)s."
 
 #: Mopy/bash/ScriptParser.py:108
 msgid "Too many arguments to %(obj_type)s '%(obj_name)s': got %(got)s, expected %(expected)s."
@@ -143,13 +143,13 @@ msgstr "Konnte Wizarddatei nicht öffnen"
 
 #: Mopy/bash/archives.py:73 Mopy/bash/archives.py:86
 msgid "Compressing files..."
-msgstr ""
+msgstr "Komprimiere Dateien..."
 
 #: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1559
 #: Mopy/bash/bosh/bain.py:1580 Mopy/bash/bosh/converters.py:318
 #: Mopy/bash/bosh/converters.py:338 Mopy/bash/bosh/converters.py:539
 msgid "Extracting files..."
-msgstr ""
+msgstr "Entpacke Dateien..."
 
 #: Mopy/bash/balt.py:109 Mopy/bash/balt.py:1571 Mopy/bash/balt.py:1579
 #: Mopy/bash/balt.py:1584 Mopy/bash/balt.py:1590 Mopy/bash/gui/popups.py:747
@@ -159,7 +159,7 @@ msgstr "Warnung"
 
 #: Mopy/bash/balt.py:121
 msgid "Don't show this for the rest of operation."
-msgstr ""
+msgstr "Für den Rest dieser Operation nicht mehr anzeigen."
 
 #: Mopy/bash/balt.py:121 Mopy/bash/gui/popups.py:62
 msgid "Don't show this in the future."
@@ -246,7 +246,7 @@ msgstr "Fehler"
 
 #: Mopy/bash/balt.py:1603 Mopy/bash/gui/popups.py:768
 msgid "Information"
-msgstr ""
+msgstr "Information"
 
 #: Mopy/bash/balt.py:1624
 msgid "Choose a directory."
@@ -271,7 +271,7 @@ msgstr ""
 #: Mopy/bash/balt.py:1936 Mopy/bash/basher/installer_links.py:1010
 #: Mopy/bash/basher/settings_dialog.py:690
 msgid "Rename..."
-msgstr ""
+msgstr "Umbenennen..."
 
 #: Mopy/bash/balt.py:1944
 msgid "Renames the selected item."
@@ -287,7 +287,7 @@ msgstr ""
 
 #: Mopy/bash/balt.py:1960
 msgid "Open..."
-msgstr ""
+msgstr "Öffnen..."
 
 #: Mopy/bash/balt.py:1973
 msgid "Open '%(item_to_open)s' with the system's default program."
@@ -315,7 +315,7 @@ msgstr ""
 
 #: Mopy/bash/balt.py:2007
 msgid "Hide..."
-msgstr ""
+msgstr "Verstecken..."
 
 #: Mopy/bash/balt.py:2022
 msgid "Hide '%(filename)s' by moving it to the 'Hidden' directory."
@@ -7634,7 +7634,7 @@ msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:505
 msgid "Language: %(selected_language)s"
-msgstr ""
+msgstr "Sprache: %(selected_language)s"
 
 #: Mopy/bash/basher/settings_dialog.py:517
 msgid "Use Alternate Wrye Bash Name"
@@ -8253,7 +8253,7 @@ msgstr ""
 #: Mopy/bash/basher/settings_dialog.py:1561
 #: Mopy/bash/basher/settings_dialog.py:1585
 msgid "Language"
-msgstr ""
+msgstr "Sprache"
 
 #: Mopy/bash/basher/settings_dialog.py:1547
 #: Mopy/bash/basher/settings_dialog.py:1566
