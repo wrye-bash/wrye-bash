@@ -59,7 +59,7 @@ __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
 #------------------------------------------------------------------------------
 class Installers_AddMarker(ItemLink):
     """Add an installer marker."""
-    _text = _(u'New Marker...')
+    _text = _('New Marker…')
     _help = _(u'Adds a Marker, a special type of package useful for '
               u'separating and labelling your packages.')
     _keyboard_hint = 'Ctrl+Shift+N'
@@ -71,7 +71,7 @@ class Installers_AddMarker(ItemLink):
 #------------------------------------------------------------------------------
 class Installers_MonitorExternalInstallation(Installers_Link):
     """Monitors Data folder for external installation."""
-    _text = _dialog_title = _('Monitor External Installation...')
+    _text = _dialog_title = _('Monitor External Installation…')
     _help = _('Monitors the %(data_folder)s folder to capture changes made '
               'manually or via 3rd party tools.') % {
         'data_folder': bush.game.mods_dir}
@@ -80,7 +80,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
     def Execute(self):
         msg = _('Wrye Bash will monitor your data folder for changes when '
                 'installing a mod via an external application or manual '
-                'install.  This will require two refreshes of the '
+                'install. This will require two refreshes of the '
                 '%(data_folder)s folder and may take some time. Continue?') % {
             'data_folder': bush.game.mods_dir}
         if not self._askYes(msg, _('External Installation')):
@@ -90,8 +90,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         # Backup CRC data
         scd_before_install = self.idata.data_sizeCrcDate.copy()
         # Install and wait
-        self._showOk(_(u'You may now install your mod.  When installation is '
-                       u'complete, press Ok.'), _(u'External Installation'))
+        self._showOk(_('You may now install your mod. When installation is '
+                       'complete, press OK.'), _('External Installation'))
         # Refresh Data
         ui_refresh = defaultdict(bool)
         with load_order.Unlock(): ##: single use outside refreshLoadOrder
@@ -140,7 +140,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             return
         pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
-        with balt.Progress(_('Creating Project...')) as prog: # will order last
+        with balt.Progress(_('Creating Project…')) as prog: # will order last
             self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
         # createFromData placed the new project last in install order - install
         try:
@@ -153,9 +153,9 @@ class Installers_MonitorExternalInstallation(Installers_Link):
 #------------------------------------------------------------------------------
 class Installers_ListPackages(Installers_Link):
     """Copies list of packages to clipboard."""
-    _text = _(u'List Packages...')
-    _help = _('Displays a list of all packages.  Also copies that list to the '
-              'clipboard.  Useful for posting your package order on forums.')
+    _text = _('List Packages…')
+    _help = _('Displays a list of all packages. Also copies that list to the '
+              'clipboard. Useful for posting your package order on forums.')
 
     @balt.conversation
     def Execute(self):
@@ -182,7 +182,7 @@ class Installers_AnnealAll(Installers_Link):
         """Anneal all packages."""
         ui_refresh = defaultdict(bool)
         try:
-            with balt.Progress(_('Annealing...')) as progress:
+            with balt.Progress(_('Annealing…')) as progress:
                 self.idata.bain_anneal(None, ui_refresh, progress=progress)
         finally:
             self.window.RefreshUI(refresh_others=ui_refresh)
@@ -200,7 +200,7 @@ class Installers_UninstallAllPackages(Installers_Link):
         if not self._askYes(_('Really uninstall all packages?')): return
         ui_refresh = defaultdict(bool)
         try:
-            with balt.Progress(_('Uninstalling...')) as progress:
+            with balt.Progress(_('Uninstalling…')) as progress:
                 self.idata.bain_uninstall_all(ui_refresh, progress=progress)
         finally:
             self.window.RefreshUI(refresh_others=ui_refresh)
@@ -243,7 +243,7 @@ class Installers_CleanData(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
     files. For safety just moved to Game Mods/Bash Installers/Bash/Data
     Folder Contents (date/time)."""
-    _text = _('Clean Data...')
+    _text = _('Clean Data…')
     _help = _('Move all files that are not linked to an active installer '
               'out of the %(data_folder)s folder.') % {
         'data_folder': bush.game.mods_dir}
@@ -275,7 +275,7 @@ class Installers_CleanData(Installers_Link):
         ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Cleaning %(data_folder)s '
-                                 'contents...') % mdir_fmt, f'\n{" " * 65}'):
+                                 'contents…') % mdir_fmt, f'\n{" " * 65}'):
                 self.idata.clean_data_dir(ed_unknown, ui_refresh)
         finally:
             self.window.RefreshUI(refresh_others=ui_refresh)
@@ -283,7 +283,7 @@ class Installers_CleanData(Installers_Link):
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
     """Open the New Project Dialog"""
-    _text = _(u'New Project...')
+    _text = _('New Project…')
     _help = _(u'Create a new project.')
     _keyboard_hint = 'Ctrl+N'
 
@@ -294,7 +294,7 @@ class Installers_CreateNewProject(ItemLink):
 #------------------------------------------------------------------------------
 class Installers_ExportOrder(Installers_Link, AImportOrderParser):
     """Export order and installation status for all packages."""
-    _text = _('Export Order...')
+    _text = _('Export Order…')
     _help = _('Export the order and installation status of all packages.')
 
     def Execute(self):
@@ -303,7 +303,7 @@ class Installers_ExportOrder(Installers_Link, AImportOrderParser):
             'packages and whether or not they have been installed. It does '
             'not export, for example, which sub-packages you enabled. If you '
             'care about preserving such information, you may want to make a '
-            'backup instead (see Settings > Global Settings... > Backups).'),
+            'backup instead (see Settings > Global Settings… > Backups).'),
             'bash.installers.export_order.continue',
                 title=_('Export Order - Note')): return
         exp_path = self._askSave(title=_('Export Order - Choose Destination'),
@@ -332,7 +332,7 @@ class Installers_ExportOrder(Installers_Link, AImportOrderParser):
 class Installers_ImportOrder(Installers_Link):
     """Import order and installation status for a subset of all packages from a
     previous export."""
-    _text = _('Import Order...')
+    _text = _('Import Order…')
     _help = _('Import the order and installation status of packages from a '
               'previous export.')
 
@@ -386,9 +386,9 @@ class Installers_AutoRefreshProjects(BoolLink):
 class Installers_IgnoreFomod(BoolLink):
     _text = _(u'Ignore FOMODs')
     _bl_key = u'bash.installers.ignore_fomods'
-    _help = _('Ignores FOMODs when using the "Install..." option. If this is '
+    _help = _('Ignores FOMODs when using the "Install…" option. If this is '
               'checked, FOMODs will only be used when you specifically run '
-              'them via "Run FOMOD...".')
+              'them via "Run FOMOD…".')
 
 #------------------------------------------------------------------------------
 class Installers_ValidateFomod(BoolLink):
@@ -406,7 +406,7 @@ class Installers_ApplyEmbeddedBCFs(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        with balt.Progress(_('Auto-Applying Embedded BCFs...')) as progress:
+        with balt.Progress(_('Auto-Applying Embedded BCFs…')) as progress:
             destinations, converted = self._data_store.applyEmbeddedBCFs(
                 progress=progress)
             if not destinations: return
@@ -495,7 +495,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                 bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
                                                      names_only=False)
                 with balt.Progress(
-                        _('Enabling BSA Redirection...')) as progress:
+                        _('Enabling BSA Redirection…')) as progress:
                     bsaFile.undo_alterations(progress)
         bosh.oblivionIni.setBsaRedirection(bass.settings[self._bl_key])
 

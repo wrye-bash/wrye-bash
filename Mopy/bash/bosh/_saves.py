@@ -307,7 +307,7 @@ class SaveFile(object):
             createdNum = unpack_int(ins)
             with ModReader(self.fileInfo.fn_key, ins) as modReader:
                 for count in range(createdNum):
-                    progress(ins.tell(), _('Reading created...'))
+                    progress(ins.tell(), _('Reading created…'))
                     record = MreRecord(unpack_header(modReader), modReader)
                     self.created[record.fid] = record
                 #--Pre-records: Quickkeys, reticule, interface, regions
@@ -318,11 +318,11 @@ class SaveFile(object):
                 self.preRecords = buff.getvalue()
                 #--Records
                 for count in range(recordsNum):
-                    progress(ins.tell(), _('Reading records...'))
+                    progress(ins.tell(), _('Reading records…'))
                     rec_id, *atts, siz = unpack_many(ins, '=IBIBH')
                     self.fid_recNum[rec_id] = (*atts, ins.read(siz))
                 #--Temp Effects, fids, worldids
-                progress(ins.tell(), _('Reading FormIDs and world IDs...'))
+                progress(ins.tell(), _('Reading FormIDs and world IDs…'))
                 tmp_effects_size = unpack_int(ins)
                 self.tempEffects = ins.read(tmp_effects_size)
                 #--Fids

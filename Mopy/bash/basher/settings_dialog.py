@@ -253,9 +253,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.default.on_clicked.subscribe(self.OnDefault)
         self.defaultAll = RevertButton(self, _(u'Reset All Colors'))
         self.defaultAll.on_clicked.subscribe(self.OnDefaultAll)
-        self.export_config = SaveAsButton(self, _(u'Export Colors...'))
+        self.export_config = SaveAsButton(self, _('Export Colors…'))
         self.export_config.on_clicked.subscribe(self.OnExport)
-        self.importConfig = OpenButton(self, _(u'Import Colors...'))
+        self.importConfig = OpenButton(self, _('Import Colors…'))
         self.importConfig.on_clicked.subscribe(self.OnImport)
         #--Events
         self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
@@ -676,21 +676,21 @@ class BackupsPage(_AFixedPage):
         save_settings_btn = SaveButton(self, _(u'Save Data'),
             btn_tooltip=_(u"Save all of Wrye Bash's settings/data now."))
         save_settings_btn.on_clicked.subscribe(self._save_settings)
-        new_backup_btn = Button(self, _(u'New Backup...'),
+        new_backup_btn = Button(self, _('New Backup…'),
             btn_tooltip=_(u"Backup all of Wrye Bash's settings/data to an "
                           u'archive file.'))
         new_backup_btn.on_clicked.subscribe(self._new_backup)
-        set_backups_dir_btn = Button(self, _('Set Backups Directory...'),
+        set_backups_dir_btn = Button(self, _('Set Backups Directory…'),
             btn_tooltip=_('Select the directory containing your backups.'))
         set_backups_dir_btn.on_clicked.subscribe(self._set_backup_dir)
-        self.restore_backup_btn = Button(self, _(u'Restore...'),
+        self.restore_backup_btn = Button(self, _('Restore…'),
             btn_tooltip=_(u"Restore all of Wrye Bash's settings/data from the "
                           u'selected backup.'))
         self.restore_backup_btn.on_clicked.subscribe(self._restore_backup)
-        self.rename_backup_btn = Button(self, _(u'Rename...'),
+        self.rename_backup_btn = Button(self, _('Rename…'),
             btn_tooltip=_(u'Rename the selected backup archive.'))
         self.rename_backup_btn.on_clicked.subscribe(self._rename_backup)
-        self.delete_backup_btn = Button(self, _(u'Delete...'),
+        self.delete_backup_btn = Button(self, _('Delete…'),
             btn_tooltip=_(u'Delete the selected backup archive.'))
         self.delete_backup_btn.on_clicked.subscribe(self._delete_backup)
         # These start out disabled, because nothing is selected by default
@@ -1350,12 +1350,12 @@ class TrustedBinariesPage(_AFixedPage):
             left_btn_tooltip=_(u'Mark the selected binary as trusted.'),
             right_btn_tooltip=_(u'Mark the selected binary as untrusted.'))
         self._binaries_list.move_btn_callback = self._check_changed
-        import_btn = OpenButton(self, _(u'Import...'),
+        import_btn = OpenButton(self, _('Import…'),
             btn_tooltip=_(u'Import list of allowed/disallowed binaries from a '
                           u'.txt file. This also allows more fine-grained '
                           u'control over trusted binary versions.'))
         import_btn.on_clicked.subscribe(self._import_lists)
-        export_btn = SaveAsButton(self, _(u'Export...'),
+        export_btn = SaveAsButton(self, _('Export…'),
             btn_tooltip=_(u'Export list of allowed/disallowed binaries to a '
                           u'.txt file. This also allows more fine-grained '
                           u'control over trusted binary versions.'))

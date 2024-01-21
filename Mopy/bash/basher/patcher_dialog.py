@@ -237,7 +237,7 @@ class PatchDialog(DialogWindow):
                 if ed_ok and ed_parts:
                     patchFile.p_file_minfos.delete(ed_parts)
             #--Save
-            progress.setCancel(False, f'{patch_name}\n' + _(u'Saving...'))
+            progress.setCancel(False, f"{patch_name}\n{_('Saving…')}")
             progress(0.9)
             for bp_file in bp_files_to_save:
                 self._save_pbash(bp_file, patch_name)

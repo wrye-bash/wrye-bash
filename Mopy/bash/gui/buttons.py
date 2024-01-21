@@ -127,7 +127,7 @@ class SaveAsButton(Button):
     """A button with the label 'Save As'. Behaves like the 'Save' button above,
     but shows some type of prompt first, asking the user where to save."""
     _id = _wx.ID_SAVEAS
-    _default_label = _(u'Save As...')
+    _default_label = _('Save As…')
 
 class RevertButton(Button):
     """A button with the label 'Revert'. Resets pending changes back to the

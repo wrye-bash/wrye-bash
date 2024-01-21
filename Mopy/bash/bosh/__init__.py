@@ -1938,7 +1938,7 @@ class INIInfos(TableFileInfos):
             choice, previous_ini = -1, None
         # Make a copy, we may modify the _target_inis dict
         for ini_name, ini_path in list(_target_inis.items()):
-            if ini_name == _(u'Browse...'): continue
+            if ini_name == _('Browse…'): continue
             # If user started with non-translated, 'Browse...'
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
@@ -1957,8 +1957,8 @@ class INIInfos(TableFileInfos):
         for iFile in gameInis: # add the game inis even if missing
             if iFile.fn_key not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
-        if _(u'Browse...') not in _target_inis:
-            _target_inis[_(u'Browse...')] = None
+        if _('Browse…') not in _target_inis:
+            _target_inis[_('Browse…')] = None
         self.__sort_target_inis()
         if previous_ini:
             choice = list(bass.settings[u'bash.ini.choices']).index(
@@ -2007,7 +2007,7 @@ class INIInfos(TableFileInfos):
         game_inis = bush.game.Ini.dropdown_inis
         len_inis = len(game_inis)
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
-                      len_inis + 1 if a == _(u'Browse...') else len_inis))
+                      len_inis + 1 if a == _('Browse…') else len_inis))
         bass.settings[u'bash.ini.choices'] = OrderedDict(
             # convert stray Path instances back to unicode
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])

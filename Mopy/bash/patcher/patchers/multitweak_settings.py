@@ -232,7 +232,7 @@ class _AMsgTweak(_AGmstCCTweak):
     """Base class for GMST tweaks in the Msg: category."""
     tweak_choices = [(_(u'None'),           u' '),
                      (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...'))]
+                     (_('Hmm…'),       _('Hmm…'))]
     default_choice = _(u'None')
 
 class _AAllowTweak(_AGmstTweak):

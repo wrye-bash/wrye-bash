@@ -38,7 +38,7 @@ __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
 #------------------------------------------------------------------------------
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
-    _text = _(u'Unhide...')
+    _text = _('Unhide…')
 
     def __init__(self, files_help):
         super(Files_Unhide, self).__init__()
@@ -87,7 +87,7 @@ class Files_Unhide(ItemLink):
 #------------------------------------------------------------------------------
 class File_Duplicate(ItemLink):
     """Create a duplicate of the file - mod, save, bsa, etc."""
-    _text = _('Duplicate...')
+    _text = _('Duplicate…')
     _help = _('Make a copy of the selected files.')
 
     _bsa_and_blocking_msg = _(
@@ -152,7 +152,7 @@ class File_Duplicate(ItemLink):
 #------------------------------------------------------------------------------
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
-    _text = _(u'List Masters...')
+    _text = _('List Masters…')
 
     @property
     def link_help(self):
@@ -172,7 +172,7 @@ class File_Snapshot(ItemLink):
 
     @property
     def link_text(self):
-        return (_(u'Snapshot'), _(u'Snapshot...'))[len(self.selected) == 1]
+        return (_('Snapshot'), _('Snapshot…'))[len(self.selected) == 1]
 
     def Execute(self):
         for fileName, fileInfo in self.iselected_pairs():
@@ -207,7 +207,7 @@ class File_Snapshot(ItemLink):
 #------------------------------------------------------------------------------
 class File_RevertToSnapshot(OneItemLink):
     """Revert to Snapshot."""
-    _text = _(u'Revert to Snapshot...')
+    _text = _('Revert to Snapshot…')
     _help = _(u'Revert to a previously created snapshot from the '
               u'Bash/Snapshots dir.')
 
@@ -275,8 +275,8 @@ class _RevertBackup(OneItemLink):
 
     def __init__(self, first=False):
         super().__init__()
-        self._text = _(u'Revert to First Backup...') if first else _(
-            u'Revert to Backup...')
+        self._text = (_('Revert to First Backup…') if first else
+                      _('Revert to Backup…'))
         self.first = first
 
     @property
@@ -336,7 +336,7 @@ class File_RevertToBackup(MultiLink):
 #------------------------------------------------------------------------------
 class File_Redate(ItemLink):
     """Move the selected files to start at a specified date."""
-    _text = _('Redate...')
+    _text = _('Redate…')
     _help = _('Changes the modification times of the selected files to start '
               'at a specified date.')
 

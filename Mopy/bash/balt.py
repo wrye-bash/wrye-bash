@@ -492,7 +492,7 @@ class Progress(bolt.Progress):
         if len(message) > 50:
             first = message[:24]
             second = message[-26:]
-            return first + u'...' + second
+            return f'{first}…{second}'
         return message
 
     def Destroy(self):
@@ -1933,7 +1933,7 @@ class UIList_Delete(EnabledLink):
 
 class UIList_Rename(EnabledLink):
     """Rename selected UIList item(s)."""
-    _text = _('Rename...')
+    _text = _('Rename…')
     _keyboard_hint = 'F2'
 
     @property
@@ -1957,7 +1957,7 @@ class UIList_Rename(EnabledLink):
 
 class UIList_OpenItems(EnabledLink):
     """Open specified file(s)."""
-    _text = _('Open...')
+    _text = _('Open…')
     _keyboard_hint = 'Enter'
 
     def _filter_unopenable(self, to_open_items):
@@ -1992,7 +1992,7 @@ class UIList_OpenItems(EnabledLink):
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
-    _text = _(u'Open Folder...')
+    _text = _('Open Folder…')
     _keyboard_hint = 'Ctrl+O'
 
     @property
@@ -2004,7 +2004,7 @@ class UIList_OpenStore(ItemLink):
 
 class UIList_Hide(EnabledLink):
     """Hide the file (move it to the data store's Hidden directory)."""
-    _text = _('Hide...')
+    _text = _('Hide…')
 
     def _filter_unhideable(self, to_hide_items):
         """Filters out unhideable items from the specified iterable."""

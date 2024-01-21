@@ -32,7 +32,7 @@ __all__ = [u'BSA_ExtractToProject', u'BSA_ListContents']
 
 class BSA_ExtractToProject(ItemLink):
     """Extracts one or more BSAs into projects."""
-    _text = _('Extract to Project...')
+    _text = _('Extract to Project…')
     _help = _('Extracts the contents of the selected BSAs into projects, '
               'where they can be edited.')
 
@@ -72,7 +72,7 @@ class BSA_ExtractToProject(ItemLink):
                 # Clear existing project, user wanted to overwrite it
                 proj_path.rmtree(safety='Installers')
         # All error checking is done, proceed to extract
-        with Progress(_(u'Extracting BSAs...')) as prog:
+        with Progress(_('Extracting BSAs…')) as prog:
             prog_curr = 0.0
             step_size = 1.0 / len(to_unpack)
             prog_next = prog_curr + step_size
@@ -91,7 +91,7 @@ class BSA_ExtractToProject(ItemLink):
 
 class BSA_ListContents(ItemLink):
     """Lists the contents of one or more BSAs."""
-    _text = _(u'List Contents...')
+    _text = _('List Contents…')
     _help = _(u'Lists the contents of each selected BSA and copies it to the '
               u'clipboard.')
 

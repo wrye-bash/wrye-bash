@@ -138,7 +138,7 @@ class OmodFile(object):
             stage_dir = GPath_no_norm(stage_base_dir).join(outDir.stail)
             try:
                 stail_fmt = f'{self.omod_path.stail}\n'
-                progress(0, f"{stail_fmt}{_('Extracting...')}")
+                progress(0, f"{stail_fmt}{_('Extracting…')}")
                 if self._is_fomod:
                     self._extract_fomod(extract_dir, stage_dir)
                 else:
@@ -170,7 +170,8 @@ class OmodFile(object):
                 maExtracting = reExtracting.match(line)
                 if maExtracting:
                     name_ = maExtracting.group(1).strip().strip(u'\r')
-                    subprogress(float(current) / total, omod_tail + u'\n' + _(u'Extracting...') + u'\n' + name_)
+                    subprogress(float(current) / total,
+                        omod_tail + '\n' + _('Extracting…') + '\n' + name_)
                     current += sizes_[name_]
         # Get compression type
         progress(0.4, omod_tail + u'\n' + _(u'Reading config'))

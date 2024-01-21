@@ -145,7 +145,7 @@ class _AMods_ActivePluginsContext(_AMods_ActivePlugins):
         self._ap_parent_link = ap_parent_link
 
 class _Mods_EditActivePluginsLists(_AMods_ActivePluginsContext):
-    _text = _('Edit Active Plugins Lists...')
+    _text = _('Edit Active Plugins Lists…')
     _help = _('Display a dialog to rename/remove active plugins '
               'lists.')
 
@@ -156,7 +156,7 @@ class _Mods_EditActivePluginsLists(_AMods_ActivePluginsContext):
             ap_editor_data)
 
 class _Mods_SaveActivePluginsList(EnabledLink, _AMods_ActivePluginsContext):
-    _text = _('Save Active Plugins List...')
+    _text = _('Save Active Plugins List…')
     _help = _('Save the currently active plugins to a new active '
               'plugins list.')
 
@@ -318,7 +318,7 @@ class Mods_CreateBlankBashedPatch(ItemLink):
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
-    _text = _(u'New Plugin...')
+    _text = _('New Plugin…')
     _help = _(u'Create a new blank plugin.')
     _keyboard_hint = 'Ctrl+N'
 
@@ -328,7 +328,7 @@ class Mods_CreateBlank(ItemLink):
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
-    _text = _('List Plugins...')
+    _text = _('List Plugins…')
     _help = _('Copies list of active plugins to clipboard.')
 
     def Execute(self):
@@ -342,7 +342,7 @@ class Mods_ListMods(ItemLink):
 # Basically just a convenient 'whole LO' version of Mod_ListBashTags
 class Mods_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
-    _text = _(u'List Bash Tags...')
+    _text = _('List Bash Tags…')
     _help = _(u'Copies list of bash tags to clipboard.')
 
     def Execute(self):
@@ -353,8 +353,8 @@ class Mods_ListBashTags(ItemLink):
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
     """Clean up after using a 'Create Dummy Masters...' command."""
-    _text = _(u'Remove Dummy Masters...')
-    _help = _(u"Clean up after using a 'Create Dummy Masters...' command")
+    _text = _('Remove Dummy Masters…')
+    _help = _("Clean up after using a 'Create Dummy Masters…' command")
 
     def _enable(self):
         for fileInfo in bosh.modInfos.values():
@@ -469,7 +469,7 @@ class Mods_CrcRefresh(ItemLink):
 class Mods_PluginChecker(ItemLink):
     """Launches the Plugin Checker. More discoverable alternative to the teensy
     icon at the bottom."""
-    _text = _(u'Plugin Checker...')
+    _text = _('Plugin Checker…')
     _help = _(u'Checks your loaded plugins for various problems and shows a '
               u'configurable report.')
 
@@ -483,7 +483,7 @@ class _AMods_BashTags(ItemLink, CsvParser):
 
 class Mods_ExportBashTags(_AMods_BashTags):
     """Writes all currently applied bash tags to a CSV file."""
-    _text = _(u'Export Bash Tags...')
+    _text = _('Export Bash Tags…')
     _help = _(u'Exports all currently applied bash tags to a CSV file.')
 
     def Execute(self):
@@ -509,7 +509,7 @@ class Mods_ExportBashTags(_AMods_BashTags):
 class Mods_ImportBashTags(_AMods_BashTags):
     """Reads bash tags from a CSV file and applies them to the current plugins
     (as far as possible)."""
-    _text = _(u'Import Bash Tags...')
+    _text = _('Import Bash Tags…')
     _help = _(u'Imports applied bash tags from a CSV file.')
 
     def Execute(self):

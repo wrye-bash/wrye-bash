@@ -228,7 +228,7 @@ class Installer(ListInfo):
     @staticmethod
     def calc_crcs(to_calc, rootName, new_sizeCrcDate, progress):
         if not to_calc: return
-        progress_msg = f'{rootName}\n' + _('Calculating CRCs...') + '\n'
+        progress_msg = f'{rootName}\n' + _('Calculating CRCs…') + '\n'
         progress(0, progress_msg)
         progress.setFull(len(to_calc))
         for i, (rpFile, (siz, asFile, date)) in enumerate(dict_sort(to_calc)):
@@ -1363,7 +1363,7 @@ class _InstallerPackage(Installer, AFile):
         for rel_src, rel_dest in self.refreshDataSizeCrc().items():
             if rel_src not in delta_files: continue
             progress(del_numb + upt_numb,
-                     _('Syncing from %(data_folder)s folder...') % {
+                     _('Syncing from %(data_folder)s folder…') % {
                          'data_folder': bush.game.mods_dir} + f'\n{rel_src}')
             full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
             full_dest = proj_dir_join(rel_dest)
@@ -1556,11 +1556,11 @@ class InstallerArchive(_InstallerPackage):
 
     def _install(self, dest_src, progress):
         #--Extract
-        progress(0, (u'%s\n' % self) + _(u'Extracting files...'))
+        progress(0, ('%s\n' % self) + _('Extracting files…'))
         unpackDir = self.unpackToTemp(list(dest_src.values()),
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
-        progress(0.9, (u'%s\n' % self) + _(u'Organizing files...'))
+        progress(0.9, ('%s\n' % self) + _('Organizing files…'))
         srcDirJoin = unpackDir.join
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(len(dest_src))
@@ -1577,10 +1577,10 @@ class InstallerArchive(_InstallerPackage):
         destDir = bass.dirs[u'installers'].join(project)
         destDir.rmtree(safety=u'Installers')
         #--Extract
-        progress(0, f'{project}\n' + _(u'Extracting files...'))
+        progress(0, f'{project}\n' + _('Extracting files…'))
         unpack_dir = self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
-        progress(0.9, f'{project}\n' + _(u'Moving files...'))
+        progress(0.9, f'{project}\n' + _('Moving files…'))
         count = 0
         tempDirJoin = unpack_dir.join
         destDirJoin = destDir.join
@@ -1722,7 +1722,7 @@ class InstallerProject(_InstallerPackage):
         # refreshDataSizeCrc. Compare to InstallersData._refresh_from_data_dir.
         rootName = self.abs_path.stail
         progress = progress if progress else bolt.Progress()
-        progress_msg = f'{rootName}\n%s\n' % _('Scanning...')
+        progress_msg = f'{rootName}\n%s\n' % _('Scanning…')
         progress(0, progress_msg)
         progress.setFull(1)
         size_apath_date, proj_size, max_node_mtime = stat_tuple
@@ -1752,7 +1752,7 @@ class InstallerProject(_InstallerPackage):
     # Installer API -----------------------------------------------------------
     def _install(self, dest_src, progress):
         progress.setFull(len(dest_src))
-        progress(0, f'{self}\n' + _(u'Moving files...'))
+        progress(0, f'{self}\n' + _('Moving files…'))
         progressPlus = progress.plus
         #--Copy Files
         srcDirJoin = self.abs_path.join
@@ -1907,7 +1907,7 @@ class InstallersData(DataStore):
                 else: # we really need to scan installers
                     dirs_files = top_level_items(bass.dirs['installers'])
                 if dirs_files:
-                    progress(0, _('Scanning Packages...'))
+                    progress(0, _('Scanning Packages…'))
                     refresh_info = self.update_installers(*dirs_files,
                         fullRefresh, progress, refresh_info=refresh_info,
                     fresh_load=fresh_load) # avoid re-stating freshly unpickled
@@ -1931,7 +1931,7 @@ class InstallersData(DataStore):
 
     def __load(self, progress):
         progress = progress or bolt.Progress()
-        progress(0, _(u'Loading Data...'))
+        progress(0, _('Loading Data…'))
         self.dictFile.load()
         pickl_data = self.dictFile.pickled_data
         pickl_data.pop('crc_installer', None) # remove unused dict
@@ -2208,7 +2208,7 @@ class InstallersData(DataStore):
         index = 0
         for items, is_proj in ((files, False), (folders, True)):
             for item in items:
-                progress(index, _('Scanning Packages...') + f'\n{item}')
+                progress(index, _('Scanning Packages…') + f'\n{item}')
                 index += 1
                 inst = self.get(item)
                 if inst is None or inst.fn_key != item:
@@ -2294,7 +2294,7 @@ class InstallersData(DataStore):
         # Scan top level files and folders in the Data dir - for plugins use
         # modInfos cache, for other files (bsas etc.) use data_sizeCrcDate
         progress_msg = f'{(dirname := mods_dir.stail)}: ' + '%s\n' % _(
-            'Pre-Scanning...')
+            'Pre-Scanning…')
         progress.setFull(1)
         progress(0, progress_msg)
         data_dirs = {} # collect those and filter them after
@@ -2333,7 +2333,7 @@ class InstallersData(DataStore):
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate)
         dirs_paths = InstallersData._skips_in_data_dir(data_dirs)
         root_len = len(mods_dir) + 1 # compute relative paths to the Data dir
-        progress_msg = f'{dirname}: ' + '%s\n' % _('Scanning...')
+        progress_msg = f'{dirname}: ' + '%s\n' % _('Scanning…')
         progress.setFull(1 + len(dirs_paths))
         #--Remove empty dirs?
         remove_empty = bass.settings['bash.installers.removeEmptyDirs']
@@ -2467,7 +2467,7 @@ class InstallersData(DataStore):
         new_skips_overrides = (self.overridden_skips -
                                self.data_sizeCrcDate.keys())
         progress = progress or bolt.Progress()
-        progress(0, _('%(data_folder)s: Skips overrides...') % {
+        progress(0, _('%(data_folder)s: Skips overrides…') % {
             'data_folder': bush.game.mods_dir} + '\n')
         self.update_data_SizeCrcDate(new_skips_overrides, progress)
 

@@ -41,7 +41,7 @@ __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
 #------------------------------------------------------------------------------
 class Screens_NextScreenShot(EnabledLink):
     """Sets screenshot base name and number."""
-    _text = _('Next Shot...')
+    _text = _('Next Shot…')
     _help = _('Sets screenshot base name and number.')
     rePattern = re.compile(r'^(.+?)(\d*)$', re.I | re.U)
 
@@ -183,7 +183,7 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
-    _text = _('Change To...')
+    _text = _('Change To…')
     _help = _(u'Rename or replace the selected master through a file dialog.')
 
     @balt.conversation
@@ -368,7 +368,7 @@ class SortByMenu(ChoiceMenuLink):
 
 #------------------------------------------------------------------------------
 class Misc_SettingsDialog(ItemLink):
-    _text = _(u'Global Settings...')
+    _text = _('Global Settings…')
     _help = _(u'Allows you to configure various settings that apply to the '
               u'entirety of Wrye Bash, not just one tab.')
 
