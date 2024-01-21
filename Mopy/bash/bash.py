@@ -526,8 +526,8 @@ def _main(opts, wx_locale, wxver):
         if not opts.noUac and not uacRestart:
             # Show a prompt asking if we should restart in Admin Mode
             message = _(
-                'Wrye Bash needs Administrator Privileges to make changes to '
-                'the %(gameName)s directory.  If you do not start Wrye Bash '
+                'Wrye Bash needs administrator privileges to make changes to '
+                'the %(gameName)s directory. If you do not start Wrye Bash '
                 'with elevated privileges, you will be prompted at each '
                 'operation that requires elevated privileges.') % {
                     'gameName': bush_game.display_name}

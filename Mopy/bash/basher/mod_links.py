@@ -246,15 +246,16 @@ class Mod_OrderByName(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        message = _('Reorder selected mods in alphabetical order starting '
+        message = _('Reorder selected plugins in alphabetical order starting '
             'at the lowest ordered?') if bush.game.using_txt_file else _(
-            'Reorder selected mods in alphabetical order?  The first file '
-            'will be given the date/time of the current earliest file in the '
-            'group, with consecutive files following at 1 minute increments.')
+            'Reorder selected plugins in alphabetical order? The first plugin '
+            'will be given the date/time of the current earliest plugin in '
+            'the group, with consecutive files following at 1 minute '
+            'increments.')
         message = '\n\n'.join((message, _(
-            'Note that some mods need to be in a specific order to work '
+            'Note that some plugins need to be in a specific order to work '
             'correctly, and this sort operation may break that order.')))
-        if not self._askContinue(message, u'bash.sortMods.continue',
+        if not self._askContinue(message, 'bash.sortMods.continue',
                                  title=self._text): return
         #--Do it
         self.selected.sort(# sort masters first
@@ -1154,8 +1155,8 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         #--Log & Clipboard text
         log = bolt.LogFile(io.StringIO())
         log.setHeader('= %s %s' % (bp_parent_info.fn_key, _('Config')))
-        log(_(u'This is the current configuration of this Bashed Patch.  This '
-              u'report has also been copied into your clipboard.')+u'\n')
+        log(_('This is the current configuration of this Bashed Patch. This '
+              'report has also been copied into your clipboard.') + '\n')
         clip = io.StringIO()
         clip.write('%s %s:\n' % (bp_parent_info.fn_key, _('Config')))
         clip.write(u'[spoiler]\n')
@@ -1944,8 +1945,8 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
     def Execute(self): # overrides _Mod_Export_Link
         message = (_(
             'This command will export the level info for NPCs whose level is '
-            'offset with respect to the PC.  The exported file can be edited '
-            'with most spreadsheet programs and then reimported.') + u'\n\n' +
+            'offset with respect to the PC. The exported file can be edited '
+            'with most spreadsheet programs and then reimported.') + '\n\n' +
                    _('See the Wrye Bash readme for more info.'))
         if not self._askContinue(message, u'bash.actorLevels.export.continue',
                                  _(u'Export NPC Levels')): return
@@ -2147,24 +2148,24 @@ class Mod_Stats_Import(_Mod_Import_Link):
 #------------------------------------------------------------------------------
 class Mod_Prices_Export(_Mod_Export_Link):
     """Export item prices from mod to text file."""
-    askTitle = _(u'Export prices to:')
+    askTitle = _('Export Prices To:')
     csvFile = u'_Prices.csv'
     progressTitle = _(u'Export Prices')
     _text = _(u'Prices...')
-    _help = _(u'Export item prices from mod to text file')
+    _help = _('Export item prices from a plugin to a text file.')
 
     def _parser(self):
         return ItemPrices()
 
 class Mod_Prices_Import(_Mod_Import_Link):
     """Import prices from text file or other mod."""
-    askTitle = _(u'Import prices from:')
+    askTitle = _('Import Prices From:')
     csvFile = u'_Prices.csv'
     progressTitle = _(u'Import Prices')
     _text = _(u'Prices...')
-    _help = _(u'Import item prices from text file or other mod')
-    continueInfo = _(u'Import item prices from a text file.  This will '
-                     u'replace existing prices and is not reversible!')
+    _help = _('Import item prices from a text file or another plugin.')
+    continueInfo = _('Import item prices from a text file. This will '
+                     'replace existing prices and is not reversible!')
     continueKey = u'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
     supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
@@ -2178,32 +2179,31 @@ class Mod_Prices_Import(_Mod_Import_Link):
 #------------------------------------------------------------------------------
 class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
     """Export Sigil Stone details from mod to text file."""
-    askTitle = _(u'Export Sigil Stone details to:')
+    askTitle = _('Export Sigil Stone Details To:')
     csvFile = u'_SigilStones.csv'
-    progressTitle = _(u'Export Sigil Stone details')
+    progressTitle = _('Export Sigil Stone Details')
     _text = _(u'Sigil Stones...')
-    _help = _(u'Export Sigil Stone details from mod to text file')
+    _help = _('Export sigil stone details from a plugin to a text file.')
 
     def _parser(self):
         return SigilStoneDetails()
 
 class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     """Import Sigil Stone details from text file."""
-    askTitle = _(u'Import Sigil Stone details from:')
+    askTitle = _('Import Sigil Stone Details From:')
     csvFile = u'_SigilStones.csv'
-    progressTitle = _(u'Import Sigil Stone details')
-    _text = _(u'Sigil Stones...')
-    _help = _(u'Import Sigil Stone details from text file')
-    continueInfo = _(
-        u'Import Sigil Stone details from a text file.  This will replace '
-        u'the existing data on sigil stones with the same form ids and is '
-        u'not reversible!')
+    progressTitle = _('Import Sigil Stone Details')
+    _text = _('Sigil Stones...')
+    _help = _('Import sigil stone details from a text file to a plugin.')
+    continueInfo = _('Import sigil stone details from a text file. This will '
+                     'replace the existing data on sigil stones with the same '
+                     'FormIDs and is not reversible!')
     continueKey = u'bash.SigilStone.import.continue'
-    noChange = _(u'No relevant Sigil Stone details to import.')
+    noChange = _('No relevant sigil stone details to import.')
     _parser_class = SigilStoneDetails
 
     def _log(self, changes, fileName):
-        msg = [_('Imported Sigil Stone details to '
+        msg = [_('Imported sigil stone details to '
                  '%(sigil_import_target)s:') % {
             'sigil_import_target': fileName}]
         msg.extend(f'* {eid}' for eid in sorted(changes))
@@ -2231,25 +2231,25 @@ class _SpellRecords_Link(ItemLink):
 
 class Mod_SpellRecords_Export(_SpellRecords_Link, _Mod_Export_Link):
     """Export Spell details from mod to text file."""
-    askTitle = _(u'Export Spell details to:')
+    askTitle = _('Export Spell Details To:')
     csvFile = u'_Spells.csv'
-    progressTitle = _(u'Export Spell details')
+    progressTitle = _('Export Spell Details')
     _text = _(u'Spells...')
-    _help = _(u'Export Spell details from mod to text file')
+    _help = _('Export spell details from a plugin to a text file.')
     _do_what = _(u'Export flags and effects?')
 
 class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
     """Import Spell details from text file."""
-    askTitle = _(u'Import Spell details from:')
+    askTitle = _('Import Spell Details From:')
     csvFile = u'_Spells.csv'
-    progressTitle = _(u'Import Spell details')
+    progressTitle = _('Import Spell Details')
     _text = _(u'Spells...')
-    _help = _(u'Import Spell details from text file')
-    continueInfo = _(u'Import Spell details from a text file.  This will '
-        u'replace the existing data on spells with the same form ids and is '
-        u'not reversible!')
+    _help = _('Import spell details from a text file to a plugin.')
+    continueInfo = _('Import spell details from a text file. This will '
+                     'replace the existing data on spells with the same '
+                     'FormIDs and is not reversible!')
     continueKey = u'bash.SpellRecords.import.continue'
-    noChange = _(u'No relevant Spell details to import.')
+    noChange = _('No relevant spell details to import.')
     _do_what = _(u'Import flags and effects?')
 
     def _log(self, changes, fileName):
@@ -2261,27 +2261,27 @@ class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
 #------------------------------------------------------------------------------
 class Mod_IngredientDetails_Export(_Mod_Export_Link):
     """Export Ingredient details from mod to text file."""
-    askTitle = _(u'Export Ingredient details to:')
+    askTitle = _('Export Ingredient Details To:')
     csvFile = u'_Ingredients.csv'
-    progressTitle = _(u'Export Ingredient details')
+    progressTitle = _('Export Ingredient Details')
     _text = _(u'Ingredients...')
-    _help = _(u'Export Ingredient details from mod to text file')
+    _help = _('Export ingredient details from a plugin to a text file.')
 
     def _parser(self):
         return IngredientDetails()
 
 class Mod_IngredientDetails_Import(_Mod_Import_Link):
     """Import Ingredient details from text file."""
-    askTitle = _(u'Import Ingredient details from:')
+    askTitle = _('Import Ingredient Details From:')
     csvFile = u'_Ingredients.csv'
-    progressTitle = _(u'Import Ingredient details')
+    progressTitle = _('Import Ingredient Details')
     _text = _(u'Ingredients...')
-    _help = _(u'Import Ingredient details from text file')
-    continueInfo = _(u'Import Ingredient details from a text file.  This will '
-                     u'replace the existing data on Ingredients with the same '
-                     u'form ids and is not reversible!')
+    _help = _('Import ingredient details from a text file to a plugin.')
+    continueInfo = _('Import ingredient details from a text file. This will '
+                     'replace the existing data on ingredients with the same '
+                     'FormIDs and is not reversible!')
     continueKey = u'bash.Ingredient.import.continue'
-    noChange = _(u'No relevant Ingredient details to import.')
+    noChange = _('No relevant ingredient details to import.')
     _parser_class = IngredientDetails
 
     def _log(self, changes, fileName):

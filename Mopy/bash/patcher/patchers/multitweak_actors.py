@@ -85,9 +85,9 @@ class MAONPCSkeletonPatcher(_ASkeletonTweak):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton
     for use with MAO."""
     tweak_name = _(u"Mayu's Animation Overhaul Skeleton Tweaker")
-    tweak_tip = _(u'Changes all (modded and vanilla) NPCs to use the MAO '
-                  u'skeletons.  Not compatible with VORB.  Note: ONLY use if '
-                  u'you have MAO installed.')
+    tweak_tip = _('Changes all (modded and vanilla) NPCs to use the MAO '
+                  'skeletons. Not compatible with VORB. Note: ONLY use if '
+                  'you have MAO installed.')
     tweak_key = u'MAO Skeleton'
     tweak_log_header = _(u'MAO Skeleton Setter')
     tweak_order = 11 # Run after the vanilla skeleton tweak for consistency
@@ -108,9 +108,9 @@ class MAONPCSkeletonPatcher(_ASkeletonTweak):
 class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
     """Changes all NPCs to use the diverse skeleton for different look."""
     tweak_name = _(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker")
-    tweak_tip = _(u"Changes all (modded and vanilla) NPCs to use diverse "
-                  u"skeletons for different look.  Not compatible with MAO, "
-                  u"Requires VadersApp's Oblivion Real Bodies.")
+    tweak_tip = _("Changes all (modded and vanilla) NPCs to use diverse "
+                  "skeletons for different look. Not compatible with MAO, "
+                  "Requires VadersApp's Oblivion Real Bodies.")
     tweak_key = u'VORB'
     tweak_log_header = _(u"VadersApp's Oblivion Real Bodies")
     _skeleton_dir = u'Characters\\_male'

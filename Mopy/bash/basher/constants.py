@@ -31,12 +31,12 @@ from ..gui import DEFAULT_POSITION
 colorInfo = {
     'default.text': (_('Default Text'),
         _('This is the text color used for list items when no other is '
-          'specified.  For example, an ESP that is not mergeable or ghosted, '
+          'specified. For example, an ESP that is not mergeable or ghosted, '
           'and has no other problems.'),
     ),
     'default.bkgd': (_('Default Background'),
         _('This is the text background color used for list items when no '
-          'other is specified.  For example, an ESM that is not ghosted.'),
+          'other is specified. For example, an ESM that is not ghosted.'),
     ),
     'default.warn': (_('Default Warning'),
         _('This is the color used for text that is communicating some sort '
@@ -86,21 +86,21 @@ colorInfo = {
     'installers.bkgd.skipped': (_('Skipped Files'),
         _('Tabs: Installers') + '\n\n' +
         _('This is the background color used for a package with files that '
-          'will not be installed by BAIN.  This means some files are selected'
-          ' to be installed, but due to your current Skip settings (for '
+          'will not be installed by BAIN. This means some files are selected '
+          'to be installed, but due to your current Skip settings (for '
           'example, Skip DistantLOD), will not be installed.'),
     ),
     'installers.bkgd.outOfOrder': (_('Installer Out of Order'),
         _('Tabs: Installers') + '\n\n' +
         _('This is the background color used for an installer with files '
           'installed, that should be overridden by a package with a higher '
-          'install order.  It can be repaired with an Anneal or Anneal All.'),
+          'install order. It can be repaired with an Anneal or Anneal All.'),
     ),
     'installers.bkgd.dirty': (_('Dirty Installer'),
         _('Tabs: Installers') + '\n\n' +
         _('This is the background color used for an installer that is '
-          'configured in a "dirty" manner.  This means changes have been made'
-          ' to its configuration, and an Anneal or Install needs to be '
+          'configured in a "dirty" manner. This means changes have been made '
+          'to its configuration, and an Anneal or Install needs to be '
           'performed to make the install match what is configured.'),
     ),
     'screens.bkgd.image': (_('Screenshot Background'),
@@ -125,13 +125,13 @@ if not bush.game.using_txt_file:
     colorInfo['mods.bkgd.doubleTime.exists'] = (_('Inactive Time Conflict'),
         _('Tabs: Mods') + '\n\n' +
         _('This is the background color used for a plugin with an inactive '
-          'time conflict.  This means that two or more plugins have the same '
+          'time conflict. This means that two or more plugins have the same '
           'timestamp, but only one (or none) of them is active.'),
     )
     colorInfo['mods.bkgd.doubleTime.load'] = (_('Active Time Conflict'),
         _('Tabs: Mods') + '\n\n' +
         _('This is the background color used for a plugin with an active '
-          'time conflict.  This means that two or more plugins with the same '
+          'time conflict. This means that two or more plugins with the same '
           'timestamp are active.'),
     )
 

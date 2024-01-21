@@ -1516,10 +1516,10 @@ class PreParser(Parser):
                               for x in wiz_script.readlines()]
             return None
         except UnicodeError:
-            return _('Could not read the wizard file.  Please ensure it is '
+            return _('Could not read the wizard file. Please ensure it is '
                      'encoded in UTF-8 format.')
         except OSError:
-            return _('Could not open wizard file')
+            return _('Could not open the wizard file.')
 
     def _reset_vars(self):
         self.variables.clear()

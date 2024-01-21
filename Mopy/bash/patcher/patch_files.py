@@ -128,7 +128,7 @@ class PatchFile(ModFile):
             except KeyError:
                 message = '* ++ '
             if version:
-                message += _('%(msg_plugin)s  [Version %(plugin_ver)s]') % {
+                message += _('%(msg_plugin)s [Version %(plugin_ver)s]') % {
                     'msg_plugin': mname, 'plugin_ver': version}
             else:
                 message += mname

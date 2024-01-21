@@ -2713,7 +2713,7 @@ class InstallersList(UIList):
             showOk(self, msg, _('OMOD Extraction Canceled'))
         else:
             if failed: showWarning(self, _(
-                'The following OMODs failed to extract.  This could be '
+                'The following OMODs failed to extract. This could be '
                 'a file IO error, or an unsupported OMOD format:') + '\n\n'
                     + '\n'.join(failed), _('OMOD Extraction Complete'))
         finally:

@@ -80,7 +80,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
     def Execute(self):
         msg = _('Wrye Bash will monitor your data folder for changes when '
                 'installing a mod via an external application or manual '
-                'install.  This will require two refreshes of the '
+                'install. This will require two refreshes of the '
                 '%(data_folder)s folder and may take some time. Continue?') % {
             'data_folder': bush.game.mods_dir}
         if not self._askYes(msg, _('External Installation')):
@@ -90,8 +90,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         # Backup CRC data
         scd_before_install = self.idata.data_sizeCrcDate.copy()
         # Install and wait
-        self._showOk(_(u'You may now install your mod.  When installation is '
-                       u'complete, press Ok.'), _(u'External Installation'))
+        self._showOk(_('You may now install your mod. When installation is '
+                       'complete, press OK.'), _('External Installation'))
         # Refresh Data
         ui_refresh = defaultdict(bool)
         with load_order.Unlock(): ##: single use outside refreshLoadOrder
@@ -154,8 +154,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
 class Installers_ListPackages(Installers_Link):
     """Copies list of packages to clipboard."""
     _text = _(u'List Packages...')
-    _help = _('Displays a list of all packages.  Also copies that list to the '
-              'clipboard.  Useful for posting your package order on forums.')
+    _help = _('Displays a list of all packages. Also copies that list to the '
+              'clipboard. Useful for posting your package order on forums.')
 
     @balt.conversation
     def Execute(self):
