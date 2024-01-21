@@ -32,11 +32,18 @@ jobs:
       run: |
         python -m pip install -U pip setuptools wheel
         python -m pip install -r requirements-scripts.txt
-    - name: Update template
-      run: |
-        python scripts/ci_update_l10n_template.py
-    - name: Push changes to weblate-in
+    - name: Rebase weblate-in
       run: |
         git config --local user.name "wryebot"
         git config --local user.email "wryebot@gmail.com"
-        ./scripts/ci_push_l10n_update.sh
+        git switch weblate-in
+        echo "[!] If the following fails, you will have to manually rebase weblate-in branch on dev, resolve conflicts and force-push it"
+        git rebase origin/dev
+    - name: Update template.pot
+      run: |
+        python scripts/update_l10n_template.py
+    - name: Push updated template.pot
+      run: |
+        # First -m is title, second -m is body
+        git commit -a -m "Update template.pot" -m "Corresponds to ${GITHUB_SHA}."
+        git push --force-with-lease origin weblate-in
