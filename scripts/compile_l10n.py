@@ -27,20 +27,26 @@ you want to test non-English localizations in a development environment."""
 
 __author__ = 'Infernio'
 
+import logging
 import os
 
 from helpers._i18n import msgfmt
-from helpers.utils import L10N_PATH
+from helpers.utils import L10N_PATH, run_script, mk_logfile, setup_log
 
-def main():
+_LOGGER = logging.getLogger(__name__)
+_LOGFILE = mk_logfile(__file__)
+
+def main(args):
+    setup_log(_LOGGER, args)
     source_files = [f for f in L10N_PATH.iterdir() if f.suffix == '.po']
-    print('Starting compilation of localizations')
+    _LOGGER.info('Starting compilation of localizations')
     for i, po in enumerate(source_files, start=1):
-        print(f'Compiling localization {po.stem} ({i}/{len(source_files)})...')
+        _LOGGER.info(f'Compiling localization {po.stem} '
+                     f'({i}/{len(source_files)})...')
         po_str = os.fspath(po) # msgfmt wants a string
         mo_output = po_str[:-2] + 'mo'
         msgfmt.make(po_str, mo_output)
-    print('Compilation of localizations succeeded!')
+    _LOGGER.info('Compilation of localizations succeeded!')
 
 if __name__ == '__main__':
-    main()
+    run_script(main, __doc__, _LOGFILE)

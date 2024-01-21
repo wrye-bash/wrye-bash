@@ -180,8 +180,8 @@ def _warn_missing_bash_dir():
     on Linux, bash/taglists/* is completely optional and the Python files and
     dirs are gone in standalone builds)."""
     test_files = [bass.dirs['mopy'].join(*x) for x in (
-        ('bash', 'l10n', 'de_DE.po'), ('bash', 'images', 'bash.svg'))]
-    if any(not t.is_file() for t in test_files):
+        ('bash', 'l10n'), ('bash', 'images', 'bash.svg'))]
+    if any(not t.exists() for t in test_files):
         msg = (_('Installation appears incomplete. Please reinstall Wrye Bash '
                  'so that all files are installed.') + '\n\n' +
                _('Correct installation will create a filled %(wb_folder)s '

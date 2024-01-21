@@ -32,13 +32,16 @@ jobs:
       run: |
         python -m pip install -U pip setuptools wheel
         python -m pip install -r requirements-scripts.txt
-    - name: Update template
+    - name: Rebase weblate-in
       run: |
-        python scripts/ci_update_l10n_template.py
-    - name: Push changes to weblate-in
+        git config --local user.name "wryebot"
+        git config --local user.email "wryebot@gmail.com"
+        git switch weblate-in
+        echo "[!] If the following fails, you will have to manually rebase weblate-in branch on dev, resolve conflicts and force-push it"
+        git rebase origin/dev
+    - name: Update template.pot
       run: |
-        # From https://github.com/orgs/community/discussions/26560
-        # These make the commit have the nice black avatar and everything
-        git config --local user.name "github-actions[bot]"
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        ./scripts/ci_push_l10n_update.sh
+        python scripts/update_l10n_template.py
+    - name: Push updated template.pot
+      run: |
+        ./scripts/ci/push_pot_changes.sh

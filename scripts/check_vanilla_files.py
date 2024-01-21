@@ -36,6 +36,9 @@ game_path_name = r'C:\Program Files\ModifiableWindowsApps\Oblivion GOTY (PC)\Obl
 import gettext
 from pprint import pprint
 
+# TODO Update for py3(?, see shebang) and our modern script infrastructure
+#  (utils.run_script and loggers)
+
 # Initialize translations before importing any Bash modules
 gettext.NullTranslations().install()
 import bash.bush as bush
