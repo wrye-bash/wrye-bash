@@ -99,6 +99,21 @@ def setup_common_parser(parser):
     )
     parser.set_defaults(verbosity=logging.INFO)
 
+def setup_parser_logfile(parser, logfile: Path):
+    """Setup a -l/--logfile option for controlling the logger's log file.
+
+    :param logfile: Absolute path to the default log file."""
+    try:
+        nicer_logfile = logfile.relative_to(Path.cwd())
+    except ValueError:
+        nicer_logfile = logfile # can't be made relative
+    parser.add_argument(
+        '-l',
+        '--logfile',
+        default=logfile,
+        help=f'Where to store the log. [default: {nicer_logfile}]',
+    )
+
 def convert_bytes(size_bytes):
     if size_bytes == 0:
         return '0B'

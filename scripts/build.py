@@ -414,7 +414,8 @@ def taglists_need_update():
 @contextmanager
 def compile_translations():
     """Compile .po files to .mo files and hide the .po files temporarily."""
-    compile_l10n.main()
+    LOGGER.info('Compiling localizations...')
+    compile_l10n.main(verbosity=logging.WARNING, logfile=BUILD_LOGFILE)
     hidden_folder = Path(tempfile.mkdtemp())
     for f in L10N_PATH.iterdir():
         if f.suffix == '.po':
@@ -445,7 +446,7 @@ def main(args):
             cp(license_real, license_temp)
             # Check if we need to update the LOOT taglists
             if args.force_tl_update or taglists_need_update():
-                update_taglist.main()
+                update_taglist.main(logfile=BUILD_LOGFILE)
                 # Remember the last LOOT version we generated taglists for
                 with open(TAGINFO, 'w', encoding='utf-8') as out:
                     out.write(update_taglist.MASTERLIST_VERSION)

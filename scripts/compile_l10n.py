@@ -27,20 +27,35 @@ you want to test non-English localizations in a development environment."""
 
 __author__ = 'Infernio'
 
+import argparse
+import logging
 import os
 
 from helpers._i18n import msgfmt
-from helpers.utils import L10N_PATH
+from helpers.utils import L10N_PATH, SCRIPTS_PATH, setup_common_parser, \
+    setup_log, setup_parser_logfile
 
-def main():
+LOGGER = logging.getLogger(__name__)
+
+LOGFILE = SCRIPTS_PATH / 'compile_l10n.log'
+
+def main(verbosity=logging.INFO, logfile=LOGFILE):
+    setup_log(LOGGER, verbosity=verbosity, logfile=logfile)
     source_files = [f for f in L10N_PATH.iterdir() if f.suffix == '.po']
-    print('Starting compilation of localizations')
+    LOGGER.info('Starting compilation of localizations')
     for i, po in enumerate(source_files, start=1):
-        print(f'Compiling localization {po.stem} ({i}/{len(source_files)})...')
+        LOGGER.info(f'Compiling localization {po.stem} '
+                    f'({i}/{len(source_files)})...')
         po_str = os.fspath(po) # msgfmt wants a string
         mo_output = po_str[:-2] + 'mo'
         msgfmt.make(po_str, mo_output)
-    print('Compilation of localizations succeeded!')
+    LOGGER.info('Compilation of localizations succeeded!')
 
 if __name__ == '__main__':
-    main()
+    argparser = argparse.ArgumentParser(description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    setup_common_parser(argparser)
+    setup_parser_logfile(argparser, LOGFILE)
+    parsed_args = argparser.parse_args()
+    with open(parsed_args.logfile, 'w', encoding='utf-8'): pass
+    main(parsed_args.verbosity, parsed_args.logfile)
