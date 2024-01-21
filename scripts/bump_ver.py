@@ -29,7 +29,7 @@ import sys
 
 import pyfiglet
 from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, \
-    open_wb_file, edit_bass_version, mk_logfile, run_script
+    open_wb_file, edit_bass_version, mk_logfile, run_script, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -44,6 +44,7 @@ def _setup_new_version(parser):
              'one.')
 
 def main(args):
+    setup_log(_LOGGER, args)
     new_ver = args.new_version
     _LOGGER.info(f'Bumping Wrye Bash version to {new_ver}')
     files_bumped = []
@@ -87,5 +88,4 @@ def main(args):
     _LOGGER.info(f'Version successfully bumped to {new_ver}')
 
 if __name__ == '__main__':
-    run_script(main, __doc__, _LOGFILE, _LOGGER,
-        custom_setup=_setup_new_version)
+    run_script(main, __doc__, _LOGFILE, custom_setup=_setup_new_version)

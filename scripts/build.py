@@ -50,25 +50,15 @@ from contextlib import contextmanager, suppress
 from pathlib import Path
 
 import compile_l10n
-import pygit2
 import PyInstaller.__main__
 import update_taglist
-from helpers.utils import APPS_PATH, DIST_PATH, IDEA_PATH, \
-    MOPY_PATH, NSIS_PATH, ROOT_PATH, SCRIPTS_PATH, TAGINFO, TAGLISTS_PATH, \
-    VSCODE_PATH, WBSA_PATH, LooseVersion, commit_changes, get_repo_sig, \
-    L10N_PATH, edit_bass_version, cp, mv, rm, run_script, mk_logfile, \
-    run_subprocess, download_file, with_args
+from helpers.utils import APPS_PATH, DIST_PATH, MOPY_PATH, NSIS_PATH, \
+    ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, L10N_PATH, LooseVersion, \
+    commit_changes,  edit_bass_version, cp, mv, rm, run_script, mk_logfile, \
+    run_subprocess, download_file, with_args, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
-
-# List of files that should be preserved during the repo cleaning
-#  NSIS_PATH, REDIST_PATH: Not tracked, should only be downloaded once
-#  TAGLISTS_PATH, TAGINFO: Not tracked since it's specific to each developer,
-#                          removing it would update the taglists every time
-# IDEA_PATH, VSCODE_PATH: Annoying to remove, won't get included anyways and
-#                         can break the 'git stash pop'
-_TO_PRESERVE = [NSIS_PATH, TAGLISTS_PATH, TAGINFO, IDEA_PATH, VSCODE_PATH]
 
 # Linux or macOS, we don't support anything but building the source
 # distributable right now
@@ -76,9 +66,32 @@ _NOT_WINDOWS = os.name != 'nt'
 
 _NSIS_VERSION = '3.09'
 if _NOT_WINDOWS:
-    EXE_7Z = '7z'
+    _EXE_7Z = '7z'
 else:
-    EXE_7Z = MOPY_PATH / 'bash' / 'compiled' / '7z.exe'
+    _EXE_7Z = MOPY_PATH / 'bash' / 'compiled' / '7z.exe'
+
+_IGNORES_MANUAL = {
+    '*.log',
+    '*.pyc',
+    'Mopy/bash.ini',
+    'Mopy/bash/tests',
+    'Mopy/redist',
+}
+_IGNORES_STANDALONE = _IGNORES_MANUAL | {
+    '*.py',
+    '*.pyw',
+    '*.pyd',
+    '*.bat',
+    '*.template',
+    'Mopy/bash/basher',
+    'Mopy/bash/bosh',
+    'Mopy/bash/brec',
+    'Mopy/bash/env',
+    'Mopy/bash/game',
+    'Mopy/bash/gui',
+    'Mopy/bash/patcher',
+}
+
 
 sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
@@ -175,7 +188,7 @@ def _get_version_info(version):
     return file_version
 
 def _pack_7z(dest_7z, *args):
-    cmd_7z = [EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, 'Mopy/'] + list(args)
+    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, 'Mopy/'] + list(args)
     run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
 
 def _get_nsis_root(cmd_arg):
@@ -215,14 +228,10 @@ def _pack_manual(version):
         ROOT_PATH / 'requirements.txt': MOPY_PATH / 'requirements.txt',
         WBSA_PATH / 'bash.ico':         MOPY_PATH / 'bash.ico',
     }
-    ignores = {
-        'Mopy/bash/tests',
-        'Mopy/redist',
-    }
     for orig, target in files_to_include.items():
         cp(orig, target)
     try:
-        _pack_7z(archive_, *['-xr!' + a for a in ignores])
+        _pack_7z(archive_, *['-xr!' + a for a in _IGNORES_MANUAL])
     finally:
         for path in files_to_include.values():
             rm(path)
@@ -233,9 +242,9 @@ def _build_executable():
     _LOGGER.info('Building executable...')
     temp_path = WBSA_PATH / 'temp'
     dist_path = WBSA_PATH / 'dist'
-    spec_path = WBSA_PATH / 'pyinstaller.spec'
     orig_exe =  dist_path / 'Wrye Bash.exe'
     dest_exe =  MOPY_PATH / 'Wrye Bash.exe'
+    spec_path = os.fspath(WBSA_PATH / 'pyinstaller.spec')
     PyInstaller.__main__.run(['--clean', '--noconfirm',
                               f'--distpath={dist_path}',
                               f'--workpath={temp_path}', spec_path])
@@ -248,23 +257,7 @@ def _build_executable():
 def _pack_standalone(version):
     """ Packages the standalone version. """
     dest_7z = DIST_PATH / f'Wrye Bash {version} - Standalone Executable.7z'
-    ignores = {
-        '*.py',
-        '*.pyw',
-        '*.pyd',
-        '*.bat',
-        '*.template',
-        'Mopy/bash/basher',
-        'Mopy/bash/bosh',
-        'Mopy/bash/brec',
-        'Mopy/bash/env',
-        'Mopy/bash/game',
-        'Mopy/bash/gui',
-        'Mopy/bash/patcher',
-        'Mopy/bash/tests',
-        'Mopy/redist',
-   }
-    _pack_7z(dest_7z, *['-xr!' + a for a in ignores])
+    _pack_7z(dest_7z, *['-xr!' + a for a in _IGNORES_STANDALONE])
 
 def _pack_installer(nsis_path, version, file_version):
     """ Packages the installer version. """
@@ -367,7 +360,9 @@ def _taglists_need_update():
 def _compile_translations(args):
     """Compile .po files to .mo files and hide the .po files temporarily."""
     _LOGGER.info('Compiling localizations...')
-    compile_l10n.main(with_args(args, verbosity=logging.WARNING))
+    compile_l10n_level = (logging.DEBUG if args.verbosity == logging.DEBUG else
+                          max(args.verbosity, logging.WARNING))
+    compile_l10n.main(with_args(args, verbosity=compile_l10n_level))
     hidden_folder = Path(tempfile.mkdtemp())
     for f in L10N_PATH.iterdir():
         if f.suffix in ('.po', '.pot'):
@@ -395,89 +390,51 @@ def _hold_files(*files: Path):
             mv(target, orig)
         rm(tmpdir)
 
-@contextmanager
-def _clean_repo():
-    repo = pygit2.Repository(ROOT_PATH)
-    if any(v != pygit2.GIT_STATUS_IGNORED for v in repo.status().values()):
-        _LOGGER.warning('Your repository is dirty (you have uncommitted '
-                        'changes).')
-    branch_name = repo.head.shorthand
-    if not branch_name.startswith(('rel-', 'nightly')):
-        _LOGGER.warning(f"You are building off branch '{branch_name}', which "
-                        f"does not appear to be a release branch")
-    with _hold_files(*_TO_PRESERVE):
-        # stash everything away
-        # - stash modified files
-        # - then stash ignored and untracked
-        # - unstash modified files
-        # and we have a clean repo!
-        sig = get_repo_sig(repo)
-        # Not unused, PyCharm is not smart enough to understand suppress
-        mod_stashed = False
-        unt_stashed = False
-        with suppress(KeyError):
-            repo.stash(sig, message='Modified')
-            mod_stashed = True
-        with suppress(KeyError):
-            repo.stash(sig, message='Untracked + Ignored',
-                include_untracked=True, include_ignored=True)
-            unt_stashed = True
-        if mod_stashed:
-            repo.stash_pop(index=[mod_stashed, unt_stashed].count(True) - 1)
-    try:
-        yield
-    finally:
-        if unt_stashed:
-            # if we commit during the yield above
-            # we need to update the git index
-            # otherwise git will complain about the pop
-            repo.status()
-            repo.stash_pop(index=0)
-
 def main(args):
+    setup_log(_LOGGER, args)
     _setup_pyinstaller_logger(args.logfile)
     rm(DIST_PATH)
-    with _clean_repo():
-        _LOGGER.info(f'Building on Python {sys.version}')
-        # check nightly timestamp is different than previous
-        if not _check_timestamp(args.version):
-            raise OSError('Aborting build due to equal nightly timestamps.')
-        with (_handle_apps_folder(), _compile_translations(args),
-              _update_file_version(args.version, args.commit)):
-            # Get repository files
-            version_info = _get_version_info(args.version)
-            # create distributable directory
-            DIST_PATH.mkdir(parents=True, exist_ok=True)
-            # Copy the license so it's included in the built releases
-            license_real = ROOT_PATH / 'LICENSE.md'
-            license_temp = MOPY_PATH / 'LICENSE.md'
-            try:
-                cp(license_real, license_temp)
-                # Check if we need to update the LOOT taglists
-                if args.force_tl_update or _taglists_need_update():
-                    update_taglist.main(args)
-                    # Remember the last LOOT version we generated taglists for
-                    with TAGINFO.open('w', encoding='utf-8') as out:
-                        out.write(update_taglist.MASTERLIST_VERSION)
-                if args.manual:
-                    _LOGGER.info('Creating python source distributable...')
-                    _pack_manual(args.version)
-                if _NOT_WINDOWS:
-                    _LOGGER.info('Non-Windows OS detected, skipping '
-                                 'standalone and installer distributables.')
-                    return
-                if not args.standalone and not args.installer:
-                    return
-                with _build_executable():
-                    if args.standalone:
-                        _LOGGER.info('Creating standalone distributable...')
-                        _pack_standalone(args.version)
-                    if args.installer:
-                        _LOGGER.info('Creating installer distributable...')
-                        _pack_installer(args.nsis, args.version, version_info)
-            finally:
-                # Clean up the temp copy of the license
-                rm(license_temp)
+    _LOGGER.info(f'Building on Python {sys.version}')
+    # check nightly timestamp is different than previous
+    if not _check_timestamp(args.version):
+        raise OSError('Aborting build due to equal nightly timestamps.')
+    with (_handle_apps_folder(), _compile_translations(args),
+          _update_file_version(args.version, args.commit)):
+        # Get repository files
+        version_info = _get_version_info(args.version)
+        # create distributable directory
+        DIST_PATH.mkdir(parents=True, exist_ok=True)
+        # Copy the license so it's included in the built releases
+        license_real = ROOT_PATH / 'LICENSE.md'
+        license_temp = MOPY_PATH / 'LICENSE.md'
+        try:
+            cp(license_real, license_temp)
+            # Check if we need to update the LOOT taglists
+            if args.force_tl_update or _taglists_need_update():
+                update_taglist.main(with_args(args,
+                    masterlist_version=update_taglist.MASTERLIST_VERSION))
+                # Remember the last LOOT version we generated taglists for
+                with TAGINFO.open('w', encoding='utf-8') as out:
+                    out.write(update_taglist.MASTERLIST_VERSION)
+            if args.manual:
+                _LOGGER.info('Creating python source distributable...')
+                _pack_manual(args.version)
+            if _NOT_WINDOWS:
+                _LOGGER.info('Non-Windows OS detected, skipping '
+                             'standalone and installer distributables.')
+                return
+            if not args.standalone and not args.installer:
+                return
+            with _build_executable():
+                if args.standalone:
+                    _LOGGER.info('Creating standalone distributable...')
+                    _pack_standalone(args.version)
+                if args.installer:
+                    _LOGGER.info('Creating installer distributable...')
+                    _pack_installer(args.nsis, args.version, version_info)
+        finally:
+            # Clean up the temp copy of the license
+            rm(license_temp)
 
 if __name__ == '__main__':
     temp_desc = __doc__
@@ -485,5 +442,4 @@ if __name__ == '__main__':
         temp_desc += '\n\n' + '\n'.join(textwrap.wrap(
             'NOTE: On operating systems besides Windows, only building of '
             'source distributables is supported right now.', width=80))
-    run_script(main, temp_desc, _LOGFILE, _LOGGER,
-        custom_setup=_setup_build_parser)
+    run_script(main, temp_desc, _LOGFILE, custom_setup=_setup_build_parser)

@@ -31,12 +31,13 @@ import logging
 import os
 
 from helpers._i18n import msgfmt
-from helpers.utils import L10N_PATH, run_script, mk_logfile
+from helpers.utils import L10N_PATH, run_script, mk_logfile, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
 
-def main(_args):
+def main(args):
+    setup_log(_LOGGER, args)
     source_files = [f for f in L10N_PATH.iterdir() if f.suffix == '.po']
     _LOGGER.info('Starting compilation of localizations')
     for i, po in enumerate(source_files, start=1):
@@ -48,4 +49,4 @@ def main(_args):
     _LOGGER.info('Compilation of localizations succeeded!')
 
 if __name__ == '__main__':
-    run_script(main, __doc__, _LOGFILE, _LOGGER)
+    run_script(main, __doc__, _LOGFILE)

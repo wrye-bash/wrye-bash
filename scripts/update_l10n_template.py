@@ -36,7 +36,7 @@ import sys
 
 from helpers._i18n import pygettext
 from helpers.utils import L10N_PATH, MOPY_PATH, fatal_error, edit_wb_file, \
-    run_script, mk_logfile
+    run_script, mk_logfile, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -66,6 +66,7 @@ def _find_all_bash_modules(bash_path, cur_dir, _files=None):
     return _files
 
 def main(_args):
+    setup_log(_LOGGER, args)
     old_pot = L10N_PATH / 'template.pot'
     new_pot = L10N_PATH / 'template_new.pot'
     gt_args = ['_ignored', '-a', '-o', new_pot]
@@ -108,4 +109,4 @@ def main(_args):
     _LOGGER.info('Successfully updated template.pot')
 
 if __name__ == '__main__':
-    run_script(main, __doc__, _LOGFILE, _LOGGER)
+    run_script(main, __doc__, _LOGFILE)

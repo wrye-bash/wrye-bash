@@ -28,7 +28,7 @@ import logging
 import pprint
 
 from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, commit_changes, \
-    fatal_error, mk_logfile, run_script
+    fatal_error, mk_logfile, run_script, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -38,6 +38,7 @@ def _setup_new_version(parser):
         help='The new version that is to be released.')
 
 def main(args):
+    setup_log(_LOGGER, args)
     new_ver = args.new_version
     wanted_path = CHANGELOGS_PATH / f'Changelog - {new_ver}.b64'
     _LOGGER.debug('Looking for base64-encoded changelog')
@@ -71,5 +72,4 @@ def main(args):
     _LOGGER.info(f'Sucessfully updated wb_status repo for v{new_ver}.')
 
 if __name__ == '__main__':
-    run_script(main, __doc__, _LOGFILE, _LOGGER,
-        custom_setup=_setup_new_version)
+    run_script(main, __doc__, _LOGFILE, custom_setup=_setup_new_version)

@@ -47,10 +47,7 @@ APPS_PATH = MOPY_PATH / 'Apps'
 NSIS_PATH = SCRIPTS_PATH / 'build' / 'nsis'
 LOG_PATH = SCRIPTS_PATH / 'log'
 L10N_PATH = MOPY_PATH / 'bash' / 'l10n'
-TESTS_PATH = MOPY_PATH / 'bash' / 'tests'
 TAGLISTS_PATH = MOPY_PATH / 'taglists'
-IDEA_PATH = ROOT_PATH / '.idea'
-VSCODE_PATH = ROOT_PATH / '.vscode'
 OUT_PATH = SCRIPTS_PATH / 'out'
 CHANGELOGS_PATH = SCRIPTS_PATH / 'changelogs'
 WB_STATUS_PATH = ROOT_PATH.parent / 'wb_status'
@@ -127,15 +124,13 @@ def setup_common_parser(parser: argparse.ArgumentParser, logfile: Path):
     )
     parser.set_defaults(verbosity=logging.INFO)
 
-def run_script(main, script_doc: str, logfile: Path, logger: logging.Logger,
-        *, custom_setup=None):
+def run_script(main, script_doc: str, logfile: Path, *, custom_setup=None):
     """The main entry point for Wrye Bash's modern script API. Sets up an
     argument parser, logging, etc. and calls the main method.
 
     :param main: The main method to call.
     :param script_doc: Set to your script's __doc__.
     :param logfile: The default path to the script's log file.
-    :param logger: The logger for this script.
     :param custom_setup: If not None, this will be called with the created
         ArgumentParser instance as a single parameter. This gives you a chance
         to add custom arguments."""
@@ -146,11 +141,12 @@ def run_script(main, script_doc: str, logfile: Path, logger: logging.Logger,
         custom_setup(argparser)
     parsed_args = argparser.parse_args()
     rm(parsed_args.logfile)
-    setup_log(logger, parsed_args)
     main(parsed_args)
 
 def with_args(args=None, **kwargs):
-    """Hacky way to pass custom arguments to another script."""
+    """Hacky way to pass custom arguments to another script. In the future,
+    scripts for which this is needed should be refactored to export an API
+    instead that other scripts can use."""
     class _CustomArgs:
         def __getattr__(self, item):
             if item in kwargs:
@@ -197,7 +193,7 @@ def run_subprocess(command, logger, **kwargs):
         universal_newlines=True,
         **kwargs
     )
-    logger.debug(f'Running command: {u" ".join(command)}')
+    logger.debug(f'Running command: {" ".join(map(str, command))}')
     stdout, _stderr = sp.communicate()
     if sp.returncode != 0:
         logger.error(stdout)

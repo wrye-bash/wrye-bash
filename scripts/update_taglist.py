@@ -26,9 +26,9 @@
 subdirectories using the LOOT masterlists."""
 
 import logging
-import sys
 
-from helpers.utils import MOPY_PATH, download_file, run_script, mk_logfile
+from helpers.utils import TAGLISTS_PATH, download_file, run_script, \
+    mk_logfile, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -49,8 +49,6 @@ _GAME_DATA = {
 }
 MASTERLIST_VERSION = '0.21'
 
-sys.path.append(str(MOPY_PATH)) ##: What is this here for?
-
 def _download_masterlist(repository, version, dl_path):
     url = (f'https://raw.githubusercontent.com/loot/{repository}/v{version}/'
            f'masterlist.yaml')
@@ -70,19 +68,19 @@ def _setup_masterlist(argparser):
 
 def all_taglists_present():
     for game_name in _GAME_DATA:
-        taglist_path = MOPY_PATH / 'taglists' / game_name / 'taglist.yaml'
+        taglist_path = TAGLISTS_PATH / game_name / 'taglist.yaml'
         if not taglist_path.is_file():
             return False
     return True
 
 def main(args):
+    setup_log(_LOGGER, args)
     for game_name, repository in _GAME_DATA.items():
-        game_dir = MOPY_PATH / 'taglists' / game_name
+        game_dir = TAGLISTS_PATH / game_name
         game_dir.mkdir(parents=True, exist_ok=True)
         taglist_path = game_dir / 'taglist.yaml'
         _download_masterlist(repository, args.masterlist_version, taglist_path)
         _LOGGER.info(f'{game_name} masterlist downloaded.')
 
 if __name__ == '__main__':
-    run_script(main, __doc__, _LOGFILE, _LOGGER,
-        custom_setup=_setup_masterlist)
+    run_script(main, __doc__, _LOGFILE, custom_setup=_setup_masterlist)
