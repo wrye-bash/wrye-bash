@@ -25,21 +25,15 @@
 """This script generates taglist.yaml files in 'Mopy/taglists' game
 subdirectories using the LOOT masterlists."""
 
-import argparse
 import logging
 import sys
 
-from helpers.utils import MOPY_PATH, SCRIPTS_PATH, download_file, \
-    setup_common_parser, setup_log, setup_parser_logfile
+from helpers.utils import MOPY_PATH, download_file, run_script, mk_logfile
 
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
+_LOGFILE = mk_logfile(__file__)
 
-MASTERLIST_VERSION = '0.21'
-
-LOGFILE = SCRIPTS_PATH / 'taglist.log'
-sys.path.append(str(MOPY_PATH)) ##: Is this actually needed?
-
-GAME_DATA = {
+_GAME_DATA = {
     # Maps game name in the Mopy/taglists folder to LOOT repo name
     'Enderal': 'enderal',
     'Fallout3': 'fallout3',
@@ -53,45 +47,42 @@ GAME_DATA = {
     'SkyrimVR': 'skyrimvr',
     'Starfield': 'starfield',
 }
+MASTERLIST_VERSION = '0.21'
 
-def download_masterlist(repository, version, dl_path):
+sys.path.append(str(MOPY_PATH)) ##: What is this here for?
+
+def _download_masterlist(repository, version, dl_path):
     url = (f'https://raw.githubusercontent.com/loot/{repository}/v{version}/'
            f'masterlist.yaml')
-    LOGGER.info(f'Downloading {repository} masterlist...')
-    LOGGER.debug(f'Download url: {url}')
-    LOGGER.debug(f'Downloading {repository} masterlist to {dl_path}')
+    _LOGGER.info(f'Downloading {repository} masterlist...')
+    _LOGGER.debug(f'Download url: {url}')
+    _LOGGER.debug(f'Downloading {repository} masterlist to {dl_path}')
     download_file(url, dl_path)
 
+def _setup_masterlist(argparser):
+    argparser.add_argument(
+        '-m',
+        '--masterlist-version',
+        default=MASTERLIST_VERSION,
+        help=f'Which LOOT masterlist version to download [default: '
+             f'{MASTERLIST_VERSION}].',
+    )
+
 def all_taglists_present():
-    for game_name in GAME_DATA:
+    for game_name in _GAME_DATA:
         taglist_path = MOPY_PATH / 'taglists' / game_name / 'taglist.yaml'
         if not taglist_path.is_file():
             return False
     return True
 
-def main(verbosity=logging.INFO, logfile=LOGFILE,
-         masterlist_version=MASTERLIST_VERSION):
-    setup_log(LOGGER, verbosity=verbosity, logfile=logfile)
-    for game_name, repository in GAME_DATA.items():
+def main(args):
+    for game_name, repository in _GAME_DATA.items():
         game_dir = MOPY_PATH / 'taglists' / game_name
         game_dir.mkdir(parents=True, exist_ok=True)
         taglist_path = game_dir / 'taglist.yaml'
-        download_masterlist(repository, masterlist_version, taglist_path)
-        LOGGER.info(f'{game_name} masterlist downloaded.')
+        _download_masterlist(repository, args.masterlist_version, taglist_path)
+        _LOGGER.info(f'{game_name} masterlist downloaded.')
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    setup_common_parser(argparser)
-    setup_parser_logfile(argparser, LOGFILE)
-    argparser.add_argument(
-        '-mv',
-        '--masterlist-version',
-        default=MASTERLIST_VERSION,
-        help=f'Which loot masterlist version to download [default: '
-             f'{MASTERLIST_VERSION}].',
-    )
-    parsed_args = argparser.parse_args()
-    with open(parsed_args.logfile, 'w', encoding='utf-8'): pass
-    main(parsed_args.verbosity, parsed_args.logfile,
-         parsed_args.masterlist_version)
+    run_script(main, __doc__, _LOGFILE, _LOGGER,
+        custom_setup=_setup_masterlist)
