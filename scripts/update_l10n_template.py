@@ -92,6 +92,20 @@ def main(args):
     edit_wb_file('bash', 'l10n', 'template_new.pot',
         trigger_regex=re.compile(r'^"POT-Creation-Date: [^\\]+\\n"$'),
         edit_callback=edit_pot_creation_date, logger=_LOGGER)
+    # Add the 'python-format' flag to all translations that use %(...)s. See
+    # https://www.gnu.org/software/gettext/manual/html_node/python_002dformat.html
+    # for more information. pygettext does not support doing this - if we ever
+    # end up adding other flags, this will have to get more complex (start by
+    # ditching the regex and parse instead)
+    def edit_add_py_fmt_flag(py_fmt_ma):
+        return '\n'.join([
+            '#, python-format',
+            f'msgid "{py_fmt_ma.group(1)}%{py_fmt_ma.group(2)}',
+        ])
+    _LOGGER.debug('Adding python-format flags')
+    edit_wb_file('bash', 'l10n', 'template_new.pot',
+        trigger_regex=re.compile(r'^msgid "(.+)%((?:\w|\d+\w|\().+)$'),
+        edit_callback=edit_add_py_fmt_flag, logger=_LOGGER)
     # pygettext always throws an extra newline at the end, get rid of that
     # (otherwise git's newline checks prevent you from committing it)
     _LOGGER.debug('Removing extraneous newline')

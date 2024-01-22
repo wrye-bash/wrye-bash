@@ -294,8 +294,9 @@ class Save_ImportFace(OneItemLink):
             srcFaces = faces.PCFaces.mod_getFaces(srcInfo)
             #--No faces to import?
             if not srcFaces:
-                self._showOk(_(u'No player (PC) faces found in %s.') % fname,
-                             fname)
+                self._showOk(_('No player (PC) faces found in '
+                               '%(face_import_target)s.') % {
+                    'face_import_target': fname}, fname)
                 return
         else: return
         #--Dialog
