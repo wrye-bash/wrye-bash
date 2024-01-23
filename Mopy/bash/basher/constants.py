@@ -42,7 +42,7 @@ colorInfo = {
         _('This is the color used for text that is communicating some sort '
           'of warning or error.'),
     ),
-    'mods.text.esm': (_('ESM'),
+    'mods.text.esm': ('ESM',
         _('Tabs: Mods, Saves') + '\n\n' +
         _('This is the text color used for ESMs on the Mods Tab, and in the '
           'Masters info on both the Mods Tab and Saves Tab.'),
@@ -137,19 +137,19 @@ if not bush.game.using_txt_file:
 
 # Can we create a BP? ---------------------------------------------------------
 if bush.game.Esp.canBash:
-    colorInfo['mods.text.bashedPatch'] = (_('Bashed Patch'),
+    colorInfo['mods.text.bashedPatch'] = ('Bashed Patch',
         _('Tabs: Mods') + '\n\n' +
         _('This is the text color used for Bashed Patches.'),
     )
 
 # Are ESLs supported? ---------------------------------------------------------
 if bush.game.has_esl:
-    colorInfo['mods.text.esl'] = (_('ESL'),
+    colorInfo['mods.text.esl'] = ('ESL',
         _('Tabs: Mods, Saves') + '\n\n' +
         _('This is the text color used for ESLs on the Mods Tab, and in the '
           'Masters info on both the Mods Tab and Saves Tab.'),
     )
-    colorInfo['mods.text.eslm'] = (_('ESLM'),
+    colorInfo['mods.text.eslm'] = ('ESLM',
         _('Tabs: Mods, Saves') + '\n\n' +
         _('This is the text color used for ESLs with a master flag on the '
           'Mods Tab, and in the Masters info on both the Mods Tab and Saves '

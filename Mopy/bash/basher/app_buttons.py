@@ -293,7 +293,8 @@ class _AMods_xEditLaunch(ItemLink):
 
 class _Mods_xEditQAC(_AMods_xEditLaunch):
     """Launch xEdit in QAC mode."""
-    _text = _('Quick Auto Clean')
+    # xEdit 'trademark' - translating would make googling it impossible
+    _text = 'Quick Auto Clean'
     _help = _('Launch %(xedit_name)s in QAC mode to clean a single '
               'plugin.') % {'xedit_name': bush.game.Xe.full_name}
     _custom_arg = '-qac'

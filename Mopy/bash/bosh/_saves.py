@@ -452,7 +452,7 @@ class SaveFile(object):
         log.setHeader(_('Array Sizes'))
         log(f'  {len(self.created)}\t{_("Created Items")}')
         log(f'  {len(self.fid_recNum)}\t{_("Records")}')
-        log(f'  {len(self.fids)}\t{_("FormIDs")}')
+        log(f'  {len(self.fids)}\tFormIDs')
         #--Created Types
         log.setHeader(_(u'Created Items'))
         created_sizes = defaultdict(int)
@@ -507,7 +507,7 @@ class SaveFile(object):
                     objRefNullBases += 1
         rec_type_map = bush.game.save_rec_types
         #--Fids log
-        log.setHeader(_('FormIDs'))
+        log.setHeader('FormIDs')
         log(f"  {_('Refed')}\t{_('Changed')}\t{_('MI')}\t    {_('Plugin')}")
         log(f"  {lostRefs:d}\t\t     {_('Lost Refs (FormID is 0)')}")
         for modIndex, (irefed, changes) in enumerate(zip(idHist, changeHisto)):

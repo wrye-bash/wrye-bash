@@ -160,7 +160,7 @@ tabInfo = {
     u'Saves': [u'SavePanel', _(u'Saves'), None],
     u'INI Edits': [u'INIPanel', _(u'INI Edits'), None],
     u'Screenshots': [u'ScreensPanel', _(u'Screenshots'), None],
-    # u'BSAs':[u'BSAPanel', _(u'BSAs'), None],
+    # 'BSAs': ['BSAPanel', 'BSAs', None],
 }
 
 #------------------------------------------------------------------------------
@@ -2940,7 +2940,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.gSubList.on_box_checked.subscribe(self._check_subitem)
         self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
         # FOMOD/Sub-Packages radio buttons
-        self.fomod_btn = RadioButton(self.sp_panel, _(u'FOMOD'))
+        self.fomod_btn = RadioButton(self.sp_panel, 'FOMOD')
         self.fomod_btn.tooltip = _(u'Disable the regular BAIN sub-packages '
                                    u'and use the results of the last FOMOD '
                                    u'installer run instead.')
