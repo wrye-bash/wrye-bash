@@ -9,11 +9,11 @@ wxPython==4.2.1; sys_platform != 'win32'
 https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2.2a1-cp312-cp312-win_amd64.whl; sys_platform == 'win32'
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
-lxml==5.0.0
+lxml==5.1.0
 # For parsing download conditions when checking for updates
 packaging==23.2
 # For PDF support in the doc browser
-PyMuPDF==1.23.8
+PyMuPDF==1.23.21
 # For reflink copies (does not support Windows/ReFS yet)
 reflink==0.2.2; sys_platform != 'win32'
 # For various Internet-based functionality
