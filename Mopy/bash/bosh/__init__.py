@@ -236,10 +236,10 @@ class FileInfo(AFile, ListInfo):
 
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Sets ftime. Defaults to current value (i.e. reset)."""
-        set_time = set_time or self.ftime
-        self.abs_path.mtime = set_time
-        self.ftime = set_time
-        return set_time
+        set_to = set_time or self.ftime
+        self.abs_path.mtime = set_to
+        self.ftime = set_to
+        return set_to
 
     def readHeader(self):
         """Read header from file and set self.header attribute."""
@@ -379,13 +379,12 @@ class FileInfo(AFile, ListInfo):
         return self.get_store().bash_dir.join(u'Snapshots')
 
     def get_rename_paths(self, newName):
-        old_new_paths = super(FileInfo, self).get_rename_paths(newName)
+        old_new_paths = super().get_rename_paths(newName)
         # all_backup_paths will return the backup paths for this file and its
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
-        for b_path, new_b_path in zip(self.all_backup_paths(),
-                                       self.all_backup_paths(newName)):
-            old_new_paths.append((b_path, new_b_path))
+        old_new_paths.extend(
+            zip(self.all_backup_paths(), self.all_backup_paths(newName)))
         return old_new_paths
 
 #------------------------------------------------------------------------------
@@ -566,10 +565,10 @@ class ModInfo(FileInfo):
 
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Set ftime and if crc_changed is True recalculate the crc."""
-        set_time = super().setmtime(set_time)
+        set_to = super().setmtime(set_time)
         # Prevent re-calculating the File CRC
         if not crc_changed:
-            self.set_table_prop(u'crc_mtime', set_time)
+            self.set_table_prop('crc_mtime', set_to)
         else:
             self.calculate_crc(recalculate=True)
 
@@ -1034,7 +1033,7 @@ class ModInfo(FileInfo):
                self.fn_key == 'Oblivion.esm'
 
     def get_rename_paths(self, newName):
-        old_new_paths = super(ModInfo, self).get_rename_paths(newName)
+        old_new_paths = super().get_rename_paths(newName)
         if self.is_ghost:
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
         return old_new_paths
@@ -1484,13 +1483,12 @@ class SaveInfo(FileInfo):
                 not xse_cosave.has_accurate_master_list()
 
     def get_rename_paths(self, newName):
-        old_new_paths = super(SaveInfo, self).get_rename_paths(newName)
+        old_new_paths = super().get_rename_paths(newName)
         # super call added the backup paths but not the actual rename cosave
         # paths inside the store_dir - add those only if they exist
         old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
-        for co_type, co_file in self._co_saves.items():
-            old_new_paths.append((co_file.abs_path,
-                                  co_type.get_cosave_path(new)))
+        old_new_paths.extend((co_file.abs_path, co_type.get_cosave_path(new))
+                             for co_type, co_file in self._co_saves.items())
         return old_new_paths
 
 #------------------------------------------------------------------------------
@@ -1592,6 +1590,16 @@ class DataStore(DataDict):
             pass
         return forward_compat_path_to_fn_list(
             {d.stail for d in destinations if d.exists()}, ret_type=set)
+
+@dataclass(slots=True)
+class RefrData:
+    """Encapsulate info the backend needs to pass on to the UI for refresh."""
+    to_del: set[FName] = field(default_factory=set)
+    to_add: set[FName] = field(default_factory=set)
+    redraw: set[FName] = field(default_factory=set)
+
+    def __bool__(self):
+        return bool(self.to_add or self.to_del or self.redraw)
 
 class TableFileInfos(DataStore):
     _bain_notify = True # notify BAIN on deletions/updates ?
@@ -1746,16 +1754,6 @@ class TableFileInfos(DataStore):
         the specified FileInfo to the specified destination path."""
         # Will set the destination's mtime to the source's mtime
         cp_file_info.abs_path.copyTo(cp_dest_path)
-
-@dataclass(slots=True)
-class RefrData:
-    """Encapsulate info the backend needs to pass on to the UI for refresh."""
-    to_del: set[FName] = field(default_factory=set)
-    to_add: set[FName] = field(default_factory=set)
-    redraw: set[FName] = field(default_factory=set)
-
-    def __bool__(self):
-        return bool(self.to_add or self.to_del or self.redraw)
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
@@ -3255,8 +3253,7 @@ class ModInfos(FileInfos):
         FileInfos.move_info(self, fileName, destDir)
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super(ModInfos, self).move_infos(sources, destinations, window,
-                                                 bash_frame)
+        moved = super().move_infos(sources, destinations, window, bash_frame)
         self.refresh() # yak, it should have an "added" parameter
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
@@ -3570,6 +3567,9 @@ class SaveInfos(FileInfos):
         self._setLocalSaveFromIni()
         if localSave == self.localSave: return # no change
         self.table.save()
+        self.__init_db()
+
+    def __init_db(self):
         self._initDB(dirs['saveBase'].join(
             env.convert_separators(self.localSave))) # always has backslashes
 
@@ -3581,8 +3581,7 @@ class SaveInfos(FileInfos):
         # the setting correctly, kept previous behavior
         oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
                                 value=localSave + u'\\')
-        self._initDB(dirs['saveBase'].join(
-            env.convert_separators(self.localSave))) # always has backslashes
+        self.__init_db()
         if refreshSaveInfos: self.refresh()
 
 #------------------------------------------------------------------------------

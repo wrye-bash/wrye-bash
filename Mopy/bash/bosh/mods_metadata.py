@@ -261,7 +261,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                 ext_data = ModHeaderReader.extract_mod_data(present_minf,
                                                             mod_progress)
                 all_extracted_data[k] = ext_data
-            # Run over all plugin data once for efficiency, collecing
+            # Run over all plugin data once for efficiency, collecting
             # information such as deleted records and overrides
             scan_progress = SubProgress(progress, 0.7, 0.9)
             scan_progress.setFull(len(all_extracted_data))

@@ -416,7 +416,7 @@ class TimePicker(_AComponent):
         """Returns the chosen time as a datetime.time object."""
         return datetime.time(*self._native_widget.GetTime())
 
-    def set_time(self, new_time: datetime.time):
+    def set_sel_time(self, new_time: datetime.time):
         """Sets the currently selected time in this time picker to the
         specified datetime.time object."""
         self._native_widget.SetTime(new_time.hour, new_time.minute,

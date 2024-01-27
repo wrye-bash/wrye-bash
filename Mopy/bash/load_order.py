@@ -456,8 +456,9 @@ def toggle_lock_load_order(user_warning_callback):
     bass.settings[u'bosh.modInfos.resetMTimes'] = locked = lock
 
 class Unlock:
+    """Context manager to temporarily unlock the load order."""
 
-    def  __init__(self, do_unlock=True):
+    def __init__(self, do_unlock=True):
         self._do_unlock = do_unlock
 
     def __enter__(self):

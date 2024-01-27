@@ -400,7 +400,7 @@ class DateAndTimeDialog(DialogWindow):
         # Pausing picker subscription here is not currently necessary, but may
         # become necessary in the future, so stay sharp
         self._date_picker.set_date(new_datetime.date())
-        self._time_picker.set_time(new_datetime.time())
+        self._time_picker.set_sel_time(new_datetime.time())
 
     def show_modal(self) -> datetime.datetime | bool:
         """Return the final chosen date and time as a datetime.datetime

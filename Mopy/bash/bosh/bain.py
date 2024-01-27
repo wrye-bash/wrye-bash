@@ -458,7 +458,7 @@ class Installer(ListInfo):
                     (u'%s' % x, y) for x, y in self.src_sizeCrcDate.items())
             if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
                 self.dirty_sizeCrc = bolt.LowerDict(
-                    (u'%s' % x, y) for x, y in self.dirty_sizeCrc.items())
+                    (f'{x}', y) for x, y in self.dirty_sizeCrc.items())
             # on error __setstate__ resets fn_key -> entry dropped in __load()
             stat_tuple = self._stat_tuple()
             # refresh projects once on booting even if skipRefresh flag is
@@ -1567,9 +1567,8 @@ class InstallerArchive(_InstallerPackage):
         return self._fs_install(dest_src, srcDirJoin, progress,
                                 subprogressPlus, unpackDir)
 
-    def unpackToProject(self, project, progress=None):
+    def unpackToProject(self, project, progress):
         """Unpacks archive to build directory."""
-        progress = progress or bolt.Progress()
         files = bolt.sortFiles([x[0] for x in self.fileSizeCrcs])
         if not files: return 0
         #--Clear Project
@@ -1915,7 +1914,22 @@ class InstallersData(DataStore):
             reordered = self.refreshOrder()
             refresh_info.redraw.update(reordered)
             changes |= bool(reordered)
-        if u'N' in what or changes: changes |= self.refreshNorm()
+        if 'N' in what or changes:
+            #--dict mapping all should-be-installed files to their attributes
+            norm_sizeCrc = bolt.LowerDict()
+            for package in (x for x in self.sorted_values() if x.is_active):
+                norm_sizeCrc.update(package.ci_dest_sizeCrc)
+            # Populate self.ci_underrides_sizeCrc with all underridden files -
+            # files installed in data dir, but from a lower loading installer
+            # (or manually)
+            ci_underrides_sizeCrc = bolt.LowerDict()
+            for path, sizeCrc in norm_sizeCrc.items():
+                try:
+                    if sizeCrc != (data_sc := self.data_sizeCrcDate[path][:2]):
+                        ci_underrides_sizeCrc[path] = data_sc
+                except KeyError: pass # file is not installed in data dir
+            changes |= self.ci_underrides_sizeCrc != ci_underrides_sizeCrc
+            self.ci_underrides_sizeCrc = ci_underrides_sizeCrc
         if 'S' in what or changes:
             st_changed = {k for k, v in self.items() if v.refreshStatus(self)}
             refresh_info.redraw.update(st_changed)
@@ -2031,8 +2045,7 @@ class InstallersData(DataStore):
         self.store_dir.join(filename).moveTo(destDir.join(filename))
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super(InstallersData, self).move_infos(sources, destinations,
-                                                       window, bash_frame)
+        moved = super().move_infos(sources, destinations, window, bash_frame)
         self.irefresh(what='I', added_archives=moved)
         return moved
 
@@ -2244,25 +2257,6 @@ class InstallersData(DataStore):
                 installer.order = order
                 change.add(iname)
         return change
-
-    def refreshNorm(self):
-        """Populate self.ci_underrides_sizeCrc with all underridden files."""
-        active_sorted = (x for x in self.sorted_values() if x.is_active)
-        #--dict mapping all should-be-installed files to their attributes
-        norm_sizeCrc = bolt.LowerDict()
-        for package in active_sorted:
-            norm_sizeCrc.update(package.ci_dest_sizeCrc)
-        #--Abnorm
-        ci_underrides_sizeCrc = bolt.LowerDict()
-        dataGet = self.data_sizeCrcDate.get
-        for path,sizeCrc in norm_sizeCrc.items():
-            sizeCrcDate = dataGet(path)
-            if sizeCrcDate and sizeCrc != sizeCrcDate[:2]: # file is installed
-                # in data dir, but from a lower loading installer (or manually)
-                ci_underrides_sizeCrc[path] = sizeCrcDate[:2]
-        self.ci_underrides_sizeCrc, oldAbnorm_sizeCrc = \
-            ci_underrides_sizeCrc, self.ci_underrides_sizeCrc
-        return ci_underrides_sizeCrc != oldAbnorm_sizeCrc
 
     def _refresh_from_data_dir(self, progress, recalculate_all_crcs):
         """Update self.data_sizeCrcDate, using current data_sizeCrcDate as a
@@ -2640,7 +2634,7 @@ class InstallersData(DataStore):
             for inst in self.sorted_values(reverse=True):
                 if inst in to_install:
                     progress(index, inst.fn_key)
-                    destFiles = set(inst.ci_dest_sizeCrc) - mask
+                    destFiles = inst.ci_dest_sizeCrc.keys() - mask
                     if not override:
                         destFiles &= inst.missingFiles
                     if destFiles:

@@ -792,21 +792,20 @@ class Mod_ListDependent(OneItemLink):
             {u'filename': sel_target})
         modInfos = self._data_store
         merged_, imported_ = modInfos.merged, modInfos.imported
-        head, bul = u'=== ', u'* '
         log = bolt.LogFile(io.StringIO())
         log(u'[spoiler]')
-        log.setHeader(head + legend + u': ')
+        log.setHeader(f'=== {legend}: ')
         text_list = u''
         for mod in load_order.get_ordered(
                 self._selected_info.get_dependents()):
             hexIndex = load_order.cached_active_index_str(mod)
             if hexIndex:
-                prefix = bul + hexIndex
+                prefix = hexIndex # active mods are prefixed with their index
             elif mod in merged_:
-                prefix = bul + u'++'
+                prefix = '++'
             else:
-                prefix = bul + (u'**' if mod in imported_ else u'__')
-            text_list = u'%s  %s' % (prefix, mod)
+                prefix = '**' if mod in imported_ else '__'
+            text_list = f'* {prefix}  {mod}'
             log(text_list)
         if not text_list:  log(u'None')
         log(u'[/spoiler]')

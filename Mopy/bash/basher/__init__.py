@@ -535,7 +535,6 @@ class MasterList(_ModsUIList):
             self.data_store[mi] = bosh.MasterInfo(parent_minf=fileInfo,
                 master_name=ma_name, master_size=ma_size, was_esl=ma_esl)
         self._reList()
-        self.populate_items()
 
     def set_item_format(self, item_key, item_format, target_ini_setts):
         super().set_item_format(item_key, item_format, target_ini_setts)
@@ -585,12 +584,13 @@ class MasterList(_ModsUIList):
         return oninc, mouseText
 
     #--Relist
-    def _reList(self):
+    def _reList(self, repopulate=True):
         file_order_names = load_order.get_ordered(
             [v.curr_name for v in self.data_store.values()])
         self._curr_lo_index = {p: i for i, p in enumerate(file_order_names)}
         self._curr_real_index = {p: bosh.modInfos.real_indices[p][0] for p in
                                  file_order_names}
+        if repopulate: self.populate_items()
 
     def _update_real_indices(self, new_file_info):
         """Updates the 'real' indices cache. Does nothing outside of saves."""
@@ -608,8 +608,7 @@ class MasterList(_ModsUIList):
         if edited: self.SetMasterlistEdited(repopulate=True)
 
     def SetMasterlistEdited(self, repopulate=False):
-        self._reList()
-        if repopulate: self.populate_items()
+        self._reList(repopulate)
         self.edited = True
         self.detailsPanel.SetEdited() # inform the details panel
 
