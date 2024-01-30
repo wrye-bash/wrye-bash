@@ -76,8 +76,8 @@ from ..bass import Store
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
-    fast_cached_property
-from ..bosh import ModInfo, omods
+    fast_cached_property, attrgetter_cache
+from ..bosh import ModInfo, omods, RefrData
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -431,12 +431,12 @@ class MasterList(_ModsUIList):
         'File': lambda self, mi: bosh.modInfos.masterWithVersion(
             self._item_name(mi)),
         'Num': lambda self, mi: f'{mi:02X}',
-        'Current Order': lambda self, mi: bosh.modInfos.hexIndexString(
+        'Current Order': lambda self, mi: load_order.cached_active_index_str(
             self._item_name(mi)),
         'Indices': lambda self, mi: self._save_lo_hex_string[
             self._item_name(mi)],
-        'Current Index': lambda self, mi: bosh.modInfos.real_index_strings[
-            self._item_name(mi)],
+        'Current Index': lambda self, mi: bosh.modInfos.real_indices[
+            self._item_name(mi)][1],
     }
     banned_columns = {'Indices', 'Current Index'} # These are Saves-specific
 
@@ -589,8 +589,8 @@ class MasterList(_ModsUIList):
         file_order_names = load_order.get_ordered(
             [v.curr_name for v in self.data_store.values()])
         self._curr_lo_index = {p: i for i, p in enumerate(file_order_names)}
-        r_indices = bosh.modInfos.real_indices
-        self._curr_real_index = {p: r_indices[p] for p in file_order_names}
+        self._curr_real_index = {p: bosh.modInfos.real_indices[p][0] for p in
+                                 file_order_names}
 
     def _update_real_indices(self, new_file_info):
         """Updates the 'real' indices cache. Does nothing outside of saves."""
@@ -659,24 +659,34 @@ class MasterList(_ModsUIList):
         return [v.curr_name for k, v in dict_sort(self.data_store)]
 
 #------------------------------------------------------------------------------
+def _ask_info(attr_name, func_args=None, wrap=None):
+    """Create a function that takes a UIList and the fn_key to a (present,
+    otherwise a KeyError is raised) list info and gets some info from the
+    info (an attribute or instance method result)."""
+    attget = attrgetter_cache[attr_name]
+    if func_args is None:
+        lm = lambda self, p: attget(self.data_store[p])
+    else:
+        lm = lambda self, p: attget(self.data_store[p])(*func_args)
+    if wrap is not None:
+        return lambda self, p: wrap(lm(self, p))
+    return lm
+
 class INIList(UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _sort_keys = {
-        u'File'     : None,
-        u'Installer': lambda self, a: self.data_store[a].get_table_prop(
-            u'installer', u''),
+        'File'     : None,
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
-    def _sortValidFirst(self, items):
+    def _sortValidFirst(self, items, *, __lm=_ask_info('tweak_status', ())):
         if settings[u'bash.ini.sortValid']:
-            items.sort(key=lambda a: self.data_store[a].tweak_status() < 0)
+            items.sort(key=lambda a: (__lm(self, a) < 0))
     _extra_sortings = [_sortValidFirst]
     #--Labels
-    labels = {
-        'File': lambda self, p: p,
-        'Installer': lambda self, p: self.data_store[p].get_table_prop(
-            'installer', ''),
+    labels = {'File': lambda self, p: p,
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
     _target_ini = True # pass the target_ini settings on PopulateItem
 
@@ -946,47 +956,42 @@ class TargetINILineCtrl(INIListCtrl):
         self.fit_column_to_header(0)
 
 #------------------------------------------------------------------------------
+_common_sort_keys = {'File': None,  # just sort by name
+    'Modified': _ask_info('ftime'), 'Size': _ask_info('fsize')}
+_common_labels = {'File': lambda self, p: p,
+    'Modified': _ask_info('ftime', wrap=format_date),
+    'Size': _ask_info('fsize', wrap=round_size)}
+
 class ModList(_ModsUIList):
     #--Class Data
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _sort_keys = {
-        u'File'      : None,
-        u'Author'    : lambda self, a:self.data_store[a].header.author.lower(),
-        u'Rating'    : lambda self, a: self.data_store[a].get_table_prop(
-                            u'rating', u''),
-        u'Group'     : lambda self, a: self.data_store[a].get_table_prop(
-                            u'group', u''),
-        u'Installer' : lambda self, a: self.data_store[a].get_table_prop(
-                            u'installer', u''),
-        u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
-        u'Indices'   : lambda self, a: self.data_store[a].real_index(),
-        u'Modified'  : lambda self, a: self.data_store[a].ftime,
-        u'Size'      : lambda self, a: self.data_store[a].fsize,
-        u'Status'    : lambda self, a: self.data_store[a].getStatus(),
-        u'Mod Status': lambda self, a: self.data_store[a].txt_status(),
-        u'CRC'       : lambda self, a: self.data_store[a].cached_mod_crc(),
+    _sort_keys = {**_common_sort_keys,
+        'Author'    : lambda self, a: _ask_info('header.author',
+                                                wrap=str.lower),
+        'Rating'    : _ask_info('get_table_prop', ('rating', '')),
+        'Group'     : _ask_info('get_table_prop', ('group', '')),
+        'Installer' : _ask_info('get_table_prop', ('installer', '')),
+        'Load Order': lambda self, a: load_order.cached_lo_index(a),
+        'Indices'   : lambda self, a: self.data_store.real_indices[a][0],
+        'Status'    : _ask_info('getStatus', ()),
+        'Mod Status': _ask_info('txt_status', ()),
+        'CRC'       : _ask_info('cached_mod_crc', ()),
     }
     _dndList, _dndColumns = True, [u'Load Order']
     _sunkenBorder = False
     #--Labels
-    labels = {
+    labels = {**_common_labels, # File is overwritten below
         'File': lambda self, p: self.data_store.masterWithVersion(p),
-        'Load Order': lambda self, p: self.data_store.hexIndexString(p),
-        'Indices': lambda self, p: self.data_store[p].real_index_string(),
-        'Rating': lambda self, p: self.data_store[p].get_table_prop('rating',
-                                                                    ''),
-        'Group': lambda self, p: self.data_store[p].get_table_prop('group',
-                                                                   ''),
-        'Installer': lambda self, p: self.data_store[p].get_table_prop(
-            'installer', ''),
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size': lambda self, p: round_size(self.data_store[p].fsize),
-        'Author': lambda self, p: self.data_store[p].header.author if
-        self.data_store[p].header else '-',
-        'CRC': lambda self, p: self.data_store[p].crc_string(),
-        'Mod Status': lambda self, p: self.data_store[p].txt_status(),
+        'Load Order': lambda self, p: load_order.cached_active_index_str(p),
+        'Indices': lambda self, p: self.data_store.real_indices[p][1],
+        'Rating': _ask_info('get_table_prop', ('rating', '')),
+        'Group': _ask_info('get_table_prop', ('group', '')),
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
+        'Author': _ask_info('header.author'),
+        'CRC': _ask_info('crc_string', ()),
+        'Mod Status': _ask_info('txt_status', ()),
     }
     _copy_paths = True
 
@@ -1003,11 +1008,7 @@ class ModList(_ModsUIList):
 
     def OnDropIndexes(self, indexes, newIndex):
         if self._dropIndexes(indexes, newIndex):
-            # Take all indices into account - we may be moving plugins up, in
-            # which case the smallest index is in indexes, or we may be moving
-            # plugins down, in which case the smallest index is newIndex
-            lowest_index = min(newIndex, min(indexes))
-            self._refreshOnDrop(lowest_index)
+            self._refreshOnDrop()
 
     def dndAllow(self, event):
         msg = u''
@@ -1027,15 +1028,14 @@ class ModList(_ModsUIList):
         return True
 
     @balt.conversation
-    def _refreshOnDrop(self, first_index):
+    def _refreshOnDrop(self):
         #--Save and Refresh
         try:
-            bosh.modInfos.cached_lo_save_all()
-        except (BoltError, NotImplementedError) as e:
+            ldiff = bosh.modInfos.cached_lo_save_all()
+            loch = ldiff.reordered | ldiff.act_index_change #no additions/removals
+            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
+        except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
             showError(self, f'{e}')
-        first_impacted = load_order.cached_lo_tuple()[first_index]
-        self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
-                       refresh_others=Store.SAVES.DO())
 
     #--Populate Item
     def _set_status_text(self, item_format, mod_info, mod_name):
@@ -1114,9 +1114,6 @@ class ModList(_ModsUIList):
                 chunks[chunk].append(dex)
             moveMod = 1 if kcode in balt.wxArrowDown else -1
             moved = False
-            # Initialize the lowest index to the smallest existing one (we
-            # won't ever beat this one if we are moving indices up)
-            lowest_index = min(indexes)
             for chunk in chunks:
                 if not chunk: continue # nothing to move, skip
                 newIndex = chunk[0] + moveMod
@@ -1124,9 +1121,8 @@ class ModList(_ModsUIList):
                     continue # trying to move last plugin past the list
                 # Check if moving hits a new lowest index (this is the case if
                 # we are moving indices down)
-                lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
-            if moved: self._refreshOnDrop(lowest_index)
+            if moved: self._refreshOnDrop()
         elif wrapped_evt.is_cmd_down and kcode == ord('Z'):
             if wrapped_evt.is_shift_down:
                 # Ctrl+Shift+Z - redo last load order or active plugins change
@@ -1186,31 +1182,6 @@ class ModList(_ModsUIList):
         return bosh.modInfos.plugin_wildcard()
 
     # Helpers -----------------------------------------------------------------
-    @staticmethod
-    def _lo_redraw_targets(impacted_plugins):
-        """Given a set of plugins (as paths) that were impacted by a load order
-        operation, returns a set UIList keys (as paths) for elements that need
-        to be redrawn."""
-        ui_impacted = impacted_plugins.copy()
-        ##: We have to refresh every active plugin that loads higher than
-        # the lowest-loading one that was (un)checked as well since their
-        # load order/index columns will change. A full refresh is complete
-        # overkill for this, but alas... -> #353
-        if len(ui_impacted) == 1:
-            lowest_impacted = next(iter(ui_impacted)) # fast path
-        else:
-            lowest_impacted = min(ui_impacted,
-                                  key=load_order.cached_lo_index_or_max)
-        ui_impacted.update(load_order.cached_higher_loading(lowest_impacted))
-        # If the touched plugins include BPs, we need to refresh their
-        # imported/merged plugins too (checkbox icons). Note that we can do
-        # this after the lowest-loading check above, because the
-        # imported/merged plugins will not affect any other plugins if they
-        # aren't active, and won't need an update if they are active.
-        ui_imported, ui_merged = bosh.modInfos.getSemiActive(
-            ui_impacted, skip_active=True)
-        return ui_impacted | ui_imported | ui_merged
-
     _activated_key = 0
     _deactivated_key = 1
     @balt.conversation
@@ -1280,34 +1251,22 @@ class ModList(_ModsUIList):
         if warn_msg:
             balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
         if touched:
-            bosh.modInfos.cached_lo_save_active()
+            ldiff = bosh.modInfos.cached_lo_save_active()
             # If we have no changes, pass - if we do have changes, only one of
             # these can be truthy at a time
             if ch := changes[self._activated_key]:
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            self.RefreshUI(redraw=self._lo_redraw_targets(touched),
-                           refresh_others=Store.SAVES.DO())
+            loch = ldiff.active_flips | ldiff.act_index_change
+            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
-        # Grab copies of the old LO/actives for find_first_difference
-        prev_lo = load_order.cached_lo_tuple()
-        prev_acti = load_order.cached_active_tuple()
-        if not undo_or_redo():
-            return # Nothing to do
-        curr_lo = load_order.cached_lo_tuple()
-        curr_acti = load_order.cached_active_tuple()
-        low_diff = load_order.find_first_difference(
-            prev_lo, prev_acti, curr_lo, curr_acti)
-        if low_diff is None:
-            return # Load orders were identical
-        # Finally, we pass to _lo_redraw_targets to take all other relevant
-        # details into account
-        self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
-                       refresh_others=Store.SAVES.DO())
+        ldiff = undo_or_redo() # no additions or removals
+        if changed := (ldiff.act_changed() | ldiff.reordered):
+            self.RefreshUI(redraw=changed, refresh_others=Store.SAVES.DO())
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -2125,10 +2084,10 @@ class INIPanel(BashTab):
         target_ch = self.detailsPanel.check_new_target()
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
-        target_ch |= changes and changes[3]
-        super(INIPanel, self).ShowPanel(target_changed=target_ch,
-                                        clean_targets=clean_targets)
-        if changes or target_ch: # we need this to be more granular
+        changes.ini_changed |= target_ch
+        super().ShowPanel(target_changed=changes.ini_changed,
+                          clean_targets=clean_targets)
+        if changes: # we need this to be more granular
             if detail_item is not self._ini_same_item:
                 self.uiList.RefreshUI(focus_list=focus_list,
                                       detail_item=detail_item)
@@ -2192,33 +2151,18 @@ class SaveList(UIList):
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _editLabels = _copy_paths = True
-    _sort_keys = {
-        u'File'    : None, # just sort by name
-        u'Modified': lambda self, a: self.data_store[a].ftime,
-        u'Size'    : lambda self, a: self.data_store[a].fsize,
-        u'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
-        u'Player'  : lambda self, a: self.data_store[a].header.pcName,
-        u'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
-        u'Status'  : lambda self, a: self.data_store[a].getStatus(),
+    _sort_keys = {**_common_sort_keys,
+        'PlayTime': _ask_info('header.gameTicks'),
+        'Player'  : _ask_info('header.pcName'),
+        'Cell'    : _ask_info('header.pcLocation'),
+        'Status'  : _ask_info('getStatus', ()),
     }
-    #--Labels, why checking for header here - is this called on corrupt saves ?
-    @staticmethod
-    def _headInfo(saveInfo, attr):
-        if not saveInfo.header: return u'-'
-        return getattr(saveInfo.header, attr)
-    @staticmethod
-    def _playTime(saveInfo):
-        if not saveInfo.header: return u'-'
-        playMinutes = saveInfo.header.gameTicks // 60000
-        return f'{playMinutes // 60}:{playMinutes % 60:02d}'
-    labels = {
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-        'PlayTime': lambda self, p: self._playTime(self.data_store[p]),
-        'Player': lambda self, p: self._headInfo(self.data_store[p], 'pcName'),
-        'Cell':     lambda self, p: self._headInfo(self.data_store[p],
-                                                   'pcLocation'),
+    #--Labels
+    labels = {**_common_labels,
+        'PlayTime': lambda self, p: f'{(playMinutes := self.data_store[
+            p].header.gameTicks // 60000) // 60}:{playMinutes % 60:02d}',
+        'Player': _ask_info('header.pcName'),
+        'Cell': _ask_info('header.pcLocation'),
     }
 
     @balt.conversation
@@ -2517,32 +2461,30 @@ class InstallersList(UIList):
     _sunkenBorder = False
     _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
-    _sort_keys = {
-        u'Package' : None,
-        u'Order'   : lambda self, x: self.data_store[x].order,
-        u'Modified': lambda self, x: self.data_store[x].ftime,
-        u'Size'    : lambda self, x: self.data_store[x].fsize,
-        u'Files'   : lambda self, x: self.data_store[x].num_of_files,
+    _sort_keys = {'Package': None,
+        'Order'   : _ask_info('order'),
+        'Modified': _ask_info('ftime'),
+        'Size'    : _ask_info('fsize'),
+        'Files'   : _ask_info('num_of_files'),
     }
     #--Special sorters
-    def _sortStructure(self, items):
+    def _sortStructure(self, items, *, __lm=_ask_info('bain_type')):
         if settings[u'bash.installers.sortStructure']:
-            items.sort(key=lambda x: self.data_store[x].bain_type)
-    def _sortActive(self, items):
+            items.sort(key=lambda x: __lm(self, x))
+    def _sortActive(self, items, *, __lm=_ask_info('is_active')):
         if settings[u'bash.installers.sortActive']:
-            items.sort(key=lambda x: not self.data_store[x].is_active)
-    def _sortProjects(self, items):
+            items.sort(key=lambda x: not __lm(self, x))
+    def _sortProjects(self, items, *, __lm=_ask_info('is_project')):
         if settings[u'bash.installers.sortProjects']:
-            items.sort(key=lambda x: not self.data_store[x].is_project)
+            items.sort(key=lambda x: not __lm(self, x))
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
-    labels = {
-        'Package':  lambda self, p: p,
-        'Order':    lambda self, p: f'{self.data_store[p].order}',
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: self.data_store[p].size_string(),
+    labels = {'Package': lambda self, p: p,
+        'Order':    _ask_info('order', wrap=str),
+        'Modified': _ask_info('ftime', wrap=format_date),
+        'Size':     _ask_info('size_string', ()),
         'Files':    lambda self, p: self.data_store[p].number_string(
-            self.data_store[p].num_of_files),
+            self.data_store[p].num_of_files),##:_ask_info('num_of_files')(self, p)
     }
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, [u'Order']
@@ -3394,32 +3336,28 @@ class InstallersPanel(BashTab):
                     #with balt.Progress(_('Scanning Packages...')) as progress:
                     refresh_info = self.listData.update_installers(folders,
                         files, fullRefresh, progress=bolt.Progress())
-                    do_refresh = refresh_info.refresh_needed()
-            refreshui = False
-            if do_refresh:
-                with balt.Progress(_('Refreshing Installers…'),
-                                   abort=canCancel) as progress:
+                    do_refresh = bool(refresh_info)
+            refreshui = refresh_info or RefrData()
+            what = prog = None
+            if (tracked := self.listData.refreshTracked()) or do_refresh:
+                what = 'DISC' if scan_data_dir else (
+                    'ISC' if tracked else 'IC')
+                prog = balt.Progress(_('Refreshing Installers…'), abort=canCancel)
+            elif self.frameActivated:
+                what = 'C' # setting progress leads to infinite refresh in MSW!
+                # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
+                prog = bolt.Progress()
+            if what:
+                with prog as progress:
                     try:
-                        what = 'DISC' if scan_data_dir else 'IC'
-                        refreshui |= self.listData.irefresh(progress, what,
-                                                            fullRefresh,
-                                                            refresh_info)
+                        refreshui = self.listData.irefresh(progress, what,
+                                                           fullRefresh,
+                                                           refresh_info)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh
                     finally:
                         self._data_dir_scanned = True
-            elif self.frameActivated:
-                try:
-                    # with balt.Progress(
-                    #         _('Refreshing Converters...')) as progress:
-                    refreshui |= self.listData.irefresh(what='C',
-                        fullRefresh=fullRefresh)
-                    self.frameActivated = False
-                except CancelError:
-                    pass # User canceled the refresh
-            do_refresh = self.listData.refreshTracked()
-            refreshui |= do_refresh and self.listData.refreshInstallersStatus()
             if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
@@ -3506,16 +3444,9 @@ class ScreensList(UIList):
     global_links = defaultdict(lambda: Links()) # Global menu
     _editLabels = _copy_paths = True
 
-    _sort_keys = {u'File'    : None,
-                  u'Modified': lambda self, a: self.data_store[a].ftime,
-                  u'Size'    : lambda self, a: self.data_store[a].fsize,
-    }
+    _sort_keys = _common_sort_keys
     #--Labels
-    labels ={
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-    }
+    labels = _common_labels
 
     # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
@@ -3633,16 +3564,9 @@ class BSAList(UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _sort_keys = {'File'    : None,
-                  'Modified': lambda self, a: self.data_store[a].ftime,
-                  'Size'    : lambda self, a: self.data_store[a].fsize,
-    }
+    _sort_keys = _common_sort_keys
     #--Labels
-    labels = {
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-    }
+    labels = _common_labels
 
 #------------------------------------------------------------------------------
 class BSADetails(_EditableMixinOnFileInfos, SashPanel):
@@ -4074,13 +3998,8 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        def try_refresh(store):
-            refresh_result = store.refresh()
-            if isinstance(refresh_result, tuple):
-                return any(refresh_result)
-            return bool(refresh_result) # May be an int etc.
         ui_refresh: defaultdict[Store, bool] = defaultdict(bool, {
-            store.unique_store_key: not booting and try_refresh(store)
+            store.unique_store_key: not booting and bool(store.refresh())
             for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)})
         ui_refresh[Store.SAVES] |= ui_refresh[Store.MODS] # for save masters
         #--Repopulate, focus will be set in ShowPanel

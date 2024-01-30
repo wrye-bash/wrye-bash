@@ -258,7 +258,7 @@ class LoGame(object):
         unchanged, possibly validating the other one based on stale data.
         NOTE: modInfos must exist and be up to date for validation."""
         if cached_load_order is not None and cached_active_ordered is not None:
-            return cached_load_order, cached_active_ordered # NOOP
+            raise ValueError('get_load_order called with both cached values')
         lo, active = self._cached_or_fetch(cached_load_order,
                                            cached_active_ordered)
         # for timestamps we use modInfos so we should not get an invalid

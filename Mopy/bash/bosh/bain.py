@@ -38,14 +38,14 @@ from operator import attrgetter, itemgetter
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files, data_tracking_stores
+    best_ini_files, data_tracking_stores, RefrData
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
+from ..bass import Store
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items, DefaultFNDict
-from ..bass import Store
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
@@ -1257,9 +1257,8 @@ class _InstallerPackage(Installer, AFile):
         raise NotImplementedError
 
     #--ABSTRACT ---------------------------------------------------------------
-    def install(self, destFiles, progress=None):
+    def install(self, destFiles: set[CIstr], progress=None):
         """Install specified files to Data directory."""
-        destFiles = set(destFiles)
         dest_src = self.refreshDataSizeCrc(True)
         for k in list(dest_src):
             if k not in destFiles: del dest_src[k]
@@ -1868,10 +1867,9 @@ class InstallersData(DataStore):
         return self.irefresh(*args, **kwargs)
 
     def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
-                 # installers refresh context parameters
-                 refresh_info: _RefreshInfo | None = None, *,
-                 deleted: _fnames = None, pending: _fnames = None,
-                 projects: _fnames = None):
+            # installers refresh context parameters
+            refresh_info: RefrData | None = None, *, deleted: _fnames = (),
+            added_archives: _fnames = ()) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
@@ -1895,13 +1893,11 @@ class InstallersData(DataStore):
             # if we are passed a refresh_info, update_installers was
             # already called, and we only need to update for deleted
             if refresh_info is None:
-                if deleted or pending:
-                    # if deleted or pending we are passed existing installers
-                    refresh_info = self._RefreshInfo(deleted, pending,
-                                                     projects)
-                    if pending: # call update_installers to update those
-                        pe, pr = refresh_info.pending, refresh_info.projects
-                        dirs_files = (pe & pr, pe - pr)
+                if deleted or added_archives:
+                    # if deleted or added we are passed existing installers
+                    refresh_info = RefrData(set(deleted))
+                    if added_archives: # call update_installers to update those
+                        dirs_files = set(added_archives), ()
                     else:
                         dirs_files = None # we are only passed deleted in
                 else: # we really need to scan installers
@@ -1911,17 +1907,24 @@ class InstallersData(DataStore):
                     refresh_info = self.update_installers(*dirs_files,
                         fullRefresh, progress, refresh_info=refresh_info,
                     fresh_load=fresh_load) # avoid re-stating freshly unpickled
-            for del_item in refresh_info.deleted:
+            for del_item in refresh_info.to_del:
                 self.pop(del_item)
-            changes |= refresh_info.refresh_needed()
-        if u'O' in what or changes: changes |= self.refreshOrder()
+            changes |= bool(refresh_info)
+        if refresh_info is None: refresh_info = RefrData()
+        if 'O' in what or changes:
+            reordered = self.refreshOrder()
+            refresh_info.redraw.update(reordered)
+            changes |= bool(reordered)
         if u'N' in what or changes: changes |= self.refreshNorm()
-        if u'S' in what or changes: changes |= self.refreshInstallersStatus()
-        if u'C' in what or changes: changes |= \
+        if 'S' in what or changes:
+            st_changed = {k for k, v in self.items() if v.refreshStatus(self)}
+            refresh_info.redraw.update(st_changed)
+            changes |= bool(st_changed)
+        if 'C' in what or changes:
             self.converters_data.refreshConverters(progress, fullRefresh)
         #--Done
         if changes: self.hasChanged = True
-        return changes
+        return refresh_info
 
     def refresh_ns(self, *args, **kwargs):
         self.irefresh(*args, **kwargs, what='NS')
@@ -2030,7 +2033,7 @@ class InstallersData(DataStore):
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super(InstallersData, self).move_infos(sources, destinations,
                                                        window, bash_frame)
-        self.irefresh(what='I', pending=moved)
+        self.irefresh(what='I', added_archives=moved)
         return moved
 
     def reorder_packages(self, partial_order: list[FName]) -> str:
@@ -2107,21 +2110,6 @@ class InstallersData(DataStore):
         return sorted(values, key=attrgetter('order'), reverse=reverse)
 
     #--Refresh Functions ------------------------------------------------------
-    class _RefreshInfo(object):
-        """Refresh info for Bash Installers directory."""
-        def __init__(self, deleted=(), pending=(), projects=(), _added=(),
-                     _refreshed=()):
-            self.deleted = frozenset(deleted or ())   # deleted keys
-            self.pending = frozenset(pending or ())   # new or updated keys
-            self.projects = frozenset(projects or ()) # all project keys
-            self._added = frozenset(_added or ())  # all added keys - wip
-            # all updated keys - _reset_cache is already called!
-            self._refreshed = frozenset(_refreshed or ())
-
-        def refresh_needed(self):
-            return bool(
-                self.deleted or self.pending or self._added or self._refreshed)
-
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
         if installers is None:
@@ -2157,7 +2145,7 @@ class InstallersData(DataStore):
                 # installer.hasBCF = False
                 installers.remove(installer)
             finally: bcfFile.remove()
-        self.irefresh(what='I', pending=dest_archives)
+        self.irefresh(what='I', added_archives=dest_archives)
         return dest_archives, [x.fn_key for x in installers]
 
     def apply_converter(self, converter, destArchive, progress, msg,
@@ -2181,7 +2169,7 @@ class InstallersData(DataStore):
             if dest_archives is not None: # caller must call irefresh on those!
                 dest_archives.append(destArchive)
             else:
-                self.irefresh(what='I', pending=[destArchive])
+                self.irefresh(what='I', added_archives=[destArchive])
                 return iArchive
         except StateError as e:
             deprint(msg, traceback=True)
@@ -2190,20 +2178,22 @@ class InstallersData(DataStore):
             raise # UI expects that
 
     def update_installers(self, folders, files, fullRefresh, progress, *,
-          refresh_info=None, fresh_load=False, __skip_prefixes=('bash', '--')):
+            refresh_info: RefrData | None = None, fresh_load=False,
+            __skip_prefixes=('bash', '--')) -> RefrData:
         """Update installer info on given folders and files, adding new and
-        updating modified projects/packages, skipping as necessary.
-        :rtype: InstallersData._RefreshInfo"""
-        _added, _refreshed, installers = set(), set(), set()
-        if refresh_info is None:#we are called with a listing of installers dir
+        updating modified projects/packages, skipping as necessary."""
+        installers = set()
+        if scanning := (refresh_info is None):
+            # we are called with a listing of installers dir - filter packages
             files = [f for f in files if f.fn_ext in readExts
                      and not f.lower().startswith(__skip_prefixes)]
             folders = {f for f in folders if
                 # skip Bash directories and user specified ones
                 (low := f.lower()) not in self.installers_dir_skips and
                 not low.startswith(__skip_prefixes)}
-        if not (files or folders):
-            return refresh_info or self._RefreshInfo()
+            refresh_info = RefrData()
+            if not (files or folders):
+                return refresh_info
         progress.setFull(len(files) + len(folders))
         index = 0
         for items, is_proj in ((files, False), (folders, True)):
@@ -2213,23 +2203,23 @@ class InstallersData(DataStore):
                 inst = self.get(item)
                 if inst is None or inst.fn_key != item:
                     if inst: # some rename bug - corrupted
+                        refresh_info.redraw.add(item)
                         deprint(f'{item} invalid idata key: {inst.fn_key}')
                         del self[item]  # delete the stored installer
+                    else: refresh_info.to_add.add(item)
                     # refresh_info will notify callers to call irefresh('N')
                     self.new_info(item, progress, is_proj=is_proj,
                                   _index=index - 1, do_refresh=False)
-                    _added.add(item)
                     continue
                 # if we just loaded __setstate just updated existing Installers
                 if not fresh_load and inst.do_update(force_update=fullRefresh,
                         progress=SubProgress(progress, index - 1, index),
                         recalculate_project_crc=fullRefresh):
-                    _refreshed.add(item)
+                    refresh_info.redraw.add(item)
                 else: installers.add(item)
-        if refresh_info is None:
-            refresh_info = self._RefreshInfo( # no pending we did the update
-                set(self.ipackages(self)) - installers - _refreshed - _added,
-                projects=folders, _added=_added, _refreshed=_refreshed)
+        if scanning:
+            exist = installers | refresh_info.to_add | refresh_info.redraw
+            refresh_info.to_del = set(self.ipackages(self)) - exist
         return refresh_info
 
     def refreshOrder(self):
@@ -2247,12 +2237,12 @@ class InstallersData(DataStore):
                 inOrder[dex:dex] = ordering
                 break
         else:
-            inOrder += ordering
-        change = False
+            inOrder.extend(ordering)
+        change = set()
         for order, (iname, installer) in enumerate(inOrder):
             if installer.order != order:
                 installer.order = order
-                change = True
+                change.add(iname)
         return change
 
     def refreshNorm(self):
@@ -2273,13 +2263,6 @@ class InstallersData(DataStore):
         self.ci_underrides_sizeCrc, oldAbnorm_sizeCrc = \
             ci_underrides_sizeCrc, self.ci_underrides_sizeCrc
         return ci_underrides_sizeCrc != oldAbnorm_sizeCrc
-
-    def refreshInstallersStatus(self):
-        """Refresh installer status."""
-        change = False
-        for installer in self.values():
-            change |= installer.refreshStatus(self)
-        return change
 
     def _refresh_from_data_dir(self, progress, recalculate_all_crcs):
         """Update self.data_sizeCrcDate, using current data_sizeCrcDate as a
@@ -2497,31 +2480,32 @@ class InstallersData(DataStore):
                     v for k, v in renamed.items() if k in renamed_keys)
 
     def refreshTracked(self):
-        del_paths, altered = set(InstallersData._externally_deleted), set(
-            InstallersData._externally_updated)
+        del_paths = set(InstallersData._externally_deleted)
+        altered = dict.fromkeys(InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
         for apath, tracked in list(InstallersData._miscTrackedFiles.items()):
             try:
                 if tracked.do_update(raise_on_error=True):
-                    altered.add(apath)
+                    altered[apath] = tracked.fsize, tracked.ftime
+                    # if we uninstalled then reinstalled without leaving Bash
+                    del_paths.discard(apath)
             except OSError: # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(apath, None)
                 del_paths.add(apath)
         do_refresh = False
-        for apath in altered | del_paths:
+        def _path_key():
             # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
-            relpath = apath.relpath(bass.dirs[u'mods'])
+            relpath = apath.relpath(bass.dirs['mods'])
             # ghosts...
-            path_key = (relpath.root.s if relpath.cs[-6:] == u'.ghost'
-                        else relpath.s)
-            if apath in del_paths:
-                do_refresh |= bool(self.data_sizeCrcDate.pop(path_key, None))
-            else:
-                s, m = apath.size_mtime()
-                self.data_sizeCrcDate[path_key] = (s, apath.crc, m)
-                do_refresh = True
+            return relpath.root.s if relpath.cs[-6:] == '.ghost' else relpath.s
+        for apath in del_paths:
+            do_refresh |= bool(self.data_sizeCrcDate.pop(_path_key(), None))
+        for apath, siz_tim in altered.items():
+            s, m = siz_tim or apath.size_mtime()
+            self.data_sizeCrcDate[_path_key()] = (s, apath.crc, m)
+            do_refresh = True
         return do_refresh #Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
@@ -2744,13 +2728,11 @@ class InstallersData(DataStore):
             ex = sys.exc_info()
             raise
         finally:
-            if ex:
-                ci_removes = [k for k, v in remove_paths.items() if
-                              not v.exists()]
-            #--Update InstallersData
-            data_sizeCrcDatePop = self.data_sizeCrcDate.pop
-            for ci_relPath in ci_removes:
-                data_sizeCrcDatePop(ci_relPath, None)
+            removed = (v for v in remove_paths.values() if not v.exists()) \
+                if ex else remove_paths.values()
+            # store.delete might have updated _externally_deleted so reset it
+            InstallersData._externally_deleted.update(removed)
+            self.refreshTracked()
 
     def __restore(self, installer, removes, restores, cede_ownership):
         """Populate restores dict with files to be restored by this

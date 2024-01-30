@@ -63,7 +63,7 @@ class DocBrowser(WindowFrame):
                                                               vertically=True)
         # Mod Name
         self._full_lo = [FName(''), # == no plugin selected
-                         *sorted(load_order.cached_lo_tuple())]
+                         *sorted(bosh.modInfos)]
         self._lower_lo = {}
         self._plugin_search = SearchBar(mod_list_window,
             hint=_('Search Plugins'))
