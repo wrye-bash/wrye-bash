@@ -32,7 +32,8 @@ from ...brec import AMreCell, AMreHeader, MelBase, MelFid, MelGroups, \
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC', b'CHGL'}
+    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'BNAM', b'INTV', b'INCC',
+                          b'CHGL'}
     next_object_default = 0x001
 
     class HeaderFlags(AMreHeader.HeaderFlags):
@@ -55,6 +56,7 @@ class MreTes4(AMreHeader):
             MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
                 prelude=MelUInt32(b'TNAM', 'form_type')),
         ),
+        MelBase(b'BNAM', 'unknown_bnam'),
         MelUInt32(b'INTV', 'unknownINTV'),
         MelUInt32(b'INCC', 'internal_cell_count'),
         MelBase(b'CHGL', 'unknown_chgl'), # TODO(SF) fill out once decoded
