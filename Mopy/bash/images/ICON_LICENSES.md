@@ -14,6 +14,10 @@ All files listed below have been modified to optimize the SVGs.
   Public domain, via Wikimedia Commons.
 - `flags/russia.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Russia.svg
   by Zscout370, Public domain, via Wikimedia Commons.
+- `flags/sweden.svg` is from https://en.wikipedia.org/wiki/File:Flag_of_Sweden.svg.
+  Public domain, via Wikimedia Commons.
+- `flags/turkey.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Turkey.svg
+  by David Benbennick, Public domain, via Wikimedia Commons.
 
 ## Font Awesome
 
