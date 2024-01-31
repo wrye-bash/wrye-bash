@@ -2058,14 +2058,15 @@ def ask_uac_restart(message, mopy):
         readme = readme_url(mopy) + '#trouble-permissions'
         btns = [(BTN_YES, f'+{admin}'), (BTN_NO, _('Run normally'))]
         switches = [_('Use one of the following command line switches:'), '',
-                    _('--no-uac: always run normally'),
-                    _('--uac: always run with Admin Privileges'), '',
-                    _('See the %(readme)s for more information.') % {
-                        'readme': f'<A href="{readme}">readme</A>'}]
+                    _('%(cli_no_uac)s: always run normally'),
+                    _('%(cli_uac)s: always run with Admin Privileges'), '',
+                    _('See the %(readme)s for more information.')]
         ex = [_('How to avoid this message in the future'),
-              _('Less information'), '\n'.join(switches)]
-    return askYes(None, message, _('UAC Protection'), vista_buttons=btns,
-                  expander=ex)
+              _('Less information'), '\n'.join(switches) % {
+                'cli_no_uac': '--no-uac', 'cli_uac': '--uac',
+                'readme': f'<A href="{readme}">readme</A>'}]
+    return askYes(None, message, title=_('UAC Protection'),
+        vista_buttons=btns, expander=ex)
 
 class INIListCtrl(wx.ListCtrl):
 

@@ -30,6 +30,7 @@ import os
 import platform
 import shutil
 import sys
+import textwrap
 import traceback
 from configparser import ConfigParser
 
@@ -431,14 +432,15 @@ def main(opts):
             _(_a := '') # Hide this from gettext
         except NameError:
             def _(x): return x
-        msg = u'\n'.join([
-            _(u'Wrye Bash encountered an error.'),
-            _(u'Please post the information below to the official thread at'),
-            _(u'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games'),
-            _(u'or to the Wrye Bash Discord at'),
-            _(u'https://discord.gg/NwWvAFR'),
-            u'', caught_exc,
-        ])
+        msg = textwrap.wrap(
+            # No period at the end, that could cause copy-paste errors when
+            # people go to copy the Discord URL
+            _('Wrye Bash encountered an error. Please post the information '
+              'below to the official thread at %(thread_url)s or to the Wrye '
+              'Bash Discord at %(discord_url)s') % {
+                'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
+                'discord_url': 'https://discord.gg/NwWvAFR',
+            } + '\n\n' + caught_exc)
         _show_boot_popup(msg)
 
 def _main(opts, wx_locale, wxver):
@@ -549,8 +551,8 @@ def _main(opts, wx_locale, wxver):
         if not settings_file:
             bkf = barb.BackupSettings.backup_filename(bush_game.bak_game_name)
             settings_file = gui.FileSave.display_dialog(
-                frame, title=_(u'Backup Bash Settings'), defaultDir=base_dir,
-                wildcard=u'*.7z', defaultFile=bkf)
+                frame, title=_('Backup Wrye Bash Settings'),
+                defaultDir=base_dir, wildcard='*.7z', defaultFile=bkf)
         if settings_file:
             with gui.BusyCursor():
                 backup = barb.BackupSettings(
@@ -561,8 +563,8 @@ def _main(opts, wx_locale, wxver):
                 with gui.BusyCursor():
                     backup.backup_settings(balt)
             except exception.StateError:
-                msg = [_('There was an error while trying to backup the Bash '
-                         'settings!'),
+                msg = [_('There was an error while trying to backup the Wrye '
+                         'Bash settings!'),
                        _('If you continue, your current settings may be '
                          'overwritten.'),
                        _('Do you want to quit Wrye Bash now?')]
@@ -611,12 +613,14 @@ def _import_bush_and_set_game(opts):
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             _show_boot_popup(_(
-                u'Wrye Bash could not find a game to manage. Make sure to '
-                u'launch games you installed through Steam once and enable '
-                u'mods on games you installed through the Windows '
-                u'Store.') + u'\n\n' + _(
-                u'You can also use the -o command line argument or bash.ini '
-                u'to specify the path manually.'))
+                'Wrye Bash could not find a game to manage. Make sure to '
+                'launch games you installed through Steam once and enable '
+                'mods on games you installed through the Windows '
+                'Store.') + '\n\n' + _(
+                'You can also use the %(cli_game_detect)s command line '
+                'argument or %(bash_config_file)s to specify the path '
+                'manually.') % {'cli_game_detect': '-o',
+                                'bash_config_file': 'bash.ini'})
             return None
         retCode = _select_game_popup(game_infos)
         if not retCode:

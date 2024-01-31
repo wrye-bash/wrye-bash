@@ -428,14 +428,16 @@ class _LangDict(dict):
 class LanguagePage(_AScrollablePage):
     """Change the language that the GUI is displayed in."""
     _internal_to_localized = _LangDict({
-        'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
-        'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
         'de_DE': _('German') + ' (Deutsch)',
-        'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
+        'en_US': _('American English') + ' (American English)',
         'it_IT': _('Italian') + ' (italiano)',
         'ja_JP': _('Japanese') + ' (日本語)',
-        'ru_RU': _('Russian') + ' (ру́сский язы́к)',
-        'en_US': _('American English') + ' (American English)',
+        'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
+        'ru_RU': _('Russian') + ' (Русский язык)',
+        'sv_SE': _('Swedish') + ' (svenska)',
+        'tr_TR': _('Turkish') + ' (Türkçe)',
+        'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
+        'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
     })
     _localized_to_internal = _LangDict(reverse_dict(_internal_to_localized))
 
@@ -445,7 +447,7 @@ class LanguagePage(_AScrollablePage):
         # use the 'de_DENEW' thing anymore, but people may still have those
         # files sitting around in their l10n dirs, so keep filtering them
         all_langs = [f'{b}' for f in bass.dirs['l10n'].ilist()
-                     if f.fn_ext == '.po'
+                     if f.fn_ext == '.mo'
                      and (b := f.fn_body)[-3:].lower() != 'new']
         # Insert English since there's no localization file for that
         if 'en_US' not in all_langs:
@@ -463,7 +465,7 @@ class LanguagePage(_AScrollablePage):
         # comparisons
         self._initial_lang = active_lang
         self._lang_dropdown = DropDown(self, value=active_lang,
-            choices=localized_langs, dd_tooltip=_(
+            choices=sorted(localized_langs), dd_tooltip=_(
                 'Changes the language that Wrye Bash will be displayed in.'))
         self._lang_dropdown.on_combo_select.subscribe(self._handle_lang_select)
         VLayout(border=6, spacing=4, item_expand=True, items=[
@@ -752,8 +754,8 @@ class BackupsPage(_AFixedPage):
         """Saves the current settings and data to create a new backup."""
         with BusyCursor(): Link.Frame.SaveSettings()
         settings_file = FileSave.display_dialog(self,
-            title=_(u'Backup Bash Settings'), defaultDir=self._backup_dir,
-            wildcard=u'*.7z', defaultFile=barb.BackupSettings.backup_filename(
+            title=_('Backup Wrye Bash Settings'), defaultDir=self._backup_dir,
+            wildcard='*.7z', defaultFile=barb.BackupSettings.backup_filename(
                 bush.game.bak_game_name))
         if not settings_file: return
         with BusyCursor():
@@ -793,10 +795,10 @@ class BackupsPage(_AFixedPage):
     def _restore_backup(self):
         """Restores the currently selected backup."""
         if not askYes(self, '\n\n'.join([
-            _("Are you sure you want to restore your Bash settings from "
+            _("Are you sure you want to restore your Wrye Bash settings from "
               "'%(chosen_backup)s'?") % {'chosen_backup': self._chosen_backup},
             _('This will force a restart of Wrye Bash once your settings are '
-              'restored.')]), title=_('Restore Bash Settings?')):
+              'restored.')]), title=_('Restore Wrye Bash Settings?')):
             return
         # former may be None
         settings_file = self._backup_dir.join(self._chosen_backup)
@@ -1290,13 +1292,14 @@ class GeneralPage(_AScrollablePage):
 
     def on_apply(self):
         # Managed Game
-        if self._is_changed(u'managed_game') and balt.askContinue(self,
-                    _(u'Switching games this way will simply relaunch this '
-                      u'Wrye Bash installation with the -o command line '
-                      u'switch.') + u'\n\n' +
-                    _(u'That means manually added application launchers in '
-                      u'the status bar will not change after switching.'),
-                    u'bash.switch_games_warning.continue'):
+        if self._is_changed('managed_game') and balt.askContinue(self,
+                    _('Switching games this way will simply relaunch this '
+                      'Wrye Bash installation with the %(cli_game_detect)s '
+                      'command line switch.') % {'cli_game_detect': '-o'}
+                    + '\n\n' +
+                    _('That means manually added application launchers in the '
+                      'status bar will not change after switching.'),
+                    'bash.switch_games_warning.continue'):
             chosen_game = self._managed_game.get_value()
             ##: The [0] here is ugly, doesn't allow changing WS variations
             self._request_restart(_('Managed Game: %(chosen_game)s') % {

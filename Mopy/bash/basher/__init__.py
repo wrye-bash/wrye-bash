@@ -160,7 +160,7 @@ tabInfo = {
     u'Saves': [u'SavePanel', _(u'Saves'), None],
     u'INI Edits': [u'INIPanel', _(u'INI Edits'), None],
     u'Screenshots': [u'ScreensPanel', _(u'Screenshots'), None],
-    # u'BSAs':[u'BSAPanel', _(u'BSAs'), None],
+    # 'BSAs': ['BSAPanel', 'BSAs', None],
 }
 
 #------------------------------------------------------------------------------
@@ -830,13 +830,13 @@ class INIList(UIList):
         # Game ini does not exist - try copying the default game ini
         default_ini = bass.dirs[u'app'].join(bush.game.Ini.default_ini_file)
         if default_ini.exists():
-            msg += _(u'Do you want Bash to create it by copying '
-                     u'%(default_ini)s ?') % {u'default_ini': default_ini}
-            if not askYes(None, msg, _('Missing game Ini')):
+            msg += _('Do you want Wrye Bash to create it by copying '
+                     '%(default_ini)s ?') % {'default_ini': default_ini}
+            if not askYes(None, msg, title=_('Missing Game INI')):
                 return False
         else:
-            msg += _(u'Please create it manually to continue.')
-            showError(None, msg, _('Missing game Ini'))
+            msg += _('Please create it manually to continue.')
+            showError(None, msg, title=_('Missing Game INI'))
             return False
         try:
             default_ini.copyTo(target_ini_file.abs_path)
@@ -2940,7 +2940,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.gSubList.on_box_checked.subscribe(self._check_subitem)
         self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
         # FOMOD/Sub-Packages radio buttons
-        self.fomod_btn = RadioButton(self.sp_panel, _(u'FOMOD'))
+        self.fomod_btn = RadioButton(self.sp_panel, 'FOMOD')
         self.fomod_btn.tooltip = _(u'Disable the regular BAIN sub-packages '
                                    u'and use the results of the last FOMOD '
                                    u'installer run instead.')
@@ -3295,14 +3295,14 @@ class InstallersPanel(BashTab):
     def _first_run_set_enabled(self):
         if settings[u'bash.installers.isFirstRun']:
             settings[u'bash.installers.isFirstRun'] = False
-            message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
-                u'If you do, Bash will first need to initialize some data. '
-                u'This can take on the order of five minutes if there are '
-                u'many mods installed.') + u'\n\n\t' + _(
-                u'If not, you can enable it at any time by right-clicking '
-                u"the column header menu and selecting 'Enabled'.")
-            settings['bash.installers.enabled'] = askYes(self, message,
-                                                         _('Installers'))
+            msg = _('Do you want to enable Installers?') + '\n\n\t' + _(
+                'If you do, Wrye Bash will first need to initialize some '
+                'data. This can take on the order of five minutes if there '
+                'are many mods installed.') + '\n\n\t' + _(
+                "If not, you can enable it at any time by right-clicking "
+                "the column header menu and selecting 'Enabled'.")
+            settings['bash.installers.enabled'] = askYes(
+                self, msg, title=_('Enable Installers?'))
 
     @balt.conversation
     def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False,
@@ -3396,7 +3396,7 @@ class InstallersPanel(BashTab):
                 _del(omodRemoves)
             except (CancelError, SkipError):
                 while askYes(self, _(
-                        'Bash needs Administrator Privileges to delete '
+                        'Wrye Bash needs Administrator Privileges to delete '
                         'OMODs that have already been extracted.') +
                         '\n\n' + _('Try again?'), dialog_title):
                     try:
@@ -3422,8 +3422,8 @@ class InstallersPanel(BashTab):
                 _move_omods(omodMoves)
             except (CancelError, SkipError):
                 while askYes(self, _(
-                        'Bash needs Administrator Privileges to move failed '
-                        'OMODs out of the Bash Installers directory.') +
+                        'Wrye Bash needs Administrator Privileges to move '
+                        'failed OMODs out of the Bash Installers directory.') +
                         '\n\n' + _('Try again?'), dialog_title):
                     try:
                         omodMoves = [x for x in omodMoves if x.exists()]
@@ -4023,10 +4023,11 @@ class BashFrame(WindowFrame):
     def _warn_reset_load_order(self):
         if load_order.warn_locked and not bass.inisettings[
                 'SkipResetTimeNotifications']:
-            showWarning(self, _('Load order has changed outside of Bash and '
-                'has been reverted to the one saved in Bash. You can hit '
-                'Ctrl + Z while the mods list has focus to undo this.'),
-                _('Lock Load Order'))
+            showWarning(self, _(
+                'Load order has changed outside of Wrye Bash and has been '
+                'reverted to the one saved in Wrye Bash. You can hit Ctrl + Z '
+                'while the mods list has focus to undo this.'),
+                title=_('Lock Load Order'))
             load_order.warn_locked = False
 
     def warn_load_order(self):

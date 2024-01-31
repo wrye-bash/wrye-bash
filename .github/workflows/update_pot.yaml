@@ -44,4 +44,8 @@ jobs:
         python scripts/update_l10n_template.py
     - name: Push updated template.pot
       run: |
-        ./scripts/ci/push_pot_changes.sh
+        # Don't mind these failing, we want to push regardless cause there may
+        # have been translation updates pushed to dev (which would not
+        # register here, but should get to weblate)
+        git commit -a -m "Update template.pot" -m "Corresponds to ${GITHUB_SHA}." || true
+        git push --force-with-lease origin weblate-in || true

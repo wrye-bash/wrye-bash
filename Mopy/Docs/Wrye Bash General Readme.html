@@ -355,13 +355,21 @@
 </ul>
 <p>If none of the above points apply to you, or once you have taken the necessary measures for the points that apply, you can uninstall Wrye Bash by either running the uninstaller, if you used the installer to install Wrye Bash, or delete the following files and folders if you installed it manually.
 <ul>
-    <li><code>[Game]\Mopy</code> - If you've edited any localisation files in the <code>l10n</code> folder that you want to keep, back them up.
-    <li><code>[Game]\Data\Bash Patches</code> - If you've exported any CSV files that you want to keep, back them up.
-    <li><code>[Game]\Data\BashTags</code> - If you've manually created any tag files that you want to keep, back them up.</li>
+    <li><code>[Game]\Mopy</code></li>
+    <li><code>[Game]\Data\Bash Patches</code> - If you've exported any CSV
+        files that you want to keep, back them up.</li>
+    <li><code>[Game]\Data\BashTags</code> - If you've manually created any tag
+        files that you want to keep, back them up.</li>
     <li><code>[Game]\Data\Docs</code>
     <li><code>[Game]\Data\INI Tweaks</code>
-    <li><code>Documents\My Games\[Game]</code> - Only delete the <code>BashProfiles.dat</code>, <code>BashProfiles.dat.bak</code>, <code>BashSettings.dat</code>, <code>BashSettings.dat.bak</code>, <code>Messages.dat</code>, <code>Messages.dat.bak</code>, <code>People.dat</code> and <code>People.dat.bak</code> files and the <code>Saves\Bash</code> folder.
-    <li><code>[Game] Mods</code> (in the same folder as [Game] for most games, in <code>Documents\Wrye Bash</code> for Windows Store games) - The <code>Bash Installers</code> folder stores the mods you've installed via BAIN.
+    <li><code>Documents\My Games\[Game]</code> - Only delete the
+        <code>BashProfiles.dat</code>, <code>BashProfiles.dat.bak</code>,
+        <code>BashSettings.dat</code>, <code>BashSettings.dat.bak</code> files
+        and the <code>Saves\Bash</code> folder.</li>
+    <li><code>[Game] Mods</code> (in the same folder as [Game] for most games,
+        in <code>Documents\Wrye Bash</code> for Windows Store games) - The
+        <code>Bash Installers</code> folder stores the mods you've installed
+        via BAIN.</li>
 </ul>
 
 <h2 id="bain">Installing Mods <a class="back2top" href="#contents">Back to top</a></h2>
@@ -2342,9 +2350,11 @@ from other packages previously overridden by the uninstalled package's
 <p>Wrye Bash has built-in support for translation into other languages,
     using text files that tell it which English strings in the source code
     should be translated, and into what. These text files are found in
-    <code>Mopy/bash/l10n</code>. The process for translating Wrye Bash used to
-    be quite complex, but we have switched over to Weblate to make contributing
-    as easy as possible. Please see
+    <code>Mopy/bash/l10n</code> in the repository, but release builds will only
+    have binary translation files there.</p>
+<p>The process for translating Wrye Bash used to be quite complex, but we have
+    switched over to Weblate to make contributing as easy as possible.
+    Please see
     <a href="https://hosted.weblate.org/engage/wrye-bash/">our Weblate page</a>
     if you are interested in helping out!</p>
 
@@ -2421,15 +2431,48 @@ from other packages previously overridden by the uninstalled package's
 <p>The easiest method is to just run the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Backup Settings</a> and/or <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Restore Settings</a> commands, which are available in the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings menu</a>. These commands do not backup/restore any mod files or saves, just the Wrye Bash settings/data. When run, the commands ask you for the location you wish to back up to or restore from.
 <p>If you wish to manually back up your settings, the directories Wrye Bash stores files in are below.
 <table>
-    <thead><tr><th>Directory<th>Contents
+    <thead>
+        <tr>
+            <th>Directory</th>
+            <th>Contents</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>[Game]\Mopy                             <td>Main Bash files. If you're working on any localisation files in <code>Mopy\l10n</code> you may want to back them up.
-        <tr><td>[Game]\Data\Bash Patches                    <td>Contains CSV files used by the import/export functions. Back up any CSV files you've exported and want to keep.
-        <tr><td>[Game]\Data\BashTags                    <td>Contains text files with Bash Tag overrides. Only needs backing up if you added any custom files (i.e. ones not installed through BAIN).</td></tr>
-        <tr><td>[Game]\Data\Docs                            <td>Contains mod readmes. Doesn't need backing up.
-        <tr><td>[Game]\Data\INI Tweaks                  <td>Contains ini tweaks. Only needs backing up if you've added custom ini tweaks.
-        <tr><td>Documents\My Games\[Game]                   <td>Contains Wrye Bash settings. It is important to back this up.
-        <tr><td>[Game] Mods (in the same folder as [Game])<td>Contains BAIN packages and other Wrye Bash settings. it is important to back this up.
+        <tr>
+            <td>[Game]\Mopy</td>
+            <td>Main Wrye Bash resources. Back up your bash.ini, if it exists,
+                and your Apps folder, if nonempty.</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\Bash Patches</td>
+            <td>Contains CSV files used by the import/export functions. Back up
+                any CSV files you've exported and want to keep.</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\BashTags</td>
+            <td>Contains text files with Bash Tag overrides. Only needs backing
+                up if you added any custom files (i.e. ones not installed
+                through BAIN).</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\Docs</td>
+            <td>Contains mod readmes. Generally doesn't need backing up.</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\INI Tweaks</td>
+            <td>Contains INI tweaks. Only needs backing up if you've added
+                custom INI tweaks.</td>
+        </tr>
+        <tr>
+            <td>Documents\My Games\[Game]</td>
+            <td>Contains Wrye Bash settings. It is important to back this
+                up.</td>
+        <tr>
+            <td>[Game] Mods (in the same folder as [Game])</td>
+            <td>Contains BAIN packages and other Wrye Bash settings. It is
+                important to back this up.</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="trouble-report">How To Report Bugs Helpfully <a class="back2top" href="#contents">Back to top</a></h3>
@@ -2529,12 +2572,100 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 <h3>Additional Credits <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
     <li><strong>Translators</strong>
+        <!-- Both languages and translators here are in alphabetical order. -->
         <ul>
-            <li><img class="smallcred" alt="Flag of China" src="../bash/images/flags/china.svg" role="img"><span>Chinese:</span><img class="smallcred" alt="blueksy404's Icon" src="../bash/images/people/blskavi32.png"><span><a href="https://www.nexusmods.com/users/2541088">bluesky404</a></span></li>
-            <li><img class="smallcred" alt="Flag of Germany" src="../bash/images/flags/germany.svg" role="img"><span>German:</span><img class="smallcred" alt="DWS's Icon" src="../bash/images/bash.svg"><span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span></li>
-            <li><img class="smallcred" alt="Flag of Italy" src="../bash/images/flags/italy.svg" role="img"><span>Italian:</span><img class="smallcred" alt="Abot's Icon" src="../bash/images/people/abotavi32.png"><span><a href="https://www.nexusmods.com/users/38047">Abot</a></span></li>
-            <li><img class="smallcred" alt="Flag of Japan" src="../bash/images/flags/japan.svg" role="img"><span>Japanese:</span><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda</a></span></li>
-            <li><img class="smallcred" alt="Flag of Russia" src="../bash/images/flags/russia.svg" role="img"><span>Russian:</span><img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg"><span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span></li>
+            <li>
+                <img class="smallcred" alt="Flag of China" src="../bash/images/flags/china.svg" role="img">
+                <span>Chinese:</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="blueksy404's Icon" src="../bash/images/people/blskavi32.png">
+                        <span><a href="https://www.nexusmods.com/users/2541088">bluesky404</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <img class="smallcred" alt="Flag of Germany" src="../bash/images/flags/germany.svg" role="img">
+                <span>German:</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="DWS's Icon" src="../bash/images/bash.svg">
+                        <span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="Infernio's Icon" src="../bash/images/people/ifniavi48.png" role="img">
+                        <span><a href="https://github.com/Infernio">Infernio</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <img class="smallcred" alt="Flag of Italy" src="../bash/images/flags/italy.svg" role="img">
+                <span>Italian:</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="Abot's Icon" src="../bash/images/people/abotavi32.png">
+                        <span><a href="https://www.nexusmods.com/users/38047">Abot</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <img class="smallcred" alt="Flag of Japan" src="../bash/images/flags/japan.svg" role="img">
+                <span>Japanese:</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png">
+                        <span><a href="https://github.com/valda">Valda</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <img class="smallcred" alt="Flag of Brazil" src="../bash/images/flags/brazil.svg">
+                <span>Portuguese (Brazil):</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="Hadoki's Icon" src="../bash/images/bash.svg">
+                        <span><a href="https://www.nexusmods.com/users/323588">Hadoki</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <img class="smallcred" alt="Flag of Russia" src="../bash/images/flags/russia.svg" role="img">
+                <span>Russian:</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="cottondisciple's Icon" src="../bash/images/people/ctndavi32.png">
+                        <span><a href="https://github.com/cottondisciple">cottondisciple</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg">
+                        <span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="JonySnowball's Icon" src="../bash/images/people/jnsnavi32.png">
+                        <span><a href="https://github.com/JonySnowball">JonySnowball</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <img class="smallcred" alt="Flag of Sweden" src="../bash/images/flags/sweden.svg" role="img">
+                <span>Swedish:</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="David Brofalk's Icon" src="../bash/images/bash.svg">
+                        <span>David Brofalk</span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <img class="smallcred" alt="Flag of Turkey" src="../bash/images/flags/turkey.svg" role="img">
+                <span>Turkish:</span>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/tmfcavi32.png">
+                        <span><a href="https://github.com/TheMalteseFalcone">TheMalteseFalcone</a></span>
+                    </li>
+                </ul>
+            </li>
         </ul>
     </li>
     <li><strong>Mod and Save File Gurus</strong>

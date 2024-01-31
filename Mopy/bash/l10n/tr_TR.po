@@ -1,15 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
-# Infernio <infernio@icloud.com>, 2024.
-# Weblate Translation Memory <noreply-mt-weblate-translation-memory@weblate.org>, 2024.
+# Efe Karakütük <efekarakutuk@gmail.com>, 2024.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: Wrye Bash v313\n"
 "POT-Creation-Date: 2024-01-07 22:03+0100\n"
-"PO-Revision-Date: 2024-01-31 17:33+0000\n"
-"Last-Translator: Infernio <infernio@icloud.com>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/wrye-bash/wrye-bash/de/>\n"
-"Language: de_DE\n"
+"PO-Revision-Date: 2024-01-29 16:23+0000\n"
+"Last-Translator: Efe Karakütük <efekarakutuk@gmail.com>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/wrye-bash/wrye-bash/tr/>\n"
+"Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,360 +19,360 @@ msgstr ""
 #: Mopy/bash/ScriptParser.py:102
 #, python-format
 msgid "Too few arguments to %(obj_type)s '%(obj_name)s': got %(got)s, expected %(expected)s."
-msgstr "Zu wenige Argumente für %(obj_type)s „%(obj_name)s“: habe %(got)s, erwarte %(expected)s."
+msgstr "%(obj_type)s '%(obj_name)s' için çok az argüman var: %(got)s alındı, %(expected)s bekleniyor."
 
 #: Mopy/bash/ScriptParser.py:108
 #, python-format
 msgid "Too many arguments to %(obj_type)s '%(obj_name)s': got %(got)s, expected %(expected)s."
-msgstr "Zu viele Argumente an %(obj_type)s „%(obj_name)s“: habe %(got)s, erwarte %(expected)s."
+msgstr "%(obj_type)s '%(obj_name)s' için çok fazla argüman var: %(got)s alındı, %(expected)s bekleniyor."
 
 #: Mopy/bash/ScriptParser.py:114
 #, python-format
 msgid "Cannot set %(obj_type)s '%(obj_name)s': type is '%(conflicting_type)s'."
-msgstr "Kann %(obj_type)s „%(obj_name)s“ nicht setzen: Typ ist „%(conflicting_type)s“."
+msgstr "%(obj_type)s '%(obj_name)s' ayarlanamaz: türü '%(conflicting_type)s'."
 
 #: Mopy/bash/ScriptParser.py:120
 #, python-format
 msgid "Unexpected '%(unexpected_keyword)s'."
-msgstr "Unerwartetes „%(unexpected_keyword)s“."
+msgstr "Beklenmeyen '%(unexpected_keyword)s'."
 
 #: Mopy/bash/ScriptParser.py:124
 #, python-format
 msgid "Function '%(string_only_function)s' only operates on string types."
-msgstr "Funktion „%(string_only_function)s“ akzeptiert nur Strings als Datentyp."
+msgstr "'%(string_only_function)s' Fonksiyonu sadece string türünde çalışır."
 
 #: Mopy/bash/ScriptParser.py:513 Mopy/bash/ScriptParser.py:743
 msgid "Index out of bounds."
-msgstr "Unzulässiger Index."
+msgstr "Dizi sınırların dışında."
 
 #: Mopy/bash/ScriptParser.py:603
 msgid "Mismatched parenthesis."
-msgstr "Unpassende Klammern."
+msgstr "Yanlış eşleştirilmiş parantezler."
 
 #: Mopy/bash/ScriptParser.py:609
 msgid "Mismatched brackets."
-msgstr "Unpassende eckige Klammern."
+msgstr "Yanlış eşleştirilmiş köşeli parantezler."
 
 #: Mopy/bash/ScriptParser.py:666
 msgid "Misplaced ',' or missing parenthesis."
-msgstr "Falsch gesetztes „,“ oder fehlende Klammer."
+msgstr "',' yanlış yerde veya parantez eksik."
 
 #: Mopy/bash/ScriptParser.py:675
 msgid "Misplaced ':' or missing bracket."
-msgstr "Falsch gesetztes „:“ oder fehlende eckige Klammer."
+msgstr "':' Yanlış yerde veya köşeli parantez eksik."
 
 #: Mopy/bash/ScriptParser.py:689
 msgid "Dot operator: no function to call."
-msgstr "Punktoperator: keine Funktion zum Aufrufen."
+msgstr "Nokta operatörü: çağrılacak işlev yok."
 
 #: Mopy/bash/ScriptParser.py:692
 #, python-format
 msgid "Dot operator: cannot access non-function '%(other_token)s'."
-msgstr "Punktoperator: kann nicht auf „%(other_token)s“ zugreifen, da dies keine Funktion ist."
+msgstr "Nokta operatörü: '%(other_token)s' işlevine erişilemiyor."
 
 #: Mopy/bash/ScriptParser.py:696
 #, python-format
 msgid "Dot operator: cannot access function '%(non_dot_function)s'."
-msgstr "Punktoperator: kann nicht auf Funktion „%(non_dot_function)s“ zugreifen."
+msgstr "Nokta operatörü: '%(non_dot_function)s işlevine erişilemiyor."
 
 #: Mopy/bash/ScriptParser.py:723 Mopy/bash/ScriptParser.py:753
 msgid "Unmatched parenthesis."
-msgstr "Unpassende Klammern."
+msgstr "Eşleşmeyen Parantezler."
 
 #: Mopy/bash/ScriptParser.py:734
 msgid "Unmatched brackets."
-msgstr "Unpassende eckige Klammern."
+msgstr "Eşleşmeyen köşeli parantezler."
 
 #: Mopy/bash/ScriptParser.py:746
 #, python-format
 msgid "Unrecognized token: '%(unknown_token_text)s', type: %(unknown_token_type)s"
-msgstr "Unbekanntes Token: „%(unknown_token_text)s“, Typ: %(unknown_token_type)s"
+msgstr "Tanınmayan belirteç: %(unknown_token_text)s, türü: %(unknown_token_type)s"
 
 #: Mopy/bash/ScriptParser.py:793
 msgid "Too many values left at the end of evaluation."
-msgstr "Am Ende der Auswertung waren zu viele Werte übrig."
+msgstr "Değerlendirmenin sonunda çok fazla değer kaldı."
 
 #: Mopy/bash/ScriptParser.py:864
 #, python-format
 msgid "Invalid character: '%(invalid_char)s'"
-msgstr "Ungültiger Buchstabe: „%(invalid_char)s“"
+msgstr "Geçersiz karakter: %(invalid_char)s"
 
 #: Mopy/bash/ScriptParser.py:873
 msgid "Unterminated single quote."
-msgstr "Ungeschlossenes einfaches Anführungszeichen."
+msgstr "Sonlandırılmamış tek tırnak."
 
 #: Mopy/bash/ScriptParser.py:888
 msgid "Unterminated double quote."
-msgstr "Ungeschlossenes doppeltes Anführungszeichen."
+msgstr "Sonlandırılmamış çift tırnak."
 
 #: Mopy/bash/ScriptParser.py:909
 #, python-format
 msgid "Unexpected quotation mark (%(wrong_mark)s) following name token."
-msgstr "Unerwartetes Anführungszeichen (%(wrong_mark)s) nach einem Namenstoken."
+msgstr "Ad belirtecinin ardından beklenmeyen tırnak işareti (%(wrong_mark)s)."
 
 #: Mopy/bash/ScriptParser.py:930
 #, python-format
 msgid "Unexpected quotation mark (%(wrong_mark)s) following number token."
-msgstr "Unerwartetes Anführungszeichen (%(wrong_mark)s) nach einem Nummertoken."
+msgstr "Sayı belirtecinin ardından beklenmeyen tırnak işareti (%(wrong_mark)s)."
 
 #: Mopy/bash/ScriptParser.py:939
 #, python-format
 msgid "Unexpected symbol (%(wrong_symbol)s) following decimal token."
-msgstr "Unerwartetes Symbol (%(wrong_symbol)s) nach einem Dezimaltoken."
+msgstr "Ondalık belirtecinin ardından beklenmeyen simge (%(wrong_symbol)s)."
 
 #: Mopy/bash/ScriptParser.py:945
 #, python-format
 msgid "Unexpected quotation mark (%(wrong_mark)s) following parenthesis."
-msgstr "Unerwartetes Anführungszeichen (%(wrong_mark)s) nach einer Klammer."
+msgstr "Parantezin ardından beklenmeyen tırnak işareti %(wrong_mark)s."
 
 #: Mopy/bash/ScriptParser.py:1081 Mopy/bash/basher/belt.py:883
 msgid "No reason given"
-msgstr "Kein Grund gegeben"
+msgstr "Sebep belirtilmedi"
 
 #: Mopy/bash/ScriptParser.py:1088
 #, python-format
 msgid "Cannot assign a value to %(lhs_name)s, type is %(lhs_type)s."
-msgstr "Kann einen Wert nicht zu %(lhs_name)s zuweisen, der Typ ist %(lhs_type)s."
+msgstr "%(lhs_name)s değer atanamaz, türü %(lhs_type)s."
 
 #: Mopy/bash/ScriptParser.py:1167
 #, python-format
 msgid "Cannot increment %(lhs_name)s, type is %(lhs_type)s."
-msgstr "Kann %(lhs_name)s nicht erhöhen, Typ ist %(lhs_type)s."
+msgstr "%(lhs_name)s Arttırılamaz, türü %(lhs_type)s."
 
 #: Mopy/bash/ScriptParser.py:1174
 #, python-format
 msgid "Cannot decrement %(lhs_name)s, type is %(lhs_type)s."
-msgstr "Kann %(lhs_name)s nicht erniedrigen, Typ ist %(lhs_type)s."
+msgstr "%(lhs_name)s Düşürülemez, türü %(lhs_type)s."
 
 #: Mopy/bash/ScriptParser.py:1485
 #, python-format
 msgid "Cannot rename %(old_plugin_name)s to %(new_plugin_name)s: the extensions must match."
-msgstr "Kann %(old_plugin_name)s nicht zu %(new_plugin_name)s umbenennen: die Dateiendung muss gleich bleiben."
+msgstr "%(old_plugin_name)s, %(new_plugin_name)s olarak yeniden adlandırılamıyor: uzantıların eşleşmesi gerekir."
 
 #: Mopy/bash/ScriptParser.py:1519
 msgid "Could not read the wizard file. Please ensure it is encoded in UTF-8 format."
-msgstr "Konnte die Wizarddatei nicht lesen. Bitte stellen Sie sicher, dass sie im UTF-8-Format enkodiert ist."
+msgstr "Sihirbaz dosyası okunulamadı. UTF-8 formatında kodlanmış olduğundan emin olun."
 
 #: Mopy/bash/ScriptParser.py:1522
 msgid "Could not open the wizard file."
-msgstr "Konnte die Wizarddatei nicht öffnen."
+msgstr "Sihirbaz dosyası açılamadı."
 
 #: Mopy/bash/archives.py:73 Mopy/bash/archives.py:86
 msgid "Compressing files…"
-msgstr "Komprimiere Dateien…"
+msgstr "Dosyalar sıkıştırılıyor…"
 
 #: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1558
 #: Mopy/bash/bosh/bain.py:1579 Mopy/bash/bosh/converters.py:318
 #: Mopy/bash/bosh/converters.py:338 Mopy/bash/bosh/converters.py:539
 msgid "Extracting files…"
-msgstr "Entpacke Dateien…"
+msgstr "Dosyalar çıkartılıyor…"
 
 #: Mopy/bash/balt.py:109 Mopy/bash/balt.py:1571 Mopy/bash/balt.py:1579
 #: Mopy/bash/balt.py:1584 Mopy/bash/balt.py:1590 Mopy/bash/gui/popups.py:747
 #: Mopy/bash/gui/popups.py:763
 msgid "Warning"
-msgstr "Warnung"
+msgstr "Uyarı"
 
 #: Mopy/bash/balt.py:121
 msgid "Don't show this for the rest of operation."
-msgstr "Für den Rest dieser Operation nicht mehr anzeigen."
+msgstr "İşlem boyunca bunu bir daha gösterme."
 
 #: Mopy/bash/balt.py:121 Mopy/bash/gui/popups.py:62
 msgid "Don't show this in the future."
-msgstr "In Zukunft nicht mehr anzeigen."
+msgstr "Bunu daha sonra gösterme."
 
 #: Mopy/bash/balt.py:157
 #, python-format
 msgid "Invalid sound file %(sound_file)s."
-msgstr "Ungültige Audiodatei %(sound_file)s."
+msgstr "Geçersiz ses dosyası %(sound_file)s."
 
 #: Mopy/bash/balt.py:237 Mopy/bash/basher/gui_patchers.py:312
 msgid "Add"
-msgstr "Hinzufügen"
+msgstr "Ekle"
 
 #: Mopy/bash/balt.py:238 Mopy/bash/balt.py:287
 msgid "Rename"
-msgstr "Umbenennen"
+msgstr "Yeniden Adlandır"
 
 #: Mopy/bash/balt.py:239 Mopy/bash/basher/__init__.py:1926
 #: Mopy/bash/basher/gui_patchers.py:314
 msgid "Remove"
-msgstr "Entfernen"
+msgstr "Çıkar"
 
 #: Mopy/bash/balt.py:240 Mopy/bash/gui/buttons.py:124
 msgid "Save"
-msgstr "Speichern"
+msgstr "Kaydet"
 
 #: Mopy/bash/balt.py:241 Mopy/bash/basher/dialogs.py:672
 #: Mopy/bash/gui/buttons.py:116 Mopy/bash/gui/popups.py:438
 msgid "Cancel"
-msgstr "Abbrechen"
+msgstr "İptal Et"
 
 #: Mopy/bash/balt.py:287
 msgid "Rename to:"
-msgstr "Umbenennen zu:"
+msgstr "Adını şu yap:"
 
 #: Mopy/bash/balt.py:291 Mopy/bash/basher/mod_links.py:353
 #: Mopy/bash/basher/saves_links.py:122
 msgid "Name must be unique."
-msgstr "Name muss eindeutig sein."
+msgstr "İsim farklı olmalı."
 
 #: Mopy/bash/balt.py:432
 msgid "Progress"
-msgstr "Fortschritt"
+msgstr "İlerleme"
 
 #: Mopy/bash/balt.py:1052 Mopy/bash/balt.py:1950
 msgid "The selected items cannot be renamed."
-msgstr "Die ausgewählten Gegenstände können nicht umbenannt werden."
+msgstr "Seçili öğeler tekrardan adlandırılamaz."
 
 #: Mopy/bash/balt.py:1057
 #, python-format
 msgid "Renaming %(first_item)s is not allowed."
-msgstr "Das Umbenennen von %(first_item)s ist nicht erlaubt."
+msgstr "%(first_item)s Yeniden adlandırmak izin verilmez."
 
 #: Mopy/bash/balt.py:1063 Mopy/bash/basher/__init__.py:637
 msgid "No items selected for renaming."
-msgstr "Keine Gegenstände zum Umbenennen ausgewählt."
+msgstr "Yeniden Adlandırmak için seçilmiş öğe yok."
 
 #: Mopy/bash/balt.py:1209
 #, python-format
 msgid "Trying to open %(num)s items - are you sure ?"
-msgstr "Dies wird %(num)s Gegenstände öffnen. Sind Sie sicher, dass Sie fortfahren möchten?"
+msgstr "%(num)s Öğelerini açmaya çalışılıyor - Emin misin?"
 
 #: Mopy/bash/balt.py:1378
 msgid "Delete Items"
-msgstr "Gegenstände Löschen"
+msgstr "Öğeleri Sil"
 
 #: Mopy/bash/balt.py:1393 Mopy/bash/balt.py:1927
 msgid "The selected items cannot be deleted."
-msgstr "Die ausgewählten Gegenstände können nicht gelöscht werden."
+msgstr "Seçili öğeler silinemez."
 
 #: Mopy/bash/balt.py:1423
 #, python-format
 msgid "A file named %(target_file_name)s already exists in the hidden files directory. Overwrite it?"
-msgstr "Eine Datei namens %(target_file_name)s gibt es bereits im Verzeichnis versteckter Dateien. Soll sie überschrieben werden?"
+msgstr "Gizli Dosyalarda %(target_file_name)s adında bir dosya var. Üzerine yazılsın mı?"
 
 #: Mopy/bash/balt.py:1426 Mopy/bash/balt.py:2039
 msgid "Hide Files"
-msgstr "Dateien ausblenden"
+msgstr "Dosyaları gizle"
 
 #: Mopy/bash/balt.py:1442
 msgid "Unhide files:"
-msgstr "Dateien einblenden:"
+msgstr "Dosyaları görünür yap:"
 
 #: Mopy/bash/balt.py:1597 Mopy/bash/gui/popups.py:757
 msgid "Error"
-msgstr "Fehler"
+msgstr "Hata"
 
 #: Mopy/bash/balt.py:1603 Mopy/bash/gui/popups.py:768
 msgid "Information"
-msgstr "Information"
+msgstr "Bilgi"
 
 #: Mopy/bash/balt.py:1624
 msgid "Choose a directory."
-msgstr "Wählen Sie ein Verzeichnis."
+msgstr "Bir yol seç."
 
 #: Mopy/bash/balt.py:1904 Mopy/bash/gui/popups.py:309
 msgid "Delete"
-msgstr "Löschen"
+msgstr "Sil"
 
 #: Mopy/bash/balt.py:1920
 #, python-format
 msgid "Delete '%(filename)s'."
-msgstr "Löscht „%(filename)s“."
+msgstr "Sil %(filename)s."
 
 #: Mopy/bash/balt.py:1922
 msgid "Delete the selected items."
-msgstr "Löscht die ausgewählten Gegenstände."
+msgstr "Seçilmiş öğeleri sil."
 
 #: Mopy/bash/balt.py:1925
 msgid "Delete the selected items (some of the selected items cannot be deleted and will be skipped)."
-msgstr "Löscht die ausgewählten Gegenstände (einige der ausgewählten Gegenstände können nicht gelöscht werden und werden deshalb übersprungen)."
+msgstr "Seçili öğeleri sil (Bazı seçilmiş öğeler silinemez ve atlanılacak)."
 
 #: Mopy/bash/balt.py:1936 Mopy/bash/basher/installer_links.py:1010
 #: Mopy/bash/basher/settings_dialog.py:690
 msgid "Rename…"
-msgstr "Umbenennen…"
+msgstr "Yeniden Adlandır…"
 
 #: Mopy/bash/balt.py:1944
 msgid "Renames the selected item."
-msgstr "Benennt den ausgewählten Gegenstand um."
+msgstr "Seçilen öğeyi yeniden adlandırır."
 
 #: Mopy/bash/balt.py:1946
 msgid "Renames the selected items."
-msgstr "Benennt die ausgewählten Gegenstände um."
+msgstr "Seçilen öğeleri yeniden adlandırır."
 
 #: Mopy/bash/balt.py:1948
 msgid "Renames the selected items (some of the selected items cannot be renamed and will be skipped)."
-msgstr "Benennt die ausgewählten Gegenstände um (einige der ausgewählten Gegenstände können nicht umbenannt werden und werden deshalb übersprungen)."
+msgstr "Seçili öğeleri yeniden adlandır (bazı seçili öğeler tekrar adlandırılamaz ve atlanılacak)."
 
 #: Mopy/bash/balt.py:1960
 msgid "Open…"
-msgstr "Öffnen…"
+msgstr "Aç…"
 
 #: Mopy/bash/balt.py:1973
 #, python-format
 msgid "Open '%(item_to_open)s' with the system's default program."
-msgstr "Öffnet „%(item_to_open)s“ mit dem vom Betriebssystem konfiguriertem Standardprogramm."
+msgstr ""
 
 #: Mopy/bash/balt.py:1975
 msgid "Open the selected items with the system's default program."
-msgstr "Öffnet die ausgewählten Gegenstände mit dem vom Betriebssystem konfiguriertem Standardprogramm."
+msgstr ""
 
 #: Mopy/bash/balt.py:1979
 msgid "Open the selected items with the system's default program (some of the selected items cannot be opened and will be skipped)."
-msgstr "Öffnet die ausgewählten Gegenstände mit dem vom Betriebssystem konfiguriertem Standardprogramm (einige der ausgewählten Gegenstände können nicht geöffnet werden und werden deshalb übersprungen)."
+msgstr ""
 
 #: Mopy/bash/balt.py:1982
 msgid "The selected items cannot be opened with the system's default program."
-msgstr "Die ausgewählten Gegenstände können nicht mit dem vom Betriebssystem konfiguriertem Standardprogramm geöffnet werden."
+msgstr ""
 
 #: Mopy/bash/balt.py:1995
 msgid "Open Folder…"
-msgstr "Ordner Öffnen…"
+msgstr ""
 
 #: Mopy/bash/balt.py:2000
 #, python-format
 msgid "Open '%(data_store_path)s'."
-msgstr "Öffnet „%(data_store_path)s“."
+msgstr ""
 
 #: Mopy/bash/balt.py:2007
 msgid "Hide…"
-msgstr "Verstecken…"
+msgstr ""
 
 #: Mopy/bash/balt.py:2022
 #, python-format
 msgid "Hide '%(filename)s' by moving it to the 'Hidden' directory."
-msgstr "Versteckt „%(filename)s”, indem es in den „Hidden“-Ordner verschoben wird."
+msgstr ""
 
 #: Mopy/bash/balt.py:2024
 msgid "Hide the selected items by moving them to the 'Hidden' directory."
-msgstr "Versteckt die ausgewählten Gegenstände, indem sie in den „Hidden“-Ordner verschoben werden."
+msgstr ""
 
 #: Mopy/bash/balt.py:2028
 msgid "Hide the selected items by moving them to the 'Hidden' directory (some of the selected items cannot be hidden and will be skipped)."
-msgstr "Versteckt die ausgewählten Gegenstände, indem sie in den „Hidden“-Ordner verschoben werden (einige der ausgewählten Gegenstände können nicht versteckt werden und werden deshalb übersprungen)."
+msgstr ""
 
 #: Mopy/bash/balt.py:2031
 msgid "The selected items cannot be hidden."
-msgstr "Die ausgewählten Gegenstände können nicht versteckt werden."
+msgstr ""
 
 #: Mopy/bash/balt.py:2036
 #, python-format
 msgid "Hide these files? Note that hidden files are simply moved to the %(hdir)s directory."
-msgstr "Sollen diese Dateien versteckt werden? Bedenken Sie, dass verstecke Dateien nur in den %(hdir)s-Ordner bewegt werden."
+msgstr ""
 
 #: Mopy/bash/balt.py:2054
 msgid "Start Wrye Bash with Administrator Privileges?"
-msgstr "Soll Wrye Bash mit Administratorrechten gestartet werden?"
+msgstr ""
 
 #: Mopy/bash/balt.py:2057
 msgid "Run with Administrator Privileges"
-msgstr "Mit Administratorrechten starten"
+msgstr ""
 
 #: Mopy/bash/balt.py:2059
 msgid "Run normally"
-msgstr "Normal starten"
+msgstr ""
 
 #: Mopy/bash/balt.py:2060
 msgid "Use one of the following command line switches:"
@@ -398,152 +397,152 @@ msgstr ""
 
 #: Mopy/bash/balt.py:2066
 msgid "Less information"
-msgstr "Weniger Informationen"
+msgstr ""
 
 #: Mopy/bash/balt.py:2067
 msgid "UAC Protection"
-msgstr "UAC-Schutz"
+msgstr ""
 
 #: Mopy/bash/barb.py:138
 msgid "A different version of Wrye Bash was previously installed."
-msgstr "Eine andere Version von Wrye Bash war vorher installiert."
+msgstr ""
 
 #: Mopy/bash/barb.py:139
 #, python-format
 msgid "Previous Version: %(prev_bash_ver)s"
-msgstr "Vorherige Version: %(prev_bash_ver)s"
+msgstr ""
 
 #: Mopy/bash/barb.py:141
 #, python-format
 msgid "Current Version: %(curr_bash_ver)s"
-msgstr "Aktuelle Version: %(curr_bash_ver)s"
+msgstr ""
 
 #: Mopy/bash/barb.py:143
 msgid "Do you want to create a backup of your Wrye Bash settings before they are overwritten?"
-msgstr "Möchten Sie ein Backup Ihrer Wrye Bash-Einstellungen machen, bevor diese überschrieben werden?"
+msgstr ""
 
 #: Mopy/bash/barb.py:144
 msgid "Create Backup?"
-msgstr "Backup Erstellen?"
+msgstr ""
 
 #: Mopy/bash/barb.py:179
 msgid "Your Wrye Bash settings have been backed up successfully."
-msgstr "Ein Backup Ihrer Wrye Bash-Einstellungen wurde erfolgreich erstellt."
+msgstr ""
 
 #: Mopy/bash/barb.py:180
 #, python-format
 msgid "Backup Path: %(backup_dest_file)s"
-msgstr "Backuppfad: %(backup_dest_file)s"
+msgstr ""
 
 #: Mopy/bash/barb.py:182
 msgid "Backup File Created"
-msgstr "Backupdatei Erstellt"
+msgstr ""
 
 #: Mopy/bash/barb.py:188
 msgid "There was an error while trying to back up Wrye Bash's settings!"
-msgstr "Beim Erstellen des Backups der Wrye Bash-Einstellungen ist ein Fehler aufgetreten!"
+msgstr ""
 
 #: Mopy/bash/barb.py:190
 msgid "No backup was created."
-msgstr "Kein Backup wurde erstellt."
+msgstr ""
 
 #: Mopy/bash/barb.py:190
 msgid "Unable to Create Backup!"
-msgstr "Konnte Kein Backup Erstellen!"
+msgstr ""
 
 #: Mopy/bash/barb.py:297
 msgid "The data format of the selected backup file is newer than the current Wrye Bash version!"
-msgstr "Das Datenformat der ausgewählten Backupdatei ist neuer als die aktuelle Wrye Bash-Version!"
+msgstr ""
 
 #: Mopy/bash/barb.py:299
 #, python-format
 msgid "Backup %(saved_backup_ver)s is not compatible with %(wb_ver)s."
-msgstr "Die Backupversion %(saved_backup_ver)s ist nicht kompatibel mit %(wb_ver)s."
+msgstr ""
 
 #: Mopy/bash/barb.py:303
 msgid "You cannot use this backup with this version of Wrye Bash."
-msgstr "Sie können dieses Backup nicht mit Ihrer aktuellen Version von Wrye Bash benutzen."
+msgstr ""
 
 #: Mopy/bash/barb.py:304
 msgid "Error: Settings Are From Newer Wrye Bash Version"
-msgstr "Fehler: Einstellungen Sind Von Einer Neueren Wrye Bash-Version"
+msgstr ""
 
 #: Mopy/bash/barb.py:310
 #, python-format
 msgid "The selected backup file is for %(game_name)s while your current game is %(curr_bak_name)s"
-msgstr "Die ausgewählte Backupdatei ist für %(game_name)s, aber Ihr aktuelles Spiel ist %(curr_bak_name)s"
+msgstr ""
 
 #: Mopy/bash/barb.py:312
 msgid "Error: Settings Are From a Different Game"
-msgstr "Fehler: Einstellungen Sind Von Einem Anderen Spiel"
+msgstr ""
 
 #: Mopy/bash/barb.py:312
 msgid "You cannot use this backup with this game."
-msgstr "Sie können dieses Backup nicht mit diesem Spiel benutzen."
+msgstr ""
 
 #: Mopy/bash/barb.py:321
 msgid "The version of Wrye Bash used to create the selected backup file does not match the current Wrye Bash version!"
-msgstr "Ihre aktuelle Wrye Bash-Version ist nicht die gleiche, die benutzt wurde, um die ausgewählte Backupdatei zu erstellen!"
+msgstr ""
 
 #: Mopy/bash/barb.py:323
 #, python-format
 msgid "Backup %(saved_backup_ver)s does not match %(wb_ver)s."
-msgstr "Die Backupversion %(saved_backup_ver)s ist nicht gleich %(wb_ver)s."
+msgstr ""
 
 #: Mopy/bash/barb.py:327
 msgid "Do you want to restore this backup anyway?"
-msgstr "Möchten Sie das Backup trotzdem wiederherstellen?"
+msgstr ""
 
 #: Mopy/bash/barb.py:327
 msgid "Warning: Version Mismatch"
-msgstr "Warnung: Versionsunterschied"
+msgstr ""
 
 #: Mopy/bash/barb.py:375
 msgid "There was an error while trying to restore your settings from the backup file!"
-msgstr "Beim Wiederherstellen Ihrer Einstellungen aus der Backupdatei ist ein Fehler aufgetreten!"
+msgstr ""
 
 #: Mopy/bash/barb.py:376
 msgid "No settings were restored."
-msgstr "Keine Einstellungen wurden wiederhergestellt."
+msgstr ""
 
 #: Mopy/bash/barb.py:377
 msgid "Unable to restore backup!"
-msgstr "Konnte das Backup nicht wiederherstellen!"
+msgstr ""
 
 #: Mopy/bash/bash.py:164
 msgid "This most likely means you are missing a certain version of the Microsoft Visual C++ Redistributable. Try installing the latest x64 version."
-msgstr "Dies bedeutet wahrscheinlich, dass Ihnen eine bestimmte Version der Microsoft Visual C++ Redistributable fehlt. Versuchen Sie, die neueste x64-Version zu installieren."
+msgstr ""
 
 #: Mopy/bash/bash.py:169
 msgid "Ensure you have installed these dependencies properly. Should the error still occur, check your installed Microsoft Visual C++ Redistributables and try installing the latest x64 version."
-msgstr "Stellen Sie sicher, dass Sie alle Abhängigkeiten richtig installiert haben. Sollte der Fehler immer noch auftreten, überprüfen Sie bitte Ihre installierten Microsoft Visual C++ Redistributables und versuchen Sie, die neueste x64-Version zu installieren."
+msgstr ""
 
 #: Mopy/bash/bash.py:174
 msgid "The following dependencies could not be located or failed to load:"
-msgstr "Die folgenden Abhängigkeiten konnten nicht gefunden werden oder haben beim Laden einen Fehler verursacht:"
+msgstr ""
 
 #: Mopy/bash/bash.py:185
 msgid "Installation appears incomplete. Please reinstall Wrye Bash so that all files are installed."
-msgstr "Die Installation scheint nicht vollständig zu sein. Bitte installieren Sie Wrye Bash neu, damit alle Dateien vorhanden sind."
+msgstr ""
 
 #: Mopy/bash/bash.py:187
 #, python-format
 msgid "Correct installation will create a filled %(wb_folder)s folder."
-msgstr "Eine korrekte Installation sollte einen gefüllten %(wb_folder)s-Ordner erstellen."
+msgstr ""
 
 #: Mopy/bash/bash.py:204
 msgid "Only one instance of Wrye Bash can run."
-msgstr "Nur eine Instanz von Wrye Bash kann zur gleichen Zeit laufen."
+msgstr ""
 
 #: Mopy/bash/bash.py:409
 #, python-format
 msgid "Generating HTML file from '%(gen_target)s'"
-msgstr "Generiere HTML-Datei aus „%(gen_target)s“"
+msgstr ""
 
 #: Mopy/bash/bash.py:412 Mopy/bash/basher/__init__.py:4274
 #: Mopy/bash/bosh/bain.py:1856
 msgid "Done"
-msgstr "Fertig"
+msgstr ""
 
 #: Mopy/bash/bash.py:435
 msgid "Wrye Bash encountered an error."
@@ -567,16 +566,16 @@ msgstr ""
 
 #: Mopy/bash/bash.py:507
 msgid "Error! Unable to start Wrye Bash."
-msgstr "Fehler! Konnte Wrye Bash nicht starten."
+msgstr ""
 
 #: Mopy/bash/bash.py:507
 msgid "Please ensure Wrye Bash is correctly installed."
-msgstr "Bitte stellen Sie sicher, dass Wrye Bash korrekt installiert ist."
+msgstr ""
 
 #: Mopy/bash/bash.py:528
 #, python-format
 msgid "Wrye Bash needs administrator privileges to make changes to the %(gameName)s directory. If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges."
-msgstr "Wrye Bash braucht Administratorrechte, um Änderungen an dem %(gameName)s-Ordner zu machen. Wenn Sie Wrye Bash nicht mit solchen Rechten starten, werden Sie für jede Operation, die Rechte benötigt, einzeln aufgefordert."
+msgstr ""
 
 #: Mopy/bash/bash.py:552 Mopy/bash/basher/settings_dialog.py:755
 msgid "Backup Wrye Bash Settings"
@@ -588,23 +587,23 @@ msgstr ""
 
 #: Mopy/bash/bash.py:566
 msgid "If you continue, your current settings may be overwritten."
-msgstr "Falls Sie fortfahren, werden Ihre aktuellen Einstellungen möglicherweise überschrieben."
+msgstr ""
 
 #: Mopy/bash/bash.py:568
 msgid "Do you want to quit Wrye Bash now?"
-msgstr "Möchten Sie Wrye Bash jetzt beenden?"
+msgstr ""
 
 #: Mopy/bash/bash.py:570
 msgid "Unable to create backup!"
-msgstr "Konnte kein Backup erstellen!"
+msgstr ""
 
 #: Mopy/bash/bash.py:600
 msgid "The following (non-critical) warnings were found during initialization:"
-msgstr "Die folgenden (unkritischen) Warnungen wurde währen der Initialisierung gefunden:"
+msgstr ""
 
 #: Mopy/bash/bash.py:613
 msgid "Wrye Bash could not find a game to manage. Make sure to launch games you installed through Steam once and enable mods on games you installed through the Windows Store."
-msgstr "Wrye Bash konnte kein Spiel zum Verwalten finden. Stellen Sie sicher, dass Sie alle via Steam installierten Spiele mindestens einmal gestartet haben und Mods für alle via Windows Store installierten Spiele aktiviert haben."
+msgstr ""
 
 #: Mopy/bash/bash.py:617
 msgid "You can also use the -o command line argument or bash.ini to specify the path manually."
@@ -612,117 +611,117 @@ msgstr ""
 
 #: Mopy/bash/bash.py:643
 msgid "Wrye Bash Error"
-msgstr "Wrye Bash Fehler"
+msgstr ""
 
 #: Mopy/bash/bash.py:644
 msgid "Wrye Bash Warning"
-msgstr "Wrye Bash Warnung"
+msgstr ""
 
 #: Mopy/bash/bash.py:655 Mopy/bash/bash.py:746
 msgid "Quit"
-msgstr "Beenden"
+msgstr ""
 
 #: Mopy/bash/bash.py:657
 msgid "Continue"
-msgstr "Fortfahren"
+msgstr ""
 
 #: Mopy/bash/bash.py:658
 msgid "Abort"
-msgstr "Abbrechen"
+msgstr ""
 
 #: Mopy/bash/bash.py:723
 msgid "Select Game"
-msgstr "Spiel Auswählen"
+msgstr ""
 
 #: Mopy/bash/bash.py:737
 msgid "Search Games"
-msgstr "Spiele Suchen"
+msgstr ""
 
 #: Mopy/bash/bash.py:750 Mopy/bash/env/windows.py:1080
 msgid "Launch"
-msgstr "Starten"
+msgstr ""
 
 #: Mopy/bash/bash.py:756
 msgid "Please choose a game to manage."
-msgstr "Bitte wählen Sie ein Spiel, das Sie verwalten möchten, aus."
+msgstr ""
 
 #: Mopy/bash/bash.py:759
 msgid "Game Details"
-msgstr "Spieldetails"
+msgstr ""
 
 #: Mopy/bash/bash.py:762
 msgid "Variant:"
-msgstr "Variante:"
+msgstr ""
 
 #: Mopy/bash/bash.py:768
 msgid "Install Path:"
-msgstr "Installationspfad:"
+msgstr ""
 
 #: Mopy/bash/bash.py:817 Mopy/bash/bash.py:831
 msgid "N/A"
-msgstr "N/A"
+msgstr ""
 
 #: Mopy/bash/bash.py:860
 #, python-format
 msgid "Warning: you appear to be using a non-supported version of wxPython (%(curr_wx_ver)s). This will cause problems! It is highly recommended you use a %(supported_wx_series)s version. Do you still want to run Wrye Bash?"
-msgstr "Warnung: Sie scheinen eine nicht unterstützte Version von wxPython (%(curr_wx_ver)s) zu verwenden. Dies wird Probleme verursachen! Es wird dringend empfohlen, eine %(supported_wx_series)s-Version zu verwenden. Möchten Sie trotzdem Wrye Bash starten?"
+msgstr ""
 
 #: Mopy/bash/bash.py:866
 msgid "Unsupported wxPython Version Detected"
-msgstr "Nicht Unterstützte wxPython-Version Gefunden"
+msgstr ""
 
 #: Mopy/bash/bash.py:875
 #, python-format
 msgid "Only Python %(min_py_ver)s and newer is supported (%(curr_py_ver)s detected). If you know what you're doing, install the Python version of Wrye Bash and edit this warning out. Wrye Bash will now exit."
-msgstr "Nur Python %(min_py_ver)s und neuere Versionen sind unterstützt (Version %(curr_py_ver)s gefunden). Falls Sie wissen, was Sie tun, können Sie die Pythonversion von Wrye Bash installieren und diese Warnmeldung rauseditieren. Wrye Bash wird nun beenden."
+msgstr ""
 
 #: Mopy/bash/bash.py:881
 msgid "Unsupported Python Version Detected"
-msgstr "Nicht Unterstützte Python-Version Gefunden"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:139
 msgid "%(package_filename)s is a directory."
-msgstr "%(package_filename)s ist ein Ordner."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:142
 msgid "%(package_filename)s is a file."
-msgstr "%(package_filename)s ist eine Datei."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:146
 msgid "%(package_filename)s already exists."
-msgstr "%(package_filename)s existiert bereits."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:149
 msgid "%(package_filename)s already exists. Overwrite it?"
-msgstr "%(package_filename)s existiert bereits. Überschreiben?"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:158 Mopy/bash/basher/__init__.py:3305
 msgid "Installers"
-msgstr "Installer"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:159
 msgid "Mods"
-msgstr "Mods"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:160
 msgid "Saves"
-msgstr "Spielstände"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:161
 msgid "INI Edits"
-msgstr "INI-Änderungen"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:162
 msgid "Screenshots"
-msgstr "Screenshots"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:346 Mopy/bash/basher/__init__.py:349
 msgid "Another plugin has the same timestamp."
-msgstr "Ein anderes Plugin hat die gleiche Zeitmarke."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:352
 msgid "Plugin is ghosted."
-msgstr "Plugin ist ein Geist."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:368
 msgid "Bashed Patch."
@@ -730,60 +729,60 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:372 Mopy/bash/bosh/__init__.py:2609
 msgid "Technically mergeable, but has NoMerge tag."
-msgstr "Theoretisch mergebar, hat aber einen NoMerge-Tag."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:377
 msgid "Merged into Bashed Patch."
-msgstr "In den Bashed Patch gemerged."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:379
 msgid "Can be merged into Bashed Patch."
-msgstr "Kann in den Bashed Patch gemerged werden."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:382
 msgid "Can be ESL-flagged."
-msgstr "Kann ESL-Flagge erhalten."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:385
 msgid "Can be Overlay-flagged."
-msgstr "Kann Overlay-Flagge erhalten."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:389
 msgid "Light plugin."
-msgstr "Leichtes Plugin."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:392
 msgid "Overlay plugin."
-msgstr "Overlayplugin."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:395
 msgid "Master plugin."
-msgstr "Masterplugin."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:483
 msgid "Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving."
-msgstr "Masterdateienliste editieren/updaten? Beachen Sie, dass der Updateprozess möglicherweise automatisch einige Masterdateien umbennenn wird. Überprüfen Sie unbedingt die Änderungen, bevor Sie diese speichern."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:487
 msgid "BETA"
-msgstr "BETA"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:487
 msgid "Update Masters"
-msgstr "Aktualisiere Masterdateien"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:552 Mopy/bash/basher/__init__.py:1053
 msgid "Plugin name incompatible, will not load."
-msgstr "Inkompatibler Pluginname, wird nicht geladen."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:555 Mopy/bash/basher/__init__.py:1056
 msgid "Plugin name incompatible, cannot be activated."
-msgstr "Inkompatibler Pluginname, kann nicht aktiviert werden."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:573
 #, python-format
 msgid "Missing master of %(child_plugin_name)s."
-msgstr "Fehlende Masterdatei von %(child_plugin_name)s."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:578
 msgid "Reordered relative to other masters."
@@ -809,7 +808,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:737
 msgid "Some settings are applied. Some are overwritten by another tweak from the same installer."
-msgstr "Einige Einstellungen werden angewandt. Einige werden durch einen anderen Tweak des gleichen Installers überschrieben."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:743
 msgid "Some settings are changed."
@@ -817,7 +816,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:748
 msgid "Tweak is invalid."
-msgstr "Tweak ist ungültig."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:751
 msgid "Tweak adds new settings."
@@ -856,7 +855,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:867 Mopy/bash/basher/installer_links.py:597
 msgid "INI Tweaks"
-msgstr "INI-Tweaks"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1017
 msgid "Reordering mods is only allowed when they are sorted by Load Order."
@@ -876,7 +875,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1069
 msgid "One or more masters are missing."
-msgstr "Eine oder mehrere Masterdateien fehlen."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1072
 msgid "Loads before its masters."
@@ -884,7 +883,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1074
 msgid "Masters have been re-ordered."
-msgstr "Masterdateien wurden umsortiert."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1076
 msgid "Active in load order."
@@ -892,7 +891,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1078
 msgid "Imported into Bashed Patch."
-msgstr "In den Bashed Patch importiert."
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1244
 msgid "You can't deactivate the following mods:"
@@ -908,11 +907,11 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1414
 msgid "File corrupted on save!"
-msgstr "Datei beim Speichern beschädigt!"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1452 Mopy/bash/basher/__init__.py:2374
 msgid "Masters:"
-msgstr "Masterdateien:"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1501
 msgid "Change this value using an interactive dialog."
@@ -928,15 +927,15 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1529 Mopy/bash/basher/__init__.py:3593
 msgid "File:"
-msgstr "Datei:"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1533
 msgid "Modified:"
-msgstr "Geändert:"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1543
 msgid "Bash Tags:"
-msgstr "Bash-Tags:"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1595
 #, python-format
@@ -1002,7 +1001,7 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:1840 Mopy/bash/basher/gui_patchers.py:309
 #: Mopy/bash/basher/settings_dialog.py:1086
 msgid "Automatic"
-msgstr "Automatik"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1841
 msgid "Use the tags from the description and masterlist/userlist."
@@ -1019,7 +1018,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1876
 msgid "Copy to Description"
-msgstr "Zur Beschreibung kopieren"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1877
 msgid "Copies currently applied tags to the plugin description."
@@ -1033,7 +1032,7 @@ msgstr ""
 #: Mopy/bash/basher/gui_fomod.py:567 Mopy/bash/basher/installer_links.py:990
 #: Mopy/bash/basher/installer_links.py:1098 Mopy/bash/gui/buttons.py:163
 msgid "Select All"
-msgstr "Alles auswählen"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1893
 msgid "Selects all currently applied tags."
@@ -1043,7 +1042,7 @@ msgstr ""
 #: Mopy/bash/basher/gui_fomod.py:574 Mopy/bash/basher/installer_links.py:1000
 #: Mopy/bash/basher/installer_links.py:1104 Mopy/bash/gui/buttons.py:171
 msgid "Deselect All"
-msgstr "Alles abwählen"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1898
 msgid "Deselects all currently applied tags."
@@ -1132,7 +1131,7 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:2441
 #, python-format
 msgid "Saves: %(status_num)d"
-msgstr "Spielstände: %(status_num)d"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2516
 msgid "Needs Annealing due to a change in configuration."
@@ -1219,7 +1218,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2857 Mopy/bash/basher/__init__.py:2863
 msgid "Refreshing Packages…"
-msgstr "Aktualisiere Pakete…"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2873
 #, python-format
@@ -1231,39 +1230,39 @@ msgstr ""
 #: Mopy/bash/basher/settings_dialog.py:1575
 #: Mopy/bash/basher/settings_dialog.py:1591
 msgid "General"
-msgstr "Allgemein"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2919
 msgid "Matched"
-msgstr "Passend"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2920
 msgid "Missing"
-msgstr "Fehlend"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2921
 msgid "Mismatched"
-msgstr "Unpassend"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2922
 msgid "Conflicts"
-msgstr "Konflikte"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2923
 msgid "Underridden"
-msgstr "Unterschrieben"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2924
 msgid "Dirty"
-msgstr "Unsauber"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2925
 msgid "Skipped"
-msgstr "Übersprungen"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2943
 msgid "FOMOD"
-msgstr ""
+msgstr "FOMOD"
 
 #: Mopy/bash/basher/__init__.py:2944
 msgid "Disable the regular BAIN sub-packages and use the results of the last FOMOD installer run instead."
@@ -1272,7 +1271,7 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:2947 Mopy/bash/basher/__init__.py:2951
 #: Mopy/bash/basher/belt.py:381
 msgid "Sub-Packages"
-msgstr "Subpakete"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2948
 msgid "Use the regular BAIN sub-packages."
@@ -1284,7 +1283,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2979
 msgid "Comments"
-msgstr "Kommentare"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3089
 #, python-format
@@ -1294,12 +1293,12 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:3089 Mopy/bash/basher/installer_links.py:1462
 #: Mopy/bash/patcher/patch_files.py:55
 msgid "Overview"
-msgstr "Übersicht"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3098
 #, python-format
 msgid "Modified: %(modified_date)s"
-msgstr "Modifiziert: %(modified_date)s"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3101
 #, python-format
@@ -1309,7 +1308,7 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:3103
 #, python-format
 msgid "Files: %(num_files)s"
-msgstr "Dateien: %(num_files)s"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3105
 #, python-format
@@ -1319,29 +1318,29 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:3108
 #, python-format
 msgid "Matched: %(num_files)s"
-msgstr "Passend: %(num_files)s"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3110
 #, python-format
 msgid "Missing: %(num_files)s"
-msgstr "Fehlend: %(num_files)s"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3112
 #, python-format
 msgid "Conflicts: %(num_files)s"
-msgstr "Konflikte: %(num_files)s"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3116
 msgid "Configured Files"
-msgstr "Konfigurierte Dateien"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3135
 msgid "Skipped (Extension)"
-msgstr "Übersprungen (Endung)"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3137
 msgid "Skipped (Dir)"
-msgstr "Übersprungen (Dir)"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3298 Mopy/bash/basher/installers_links.py:440
 msgid "Do you want to enable Installers?"
@@ -1379,7 +1378,7 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:3437
 #, python-format
 msgid "Packages: %(status_num)d/%(total_status_num)d"
-msgstr "Pakete: %(status_num)d/%(total_status_num)d"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3547
 #, python-format
@@ -1389,7 +1388,7 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:3611 Mopy/bash/basher/__init__.py:3613
 #: Mopy/bash/basher/belt.py:392
 msgid "Notes:"
-msgstr "Notizen:"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3635
 #, python-format
@@ -1449,7 +1448,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1678
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1681
 msgid "Default"
-msgstr "Standard"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4026
 msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
@@ -1523,15 +1522,15 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4267
 msgid "Initializing Data"
-msgstr "Initialisiere Daten"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4269
 msgid "Initializing Version"
-msgstr "Initialisiere Version"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4272
 msgid "Initializing Windows"
-msgstr "Initialisiere Fenster"
+msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4290
 msgid "Initializing BSAs"
@@ -1551,7 +1550,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4307
 msgid "Generating Blank Bashed Patch"
-msgstr "Generiere leeren Bashed Patch"
+msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:145
 #, python-format
@@ -1608,7 +1607,7 @@ msgstr ""
 #: Mopy/bash/basher/app_buttons.py:278
 #, python-format
 msgid "Skip loading BSAs when opening %(xedit_name)s. Will disable some of its functions."
-msgstr "Überspringe das Laden von BSAs beim Öffnen von %(xedit_name)s. Einige seiner Funktionen werden nicht verfügbar sein."
+msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:296
 msgid "Quick Auto Clean"
@@ -1679,11 +1678,11 @@ msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:560
 msgid "Auto-Quit Disabled"
-msgstr "Automatisches Verlassen deaktiviert"
+msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:560
 msgid "Auto-Quit Enabled"
-msgstr "Automatisches Verlassen aktiviert"
+msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:565
 msgid "Help"
@@ -1691,7 +1690,7 @@ msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:574 Mopy/bash/basher/frames.py:58
 msgid "Doc Browser"
-msgstr "Dokument-Browser"
+msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:584 Mopy/bash/basher/links_init.py:376
 #: Mopy/bash/basher/links_init.py:444 Mopy/bash/basher/links_init.py:691
@@ -1717,7 +1716,7 @@ msgstr ""
 #: Mopy/bash/basher/belt.py:80 Mopy/bash/basher/belt.py:524
 #: Mopy/bash/basher/belt.py:535
 msgid "Installer Wizard"
-msgstr "Installer-Wizard"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:201 Mopy/bash/basher/installer_links.py:1474
 msgid "Options:"
@@ -1725,7 +1724,7 @@ msgstr ""
 
 #: Mopy/bash/basher/belt.py:205
 msgid "Description:"
-msgstr "Beschreibung:"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:283
 msgid "Selects all options on this page."
@@ -1755,7 +1754,7 @@ msgstr ""
 
 #: Mopy/bash/basher/belt.py:368
 msgid "Apply these selections"
-msgstr "Diese Auswahl anwenden"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:372 Mopy/bash/basher/gui_fomod.py:471
 msgid "Install this package"
@@ -1763,19 +1762,19 @@ msgstr ""
 
 #: Mopy/bash/basher/belt.py:384 Mopy/bash/bosh/__init__.py:3191
 msgid "Plugins"
-msgstr "Plugins"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:388
 msgid "INI Tweaks:"
-msgstr "INI-Tweaks:"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:430
 msgid "Need"
-msgstr "Benötigt"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:431
 msgid "Have"
-msgstr "Derzeit"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:453
 msgid "Wrye Bash Download"
@@ -1783,15 +1782,15 @@ msgstr ""
 
 #: Mopy/bash/basher/belt.py:454
 msgid "Version Requirements"
-msgstr "Versionsvoraussetzungen"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:457
 msgid "WARNING: The following version requirements are not met for using this installer."
-msgstr "WARNUNG: Die folgenden Versionsvoraussetzungen für diesen Installer sind nicht erfüllt."
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:461
 msgid "Install anyway"
-msgstr "Trotzdem installieren"
+msgstr ""
 
 #: Mopy/bash/basher/belt.py:519
 msgid "An error occurred in the wizard script:"
@@ -1833,7 +1832,7 @@ msgstr ""
 
 #: Mopy/bash/basher/belt.py:884
 msgid "The installer wizard was canceled:"
-msgstr "Der Installer-Wizard wurde abgebrochen:"
+msgstr ""
 
 #: Mopy/bash/basher/bsa_links.py:35
 msgid "Extract to Project…"
@@ -1858,7 +1857,7 @@ msgstr ""
 
 #: Mopy/bash/basher/bsa_links.py:68
 msgid "%(existing_proj)s already exists. Overwrite it?"
-msgstr "%(existing_proj)s existiert bereits. Überschreiben?"
+msgstr ""
 
 #: Mopy/bash/basher/bsa_links.py:75
 msgid "Extracting BSAs…"
@@ -2155,7 +2154,7 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:204 Mopy/bash/bosh/mods_metadata.py:647
 msgid "Mergeable"
-msgstr "Mergebar"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:205
 msgid "This is the text color used for plugins that could be merged into the Bashed Patch."
@@ -2175,7 +2174,7 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:310
 msgid "Author"
-msgstr "Autor"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:311
 msgid "Location"
@@ -2191,22 +2190,22 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:314
 msgid "Current LO"
-msgstr "Derzeite Ladereihenfolge"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:315 Mopy/bash/basher/dialogs.py:1041
 #: Mopy/bash/basher/links_init.py:344 Mopy/bash/basher/links_init.py:433
 #: Mopy/bash/basher/links_init.py:653 Mopy/bash/basher/links_init.py:781
 #: Mopy/bash/basher/links_init.py:830 Mopy/bash/basher/links_init.py:882
 msgid "File"
-msgstr "Datei"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:316
 msgid "Files"
-msgstr "Dateien"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:317 Mopy/bash/basher/mod_links.py:485
 msgid "Group"
-msgstr "Gruppe"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:318 Mopy/bash/bosh/cosaves.py:696
 msgid "Index"
@@ -2218,11 +2217,11 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:320
 msgid "Load Order"
-msgstr "Ladereihenfolge"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:321
 msgid "Modified"
-msgstr "Datum"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:322 Mopy/bash/bosh/_saves.py:511
 msgid "MI"
@@ -2230,27 +2229,27 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:323
 msgid "Order"
-msgstr "Sortierung"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:324 Mopy/bash/basher/dialogs.py:1006
 msgid "Package"
-msgstr "Paket"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:325
 msgid "Hours"
-msgstr "Spielstunden"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:326
 msgid "Player"
-msgstr "Spieler"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:327
 msgid "Rating"
-msgstr "Bewertung"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:328
 msgid "Size"
-msgstr "Größe"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:329
 msgid "Status"
@@ -2258,23 +2257,23 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:505
 msgid "Launch OBMM"
-msgstr "OBMM starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:507
 msgid "Launch InsanitySorrow's Oblivion Launcher"
-msgstr "InsanitySorrow's Oblivion Launcher starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:509
 msgid "Launch InsanitySorrow's Readme Generator"
-msgstr "InsanitySorrow's Readme Generator starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:511
 msgid "Launch InsanitySorrow's Random Name Generator"
-msgstr "InsanitySorrow's Random Name Generator starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:513
 msgid "Launch InsanitySorrow's Random NPC Generator"
-msgstr "InsanitySorrow's Random NPC Generator starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:515
 msgid "Oblivion Face Exchange Lite"
@@ -2286,7 +2285,7 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:519
 msgid "Launch BSA Commander"
-msgstr "BSA Commander starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:521
 msgid "Launch Tabula"
@@ -2294,15 +2293,15 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:523
 msgid "Launch TES4Files"
-msgstr "TES4Files starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:528
 msgid "Launch Tes4Gecko"
-msgstr "Tes4Gecko starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:530
 msgid "Launch Oblivion Book Creator"
-msgstr "Oblivion Book Creator starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:535
 msgid "Launch TesVGecko"
@@ -2310,31 +2309,31 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:540
 msgid "Launch AutoCad"
-msgstr "AutoCad starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:542
 msgid "Launch Blender"
-msgstr "Blender starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:544
 msgid "Launch Dogwaffle"
-msgstr "DogWaffle starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:546
 msgid "Launch Gmax"
-msgstr "Gmax starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:548
 msgid "Launch Maya"
-msgstr "Maya starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:549
 msgid "Launch 3dsMax"
-msgstr "3dsMax starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:551
 msgid "Launch Milkshape 3D"
-msgstr "Milkshape 3D starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:553
 msgid "Launch Mudbox"
@@ -2354,7 +2353,7 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:560
 msgid "Launch Wings 3D"
-msgstr "Wings 3D starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:562
 msgid "Launch Softimage Mod Tool"
@@ -2362,15 +2361,15 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:569
 msgid "Launch AniFX"
-msgstr "AniFX starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:571
 msgid "Launch Art Of Illusion"
-msgstr "Art Of Illusion starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:573
 msgid "Launch Artweaver"
-msgstr "Artweaver starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:575
 msgid "Launch CrazyBump"
@@ -2378,7 +2377,7 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:577
 msgid "Launch DDSConverter"
-msgstr "DDSConverter starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:579
 msgid "Launch DeepPaint"
@@ -2386,31 +2385,31 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:581
 msgid "Launch FastStone Image Viewer"
-msgstr "FastStone Image Viewer starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:583
 msgid "Launch Genetica"
-msgstr "Genetica starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:585
 msgid "Launch Genetica Viewer"
-msgstr "Genetica Viewer starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:587
 msgid "Launch GIMP"
-msgstr "GIMP starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:589
 msgid "Launch IcoFX"
-msgstr "IcoFX starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:591
 msgid "Launch Inkscape"
-msgstr "Inkscape starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:593
 msgid "Launch IrfanView"
-msgstr "IrfanView starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:595
 msgid "Launch Krita"
@@ -2430,19 +2429,19 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:603
 msgid "Launch Paint.NET"
-msgstr "Paint.NET starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:606
 msgid "Launch PaintShop Photo Pro"
-msgstr "PaintShop Photo Pro starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:610
 msgid "Launch Photoshop"
-msgstr "Photoshop starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:614
 msgid "Launch PhotoScape"
-msgstr "PhotoScape starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:616
 msgid "Launch PhotoSEAM"
@@ -2450,15 +2449,15 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:618
 msgid "Launch Photobie"
-msgstr "Photobie starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:620
 msgid "Launch PhotoFiltre"
-msgstr "PhotoFiltre starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:622
 msgid "Launch Pixel Studio Pro"
-msgstr "Pixel Studio Pro starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:624
 msgid "Launch Pixia"
@@ -2470,7 +2469,7 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:628
 msgid "Launch TwistedBrush"
-msgstr "TwistedBrush starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:630
 msgid "Launch Windows Texture Viewer"
@@ -2482,19 +2481,19 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:634
 msgid "Launch XnView"
-msgstr "XnView starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:638
 msgid "Launch Nifskope"
-msgstr "Nifskope starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:642
 msgid "Launch Audacity"
-msgstr "Audacity starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:645
 msgid "Launch ABC Amber Audio Converter"
-msgstr "ABC Amber Audio Converter starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:647
 msgid "Launch Switch"
@@ -2502,39 +2501,39 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:652
 msgid "Launch Fraps"
-msgstr "Fraps starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:655
 msgid "Interactive Map of Cyrodiil and Shivering Isles"
-msgstr "Interaktive Karte von Cyrodiil und den Shivering Isles"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:658
 msgid "Launch LogitechKeyboard"
-msgstr "LogitechKeyboard starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:661
 msgid "Launch MediaMonkey"
-msgstr "MediaMonkey starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:663
 msgid "Launch Notepad++"
-msgstr "Notepad++ starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:665
 msgid "Launch Steam"
-msgstr "Steam starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:667
 msgid "Launch EVGA Precision"
-msgstr "EVGA Precision starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:669
 msgid "Launch WinMerge"
-msgstr "WinMerge starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:671
 msgid "Launch FreeMind"
-msgstr "FreeMind starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:673
 msgid "Launch Freeplane"
@@ -2542,15 +2541,15 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:675
 msgid "Launch FileZilla"
-msgstr "FileZilla starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:677
 msgid "Launch Egg Translator"
-msgstr "Egg-Translator starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:679
 msgid "Launch RAD Video Tools"
-msgstr "RAD Video Tools starten"
+msgstr ""
 
 #: Mopy/bash/basher/constants.py:681
 msgid "Launch WinSnap"
@@ -2562,7 +2561,7 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:687
 msgid "Launch BOSS"
-msgstr "BOSS starten"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:72 Mopy/bash/bosh/cosaves.py:908
 #: Mopy/bash/brec/record_structs.py:70 Mopy/bash/game/oblivion/records.py:295
@@ -2572,19 +2571,19 @@ msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:73
 msgid "Race"
-msgstr "Rasse"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:74
 msgid "Gender"
-msgstr "Geschlecht"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:76
 msgid "Stats"
-msgstr "Eigenschaften"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:77
 msgid "Class"
-msgstr "Klasse"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:86 Mopy/bash/basher/patcher_dialog.py:103
 msgid "Import"
@@ -2593,11 +2592,11 @@ msgstr ""
 #: Mopy/bash/basher/dialogs.py:112 Mopy/bash/brec/record_structs.py:72
 #: Mopy/bash/game/oblivion/records.py:213
 msgid "Health"
-msgstr "Gesundheit"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:138
 msgid "Face imported."
-msgstr "Gesicht importiert."
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:143
 msgid "New Project"
@@ -2650,7 +2649,7 @@ msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:169
 msgid "Docs Directory"
-msgstr "Docs-Ordner"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:170
 msgid "Include an empty Docs directory in the project."
@@ -2679,7 +2678,7 @@ msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:294 Mopy/bash/basher/dialogs.py:305
 msgid "New Plugin"
-msgstr "Neues Plugin"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:302
 msgid "Select which extension the plugin will have."
@@ -2727,7 +2726,7 @@ msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:371
 msgid "Masters"
-msgstr "Masterdateien"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:405
 #, python-format
@@ -2792,7 +2791,7 @@ msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:604 Mopy/bash/basher/frames.py:447
 msgid "Update"
-msgstr "Aktualisieren"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:609
 msgid "Clean Data - Preview"
@@ -3041,7 +3040,7 @@ msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:1046
 msgid "Options"
-msgstr "Einstellungen"
+msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:1049
 msgid "Import What?"
@@ -3171,11 +3170,11 @@ msgstr ""
 #: Mopy/bash/basher/files_links.py:230
 #, python-format
 msgid "Revert %(target_file_name)s to snapshot %(snapsnot_file_name)s dated %(snapshot_date)s?"
-msgstr "Rückkehr %(target_file_name)s zu Snapshot %(snapsnot_file_name)s datiert mit %(snapshot_date)s?"
+msgstr ""
 
 #: Mopy/bash/basher/files_links.py:234
 msgid "Revert to Snapshot"
-msgstr "Rückkehr zu Snapshot"
+msgstr ""
 
 #: Mopy/bash/basher/files_links.py:250
 #, python-format
@@ -3215,7 +3214,7 @@ msgstr ""
 #: Mopy/bash/basher/files_links.py:301
 #, python-format
 msgid "Revert %(target_file_name)s to backup dated %(backup_date)s?"
-msgstr "Rückkehr %(target_file_name)s zu Backup datiert mit %(backup_date)s?"
+msgstr ""
 
 #: Mopy/bash/basher/files_links.py:315
 #, python-format
@@ -3257,7 +3256,7 @@ msgstr ""
 
 #: Mopy/bash/basher/frames.py:84
 msgid "Forget Doc"
-msgstr "Löse Dokument"
+msgstr ""
 
 #: Mopy/bash/basher/frames.py:85
 msgid "Removes the link between this plugin file and the matching document."
@@ -3334,7 +3333,7 @@ msgstr ""
 
 #: Mopy/bash/basher/frames.py:444
 msgid "Copy Text"
-msgstr "Kopiere Text"
+msgstr ""
 
 #: Mopy/bash/basher/frames.py:445
 msgid "Copy a text version of the report to the clipboard."
@@ -3350,7 +3349,7 @@ msgstr ""
 
 #: Mopy/bash/basher/frames.py:544
 msgid "OMOD Config"
-msgstr "OMOD-Konfiguration"
+msgstr ""
 
 #: Mopy/bash/basher/frames.py:566
 msgid "Name:"
@@ -3362,7 +3361,7 @@ msgstr ""
 
 #: Mopy/bash/basher/frames.py:568
 msgid "Website:"
-msgstr "Webseite:"
+msgstr ""
 
 #: Mopy/bash/basher/frames.py:569
 msgid "Author:"
@@ -3374,7 +3373,7 @@ msgstr ""
 
 #: Mopy/bash/basher/frames.py:572
 msgid "Abstract"
-msgstr "Abstrakt"
+msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:56
 msgid "The ModuleConfig.xml file used to specify the FOMOD installer for this package does not conform to the FOMOD specification. This should be reported to and fixed by the mod author. Please share the error log shown below with them as well. You can use the \"Copy Log\" button to easily copy it."
@@ -3407,12 +3406,12 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:95
 msgid "Cancel Installation"
-msgstr "Installation Abbrechen"
+msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:129
 #, python-format
 msgid "FOMOD Installer - %(fomod_title)s"
-msgstr "FOMOD-Installer - %(fomod_title)s"
+msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:173
 msgid "This installer cannot start due to the following unmet conditions:"
@@ -3446,7 +3445,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:236
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1571
 msgid "None"
-msgstr "Keine"
+msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:384
 msgid "This option cannot be enabled."
@@ -3587,7 +3586,7 @@ msgstr ""
 #: Mopy/bash/basher/gui_patchers.py:771 Mopy/bash/brec/record_structs.py:126
 #: Mopy/bash/parsers.py:1110
 msgid "Value"
-msgstr "Wert"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:780
 msgid "Enter the desired custom tweak text."
@@ -3611,7 +3610,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1007
 msgid "Import Graphics"
-msgstr "Import: Grafik"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1008
 msgid "Import graphics (models, icons, etc.) from source plugins."
@@ -3627,7 +3626,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1024
 msgid "Import Actors"
-msgstr "Import: Actors"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1025
 msgid "Import various actor attributes from source plugins."
@@ -3643,7 +3642,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1040
 msgid "Import Cells"
-msgstr "Import: Cells"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1041
 msgid "Import cells (climate, lighting, and water) from source plugins."
@@ -3659,7 +3658,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1057 Mopy/bash/basher/mod_links.py:1982
 msgid "Import Relations"
-msgstr "Import: Beziehungen"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1058
 msgid "Import relations from source plugins/files."
@@ -3667,7 +3666,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1065
 msgid "Import Inventory"
-msgstr "Import: Inventar"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1066
 msgid "Merges changes to items in various inventories."
@@ -3683,7 +3682,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1081
 msgid "Import Actors: Spells"
-msgstr "Import Actors: Zauber"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1082
 msgid "Merges changes to actor spell / effect lists."
@@ -3691,7 +3690,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1089 Mopy/bash/basher/mod_links.py:2378
 msgid "Import Names"
-msgstr "Import: Namen"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1090
 msgid "Import names from source plugins/files."
@@ -3707,7 +3706,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1106
 msgid "Import Sounds"
-msgstr "Import: Sounds"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1107
 msgid "Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source plugins."
@@ -3715,7 +3714,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1116 Mopy/bash/basher/mod_links.py:2131
 msgid "Import Stats"
-msgstr "Import: Eigenschaften"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1117
 msgid "Import stats from any pickupable items from source plugins/files."
@@ -3725,7 +3724,7 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:2092 Mopy/bash/basher/mod_links.py:2094
 #: Mopy/bash/basher/mod_links.py:2100 Mopy/bash/basher/mod_links.py:2112
 msgid "Import Scripts"
-msgstr "Skripte importieren"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1126
 msgid "Import scripts on various objects (e.g. containers, weapons, etc.) from source plugins."
@@ -3757,7 +3756,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1159
 msgid "Import Spell Stats"
-msgstr "Import: Zaubereigenschaften"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1160
 msgid "Import stats from spells from source plugins/files."
@@ -3821,7 +3820,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1219
 msgid "Tweak Assorted"
-msgstr "Tweak: Verschiedenes"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1220
 msgid "Tweak various records in miscellaneous ways."
@@ -3829,7 +3828,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1227
 msgid "Tweak Clothes"
-msgstr "Tweak: Kleidung"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1228
 msgid "Tweak clothing weight and blocking."
@@ -3837,7 +3836,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1234
 msgid "Tweak Settings"
-msgstr "Tweak: Einstellungen"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1235
 msgid "Tweak game settings."
@@ -3845,7 +3844,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1241
 msgid "Tweak Names"
-msgstr "Tweak: Namen"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1242
 msgid "Tweak object names to sort them by type/stats or to improve things like lore friendliness."
@@ -3853,7 +3852,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1249
 msgid "Tweak Actors"
-msgstr "Tweak: Actors"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1250
 msgid "Tweak NPC and Creatures records in specified ways."
@@ -3869,7 +3868,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1264
 msgid "Replace Form IDs"
-msgstr "Ersetze FormIDs"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1265
 msgid "Imports Form Id replacers from csv files into the Bashed Patch."
@@ -3877,7 +3876,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1283
 msgid "Leveled Lists"
-msgstr "Leveled-Listen"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1285
 msgid "Merges changes to leveled lists from all active and/or merged plugins."
@@ -3889,7 +3888,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1291
 msgid "Override Delev/Relev Tags"
-msgstr "Überschreibe Delev-/Relev-Tags"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1292
 msgid "Add Delev/Relev Tags to Plugin"
@@ -3917,7 +3916,7 @@ msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1316
 msgid "Contents Checker"
-msgstr "Prüfen von Inhalten"
+msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:1317
 msgid "Checks contents of leveled lists, inventories and containers for correct types."
@@ -3957,7 +3956,7 @@ msgstr ""
 
 #: Mopy/bash/basher/ini_links.py:36
 msgid "Valid Tweaks First"
-msgstr "Gültige Tweaks zuerst"
+msgstr ""
 
 #: Mopy/bash/basher/ini_links.py:38
 msgid "Valid tweak files will be shown first."
@@ -3993,11 +3992,11 @@ msgstr ""
 
 #: Mopy/bash/basher/ini_links.py:82
 msgid "INI Tweak Errors"
-msgstr "INI-Tweak-Fehler"
+msgstr ""
 
 #: Mopy/bash/basher/ini_links.py:93 Mopy/bash/gui/buttons.py:179
 msgid "Apply"
-msgstr "Anwenden"
+msgstr ""
 
 #: Mopy/bash/basher/ini_links.py:99
 #, python-format
@@ -4151,7 +4150,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:450
 msgid "Anneal"
-msgstr "Installation aktualisieren"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:451
 #, python-format
@@ -4170,7 +4169,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:505
 msgid "Has Extra Directories"
-msgstr "Hat zusätzliche Verzeichnisse"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:506
 msgid "Allow installation of files in non-standard directories."
@@ -4195,7 +4194,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:553
 msgid "Install Last"
-msgstr "Am Schluss installieren"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:554
 msgid "Install Missing Files"
@@ -4264,7 +4263,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:694
 msgid "Package Structure"
-msgstr "Paketstruktur"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:699
 msgid "Export Achlist"
@@ -4313,7 +4312,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:806
 msgid "Open a search for this on Google?"
-msgstr "Soll eine Suche danach bei Google geöffnet werden?"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:807
 msgid "Open at Google"
@@ -4333,7 +4332,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:846 Mopy/bash/basher/mod_links.py:592
 msgid "Refresh"
-msgstr "Aktualisieren"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:847
 msgid "Rescan selected packages. Ignores \"Don't Refresh\" flag on projects. Will forcibly recalculate the CRCs of all files in any selected projects."
@@ -4349,7 +4348,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:868
 msgid "Skip Voices"
-msgstr "Überspringe Voices"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:872
 #, python-format
@@ -4358,7 +4357,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:883
 msgid "Uninstall"
-msgstr "Deinstallieren"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:884
 #, python-format
@@ -4372,7 +4371,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:903
 msgid "Copy Conflicts to Project"
-msgstr "Konflikte zum Projekte kopieren"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:904
 msgid "Copy all files that conflict with the selected package into a new project. Conflicts with inactive packages are included."
@@ -4387,7 +4386,7 @@ msgstr ""
 #: Mopy/bash/basher/installer_links.py:925 Mopy/bash/bosh/bain.py:1906
 #: Mopy/bash/bosh/bain.py:2201
 msgid "Scanning Packages…"
-msgstr "Untersuche Pakete…"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:939
 #, python-format
@@ -4503,7 +4502,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:1161
 msgid "%(target_proj)s already exists. Overwrite it?"
-msgstr "%(target_proj)s existiert bereits. Überschreiben?"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:1168
 msgid "Unpacking to project…"
@@ -4578,7 +4577,7 @@ msgstr ""
 #: Mopy/bash/basher/installer_links.py:1280
 #, python-format
 msgid "Use solid compression for %(new_archive)s?"
-msgstr "Hohe Komprimierung für %(new_archive)s nutzen?"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:1287
 msgid "Packing to archive…"
@@ -4753,7 +4752,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:1497
 msgid "BCF Information"
-msgstr "BCF-Information"
+msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:1504
 msgid "Apply.."
@@ -4826,15 +4825,15 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:157
 msgid "Only Show Installed?"
-msgstr "Nur installierte anzeigen?"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:161
 msgid "BAIN Packages"
-msgstr "BAIN-Pakete"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:166
 msgid "Anneal All"
-msgstr "Alle aktualisieren"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:167
 #, python-format
@@ -4855,7 +4854,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:215
 msgid "Full Refresh"
-msgstr "Volle Aktualisierung"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:216
 msgid "Perform a full refresh of all data files, recalculating all CRCs. This can take 5-15 minutes."
@@ -4867,7 +4866,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:229
 msgid "Refresh Data"
-msgstr "Daten aktualisieren"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:230
 #, python-format
@@ -4972,7 +4971,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:351
 msgid "Auto-Anneal"
-msgstr "Auto-Aktualisieren"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:352
 msgid "Enable/Disable automatic annealing of packages."
@@ -4980,7 +4979,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:356
 msgid "Auto-Anneal/Install Wizards"
-msgstr "Auto-Aktualisieren/Installations-Wizwards"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:358
 msgid "Enable/Disable automatic installing or anneal (as applicable) of packages after running its wizard."
@@ -4996,7 +4995,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:372
 msgid "Auto-Refresh Projects"
-msgstr "Auto-Refresh von Projekten"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:374
 msgid "Toggles whether or not Wrye Bash will automatically detect changes to projects in the installers folder."
@@ -5058,7 +5057,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1533
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1717
 msgid "Enabled"
-msgstr "Aktiviert"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:439
 msgid "Enable Installers"
@@ -5066,7 +5065,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:460
 msgid "BSA Redirection"
-msgstr "BSA-Redirection"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:461
 msgid "Use Quarn's BSA redirection technique."
@@ -5082,7 +5081,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:497
 msgid "Show Inactive Conflicts"
-msgstr "Inaktive Konflikte zeigen"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:498
 msgid "In the conflicts tab also display conflicts with inactive (not installed) installers"
@@ -5090,7 +5089,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:505
 msgid "Show Lower Conflicts"
-msgstr "Kleinere Konflikte zeigen"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:506
 msgid "In the conflicts tab also display conflicts with lower order installers (or lower loading active bsas)"
@@ -5106,7 +5105,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:521
 msgid "Avoid at Startup"
-msgstr "Beim Starten vermeiden"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:522
 msgid "Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning."
@@ -5131,7 +5130,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:552
 msgid "Projects First"
-msgstr "Projekte zuerst"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:554
 msgid "If checked, sort projects to the top of the list."
@@ -5157,7 +5156,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:607
 msgid "Skip Screenshots"
-msgstr "Screenshots Überspringen"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:608
 msgid "Skips the installation of files in screenshot directories."
@@ -5174,7 +5173,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:625
 msgid "Skip Images"
-msgstr "Bilder überspringen"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:626
 msgid "Skips the installation of images (.png, .jpg, etc.)."
@@ -5182,7 +5181,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:632
 msgid "Skip Docs"
-msgstr "Docs überspringen"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:633
 msgid "Skips the installation of documentation (.txt, .html, etc.)."
@@ -5190,7 +5189,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:639
 msgid "Skip DistantLOD"
-msgstr "DistantLOD überspringen"
+msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:640
 msgid "Skips the installation of files in the distantlod folder."
@@ -5297,15 +5296,15 @@ msgstr ""
 
 #: Mopy/bash/basher/links_init.py:118
 msgid "Launch TES4View"
-msgstr "TES4View starten"
+msgstr ""
 
 #: Mopy/bash/basher/links_init.py:122
 msgid "Launch TES4Trans"
-msgstr "TES4Trans starten"
+msgstr ""
 
 #: Mopy/bash/basher/links_init.py:127
 msgid "Launch Tes4LODGen"
-msgstr "Tes4LODGen starten"
+msgstr ""
 
 #: Mopy/bash/basher/links_init.py:191 Mopy/bash/basher/links_init.py:409
 #: Mopy/bash/basher/links_init.py:459 Mopy/bash/basher/links_init.py:711
@@ -5366,7 +5365,7 @@ msgstr ""
 #: Mopy/bash/basher/links_init.py:353 Mopy/bash/basher/links_init.py:663
 #: Mopy/bash/basher/links_init.py:787
 msgid "Edit"
-msgstr "Bearbeiten"
+msgstr ""
 
 #: Mopy/bash/basher/links_init.py:367 Mopy/bash/basher/links_init.py:438
 #: Mopy/bash/basher/links_init.py:681 Mopy/bash/basher/links_init.py:793
@@ -5483,12 +5482,12 @@ msgstr ""
 #: Mopy/bash/basher/misc_links.py:95
 #, python-format
 msgid "Convert to %(img_ext)s"
-msgstr "Zu %(img_ext)s konvertieren"
+msgstr ""
 
 #: Mopy/bash/basher/misc_links.py:103
 #, python-format
 msgid "Converting to %(img_ext)s"
-msgstr "Konvertiere zu %(img_ext)s"
+msgstr ""
 
 #: Mopy/bash/basher/misc_links.py:123
 msgid "Sets JPG quality for saving."
@@ -5548,7 +5547,7 @@ msgstr ""
 
 #: Mopy/bash/basher/misc_links.py:240
 msgid "Disable"
-msgstr "Deaktivieren"
+msgstr ""
 
 #: Mopy/bash/basher/misc_links.py:241
 msgid "Renames the selected ESM to a non-existent ESP so it will get removed when you next load and save the game."
@@ -5686,7 +5685,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:418
 msgid "Groups"
-msgstr "Gruppen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:421
 msgid "Add group:"
@@ -5741,7 +5740,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:566 Mopy/bash/basher/mod_links.py:586
 msgid "Import Groups"
-msgstr "Import: Gruppen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:570 Mopy/bash/basher/mod_links.py:2376
 msgid "Import names from:"
@@ -5786,7 +5785,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:636
 msgid "Ratings"
-msgstr "Bewertungen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:639
 msgid "Add rating:"
@@ -5810,7 +5809,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:658
 msgid "(Details not provided for this record type.)"
-msgstr "(Details für diesen Recordtyp nicht angegeben.)"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:669
 msgid "Readme…"
@@ -5831,7 +5830,7 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:687 Mopy/bash/basher/mods_links.py:351
 #: Mopy/bash/basher/mods_links.py:490
 msgid "Bash Tags"
-msgstr "Bash-Tags"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:711
 msgid "Create LOOT Entry…"
@@ -5888,7 +5887,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:843
 msgid "Allow Ghosting"
-msgstr "Erlaube Ghosting"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:843
 msgid "Allow Ghosting for selected mods"
@@ -5896,7 +5895,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:849 Mopy/bash/basher/mod_links.py:896
 msgid "Disallow Ghosting"
-msgstr "Verbiete Ghosting"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:850
 msgid "Disallow Ghosting for selected mods"
@@ -5920,7 +5919,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:886
 msgid "Invert Ghosting"
-msgstr "Ghosting umkehren"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:887
 msgid "Invert Ghosting for selected mods"
@@ -6009,7 +6008,7 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:1028
 #, python-format
 msgid "Activate %(bp_name)s?"
-msgstr "Aktiviere %(bp_name)s?"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1035
 #, python-format
@@ -6031,7 +6030,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1063
 msgid "Existential Error"
-msgstr "Existentieller Fehler"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1069
 msgid "This patch was built in CBash mode. This is no longer supported. You can either use Wrye Bash 307 to convert it to PBash format, or you can click \"Yes\" below to make Wrye Bash reset the configuration to default. If you click \"No\", the patch building will abort now."
@@ -6166,7 +6165,7 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:1362 Mopy/bash/basher/mod_links.py:1365
 #: Mopy/bash/patcher/patch_files.py:107
 msgid "Remove World Orphans"
-msgstr "World-Orphans entfernen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1349
 msgid "Remove orphaned cell records"
@@ -6212,7 +6211,7 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:1397
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:268
 msgid "Nvidia Fog Fix"
-msgstr "Nvidia-Nebelfix"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1388
 msgid "Modify fog values in interior cells to avoid the Nvidia black screen bug"
@@ -6225,11 +6224,11 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:1401 Mopy/bash/basher/saves_links.py:927
 #, python-format
 msgid "Scanning %(scanning_plugin)s"
-msgstr "Untersuche %(scanning_plugin)s"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1408
 msgid "Cells Fixed:"
-msgstr "Gefixte Cells:"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1423
 #, python-format
@@ -6239,12 +6238,12 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:1446
 #, python-format
 msgid "Replace existing %(existing_plugin)s?"
-msgstr "Ersetze bestehende %(existing_plugin)s?"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1483 Mopy/bash/basher/mod_links.py:1492
 #: Mopy/bash/basher/mod_links.py:1497 Mopy/bash/patcher/patch_files.py:121
 msgid "Decompile All"
-msgstr "Alles dekompilieren"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1484
 msgid "Removes effects of a \"recompile all\" on the mod"
@@ -6257,7 +6256,7 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:1496
 #, python-format
 msgid "Skipping %(skipping_plugin)s"
-msgstr "Überspringe %(skipping_plugin)s"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1530
 #, python-format
@@ -6367,7 +6366,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1744 Mopy/bash/basher/mod_links.py:1755
 msgid "Import Form IDs"
-msgstr "Importiere Form-IDs"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1747
 msgid "Form ID mapper file:"
@@ -6391,7 +6390,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1767 Mopy/bash/basher/mod_links.py:2358
 msgid "Objects Changed"
-msgstr "Objekte geändert"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1772
 msgid "Face…"
@@ -6412,7 +6411,7 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:1801
 #, python-format
 msgid "Imported face to: %(target_npc_edid)s"
-msgstr "Gesicht importiert nach: %(target_npc_edid)s"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1833
 msgid "%(filename)s is missing one or more masters. Without these, a data export is not possible:"
@@ -6468,7 +6467,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1949
 msgid "Export NPC Levels"
-msgstr "Exportiere NPC-Level"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1954
 msgid "Import NPC levels from:"
@@ -6476,7 +6475,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1956
 msgid "Import NPC Levels"
-msgstr "Import: NPC-Level"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1958
 msgid "Import NPC level info from text file to mod"
@@ -6496,7 +6495,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1971
 msgid "Export Relations"
-msgstr "Exportiere Beziehungen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1972 Mopy/bash/basher/mod_links.py:1983
 msgid "Relations…"
@@ -6528,7 +6527,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1998
 msgid "Export Factions"
-msgstr "Exportiere Fraktionen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1999 Mopy/bash/basher/mod_links.py:2010
 msgid "Factions…"
@@ -6544,7 +6543,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2009
 msgid "Import Factions"
-msgstr "Import: Fraktionen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2011
 msgid "Import factions from text file to mod"
@@ -6577,12 +6576,12 @@ msgstr ""
 #: Mopy/bash/basher/mod_links.py:2055 Mopy/bash/basher/mod_links.py:2066
 #: Mopy/bash/parsers.py:1031
 msgid "Export Scripts"
-msgstr "Skripte exportieren"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2061
 #, python-format
 msgid "Exported %(num_exported_scripts)d scripts from %(script_export_target)s:"
-msgstr "%(num_exported_scripts)d geänderte Skripte aus %(script_export_target)s exportiert:"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2071
 msgid "Import scripts from text files."
@@ -6624,7 +6623,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2120
 msgid "Export Stats"
-msgstr "Exportiere Eigenschaften"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2121 Mopy/bash/basher/mod_links.py:2132
 msgid "Stats…"
@@ -6644,7 +6643,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2134
 msgid "Import item stats from a text file. This will replace existing stats and is not reversible!"
-msgstr "Importiert Gegenstandseigenschaften aus Textdatei. Das ersetzt vorhandene Eigenschaften und kann nicht rückgängig gemacht werden!"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2137
 msgid "No relevant stats to import."
@@ -6652,11 +6651,11 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2148
 msgid "Export Prices To:"
-msgstr "Exportiere Preise Nach:"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2150
 msgid "Export Prices"
-msgstr "Exportiere Preise"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2151 Mopy/bash/basher/mod_links.py:2162
 msgid "Prices…"
@@ -6668,11 +6667,11 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2159
 msgid "Import Prices From:"
-msgstr "Importiere Preise Von:"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2161
 msgid "Import Prices"
-msgstr "Import: Preise"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2163
 msgid "Import item prices from a text file or another plugin."
@@ -6680,7 +6679,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2164
 msgid "Import item prices from a text file. This will replace existing prices and is not reversible!"
-msgstr "Importiert Preise von Gegenständen aus einer Textdatei. Dies ersetzt bestehende Preise und kann nicht rückgängig gemacht werden!"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2167
 msgid "No relevant prices to import."
@@ -6712,7 +6711,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2192
 msgid "Import Sigil Stone Details"
-msgstr "Importiere Siegelsteindetails"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2194
 msgid "Import sigil stone details from a text file to a plugin."
@@ -6720,7 +6719,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2195
 msgid "Import sigil stone details from a text file. This will replace the existing data on sigil stones with the same FormIDs and is not reversible!"
-msgstr "Importiert Siegelsteindetails aus einer Textdatei. Dies ersetzt bestehende Siegelsteindaten mit der gleichen FormID und kann nicht rückgängig gemacht werden!"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2199
 msgid "No relevant sigil stone details to import."
@@ -6737,11 +6736,11 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2231
 msgid "Export Spell Details To:"
-msgstr "Exportiere Zauberdetails Nach:"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2233
 msgid "Export Spell Details"
-msgstr "Exportiere Zauberdetails"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2234 Mopy/bash/basher/mod_links.py:2243
 msgid "Spells…"
@@ -6757,11 +6756,11 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2240
 msgid "Import Spell Details From:"
-msgstr "Importiere Zauberdetails Von:"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2242
 msgid "Import Spell Details"
-msgstr "Importiere Zauberdetails"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2244
 msgid "Import spell details from a text file to a plugin."
@@ -6769,7 +6768,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2245
 msgid "Import spell details from a text file. This will replace the existing data on spells with the same FormIDs and is not reversible!"
-msgstr "Importiert Zauberdetails aus einer Textdatei. Dies ersetzt bestehende Zauberdaten mit den gleichen FormIDs und kann nicht rückgängig gemacht werden!"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2249
 msgid "No relevant spell details to import."
@@ -6814,7 +6813,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2277
 msgid "Import ingredient details from a text file. This will replace the existing data on ingredients with the same FormIDs and is not reversible!"
-msgstr "Importiert Zutatendetails aus einer Textdatei. Dies ersetzt bestehende Zutatendetails mit den gleichen FormIDs und kann nicht rückgängig gemacht werden!"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2281
 msgid "No relevant ingredient details to import."
@@ -6871,7 +6870,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2367
 msgid "Export Names"
-msgstr "Exportiere Namen"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2368 Mopy/bash/basher/mod_links.py:2383
 msgid "Names…"
@@ -6883,7 +6882,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2379
 msgid "Import record names from a text file. This will replace existing names and is not reversible!"
-msgstr "Importiert Record-Namen aus einer Textdatei. Das ersetzt existierende Namen und ist nicht rückgängig zu machen!"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2384
 msgid "Import full names from text file or other mod"
@@ -6891,7 +6890,7 @@ msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2393
 msgid "Objects Renamed"
-msgstr "Objekte umbenannt"
+msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2405
 #, python-format
@@ -7124,7 +7123,7 @@ msgstr ""
 #: Mopy/bash/basher/mods_links.py:490 Mopy/bash/bosh/_saves.py:511
 #: Mopy/bash/bosh/cosaves.py:696
 msgid "Plugin"
-msgstr "Plugin"
+msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:494
 msgid "Export Bash Tags…"
@@ -7246,7 +7245,7 @@ msgstr ""
 
 #: Mopy/bash/basher/patcher_dialog.py:84
 msgid "Build Patch"
-msgstr "Patch erstellen"
+msgstr ""
 
 #: Mopy/bash/basher/patcher_dialog.py:101
 msgid "Export"
@@ -7356,11 +7355,11 @@ msgstr ""
 #: Mopy/bash/basher/saves_links.py:153
 #, python-format
 msgid "Delete profile %(save_profile)s and the %(num_contained_saves)d save files it contains?"
-msgstr "Das Profil %(save_profile)s und die %(num_contained_saves)d Spielstände, die es enthält, wirklich löschen?"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:156
 msgid "Delete Profile"
-msgstr "Profil löschen"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:182
 #, python-format
@@ -7382,7 +7381,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:229
 msgid "Save Profiles"
-msgstr "Profile speichern"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:249
 msgid "Activate Masters"
@@ -7460,7 +7459,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:358
 msgid "Active Masters"
-msgstr "Aktive Masterdateien"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:367
 msgid "Masters are the same."
@@ -7468,7 +7467,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:368 Mopy/bash/basher/saves_links.py:378
 msgid "Diff Masters"
-msgstr "Masterdateien vergleichen"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:372
 msgid "Removed Masters"
@@ -7505,11 +7504,11 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:452 Mopy/bash/game/oblivion/__init__.py:520
 msgid "Clothing"
-msgstr "Kleidung"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:453 Mopy/bash/game/oblivion/__init__.py:518
 msgid "Armor"
-msgstr "Rüstung"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:476
 msgid "Enchantment:"
@@ -7558,7 +7557,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:559
 msgid "Loading Masters"
-msgstr "Lade Masterdateien"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:594
 msgid "Delete Spells…"
@@ -7570,7 +7569,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:600
 msgid "Player Spells"
-msgstr "Spieler-Zauber"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:606
 msgid "Set Number of Uses for Weapon Enchantments…"
@@ -7594,7 +7593,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:613 Mopy/bash/brec/record_structs.py:126
 msgid "Uses"
-msgstr "Verwendet"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:628 Mopy/bash/basher/saves_links.py:630
 #, python-format
@@ -7603,7 +7602,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:663
 msgid "You can't move saves to the current profile!"
-msgstr "Sie können keine Speicherstände in das aktuelle Profile verschieben!"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:673
 #, python-format
@@ -7626,15 +7625,15 @@ msgstr ""
 #: Mopy/bash/basher/saves_links.py:692
 #, python-format
 msgid "A file named %(conflicting_save)s already exists in %(save_profile)s. Overwrite it?"
-msgstr "Eine Datei namens %(conflicting_save)s existiert bereits in %(save_profile)s. Überschreiben?"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:697
 msgid "Move File"
-msgstr "Verschiebe Datei"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:717 Mopy/bash/basher/saves_links.py:738
 msgid "Repair Abomb"
-msgstr "Abomb reparieren"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:718
 msgid "Repair animation slowing"
@@ -7660,7 +7659,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:746
 msgid "Repair Hair"
-msgstr "Haare reparieren"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:747
 msgid "Repair hair that has been zeroed due to removal of a hair mod."
@@ -7690,7 +7689,7 @@ msgstr ""
 #: Mopy/bash/basher/saves_links.py:779 Mopy/bash/basher/saves_links.py:795
 #: Mopy/bash/basher/saves_links.py:799
 msgid "Reweigh Potions"
-msgstr "Gewichtsänderung von Tränken"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:774
 #, python-format
@@ -7708,11 +7707,11 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:798
 msgid "No potions to reweigh!"
-msgstr "Keine Tränke zur Gewichtsänderung!"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:804 Mopy/bash/basher/saves_links.py:809
 msgid "Statistics"
-msgstr "Statistiken"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:805
 msgid "Show savefile statistics"
@@ -7750,7 +7749,7 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:869
 msgid "Scanning for Bloat"
-msgstr "Scanne nach Bloat"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:876
 msgid "No bloating found."
@@ -7771,11 +7770,11 @@ msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:889
 msgid "Remove bloating?"
-msgstr "Datenblasen entfernen?"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:892
 msgid "Removing Bloat"
-msgstr "Entferne Datenblasen"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:896
 #, python-format
@@ -7807,7 +7806,7 @@ msgstr ""
 #: Mopy/bash/basher/saves_links.py:918 Mopy/bash/basher/saves_links.py:919
 #: Mopy/bash/basher/saves_links.py:986
 msgid "Update NPC Levels"
-msgstr "NPC-Levels aktualisieren"
+msgstr ""
 
 #: Mopy/bash/basher/saves_links.py:947
 msgid "NPCs Releveled:"
@@ -7966,7 +7965,7 @@ msgstr ""
 #: Mopy/bash/basher/settings_dialog.py:505
 #, python-format
 msgid "Language: %(selected_language)s"
-msgstr "Sprache: %(selected_language)s"
+msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:517
 msgid "Use Alternate Wrye Bash Name"
@@ -8596,7 +8595,7 @@ msgstr ""
 #: Mopy/bash/basher/settings_dialog.py:1561
 #: Mopy/bash/basher/settings_dialog.py:1585
 msgid "Language"
-msgstr "Sprache"
+msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:1547
 #: Mopy/bash/basher/settings_dialog.py:1566
@@ -9007,7 +9006,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:442
 msgid "Abomb Counter"
-msgstr "Abomb Zähler"
+msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:443
 #, python-format
@@ -9021,7 +9020,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:448
 msgid "Fbomb Counter"
-msgstr "Fbomb-Zähler"
+msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:449
 #, python-format
@@ -9034,11 +9033,11 @@ msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:453 Mopy/bash/bosh/_saves.py:457
 msgid "Created Items"
-msgstr "Erstellte Objekte"
+msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:454
 msgid "Records"
-msgstr "Datensätze"
+msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:455 Mopy/bash/bosh/_saves.py:510
 msgid "FormIDs"
@@ -9062,7 +9061,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:524 Mopy/bash/bosh/faces.py:79
 msgid "Unknown"
-msgstr "Unbekannt"
+msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:527
 msgid "Total"
@@ -9070,7 +9069,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:529
 msgid "New ObjectRef Bases"
-msgstr "Neue ObjectRef-Basen"
+msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:531
 msgid "Null Bases"
@@ -9090,7 +9089,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:549 Mopy/bash/bosh/_saves.py:583
 msgid "Scanning created objects"
-msgstr "Untersuche erstellte Objekte"
+msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:563 Mopy/bash/bosh/_saves.py:598
 msgid "Scanning change records."
@@ -9098,7 +9097,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/bain.py:148
 msgid "Unrecognized"
-msgstr "Unbekannt"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:231
 msgid "Calculating CRCs…"
@@ -9111,15 +9110,15 @@ msgstr ""
 
 #: Mopy/bash/bosh/bain.py:357
 msgid "Structure: Simple"
-msgstr "Structure: Einfach"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:360
 msgid "Structure: Complex/Simple"
-msgstr "Structure: Komplex/Einfach"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:362
 msgid "Structure: Complex"
-msgstr "Structure: Komplex"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:365
 msgid "Structure: Scattered (FOMOD)"
@@ -9127,11 +9126,11 @@ msgstr ""
 
 #: Mopy/bash/bosh/bain.py:367
 msgid "Structure: Corrupt/Incomplete"
-msgstr "Structure: Fehlerhaft/Unvollständig"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:369
 msgid "Structure: Unrecognized"
-msgstr "Structure: Unbekannt"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:670 Mopy/bash/bosh/bain.py:913
 #: Mopy/bash/bosh/bain.py:970
@@ -9170,15 +9169,15 @@ msgstr ""
 
 #: Mopy/bash/bosh/bain.py:1442
 msgid "Size: N/A"
-msgstr "Größe: N/A"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:1444
 msgid "Structure: N/A"
-msgstr "Struktur: N/A"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:1452
 msgid "Archive"
-msgstr "Archiv"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:1459
 #, python-format
@@ -9223,7 +9222,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/bain.py:1664
 msgid "Project"
-msgstr "Projekt"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:1724 Mopy/bash/bosh/bain.py:2319
 #: Mopy/bash/patcher/patch_files.py:361
@@ -9262,11 +9261,11 @@ msgstr ""
 #: Mopy/bash/bosh/bain.py:3102 Mopy/bash/bosh/bain.py:3117
 #: Mopy/bash/bosh/bain.py:3122 Mopy/bash/bosh/bain.py:3135
 msgid "Lower"
-msgstr "Niedriger"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:3119 Mopy/bash/bosh/bain.py:3137
 msgid "Higher"
-msgstr "Höher"
+msgstr ""
 
 #: Mopy/bash/bosh/bain.py:3120
 msgid "Loose File Conflicts"
@@ -9284,7 +9283,7 @@ msgstr ""
 #: Mopy/bash/bosh/bsa_files.py:947
 #, python-format
 msgid "Extracting %(target_bsa)s…"
-msgstr "Entpacke %(target_bsa)s…"
+msgstr ""
 
 #: Mopy/bash/bosh/bsa_files.py:1020
 msgid "Rebuilding Hashes…"
@@ -9296,7 +9295,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/converters.py:137
 msgid "Scanning Converter…"
-msgstr "Untersuche Konverter…"
+msgstr ""
 
 #: Mopy/bash/bosh/converters.py:383
 msgid "%(bcf_rel)s: Missing source file:"
@@ -9663,7 +9662,7 @@ msgstr ""
 #: Mopy/bash/parsers.py:638 Mopy/bash/parsers.py:856 Mopy/bash/parsers.py:948
 #: Mopy/bash/parsers.py:1111 Mopy/bash/parsers.py:1235
 msgid "Type"
-msgstr "Typ"
+msgstr ""
 
 #: Mopy/bash/bosh/faces.py:76
 msgid "Female"
@@ -9864,7 +9863,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/mods_metadata.py:679
 msgid "Circular Masters"
-msgstr "Zyklische Masterdateien"
+msgstr ""
 
 #: Mopy/bash/bosh/mods_metadata.py:680
 #, python-format
@@ -10057,7 +10056,7 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:58
 msgid "Cost"
-msgstr "Kosten"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:59
 msgid "Critical Damage"
@@ -10073,7 +10072,7 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:62
 msgid "Damage"
-msgstr "Schaden"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:63
 msgid "Damage Resistance"
@@ -10085,12 +10084,12 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:65 Mopy/bash/game/oblivion/records.py:295
 msgid "Duration"
-msgstr "Dauer"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:66 Mopy/bash/parsers.py:638
 #: Mopy/bash/parsers.py:856 Mopy/bash/parsers.py:1111
 msgid "Editor Id"
-msgstr "Editor-Id"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:67
 msgid "Enchantment Points"
@@ -10106,7 +10105,7 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:73
 msgid "Icon Path"
-msgstr "Icon-Pfad"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:74
 msgid "Impulse Distance"
@@ -10175,11 +10174,11 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:92
 msgid "Quality"
-msgstr "Qualität"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:93
 msgid "Reach"
-msgstr "Reichweite"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:94
 msgid "Regeneration Rate"
@@ -10227,7 +10226,7 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:109 Mopy/bash/game/oblivion/records.py:209
 msgid "Speed"
-msgstr "Schnelligkeit"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:110
 msgid "Spell Flags"
@@ -10263,7 +10262,7 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:121
 msgid "Spell Type"
-msgstr "Zaubertyp"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:122
 msgid "Spread"
@@ -10275,7 +10274,7 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:124 Mopy/bash/game/oblivion/records.py:205
 msgid "Strength"
-msgstr "Stärke"
+msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:125
 msgid "Strength Requirement"
@@ -10295,7 +10294,7 @@ msgstr ""
 
 #: Mopy/bash/brec/record_structs.py:130
 msgid "Weight"
-msgstr "Gewicht"
+msgstr ""
 
 #: Mopy/bash/bush.py:217
 msgid "No game support modules found in Mopy/bash/game."
@@ -10436,7 +10435,7 @@ msgstr ""
 
 #: Mopy/bash/game/enderal/__init__.py:115 Mopy/bash/game/nehrim/__init__.py:96
 msgid "Vynroots"
-msgstr "Vynwurzen"
+msgstr ""
 
 #: Mopy/bash/game/fallout3/__init__.py:167
 msgid "Big gun"
@@ -10573,57 +10572,57 @@ msgstr ""
 #: Mopy/bash/game/oblivion/__init__.py:217
 #: Mopy/bash/game/skyrim/__init__.py:220
 msgid "Blade (1 Handed)"
-msgstr "Klinge - einhändig"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:218
 #: Mopy/bash/game/skyrim/__init__.py:221
 msgid "Blade (2 Handed)"
-msgstr "Klinge - zweihändig"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:219
 #: Mopy/bash/game/skyrim/__init__.py:222
 msgid "Blunt (1 Handed)"
-msgstr "Stumpf - einhändig"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:220
 #: Mopy/bash/game/skyrim/__init__.py:223
 msgid "Blunt (2 Handed)"
-msgstr "Stumpf - zweihändig"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:221
 #: Mopy/bash/game/skyrim/__init__.py:224
 msgid "Staff"
-msgstr "Stab"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:222
 #: Mopy/bash/game/skyrim/__init__.py:225
 msgid "Bow"
-msgstr "Bogen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:226
 #: Mopy/bash/game/skyrim/__init__.py:229
 msgid "Argonian"
-msgstr "Argonier"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:227
 #: Mopy/bash/game/skyrim/__init__.py:230
 msgid "Breton"
-msgstr "Bretone"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:228
 #: Mopy/bash/game/skyrim/__init__.py:231
 msgid "Dark Elf"
-msgstr "Dunkelelf"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:229
 #: Mopy/bash/game/skyrim/__init__.py:232
 msgid "High Elf"
-msgstr "Hochelf"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:230
 #: Mopy/bash/game/skyrim/__init__.py:233
 msgid "Imperial"
-msgstr "Kaiserlicher"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:231
 #: Mopy/bash/game/skyrim/__init__.py:234
@@ -10638,50 +10637,50 @@ msgstr ""
 #: Mopy/bash/game/oblivion/__init__.py:233
 #: Mopy/bash/game/skyrim/__init__.py:236
 msgid "Orc"
-msgstr "Ork"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:234
 #: Mopy/bash/game/skyrim/__init__.py:237
 msgid "Redguard"
-msgstr "Rothwardone"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:235
 msgid "Vampire"
-msgstr "Vampir"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:236
 #: Mopy/bash/game/skyrim/__init__.py:238
 msgid "Wood Elf"
-msgstr "Waldelf"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:516
 msgid "Faction"
-msgstr "Fraktion"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:517
 msgid "Apparatus"
-msgstr "Gerät"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:519
 msgid "Book"
-msgstr "Buch"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:521
 msgid "Ingredient"
-msgstr "Zutat"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:522
 #: Mopy/bash/game/oblivion/records.py:1487
 msgid "Light"
-msgstr "Licht"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:523
 msgid "Misc. Item"
-msgstr "Sonstiges Objekt"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:524
 msgid "Weapon"
-msgstr "Waffe"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:525
 msgid "NPC"
@@ -10690,35 +10689,35 @@ msgstr ""
 #: Mopy/bash/game/oblivion/__init__.py:526
 #: Mopy/bash/patcher/patchers/mergers.py:842
 msgid "Creature"
-msgstr "Kreatur"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:527
 msgid "Key"
-msgstr "Schlüssel"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:528
 msgid "Potion"
-msgstr "Trank"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:529
 msgid "Cell"
-msgstr "Zelle"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:530
 msgid "Object Ref"
-msgstr "Objekt-Referenz"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:531
 msgid "NPC Ref"
-msgstr "NPC-Referenz"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:532
 msgid "Creature Ref"
-msgstr "Kreatur-Referenz"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:533
 msgid "Dialog Entry"
-msgstr "Dialogeintrag"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:534 Mopy/bash/parsers.py:709
 msgid "Quest"
@@ -10726,7 +10725,7 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:535
 msgid "AI Package"
-msgstr "AI-Paket"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/checkers.py:35
 msgid "Salan's Catalog of Alchemical Ingredients I"
@@ -10762,7 +10761,7 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/checkers.py:51
 msgid "Cobl Catalogs"
-msgstr "Cobl-Verzeichnisse"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/checkers.py:53
 msgid "Update COBL's catalogs of alchemical ingredients and effects."
@@ -10792,7 +10791,7 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/checkers.py:164
 msgid "SEWorld Tests"
-msgstr "SEWorld-Tests"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/checkers.py:165
 msgid "Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary."
@@ -10801,11 +10800,11 @@ msgstr ""
 #: Mopy/bash/game/oblivion/patcher/checkers.py:226
 #, python-format
 msgid "Quests Patched: %(total_changed)d"
-msgstr "Gepatchte Quests: %(total_changed)d"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:34
 msgid "Import Roads"
-msgstr "Import: Straßen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:35
 msgid "Import roads from source mods."
@@ -10817,7 +10816,7 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:114
 msgid "Cobl Exhaustion"
-msgstr "Cobl-Ermüdung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:116
 msgid "Modify greater powers to use Cobl's Power Exhaustion feature."
@@ -10834,7 +10833,7 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:185
 msgid "Morph Factions"
-msgstr "Morph-Fraktionen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:187
 msgid "Mark factions that player can acquire while morphing."
@@ -10850,7 +10849,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/preservers.py:374
 #: Mopy/bash/patcher/patchers/preservers.py:389
 msgid "Source Mods/Files"
-msgstr "Quellmods/Dateien"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:199
 msgid "Morphable Factions"
@@ -10858,87 +10857,87 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/patcher/preservers.py:207
 msgid "Member"
-msgstr "Mitglied"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:206
 msgid "Intelligence"
-msgstr "Intelligenz"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:207
 msgid "Willpower"
-msgstr "Willenskraft"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:208
 msgid "Agility"
-msgstr "Geschicklichkeit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:210
 msgid "Endurance"
-msgstr "Konstitution"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:211
 msgid "Personality"
-msgstr "Charisma"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:212
 msgid "Luck"
-msgstr "Glück"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:214
 msgid "Magicka"
-msgstr "Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:215
 msgid "Fatigue"
-msgstr "Ausdauer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:216
 msgid "Encumbrance"
-msgstr "Belastung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:217
 msgid "Armorer"
-msgstr "Waffenschmied"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:218
 msgid "Athletics"
-msgstr "Athletik"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:219
 msgid "Blade"
-msgstr "Schwertkampf"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:220
 msgid "Block"
-msgstr "Blocken"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:221
 msgid "Blunt"
-msgstr "Stumpfe Waffe"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:222
 msgid "Hand To Hand"
-msgstr "Nahkampf"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:223
 msgid "Heavy Armor"
-msgstr "Schwere Rüstung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:224
 msgid "Alchemy"
-msgstr "Alchemie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:225
 msgid "Alteration"
-msgstr "Veränderung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:226
 msgid "Conjuration"
-msgstr "Beschwörung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:227
 msgid "Destruction"
-msgstr "Zerstörung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:228
 msgid "Illusion"
@@ -10946,39 +10945,39 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:229
 msgid "Mysticism"
-msgstr "Mystik"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:230
 msgid "Restoration"
-msgstr "Wiederherstellung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:231
 msgid "Acrobatics"
-msgstr "Akrobatik"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:232
 msgid "Light Armor"
-msgstr "Leichte Rüstung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:233
 msgid "Marksman"
-msgstr "Schütze"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:234
 msgid "Mercantile"
-msgstr "Handelsgeschick"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:235
 msgid "Security"
-msgstr "Sicherheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:236
 msgid "Sneak"
-msgstr "Schleichen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:237
 msgid "Speechcraft"
-msgstr "Wortgewandheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:295
 msgid "Area"
@@ -11038,251 +11037,251 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:357
 msgid "(Attribute|Skill)"
-msgstr "(Attribut|Fähigkeit)"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1412
 msgid "Absorb Attribute"
-msgstr "Absorbieren: Attribut"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1413
 msgid "Absorb Fatigue"
-msgstr "Absorbieren: Ausdauer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1414
 msgid "Absorb Health"
-msgstr "Absorbieren: Gesundheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1415
 msgid "Absorb Skill"
-msgstr "Absorbieren: Fähigkeit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1416
 msgid "Absorb Magicka"
-msgstr "Absorbieren: Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1417
 msgid "Bound Armor Extra 01"
-msgstr "Gebundene Rüstung Extra 01"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1418
 msgid "Bound Armor Extra 02"
-msgstr "Gebundene Rüstung Extra 02"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1419
 msgid "Bound Armor Extra 03"
-msgstr "Gebundene Rüstung Extra 03"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1420
 msgid "Bound Armor Extra 04"
-msgstr "Gebundene Rüstung Extra 04"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1421
 msgid "Bound Armor Extra 05"
-msgstr "Gebundene Rüstung Extra 05"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1422
 msgid "Bound Armor Extra 06"
-msgstr "Gebundene Rüstung Extra 06"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1423
 msgid "Bound Armor Extra 07"
-msgstr "Gebundene Rüstung Extra 07"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1424
 msgid "Bound Armor Extra 08"
-msgstr "Gebundene Rüstung Extra 08"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1425
 msgid "Bound Armor Extra 09"
-msgstr "Gebundene Rüstung Extra 09"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1426
 msgid "Bound Armor Extra 10"
-msgstr "Gebundene Rüstung Extra 10"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1427
 msgid "Bound Boots"
-msgstr "Gebundene Stiefel"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1428
 msgid "Bound Cuirass"
-msgstr "Gebundener Brustharnisch"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1429
 msgid "Bound Gauntlets"
-msgstr "Gebundene Handschuhe"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1430
 msgid "Bound Greaves"
-msgstr "Gebundene Beinschienen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1431
 msgid "Bound Helmet"
-msgstr "Gebundener Helm"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1432
 msgid "Bound Shield"
-msgstr "Gebundener Schild"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1433
 msgid "Burden"
-msgstr "Last"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1434
 msgid "Bound Order Weapon 1"
-msgstr "Gebundene Ordenswaffe 1"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1435
 msgid "Bound Order Weapon 2"
-msgstr "Gebundene Ordenswaffe 2"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1436
 msgid "Bound Order Weapon 3"
-msgstr "Gebundene Ordenswaffe 3"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1437
 msgid "Bound Order Weapon 4"
-msgstr "Gebundene Ordenswaffe 4"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1438
 msgid "Bound Order Weapon 5"
-msgstr "Gebundene Ordenswaffe 5"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1439
 msgid "Bound Order Weapon 6"
-msgstr "Gebundene Ordenswaffe 6"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1440
 msgid "Summon Staff of Sheogorath"
-msgstr "Beschwören: Stab des Sheogorath"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1441
 msgid "Bound Priest Dagger"
-msgstr "Gebundener Priesterdolch"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1442
 msgid "Bound Weapon Extra 09"
-msgstr "Gebundene Waffe Extra 09"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1443
 msgid "Bound Weapon Extra 10"
-msgstr "Gebundene Waffe Extra 10"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1444
 msgid "Bound Axe"
-msgstr "Gebundene Axt"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1445
 msgid "Bound Bow"
-msgstr "Gebundener Bogen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1446
 msgid "Bound Dagger"
-msgstr "Gebundener Dolch"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1447
 msgid "Bound Mace"
-msgstr "Gebundener Streitkolben"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1448
 msgid "Bound Sword"
-msgstr "Gebundenes Schwert"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1449
 msgid "Calm"
-msgstr "Beruhigen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1450
 msgid "Chameleon"
-msgstr "Chamäleon"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1451
 msgid "Charm"
-msgstr "Bezaubern"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1452
 msgid "Command Creature"
-msgstr "Beherrschung: Kreatur"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1453
 msgid "Command Humanoid"
-msgstr "Beherrschung: Humanoid"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1454
 msgid "Cure Disease"
-msgstr "Heilung: Krankheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1455
 msgid "Cure Paralysis"
-msgstr "Heilung: Lähmung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1456
 msgid "Cure Poison"
-msgstr "Heilung: Gift"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1457
 msgid "DO NOT USE - Darkness"
-msgstr "NICHT VERWENDEN - Dunkelheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1458
 msgid "Demoralize"
-msgstr "Demoralisieren"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1459
 msgid "Damage Attribute"
-msgstr "Schaden: Attribut"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1460
 msgid "Damage Fatigue"
-msgstr "Schaden: Ausdauer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1461
 msgid "Damage Health"
-msgstr "Schaden: Gesundheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1462
 msgid "Damage Magicka"
-msgstr "Schaden: Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1463
 msgid "Disintegrate Armor"
-msgstr "Korrosion: Rüstung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1464
 msgid "Disease Info"
-msgstr "Info: Krankheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1465
 msgid "Disintegrate Weapon"
-msgstr "Korrosion: Waffe"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1466
 msgid "Drain Attribute"
-msgstr "Entziehen: Attribut"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1467
 msgid "Drain Fatigue"
-msgstr "Entziehen: Ausdauer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1468
 msgid "Drain Health"
-msgstr "Entziehen: Gesundheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1469
 msgid "Drain Skill"
-msgstr "Entziehen: Fähigkeit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1470
 msgid "Drain Magicka"
-msgstr "Entziehen: Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1471
 msgid "Dispel"
-msgstr "Magie bannen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1472
 msgid "Detect Life"
-msgstr "Leben entdecken"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1473
 msgid "Mehrunes Dagon"
@@ -11290,399 +11289,399 @@ msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1474
 msgid "Fire Damage"
-msgstr "Feuerschaden"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1475
 msgid "Fire Shield"
-msgstr "Feuerschild"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1476
 msgid "Fortify Attribute"
-msgstr "Festigen: Attribut"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1477
 msgid "Fortify Fatigue"
-msgstr "Festigen: Ausdauer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1478
 msgid "Fortify Health"
-msgstr "Festigen: Gesundheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1479
 msgid "Fortify Magicka Multiplier"
-msgstr "Festigen: Magie-Multiplikator"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1480
 msgid "Fortify Skill"
-msgstr "Festigen: Fähigkeit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1481
 msgid "Fortify Magicka"
-msgstr "Festigen: Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1482
 msgid "Frost Damage"
-msgstr "Frostschaden"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1483
 msgid "Frenzy"
-msgstr "Erzürnen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1484
 msgid "Frost Shield"
-msgstr "Frostschild"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1485
 msgid "Feather"
-msgstr "Feder"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1486
 msgid "Invisibility"
-msgstr "Unsichtbarkeit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1488
 msgid "Shock Shield"
-msgstr "Blitzschild"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1489
 msgid "DO NOT USE - Lock"
-msgstr "NICHT VERWENDEN - Schloss"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1490
 msgid "Summon Mythic Dawn Helm"
-msgstr "Beschwören: Helm der Mytischen Morgenröte"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1491
 msgid "Summon Mythic Dawn Armor"
-msgstr "Beschwören: Rüstung der Mytischen Morgenröte"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1492
 msgid "Night-Eye"
-msgstr "Nachtauge"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1493 Mopy/bash/gui/buttons.py:155
 msgid "Open"
-msgstr "Öffnen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1494
 msgid "Paralyze"
-msgstr "Lähmen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1495
 msgid "Poison Info"
-msgstr "Gift-Info"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1496
 msgid "Rally"
-msgstr "Ermutigen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1497
 msgid "Reanimate"
-msgstr "Wiederbeleben"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1498
 msgid "Restore Attribute"
-msgstr "Wiederherstellen: Attribut"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1499
 msgid "Reflect Damage"
-msgstr "Reflektieren: Schaden"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1500
 msgid "Restore Fatigue"
-msgstr "Wiederherstellen: Ausdauer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1501
 msgid "Restore Health"
-msgstr "Wiederherstellen: Gesundheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1502
 msgid "Restore Magicka"
-msgstr "Wiederherstellen: Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1503
 msgid "Reflect Spell"
-msgstr "Reflektieren: Zauber"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1504
 msgid "Resist Disease"
-msgstr "Widerstehen: Krankheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1505
 msgid "Resist Fire"
-msgstr "Widerstehen: Feuer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1506
 msgid "Resist Frost"
-msgstr "Widerstehen: Frost"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1507
 msgid "Resist Magic"
-msgstr "Widerstehen: Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1508
 msgid "Resist Normal Weapons"
-msgstr "Widerstehen: Normale Waffen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1509
 msgid "Resist Paralysis"
-msgstr "Widerstehen: Lähmung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1510
 msgid "Resist Poison"
-msgstr "Widerstehen: Gift"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1511
 msgid "Resist Shock"
-msgstr "Widerstehen: Blitz"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1512
 msgid "Resist Water Damage"
-msgstr "Widerstehen: Wasserschaden"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1513
 msgid "Spell Absorption"
-msgstr "Zauberabsorption"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1514
 msgid "Script Effect"
-msgstr "Skripteffekt"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1515
 msgid "Shock Damage"
-msgstr "Blitzschaden"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1516
 msgid "Shield"
-msgstr "Schild"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1517
 msgid "Silence"
-msgstr "Stille"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1518
 msgid "Stunted Magicka"
-msgstr "Verkümmerte Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1519
 msgid "Soul Trap"
-msgstr "Seelenfalle"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1520
 msgid "Sun Damage"
-msgstr "Sonnenschaden"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1521
 msgid "Telekinesis"
-msgstr "Telekinese"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1522
 msgid "Turn Undead"
-msgstr "Untote vertreiben"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1523
 msgid "Vampirism"
-msgstr "Vampirismus"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1524
 msgid "Water Breathing"
-msgstr "Unterwasseratmung"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1525
 msgid "Water Walking"
-msgstr "Auf Wasser laufen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1526
 msgid "Weakness to Disease"
-msgstr "Anfälligkeit für Krankheit"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1527
 msgid "Weakness to Fire"
-msgstr "Anfälligkeit für Feuer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1528
 msgid "Weakness to Frost"
-msgstr "Anfälligkeit für Frost"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1529
 msgid "Weakness to Magic"
-msgstr "Anfälligkeit für Magie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1530
 msgid "Weakness to Normal Weapons"
-msgstr "Anfälligkeit für Normale Waffen"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1531
 msgid "Weakness to Poison"
-msgstr "Anfälligkeit für Gift"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1532
 msgid "Weakness to Shock"
-msgstr "Anfälligkeit für Blitz"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1533
 msgid "Summon Rufio's Ghost"
-msgstr "Beschwören: Rufios Geist"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1534
 msgid "Summon Ancestor Guardian"
-msgstr "Beschwören: Urahnen-Wächter"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1535
 msgid "Summon Spiderling"
-msgstr "Beschwören: Spiderling"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1536
 msgid "Summon Flesh Atronach"
-msgstr "Beschwören: Fleisch-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1537
 msgid "Summon Bear"
-msgstr "Beschwören: Bär"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1538
 msgid "Summon Gluttonous Hunger"
-msgstr "Beschwören: Gefräßiger Hunger"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1539
 msgid "Summon Ravenous Hunger"
-msgstr "Beschwören: Heißhungriger Hunger"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1540
 msgid "Summon Voracious Hunger"
-msgstr "Beschwören: Gieriger Hunger"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1541
 msgid "Summon Dark Seducer"
-msgstr "Beschwören: Dunkler Verführer"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1542
 msgid "Summon Golden Saint"
-msgstr "Beschwören: Goldene Heilige"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1543
 msgid "Wabba Summon"
-msgstr "Beschwören: Wabba"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1544
 msgid "Summon Decrepit Shambles"
-msgstr "Beschwören: Klapprige Klapperscheuche"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1545
 msgid "Summon Shambles"
-msgstr "Beschwören: Klapperscheuche"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1546
 msgid "Summon Replete Shambles"
-msgstr "Beschwören: Verstörte Klapperscheuche"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1547
 msgid "Summon Hunger"
-msgstr "Beschwören: Hunger"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1548
 msgid "Summon Mangled Flesh Atronach"
-msgstr "Beschwören: Verstümmelter Fleisch-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1549
 msgid "Summon Torn Flesh Atronach"
-msgstr "Beschwören: Zerfetzter Fleisch-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1550
 msgid "Summon Stitched Flesh Atronach"
-msgstr "Beschwören: Geflickter Fleisch-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1551
 msgid "Summon Sewn Flesh Atronach"
-msgstr "Beschwören: Genähter Fleisch-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1552
 msgid "Extra Summon 20"
-msgstr "Beschwören: Extra 20"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1553
 msgid "Summon Clannfear"
-msgstr "Beschwören: Clannfear"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1554
 msgid "Summon Daedroth"
-msgstr "Beschwören: Daedroth"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1555
 msgid "Summon Dremora"
-msgstr "Beschwören: Dremora"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1556
 msgid "Summon Dremora Lord"
-msgstr "Beschwören: Dremora-Fürst"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1557
 msgid "Summon Flame Atronach"
-msgstr "Beschwören: Flammen-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1558
 msgid "Summon Frost Atronach"
-msgstr "Beschwören: Frost-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1559
 msgid "Summon Ghost"
-msgstr "Beschwören: Geist"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1560
 msgid "Summon Headless Zombie"
-msgstr "Beschwören: Kopfloser Zombie"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1561
 msgid "Summon Lich"
-msgstr "Beschwören: Lich"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1562
 msgid "Summon Scamp"
-msgstr "Beschwören: Skamp"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1563
 msgid "Summon Skeleton Guardian"
-msgstr "Beschwören: Skelett-Wächter"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1564
 msgid "Summon Skeleton Champion"
-msgstr "Beschwören: Skelett-Champion"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1565
 msgid "Summon Skeleton"
-msgstr "Beschwören: Skelett"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1566
 msgid "Summon Skeleton Hero"
-msgstr "Beschwören: Skelett-Held"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1567
 msgid "Summon Spider Daedra"
-msgstr "Beschwören: Spinnen-Daedra"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1568
 msgid "Summon Storm Atronach"
-msgstr "Beschwören: Sturm-Atronach"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1569
 msgid "Summon Faded Wraith"
-msgstr "Beschwören: Verblichenes Gespenst"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1570
 msgid "Summon Gloom Wraith"
-msgstr "Beschwören: Düstergespenst"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1571
 msgid "Summon Xivilai"
-msgstr "Beschwören: Xivilai"
+msgstr ""
 
 #: Mopy/bash/game/oblivion/records.py:1572
 msgid "Summon Zombie"
-msgstr "Beschwören: Zombie"
+msgstr ""
 
 #: Mopy/bash/game/patch_game.py:250
 msgid "Nirnroots"
-msgstr "Nirnwurzen"
+msgstr ""
 
 #: Mopy/bash/gui/buttons.py:130
 msgid "Save As…"
@@ -11766,11 +11765,11 @@ msgstr ""
 
 #: Mopy/bash/gui/popups.py:352
 msgid "Date"
-msgstr "Datum"
+msgstr ""
 
 #: Mopy/bash/gui/popups.py:355
 msgid "Time"
-msgstr "Zeit"
+msgstr ""
 
 #: Mopy/bash/gui/popups.py:391
 msgid "Manual (invalid)"
@@ -11786,7 +11785,7 @@ msgstr ""
 
 #: Mopy/bash/gui/text_components.py:226
 msgid "Search"
-msgstr "Suche"
+msgstr ""
 
 #: Mopy/bash/gui/wizards.py:35
 msgid "Wizard"
@@ -11892,31 +11891,31 @@ msgstr ""
 
 #: Mopy/bash/parsers.py:478 Mopy/bash/parsers.py:533
 msgid "Actor Eid"
-msgstr "Actor-Eid"
+msgstr ""
 
 #: Mopy/bash/parsers.py:478 Mopy/bash/parsers.py:533
 msgid "Actor Mod"
-msgstr "Actor-Mod"
+msgstr ""
 
 #: Mopy/bash/parsers.py:479
 msgid "Faction Eid"
-msgstr "Faction-Eid"
+msgstr ""
 
 #: Mopy/bash/parsers.py:479
 msgid "Faction Mod"
-msgstr "Fraktions-Mod"
+msgstr ""
 
 #: Mopy/bash/parsers.py:479 Mopy/bash/parsers.py:533
 msgid "Actor Object"
-msgstr "Actor-Objekt"
+msgstr ""
 
 #: Mopy/bash/parsers.py:480
 msgid "Faction Object"
-msgstr "Fraktions-Objekt"
+msgstr ""
 
 #: Mopy/bash/parsers.py:480
 msgid "Rank"
-msgstr "Rang"
+msgstr ""
 
 #: Mopy/bash/parsers.py:533
 msgid "Source Mod"
@@ -11928,20 +11927,20 @@ msgstr ""
 
 #: Mopy/bash/parsers.py:535
 msgid "Old CalcMax"
-msgstr "Alter CalcMax"
+msgstr ""
 
 #: Mopy/bash/parsers.py:535
 msgid "Old CalcMin"
-msgstr "Alter CalcMin"
+msgstr ""
 
 #: Mopy/bash/parsers.py:535
 msgid "Old Offset"
-msgstr "Alter Offset"
+msgstr ""
 
 #: Mopy/bash/parsers.py:638 Mopy/bash/parsers.py:856 Mopy/bash/parsers.py:948
 #: Mopy/bash/parsers.py:1110 Mopy/bash/parsers.py:1148
 msgid "Mod Name"
-msgstr "Mod-Name"
+msgstr ""
 
 #: Mopy/bash/parsers.py:638 Mopy/bash/parsers.py:856 Mopy/bash/parsers.py:948
 #: Mopy/bash/parsers.py:1110 Mopy/bash/parsers.py:1148
@@ -11950,31 +11949,31 @@ msgstr ""
 
 #: Mopy/bash/parsers.py:694
 msgid "Script"
-msgstr "Skript"
+msgstr ""
 
 #: Mopy/bash/parsers.py:749
 msgid "Main Eid"
-msgstr "Main-Eid"
+msgstr ""
 
 #: Mopy/bash/parsers.py:749
 msgid "Main Mod"
-msgstr "Main-Mod"
+msgstr ""
 
 #: Mopy/bash/parsers.py:749
 msgid "Main Object"
-msgstr "Main-Objekt"
+msgstr ""
 
 #: Mopy/bash/parsers.py:750
 msgid "Other Eid"
-msgstr "Andere Eid"
+msgstr ""
 
 #: Mopy/bash/parsers.py:750
 msgid "Other Mod"
-msgstr "Andere Mod"
+msgstr ""
 
 #: Mopy/bash/parsers.py:750
 msgid "Other Object"
-msgstr "Anderes Objekt"
+msgstr ""
 
 #: Mopy/bash/parsers.py:990
 #, python-format
@@ -11998,7 +11997,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/base.py:99
 msgid "Source Mods"
-msgstr "Quellmods"
+msgstr ""
 
 #: Mopy/bash/patcher/base.py:423
 #, python-format
@@ -12021,7 +12020,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patch_files.py:56
 msgid "Date/Time"
-msgstr "Datum/Zeit"
+msgstr ""
 
 #: Mopy/bash/patcher/patch_files.py:58
 #, python-format
@@ -12079,7 +12078,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patch_files.py:110
 msgid "Compiled All"
-msgstr "Alle kompiliert"
+msgstr ""
 
 #: Mopy/bash/patcher/patch_files.py:111
 #, python-format
@@ -12093,7 +12092,7 @@ msgstr ""
 #: Mopy/bash/patcher/patch_files.py:131
 #, python-format
 msgid "%(msg_plugin)s [Version %(plugin_ver)s]"
-msgstr "%(msg_plugin)s [Version %(plugin_ver)s]"
+msgstr ""
 
 #: Mopy/bash/patcher/patch_files.py:138
 msgid "Plugin Aliases"
@@ -12149,7 +12148,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/base.py:60
 msgid "Custom"
-msgstr "Frei definiert"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/base.py:164
 #, python-format
@@ -12216,17 +12215,17 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/mergers.py:758
 #, python-format
 msgid "Merged %(ll_label)s Lists"
-msgstr "Gemergte %(ll_label)s-Listen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/mergers.py:817
 #, python-format
 msgid "Empty %(ll_label)s Sublists"
-msgstr "Leere %(ll_label)s-Sublisten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/mergers.py:821
 #, python-format
 msgid "Empty %(ll_label)s Sublists Removed"
-msgstr "Leere %(ll_label)s-Sublisten entfernt"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/mergers.py:843
 msgid "Actor"
@@ -12234,11 +12233,11 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/mergers.py:844
 msgid "Item"
-msgstr "Gegenstand"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/mergers.py:845
 msgid "Spell"
-msgstr "Zauber"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/mergers.py:847
 msgid "Delevelers/Relevelers"
@@ -12272,7 +12271,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:87
 msgid "Mayu's Animation Overhaul Skeleton Tweaker"
-msgstr "Mayu's Animations Overhaul Skelett-Tweaker"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:88
 msgid "Changes all (modded and vanilla) NPCs to use the MAO skeletons. Not compatible with VORB. Note: ONLY use if you have MAO installed."
@@ -12280,7 +12279,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:92
 msgid "MAO Skeleton Setter"
-msgstr "MAO-Skeletteinrichter"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:110
 msgid "VadersApp's Oblivion Real Bodies Skeleton Tweaker"
@@ -12296,7 +12295,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:158
 msgid "Vanilla Beast Skeleton Tweaker"
-msgstr "Vanilla Tierskelett-Tweak"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:159
 msgid "Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues."
@@ -12304,11 +12303,11 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:164
 msgid "Vanilla Beast Skeleton"
-msgstr "Vanilla Tierskelett"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:179
 msgid "Redguard FGTS Patcher"
-msgstr "Rothwardonen-FGTS-Patcher"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:180
 msgid "Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards."
@@ -12321,7 +12320,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:198
 msgid "No Bloody Creatures"
-msgstr "Keine blutigen Kreaturen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:199
 msgid "Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."
@@ -12336,7 +12335,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:219
 msgid "As Intended: Imps"
-msgstr "Wie vorgesehen: Kobolde"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:220
 msgid "Set imps to have the unassigned vanilla imp spells as discovered by the UOP team and made into a mod by Tejon."
@@ -12344,15 +12343,15 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:223
 msgid "All imps"
-msgstr "Alle Kobolde"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:224
 msgid "Only fullsize imps"
-msgstr "Nur große Kobolde"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:225
 msgid "Only implings"
-msgstr "Nur Koböldchen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:226
 #, python-format
@@ -12361,7 +12360,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:249
 msgid "As Intended: Boars"
-msgstr "Wie vorgesehen: Wildschweine"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_actors.py:250
 msgid "Set boars to have the unassigned vanilla boar spells as discovered by the UOP team and made into a mod by Tejon."
@@ -12462,7 +12461,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:54
 msgid "Armor Shows Amulets"
-msgstr "Rüstung zeigt Amulette"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:55
 msgid "Prevents armor from hiding amulets."
@@ -12470,7 +12469,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:60
 msgid "Armor Shows Rings"
-msgstr "Rüstung zeigt Ringe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:61
 msgid "Prevents armor from hiding rings."
@@ -12484,7 +12483,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:72
 msgid "Clothing Shows Amulets"
-msgstr "Kleidung zeigt Amulette"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:73
 msgid "Prevents Clothing from hiding amulets."
@@ -12492,7 +12491,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:78
 msgid "Clothing Shows Rings"
-msgstr "Kleidung zeigt Ringe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:79
 msgid "Prevents Clothing from hiding rings."
@@ -12500,7 +12499,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:87
 msgid "Bow Reach Fix"
-msgstr "Bogen-Reichweitenfix"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:88
 msgid "Fix bows with zero reach (zero reach causes CTDs)."
@@ -12526,7 +12525,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:121
 msgid "Right Hand Rings"
-msgstr "Ringe an der rechten Hand"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:122
 msgid "Fixes rings to unequip consistently by making them prefer the right hand."
@@ -12539,7 +12538,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:179
 msgid "All Clothing Playable"
-msgstr "Jede Kleidung spielbar"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:180
 msgid "Sets all clothing to be playable."
@@ -12547,7 +12546,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:183
 msgid "Playable Clothes"
-msgstr "Spielbare Kleidung"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:184
 #, python-format
@@ -12556,7 +12555,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:190
 msgid "All Armor Playable"
-msgstr "Jede Rüstung spielbar"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:191
 msgid "Sets all armor to be playable."
@@ -12564,7 +12563,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:194
 msgid "Playable Armor"
-msgstr "Spielbare Rüstung"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:195
 #, python-format
@@ -12573,7 +12572,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:201
 msgid "DarNified Books"
-msgstr "DarNifizierte Bücher"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:202
 msgid "Books will be reformatted for DarN UI."
@@ -12595,7 +12594,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:292
 msgid "No Light Flicker"
-msgstr "Kein Lichtflackern"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:293
 msgid "Remove flickering from lights. For use on low-end machines."
@@ -12818,11 +12817,11 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:935
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1090
 msgid "Unlimited"
-msgstr "Unbegrenzt"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:596
 msgid "Set Enchantment Number of Uses"
-msgstr "Setze Anzahl von Anwendungen bei Verzauberungen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:597
 #, python-format
@@ -12987,7 +12986,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:81
 msgid "Max Weight Amulets"
-msgstr "Max. Gewicht Amulette"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:82
 msgid "Amulet weight will be capped."
@@ -12995,7 +12994,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:89
 msgid "Max Weight Rings"
-msgstr "Max. Gewicht Ringe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:90
 msgid "Ring weight will be capped."
@@ -13003,7 +13002,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:97
 msgid "Max Weight Hoods"
-msgstr "Max. Gewicht Kappen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:98
 msgid "Hood weight will be capped."
@@ -13011,7 +13010,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:126
 msgid "Unlimited Amulets"
-msgstr "Unbegrenzt Amulette"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:127
 msgid "Wear unlimited number of amulets - but they won't display. Will affect all clothes flagged as amulets."
@@ -13019,7 +13018,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:133
 msgid "Unlimited Rings"
-msgstr "Unbegrenzt Ringe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:134
 msgid "Wear unlimited number of rings - but they won't display. Will affect all clothes flagged as rings."
@@ -13027,7 +13026,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:140
 msgid "Gloves Show Rings"
-msgstr "Handschuhe zeigen Ringe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:141
 msgid "Gloves will always show rings (conflicts with Unlimited Rings)."
@@ -13035,7 +13034,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:147
 msgid "Robes Show Pants"
-msgstr "Roben zeigen Hosen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:148
 msgid "Robes will allow pants, greaves, skirts - but they'll clip."
@@ -13043,7 +13042,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:154
 msgid "Robes Show Amulets"
-msgstr "Roben zeigen Amulette"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_clothes.py:155
 msgid "Robes will always show amulets (conflicts with Unlimited Amulets)."
@@ -13071,7 +13070,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_names.py:187
 msgid "Body Part Codes"
-msgstr "Körperteil-Codes"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_names.py:188
 msgid "Sets body part codes used by Armor/Clothes name tweaks."
@@ -13544,15 +13543,15 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:59
 msgid "World: Timescale"
-msgstr "Welt: Zeitmaßstab"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:60
 msgid "Timescale will be set to:"
-msgstr "Der Zeitmaßstab wird auf das ausgewählte gesetzt:"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:77
 msgid "Thieves Guild: Quest Stealing Penalty"
-msgstr "Diebesgilde: Quest-Diebstahlstrafe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:78
 msgid "The penalty (in Septims) for stealing while doing a Thieves Guild job:"
@@ -13560,7 +13559,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:90
 msgid "Thieves Guild: Quest Killing Penalty"
-msgstr "Diebesgilde: Quest-Mordstrafe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:91
 msgid "The penalty (in Septims) for killing while doing a Thieves Guild job:"
@@ -13568,7 +13567,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:103
 msgid "Thieves Guild: Quest Attacking Penalty"
-msgstr "Diebesgilde: Quest-Angriffsstrafe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:104
 msgid "The penalty (in Septims) for attacking while doing a Thieves Guild job:"
@@ -13576,11 +13575,11 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:116
 msgid "Crime: Force Jail"
-msgstr "Verbrechen: Gefängnis erzwingen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:117
 msgid "The amount of Bounty at which a jail sentence is mandatory"
-msgstr "Die Kopfgeldhöhe, ab der Gefängnis zwingend ist"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:169
 msgid "Oblivion GMST values can't be negative"
@@ -13593,7 +13592,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:225
 msgid "Custom (in seconds)"
-msgstr "Frei definiert (in Sekunden)"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:229
 msgid "Custom (in units)"
@@ -13606,12 +13605,12 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:240
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:521
 msgid "Allow"
-msgstr "Erlauben"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:241
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:242
 msgid "Disallow"
-msgstr "Nicht erlauben"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:264
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1504
@@ -13637,7 +13636,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:289
 msgid "Arrow: Litter Count"
-msgstr "Pfeil: Bodenanzahl"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:290
 msgid "Maximum number of spent arrows allowed in cell."
@@ -13645,7 +13644,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:302
 msgid "Arrow: Litter Time"
-msgstr "Pfeil: Bodenzeit"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:303
 msgid "Time before spent arrows fade away from cells and actors."
@@ -13669,32 +13668,32 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:396
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:455
 msgid "2 Minutes"
-msgstr "2 Minuten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:308
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:456
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1392
 msgid "3 Minutes"
-msgstr "3 Minuten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:309
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:394
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:457
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1393
 msgid "5 Minutes"
-msgstr "5 Minuten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:310
 msgid "10 Minutes"
-msgstr "10 Minuten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:311
 msgid "30 Minutes"
-msgstr "30 Minuten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:312
 msgid "1 Hour"
-msgstr "1 Stunde"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:317
 msgid "Arrow: Recovery From Actor"
@@ -13706,7 +13705,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:335
 msgid "Arrow: Speed"
-msgstr "Pfeil: Geschwindigkeit"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:336
 msgid "Speed of a full power arrow."
@@ -13714,7 +13713,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:353
 msgid "Camera: Chase Tightness"
-msgstr "Kamera: Verfolgungsnähe"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:354
 msgid "Tightness of chase camera to player turning."
@@ -13722,7 +13721,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:365
 msgid "Camera: Chase Distance"
-msgstr "Kamera: Verfolgungsentfernung"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:366
 msgid "Distance camera can be moved away from PC using mouse wheel."
@@ -13751,7 +13750,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:491
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1390
 msgid "30 Seconds"
-msgstr "30 Sekunden"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:395
 msgid "Disabled"
@@ -13767,7 +13766,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:413
 msgid "Magic: Chameleon Refraction"
-msgstr "Magie: Chamäleon-Brechung"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:414
 msgid "Chameleon with transparency instead of refraction effect."
@@ -13775,7 +13774,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:416
 msgid "Zero"
-msgstr "Null"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:417
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:419
@@ -13784,11 +13783,11 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:418
 msgid "Full"
-msgstr "Voll"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:423
 msgid "Compass: Disable"
-msgstr "Kompass: Ausschalten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:424
 msgid "No quest and/or points of interest markers on compass."
@@ -13804,7 +13803,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:428
 msgid "Quests and POIs"
-msgstr "Quests und POIs"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:432
 msgid "Compass: Recognition Distance"
@@ -13850,11 +13849,11 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1389
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1690
 msgid "20 Seconds"
-msgstr "20 Sekunden"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:454
 msgid "1 1/2 Minutes"
-msgstr "1 1/2 Minuten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:462
 msgid "Movement: Fatigue From Running/Encumbrance"
@@ -13878,7 +13877,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:486
 msgid "Camera: PC Death Time"
-msgstr "Kamera: PC-Todeszeit"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:487
 msgid "Time after player's death before the last save is loaded/the reload menu appears."
@@ -13886,15 +13885,15 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:490
 msgid "15 Seconds"
-msgstr "15 Sekunden"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:493
 msgid "5 Minute"
-msgstr "5 Minuten"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:498
 msgid "World: Cell Respawn Time"
-msgstr "Welt: Zellen-Respawn-Zeit"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:499
 msgid "Time before unvisited cells respawn. Longer times increase save sizes."
@@ -13903,7 +13902,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:502
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1542
 msgid "1 Day"
-msgstr "1 Tag"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:503
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:510
@@ -13912,42 +13911,42 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:504
 msgid "5 Days"
-msgstr "5 Tage"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:505
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:514
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1434
 msgid "10 Days"
-msgstr "10 Tage"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:506
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1436
 msgid "20 Days"
-msgstr "20 Tage"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:507
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1547
 msgid "1 Month"
-msgstr "1 Monat"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:508
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1440
 msgid "6 Months"
-msgstr "6 Monate"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:509
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1441
 msgid "1 Year"
-msgstr "1 Jahr"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:511
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1443
 msgid "Custom (in hours)"
-msgstr "Frei definiert (in Stunden)"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:518
 msgid "Combat: Recharge Weapons"
-msgstr "Kampf: Waffen wiederaufladen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:519
 msgid "Allow recharging weapons during combat."
@@ -13955,7 +13954,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:525
 msgid "Magic: Bolt Speed"
-msgstr "Magie: Blitzgeschwindigkeit"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:526
 msgid "Speed of magic bolt/projectile."
@@ -13963,7 +13962,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:541
 msgid "Msg: Equip Misc. Item"
-msgstr "Nachricht: Ausrüsten von Misc"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:542
 msgid "Message upon equipping misc. item."
@@ -14043,7 +14042,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:605
 msgid "Cost Multiplier: Repair"
-msgstr "Kostenmultiplikator: Reparatur"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:606
 msgid "Cost factor for repairing items."
@@ -14059,7 +14058,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:646
 msgid "Cost Multiplier: Recharge"
-msgstr "Kostenmultiplikator: Wiederaufladen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:647
 msgid "Cost factor for recharging items."
@@ -14075,7 +14074,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:675
 msgid "Combat: Max Actors"
-msgstr "Kampf: Max. Actors"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:676
 msgid "Maximum number of actors that can actively be in combat with the player."
@@ -14099,7 +14098,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:721
 msgid "Cost Multiplier: Enchantment"
-msgstr "Kostenmultiplikator: Verzauberung"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:722
 msgid "Cost factor for enchanting items."
@@ -14111,7 +14110,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:736
 msgid "Cost Multiplier: Spell Making"
-msgstr "Kostenmultiplikator: Zaubererstellung"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:737
 msgid "Cost factor for making spells."
@@ -14119,11 +14118,11 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:748
 msgid "AI: Max Active Actors"
-msgstr "AI: Maximal aktive Actors"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:749
 msgid "Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"
-msgstr "Maximum Actors, deren AI aktiv sein kann. Muss höher als bei Kampf: Max Actors sein"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:756
 msgid "MMM Default: 40"
@@ -14131,7 +14130,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:767
 msgid "Magic: Max Player Summons"
-msgstr "Magie: Maximale Spieler-Beschwörungen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:768
 msgid "Maximum number of creatures the player can summon."
@@ -14184,11 +14183,11 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:842
 msgid "Magic: Max NPC Summons"
-msgstr "Magie: Max. NPC-Beschwörungen"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:843
 msgid "Maximum number of creatures that each NPC can summon"
-msgstr "Maximale Anzahl an Kreaturen, die ein NPC beschwören kann"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:855
 msgid "Bounty: Assault"
@@ -14200,7 +14199,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:874
 msgid "Bounty: Horse Theft"
-msgstr "Kopfgeld: Pferdediebstahl"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:875
 msgid "Bounty for horse theft."
@@ -14208,7 +14207,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:892
 msgid "Bounty: Theft"
-msgstr "Kopfgeld: Diebstahl"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:893
 msgid "Bounty for stealing, as fraction of item value."
@@ -14216,7 +14215,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:903
 msgid "Combat: Alchemy"
-msgstr "Kampf: Alchemie"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:904
 msgid "Allow alchemy during combat."
@@ -14224,7 +14223,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:909
 msgid "Combat: Repair"
-msgstr "Kampf: Reparieren"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:910
 msgid "Allow repairing armor/weapons during combat."
@@ -14248,7 +14247,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:943
 msgid "Combat: Maximum Armor Rating"
-msgstr "Kampf: Maximaler Rüstungswert"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:944
 msgid "The Maximum amount of protection you will get from armor."
@@ -14280,7 +14279,7 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1002
 msgid "AI: Max Dead Actors"
-msgstr "AI: Max tote Actors"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1003
 msgid "Maximum number of dead actors allowed before they're removed."
@@ -14602,11 +14601,11 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1430
 msgid "World: Cell Respawn Time (Cleared)"
-msgstr "Welt: Zellen-Respawn-Zeit (Erledigte)"
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1431
 msgid "Time before cleared cells respawn. Longer times increase save sizes."
-msgstr "Zeit, bevor in erledigten Zellen ein Respawn stattfindet. Längere Zeiten führen zu größeren Spielständen."
+msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1435
 msgid "15 Days"

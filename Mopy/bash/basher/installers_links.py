@@ -437,15 +437,17 @@ class Installers_Enabled(BoolLink, Installers_Link):
     _text, _bl_key, _help = _(u'Enabled'), u'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     _dialog_title = _(u'Enable Installers')
-    message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
-        u'If you do, Bash will first need to initialize some data. This can '
-        u'take on the order of five minutes if there are many mods installed.')
+    _msg_inst_enabled = _(
+        'Do you want to enable Installers?') + '\n\n\t' + _(
+        'If you do, Wrye Bash will first need to initialize some data. This '
+        'can take on the order of five minutes if there are many mods '
+        'installed.')
 
     @balt.conversation
     def Execute(self):
         """Enable/Disable the installers tab."""
         enabled = bass.settings[self._bl_key]
-        if not enabled and not self._askYes(self.message,
+        if not enabled and not self._askYes(self._msg_inst_enabled,
                                             title=self._dialog_title): return
         enabled = bass.settings[self._bl_key] = not enabled
         if enabled:
