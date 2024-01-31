@@ -45,6 +45,9 @@ def main(args):
                      f'({i}/{len(source_files)})...')
         po_str = os.fspath(po) # msgfmt wants a string
         mo_output = po_str[:-2] + 'mo'
+        # msgfmt caches its messages between runs for some godforsaken reason,
+        # so explicitly clear that
+        msgfmt.MESSAGES = {}
         msgfmt.make(po_str, mo_output)
     _LOGGER.info('Compilation of localizations succeeded!')
 
