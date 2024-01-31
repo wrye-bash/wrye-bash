@@ -549,8 +549,8 @@ def _main(opts, wx_locale, wxver):
         if not settings_file:
             bkf = barb.BackupSettings.backup_filename(bush_game.bak_game_name)
             settings_file = gui.FileSave.display_dialog(
-                frame, title=_(u'Backup Bash Settings'), defaultDir=base_dir,
-                wildcard=u'*.7z', defaultFile=bkf)
+                frame, title=_('Backup Wrye Bash Settings'),
+                defaultDir=base_dir, wildcard='*.7z', defaultFile=bkf)
         if settings_file:
             with gui.BusyCursor():
                 backup = barb.BackupSettings(
@@ -561,8 +561,8 @@ def _main(opts, wx_locale, wxver):
                 with gui.BusyCursor():
                     backup.backup_settings(balt)
             except exception.StateError:
-                msg = [_('There was an error while trying to backup the Bash '
-                         'settings!'),
+                msg = [_('There was an error while trying to backup the Wrye '
+                         'Bash settings!'),
                        _('If you continue, your current settings may be '
                          'overwritten.'),
                        _('Do you want to quit Wrye Bash now?')]

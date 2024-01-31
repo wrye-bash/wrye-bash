@@ -754,8 +754,8 @@ class BackupsPage(_AFixedPage):
         """Saves the current settings and data to create a new backup."""
         with BusyCursor(): Link.Frame.SaveSettings()
         settings_file = FileSave.display_dialog(self,
-            title=_(u'Backup Bash Settings'), defaultDir=self._backup_dir,
-            wildcard=u'*.7z', defaultFile=barb.BackupSettings.backup_filename(
+            title=_('Backup Wrye Bash Settings'), defaultDir=self._backup_dir,
+            wildcard='*.7z', defaultFile=barb.BackupSettings.backup_filename(
                 bush.game.bak_game_name))
         if not settings_file: return
         with BusyCursor():
@@ -795,10 +795,10 @@ class BackupsPage(_AFixedPage):
     def _restore_backup(self):
         """Restores the currently selected backup."""
         if not askYes(self, '\n\n'.join([
-            _("Are you sure you want to restore your Bash settings from "
+            _("Are you sure you want to restore your Wrye Bash settings from "
               "'%(chosen_backup)s'?") % {'chosen_backup': self._chosen_backup},
             _('This will force a restart of Wrye Bash once your settings are '
-              'restored.')]), title=_('Restore Bash Settings?')):
+              'restored.')]), title=_('Restore Wrye Bash Settings?')):
             return
         # former may be None
         settings_file = self._backup_dir.join(self._chosen_backup)

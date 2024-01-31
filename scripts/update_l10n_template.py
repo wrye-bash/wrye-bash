@@ -104,7 +104,7 @@ def main(args):
         ])
     _LOGGER.debug('Adding python-format flags')
     edit_wb_file('bash', 'l10n', 'template_new.pot',
-        trigger_regex=re.compile(r'^msgid "(.+)%((?:\w|\d+\w|\().+)$'),
+        trigger_regex=re.compile(r'^msgid "(.*)%((?:\w|\d+\w|\().+)$'),
         edit_callback=edit_add_py_fmt_flag, logger=_LOGGER)
     # pygettext always throws an extra newline at the end, get rid of that
     # (otherwise git's newline checks prevent you from committing it)

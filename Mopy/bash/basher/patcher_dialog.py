@@ -330,16 +330,21 @@ class PatchDialog(DialogWindow):
                 return
             except (CancelError, SkipError, PermissionError):
                 ##: Ugly warts below (see also FIXME above)
-                m = _('Bash encountered an error when saving %(patch_name)s.')
-                m += '\n\n' + _('Either Bash needs Administrator Privileges '
-                    'to save the file, or the file is in use by another '
-                    'process such as %(xedit_name)s.')
-                m += '\n' + _('Please close any program that is accessing '
-                    '%(patch_name)s, and provide Administrator Privileges if '
-                    'prompted to do so.') + '\n\n' + _('Try again?')
-                m %= {'patch_name': patch_name,
-                      'xedit_name': bush.game.Xe.full_name}
-                if askYes(self, m, _('Bashed Patch - Save Error')):
+                m = [_('Wrye Bash encountered an error when saving '
+                       '%(patch_name)s.'),
+                     '', '',
+                     _('Either Wrye Bash needs Administrator Privileges to '
+                       'save the file, or the file is in use by another '
+                       'process such as %(xedit_name)s.'),
+                     '',
+                     _('Please close any program that is accessing '
+                       '%(patch_name)s, and provide Administrator Privileges '
+                       'if prompted to do so.'),
+                     '', '',
+                     _('Try again?')]
+                msg = '\n'.join(m) % {'patch_name': patch_name,
+                                      'xedit_name': bush.game.Xe.full_name}
+                if askYes(self, msg, _('Bashed Patch - Save Error')):
                     continue
                 raise # will raise the SkipError which is correctly processed
 

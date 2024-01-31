@@ -3276,13 +3276,18 @@ class ModInfos(FileInfos):
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def _retry(self, old, new, ask_yes):  ##: we should check *before* writing the patch
-        msg = _('Bash encountered an error when renaming %(old)s to %(new)s.')
-        msg += '\n\n' + _('The file is in use by another process such as '
-                          '%(xedit_name)s.') + '\n'
-        msg += _('Please close the other program that is accessing %(new)s.')
-        msg += '\n\n' + _('Try again?')
-        msg %= {'xedit_name': bush.game.Xe.full_name, 'old': old, 'new': new}
-        return ask_yes(self, msg, _('File in use'))
+        m = [_('Wrye Bash encountered an error when renaming %(old)s to '
+               '%(new)s.'),
+             '', '',
+             _('The file is in use by another process such as '
+               '%(xedit_name)s.'),
+             '',
+             _('Please close the other program that is accessing %(new)s.'),
+             '', '',
+             _('Try again?')]
+        msg = '\n'.join(m) % {'xedit_name': bush.game.Xe.full_name,
+                              'old': old, 'new': new}
+        return ask_yes(self, msg, title=_('File in Use'))
 
     def setOblivionVersion(self, newVersion, ask_yes):
         """Swaps Oblivion.esm to specified version."""

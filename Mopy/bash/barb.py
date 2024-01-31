@@ -140,8 +140,8 @@ class BackupSettings(object):
                 'prev_bash_ver': previous_bash_version},
             _('Current Version: %(curr_bash_ver)s') % {
                 'curr_bash_ver': AppVersion},
-            _('Do you want to create a backup of your Bash settings before '
-              'they are overwritten?')]), title=_('Create Backup?'))
+            _('Do you want to create a backup of your Wrye Bash settings '
+              'before they are overwritten?')]), title=_('Create Backup?'))
 
     @staticmethod
     def backup_filename(bak_name):
@@ -318,8 +318,9 @@ class RestoreSettings(object):
             self._get_settings_versions()
         if settings_saved_with != bass.settings['bash.version']:
             return '\n'.join(
-                [_('The version of Bash used to create the selected backup '
-                   'file does not match the current Bash version!'),
+                [_('The version of Wrye Bash used to create the selected '
+                   'backup file does not match the current Wrye Bash '
+                   'version!'),
                  _('Backup %(saved_backup_ver)s does not match '
                    '%(wb_ver)s.') % {
                      'saved_backup_ver': f'v{settings_saved_with}',

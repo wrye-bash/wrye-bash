@@ -379,7 +379,7 @@ class _Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then boss_gui.exe should be too."""
     _text = _('Launch Using GUI')
     _bl_key = 'BOSS.UseGUI'
-    _help = _("If enabled, Bash will run BOSS's GUI.")
+    _help = _("If enabled, Wrye Bash will run BOSS's GUI.")
 
 class AppBOSS(_AAppLOManager):
     """Runs BOSS if it's present."""

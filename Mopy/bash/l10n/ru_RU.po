@@ -423,7 +423,7 @@ msgid "Current Version: %(curr_bash_ver)s"
 msgstr "Текущая версия:%(curr_bash_ver)s"
 
 #: Mopy/bash/barb.py:143
-msgid "Do you want to create a backup of your Bash settings before they are overwritten?"
+msgid "Do you want to create a backup of your Wrye Bash settings before they are overwritten?"
 msgstr "Хотите ли вы создать резервную копию настроек Wrye Bash до того, как они будут презаписаны?"
 
 #: Mopy/bash/barb.py:144
@@ -486,7 +486,7 @@ msgid "You cannot use this backup with this game."
 msgstr ""
 
 #: Mopy/bash/barb.py:321
-msgid "The version of Bash used to create the selected backup file does not match the current Bash version!"
+msgid "The version of Wrye Bash used to create the selected backup file does not match the current Wrye Bash version!"
 msgstr "Резервная копия настроек создана в другой версии программы!"
 
 #: Mopy/bash/barb.py:323
@@ -583,11 +583,11 @@ msgid "Wrye Bash needs administrator privileges to make changes to the %(gameNam
 msgstr ""
 
 #: Mopy/bash/bash.py:552 Mopy/bash/basher/settings_dialog.py:755
-msgid "Backup Bash Settings"
+msgid "Backup Wrye Bash Settings"
 msgstr "Создать резервную копию настроек"
 
 #: Mopy/bash/bash.py:564
-msgid "There was an error while trying to backup the Bash settings!"
+msgid "There was an error while trying to backup the Wrye Bash settings!"
 msgstr "При создании резервной копии настроек возникла ошибка!"
 
 #: Mopy/bash/bash.py:566
@@ -833,7 +833,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:833
 #, python-format
-msgid "Do you want Bash to create it by copying %(default_ini)s ?"
+msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:835 Mopy/bash/basher/__init__.py:839
@@ -1354,7 +1354,7 @@ msgid "Do you want to enable Installers?"
 msgstr "Вы хотите включить 'Установщики'?"
 
 #: Mopy/bash/basher/__init__.py:3298 Mopy/bash/basher/installers_links.py:440
-msgid "If you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
+msgid "If you do, Wrye Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
 msgstr "Если да, то Wrye Bash требуется инициализировать данные. Если у вас установлено много модов, это может занять несколько минут."
 
 #: Mopy/bash/basher/__init__.py:3301
@@ -1370,7 +1370,7 @@ msgid "OMOD Extraction - Cleanup Error"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3398
-msgid "Bash needs Administrator Privileges to delete OMODs that have already been extracted."
+msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have already been extracted."
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3401 Mopy/bash/basher/__init__.py:3427
@@ -1379,7 +1379,7 @@ msgid "Try again?"
 msgstr "Попробовать снова?"
 
 #: Mopy/bash/basher/__init__.py:3424
-msgid "Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory."
+msgid "Wrye Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory."
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3437
@@ -1458,7 +1458,7 @@ msgid "Default"
 msgstr "По умолчанию"
 
 #: Mopy/bash/basher/__init__.py:4026
-msgid "Load order has changed outside of Bash and has been reverted to the one saved in Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
+msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4029 Mopy/bash/basher/mods_links.py:426
@@ -1647,7 +1647,7 @@ msgid "Launch Using GUI"
 msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:381
-msgid "If enabled, Bash will run BOSS's GUI."
+msgid "If enabled, Wrye Bash will run BOSS's GUI."
 msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:415
@@ -7165,7 +7165,7 @@ msgid "Will reset mod Load Order to whatever Wrye Bash has saved for them whenev
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:434
-msgid "Lock Load Order is a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made outside Bash."
+msgid "Lock Load Order is a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made outside Wrye Bash."
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:445
@@ -7375,12 +7375,12 @@ msgstr ""
 
 #: Mopy/bash/basher/patcher_dialog.py:333
 #, python-format
-msgid "Bash encountered an error when saving %(patch_name)s."
+msgid "Wrye Bash encountered an error when saving %(patch_name)s."
 msgstr "При сохранении файла %(patch_name)s возникла ошибка."
 
 #: Mopy/bash/basher/patcher_dialog.py:334
 #, python-format
-msgid "Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as %(xedit_name)s."
+msgid "Either Wrye Bash needs Administrator Privileges to save the file, or the file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
 #: Mopy/bash/basher/patcher_dialog.py:337
@@ -8164,7 +8164,7 @@ msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:796
 #, python-format
-msgid "Are you sure you want to restore your Bash settings from '%(chosen_backup)s'?"
+msgid "Are you sure you want to restore your Wrye Bash settings from '%(chosen_backup)s'?"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:798
@@ -8172,7 +8172,7 @@ msgid "This will force a restart of Wrye Bash once your settings are restored."
 msgstr "Это вызовет принудительный перезапуск программы."
 
 #: Mopy/bash/basher/settings_dialog.py:799
-msgid "Restore Bash Settings?"
+msgid "Restore Wrye Bash Settings?"
 msgstr "Восстановить настройки Wrye Bash из резервной копии?"
 
 #: Mopy/bash/basher/settings_dialog.py:819
@@ -8929,7 +8929,7 @@ msgstr ""
 
 #: Mopy/bash/bosh/__init__.py:3279
 #, python-format
-msgid "Bash encountered an error when renaming %(old)s to %(new)s."
+msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
 msgstr "При переименовании файла %(old)s в %(new)s возникла ошибка."
 
 #: Mopy/bash/bosh/__init__.py:3280
@@ -15275,5 +15275,5 @@ msgstr "Данная папка используется Wrye Bash для хра
 msgid "If all instances of Wrye Bash are closed and you still see directories and/or files in here, you can freely delete them."
 msgstr ""
 
-#~ msgid "Generate Bash program translator file?"
+#~ msgid "Generate Wrye Bash program translator file?"
 #~ msgstr "Сгенерировать файл строковых переменных для перевода?"

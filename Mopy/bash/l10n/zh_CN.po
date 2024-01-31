@@ -423,7 +423,7 @@ msgid "Current Version: %(curr_bash_ver)s"
 msgstr ""
 
 #: Mopy/bash/barb.py:143
-msgid "Do you want to create a backup of your Bash settings before they are overwritten?"
+msgid "Do you want to create a backup of your Wrye Bash settings before they are overwritten?"
 msgstr "替换旧配置前是否先备份当前的Bash配置？"
 
 #: Mopy/bash/barb.py:144
@@ -449,7 +449,7 @@ msgstr ""
 
 #: Mopy/bash/barb.py:190
 msgid "No backup was created."
-msgstr "未备份 Bash 配置。"
+msgstr "未备份 Wrye Bash 配置。"
 
 #: Mopy/bash/barb.py:190
 msgid "Unable to Create Backup!"
@@ -486,7 +486,7 @@ msgid "You cannot use this backup with this game."
 msgstr ""
 
 #: Mopy/bash/barb.py:321
-msgid "The version of Bash used to create the selected backup file does not match the current Bash version!"
+msgid "The version of Wrye Bash used to create the selected backup file does not match the current Wrye Bash version!"
 msgstr "所选备份文件所对应的版本号与当前的版本号不匹配！"
 
 #: Mopy/bash/barb.py:323
@@ -584,12 +584,12 @@ msgid "Wrye Bash needs administrator privileges to make changes to the %(gameNam
 msgstr "Wrye Bash 需要管理员权限才能对 %(gameName)s 目录进行修改。建议以管理员身份运行 Wrye Bash ，不然接下来的操作您会一直收到需要权限的提示。"
 
 #: Mopy/bash/bash.py:552 Mopy/bash/basher/settings_dialog.py:755
-msgid "Backup Bash Settings"
-msgstr "备份 Bash 配置"
+msgid "Backup Wrye Bash Settings"
+msgstr "备份 Wrye Bash 配置"
 
 #: Mopy/bash/bash.py:564
-msgid "There was an error while trying to backup the Bash settings!"
-msgstr "备份 Bash 配置时发生错误！"
+msgid "There was an error while trying to backup the Wrye Bash settings!"
+msgstr "备份 Wrye Bash 配置时发生错误！"
 
 #: Mopy/bash/bash.py:566
 msgid "If you continue, your current settings may be overwritten."
@@ -601,7 +601,7 @@ msgstr "是否退出 Wrye Bash ？"
 
 #: Mopy/bash/bash.py:570
 msgid "Unable to create backup!"
-msgstr "无法备份 Bash 配置！"
+msgstr "无法备份 Wrye Bash 配置！"
 
 #: Mopy/bash/bash.py:600
 msgid "The following (non-critical) warnings were found during initialization:"
@@ -834,7 +834,7 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:833
 #, python-format
-msgid "Do you want Bash to create it by copying %(default_ini)s ?"
+msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:835 Mopy/bash/basher/__init__.py:839
@@ -1355,8 +1355,8 @@ msgid "Do you want to enable Installers?"
 msgstr "您要开启 Installers 功能吗？"
 
 #: Mopy/bash/basher/__init__.py:3298 Mopy/bash/basher/installers_links.py:440
-msgid "If you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
-msgstr "现在开启的话，Bash 需要先初始化数据，根据您安装包的安装情况这将需要5分钟左右的时间。"
+msgid "If you do, Wrye Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
+msgstr "现在开启的话，Wrye Bash 需要先初始化数据，根据您安装包的安装情况这将需要5分钟左右的时间。"
 
 #: Mopy/bash/basher/__init__.py:3301
 msgid "If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'."
@@ -1371,7 +1371,7 @@ msgid "OMOD Extraction - Cleanup Error"
 msgstr "OMOD 解压 - 清除错误"
 
 #: Mopy/bash/basher/__init__.py:3398
-msgid "Bash needs Administrator Privileges to delete OMODs that have already been extracted."
+msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have already been extracted."
 msgstr "Wrye Bash 需要管理员权限才能删除已经解压的 OMOD 文件。"
 
 #: Mopy/bash/basher/__init__.py:3401 Mopy/bash/basher/__init__.py:3427
@@ -1380,7 +1380,7 @@ msgid "Try again?"
 msgstr "重试？"
 
 #: Mopy/bash/basher/__init__.py:3424
-msgid "Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory."
+msgid "Wrye Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory."
 msgstr "Wrye Bash 需要管理员权限才能移除解压失败的 OMOD 文件。"
 
 #: Mopy/bash/basher/__init__.py:3437
@@ -1459,7 +1459,7 @@ msgid "Default"
 msgstr "默认"
 
 #: Mopy/bash/basher/__init__.py:4026
-msgid "Load order has changed outside of Bash and has been reverted to the one saved in Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
+msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:4029 Mopy/bash/basher/mods_links.py:426
@@ -1648,7 +1648,7 @@ msgid "Launch Using GUI"
 msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:381
-msgid "If enabled, Bash will run BOSS's GUI."
+msgid "If enabled, Wrye Bash will run BOSS's GUI."
 msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:415
@@ -5131,7 +5131,7 @@ msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:521
 msgid "Avoid at Startup"
-msgstr "开启 Bash 时不进入"
+msgstr "开启 Wrye Bash 时不进入"
 
 #: Mopy/bash/basher/installers_links.py:522
 msgid "Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning."
@@ -7170,7 +7170,7 @@ msgid "Will reset mod Load Order to whatever Wrye Bash has saved for them whenev
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:434
-msgid "Lock Load Order is a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made outside Bash."
+msgid "Lock Load Order is a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made outside Wrye Bash."
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:445
@@ -7380,12 +7380,12 @@ msgstr ""
 
 #: Mopy/bash/basher/patcher_dialog.py:333
 #, python-format
-msgid "Bash encountered an error when saving %(patch_name)s."
-msgstr "Bash 保存 %(patch_name)s 时发生错误。"
+msgid "Wrye Bash encountered an error when saving %(patch_name)s."
+msgstr "Wrye Bash 保存 %(patch_name)s 时发生错误。"
 
 #: Mopy/bash/basher/patcher_dialog.py:334
 #, python-format
-msgid "Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as %(xedit_name)s."
+msgid "Either Wrye Bash needs Administrator Privileges to save the file, or the file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
 #: Mopy/bash/basher/patcher_dialog.py:337
@@ -8169,7 +8169,7 @@ msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:796
 #, python-format
-msgid "Are you sure you want to restore your Bash settings from '%(chosen_backup)s'?"
+msgid "Are you sure you want to restore your Wrye Bash settings from '%(chosen_backup)s'?"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:798
@@ -8177,8 +8177,8 @@ msgid "This will force a restart of Wrye Bash once your settings are restored."
 msgstr "恢复配置后必须重启 Wrye Bash 才能生效。"
 
 #: Mopy/bash/basher/settings_dialog.py:799
-msgid "Restore Bash Settings?"
-msgstr "恢复 Bash 配置？"
+msgid "Restore Wrye Bash Settings?"
+msgstr "恢复 Wrye Bash 配置？"
 
 #: Mopy/bash/basher/settings_dialog.py:819
 msgid "Your Wrye Bash settings have been successfully extracted."
@@ -8934,8 +8934,8 @@ msgstr ""
 
 #: Mopy/bash/bosh/__init__.py:3279
 #, python-format
-msgid "Bash encountered an error when renaming %(old)s to %(new)s."
-msgstr "Bash 修改名字 %(old)s 为 %(new)s 时遇到错误。"
+msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
+msgstr "Wrye Bash 修改名字 %(old)s 为 %(new)s 时遇到错误。"
 
 #: Mopy/bash/bosh/__init__.py:3280
 #, python-format
@@ -15279,5 +15279,5 @@ msgstr ""
 msgid "If all instances of Wrye Bash are closed and you still see directories and/or files in here, you can freely delete them."
 msgstr ""
 
-#~ msgid "Generate Bash program translator file?"
-#~ msgstr "生成 Bash 翻译文件？"
+#~ msgid "Generate Wrye Bash program translator file?"
+#~ msgstr "生成 Wrye Bash 翻译文件？"
