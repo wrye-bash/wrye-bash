@@ -1292,13 +1292,14 @@ class GeneralPage(_AScrollablePage):
 
     def on_apply(self):
         # Managed Game
-        if self._is_changed(u'managed_game') and balt.askContinue(self,
-                    _(u'Switching games this way will simply relaunch this '
-                      u'Wrye Bash installation with the -o command line '
-                      u'switch.') + u'\n\n' +
-                    _(u'That means manually added application launchers in '
-                      u'the status bar will not change after switching.'),
-                    u'bash.switch_games_warning.continue'):
+        if self._is_changed('managed_game') and balt.askContinue(self,
+                    _('Switching games this way will simply relaunch this '
+                      'Wrye Bash installation with the %(cli_game_detect)s '
+                      'command line switch.') % {'cli_game_detect': '-o'}
+                    + '\n\n' +
+                    _('That means manually added application launchers in the '
+                      'status bar will not change after switching.'),
+                    'bash.switch_games_warning.continue'):
             chosen_game = self._managed_game.get_value()
             ##: The [0] here is ugly, doesn't allow changing WS variations
             self._request_restart(_('Managed Game: %(chosen_game)s') % {
