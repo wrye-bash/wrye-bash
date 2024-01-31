@@ -428,14 +428,15 @@ class _LangDict(dict):
 class LanguagePage(_AScrollablePage):
     """Change the language that the GUI is displayed in."""
     _internal_to_localized = _LangDict({
-        'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
-        'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
         'de_DE': _('German') + ' (Deutsch)',
-        'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
+        'en_US': _('American English') + ' (American English)',
         'it_IT': _('Italian') + ' (italiano)',
         'ja_JP': _('Japanese') + ' (日本語)',
-        'ru_RU': _('Russian') + ' (ру́сский язы́к)',
-        'en_US': _('American English') + ' (American English)',
+        'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
+        'ru_RU': _('Russian') + ' (Русский язык)',
+        'tr_TR': _('Turkish') + ' (Türkçe)',
+        'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
+        'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
     })
     _localized_to_internal = _LangDict(reverse_dict(_internal_to_localized))
 
