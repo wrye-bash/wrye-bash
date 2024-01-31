@@ -434,6 +434,7 @@ class LanguagePage(_AScrollablePage):
         'ja_JP': _('Japanese') + ' (日本語)',
         'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
         'ru_RU': _('Russian') + ' (Русский язык)',
+        'sv_SE': _('Swedish') + ' (svenska)',
         'tr_TR': _('Turkish') + ' (Türkçe)',
         'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
         'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
@@ -464,7 +465,7 @@ class LanguagePage(_AScrollablePage):
         # comparisons
         self._initial_lang = active_lang
         self._lang_dropdown = DropDown(self, value=active_lang,
-            choices=localized_langs, dd_tooltip=_(
+            choices=sorted(localized_langs), dd_tooltip=_(
                 'Changes the language that Wrye Bash will be displayed in.'))
         self._lang_dropdown.on_combo_select.subscribe(self._handle_lang_select)
         VLayout(border=6, spacing=4, item_expand=True, items=[
