@@ -120,9 +120,9 @@ class File_Duplicate(ItemLink):
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
             destDir = fileInfo.info_dir
-            # This directory may not exist yet (e.g. INI Tweaks)
-            destDir.makedirs()
             if len(self.selected) == 1: # ask the user for a filename
+                # This directory may not exist yet (e.g. INI Tweaks)
+                destDir.makedirs()
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
                     defaultFile=destName, wildcard=f'*{e}')
@@ -233,14 +233,13 @@ class File_RevertToSnapshot(OneItemLink):
             'snapshot_date': format_date(snapPath.mtime)})
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with BusyCursor(), TempFile() as known_good_copy:
-            destPath = self._selected_info.abs_path
+            sel_inf = self._selected_info
+            destPath = sel_inf.abs_path
             current_mtime = destPath.mtime
             # Make a temp copy first in case reverting to snapshot fails
-            destPath.copyTo(known_good_copy)
-            snapPath.copyTo(destPath)
-            sel_inf = self._selected_info
-            # keep load order but recalculate the crc
-            sel_inf.setmtime(current_mtime)
+            self._selected_info.copy_to(known_good_copy)
+            # keep load order (so mtime)
+            snapPath.copyTo(destPath, set_time=current_mtime)
             try:
                 inf = self._data_store.new_info(fileName, notify_bain=True)
                 inf.copy_persistent_attrs(sel_inf)
@@ -306,10 +305,10 @@ class _RevertBackup(OneItemLink):
                                            'backup_date': backup_date_fmt}
         if not self._askYes(message): return
         with BusyCursor(), TempFile() as known_good_copy:
-            # Make a temp copy first in case reverting to backup fails
-            info_path = self._selected_info.abs_path
-            info_path.copyTo(known_good_copy)
             sel = self._selected_info
+            # Make a temp copy first in case reverting to backup fails
+            info_path = sel.abs_path
+            sel.copy_to(known_good_copy)
             try:
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:
