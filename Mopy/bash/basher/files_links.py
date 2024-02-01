@@ -120,9 +120,9 @@ class File_Duplicate(ItemLink):
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
             destDir = fileInfo.info_dir
-            # This directory may not exist yet (e.g. INI Tweaks)
-            destDir.makedirs()
             if len(self.selected) == 1: # ask the user for a filename
+                # This directory may not exist yet (e.g. INI Tweaks)
+                destDir.makedirs()
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
                     defaultFile=destName, wildcard=f'*{e}')
@@ -236,10 +236,10 @@ class File_RevertToSnapshot(OneItemLink):
             destPath = self._selected_info.abs_path
             current_mtime = destPath.mtime
             # Make a temp copy first in case reverting to snapshot fails
-            destPath.copyTo(known_good_copy)
-            snapPath.copyTo(destPath)
-            # keep load order but recalculate the crc
-            self._selected_info.setmtime(current_mtime, crc_changed=True)
+            self._selected_info.copy_to(known_good_copy)
+            # keep load order (so mtime) but recalculate the crc
+            snapPath.copyTo(destPath, set_time=current_mtime)
+            self._selected_info.calculate_crc(recalculate=True)
             try:
                 self._data_store.new_info(fileName, notify_bain=True)
             except exception.FileError:
@@ -305,7 +305,7 @@ class _RevertBackup(OneItemLink):
         with BusyCursor(), TempFile() as known_good_copy:
             # Make a temp copy first in case reverting to backup fails
             info_path = self._selected_info.abs_path
-            info_path.copyTo(known_good_copy)
+            self._selected_info.copy_to(known_good_copy)
             try:
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:

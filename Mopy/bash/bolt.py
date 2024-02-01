@@ -1239,8 +1239,6 @@ class Path(os.PathLike):
     def copyTo(self, dest_path, set_time=None):
         """Copy self to dest_path make dirs if necessary and preserve ftime."""
         dest_path = GPath(dest_path)
-        if self.is_dir():
-            raise exception.StateError(f'{self._s} is a directory.')
         try:
             copy_or_reflink(self._s, dest_path._s)
             dest_path.mtime = set_time or self.mtime
@@ -1717,6 +1715,12 @@ class AFile(object):
         """
         self.fsize, self.ftime = stat_tuple
 
+    def copy_to(self, dup_path: Path, *, set_time=None):
+        """Duplicate file to dup_path. If set_time is None, we set the mtime
+        of the duplicate path to ftime. This should really be a
+        _mark_not_changed internal API (what about ctime?)."""
+        self.abs_path.copyTo(dup_path, set_time=set_time or self.ftime)
+
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.abs_path.stail}>'
 
@@ -1935,7 +1939,7 @@ class PickleDict(object):
                 if resave:
                     # Make a permanent backup copy of the VDATA2 version before
                     # saving over it
-                    path.copyTo(path.root + u'-vdata2.dat.bak')
+                    path.copyTo(path.root + '-vdata2.dat.bak') # Path.__add__!
                     self.save()
                 return 1 + (path == self.backup)
             except (OSError, EOFError, ValueError,

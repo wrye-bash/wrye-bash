@@ -253,9 +253,6 @@ class FileInfo(_TabledInfo, AFileInfo):
         self.fsize, self.ftime, self.ctime = stat_tuple
         if kwargs['load_cache']: self.readHeader()
 
-    def _mark_unchanged(self):
-        self._reset_cache(self._stat_tuple(), load_cache=False)
-
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Sets ftime. Defaults to current value (i.e. reset)."""
         set_to = set_time or self.ftime
@@ -684,7 +681,8 @@ class ModInfo(FileInfo):
             return False
         self.is_ghost = ghostify
         # reset cache info as un/ghosting should not make do_update return True
-        self._mark_unchanged()
+        self._reset_cache((self.fsize, self.ftime, self.ctime),
+                          load_cache=False)
         # This is necessary if BAIN externally tracked the (un)ghosted file
         self.get_store()._notify_bain(renamed={ghost_source: ghost_target})
         return True
@@ -1731,19 +1729,14 @@ class _AFileInfos(DataStore):
             destPath = self[destName].abs_path
         else:
             destPath = destDir.join(destName)
-        self._do_copy(src_info, destPath)
+        # Will set the destination's mtime to the source's mtime
+        src_info.copy_to(destPath)
         if destDir == self.store_dir:
             self._add_info(destName, set_mtime, fileName, save_lo_cache)
 
     def _add_info(self, destName, set_mtime, fileNam, save_lo_cache):
         # TODO(ut) : in duplicate pass the info in and load_cache=False
         return self.new_info(destName, notify_bain=True)
-
-    def _do_copy(self, cp_file_info, cp_dest_path):
-        """Performs the actual copy operation, copying the file represented by
-        the specified FileInfo to the specified destination path."""
-        # Will set the destination's mtime to the source's mtime
-        cp_file_info.abs_path.copyTo(cp_dest_path)
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
@@ -1836,6 +1829,10 @@ class DefaultIniInfo(AINIInfo):
     @property
     def info_dir(self):
         return dirs['ini_tweaks']
+
+    def copy_to(self, cp_dest_path, *, set_mtime=None):
+        # Default tweak, so the file doesn't actually exist
+        self.get_store()._copy_to_new_tweak(self, FName(cp_dest_path.stail))
 
 # noinspection PyUnusedLocal
 def ini_info_factory(fullpath, **kwargs) -> INIInfo:
@@ -2043,14 +2040,6 @@ class INIInfos(TableFileInfos):
                 sett: val[0] for sett, val in v.items()}
         dup_info.saveSettings(new_tweak_settings)
         return True
-
-    # _AFileInfos stuff -------------------------------------------------------
-    def _do_copy(self, cp_file_info, cp_dest_path):
-        if cp_file_info.is_default_tweak:
-            # Default tweak, so the file doesn't actually exist
-            self._copy_to_new_tweak(cp_file_info, FName(cp_dest_path.stail))
-        else:
-            super()._do_copy(cp_file_info, cp_dest_path)
 
 #-- ModInfos ------------------------------------------------------------------
 def _lo_cache(lord_func):
