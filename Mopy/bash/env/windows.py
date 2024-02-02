@@ -1077,7 +1077,7 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
                     shortcut = sh.CreateShortCut(lnk.s)
                     descr = shortcut.Description
                     if not descr:
-                        descr = ' '.join((_('Launch'), lnk.sbody))
+                        descr = None # means 'use filename'
                     shortcuts[lnk] = (shortcut.TargetPath,
                         # shortcut.WorkingDirectory, shortcut.Arguments,
                         shortcut.IconLocation, descr)

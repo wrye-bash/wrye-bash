@@ -295,7 +295,7 @@ msgid "Delete the selected items (some of the selected items cannot be deleted a
 msgstr ""
 
 #: Mopy/bash/balt.py:1936 Mopy/bash/basher/installer_links.py:1010
-#: Mopy/bash/basher/settings_dialog.py:690
+#: Mopy/bash/basher/settings_dialog.py:692
 msgid "Rename…"
 msgstr "重命名…"
 
@@ -384,11 +384,15 @@ msgid "Use one of the following command line switches:"
 msgstr "使用以下命令行进行切换："
 
 #: Mopy/bash/balt.py:2061
-msgid "--no-uac: always run normally"
+#, fuzzy, python-format
+#| msgid "--no-uac: always run normally"
+msgid "%(cli_no_uac)s: always run normally"
 msgstr "--no-uac: 始终直接运行"
 
 #: Mopy/bash/balt.py:2062
-msgid "--uac: always run with Admin Privileges"
+#, fuzzy, python-format
+#| msgid "--uac: always run with Admin Privileges"
+msgid "%(cli_uac)s: always run with Admin Privileges"
 msgstr "--uac: 始终以管理员身份运行"
 
 #: Mopy/bash/balt.py:2063
@@ -396,15 +400,15 @@ msgstr "--uac: 始终以管理员身份运行"
 msgid "See the %(readme)s for more information."
 msgstr ""
 
-#: Mopy/bash/balt.py:2065
+#: Mopy/bash/balt.py:2064
 msgid "How to avoid this message in the future"
 msgstr "如何避免今后再次出现此窗口？"
 
-#: Mopy/bash/balt.py:2066
+#: Mopy/bash/balt.py:2065
 msgid "Less information"
 msgstr "更少信息"
 
-#: Mopy/bash/balt.py:2067
+#: Mopy/bash/balt.py:2068
 msgid "UAC Protection"
 msgstr "UAC 保护"
 
@@ -489,219 +493,209 @@ msgstr ""
 msgid "The version of Wrye Bash used to create the selected backup file does not match the current Wrye Bash version!"
 msgstr "所选备份文件所对应的版本号与当前的版本号不匹配！"
 
-#: Mopy/bash/barb.py:323
+#: Mopy/bash/barb.py:324
 #, python-format
 msgid "Backup %(saved_backup_ver)s does not match %(wb_ver)s."
 msgstr ""
 
-#: Mopy/bash/barb.py:327
+#: Mopy/bash/barb.py:328
 msgid "Do you want to restore this backup anyway?"
 msgstr "您确定仍要恢复所选配置？"
 
-#: Mopy/bash/barb.py:327
+#: Mopy/bash/barb.py:328
 msgid "Warning: Version Mismatch"
 msgstr ""
 
-#: Mopy/bash/barb.py:375
+#: Mopy/bash/barb.py:376
 msgid "There was an error while trying to restore your settings from the backup file!"
 msgstr "从备份中恢复配置时发生错误！"
 
-#: Mopy/bash/barb.py:376
+#: Mopy/bash/barb.py:377
 msgid "No settings were restored."
 msgstr "未恢复任何配置。"
 
-#: Mopy/bash/barb.py:377
+#: Mopy/bash/barb.py:378
 msgid "Unable to restore backup!"
 msgstr "无法恢复配置！"
 
-#: Mopy/bash/bash.py:164
+#: Mopy/bash/bash.py:165
 msgid "This most likely means you are missing a certain version of the Microsoft Visual C++ Redistributable. Try installing the latest x64 version."
 msgstr ""
 
-#: Mopy/bash/bash.py:169
+#: Mopy/bash/bash.py:170
 msgid "Ensure you have installed these dependencies properly. Should the error still occur, check your installed Microsoft Visual C++ Redistributables and try installing the latest x64 version."
 msgstr ""
 
-#: Mopy/bash/bash.py:174
+#: Mopy/bash/bash.py:175
 msgid "The following dependencies could not be located or failed to load:"
 msgstr ""
 
-#: Mopy/bash/bash.py:185
+#: Mopy/bash/bash.py:186
 msgid "Installation appears incomplete. Please reinstall Wrye Bash so that all files are installed."
 msgstr ""
 
-#: Mopy/bash/bash.py:187
+#: Mopy/bash/bash.py:188
 #, python-format
 msgid "Correct installation will create a filled %(wb_folder)s folder."
 msgstr ""
 
-#: Mopy/bash/bash.py:204
+#: Mopy/bash/bash.py:205
 msgid "Only one instance of Wrye Bash can run."
 msgstr "不能同时运行多个 Wrye Bash 。"
 
-#: Mopy/bash/bash.py:409
+#: Mopy/bash/bash.py:410
 #, python-format
 msgid "Generating HTML file from '%(gen_target)s'"
 msgstr ""
 
-#: Mopy/bash/bash.py:412 Mopy/bash/basher/__init__.py:4274
+#: Mopy/bash/bash.py:413 Mopy/bash/basher/__init__.py:4275
 #: Mopy/bash/bosh/bain.py:1856
 msgid "Done"
 msgstr ""
 
-#: Mopy/bash/bash.py:435
-msgid "Wrye Bash encountered an error."
-msgstr ""
-
-#: Mopy/bash/bash.py:436
-msgid "Please post the information below to the official thread at"
-msgstr ""
-
-#: Mopy/bash/bash.py:437
-msgid "https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games"
-msgstr ""
-
 #: Mopy/bash/bash.py:438
-msgid "or to the Wrye Bash Discord at"
+#, python-format
+msgid "Wrye Bash encountered an error. Please post the information below to the official thread at %(thread_url)s or to the Wrye Bash Discord at %(discord_url)s"
 msgstr ""
 
-#: Mopy/bash/bash.py:439
-msgid "https://discord.gg/NwWvAFR"
-msgstr ""
-
-#: Mopy/bash/bash.py:507
+#: Mopy/bash/bash.py:509
 msgid "Error! Unable to start Wrye Bash."
 msgstr "错误！Wrye Bash 无法启动。"
 
-#: Mopy/bash/bash.py:507
+#: Mopy/bash/bash.py:509
 msgid "Please ensure Wrye Bash is correctly installed."
 msgstr "请确保 Wrye Bash 已正确安装。"
 
-#: Mopy/bash/bash.py:528
+#: Mopy/bash/bash.py:530
 #, fuzzy, python-format
 #| msgid "Wrye Bash needs Administrator Privileges to make changes to the %(gameName)s directory.  If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges."
 msgid "Wrye Bash needs administrator privileges to make changes to the %(gameName)s directory. If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges."
 msgstr "Wrye Bash 需要管理员权限才能对 %(gameName)s 目录进行修改。建议以管理员身份运行 Wrye Bash ，不然接下来的操作您会一直收到需要权限的提示。"
 
-#: Mopy/bash/bash.py:552 Mopy/bash/basher/settings_dialog.py:755
+#: Mopy/bash/bash.py:554 Mopy/bash/basher/settings_dialog.py:757
 msgid "Backup Wrye Bash Settings"
 msgstr "备份 Wrye Bash 配置"
 
-#: Mopy/bash/bash.py:564
+#: Mopy/bash/bash.py:566
 msgid "There was an error while trying to backup the Wrye Bash settings!"
 msgstr "备份 Wrye Bash 配置时发生错误！"
 
-#: Mopy/bash/bash.py:566
+#: Mopy/bash/bash.py:568
 msgid "If you continue, your current settings may be overwritten."
 msgstr "如果继续，您的当前配置将被替换。"
 
-#: Mopy/bash/bash.py:568
+#: Mopy/bash/bash.py:570
 msgid "Do you want to quit Wrye Bash now?"
 msgstr "是否退出 Wrye Bash ？"
 
-#: Mopy/bash/bash.py:570
+#: Mopy/bash/bash.py:572
 msgid "Unable to create backup!"
 msgstr "无法备份 Wrye Bash 配置！"
 
-#: Mopy/bash/bash.py:600
+#: Mopy/bash/bash.py:602
 msgid "The following (non-critical) warnings were found during initialization:"
 msgstr ""
 
-#: Mopy/bash/bash.py:613
+#: Mopy/bash/bash.py:615
 msgid "Wrye Bash could not find a game to manage. Make sure to launch games you installed through Steam once and enable mods on games you installed through the Windows Store."
 msgstr ""
 
-#: Mopy/bash/bash.py:617
-msgid "You can also use the -o command line argument or bash.ini to specify the path manually."
+#: Mopy/bash/bash.py:619
+#, python-format
+msgid "You can also use the %(cli_game_detect)s command line argument or %(bash_config_file)s to specify the path manually."
 msgstr ""
 
-#: Mopy/bash/bash.py:643
+#: Mopy/bash/bash.py:647
 msgid "Wrye Bash Error"
 msgstr ""
 
-#: Mopy/bash/bash.py:644
+#: Mopy/bash/bash.py:648
 msgid "Wrye Bash Warning"
 msgstr ""
 
-#: Mopy/bash/bash.py:655 Mopy/bash/bash.py:746
+#: Mopy/bash/bash.py:659 Mopy/bash/bash.py:750
 msgid "Quit"
 msgstr "退出"
 
-#: Mopy/bash/bash.py:657
+#: Mopy/bash/bash.py:661
 msgid "Continue"
 msgstr ""
 
-#: Mopy/bash/bash.py:658
+#: Mopy/bash/bash.py:662
 msgid "Abort"
 msgstr ""
 
-#: Mopy/bash/bash.py:723
+#: Mopy/bash/bash.py:727
 msgid "Select Game"
 msgstr ""
 
-#: Mopy/bash/bash.py:737
+#: Mopy/bash/bash.py:741
 msgid "Search Games"
 msgstr ""
 
-#: Mopy/bash/bash.py:750 Mopy/bash/env/windows.py:1080
+#: Mopy/bash/bash.py:754 Mopy/bash/env/windows.py:1080
 msgid "Launch"
 msgstr "运行"
 
-#: Mopy/bash/bash.py:756
+#: Mopy/bash/bash.py:760
 msgid "Please choose a game to manage."
 msgstr ""
 
-#: Mopy/bash/bash.py:759
+#: Mopy/bash/bash.py:763
 msgid "Game Details"
 msgstr ""
 
-#: Mopy/bash/bash.py:762
+#: Mopy/bash/bash.py:766
 msgid "Variant:"
 msgstr ""
 
-#: Mopy/bash/bash.py:768
+#: Mopy/bash/bash.py:772
 msgid "Install Path:"
 msgstr ""
 
-#: Mopy/bash/bash.py:817 Mopy/bash/bash.py:831
+#: Mopy/bash/bash.py:821 Mopy/bash/bash.py:835
 msgid "N/A"
 msgstr ""
 
-#: Mopy/bash/bash.py:860
+#: Mopy/bash/bash.py:864
 #, python-format
 msgid "Warning: you appear to be using a non-supported version of wxPython (%(curr_wx_ver)s). This will cause problems! It is highly recommended you use a %(supported_wx_series)s version. Do you still want to run Wrye Bash?"
 msgstr ""
 
-#: Mopy/bash/bash.py:866
+#: Mopy/bash/bash.py:870
 msgid "Unsupported wxPython Version Detected"
 msgstr ""
 
-#: Mopy/bash/bash.py:875
+#: Mopy/bash/bash.py:879
 #, python-format
 msgid "Only Python %(min_py_ver)s and newer is supported (%(curr_py_ver)s detected). If you know what you're doing, install the Python version of Wrye Bash and edit this warning out. Wrye Bash will now exit."
 msgstr ""
 
-#: Mopy/bash/bash.py:881
+#: Mopy/bash/bash.py:885
 msgid "Unsupported Python Version Detected"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:139
+#, python-format
 msgid "%(package_filename)s is a directory."
 msgstr "%(package_filename)s 是目录名。"
 
 #: Mopy/bash/basher/__init__.py:142
+#, python-format
 msgid "%(package_filename)s is a file."
 msgstr "%(package_filename)s 是个文件名。"
 
 #: Mopy/bash/basher/__init__.py:146
+#, python-format
 msgid "%(package_filename)s already exists."
 msgstr "%(package_filename)s 已经存在。"
 
 #: Mopy/bash/basher/__init__.py:149
+#, python-format
 msgid "%(package_filename)s already exists. Overwrite it?"
 msgstr "%(package_filename)s 已存在。是否覆盖？"
 
-#: Mopy/bash/basher/__init__.py:158 Mopy/bash/basher/__init__.py:3305
+#: Mopy/bash/basher/__init__.py:158
 msgid "Installers"
 msgstr ""
 
@@ -838,7 +832,8 @@ msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:835 Mopy/bash/basher/__init__.py:839
-msgid "Missing game Ini"
+#: Mopy/bash/basher/__init__.py:855 Mopy/bash/basher/__init__.py:4159
+msgid "Missing Game INI"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:838
@@ -848,10 +843,6 @@ msgstr ""
 #: Mopy/bash/basher/__init__.py:852
 #, python-format
 msgid "Failed to copy %(def_ini_path)s to %(target_ini_pth)s."
-msgstr ""
-
-#: Mopy/bash/basher/__init__.py:855 Mopy/bash/basher/__init__.py:4158
-msgid "Missing Game INI"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:864
@@ -1005,7 +996,7 @@ msgid "Remove all shown tags from the plugin."
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1840 Mopy/bash/basher/gui_patchers.py:309
-#: Mopy/bash/basher/settings_dialog.py:1086
+#: Mopy/bash/basher/settings_dialog.py:1088
 msgid "Automatic"
 msgstr "自动"
 
@@ -1233,10 +1224,10 @@ msgstr "正在刷新安装包…"
 msgid "Refreshing from %(data_folder)s…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2918 Mopy/bash/basher/settings_dialog.py:587
-#: Mopy/bash/basher/settings_dialog.py:1551
-#: Mopy/bash/basher/settings_dialog.py:1575
-#: Mopy/bash/basher/settings_dialog.py:1591
+#: Mopy/bash/basher/__init__.py:2918 Mopy/bash/basher/settings_dialog.py:589
+#: Mopy/bash/basher/settings_dialog.py:1554
+#: Mopy/bash/basher/settings_dialog.py:1578
+#: Mopy/bash/basher/settings_dialog.py:1594
 msgid "General"
 msgstr "概况"
 
@@ -1267,10 +1258,6 @@ msgstr "混乱"
 #: Mopy/bash/basher/__init__.py:2925
 msgid "Skipped"
 msgstr "跳过"
-
-#: Mopy/bash/basher/__init__.py:2943
-msgid "FOMOD"
-msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2944
 msgid "Disable the regular BAIN sub-packages and use the results of the last FOMOD installer run instead."
@@ -1354,13 +1341,19 @@ msgstr "已跳过（非标准路径）"
 msgid "Do you want to enable Installers?"
 msgstr "您要开启 Installers 功能吗？"
 
-#: Mopy/bash/basher/__init__.py:3298 Mopy/bash/basher/installers_links.py:440
+#: Mopy/bash/basher/__init__.py:3298 Mopy/bash/basher/installers_links.py:441
 msgid "If you do, Wrye Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
 msgstr "现在开启的话，Wrye Bash 需要先初始化数据，根据您安装包的安装情况这将需要5分钟左右的时间。"
 
 #: Mopy/bash/basher/__init__.py:3301
 msgid "If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'."
 msgstr "现在不开启的话，您可以另外右击标题栏，然后勾选 开启。"
+
+#: Mopy/bash/basher/__init__.py:3305
+#, fuzzy
+#| msgid "Tabs: Installers"
+msgid "Enable Installers?"
+msgstr "适用标签：Installers"
 
 #: Mopy/bash/basher/__init__.py:3345
 msgid "Refreshing Installers…"
@@ -1375,7 +1368,7 @@ msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have alread
 msgstr "Wrye Bash 需要管理员权限才能删除已经解压的 OMOD 文件。"
 
 #: Mopy/bash/basher/__init__.py:3401 Mopy/bash/basher/__init__.py:3427
-#: Mopy/bash/basher/patcher_dialog.py:339 Mopy/bash/bosh/__init__.py:3283
+#: Mopy/bash/basher/patcher_dialog.py:344 Mopy/bash/bosh/__init__.py:3287
 msgid "Try again?"
 msgstr "重试？"
 
@@ -1462,101 +1455,101 @@ msgstr "默认"
 msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4029 Mopy/bash/basher/mods_links.py:426
+#: Mopy/bash/basher/__init__.py:4030 Mopy/bash/basher/mods_links.py:426
 #: Mopy/bash/basher/mods_links.py:440
 msgid "Lock Load Order"
 msgstr "排序锁定"
 
-#: Mopy/bash/basher/__init__.py:4037
+#: Mopy/bash/basher/__init__.py:4038
 #, python-format
 msgid "The following plugins could not be found in the %(data_folder)s folder or are corrupt and have thus been removed from the load order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4045
+#: Mopy/bash/basher/__init__.py:4046
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d regular plugins and %(max_esl_plugins)d ESL-flagged plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4050
+#: Mopy/bash/basher/__init__.py:4051
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4080
+#: Mopy/bash/basher/__init__.py:4081
 msgid "The following plugins could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4087
+#: Mopy/bash/basher/__init__.py:4088
 msgid "The following save files could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4096
+#: Mopy/bash/basher/__init__.py:4097
 msgid "The following plugins have header versions that are not valid for this game. This may mean that they are actually intended to be used for a different game."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4104
+#: Mopy/bash/basher/__init__.py:4105
 msgid "The following plugins use an older Form Version for their main header. This most likely means that they were not ported properly (if at all)."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4111
+#: Mopy/bash/basher/__init__.py:4112
 msgid "The following plugins are marked as localized, but are missing strings localization files in the language your game is set to. This will cause CTDs if they are activated."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4119
+#: Mopy/bash/basher/__init__.py:4120
 #, python-format
 msgid "The following BSAs have a version different from the one %(game_name)s expects. This can lead to CTDs, please extract and repack them using the %(ck_name)s-provided tool."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4129
+#: Mopy/bash/basher/__init__.py:4130
 msgid "The following BA2s have filenames whose hashes collide, which will cause one or more of them to fail to work correctly. This should be corrected by the mod authors by renaming the files to avoid the collision."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4139
+#: Mopy/bash/basher/__init__.py:4140
 #, python-format
 msgid "%(game_ini_file)s does not exist yet. %(game_name)s will create this file on first run. INI tweaks will not be usable until then."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4148
+#: Mopy/bash/basher/__init__.py:4149
 msgid "Please replace the INI with a default copy and restart Wrye Bash."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4151
+#: Mopy/bash/basher/__init__.py:4152
 msgid "Corrupted Game INI"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4259
+#: Mopy/bash/basher/__init__.py:4260
 msgid "Initializing"
 msgstr "正在初始化"
 
-#: Mopy/bash/basher/__init__.py:4267
+#: Mopy/bash/basher/__init__.py:4268
 msgid "Initializing Data"
 msgstr "正在初始化 Data 数据"
 
-#: Mopy/bash/basher/__init__.py:4269
+#: Mopy/bash/basher/__init__.py:4270
 msgid "Initializing Version"
 msgstr "正在初始化版本数据"
 
-#: Mopy/bash/basher/__init__.py:4272
+#: Mopy/bash/basher/__init__.py:4273
 msgid "Initializing Windows"
 msgstr "正在初始化窗口"
 
-#: Mopy/bash/basher/__init__.py:4290
+#: Mopy/bash/basher/__init__.py:4291
 msgid "Initializing BSAs"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4294
+#: Mopy/bash/basher/__init__.py:4295
 msgid "Initializing plugins"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4297
+#: Mopy/bash/basher/__init__.py:4298
 msgid "Initializing saves"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4300
+#: Mopy/bash/basher/__init__.py:4301
 msgid "Initializing INIs"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4307
+#: Mopy/bash/basher/__init__.py:4308
 msgid "Generating Blank Bashed Patch"
 msgstr "正在生成空白 Bashed Patch"
 
@@ -1617,90 +1610,86 @@ msgstr ""
 msgid "Skip loading BSAs when opening %(xedit_name)s. Will disable some of its functions."
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:296
-msgid "Quick Auto Clean"
-msgstr ""
-
-#: Mopy/bash/basher/app_buttons.py:297
+#: Mopy/bash/basher/app_buttons.py:298
 #, python-format
 msgid "Launch %(xedit_name)s in QAC mode to clean a single plugin."
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:303
+#: Mopy/bash/basher/app_buttons.py:304
 msgid "Very Quick Show Conflicts"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:304
+#: Mopy/bash/basher/app_buttons.py:305
 #, python-format
 msgid "Launch %(xedit_name)s in VQSC mode to detect conflicts."
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:337
+#: Mopy/bash/basher/app_buttons.py:338
 msgid "Suspend Lock Load Order"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:339
+#: Mopy/bash/basher/app_buttons.py:340
 msgid "If enabled, will temporarily disable 'Lock Load Order' when running this program through Wrye Bash."
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:379
+#: Mopy/bash/basher/app_buttons.py:380
 msgid "Launch Using GUI"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:381
+#: Mopy/bash/basher/app_buttons.py:382
 msgid "If enabled, Wrye Bash will run BOSS's GUI."
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:415
+#: Mopy/bash/basher/app_buttons.py:416
 msgid "Auto-Sort"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:417
+#: Mopy/bash/basher/app_buttons.py:418
 msgid "If enabled, LOOT will automatically sort the load order for the current game, then apply the result and quit."
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:437
+#: Mopy/bash/basher/app_buttons.py:438
 #, python-format
 msgid "Launch %(game_name)s %(app_version)s"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:441
+#: Mopy/bash/basher/app_buttons.py:442
 #, python-format
 msgid "Launch %(game_name)s"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:481
+#: Mopy/bash/basher/app_buttons.py:482
 #, python-format
 msgid "Launch %(ck_name)s %(app_version)s"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:546
+#: Mopy/bash/basher/app_buttons.py:547
 #, python-format
 msgid "%(se_name)s%(se_ver)s Enabled"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:547
+#: Mopy/bash/basher/app_buttons.py:548
 #, python-format
 msgid "%(se_name)s%(se_ver)s Disabled"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:560
+#: Mopy/bash/basher/app_buttons.py:561
 msgid "Auto-Quit Disabled"
 msgstr "关闭自动退出"
 
-#: Mopy/bash/basher/app_buttons.py:560
+#: Mopy/bash/basher/app_buttons.py:561
 msgid "Auto-Quit Enabled"
 msgstr "开启自动退出"
 
-#: Mopy/bash/basher/app_buttons.py:565
+#: Mopy/bash/basher/app_buttons.py:566
 msgid "Help"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:574 Mopy/bash/basher/frames.py:58
+#: Mopy/bash/basher/app_buttons.py:575 Mopy/bash/basher/frames.py:58
 msgid "Doc Browser"
 msgstr "文档查看"
 
-#: Mopy/bash/basher/app_buttons.py:584 Mopy/bash/basher/links_init.py:376
+#: Mopy/bash/basher/app_buttons.py:585 Mopy/bash/basher/links_init.py:376
 #: Mopy/bash/basher/links_init.py:444 Mopy/bash/basher/links_init.py:691
 #: Mopy/bash/basher/links_init.py:797 Mopy/bash/basher/links_init.py:840
 #: Mopy/bash/basher/links_init.py:891 Mopy/bash/basher/links_init.py:899
@@ -1708,11 +1697,11 @@ msgstr "文档查看"
 msgid "Settings"
 msgstr "设置"
 
-#: Mopy/bash/basher/app_buttons.py:595
+#: Mopy/bash/basher/app_buttons.py:596
 msgid "Restart"
 msgstr "重启"
 
-#: Mopy/bash/basher/app_buttons.py:605 Mopy/bash/basher/frames.py:408
+#: Mopy/bash/basher/app_buttons.py:606 Mopy/bash/basher/frames.py:408
 msgid "Plugin Checker"
 msgstr ""
 
@@ -1856,14 +1845,17 @@ msgid "Extract %(target_bsa_name)s to Project:"
 msgstr ""
 
 #: Mopy/bash/basher/bsa_links.py:51
+#, python-format
 msgid "%(invalid_proj_name)s is not a valid project name."
 msgstr "%(invalid_proj_name)s 不是有效的项目名字。"
 
 #: Mopy/bash/basher/bsa_links.py:64
+#, python-format
 msgid "%(invalid_proj_name)s is a file."
 msgstr "%(invalid_proj_name)s 是个文件名。"
 
 #: Mopy/bash/basher/bsa_links.py:68
+#, python-format
 msgid "%(existing_proj)s already exists. Overwrite it?"
 msgstr "%(existing_proj)s 已存在。是否覆盖？"
 
@@ -1917,10 +1909,6 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:42
 msgid "This is the color used for text that is communicating some sort of warning or error."
-msgstr ""
-
-#: Mopy/bash/basher/constants.py:45
-msgid "ESM"
 msgstr ""
 
 #: Mopy/bash/basher/constants.py:46 Mopy/bash/basher/constants.py:148
@@ -2085,24 +2073,12 @@ msgstr "显现时间冲突"
 msgid "This is the background color used for a plugin with an active time conflict. This means that two or more plugins with the same timestamp are active."
 msgstr "这是显现时间冲突的插件的颜色。这表示有两个或多个激活的插件含相同的修改时间。"
 
-#: Mopy/bash/basher/constants.py:140
-msgid "Bashed Patch"
-msgstr ""
-
 #: Mopy/bash/basher/constants.py:142
 msgid "This is the text color used for Bashed Patches."
 msgstr ""
 
-#: Mopy/bash/basher/constants.py:147
-msgid "ESL"
-msgstr ""
-
 #: Mopy/bash/basher/constants.py:149
 msgid "This is the text color used for ESLs on the Mods Tab, and in the Masters info on both the Mods Tab and Saves Tab."
-msgstr ""
-
-#: Mopy/bash/basher/constants.py:152
-msgid "ESLM"
 msgstr ""
 
 #: Mopy/bash/basher/constants.py:154
@@ -2834,7 +2810,7 @@ msgstr ""
 msgid "Move the following files out of the %(data_folder)s folder?"
 msgstr ""
 
-#: Mopy/bash/basher/dialogs.py:622 Mopy/bash/basher/settings_dialog.py:862
+#: Mopy/bash/basher/dialogs.py:622 Mopy/bash/basher/settings_dialog.py:864
 #: Mopy/bash/gui/popups.py:63
 msgid "Move"
 msgstr "移动"
@@ -2986,6 +2962,7 @@ msgid "Ignore"
 msgstr ""
 
 #: Mopy/bash/basher/dialogs.py:875
+#, python-format
 msgid "%(target_item)s could not be found."
 msgstr ""
 
@@ -3460,7 +3437,7 @@ msgid "This option cannot be selected."
 msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:327 Mopy/bash/basher/mod_links.py:443
-#: Mopy/bash/basher/settings_dialog.py:1405 Mopy/bash/bosh/__init__.py:1308
+#: Mopy/bash/basher/settings_dialog.py:1408 Mopy/bash/bosh/__init__.py:1308
 #: Mopy/bash/patcher/base.py:180 Mopy/bash/patcher/patchers/checkers.py:171
 #: Mopy/bash/patcher/patchers/mergers.py:961
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:233
@@ -3593,6 +3570,7 @@ msgid "Enter the desired custom tweak value."
 msgstr "自定义数值"
 
 #: Mopy/bash/basher/gui_patchers.py:753 Mopy/bash/basher/gui_patchers.py:772
+#, python-format
 msgid "%(tweak_title)s - Custom Tweak Value"
 msgstr ""
 
@@ -3602,6 +3580,7 @@ msgid "'%(invalid_float)s' is not a valid floating point number."
 msgstr ""
 
 #: Mopy/bash/basher/gui_patchers.py:766 Mopy/bash/basher/gui_patchers.py:806
+#, python-format
 msgid "%(tweak_title)s - Error"
 msgstr ""
 
@@ -3615,6 +3594,7 @@ msgid "Enter the desired custom tweak text."
 msgstr "自定义文本"
 
 #: Mopy/bash/basher/gui_patchers.py:785
+#, python-format
 msgid "%(tweak_title)s - Custom Tweak Text"
 msgstr ""
 
@@ -4523,6 +4503,7 @@ msgid "Name the project that %(target_archive)s should get unpacked into:"
 msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:1161
+#, python-format
 msgid "%(target_proj)s already exists. Overwrite it?"
 msgstr "%(target_proj)s 已存在。是否覆盖？"
 
@@ -4644,6 +4625,7 @@ msgid "Converting to Archive…"
 msgstr "正转换成压缩包…"
 
 #: Mopy/bash/basher/installer_links.py:1366
+#, python-format
 msgid "%(dest_archive)s: An error occurred while applying a BCF. This can occur if the BCF is applied to an already BCF-converted archive. More details about the error follow:"
 msgstr ""
 
@@ -4684,10 +4666,12 @@ msgid "Select the BAIN'ed Archive:"
 msgstr "选择 BAIN 格式压缩包："
 
 #: Mopy/bash/basher/installer_links.py:1419
+#, python-format
 msgid "%(arcname)s is not a valid archive name."
 msgstr "%(arcname)s 不是有效的压缩包名字。"
 
 #: Mopy/bash/basher/installer_links.py:1423
+#, python-format
 msgid "%(arcname)s must be in the Bash Installers directory."
 msgstr "文件 %(arcname)s 必须在 Bash 安装目录中。"
 
@@ -5089,224 +5073,225 @@ msgstr "开启"
 msgid "Enable Installers"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:460
+#: Mopy/bash/basher/installers_links.py:462
 msgid "BSA Redirection"
 msgstr "材质无效化(BSA Redirection)"
 
-#: Mopy/bash/basher/installers_links.py:461
+#: Mopy/bash/basher/installers_links.py:463
 msgid "Use Quarn's BSA redirection technique."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:466
+#: Mopy/bash/basher/installers_links.py:468
+#, python-format
 msgid "%(ini)s must exist"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:490
+#: Mopy/bash/basher/installers_links.py:492
 msgid "Enabling BSA Redirection…"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:497
+#: Mopy/bash/basher/installers_links.py:499
 msgid "Show Inactive Conflicts"
 msgstr "显示未安装冲突"
 
-#: Mopy/bash/basher/installers_links.py:498
+#: Mopy/bash/basher/installers_links.py:500
 msgid "In the conflicts tab also display conflicts with inactive (not installed) installers"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:505
+#: Mopy/bash/basher/installers_links.py:507
 msgid "Show Lower Conflicts"
 msgstr "显示较低冲突"
 
-#: Mopy/bash/basher/installers_links.py:506
+#: Mopy/bash/basher/installers_links.py:508
 msgid "In the conflicts tab also display conflicts with lower order installers (or lower loading active bsas)"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:513
+#: Mopy/bash/basher/installers_links.py:515
 msgid "Show Active BSA Conflicts"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:514
+#: Mopy/bash/basher/installers_links.py:516
 msgid "In the conflicts tab also display same-name resources inside installed *and* active bsas"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:521
+#: Mopy/bash/basher/installers_links.py:523
 msgid "Avoid at Startup"
 msgstr "开启 Wrye Bash 时不进入"
 
-#: Mopy/bash/basher/installers_links.py:522
+#: Mopy/bash/basher/installers_links.py:524
 msgid "Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning."
 msgstr "让 Wrye Bash 在开启时不进入 Installers 标签，避免不必要的文件扫描。"
 
-#: Mopy/bash/basher/installers_links.py:528
+#: Mopy/bash/basher/installers_links.py:530
 msgid "Remove Empty Directories"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:529
+#: Mopy/bash/basher/installers_links.py:531
 #, python-format
 msgid "Toggles whether or not Wrye Bash will remove empty directories when scanning the %(data_folder)s folder."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:545
+#: Mopy/bash/basher/installers_links.py:547
 msgid "Installed First"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:547
+#: Mopy/bash/basher/installers_links.py:549
 msgid "If checked, sort installed packages to the top of the list."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:552
+#: Mopy/bash/basher/installers_links.py:554
 msgid "Projects First"
 msgstr "项目靠前"
 
-#: Mopy/bash/basher/installers_links.py:554
+#: Mopy/bash/basher/installers_links.py:556
 msgid "If checked, sort projects to the top of the list."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:559
+#: Mopy/bash/basher/installers_links.py:561
 msgid "Simple First"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:561
+#: Mopy/bash/basher/installers_links.py:563
 msgid "If checked, sort simple packages to the top of the list."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:593
+#: Mopy/bash/basher/installers_links.py:595
 #, python-format
 msgid "Skip %(se_sd)s Plugins"
 msgstr "跳过 %(se_sd)s 插件"
 
-#: Mopy/bash/basher/installers_links.py:594
+#: Mopy/bash/basher/installers_links.py:596
 #, python-format
 msgid "Skips the installation of %(se_sd)s plugins."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:607
+#: Mopy/bash/basher/installers_links.py:609
 msgid "Skip Screenshots"
 msgstr "跳过截图"
 
-#: Mopy/bash/basher/installers_links.py:608
+#: Mopy/bash/basher/installers_links.py:610
 msgid "Skips the installation of files in screenshot directories."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:614
+#: Mopy/bash/basher/installers_links.py:616
 msgid "Skip Script Sources"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:615
+#: Mopy/bash/basher/installers_links.py:617
 #, python-format
 msgid "Skips the installation of script sources (%(ss_exts)s)."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:625
+#: Mopy/bash/basher/installers_links.py:627
 msgid "Skip Images"
 msgstr "跳过图片"
 
-#: Mopy/bash/basher/installers_links.py:626
+#: Mopy/bash/basher/installers_links.py:628
 msgid "Skips the installation of images (.png, .jpg, etc.)."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:632
+#: Mopy/bash/basher/installers_links.py:634
 msgid "Skip Docs"
 msgstr "跳过文档"
 
-#: Mopy/bash/basher/installers_links.py:633
+#: Mopy/bash/basher/installers_links.py:635
 msgid "Skips the installation of documentation (.txt, .html, etc.)."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:639
+#: Mopy/bash/basher/installers_links.py:641
 msgid "Skip DistantLOD"
 msgstr "跳过 DistantLOD"
 
-#: Mopy/bash/basher/installers_links.py:640
+#: Mopy/bash/basher/installers_links.py:642
 msgid "Skips the installation of files in the distantlod folder."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:649
+#: Mopy/bash/basher/installers_links.py:651
 msgid "Skip LOD Meshes"
 msgstr "跳过 LOD 模型"
 
-#: Mopy/bash/basher/installers_links.py:650
+#: Mopy/bash/basher/installers_links.py:652
 msgid "Skips the installation of LOD meshes."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:656
+#: Mopy/bash/basher/installers_links.py:658
 msgid "Skip LOD Textures"
 msgstr "跳过 LOD 材质"
 
-#: Mopy/bash/basher/installers_links.py:657
+#: Mopy/bash/basher/installers_links.py:659
 msgid "Skips the installation of LOD textures (except normals)."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:663
+#: Mopy/bash/basher/installers_links.py:665
 msgid "Skip LOD Normals"
 msgstr "跳过 LOD 法线"
 
-#: Mopy/bash/basher/installers_links.py:664
+#: Mopy/bash/basher/installers_links.py:666
 msgid "Skips the installation of LOD normals."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:670
+#: Mopy/bash/basher/installers_links.py:672
 msgid "Skip BSL Files"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:671
+#: Mopy/bash/basher/installers_links.py:673
 msgid "Skips the installation of .bsl files."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:680
+#: Mopy/bash/basher/installers_links.py:682
 msgid "Skip PDB Files"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:681
+#: Mopy/bash/basher/installers_links.py:683
 msgid "Skips the installation of .pdb files."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:690
+#: Mopy/bash/basher/installers_links.py:692
 msgid "Global Skips.."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:717
+#: Mopy/bash/basher/installers_links.py:719
 msgid "Redirect CSVs"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:718
+#: Mopy/bash/basher/installers_links.py:720
 msgid "If checked, Wrye Bash will move all top-level CSV files (.csv) to the Bash Patches folder."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:725
+#: Mopy/bash/basher/installers_links.py:727
 msgid "Redirect Docs"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:726
+#: Mopy/bash/basher/installers_links.py:728
 msgid "If checked, Wrye Bash will move all top-level documentation files (.txt, .html, etc.) to a Docs subfolder. 'Skip Docs' must be off."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:735
+#: Mopy/bash/basher/installers_links.py:737
 msgid "Redirect Script Sources"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:736
+#: Mopy/bash/basher/installers_links.py:738
 #, python-format
 msgid "If checked, Wrye Bash will move all script sources installed to incorrect directories (%(incorrect_dirs)s) to the correct ones. 'Skip Script Sources' must be off."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:751
+#: Mopy/bash/basher/installers_links.py:753
 msgid "Rename Docs"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:752
+#: Mopy/bash/basher/installers_links.py:754
 msgid "If checked, Wrye Bash will rename documentation files with common names (e.g. readme.txt) to avoid packages overwriting each other's docs."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:760
+#: Mopy/bash/basher/installers_links.py:762
 msgid "Rename String Translation Files"
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:761
+#: Mopy/bash/basher/installers_links.py:763
 msgid "If checked, Wrye Bash will rename installed string files so they match your current language if none are provided for it."
 msgstr ""
 
-#: Mopy/bash/basher/installers_links.py:771
+#: Mopy/bash/basher/installers_links.py:773
 msgid "Global Redirects.."
 msgstr ""
 
@@ -5493,6 +5478,7 @@ msgid "Sets screenshot base name and number."
 msgstr ""
 
 #: Mopy/bash/basher/misc_links.py:55
+#, python-format
 msgid "%(game_ini_name)s must exist."
 msgstr ""
 
@@ -5637,7 +5623,7 @@ msgstr ""
 msgid "Allows you to configure various settings that apply to the entirety of Wrye Bash, not just one tab."
 msgstr ""
 
-#: Mopy/bash/basher/misc_links.py:381 Mopy/bash/basher/settings_dialog.py:676
+#: Mopy/bash/basher/misc_links.py:381 Mopy/bash/basher/settings_dialog.py:678
 msgid "Save Data"
 msgstr ""
 
@@ -6431,6 +6417,7 @@ msgid "Imports a face from a save to an ESP file."
 msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:1778
+#, python-format
 msgid "%(game_name)s Saves"
 msgstr ""
 
@@ -6444,6 +6431,7 @@ msgid "Imported face to: %(target_npc_edid)s"
 msgstr "已导入脸部数据到：%(target_npc_edid)s"
 
 #: Mopy/bash/basher/mod_links.py:1833
+#, python-format
 msgid "%(filename)s is missing one or more masters. Without these, a data export is not possible:"
 msgstr ""
 
@@ -6598,6 +6586,7 @@ msgid "Export scripts from plugin to text files."
 msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2036
+#, python-format
 msgid "%(script_export_target)s Exported Scripts"
 msgstr ""
 
@@ -6624,6 +6613,7 @@ msgid "Import script from text files. This will replace existing scripts and is 
 msgstr ""
 
 #: Mopy/bash/basher/mod_links.py:2082
+#, python-format
 msgid "%(script_import_target)s Exported Scripts"
 msgstr ""
 
@@ -7383,39 +7373,39 @@ msgstr ""
 msgid "Wrye Bash encountered an error when saving %(patch_name)s."
 msgstr "Wrye Bash 保存 %(patch_name)s 时发生错误。"
 
-#: Mopy/bash/basher/patcher_dialog.py:334
+#: Mopy/bash/basher/patcher_dialog.py:336
 #, python-format
 msgid "Either Wrye Bash needs Administrator Privileges to save the file, or the file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/basher/patcher_dialog.py:337
+#: Mopy/bash/basher/patcher_dialog.py:340
 #, python-format
 msgid "Please close any program that is accessing %(patch_name)s, and provide Administrator Privileges if prompted to do so."
 msgstr ""
 
-#: Mopy/bash/basher/patcher_dialog.py:342
+#: Mopy/bash/basher/patcher_dialog.py:347
 msgid "Bashed Patch - Save Error"
 msgstr ""
 
-#: Mopy/bash/basher/patcher_dialog.py:365
+#: Mopy/bash/basher/patcher_dialog.py:370
 msgid "Import Bashed Patch configuration from:"
 msgstr "导入 Bashed Path 配置从："
 
-#: Mopy/bash/basher/patcher_dialog.py:379
+#: Mopy/bash/basher/patcher_dialog.py:384
 #, python-format
 msgid "No patch config data found in %(bp_config_path)s"
 msgstr ""
 
-#: Mopy/bash/basher/patcher_dialog.py:381
+#: Mopy/bash/basher/patcher_dialog.py:386
 msgid "Import Config"
 msgstr ""
 
-#: Mopy/bash/basher/patcher_dialog.py:383
+#: Mopy/bash/basher/patcher_dialog.py:388
 #, python-format
 msgid "The patch config data in %(bp_config_path)s is too old for this version of Wrye Bash to handle or was created with CBash. Please use Wrye Bash 307 to import the config, then rebuild the patch using PBash to convert it and finally export the config again to get one that will work in this version."
 msgstr ""
 
-#: Mopy/bash/basher/patcher_dialog.py:389
+#: Mopy/bash/basher/patcher_dialog.py:394
 msgid "Config Too Old"
 msgstr ""
 
@@ -8002,742 +7992,751 @@ msgid "An error occurred reading from %(color_import_file)s:"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:431
-#: Mopy/bash/basher/settings_dialog.py:1087
-msgid "Chinese (Simplified)"
-msgstr "简体中文"
-
-#: Mopy/bash/basher/settings_dialog.py:432
-#: Mopy/bash/basher/settings_dialog.py:1088
-msgid "Chinese (Traditional)"
-msgstr "繁体中文"
-
-#: Mopy/bash/basher/settings_dialog.py:433
 msgid "German"
 msgstr "德语"
 
-#: Mopy/bash/basher/settings_dialog.py:434
-msgid "Brazilian Portuguese"
-msgstr ""
-
-#: Mopy/bash/basher/settings_dialog.py:435
-msgid "Italian"
-msgstr "意大利语"
-
-#: Mopy/bash/basher/settings_dialog.py:436
-msgid "Japanese"
-msgstr "日语"
-
-#: Mopy/bash/basher/settings_dialog.py:437
-#: Mopy/bash/basher/settings_dialog.py:1089
-msgid "Russian"
-msgstr "俄语"
-
-#: Mopy/bash/basher/settings_dialog.py:438
+#: Mopy/bash/basher/settings_dialog.py:432
 msgid "American English"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:466
+#: Mopy/bash/basher/settings_dialog.py:433
+msgid "Italian"
+msgstr "意大利语"
+
+#: Mopy/bash/basher/settings_dialog.py:434
+msgid "Japanese"
+msgstr "日语"
+
+#: Mopy/bash/basher/settings_dialog.py:435
+msgid "Brazilian Portuguese"
+msgstr ""
+
+#: Mopy/bash/basher/settings_dialog.py:436
+#: Mopy/bash/basher/settings_dialog.py:1091
+msgid "Russian"
+msgstr "俄语"
+
+#: Mopy/bash/basher/settings_dialog.py:437
+msgid "Swedish"
+msgstr ""
+
+#: Mopy/bash/basher/settings_dialog.py:438
+msgid "Turkish"
+msgstr ""
+
+#: Mopy/bash/basher/settings_dialog.py:439
+#: Mopy/bash/basher/settings_dialog.py:1089
+msgid "Chinese (Simplified)"
+msgstr "简体中文"
+
+#: Mopy/bash/basher/settings_dialog.py:440
+#: Mopy/bash/basher/settings_dialog.py:1090
+msgid "Chinese (Traditional)"
+msgstr "繁体中文"
+
+#: Mopy/bash/basher/settings_dialog.py:468
 msgid "Changes the language that Wrye Bash will be displayed in."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:472
+#: Mopy/bash/basher/settings_dialog.py:474
 msgid "Change Language"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:475
+#: Mopy/bash/basher/settings_dialog.py:477
 msgid "Want to help translate Wrye Bash into your language?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:477
+#: Mopy/bash/basher/settings_dialog.py:479
 msgid "Visit our Weblate page!"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:505
+#: Mopy/bash/basher/settings_dialog.py:507
 #, python-format
 msgid "Language: %(selected_language)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:517
+#: Mopy/bash/basher/settings_dialog.py:519
 msgid "Use Alternate Wrye Bash Name"
 msgstr "使用其他 Wrye Bash 名"
 
-#: Mopy/bash/basher/settings_dialog.py:518
+#: Mopy/bash/basher/settings_dialog.py:520
 msgid "Use an alternate display name for Wrye Bash based on the game it is managing."
 msgstr "根据 Wrye Bash 管理的游戏版本修改程序名字的显示。"
 
-#: Mopy/bash/basher/settings_dialog.py:522
-#: Mopy/bash/basher/settings_dialog.py:553
+#: Mopy/bash/basher/settings_dialog.py:524
+#: Mopy/bash/basher/settings_dialog.py:555
 msgid "Reverse Icon Colors"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:523
+#: Mopy/bash/basher/settings_dialog.py:525
 msgid "Replace black icons used by Wrye Bash with white ones. Useful if you are using an OS theme that makes those icons hard to see."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:566
+#: Mopy/bash/basher/settings_dialog.py:568
 msgid "Show App Version"
 msgstr "显示程序版本"
 
-#: Mopy/bash/basher/settings_dialog.py:567
+#: Mopy/bash/basher/settings_dialog.py:569
 msgid "Show/hide version numbers for buttons on the status bar."
 msgstr "显示/隐藏状态栏中图标的版本号。"
 
-#: Mopy/bash/basher/settings_dialog.py:573
+#: Mopy/bash/basher/settings_dialog.py:575
 msgid "Sets the status bar icons to the selected size in pixels."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:579
+#: Mopy/bash/basher/settings_dialog.py:581
 msgid "Hidden Buttons"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:579
+#: Mopy/bash/basher/settings_dialog.py:581
 msgid "Visible Buttons"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:580
+#: Mopy/bash/basher/settings_dialog.py:582
 msgid "Make the selected button visible again."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:581
+#: Mopy/bash/basher/settings_dialog.py:583
 msgid "Hide the selected button."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:591
+#: Mopy/bash/basher/settings_dialog.py:593
 msgid "Icon Size:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:596
+#: Mopy/bash/basher/settings_dialog.py:598
 msgid "Manage Hidden Buttons"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:631
+#: Mopy/bash/basher/settings_dialog.py:633
 #, python-format
 msgid "Icon Size: %(new_icon_size)d"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:677
+#: Mopy/bash/basher/settings_dialog.py:679
 msgid "Save all of Wrye Bash's settings/data now."
 msgstr "保存所有 Wrye Bash 的配置/数据。"
 
-#: Mopy/bash/basher/settings_dialog.py:679
+#: Mopy/bash/basher/settings_dialog.py:681
 msgid "New Backup…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:680
+#: Mopy/bash/basher/settings_dialog.py:682
 msgid "Backup all of Wrye Bash's settings/data to an archive file."
 msgstr "备份所有 Wrye Bash 的配置/数据至压缩包。"
 
-#: Mopy/bash/basher/settings_dialog.py:683
+#: Mopy/bash/basher/settings_dialog.py:685
 msgid "Set Backups Directory…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:684
+#: Mopy/bash/basher/settings_dialog.py:686
 msgid "Select the directory containing your backups."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:686
+#: Mopy/bash/basher/settings_dialog.py:688
 msgid "Restore…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:687
+#: Mopy/bash/basher/settings_dialog.py:689
 msgid "Restore all of Wrye Bash's settings/data from the selected backup."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:691
+#: Mopy/bash/basher/settings_dialog.py:693
 msgid "Rename the selected backup archive."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:693
+#: Mopy/bash/basher/settings_dialog.py:695
 msgid "Delete…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:694
+#: Mopy/bash/basher/settings_dialog.py:696
 msgid "Delete the selected backup archive."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:745
+#: Mopy/bash/basher/settings_dialog.py:747
 msgid "Set Backups Directory"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:784
+#: Mopy/bash/basher/settings_dialog.py:786
 msgid "Rename Backup"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:785
+#: Mopy/bash/basher/settings_dialog.py:787
 msgid "Please enter the new name for this backup."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:796
+#: Mopy/bash/basher/settings_dialog.py:798
 #, python-format
 msgid "Are you sure you want to restore your Wrye Bash settings from '%(chosen_backup)s'?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:798
+#: Mopy/bash/basher/settings_dialog.py:800
 msgid "This will force a restart of Wrye Bash once your settings are restored."
 msgstr "恢复配置后必须重启 Wrye Bash 才能生效。"
 
-#: Mopy/bash/basher/settings_dialog.py:799
+#: Mopy/bash/basher/settings_dialog.py:801
 msgid "Restore Wrye Bash Settings?"
 msgstr "恢复 Wrye Bash 配置？"
 
-#: Mopy/bash/basher/settings_dialog.py:819
+#: Mopy/bash/basher/settings_dialog.py:821
 msgid "Your Wrye Bash settings have been successfully extracted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:821
+#: Mopy/bash/basher/settings_dialog.py:823
 #, python-format
 msgid "Backup Path: %(backup_file)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:824
+#: Mopy/bash/basher/settings_dialog.py:826
 msgid "Before the settings can take effect, Wrye Bash must restart."
 msgstr "您需要重启 Wrye Bash ，新的配置才能生效。"
 
-#: Mopy/bash/basher/settings_dialog.py:826
+#: Mopy/bash/basher/settings_dialog.py:828
 msgid "Click OK to restart now."
 msgstr "单击确定(OK)开始恢复。"
 
-#: Mopy/bash/basher/settings_dialog.py:827
+#: Mopy/bash/basher/settings_dialog.py:829
 msgid "Wrye Bash Settings Extracted"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:846
+#: Mopy/bash/basher/settings_dialog.py:848
 msgid "Wrye Bash settings files were successfully saved."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:847
+#: Mopy/bash/basher/settings_dialog.py:849
 msgid "Save Settings"
 msgstr "保存配置"
 
-#: Mopy/bash/basher/settings_dialog.py:860
+#: Mopy/bash/basher/settings_dialog.py:862
 msgid "Ask every time"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:861 Mopy/bash/bolt.py:1791
+#: Mopy/bash/basher/settings_dialog.py:863 Mopy/bash/bolt.py:1791
 #: Mopy/bash/bosh/bain.py:1413 Mopy/bash/gui/popups.py:65
 msgid "Copy"
 msgstr "复制"
 
-#: Mopy/bash/basher/settings_dialog.py:872
+#: Mopy/bash/basher/settings_dialog.py:874
 msgid "[INI Edits] Applying an INI tweak"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:874
+#: Mopy/bash/basher/settings_dialog.py:876
 msgid "[Installers, Screenshots] Opening a lot of items"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:876
+#: Mopy/bash/basher/settings_dialog.py:878
 msgid "[Installers] Exporting package order"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:878
+#: Mopy/bash/basher/settings_dialog.py:880
 msgid "[Installers] Installing unconfigured complex packages"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:880
+#: Mopy/bash/basher/settings_dialog.py:882
 #, python-format
 msgid "[Installers] Opening a mod's page at the %(target_nexus_name)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:883
+#: Mopy/bash/basher/settings_dialog.py:885
 msgid "[Installers] Opening a mod's page at TES Alliance"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:885
+#: Mopy/bash/basher/settings_dialog.py:887
 msgid "[Installers] Overwriting a package via drag and drop"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:887
+#: Mopy/bash/basher/settings_dialog.py:889
 msgid "[Installers] Overwriting a BCF via drag and drop"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:889
+#: Mopy/bash/basher/settings_dialog.py:891
 msgid "[Installers] Searching for a mod on Google"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:891
+#: Mopy/bash/basher/settings_dialog.py:893
 msgid "[Installers] Trying to reorder installers, but Install Order column not selected"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:894
+#: Mopy/bash/basher/settings_dialog.py:896
 msgid "[Masters] Editing or updating a master list"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:896
+#: Mopy/bash/basher/settings_dialog.py:898
 msgid "[Mods] Adding or removing the ESL flag from a plugin"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:898
+#: Mopy/bash/basher/settings_dialog.py:900
 msgid "[Mods] Adding or removing the ESM flag from a plugin"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:900
+#: Mopy/bash/basher/settings_dialog.py:902
 msgid "[Mods] Adding or removing the ESM flag from a plugin's masters"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:902
+#: Mopy/bash/basher/settings_dialog.py:904
 msgid "[Mods] Applying the Nvidia Fog Fix"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:904
+#: Mopy/bash/basher/settings_dialog.py:906
 msgid "[Mods] Changing a plugin's version to 0.8"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:906
+#: Mopy/bash/basher/settings_dialog.py:908
 msgid "[Mods] Exporting NPC levels to a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:908
+#: Mopy/bash/basher/settings_dialog.py:910
 msgid "[Mods] Importing groups from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:910
+#: Mopy/bash/basher/settings_dialog.py:912
 msgid "[Mods] Importing editor IDs from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:912
+#: Mopy/bash/basher/settings_dialog.py:914
 msgid "[Mods] Importing ingredients from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:914
+#: Mopy/bash/basher/settings_dialog.py:916
 msgid "[Mods] Importing names from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:916
+#: Mopy/bash/basher/settings_dialog.py:918
 msgid "[Mods] Importing NPC levels from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:918
+#: Mopy/bash/basher/settings_dialog.py:920
 msgid "[Mods] Importing prices from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:920
+#: Mopy/bash/basher/settings_dialog.py:922
 msgid "[Mods] Importing relations from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:922
+#: Mopy/bash/basher/settings_dialog.py:924
 msgid "[Mods] Importing scripts from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:924
+#: Mopy/bash/basher/settings_dialog.py:926
 msgid "[Mods] Importing sigil stones from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:926
+#: Mopy/bash/basher/settings_dialog.py:928
 msgid "[Mods] Importing spells from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:928
+#: Mopy/bash/basher/settings_dialog.py:930
 msgid "[Mods] Importing stats from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:930
+#: Mopy/bash/basher/settings_dialog.py:932
 msgid "[Mods] Locking or unlocking the load order"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:932
+#: Mopy/bash/basher/settings_dialog.py:934
 msgid "[Mods] Removing world orphans"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:934
+#: Mopy/bash/basher/settings_dialog.py:936
 #, python-format
 msgid "[Mods] Renaming a plugin to something that %(game_name)s can't load"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:937
+#: Mopy/bash/basher/settings_dialog.py:939
 msgid "[Mods] Reordering plugins by name"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:939
+#: Mopy/bash/basher/settings_dialog.py:941
 msgid "[Mods] Replacing a plugin's FormIDs based on a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:941
+#: Mopy/bash/basher/settings_dialog.py:943
 msgid "[Mods] Resetting groups to default ones"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:943
+#: Mopy/bash/basher/settings_dialog.py:945
 msgid "[Mods] Synchronizing groups to currently active ones"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:945
+#: Mopy/bash/basher/settings_dialog.py:947
 msgid "[Mods] Trying to activate plugins that can't be activated"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:947
+#: Mopy/bash/basher/settings_dialog.py:949
 msgid "[Mods] Trying to deactivate plugins that can't be deactivated"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:949
+#: Mopy/bash/basher/settings_dialog.py:951
 msgid "[Mods] Trying to reorder plugins, but Load Order column not selected"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:952
+#: Mopy/bash/basher/settings_dialog.py:954
 msgid "[Mods] Trying to reorder plugins that can't be reordered"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:954
+#: Mopy/bash/basher/settings_dialog.py:956
 msgid "[Mods] Using Decompile All to undo a 'Recompile All'"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:956
+#: Mopy/bash/basher/settings_dialog.py:958
 msgid "[Saves] Disabling a save"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:958
+#: Mopy/bash/basher/settings_dialog.py:960
 msgid "[Saves] Updating NPC levels in a save based on current plugins"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:960
+#: Mopy/bash/basher/settings_dialog.py:962
 msgid "[Settings] Switching the currently managed game"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:973
+#: Mopy/bash/basher/settings_dialog.py:975
 msgid "Show Internal Keys"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:974
+#: Mopy/bash/basher/settings_dialog.py:976
 msgid "If checked, show the internal key Wrye Bash uses to store these settings as well."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:982
+#: Mopy/bash/basher/settings_dialog.py:984
 msgid "Choose what to do with files that are dropped onto the Installers tab."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:991
+#: Mopy/bash/basher/settings_dialog.py:993
 msgid "Drop Action:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:994
+#: Mopy/bash/basher/settings_dialog.py:996
 msgid "Unchecking an entry below will reenable that prompt and vice versa."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1014
+#: Mopy/bash/basher/settings_dialog.py:1016
 msgid "Activating this setting will discard all changes you have made below. Are you sure you want to proceed?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1017
+#: Mopy/bash/basher/settings_dialog.py:1019
 msgid "Warning: Unapplied Changes"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1090
+#: Mopy/bash/basher/settings_dialog.py:1092
 msgid "Japanese (Shift_JIS)"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1092
+#: Mopy/bash/basher/settings_dialog.py:1094
 msgid "Western European (English, French, German, etc)"
 msgstr "西欧（英语、法语、德语等）"
 
-#: Mopy/bash/basher/settings_dialog.py:1096
+#: Mopy/bash/basher/settings_dialog.py:1098
 msgid "Both"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1097
+#: Mopy/bash/basher/settings_dialog.py:1099
 msgid "Global Menu Only"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1098
+#: Mopy/bash/basher/settings_dialog.py:1100
 msgid "Column Menu Only"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1109
+#: Mopy/bash/basher/settings_dialog.py:1111
 msgid "Changes which game Wrye Bash is managing."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1113
+#: Mopy/bash/basher/settings_dialog.py:1115
 msgid "Changes the encoding Wrye Bash will use to read and write plugins."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1119
+#: Mopy/bash/basher/settings_dialog.py:1121
 msgid "'requests' not installed, update checking disabled."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1124
+#: Mopy/bash/basher/settings_dialog.py:1126
 msgid "Check on Startup"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1125
+#: Mopy/bash/basher/settings_dialog.py:1127
 msgid "Whether or not Wrye Bash should check to see if a newer version is available when it is launched."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1131
+#: Mopy/bash/basher/settings_dialog.py:1133
 msgid "Do not check for updates again until this many hours have elapsed since the last check. Set to 0 to check on every startup."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1137
+#: Mopy/bash/basher/settings_dialog.py:1139
 msgid "Cooldown (hours):"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1142
+#: Mopy/bash/basher/settings_dialog.py:1144
 msgid "Check for Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1143
+#: Mopy/bash/basher/settings_dialog.py:1145
 msgid "Check for Wrye Bash updates right now."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1149
+#: Mopy/bash/basher/settings_dialog.py:1151
 msgid "Choose whether only the global menu, only the column header menus, or both should be enabled."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1153
+#: Mopy/bash/basher/settings_dialog.py:1155
 msgid "Global or Column Menu:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1159
+#: Mopy/bash/basher/settings_dialog.py:1161
 msgid "Restore Scroll Positions on Start"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1160
+#: Mopy/bash/basher/settings_dialog.py:1162
 msgid "Remember where you left off last time and scroll back down to that plugin/save/etc. on startup. May cause a moderate slowdown in Wrye Bash's boot process if you have a very large number of plugins/saves/etc."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1168
-#: Mopy/bash/basher/settings_dialog.py:1339
+#: Mopy/bash/basher/settings_dialog.py:1170
+#: Mopy/bash/basher/settings_dialog.py:1342
 msgid "Administrator Mode"
 msgstr "管理员模式"
 
-#: Mopy/bash/basher/settings_dialog.py:1169
+#: Mopy/bash/basher/settings_dialog.py:1171
 msgid "Restart Wrye Bash with administrator privileges."
 msgstr "以管理员身份重启 Wrye Bash。"
 
-#: Mopy/bash/basher/settings_dialog.py:1180
+#: Mopy/bash/basher/settings_dialog.py:1182
 msgid "Open a file dialog to interactively choose the path at which Wrye Bash will store temporary files."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1186
+#: Mopy/bash/basher/settings_dialog.py:1188
 msgid "Reset the path at which Wrye Bash will store temporary files back to its default value."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1192
+#: Mopy/bash/basher/settings_dialog.py:1194
 msgid "Game"
 msgstr "游戏"
 
-#: Mopy/bash/basher/settings_dialog.py:1194
+#: Mopy/bash/basher/settings_dialog.py:1196
 msgid "Managed Game:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1197
+#: Mopy/bash/basher/settings_dialog.py:1199
 msgid "Plugin Encoding:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1200
+#: Mopy/bash/basher/settings_dialog.py:1202
 msgid "Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1209
-#: Mopy/bash/basher/settings_dialog.py:1326
+#: Mopy/bash/basher/settings_dialog.py:1211
+#: Mopy/bash/basher/settings_dialog.py:1329
 msgid "Temporary Folder"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1215
-#: Mopy/bash/basher/settings_dialog.py:1546
-#: Mopy/bash/basher/settings_dialog.py:1564
-#: Mopy/bash/basher/settings_dialog.py:1586
+#: Mopy/bash/basher/settings_dialog.py:1217
+#: Mopy/bash/basher/settings_dialog.py:1549
+#: Mopy/bash/basher/settings_dialog.py:1567
+#: Mopy/bash/basher/settings_dialog.py:1589
 msgid "Miscellaneous"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1264
+#: Mopy/bash/basher/settings_dialog.py:1266
 #, python-format
 msgid "You are already using the newest version of Wrye Bash, version %(wb_version)s."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1267
+#: Mopy/bash/basher/settings_dialog.py:1269
 msgid "No Newer Version Available"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1269
+#: Mopy/bash/basher/settings_dialog.py:1271
 msgid "Failed to contact GitHub for update checking. Check your Internet connection."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1271
+#: Mopy/bash/basher/settings_dialog.py:1273
 msgid "Failed To Check for Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1279
+#: Mopy/bash/basher/settings_dialog.py:1281
 msgid "Choose Temporary Folder"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1294
-msgid "Switching games this way will simply relaunch this Wrye Bash installation with the -o command line switch."
+#: Mopy/bash/basher/settings_dialog.py:1296
+#, python-format
+msgid "Switching games this way will simply relaunch this Wrye Bash installation with the %(cli_game_detect)s command line switch."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1297
+#: Mopy/bash/basher/settings_dialog.py:1300
 msgid "That means manually added application launchers in the status bar will not change after switching."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1302
+#: Mopy/bash/basher/settings_dialog.py:1305
 #, python-format
 msgid "Managed Game: %(chosen_game)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1312
+#: Mopy/bash/basher/settings_dialog.py:1315
 #, python-format
 msgid "Plugin Encoding: %(chosen_encoding)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1348
-#: Mopy/bash/basher/settings_dialog.py:1552
-#: Mopy/bash/basher/settings_dialog.py:1577
-#: Mopy/bash/basher/settings_dialog.py:1592
+#: Mopy/bash/basher/settings_dialog.py:1351
+#: Mopy/bash/basher/settings_dialog.py:1555
+#: Mopy/bash/basher/settings_dialog.py:1580
+#: Mopy/bash/basher/settings_dialog.py:1595
 msgid "Trusted Binaries"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1349
+#: Mopy/bash/basher/settings_dialog.py:1352
 msgid "Untrusted Binaries"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1350
+#: Mopy/bash/basher/settings_dialog.py:1353
 msgid "Mark the selected binary as trusted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1351
+#: Mopy/bash/basher/settings_dialog.py:1354
 msgid "Mark the selected binary as untrusted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1353
+#: Mopy/bash/basher/settings_dialog.py:1356
 msgid "Import…"
 msgstr "导入…"
 
-#: Mopy/bash/basher/settings_dialog.py:1354
+#: Mopy/bash/basher/settings_dialog.py:1357
 msgid "Import list of allowed/disallowed binaries from a .txt file. This also allows more fine-grained control over trusted binary versions."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1358
+#: Mopy/bash/basher/settings_dialog.py:1361
 msgid "Export…"
 msgstr "导出…"
 
-#: Mopy/bash/basher/settings_dialog.py:1359
+#: Mopy/bash/basher/settings_dialog.py:1362
 msgid "Export list of allowed/disallowed binaries to a .txt file. This also allows more fine-grained control over trusted binary versions."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1384
+#: Mopy/bash/basher/settings_dialog.py:1387
 msgid "Export list of allowed/disallowed plugin DLLs to:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1385
+#: Mopy/bash/basher/settings_dialog.py:1388
 msgid "DLL permissions"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1392
+#: Mopy/bash/basher/settings_dialog.py:1395
 #, python-format
 msgid "Exported by Wrye Bash v%(wb_version)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1394
+#: Mopy/bash/basher/settings_dialog.py:1397
 msgid "Binaries whose installation you have allowed"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1398
+#: Mopy/bash/basher/settings_dialog.py:1401
 msgid "Binaries whose installation you have forbidden"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1418
+#: Mopy/bash/basher/settings_dialog.py:1421
 msgid "dll permissions"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1419
+#: Mopy/bash/basher/settings_dialog.py:1422
 msgid "Import list of allowed/disallowed plugin DLLs from:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1423
+#: Mopy/bash/basher/settings_dialog.py:1426
 msgid "Merge permissions from file with current dll permissions?"
 msgstr "整合文件权限与当前 dll 权限？"
 
-#: Mopy/bash/basher/settings_dialog.py:1424
+#: Mopy/bash/basher/settings_dialog.py:1427
 msgid "('No' Replaces current permissions instead.)"
 msgstr "（'否'将替换当前的权限。）"
 
-#: Mopy/bash/basher/settings_dialog.py:1425
+#: Mopy/bash/basher/settings_dialog.py:1428
 msgid "Merge permissions?"
 msgstr "整合权限？"
 
-#: Mopy/bash/basher/settings_dialog.py:1487
+#: Mopy/bash/basher/settings_dialog.py:1490
 #, python-format
 msgid "Wrye Bash could not load %(import_file)s, because it is not saved in UTF-8 format. Please resave it in UTF-8 format and try again."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1493
+#: Mopy/bash/basher/settings_dialog.py:1496
 #, python-format
 msgid "Wrye Bash could not load %(import_file)s, because there was an error in the format of the file."
 msgstr "文件 %(import_file)s 格式错误，Wrye Bash 无法加载。"
 
-#: Mopy/bash/basher/settings_dialog.py:1543
-#: Mopy/bash/basher/settings_dialog.py:1556
+#: Mopy/bash/basher/settings_dialog.py:1546
 #: Mopy/bash/basher/settings_dialog.py:1559
-#: Mopy/bash/basher/settings_dialog.py:1561
+#: Mopy/bash/basher/settings_dialog.py:1562
 #: Mopy/bash/basher/settings_dialog.py:1564
-#: Mopy/bash/basher/settings_dialog.py:1566
-#: Mopy/bash/basher/settings_dialog.py:1584
-#: Mopy/bash/basher/settings_dialog.py:1585
-#: Mopy/bash/basher/settings_dialog.py:1586
+#: Mopy/bash/basher/settings_dialog.py:1567
+#: Mopy/bash/basher/settings_dialog.py:1569
 #: Mopy/bash/basher/settings_dialog.py:1587
+#: Mopy/bash/basher/settings_dialog.py:1588
+#: Mopy/bash/basher/settings_dialog.py:1589
+#: Mopy/bash/basher/settings_dialog.py:1590
 msgid "Appearance"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1544
-#: Mopy/bash/basher/settings_dialog.py:1559
-#: Mopy/bash/basher/settings_dialog.py:1584
+#: Mopy/bash/basher/settings_dialog.py:1547
+#: Mopy/bash/basher/settings_dialog.py:1562
+#: Mopy/bash/basher/settings_dialog.py:1587
 msgid "Colors"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1545
-#: Mopy/bash/basher/settings_dialog.py:1561
-#: Mopy/bash/basher/settings_dialog.py:1585
+#: Mopy/bash/basher/settings_dialog.py:1548
+#: Mopy/bash/basher/settings_dialog.py:1564
+#: Mopy/bash/basher/settings_dialog.py:1588
 msgid "Language"
 msgstr "语言"
 
-#: Mopy/bash/basher/settings_dialog.py:1547
-#: Mopy/bash/basher/settings_dialog.py:1566
-#: Mopy/bash/basher/settings_dialog.py:1587
+#: Mopy/bash/basher/settings_dialog.py:1550
+#: Mopy/bash/basher/settings_dialog.py:1569
+#: Mopy/bash/basher/settings_dialog.py:1590
 msgid "Status Bar"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1549
-#: Mopy/bash/basher/settings_dialog.py:1569
-#: Mopy/bash/basher/settings_dialog.py:1589
+#: Mopy/bash/basher/settings_dialog.py:1552
+#: Mopy/bash/basher/settings_dialog.py:1572
+#: Mopy/bash/basher/settings_dialog.py:1592
 msgid "Backups"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1550
-#: Mopy/bash/basher/settings_dialog.py:1572
-#: Mopy/bash/basher/settings_dialog.py:1590
+#: Mopy/bash/basher/settings_dialog.py:1553
+#: Mopy/bash/basher/settings_dialog.py:1575
+#: Mopy/bash/basher/settings_dialog.py:1593
 msgid "Confirmations"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1557
+#: Mopy/bash/basher/settings_dialog.py:1560
 msgid "Personalize various aspects of how Wrye Bash looks, including colors and some GUI options."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1560
+#: Mopy/bash/basher/settings_dialog.py:1563
 msgid "Change colors of various GUI components."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1562
+#: Mopy/bash/basher/settings_dialog.py:1565
 msgid "Change the language that Wrye Bash is displayed in and manage localizations."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1565
+#: Mopy/bash/basher/settings_dialog.py:1568
 msgid "Change various miscellaneous appearance settings."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1567
+#: Mopy/bash/basher/settings_dialog.py:1570
 msgid "Change settings related to the status bar at the bottom and manage hidden buttons."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1570
+#: Mopy/bash/basher/settings_dialog.py:1573
 msgid "Create, manage and restore backups of Wrye Bash settings and other data. Click on a backup to manage it."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1573
+#: Mopy/bash/basher/settings_dialog.py:1576
 msgid "Enable or disable popups with a 'Don't show this in the future' option."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1576
+#: Mopy/bash/basher/settings_dialog.py:1579
 msgid "Change various general settings."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1578
+#: Mopy/bash/basher/settings_dialog.py:1581
 msgid "Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted binaries will be skipped by BAIN when installing packages."
 msgstr ""
 
@@ -8937,36 +8936,38 @@ msgstr ""
 msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
 msgstr "Wrye Bash 修改名字 %(old)s 为 %(new)s 时遇到错误。"
 
-#: Mopy/bash/bosh/__init__.py:3280
+#: Mopy/bash/bosh/__init__.py:3282
 #, python-format
 msgid "The file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3282
+#: Mopy/bash/bosh/__init__.py:3285
 #, python-format
 msgid "Please close the other program that is accessing %(new)s."
 msgstr "请关闭其他正在操作 %(new)s 的程序。"
 
-#: Mopy/bash/bosh/__init__.py:3285
-msgid "File in use"
-msgstr ""
+#: Mopy/bash/bosh/__init__.py:3290
+#, fuzzy
+#| msgid "Files"
+msgid "File in Use"
+msgstr "文件"
 
-#: Mopy/bash/bosh/__init__.py:3785
+#: Mopy/bash/bosh/__init__.py:3790
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3793 Mopy/bash/bosh/__init__.py:3805
-#: Mopy/bash/bosh/__init__.py:3815
+#: Mopy/bash/bosh/__init__.py:3798 Mopy/bash/bosh/__init__.py:3810
+#: Mopy/bash/bosh/__init__.py:3820
 msgid "Settings Load Error"
 msgstr "设置加载错误"
 
-#: Mopy/bash/bosh/__init__.py:3798
+#: Mopy/bash/bosh/__init__.py:3803
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3811
+#: Mopy/bash/bosh/__init__.py:3816
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
@@ -9128,10 +9129,6 @@ msgstr "产生的物品"
 #: Mopy/bash/bosh/_saves.py:454
 msgid "Records"
 msgstr "记录"
-
-#: Mopy/bash/bosh/_saves.py:455 Mopy/bash/bosh/_saves.py:510
-msgid "FormIDs"
-msgstr ""
 
 #: Mopy/bash/bosh/_saves.py:511
 msgid "Changed"
@@ -9336,6 +9333,7 @@ msgid "Pre-Scanning…"
 msgstr "正在准备扫描…"
 
 #: Mopy/bash/bosh/bain.py:2453
+#, python-format
 msgid "%(data_folder)s: Skips overrides…"
 msgstr ""
 
@@ -9390,10 +9388,12 @@ msgid "Scanning Converter…"
 msgstr "正在扫描转换文件…"
 
 #: Mopy/bash/bosh/converters.py:383
+#, python-format
 msgid "%(bcf_rel)s: Missing source file:"
 msgstr ""
 
 #: Mopy/bash/bosh/converters.py:386
+#, python-format
 msgid "%(bcf_rel)s: Unable to determine file destination for:"
 msgstr ""
 
@@ -9410,6 +9410,7 @@ msgid "Mapping files…"
 msgstr "正在映射文件…"
 
 #: Mopy/bash/bosh/cosaves.py:150
+#, python-format
 msgid "%(cosave_file_tag)s Header"
 msgstr ""
 
@@ -9479,10 +9480,12 @@ msgstr ""
 
 #: Mopy/bash/bosh/cosaves.py:552 Mopy/bash/bosh/cosaves.py:630
 #: Mopy/bash/bosh/cosaves.py:906
+#, python-format
 msgid "%(num_loaded_plugins)d loaded plugins:"
 msgstr ""
 
 #: Mopy/bash/bosh/cosaves.py:579 Mopy/bash/bosh/cosaves.py:604
+#, python-format
 msgid "%(num_loaded_lights)d loaded light plugins:"
 msgstr ""
 
@@ -9528,6 +9531,7 @@ msgid "Flags: %(string_flags)s"
 msgstr ""
 
 #: Mopy/bash/bosh/cosaves.py:969
+#, python-format
 msgid "%(num_stored_strings)d stored strings:"
 msgstr ""
 
@@ -9575,6 +9579,7 @@ msgid "Name: %(printable_name)s"
 msgstr ""
 
 #: Mopy/bash/bosh/cosaves.py:1102
+#, python-format
 msgid "%(num_stored_names)d stored names:"
 msgstr ""
 
@@ -9667,6 +9672,7 @@ msgid "Auto-Scale: %(hud_auto_scale)s"
 msgstr ""
 
 #: Mopy/bash/bosh/cosaves.py:1224
+#, python-format
 msgid "%(num_hud_screens)d HUD screen entries:"
 msgstr ""
 
@@ -9730,6 +9736,7 @@ msgid "Font Color: (%(hud_font_red)d, %(hud_font_green)d, %(hud_font_blue)d)"
 msgstr ""
 
 #: Mopy/bash/bosh/cosaves.py:1362
+#, python-format
 msgid "%(num_hud_texts)d HUD Text entries:"
 msgstr ""
 
@@ -9790,6 +9797,7 @@ msgid "1 deleted reference"
 msgstr ""
 
 #: Mopy/bash/bosh/mods_metadata.py:424
+#, python-format
 msgid "%(num_del_refs)d deleted references"
 msgstr ""
 
@@ -9798,6 +9806,7 @@ msgid "1 deleted navmesh"
 msgstr ""
 
 #: Mopy/bash/bosh/mods_metadata.py:443
+#, python-format
 msgid "%(num_del_navms)d deleted navmeshes"
 msgstr ""
 
@@ -9806,6 +9815,7 @@ msgid "1 deleted base record"
 msgstr ""
 
 #: Mopy/bash/bosh/mods_metadata.py:462
+#, python-format
 msgid "%(num_del_bases)d deleted base records"
 msgstr ""
 
@@ -9814,6 +9824,7 @@ msgid "1 old weapon record"
 msgstr ""
 
 #: Mopy/bash/bosh/mods_metadata.py:476
+#, python-format
 msgid "%(num_old_weaps)d old weapon records"
 msgstr ""
 
@@ -9822,6 +9833,7 @@ msgid "1 HITME"
 msgstr ""
 
 #: Mopy/bash/bosh/mods_metadata.py:502
+#, python-format
 msgid "%(num_hitmes)d HITMEs"
 msgstr ""
 
@@ -11906,6 +11918,7 @@ msgid "The game INI must exist to apply a tweak to it."
 msgstr ""
 
 #: Mopy/bash/ini_files.py:709
+#, python-format
 msgid "%(ini_full_path)s does not exist."
 msgstr ""
 

@@ -363,8 +363,8 @@ class GmstTweak_Camera_ChaseTightness(_AGmstCCTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_Camera_ChaseDistance(_AGmstCCTweak):
     tweak_name = _(u'Camera: Chase Distance')
-    tweak_tip = _(u'Distance camera can be moved away from PC using mouse '
-                  u'wheel.')
+    tweak_tip = _('How far camera the can be moved away from the player '
+                  'using the mouse wheel.')
     tweak_key = (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond',
                  u'fVanityModeWheelMult')
     tweak_choices = [(u'x1.5', 900.0, 450.0, 0.15),
@@ -483,7 +483,7 @@ class GmstTweak_Player_HorseTurningSpeed(_AGmstTweak):
 
 #------------------------------------------------------------------------------
 class GmstTweak_Camera_PCDeathTime(_AGmstCCTweak):
-    tweak_name = _(u'Camera: PC Death Time')
+    tweak_name = _('Camera: Player Death Time')
     tweak_tip = _(u"Time after player's death before the last save is "
                   u"loaded/the reload menu appears.")
     tweak_key = (u'fPlayerDeathReloadTime',)

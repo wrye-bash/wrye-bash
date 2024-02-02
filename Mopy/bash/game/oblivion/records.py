@@ -276,6 +276,10 @@ actor_values = [ # Human-readable names for each actor value
     'ResistWaterDamage',
 ]
 
+_ATTRIB = re.escape(_('Attribute'))
+_SKILL = re.escape(_('Skill'))
+_ATTRIB_SKILL_REGEX = re.compile(f'(?:{_ATTRIB}|{_SKILL})')
+
 class MreHasEffects(MelRecord):
     """Mixin class for magic items."""
     _recipient_number_name = {None: 'NONE', 0: 'Self', 1: 'Touch', 2: 'Target'}
@@ -354,8 +358,8 @@ class MreHasEffects(MelRecord):
             else:
                 effectName = MreMgef.mgef_name[effect.effect_sig]
                 if effect.effect_sig in avEffects:
-                    effectName = re.sub(_('(Attribute|Skill)'),
-                                        aValues[effect.actorValue], effectName)
+                    effectName = _ATTRIB_SKILL_REGEX.sub(
+                        aValues[effect.actorValue], effectName)
             buffWrite('o+*'[effect.recipient] + f' {effectName}')
             if effect.magnitude: buffWrite(f' {effect.magnitude}m')
             if effect.area: buffWrite(f' {effect.area}a')
