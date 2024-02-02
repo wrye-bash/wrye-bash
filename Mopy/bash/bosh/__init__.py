@@ -48,7 +48,7 @@ from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
-    OrderedLowerDict, AFileInfo
+    OrderedLowerDict, AFileInfo, attrgetter_cache
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
@@ -75,7 +75,7 @@ iniInfos: INIInfos | None = None
 bsaInfos: BSAInfos | None = None
 screen_infos: ScreenInfos | None = None
 
-def data_tracking_stores() -> Iterable[FileInfos]:
+def data_tracking_stores() -> Iterable['_AFileInfos']:
     """Return an iterable containing all data stores that keep track of the
     Data folder and which files in it are owned by which BAIN package."""
     return tuple(s for s in (modInfos, iniInfos, bsaInfos, screen_infos) if
@@ -374,6 +374,9 @@ class FileInfo(AFileInfo):
     @property
     def snapshot_dir(self):
         return self.get_store().bash_dir.join(u'Snapshots')
+
+    def delete_paths(self): # will include cosave ones
+        return *super().delete_paths(), *self.all_backup_paths()
 
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
@@ -1028,6 +1031,14 @@ class ModInfo(FileInfo):
         return self.fn_key in bush.game.modding_esm_size or \
                self.fn_key == 'Oblivion.esm'
 
+    def delete_paths(self):
+        sup = super().delete_paths()
+        if self.is_ghost:
+            return sup
+        # Add ghosts - the file may exist in both states (bug, or user mistake)
+        # in this case the file is marked as normal but let's delete the ghost
+        return *sup, self.abs_path + '.ghost' # Path.__add__!
+
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
         if self.is_ghost:
@@ -1478,6 +1489,16 @@ class SaveInfo(FileInfo):
             self.has_inaccurate_masters = xse_cosave is None or \
                 not xse_cosave.has_accurate_master_list()
 
+    def delete_paths(self, *, __abs=attrgetter_cache['abs_path']):
+        # now add backups and cosaves backups
+        return *super().delete_paths(), *map(__abs, self._co_saves.values())
+
+    def move_info(self, destDir):
+        """Moves member file to destDir. Will overwrite!"""
+        super().move_info(destDir)
+        SaveInfos.co_copy_or_move(self._co_saves, destDir.join(self.fn_key),
+                                  move_cosave=True)
+
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
         # super call added the backup paths but not the actual rename cosave
@@ -1532,9 +1553,11 @@ class DataStore(DataDict):
                 delete_keys = {k for k in delete_keys if k not in delete_info}
             self.delete_refresh(delete_keys, True, delete_info)
 
-    def files_to_delete(self, filenames, **kwargs):
-        abs_delete_paths = (fileInfo.abs_path for fileInfo in
-                            self.filter_essential(filenames).values())
+    def files_to_delete(self, filenames, **kwargs): # factory is _AFileInfos!
+        finfos = (v or self.factory(self.store_dir.join(k)) for k, v in
+                  self.filter_essential(filenames).items())
+        abs_delete_paths = [*chain.from_iterable(fileInfo.delete_paths() for
+            fileInfo in finfos)]
         return abs_delete_paths, None # no extra delete info
 
     def _delete_operation(self, paths, delete_info, *, recycle=True):
@@ -1799,22 +1822,12 @@ class TableFileInfos(_AFileInfos):
         return db
 
     #--Delete
-    def files_to_delete(self, fileNames, **kwargs):
-        finfos = (v or self.factory(self.store_dir.join(k)) for k, v in
-                  self.filter_essential(fileNames).items())
-        abs_delete_paths = [*chain.from_iterable(
-            (fileInfo.abs_path, *self._additional_deletes(fileInfo)) for
-            fileInfo in finfos)]
-        return abs_delete_paths, None # no extra delete info
-
     def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
         deleted_keys = super().delete_refresh(deleted_keys, check_existence,
                                               extra_del_data)
         for del_fn in deleted_keys:
             self.table.pop(del_fn, None)
         return deleted_keys
-
-    def _additional_deletes(self, fileInfo): return ()
 
     def save(self):
         # items deleted outside Bash
@@ -1845,20 +1858,6 @@ class _Corrupted(AFile):
             fullpath = fullpath + '.ghost' # Path.__add__ !
         super().__init__(fullpath, **kwargs)
         self.error_message = error_message
-
-class FileInfos(TableFileInfos):
-    """Common superclass for mod, saves and bsa infos."""
-
-    def _additional_deletes(self, fileInfo):
-        #--Backups
-        return fileInfo.all_backup_paths()  # will include cosave ones
-
-    #--Move
-    def move_info(self, fileName, destDir):
-        """Moves member file to destDir. Will overwrite! The client is
-        responsible for calling delete_refresh of the data store."""
-        destPath = destDir.join(fileName)
-        self[fileName].abs_path.moveTo(destPath)
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFileInfo, AINIInfo):
@@ -2107,7 +2106,7 @@ class INIInfos(TableFileInfos):
         dup_info.saveSettings(new_tweak_settings)
         return True
 
-    # FileInfos stuff ---------------------------------------------------------
+    # _AFileInfos stuff -------------------------------------------------------
     def _do_copy(self, cp_file_info, cp_dest_path):
         if cp_file_info.is_default_tweak:
             # Default tweak, so the file doesn't actually exist
@@ -2155,14 +2154,14 @@ def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
     return (available_bsas[b] for b in r_bsas if b in available_bsas)
 
 #------------------------------------------------------------------------------
-class ModInfos(FileInfos):
+class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     unique_store_key = Store.MODS
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
-        FileInfos.__init__(self, dirs['mods'], ModInfo)
+        super().__init__(dirs['mods'], ModInfo)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
@@ -3226,23 +3225,9 @@ class ModInfos(FileInfos):
             self.cached_lo_save_all() # will perform the needed refreshes
         return deleted_keys
 
-    def _additional_deletes(self, fileInfo):
-        sup = super()._additional_deletes(fileInfo)
-        # Add ghosts - the file may exist in both states (bug, or user mistake)
-        # in this case the file is marked as normal but let's delete the ghost
-        if not fileInfo.is_ghost: # add ghost if not added
-            return *sup, self.store_dir.join(f'{fileInfo.fn_key}.ghost')
-        else:
-            return sup
-
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
         return {k: self.get(k) for k in fn_items if k != self._master_esm}
-
-    def move_info(self, fileName, destDir):
-        """Moves member file to destDir."""
-        self.lo_deactivate(fileName)
-        FileInfos.move_info(self, fileName, destDir)
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)
@@ -3399,7 +3384,7 @@ class ModInfos(FileInfos):
                 cached_dependents[p_master].add(p)
 
 #------------------------------------------------------------------------------
-class SaveInfos(FileInfos):
+class SaveInfos(TableFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = False
     # Enabled and disabled saves, no .bak files ##: needed?
@@ -3502,24 +3487,15 @@ class SaveInfos(FileInfos):
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
         return old_key
 
-    def _additional_deletes(self, fileInfo):
-        # now add backups and cosaves backups
-        return *super()._additional_deletes(fileInfo), *(
-            x.abs_path for x in fileInfo._co_saves.values())
-
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
                   save_lo_cache=False):
         """Copies savefile and associated cosaves file(s)."""
         super().copy_info(fileName, destDir, destName, set_mtime)
-        self._co_copy_or_move(self[fileName].abs_path,
-            destDir.join(destName or fileName))
+        self.co_copy_or_move(self[fileName]._co_saves,
+                             destDir.join(destName or fileName))
 
-    def _co_copy_or_move(self, src_path: Path, dest_path: Path,
-            move_cosave=False):
-        try:
-            co_instances = self[src_path.stail]._co_saves
-        except KeyError: # src_path is outside self.store_dir
-            co_instances = SaveInfo.get_cosaves_for_path(src_path)
+    @staticmethod
+    def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
         for co_type, co_file in co_instances.items():
             newPath = co_type.get_cosave_path(dest_path)
             if newPath.exists(): newPath.remove() ##: dont like it, investigate
@@ -3534,7 +3510,8 @@ class SaveInfos(FileInfos):
         moved = super().move_infos(sources, destinations, window, bash_frame)
         for s, d in zip(sources, destinations):
             if FName(d.stail) in moved:
-                self._co_copy_or_move(s, d, move_cosave=True)
+                co_instances = SaveInfo.get_cosaves_for_path(s)
+                self.co_copy_or_move(co_instances, d, move_cosave=True)
                 break
         for m in moved:
             try:
@@ -3543,12 +3520,6 @@ class SaveInfos(FileInfos):
                 pass # will warn below
         bash_frame.warn_corrupted(warn_saves=True)
         return moved
-
-    def move_info(self, fileName, destDir):
-        """Moves member file to destDir. Will overwrite!"""
-        FileInfos.move_info(self, fileName, destDir)
-        self._co_copy_or_move(self[fileName].abs_path, destDir.join(fileName),
-            move_cosave=True)
 
     #--Local Saves ------------------------------------------------------------
     def _refreshLocalSave(self):
@@ -3576,7 +3547,7 @@ class SaveInfos(FileInfos):
         if refreshSaveInfos: self.refresh()
 
 #------------------------------------------------------------------------------
-class BSAInfos(FileInfos):
+class BSAInfos(TableFileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
     # BSAs that have versions other than the one expected for the current game
     mismatched_versions = set()

@@ -1409,7 +1409,7 @@ class InstallerMarker(Installer):
 
     @staticmethod
     def _new_name(base_name, count):
-        return f'=={base_name.strip("=")}{f" ({count})" if count else ""}=='
+        return f'=={base_name.strip("=")}{f" ({count})"}=='
 
     def unique_key(self, new_root, ext=u'', add_copy=False):
         new_name = new_root + (f" {_('Copy')}" if add_copy else '')
@@ -1667,7 +1667,7 @@ class InstallerProject(_InstallerPackage):
 
     @staticmethod
     def _new_name(base_name, count):
-        return f'{base_name} ({count})' if count else base_name
+        return f'{base_name} ({count})'
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
@@ -2043,10 +2043,6 @@ class InstallersData(DataStore):
             setattr(clone, att, copy.copy(getattr(src_inst, att)))
         clone.is_active = False # make sure we mark as inactive
         self.refresh_n() # no need to change installer status here
-
-    def move_info(self, filename, destDir):
-        # hasty method to use in UIList.hide(), see FileInfos.move_info()
-        self.store_dir.join(filename).moveTo(destDir.join(filename))
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)

@@ -1757,7 +1757,7 @@ class ListInfo:
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
-    def _new_name(base_name, count):
+    def _new_name(base_name, count): # only use in unique_name - count is > 0 !
         r, e = os.path.splitext(base_name)
         return f'{r} ({count}){e}'
 
@@ -1767,10 +1767,19 @@ class ListInfo:
         unique_counter = 0
         store = cls.get_store()
         while (store.store_dir.join(name_str).exists() if check_exists else
-                name_str in store): # must wrap a FNDict
+               name_str in store): # must wrap a FNDict
             unique_counter += 1
             name_str = cls._new_name(base_name, unique_counter)
         return FName(name_str)
+
+    def unique_key(self, new_root, ext='', add_copy=False):
+        """Generate a unique name based on fn_key. When copying or renaming."""
+        if self.__class__._valid_exts_re and not ext:
+            ext = self.fn_key.fn_ext
+        new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
+        if new_name == self.fn_key: # new and old names are ci-same
+            return None
+        return self.unique_name(new_name)
 
     # Gui renaming stuff ------------------------------------------------------
     @classmethod
@@ -1786,15 +1795,6 @@ class ListInfo:
         raise NotImplementedError(f'{type(cls)} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
-    def unique_key(self, new_root, ext=u'', add_copy=False):
-        if self.__class__._valid_exts_re and not ext:
-            ext = self.fn_key.fn_ext
-        new_name = FName(new_root +
-                         (f" {_('Copy')}" if add_copy else '') + ext)
-        if new_name == self.fn_key: # new and old names are ci-same
-            return None
-        return self.unique_name(new_name)
-
     def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
         return self.get_store().table.getItem(self.fn_key, prop, default)
 
@@ -1814,6 +1814,15 @@ class AFileInfo(AFile, ListInfo):
     def __init__(self, fullpath, load_cache=False, **kwargs):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
         super().__init__(fullpath, load_cache, **kwargs)
+
+    def delete_paths(self):
+        """Paths to delete when this item is deleted - abs_path comes first!"""
+        return self.abs_path,
+
+    def move_info(self, destDir):
+        """Hasty method used in UIList.hide(). Will overwrite! The client is
+        responsible for calling delete_refresh of the data store."""
+        self.abs_path.moveTo(destDir.join(self.fn_key))
 
     def get_rename_paths(self, newName):
         """Return possible paths this file's renaming might affect (possibly
