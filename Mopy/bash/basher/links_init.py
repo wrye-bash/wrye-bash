@@ -246,7 +246,7 @@ def InitInstallerLinks():
     #--Item links
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append_link(Installer_Open())
+        file_menu.links.append_link(UIList_OpenItems())
         file_menu.links.append_link(UIList_Rename())
         file_menu.links.append_link(Installer_Duplicate())
         file_menu.links.append_link(Installer_Hide())
@@ -415,7 +415,7 @@ def InitINILinks():
     #--Item menu
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append_link(INI_Open())
+        file_menu.links.append_link(UIList_OpenItems())
         file_menu.links.append_link(File_Duplicate())
         file_menu.links.append_link(UIList_Delete())
         INIList.context_links.append_link(file_menu)

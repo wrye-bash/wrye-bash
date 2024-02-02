@@ -2023,6 +2023,10 @@ class InstallersData(DataStore):
         # The ==Last== marker must always be present
         return {i: self[i] for i in fn_items if i != self.lastKey}
 
+    def filter_unopenable(self, fn_items: Iterable[FName]):
+        # Can't open markers since they're virtual
+        return {i: self[i] for i in fn_items if not self[i].is_marker}
+
     def copy_installer(self, src_inst, destName):
         """Copies archive to new location."""
         dest_path = self.store_dir.join(destName)
