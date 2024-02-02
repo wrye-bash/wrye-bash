@@ -55,5 +55,5 @@ class MreTes4(AMreHeader):
                 prelude=MelUInt32(b'TNAM', 'form_type')),
         ),
         MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'internal_cell_count'),
+        MelUInt32(b'INCC', 'interior_cell_count'),
     )

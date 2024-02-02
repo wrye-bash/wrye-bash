@@ -58,7 +58,7 @@ class MreTes4(AMreHeader):
         ),
         MelBase(b'BNAM', 'unknown_bnam'),
         MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'internal_cell_count'),
+        MelUInt32(b'INCC', 'interior_cell_count'),
         MelBase(b'CHGL', 'unknown_chgl'), # TODO(SF) fill out once decoded
     )
 

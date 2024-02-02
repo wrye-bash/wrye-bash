@@ -424,7 +424,7 @@ class MreTes4(AMreHeader):
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelBase(b'INTV', 'unknownINTV'),
-        MelBase(b'INCC', 'unknownINCC'),
+        MelUInt32(b'INCC', 'interior_cell_count'),
     )
 
 #------------------------------------------------------------------------------
