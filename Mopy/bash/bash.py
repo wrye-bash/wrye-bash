@@ -368,7 +368,7 @@ def _parse_bash_ini(bash_ini_path):
                             section_defaults.items()}
         # retrieving ini settings is case-insensitive - key: lowercase
         for ini_key_lower, value in bash_ini_parser.items(section):
-            if not value or value == '.': continue
+            if not value: continue
             if default := section_defaults.get(ini_key_lower[1:]):
                 ini_settings_key, default_value = default
                 if type(default_value) is bool:
