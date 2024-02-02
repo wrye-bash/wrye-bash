@@ -1941,9 +1941,10 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
     def Execute(self): # overrides _Mod_Export_Link
         message = (_(
             'This command will export the level info for NPCs whose level is '
-            'offset with respect to the PC. The exported file can be edited '
-            'with most spreadsheet programs and then reimported.') + '\n\n' +
-                   _('See the Wrye Bash readme for more info.'))
+            'offset with respect to the player. The exported file can be '
+            'edited with most spreadsheet programs and then '
+            'reimported.') + '\n\n' + _(
+            'See the Wrye Bash readme for more info.'))
         if not self._askContinue(message, u'bash.actorLevels.export.continue',
                                  _(u'Export NPC Levels')): return
         super(Mod_ActorLevels_Export, self).Execute()

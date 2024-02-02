@@ -76,7 +76,7 @@ def InitStatusBar():
         game_class.Xe.full_name for game_class in PatchGame.supported_games())
     xe_images = _png_list('tools/tes4edit%s.png')
     def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
-        app_launcher, tooltip_str, path_kwargs, *cli_args = app_path_data
+        app_launcher, app_name, path_kwargs, *cli_args = app_path_data
         uid = kwargs.setdefault('uid', app_key)
         if app_key in {'Steam', 'LOOT'}:
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
@@ -90,11 +90,10 @@ def InitStatusBar():
         if cli_args: # for tools defined in constants.py and TES4View/Trans
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
-            list_img, tooltip_str, **kwargs)
+            list_img, app_name, **kwargs)
     all_links.append(_tool_args(None, (bush.game.Ck.exe,
-            _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name},
-            {'root_dirs': 'app'}), clazz=TESCSButton, uid='TESCS',
-            display_launcher=bool(bush.game.Ck.ck_abbrev)))
+            bush.game.Ck.long_name, {'root_dirs': 'app'}), clazz=TESCSButton,
+        uid='TESCS', display_launcher=bool(bush.game.Ck.ck_abbrev)))
     # Launchers of tools ------------------------------------------------------
     all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
                      in oblivion_tools.items())
@@ -105,9 +104,7 @@ def InitStatusBar():
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
     # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
-        args = (f'{xe_name}.exe',
-                _('Launch %(xedit_name)s') % {'xedit_name': xe_name},
-                {'root_dirs': 'app'})
+        args = (f'{xe_name}.exe', xe_name, {'root_dirs': 'app'})
         all_links.append(_tool_args(f'{xe_name}Path', args, uid=xe_name,
             display_launcher=bush.game.Xe.full_name == xe_name,
             cli_args=(f'-{xe_name[:-4]}', '-edit'), clazz=AppXEdit))
@@ -115,16 +112,16 @@ def InitStatusBar():
             # set the paths for TES4Trans/TES4View, supposing they are in the
             # same folder with TES4Edit - these are not specified in the ini
             tes4_edit_dir = all_links[-1].app_path.head
-            args = 'TES4View.exe', _('Launch TES4View'), {
+            args = 'TES4View.exe', 'TES4View', {
                 'root_dirs': tes4_edit_dir}, '-TES4', '-view'
             all_links.append(_tool_args('TES4ViewPath', args, uid='TES4View',
                 display_launcher=_is_oblivion, clazz=AppXEdit))
-            args = 'TES4Trans.exe', _('Launch TES4Trans'), {
+            args = 'TES4Trans.exe', 'TES4Trans', {
                 'root_dirs': tes4_edit_dir}, '-TES4', '-translate'
             all_links.append(_tool_args('TES4TransPath', args, uid='TES4Trans',
                 display_launcher=_is_oblivion, clazz=AppXEdit))
     all_links.append(  #Tes4LODGen
-        _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', _('Launch Tes4LODGen'),
+        _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', 'Tes4LODGen',
             {'root_dirs': 'app'}), clazz=AppXEdit, uid='TES4LODGen',
             display_launcher=_is_oblivion, cli_args=('-TES4', '-lodgen')))
     all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
@@ -142,7 +139,7 @@ def InitStatusBar():
         'ShowAudioToolLaunchers']) for at in audio_tools.items())
     all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
     #--Custom Apps
-    for pth, img_path, shortcut_descr in init_app_links(
+    for pth, img_path, shortcut_desc in init_app_links(
             bass.dirs['mopy'].join('Apps')):
         if img_path is None:
             imgs = badIcons # use the 'x' icon
@@ -151,7 +148,7 @@ def InitStatusBar():
                     zip((16, 24, 32), img_path)]
         #target.stail would keep the id on renaming the .lnk but this is unique
         app_key = pth.stail.lower()
-        all_links.append(LnkButton(pth, imgs, shortcut_descr, app_key,
+        all_links.append(LnkButton(pth, imgs, shortcut_desc, app_key,
                                    canHide=False))
     #--Final couple
     all_links.append(DocBrowserButton('DocBrowser'))

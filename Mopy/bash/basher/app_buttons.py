@@ -46,9 +46,7 @@ __all__ = ['ObseButton', 'AutoQuitButton', 'GameButton', 'TESCSButton',
 # StatusBar Buttons -----------------------------------------------------------
 #------------------------------------------------------------------------------
 def _strip_version(exe_path=None, ver_tuple=()):
-    """File version with leading and trailing zeros stripped - if
-    bash.statusbar.showversion is True."""
-    if not bass.settings['bash.statusbar.showversion']: return ''
+    """File version with leading and trailing zeros stripped."""
     try:
         version = list(ver_tuple or get_file_version(exe_path.s))
         while version and version[0] == 0:
@@ -61,18 +59,22 @@ def _strip_version(exe_path=None, ver_tuple=()):
 
 class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
     """Launch an application."""
-    _tip = u''
+    _tip: str
     imageKey = '' ##: this must be set - ideally provide an env dependent fallback
 
     def __init__(self, uid: str, canHide=True, button_tip=''):
-        """uid: Unique identifier, used for saving the order of status bar
-                icons and whether they are hidden/shown.
-           canHide: True if this button is allowed to be hidden."""
+        """Create a new StatusBarButton.
+
+        :param uid: Unique identifier, used for saving the order of status bar
+            icons and whether they are hidden/shown.
+        :param canHide: True if this button is allowed to be hidden.
+        :param button_tip: The tooltip that will be shown on this button."""
         super().__init__()
         self.canHide = canHide
         self.mainMenu = self._init_menu(Links())
+        ##: Is this comment still true (re uniqueness)?
         # the _tip must be set and be as unique as uid - see SettingsDialog
-        self._tip = button_tip or self.__class__._tip or uid
+        self._tip = button_tip or getattr(self.__class__, '_tip', uid)
         self.uid = uid
 
     # we always need to pass a parent to those
@@ -129,7 +131,7 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
         for ver_file in bush.game.Se.ver_files:
             ver_path = bass.dirs[u'app'].join(ver_file)
             if ver := _strip_version(ver_path):
-                return f' {ver}'
+                return f'{ver}'
         return ''
 
     def sb_click(self):
@@ -159,13 +161,15 @@ class _StatusBar_Hide(ItemLink):
 #------------------------------------------------------------------------------
 class AppButton(AppLauncher, StatusBarButton):
     """Launch an application."""
-    _obseTip = None
 
-    def __init__(self, launcher_path, images, tip, uid, cli_args=(),
+    def __init__(self, launcher_path, images, app_name, uid, cli_args=(),
                  canHide=True, display_launcher=True):
         """images: [16x16,24x24,32x32] images"""
+        app_tooltip = _('Launch %(application_name)s') % {
+            'application_name': app_name}
         super().__init__(launcher_path, cli_args, display_launcher, uid,
-                         canHide, tip)
+                         canHide, app_tooltip)
+        self._app_name = app_name
         self.images = images
         self.wait = False
 
@@ -176,14 +180,16 @@ class AppButton(AppLauncher, StatusBarButton):
 
     @property
     def sb_button_tip(self):
-        if (obse_tip := self._obseTip) and BashStatusBar.obseButton.button_state:
-            return obse_tip
-        return f'{self._tip} {app_ver}' if (
-            app_ver := self._app_version) else self._tip
+        app_ver = self._app_version
+        return _('Launch %(application_name)s %(application_version)s') % {
+            'application_name': self._app_name,
+            'application_version': app_ver,
+        } if app_ver else super().sb_button_tip
 
     @property
     def _app_version(self):
-        return _strip_version(self._app_path)
+        return (_strip_version(self._app_path)
+                if bass.settings['bash.statusbar.showversion'] else '')
 
     def sb_click(self, *, custom_args: tuple[str, ...] = ()):
         exeargs, exepath = self.app_cli(custom_args), self.app_path
@@ -257,7 +263,17 @@ class _JavaButton(AppButton):
         subprocess.Popen((self._java.stail, '-jar', exe_path.stail,
             shlex.join(exe_args)), executable=self._java.s, close_fds=True)
 
-class LnkButton(LnkLauncher, AppButton): pass
+class LnkButton(LnkLauncher, AppButton):
+    def __init__(self, launcher_path, images, shortcut_desc, *args, **kwargs):
+        super().__init__(launcher_path, images, launcher_path.sbody, *args,
+            **kwargs)
+        self._shortcut_desc = shortcut_desc
+
+    @property
+    def sb_button_tip(self):
+        if self._shortcut_desc is not None:
+            return self._shortcut_desc
+        return super().sb_button_tip
 
 class _DirButton(AppButton):
 
@@ -435,15 +451,17 @@ class AppLOOT(_AAppLOManager):
 #------------------------------------------------------------------------------
 class GameButton(_ExeButton):
     """Will close app on execute if autoquit is on."""
-    _obseTip = _('Launch %(game_name)s %(app_version)s')
 
     def __init__(self, images):
         super().__init__(bass.dirs['app'].join(bush.game.launch_exe), images,
-            _('Launch %(game_name)s') % {'game_name': bush.game.display_name},
-            'Oblivion') # the uid
-        self._obseTip %= {'game_name': bush.game.display_name,
-                          'app_version': self._app_version}
-        self._obseTip += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
+            bush.game.display_name, uid='Oblivion')
+
+    @property
+    def sb_button_tip(self):
+        final_tip = super().sb_button_tip
+        if self.obseVersion:
+            final_tip += f' + {bush.game.Se.se_abbrev} {self.obseVersion}'
+        return final_tip
 
     def sb_click(self, *, custom_args: tuple[str, ...] = ()):
         if bush.ws_info.installed:
@@ -465,9 +483,8 @@ class GameButton(_ExeButton):
 
     @property
     def _app_version(self):
-        if not bass.settings['bash.statusbar.showversion']:
-            return '' # check first to avoid the syscall
-        return _strip_version(ver_tuple=(bush.game_version()))
+        return (_strip_version(ver_tuple=(bush.game_version()))
+                if bass.settings['bash.statusbar.showversion'] else '')
 
     def allow_create(self):
         # Always possible to run, even if the EXE is missing/inaccessible
@@ -479,18 +496,21 @@ class TESCSButton(_ExeButton):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, cli_args=bush.game.Ck.se_args, **kwargs)
-        self._obseTip = _('Launch %(ck_name)s %(app_version)s') % {
-            'ck_name': bush.game.Ck.long_name, 'app_version': self._app_version
-        }
+
+    @property
+    def sb_button_tip(self):
+        final_tip = super().sb_button_tip
         if self._exe_args: # + OBSE
-            self._obseTip += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
+            final_tip += f' + {bush.game.Se.se_abbrev} {self.obseVersion}'
             # + CSE?
             cse_path = bass.dirs['mods'].join('obse', 'plugins',
                 'Construction Set Extender.dll')
             if cse_path.is_file():
-                cse_version = f' {cse_ver}' if (
-                    cse_ver := _strip_version(cse_path)) else ''
-                self._obseTip += f' + CSE{cse_version}'
+                cse_version = ''
+                if bass.settings['bash.statusbar.showversion']:
+                    cse_version = _strip_version(cse_path)
+                final_tip += f' + CSE{cse_version}'
+        return final_tip
 
     @property
     def app_path(self):
@@ -543,9 +563,13 @@ class ObseButton(_StatefulButton):
 
     @property
     def sb_button_tip(self):
-        tip_to_fmt = (
-            _('%(se_name)s%(se_ver)s Enabled') if self.button_state else
-            _('%(se_name)s%(se_ver)s Disabled'))
+        if self.obseVersion:
+            tip_to_fmt = (_('%(se_name)s %(se_ver)s Enabled')
+                          if self.button_state else
+                          _('%(se_name)s %(se_ver)s Disabled'))
+        else:
+            tip_to_fmt = (_('%(se_name)s Enabled') if self.button_state else
+                          _('%(se_name)s Disabled'))
         return tip_to_fmt % {'se_name': bush.game.Se.se_abbrev,
                              'se_ver': self.obseVersion}
 
