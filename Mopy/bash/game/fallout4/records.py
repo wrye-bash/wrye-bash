@@ -435,7 +435,7 @@ class MreTes4(AMreHeader):
                 prelude=MelUInt32(b'TNAM', 'form_type')),
         ),
         MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'internal_cell_count'),
+        MelUInt32(b'INCC', 'interior_cell_count'),
     )
 
 #------------------------------------------------------------------------------
@@ -650,6 +650,7 @@ class MreArma(MelRecord):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         no_underarmor_scaling: bool = flag(6)
+        has_sculpt_data: bool = flag(9)
         hi_res_1st_person_only: bool = flag(30)
 
     melSet = MelSet(
@@ -2938,15 +2939,15 @@ class MreRfgp(MelRecord):
         MelEdid(),
         MelString(b'NNAM', 'rfgp_name'),
         MelFid(b'RNAM', 'rfgp_reference'),
-        MelBase(b'PNAM', 'unknown_pnam'),
+        MelFid(b'PNAM', 'rfgp_packin'),
     )
 
 #------------------------------------------------------------------------------
 class _MelSccoXnam(MelStruct):
     """Occurs twice in SCCO (because Bethesda), so deduplicated here."""
     def __init__(self):
-        super().__init__(b'XNAM', ['2i'], 'scco_scene_unknown1',
-            'scco_scene_unknown2'),
+        super().__init__(b'XNAM', ['2i'], 'scco_coordinates_x',
+            'scco_coordinates_y'),
 
 class MreScco(MelRecord):
     """Scene Collection."""
@@ -2955,7 +2956,7 @@ class MreScco(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid(b'QNAM', 'scco_quest'),
-        MelGroups('scco_scenes',
+        MelGroups('scco_scene_layout',
             MelFid(b'SNAM', 'scco_scene_fid'),
             _MelSccoXnam(),
         ),
@@ -2965,7 +2966,7 @@ class MreScco(MelRecord):
         ),
         MelBaseR(b'VNAM', 'scco_unknown_vnam2'), # required, marker?
     ).with_distributor({
-        b'XNAM': 'scco_scenes',
+        b'XNAM': 'scco_scene_layout',
         b'VNAM': ('scco_unknown_vnam1', {
             b'VNAM': 'scco_unknown_vnam2',
             b'XNAM': 'scco_unknown_array',

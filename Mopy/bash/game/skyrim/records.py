@@ -295,6 +295,21 @@ class MreHasEffects(MelRecord):
         return 0 # default to 0 (novice)
 
 #------------------------------------------------------------------------------
+class MelInteriorCellCount(MelUInt32):
+    """Handles the TES4 subrecord INCC, which is actually a uint32 but was
+    marked as an unknown byte array in TES5Edit for a long time. Handle it by
+    just skipping subrecords that can't be read as a uint32."""
+    def __init__(self):
+        super().__init__(b'INCC', 'interior_cell_count')
+
+    def load_bytes(self, ins, size_, *debug_strs):
+        if size_ != 4:
+            # Written by an older xEdit version, skip it
+            ins.seek(size_, 1, *debug_strs)
+            return None
+        return super().load_bytes(ins, size_, *debug_strs)
+
+#------------------------------------------------------------------------------
 class MelItems(AMelItems):
     """Handles the COCT/CNTO/COED subrecords defining items."""
 
@@ -424,7 +439,7 @@ class MreTes4(AMreHeader):
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelBase(b'INTV', 'unknownINTV'),
-        MelBase(b'INCC', 'unknownINCC'),
+        MelInteriorCellCount(),
     )
 
 #------------------------------------------------------------------------------
