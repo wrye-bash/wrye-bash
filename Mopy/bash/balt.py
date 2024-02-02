@@ -1200,12 +1200,16 @@ class UIList(PanelWin):
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
-        selected = self.GetSelectedInfos(selected)
-        num = len(selected)
+        sel_openable = self.data_store.filter_unopenable(
+            selected or self.GetSelected())
+        if not sel_openable:
+            showWarning(self, _('The selected items cannot be opened.'))
+            return
+        num = len(sel_openable)
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {u'num': num},
             u'bash.maxItemsOpen.continue'): return
-        for sel_inf in selected:
+        for sel_inf in sel_openable.values():
             try:
                 sel_inf.abs_path.start()
             except OSError:
@@ -1957,14 +1961,9 @@ class UIList_OpenItems(EnabledLink):
     _text = _('Open…')
     _keyboard_hint = 'Enter'
 
-    def _filter_unopenable(self, to_open_items):
-        """Filters out unopenable items from the specified iterable. Default
-        behavior is to not filter out anything."""
-        return to_open_items
-
     @property
     def link_help(self):
-        sel_filtered = self._filter_unopenable(self.selected)
+        sel_filtered = list(self._data_store.filter_unopenable(self.selected))
         if sel_filtered == self.selected:
             if len(sel_filtered) == 1:
                 return _("Open '%(item_to_open)s' with the system's default "
@@ -1980,12 +1979,11 @@ class UIList_OpenItems(EnabledLink):
                      "default program.")
 
     def _enable(self):
-        # Enable if we have at least one openable file
-        return bool(self._filter_unopenable(self.selected))
+        return bool(self._data_store.filter_unopenable(self.selected))
 
     def Execute(self):
-        self.window.OpenSelected(
-            selected=self._filter_unopenable(self.selected))
+        # OpenSelected will do the filtering, no need for us to do it too
+        self.window.OpenSelected(self.selected)
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""

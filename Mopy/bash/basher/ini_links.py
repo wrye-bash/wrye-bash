@@ -29,7 +29,7 @@ from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink, \
 from ..gui import copy_text_to_clipboard
 
 __all__ = ['INI_ValidTweaksFirst', 'INI_AllowNewLines', 'INI_ListINIs',
-           'INI_Apply', 'INI_CreateNew', 'INI_ListErrors', 'INI_Open']
+           'INI_Apply', 'INI_CreateNew', 'INI_ListErrors']
 
 class INI_ValidTweaksFirst(BoolLink):
     """Sort valid INI Tweaks to the top."""
@@ -80,12 +80,6 @@ class INI_ListErrors(EnabledLink):
         error_text = '\n'.join(inf.listErrors() for inf in self._erroneous)
         copy_text_to_clipboard(error_text)
         self._showLog(error_text, title=_('INI Tweak Errors'))
-
-#------------------------------------------------------------------------------
-class INI_Open(UIList_OpenItems):
-    """Version of UIList_OpenItems that skips default tweaks."""
-    def _filter_unopenable(self, to_open_items):
-        return [*self._data_store.filter_essential(to_open_items)]
 
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):

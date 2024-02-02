@@ -1502,9 +1502,15 @@ class DataStore(DataDict):
         env.shellDelete(paths, recycle=recycle)
 
     def filter_essential(self, fn_items: Iterable[FName]):
-        """Filters essential files out of the specified filenames. Useful to
+        """Filters essential files out of the specified filenames. Returns the
+        remaining ones as a dict, mapping file names to file infos. Useful to
         determine whether a file will cause instability when deleted/hidden."""
         return {k: self.get(k) for k in fn_items}
+
+    def filter_unopenable(self, fn_items: Iterable[FName]):
+        """Filter unopenable files out of the specified filenames. Returns the
+        remaining ones as a dict, mapping file names to file infos."""
+        return {k: self[k] for k in fn_items}
 
     def delete_refresh(self, del_paths, check_existence, extra_del_data=None):
         raise NotImplementedError
@@ -2018,6 +2024,10 @@ class INIInfos(TableFileInfos):
         # Can't remove default tweaks
         return {k: v for k in fn_items if # return None for corrupted
                 not (v := self.get(k)) or not v.is_default_tweak}
+
+    def filter_unopenable(self, fn_items: Iterable[FName]):
+        # Can't open default tweaks, they are entirely virtual
+        return self.filter_essential(fn_items)
 
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])

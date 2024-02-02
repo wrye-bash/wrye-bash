@@ -53,7 +53,7 @@ from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 from ..wbtemp import cleanup_temp_dir
 
-__all__ = [u'Installer_Open', u'Installer_Duplicate',
+__all__ = ['Installer_Duplicate',
            'Installer_OpenSearch', 'Installer_CaptureFomodOutput',
            'Installer_OpenTESA', 'Installer_Hide',
            u'Installer_Refresh', u'Installer_Move', u'Installer_HasExtraData',
@@ -746,11 +746,6 @@ class Installer_Move(_InstallerLink):
         self.idata.refresh_n()
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
-
-class Installer_Open(Installers_Link, balt.UIList_OpenItems):
-    """Open selected installer(s). Selected markers are skipped."""
-    def _filter_unopenable(self, to_open_items):
-        return [p for p in to_open_items if not self.idata[p].is_marker]
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
