@@ -398,20 +398,18 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'), title=_('Renumber Saves'), initial_num=1,
             min_num=1, max_num=10000)
         if nfn_number is None: return
-        old_names = set()
-        new_names = set()
+        rdata = bosh.RefrData()
         for s_groups, sinf in self._matches:
             # We have to pass the root, so strip off the extension
             ofn_root = FName(s_groups[2]).fn_body
             nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
             if nfn_save != sinf.fn_key.fn_body:
-                if not self.window.try_rename(sinf, nfn_save, new_names,
-                                              old_names):
+                if not self.window.try_rename(sinf, nfn_save, rdata):
                     break
                 nfn_number += 1
-        if new_names:
-            self.window.RefreshUI(redraw=new_names, to_del=old_names)
-            self.window.SelectItemsNoCallback(new_names)
+        if rdata:
+            self.window.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del)
+            self.window.SelectItemsNoCallback(rdata.redraw)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):

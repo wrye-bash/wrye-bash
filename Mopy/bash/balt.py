@@ -1097,12 +1097,14 @@ class UIList(PanelWin):
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH
 
-    def try_rename(self, info, newName, to_select=None, to_del=None,
-                   item_edited=None): # Mods/BSAs
+    def try_rename(self, info, newName, rdata=None, item_edited=None):
+        """Mods/BSAs - Inis won't be added and Screens/Installers/Saves
+        override - reduce this."""
         oldName = self._try_rename(info, newName)
         if oldName:
-            if to_select is not None: to_select.add(newName)
-            if to_del is not None: to_del.add(oldName)
+            if rdata is not None:
+                rdata.redraw.add(newName)
+                rdata.to_del.add(oldName)
             if item_edited and oldName == item_edited[0]:
                 item_edited[0] = newName
             return newName # continue

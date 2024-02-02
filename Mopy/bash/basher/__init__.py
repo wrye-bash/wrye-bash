@@ -2175,23 +2175,20 @@ class SaveList(UIList):
             showError(self, newName)
             return EventResult.CANCEL # validate_filename would Veto
         item_edited = [self.panel.detailsPanel.displayed_item]
-        to_select = set()
-        to_del = set()
+        rdata = RefrData()
         for saveInfo in self.get_selected_infos_filtered():
-            if not self.try_rename(saveInfo, root, to_select, to_del,
-                                   item_edited): break
-        if to_select:
-            self.RefreshUI(redraw=to_select, to_del=to_del, # to_add
+            if not self.try_rename(saveInfo, root, rdata, item_edited): break
+        if rdata:
+            self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
                            detail_item=item_edited[0])
             #--Reselect the renamed items
-            self.SelectItemsNoCallback(to_select)
+            self.SelectItemsNoCallback(rdata.redraw)
         return EventResult.CANCEL # needed ! clears new name from label on exception
 
-    def try_rename(self, saveinf, new_root, to_select=None, to_del=None,
-                   item_edited=None, force_ext=''):
+    def try_rename(self, saveinf, new_root, rdata=None, item_edited=None,
+                   force_ext=''):
         newFileName = saveinf.unique_key(new_root, force_ext)
-        return super().try_rename(saveinf, newFileName, to_select, to_del,
-                                  item_edited)
+        return super().try_rename(saveinf, newFileName, rdata, item_edited)
 
     @staticmethod
     def _unhide_wildcard():
@@ -2404,7 +2401,7 @@ class SaveDetails(_ModsSavesDetails):
         saveInfo.makeBackup() ##: why backup when just renaming - #292
         prevMTime = saveInfo.ftime
         #--Change Name?
-        to_del = set()
+        rdata = RefrData()
         if changeName:
             newName = FName(self.fileStr.strip()).fn_body
             # if you were wondering: OnFileEdited checked if file existed,
@@ -2412,7 +2409,7 @@ class SaveDetails(_ModsSavesDetails):
             # don't - filesystem APIs might warn user (with a dialog hopefully)
             # for an overwrite, otherwise we can have a race whatever we try
             # here - an extra check can't harm nor makes a (any) difference
-            self.panel_uilist.try_rename(saveInfo, newName, to_del=to_del)
+            self.panel_uilist.try_rename(saveInfo, newName, rdata)
         #--Change masters?
         if changeMasters:
             prev_masters = saveInfo.masterNames
@@ -2423,12 +2420,12 @@ class SaveDetails(_ModsSavesDetails):
             saveInfo.setmtime(prevMTime)
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
-        kwargs = {u'to_del': to_del, u'detail_item': detail_item}
+        kwargs = {'to_del': rdata.to_del}
         if detail_item is None:
-            kwargs[u'to_del'] = to_del | {self.file_info.fn_key}
+            kwargs['to_del'] |= {self.file_info.fn_key} # we failed rewriting
         else:
             kwargs[u'redraw'] = [detail_item]
-        self.panel_uilist.RefreshUI(**kwargs)
+        self.panel_uilist.RefreshUI(**kwargs, detail_item=detail_item)
 
     def RefreshUIColors(self):
         self._update_masters_warning()
@@ -3475,28 +3472,25 @@ class ScreensList(UIList):
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr.zfill(digits) if numStr else ''
         with BusyCursor():
-            to_select = set()
-            to_del = set()
+            rdata = RefrData()
             item_edited = [self.panel.detailsPanel.displayed_item]
             for scrinf in selected:
-                if not self.try_rename(scrinf, root + numStr, to_select,
-                                       to_del, item_edited): break
+                if not self.try_rename(scrinf, root + numStr, rdata,
+                                       item_edited): break
                 num += 1
                 numStr = str(num).zfill(digits)
-            if to_select:
-                self.RefreshUI(redraw=to_select, to_del=to_del,
+            if rdata:
+                self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
                                detail_item=item_edited[0])
                 #--Reselected the renamed items
-                self.SelectItemsNoCallback(to_select)
+                self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
 
-    def try_rename(self, scrinf, new_root, to_select=None, to_del=None,
-                   item_edited=None):
+    def try_rename(self, scrinf, new_root, rdata=None, item_edited=None):
         newName = FName(new_root + scrinf.fn_key.fn_ext) # TODO: add ScreenInfo.unique_key()
         if scrinf.get_store().store_dir.join(newName).exists():
             return None # break
-        return super().try_rename(scrinf, newName, to_select, to_del,
-                                  item_edited)
+        return super().try_rename(scrinf, newName, rdata, item_edited)
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens
