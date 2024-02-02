@@ -2453,6 +2453,8 @@ class SavePanel(BashTab):
         super(SavePanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
+_localized_last = f"=={_('Last')}=="
+
 class InstallersList(UIList):
     column_links = Links()
     context_links = Links()
@@ -2478,7 +2480,9 @@ class InstallersList(UIList):
             items.sort(key=lambda x: not __lm(self, x))
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
-    labels = {'Package': lambda self, p: p,
+    labels = {
+        # Special handling to allow ==Last== to be shown translated to the user
+        'Package': lambda self, p: _localized_last if p == '==Last==' else p,
         'Order':    _ask_info('order', wrap=str),
         'Modified': _ask_info('ftime', wrap=format_date),
         'Size':     _ask_info('size_string', ()),
