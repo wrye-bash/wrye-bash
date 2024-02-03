@@ -33,7 +33,7 @@ from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
 from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, Links, \
-    OkButton, PictureWithCursor, RadioButton, ScrollableWindow, Stretch, \
+    OkButton, MediaViewerWithCursor, RadioButton, ScrollableWindow, Stretch, \
     Table, TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
     copy_text_to_clipboard, showWarning, StaticBmp
 from ..wbtemp import cleanup_temp_dir
@@ -238,10 +238,8 @@ class PageSelect(PageInstaller):
         # To undo user changes to 'frozen' radio button groups
         self._frozen_states = {}
         self._current_image = None
-        self._img_cache = {} # creating images can be really expensive
-        self._bmp_item = PictureWithCursor(self, 0, 0, background=None)
-        self._bmp_item.on_mouse_middle_up.subscribe(self._open_image)
-        self._bmp_item.on_mouse_left_dclick.subscribe(self._open_image)
+        self._bmp_item = MediaViewerWithCursor(self, 0, 0, background=None,
+            click_callback=self._open_image)
         # Shows required/recommended/etc. status of hovered-over option
         self._option_type_label = Label(self, u'')
         self._text_item = TextArea(self, editable=False, auto_tooltip=False)
@@ -403,11 +401,7 @@ class PageSelect(PageInstaller):
         opt_img_path = to_os_path(self._page_parent._fomod_dir.join(
             self._page_parent.installer_root, opt_img))
         self._current_image = opt_img_path # To allow opening via double click
-        try:
-            final_image = self._img_cache[opt_img]
-        except KeyError:
-            final_image = opt_img_path
-        self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
+        self._bmp_item.load_from_path(opt_img_path)
         # Check if we need to display a special string above the description
         type_desc, type_warn = self._option_type_info[option.option_type]
         cg_type = self.checkable_to_group[checkable].group_type

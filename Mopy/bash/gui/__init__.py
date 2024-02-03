@@ -24,8 +24,6 @@
 outside the gui package should import from here, so that classes may be moved
 around without breaking third-party code."""
 
-__author__ = u'Infernio'
-
 from ._gui_globals import *
 from .base_components import *
 from .buttons import *
@@ -37,8 +35,9 @@ from .functions import *
 from .images import *
 from .layouts import *
 from .list_ctrl import *
-from .misc_components import *
+from .media_viewer import *
 from .menus import *
+from .misc_components import *
 from .multi_choices import *
 from .popups import *
 from .text_components import *

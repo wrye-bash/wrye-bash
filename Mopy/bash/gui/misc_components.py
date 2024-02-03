@@ -35,13 +35,10 @@ import wx as _wx
 import wx.adv as _adv
 from wx.grid import Grid
 
-from .base_components import Color, WithCharEvents, WithMouseEvents, \
-    _AComponent, _AEvtHandler
-from .events import EventResult
+from .base_components import WithCharEvents, _AComponent, _AEvtHandler
 from .functions import copy_text_to_clipboard, read_from_clipboard
-from .images import GuiImage
 from .menus import Links
-from ..bolt import Path, dict_sort
+from ..bolt import dict_sort
 
 class Font(_wx.Font):
     @staticmethod
@@ -52,94 +49,6 @@ class Font(_wx.Font):
         else: font_.SetStyle(_wx.FONTSTYLE_NORMAL)
         font_.SetUnderlined(underline)
         return font_
-
-# Pictures --------------------------------------------------------------------
-class Picture(_AComponent):
-    """Picture panel."""
-
-    def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
-                 style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
-        super(Picture, self).__init__(parent, size=(width, height),
-                                      style=style)
-        self._native_widget.SetBackgroundStyle(_wx.BG_STYLE_CUSTOM)
-        self._gui_bitmap = None
-        self.background = self._get_brush(
-            background or self._native_widget.GetBackgroundColour())
-        #self.SetSizeHints(width,height,width,height)
-        #--Events
-        self._on_paint = self._evt_handler(_wx.EVT_PAINT)
-        self._on_paint.subscribe(self._handle_paint)
-        self._on_size = self._evt_handler(_wx.EVT_SIZE)
-        self._on_size.subscribe(self._handle_resize)
-        self._handle_resize()
-
-    def SetBackground(self, background):
-        self.background = self._get_brush(background)
-        self._handle_resize()
-
-    @staticmethod
-    def _get_brush(background):
-        if isinstance(background, Color):
-            background = background.to_rgba_tuple()
-        if isinstance(background, tuple):
-            background = _wx.Colour(*background)
-        if isinstance(background, _wx.Colour):
-            background = _wx.Brush(background)
-        return background
-
-    def set_bitmap(self, bmp):
-        """Set the bitmap on the native_widget and return the wx object for
-        caching"""
-        if isinstance(bmp, Path):
-            bmp = (bmp.is_file() and GuiImage.from_path(bmp)) or None
-        if bmp is not None:
-            bmp = self._resolve(bmp)
-            # If bmp comes from a BmpFromStream, this will be a bitmap; if it
-            # comes from a _BmpFromPath, it will be a bitmap bundle (with only
-            # one bitmap in it)
-            if isinstance(bmp, _wx.BitmapBundle):
-                bmp = bmp.GetBitmap(bmp.GetDefaultSize())
-        self._gui_bitmap = bmp
-        self._handle_resize()
-        return self._gui_bitmap
-
-    def _handle_resize(self): ##: is all these wx.Bitmap calls needed? One right way?
-        x, y = self.scaled_size()
-        if x <= 0 or y <= 0: return
-        self.buffer = _wx.Bitmap(x,y)
-        dc = _wx.MemoryDC()
-        dc.SelectObject(self.buffer)
-        # Draw
-        dc.SetBackground(self.background)
-        dc.Clear()
-        if self._gui_bitmap is not None:
-            old_x,old_y = self._gui_bitmap.GetSize()
-            scale = min(float(x)/old_x, float(y)/old_y)
-            new_x = old_x * scale
-            new_y = old_y * scale
-            pos_x = max(0,x-new_x)/2
-            pos_y = max(0,y-new_y)/2
-            image = self._gui_bitmap.ConvertToImage()
-            image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
-            dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
-        del dc
-        self._native_widget.Refresh()
-        self._native_widget.Update()
-
-    def _handle_paint(self):
-        dc = _wx.BufferedPaintDC(self._native_widget, self.buffer)
-        return EventResult.FINISH
-
-class PictureWithCursor(Picture, WithMouseEvents):
-    bind_lclick_double = bind_middle_up = True
-
-    def set_bitmap(self, bmp):
-        # Don't want the bitmap to resize until we call self.Layout()
-        with self.pause_drawing():
-            img = super(PictureWithCursor, self).set_bitmap(bmp)
-            self._native_widget.SetCursor(
-                _wx.Cursor(_wx.CURSOR_MAGNIFIER if img else _wx.CURSOR_ARROW))
-        return img
 
 # Lines -----------------------------------------------------------------------
 class _ALine(_AComponent):

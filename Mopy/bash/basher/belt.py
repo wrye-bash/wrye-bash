@@ -33,7 +33,7 @@ from ..bolt import FName, FNDict, LooseVersion
 from ..env import get_file_version, to_os_path
 from ..gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
-    ListBox, PictureWithCursor, StaticBmp, Stretch, TextArea, VLayout, \
+    ListBox, MediaViewerWithCursor, StaticBmp, Stretch, TextArea, VLayout, \
     WizardDialog, WizardPage, get_image_dir, get_image
 from ..ini_files import OBSEIniFile
 from ..wbtemp import cleanup_temp_dir
@@ -174,7 +174,8 @@ class PageSelect(PageInstaller):
         self.index = None
         self.title_desc = Label(self, desc)
         self.textItem = TextArea(self, editable=False, auto_tooltip=False)
-        self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
+        self.bmp_item = MediaViewerWithCursor(self, 0, 0, background=None,
+            click_callback=self._click_on_image)
         kwargs = dict(choices=self.listItems, isHScroll=True,
                       onSelect=self.OnSelect)
         self._page_parent = parent
@@ -206,9 +207,6 @@ class PageSelect(PageInstaller):
             (self.textItem, LayoutOptions(weight=1))
         ]).apply_to(self)
         self.update_layout()
-        self.bmp_item.on_mouse_middle_up.subscribe(self._click_on_image)
-        self.bmp_item.on_mouse_left_dclick.subscribe(
-            lambda selected_index: self._click_on_image())
 
     def OnSelect(self, lb_selection_dex, _lb_selection_str):
         self.listOptions.lb_select_index(lb_selection_dex) # event.Skip() won't do
@@ -234,7 +232,7 @@ class PageSelect(PageInstaller):
         self._page_parent.enable_forward(True)
         self.index = index
         self.textItem.text_content = self.descs[index]
-        self.bmp_item.set_bitmap(self._image_paths[index])
+        self.bmp_item.load_from_path(self._image_paths[index])
         # self.Layout() # the bitmap would change size and show blurred
 
     def OnNext(self):

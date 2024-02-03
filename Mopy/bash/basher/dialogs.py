@@ -36,7 +36,7 @@ from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     CheckBox, CheckListBox, DeselectAllButton, DialogWindow, DocumentViewer, \
     DropDown, EventResult, FileOpen, GridLayout, HBoxedLayout, HLayout, \
     HorizontalLine, IcoFromPng, ImageButton, Label, LayoutOptions, ListBox, \
-    MLEList, MaybeModalDialogWindow, OkButton, Picture, RadioButton, \
+    MLEList, MaybeModalDialogWindow, OkButton, MediaViewer, RadioButton, \
     SearchBar, SelectAllButton, Spacer, Stretch, TextAlignment, TextField, \
     Tree, TreeNode, VBoxedLayout, VLayout, WrappingLabel, bell, get_image, \
     showError, showOk, ImageList
@@ -85,7 +85,7 @@ class ImportFaceDialog(DialogWindow):
         #--Other
         importButton = OkButton(self, btn_label=_('Import'))
         importButton.on_clicked.subscribe(self.DoImport)
-        self.picture = Picture(self, 350, 210, scaling=2) ##: unused
+        self.picture = MediaViewer(self, 350, 210, scaling=2) ##: unused
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
             ((self.listBox, LayoutOptions(row_span=2, expand=True)),
@@ -112,7 +112,7 @@ class ImportFaceDialog(DialogWindow):
         self.statsText.label_text = _('Health') + f' {face.health}'
         itemImagePath = bass.dirs['mods'].join('Docs', 'Images', f'{item}.jpg')
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
-        self.picture.set_bitmap(itemImagePath)
+        self.picture.load_from_path(itemImagePath)
         self.listBox.lb_select_index(lb_selection_dex)
 
     def DoImport(self):

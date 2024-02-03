@@ -83,7 +83,7 @@ from ..exception import BoltError, CancelError, FileError, SkipError, \
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
-    ListBox, Links, MultiChoicePopup, PanelWin, Picture, PureImageButton, \
+    ListBox, Links, MultiChoicePopup, PanelWin, MediaViewer, PureImageButton, \
     RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, TextArea, \
     TextField, VLayout, WindowFrame, WithMouseEvents, get_shift_down, \
     read_files_from_clipboard_cb, showError, askYes, showWarning, askWarning, \
@@ -2292,8 +2292,8 @@ class SaveDetails(_ModsSavesDetails):
         self._set_player_info_label()
         self.gCoSaves = Label(top, u'--\n--')
         #--Picture
-        self.picture = Picture(top, textWidth, 192 * textWidth // 256,
-            background=colors[u'screens.bkgd.image']) #--Native: 256x192
+        self.picture = MediaViewer(top, textWidth, 192 * textWidth // 256,
+            background=colors['screens.bkgd.image']) #--Native: 256x192
         self.picture.visible = bush.game.Ess.has_screenshots
         #--Save Info
         self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
@@ -2350,7 +2350,7 @@ class SaveDetails(_ModsSavesDetails):
                 *self.saveInfo.header.image_parameters)
         else:
             new_save_screen = None # reset to default
-        self.picture.set_bitmap(new_save_screen)
+        self.picture.load_from_buffer(new_save_screen)
         #--Info Box
         self.gInfo.modified = False
         self.gInfo.text_content = note_text
@@ -2431,7 +2431,7 @@ class SaveDetails(_ModsSavesDetails):
 
     def RefreshUIColors(self):
         self._update_masters_warning()
-        self.picture.SetBackground(colors[u'screens.bkgd.image'])
+        self.picture.set_viewer_background(colors['screens.bkgd.image'])
 
 #------------------------------------------------------------------------------
 class SavePanel(BashTab):
@@ -3511,13 +3511,13 @@ class ScreensList(UIList):
 class ScreensDetails(_DetailsMixin, NotebookPanel):
 
     def __init__(self, parent, ui_list_panel):
-        self.screenshot_control = None # For _resetDetails
+        self.screenshot_viewer = None # For _resetDetails
         super().__init__(parent)
-        self.screenshot_control = Picture(self, 256, 192,
+        self.screenshot_viewer = MediaViewer(self, 256, 192,
             background=colors['screens.bkgd.image'])
         self.displayed_screen: bolt.Path | None = None
         HLayout(item_expand=True, item_weight=1,
-                items=[self.screenshot_control]).apply_to(self)
+                items=[self.screenshot_viewer]).apply_to(self)
 
     @property
     def displayed_item(self): return self.displayed_screen
@@ -3526,22 +3526,19 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def file_infos(self): return bosh.screen_infos
 
     def _resetDetails(self):
-        if self.screenshot_control:
-            self.screenshot_control.set_bitmap(None)
+        if self.screenshot_viewer:
+            self.screenshot_viewer.clear_viewer()
 
     def SetFile(self, fileName=_same_file):
         """Set file to be viewed."""
         #--Reset?
         self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
         if not self.displayed_screen: return
-        if self.file_info.cached_bitmap is None:
-            self.file_info.cached_bitmap = self.screenshot_control.set_bitmap(
-                self.file_info.abs_path)
-        else:
-            self.screenshot_control.set_bitmap(self.file_info.cached_bitmap)
+        self.screenshot_viewer.load_from_path(self.file_info.abs_path)
 
     def RefreshUIColors(self):
-        self.screenshot_control.SetBackground(colors[u'screens.bkgd.image'])
+        self.screenshot_viewer.set_viewer_background(
+            colors['screens.bkgd.image'])
 
 #------------------------------------------------------------------------------
 class ScreensPanel(BashTab):

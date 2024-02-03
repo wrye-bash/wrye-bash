@@ -1509,20 +1509,10 @@ class SaveInfo(FileInfo):
         return old_new_paths
 
 #------------------------------------------------------------------------------
-class ScreenInfo(AFileInfo):
-    """Cached screenshot, stores a bitmap and refreshes it when its cache is
-    invalidated."""
+class ScreenInfo(AFileInfo): ##: Should be able to drop this now?
     _valid_exts_re = r'(\.(?:' + '|'.join(
         ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
-
-    def __init__(self, fullpath, load_cache=False, **kwargs):
-        super().__init__(fullpath, load_cache, **kwargs)
-        self.cached_bitmap = None
-
-    def _reset_cache(self, stat_tuple, **kwargs):
-        self.cached_bitmap = None # Lazily reloaded
-        super()._reset_cache(stat_tuple, **kwargs)
 
     @classmethod
     def get_store(cls): return screen_infos

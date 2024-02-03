@@ -26,6 +26,7 @@ from __future__ import annotations
 import os
 
 import wx as _wx
+import wx.adv as _adv
 import wx.svg as _svg
 
 from ._gui_globals import get_image, get_image_dir
@@ -40,6 +41,7 @@ class GuiImage(Lazy):
 
     img_types = {
         '.bmp': _wx.BITMAP_TYPE_BMP,
+        '.gif': _wx.BITMAP_TYPE_GIF,
         '.ico': _wx.BITMAP_TYPE_ICO,
         '.jpeg': _wx.BITMAP_TYPE_JPEG,
         '.jpg': _wx.BITMAP_TYPE_JPEG,
@@ -84,10 +86,23 @@ class GuiImage(Lazy):
             return cls(img_path, iconSize, img_type, quality)
         if img_type == _wx.BITMAP_TYPE_ICO:
             return _BmpFromIcoPath(img_path, iconSize, img_type, quality)
+        elif img_type == _wx.BITMAP_TYPE_GIF:
+            return AnimatedImage(img_path, iconSize, img_type, quality)
         elif is_svg:
             return _SvgFromPath(img_path, iconSize, img_type, quality)
         else:
             return _BmpFromPath(img_path, iconSize, img_type, quality)
+
+class AnimatedImage(GuiImage):
+    """Represents an animated image, e.g. a gif."""
+    _native_widget: _adv.Animation
+
+    @property
+    def _native_widget(self):
+        if not self._is_created():
+            # Currently only supports GIFs
+            self._cached_args = (self._img_path, _adv.ANIMATION_TYPE_GIF)
+        return super()._native_widget
 
 class _SvgFromPath(GuiImage):
     """Wrap an svg."""
