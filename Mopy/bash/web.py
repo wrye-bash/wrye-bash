@@ -61,7 +61,7 @@ except ImportError as i_err:
     raise ImportError('requests missing, web API unavailable') from i_err
 
 # Constants -------------------------------------------------------------------
-_USER_AGENT = (f'WryeBash/{bass.AppVersion} ({platform.platform()}; '
+_USER_AGENT = (f'WryeBash/{bass.AppVersion} ({platform.system()}; '
                f'{platform.architecture()[0]}) '
                f'{platform.python_implementation()}/'
                f'{platform.python_version()}')
