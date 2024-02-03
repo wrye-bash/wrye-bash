@@ -1533,7 +1533,7 @@ class DataStore(DataDict):
     def refresh(self): raise NotImplementedError
     def save_pickle(self): pass # for Screenshots
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
@@ -1541,14 +1541,16 @@ class DataStore(DataDict):
             # saves) shellMove will offer to skip and raise SkipError
             if tup[0] == tup[1] or not tup[0].exists():
                 rename_paths.remove(tup)
-        env.shellMove(dict(rename_paths))
+        env.shellMove(ren := dict(rename_paths))
+        # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
         old_key = member_info.fn_key
         ##: Make sure we pass FName in, then drop this FName call
         member_info.fn_key = FName(newName)
-        #--FileInfos
+        #--FileInfo
         self[newName] = member_info
+        member_info.abs_path = self.store_dir.join(newName)
         del self[old_key]
-        return old_key
+        return {old_key: newName}, ren
 
     def add_info(self, file_info, destName, **kwargs):
         raise NotImplementedError
@@ -1581,6 +1583,11 @@ class RefrData:
 
     def __bool__(self):
         return bool(self.to_add or self.to_del or self.redraw)
+
+    @classmethod
+    def from_renamed(cls, renamed: dict[FName, FName]) -> 'RefrData':
+        """Return a RefrData instance with the specified renamed filenames."""
+        return cls(to_del=set(renamed), redraw=set(renamed.values()))
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -1735,15 +1742,11 @@ class _AFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         # Override to allow us to notify BAIN if necessary
-        ##: This is *very* inelegant/inefficient, we calculate these paths
-        # twice (once here and once in super)
-        self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
-        res = super().rename_operation(member_info, newName)
-        #--FileInfo
-        member_info.abs_path = self.store_dir.join(newName)
-        return res
+        ren_keys, ren_paths = super().rename_operation(member_info, newName)
+        self._notify_bain(renamed=ren_paths)
+        return ren_keys, ren_paths
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
@@ -3065,14 +3068,14 @@ class ModInfos(TableFileInfos):
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip = [x for x in self._active_wip if x not in to_remove]
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(member_info.fn_key)
         if isSelected:
             self.lo_deactivate(member_info.fn_key)
-        old_key = super(ModInfos, self).rename_operation(member_info, newName)
+        ren_keys, ren_paths = super().rename_operation(member_info, newName)
         # rename in load order caches
-        oldIndex = self._lo_wip.index(old_key)
+        oldIndex = self._lo_wip.index(old_key := next(iter(ren_keys)))
         self._lo_caches_remove_mods([old_key])
         self._lo_wip.insert(oldIndex, newName)
         if isSelected: self.lo_activate(newName)
@@ -3082,7 +3085,7 @@ class ModInfos(TableFileInfos):
         for mod_inf in self.values():
             if mod_inf.get_table_prop('bp_split_parent') == old_key:
                 mod_inf.set_table_prop('bp_split_parent', newName)
-        return old_key
+        return ren_keys, ren_paths
 
     #--Delete
     def delete_refresh(self, infos, check_existence):
@@ -3344,13 +3347,13 @@ class SaveInfos(TableFileInfos):
         return super().refresh(booting=booting) if refresh_infos else \
            self._rdata_type()
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        old_key = super(SaveInfos, self).rename_operation(member_info, newName)
+        ren_keys, ren_paths = super().rename_operation(member_info, newName)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
-        return old_key
+        return ren_keys, ren_paths
 
     @staticmethod
     def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):

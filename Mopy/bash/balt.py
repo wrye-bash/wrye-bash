@@ -1097,32 +1097,23 @@ class UIList(PanelWin):
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH
 
-    def try_rename(self, info, newName, rdata=None, item_edited=None):
+    # Renaming - note the @conversation, this needs to be atomic with respect
+    # to refreshes and ideally atomic short - store_refr is Installers only
+    @conversation
+    def try_rename(self, info, newName, store_refr=None):
         """Mods/BSAs - Inis won't be added and Screens/Installers/Saves
         override - reduce this."""
-        oldName = self._try_rename(info, newName)
-        if oldName:
-            if rdata is not None:
-                rdata.redraw.add(newName)
-                rdata.to_del.add(oldName)
-            if item_edited and oldName == item_edited[0]:
-                item_edited[0] = newName
-            return newName # continue
-
-    # Renaming - note the @conversation, this needs to be atomic with respect
-    # to refreshes and ideally atomic short
-    @conversation
-    def _try_rename(self, info, newFileName):
         try:
-            return self.data_store.rename_operation(info, newFileName)
+            return self.data_store.rename_operation(info, newName,
+                store_refr)[0] # return the renamed keys old -> new
         except (CancelError, OSError):
-            deprint(f'Renaming {info} to {newFileName} failed', traceback=True)
+            deprint(f'Renaming {info} to {newName} failed', traceback=True)
             # When using moveTo I would get "WindowsError:[Error 32]The process
             # cannot access ..." -  the code below was reverting the changes.
             # With shellMove I mostly get CancelError so below not needed -
             # except if a save is locked and user presses Skip - so cosaves are
             # renamed! Error handling is still a WIP
-            for old, new in info.get_rename_paths(newFileName):
+            for old, new in info.get_rename_paths(newName):
                 if old == new: continue
                 if (nex := new.exists()) and not (oex := old.exists()):
                     # some cosave move failed, restore files
