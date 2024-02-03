@@ -883,7 +883,7 @@ class MreCell(AMreCell):
         fogMax: bool = flag(9)
         lightFadeDistances: bool = flag(10)
 
-    class _cell_land_flags(TrimmedFlags):
+    class _CellLandFlags(Flags):
         hide_quad1: bool
         hide_quad2: bool
         hide_quad3: bool
@@ -896,8 +896,8 @@ class MreCell(AMreCell):
             (CellDataFlags2, 'skyFlags'), old_versions={'B'},
             is_required=True),
         ##: The other games skip this in interiors - why / why not here?
-        MelStruct(b'XCLC', ['2i', 'I'], 'posX', 'posY',
-                  (_cell_land_flags, 'cell_land_flags')),
+        MelStruct(b'XCLC', ['2i', 'B', '3s'], 'posX', 'posY',
+            (_CellLandFlags, 'cell_land_flags'), 'unused_xclc'),
         MelTruncatedStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f',
             '2i', '3f', '3B', 's', '3B', 's', '3B', 's', '3B', 's', '3B', 's',
             '3B', 's', '3B', 's', 'f', '3B', 's', '3f', 'I'],
