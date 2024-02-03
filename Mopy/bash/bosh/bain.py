@@ -1987,27 +1987,27 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, member_info, name_new):
-        """Rename installer and return a three tuple specifying if a refresh in
-        mods and ini lists is needed. name_new must be tested (via unique name)
-        otherwise we will overwrite!"""
+    def rename_operation(self, member_info, name_new, store_refr=None):
+        """Rename installer and update store_refr if owned files need be
+        redrawn. name_new must be tested (via unique name) otherwise we will
+        overwrite!"""
         if member_info.is_marker:
-            del self[member_info.fn_key]
-            member_info.fn_key = FName(name_new) ##: make sure newName is fn
-            self[member_info.fn_key] = member_info
-            return True, False, False
-        old_key = super().rename_operation(member_info, name_new)
-        member_info.abs_path = self.store_dir.join(name_new)
+            del self[old := member_info.fn_key]
+            new = member_info.fn_key = FName(name_new) ##: make sure newName is fn
+            self[new] = member_info
+            return {old: new}, {}
+        ren_keys, ren_paths = super().rename_operation(member_info, name_new)
         # Update the ownership information for relevant data stores
-        owned_per_store = []
+        old_key = next(iter(ren_keys))
         for store in data_tracking_stores():
             if not store.tracks_ownership: continue
             owned = [v for v in store.values() if str( # str due to Paths
                 v.get_table_prop('installer')) == old_key]
-            owned_per_store.append(owned)
+            if owned:
+                store_refr[store] = True
             for v in owned:
                 v.set_table_prop('installer', '%s' % name_new)
-        return True, *map(bool, owned_per_store)
+        return ren_keys, ren_paths
 
     #--Dict Functions ---------------------------------------------------------
     def _delete_operation(self, infos, *, recycle=True):
