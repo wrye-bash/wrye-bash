@@ -157,6 +157,12 @@ class PatchFile(ModFile):
         ModFile.__init__(self,modInfo,None)
         self.tes4.author = 'BASHED PATCH'
         self.tes4.masters = [bush.game.master_file]
+        # Start records at 0x800 to avoid problems where people use older
+        # versions of games that don't support the expanded ESL range. BPs
+        # generally end up with very few new records, so we're very
+        # unlikely to end up exceeding the 2048 barrier where the BP would
+        # take a full slot again, even with this.
+        self.tes4.nextObject = 0x800
         self.keepIds = set()
         # Aliases from one mod name to another. Used by text file patchers.
         self.pfile_aliases = {}
@@ -452,10 +458,10 @@ class PatchFile(ModFile):
         ##: Consider flagging as Overlay instead if that flag is supported by
         # the game and no new records have been included?
         # Flag as ESL if the game supports them, the option is enabled and the
-        # BP has <= 0xFFF new records
-        num_new_recs = self.count_new_records()
+        # BP has <= 2048 new records
+        num_new_recs = self.count_new_records(next_object_start=0x800)
         if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
-            num_new_recs <= 0xFFF):
+            num_new_recs <= 2048):
             self.tes4.flags1.esl_flag = True
             msg = '\n\n' + _('This patch has been automatically ESL-flagged '
                              'to save a load order slot.')
