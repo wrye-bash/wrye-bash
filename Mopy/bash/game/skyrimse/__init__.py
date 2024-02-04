@@ -337,7 +337,6 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
 
 class EGSSkyrimSEGameInfo(EGSMixin, ASkyrimSEGameInfo):
     """GameInfo override for the Epic Games Store version of Skyrim SE."""
-    unique_display_name = f'{ASkyrimSEGameInfo.display_name} (EGS)'
     my_games_name = 'Skyrim Special Edition EPIC'
     appdata_name = 'Skyrim Special Edition EPIC'
 

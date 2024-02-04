@@ -160,6 +160,8 @@ class GameInfo(object):
     #  HKCU\Software\Wow6432Node
     # Example: [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
     gog_registry_keys = []
+    # Same as above, but for the old disc versions of games
+    disc_registry_keys = []
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name

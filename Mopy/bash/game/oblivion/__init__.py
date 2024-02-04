@@ -24,7 +24,7 @@ from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
-from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
+from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
 
 _GOG_IDS = [
@@ -1235,6 +1235,10 @@ class AOblivionGameInfo(PatchGame):
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *_brec.RecordType.nested_to_top}
 
+class DiscOblivionGameInfo(DiscMixin, AOblivionGameInfo):
+    """GameInfo override for the disc version of Oblivion."""
+    _disc_subkey = 'Oblivion'
+
 class GOGOblivionGameInfo(GOGMixin, AOblivionGameInfo):
     """GameInfo override for the GOG version of Oblivion."""
     _gog_game_ids = _GOG_IDS
@@ -1263,5 +1267,7 @@ class WSOblivionGameInfo(WindowsStoreMixin, AOblivionGameInfo):
                             'Oblivion GOTY Italian',
                             'Oblivion GOTY Spanish']
 
+# DiscOblivionGameInfo last - see DiscMixin docstring
 GAME_TYPE = {g.unique_display_name: g for g in (
-    GOGOblivionGameInfo, SteamOblivionGameInfo, WSOblivionGameInfo)}
+    GOGOblivionGameInfo, SteamOblivionGameInfo, WSOblivionGameInfo,
+    DiscOblivionGameInfo)}

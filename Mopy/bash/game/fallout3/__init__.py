@@ -24,7 +24,8 @@ from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
-from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
+from ..store_mixins import DiscMixin, EGSMixin, GOGMixin, SteamMixin, \
+    WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
 
 _GOG_IDS = [1454315831]
@@ -1256,6 +1257,10 @@ class EGSFallout3GameInfo(EGSMixin, AFallout3GameInfo):
         egs_app_names = ['adeae8bbfc94427db57c7dfecce3f1d4']
         egs_language_dirs = FO3_LANG_DIRS
 
+class DiscFallout3GameInfo(DiscMixin, AFallout3GameInfo):
+    """GameInfo override for the disc version of Fallout 3."""
+    _disc_subkey = 'Fallout3'
+
 class GOGFallout3GameInfo(GOGMixin, AFallout3GameInfo):
     """GameInfo override for the GOG version of Fallout 3."""
     _gog_game_ids = _GOG_IDS
@@ -1278,6 +1283,7 @@ class WSFallout3GameInfo(WindowsStoreMixin, AFallout3GameInfo):
         win_store_name = 'BethesdaSoftworks.Fallout3'
         ws_language_dirs = FO3_LANG_DIRS
 
+# DiscFallout3GameInfo last - see DiscMixin docstring
 GAME_TYPE = {g.unique_display_name: g for g in (
     EGSFallout3GameInfo, GOGFallout3GameInfo, SteamFallout3GameInfo,
-    WSFallout3GameInfo)}
+    WSFallout3GameInfo, DiscFallout3GameInfo)}

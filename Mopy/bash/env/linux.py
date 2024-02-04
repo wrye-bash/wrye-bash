@@ -165,6 +165,11 @@ def get_gog_game_paths(_submod):
     # Lutris?)
     return []
 
+def get_disc_game_paths(_submod, _found_steam_paths, _found_gog_paths):
+    # We can't detect this on Linux because there's no registry to pull from,
+    # users will just have to tell us via -o/bash.ini
+    return []
+
 def get_legacy_ws_game_info(_submod):
     return _LegacyWinAppInfo() # no Windows Store on Linux
 
