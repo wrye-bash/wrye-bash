@@ -309,7 +309,7 @@ class ModFile(object):
             ret[block_sig] = set(masters_set) ##: drop once MasterSet is gone
         return ret
 
-    def count_new_records(self):
+    def count_new_records(self, next_object_start=None):
         """Count the number of new records in this file. self.tes4.masters must
         be set correctly. Also updates self.tes4.nextObject to match."""
         new_rec_count = 0
@@ -317,7 +317,8 @@ class ModFile(object):
         for t_block in self.tops.values():
             new_rec_count += len([r for r in t_block.iter_records()
                                   if r.fid.mod_fn == own_name])
-        self.tes4.nextObject = self.tes4.next_object_default + new_rec_count
+        next_object = next_object_start or self.tes4.next_object_default
+        self.tes4.nextObject = next_object + new_rec_count
         return new_rec_count
 
     def _index_mgefs(self):
