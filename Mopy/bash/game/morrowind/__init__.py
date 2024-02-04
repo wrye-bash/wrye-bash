@@ -24,7 +24,7 @@ import struct as _struct
 
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
-from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
+from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
 
 _GOG_IDS = [
@@ -152,6 +152,12 @@ class _AMorrowindGameInfo(PatchGame):
         sub.sub_header_size = 8
         cls._import_records(__name__)
 
+class DiscMorrowindGameInfo(DiscMixin, _AMorrowindGameInfo):
+    """GameInfo override for the disc version of Morrowind."""
+    # This is according to xEdit's sources, but I've never seen it make that
+    # registry key
+    _disc_subkey = 'Morrowind'
+
 class GOGMorrowindGameInfo(GOGMixin, _AMorrowindGameInfo):
     """GameInfo override for the GOG version of Morrowind."""
     _gog_game_ids = _GOG_IDS
@@ -174,4 +180,5 @@ class WSMorrowindGameInfo(WindowsStoreMixin, _AMorrowindGameInfo):
                             'Morrowind GOTY German']
 
 GAME_TYPE = {g.unique_display_name: g for g in (
-    GOGMorrowindGameInfo, SteamMorrowindGameInfo, WSMorrowindGameInfo)}
+    DiscMorrowindGameInfo, GOGMorrowindGameInfo, SteamMorrowindGameInfo,
+    WSMorrowindGameInfo)}

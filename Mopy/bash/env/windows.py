@@ -541,6 +541,16 @@ def _get_steam_path() -> _Path | None:
     return get_registry_path(r'Valve\Steam', 'InstallPath',
         lambda p: p.join('steam.exe').is_file())
 
+def _find_registry_games(submod, reg_keys):
+    """Helper for finding games via registry keys."""
+    if not reg_keys:
+        return [] # Game is not detectable via registry
+    for subkey, entry in reg_keys:
+        reg_path = get_registry_path(subkey, entry, submod.test_game_path)
+        if reg_path:
+            return [reg_path]
+    return []
+
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
 # https://gist.github.com/mkropat/7550097 by Michael Kropat
@@ -1022,14 +1032,15 @@ def get_registry_path(subkey, entry, test_path_callback):
 
 def get_gog_game_paths(submod):
     """Check registry for games with GOG keys."""
-    reg_keys = submod.gog_registry_keys
-    if not reg_keys:
-        return [] # Game is not detectable via registry
-    for subkey, entry in reg_keys:
-        reg_path = get_registry_path(subkey, entry, submod.test_game_path)
-        if reg_path:
-            return [reg_path]
-    return []
+    return _find_registry_games(submod, submod.gog_registry_keys)
+
+def get_disc_game_paths(submod, found_steam_paths, found_gog_paths):
+    """Check registry for the disc versions of older games."""
+    found_games = _find_registry_games(submod, submod.disc_registry_keys)
+    # The Steam and GOG versions set the same registry key as the disc version,
+    # so avoid showing it twice
+    return [g for g in found_games
+            if g not in found_steam_paths and g not in found_gog_paths]
 
 def get_legacy_ws_game_info(submod):
     """Get all information about a legacy Windows Store application."""

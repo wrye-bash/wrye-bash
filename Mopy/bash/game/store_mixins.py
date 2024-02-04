@@ -25,6 +25,18 @@ various stores."""
 from . import GameInfo, WS_COMMON_FILES
 from ..bolt import classproperty
 
+class DiscMixin(GameInfo):
+    """Mixin for variants of games that are installed via retail discs."""
+    _disc_subkey: str
+
+    @classproperty
+    def disc_registry_keys(cls):
+        return [(fr'Bethesda Softworks\{cls._disc_subkey}', 'Installed Path')]
+
+    @classproperty
+    def unique_display_name(cls):
+        return f'{cls.display_name} (Disc)'
+
 class EGSMixin(GameInfo):
     """Mixin for variants of games that are installed via the Epic Games
     Store."""

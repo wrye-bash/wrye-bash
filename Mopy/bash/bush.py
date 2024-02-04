@@ -34,19 +34,21 @@ from . import game as game_init, bass
 from .bolt import GPath, Path, deprint, dict_sort
 from .env import get_egs_game_paths, get_legacy_ws_game_info, \
     get_legacy_ws_game_paths, get_gog_game_paths, get_ws_game_paths, \
-    get_steam_game_paths, get_file_version, get_game_version_fallback
+    get_steam_game_paths, get_file_version, get_game_version_fallback, \
+    get_disc_game_paths
 from .exception import BoltError
 from .game import GameInfo, patch_game
 
 # Game detection --------------------------------------------------------------
-game: 'patch_game.PatchGame' | None = None
-ws_info = None                      # type: env._LegacyWinAppInfo | None
+game: patch_game.PatchGame | None = None
+ws_info: 'env._LegacyWinAppInfo' | None = None
 foundGames: dict[str, Path] = {}    # dict used by the Settings switch game menu
 
 # Module Cache
 _allGames: dict[str, type[GameInfo]] = {}
 _steam_games: dict[str, list[Path]] = {}
 _gog_games: dict[str, list[Path]] = {}
+_disc_games: dict[str, list[Path]] = {}
 _ws_legacy_games: dict[str, list[Path]] = {}
 _ws_games: dict[str, list[Path]] = {}
 _egs_games: dict[str, list[Path]] = {}
@@ -108,6 +110,9 @@ def _supportedGames(skip_ws_games=False):
             gog_paths = get_gog_game_paths(game_type)
             if gog_paths:
                 _gog_games[gt_display_name] = gog_paths
+            disc_paths = get_disc_game_paths(game_type, steam_paths, gog_paths)
+            if disc_paths:
+                _disc_games[gt_display_name] = disc_paths
             ws_legacy_paths = get_legacy_ws_game_paths(game_type)
             if ws_legacy_paths:
                 _ws_legacy_games[gt_display_name] = ws_legacy_paths
@@ -150,7 +155,14 @@ def _supportedGames(skip_ws_games=False):
         msg.extend(_print_found_games(_gog_games))
     else:
         msg.append('  No supported games were found via GOG.')
-    msg.append(' 3. Windows Store (Legacy):')
+    msg.append(' 3. Disc Versions (via Windows Registry):')
+    if _disc_games:
+        msg.append('  The following disc versions of supported games were '
+                   'found:')
+        msg.extend(_print_found_games(_disc_games))
+    else:
+        msg.append('  No disc versions of supported games were found.')
+    msg.append(' 4. Windows Store (Legacy):')
     if _ws_legacy_games:
         msg.append('  The following supported games with modding enabled were '
                    'found via the legacy Windows Store:')
@@ -158,7 +170,7 @@ def _supportedGames(skip_ws_games=False):
     else:
         msg.append('  No supported games with modding enabled were found via '
                    'the legacy Windows Store.')
-    msg.append(' 4. Windows Store:')
+    msg.append(' 5. Windows Store:')
     if skip_ws_games:
         msg.append('  Windows Store game detection was disabled via bash.ini.')
     elif _ws_games:
@@ -167,7 +179,7 @@ def _supportedGames(skip_ws_games=False):
         msg.extend(_print_found_games(_ws_games))
     else:
         msg.append('  No supported games were found via the Windows Store.')
-    msg.append(' 5. Epic Games Store:')
+    msg.append(' 6. Epic Games Store:')
     if _egs_games:
         msg.append('  The following supported games were found via the Epic '
                    'Games Store:')
@@ -187,6 +199,7 @@ def _supportedGames(skip_ws_games=False):
             else:
                 all_found_games[found_game] = found_paths
     merge_games(_gog_games)
+    merge_games(_disc_games)
     merge_games(_ws_legacy_games)
     merge_games(_ws_games)
     merge_games(_egs_games)
