@@ -1715,7 +1715,7 @@ class AFile(object):
         """
         self.fsize, self.ftime = stat_tuple
 
-    def copy_to(self, dup_path: Path, *, set_time=None):
+    def _fs_copy(self, dup_path: Path, *, set_time=None):
         """Duplicate file to dup_path. If set_time is None, we set the mtime
         of the duplicate path to ftime. This should really be a
         _mark_not_changed internal API (what about ctime?)."""
@@ -1823,6 +1823,19 @@ class ListInfo:
     @classmethod
     def get_store(cls):
         raise NotImplementedError(f'{type(cls)} does not provide a data store')
+
+    # Instance methods --------------------------------------------------------
+    def copy_to(self, dup_path: Path, *, set_time=None, **kwargs):
+        """Copies self to dup_path. Will overwrite! Will add the new file to
+        the data_store if copied inside the store_dir but the client is
+        responsible for calling the final refresh of the data store."""
+        self._fs_copy(dup_path, set_time=set_time)
+        destDir, destName = dup_path.head, dup_path.stail
+        if destDir == self.get_store().store_dir:
+            self.get_store().add_info(self, destName, **kwargs)
+
+    def _fs_copy(self, dup_path, set_time=None):
+        raise NotImplementedError
 
     def __str__(self):
         """Alias for self.fn_key."""

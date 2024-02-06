@@ -311,12 +311,11 @@ class FileInfo(_TabledInfo, AFileInfo):
         if self not in self.get_store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        cop = self.get_store().copy_info
-        cop(self.fn_key, self.backup_dir, self.fn_key)
+        self.copy_to(self.backup_dir.join(self.fn_key))
         #--First backup
         firstBackup = self.backup_dir.join(self.fn_key) + 'f'
         if not firstBackup.exists():
-            cop(self.fn_key, self.backup_dir, firstBackup.tail)
+            self.copy_to(self.backup_dir.join(firstBackup.tail))
         self.madeBackup = True
 
     def backup_restore_paths(self, first=False, fname=None):
@@ -1026,6 +1025,12 @@ class ModInfo(FileInfo):
         # in this case the file is marked as normal but let's delete the ghost
         return *sup, self.abs_path + '.ghost' # Path.__add__!
 
+    def _fs_copy(self, dup_path, *, set_time=None):
+        destDir, destName = dup_path.head, dup_path.stail
+        if destDir == (st := self.get_store()).store_dir and destName in st:
+            dup_path = st[destName].abs_path # used the (possibly) ghosted path
+        super()._fs_copy(dup_path, set_time=set_time)
+
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
         if self.is_ghost: # add ghost extension to dest path - Path.__add__!
@@ -1428,6 +1433,11 @@ class SaveInfo(FileInfo):
         SaveInfos.co_copy_or_move(self._co_saves, destDir.join(self.fn_key),
                                   move_cosave=True)
 
+    def copy_to(self, dup_path, *args, **kwargs):
+        """Copies savefile and associated cosaves file(s)."""
+        super().copy_to(dup_path, *args, **kwargs)
+        SaveInfos.co_copy_or_move(self._co_saves, dup_path)
+
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
         # super call added the backup paths but not the actual rename cosave
@@ -1527,6 +1537,9 @@ class DataStore(DataDict):
         self[newName] = member_info
         del self[old_key]
         return old_key
+
+    def add_info(self, file_info, destName, **kwargs):
+        raise NotImplementedError
 
     @property
     def bash_dir(self) -> Path:
@@ -1713,28 +1726,7 @@ class _AFileInfos(DataStore):
         return res
 
     #--Copy
-    def copy_info(self, fileName, destDir, destName, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies member file to destDir. Will overwrite! Will update
-        internal self._data for the file if copied inside self.store_dir but the
-        client is responsible for calling the final refresh of the data store.
-        See usages.
-
-        :param save_lo_cache: ModInfos only save the mod infos load order cache
-        :param set_mtime: if None self[fileName].ftime is copied to destination
-        """
-        destDir.makedirs()
-        src_info = self[fileName]
-        if destDir == self.store_dir and destName in self:
-            destPath = self[destName].abs_path
-        else:
-            destPath = destDir.join(destName)
-        # Will set the destination's mtime to the source's mtime
-        src_info.copy_to(destPath)
-        if destDir == self.store_dir:
-            self._add_info(destName, set_mtime, fileName, save_lo_cache)
-
-    def _add_info(self, destName, set_mtime, fileNam, save_lo_cache):
+    def add_info(self, file_info, destName, **kwargs):
         # TODO(ut) : in duplicate pass the info in and load_cache=False
         return self.new_info(destName, notify_bain=True)
 
@@ -1830,7 +1822,7 @@ class DefaultIniInfo(AINIInfo):
     def info_dir(self):
         return dirs['ini_tweaks']
 
-    def copy_to(self, cp_dest_path, *, set_mtime=None):
+    def _fs_copy(self, cp_dest_path, **kwargs):
         # Default tweak, so the file doesn't actually exist
         self.get_store()._copy_to_new_tweak(self, FName(cp_dest_path.stail))
 
@@ -3016,11 +3008,10 @@ class ModInfos(TableFileInfos):
             newFile.tes4.flags1.overlay_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
-            inf = self.new_info(newName, notify_bain=True) #notify just in case
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
-            self.cached_lo_insert_after(last_selected, newName)
-            self.cached_lo_save_lo()
+            inf = self.add_info(newInfo, newName, insert_after=last_selected,
+                                save_lo_cache=True)
             self.refresh(refresh_infos=False)
             return inf
 
@@ -3102,12 +3093,12 @@ class ModInfos(TableFileInfos):
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
-    def _add_info(self, destName, set_mtime, fileName, save_lo_cache):
-        inf = super()._add_info(destName, set_mtime, fileName, save_lo_cache)
-        if set_mtime is not None:
-            inf.setmtime(set_mtime) # correctly update table
-        self.cached_lo_insert_after(fileName, destName)
+    def add_info(self, file_info, destName, *, insert_after=None,
+                 save_lo_cache=False):
+        inf = super().add_info(file_info, destName)
+        self.cached_lo_insert_after(insert_after or file_info.fn_key, destName)
         if save_lo_cache: self.cached_lo_save_lo()
+        return inf
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -3354,13 +3345,6 @@ class SaveInfos(TableFileInfos):
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
         return old_key
-
-    def copy_info(self, fileName, destDir, destName, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies savefile and associated cosaves file(s)."""
-        super().copy_info(fileName, destDir, destName, set_mtime)
-        self.co_copy_or_move(self[fileName]._co_saves,
-                             destDir.join(destName))
 
     @staticmethod
     def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):

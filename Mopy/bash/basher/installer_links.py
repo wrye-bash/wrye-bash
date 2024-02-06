@@ -490,7 +490,7 @@ class Installer_Duplicate(_SingleInstallable):
         if not result: return
         #--Duplicate
         with BusyCursor():
-            self.idata.copy_installer(self._selected_info, result)
+            self._selected_info.copy_to(result)
         self.window.RefreshUI(detail_item=result)
 
 class Installer_Hide(_InstallerLink, UIList_Hide):

@@ -153,7 +153,7 @@ class _LoFile(AFile):
     def upd_on_swap(self, old_dir, new_dir):
         pl_path = self.abs_path
         # Save plugins.txt inside the old (saves) directory
-        try: self.copy_to(self._resolve_case_ambiguity(
+        try: self._fs_copy(self._resolve_case_ambiguity(
             old_dir.join(pl_path.stail)))
         except FileNotFoundError: pass # no plugins.txt to save
         # Move the new plugins.txt here for use
@@ -167,7 +167,7 @@ class _LoFile(AFile):
     def create_backup(self):
         pl_path = self.abs_path
         try:
-            self.copy_to(pl_path.backup)
+            self._fs_copy(pl_path.backup)
         except FileNotFoundError:
             bolt.deprint(f'Tried to back up {pl_path}, but it did not exist')
         except OSError:
@@ -670,7 +670,7 @@ def _mk_ini(ini_key, star, ini_fpath):
             # If there's no INI inside the old (saves) directory, copy it
             old_ini = self._resolve_case_ambiguity(old_dir.join(ini_key[0]))
             if not old_ini.is_file():
-                self.copy_to(old_ini)
+                self._fs_copy(old_ini)
             # Read from the new INI if it exists and write to our main INI
             move_ini = self._resolve_case_ambiguity(new_dir.join(ini_key[0]))
             if move_ini.is_file():

@@ -134,8 +134,7 @@ class File_Duplicate(ItemLink):
                 if root is None:
                     self._showError(destName)
                     return
-            fileInfos.copy_info(to_duplicate, destDir, destName,
-                                save_lo_cache=dex == last)
+            fileInfo.copy_to(destDir.join(destName), save_lo_cache=dex == last)
             dests.append(destName)
         if dests:
             ##: refresh_infos=True for saves - would love to specify something
@@ -202,7 +201,7 @@ class File_Snapshot(ItemLink):
                 fileInfo.writeDescription(newDescription)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
-            self._data_store.copy_info(fileName, destDir, destName)
+            fileInfo.copy_to(destDir.join(destName))
 
 #------------------------------------------------------------------------------
 class File_RevertToSnapshot(OneItemLink):
