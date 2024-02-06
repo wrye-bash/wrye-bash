@@ -696,7 +696,7 @@ class Save_Move(ChoiceLink):
                 if not result: continue
                 ask = ask and result != 2 # so don't warn for rest of operation
             if self.copyMode:
-                bosh.saveInfos.copy_info(fileName, destDir)
+                bosh.saveInfos.copy_info(fileName, destDir, fileName)
             else:
                 bosh.saveInfos[fileName].move_info(destDir)
             if att_dict := save_inf.get_persistent_attrs():
