@@ -1710,13 +1710,16 @@ class _AFileInfos(DataStore):
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
         oldNames = set(self) | set(self.corrupted)
-        new_or_present = {k: (self.get(k), kws) for k, kws in inodes.items()
-            if k in self or not (cor := self.corrupted.get(k)) # present or new
+        new_or_present = {}
+        for k, kws in inodes.items():
             # corrupted that has been updated on disk - if cor.abs_path
-            # changed ghost state (effectivelly deleted) do_update returns True
-            or cor.do_update()} # ghost state can only change manually - don't!
-        del_infos = oldNames - inodes.keys()
-        return new_or_present, del_infos
+            # changed ghost state (effectively deleted) do_update returns True
+            # ghost state can only change manually for corrupted - don't!
+            if (cor := self.corrupted.get(k)) and cor.do_update():
+                new_or_present[k] = (None, kws)
+            elif not cor: # for default tweaks with a corrupted copy
+                new_or_present[k] = (self.get(k), kws)
+        return new_or_present, oldNames - inodes.keys()
 
     def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
         """Special case for the saves, inis, mods and bsas.
@@ -2032,11 +2035,13 @@ class INIInfos(TableFileInfos):
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
 
     def _diff_dir(self, inodes):
-        oldNames = {n for n, v in self.items() if not v.is_default_tweak}
-        new_or_present = {k: (iinf if (iinf := self.get(
-            k)) and not iinf.is_default_tweak else None, kws) for k, kws in
-            inodes.items()} # if iinf is a default tweak a file has replaced it
-        return new_or_present, oldNames - new_or_present.keys()
+        oldNames = {*(n for n, v in self.items() if not v.is_default_tweak),
+                    *self.corrupted}
+        new_or_present, del_infos = super()._diff_dir(inodes)
+        # if iinf is a default tweak a file has replaced it - set it to None
+        new_or_present = {k: (inf and (None if inf.is_default_tweak else inf),
+            kws) for k, (inf, kws) in new_or_present.items()}
+        return new_or_present, oldNames & del_infos
 
     def _missing_default_inis(self):
         return ((k, v) for k, v in self._default_tweaks.items() if

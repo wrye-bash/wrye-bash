@@ -108,8 +108,8 @@ class LOOTParser(object):
                 self.load_lists(*args)
                 return True
         except (OSError, yaml.YAMLError):
-        #--No masterlist or an error occurred while reading it, use the taglist
-            try:
+            # No masterlist or an error occurred while reading it
+            try: # use the taglist
                 if self._taglist.do_update(raise_on_error=True) or _force:
                     self.load_lists(self._taglist.abs_path)
                 return True

@@ -1423,7 +1423,7 @@ class UIList(PanelWin):
                 if not askYes(self, message, _('Hide Files')): continue
             #--Do it
             with BusyCursor():
-                self.data_store[fnkey].move_info(destDir)
+                inf.move_info(destDir)
                 hidden_.append(fnkey)
         #--Refresh stuff
         self.data_store.delete_refresh(hidden_, check_existence=True)

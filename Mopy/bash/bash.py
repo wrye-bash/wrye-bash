@@ -432,16 +432,15 @@ def main(opts):
             _(_a := '') # Hide this from gettext
         except NameError:
             def _(x): return x
-        msg = '\n'.join([
-            # No period at the end, that could cause copy-paste errors when
-            # people go to copy the Discord URL
-            _('Wrye Bash encountered an error.'),
-            _('Please post the information below to the official thread at'),
-            'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
-            _('or to the Wrye Bash Discord at'),
-            'https://discord.gg/NwWvAFR', '', caught_exc,
-        ])
-        _show_boot_popup(msg)
+        # No period at the end, that could cause copy-paste errors when
+        # people go to copy the Discord URL
+        _show_boot_popup(_('Wrye Bash encountered an error. Please post the '
+                           'information below to the official thread at '
+                           '%(thread_url)s or to the Wrye Bash Discord at '
+                           '%(discord_url)s') % {
+            'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
+            'discord_url': 'https://discord.gg/NwWvAFR',
+        } + '\n\n' + caught_exc)
 
 def _main(opts, wx_locale, wxver):
     """Run the Wrye Bash main loop.
