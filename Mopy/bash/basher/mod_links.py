@@ -1441,8 +1441,7 @@ class _CopyToLink(EnabledLink):
                     timeSource = newName
                 newTime = modInfos[timeSource].ftime if timeSource else None
                 # Copy and set flag - will use ghosted path if needed
-                modInfos.copy_info(curName, minfo.info_dir, newName,
-                                   set_mtime=newTime)
+                minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
                 added.append(newName)
                 newInfo = modInfos[newName]
                 newInfo.set_plugin_flags(set_esm=add_esm_flag,

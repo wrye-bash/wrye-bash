@@ -1684,7 +1684,7 @@ class InstallerProject(_InstallerPackage):
         return super().do_update(raise_on_error=True, # don't call on deleted!
                                  force_update=force_update, **kwargs)
 
-    def copy_to(self, dest_path, *, set_time=None):
+    def fs_copy(self, dest_path, **kwargs):
         # does not preserve mtimes so next do_update will return True?
         shutil.copytree(self.abs_path.s, dest_path.s, ##: are .s needed?
                         copy_function=copy_or_reflink2)
@@ -2034,16 +2034,14 @@ class InstallersData(DataStore):
         # Can't open markers since they're virtual
         return {i: self[i] for i in fn_items if not self[i].is_marker}
 
-    def copy_installer(self, src_inst, destName):
-        """Copies archive to new location."""
-        src_inst.copy_to(self.store_dir.join(destName))
+    def add_info(self, file_info, destName, **kwargs):
         clone = self.new_info(destName,
-            is_proj=src_inst.is_project, install_order=src_inst.order + 1,
+            is_proj=file_info.is_project, install_order=file_info.order + 1,
             do_refresh=False, # we only need to call refresh_n()
             load_cache=False) # don't load from disc - copy all attributes over
         atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
         for att in atts:
-            setattr(clone, att, copy.copy(getattr(src_inst, att)))
+            setattr(clone, att, copy.copy(getattr(file_info, att)))
         clone.is_active = False # make sure we mark as inactive
         self.refresh_n() # no need to change installer status here
 
@@ -3185,7 +3183,7 @@ class InstallersData(DataStore):
                 srcJoin(ci_rel_path).copyTo(dstJoin(ci_rel_path))
             except FileNotFoundError: # modInfos MUST BE UPDATED
                 if minf := mod_infos.get(str(ci_rel_path)): # try the ghost
-                    minf.copy_to(dstJoin(ci_rel_path))
+                    minf.fs_copy(dstJoin(ci_rel_path))
                 else: raise
         # Refresh, so we can manipulate the InstallerProject item
         self.new_info(projectPath, progress,

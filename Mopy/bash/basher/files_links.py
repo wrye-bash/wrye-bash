@@ -134,8 +134,7 @@ class File_Duplicate(ItemLink):
                 if root is None:
                     self._showError(destName)
                     return
-            fileInfos.copy_info(to_duplicate, destDir, destName,
-                                save_lo_cache=dex == last)
+            fileInfo.copy_to(destDir.join(destName), save_lo_cache=dex == last)
             dests.append(destName)
         if dests:
             ##: refresh_infos=True for saves - would love to specify something
@@ -202,7 +201,7 @@ class File_Snapshot(ItemLink):
                 fileInfo.writeDescription(newDescription)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
-            self._data_store.copy_info(fileName, destDir, destName)
+            fileInfo.fs_copy(destDir.join(destName))
 
 #------------------------------------------------------------------------------
 class File_RevertToSnapshot(OneItemLink):
@@ -237,7 +236,7 @@ class File_RevertToSnapshot(OneItemLink):
             destPath = sel_inf.abs_path
             current_mtime = destPath.mtime
             # Make a temp copy first in case reverting to snapshot fails
-            self._selected_info.copy_to(known_good_copy)
+            self._selected_info.fs_copy(known_good_copy)
             # keep load order (so mtime)
             snapPath.copyTo(destPath, set_time=current_mtime)
             try:
@@ -308,7 +307,7 @@ class _RevertBackup(OneItemLink):
             sel = self._selected_info
             # Make a temp copy first in case reverting to backup fails
             info_path = sel.abs_path
-            sel.copy_to(known_good_copy)
+            sel.fs_copy(known_good_copy)
             try:
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:
