@@ -1869,7 +1869,7 @@ class InstallersData(DataStore):
 
     def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
             # installers refresh context parameters
-            refresh_info: RefrData | None = None, *, deleted: _fnames = (),
+            refresh_info: RefrData | None = None, *,
             added_archives: _fnames = ()) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
@@ -1894,13 +1894,10 @@ class InstallersData(DataStore):
             # if we are passed a refresh_info, update_installers was
             # already called, and we only need to update for deleted
             if refresh_info is None:
-                if deleted or added_archives:
-                    # if deleted or added we are passed existing installers
-                    refresh_info = RefrData(set(deleted))
-                    if added_archives: # call update_installers to update those
-                        dirs_files = set(added_archives), ()
-                    else:
-                        dirs_files = None # we are only passed deleted in
+                if added_archives: # if added we are passed existing installers
+                    refresh_info = RefrData(to_add=set(added_archives))
+                    # call update_installers to update those
+                    dirs_files = set(added_archives), ()
                 else: # we really need to scan installers
                     dirs_files = top_level_items(bass.dirs['installers'])
                 if dirs_files:
@@ -2017,7 +2014,8 @@ class InstallersData(DataStore):
         if check_existence:
             del_paths = {i for i in del_paths if not self[i].abs_path.exists()}
         if del_paths:
-            self.irefresh(what='I', deleted=del_paths)
+            self.irefresh(what='I',
+                          refresh_info=RefrData({*del_paths, *markers}))
         elif markers: # markers are popped in _delete_operation
             self.refreshOrder()
 
