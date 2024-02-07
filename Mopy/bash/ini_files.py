@@ -27,8 +27,8 @@ from collections import Counter, OrderedDict
 
 from . import bush, env
 from .bass import dirs
-from .bolt import AFile, CIstr, DefaultLowerDict, ListInfo, LowerDict, \
-    OrderedLowerDict, decoder, deprint, getbestencoding
+from .bolt import CIstr, DefaultLowerDict, ListInfo, LowerDict, \
+    OrderedLowerDict, decoder, deprint, getbestencoding, AFileInfo
 from .exception import CancelError, FailedIniInferError, SkipError
 from .wbtemp import TempFile
 
@@ -230,14 +230,14 @@ class AIniInfo(ListInfo):
                           is_deleted))
         return lines
 
-class IniFileInfo(AIniInfo, AFile):
+class IniFileInfo(AIniInfo, AFileInfo):
     """Any old ini file."""
     __empty_settings = LowerDict()
     _ci_settings_cache_linenum = __empty_settings
 
     def __init__(self, fullpath, ini_encoding):
-        super(ListInfo, self).__init__(fullpath)
-        ListInfo.__init__(self, fullpath.stail)
+        super(AIniInfo, self).__init__(fullpath)
+        AIniInfo.__init__(self, fullpath.stail) # calls ListInfo.__init__ again
         self.ini_encoding = ini_encoding
         self.isCorrupted = u''
         #--Settings cache

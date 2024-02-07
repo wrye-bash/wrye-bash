@@ -1044,23 +1044,20 @@ class UIList(PanelWin):
         """Check if the renaming operation is allowed and return the item type
         of the selected labels to be renamed as well as an error to show the
         user."""
-        sel_original = self.GetSelected()
-        sel_filtered = list(self.data_store.filter_essential(sel_original))
+        if not (sel_original := self.GetSelected()):
+            # I don't see how this would be possible, but just in case...
+            return None, _('No items selected for renaming.')
+        sel_filtered = self.data_store.filter_essential(sel_original)
         if not sel_filtered:
             # None of the selected items may be renamed, so this whole renaming
             # attempt is a nonstarter
             return None, _('The selected items cannot be renamed.')
-        if (sel_original and sel_filtered and
-                sel_filtered[0] != sel_original[0]):
+        if next(iter(sel_filtered)) != sel_original[0]:
             # The currently selected/detail item cannot be renamed, so we can't
             # edit labels, which means we have to abort the renaming attempt
             return None, _('Renaming %(first_item)s is not allowed.') % {
                 'first_item': sel_original[0]}
-        to_rename = [self.data_store[i] for i in sel_filtered]
-        if to_rename:
-            return type(to_rename[0]), ''
-        # I don't see how this would be possible, but just in case...
-        return None, _('No items selected for renaming.')
+        return type(next(iter(sel_filtered.values()))), ''
 
     def could_rename(self):
         """Returns True if the currently selected item(s) would allow
@@ -1164,8 +1161,8 @@ class UIList(PanelWin):
 
     def get_selected_infos_filtered(self, selected=None):
         """Version of GetSelectedInfos that filters out essential infos."""
-        return [self.data_store[i] for i in self.data_store.filter_essential(
-            selected or self.GetSelected())]
+        return [v for v in self.data_store.filter_essential(
+            selected or self.GetSelected()).values()]
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self._get_uil_index(item)
@@ -1414,11 +1411,11 @@ class UIList(PanelWin):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
-    def hide(self, items: Iterable[FName]):
+    def hide(self, items: dict[FName, ...]):
         """Hides the items in the specified iterable."""
         hidden_ = []
-        for fnkey in items:
-            destDir = self.data_store[fnkey].get_hide_dir()
+        for fnkey, inf in items.items():
+            destDir = inf.get_hide_dir()
             if destDir.join(fnkey).exists():
                 message = (_('A file named %(target_file_name)s already '
                              'exists in the hidden files directory. Overwrite '
@@ -1426,10 +1423,10 @@ class UIList(PanelWin):
                 if not askYes(self, message, _('Hide Files')): continue
             #--Do it
             with BusyCursor():
-                self.data_store.move_info(fnkey, destDir)
+                self.data_store[fnkey].move_info(destDir)
                 hidden_.append(fnkey)
         #--Refresh stuff
-        self.data_store.delete_refresh(hidden_, None, check_existence=True)
+        self.data_store.delete_refresh(hidden_, check_existence=True)
 
     @staticmethod
     def _unhide_wildcard(): raise NotImplementedError
@@ -1910,7 +1907,7 @@ class UIList_Delete(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one deletable file is selected
-        return bool(list(self._filter_undeletable(self.selected)))
+        return bool(self._filter_undeletable(self.selected))
 
     @property
     def link_help(self):
@@ -1967,7 +1964,7 @@ class UIList_OpenItems(EnabledLink):
 
     @property
     def link_help(self):
-        sel_filtered = list(self._filter_unopenable(self.selected))
+        sel_filtered = self._filter_unopenable(self.selected)
         if sel_filtered == self.selected:
             if len(sel_filtered) == 1:
                 return _("Open '%(item_to_open)s' with the system's default "
@@ -1984,7 +1981,7 @@ class UIList_OpenItems(EnabledLink):
 
     def _enable(self):
         # Enable if we have at least one openable file
-        return bool(list(self._filter_unopenable(self.selected)))
+        return bool(self._filter_unopenable(self.selected))
 
     def Execute(self):
         self.window.OpenSelected(
@@ -2012,7 +2009,7 @@ class UIList_Hide(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one hideable file is selected
-        return bool(list(self._filter_unhideable(self.selected)))
+        return bool(self._filter_unhideable(self.selected))
 
     @property
     def link_help(self):

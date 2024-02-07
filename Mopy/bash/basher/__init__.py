@@ -2082,7 +2082,7 @@ class INIPanel(BashTab):
         # details panel
         target_ch = self.detailsPanel.check_new_target()
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
-                                        refresh_target=refresh_target)
+                                        refresh_target=refresh_target) ##: add booting?
         changes.ini_changed |= target_ch
         super().ShowPanel(target_changed=changes.ini_changed,
                           clean_targets=clean_targets)
@@ -4299,7 +4299,7 @@ class BashApp(object):
         bosh.saveInfos.refresh(booting=True)
         progress(0.6, _(u'Initializing INIs'))
         bosh.iniInfos = bosh.INIInfos()
-        bosh.iniInfos.refresh(refresh_target=False)
+        bosh.iniInfos.refresh(refresh_target=False, booting=True)
         # screens/installers data are refreshed upon showing the panel
         #--Patch check
         if bush.game.Esp.canBash and not bosh.modInfos.bashed_patches and \

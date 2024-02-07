@@ -666,7 +666,7 @@ class Save_Move(ChoiceLink):
             count = self._move_saves(destDir, profile)
         finally:
             if not self.copyMode: # files moved to other profile, refresh
-                moved = bosh.saveInfos.delete_refresh(self.selected, None,
+                moved = bosh.saveInfos.delete_refresh(self.selected,
                                                       check_existence=True)
                 self.window.RefreshUI(to_del=moved)
         profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
@@ -697,13 +697,13 @@ class Save_Move(ChoiceLink):
                                                     title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
                 if not result: continue
-                elif result == 2: ask = False #so don't warn for rest of operation
+                ask = ask and result != 2 # so don't warn for rest of operation
             if self.copyMode:
                 bosh.saveInfos.copy_info(fileName, destDir)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable[fileName]
             else:
-                bosh.saveInfos.move_info(fileName, destDir)
+                bosh.saveInfos[fileName].move_info(destDir)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable.pop(fileName)
             count += 1

@@ -46,8 +46,8 @@ from ..archives import compress7z, defaultExt, extract7z, list_archive, \
 from ..bass import Store
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, round_size, top_level_items, DefaultFNDict, \
-    copy_or_reflink2
+    forward_compat_path_to_fn_list, round_size, top_level_items, \
+    DefaultFNDict, copy_or_reflink2, AFileInfo
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
@@ -249,7 +249,7 @@ class Installer(ListInfo):
     #--Initialization, etc ----------------------------------------------------
     def __init__(self, fn_key, **kwargs):
         self.initDefault()
-        super().__init__(f'{fn_key}')
+        ListInfo.__init__(self, f'{fn_key}')
 
     def initDefault(self):
         """Initialize everything to default values."""
@@ -1172,7 +1172,7 @@ class Installer(ListInfo):
             compress7z(outDir.join(fn_archive), outDir.join(project), progress,
                        is_solid=isSolid, temp_list=tl, blockSize=blockSize)
 
-class _InstallerPackage(Installer, AFile):
+class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
     def __init__(self, fn_key, progress=None, load_cache=False):
@@ -1409,7 +1409,7 @@ class InstallerMarker(Installer):
 
     @staticmethod
     def _new_name(base_name, count):
-        return f'=={base_name.strip("=")}{f" ({count})" if count else ""}=='
+        return f'=={base_name.strip("=")}{f" ({count})"}=='
 
     def unique_key(self, new_root, ext=u'', add_copy=False):
         new_name = new_root + (f" {_('Copy')}" if add_copy else '')
@@ -1667,7 +1667,7 @@ class InstallerProject(_InstallerPackage):
 
     @staticmethod
     def _new_name(base_name, count):
-        return f'{base_name} ({count})' if count else base_name
+        return f'{base_name} ({count})'
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
@@ -2005,29 +2005,25 @@ class InstallersData(DataStore):
     #--Dict Functions ---------------------------------------------------------
     def files_to_delete(self, filenames, **kwargs):
         toDelete = []
-        markers = []
-        for item in self.filter_essential(filenames):
-            if self[item].is_marker: markers.append(item)
-            else: toDelete.append(self.store_dir.join(item))
+        markers = [k for k, inst in self.filter_essential(filenames).items() if
+                   inst.is_marker or toDelete.append(inst.abs_path)] # or None
         return toDelete, markers
 
     def _delete_operation(self, paths, markers, *, recycle=True):
         for m in markers: del self[m]
         super()._delete_operation(paths, markers, recycle=recycle)
 
-    def delete_refresh(self, del_paths, markers, check_existence):
-        if any(isinstance(p, FName) for p in del_paths): # UIList.hide path
-            del_paths = [self.store_dir.join(p) for p in del_paths]
-        del_paths = {FName(item.stail) for item in del_paths
-                     if not check_existence or not item.exists()}
+    def delete_refresh(self, del_paths, check_existence, markers):
+        if check_existence:
+            del_paths = {i for i in del_paths if not self[i].abs_path.exists()}
         if del_paths:
             self.irefresh(what='I', deleted=del_paths)
-        elif markers:
+        elif markers: # markers are popped in _delete_operation
             self.refreshOrder()
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
-        return (i for i in fn_items if i != self.lastKey)
+        return {i: self[i] for i in fn_items if i != self.lastKey}
 
     def copy_installer(self, src_inst, destName):
         """Copies archive to new location."""
@@ -2047,10 +2043,6 @@ class InstallersData(DataStore):
             setattr(clone, att, copy.copy(getattr(src_inst, att)))
         clone.is_active = False # make sure we mark as inactive
         self.refresh_n() # no need to change installer status here
-
-    def move_info(self, filename, destDir):
-        # hasty method to use in UIList.hide(), see FileInfos.move_info()
-        self.store_dir.join(filename).moveTo(destDir.join(filename))
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)
@@ -2921,7 +2913,7 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_keys in store_del.items():
-                store.delete_refresh(del_keys, None, check_existence=False)
+                store.delete_refresh(del_keys, check_existence=False)
                 refresh_ui |= store.unique_store_key.DO()
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:

@@ -45,7 +45,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import ClassVar, Self, TypeVar, get_type_hints, overload
+from typing import ClassVar, Self, TypeVar, get_type_hints, overload, Iterator
 from zlib import crc32
 
 try:
@@ -1093,7 +1093,7 @@ class Path(os.PathLike):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
-    def ilist(self):
+    def ilist(self) -> Iterator[FName] | list[FName]:
         """For directory: Return list of files - bit weird this returns
         FName but let's say Path and FName are friend classes."""
         try:
@@ -1732,6 +1732,17 @@ class ListInfo:
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None
 
+    def validate_name(self, name_str, check_store=True):
+        # disallow extension change but not if no-extension info type
+        check_ext = name_str and self.__class__._valid_exts_re
+        if check_ext and not name_str.lower().endswith(
+                self.fn_key.fn_ext.lower()):
+            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
+                    '%(expected_ext)s).') % {
+                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
+            return msg, None
+        return self.__class__.validate_filename_str(name_str)
+
     @classmethod
     def _name_re(cls, allowed_exts):
         exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
@@ -1746,7 +1757,7 @@ class ListInfo:
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
-    def _new_name(base_name, count):
+    def _new_name(base_name, count): # only use in unique_name - count is > 0 !
         r, e = os.path.splitext(base_name)
         return f'{r} ({count}){e}'
 
@@ -1756,10 +1767,19 @@ class ListInfo:
         unique_counter = 0
         store = cls.get_store()
         while (store.store_dir.join(name_str).exists() if check_exists else
-                name_str in store): # must wrap a FNDict
+               name_str in store): # must wrap a FNDict
             unique_counter += 1
             name_str = cls._new_name(base_name, unique_counter)
         return FName(name_str)
+
+    def unique_key(self, new_root, ext='', add_copy=False):
+        """Generate a unique name based on fn_key. When copying or renaming."""
+        if self.__class__._valid_exts_re and not ext:
+            ext = self.fn_key.fn_ext
+        new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
+        if new_name == self.fn_key: # new and old names are ci-same
+            return None
+        return self.unique_name(new_name)
 
     # Gui renaming stuff ------------------------------------------------------
     @classmethod
@@ -1775,51 +1795,52 @@ class ListInfo:
         raise NotImplementedError(f'{type(cls)} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
-    def get_rename_paths(self, newName):
-        """Return possible paths this file's renaming might affect (possibly
-        omitting some that do not exist)."""
-        return [(self.abs_path, self.get_store().store_dir.join(newName))]
-
-    def unique_key(self, new_root, ext=u'', add_copy=False):
-        if self.__class__._valid_exts_re and not ext:
-            ext = self.fn_key.fn_ext
-        new_name = FName(new_root +
-                         (f" {_('Copy')}" if add_copy else '') + ext)
-        if new_name == self.fn_key: # new and old names are ci-same
-            return None
-        return self.unique_name(new_name)
-
     def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
         return self.get_store().table.getItem(self.fn_key, prop, default)
 
     def set_table_prop(self, prop, val):
         return self.get_store().table.setItem(self.fn_key, prop, val)
 
-    def validate_name(self, name_str, check_store=True):
-        # disallow extension change but not if no-extension info type
-        check_ext = name_str and self.__class__._valid_exts_re
-        if check_ext and not name_str.lower().endswith(
-                self.fn_key.fn_ext.lower()):
-            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
-                    '%(expected_ext)s).') % {
-                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return msg, None
-        #--Else file exists?
-        if check_store and self.info_dir.join(name_str).exists():
-            return _('File %(bad_name_str)s already exists.') % {
-                'bad_name_str': name_str}, None
-        return self.__class__.validate_filename_str(name_str)
-
-    @property
-    def info_dir(self):
-        return self.abs_path.head
-
     def __str__(self):
-        """Alias for self.ci_key."""
+        """Alias for self.fn_key."""
         return self.fn_key
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.fn_key}>'
+
+#------------------------------------------------------------------------------
+class AFileInfo(AFile, ListInfo):
+    """List Info representing a file."""
+    def __init__(self, fullpath, load_cache=False, **kwargs):
+        ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
+        super().__init__(fullpath, load_cache, **kwargs)
+
+    def delete_paths(self):
+        """Paths to delete when this item is deleted - abs_path comes first!"""
+        return self.abs_path,
+
+    def move_info(self, destDir):
+        """Hasty method used in UIList.hide(). Will overwrite! The client is
+        responsible for calling delete_refresh of the data store."""
+        self.abs_path.moveTo(destDir.join(self.fn_key))
+
+    def get_rename_paths(self, newName):
+        """Return possible paths this file's renaming might affect (possibly
+        omitting some that do not exist)."""
+        return [(self.abs_path, self.get_store().store_dir.join(newName))]
+
+    def validate_name(self, name_str, check_store=True):
+        super_validate = super().validate_name(name_str,
+            check_store=check_store)
+        #--Else file exists?
+        if check_store and self.info_dir.join(name_str).exists():
+            return _('File %(bad_name_str)s already exists.') % {
+                'bad_name_str': name_str}, None
+        return super_validate
+
+    @property
+    def info_dir(self):
+        return self.abs_path.head
 
 #------------------------------------------------------------------------------
 class PickleDict(object):
@@ -2153,12 +2174,6 @@ class DataTable(DataDict):
         """Deletes item in row, column."""
         if row in self._data and column in self._data[row]:
             del self._data[row][column]
-            self.hasChanged = True
-
-    def delRow(self,row):
-        """Deletes row."""
-        if row in self._data:
-            del self._data[row]
             self.hasChanged = True
 
     ##: DataTableColumn.clear is the only usage, and that seems unused too
