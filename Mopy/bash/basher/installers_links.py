@@ -30,6 +30,7 @@ from . import Installers_Link
 from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
     MonitorExternalInstallationEditor, AImportOrderParser
 from .. import balt, bass, bosh, bush, load_order
+from ..bosh import bain
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink
 from ..gui import copy_text_to_clipboard, askYes
@@ -126,11 +127,11 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             return # Aborted by user or nothing left to package, cancel
         # Create Project
         projectName = self._askFilename(_('Project Name'),
-            _('External Installation'), inst_type=bosh.InstallerProject,
+            _('External Installation'), inst_type=bain.InstallerProject,
             check_exists=False) # we will use unique_name
         if not projectName:
             return
-        pr_path = bosh.InstallerProject.unique_name(projectName)
+        pr_path = bain.InstallerProject.unique_name(projectName)
         # Copy Files
         with balt.Progress(_('Creating Project…')) as prog: # will order last
             self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
