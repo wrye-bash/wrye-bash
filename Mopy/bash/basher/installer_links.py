@@ -48,7 +48,7 @@ from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..bass import Store
 from ..bolt import FName, LogFile, SubProgress, deprint, round_size
-from ..bosh import InstallerConverter, converters
+from ..bosh import bain, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 from ..wbtemp import cleanup_temp_dir
@@ -252,10 +252,10 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
         proj_default = (sel_package.abs_path.sbody if working_on_archive
                         else sel_package.fn_key)
         proj_name = self._askFilename(_('Project Name'), proj_default,
-            inst_type=bosh.InstallerProject, check_exists=False)
+            inst_type=bain.InstallerProject, check_exists=False)
         if not proj_name:
             return
-        pr_path = bosh.InstallerProject.unique_name(proj_name)
+        pr_path = bain.InstallerProject.unique_name(proj_name)
         if working_on_archive:
             # This is an archive, so we have to use unpackToTemp first
             with balt.Progress(_('Unpacking Archive…')) as prog:
@@ -1150,7 +1150,7 @@ class InstallerArchive_Unpack(_ArchiveOnly):
                 msg = _('Name the project that %(target_archive)s should get '
                         'unpacked into:') % {'target_archive': iname}
                 project = self._askFilename(msg, project,
-                    inst_type=bosh.InstallerProject, no_file=True)
+                    inst_type=bain.InstallerProject, no_file=True)
                 if not project: return
             elif project in self.idata and not self._askYes( #only needed check
                     _('%(target_proj)s already exists. Overwrite it?') % {
@@ -1445,8 +1445,8 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         with balt.Progress(_('Creating %(bcf_name)s…') % {
             'bcf_name': bcf_fname}) as progress:
             #--Create the converter
-            conv = InstallerConverter.from_scratch(self.selected, self.idata,
-                destArchive, bcf_fname, blockSize, progress)
+            conv = converters.InstallerConverter.from_scratch(self.selected,
+                self.idata, destArchive, bcf_fname, blockSize, progress)
             #--Add the converter to Bash
             self.idata.converters_data.addConverter(conv)
         #--Refresh UI

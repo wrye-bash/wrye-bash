@@ -77,7 +77,7 @@ from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property, attrgetter_cache, top_level_files
-from ..bosh import ModInfo, omods, RefrData
+from ..bosh import ModInfo, RefrData, bain, omods
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
@@ -117,7 +117,7 @@ class Installers_Link(ItemLink):
         """:rtype: InstallersPanel"""
         return self.window.panel
 
-    def _askFilename(self, message, filename, inst_type=bosh.InstallerArchive,
+    def _askFilename(self, message, filename, inst_type=bain.InstallerArchive,
                      disallow_overwrite=False, no_dir=True, base_dir=None,
                      allowed_exts=archives.writeExts, use_default_ext=True,
                      check_exists=True, no_file=False):
@@ -3275,7 +3275,7 @@ class InstallersPanel(BashTab):
     def __init__(self,parent):
         """Initialize."""
         BashFrame.iPanel = self
-        self.listData = bosh.bain.Installer.instData = bosh.bain.InstallersData()
+        self.listData = bain.Installer.instData = bain.InstallersData()
         super(InstallersPanel, self).__init__(parent)
         #--Refreshing
         self._data_dir_scanned = False
@@ -3366,7 +3366,7 @@ class InstallersPanel(BashTab):
             omodMoves, omodRemoves = set(), set()
             for i, fn_omod in enumerate(omds):
                 progress(i, fn_omod)
-                pr_name = bosh.InstallerProject.unique_name(fn_omod.fn_body,
+                pr_name = bain.InstallerProject.unique_name(fn_omod.fn_body,
                                                             check_exists=True)
                 outDir = dirInstallersJoin(pr_name)
                 try:

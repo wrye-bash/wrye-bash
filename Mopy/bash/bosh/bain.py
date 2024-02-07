@@ -38,8 +38,9 @@ from itertools import chain, groupby
 from operator import attrgetter, itemgetter
 from zlib import crc32
 
-from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files, data_tracking_stores, RefrData, Corrupted
+from . import Corrupted, DataStore, ModInfos, RefrData, bain_image_exts, \
+    best_ini_files, data_tracking_stores
+from .converters import InstallerConverter
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
@@ -411,7 +412,9 @@ class Installer(ListInfo):
 
     def __reduce__(self):
         """Used by pickler to save object state."""
-        raise NotImplementedError(f'{type(self)} must define __reduce__')
+        bosh_clz = getattr(sys.modules['bash.bosh'], type(self).__name__)
+        return bosh_clz, (self.fn_key,), (
+            f'{self.fn_key}', *(getattr(self, a) for a in self.persistent))
 
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
@@ -1430,11 +1433,6 @@ class InstallerMarker(Installer):
         super().initDefault()
         self.ftime = time.time()
 
-    def __reduce__(self):
-        from . import InstallerMarker as boshInstallerMarker
-        return boshInstallerMarker, (self.fn_key,), ('%s' % self.fn_key,
-            *(getattr(self, a) for a in self.persistent))
-
     @property
     def num_of_files(self): return -1
 
@@ -1496,11 +1494,6 @@ class InstallerArchive(_InstallerPackage):
         if msg: # propagate the msg for extension change
             return name_path, (root, msg)
         return name_path, root
-
-    def __reduce__(self):
-        from . import InstallerArchive as boshInstallerArchive
-        return boshInstallerArchive, (self.fn_key,), (f'{self.fn_key}',
-                *(getattr(self, a) for a in self.persistent))
 
     #--File Operations --------------------------------------------------------
     def _fs_refresh(self, progress, stat_tuple, **kwargs):
@@ -1671,11 +1664,6 @@ class InstallerProject(_InstallerPackage):
     def _new_name(base_name, count):
         return f'{base_name} ({count})'
 
-    def __reduce__(self):
-        from . import InstallerProject as boshInstallerProject
-        return boshInstallerProject, (self.fn_key,), ('%s' % self.fn_key,
-            *(getattr(self, a) for a in self.persistent))
-
     # AFile API - InstallerProject is a folder not a file, special handling
     def do_update(self, raise_on_error=False, force_update=False, **kwargs):
         # refresh projects once on boot, even if skipRefresh is on
@@ -1828,8 +1816,6 @@ class InstallersData(DataStore):
         self.hasChanged = False
         self.loaded = False
         self.lastKey = FName(u'==Last==')
-        # Need to delay the main bosh import until here
-        from . import InstallerArchive, InstallerProject, InstallerMarker
         self._inst_types = [InstallerArchive, InstallerProject,
                             InstallerMarker]
 
@@ -1883,7 +1869,7 @@ class InstallersData(DataStore):
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
         #--Archive invalidation
-        from . import InstallerMarker, modInfos, oblivionIni, bsaInfos
+        from . import modInfos, oblivionIni, bsaInfos
         if (bass.settings['bash.bsaRedirection'] and
                 oblivionIni.abs_path.exists()):
             ##: What about all the other stuff the "BSA Redirection" link does?
@@ -1958,6 +1944,11 @@ class InstallersData(DataStore):
     def __load(self, progress):
         progress = progress or bolt.Progress()
         progress(0, _('Loading Data…'))
+        # that's what happens when you pickle non builtins :shrug:
+        for clz in self._inst_types:
+            setattr(sys.modules['bash.bosh'], clz.__name__, clz)
+            getattr(sys.modules['bash.bosh'], # needed for reduce!
+                    clz.__name__).__module__ = 'bash.bosh'
         self.dictFile.load()
         pickl_data = self.dictFile.pickled_data
         pickl_data.pop('crc_installer', None) # remove unused dict

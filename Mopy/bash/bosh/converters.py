@@ -27,6 +27,7 @@ from __future__ import annotations
 import io
 import os
 import pickle
+import sys
 from collections import defaultdict
 from itertools import chain
 
@@ -59,6 +60,10 @@ class ConvertersData(DataDict):
         self.bcfPath_sizeCrcDate = {}
 
     def load(self):
+        # Older Converters.dat pickle and expect bosh.InstallerConverter.
+        # See InstallerConverter.__reduce__() for the expect part.
+        sys.modules['bash.bosh'].InstallerConverter = InstallerConverter
+        sys.modules['bash.bosh'].InstallerConverter.__module__ = 'bash.bosh'
         self.converterFile.load()
         convertData = self.converterFile.pickled_data
         self.bcfCRC_converter = convertData.get(u'bcfCRC_converter', {})
@@ -260,8 +265,7 @@ class InstallerConverter(object):
             setattr(self, a, v)
 
     def __reduce__(self):
-        from . import InstallerConverter as boshInstallerConverter
-        return boshInstallerConverter, (), tuple(
+        return sys.modules['bash.bosh'].InstallerConverter, (), tuple(
             getattr(self, a) for a in
             self._persistBCF + self._persistDAT + self._addedPersistDAT)
 

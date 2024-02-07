@@ -41,7 +41,6 @@ from typing import final
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
 from ._mergeability import is_esl_capable, isPBashMergeable, is_overlay_capable
-from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
     read_loot_tags
@@ -1701,6 +1700,7 @@ class _AFileInfos(DataStore):
         altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
         """Note that all of these parameters need to be absolute paths!"""
         if self._bain_notify:
+            from .bain import InstallersData # circular import - see #50
             InstallersData.notify_external(del_set=del_set, altered=altered,
                                            renamed=renamed)
 
@@ -3550,24 +3550,6 @@ class ScreenInfos(_AFileInfos):
         self.set_store_dir()
         return super().refresh(refresh_infos, booting)
 
-#------------------------------------------------------------------------------
-# Hack below needed as older Converters.dat expect bosh.InstallerConverter
-# See InstallerConverter.__reduce__()
-# noinspection PyRedeclaration
-class InstallerConverter(InstallerConverter): pass
-
-##: This hides a circular dependency (__init__ -> bain -> __init__)
-from .bain import Installer, InstallerArchive, InstallerMarker, \
-    InstallerProject, InstallersData
-
-# Same hack for Installers.dat...
-# noinspection PyRedeclaration
-class InstallerArchive(InstallerArchive): pass
-# noinspection PyRedeclaration
-class InstallerMarker(InstallerMarker): pass
-# noinspection PyRedeclaration
-class InstallerProject(InstallerProject): pass
-
 # Initialization --------------------------------------------------------------
 def initBosh(game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized
@@ -3582,6 +3564,7 @@ def initBosh(game_ini_path):
     load_order.initialize_load_order_files()
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
+    from .bain import Installer
     Installer.init_bain_dirs()
 
 def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
