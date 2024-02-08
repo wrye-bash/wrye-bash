@@ -879,6 +879,9 @@
         ; As of 313, we only ship the .mo files
         Delete "${Path}\Mopy\bash\l10n\*.po"
         Delete "${Path}\Mopy\bash\l10n\template.pot"
+        ; The .po's for these were only temporarily on dev, then got renamed
+        Delete "${Path}\Mopy\bash\l10n\sv.mo"
+        Delete "${Path}\Mopy\bash\l10n\tr.mo"
     !macroend
 
 

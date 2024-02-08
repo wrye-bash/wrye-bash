@@ -434,8 +434,8 @@ class LanguagePage(_AScrollablePage):
         'ja_JP': _('Japanese') + ' (日本語)',
         'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
         'ru_RU': _('Russian') + ' (Русский язык)',
-        'sv': _('Swedish') + ' (svenska)',
-        'tr': _('Turkish') + ' (Türkçe)',
+        'sv_SE': _('Swedish') + ' (svenska)',
+        'tr_TR': _('Turkish') + ' (Türkçe)',
         'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
         'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
     })
