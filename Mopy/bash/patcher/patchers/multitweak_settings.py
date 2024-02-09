@@ -130,6 +130,34 @@ class _AGmstTweak(_ASettingsTweak):
     tweak_read_classes = b'GMST',
     _eid_was_itpo: dict[str, bool]
 
+    def __init__(self, bashed_patch):
+        super().__init__(bashed_patch)
+        eid_to_type = {}
+        # Validate the data types of each choice's values
+        for target_eid in self.chosen_eids:
+            match target_eid[0]:
+                case 'i':
+                    wanted_type = int
+                case 'f':
+                    wanted_type = float
+                case 's':
+                    wanted_type = str
+                case _:
+                    raise NotImplementedError(
+                        f'_AGmstTweak cannot handle GMSTs starting with '
+                        f'"{target_eid[0]}" right now')
+            eid_to_type[target_eid] = wanted_type
+        for possible_choice in self.tweak_choices:
+            choice_label, *choice_values = possible_choice
+            for i, (curr_eid, wanted_type) in enumerate(eid_to_type.items()):
+                actual_value = choice_values[i]
+                if not isinstance(actual_value, wanted_type):
+                    self._raise_tweak_syntax_error(
+                        f'Illegal tweak_choices: value "{actual_value}" from '
+                        f'choice "{choice_label}" should have type '
+                        f'{wanted_type.__name__}, since the GMST ID is '
+                        f'{curr_eid} (starts with "{curr_eid[0]}")')
+
     @property
     def chosen_eids(self):
         return ((self.tweak_key,), self.tweak_key)[isinstance(self.tweak_key,
@@ -1933,7 +1961,7 @@ class GmstTweak_Actor_TrainingCostMultiplier(_AGmstCCTweak):
                      ('x5',   5.0),
                      ('x10', 10.0),
                      ('x20', 20.0)]
-    default_choice = _('x10')
+    default_choice = 'x10'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Actor_ExpertCostMultiplier(_AGmstCCTweak):
@@ -1941,11 +1969,11 @@ class GmstTweak_Actor_ExpertCostMultiplier(_AGmstCCTweak):
     tweak_tip = _('The multiplier by which to increase Expert level training '
                   'costs.')
     tweak_key = ('iTrainingExpertCost',)
-    tweak_choices = [('x1', 1.0),
-                     ('x2', 2.0),
-                     ('x3', 3.0),
-                     ('x5', 5.0)]
-    default_choice = _('x3')
+    tweak_choices = [('x1', 1),
+                     ('x2', 2),
+                     ('x3', 3),
+                     ('x5', 5)]
+    default_choice = 'x3'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Actor_MasterCostMultiplier(_AGmstCCTweak):
@@ -1953,11 +1981,11 @@ class GmstTweak_Actor_MasterCostMultiplier(_AGmstCCTweak):
     tweak_tip = _('The multiplier by which to increase Master level training '
                   'costs.')
     tweak_key = ('iTrainingMasterCost',)
-    tweak_choices = [('x1',   1.0),
-                     ('x3',   5.0),
-                     ('x5',   5.0),
-                     ('x10', 10.0)]
-    default_choice = _('x5')
+    tweak_choices = [('x1',   1),
+                     ('x3',   5),
+                     ('x5',   5),
+                     ('x10', 10)]
+    default_choice = 'x5'
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

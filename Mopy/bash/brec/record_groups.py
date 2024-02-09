@@ -1182,7 +1182,7 @@ class WorldChildren(CellChildren):
         """Updates the persistent CELL block to use a copy of the specified
         CELL or creates a new persistent CELL block if one does not already
         exist in this world."""
-        if cell_rec.flags.isInterior:
+        if cell_rec.flags1.persistent:
             cell_copy = cell_rec.getTypeCopy()
             if self._stray_recs[b'CELL']:
                 self._stray_recs[b'CELL'].master_record = cell_copy
