@@ -1029,8 +1029,9 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
             choices=sorted(self._key_to_import.values()),
             dd_tooltip=_('Select what will be imported.'))
         self._import_what.on_combo_select.subscribe(self._save_import_what)
-        self._create_markers = CheckBox(self, checked=bass.settings[
-            'bash.installers.import_order.create_markers'],
+        self._create_markers = CheckBox(self,
+            cb_label=_('Create Missing Markers'), checked=bass.settings[
+                'bash.installers.import_order.create_markers'],
             chkbx_tooltip=_("If checked, markers (i.e. entries beginning and "
                             "ending with '==') that don't exist will be "
                             "created upon import."))
@@ -1050,7 +1051,6 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
                          LayoutOptions(expand=True, weight=1)),
                     ]),
                     HLayout(spacing=4, items=[
-                        Label(self, _('Create Missing Markers')),
                         self._create_markers,
                     ]),
             ]),

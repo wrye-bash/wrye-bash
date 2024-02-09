@@ -76,7 +76,7 @@ from ..bass import Store
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
-    fast_cached_property, attrgetter_cache
+    fast_cached_property, attrgetter_cache, top_level_files
 from ..bosh import ModInfo, omods, RefrData
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, FileError, SkipError, \
@@ -4198,22 +4198,25 @@ class BashFrame(WindowFrame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = set(bosh.modInfos)
-        modNames.update(bosh.modInfos.table)
+        modNames = {*bosh.modInfos.table, *bosh.modInfos.corrupted}
+        modNames.update(bosh.modInfos)
         renames = bass.settings[u'bash.mods.renames']
         # Make a copy, we may alter it in the loop
         for old_mname, new_mname in list(renames.items()):
             if new_mname not in modNames:
                 del renames[old_mname]
-        #--Clean backup
-        for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = {p.fn_body for p in fileInfos}
-            backupDir = fileInfos.bash_dir.join(u'Backups')
-            if not backupDir.is_dir(): continue
-            for back_fname in backupDir.ilist():
-                back_path = backupDir.join(back_fname)
-                if back_fname.fn_body not in goodRoots and back_path.is_file():
-                    back_path.remove()
+        # Clean backup directories of old .es*/.es*f files
+        for tc_store in (bosh.modInfos, bosh.saveInfos):
+            existing_roots = {p.fn_body for p in tc_store}
+            to_clean_dir = tc_store.bash_dir.join('Backups')
+            for bk_fn in top_level_files(to_clean_dir):
+                if (not tc_store.rightFileType(bk_fn) and
+                        not tc_store.rightFileType(bk_fn.removesuffix('f'))):
+                    # This file was almost certainly not created by us, better
+                    # leave it untouched
+                    continue
+                if bk_fn.fn_body not in existing_roots:
+                    to_clean_dir.join(bk_fn).remove()
 
     # Global Menu API
     def set_global_menu(self, new_global_menu):
