@@ -4,7 +4,7 @@
 # Weblate Translation Memory <noreply-mt-weblate-translation-memory@weblate.org>, 2024.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: Wrye Bash v313\n"
 "POT-Creation-Date: 2024-01-07 22:03+0100\n"
 "PO-Revision-Date: 2024-02-09 21:36+0000\n"
 "Last-Translator: Infernio <infernio@icloud.com>\n"

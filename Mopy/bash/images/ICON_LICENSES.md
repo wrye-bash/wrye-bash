@@ -18,6 +18,8 @@ All files listed below have been modified to optimize the SVGs.
   Public domain, via Wikimedia Commons.
 - `flags/turkey.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Turkey.svg
   by David Benbennick, Public domain, via Wikimedia Commons.
+- `flags/ukraine.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Ukraine.svg.
+   Government of Ukraine, Public domain, via Wikimedia Commons.
 
 ## Font Awesome
 
