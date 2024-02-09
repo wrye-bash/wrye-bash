@@ -436,6 +436,7 @@ class LanguagePage(_AScrollablePage):
         'ru_RU': _('Russian') + ' (Русский язык)',
         'sv_SE': _('Swedish') + ' (svenska)',
         'tr_TR': _('Turkish') + ' (Türkçe)',
+        'uk_UA': _('Ukrainian') + ' (українська мова)',
         'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
         'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
     })

@@ -98,7 +98,7 @@ class PCFaces(object):
         namePos = data.find(pcName)
         if namePos == -1:
             raise SaveFileError(saveName,
-                                'Failed to find pcName in PC ACHR record.')
+                'Failed to find pcName in player ACHR record.')
         namePos2 = data.find(pcName,namePos+1)
         if namePos2 != -1:
             raise SaveFileError(saveName,
