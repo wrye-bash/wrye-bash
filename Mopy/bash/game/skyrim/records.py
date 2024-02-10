@@ -22,6 +22,7 @@
 # =============================================================================
 """This module contains the skyrim record classes."""
 from collections import defaultdict
+from itertools import repeat
 
 from ... import bush
 from ...bolt import Flags, TrimmedFlags, flag, sig_to_str
@@ -417,20 +418,27 @@ class MelWaterVelocities(MelSequential):
 #------------------------------------------------------------------------------
 # Skyrim Records --------------------------------------------------------------
 #------------------------------------------------------------------------------
+class _MelTes4Hedr(MelStruct):
+    def setDefault(self, record, *, __nones=repeat(None)):
+        super().setDefault(record)
+        # The 1.71 thing is only supported by SSE right now, plus we'll want to
+        # support SKSE plugins for it (see #673)
+        has_171 = 1.71 in bush.game.Esp.validHeaderVersions
+        record.version = 1.71 if has_171 else 1.7
+        record.nextObject = 0x001 if has_171 else 0x800
+
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'SCRN', b'INTV', b'INCC', b'ONAM'}
-    next_object_default = if_sse(le_version=0x800, se_version=0x001)
 
     class HeaderFlags(AMreHeader.HeaderFlags):
         localized: bool = flag(7)
         esl_flag: bool = flag(sse_only(9))
 
     melSet = MelSet(
-        MelStruct(b'HEDR', ['f', '2I'],
-            ('version', if_sse(le_version=1.7, se_version=1.71)), 'numRecords',
-            ('nextObject', next_object_default), is_required=True),
+        _MelTes4Hedr(b'HEDR', ['f', '2I'], 'version', 'numRecords',
+            'nextObject', is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -441,6 +449,11 @@ class MreTes4(AMreHeader):
         MelBase(b'INTV', 'unknownINTV'),
         MelInteriorCellCount(),
     )
+
+    def loadData(self, ins, endPos, *, file_offset=0):
+        super().loadData(ins, endPos, file_offset=file_offset)
+        self.__class__.next_object_default = (
+            0x001 if 1.71 in bush.game.Esp.validHeaderVersions else 0x800)
 
 #------------------------------------------------------------------------------
 class MreAact(MelRecord):
