@@ -1630,8 +1630,6 @@ class AFile(object):
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
-    def _stat_tuple(self): return self.abs_path.size_mtime()
-
     def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
                  **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
@@ -1642,6 +1640,8 @@ class AFile(object):
         except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
+
+    def _stat_tuple(self): return self.abs_path.size_mtime()
 
     @property
     def abs_path(self): return self._file_key
@@ -1691,8 +1691,8 @@ class AFile(object):
         """
         self.fsize, self.ftime = stat_tuple
 
-    def __repr__(self): return f'{self.__class__.__name__}<' \
-                               f'{self.abs_path.stail}>'
+    def __repr__(self):
+        return f'{self.__class__.__name__}<{self.abs_path.stail}>'
 
 #------------------------------------------------------------------------------
 class ListInfo:

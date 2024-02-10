@@ -78,6 +78,7 @@ from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property, attrgetter_cache
 from ..bosh import ModInfo, omods, RefrData
+from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -1851,7 +1852,7 @@ class ModDetails(_ModsSavesDetails):
         tag_plugin_name = mod_info.fn_key
         # We need to grab both the ones from the description and from LOOT,
         # since we need to save a diff in case of Copy to BashTags
-        added_tags, deleted_tags = bosh.read_loot_tags(tag_plugin_name)
+        added_tags, deleted_tags = read_loot_tags(tag_plugin_name)
         # Emulate the effects of applying the LOOT tags
         old_tags = bashTagsDesc.copy()
         old_tags |= added_tags
@@ -1865,7 +1866,7 @@ class ModDetails(_ModsSavesDetails):
                     f'{mod_info.fn_key.fn_body}.txt')}
             def _enable(self):
                 return (not mod_info.is_auto_tagged() and
-                        bosh.read_dir_tags(tag_plugin_name) != dir_diff)
+                        read_dir_tags(tag_plugin_name) != dir_diff)
             def Execute(self):
                 """Copy manually assigned bash tags into the Data/BashTags
                 folder."""

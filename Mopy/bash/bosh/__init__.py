@@ -41,7 +41,8 @@ from . import bsa_files, converters, cosaves
 from ._mergeability import is_esl_capable, isPBashMergeable, is_overlay_capable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
-from .mods_metadata import get_tags_from_dir
+from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
+    read_loot_tags
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
@@ -388,8 +389,6 @@ class FileInfo(AFileInfo):
         return old_new_paths
 
 #------------------------------------------------------------------------------
-reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
-
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     # Cached, since we need them so often
@@ -659,7 +658,8 @@ class ModInfo(FileInfo):
         """Sets bash keys as specified."""
         self.set_table_prop(u'bashTags', keys)
 
-    def setBashTagsDesc(self,keys):
+    def setBashTagsDesc(self, keys, *, __re_bash_tags=re.compile(
+            '{{ *BASH *:[^}]*}}\\s*\\n?')):
         """Sets bash keys as specified."""
         keys = set(keys) #--Make sure it's a set.
         if keys == self.getBashTagsDesc(): return
@@ -668,8 +668,8 @@ class ModInfo(FileInfo):
         else:
             strKeys = u''
         desc_ = self.header.description
-        if reBashTags.search(desc_):
-            desc_ = reBashTags.sub(strKeys,desc_)
+        if __re_bash_tags.search(desc_):
+            desc_ = __re_bash_tags.sub(strKeys, desc_)
         else:
             desc_ = desc_ + u'\n' + strKeys
         if len(desc_) > 511: return False
@@ -1069,68 +1069,6 @@ class ModInfo(FileInfo):
         return msg % {
             'assoc_bsa_name': assoc_bsa,
             'pnd_example': os.path.join('Sound', 'Voice', self.fn_key)}
-
-# Deprecated/Obsolete Bash Tags -----------------------------------------------
-# Tags that have been removed from Wrye Bash and should be dropped from pickle
-# files
-removed_tags = {u'Merge', u'ScriptContents'}
-# Indefinite backwards-compatibility aliases for deprecated tags
-tag_aliases = {
-    'Actors.Perks.Add': {'NPC.Perks.Add'},
-    'Actors.Perks.Change': {'NPC.Perks.Change'},
-    'Actors.Perks.Remove': {'NPC.Perks.Remove'},
-    'Body-F': {'R.Body-F'},
-    'Body-M': {'R.Body-M'},
-    'Body-Size-F': {'R.Body-Size-F'},
-    'Body-Size-M': {'R.Body-Size-M'},
-    'C.GridFlags': {'C.ForceHideLand'},
-    'Derel': {'Relations.Remove'},
-    'Eyes': {'R.Eyes'},
-    'Eyes-D': {'R.Eyes'},
-    'Eyes-E': {'R.Eyes'},
-    'Eyes-R': {'R.Eyes'},
-    'Factions': {'Actors.Factions'},
-    'Hair': {'R.Hair'},
-    'Invent': {'Invent.Add', 'Invent.Remove'},
-    'InventOnly': {'IIM', 'Invent.Add', 'Invent.Remove'},
-    'Npc.EyesOnly': {'NPC.Eyes'},
-    'Npc.HairOnly': {'NPC.Hair'},
-    'NpcFaces': {'NPC.Eyes', 'NPC.Hair', 'NPC.FaceGen'},
-    'R.Relations': {'R.Relations.Add', 'R.Relations.Change',
-                    'R.Relations.Remove'},
-    'Relations': {'Relations.Add', 'Relations.Change'},
-    'Voice-F': {'R.Voice-F'},
-    'Voice-M': {'R.Voice-M'},
-}
-
-def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
-    """Removes obsolete tags from and resolves any tag aliases in the
-    specified set of tags. See the comments above for more information. If
-    drop_unknown is True, also removes any unknown tags (tags that are not
-    currently used, obsolete or aliases)."""
-    if not tag_set: return tag_set # fast path - nothing to process
-    ret_tags = tag_set.copy()
-    ret_tags -= removed_tags
-    for old_tag, replacement_tags in tag_aliases.items():
-        if old_tag in tag_set:
-            ret_tags.discard(old_tag)
-            ret_tags.update(replacement_tags)
-    if drop_unknown:
-        ret_tags &= bush.game.allTags
-    return ret_tags
-
-# Some wrappers to decouple other files from process_tags
-def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
-    """Wrapper around get_tags_from_dir. See that method for docs."""
-    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
-        ci_cached_bt_contents=ci_cached_bt_contents)
-    return process_tags(added_tags), process_tags(deleted_tags)
-
-def read_loot_tags(plugin_name):
-    """Wrapper around get_tags_from_loot. See that method for docs."""
-    added_tags, deleted_tags = initialization.lootDb.get_tags_from_loot(
-        plugin_name)
-    return process_tags(added_tags), process_tags(deleted_tags)
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):
@@ -1534,7 +1472,7 @@ class ScreenInfo(AFileInfo):
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
-    store_dir = empty_path # where the data sit, static except for SaveInfos
+    store_dir: Path # where the data sit, static except for SaveInfos
     # Each subclass must define this. Used when information related to the
     # store is passed between the GUI and the backend
     unique_store_key: Store
@@ -1592,9 +1530,8 @@ class DataStore(DataDict):
         return old_key
 
     @property
-    def bash_dir(self):
-        """Return the folder where Bash persists its data - create it on init!
-        :rtype: bolt.Path"""
+    def bash_dir(self) -> Path:
+        """Return the folder where Bash persists its data.Create it on init!"""
         raise NotImplementedError
 
     @property
@@ -1631,7 +1568,7 @@ class _AFileInfos(DataStore):
 
     def __init__(self, dir_, factory):
         """Init with specified directory and specified factory type."""
-        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
+        self.corrupted: FNDict[FName, Corrupted] = FNDict()
         super().__init__(self._initDB(dir_))
         self.factory = factory
 
@@ -1666,7 +1603,7 @@ class _AFileInfos(DataStore):
                     # corrupted so in any case re-add to corrupted
                     cor_path = self.store_dir.join(new)
                     er = e.message if hasattr(e, 'message') else f'{e}'
-                    self.corrupted[new] = cor = _Corrupted(cor_path, er, **kws)
+                    self.corrupted[new] = cor = Corrupted(cor_path, er, **kws)
                     deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                             traceback=True)
                     self.pop(new, None)
@@ -1693,7 +1630,7 @@ class _AFileInfos(DataStore):
             return info
         except FileError as error:
             if not _in_refresh: # if refresh just raise so we print the error
-                self.corrupted[fileName] = _Corrupted(
+                self.corrupted[fileName] = Corrupted(
                     self.store_dir.join(fileName), error.message, **kwargs)
                 self.pop(fileName, None)
             raise
@@ -1709,7 +1646,7 @@ class _AFileInfos(DataStore):
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
-        oldNames = set(self) | set(self.corrupted)
+        oldNames = set(self) | self.corrupted.keys()
         new_or_present = {}
         for k, kws in inodes.items():
             # corrupted that has been updated on disk - if cor.abs_path
@@ -1721,22 +1658,22 @@ class _AFileInfos(DataStore):
                 new_or_present[k] = (self.get(k), kws)
         return new_or_present, oldNames - inodes.keys()
 
-    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
+    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
         """Special case for the saves, inis, mods and bsas.
-        :param deleted_keys: must be the data store keys and not full paths
+        :param del_keys: must be the data store keys and not full paths
         :param extra_del_data: unused"""
         #--Table
-        paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
+        paths_to_keys = {self[n].abs_path: n for n in del_keys}
         if check_existence:
             for filePath in list(paths_to_keys):
                 if filePath.exists():
                     del paths_to_keys[filePath]  # item was not deleted
         self._notify_bain(del_set={*paths_to_keys})
-        deleted_keys = list(paths_to_keys.values())
-        for del_fn in deleted_keys:
+        del_keys = list(paths_to_keys.values())
+        for del_fn in del_keys:
             self.pop(del_fn, None)
             self.corrupted.pop(del_fn, None)
-        return deleted_keys
+        return del_keys
 
     def _notify_bain(self, del_set: set[Path] = frozenset(),
         altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
@@ -1853,7 +1790,7 @@ class TableFileInfos(_AFileInfos):
         return super()._add_info(destDir, destName, set_mtime, fileName,
                                  save_lo_cache)
 
-class _Corrupted(AFile):
+class Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
     def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
@@ -2068,14 +2005,14 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
-    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
-        deleted_keys = super().delete_refresh(deleted_keys, check_existence,
-                                              extra_del_data)
+    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
+        del_keys = super().delete_refresh(del_keys, check_existence,
+                                          extra_del_data)
         if check_existence: # DataStore.delete() path - re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo
                 default_info.reset_status()
-        return deleted_keys
+        return del_keys
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Can't remove default tweaks
@@ -3219,16 +3156,16 @@ class ModInfos(TableFileInfos):
         return old_key
 
     #--Delete
-    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
+    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted_keys = super().delete_refresh(deleted_keys, check_existence,
-                                              extra_del_data)
+        del_keys = super().delete_refresh(del_keys, check_existence,
+                                          extra_del_data)
         # we need to call deactivate to deactivate dependents
-        self.lo_deactivate(deleted_keys) # no-op if empty
-        if deleted_keys and check_existence: # delete() path - refresh caches
-            self._lo_caches_remove_mods(deleted_keys)
+        self.lo_deactivate(del_keys) # no-op if empty
+        if del_keys and check_existence: # delete() path - refresh caches
+            self._lo_caches_remove_mods(del_keys)
             self.cached_lo_save_all() # will perform the needed refreshes
-        return deleted_keys
+        return del_keys
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
@@ -3691,9 +3628,6 @@ class ScreenInfos(_AFileInfos):
     def refresh(self, refresh_infos=True, booting=False):
         self._set_store_dir()
         return super().refresh(refresh_infos, booting)
-
-    @property
-    def bash_dir(self): return dirs[u'modsBash'].join(u'Screenshot Data')
 
 #------------------------------------------------------------------------------
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter

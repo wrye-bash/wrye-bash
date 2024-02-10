@@ -20,16 +20,80 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import annotations
+
 import io
 from collections import Counter, defaultdict
 
-from .. import bass, bolt, bush, load_order
+from .. import bass, bolt, bush, load_order, initialization
 from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
 from ..wbtemp import TempFile
+
+# Deprecated/Obsolete Bash Tags -----------------------------------------------
+# Tags that have been removed from Wrye Bash and should be dropped from pickle
+# files
+_removed_tags = {'Merge', 'ScriptContents'}
+# Indefinite backwards-compatibility aliases for deprecated tags
+_tag_aliases = {
+    'Actors.Perks.Add': {'NPC.Perks.Add'},
+    'Actors.Perks.Change': {'NPC.Perks.Change'},
+    'Actors.Perks.Remove': {'NPC.Perks.Remove'},
+    'Body-F': {'R.Body-F'},
+    'Body-M': {'R.Body-M'},
+    'Body-Size-F': {'R.Body-Size-F'},
+    'Body-Size-M': {'R.Body-Size-M'},
+    'C.GridFlags': {'C.ForceHideLand'},
+    'Derel': {'Relations.Remove'},
+    'Eyes': {'R.Eyes'},
+    'Eyes-D': {'R.Eyes'},
+    'Eyes-E': {'R.Eyes'},
+    'Eyes-R': {'R.Eyes'},
+    'Factions': {'Actors.Factions'},
+    'Hair': {'R.Hair'},
+    'Invent': {'Invent.Add', 'Invent.Remove'},
+    'InventOnly': {'IIM', 'Invent.Add', 'Invent.Remove'},
+    'Npc.EyesOnly': {'NPC.Eyes'},
+    'Npc.HairOnly': {'NPC.Hair'},
+    'NpcFaces': {'NPC.Eyes', 'NPC.Hair', 'NPC.FaceGen'},
+    'R.Relations': {'R.Relations.Add', 'R.Relations.Change',
+                    'R.Relations.Remove'},
+    'Relations': {'Relations.Add', 'Relations.Change'},
+    'Voice-F': {'R.Voice-F'},
+    'Voice-M': {'R.Voice-M'},
+}
+
+def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
+    """Removes obsolete tags from and resolves any tag aliases in the
+    specified set of tags. See the comments above for more information. If
+    drop_unknown is True, also removes any unknown tags (tags that are not
+    currently used, obsolete or aliases)."""
+    if not tag_set: return tag_set # fast path - nothing to process
+    ret_tags = tag_set.copy()
+    ret_tags -= _removed_tags
+    for old_tag, replacement_tags in _tag_aliases.items():
+        if old_tag in tag_set:
+            ret_tags.discard(old_tag)
+            ret_tags.update(replacement_tags)
+    if drop_unknown:
+        ret_tags &= bush.game.allTags
+    return ret_tags
+
+# Some wrappers to decouple other files from process_tags
+def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
+    """Wrapper around get_tags_from_dir. See that method for docs."""
+    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
+        ci_cached_bt_contents=ci_cached_bt_contents)
+    return process_tags(added_tags), process_tags(deleted_tags)
+
+def read_loot_tags(plugin_name):
+    """Wrapper around get_tags_from_loot. See that method for docs."""
+    added_tags, deleted_tags = initialization.lootDb.get_tags_from_loot(
+        plugin_name)
+    return process_tags(added_tags), process_tags(deleted_tags)
 
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):

@@ -39,7 +39,7 @@ from operator import attrgetter, itemgetter
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files, data_tracking_stores, RefrData
+    best_ini_files, data_tracking_stores, RefrData, Corrupted
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
@@ -1322,7 +1322,8 @@ class _InstallerPackage(Installer, AFileInfo):
                     data_sizeCrcDate_update[dest][2] = inf.ftime
                     lo_append.append(owned_file)
                 except FileError as error: # repeated from refresh
-                    store.corrupted[owned_file] = error.message
+                    store.corrupted[owned_file] = Corrupted(owned_file,
+                                                            error.message)
                     store.pop(owned_file, None)
             if lo_append:
                 refresh_ui[store.unique_store_key] = True
@@ -2010,13 +2011,12 @@ class InstallersData(DataStore):
         for m in markers: del self[m]
         super()._delete_operation(paths, markers, recycle=recycle)
 
-    def delete_refresh(self, del_paths, check_existence, markers):
+    def delete_refresh(self, del_keys, check_existence, markers):
         if check_existence:
-            del_paths = {i for i in del_paths if not self[i].abs_path.exists()}
-        if del_paths:
-            self.irefresh(what='I',
-                          refresh_info=RefrData({*del_paths, *markers}))
-        elif markers: # markers are popped in _delete_operation
+            del_keys = {i for i in del_keys if not self[i].abs_path.exists()}
+        if del_keys: # markers are popped in _delete_operation
+            self.irefresh(what='I', refresh_info=RefrData({*del_keys}))
+        elif markers:
             self.refreshOrder()
 
     def filter_essential(self, fn_items: Iterable[FName]):
