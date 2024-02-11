@@ -659,7 +659,7 @@ class ModInfo(FileInfo):
         self.set_table_prop(u'bashTags', keys)
 
     def setBashTagsDesc(self, keys, *, __re_bash_tags=re.compile(
-            '{{ *BASH *:[^}]*}}\\s*\\n?')):
+            '{{ *BASH *:[^}]*}}\\s*\\n?', re.I)):
         """Sets bash keys as specified."""
         keys = set(keys) #--Make sure it's a set.
         if keys == self.getBashTagsDesc(): return
