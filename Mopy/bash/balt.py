@@ -1466,8 +1466,7 @@ class UIList(PanelWin):
         if (not Link.Frame.iPanel or
                 not _settings['bash.installers.enabled']):
             return None # Installers disabled or not initialized
-        pkg_column = self.data_store.table.getColumn('installer')
-        return FName(pkg_column.get(uil_item))
+        return FName(self.data_store[uil_item].get_table_prop('installer'))
 
     # Global Menu -------------------------------------------------------------
     def _populate_category(self, cat_label, target_category):

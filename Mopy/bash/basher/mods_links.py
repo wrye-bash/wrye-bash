@@ -381,10 +381,9 @@ class Mods_AutoGhost(BoolLink):
         super(Mods_AutoGhost, self).Execute()
         flipped = []
         toGhost = bass.settings['bash.mods.autoGhost']
-        allowGhosting = bosh.modInfos.table.getColumn('allowGhosting')
         for mod, modInfo in bosh.modInfos.items():
             modGhost = toGhost and not load_order.cached_is_active(
-                mod) and allowGhosting.get(mod, True)
+                mod) and modInfo.get_table_prop('allowGhosting', True)
             if modInfo.setGhost(modGhost):
                 flipped.append(mod)
         self.window.RefreshUI(redraw=flipped)
