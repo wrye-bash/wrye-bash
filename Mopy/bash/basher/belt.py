@@ -597,12 +597,12 @@ class WryeParser(PreParser):
         wbHave = bass.AppVersion
         return bolt.cmp_(LooseVersion(wbHave), LooseVersion(wbWant))
 
-    def fnDataFileExists(self, *filenames):
-        for filename in filenames:
-            if not bass.dirs['mods'].join(filename).exists():
-                # Check for ghosted mods
-                if filename in bosh.modInfos:
-                    return True # It's a ghosted mod
+    def fnDataFileExists(self, *rel_paths):
+        for rel_path in rel_paths:
+            if rel_path in bosh.modInfos:
+                return True # It's a (potentially ghosted) plugin
+            rel_path_os = to_os_path(bass.dirs['mods'].join(rel_path))
+            if not rel_path_os.exists():
                 return False
         return True
 

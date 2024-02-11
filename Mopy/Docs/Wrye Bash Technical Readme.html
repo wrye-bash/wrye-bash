@@ -209,17 +209,32 @@
     testing for is a plugin, this will also detect ghosted versions of the file.</p>
 <code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
 <ul>
-    <li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example
-        using <code>"Oblivion.esm"</code> would test for <code>"[path to game]\Data\Oblivion.esm"</code>. Notes:
-    <ul>
-        <li>When specifying a path below the Data directory, use double slashes to indicate folder separation. For example assuming
-            MenuQue.dll is installed correctly, <code>"obse\\plugins\\MenuQue.dll"</code> will work but
-            <code>"obse\plugins\MenuQue.dll"</code> will fail.
-        <li>You can also look for files above the Data directory using the following syntax: <code>"..\\SoundCommands.log"</code>
-        <li>When testing for multiple files, separate each file with commas. They do not have to all be in the same directory. Example:
-        <code>DataFileExists("Oblivion.esm","..\\SoundCommands.log","obse\\plugins\\MenuQue.dll")</code> will accurately test to see if each
-        of the files exist.
-    </ul>
+    <li><var>file_name</var> - A string or variable holding a string,
+        specifying the path relative to the Data directory to test. For
+        example, using <code>"Oblivion.esm"</code> would test for
+        <code>"[path to game]\Data\Oblivion.esm"</code>. Notes:
+        <ul>
+            <li>When specifying a path below the Data directory, use double
+                backslashes to indicate folder separation. For example assuming
+                MenuQue.dll is installed correctly,
+                <code>"obse\\plugins\\MenuQue.dll"</code> will work, but
+                <code>"obse\plugins\MenuQue.dll"</code> will fail.</li>
+            <li>You can also look for files above the Data directory using the
+                following syntax: <code>"..\\SoundCommands.log"</code></li>
+            <li>When testing for multiple files, separate each file with
+                commas. They do not have to all be in the same directory.
+                Example:
+                <code>DataFileExists("Oblivion.esm","..\\SoundCommands.log",
+                    "obse\\plugins\\MenuQue.dll")</code> will accurately test
+                to see if each of the files exist.</li>
+            <li>Path separators will automatically be converted to the right
+                ones for the current operating system, so you can use either
+                backslashes or forward slashes.</li>
+            <li>This will check case-insensitively, <strong>even on
+                case-sensitive filesystems</strong> (e.g. most Linux
+                filesystems).</li>
+        </ul>
+    </li>
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
