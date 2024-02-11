@@ -2223,9 +2223,11 @@ class _Property(_AValueComponent):
     def load_frag(self, record, ins, vmad_ctx: AVmadContext, *debug_strs):
         # Load the three regular attributes first - need to check version,
         # prop_status got added in v4
-        self._processors = self._v4_processors if vmad_ctx.vmad_ver >= 4 \
-            else self._v3_processors
-        record.prop_status = 1  # Defaults to 1 (edited)
+        if vmad_ctx.vmad_ver >= 4:
+            self._processors = self._v4_processors
+        else:
+            self._processors = self._v3_processors
+            record.prop_status = 1 # Defaults to 1 (edited)
         super().load_frag(record, ins, vmad_ctx, *debug_strs)
 
     def dump_frag(self, record, out, vmad_ctx: AVmadContext):

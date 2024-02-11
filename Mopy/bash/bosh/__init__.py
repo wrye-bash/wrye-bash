@@ -1569,11 +1569,11 @@ class _AFileInfos(DataStore):
 
     def __init__(self, dir_, factory):
         """Init with specified directory and specified factory type."""
-        self.corrupted: FNDict[FName, Corrupted] = FNDict()
         super().__init__(self._initDB(dir_))
         self.factory = factory
 
     def _initDB(self, dir_):
+        self.corrupted: FNDict[FName, Corrupted] = FNDict()
         self.store_dir = dir_ #--Path
         deprint(f'Initializing {self.__class__.__name__}')
         deprint(f' store_dir: {self.store_dir}')
@@ -3333,17 +3333,18 @@ class SaveInfos(TableFileInfos):
         """Read the current save profile from the oblivion.ini file and set
         local save attribute to that value."""
         # saveInfos singleton is constructed in InitData after bosh.oblivionIni
-        self.localSave = oblivionIni.getSetting(
-            *bush.game.Ini.save_profiles_key,
-            default=bush.game.Ini.save_prefix)
-        # Hopefully will solve issues with unicode usernames # TODO(ut) test
-        self.localSave = decoder(self.localSave.rstrip('\\')) ##: use cp1252?
+        prev = getattr(self, 'localSave', None)
+        save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
+            default=bush.game.Ini.save_prefix).rstrip('\\')
+        self.localSave = save_dir
+        if prev is not None and prev != save_dir:
+            self.table.save()
+            self.__init_db()
+        return prev != save_dir
 
     def __init__(self):
-        self.localSave = bush.game.Ini.save_prefix
         self._setLocalSaveFromIni()
-        super().__init__(dirs['saveBase'].join(
-            env.convert_separators(self.localSave)), SaveInfo)
+        super().__init__(self.__saves_dir(), SaveInfo)
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
@@ -3412,7 +3413,8 @@ class SaveInfos(TableFileInfos):
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
     def refresh(self, refresh_infos=True, booting=False):
-        if not booting: self._refreshLocalSave() # otherwise we just did this
+        if not booting:
+            self._setLocalSaveFromIni()
         return super().refresh(booting=booting) if refresh_infos else \
            self._rdata_type()
 
@@ -3459,18 +3461,11 @@ class SaveInfos(TableFileInfos):
         return moved
 
     #--Local Saves ------------------------------------------------------------
-    def _refreshLocalSave(self):
-        """Refreshes self.localSave."""
-        #--self.localSave is NOT a Path object.
-        localSave = self.localSave
-        self._setLocalSaveFromIni()
-        if localSave == self.localSave: return # no change
-        self.table.save()
-        self.__init_db()
-
     def __init_db(self):
-        self._initDB(dirs['saveBase'].join(
-            env.convert_separators(self.localSave))) # always has backslashes
+        self._initDB(self.__saves_dir())
+
+    def __saves_dir(self): # always has backslashes
+        return dirs['saveBase'].join(env.convert_separators(self.localSave))
 
     def setLocalSave(self, localSave: str, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
