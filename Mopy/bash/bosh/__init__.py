@@ -1759,11 +1759,11 @@ class TableFileInfos(_AFileInfos):
         self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join('Table.dat')))
         ##: fix nightly regression storing 'installer' property as FName
-        inst_column = self.table.getColumn('installer')
-        for fn_key, val in inst_column.items():
-            if type(val) is not str:
+        for fn_key, val in ((fnk, col_dict['installer']) for fnk, col_dict in
+                            self.table.items() if 'installer' in col_dict):
+            if val is not None and type(val) is not str:
                 deprint(f'stored installer for {fn_key} is {val!r}')
-                inst_column[fn_key] = str(val)
+                self.table[fn_key]['installer'] = str(val)
         return db
 
     #--Delete
@@ -2085,11 +2085,10 @@ def _lo_cache(lord_func):
             # unghost new active plugins and ghost new inactive (if autoGhost)
             ghostify = dict.fromkeys(ldiff.act_new, False)
             if bass.settings['bash.mods.autoGhost']:
-                allowGhosting = self.table.getColumn('allowGhosting')
                 new_inactive = (ldiff.act_del - ldiff.missing) | (
                         ldiff.added - ldiff.act_new) # new mods, ghost
                 ghostify.update({k: True for k in new_inactive if
-                                 allowGhosting.get(k, True)})
+                    self[k].get_table_prop('allowGhosting', True)})
             ldiff.affected.update(mod for mod, modGhost in ghostify.items()
                                   if self[mod].setGhost(modGhost))
             return ldiff
@@ -2458,10 +2457,10 @@ class ModInfos(TableFileInfos):
         # game
         quick_checks = {k: v for k, v in quick_checks.items()
                         if k in merg_checks}
-        name_mergeInfo = self.table.getColumn('mergeInfo')
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
-            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, {}))
+            cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
+                                                           (None, {}))
             if not isinstance(canMerge, dict):
                 canMerge = {} # Convert older settings (had a bool here)
             # Quickly check if some mergeability types are impossible for this
@@ -2477,7 +2476,7 @@ class ModInfos(TableFileInfos):
             for m in list(canMerge):
                 if m not in merg_checks_ints:
                     del canMerge[m]
-            name_mergeInfo[fn_mod] = (cached_size, canMerge)
+            modInfo.set_table_prop('mergeInfo', (cached_size, canMerge))
             if not (merg_checks - covered_checks):
                 # We've already covered all required checks with those checks
                 # above (e.g. an ESL-flagged plugin in a game with only ESL
@@ -2517,7 +2516,6 @@ class ModInfos(TableFileInfos):
         # The checks that are actually required for this game
         required_checks = {m: c for m, c in all_known_checks.items()
                            if m in bush.game.mergeability_checks}
-        mod_mergeInfo = self.table.getColumn('mergeInfo')
         with progress:
             progress.setFull(max(len(names),1))
             result, tagged_no_merge = {}, set()
@@ -2562,8 +2560,8 @@ class ModInfos(TableFileInfos):
                         merg_set.discard(fileName)
                 # Only store the enum values (i.e. the ints) in our settings
                 # files, we are moving away from pickling non-std classes
-                mod_mergeInfo[fileName] = (fileInfo.fsize, {
-                    k.value: v for k, v in check_results.items()})
+                fileInfo.set_table_prop('mergeInfo', (fileInfo.fsize, {
+                    k.value: v for k, v in check_results.items()}))
             return result, tagged_no_merge
 
     def _refresh_bash_tags(self):
@@ -2622,7 +2620,7 @@ class ModInfos(TableFileInfos):
             plugins."""
         merged_,imported_ = set(),set()
         for patch in patches & self.bashed_patches: # this must be up to date!
-            patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
+            patchConfigs = self[patch].get_table_prop('bash.patch.configs')
             if not patchConfigs: continue
             if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
                     u'isEnabled'):
@@ -3148,10 +3146,9 @@ class ModInfos(TableFileInfos):
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
         # Update linked BP parts if the parent BP got renamed
-        for bp_part in self.table.getColumn('bp_split_parent'):
-            table_entry = self.table[bp_part]
-            if table_entry['bp_split_parent'] == old_key:
-                table_entry['bp_split_parent'] = newName
+        for mod_inf in self.values():
+            if mod_inf.get_table_prop('bp_split_parent') == old_key:
+                mod_inf.set_table_prop('bp_split_parent', newName)
         return old_key
 
     #--Delete

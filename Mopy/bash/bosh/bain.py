@@ -1996,12 +1996,11 @@ class InstallersData(DataStore):
         owned_per_store = []
         for store in data_tracking_stores():
             if not store.tracks_ownership: continue
-            storet = store.table
-            owned = [x for x in storet.getColumn('installer') if str(
-                storet[x]['installer']) == old_key]  # str due to Paths
+            owned = [v for v in store.values() if str( # str due to Paths
+                v.get_table_prop('installer')) == old_key]
             owned_per_store.append(owned)
-            for i in owned:
-                storet[i]['installer'] = '%s' % name_new
+            for v in owned:
+                v.set_table_prop('installer', '%s' % name_new)
         return True, *map(bool, owned_per_store)
 
     #--Dict Functions ---------------------------------------------------------
@@ -2887,7 +2886,7 @@ class InstallersData(DataStore):
         from . import modInfos
         for bpatch in modInfos.bashed_patches: # type: FName
             ci_keep_files.add(CIstr(bpatch))
-            bp_doc = modInfos.table.getItem(bpatch, u'doc')
+            bp_doc = modInfos[bpatch].get_table_prop('doc')
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
                 try:
                     bp_doc = bp_doc.relpath(bass.dirs[u'mods'])

@@ -501,8 +501,8 @@ class CreateNewPlugin(DialogWindow):
                               'itself.') % {'chosen_plugin_name': chosen_name})
             return EventResult.FINISH # leave the dialog open
         if windowSelected:  # assign it the group of the first selected mod
-            mod_group = pw.data_store.table.getColumn(u'group')
-            mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')
+            if grp := pw.data_store[windowSelected[0]].get_table_prop('group'):
+                created_plugin.set_table_prop('group', grp)
         pw.ClearSelected(clear_details=True)
         pw.RefreshUI(redraw=[chosen_name])
 
