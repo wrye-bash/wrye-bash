@@ -375,12 +375,11 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.mod_labels.append(newName)
         self.mod_labels.sort()
         #--Edit table entries.
-        colGroup = bosh.modInfos.table.getColumn(self.column)
         renamed = []
-        for fileName, val in colGroup.items():
-            if val == oldName:
-                colGroup[fileName] = newName
-                renamed.append(fileName)
+        for fn, mod_inf in bosh.modInfos.items():
+            if mod_inf.get_table_prop(self.column) == oldName:
+                mod_inf.set_table_prop(self.column, newName)
+                renamed.append(fn)
         self._refresh(redraw=renamed)
         #--Done
         return newName
@@ -389,12 +388,11 @@ class _Mod_LabelsData(balt.ListEditorData):
         """Removes group."""
         self.mod_labels.remove(item)
         #--Edit table entries.
-        colGroup = bosh.modInfos.table.getColumn(self.column)
         deletd = []
-        for fileName, val in list(colGroup.items()):
-            if val == item:
-                del colGroup[fileName]
-                deletd.append(fileName)
+        for fn, mod_inf in bosh.modInfos.items():
+            if mod_inf.get_table_prop(self.column) == item:
+                mod_inf.set_table_prop(self.column, None)
+                deletd.append(fn)
         self._refresh(redraw=deletd)
         #--Done
         return True
@@ -444,22 +442,20 @@ class _Mod_Labels(ChoiceLink):
             _help = _('Remove all labels from the selected plugins.')
             def Execute(self):
                 """Handle selection of None."""
-                fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected:
-                    fileLabels[fileName] = u''
+                    bosh.modInfos[fileName].set_table_prop(_self.column, None)
                 _self._refresh()
             def _check(self):
                 return _self._none_checked
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
-    def _initData(self, window, selection):
+    def _initData(self, window, selection): ##: TTT
         super(_Mod_Labels, self)._initData(window, selection)
         _self = self
-        label_column = bosh.modInfos.table.getColumn(self.column)
         selection_set = set(selection)
-        column_contents = {x[1] for x in label_column.items()
-                           if x[0] in selection_set}
-        self._none_checked = not any(column_contents)
+        assigned_labels = {p for k, v in bosh.modInfos.items() if
+            k in selection_set and (p := v.get_table_prop(self.column))}
+        self._none_checked = not assigned_labels
         class _LabelLink(CheckLink):
             def Execute(self):
                 for fileInfo in self.iselected_infos():
@@ -472,7 +468,7 @@ class _Mod_Labels(ChoiceLink):
             def _check(self):
                 """Check the link if any of the selected plugins have labels
                 matching this one."""
-                return self._text in column_contents
+                return self._text in assigned_labels
         self.__class__.choiceLinkType = _LabelLink
 
     @property
@@ -487,27 +483,25 @@ class _ModGroups(CsvParser):
     def __init__(self):
         self.mod_group = {}
 
-    def readFromModInfos(self,mods=None):
-        """Imports mods/groups from modInfos."""
-        column = bosh.modInfos.table.getColumn(u'group')
-        mods = mods or list(column) # if mods are None read groups for all mods
-        groups = tuple(column.get(x) for x in mods)
-        self.mod_group.update((x, y) for x, y in zip(mods, groups) if y)
+    def readFromModInfos(self, mods):
+        """Read groups for specified mods from modInfos."""
+        self.mod_group.update((x, g) for x in mods if (
+            g := bosh.modInfos[x].get_table_prop('group')))
 
     @staticmethod
     def assignedGroups():
         """Return all groups that are currently assigned to mods."""
-        column = bosh.modInfos.table.getColumn(u'group')
-        return {x for x in column.values() if x}
+        return {g for x in bosh.modInfos.values() if
+                (g := x.get_table_prop('group'))}
 
-    def writeToModInfos(self,mods=None):
+    def writeToModInfos(self, mods):
         """Exports mod groups to modInfos."""
         mod_group = self.mod_group
-        column = bosh.modInfos.table.getColumn(u'group')
         changed_count = 0
-        for mod in (mods or bosh.modInfos.table):
-            if mod in mod_group and column.get(mod) != mod_group[mod]:
-                column[mod] = mod_group[mod]
+        for x in mods:
+            if x in mod_group and (g := mod_group[x]) != (
+                    (inf := bosh.modInfos[x]).get_table_prop('group')):
+                inf.set_table_prop('group', g)
                 changed_count += 1
         return changed_count
 
@@ -578,8 +572,7 @@ class _Mod_Groups_Import(ItemLink):
         modGroups = _ModGroups()
         modGroups.read_csv(textPath)
         changed_count = modGroups.writeToModInfos(self.selected)
-        bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI() ##: redraw=changed
         self._showOk(_('Imported %(num_imported_groups)d groups '
                        '(%(num_changed_groups)d changed).') % {
             'num_imported_groups': len(modGroups.mod_group),
@@ -671,7 +664,7 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser().show_frame()
+            DocBrowser(self.window.data_store).show_frame()
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 
@@ -824,7 +817,7 @@ class _GhostLink(ItemLink):
         not load_order.cached_is_active(filename) # cannot ghost active mods
     @staticmethod
     def getAllow(filename):
-        return bosh.modInfos.table.getItem(filename, u'allowGhosting', True)
+        return bosh.modInfos[filename].get_table_prop('allowGhosting', True)
 
     def Execute(self):
         """Loop selected files applying allow ghosting settings and
@@ -833,7 +826,7 @@ class _GhostLink(ItemLink):
         set_allow = self.__class__.setAllow
         to_ghost = self.__class__.toGhost
         for fileName, fileInfo in self.iselected_pairs():
-            fileInfo.set_table_prop(u'allowGhosting', set_allow(fileName))
+            fileInfo.set_table_prop('allowGhosting', set_allow(fileName))
             if fileInfo.setGhost(to_ghost(fileName)):
                 ghost_changed.append(fileName)
         self.window.RefreshUI(redraw=ghost_changed)

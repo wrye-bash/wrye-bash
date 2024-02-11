@@ -349,7 +349,7 @@ def refresh_lo(cached: bool, cached_active: bool):
     ldiff = _update_cache(lo, active)
     if saved is not __lo_unset:
         if _cached_lord.loadOrder != saved.loadOrder or (
-           _cached_lord.active != saved.active and #active order doesn't matter
+           _cached_lord.active != saved.active and #active order doesn't matter ##: was true for oblivion still valid?
            bass.settings[u'bash.load_order.lock_active_plugins']):
             global warn_locked
             warn_locked = True
@@ -417,9 +417,7 @@ def swap(old_dir, new_dir):
     return _game_handle.swap(old_dir, new_dir)
 
 def force_active_if_present():
-    s = set(_game_handle.must_be_active_if_present)
-    return s if _game_handle.allow_deactivate_master else {*s,
-        _game_handle.master_path}
+    return {*_game_handle.must_be_active_if_present, _game_handle.master_path}
 
 def using_ini_file(): return isinstance(_game_handle, _games_lo.INIGame)
 

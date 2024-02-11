@@ -600,7 +600,7 @@ class DocBrowserButton(StatusBarButton):
 
     def sb_click(self):
         if not Link.Frame.docBrowser:
-            DocBrowser().show_frame()
+            DocBrowser(bosh.modInfos).show_frame()
         Link.Frame.docBrowser.raise_frame()
 
 #------------------------------------------------------------------------------

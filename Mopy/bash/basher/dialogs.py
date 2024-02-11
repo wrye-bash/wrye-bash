@@ -501,8 +501,8 @@ class CreateNewPlugin(DialogWindow):
                               'itself.') % {'chosen_plugin_name': chosen_name})
             return EventResult.FINISH # leave the dialog open
         if windowSelected:  # assign it the group of the first selected mod
-            mod_group = pw.data_store.table.getColumn(u'group')
-            mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')
+            if grp := pw.data_store[windowSelected[0]].get_table_prop('group'):
+                created_plugin.set_table_prop('group', grp)
         pw.ClearSelected(clear_details=True)
         pw.RefreshUI(redraw=[chosen_name])
 
@@ -569,7 +569,7 @@ class _ABainMLE(_AWBMLE):
     """Base class for BAIN-related multi-list editors. Automatically converts
     results back to CIstrs."""
     def show_modal(self):
-        # Add the CIstrs we removed in __init__ (see map(str)'s below) back in
+        # Add the CIstrs we removed in __init__ (see map(str)'s below) back in todo does wx need the strs?
         result = super().show_modal()
         final_lists = [list(map(CIstr, l)) for l in result[1:]]
         return result[0], *final_lists

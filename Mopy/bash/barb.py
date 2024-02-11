@@ -28,8 +28,8 @@ Re: bass.AppVersion, bass.settings[u'bash.version']
 
 The latter is read from the settings - so on upgrading Bash it's the version of
 the previous Bash install, whereupon is based the backup-on-upgrade routine.
-Later on, in basher.BashApp#InitVersion, bass.settings[u'bash.version'] is
-set to bass.AppVersion. We save both in the settings we backup:
+Later on, in basher.Init, bass.settings['bash.version'] is set to
+bass.AppVersion. We save both in the settings we backup:
 - bass.settings[u'bash.version'] is saved first and corresponds to the version
 the settings were created with
 - bass.AppVersion, saved second, is the version of Bash currently executing

@@ -644,6 +644,27 @@ class ABsa(AFile):
             del self._filenames[:]
         return wanted_assets
 
+    # Heuristics for str_bsa_sort_key. Patch before interface because the
+    # patch BSA (which only exists in SSE) will always load after the interface
+    # BSA and hence should win all conflicts (including strings).
+    _str_heuristics = tuple(enumerate(('main', 'patch', 'interface')))
+    def str_bsa_sort_key(self, plugin_prefix, *, __heuristics=_str_heuristics):
+        """Used in sorting bsa files, to get strings files from. Note that this
+        is *only* meant for strings files. Return the sort key as a tuple built
+        in such a way as to prioritize files that are likely to contain the
+        strings, instead of returning the true BSA order. Heuristics used are:
+        - sort BSAs that begin with the body of this plugin before others.
+        This avoids parsing vanilla BSAs for third party plugins
+        - sort 'main', 'patch' and 'interface' to the front in each group. This
+        avoids parsing expensive BSAs at startup for the game master (e.g.
+        Skyrim.esm -> Skyrim - Textures0.bsa)."""
+        b_lower = self.fn_key.fn_body.lower()
+        startsw = not b_lower.startswith(plugin_prefix)
+        for i, h in __heuristics:
+            if h in b_lower:
+                return startsw, i
+        return startsw, i + 1
+
 class BSA(ABsa):
     """Bsa file. Notes:
     - We require that include_directory_names and include_file_names are True.

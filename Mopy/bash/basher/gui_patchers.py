@@ -118,9 +118,8 @@ class _PatcherPanel(object):
 
         Called in basher.patcher_dialog.PatchDialog#__init__, before the
         dialog is shown, to update the patch options based on the previous
-        config for this patch stored in modInfos.table[patch][
-        'bash.patch.configs']. If no config is saved then the class
-        default_XXX values are used for the relevant attributes."""
+        config for this patch loaded via get_table_prop('bash.patch.configs').
+        Fallback to default_XXX class vars for missing config entries."""
         # Remember whether we were present in the config for bolding later
         self._was_present = self.__class__._config_key in configs
         config = (configs[self.__class__._config_key]

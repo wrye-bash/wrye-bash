@@ -383,12 +383,15 @@ class ScrollableWindow(_AComponent):
 
 class CenteredSplash(_AComponent):
     """A centered splash screen without a timeout. Only disappears when either
-    the entire application terminates or stop_splash is called."""
+    the entire application terminates or _stop_splash is called."""
     _native_widget: _adv.SplashScreen
 
-    def __init__(self, splash_path):
+    def __init__(self, splash_path, show_splash=True):
         """Creates a new CenteredSplash with an image read from the specified
         path."""
+        if not show_splash:
+            self._native_widget = None
+            return # ha!
         splash_bitmap = _wx.Image(splash_path).ConvertToBitmap()
         # Center image on the screen and image will stay until clicked by
         # user or is explicitly destroyed when the main window is ready
@@ -398,11 +401,17 @@ class CenteredSplash(_AComponent):
         self._native_widget = _adv.SplashScreen(
             splash_bitmap, splash_style, 1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
-        self._on_close_evt.subscribe(self.stop_splash)
+        self._on_close_evt.subscribe(self._stop_splash)
         _wx.Yield() ##: huh?
 
-    def stop_splash(self):
+    def __enter__(self): return self
+
+    def _stop_splash(self):
         """Hides and terminates the splash screen."""
+        if self._native_widget is None: return
         self.native_destroy()
         ##: Apparently won't be hidden if warnTooManyModsBsas warns(?)
         self.visible = False
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._stop_splash()

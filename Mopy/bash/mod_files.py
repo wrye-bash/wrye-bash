@@ -221,23 +221,22 @@ class ModFile(object):
     def __load_strs(self, ins, loadStrings, progress):
         # Check if we need to handle strings
         self.strings.clear()
-        if loadStrings and getattr(self.tes4.flags1, 'localized', False):
-            stringsProgress = SubProgress(# Use 10% of progress bar for strings
-                progress, 0, 0.1)
-            from . import bosh
-            i_lang = bosh.oblivionIni.get_ini_language(
-                bush.game.Ini.default_game_lang)
-            stringsPaths = self.fileInfo.getStringsPaths(i_lang)
-            if stringsPaths: stringsProgress.setFull(len(stringsPaths))
-            for i, path in enumerate(stringsPaths):
-                self.strings.loadFile(
-                    path, SubProgress(stringsProgress, i, i + 1), i_lang)
-                stringsProgress(i)
-            ins.setStringTable(self.strings)
-            subProgress = SubProgress(progress, 0.1, 1.0)
-        else:
+        if not (loadStrings and getattr(self.tes4.flags1, 'localized', False)):
             ins.setStringTable(None)
-            subProgress = progress
+            return progress
+        stringsProgress = SubProgress( # Use 10% of progress bar for strings
+            progress, 0, 0.1)
+        from . import bosh
+        i_lang = bosh.oblivionIni.get_ini_language(
+            bush.game.Ini.default_game_lang)
+        stringsPaths = self.fileInfo.getStringsPaths(i_lang)
+        if stringsPaths: stringsProgress.setFull(len(stringsPaths))
+        for i, path in enumerate(stringsPaths):
+            self.strings.loadFile(path, SubProgress(stringsProgress, i, i + 1),
+                                  i_lang)
+            stringsProgress(i)
+        ins.setStringTable(self.strings)
+        subProgress = SubProgress(progress, 0.1, 1.0)
         return subProgress
 
     def safeSave(self):

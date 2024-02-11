@@ -25,6 +25,8 @@ state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
+import re
+import sys
 from enum import Enum
 from itertools import chain
 from os.path import join as _j
@@ -388,6 +390,43 @@ class GameInfo(object):
         # Whether this game supports mod ini files aka ini fragments
         supports_mod_inis = True
 
+        @classmethod
+        def get_bsas_from_inis(cls, available_bsas, ini_files_cached):
+            """Get the load order of INI loaded bsas - in the vicinity of
+            ±sys.maxsize."""
+            bsa_lo = {}
+            bsa_cause = {}  # Reason each BSA was loaded
+            start_dex_keys = {
+                # BSAs from INI files load first so make sure they come first
+                # by assigning negative indexes
+                -sys.maxsize - 1: cls.resource_archives_keys,
+                # Some games have INI settings that override all other BSAs,
+                # make sure they come last
+                sys.maxsize: [cls.resource_override_key]}
+            for group_dex, (ini_idx, keys) in enumerate(
+                    start_dex_keys.items()):
+                bsas_cause = []
+                for ini_k in keys:
+                    for ini_f in ini_files_cached:
+                        if bsas := ini_f.getSetting('Archive', ini_k, ''):
+                            bsas = (x.strip() for x in bsas.split(','))
+                            bsas_cause.append(((available_bsas[b] for b in bsas
+                                if b in available_bsas),
+                                f'{ini_f.abs_path.stail} ({ini_k})'))
+                            break # The first INI with the key wins ##: Test this
+                if not bsas_cause and group_dex == 1:
+                    # fallback to the defaults set by the engine - must exist!
+                    bsas_cause = ([available_bsas[b] for b in
+                                   cls.resource_override_defaults],
+                                  f'{cls.dropdown_inis[0]} ({keys[0]})'),
+                for res_ov_bsas, res_ov_cause in bsas_cause:
+                    for binf in res_ov_bsas:
+                        bsa_lo[binf] = ini_idx
+                        bsa_cause[binf] = res_ov_cause
+                        ini_idx -= -1 if ini_idx < 0 else 1
+                        del available_bsas[binf.fn_key]
+            return bsa_lo, bsa_cause
+
     class Ess(object):
         """Information about WB's capabilities with regards to save file
         viewing and editing for this game."""
@@ -428,6 +467,24 @@ class GameInfo(object):
         # game does not use BSA versions and so BSA version checks will be
         # skipped entirely.
         valid_versions = set()
+
+        @classmethod
+        def attached_bsas(cls, bsa_infos, plugin_fn):
+            """Return a list of all BSAs that the game will attach to
+            plugin_fn."""
+            bsa_pattern = (re.escape(plugin_fn.fn_body) +
+                           f'{cls.attachment_regex}\\{cls.bsa_extension}')
+            is_attached = re.compile(bsa_pattern, re.I).match
+            return [binf for k, binf in bsa_infos.items() if is_attached(k)]
+
+        @classmethod
+        def update_bsa_lo(cls, lo, av_bsas, bsa_lodex, cause):
+            # BSAs loaded based on plugin name load in the middle of the pack
+            for i, p in enumerate(lo):
+                for binf in cls.attached_bsas(av_bsas, p):
+                    bsa_lodex[binf] = i
+                    cause[binf] = p
+                    del av_bsas[binf.fn_key]
 
     class Psc(object):
         """Information about script sources (only Papyrus right now) for this
