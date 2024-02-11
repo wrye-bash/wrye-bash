@@ -79,7 +79,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelRegnRdat, MelRegnEntryObjects, MelRegnEntryMusic, MelRegnEntrySounds, \
     MelRegnEntryWeatherTypes, MelRegnEntryGrasses, MelRevbData, MelParent, \
     MelSmbnShared, MelSmenShared, MelSmqnShared, MelSnctFlags, \
-    MelSnctVnamUnam
+    MelSnctVnamUnam, velocity_attrs, MelLinkedOcclusionReferences, \
+    MelOcclusionPlane
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -401,17 +402,17 @@ class MelVmad(AMelVmad):
     _vmad_context_class = _VmadContextTes5
 
 #------------------------------------------------------------------------------
-class MelWaterVelocities(MelSequential):
+class MelWaterCurrents(MelSequential):
     """Handles the XWCU/XWCS/XWCN subrecords shared by REFR and CELL."""
     def __init__(self):
-        super(MelWaterVelocities, self).__init__(
+        super().__init__(
             # Old version of XWCN - replace with XWCN upon dumping
-            MelReadOnly(MelUInt32(b'XWCS', u'water_velocities_count')),
-            MelCounter(MelUInt32(b'XWCN', u'water_velocities_count'),
-                       counts=u'water_velocities'),
-            MelArray(u'water_velocities',
-                MelStruct(b'XWCU', [u'4f'], u'x_offset', u'y_offset',
-                    u'z_offset', u'unknown1'),
+            MelReadOnly(MelUInt32(b'XWCS', 'water_current_count')),
+            MelCounter(MelUInt32(b'XWCN', 'water_current_count'),
+                       counts='water_currents'),
+            MelArray('water_currents',
+                MelStruct(b'XWCU', ['3f', '4s'], *velocity_attrs('water'),
+                    'water_unknown'),
             ),
         )
 
@@ -958,7 +959,7 @@ class MreCell(AMreCell):
         MelString(b'XNAM','waterNoiseTexture'),
         MelRegions(),
         MelFid(b'XLCN','location',),
-        MelWaterVelocities(),
+        MelWaterCurrents(),
         MelFid(b'XCWT','water'),
         MelOwnership(),
         MelFid(b'XILL','lockList',),
@@ -2963,11 +2964,8 @@ class MreRefr(MelRecord):
                   'primitiveBoundX', 'primitiveBoundY', 'primitiveBoundZ',
                   'primitiveColorRed', 'primitiveColorGreen',
                   'primitiveColorBlue', 'primitiveUnknown','primitiveType'),
-        MelBase(b'XORD','xord_p'),
-        MelStruct(b'XOCP', ['9f'],'occlusionPlaneWidth','occlusionPlaneHeight',
-             'occlusionPlanePosX','occlusionPlanePosY','occlusionPlanePosZ',
-             'occlusionPlaneRot1','occlusionPlaneRot2','occlusionPlaneRot3',
-             'occlusionPlaneRot4'),
+        MelLinkedOcclusionReferences(),
+        MelOcclusionPlane(),
         MelArray('portalData',
             MelStruct(b'XPOD', [u'2I'], (FID, 'portalOrigin'),
                       (FID, 'portalDestination')),
@@ -3001,12 +2999,12 @@ class MreRefr(MelRecord):
                   (_destinationFlags, 'destinationFlags')),
         MelFids('teleportMessageBox', MelFid(b'XTNM')),
         MelFid(b'XMBR','multiboundReference'),
-        MelWaterVelocities(),
-        MelStruct(b'XCVL', ['4s', 'f', '4s'], 'unknown3', 'angleX',
-                  'unknown4'),
-        MelFid(b'XCZR', u'unknown5'),
-        MelBase(b'XCZA', 'xcza_p',),
-        MelFid(b'XCZC', u'unknown6'),
+        MelWaterCurrents(),
+        MelStruct(b'XCVL', ['3f'], *velocity_attrs('water_current_lin')),
+        MelStruct(b'XCVR', ['3f'], *velocity_attrs('water_current_rot')),
+        MelFid(b'XCZC', 'water_current_zone_cell'),
+        MelFid(b'XCZR', 'water_current_zone_reference'),
+        MelStruct(b'XCZA', ['4s'], 'water_current_zone_action'),
         MelRefScale(),
         MelFid(b'XSPC','spawnContainer'),
         MelActivateParents(),

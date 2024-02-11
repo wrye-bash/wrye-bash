@@ -33,7 +33,8 @@ from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8, MelUInt16
 from .utils_constants import FID, ZERO_FID, ambient_lighting_attrs, \
     color_attrs, color3_attrs, int_unpacker, null1, gen_coed_key, \
-    PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs
+    PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs, \
+    EnableParentFlags
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
@@ -454,15 +455,9 @@ class MelEdid(MelString):
 #------------------------------------------------------------------------------
 class MelEnableParent(MelStruct):
     """Enable Parent struct for a reference record (REFR, ACHR, etc.)."""
-    # The pop_in flag doesn't technically exist for all XESP subrecords, but it
-    # will just be ignored for those where it doesn't exist, so no problem.
-    class _parent_flags(Flags):
-        opposite_parent: bool
-        pop_in: bool
-
     def __init__(self):
         super().__init__(b'XESP', ['I', 'B', '3s'], (FID, 'ep_reference'),
-            (self._parent_flags, 'parent_flags'), 'xesp_unused')
+            (EnableParentFlags, 'enable_parent_flags'), 'xesp_unused')
 
 #------------------------------------------------------------------------------
 class MelEnchantment(MelFid):
@@ -883,9 +878,9 @@ class MelKeywords(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelLandMpcd(MelGroups):
-    """Handles the LAND subrecord MPCD (Unknown)."""
+    """Handles the LAND subrecord MPCD (Hi-Res Heightfield Data)."""
     def __init__(self):
-        super().__init__('unknown_mpcd',
+        super().__init__('hi_res_heightfield_data',
             MelBase(b'MPCD', 'unknown1'),
         )
 
@@ -896,9 +891,11 @@ class MelLandShared(MelSequential):
         has_vertex_normals_height_map: bool = flag(0)
         has_vertex_colors: bool = flag(1)
         has_layers: bool = flag(2)
-        has_mpcd: bool = flag(10) # since Skyrim
+        auto_calc_normals: bool = flag(4)
+        has_hi_res_heightfield: bool = flag(5) # since FO4
+        has_mpcd: bool = flag(10) # Skyrim's version of has_hi_res_heightfield?
 
-    def __init__(self):
+    def __init__(self, *, with_vtex: bool = False):
         super().__init__(
             MelUInt32Flags(b'DATA', 'land_flags', self._land_flags),
             MelBase(b'VNML', 'vertex_normals'),
@@ -919,7 +916,8 @@ class MelLandShared(MelSequential):
                     False: MelNull(b'VTXT'),
                 }, decider=FidNotNullDecider('atxt_texture')),
             ), sort_by_attrs=('quadrant', 'layer')),
-            MelSimpleArray('vertex_textures', MelFid(b'VTEX')),
+            (MelSimpleArray('vertex_textures', MelFid(b'VTEX'))
+             if with_vtex else None),
         )
 
 #------------------------------------------------------------------------------
@@ -928,64 +926,75 @@ class MelLctnShared(MelSequential):
     def __init__(self):
         super().__init__(
             MelEdid(),
-            MelArray('actor_cell_persistent_reference',
-                MelStruct(b'ACPR', ['2I', '2h'], (FID, 'acpr_actor'),
-                    (FID, 'acpr_location'), 'acpr_grid_x', 'acpr_grid_y'),
-            ),
-            MelArray('location_cell_persistent_reference',
-                MelStruct(b'LCPR', ['2I', '2h'], (FID, 'lcpr_actor'),
-                    (FID, 'lcpr_location'), 'lcpr_grid_x', 'lcpr_grid_y'),
-            ),
-            MelSimpleArray('reference_cell_persistent_reference',
-                MelFid(b'RCPR')),
-            MelArray('actor_cell_unique',
-                MelStruct(b'ACUN', ['3I'], (FID, 'acun_actor'),
-                    (FID, 'acun_ref'), (FID, 'acun_location')),
-            ),
-            MelArray('location_cell_unique',
-                MelStruct(b'LCUN', ['3I'], (FID, 'lcun_actor'),
-                    (FID, 'lcun_ref'), (FID, 'lcun_location')),
-            ),
-            MelSimpleArray('reference_cell_unique', MelFid(b'RCUN')),
-            MelArray('actor_cell_static_reference',
+            # Persistent References -------------------------------------------
+            MelSorted(MelArray('added_persistent_references',
+                MelStruct(b'ACPR', ['2I', '2h'], (FID, 'acpr_ref'),
+                    (FID, 'acpr_world_cell'), 'acpr_grid_x', 'acpr_grid_y'),
+            ), sort_by_attrs='acpr_ref'),
+            MelSorted(MelArray('master_persistent_references',
+                MelStruct(b'LCPR', ['2I', '2h'], (FID, 'lcpr_ref'),
+                    (FID, 'lcpr_world_cell'), 'lcpr_grid_x', 'lcpr_grid_y'),
+            ), sort_by_attrs='lcpr_ref'),
+            MelSorted(MelSimpleArray('removed_persistent_references',
+                MelFid(b'RCPR'))),
+            # Unique NPCs -----------------------------------------------------
+            MelSorted(MelArray('added_unique_npcs',
+                MelStruct(b'ACUN', ['3I'], (FID, 'acun_npc'),
+                    (FID, 'acun_actor_ref'), (FID, 'acun_location')),
+            ), sort_by_attrs='acun_actor_ref'),
+            MelSorted(MelArray('master_unique_npcs',
+                MelStruct(b'LCUN', ['3I'], (FID, 'lcun_npc'),
+                    (FID, 'lcun_actor_ref'), (FID, 'lcun_location')),
+            ), sort_by_attrs='lcun_actor_ref'),
+            MelSorted(MelSimpleArray('removed_unique_npcs', MelFid(b'RCUN'))),
+            # Special References ----------------------------------------------
+            MelSorted(MelArray('added_special_references',
                 MelStruct(b'ACSR', ['3I', '2h'], (FID, 'acsr_loc_ref_type'),
-                    (FID, 'acsr_marker'), (FID, 'acsr_location'),
-                    'acsr_grid_x', 'acsr_grid_y'),
-            ),
-            MelArray('location_cell_static_reference',
+                    (FID, 'acsr_ref'), (FID, 'acsr_world_cell'), 'acsr_grid_x',
+                    'acsr_grid_y'),
+            ), sort_by_attrs='acsr_ref'),
+            MelSorted(MelArray('master_special_references',
                 MelStruct(b'LCSR', ['3I', '2h'], (FID, 'lcsr_loc_ref_type'),
-                    (FID, 'lcsr_marker'), (FID, 'lcsr_location'),
+                    (FID, 'lcsr_ref'), (FID, 'lcsr_world_cell'),
                     'lcsr_grid_x', 'lcsr_grid_y'),
-            ),
-            MelSimpleArray('reference_cell_static_reference', MelFid(b'RCSR')),
-            MelGroups('actor_cell_encounter_cell',
+            ), sort_by_attrs='lcsr_ref'),
+            MelSorted(MelSimpleArray('removed_special_references',
+                MelFid(b'RCSR'))),
+            # Worldspace Cells ------------------------------------------------
+            MelSorted(MelGroups('added_worldspace_cells',
                 MelArray('acec_coordinates',
                     MelStruct(b'ACEC', ['2h'], 'acec_grid_x', 'acec_grid_y'),
-                    prelude=MelFid(b'ACEC', 'acec_location'),
+                    prelude=MelFid(b'ACEC', 'acec_world'),
                 ),
-            ),
-            MelGroups('location_cell_encounter_cell',
+            ), sort_by_attrs='acec_world'),
+            MelSorted(MelGroups('master_worldspace_cells',
                 MelArray('lcec_coordinates',
                     MelStruct(b'LCEC', ['2h'], 'lcec_grid_x', 'lcec_grid_y'),
-                    prelude=MelFid(b'LCEC', 'lcec_location'),
+                    prelude=MelFid(b'LCEC', 'lcec_world'),
                 ),
-            ),
-            MelGroups('reference_cell_encounter_cell',
+            ), sort_by_attrs='lcec_world'),
+            MelSorted(MelGroups('removed_worldspace_cells',
                 MelArray('rcec_coordinates',
                     MelStruct(b'RCEC', ['2h'], 'rcec_grid_x', 'rcec_grid_y'),
-                    prelude=MelFid(b'RCEC', 'rcec_location'),
+                    prelude=MelFid(b'RCEC', 'rcec_world'),
                 ),
-            ),
-            MelSimpleArray('actor_cell_marker_reference', MelFid(b'ACID')),
-            MelSimpleArray('location_cell_marker_reference', MelFid(b'LCID')),
-            MelArray('actor_cell_enable_point',
-                MelStruct(b'ACEP', ['2I', '2h'], (FID, 'acep_actor'),
-                    (FID, 'acep_ref'), 'acep_grid_x', 'acep_grid_y'),
-            ),
-            MelArray('location_cell_enable_point',
-                MelStruct(b'LCEP', ['2I', '2h'], (FID, 'lcep_actor'),
-                    (FID, 'lcep_ref'), 'lcep_grid_x', 'lcep_grid_y'),
-            ),
+            ), sort_by_attrs='rcec_world'),
+            # Initially Disabled References -----------------------------------
+            MelSorted(MelSimpleArray('added_initially_disabled_references',
+                MelFid(b'ACID'))),
+            MelSorted(MelSimpleArray('master_initially_disabled_references',
+                MelFid(b'LCID'))),
+            # Enable Parent References ----------------------------------------
+            MelSorted(MelArray('added_enable_parent_references',
+                MelStruct(b'ACEP', ['2I', 'B', '3s'], (FID, 'acep_ref'),
+                    (FID, 'acep_parent'), (EnableParentFlags, 'acep_flags'),
+                    'acep_unused'),
+            ), sort_by_attrs='acep_ref'),
+            MelSorted(MelArray('master_enable_parent_references',
+                MelStruct(b'LCEP', ['2I', '2h'], (FID, 'lcep_ref'),
+                    (FID, 'lcep_parent'), (EnableParentFlags, 'lcep_flags'),
+                    'lcep_unused'),
+            ), sort_by_attrs='lcep_ref'),
             MelFull(),
             MelKeywords(),
             MelParent(),
@@ -1039,6 +1048,16 @@ class MelLinkColors(MelStruct):
     def __init__(self):
         super().__init__(b'XCLP', ['3B', 's', '3B', 's'],
             *color_attrs('start_color'), *color_attrs('end_color'))
+
+#------------------------------------------------------------------------------
+class MelLinkedOcclusionReferences(MelStruct):
+    """Hanldes the REFR subrecord XORD (Linked Occlusion References)."""
+    def __init__(self):
+        super().__init__(b'XORD', ['4I'],
+            (FID, 'linked_occlusion_reference_right'),
+            (FID, 'linked_occlusion_reference_left'),
+            (FID, 'linked_occlusion_reference_bottom'),
+            (FID, 'linked_occlusion_reference_top'))
 
 #------------------------------------------------------------------------------
 class MelLLChanceNone(MelUInt8):
@@ -1429,6 +1448,16 @@ class MelNpcPerks(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelOcclusionPlane(MelStruct):
+    """Handles the REFR subrecord XOCP (Occlusion Plane Data)."""
+    def __init__(self):
+        super().__init__(b'XOCP', ['9f'], 'occlusion_plane_width',
+            'occlusion_plane_height', *position_attrs('occlusion_plane'),
+            # This is most likely a quaternion
+            'occlusion_plane_rot_a', 'occlusion_plane_rot_b',
+            'occlusion_plane_rot_c', 'occlusion_plane_rot_d'),
+
+#------------------------------------------------------------------------------
 class MelOverridePackageLists(MelSequential):
     """Handles the NPC_/QUST subrecords SPOR, OCOR, GWOR and ECOR."""
     def __init__(self):
@@ -1520,7 +1549,7 @@ class MelPackIdleHandler(MelGroup):
         'on_end': b'POEA',
     }
 
-    def __init__(self, attr, *, ck_leftovers: tuple[MelBase] = ()):
+    def __init__(self, attr, *, ck_leftovers: tuple[MelBase, ...] = ()):
         super().__init__(attr,
             MelBase(self._attr_lookup[attr], f'{attr}_marker'),
             MelFid(b'INAM', 'idle_anim'),

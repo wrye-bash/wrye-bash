@@ -1275,7 +1275,7 @@ class MreLand(MelRecord):
     rec_sig = b'LAND'
 
     melSet = MelSet(
-        MelLandShared(),
+        MelLandShared(with_vtex=True),
     )
 
 #------------------------------------------------------------------------------

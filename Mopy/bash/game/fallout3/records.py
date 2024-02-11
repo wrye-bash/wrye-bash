@@ -62,7 +62,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelColor, MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
-    MelScolParts
+    MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -1610,7 +1610,7 @@ class MreLand(MelRecord):
     rec_sig = b'LAND'
 
     melSet = MelSet(
-        MelLandShared(),
+        MelLandShared(with_vtex=True),
     )
 
 #------------------------------------------------------------------------------
@@ -2681,13 +2681,8 @@ class MreRefr(_AMreReferenceFo3):
                 counters={'linked_rooms_count': 'linked_rooms'}),
             MelSorted(MelFids('linked_rooms', MelFid(b'XLRM'))),
         ),
-        MelStruct(b'XOCP', ['9f'], 'occlusionPlaneWidth',
-            'occlusionPlaneHeight', 'occlusionPlanePosX', 'occlusionPlanePosY',
-            'occlusionPlanePosZ', 'occlusionPlaneRot1', 'occlusionPlaneRot2',
-            'occlusionPlaneRot3', 'occlusionPlaneRot4'),
-        MelStruct(b'XORD', ['4I'], (FID, 'linkedOcclusionPlane0'),
-            (FID, 'linkedOcclusionPlane1'), (FID, 'linkedOcclusionPlane2'),
-            (FID, 'linkedOcclusionPlane3')),
+        MelOcclusionPlane(),
+        MelLinkedOcclusionReferences(),
         MelXlod(),
         MelRefScale(),
         MelRef3D(),

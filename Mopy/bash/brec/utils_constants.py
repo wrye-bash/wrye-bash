@@ -382,6 +382,13 @@ class AMgefFlagsTes4(AMgefFlags):
         new_bits = mask if new_fpt else 0
         self._field = (self._field & ~mask) | new_bits
 
+class EnableParentFlags(Flags):
+    """Implements the enable parent flags shared by XESP, ACEP and LCEP."""
+    opposite_parent: bool
+    # The pop_in flag doesn't technically exist for all XESP subrecords, but it
+    # will just be ignored for those where it doesn't exist, so no problem.
+    pop_in: bool
+
 class MgefFlags(AMgefFlags):
     """Implements the MGEF data flags used since Skyrim."""
     snap_to_navmesh: bool = flag(3)
@@ -567,7 +574,7 @@ def color3_attrs(color_attr_pfx: str) -> list[str]:
     return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue')]
 
 def _gen_3d_attrs(attr_prefix: str) -> list[str]:
-    """Internal helper for position_attrs and rotation_attrs."""
+    """Internal helper for position_attrs et al."""
     return [f'{attr_prefix}_{d}' for d in ('x', 'y', 'z')]
 
 def position_attrs(attr_prefix: str) -> list[str]:
@@ -577,6 +584,10 @@ def position_attrs(attr_prefix: str) -> list[str]:
 def rotation_attrs(attr_prefix: str) -> list[str]:
     """Helper method for generating X/Y/Z rotation attributes."""
     return _gen_3d_attrs(f'{attr_prefix}_rot')
+
+def velocity_attrs(attr_prefix: str) -> list[str]:
+    """Helper method for generating X/Y/Z velocity attributes."""
+    return _gen_3d_attrs(f'{attr_prefix}_vel')
 
 # Distributors ----------------------------------------------------------------
 # Shared distributor for LENS records
