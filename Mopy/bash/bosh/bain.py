@@ -1805,10 +1805,11 @@ class InstallersData(DataStore):
     file_pattern = re.compile(
         fr'\.(?:{"|".join(e[1:] for e in archives.readExts)})$', re.I)
     unique_store_key = Store.INSTALLERS
+    _dir_key = 'installers'
 
     def __init__(self):
+        self.set_store_dir()
         super().__init__()
-        self.store_dir = bass.dirs['installers']
         self.bash_dir.makedirs()
         #--Persistent data
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))

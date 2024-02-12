@@ -48,10 +48,10 @@ from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
-from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
-    decoder, deprint, dict_sort, forward_compat_path_to_fn, \
+from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
+    ListInfo, Path, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
-    OrderedLowerDict, AFileInfo, attrgetter_cache
+    OrderedLowerDict, attrgetter_cache
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
@@ -1470,12 +1470,17 @@ class ScreenInfo(AFileInfo):
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
+    _dir_key: str # key in dirs dict for the store_dir
     # Each subclass must define this. Used when information related to the
     # store is passed between the GUI and the backend
     unique_store_key: Store
 
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
+
+    def set_store_dir(self):
+        self.store_dir = sd = dirs[self._dir_key]
+        return sd
 
     # Store operations --------------------------------------------------------
     @final
@@ -1568,17 +1573,17 @@ class _AFileInfos(DataStore):
     # Whether these file infos track ownership in a table
     tracks_ownership = False
 
-    def __init__(self, dir_, factory):
+    def __init__(self, factory=None):
         """Init with specified directory and specified factory type."""
-        super().__init__(self._initDB(dir_))
-        self.factory = factory
+        super().__init__(self._init_store(self.set_store_dir()))
+        self.factory = factory or self.__class__.factory
 
-    def _initDB(self, dir_):
+    def _init_store(self, storedir):
+        """Set up the self's _data/corrupted and return the former."""
         self.corrupted: FNDict[FName, Corrupted] = FNDict()
-        self.store_dir = dir_ #--Path
         deprint(f'Initializing {self.__class__.__name__}')
-        deprint(f' store_dir: {self.store_dir}')
-        self.store_dir.makedirs()
+        deprint(f' store_dir: {storedir}')
+        storedir.makedirs()
         self._data = FNDict()
         return self._data
 
@@ -1747,11 +1752,11 @@ class _AFileInfos(DataStore):
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
 
-    def _initDB(self, dir_):
+    def _init_store(self, storedir):
         """Load pickled data for mods, saves, inis and bsas."""
-        db = super()._initDB(dir_)
-        deprint(f' bash_dir: {self.bash_dir}')
-        self.bash_dir.makedirs() # self.store_dir may need be set
+        db = super()._init_store(storedir)
+        deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
+        self.bash_dir.makedirs()
         # the type of the table keys is always bolt.FName
         self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join('Table.dat')))
@@ -1877,11 +1882,12 @@ class INIInfos(TableFileInfos):
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
+    _dir_key = 'ini_tweaks'
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
                                       bush.game.default_tweaks.items())
-        super().__init__(dirs['ini_tweaks'], ini_info_factory)
+        super().__init__(ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -2104,11 +2110,12 @@ def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     unique_store_key = Store.MODS
+    _dir_key = 'mods'
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
-        super().__init__(dirs['mods'], ModInfo)
+        super().__init__(ModInfo)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
@@ -3262,13 +3269,11 @@ class ModInfos(TableFileInfos):
         self.voAvailable.add(current_version)
         self.voAvailable.remove(newVersion)
 
-    def swapPluginsAndMasterVersion(self, arcSaves, newSaves, ask_yes):
+    def swapPluginsAndMasterVersion(self, arcPath, newSaves, ask_yes):
         """Save current plugins into arcSaves directory, load plugins from
         newSaves directory and set oblivion version."""
         # arcSave and newSaves always have backslash separators
-        arcPath, newPath = (dirs['saveBase'].join(env.convert_separators(s))
-                            for s in (arcSaves, newSaves))
-        if load_order.swap(arcPath, newPath):
+        if load_order.swap(arcPath, saveInfos.store_dir):
             self.refreshLoadOrder(unlock_lo=True)
         # Swap Oblivion version to memorized version
         voNew = saveInfos.get_profile_attr(newSaves, u'vOblivion', None)
@@ -3323,22 +3328,30 @@ class SaveInfos(TableFileInfos):
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
     unique_store_key = Store.SAVES
 
-    def _setLocalSaveFromIni(self):
-        """Read the current save profile from the oblivion.ini file and set
-        local save attribute to that value."""
+    def set_store_dir(self, save_dir=None):
+        """If save_dir is None, read the current save profile from
+        oblivion.ini file, else update the ini with save_dir."""
         # saveInfos singleton is constructed in InitData after bosh.oblivionIni
         prev = getattr(self, 'localSave', None)
-        save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
-            default=bush.game.Ini.save_prefix).rstrip('\\')
+        if save_dir is None:
+            save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
+                default=bush.game.Ini.save_prefix).rstrip('\\')
+        else: # set SLocalSavePath in Oblivion.ini - the latter must exist
+            # not sure if appending the slash is needed for the game to parse
+            # the setting correctly, kept previous behavior
+            oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
+                                    value=f'{save_dir}\\')
         self.localSave = save_dir
-        if prev is not None and prev != save_dir:
-            self.table.save()
-            self.__init_db()
-        return prev != save_dir
+        if (boot := prev is None) or prev != save_dir:
+            self.store_dir = sd = dirs['saveBase'].join(env.convert_separators(
+                save_dir)) # localSave always has backslashes
+            if not boot:
+                self.table.save()
+                self._init_store(sd)
+        return self.store_dir
 
     def __init__(self):
-        self._setLocalSaveFromIni()
-        super().__init__(self.__saves_dir(), SaveInfo)
+        super().__init__(SaveInfo)
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
@@ -3406,9 +3419,9 @@ class SaveInfos(TableFileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos=True, booting=False):
-        if not booting:
-            self._setLocalSaveFromIni()
+    def refresh(self, refresh_infos=True, booting=False, *, save_dir=None):
+        if not booting: # else we just called __init__
+            self.set_store_dir(save_dir)
         return super().refresh(booting=booting) if refresh_infos else \
            self._rdata_type()
 
@@ -3454,24 +3467,6 @@ class SaveInfos(TableFileInfos):
         bash_frame.warn_corrupted(warn_saves=True)
         return moved
 
-    #--Local Saves ------------------------------------------------------------
-    def __init_db(self):
-        self._initDB(self.__saves_dir())
-
-    def __saves_dir(self): # always has backslashes
-        return dirs['saveBase'].join(env.convert_separators(self.localSave))
-
-    def setLocalSave(self, localSave: str, refreshSaveInfos=True):
-        """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
-        self.table.save()
-        self.localSave = localSave
-        ##: not sure if appending the slash is needed for the game to parse
-        # the setting correctly, kept previous behavior
-        oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
-                                value=f'{localSave}\\')
-        self.__init_db()
-        if refreshSaveInfos: self.refresh()
-
 #------------------------------------------------------------------------------
 class BSAInfos(TableFileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
@@ -3481,6 +3476,7 @@ class BSAInfos(TableFileInfos):
     _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
     unique_store_key = Store.BSAS
+    _dir_key = 'mods'
 
     def __init__(self):
         ##: Hack, this should not use display_name
@@ -3519,8 +3515,7 @@ class BSAInfos(TableFileInfos):
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
                     if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
-
-        super().__init__(dirs['mods'], BSAInfo)
+        super().__init__(BSAInfo)
 
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, **kwargs):
@@ -3599,31 +3594,28 @@ class ScreenInfos(_AFileInfos):
         'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
         'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
     unique_store_key = Store.SCREENSHOTS
+    file_pattern = re.compile(
+        r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
+    factory = ScreenInfo
 
-    def __init__(self):
-        self._orig_store_dir: bolt.Path = dirs[u'app']
-        self.__class__.file_pattern = re.compile(
-            r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$',
-            re.I | re.U)
-        self._set_store_dir()
-        super().__init__(self.store_dir, ScreenInfo)
-
-    def _set_store_dir(self):
+    def set_store_dir(self):
         # Check if we need to adjust the screenshot dir
         ss_base = GPath(oblivionIni.getSetting(
             u'Display', u'SScreenShotBaseName', u'ScreenShot'))
-        new_store_dir = self._orig_store_dir.join(ss_base.shead)
-        if getattr(self, 'store_dir', None) != new_store_dir:
+        new_store_dir = dirs['app'].join(ss_base.shead)
+        if (prev := getattr(self, 'store_dir', None)) != new_store_dir:
             self.store_dir = new_store_dir
-        # Also check if we're now relative to the Data folder and hence need to
-        # pay attention to BAIN
-        self._rel_to_data = self.store_dir.cs.startswith(bass.dirs['mods'].cs)
-        self._bain_notify = self._rel_to_data
-        if self._rel_to_data:
-            self._ci_curr_data_prefix = os.path.split(os.path.relpath(
-                self.store_dir, bass.dirs['mods']).lower())
-        else:
-            self._ci_curr_data_prefix = []
+            if prev is not None: # else we are in __init__
+                self._init_store(new_store_dir)
+            # Also check if we're now in the Data folder and hence need to
+            # pay attention to BAIN
+            if in_data := self.store_dir.cs.startswith(bass.dirs['mods'].cs):
+                self._ci_curr_data_prefix = os.path.split(os.path.relpath(
+                    new_store_dir, bass.dirs['mods']).lower())
+            else:
+                self._ci_curr_data_prefix = []
+            self._bain_notify = in_data
+        return new_store_dir
 
     @classmethod
     def rightFileType(cls, fileName: bolt.FName):
@@ -3633,7 +3625,7 @@ class ScreenInfos(_AFileInfos):
         return super().rightFileType(fileName)
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
-        if not self._rel_to_data:
+        if not self._bain_notify:
             # Current store_dir is not relative to Data folder, so we do not
             # need to pay attention to BAIN
             return None
@@ -3645,7 +3637,7 @@ class ScreenInfos(_AFileInfos):
         return super().data_path_to_info(filename, would_be)
 
     def refresh(self, refresh_infos=True, booting=False):
-        self._set_store_dir()
+        self.set_store_dir()
         return super().refresh(refresh_infos, booting)
 
 #------------------------------------------------------------------------------

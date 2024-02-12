@@ -110,7 +110,9 @@ class Saves_ProfilesData(balt.ListEditorData):
         oldDir.moveTo(newDir)
         oldSaves, newSaves = map(_win_join, (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
-            self._parent_list.set_local_save(newSaves, refreshSaveInfos=True)
+            # this will clear and refresh SaveInfos - we could be smarter as
+            # only the abs_path of the infos changes - not worth the complexity
+            self._parent_list.set_local_save(newSaves)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
@@ -193,11 +195,11 @@ class Saves_Profiles(ChoiceLink):
 
         def Execute(self):
             arcSaves = bosh.saveInfos.localSave
-            newSaves = self.relativePath
+            new_dir = self.relativePath
             with BusyCursor():
-                self.window.set_local_save(newSaves, refreshSaveInfos=False)
-                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves, askYes)
-                bosh.saveInfos.refresh()
+                old = bosh.saveInfos.store_dir
+                self.window.set_local_save(new_dir)
+                bosh.modInfos.swapPluginsAndMasterVersion(old, new_dir, askYes)
                 self.window.DeleteAll() # let call below repopulate
                 self.window.RefreshUI(detail_item=None,
                                       refresh_others=Store.MODS.DO())
