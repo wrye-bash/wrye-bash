@@ -2004,21 +2004,21 @@ class InstallersData(DataStore):
         return True, *map(bool, owned_per_store)
 
     #--Dict Functions ---------------------------------------------------------
-    def files_to_delete(self, filenames, **kwargs):
+    def _delete_operation(self, infos, *, recycle=True):
         toDelete = []
-        markers = [k for k, inst in self.filter_essential(filenames).items() if
-                   inst.is_marker or toDelete.append(inst.abs_path)] # or None
-        return toDelete, markers
-
-    def _delete_operation(self, paths, markers, *, recycle=True):
+        markers = [inst.fn_key for inst in infos if
+                   inst.is_marker or toDelete.append(inst)] # or None
+        super()._delete_operation(toDelete, recycle=recycle)
         for m in markers: del self[m]
-        super()._delete_operation(paths, markers, recycle=recycle)
 
-    def delete_refresh(self, del_keys, check_existence, markers):
+    def delete_refresh(self, infos, check_existence):
+        del_insts = [inst for inst in infos if not inst.is_marker]
+        markers = len(del_insts) < len(infos)
         if check_existence:
-            del_keys = {i for i in del_keys if not self[i].abs_path.exists()}
-        if del_keys: # markers are popped in _delete_operation
-            self.irefresh(what='I', refresh_info=RefrData({*del_keys}))
+            del_insts = {i for i in del_insts if not i.abs_path.exists()}
+        if del_insts: # markers are popped in _delete_operation
+            self.irefresh(what='I',
+                          refresh_info=RefrData({i.fn_key for i in del_insts}))
         elif markers:
             self.refreshOrder()
 

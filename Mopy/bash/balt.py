@@ -1417,7 +1417,7 @@ class UIList(PanelWin):
 
     def hide(self, items: dict[FName, ...]):
         """Hides the items in the specified iterable."""
-        hidden_ = []
+        moved_infos = []
         for fnkey, inf in items.items():
             destDir = inf.get_hide_dir()
             if destDir.join(fnkey).exists():
@@ -1428,9 +1428,9 @@ class UIList(PanelWin):
             #--Do it
             with BusyCursor():
                 inf.move_info(destDir)
-                hidden_.append(fnkey)
+                moved_infos.append(inf)
         #--Refresh stuff
-        self.data_store.delete_refresh(hidden_, check_existence=True)
+        self.data_store.delete_refresh(moved_infos, check_existence=True)
 
     @staticmethod
     def _unhide_wildcard(): raise NotImplementedError

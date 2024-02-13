@@ -36,6 +36,7 @@ from collections.abc import Iterable, Callable
 from dataclasses import dataclass, field
 from functools import wraps
 from itertools import chain
+from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
@@ -1476,26 +1477,26 @@ class DataStore(DataDict):
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
 
+    # Store operations --------------------------------------------------------
+    @final
     def delete(self, delete_keys, *, recycle=True):
         """Deletes member file(s)."""
-        full_delete_paths, delete_info = self.files_to_delete(delete_keys)
+        # factory is _AFileInfos only, but installers don't have corrupted so
+        # let it blow if we are called with non-existing keys(join(None), boom)
+        finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
+                  self.filter_essential(delete_keys).items()]
         try:
-            self._delete_operation(full_delete_paths, delete_info,
-                recycle=recycle)
+            self._delete_operation(finfos, recycle=recycle)
         finally:
-            if delete_info: # Installers - remove markers from keys
-                delete_keys = {k for k in delete_keys if k not in delete_info}
-            self.delete_refresh(delete_keys, True, delete_info)
+            self.delete_refresh(finfos, True)
 
-    def files_to_delete(self, filenames, **kwargs): # factory is _AFileInfos!
-        finfos = (v or self.factory(self.store_dir.join(k)) for k, v in
-                  self.filter_essential(filenames).items())
-        abs_delete_paths = [*chain.from_iterable(fileInfo.delete_paths() for
-            fileInfo in finfos)]
-        return abs_delete_paths, None # no extra delete info
+    def _delete_operation(self, finfos, *, recycle=True):
+        abs_del_paths = [*chain.from_iterable(
+            inf.delete_paths() for inf in finfos)]
+        env.shellDelete(abs_del_paths, recycle=recycle)
 
-    def _delete_operation(self, paths, delete_info, *, recycle=True):
-        env.shellDelete(paths, recycle=recycle)
+    def delete_refresh(self, infos, check_existence):
+        raise NotImplementedError
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1507,9 +1508,6 @@ class DataStore(DataDict):
         """Filter unopenable files out of the specified filenames. Returns the
         remaining ones as a dict, mapping file names to file infos."""
         return {k: self[k] for k in fn_items}
-
-    def delete_refresh(self, del_paths, check_existence, extra_del_data=None):
-        raise NotImplementedError
 
     def refresh(self): raise NotImplementedError
     def save(self): pass # for Screenshots
@@ -1611,8 +1609,8 @@ class _AFileInfos(DataStore):
                     deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                             traceback=True)
                     self.pop(new, None)
-            rdata.to_del = del_infos
-        self.delete_refresh(rdata.to_del, check_existence=False)
+            rdata.to_del = {d.fn_key for d in del_infos}
+        self.delete_refresh(del_infos, check_existence=False)
         if rdata.redraw:
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
@@ -1646,11 +1644,12 @@ class _AFileInfos(DataStore):
         return self._diff_dir(FNDict(((x, {}) for x in inodes)))
 
     def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
-        dict[FName, tuple[AFile | None, dict]], set[FName]]:
+        dict[FName, tuple[AFile | None, dict]], set[ListInfo]]:
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
-        oldNames = set(self) | self.corrupted.keys()
+        del_infos = {inf for inf in [*self.values(), *self.corrupted.values()]
+                     if inf.fn_key not in inodes}
         new_or_present = {}
         for k, kws in inodes.items():
             # corrupted that has been updated on disk - if cor.abs_path
@@ -1660,14 +1659,12 @@ class _AFileInfos(DataStore):
                 new_or_present[k] = (None, kws)
             elif not cor: # for default tweaks with a corrupted copy
                 new_or_present[k] = (self.get(k), kws)
-        return new_or_present, oldNames - inodes.keys()
+        return new_or_present, del_infos
 
-    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
+    def delete_refresh(self, infos, check_existence):
         """Special case for the saves, inis, mods and bsas.
-        :param del_keys: must be the data store keys and not full paths
-        :param extra_del_data: unused"""
-        #--Table
-        paths_to_keys = {self[n].abs_path: n for n in del_keys}
+        :param infos: the infos corresponding to deleted items."""
+        paths_to_keys = {inf.abs_path: inf.fn_key for inf in infos}
         if check_existence:
             for filePath in list(paths_to_keys):
                 if filePath.exists():
@@ -1767,9 +1764,8 @@ class TableFileInfos(_AFileInfos):
         return db
 
     #--Delete
-    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
-        deleted_keys = super().delete_refresh(deleted_keys, check_existence,
-                                              extra_del_data)
+    def delete_refresh(self, infos, check_existence):
+        deleted_keys = super().delete_refresh(infos, check_existence)
         for del_fn in deleted_keys:
             self.table.pop(del_fn, None)
         return deleted_keys
@@ -1799,6 +1795,7 @@ class Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
     def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
+        self.fn_key = FName(fullpath.stail)
         if itsa_ghost:
             fullpath = fullpath + '.ghost' # Path.__add__ !
         super().__init__(fullpath, **kwargs)
@@ -1978,13 +1975,13 @@ class INIInfos(TableFileInfos):
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
 
     def _diff_dir(self, inodes):
-        oldNames = {*(n for n, v in self.items() if not v.is_default_tweak),
-                    *self.corrupted}
+        old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
+                         *self.corrupted.values()}
         new_or_present, del_infos = super()._diff_dir(inodes)
         # if iinf is a default tweak a file has replaced it - set it to None
         new_or_present = {k: (inf and (None if inf.is_default_tweak else inf),
             kws) for k, (inf, kws) in new_or_present.items()}
-        return new_or_present, oldNames & del_infos
+        return new_or_present, del_infos & old_ini_infos # drop default tweaks
 
     def _missing_default_inis(self):
         return ((k, v) for k, v in self._default_tweaks.items() if
@@ -2011,9 +2008,8 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
-    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
-        del_keys = super().delete_refresh(del_keys, check_existence,
-                                          extra_del_data)
+    def delete_refresh(self, infos, check_existence):
+        del_keys = super().delete_refresh(infos, check_existence)
         if check_existence: # DataStore.delete() path - re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo
@@ -3156,10 +3152,9 @@ class ModInfos(TableFileInfos):
         return old_key
 
     #--Delete
-    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
+    def delete_refresh(self, infos, check_existence):
         # adapted from refresh() (avoid refreshing from the data directory)
-        del_keys = super().delete_refresh(del_keys, check_existence,
-                                          extra_del_data)
+        del_keys = super().delete_refresh(infos, check_existence)
         # we need to call deactivate to deactivate dependents
         self.lo_deactivate(del_keys) # no-op if empty
         if del_keys and check_existence: # delete() path - refresh caches
