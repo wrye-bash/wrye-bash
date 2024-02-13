@@ -3554,7 +3554,7 @@ class ScreensPanel(BashTab):
 
     def __init__(self,parent):
         """Initialize."""
-        self.listData = bosh.screen_infos = bosh.ScreenInfos()
+        self.listData = bosh.screen_infos = bosh.ScreenInfos(do_refresh=False)
         super(ScreensPanel, self).__init__(parent)
 
     def ShowPanel(self, **kwargs):
@@ -4298,16 +4298,12 @@ class BashApp(object):
         progress(0.2, _(u'Initializing BSAs'))
         #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
         bosh.bsaInfos = bosh.BSAInfos()
-        bosh.bsaInfos.refresh(booting=True)
         progress(0.3, _(u'Initializing plugins'))
         bosh.modInfos = bosh.ModInfos()
-        bosh.modInfos.refresh(booting=True)
         progress(0.5, _(u'Initializing saves'))
         bosh.saveInfos = bosh.SaveInfos()
-        bosh.saveInfos.refresh(booting=True)
         progress(0.6, _(u'Initializing INIs'))
         bosh.iniInfos = bosh.INIInfos()
-        bosh.iniInfos.refresh(refresh_target=False, booting=True)
         # screens/installers data are refreshed upon showing the panel
         #--Patch check
         if bush.game.Esp.canBash and not bosh.modInfos.bashed_patches and \

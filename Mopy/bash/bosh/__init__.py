@@ -1603,11 +1603,13 @@ class _AFileInfos(DataStore):
     factory: type[AFile]
     # Whether these file infos track ownership in a table
     tracks_ownership = False
+    _boot_refresh_args = {'booting': True}
 
-    def __init__(self, factory=None):
+    def __init__(self, factory=None, *, do_refresh=True):
         """Init with specified directory and specified factory type."""
         super().__init__(self._init_store(self.set_store_dir()))
         self.factory = factory or self.__class__.factory
+        if do_refresh: self.refresh(**self._boot_refresh_args)
 
     def _init_store(self, storedir):
         """Set up the self's _data/corrupted and return the former."""
@@ -1901,6 +1903,7 @@ class INIInfos(TableFileInfos):
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
     _dir_key = 'ini_tweaks'
+    _boot_refresh_args = {'booting': True, 'refresh_target': False}
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
@@ -2133,7 +2136,6 @@ class ModInfos(TableFileInfos):
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
-        super().__init__(ModInfo)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
@@ -2175,10 +2177,13 @@ class ModInfos(TableFileInfos):
         # used in RefreshData
         self.warn_missing_lo_act = set()
         self.selectedExtra = []
-        load_order.initialize_load_order_handle(self, bush.game.fsName)
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
+        load_order.initialize_load_order_handle(self, bush.game.fsName)
+        global modInfos
+        modInfos = self ##: hack needed in ModInfo._find_string_bsas
+        super().__init__(ModInfo)
 
     def _update_info_sets(self):
         """Refresh bashed_patches/imported/merged - active state changes and/or
