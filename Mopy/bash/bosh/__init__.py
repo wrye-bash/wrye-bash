@@ -97,8 +97,8 @@ reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
 del __exts
 # Image extensions for BAIN and for the Screnshots tab
 _common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
-bain_image_exts = _common_image_exts | {'.webp'}
-ss_image_exts = _common_image_exts | {'.tga'}
+bain_image_exts = {*_common_image_exts, '.webp'}
+ss_image_exts = {*_common_image_exts, '.tga'}
 
 #--Typing
 _CosaveDict = dict[type[cosaves.ACosave], cosaves.ACosave]
@@ -1472,7 +1472,7 @@ class ScreenInfo(AFileInfo):
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
-    store_dir: Path # where the data sit, static except for SaveInfos
+    store_dir: Path # where the data sit, static except for Save/ScreenInfos
     # Each subclass must define this. Used when information related to the
     # store is passed between the GUI and the backend
     unique_store_key: Store
@@ -2107,7 +2107,7 @@ class ModInfos(TableFileInfos):
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
-        # RefrData.redraw/added so we need to calculate these in refresh.
+        # RefrData.redraw/to_add so we need to calculate these in refresh.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         if dirs[u'mods'].join(bush.game.master_file).is_file():
             self._master_esm = bush.game.master_file
@@ -3484,7 +3484,7 @@ class SaveInfos(TableFileInfos):
         ##: not sure if appending the slash is needed for the game to parse
         # the setting correctly, kept previous behavior
         oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
-                                value=localSave + u'\\')
+                                value=f'{localSave}\\')
         self.__init_db()
         if refreshSaveInfos: self.refresh()
 
@@ -3505,9 +3505,8 @@ class BSAInfos(TableFileInfos):
             bush.game.Bsa.redate_dict[inisettings[
                 u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'
         self.__class__.file_pattern = re.compile(
-            re.escape(bush.game.Bsa.bsa_extension) + u'$', re.I | re.U)
+            f'{re.escape(bush.game.Bsa.bsa_extension)}$', re.I)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
-
         class BSAInfo(FileInfo, _bsa_type):
             _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
             def __init__(self, fullpath, load_cache=False, **kwargs):
@@ -3594,7 +3593,7 @@ class ScreenInfos(_AFileInfos):
         ss_base = GPath(oblivionIni.getSetting(
             u'Display', u'SScreenShotBaseName', u'ScreenShot'))
         new_store_dir = self._orig_store_dir.join(ss_base.shead)
-        if self.store_dir != new_store_dir:
+        if getattr(self, 'store_dir', None) != new_store_dir:
             self.store_dir = new_store_dir
         # Also check if we're now relative to the Data folder and hence need to
         # pay attention to BAIN

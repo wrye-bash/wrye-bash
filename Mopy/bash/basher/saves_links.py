@@ -620,7 +620,6 @@ class Save_EditCreatedEnchantmentCosts(OneItemLink):
 #------------------------------------------------------------------------------
 class Save_Move(ChoiceLink):
     """Moves or copies selected files to alternate profile."""
-    local = None
 
     def __init__(self, copyMode=False):
         super(Save_Move, self).__init__()
@@ -634,14 +633,14 @@ class Save_Move(ChoiceLink):
 
     def _initData(self, window, selection):
         super(Save_Move, self)._initData(window, selection)
-        Save_Move.local = bosh.saveInfos.localSave
+        saves_dir = bosh.saveInfos.localSave
         _self = self
         class _Default(EnabledLink):
             _text = _('Default')
             _help = _self._help_str % {
                 'save_profile': bush.game.Ini.save_prefix}
             def _enable(self):
-                return Save_Move.local != bush.game.Ini.save_prefix
+                return saves_dir != bush.game.Ini.save_prefix
             def Execute(self): _self.MoveFiles(profile=None)
         class _SaveProfileLink(EnabledLink):
             @property
@@ -650,7 +649,7 @@ class Save_Move(ChoiceLink):
                     'save_profile': os.path.join(
                         bush.game.Ini.save_prefix, self._text)}
             def _enable(self):
-                return Save_Move.local != _win_join(self._text)
+                return saves_dir != _win_join(self._text)
             def Execute(self): _self.MoveFiles(profile=self._text)
         self.__class__.choiceLinkType = _SaveProfileLink
         self.extraItems = [_Default()]

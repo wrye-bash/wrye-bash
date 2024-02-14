@@ -274,7 +274,6 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
         """Handle selection."""
         if bosh.modInfos.voCurrent == self._version_key: return
         bosh.modInfos.setOblivionVersion(self._version_key, askYes)
-        bosh.modInfos.setOblivionVersion(self._version_key)
         ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
         # not any of the modding ESMs. Maybe we should enforce that those
         # modding ESMs are never active and drop this refresh_others?

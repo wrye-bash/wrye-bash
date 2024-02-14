@@ -1404,12 +1404,12 @@ class UIList(PanelWin):
 
     def open_data_store(self):
         try:
-            self.data_store.store_dir.start()
+            (sd := self.data_store.store_dir).start()
             return
         except OSError:
-            deprint(f'Creating {self.data_store.store_dir}')
-            self.data_store.store_dir.makedirs()
-        self.data_store.store_dir.start()
+            deprint(f'Creating {sd}')
+            sd.makedirs()
+        sd.start()
 
     def hide(self, items: dict[FName, ...]):
         """Hides the items in the specified iterable."""
