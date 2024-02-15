@@ -214,7 +214,6 @@ class FixInfo(object):
 class LoGame(object):
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
-    allow_deactivate_master = False
     must_be_active_if_present: LoTuple = ()
     max_espms = 255
     max_esls = 0
@@ -529,11 +528,10 @@ class LoGame(object):
         acti_filtered_set = set(acti_filtered)
         lord_set = set(lord)
         fix_active.act_removed = set(acti) - acti_filtered_set
-        if not self.allow_deactivate_master:
-            if self.master_path not in acti_filtered_set:
-                acti_filtered.insert(0, self.master_path)
-                acti_filtered_set.add(self.master_path)
-                fix_active.master_not_active = self.master_path
+        if self.master_path not in acti_filtered_set:
+            acti_filtered.insert(0, self.master_path)
+            acti_filtered_set.add(self.master_path)
+            fix_active.master_not_active = self.master_path
         for path in self.must_be_active_if_present:
             if path in lord_set and path not in acti_filtered_set:
                 fix_active.missing_must_be_active.append(path)
@@ -850,7 +848,6 @@ class INIGame(LoGame):
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
-    allow_deactivate_master = True
     # Intentionally imprecise mtime cache
     _mtime_mods: defaultdict[int, set[Path]] = defaultdict(set)
     _get_free_time_step = 1.0 # step by one second intervals
