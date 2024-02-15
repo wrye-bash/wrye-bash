@@ -196,9 +196,7 @@ class Saves_Profiles(ChoiceLink):
         def Execute(self):
             new_dir = self.relativePath
             with BusyCursor():
-                old = bosh.saveInfos.store_dir
-                self.window.set_local_save(new_dir)
-                bosh.modInfos.swapPluginsAndMasterVersion(old, new_dir, askYes)
+                self.window.set_local_save(new_dir, do_swap=askYes)
                 self.window.DeleteAll() # let call below repopulate
                 self.window.RefreshUI(detail_item=None,
                                       refresh_others=Store.MODS.DO())
