@@ -388,12 +388,11 @@ class _Mod_LabelsData(balt.ListEditorData):
         """Removes group."""
         self.mod_labels.remove(item)
         #--Edit table entries.
-        colGroup = bosh.modInfos.table.getColumn(self.column)
         deletd = []
-        for fileName, val in list(colGroup.items()):
-            if val == item:
-                del colGroup[fileName]
-                deletd.append(fileName)
+        for fn, mod_inf in bosh.modInfos.items():
+            if mod_inf.get_table_prop(self.column) == item:
+                mod_inf.set_table_prop(self.column, None)
+                deletd.append(fn)
         self._refresh(redraw=deletd)
         #--Done
         return True
@@ -443,9 +442,8 @@ class _Mod_Labels(ChoiceLink):
             _help = _('Remove all labels from the selected plugins.')
             def Execute(self):
                 """Handle selection of None."""
-                fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected:
-                    fileLabels[fileName] = u''
+                    bosh.modInfos[fileName].set_table_prop(_self.column, None)
                 _self._refresh()
             def _check(self):
                 return _self._none_checked
@@ -574,8 +572,7 @@ class _Mod_Groups_Import(ItemLink):
         modGroups = _ModGroups()
         modGroups.read_csv(textPath)
         changed_count = modGroups.writeToModInfos(self.selected)
-        bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI() ##: redraw=changed
         self._showOk(_('Imported %(num_imported_groups)d groups '
                        '(%(num_changed_groups)d changed).') % {
             'num_imported_groups': len(modGroups.mod_group),
