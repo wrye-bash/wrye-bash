@@ -1812,9 +1812,8 @@ class TableFileInfos(_AFileInfos):
         """Load pickled data for mods, saves, inis and bsas."""
         deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
         self.bash_dir.makedirs()
-        pickled = bolt.PickleDict(self.bash_dir.join('Table.dat'),
-                                  load_pickle=True)
-        return forward_compat_path_to_fn(pickled.pickled_data)
+        return bolt.DataTable(self.bash_dir.join('Table.dat'),
+                              load_pickle=True).pickled_data
 
     def refresh(self, *args, **kwargs):
         if not self._table_loaded:
@@ -1823,11 +1822,10 @@ class TableFileInfos(_AFileInfos):
         return super().refresh(*args, **kwargs)
 
     def save_pickle(self):
-        pd = bolt.PickleDict(self.bash_dir.join('Table.dat')) # don't load!
+        pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
         for k, v in self.items():
             if pickle_dict := v.get_persistent_attrs():
                 pd.pickled_data[k] = pickle_dict
-        # fixme do we need to update self.vdata too??
         pd.save()
 
 class Corrupted(AFile):
