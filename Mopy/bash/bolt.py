@@ -2105,44 +2105,20 @@ def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
     return b''.join(wip_string)
 
 #------------------------------------------------------------------------------
-class DataTable(DataDict):
+class DataTable(PickleDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
-    currently used by TableFileInfos to represent properties associated with
+    currently used by TableFileInfos to pickle properties associated with
     mod/save/bsa/ini files, where each file is a row, and each property (e.g.
     modified date or 'mtime') is a column.
 
-    The "table" is actually a dictionary of dictionaries. E.g.
-        propValue = table['fileName']['propName']
+    self.pickled_data is actually a dictionary of dictionaries. E.g.
+        propValue = self.pickled_data['fileName']['propName']
     Rows are the first index ('fileName') and columns are the second index
     ('propName')."""
 
-    def __init__(self, dictFile: PickleDict):
-        """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile
-        dictFile.load()
-        self.vdata = dictFile.vdata
-        self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
-            self.dictFile.pickled_data)
-        super().__init__(_data)
-        self.hasChanged = False ##: move to PickleDict
-
-    def save(self):
-        """Saves to pickle file."""
-        dictFile = self.dictFile
-        if self.hasChanged and not dictFile.readOnly:
-            dictFile.pickled_data = self._data # note we reassign pickled_data
-            self.hasChanged = not dictFile.save()
-
-    #--Dictionary emulation
-    def __setitem__(self,key,value):
-        self._data[key] = value
-        self.hasChanged = True
-    def __delitem__(self,key):
-        del self._data[key]
-        self.hasChanged = True
-    def pop(self,key,default=None):
-        self.hasChanged = True
-        return self._data.pop(key, default)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pickled_data = forward_compat_path_to_fn(self.pickled_data)
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------

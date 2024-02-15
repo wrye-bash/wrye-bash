@@ -679,8 +679,8 @@ class Save_Move(ChoiceLink):
     def _move_saves(self, destDir, profile: str | None):
         #--bashDir
         destTable = bolt.DataTable(bolt.PickleDict(destDir.join(
-            u'Bash', u'Table.dat')))
-        count = 0
+            'Bash', 'Table.dat')), load_pickle=True)
+        count = do_save = 0
         ask = True
         for fileName, save_inf in self.iselected_pairs():
             if ask and destDir.join(fileName).exists():
@@ -697,12 +697,13 @@ class Save_Move(ChoiceLink):
                 ask = ask and result != 2 # so don't warn for rest of operation
             if self.copyMode:
                 bosh.saveInfos.copy_info(fileName, destDir)
-                if att_dict := save_inf.get_persistent_attrs():
-                    destTable[fileName] = att_dict
             else:
                 bosh.saveInfos[fileName].move_info(destDir)
+            if att_dict := save_inf.get_persistent_attrs():
+                destTable.pickled_data[fileName] = att_dict
+                do_save = 1
             count += 1
-        destTable.save()
+        if do_save: destTable.save()
         return count
 
 #------------------------------------------------------------------------------
