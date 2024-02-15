@@ -3187,20 +3187,11 @@ class ModInfos(TableFileInfos):
         return self[fileName].get_version() if fileName in self else ''
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def _retry(self, old, new, ask_yes):  ##: we should check *before* writing the patch
-        m = [_('Wrye Bash encountered an error when renaming %(old)s to '
-               '%(new)s.'),
-             '', '',
-             _('The file is in use by another process such as '
-               '%(xedit_name)s.'),
-             '',
-             _('Please close the other program that is accessing %(new)s.'),
-             '', '',
-             _('Try again?')]
-        msg = '\n'.join(m) % {'xedit_name': bush.game.Xe.full_name,
-                              'old': old, 'new': new}
-        return ask_yes(self, msg, title=_('File in Use'))
-
+    _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
+                    '%(new)s.'), '', '',
+        _('The file is in use by another process such as %(xedit_name)s.'), '',
+        _('Please close the other program that is accessing %(new)s.'), '', '',
+        _('Try again?')]
     def setOblivionVersion(self, newVersion, ask_yes):
         """Swaps Oblivion.esm to specified version."""
         baseName = self._master_esm # Oblivion.esm, say it's currently SI one
@@ -3209,8 +3200,8 @@ class ModInfos(TableFileInfos):
         newSize = bush.game.modding_esm_size[newName]
         oldSize = self[baseName].fsize
         if newSize == oldSize: return
-        current_version = bush.game.size_esm_version[oldSize]
         try: # for instance: Oblivion_SI.esm, we rename Oblivion.esm to this
+            current_version = bush.game.size_esm_version[oldSize]
             oldName = FName(f'{fnb}_{current_version}.esm')
         except KeyError:
             raise StateError("Can't match current main ESM to known version.")
@@ -3227,32 +3218,26 @@ class ModInfos(TableFileInfos):
         is_new_info_active = load_order.cached_is_active(newName)
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
-        while True:
-            try:
-                file_info_rename_op(baseInfo, oldName)
-                break
-            except PermissionError: ##: can only occur if SHFileOperation
-                # isn't called, yak - file operation API badly needed
-                if self._retry(baseInfo.abs_path,
-                        self.store_dir.join(oldName), ask_yes):
-                    continue
-                raise
-            except CancelError:
-                return
-        while True:
-            try:
-                file_info_rename_op(newInfo, self._master_esm)
-                break
-            except PermissionError:
-                if self._retry(newInfo.abs_path, baseInfo.abs_path, ask_yes):
-                    continue
-                #Undo any changes
-                file_info_rename_op(oldName, self._master_esm)
-                raise
-            except CancelError:
-                #Undo any changes
-                file_info_rename_op(oldName, self._master_esm)
-                return
+        rename_args = {baseInfo: baseInfo.abs_path,
+                       oldName: self.store_dir.join(oldName)}, {
+            newInfo: newInfo.abs_path, self._master_esm: baseInfo.abs_path}
+        for do_undo, args_dict in enumerate(rename_args):
+            while True:
+                try:
+                    file_info_rename_op(*args_dict)
+                    break
+                except PermissionError: ##: can only occur if SHFileOperation
+                    # isn't called, yak - file operation API badly needed
+                    old, new = args_dict.values()
+                    msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
+                        'xedit_name': bush.game.Xe.full_name, }
+                    if ask_yes(self, msg, title=_('File in Use')):
+                        continue
+                    if do_undo: file_info_rename_op(self[oldName], self._master_esm)
+                    raise
+                except CancelError:
+                    if do_undo: file_info_rename_op(self[oldName], self._master_esm)
+                    return
         # set mtimes to previous respective values
         self[self._master_esm].setmtime(master_time)
         self[oldName].setmtime(new_info_time)
