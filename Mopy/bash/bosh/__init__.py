@@ -2816,7 +2816,7 @@ class ModInfos(TableFileInfos):
             if fileName not in acti_set:
                 self._active_wip.append(fileName)
                 _activated.add(fileName)
-            return load_order.get_ordered(_activated or [])
+            return load_order.get_ordered(_activated)
         finally:
             if doSave: self.cached_lo_save_active()
 
@@ -3213,18 +3213,18 @@ class ModInfos(TableFileInfos):
             raise StateError(f"Can't swap: {move_to} already exists.")
         if copy_from not in self:
             raise StateError(f"Can't swap: {copy_from} doesn't exist.")
-        newInfo = self[copy_from]
+        swapped_inf = self[copy_from]
+        swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
         baseInfo = self[master_esm]
         master_time = baseInfo.ftime
-        new_info_time = newInfo.ftime
-        is_master_active = load_order.cached_is_active(master_esm)
+        new_info_time = swapped_inf.ftime
         is_new_info_active = load_order.cached_is_active(copy_from)
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
         rename_args = {baseInfo: baseInfo.abs_path,
-                       move_to: self.store_dir.join(move_to)}, {newInfo: (
-            deltd := newInfo.abs_path), master_esm: baseInfo.abs_path}
+                       move_to: self.store_dir.join(move_to)}, {swapped_inf: (
+            deltd := swapped_inf.abs_path), master_esm: baseInfo.abs_path}
         for do_undo, args_dict in enumerate(rename_args):
             while True:
                 try:
@@ -3249,14 +3249,12 @@ class ModInfos(TableFileInfos):
         oldIndex = self._lo_wip.index(copy_from)
         self._lo_caches_remove_mods([copy_from])
         self._lo_wip.insert(oldIndex, move_to)
-        def _activate(active, mod):
-            (self.lo_activate if active else self.lo_deactivate)(mod)
-        _activate(is_new_info_active, move_to)
-        _activate(is_master_active, master_esm)
-        # Save to disc (load order and plugins.txt) - need to handle ghosting
-        if is_master_active and master_inf.is_ghost:
+        (self.lo_activate if is_new_info_active else self.lo_deactivate)(
+            move_to)
+        if swapping_a_ghost: # we need to unghost the master esm
             master_inf.setGhost(False)
-        self.cached_lo_save_all() # sets ghost as needed
+        # Save to disc (load order and plugins.txt)
+        self.cached_lo_save_all()
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = newVersion
