@@ -2233,11 +2233,11 @@ class SaveList(UIList):
             self.RefreshUI(redraw=[rename_res], to_del=[fn_item])
 
     # Save profiles
-    def set_local_save(self, new_saves):
+    def set_local_save(self, new_saves, do_swap=None):
         if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=_(
             u'Setting the save profile is done by editing the game ini.')):
             return
-        self.data_store.refresh(save_dir=new_saves)
+        self.data_store.refresh(save_dir=new_saves, do_swap=do_swap)
         balt.Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------

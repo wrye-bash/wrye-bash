@@ -3269,18 +3269,12 @@ class ModInfos(TableFileInfos):
         self.voAvailable.add(current_version)
         self.voAvailable.remove(newVersion)
 
-    def swapPluginsAndMasterVersion(self, arcPath, newSaves, ask_yes):
-        """Save current plugins into arcSaves directory, load plugins from
-        newSaves directory and set oblivion version."""
-        # arcSave and newSaves always have backslash separators
-        if load_order.swap(arcPath, saveInfos.store_dir):
-            self.refreshLoadOrder(unlock_lo=True)
-        # Swap Oblivion version to memorized version
-        voNew = saveInfos.get_profile_attr(newSaves, u'vOblivion', None)
-        if voNew is None:
-            saveInfos.set_profile_attr(newSaves, u'vOblivion', self.voCurrent)
-            voNew = self.voCurrent
-        if voNew in self.voAvailable: self.setOblivionVersion(voNew, ask_yes)
+    def try_set_version(self, set_version, do_swap): # do_swap is askYes here!
+        curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
+        if set_version is None: # just return current version
+            return curr_ver # as a convenience for saveInfos
+        if set_version != curr_ver and set_version in self.voAvailable:
+            self.setOblivionVersion(set_version, do_swap)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size
@@ -3328,7 +3322,7 @@ class SaveInfos(TableFileInfos):
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
     unique_store_key = Store.SAVES
 
-    def set_store_dir(self, save_dir=None):
+    def set_store_dir(self, save_dir=None, do_swap=None):
         """If save_dir is None, read the current save profile from
         oblivion.ini file, else update the ini with save_dir."""
         # saveInfos singleton is constructed in InitData after bosh.oblivionIni
@@ -3343,8 +3337,17 @@ class SaveInfos(TableFileInfos):
                                     value=f'{save_dir}\\')
         self.localSave = save_dir
         if (boot := prev is None) or prev != save_dir:
+            old = not boot and self.store_dir
             self.store_dir = sd = dirs['saveBase'].join(env.convert_separators(
                 save_dir)) # localSave always has backslashes
+            if do_swap:
+                # save current plugins into old directory, load plugins from sd
+                if load_order.swap(old, sd):
+                    modInfos.refreshLoadOrder(unlock_lo=True)
+                # Swap Oblivion version to memorized version
+                voNew = self.get_profile_attr(save_dir, 'vOblivion', None)
+                if curr := modInfos.try_set_version(voNew, do_swap):
+                    self.set_profile_attr(save_dir, 'vOblivion', curr)
             if not boot:
                 self.table.save()
                 self._init_store(sd)
@@ -3419,9 +3422,10 @@ class SaveInfos(TableFileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos=True, booting=False, *, save_dir=None):
+    def refresh(self, refresh_infos=True, booting=False, *, save_dir=None,
+                do_swap=None):
         if not booting: # else we just called __init__
-            self.set_store_dir(save_dir)
+            self.set_store_dir(save_dir, do_swap)
         return super().refresh(booting=booting) if refresh_infos else \
            self._rdata_type()
 
