@@ -26,7 +26,7 @@ Bash application is actually launched by the bash module.)
 
 This module is used to help split basher.py to a package without breaking
 the program. basher.py was organized starting with lower level elements,
-working up to higher level elements (up the BashApp). This was followed by
+working up to higher level elements. This was followed by
 definition of menus and buttons classes, dialogs, and finally by several
 initialization functions. Currently the package structure is:
 
@@ -4251,81 +4251,46 @@ class BashFrame(WindowFrame):
                 newer_version.wb_version > LooseVersion(bass.AppVersion)):
             UpdateNotification.display_dialog(self, newer_version)
 
-#------------------------------------------------------------------------------
-class BashApp(object):
-    """Wrapper around a wx Application."""
-    __slots__ = ('bash_app',)
-
-    def __init__(self, bash_app):
-        self.bash_app = bash_app
-
-    def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
-        """Initialize the application data and create the BashFrame."""
-        #--OnStartup SplashScreen and/or Progress
-        #   Progress gets hidden behind splash by default, since it's not very informative anyway
-        splash_screen = None
-        with balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
-                           elapsed=False) as progress:
-            # Is splash enabled in ini ?
-            if bass.inisettings['EnableSplashScreen']:
-                if (splash := GPath(os.path.join(get_image_dir(),
-                                                 'wryesplash.png'))).is_file():
-                    splash_screen = CenteredSplash(splash.s)
-            #--Init Data
-            progress(0.2, _(u'Initializing Data'))
-            self.InitData(progress)
-            progress(0.7, _(u'Initializing Version'))
-            self.InitVersion()
-            #--MWFrame
-            progress(0.8, _(u'Initializing Windows'))
-            frame = BashFrame() # Link.Frame global set here
-            progress(1.0, _(u'Done'))
-        if splash_screen:
-            splash_screen.stop_splash()
-        self.bash_app.SetTopWindow(frame._native_widget)
-        frame.show_frame()
-        frame.RefreshData(booting=True)
-        frame.is_maximized = settings[u'bash.frameMax']
-        # Moved notebook.Bind() callback here as OnShowPage() is explicitly
-        # called in RefreshData
-        frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
-                            frame.notebook.OnShowPage)
-        return frame
-
-    @staticmethod
-    def InitData(progress):
-        """Initialize all data. Called by Init()."""
-        progress(0.2, _(u'Initializing BSAs'))
-        #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
-        bosh.bsaInfos = bosh.BSAInfos()
-        progress(0.3, _(u'Initializing plugins'))
-        bosh.modInfos = bosh.ModInfos()
-        progress(0.5, _(u'Initializing saves'))
-        bosh.saveInfos = bosh.SaveInfos()
-        progress(0.6, _(u'Initializing INIs'))
-        bosh.iniInfos = bosh.INIInfos()
-        # screens/installers data are refreshed upon showing the panel
-        #--Patch check
-        if bush.game.Esp.canBash and not bosh.modInfos.bashed_patches and \
-                bass.inisettings['EnsurePatchExists']:
-            progress(0.68, _('Generating Blank Bashed Patch'))
-            try:
-                bosh.modInfos.generateNextBashedPatch(selected_mods=())
-            except: # YAK but this may blow and has blown on whatever coding error, crashing Bash on boot
-                deprint('Failed to create new bashed patch', traceback=True)
-
-    @staticmethod
-    def InitVersion():
-        """Perform any version to version conversion. Called by Init()."""
-        #--Current Version
-        if settings[u'bash.version'] != bass.AppVersion:
-            settings[u'bash.version'] = bass.AppVersion
-            # rescan mergeability on version upgrade to detect new mergeable
-            deprint(u'Version changed, rescanning mergeability')
-            bosh.modInfos.rescanMergeable(bosh.modInfos)
-            deprint(u'Done rescanning mergeability')
-
 # Initialization --------------------------------------------------------------
+def Init(bash_app):
+    """Initialize the application data and create the BashFrame."""
+    #--OnStartup SplashScreen and/or Progress
+    # Progress gets hidden behind splash by default
+    splash = GPath(os.path.join(get_image_dir(), 'wryesplash.png'))
+    show_splash = bass.inisettings['EnableSplashScreen'] and splash.is_file()
+    with CenteredSplash(splash.s, show_splash), balt.Progress(
+            'Wrye Bash', _('Initializing') + ' ' * 10, elapsed=False) as prog:
+        #--Init Data
+        mod_infs = bosh.init_stores(prog)
+        #--Patch check
+        if bush.game.Esp.canBash and not mod_infs.bashed_patches and \
+                bass.inisettings['EnsurePatchExists']:
+            prog(0.68, _('Generating Blank Bashed Patch'))
+            try: # this may blow and has blown on random coding errors ...
+                mod_infs.generateNextBashedPatch(selected_mods=())
+            except: # ... crashing Bash on boot, hence the catch-all here
+                 deprint('Failed to create new bashed patch', traceback=True)
+        prog(0.7, _('Initializing Version'))
+        if settings['bash.version'] != bass.AppVersion:
+            settings['bash.version'] = bass.AppVersion
+            # rescan mergeability on version upgrade to detect new mergeable
+            deprint('Version changed, rescanning mergeability')
+            mod_infs.rescanMergeable(mod_infs)
+            deprint('Done rescanning mergeability')
+        #--MWFrame
+        prog(0.8, _('Initializing Windows'))
+        frame = BashFrame() # Link.Frame global set here
+        prog(1.0, _('Done'))
+    bash_app.SetTopWindow(frame._native_widget)
+    frame.show_frame()
+    frame.RefreshData(booting=True)
+    frame.is_maximized = settings['bash.frameMax']
+    # Moved notebook.Bind() callback here as OnShowPage() is explicitly
+    # called in RefreshData
+    frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
+                        frame.notebook.OnShowPage)
+    return frame
+
 def InitSettings(): # this must run first !
     """Initializes settings dictionary for bosh and basher."""
     bosh.initSettings(askYes)

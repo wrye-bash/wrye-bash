@@ -2018,8 +2018,8 @@ class InstallersData(DataStore):
         if check_existence:
             del_insts = {i for i in del_insts if not i.abs_path.exists()}
         if del_insts: # markers are popped in _delete_operation
-            self.irefresh(what='I',
-                          refresh_info=RefrData({i.fn_key for i in del_insts}))
+            self.irefresh(what='I', refresh_info=RefrData({
+                i.fn_key for i in del_insts}))
         elif markers:
             self.refreshOrder()
 
