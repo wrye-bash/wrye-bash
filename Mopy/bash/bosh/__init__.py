@@ -865,7 +865,7 @@ class ModInfo(FileInfo):
 
     def mod_bsas(self, bsa_infos=None):
         """Returns a list of all BSAs that the game will attach to this plugin.
-        bsa_infos is optional and will default to bosh.bsaInfos."""
+        bsa_infos is optional and will default to bsaInfos."""
         if bush.game.fsName == u'Morrowind':
             # Morrowind does not load attached BSAs at all - they all have to
             # be registered via the INI
@@ -3346,7 +3346,7 @@ class SaveInfos(TableFileInfos):
     def set_store_dir(self, save_dir=None, do_swap=None):
         """If save_dir is None, read the current save profile from
         oblivion.ini file, else update the ini with save_dir."""
-        # saveInfos singleton is constructed in InitData after bosh.oblivionIni
+        # saveInfos singleton is constructed in InitData after oblivionIni
         prev = getattr(self, 'localSave', None)
         if save_dir is None:
             save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
@@ -3694,9 +3694,8 @@ def initBosh(game_ini_path):
     deprint(f'Looking for main game INI at {game_ini_path}')
     global oblivionIni, gameInis
     oblivionIni = GameIni(game_ini_path, 'cp1252')
-    gameInis = [oblivionIni]
-    gameInis.extend(IniFileInfo(dirs[u'saveBase'].join(x), 'cp1252') for x in
-                    bush.game.Ini.dropdown_inis[1:])
+    gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
+                               for x in bush.game.Ini.dropdown_inis[1:])]
     load_order.initialize_load_order_files()
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
@@ -3760,3 +3759,18 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else:
                 raise
+
+def init_stores(progress):
+    """Initialize the data stores. Bsas first - used in warnTooManyModsBsas
+    and modInfos strings detection. Screens/installers data are refreshed
+    upon showing the panel - we should probably do the same for saves."""
+    global bsaInfos, saveInfos, iniInfos
+    progress(0.2, _('Initializing BSAs'))
+    bsaInfos = BSAInfos()
+    progress(0.3, _('Initializing plugins'))
+    ModInfos() # modInfos global is set in __init__
+    progress(0.5, _('Initializing saves'))
+    saveInfos = SaveInfos()
+    progress(0.6, _('Initializing INIs'))
+    iniInfos = INIInfos()
+    return modInfos

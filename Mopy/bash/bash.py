@@ -632,8 +632,6 @@ def _main(opts, wx_locale, wxver):
     basher.InitImages()
     basher.links_init.InitStatusBar()
     basher.InitLinks()
-    #--Start application
-    bapp = basher.BashApp(bash_app)
     # Set the window title for stdout/stderr messages
     bash_app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
     # Need to reference the locale object somewhere, so let's do it on the App
@@ -686,7 +684,8 @@ def _main(opts, wx_locale, wxver):
                 if gui.askYes(frame, '\n'.join(msg),
                               title=_('Unable to create backup!')):
                     return  # Quit
-    frame = bapp.Init() # Link.Frame is set here !
+    #--Start application
+    frame = basher.Init(bash_app)  # Link.Frame is set here !
     frame.ensureDisplayed()
     frame.bind_refresh()
     # Start the update check in the background and pass control to wx's event
