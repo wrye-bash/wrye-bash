@@ -662,6 +662,7 @@ class SaveSpells(_SaveData):
 
     def __init__(self, saveInfo):
         super().__init__(saveInfo)
+        ##: This typing doesn't seem right, looks like FormId -> MreRecord
         #--spells[(modName,objectIndex)] = (name,type)
         self.allSpells: dict[FormId, (str, int)] = {}
 
@@ -730,7 +731,8 @@ class SaveSpells(_SaveData):
                 continue
             #--Get spell data
             record = self.allSpells.get((master,objectIndex),None)
-            if record and record.full and record.spellType == 0 and fid != 0x136:
+            if (record and record.full and record.spell_type == 0 and
+                    fid != 0x136): ##: What is this FormID and why skip it?
                 pcSpells[record.full] = (iref,record)
         return pcSpells
 

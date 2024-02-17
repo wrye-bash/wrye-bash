@@ -782,13 +782,19 @@ class ASkyrimGameInfo(PatchGame):
         # sound_files does not need to loop here
         b'SNDR': ('sound_files', 'looping_type', 'rumble_send_value',
                   'pct_frequency_shift', 'pct_frequency_variance',
-                  'descriptor_priority', 'db_variance', 'staticAtten'),
-        b'SOPM': ('reverbSendpct', 'outputType', 'ch0_l', 'ch0_r', 'ch0_c',
-                  'ch0_lFE', 'ch0_rL', 'ch0_rR', 'ch0_bL', 'ch0_bR', 'ch1_l',
-                  'ch1_r', 'ch1_c', 'ch1_lFE', 'ch1_rL', 'ch1_rR', 'ch1_bL',
-                  'ch1_bR', 'ch2_l', 'ch2_r', 'ch2_c', 'ch2_lFE', 'ch2_rL',
-                  'ch2_rR', 'ch2_bL', 'ch2_bR', 'minDistance', 'maxDistance',
-                  'curve1', 'curve2', 'curve3', 'curve4', 'curve5'),
+                  'descriptor_priority', 'db_variance', 'static_attenuation'),
+        b'SOPM': ('reverb_send_pct', 'sopm_type',
+                  # Import each channel as a fused attribute
+                  ('ch0_fl', 'ch0_fr', 'ch0_c', 'ch0_lfe', 'ch0_rl', 'ch0_rr',
+                   'ch0_sl', 'ch0_sr'),
+                  ('ch1_fl', 'ch1_fr', 'ch1_c', 'ch1_lfe', 'ch1_rl', 'ch1_rr',
+                   'ch1_sl', 'ch1_sr'),
+                  ('ch2_fl', 'ch2_fr', 'ch2_c', 'ch2_lfe', 'ch2_rl', 'ch2_rr',
+                   'ch2_sl', 'ch2_sr'),
+                  'av_min_distance', 'av_max_distance',
+                  # Import the entire curve as a fused attribute
+                  ('av_curve1', 'av_curve2', 'av_curve3', 'av_curve4',
+                   'av_curve5')),
         b'WEAP': ('detectionSoundLevel',),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
@@ -820,7 +826,7 @@ class ASkyrimGameInfo(PatchGame):
         b'SLGM': ('sound_pickup', 'sound_drop'),
         b'SNCT': ('parent_fid',),
         b'SNDR': ('descriptor_category', 'output_model'),
-        b'SOUN': ('soundDescriptor',),
+        b'SOUN': ('sound_descriptor',),
         b'TACT': ('sound',),
         b'TREE': ('sound',),
         b'WATR': ('sound',),
@@ -1148,15 +1154,17 @@ class ASkyrimGameInfo(PatchGame):
     # Import Spell Stats
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
-    spell_stats_attrs = ('eid', 'cost', 'spellType', 'charge_time',
-                         'cast_type', 'spell_target_type', 'castDuration',
-                         'range', 'dataFlags')
-    spell_stats_fid_attrs = ('halfCostPerk',)
-    # halfCostPerk at the end since it's a FormID, to mirror how APreserver
+    spell_stats_attrs = ('eid', 'spell_cost', 'spell_type',
+                         'spell_charge_time', 'spell_cast_type',
+                         'spell_target_type', 'spell_cast_duration',
+                         'spell_range', 'spell_flags')
+    spell_stats_fid_attrs = ('casting_perk',)
+    # casting_perk at the end since it's a FormID, to mirror how APreserver
     # will join the tuples
-    spell_stats_csv_attrs = ('eid', 'cost', 'spellType', 'charge_time',
-                             'cast_type', 'spell_target_type', 'castDuration',
-                             'range', 'dataFlags', 'halfCostPerk')
+    spell_stats_csv_attrs = ('eid', 'spell_cost', 'spell_type',
+                             'spell_charge_time', 'spell_cast_type',
+                             'spell_target_type', 'spell_cast_duration',
+                             'spell_range', 'spell_flags', 'casting_perk')
     spell_stats_types = {b'SCRL', b'SPEL'}
 
     #--------------------------------------------------------------------------
@@ -1377,9 +1385,10 @@ class ASkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Enchantment Stats
     #--------------------------------------------------------------------------
-    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
-                        'enchantment_amount', 'enchantment_target_type',
-                        'enchantment_type', 'charge_time')
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags',
+                        'enchantment_cast_type', 'enchantment_amount',
+                        'enchantment_target_type', 'enchantment_type',
+                        'enchantment_charge_time')
     ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------

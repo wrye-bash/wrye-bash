@@ -613,9 +613,9 @@ class AFallout3GameInfo(PatchGame):
         b'IPCT': ('ipct_sound_level',),
         b'PROJ': ('sound_level',),
         b'SOUN': ('soundFile', 'minDist', 'maxDist', 'freqAdj', 'flags',
-                  'staticAtten', 'stopTime', 'startTime', 'point0', 'point1',
-                  'point2', 'point3', 'point4', 'reverb', 'priority', 'xLoc',
-                  'yLoc'),
+                  'static_attenuation', 'stopTime', 'startTime', 'point0',
+                  'point1', 'point2', 'point3', 'point4', 'reverb', 'priority',
+                  'xLoc', 'yLoc'),
         b'WEAP': ('sound_level',),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
@@ -968,7 +968,7 @@ class AFallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
     spell_stats_attrs = spell_stats_csv_attrs = (
-        'eid', 'cost', 'level', 'spellType', 'spell_flags')
+        'eid', 'spell_cost', 'spell_level', 'spell_type', 'spell_flags')
 
     #--------------------------------------------------------------------------
     # Tweak Actors

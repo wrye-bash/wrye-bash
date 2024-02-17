@@ -34,7 +34,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelClmtWeatherTypes, MelCombatStyle, MelConditionsFo3, MelContData, \
     MelCpthShared, MelDeathItem, MelDecalData, MelDescription, MelDoorFlags, \
     MelEdid, MelEffectsFo3, MelEnableParent, MelEnchantment, MelExtra, \
-    MelFactions, MelFactRanks, MelFid, MelFids, MelFloat, MelFlstFids, \
+    MelFactions, MelFactRanks, MelFid, MelFloat, MelFlstFids, \
     MelFull, MelGrasData, MelGroup, MelGroups, MelHairFlags, MelIco2, \
     MelIcon, MelIcons, MelIcons2, MelIdleAnimationCountOld, MelMesgButtons, \
     MelIdleAnimations, MelIdleRelatedAnims, MelIdleTimerSetting, \
@@ -54,7 +54,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, PartialLoadDecider, PerkEpdfDecider, SizeDecider, AMreGlob, \
-    SpellFlags, color_attrs, color3_attrs, null2, perk_distributor, \
+    MelSpitOld, color_attrs, color3_attrs, null2, perk_distributor, \
     perk_effect_key, MelLinkColors, MelNpcClass, TemplateFlags, MelTemplate, \
     MelAIPackages, MelNpcHeadParts, MelInheritsSoundsFrom, MelSoundLevel, \
     MelIdleAnimFlags, PackGeneralOldFlags, MelPackScheduleOld, MelMgefData, \
@@ -62,7 +62,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelColor, MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
-    MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane
+    MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane, \
+    MelSimpleGroups, AMreEyes, MelEyesFlags
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -555,7 +556,7 @@ class MreAmmo(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcons(),
         fnv_only(MelScript()),
@@ -569,7 +570,7 @@ class MreAmmo(MelRecord):
             'consumedPercentage', old_versions={'2If'})),
         MelShortName(),
         fnv_only(MelString(b'QNAM', 'abbreviation')),
-        fnv_only(MelFids('effects', MelFid(b'RCIL'))),
+        fnv_only(MelSimpleGroups('effects', MelFid(b'RCIL'))),
     )
 
 #------------------------------------------------------------------------------
@@ -882,7 +883,7 @@ class MreClas(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelDescription(),
         MelIcon(),
         MelStruct(b'DATA', ['4i', '2I', 'b', 'B', '2s'],
@@ -1099,8 +1100,8 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFids('added_quests', MelFid(b'QSTI'))),
-        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
+        MelSorted(MelSimpleGroups('added_quests', MelFid(b'QSTI'))),
+        MelSorted(MelSimpleGroups('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelTruncatedStruct(b'DATA', [u'2B'], 'dialType',
@@ -1285,6 +1286,16 @@ class MreExpl(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreEyes(AMreEyes):
+    """Eyes."""
+    melSet = MelSet(
+        MelEdid(is_required=True),
+        MelFull(is_required=True),
+        MelIcon(),
+        MelEyesFlags(),
+    )
+
+#------------------------------------------------------------------------------
 class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
@@ -1366,7 +1377,7 @@ class MreHair(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcon(),
         MelHairFlags(),
@@ -1382,10 +1393,10 @@ class MreHdpt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelUInt8Flags(b'DATA', 'flags', _hdpt_flags),
-        MelSorted(MelFids('extra_parts', MelFid(b'HNAM'))),
+        MelSorted(MelSimpleGroups('extra_parts', MelFid(b'HNAM'))),
     )
 
 #------------------------------------------------------------------------------
@@ -1511,12 +1522,12 @@ class MreInfo(MelRecord):
         MelFid(b'QSTI', 'info_quest'),
         MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
-        MelFids('add_topics', MelFid(b'NAME')),
+        MelSimpleGroups('add_topics', MelFid(b'NAME')),
         MelInfoResponsesFo3(),
         MelConditionsFo3(),
-        MelFids('info_choices', MelFid(b'TCLT')),
-        MelFids('link_from', MelFid(b'TCLF')),
-        fnv_only(MelFids('follow_up', MelFid(b'TCFU'))),
+        MelSimpleGroups('info_choices', MelFid(b'TCLT')),
+        MelSimpleGroups('link_from', MelFid(b'TCLF')),
+        fnv_only(MelSimpleGroups('follow_up', MelFid(b'TCFU'))),
         MelGroup('script_begin',
             MelEmbeddedScript(),
         ),
@@ -1543,7 +1554,7 @@ class MreIngr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcon(),
         MelScript(),
@@ -1594,7 +1605,7 @@ class MreKeym(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcons(),
         MelScript(),
@@ -2473,7 +2484,7 @@ class MreRace(MelRecord, AMreRace):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelDescription(),
         MelRelations(),
         MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], ('skills', [0] * 14),
@@ -2654,7 +2665,7 @@ class MreRefr(_AMreReferenceFo3):
             MelUInt32(b'XAMC', 'count'),
         ),
         MelReflectedRefractedBy(),
-        MelSorted(MelFids('litWaters', MelFid(b'XLTW'))),
+        MelSorted(MelSimpleGroups('litWaters', MelFid(b'XLTW'))),
         MelLinkedDecals(),
         MelFid(b'XLKR','linkedReference'),
         MelLinkColors(),
@@ -2679,7 +2690,7 @@ class MreRefr(_AMreReferenceFo3):
             MelPartialCounter(MelStruct(b'XRMR', ['H', '2s'],
                 'linked_rooms_count', 'unknown1'),
                 counters={'linked_rooms_count': 'linked_rooms'}),
-            MelSorted(MelFids('linked_rooms', MelFid(b'XLRM'))),
+            MelSorted(MelSimpleGroups('linked_rooms', MelFid(b'XLRM'))),
         ),
         MelOcclusionPlane(),
         MelLinkedOcclusionReferences(),
@@ -2707,7 +2718,7 @@ class MreRegn(AMreRegn):
             fnv_only(MelRegnEntrySubrecord(7,
                 MelFid(b'RDSI', 'incidental_media_set'))),
             fnv_only(MelRegnEntrySubrecord(7,
-                MelFids('battle_media_sets', MelFid(b'RDSB')))),
+                MelSimpleGroups('battle_media_sets', MelFid(b'RDSB')))),
             MelRegnEntrySoundsOld(),
             MelRegnEntryWeatherTypes(),
             fnv_only(MelRegnEntrySubrecord(8,
@@ -2803,15 +2814,16 @@ class MreSoun(MelRecord):
         MelBounds(),
         MelString(b'FNAM','soundFile'),
         fnv_only(MelUInt8(b'RNAM', 'random_chance')),
-        MelStruct(b'SNDD', [u'2B', u'b', u's', u'I', u'h', u'2B', u'6h', u'3i'], 'minDist', 'maxDist', 'freqAdj',
-                  'unusedSndd', (_flags, 'flags'), 'staticAtten',
-                  'stopTime', 'startTime', 'point0', 'point1', 'point2',
-                  'point3', 'point4', 'reverb', 'priority', 'xLoc', 'yLoc'),
+        MelStruct(b'SNDD', ['2B', 'b', 's', 'I', 'h', '2B', '6h', '3i'],
+            'minDist', 'maxDist', 'freqAdj', 'unusedSndd', (_flags, 'flags'),
+            'static_attenuation', 'stopTime', 'startTime', 'point0', 'point1',
+            'point2', 'point3', 'point4', 'reverb', 'priority', 'xLoc',
+            'yLoc'),
         # These are the older format - read them, but only write out SNDD
         MelReadOnly(
-            MelStruct(b'SNDX', [u'2B', u'b', u's', u'I', u'h', u'2B'], 'minDist', 'maxDist', 'freqAdj',
-                      'unusedSndd', (_flags, 'flags'), 'staticAtten',
-                      'stopTime', 'startTime'),
+            MelStruct(b'SNDX', ['2B', 'b', 's', 'I', 'h', '2B'], 'minDist',
+                'maxDist', 'freqAdj', 'unusedSndd', (_flags, 'flags'),
+                'static_attenuation', 'stopTime', 'startTime'),
             MelStruct(b'ANAM', [u'5h'], 'point0', 'point1', 'point2', 'point3',
                       'point4'),
             MelSInt16(b'GNAM', 'reverb'),
@@ -2827,8 +2839,7 @@ class MreSpel(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
-                  (SpellFlags, 'spell_flags'), 'unused1'),
+        MelSpitOld(),
         MelEffectsFo3(),
     )
 

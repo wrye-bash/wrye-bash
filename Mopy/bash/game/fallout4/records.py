@@ -35,7 +35,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelContData, MelCounter, MelCpthShared, MelDalc, MelDecalData, \
     MelDescription, MelDoorFlags, MelEdid, MelEffects, MelEnchantment, \
     MelEquipmentType, MelEqupPnam, MelFactFids, MelFactFlags, MelFactRanks, \
-    MelFactVendorInfo, MelFid, MelFids, MelFloat, MelFlstFids, MelFull, \
+    MelFactVendorInfo, MelFid, MelFloat, MelFlstFids, MelFull, \
     MelFurnMarkerData, MelGrasData, MelGroup, MelGroups, MelHdptShared, \
     MelIco2, MelIcon, MelIcons, MelIcons2, MelIdleAnimationCount, \
     MelIdleAnimations, MelIdleData, MelIdleEnam, MelIdleRelatedAnims, \
@@ -73,7 +73,11 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySounds, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRevbData, MelScolParts, MelSmbnShared, \
-    MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam
+    MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
+    MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
+    MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
+    MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit, MelStagTnam, \
+    AMreEyes, MelEyesFlags
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1353,9 +1357,10 @@ class MreEnch(MelRecord):
         MelBounds(),
         MelFull(),
         MelStruct(b'ENIT', ['i', '2I', 'i', '2I', 'f', '2I'],
-            'enchantment_cost', (_enit_flags, 'enit_flags'), 'cast_type',
-            'enchantment_amount', 'enchantment_target_type',
-            'enchantment_type', 'charge_time', (FID, 'base_enchantment'),
+            'enchantment_cost', (_enit_flags, 'enit_flags'),
+            'enchantment_cast_type', 'enchantment_amount',
+            'enchantment_target_type', 'enchantment_type',
+            'enchantment_charge_time', (FID, 'base_enchantment'),
             (FID, 'worn_restrictions')),
         MelEffects(),
     )
@@ -1421,6 +1426,16 @@ class MreExpl(MelRecord):
             'expl_spawn_y', 'expl_spawn_z', 'expl_spawn_spread_degrees',
             'expl_spawn_count', old_versions={'6I6f2IfI', '6I5f2IfI',
                                               '6I5f2If', '6I5f2I'}),
+    )
+
+#------------------------------------------------------------------------------
+class MreEyes(AMreEyes):
+    """Eyes."""
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(is_required=True),
+        MelIcon(is_required=True),
+        MelEyesFlags(),
     )
 
 #------------------------------------------------------------------------------
@@ -1947,7 +1962,7 @@ class MreKssm(MelRecord):
         MelFid(b'ENAM', 'exterior_tail'),
         MelFid(b'VNAM', 'vats_descriptor'),
         MelFloat(b'TNAM', 'vats_threshold'),
-        MelFids('kssm_keywords', MelFid(b'KNAM')),
+        MelSimpleGroups('kssm_keywords', MelFid(b'KNAM')),
         MelSorted(MelGroups('kssm_sounds',
             MelStruct(b'RNAM', ['2I'], 'ks_reverb_class',
                 (FID, 'ks_sound_descriptor')),
@@ -2711,7 +2726,7 @@ class MrePack(MelRecord):
         ),
         MelPackDataInputs('data_inputs1'),
         MelBaseR(b'XNAM', 'xnam_marker'),
-        MelPackProcedureTree(MelConditions()),
+        MelPackProcedureTree(MelConditions(is_required=True)),
         MelPackDataInputs('data_inputs2'),
         MelPackIdleHandler('on_begin'),
         MelPackIdleHandler('on_end'),
@@ -3019,7 +3034,7 @@ class MreSmbn(MelRecord):
     rec_sig = b'SMBN'
 
     melSet = MelSet(
-        MelSmbnShared(MelConditions()),
+        MelSmbnShared(MelConditions(is_required=True)),
     )
 
 #------------------------------------------------------------------------------
@@ -3028,7 +3043,7 @@ class MreSmen(MelRecord):
     rec_sig = b'SMEN'
 
     melSet = MelSet(
-        MelSmenShared(MelConditions()),
+        MelSmenShared(MelConditions(is_required=True)),
     )
 
 #------------------------------------------------------------------------------
@@ -3037,7 +3052,8 @@ class MreSmqn(MelRecord):
     rec_sig = b'SMQN'
 
     melSet = MelSet(
-        MelSmqnShared(MelConditions(), with_extra_hours_until_reset=True),
+        MelSmqnShared(MelConditions(is_required=True),
+            with_extra_hours_until_reset=True),
     )
 
 #------------------------------------------------------------------------------
@@ -3054,6 +3070,162 @@ class MreSnct(MelRecord):
         MelSnctVnamUnam(),
         MelFloat(b'MNAM', 'min_frequency_multiplier'),
         MelFloat(b'CNAM', 'sidechain_target_multiplier'),
+    )
+
+#------------------------------------------------------------------------------
+class MreSndr(MelRecord):
+    """Sound Descriptor."""
+    rec_sig = b'SNDR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelString(b'NNAM', 'descriptor_notes'),
+        MelSndrType(),
+        MelSndrCategory(),
+        MelSound(),
+        MelSndrSounds(),
+        MelSndrOutputModel(),
+        MelConditionList(),
+        MelSndrLnam(),
+        MelUnion({
+            # AutoWeapon
+            0xED157AE3: MelFid(b'BNAM', 'base_descriptor'),
+        }, decider=AttrValDecider('descriptor_type'), fallback=MelSndrBnam()),
+        MelSimpleGroups('sndr_descriptors', MelFid(b'DNAM')),
+        MelCounter(MelUInt32(b'ITMC', 'rates_of_fire_count'),
+            counts='rates_of_fire'),
+        MelSorted(MelGroups('rates_of_fire',
+            MelBase(b'ITMS', 'rof_marker_start'),
+            MelUInt32(b'INTV', 'rof_rpm'),
+            MelString(b'FNAM', 'rof_file'),
+            MelBase(b'ITME', 'rof_marker_end'), # marker, but not(?) required
+        ), sort_by_attrs='rof_rpm'),
+    )
+
+#------------------------------------------------------------------------------
+class MreSopm(MelRecord):
+    """Sound Output Model."""
+    rec_sig = b'SOPM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelSopmData(),
+        MelSopmType(),
+        MelSInt16(b'VNAM', 'sopm_static_attenuation'),
+        MelSopmOutputValues(),
+        # dav = 'Dynamic Attenuation Values'
+        MelStruct(b'ATTN', ['4f', '8B'], 'dav_fade_in_distance_start',
+            'dav_fade_in_distance_end', 'dav_fade_out_distance_start',
+            'dav_fade_out_distance_end', 'dav_fade_in_curve1',
+            'dav_fade_in_curve2', 'dav_fade_in_curve3', 'dav_fade_in_curve4',
+            'dav_fade_out_curve1', 'dav_fade_out_curve2',
+            'dav_fade_out_curve3', 'dav_fade_out_curve4'),
+        MelFid(b'ENAM', 'effect_chain'),
+    )
+
+#------------------------------------------------------------------------------
+class MreSoun(MelRecord):
+    """Sound Marker."""
+    rec_sig = b'SOUN'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelSounSdsc(),
+        MelTruncatedStruct(b'REPT', ['2f', 'B'], 'repeat_min_time',
+            'repeat_max_time', 'repeat_stackable', old_versions={'2f'}),
+    )
+
+#------------------------------------------------------------------------------
+class MreSpel(AMreWithKeywords):
+    """Spell."""
+    rec_sig = b'SPEL'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelKeywords(),
+        MelEquipmentType(),
+        MelDescription(),
+        MelSpit(),
+        MelEffects(),
+    )
+
+#------------------------------------------------------------------------------
+class MreSpgd(MelRecord):
+    """Shader Particle Geometry."""
+    rec_sig = b'SPGD'
+
+    melSet = MelSet(
+        MelEdid(),
+        # What on earth did you do to this struct, Bethesda? It was so nice and
+        # normal in Skyrim...
+        MelExtra(MelStruct(b'DATA',
+            ['f', '4s', 'f', '4s', '3f', '4s', 'f', '4s', 'f', '4s', 'f', '4s',
+             'I', '4s', 'I', '4s', 'I', '4s', 'I', '4s', 'f'],
+            'gravity_velocity', 'unknown1', 'rotation_velocity', 'unknown2',
+            'particle_size_x', 'center_offset_min1', 'particle_size_y',
+            'unknown3', 'center_offset_min2', 'unknown4', 'center_offset_max',
+            'unknown5', 'initial_rotation', 'unknown6', 'num_subtextures_x',
+            'unknown7', 'num_subtextures_y', 'unknown8', 'spgd_type',
+            'unknown9', 'spgd_box_size', 'unknown10', 'particle_density'),
+            extra_attr='unknown11'),
+        MelString(b'MNAM', 'spgd_particle_texture'),
+    )
+
+#------------------------------------------------------------------------------
+class MreStag(MelRecord):
+    """Animation Sound Tag Set."""
+    rec_sig = b'STAG'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('stag_sounds',
+            MelStagTnam(),
+        ),
+    )
+
+#------------------------------------------------------------------------------
+class MreStat(MelRecord):
+    """Static."""
+    rec_sig = b'STAT'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        heading_marker: bool = flag(2)
+        non_occluder: bool = flag(4)
+        has_tree_lod: bool = flag(6)
+        addon_lod_object: bool = flag(7)
+        hidden_from_local_map: bool = flag(9)
+        headtrack_marker: bool = flag(10)
+        used_as_platform: bool = flag(11)
+        packin_use_only: bool = flag(13)
+        has_distant_lod: bool = flag(15)
+        uses_hd_lod_texture: bool = flag(17)
+        has_currents: bool = flag(19)
+        is_marker: bool = flag(23)
+        obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        show_in_world_map: bool = flag(28)
+        navmesh_ground: bool = flag(30)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFtyp(),
+        MelModel(),
+        MelProperties(),
+        MelFull(),
+        MelTruncatedStruct(b'DNAM', ['f', 'I', '2f'], 'max_angle',
+            (FID, 'stat_material'), ('leaf_amplitude', 1.0),
+            ('leaf_frequency', 1.0), is_required=True, old_versions={'fI'}),
+        MelNvnm(),
+        # Contains null-terminated mesh filename followed by random data
+        # up to 260 bytes and repeats 4 times
+        MelBase(b'MNAM', 'distant_lod'),
     )
 
 #------------------------------------------------------------------------------

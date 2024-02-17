@@ -657,11 +657,13 @@ class _AAttenuationTweak(CustomChoiceTweak):
     def chosen_atten(self): return self.choiceValues[self.chosen][0] / 100
 
     def wants_record(self, record):
-        return record.staticAtten and self.chosen_atten != 1 # avoid ITPOs
+        return (record.static_attenuation and
+                self.chosen_atten != 1) # avoid ITPOs
 
     def tweak_record(self, record):
         # Must be an int on py3, otherwise errors on dump
-        record.staticAtten = int(record.staticAtten * self.chosen_atten)
+        record.static_attenuation = int(
+            record.static_attenuation * self.chosen_atten)
 
 #------------------------------------------------------------------------------
 class AssortedTweak_SetSoundAttenuationLevels(_AAttenuationTweak):
@@ -819,7 +821,7 @@ class AssortedTweak_AbsorbSummonFix(IndexingTweak):
         self._look_up_mgef = self._indexed_records[b'MGEF']
 
     def wants_record(self, record):
-        if record.dataFlags.noAbsorbReflect: return False
+        if record.spell_flags.no_absorb_reflect: return False
         # If we don't have MGEF lookup available yet, just forward everything
         if not self._look_up_mgef: return True
         # Otherwise, we can look through the effects for the right archetype
@@ -830,7 +832,7 @@ class AssortedTweak_AbsorbSummonFix(IndexingTweak):
         return False
 
     def tweak_record(self, record):
-        record.dataFlags.noAbsorbReflect = True
+        record.spell_flags.no_absorb_reflect = True
 
 #------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):

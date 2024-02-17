@@ -34,7 +34,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelConditionsTes4, MelContData, MelDeathItem, MelDescription, AMreGlob, \
     MelDoorFlags, MelEdid, MelEffectsTes4, MelEffectsTes4ObmeFull, \
     MelEnableParent, MelEnchantment, MelFactions, MelFactRanks, MelFid, \
-    MelFids, MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, \
+    MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, MelSimpleGroups, \
     MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
     MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
     MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
@@ -47,12 +47,12 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
-    SpellFlags, attr_csv_struct, color_attrs, null2, null4, MelMgefEdidTes4, \
+    MelSpitOld, attr_csv_struct, color_attrs, null2, null4, MelMgefEdidTes4, \
     AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom, \
     PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, MelRegnEntryGrasses, \
-    MelRegnEntryMapName
+    MelRegnEntryMapName, AMreEyes, MelEyesFlags
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -170,7 +170,7 @@ class MelOwnershipTes4(MelOwnership):
         )
 
 #------------------------------------------------------------------------------
-class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
+class MelSpellsTes4(MelSimpleGroups): ##: HACKy workaround, see docstring
     """Handles the common SPLO subrecord. This is a workaround to fix Oblivion
     hanging on load in some edge cases. The CS does some sort of processing or
     sorting to SPLOs that we don't fully understand yet. All we know for sure
@@ -488,9 +488,8 @@ class MreHasEffects(MelRecord):
           1: Apprentice
           2: Journeyman
           3: Expert
-          4: Master
-        """
-        return self.level
+          4: Master"""
+        return self.spell_level
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -790,7 +789,7 @@ class MreCell(AMreCell):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8Flags(b'DATA', 'flags', _CellFlags, is_required=True),
+        MelUInt8Flags(b'DATA', 'flags', _CellFlags, set_default=0),
         MelSkipInterior(MelStruct(b'XCLC', ['2i'], 'posX', 'posY')),
         MelStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '2f'],
             'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
@@ -1015,8 +1014,8 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFids('added_quests', MelFid(b'QSTI'))),
-        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
+        MelSorted(MelSimpleGroups('added_quests', MelFid(b'QSTI'))),
+        MelSorted(MelSimpleGroups('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelUInt8(b'DATA', 'dialType'),
     )
@@ -1104,6 +1103,16 @@ class MreEnch(MreHasEffects, MelRecord):
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
+
+#------------------------------------------------------------------------------
+class MreEyes(AMreEyes):
+    """Eyes."""
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelIcon(is_required=True),
+        MelEyesFlags(),
+    )
 
 #------------------------------------------------------------------------------
 class MreFact(MelRecord):
@@ -1212,7 +1221,7 @@ class MreInfo(MelRecord):
         MelFid(b'QSTI', 'info_quest'),
         MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
-        MelFids('add_topics', MelFid(b'NAME')),
+        MelSimpleGroups('add_topics', MelFid(b'NAME')),
         MelGroups('info_responses',
             MelStruct(b'TRDT', ['I', 'i', '4s', 'B', '3s'], 'rd_emotion_type',
                 'rd_emotion_value', 'rd_unused1', 'rd_response_number',
@@ -1221,8 +1230,8 @@ class MreInfo(MelRecord):
             MelString(b'NAM2', 'script_notes'),
         ),
         MelConditionsTes4(),
-        MelFids('info_choices', MelFid(b'TCLT')),
-        MelFids('link_from', MelFid(b'TCLF')),
+        MelSimpleGroups('info_choices', MelFid(b'TCLT')),
+        MelSimpleGroups('link_from', MelFid(b'TCLF')),
         MelEmbeddedScript(),
     )
 
@@ -2168,7 +2177,7 @@ class MreSoun(MelRecord):
         ),
         MelStruct(b'SNDX', ['2B', 'b', 's', 'H', '2s', 'H', '2B'],
             'minDistance', 'maxDistance', 'freqAdjustment', 'unused1',
-            (_SounFlags, 'flags'), 'unused2', 'staticAtten', 'stopTime',
+            (_SounFlags, 'flags'), 'unused2', 'static_attenuation', 'stopTime',
             'startTime'),
     )
 
@@ -2186,17 +2195,16 @@ class MreSpel(MreHasEffects, MelRecord):
          'Master': 4})
     _level_type_num_name = {y: x for x, y in _level_type_name_num.items()}
     _level_type_num_name[None] = 'NONE'
-    attr_csv_struct['level'][2] = \
+    attr_csv_struct['spell_level'][2] = \
         lambda val: f'"{MreSpel._level_type_num_name.get(val, val)}"'
-    attr_csv_struct['spellType'][2] = \
+    attr_csv_struct['spell_type'][2] = \
         lambda val: f'"{MreSpel._spell_type_num_name.get(val, val)}"'
 
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(),
-        MelStruct(b'SPIT', ['3I', 'B', '3s'], 'spellType', 'cost', 'level',
-                  (SpellFlags, 'spell_flags'), 'unused1'),
+        MelSpitOld(),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
@@ -2205,16 +2213,16 @@ class MreSpel(MreHasEffects, MelRecord):
     def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
         attr_dict = super().parse_csv_line(csv_fields, index_dict, reuse)
         try:
-            lvl = attr_dict['level'] # KeyError on 'detailed' pass
-            attr_dict['level'] = cls._level_type_name_num.get(lvl,
+            lvl = attr_dict['spell_level'] # KeyError on 'detailed' pass
+            attr_dict['spell_level'] = cls._level_type_name_num.get(lvl,
                 int_or_zero(lvl))
-            stype = attr_dict['spellType']
-            attr_dict['spellType'] = cls._spell_type_name_num.get(stype,
+            stype = attr_dict['spell_type']
+            attr_dict['spell_type'] = cls._spell_type_name_num.get(stype,
                 int_or_zero(stype))
-            attr_dict['spell_flags'] = SpellFlags(
+            attr_dict['spell_flags'] = MelSpitOld.SpellFlagsOld(
                 attr_dict.get('spell_flags', 0))
         except KeyError:
-            """We are called for reading the 'detailed' attributes"""
+            pass # We are called for reading the 'detailed' attributes
         return attr_dict
 
 #------------------------------------------------------------------------------

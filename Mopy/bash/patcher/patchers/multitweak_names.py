@@ -520,7 +520,7 @@ class _ANamesTweak_Spells(_ANamesTweak):
     _may_lack_specifiers = True
 
     def wants_record(self, record):
-        return record.spellType == 0 and super().wants_record(record)
+        return record.spell_type == 0 and super().wants_record(record)
 
     def _exec_rename(self, record):
         school_tag = record.get_spell_school(self._look_up_mgef)

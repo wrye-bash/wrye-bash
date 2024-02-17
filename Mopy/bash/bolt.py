@@ -386,6 +386,24 @@ def reverse_dict_multi(source_dict: dict[K, V]) -> dict[V, set[K]]:
         ret.setdefault(v, set()).add(k)
     return ret
 
+def flatten_multikey_dict(multikey_dict: dict[K | tuple[K, ...], V]) \
+        -> dict[K, V]:
+    """Create a flattened version of the specified multikey dict. A multikey
+    dict is one where keys may be of type K or of type tuple[K, ...], where
+    each tuple key is called a multikey - any key in this tuple can be used for
+    accessing the associated value. Before such a dict can be used for regular
+    lookups, however, it first needs to be fed into this method."""
+    flattened_dict = {}
+    for mk_index, mk_values in multikey_dict.items():
+        if not isinstance(mk_index, tuple):
+            mk_index = (mk_index,)
+        for split_index in mk_index:
+            if split_index in flattened_dict:
+                raise SyntaxError(f"Invalid multikey dict: Duplicate key "
+                                  f"'{split_index!r}'")
+            flattened_dict[split_index] = mk_values
+    return flattened_dict
+
 def gen_enum_parser(enum_type: type[Enum]):
     """Create a dict that maps the values of the specified enum to the matching
     enum entries. Useful e.g. for when the enum's values represent information

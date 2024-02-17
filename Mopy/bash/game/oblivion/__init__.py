@@ -591,7 +591,7 @@ class AOblivionGameInfo(PatchGame):
         # without any sounds would be valid or not. Leaving as is for now
         b'CREA': ('foot_weight', 'actor_sounds'),
         b'SOUN': ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment',
-                  'staticAtten', 'stopTime', 'startTime'),
+                  'static_attenuation', 'stopTime', 'startTime'),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
     }
@@ -884,7 +884,7 @@ class AOblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
     spell_stats_attrs = spell_stats_csv_attrs = (
-        'eid', 'cost', 'level', 'spellType', 'spell_flags')
+        'eid', 'spell_cost', 'spell_level', 'spell_type', 'spell_flags')
 
     #--------------------------------------------------------------------------
     # Tweak Actors
