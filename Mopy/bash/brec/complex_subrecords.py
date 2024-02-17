@@ -1271,6 +1271,8 @@ class AMelNvnm(MelBase):
             end_of_nvnm - ins.tell(), *debug_strs)
 
     def pack_subrecord_data(self, record):
+        if record.navmesh_geometry is None:
+            return None
         out = BytesIO()
         nvnm_ctx = self._nvnm_context_class(
             self._nvnm_context_class.max_nvnm_ver, record.header.form_version)

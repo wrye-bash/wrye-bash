@@ -100,6 +100,15 @@ class MelModel(MelGroup):
         has_facebones_model: bool
         has_1stperson_model: bool
 
+    class _MelModelFlags(MelUInt8Flags):
+        """Before I decoded this, the flags were marked as unknown byte arrays
+        in xEdit, hence there are mods that have 0 bytes in them. Upgrade those
+        to empty flags."""
+        def load_bytes(self, ins, size_, *debug_strs):
+            if size_ == 0:
+                return self._flag_default()
+            return super().load_bytes(ins, size_, *debug_strs)
+
     def __init__(self, mel_sig=b'MODL', attr='model', *, swap_3_4=False,
             always_use_modc=False, no_flags=False):
         """Fallout 4 has a whole lot of model nonsense:
@@ -122,7 +131,7 @@ class MelModel(MelGroup):
         if swap_3_4:
             mdl_elements[2], mdl_elements[3] = mdl_elements[3], mdl_elements[2]
         if len(types) == 5 and not no_flags:
-            mdl_elements.append(MelUInt8Flags(types[4], 'model_flags',
+            mdl_elements.append(self._MelModelFlags(types[4], 'model_flags',
                 self._ModelFlags))
         super().__init__(attr, *mdl_elements)
 
@@ -707,8 +716,9 @@ class MreArmo(AMreWithKeywords):
             MelFid(b'MODL', 'addon_fid'),
         ),
         MelStruct(b'DATA', ['i', 'f', 'I'], 'value', 'weight', 'health'),
-        MelStruct(b'FNAM', ['2H', 'B', '3s'], 'armorRating',
-            'base_addon_index', 'stagger_rating', 'unknown_fnam'),
+        MelTruncatedStruct(b'FNAM', ['2H', 'B', '3s'], 'armorRating',
+            'base_addon_index', 'stagger_rating', 'unknown_fnam',
+            old_versions={'2HB'}),
         MelResistances(b'DAMA'),
         MelTemplateArmor(),
         MelAppr(),
