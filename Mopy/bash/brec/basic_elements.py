@@ -536,6 +536,7 @@ class MelSimpleGroups(MelGroups):
         if not isinstance(element, MelNum):
             raise SyntaxError(f'MelSimpleGroups only accepts MelNum, passed: '
                               f'{element!r}')
+        self.mel_sig = element.mel_sig
         self._element = element
         super().__init__(groups_attr, element)
 
@@ -550,8 +551,10 @@ class MelSimpleGroups(MelGroups):
             if save_fids:
                 setattr(record, self.attr, mapped)
 
-    def pack_subrecord_data(self, record):
-        return b''.join(map(self._element.packer, getattr(record, self.attr)))
+    def dumpData(self, record, out):
+        pack_el = self._element.packer
+        for target in getattr(record, self.attr):
+            self.packSub(out, pack_el(target))
 
 #------------------------------------------------------------------------------
 class MelString(MelBase):

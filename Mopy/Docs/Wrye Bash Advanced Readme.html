@@ -927,10 +927,10 @@ tab. The directories skipped are:
         <tr>
             <td rowspan="7">Packages..</td>
             <td id="bainAnnealAll">Anneal All</td>
-            <td>Install any missing files for installed packages and correct
-                all install order errors. Identical to running
-                <a href="#bainAnneal">Anneal</a> on all installed
-                packages.</td>
+            <td>Update all installed packages to match their configuration,
+                installing changed and missing files and uninstalling removed
+                ones. Identical to running <a href="#bainAnneal">Anneal</a>
+                on all packages.</td>
         </tr>
         <tr>
             <td id="bainUninstallAll">Uninstall All Packages</td>
@@ -1355,7 +1355,15 @@ tab. The directories skipped are:
         </tr>
         <tr>
             <td colspan="3" id="bainAnneal">Anneal</td>
-            <td>Install missing files and correct install order errors.<br>
+            <td>Update an installed ("active") package to match changes in its
+                installation configuration or in the order of packages. If you
+                check a subpackage, or change the order of two conflicting
+                packages, for example, you will have to run this command.<br>
+                <br>
+                Technically, what this does is install any missing and changed
+                files according to the package's configuration (for active
+                packages only, plus see the note below) and uninstall all files
+                that have been removed from the package's configuration.<br>
                 <br>
                 Note: If an already installed file is changed outside of Wrye
                 Bash's control, Wrye Bash will not anneal that file. Anneal is

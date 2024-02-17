@@ -2742,14 +2742,24 @@ class InstallersData(DataStore):
         # keep those to be removed while not restored by a higher order package
         to_keep = (removes & dest_sc.keys()) - restores.keys()
         for ci_dest in to_keep:
-            removes.discard(ci_dest) # don't remove it anyway
-            try: # restore it from this installer?
-                if dest_sc[ci_dest] != self.data_sizeCrcDate[ci_dest][:2]:
+            # We don't want to remove it right now, only if no higher package
+            # has it either -> that's checked later
+            removes.discard(ci_dest)
+            try:
+                version_in_data = self.data_sizeCrcDate[ci_dest]
+            except KeyError:
+                # The file isn't present in the Data folder at all -> missing
+                # file, restore it from this package
+                restores[ci_dest] = installer.fn_key
+            else:
+                if installer.ci_dest_sizeCrc[ci_dest] != version_in_data[:2]:
+                    # This package has a different version than the one in the
+                    # Data folder, restore that one
                     restores[ci_dest] = installer.fn_key
-                    continue
-            except KeyError: pass
-            # don't mind the FName(str()) below - done seldom
-            cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
+                else: # don't mind the FName(str()) below - done seldom
+                    # This package has the same version as the one in the Data
+                    # folder, so simply take ownership of the existing file
+                    cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
         return set(dest_sc)
 
     def bain_uninstall_all(self, refresh_ui, progress=None):
