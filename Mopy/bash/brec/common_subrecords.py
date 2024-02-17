@@ -31,7 +31,7 @@ from .basic_elements import MelBase, MelFid, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8, MelUInt16, \
-    MelSimpleGroups
+    MelSimpleGroups, MelUInt32Bool
 from .utils_constants import FID, ZERO_FID, ambient_lighting_attrs, \
     color_attrs, color3_attrs, int_unpacker, null1, gen_coed_key, \
     PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs, \
@@ -1511,7 +1511,7 @@ class MelPackDataInputs(MelGroups):
         super().__init__(attr,
             MelSInt8(b'UNAM', 'input_index'),
             MelString(b'BNAM', 'input_name'),
-            MelUInt32(b'PNAM', 'input_public'), # actually a bool
+            MelUInt32Bool(b'PNAM', 'input_public'),
         )
 
 #------------------------------------------------------------------------------
@@ -1593,7 +1593,7 @@ class MelPackProcedureTree(MelGroups):
             MelStruct(b'PRCB', ['2I'], 'sub_branch_count',
                 (self._SubBranchFlags, 'sub_branch_flags')),
             MelString(b'PNAM', 'procedure_type'),
-            MelUInt32(b'FNAM', 'success_completes_package'), # actually a bool
+            MelUInt32Bool(b'FNAM', 'success_completes_package'),
             MelSimpleGroups('data_input_indices', MelUInt8(b'PKC2')),
             MelGroups('flag_overrides',
                 MelStruct(b'PFO2', ['2I', '2H', 'B', '3s'],

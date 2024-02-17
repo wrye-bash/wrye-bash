@@ -846,6 +846,25 @@ class MelUInt8Flags(MelUInt8, _MelFlags): pass
 class MelUInt16Flags(MelUInt16, _MelFlags): pass
 class MelUInt32Flags(MelUInt32, _MelFlags): pass
 
+class _MelBool(MelNum):
+    """Boolean field."""
+    __slots__ = ()
+
+    def __init__(self, mel_sig, attr, *, set_default=None):
+        super().__init__(mel_sig, attr, set_default=set_default)
+
+    def load_bytes(self, ins, size_, *debug_strs):
+        # Treat 0 as false, every other value as true...
+        return super().load_bytes(ins, size_, *debug_strs) != 0
+
+    def packer(self, bool_val: bool):
+        # ...but only put out 0 and 1
+        return super(_MelBool, self.__class__).packer(1 if bool_val else 0)
+
+class MelUInt8Bool(MelUInt8, _MelBool): pass
+class MelUInt16Bool(MelUInt16, _MelBool): pass
+class MelUInt32Bool(MelUInt32, _MelBool): pass
+
 #------------------------------------------------------------------------------
 class MelXXXX(MelUInt32):
     """Represents an XXXX size field. Ignores record in load/dump"""

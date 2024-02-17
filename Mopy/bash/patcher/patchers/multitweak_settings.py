@@ -136,10 +136,12 @@ class _AGmstTweak(_ASettingsTweak):
         # Validate the data types of each choice's values
         for target_eid in self.chosen_eids:
             match target_eid[0]:
-                case 'i':
-                    wanted_type = int
+                case 'b':
+                    wanted_type = bool
                 case 'f':
                     wanted_type = float
+                case 'i':
+                    wanted_type = int
                 case 's':
                     wanted_type = str
                 case _:

@@ -82,7 +82,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSnctVnamUnam, velocity_attrs, MelLinkedOcclusionReferences, \
     MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
     MelSndrOutputModel, MelSndrLnam, MelSndrBnam, MelSopmData, MelSopmType, \
-    MelSopmOutputValues, MelSounSdsc, MelSpit, AMreEyes, MelEyesFlags
+    MelSopmOutputValues, MelSounSdsc, MelSpit, AMreEyes, MelEyesFlags, \
+    MelUInt32Bool
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -991,7 +992,7 @@ class MreClfm(MelRecord):
         MelEdid(),
         MelFull(),
         MelColorO(),
-        MelUInt32(b'FNAM', 'playable'), # actually a bool, stored as uint32
+        MelUInt32Bool(b'FNAM', 'playable'),
     )
 
 #------------------------------------------------------------------------------
@@ -1299,7 +1300,7 @@ class MreEqup(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelEqupPnam(),
-        MelUInt32(b'DATA', 'use_all_parents'), # actually a bool
+        MelUInt32Bool(b'DATA', 'use_all_parents'),
     )
 
 #------------------------------------------------------------------------------

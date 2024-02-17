@@ -32,10 +32,10 @@ from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
     MelUnion
 from .basic_elements import MelBase, MelFid, MelSimpleGroups, MelFixedString, \
     MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, \
-    MelStruct, MelUInt8Flags, MelUInt32, MelUInt32Flags, MelUnicode, \
-    unpackSubHeader
+    MelStruct, MelUInt8Bool, MelUInt32, MelUInt32Flags, MelUnicode, \
+    unpackSubHeader, MelUInt32Bool
 from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
-    MelDebrData, MelDescription, MelEdid, MelFull, MelIcon, MelImpactDataset, \
+    MelDebrData, MelDescription, MelEdid, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId, gen_coed_key
@@ -688,11 +688,9 @@ class MreDlvw(MelRecord):
         MelEdid(),
         MelFid(b'QNAM', 'dlvw_quest'),
         MelSimpleGroups('dlvw_branches', MelFid(b'BNAM')),
-        MelGroups('unknown_tnam',
-            MelBase(b'TNAM', 'unknown1'),
-        ),
-        MelBase(b'ENAM', 'unknown_enam'),
-        MelBase(b'DNAM', 'unknown_dnam'),
+        MelSimpleGroups('dlvw_topics', MelFid(b'TNAM')),
+        MelUInt32(b'ENAM', 'view_category'),
+        MelUInt8Bool(b'DNAM', 'show_all_text'),
     )
 
 #------------------------------------------------------------------------------
@@ -746,12 +744,12 @@ class MreGmst(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUnion({
-            u'b': MelUInt32(b'DATA', u'value'), # actually a bool
-            u'f': MelFloat(b'DATA', u'value'),
-            u's': MelLString(b'DATA', u'value'),
+            'b': MelUInt32Bool(b'DATA', 'value'),
+            'f': MelFloat(b'DATA', 'value'),
+            's': MelLString(b'DATA', 'value'),
         }, decider=AttrValDecider(
-            u'eid', transformer=lambda e: e[0] if e else u'i'),
-            fallback=MelSInt32(b'DATA', u'value')
+            'eid', transformer=lambda e: e[0] if e else 'i'),
+            fallback=MelSInt32(b'DATA', 'value')
         ),
     )
 

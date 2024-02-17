@@ -764,7 +764,7 @@ class MelUnion(MelBase):
     in the element_mapping dict passed in. For example, consider this MelUnion,
     which showcases most features:
         MelUnion({
-            'b': MelUInt32(b'DATA', 'value'), # actually a bool
+            'b': MelUInt32Bool(b'DATA', 'value')
             'f': MelFloat(b'DATA', 'value'),
             's': MelLString(b'DATA', 'value'),
         }, decider=AttrValDecider(
