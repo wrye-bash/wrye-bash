@@ -35,7 +35,8 @@ import time
 from collections import defaultdict
 
 from . import bass, bolt, env, exception
-from .bolt import FName, GPath, Path, dict_sort, attrgetter_cache
+from .bolt import FName, GPath, Path, dict_sort, attrgetter_cache, \
+    classproperty
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -1520,10 +1521,17 @@ class SkyrimSE(AsteriskGame):
 class SkyrimVR(SkyrimSE):
     must_be_active_if_present = (*SkyrimSE.must_be_active_if_present,
                                  FName('SkyrimVR.esm'))
-    # No ESLs, reset these back to their pre-ESL versions
-    _ccc_filename = ''
-    max_espms = 255
-    max_esls = 0
+
+    ##: This is nasty, figure out a way to get rid of it
+    @classproperty
+    def max_espms(cls):
+        from . import bush
+        return 253 if bush.game.has_esl else 255
+
+    @classproperty
+    def max_esls(cls):
+        from . import bush
+        return 4096 if bush.game.has_esl else 0
 
 class EnderalSE(SkyrimSE):
     # Update.esm is forcibly loaded after the (empty) DLC plugins by the game

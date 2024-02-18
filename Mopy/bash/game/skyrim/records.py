@@ -407,8 +407,6 @@ class MelWaterCurrents(MelSequential):
 class _MelTes4Hedr(MelStruct):
     def setDefault(self, record, *, __nones=repeat(None)):
         super().setDefault(record)
-        # The 1.71 thing is only supported by SSE right now, plus we'll want to
-        # support SKSE plugins for it (see #673)
         has_171 = 1.71 in bush.game.Esp.validHeaderVersions
         record.version = 1.71 if has_171 else 1.7
         record.nextObject = 0x001 if has_171 else 0x800

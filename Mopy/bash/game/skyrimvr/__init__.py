@@ -24,6 +24,7 @@
 from .. import MergeabilityCheck, ObjectIndexRange
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
+from ... import bass
 
 class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     display_name = 'Skyrim VR'
@@ -65,8 +66,9 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
         skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
     class Esp(ASkyrimSEGameInfo.Esp):
+        # All these will be restored again if the appropriate SKSE plugin is
+        # installed, see init() below
         master_limit = 255
-        ##: Drop once we've implemented support for Skyrim VR ESL Support
         object_index_range = ObjectIndexRange.RESERVED
         object_index_range_expansion_ver = 0.0
         validHeaderVersions = (0.94, 1.70)
@@ -79,6 +81,20 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
+
+    @classmethod
+    def post_init(cls):
+        from ... import env
+        esl_plugin_path = env.to_os_path(bass.dirs['mods'].join(
+                cls.Se.plugin_dir, 'plugins', 'skyrimvresl.dll'))
+        if esl_plugin_path and esl_plugin_path.is_file():
+            # ESL-support plugin installed, enable ESL support in WB
+            cls.espm_extensions |= {'.esl'}
+            cls.mergeability_checks = {MergeabilityCheck.ESL_CHECK}
+            cls.Esp.master_limit = 253
+            cls.Esp.object_index_range = ObjectIndexRange.RESERVED
+            cls.Esp.object_index_range_expansion_ver = 0.0
+            cls.Esp.validHeaderVersions = (0.94, 1.70, 1.71)
 
 class SteamSkyrimVRGameInfo(SteamMixin, _ASkyrimVRGameInfo):
     """GameInfo override for the Steam version of Skyrim VR."""

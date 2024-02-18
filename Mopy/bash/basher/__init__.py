@@ -3896,9 +3896,9 @@ class BashFrame(WindowFrame):
         if not limit_fixers: return # Problem does not apply to this game
         if not bass.inisettings['WarnTooManyFiles']: return
         for lf in limit_fixers:
-            lf_path = bass.dirs[u'mods'].join(bush.game.Se.plugin_dir,
-                                              u'plugins', lf)
-            if lf_path.is_file():
+            lf_path = env.to_os_path(bass.dirs['mods'].join(
+                bush.game.Se.plugin_dir, 'plugins', lf))
+            if lf_path and lf_path.is_file():
                 return # Limit-fixing xSE plugin installed
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \

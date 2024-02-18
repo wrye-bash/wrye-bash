@@ -29,7 +29,7 @@ from enum import Enum
 from itertools import chain
 from os.path import join as _j
 
-from .. import bolt
+from .. import bass, bolt
 from ..bolt import FNDict, fast_cached_property
 
 # Constants and Helpers -------------------------------------------------------
@@ -199,7 +199,10 @@ class GameInfo(object):
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
-        self.has_esl = '.esl' in self.espm_extensions
+
+    @fast_cached_property
+    def has_esl(self):
+        return '.esl' in self.espm_extensions
 
     # Master esm form ids factory
     __master_fids = {}
@@ -296,7 +299,6 @@ class GameInfo(object):
 
         @classmethod
         def exe_path_sc(cls):
-            from .. import bass
             exe_xse = bass.dirs['app'].join(cls.exe)
             return exe_xse if exe_xse.is_file() else None
 
@@ -604,6 +606,7 @@ class GameInfo(object):
     @classmethod
     def init(cls, _package_name=None):
         """Dynamically import modules - Record[Type] variables not yet set!
+
         :param _package_name: the name of the game package to load if loading
                               from a derived game - used internally - don't
                               pass!"""
@@ -623,6 +626,11 @@ class GameInfo(object):
         vf_module = importlib.import_module(u'.vanilla_files',
             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
+
+    @classmethod
+    def post_init(cls):
+        """Post-initialize this game module. This runs after all directories
+        for the game have been set."""
 
     @classmethod
     def supported_games(cls):

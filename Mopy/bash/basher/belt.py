@@ -602,7 +602,7 @@ class WryeParser(PreParser):
             if rel_path in bosh.modInfos:
                 return True # It's a (potentially ghosted) plugin
             rel_path_os = to_os_path(bass.dirs['mods'].join(rel_path))
-            if not rel_path_os.exists():
+            if not rel_path_os or not rel_path_os.exists():
                 return False
         return True
 

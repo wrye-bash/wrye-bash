@@ -701,6 +701,7 @@ def _detect_game(opts, backup_bash_ini):
         warning_msg += '\n\n'
         warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
         _show_boot_popup(warning_msg, is_critical=False)
+    bush_game.post_init()
     return bush_game, game_ini_path
 
 def _import_bush_and_set_game(opts):
