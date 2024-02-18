@@ -698,7 +698,7 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     save_magic = b'SFS_SAVEGAME'
     __slots__ = ('version', 'unknown1', 'saveNumber', 'gameDate', 'raceEid',
                  'pcSex', 'pcExp', 'pcLvlExp', 'filetime', 'unknown3',
-                 '_formVersion', 'game_ver', 'game_ver_again',
+                 '_formVersion', 'game_ver', 'other_game_ver',
                  'plugin_info_size', '_bcps_header_version',
                  '_bcps_header_size', '_bcps_unknown1', '_bcps_comp_location',
                  '_bcps_unknown2', '_bcps_unknown3', '_bcps_decomp_size',
@@ -708,6 +708,7 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     _unpackers = {
         'header_size':      (00, unpack_int),
         'version':          (00, unpack_int),
+        ##: Seems to be equal to _formVersion?
         'unknown1':         (00, unpack_byte),
         'saveNumber':       (00, unpack_int),
         'pcName':           (00, unpack_str16),
@@ -719,18 +720,20 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         'pcExp':            (00, unpack_float),
         'pcLvlExp':         (00, unpack_float),
         'filetime':         (00, unpack_int64),
-        'ssWidth':          (00, unpack_int), # Seems unused - always(?) zero
-        'ssHeight':         (00, unpack_int), # Seems unused - always(?) zero
-        'unknown3':         (00, unpack_int),
+        'ssWidth':          (00, unpack_int), ##: Seems unused - always(?) zero
+        'ssHeight':         (00, unpack_int), ##: Seems unused - always(?) zero
+        'unknown3':         (00, unpack_int), ##: Seems to always be 1?
     }
     _unpackers_post_ss = {
         '_formVersion':     (00, unpack_byte),
         'game_ver':         (00, unpack_str16),
-        'game_ver_again':   (00, unpack_str16), # huh?
+        ##: Maybe this is the version the playthrough was started on, it seems
+        # to not change when the game version is upgraded
+        'other_game_ver':   (00, unpack_str16),
     }
 
     def _esl_block(self):
-        return self._formVersion >= 82
+        return True # Some sources say if form version >= 82, MO2 says always
 
     def load_image_data(self, ins, load_image=False):
         # -4 for the header size itself (uint32)
@@ -748,7 +751,12 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         #  override-only plugins? There does seem to be a valid short after
         #  this, but it has a value of 1 and is followed by no valid plugin
         #  strings? For now, just HACK our way past the check via sse_offset
-        self._load_masters_16(ins, sse_offset=2)
+        ##: Starfield 1.9 made this worse. Since form version 109 (or 108, not
+        # sure yet), another 4 unknown bytes (which seem to always be zero) got
+        # added right before the unknown short and count as part of the
+        # masters. Still no clue what any of that is for.
+        self._load_masters_16(ins,
+            sse_offset=2 if self._formVersion < 109 else 6)
 
     def calc_time(self):
         self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
