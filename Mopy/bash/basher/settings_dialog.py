@@ -162,7 +162,7 @@ class _ASettingsPage(ATreeMixin):
         ##: The restart parameters here are a smell, see usage in LanguagePage
         self._request_restart = None
         # Used to keep track of each setting's 'changed' state
-        self._setting_states = {k: False for k in self._setting_ids}
+        self._setting_states = dict.fromkeys(self._setting_ids, False)
 
     def _is_changed(self, setting_id):
         """Checks if the setting with the specified ID has been changed. See
@@ -1380,7 +1380,6 @@ class TrustedBinariesPage(_AFixedPage):
         self._mark_changed(self, good_changed or bad_changed)
         self.update_layout()
 
-    ##: Here be (some) dragons, especially in the import method
     def _export_lists(self):
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
@@ -1395,25 +1394,19 @@ class TrustedBinariesPage(_AFixedPage):
             # a comment anyways, but to be sure, put a '#' in front of it
             out.write(f"# {_('Exported by Wrye Bash v%(wb_version)s')}\n" % {
                 'wb_version': bass.AppVersion})
-            out.write(u'goodDlls # %s\n' % _(u'Binaries whose installation '
-                                             u'you have allowed'))
-            self._dump_dlls(bass.settings['bash.installers.goodDlls'], out)
-            out.write('\n')
-            out.write(u'badDlls # %s\n' % _(u'Binaries whose installation you '
-                                            u'have forbidden'))
-            self._dump_dlls(bass.settings['bash.installers.badDlls'], out)
-
-    @staticmethod
-    def _dump_dlls(dll_dict, out):
-        if not dll_dict:
-            out.write(f'# {_("None")}\n') # Treated as a comment
-            return
-        for dll, versions in dll_dict.items():
-            out.write(f'dll: {dll}:\n')
-            for i, version in enumerate(versions):
-                v_name, v_size, v_crc = version
-                out.write(f"version {i:02d}: ['{v_name}', {v_size:d}, "
-                          f"{v_crc:d}]\n")
+            sect_head = [_('Binaries whose installation you have allowed'),
+                         _('Binaries whose installation you have forbidden')]
+            for sect_key, sec_head in zip(['goodDlls', 'badDlls'], sect_head):
+                out.write(f'{sect_key} # {sect_head}\n')
+                dll_dict = bass.settings[f'bash.installers.{sect_key}']
+                if not dll_dict:
+                    out.write(f'# {_("None")}\n')
+                else:
+                    for dll, versions in dll_dict.items():
+                        out.write(f'dll: {dll}:\n')
+                        for i, (v_name, v_size, v_crc) in enumerate(versions):
+                            out.write(f"version {i:02d}: ['{v_name}', "
+                                      f"{v_size:d}, {v_crc:d}]\n")
 
     def _import_lists(self):
         textDir = bass.dirs[u'patches']
@@ -1446,14 +1439,14 @@ class TrustedBinariesPage(_AFixedPage):
             if contents.startswith(b'\xef\xbb\xbf'):
                 contents = contents[3:]
             with io.StringIO(contents.decode(u'utf-8')) as ins:
-                Dlls = {u'goodDlls':{}, u'badDlls':{}}
+                good, bad = {}, {}
                 current, dll = None, None
                 for line in ins:
                     line = line.strip()
                     if line.startswith(u'goodDlls'):
-                        current = Dlls[u'goodDlls']
+                        current = good
                     elif line.startswith(u'badDlls'):
-                        current = Dlls[u'badDlls']
+                        current = bad
                     elif line.startswith(u'dll:'):
                         if current is None:
                             raise SyntaxError(u'Missing "goodDlls" or '
@@ -1466,27 +1459,22 @@ class TrustedBinariesPage(_AFixedPage):
                             raise SyntaxError(u'Missing "dll" statement '
                                               u'before "version" statement')
                         ver = line.split(u':',1)[1]
-                        # Strip off leading '[' and trailing ']' before split
-                        ver_components = ver[1:-1].split(u',')
-                        if len(ver_components) != 3:
+                        try:
+                            # strip leading '[' and trailing ']' and any
+                            # whitespace before split - see _export_lists
+                            inst_name, inst_size, inst_crc = map(str.strip,
+                                ver.rstrip()[1:-1].split(','))
+                        except ValueError:
                             raise SyntaxError(u'Invalid format: expected '
                                               u'"version: [name, size, crc]"')
-                        # Strip any spacing due to the repr used when exporting
-                        ver_components = [c.strip() for c in ver_components]
-                        inst_name, inst_size, inst_crc = ver_components
                         current[dll].append((
                             parse_path(inst_name), parse_int(inst_size),
                             parse_int(inst_crc)))
             if not replace:
-                self._binaries_list.left_items = sorted(
-                    set(self._binaries_list.left_items) |
-                    set(Dlls[u'goodDlls']))
-                self._binaries_list.right_items = sorted(
-                    set(self._binaries_list.right_items) |
-                    set(Dlls[u'badDlls']))
-            else:
-                self._binaries_list.left_items = sorted(Dlls[u'goodDlls'])
-                self._binaries_list.right_items = sorted(Dlls[u'badDlls'])
+                good = good.keys() | set(self._binaries_list.left_items)
+                bad = bad.keys() | set(self._binaries_list.right_items)
+            self._binaries_list.left_items = sorted(good)
+            self._binaries_list.right_items = sorted(bad)
         except UnicodeError:
             msg = _('Wrye Bash could not load %(import_file)s, because it '
                     'is not saved in UTF-8 format. Please resave it in UTF-8 '
@@ -1516,10 +1504,9 @@ class TrustedBinariesPage(_AFixedPage):
         bad_dlls_dict = bass.settings[u'bash.installers.badDlls']
         good_dlls_dict = bass.settings[u'bash.installers.goodDlls']
         # Determine which have been moved to/from the bad DLLs list
-        old_bad = set(bad_dlls_dict)
         new_bad = set(self._binaries_list.right_items)
-        bad_added = new_bad - old_bad
-        bad_removed = old_bad - new_bad
+        bad_added = new_bad - bad_dlls_dict.keys()
+        bad_removed = bad_dlls_dict.keys() - new_bad
         merge_versions(dll_source=bad_added, target_dict=bad_dlls_dict,
             source_dict=good_dlls_dict)
         merge_versions(dll_source=bad_removed, target_dict=good_dlls_dict,
