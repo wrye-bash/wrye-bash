@@ -11,17 +11,24 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
-                        /x "basher" \
-                        /x "bosh" \
-                        /x "brec" \
-                        /x "env" \
-                        /x "game" \
-                        /x "gui" \
-                        /x "patcher" \
-                        /x "redist" \
-                        /x "tests" \
-                        "${WB_CLEAN_MOPY}\*.*"
+        ; Excludes have to be kept in sync with _IGNORES_STANDALONE from
+        ; build.py (i.e. also include the ones in _IGNORES_MANUAL)
+        File /r \
+            /x "*.bat" \
+            /x "*.log" \
+            /x "*.py*" \
+            /x "bash.ini" \
+            /x "Wrye Bash.exe" \
+            /x "basher" \
+            /x "bosh" \
+            /x "brec" \
+            /x "env" \
+            /x "game" \
+            /x "gui" \
+            /x "patcher" \
+            /x "redist" \
+            /x "tests" \
+            "${WB_CLEAN_MOPY}\*.*"
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
         ; Install the standalone only files
         SetOutPath "${GameDir}\Mopy"

@@ -13,7 +13,7 @@ lxml==5.1.0
 # For parsing download conditions when checking for updates
 packaging==23.2
 # For PDF support in the doc browser
-PyMuPDF==1.23.22
+PyMuPDF==1.23.25
 # For reflink copies (does not support Windows/ReFS yet)
 reflink==0.2.2; sys_platform != 'win32'
 # For various Internet-based functionality

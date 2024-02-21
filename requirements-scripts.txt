@@ -6,4 +6,4 @@ pyfiglet==1.0.2
 pygit2==1.14.1
 PyGithub==2.2.0
 pyinstaller==6.4.0
-pytest==8.0.1
+pytest==8.0.2
