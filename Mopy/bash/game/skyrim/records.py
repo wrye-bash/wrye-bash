@@ -404,13 +404,6 @@ class MelWaterCurrents(MelSequential):
 #------------------------------------------------------------------------------
 # Skyrim Records --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _MelTes4Hedr(MelStruct):
-    def setDefault(self, record, *, __nones=repeat(None)):
-        super().setDefault(record)
-        has_171 = 1.71 in bush.game.Esp.validHeaderVersions
-        record.version = 1.71 if has_171 else 1.7
-        record.nextObject = 0x001 if has_171 else 0x800
-
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
@@ -421,8 +414,10 @@ class MreTes4(AMreHeader):
         esl_flag: bool = flag(sse_only(9))
 
     melSet = MelSet(
-        _MelTes4Hedr(b'HEDR', ['f', '2I'], 'version', 'numRecords',
-            'nextObject', is_required=True),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.71 if (
+            has_171 := 1.71 in bush.game.Esp.validHeaderVersions) else 1.7),
+            ('numRecords', 0), ('nextObject', 0x001 if has_171 else 0x800),
+            is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
