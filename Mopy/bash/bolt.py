@@ -220,7 +220,7 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
     raise UnicodeEncodeError(f'Text could not be encoded using any of the '
                              f'following encodings: {encodings}')
 
-def encode_complex_string(string_val: str, max_size: int | None = None,
+def _encode_complex_string(string_val: str, max_size: int | None = None,
         min_size: int | None = None,
         preferred_encoding: str | None = None) -> bytes:
     """Handles encoding of a string that must satisfy certain conditions. Any
@@ -690,7 +690,7 @@ class PluginStr(bytes):
                 return self
             to_encode = self # hopefully will not try to encode it
         else: to_encode = self._decoded
-        return encode_complex_string(to_encode, maxSize, minSize,
+        return _encode_complex_string(to_encode, maxSize, minSize,
             target_encoding)
 
     @classmethod
