@@ -612,14 +612,12 @@ class _MelString(MelBase):
     def load_bytes(self, ins, size_, *debug_strs):
         return self._wrapper_bytes_type(ins.read(size_, *debug_strs))
 
-    def packSub(self, out: BinaryIO, string_val: PluginStr,
-                force_encoding=None):
+    def pack_subrecord_data(self, record):
         """Write out a string subrecord, properly encoding it beforehand and
-        respecting maxSize, minSize and encoding if they are set."""
-        byte_string = string_val.reencode(
-            force_encoding or bolt.pluginEncoding, self.maxSize,self.minSize)
+        respecting maxSize, minSize if they are set."""
+        pstr: PluginStr = super().pack_subrecord_data(record)
         # Null terminator is accounted for in _dump_bytes
-        super().packSub(out, byte_string)
+        return pstr.reencode(bolt.pluginEncoding, self.maxSize, self.minSize)
 
 #------------------------------------------------------------------------------
 class MelFixedString(_MelString):
@@ -659,25 +657,22 @@ class MelStrings(MelString):
                  ins.read(size_, *debug_strs).rstrip(null1).split(null1)]
         setattr(record, self.attr, value)
 
-    def packSub(self, out, strings, force_encoding=None):
+    def pack_subrecord_data(self, record):
         """Writes out a strings array subrecord, encoding and adding a null
         terminator to each string separately."""
-        if not strings:
+        if not (strings := super(MelString, self).pack_subrecord_data(record)):
             # Don't dump out a pointless terminator when we have zero strings
             return
         str_data = null1.join(
-            x.reencode(force_encoding or bolt.pluginEncoding, self.maxSize) for
-            x in strings)
-        if not str_data:
+            x.reencode(bolt.pluginEncoding, self.maxSize) for x in strings)
+        if not str_data: ## todo bool(b'\0') == True??
             # Similarly, don't dump out a pointless terminator just because the
             # plugin we read it from had a pointless terminator
             return
         # MelStrings need an extra null separator or Oblivion will CTD. This
-        # adds the null separator for the last string, then we...
-        str_data += null1
-        # ...call Subrecord.packSub which will call MelString._dump_bytes to
-        # add the last null separator
-        super(MelString, self).packSub(out, str_data)
+        # adds the null separator for the last string,  Subrecord.packSub will
+        # call MelString._dump_bytes to add the last null separator
+        return str_data + null1
 
 #------------------------------------------------------------------------------
 class MelStruct(MelBase):

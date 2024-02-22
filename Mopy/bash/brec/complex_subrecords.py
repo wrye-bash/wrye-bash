@@ -1421,14 +1421,8 @@ class MelStagTnam(MelString):
         super().load_mel(record, ins, sub_type, size_ - 4, *debug_strs)
 
     def pack_subrecord_data(self, record):
-        return (record.stag_sound_fid.dump(),
-                super().pack_subrecord_data(record))
-
-    def packSub(self, out, stag_sr_data: tuple[int, bolt.PluginStr],
-                force_encoding=None):
-        # Pack the int using base implementation
-        super(MelString, self).packSub(out, struct_pack('I', stag_sr_data[0]))
-        super().packSub(out, stag_sr_data[1], force_encoding)
+        bstr = struct_pack('I', record.stag_sound_fid.dump())
+        return bstr + super().pack_subrecord_data(record)
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapter
