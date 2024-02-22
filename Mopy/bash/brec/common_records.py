@@ -174,9 +174,9 @@ class AMreGlob(MelRecord):
 
 #------------------------------------------------------------------------------
 class AMreHeader(MelRecord):
-    """File header.  Base class for all 'TES4' like records"""
+    """File header.  Base class for all 'TES4' like records."""
     # Set per game, the value that nextObject defaults to
-    next_object_default: int
+    next_object_default = 0x800
 
     class HeaderFlags(MelRecord.HeaderFlags):
         esm_flag: bool = flag(0)

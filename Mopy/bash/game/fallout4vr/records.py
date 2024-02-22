@@ -32,7 +32,6 @@ from ...brec import AMreHeader, MelFid, MelGroups, MelNull, MelPostMast, \
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
-    next_object_default = 0x800
 
     class HeaderFlags(AMreHeader.HeaderFlags):
         localized: bool = flag(7)
@@ -40,7 +39,7 @@ class MreTes4(AMreHeader):
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.95), 'numRecords',
-                  ('nextObject', next_object_default), is_required=True),
+            ('nextObject', AMreHeader.next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),

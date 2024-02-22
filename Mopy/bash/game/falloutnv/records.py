@@ -38,11 +38,10 @@ from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    next_object_default = 0x800
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 1.34), 'numRecords',
-                  ('nextObject', next_object_default), is_required=True),
+            ('nextObject', AMreHeader.next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
