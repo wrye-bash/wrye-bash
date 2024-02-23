@@ -242,7 +242,8 @@ def cached_is_active(mod):
 def cached_lo_index(mod): return _cached_lord.mod_lo_index[mod]
 
 def cached_active_index_str(mod):
-    return f'{dex:02X}' if (dex := _cached_lord.mod_act_index.get(mod)) else ''
+    return '' if (dex := _cached_lord.mod_act_index.get(mod)) is None else \
+        f'{dex:02X}'
 
 def cached_lower_loading(mod):
     return _cached_lord.loadOrder[:_cached_lord.mod_lo_index[mod]]

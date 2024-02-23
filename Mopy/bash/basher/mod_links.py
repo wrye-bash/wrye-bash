@@ -776,7 +776,7 @@ class Mod_CopyModInfo(ItemLink):
         self._showLog(info_txt, title=_('Plugin Info Report'))
 
 class Mod_ListDependent(OneItemLink):
-    """Copies list of masters to clipboard."""
+    """Copies list of dependents to clipboard."""
     _text = _('List Dependent…')
 
     @property
