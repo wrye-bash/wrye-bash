@@ -522,7 +522,7 @@ def main(opts):
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
         _main(opts, wx_locale, wxver)
-    except Exception:
+    except Exception as e:
         caught_exc = traceback.format_exc()
         try:
             # Check if localize succeeded in setting up translations, otherwise
@@ -530,15 +530,33 @@ def main(opts):
             _(_a := '') # Hide this from gettext
         except NameError:
             def _(x): return x
-        # No period at the end, that could cause copy-paste errors when
-        # people go to copy the Discord URL
-        _show_boot_popup(_('Wrye Bash encountered an error. Please post the '
-                           'information below to the official thread at '
-                           '%(thread_url)s or to the Wrye Bash Discord at '
-                           '%(discord_url)s') % {
+        # No period at the end of URLs, that could cause copy-paste errors when
+        # people go to copy them
+        if isinstance(e, OSError) and e.errno == 22 and bolt.os_name == 'nt':
+            # On Windows, OSError 22 can occur in any number of random spots
+            # when we go to access data in the Documents folder while OneDrive
+            # is messing with us, so catch it here
+            err_msg = _('Wrye Bash encountered OSError 22. This is often '
+                        'caused by OneDrive backing up the Documents folder. '
+                        'Please follow the directions in the following link '
+                        'under "Change PC folder backup settings", removing '
+                        'your Documents folder from backup: %(ms_docs_url)s')
+            err_msg += '\n\n' + _('Should the error persist, please post your '
+                                  'BashBugDump to the official thread at '
+                                  '%(thread_url)s or to the Wrye Bash Discord '
+                                  'at %(discord_url)s')
+            print(caught_exc) # Print the real error only into the debug dump
+        else:
+            err_msg = _('Wrye Bash encountered an error. Please post the '
+                        'information below as well as your BashBugDump to the '
+                        'official thread at %(thread_url)s or to the Wrye '
+                        'Bash Discord at %(discord_url)s')
+            err_msg += '\n\n' + caught_exc
+        _show_boot_popup(err_msg % {
             'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
             'discord_url': 'https://discord.gg/NwWvAFR',
-        } + '\n\n' + caught_exc)
+            'ms_docs_url': 'https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057',
+        })
 
 def _main(opts, wx_locale, wxver):
     """Run the Wrye Bash main loop.
