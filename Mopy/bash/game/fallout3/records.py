@@ -63,7 +63,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
     MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane, \
-    MelSimpleGroups, AMreEyes, MelEyesFlags
+    MelSimpleGroups, AMreEyes, MelEyesFlags, MelTactVnam
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -2887,7 +2887,7 @@ class MreTact(MelRecord):
         MelScript(),
         MelDestructible(),
         MelSound(),
-        MelFid(b'VNAM', 'activator_voice_type'),
+        MelTactVnam(),
         fnv_only(MelFid(b'INAM', 'radio_template')),
     )
 

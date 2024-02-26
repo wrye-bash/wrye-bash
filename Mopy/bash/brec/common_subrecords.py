@@ -2323,6 +2323,12 @@ class MelSpitOld(MelStruct):
             'unused1')
 
 #------------------------------------------------------------------------------
+class MelTactVnam(MelFid):
+    """Handles the TACT subrecord VNAM (Voice Type)."""
+    def __init__(self):
+        super().__init__(b'VNAM', 'activator_voice_type')
+
+#------------------------------------------------------------------------------
 class MelTemplate(MelFid):
     """Handles the CREA/NPC_ subrecord TPLT (Template). Has become "Default
     Template" in FO4."""

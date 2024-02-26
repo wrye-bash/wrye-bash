@@ -83,7 +83,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
     MelSndrOutputModel, MelSndrLnam, MelSndrBnam, MelSopmData, MelSopmType, \
     MelSopmOutputValues, MelSounSdsc, MelSpit, AMreEyes, MelEyesFlags, \
-    MelUInt32Bool
+    MelUInt32Bool, MelTactVnam
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -3399,15 +3399,15 @@ class MreTact(AMreWithKeywords):
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelBounds(),
+        MelBounds(is_required=True),
         MelFull(),
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelColor(b'PNAM'),
+        MelColor(b'PNAM'), # required
         MelSound(),
-        MelActiFlags(),
-        MelFid(b'VNAM', 'activator_voice_type'),
+        MelActiFlags(), # required
+        MelTactVnam(),
     )
 
 #------------------------------------------------------------------------------

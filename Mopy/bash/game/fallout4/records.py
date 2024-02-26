@@ -77,7 +77,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
     MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
     MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit, MelStagTnam, \
-    AMreEyes, MelEyesFlags
+    AMreEyes, MelEyesFlags, MelTactVnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -3237,6 +3237,30 @@ class MreStat(MelRecord):
         # Contains null-terminated mesh filename followed by random data
         # up to 260 bytes and repeats 4 times
         MelBase(b'MNAM', 'distant_lod'),
+    )
+
+#------------------------------------------------------------------------------
+class MreTact(AMreWithKeywords):
+    """Talking Activator."""
+    rec_sig = b'TACT'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        hidden_from_local_map: bool = flag(9)
+        random_anim_start: bool = flag(16)
+        radio_station: bool = flag(17)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(is_required=True),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelColor(b'PNAM'), # required
+        MelSound(),
+        MelActiFlags(), # required
+        MelTactVnam(),
     )
 
 #------------------------------------------------------------------------------
