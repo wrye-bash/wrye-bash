@@ -77,7 +77,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
     MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
     MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit, MelStagTnam, \
-    AMreEyes, MelEyesFlags, MelTactVnam
+    AMreEyes, MelEyesFlags, MelTactVnam, MelMarkerModel
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -157,6 +157,46 @@ class _AMreWithProperties(MelRecord):
         super().keep_fids(keep_plugins)
         self.properties = [c for c in self.properties
                            if c.prop_actor_value.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
+class MelActiveMarkersFlags(MelUInt32Flags):
+    """Handles the MNAM (Active Markers / Flags) subrecord shared by FURN and
+    TERM."""
+    class _MnamFlags(Flags):
+        interaction_point_0: bool = flag(0)
+        interaction_point_1: bool = flag(1)
+        interaction_point_2: bool = flag(2)
+        interaction_point_3: bool = flag(3)
+        interaction_point_4: bool = flag(4)
+        interaction_point_5: bool = flag(5)
+        interaction_point_6: bool = flag(6)
+        interaction_point_7: bool = flag(7)
+        interaction_point_8: bool = flag(8)
+        interaction_point_9: bool = flag(9)
+        interaction_point_10: bool = flag(10)
+        interaction_point_11: bool = flag(11)
+        interaction_point_12: bool = flag(12)
+        interaction_point_13: bool = flag(13)
+        interaction_point_14: bool = flag(14)
+        interaction_point_15: bool = flag(15)
+        interaction_point_16: bool = flag(16)
+        interaction_point_17: bool = flag(17)
+        interaction_point_18: bool = flag(18)
+        interaction_point_19: bool = flag(19)
+        interaction_point_20: bool = flag(20)
+        interaction_point_21: bool = flag(21)
+        allow_awake_sound: bool = flag(22)
+        enter_with_weapon_drawn: bool = flag(23)
+        play_anim_when_full: bool = flag(24)
+        disables_activation: bool = flag(25)
+        is_perch: bool = flag(26)
+        must_exit_to_talk: bool = flag(27)
+        use_static_to_avoid_node: bool = flag(28)
+        has_model: bool = flag(30)
+        is_sleep_furniture: bool = flag(31)
+
+    def __init__(self):
+        super().__init__(b'MNAM', 'active_markers_flags', self._MnamFlags)
 
 #------------------------------------------------------------------------------
 class MelAnimationSound(MelFid):
@@ -301,6 +341,48 @@ class MelLocation(MelUnion):
                 decider=AttrValDecider('package_location_type')),
             fallback=MelNull(b'NULL') # ignore
         )
+
+#------------------------------------------------------------------------------
+##: It should be possible to absorb this in MelArray, see MelWthrColorsFnv for
+# a plan of attack. But note that if we have form version info, we should be
+# able to pass that in too, since the other algorithm is ambiguous once a
+# subrecord of size lcm(new, old) is reached - MelFVDArray (form version
+# dependent)?
+class MelMarkerParams(MelArray):
+    """Handles the FURN/TERM subrecord SNAM (Marker Parameters), which requires
+    special code."""
+    class _param_entry_types(Flags):
+        entry_type_front: bool
+        entry_type_rear: bool
+        entry_type_right: bool
+        entry_type_left: bool
+        entry_type_other: bool
+        entry_type_unused1: bool
+        entry_type_unused2: bool
+        entry_type_unused3: bool
+
+    def __init__(self):
+        struct_args = (b'SNAM', ['4f', 'I', 'B', '3s'], 'param_offset_x',
+                       'param_offset_y', 'param_offset_z', 'param_rotation_z',
+                       (FID, 'param_keyword'),
+                       (self._param_entry_types, 'param_entry_types'),
+                       'param_unknown')
+        # Trick MelArray into thinking we have a static-sized element
+        super().__init__('furn_marker_parameters', MelStruct(*struct_args))
+        self._real_loader = MelTruncatedStruct(*struct_args,
+            old_versions={'4fI'})
+
+    def _load_array(self, record, ins, sub_type, size_, *debug_strs):
+        append_entry = getattr(record, self.attr).append
+        entry_slots = self.array_element_attrs
+        # Form version 125 added the entry types to the end
+        entry_size = 24 if record.header.form_version >= 125 else 20
+        load_entry = self._real_loader.load_mel
+        for x in range(size_ // entry_size):
+            arr_entry = MelObject()
+            append_entry(arr_entry)
+            arr_entry.__slots__ = entry_slots
+            load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
 
 #------------------------------------------------------------------------------
 class MelNativeTerminal(MelFid):
@@ -1509,47 +1591,6 @@ class MreFlst(AMreFlst):
     )
 
 #------------------------------------------------------------------------------
-##: It should be possible to absorb this in MelArray, see MelWthrColorsFnv for
-# a plan of attack. But note that if we have form version info, we should be
-# able to pass that in too, since the other algorithm is ambiguous once a
-# subrecord of size lcm(new, old) is reached - MelFVDArray (form version
-# dependent)?
-class MelFurnMarkerParams(MelArray):
-    """Handles the FURN subrecord SNAM (Furniture Marker Parameters), which
-    requires special code."""
-    class _param_entry_types(Flags):
-        entry_type_front: bool
-        entry_type_rear: bool
-        entry_type_right: bool
-        entry_type_left: bool
-        entry_type_other: bool
-        entry_type_unused1: bool
-        entry_type_unused2: bool
-        entry_type_unused3: bool
-
-    def __init__(self):
-        struct_args = (b'SNAM', ['4f', 'I', 'B', '3s'], 'param_offset_x',
-                       'param_offset_y', 'param_offset_z', 'param_rotation_z',
-                       (FID, 'param_keyword'),
-                       (self._param_entry_types, 'param_entry_types'),
-                       'param_unknown')
-        # Trick MelArray into thinking we have a static-sized element
-        super().__init__('furn_marker_parameters', MelStruct(*struct_args))
-        self._real_loader = MelTruncatedStruct(*struct_args,
-            old_versions={'4fI'})
-
-    def _load_array(self, record, ins, sub_type, size_, *debug_strs):
-        append_entry = getattr(record, self.attr).append
-        entry_slots = self.array_element_attrs
-        # Form version 125 added the entry types to the end
-        entry_size = 24 if record.header.form_version >= 125 else 20
-        load_entry = self._real_loader.load_mel
-        for x in range(size_ // entry_size):
-            arr_entry = MelObject()
-            append_entry(arr_entry)
-            arr_entry.__slots__ = entry_slots
-            load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
-
 class MreFurn(AMreWithItems, AMreWithKeywords, _AMreWithProperties):
     """Furniture."""
     rec_sig = b'FURN'
@@ -1563,39 +1604,6 @@ class MreFurn(AMreWithItems, AMreWithKeywords, _AMreWithProperties):
         power_armor: bool = flag(25)
         must_exit_to_talk: bool = flag(28)
         child_can_use: bool = flag(29)
-
-    class _active_markers_flags(Flags):
-        interaction_point_0: bool = flag(0)
-        interaction_point_1: bool = flag(1)
-        interaction_point_2: bool = flag(2)
-        interaction_point_3: bool = flag(3)
-        interaction_point_4: bool = flag(4)
-        interaction_point_5: bool = flag(5)
-        interaction_point_6: bool = flag(6)
-        interaction_point_7: bool = flag(7)
-        interaction_point_8: bool = flag(8)
-        interaction_point_9: bool = flag(9)
-        interaction_point_10: bool = flag(10)
-        interaction_point_11: bool = flag(11)
-        interaction_point_12: bool = flag(12)
-        interaction_point_13: bool = flag(13)
-        interaction_point_14: bool = flag(14)
-        interaction_point_15: bool = flag(15)
-        interaction_point_16: bool = flag(16)
-        interaction_point_17: bool = flag(17)
-        interaction_point_18: bool = flag(18)
-        interaction_point_19: bool = flag(19)
-        interaction_point_20: bool = flag(20)
-        interaction_point_21: bool = flag(21)
-        allow_awake_sound: bool = flag(22)
-        enter_with_weapon_drawn: bool = flag(23)
-        play_anim_when_full: bool = flag(24)
-        disables_activation: bool = flag(25)
-        is_perch: bool = flag(26)
-        must_exit_to_talk: bool = flag(27)
-        use_static_to_avoid_node: bool = flag(28)
-        has_model: bool = flag(30)
-        is_sleep_furniture: bool = flag(31)
 
     melSet = MelSet(
         MelEdid(),
@@ -1615,12 +1623,12 @@ class MreFurn(AMreWithItems, AMreWithKeywords, _AMreWithProperties):
         MelActiFlags(),
         MelConditions(),
         MelItems(),
-        MelUInt32Flags(b'MNAM', 'active_markers_flags', _active_markers_flags),
+        MelActiveMarkersFlags(),
         MelTruncatedStruct(b'WBDT', ['B', 'b'], 'bench_type', 'uses_skill',
             old_versions={'B'}),
         MelFid(b'NAM1', 'associated_form'),
         MelFurnMarkerData(),
-        MelFurnMarkerParams(),
+        MelMarkerParams(),
         MelAppr(),
         MelObjectTemplate(),
         MelNvnm(),
@@ -3198,7 +3206,7 @@ class MreStag(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreStat(MelRecord):
+class MreStat(_AMreWithProperties):
     """Static."""
     rec_sig = b'STAT'
 
@@ -3262,6 +3270,71 @@ class MreTact(AMreWithKeywords):
         MelActiFlags(), # required
         MelTactVnam(),
     )
+
+#------------------------------------------------------------------------------
+class MreTerm(AMreWithKeywords, _AMreWithProperties):
+    """Terminal."""
+    rec_sig = b'TERM'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(is_required=True),
+        MelPreviewTransform(),
+        MelLString(b'NAM0', 'terminal_header_text'),
+        MelLString(b'WNAM', 'terminal_welcome_text'),
+        MelFull(),
+        MelModel(),
+        MelKeywords(),
+        MelProperties(),
+        MelBase(b'PNAM', 'unknown_pnam'),
+        MelSound(),
+        MelBase(b'FNAM', 'unknown_fnam'),
+        MelCounter(MelUInt32(b'COCT', 'terminal_holotape_count'),
+            counts='terminal_holotapes'),
+        MelGroups('terminal_holotapes',
+            MelStruct(b'CNTO', ['I', 'i'], (FID, 'holotape_item'),
+                'holotape_count'),
+        ),
+        MelActiveMarkersFlags(),
+        MelBase(b'WBDT', 'unused_workbench_data'),
+        MelMarkerModel(),
+        MelMarkerParams(),
+        MelCounter(MelUInt32(b'BSIZ', 'terminal_body_item_count'),
+            counts='terminal_body_items'),
+        MelGroups('terminal_body_items',
+            MelLString(b'BTXT', 'tbi_text'),
+            MelConditionList(),
+        ),
+        MelCounter(MelUInt32(b'ISIZ', 'terminal_menu_item_count'),
+            counts='terminal_menu_items'),
+        MelGroups('terminal_menu_items',
+            MelLString(b'ITXT', 'tmi_text'),
+            MelLString(b'RNAM', 'tmi_response_text'),
+            MelUInt8(b'ANAM', 'tmi_item_type', set_default=0),
+            MelUInt16(b'ITID', 'tmi_item_id'),
+            MelLString(b'UNAM', 'tmi_display_text'),
+            MelString(b'VNAM', 'tmi_show_image'),
+            MelFid(b'TNAM', 'tmi_submenu'),
+            MelConditionList(),
+        ),
+    ).with_distributor({
+        b'BTXT': {
+            b'CTDA|CIS1|CIS2': 'terminal_body_items',
+        },
+        b'ITXT': {
+            b'CTDA|CIS1|CIS2': 'terminal_menu_items',
+        },
+    })
+
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.terminal_holotapes = [h for h in self.terminal_holotapes
+                                   if h.holotape_item.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done

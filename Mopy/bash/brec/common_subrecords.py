@@ -430,8 +430,9 @@ class MelDecalData(MelStruct):
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
     """Handles the description (DESC) subrecord."""
-    def __init__(self):
-        super().__init__(b'DESC', 'description')
+    def __init__(self, *, is_required=False):
+        super().__init__(b'DESC', 'description',
+            set_default='' if is_required else None)
 
 #------------------------------------------------------------------------------
 class MelDoorFlags(MelUInt8Flags):
@@ -610,7 +611,7 @@ class MelFurnMarkerData(MelSequential):
                 MelStruct(b'FNPR', ['2H'], 'furn_marker_type',
                     (self._entry_points, 'furn_marker_entry_points')),
             ),
-            MelString(b'XMRK', 'marker_model'),
+            MelMarkerModel(),
         )
 
 #------------------------------------------------------------------------------
@@ -917,7 +918,7 @@ class MelLandShared(MelSequential):
         has_hi_res_heightfield: bool = flag(5) # since FO4
         has_mpcd: bool = flag(10) # Skyrim's version of has_hi_res_heightfield?
 
-    def __init__(self, *, with_vtex: bool = False):
+    def __init__(self, *, with_vtex=False):
         super().__init__(
             MelUInt32Flags(b'DATA', 'land_flags', self._land_flags),
             MelBase(b'VNML', 'vertex_normals'),
@@ -1181,6 +1182,12 @@ class MelMapMarker(MelGroup):
         if with_reputation:
             group_elems.append(MelFid(b'WMI1', 'marker_reputation'))
         super().__init__('map_marker', *group_elems)
+
+#------------------------------------------------------------------------------
+class MelMarkerModel(MelString):
+    """Handles the FURN/TERM subrecord XMRK (Marker Model)."""
+    def __init__(self):
+        super().__init__(b'XMRK', 'marker_model')
 
 #------------------------------------------------------------------------------
 class MelMatoPropertyData(MelGroups):

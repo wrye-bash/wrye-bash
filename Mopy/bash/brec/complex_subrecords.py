@@ -1983,6 +1983,10 @@ class _VmadHandlerSCEN(_AVmadHandlerV6Mixin, _AFixedContainer):
     def used_slots(self):
         return [*super().used_slots, 'phase_fragments']
 
+class _VmadHandlerTERM(_VmadHandlerPERK):
+    """Implements special handling for FO4's TERM records. Identical VMAD
+    behavior to PERK."""
+
 # Scripts -----------------------------------------------------------------
 class _Script(_AVariableContainer):
     """Represents a single script."""
@@ -2349,6 +2353,9 @@ class AVmadContext:
         self_copy.obj_format = alias_obj_format
         return self_copy
 
+# Typing
+_HandlerMap = dict[bytes, type | _AVmadComponent]
+
 class AMelVmad(MelBase):
     """Virtual Machine Adapter. Forms the bridge between the Papyrus scripting
     system and the record definitions. A very complex subrecord that requires
@@ -2360,12 +2367,15 @@ class AMelVmad(MelBase):
     # A class holding necessary context when reading/writing records
     _vmad_context_class: type[AVmadContext]
     # The special handlers used by various record types
-    _handler_map: dict[bytes, type | _AVmadComponent] = {
+    _handler_map_v5: _HandlerMap = {
         b'INFO': _VmadHandlerINFO,
         b'PACK': _VmadHandlerPACK,
         b'PERK': _VmadHandlerPERK,
         b'QUST': _VmadHandlerQUST,
         b'SCEN': _VmadHandlerSCEN,
+    }
+    _handler_map_v6: _HandlerMap = _handler_map_v5 | {
+        b'TERM': _VmadHandlerTERM,
     }
 
     def __init__(self):
@@ -2373,16 +2383,27 @@ class AMelVmad(MelBase):
         self._script_loader = _Script()
         self._vmad_class = None
 
-    def _get_special_handler(self, record_sig: bytes) -> _AVmadComponent:
+    @classmethod
+    def _get_handler_map(cls, vmad_ctx: AVmadContext):
+        """Retrieve the right handler map version to use, based on the
+        specified VMAD load context."""
+        # Note we use max_vmad_ver here, since TERM is possible whether the
+        # VMAD in question is v5 or v6
+        return (cls._handler_map_v6 if vmad_ctx.max_vmad_ver >= 6 else
+                cls._handler_map_v5)
+
+    @staticmethod
+    def _get_special_handler(record_sig: bytes,
+            handler_map: _HandlerMap) -> _AVmadComponent:
         """Internal helper method for instantiating / retrieving a VMAD handler
         instance.
 
         :param record_sig: The signature of the record type in question."""
-        special_handler = self._handler_map[record_sig]
+        special_handler = handler_map[record_sig]
         if isinstance(special_handler, type):
             # These initializations need to be delayed, since they require
             # MelVmad to be fully initialized first, so do this JIT
-            self._handler_map[record_sig] = special_handler = special_handler()
+            handler_map[record_sig] = special_handler = special_handler()
         return special_handler
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -2415,8 +2436,9 @@ class AMelVmad(MelBase):
             append_script(vm_script)
         # If the record type is one of the ones that need special handling and
         # we still have something to read, call the appropriate handler
-        if record._rec_sig in self._handler_map and ins.tell() < end_of_vmad:
-            special_handler = self._get_special_handler(record._rec_sig)
+        handler_map = self._get_handler_map(vmad_ctx)
+        if (rs := record._rec_sig) in handler_map and ins.tell() < end_of_vmad:
+            special_handler = self._get_special_handler(rs, handler_map)
             vmad.special_data = special_handler.make_new()
             special_handler.load_frag(vmad.special_data, ins, vmad_ctx,
                 *debug_strs)

@@ -2900,35 +2900,36 @@ class MreTerm(MelRecord):
         visible_when_distant: bool = flag(15)
         random_anim_start: bool = flag(16)
 
-    class _flags(Flags):
-        leveled: bool
-        unlocked: bool
-        alternateColors: bool
-        hideWellcomeTextWhenDisplayingImage: bool
+    class _TerminalFlags(Flags):
+        terminal_leveled: bool
+        terminal_unlocked: bool
+        terminal_alternate_colors: bool
+        hide_welcome_text_when_displaying_image: bool
 
-    class _menuFlags(Flags):
-        addNote: bool
-        forceRedraw: bool
+    class _TerminalMenuFlags(Flags):
+        terminal_add_note: bool
+        terminal_force_redraw: bool
 
     melSet = MelSet(
-        MelEdid(),
-        MelBounds(),
+        MelEdid(is_required=True),
+        MelBounds(is_required=True),
         MelFull(),
         MelModel(),
         MelScript(),
         MelDestructible(),
-        MelDescription(),
+        MelDescription(is_required=True),
         MelSound(),
-        MelFid(b'PNAM','passwordNote'),
-        MelTruncatedStruct(b'DNAM', [u'3B', u's'], 'baseHackingDifficulty',
-                           (_flags,'flags'), 'serverType', 'unused1',
-                           old_versions={'3B'}),
-        MelGroups('menuItems',
-            MelString(b'ITXT','itemText'),
-            MelString(b'RNAM','resultText'),
-            MelUInt8Flags(b'ANAM', u'menuFlags', _menuFlags),
-            MelFid(b'INAM','displayNote'),
-            MelFid(b'TNAM','subMenu'),
+        MelFid(b'PNAM', 'password_note'),
+        MelTruncatedStruct(b'DNAM', ['3B', 's'],
+            'base_hacking_difficulty', (_TerminalFlags, 'terminal_flags'),
+            'server_type', 'unused1', old_versions={'3B'}, is_required=True),
+        MelGroups('terminal_menu_items',
+            MelString(b'ITXT', 'terminal_item_text'),
+            MelString(b'RNAM', 'terminal_result_text', set_default=''),
+            MelUInt8Flags(b'ANAM', 'terminal_menu_flags', _TerminalMenuFlags,
+                set_default=0),
+            MelFid(b'INAM', 'terminal_display_note'),
+            MelFid(b'TNAM', 'terminal_sub_menu'),
             MelEmbeddedScript(),
             MelConditionsFo3(),
         ),

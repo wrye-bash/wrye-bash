@@ -849,7 +849,7 @@ class AFallout4GameInfo(PatchGame):
     keywords_types = {
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
         b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MGEF',
-        b'MISC', b'MSTT', b'NPC_', b'SPEL', b'TACT',
+        b'MISC', b'MSTT', b'NPC_', b'SPEL', b'TACT', b'TERM',
     }
 
     #--------------------------------------------------------------------------
@@ -860,7 +860,7 @@ class AFallout4GameInfo(PatchGame):
         b'CLFM', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FACT', b'FLOR',
         b'FLST', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'KYWD', b'LIGH',
         b'MESG', b'MGEF', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'OMOD', b'PERK',
-        b'PROJ', b'SCOL', b'SNCT', b'SPEL', b'STAT', b'TACT',
+        b'PROJ', b'SCOL', b'SNCT', b'SPEL', b'STAT', b'TACT', b'TERM',
     }
 
     #--------------------------------------------------------------------------
@@ -871,7 +871,7 @@ class AFallout4GameInfo(PatchGame):
         b'BOOK', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FLOR', b'FURN',
         b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
         b'LVSP', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'PKIN', b'PROJ', b'SCOL',
-        b'SOUN', b'SPEL', b'STAT', b'TACT',
+        b'SOUN', b'SPEL', b'STAT', b'TACT', b'TERM',
     }
 
     #--------------------------------------------------------------------------
@@ -972,7 +972,7 @@ class AFallout4GameInfo(PatchGame):
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
             b'CELL', b'NAVI', b'NOCM', b'QUST', b'SCEN',
             b'RACE', # later :(
-            b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
+            b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
             b'WRLD', b'WTHR', b'ZOOM'}
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs
 
