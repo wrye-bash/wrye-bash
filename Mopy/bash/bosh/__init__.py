@@ -78,7 +78,9 @@ screen_infos: ScreenInfos | None = None
 
 def data_tracking_stores() -> Iterable['_AFileInfos']:
     """Return an iterable containing all data stores that keep track of the
-    Data folder and which files in it are owned by which BAIN package."""
+    Data folder and so will get refresh calls from BAIN when files get
+    installed/changed/uninstalled. If they set _AFileInfos.tracks_ownership to
+    True, they will also get ownership updates."""
     return tuple(s for s in (modInfos, iniInfos, bsaInfos, screen_infos) if
                  s is not None)
 
@@ -1571,6 +1573,8 @@ class _AFileInfos(DataStore):
     file_pattern = None # subclasses must define this !
     _rdata_type = RefrData
     factory: type[AFile]
+    # Whether these file infos track ownership in a table
+    tracks_ownership = False
 
     def __init__(self, dir_, factory):
         """Init with specified directory and specified factory type."""
@@ -1750,6 +1754,7 @@ class _AFileInfos(DataStore):
         cp_file_info.abs_path.copyTo(cp_dest_path)
 
 class TableFileInfos(_AFileInfos):
+    tracks_ownership = True
 
     def _initDB(self, dir_):
         """Load pickled data for mods, saves, inis and bsas."""

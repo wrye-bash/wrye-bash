@@ -235,7 +235,7 @@ def _get_default_app_icon(idex, target):
             icon_path = _GPath(filedata)
         else:
             icon_path, idex = filedata.split(',')
-            icon_path = os.path.expandvars(icon_path)
+            icon_path = _GPath(os.path.expandvars(icon_path))
         if not os.path.isabs(icon_path):
             # Get the correct path to the dll
             for dir_ in os.environ[u'PATH'].split(u';'):

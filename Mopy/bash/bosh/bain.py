@@ -1992,6 +1992,7 @@ class InstallersData(DataStore):
         # Update the ownership information for relevant data stores
         owned_per_store = []
         for store in data_tracking_stores():
+            if not store.tracks_ownership: continue
             storet = store.table
             owned = [x for x in storet.getColumn('installer') if str(
                 storet[x]['installer']) == old_key]  # str due to Paths
@@ -2820,7 +2821,9 @@ class InstallersData(DataStore):
                 for owned_path in owned_files:
                     for store in stores:
                         if store_info := store.data_path_to_info(owned_path):
-                            store_info.set_table_prop('installer', f'{ikey}')
+                            if store.tracks_ownership:
+                                store_info.set_table_prop(
+                                    'installer', f'{ikey}')
                             refresh_ui[store.unique_store_key] = True
                             # Each file may only belong to one data store
                             break
