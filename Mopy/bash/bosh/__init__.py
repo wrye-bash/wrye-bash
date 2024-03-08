@@ -450,6 +450,9 @@ class ModInfo(FileInfo):
         'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None, **kwargs):
+        # list of string bsas sorted by search order for localized plugins -
+        # None otherwise
+        self.str_bsas_sorted = None
         if itsa_ghost is None and (fullpath.cs[-6:] == '.ghost'):
             fullpath = fullpath.root
             self.is_ghost = True
@@ -895,7 +898,8 @@ class ModInfo(FileInfo):
 
     def getStringsPaths(self, lang):
         """If Strings Files are available as loose files, just point to
-        those, otherwise extract needed files from BSA if needed."""
+        those, otherwise extract needed files from BSA. Only use for localized
+        plugins."""
         baseDirJoin = self.info_dir.join
         extract = set()
         paths = set()
@@ -908,10 +912,10 @@ class ModInfo(FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            ##: Pass cached_ini_info here for performance?
-            potential_bsas = self._find_string_bsas()
-            bsa_assets = OrderedDict()
-            for bsa_info in potential_bsas:
+            bsa_assets = {}
+            ##: note for SkyrimVR that has resource overriding BSAs we
+            # should reset the order to have the overriding BSAs first
+            for bsa_info in self.str_bsas_sorted: # None for non-localized mods
                 try:
                     found_assets = bsa_info.has_assets(extract)
                 except BSAError:
@@ -926,11 +930,11 @@ class ModInfo(FileInfo):
                 msg = [f'This plugin is localized, but the following strings '
                        f'files seem to be missing:']
                 msg.extend(f' - {e}' for e in extract)
-                if potential_bsas:
+                if self.str_bsas_sorted:
                     msg.append('The following BSAs were scanned (based on '
                                'name and INI settings), but none of them '
                                'contain the missing files:')
-                    msg.extend(f' - {bsa_inf}' for bsa_inf in potential_bsas)
+                    msg.extend(f' - {binf}' for binf in self.str_bsas_sorted)
                 else:
                     msg.append('No BSAs were found that could contain the '
                         'missing strings - this is bad, validate your game '
@@ -946,40 +950,10 @@ class ModInfo(FileInfo):
                 paths.update(map(out_path.join, assets))
         return paths
 
-    # Heuristics for _find_string_bsas. Patch before interface because the
-    # patch BSA (which only exists in SSE) will always load after the interface
-    # BSA and hence should win all conflicts (including strings).
-    _bsa_heuristics = list(enumerate((u'main', u'patch', u'interface')))
-    def _find_string_bsas(self, cached_ini_info=None):
-        """Return a list of BSAs to get strings files from. Note that this is
-        *only* meant for strings files. It sorts the list in such a way as to
-        prioritize files that are likely to contain the strings, instead of
-        returning the true BSA order.
-
-        :param cached_ini_info: Passed to get_bsa_lo, see there for docs."""
-        ret_bsas = modInfos.get_bsa_lo([self.fn_key], cached_ini_info)[0]
-        # First heuristic sorting pass: sort 'main', 'patch' and 'interface' to
-        # the front. This avoids parsing expensive BSAs at startup for the game
-        # master (e.g. Skyrim.esm -> Skyrim - Textures0.bsa).
-        heuristics = self._bsa_heuristics
-        last_index = len(heuristics) # last place to sort unwanted BSAs
-        # Second heuristic sorting pass: sort BSAs that begin with the body of
-        # this plugin before others. This avoids parsing vanilla BSAs for third
-        # party plugins, while being a noop for vanilla plugins (stable sort).
-        plugin_prefix = self.fn_key.fn_body.lower()
-        def _bsa_heuristic(binf):
-            b_lower = binf.fn_key.fn_body.lower()
-            startsw = not b_lower.startswith(plugin_prefix)
-            for i, h in heuristics:
-                if h in b_lower:
-                    return startsw, i
-            return startsw, last_index
-        ret_bsas = sorted(reversed(ret_bsas), key=_bsa_heuristic)
-        return ret_bsas
-
     def isMissingStrings(self, cached_ini_info, ci_cached_strings_paths):
         """True if the mod says it has .STRINGS files, but the files are
-        missing.
+        missing. Sets the str_bsas_sorted attribute to the list of BSAs that
+        may contain the strings files for this plugin.
 
         :param cached_ini_info: Passed to get_bsa_lo, see there for docs.
         :param ci_cached_strings_paths: Set of lower-case versions of the paths
@@ -987,13 +961,16 @@ class ModInfo(FileInfo):
             _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
         i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
-        bsa_infos = self._find_string_bsas(cached_ini_info)
+        ret_bsas = modInfos.get_bsa_lo([self.fn_key], cached_ini_info)[0]
+        plugin_prefix = self.fn_key.fn_body.lower()
+        self.str_bsas_sorted = sorted(reversed(ret_bsas), key=lambda binf:
+            binf.str_bsa_sort_key(plugin_prefix))
         for assetPath in self._string_files_paths(i_lang):
             # Check loose files first
             if assetPath.lower() in ci_cached_strings_paths:
                 continue
             # Check in BSA's next
-            for bsa_info in bsa_infos:
+            for bsa_info in self.str_bsas_sorted:
                 try:
                     if bsa_info.has_assets((assetPath,)):
                         break # found
