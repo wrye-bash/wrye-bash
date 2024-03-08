@@ -826,9 +826,10 @@ class Installer(ListInfo):
                     and bass.settings[u'bash.installers.redirect_scripts'])
         if renameStrings:
             from . import oblivionIni
-            lang = oblivionIni.get_ini_language()
-        else: lang = u''
-        languageLower = lang.lower()
+            language_lower = oblivionIni.get_ini_language(
+                bush.game.Ini.default_game_lang).lower()
+        else:
+            language_lower = ''
         hasExtraData = self.hasExtraData
         # exclude '' from active sub-packages
         activeSubs = (
@@ -985,7 +986,7 @@ class Installer(ListInfo):
                 if dest is None: dest = file_relative
                 dest = self._remap_files(
                     dest, fileLower, rootLower, fileExt, file_relative,
-                    data_sizeCrc, archiveRoot, renameStrings, languageLower,
+                    data_sizeCrc, archiveRoot, renameStrings, language_lower,
                     redirect_scripts)
                 if fileExt in commonlyEditedExts:
                     ##: will track all the txt files in Docs/
@@ -1068,7 +1069,7 @@ class Installer(ListInfo):
             self.fileRootIdex = len(rootStr)
 
     def _remap_files(self, dest, fileLower, rootLower, fileExt, file_relative,
-                     data_sizeCrc, archiveRoot, renameStrings, languageLower,
+                     data_sizeCrc, archiveRoot, renameStrings, language_lower,
                      redirect_scripts):
         """Renames and redirects files to other destinations in the Data
         folder."""
@@ -1081,9 +1082,9 @@ class Installer(ListInfo):
             langSep = fileLower.rfind(u'_')
             extSep = fileLower.rfind(u'.')
             lang = fileLower[langSep + 1:extSep]
-            if lang != languageLower:
-                dest = u''.join((file_relative[:langSep], u'_', lang,
-                                 file_relative[extSep:]))
+            if lang != language_lower:
+                dest = ''.join((file_relative[:langSep], '_', lang,
+                                file_relative[extSep:]))
                 # Check to ensure not overriding an already provided language
                 # file for that language
                 if dest in data_sizeCrc:
@@ -1876,9 +1877,11 @@ class InstallersData(DataStore):
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
         #--Archive invalidation
-        from . import InstallerMarker, modInfos, oblivionIni
-        if bass.settings[u'bash.bsaRedirection'] and oblivionIni.abs_path.exists():
-            oblivionIni.setBsaRedirection(True)
+        from . import InstallerMarker, modInfos, oblivionIni, bsaInfos
+        if (bass.settings['bash.bsaRedirection'] and
+                oblivionIni.abs_path.exists()):
+            ##: What about all the other stuff the "BSA Redirection" link does?
+            bsaInfos.set_bsa_redirection(do_redirect=True)
         #--Load Installers.dat if not loaded - will set changed to True
         changes = (fresh_load := not self.loaded) and self.__load(progress)
         #--Last marker

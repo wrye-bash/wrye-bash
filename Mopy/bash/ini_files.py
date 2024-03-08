@@ -20,16 +20,18 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""A parser and minimally invasive writer for all kinds of INI files and
+related formats (e.g. simple TOML files)."""
+from __future__ import annotations
+
 import os
 import re
-import time
 from collections import Counter, OrderedDict
 
-from . import bush, env
-from .bass import dirs
+# Keep local imports to a minimum, this module is important for booting!
 from .bolt import CIstr, DefaultLowerDict, ListInfo, LowerDict, \
     OrderedLowerDict, decoder, deprint, getbestencoding, AFileInfo
-from .exception import CancelError, FailedIniInferError, SkipError
+from .exception import FailedIniInferError
 from .wbtemp import TempFile
 
 _comment_start_re = re.compile(r'^[^\S\r\n]*[;#][^\S\r\n]*')
@@ -46,8 +48,8 @@ def _to_lower(ini_settings):
         return ret_type(input_dict)
     return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.items())
 
-def get_ini_type_and_encoding(abs_ini_path, fallback_type=None) -> tuple[
-        type['IniFileInfo'], str]:
+def get_ini_type_and_encoding(abs_ini_path, *, fallback_type=None,
+        consider_obse_inis=False) -> tuple[type[IniFileInfo], str]:
     """Return ini type (one of IniFileInfo, OBSEIniFile) and inferred encoding
     of the file at abs_ini_path. It reads the file and performs heuristics
     for detecting the encoding, then decodes and applies regexes to every
@@ -58,15 +60,18 @@ def get_ini_type_and_encoding(abs_ini_path, fallback_type=None) -> tuple[
 
     :param abs_ini_path: The full path to the INI file in question.
     :param fallback_type: If set, then if the INI type can't be detected,
-        instead of raising an error, use this type."""
+        instead of raising an error, use this type.
+    :param consider_obse_inis: Whether to consider OBSE INIs as well. If True,
+        some empty/fully commented-out INIs can't be parsed properly. If False,
+        OBSE INIs can't be parsed."""
     if os.path.splitext(abs_ini_path)[1] == '.toml':
         # TOML must always use UTF-8, demanded by its specification
         return TomlFile, 'utf-8'
     with open(abs_ini_path, u'rb') as ini_file:
         content = ini_file.read()
     detected_encoding, _confidence = getbestencoding(content)
-    # If the game does not have OBSE INIs, just the encoding suffices
-    if not bush.game.Ini.has_obse_inis:
+    # If we don't have to worry about OBSE INIs, just the encoding suffices
+    if not consider_obse_inis:
         return IniFileInfo, detected_encoding
     ##: Add a 'return encoding' param to decoder to avoid the potential double
     # chardet here!
@@ -685,19 +690,17 @@ class OBSEIniFile(IniFileInfo):
 
 class GameIni(IniFileInfo):
     """Main game ini file. Only use to instantiate bosh.oblivionIni"""
-    bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
-                      u'..\\obmm\\bsaredirection.bsa'}
-    _ini_language = None
+    _ini_language: str | None = None
 
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
         ini_settings = {section:{key:value}}
         self.saveSettings(ini_settings)
 
-    def get_ini_language(self, cached=True):
+    def get_ini_language(self, default_lang: str, cached=True) -> str:
         if not cached or self._ini_language is None:
             self._ini_language = self.getSetting('General', 'sLanguage',
-                bush.game.Ini.default_game_lang)
+                default_lang)
         return self._ini_language
 
     def target_ini_exists(self, msg=None):
@@ -709,37 +712,3 @@ class GameIni(IniFileInfo):
         msg = _('%(ini_full_path)s does not exist.') % {
             'ini_full_path': self.abs_path} + f'\n\n{msg}\n\n'
         return msg
-
-    #--BSA Redirection --------------------------------------------------------
-    def setBsaRedirection(self,doRedirect=True):
-        """Activate or deactivate BSA redirection - game ini must exist!"""
-        if self.isCorrupted: return
-        br_section, br_key = bush.game.Ini.bsa_redirection_key
-        if not br_section or not br_key: return
-        ai_path = dirs['mods'].join('ArchiveInvalidationInvalidated!.bsa')
-        aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
-        if ai_path.exists() and ai_path.mtime > aiBsaMTime:
-            ai_path.mtime = aiBsaMTime
-        # check if BSA redirection is active
-        sArchives = self.getSetting(br_section, br_key, u'')
-        is_bsa_redirection_active = any(x for x in sArchives.split(u',')
-            if x.strip().lower() in self.bsaRedirectors)
-        if doRedirect == is_bsa_redirection_active:
-            return
-        if doRedirect and not ai_path.exists():
-            source = dirs[u'templates'].join(
-                bush.game.template_dir, u'ArchiveInvalidationInvalidated!.bsa')
-            source.mtime = aiBsaMTime
-            try:
-                env.shellCopy({source: ai_path}, allow_undo=True, auto_rename=True)
-            except (PermissionError, CancelError, SkipError):
-                return
-        sArchives = self.getSetting(br_section, br_key, u'')
-        #--Strip existing redirectors out
-        archives_ = [x.strip() for x in sArchives.split(u',') if
-                     x.strip().lower() not in self.bsaRedirectors]
-        #--Add redirector back in?
-        if doRedirect:
-            archives_.insert(0, u'ArchiveInvalidationInvalidated!.bsa')
-        sArchives = u', '.join(archives_)
-        self.saveSetting(u'Archive',u'sArchiveList',sArchives)

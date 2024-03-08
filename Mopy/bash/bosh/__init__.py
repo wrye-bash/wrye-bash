@@ -30,6 +30,7 @@ import os
 import pickle
 import re
 import sys
+import time
 from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable, Callable
 from dataclasses import dataclass, field
@@ -937,9 +938,9 @@ class ModInfo(FileInfo):
             to all strings files. They must match the format returned by
             _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
-        lang = oblivionIni.get_ini_language()
+        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
         bsa_infos = self._find_string_bsas(cached_ini_info)
-        for assetPath in self._string_files_paths(lang):
+        for assetPath in self._string_files_paths(i_lang):
             # Check loose files first
             if assetPath.lower() in ci_cached_strings_paths:
                 continue
@@ -1078,7 +1079,7 @@ def BestIniFile(abs_ini_path):
     if game_ini:
         return game_ini
     inferred_ini_type, detected_encoding = get_ini_type_and_encoding(
-        abs_ini_path)
+        abs_ini_path, consider_obse_inis=bush.game.Ini.has_obse_inis)
     return inferred_ini_type(abs_ini_path, detected_encoding)
 
 def best_ini_files(abs_ini_paths):
@@ -1098,7 +1099,8 @@ def best_ini_files(abs_ini_paths):
             found_types.add(IniFileInfo)
             continue
         try:
-            detected_type, detected_enc = get_ini_type_and_encoding(aip)
+            detected_type, detected_enc = get_ini_type_and_encoding(aip,
+                consider_obse_inis=bush.game.Ini.has_obse_inis)
         except FailedIniInferError:
             # Come back to this later using the found types
             ambigous_paths.add(aip)
@@ -1112,7 +1114,8 @@ def best_ini_files(abs_ini_paths):
         single_found_type = next(iter(found_types))
     for aip in ambigous_paths:
         detected_type, detected_enc = get_ini_type_and_encoding(aip,
-            fallback_type=single_found_type)
+            fallback_type=single_found_type,
+            consider_obse_inis=bush.game.Ini.has_obse_inis)
         ret[aip] = detected_type(aip, detected_enc)
     return ret
 
@@ -1856,7 +1859,8 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
     :param fullpath: Full path to the INI file to wrap
     :param load_cache: Dummy param used in INIInfos.new_info factory call
     :param kwargs: Cached ghost status information, ignored for INIs"""
-    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath)
+    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
+        consider_obse_inis=bush.game.Ini.has_obse_inis)
     ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
                      else INIInfo)
     return ini_info_type(fullpath, detected_encoding)
@@ -3551,12 +3555,48 @@ class BSAInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')
 
+    # BSA Redirection ---------------------------------------------------------
+    _aii_name = 'ArchiveInvalidationInvalidated!.bsa'
+    _bsa_redirectors = {_aii_name.lower(), '..\\obmm\\bsaredirection.bsa'}
+
     @staticmethod
     def remove_invalidation_file():
         """Removes ArchiveInvalidation.txt, if it exists in the game folder.
         This is used when disabling other solutions to the Archive Invalidation
         problem prior to enabling WB's BSA Redirection."""
-        dirs[u'app'].join(u'ArchiveInvalidation.txt').remove()
+        dirs['app'].join('ArchiveInvalidation.txt').remove()
+
+    def set_bsa_redirection(self, *, do_redirect: bool):
+        """Activate or deactivate BSA redirection - game ini must exist!"""
+        if oblivionIni.isCorrupted: return
+        br_section, br_key = bush.game.Ini.bsa_redirection_key
+        if not br_section or not br_key: return
+        aii_bsa = self.get(self._aii_name)
+        aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
+        if aii_bsa and aii_bsa.ftime > aiBsaMTime:
+            aii_bsa.setmtime(aiBsaMTime)
+        # check if BSA redirection is active
+        sArchives = oblivionIni.getSetting(br_section, br_key, '')
+        is_bsa_redirection_active = any(x for x in sArchives.split(',')
+            if x.strip().lower() in self._bsa_redirectors)
+        if do_redirect == is_bsa_redirection_active:
+            return
+        if do_redirect and not aii_bsa:
+            source = dirs['templates'].join(
+                bush.game.template_dir, self._aii_name)
+            source.mtime = aiBsaMTime
+            try:
+                env.shellCopy({source: self.store_dir.join(self._aii_name)},
+                    allow_undo=True, auto_rename=True)
+            except (PermissionError, CancelError, SkipError):
+                return
+        # Strip any existing redirectors out, then add our own
+        bsa_archs = [x_s for x in sArchives.split(',') if
+                     (x_s := x.strip()).lower() not in self._bsa_redirectors]
+        if do_redirect:
+            bsa_archs.insert(0, self._aii_name)
+        sArchives = ', '.join(bsa_archs)
+        oblivionIni.saveSetting('Archive', 'sArchiveList', sArchives)
 
 #------------------------------------------------------------------------------
 class ScreenInfos(_AFileInfos):

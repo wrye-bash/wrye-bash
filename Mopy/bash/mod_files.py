@@ -225,13 +225,13 @@ class ModFile(object):
             stringsProgress = SubProgress(# Use 10% of progress bar for strings
                 progress, 0, 0.1)
             from . import bosh
-            lang = bosh.oblivionIni.get_ini_language()
-            stringsPaths = self.fileInfo.getStringsPaths(lang)
+            i_lang = bosh.oblivionIni.get_ini_language(
+                bush.game.Ini.default_game_lang)
+            stringsPaths = self.fileInfo.getStringsPaths(i_lang)
             if stringsPaths: stringsProgress.setFull(len(stringsPaths))
             for i, path in enumerate(stringsPaths):
-                self.strings.loadFile(path,
-                                      SubProgress(stringsProgress, i, i + 1),
-                                      lang)
+                self.strings.loadFile(
+                    path, SubProgress(stringsProgress, i, i + 1), i_lang)
                 stringsProgress(i)
             ins.setStringTable(self.strings)
             subProgress = SubProgress(progress, 0.1, 1.0)

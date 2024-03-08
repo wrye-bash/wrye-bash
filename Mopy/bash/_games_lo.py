@@ -699,6 +699,7 @@ class INIGame(LoGame):
     @staticmethod
     def _mk_ini(ini_fpath):
         """Creates a new IniFile from the specified bolt.Path object."""
+        # We don't support OBSE INIs here, only regular IniFile objects
         ini_type, ini_encoding = get_ini_type_and_encoding(ini_fpath)
         return ini_type(ini_fpath, ini_encoding)
 
