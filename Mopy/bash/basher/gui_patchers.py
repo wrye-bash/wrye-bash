@@ -706,7 +706,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             def _check(self): return self.index == tweak.chosen
             def Execute(self): _self.tweak_choice(self.index, tweakIndex)
         class _ValueLinkCustom(_ValueLink):
-            def Execute(self): _self.tweak_custom_choice(self.index,tweakIndex)
+            def Execute(self):
+                _self.tweak_custom_choice(self.index, tweakIndex)
         for index, itm_txt in enumerate(choiceLabels):
             if itm_txt == '----':
                 links.append_link(SeparatorLink())
@@ -740,14 +741,17 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 ##: Mirrors chosen_eids, but all this is hacky - we should
                 # enforce that keys for settings tweaks *must* be tuples and
                 # then get rid of this
-                key_display = u'\n\n' + tweak.tweak_key[i] if isinstance(
+                key_display = tweak.tweak_key[i] if isinstance(
                     tweak.tweak_key, tuple) else tweak.tweak_key
+                default_tweak_fmt = ' ' + _('(Default: %(default_tweak_val)s)')
             else:
-                key_display = u''
+                key_display = ''
+                default_tweak_fmt = _('Default: %(default_tweak_val)s')
+            default_tweak_fmt %= {'default_tweak_val': v}
             if isinstance(v, float):
-                msg = (_('Enter the desired custom tweak value.') + '\n\n' + _(
-                    'Note: A floating point number is expected here.'))
-                msg = f'{msg}{key_display}'
+                msg = (f'{_('Enter the desired custom tweak value.')}\n\n'
+                       f'{_('Note: A floating point number is expected '
+                            'here.')}\n\n{key_display}{default_tweak_fmt}')
                 while new is None: # keep going until user entered valid float
                     new = askText(self.gConfigPanel, msg,
                         title=_('%(tweak_title)s - Custom Tweak Value') % {
@@ -767,7 +771,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                                       'tweak_title': tweak.tweak_name})
                         new = None # invalid float, try again
             elif isinstance(v, int):
-                msg = _('Enter the desired custom tweak value.') + key_display
+                msg = (f"{_('Enter the desired custom tweak value.')}\n\n"
+                       f"{key_display}{default_tweak_fmt}")
                 new = askNumber(self.gConfigPanel, msg, prompt=_('Value'),
                     title=_('%(tweak_title)s - Custom Tweak Value') % {
                         'tweak_title': tweak.tweak_name},
@@ -777,7 +782,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     return
                 values.append(new)
             elif isinstance(v, str):
-                msg = _(u'Enter the desired custom tweak text.') + key_display
+                msg = (f"{_('Enter the desired custom tweak text.')}\n\n"
+                       f"{key_display}{default_tweak_fmt}")
                 # Don't strip - at least for Tweak Names, custom choices with
                 # trailing whitespace are necessary (e.g. consider a custom
                 # choice '%s* ', which renames 'Fireball' to 'D* Fireball')
