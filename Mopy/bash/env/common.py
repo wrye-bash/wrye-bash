@@ -72,7 +72,7 @@ def _find_legendary_games():
     found_lgd_games = {}
     # Look at the XDG location first (Linux only, won't be defined on all Linux
     # systems and obviously not on Windows)
-    user_config_path = os.environ.get('XDG_CONFIG_HOME')
+    user_config_path = os.getenv('XDG_CONFIG_HOME')
     if not user_config_path:
         # Use the fallback location (which exists on Windows as well, and so is
         # the only location used there)

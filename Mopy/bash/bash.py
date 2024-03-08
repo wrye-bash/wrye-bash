@@ -30,7 +30,7 @@ import os
 import platform
 import shutil
 import sys
-import textwrap
+import tomllib
 import traceback
 from configparser import ConfigParser
 
@@ -42,6 +42,15 @@ bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
 # The one and only wx
 _wx = None
+_boot_settings_path: bolt.Path | None = None
+
+##: This should probably sit somewhere else. bass?
+# OS conventions-conformant names for WB's user config subdirectory
+_wb_conf_dir_name = {
+    'Darwin': 'com.wrye-bash',
+    'Linux': 'wrye-bash',
+    'Windows': 'WryeBash',
+}
 
 def _early_setup():
     """Executes (very) early setup by changing working directory and installing
@@ -68,6 +77,41 @@ def _early_setup():
     _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
         buffering=1, encoding='utf-8')
     _install_bugdump()
+
+def _parse_boot_settings(curr_os: str):
+    """Parse the per-user config file boot-settings.toml, which is used to
+    store settings we need before we have a chance to set the game, like locale
+    and last chosen game."""
+    # No way to use env for this, we need this to be done before setting
+    # locale, which needs to be done before we import env
+    if not (wcd_name := _wb_conf_dir_name.get(curr_os)):
+        bolt.deprint(f'Early boot config not supported on {platform.system()} '
+                     f'yet')
+        return
+    if xdg_conf_dir := os.getenv('XDG_CONFIG_HOME'):
+        user_config_dir = bolt.GPath(xdg_conf_dir)
+    else:
+        match curr_os:
+            case 'Windows':
+                # Use AppData\Roaming since, conceptually, we'd want these
+                # settings to be shared for all the user's computers (even if
+                # Roaming isn't being used for that)
+                user_config_dir = bolt.GPath(os.environ['APPDATA'])
+            case 'Linux':
+                user_config_dir = bolt.GPath_no_norm(os.path.expanduser(
+                    '~/.config'))
+            case 'Darwin':
+                user_config_dir = bolt.GPath_no_norm(os.path.expanduser(
+                    '~/Library/Application Support'))
+            case _: return # Impossible, checked above
+    global _boot_settings_path
+    _boot_settings_path = user_config_dir.join(wcd_name, 'boot-settings.toml')
+    try:
+        with open(_boot_settings_path, 'rb') as ins:
+            parsed_boot_settings = tomllib.load(ins)
+    except FileNotFoundError:
+        parsed_boot_settings = {}
+    bass.boot_settings.update(parsed_boot_settings.get('Boot', {}))
 
 def _install_bugdump():
     """Replaces sys.stdout/sys.stderr with tees that copy the output into the
@@ -394,13 +438,16 @@ def main(opts):
                           f"the moment. If you know what you're doing, use "
                           f"the --unsupported switch to bypass this raise "
                           f"statement.")
-    # Change working dir and logging
+    # Change working dir and setup logging
     _early_setup()
-    # wx is needed to initialize locale, so that's first
+    # Parsing the boot settings needs logging to be available and, in turn, is
+    # needed for initializing locale
+    _parse_boot_settings(curr_os)
+    # wx is also needed to initialize locale
     wxver = _import_wx()
     try:
-        # Next, initialize locale so that we can show a translated error
-        # message if WB crashes
+        # We're now ready to initialize locale. That way, we can show a
+        # translated error message if WB crashes
         from . import localize
         wx_locale = localize.setup_locale(opts.language, _wx)
         if not bass.is_standalone and (not _rightWxVersion(wxver) or

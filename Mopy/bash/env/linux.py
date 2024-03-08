@@ -109,7 +109,7 @@ def _get_xdg_path(xdg_var: str) -> _Path | None:
     set, fall back to the corresponding legacy path. If that *also* doesn't
     exist, return None - user clearly has a weird, nonstandard Linux system and
     will have to use CLI or bash.ini to set the path."""
-    if xdg_val := os.environ.get(xdg_var):
+    if xdg_val := os.getenv(xdg_var):
         return _GPath(xdg_val)
     home_path = os.path.expanduser('~')
     # For this mapping, see:
@@ -196,7 +196,7 @@ def get_personal_path(submod):
 
 def get_local_app_data_path(submod):
     if sys.platform == 'darwin':
-        return _GPath(f'{os.path.expanduser("~")}/.local/share'), _(
+        return _GPath(os.path.expanduser("~/.local/share")), _(
             'Fallback to ~/.local/share)')
     if submod.St.steam_ids:
         # Let it blow if this is None - don't create random folders on Linux

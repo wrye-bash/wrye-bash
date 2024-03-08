@@ -62,11 +62,12 @@ def setup_locale(cli_lang, _wx):
     :param cli_lang: The language the user specified on the command line, or
         None.
     :return: The wx.Locale object we ended up using."""
+    target_lang = cli_lang or bass.boot_settings.get('locale')
     # Set the wx language - otherwise we will crash when loading any images
-    cli_target = cli_lang and _wx.Locale.FindLanguageInfo(cli_lang)
-    if cli_target:
+    chosen_wx_lang = target_lang and _wx.Locale.FindLanguageInfo(target_lang)
+    if chosen_wx_lang:
         # The user specified a language that wx recognizes
-        target_name = cli_target.CanonicalName
+        target_name = chosen_wx_lang.CanonicalName
     else:
         # Fall back on the default language
         try:
@@ -78,7 +79,7 @@ def setup_locale(cli_lang, _wx):
             bolt.deprint('getdefaultlocale no longer exists, this will '
                          'probably break on Windows now')
             language_code, enc = locale.getlocale()
-        bolt.deprint(f'{cli_lang=} - {cli_target=} - falling back to '
+        bolt.deprint(f'{cli_lang=} - {target_lang=} - falling back to '
                      f'({language_code}, {enc}) from default locale')
         lang_info = _wx.Locale.FindLanguageInfo(language_code)
         target_name = lang_info and lang_info.CanonicalName
