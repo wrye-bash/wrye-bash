@@ -912,6 +912,9 @@ class AFallout4GameInfo(PatchGame):
         'GmstTweak_Visuals_TerminalDisplayRate',
         'GmstTweak_Warning_ExteriorDistanceToHostiles',
         'GmstTweak_Warning_InteriorDistanceToHostiles',
+        'GmstTweak_Combat_BlockTimeMaximum',
+        'GmstTweak_Combat_BlockTimeAverage',
+        'GmstTweak_Combat_BlockTimeMinimum',
     }
 
     top_groups = [

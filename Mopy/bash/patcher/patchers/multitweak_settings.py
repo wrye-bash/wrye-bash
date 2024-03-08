@@ -20,8 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module contains oblivion multitweak item patcher classes that belong
-to the Settings Multitweaker - as well as the tweaker itself."""
+"""This module contains tweak classes that belong to Tweak Settings and so
+alter GMST and GLOB records - as well as the tweaker itself."""
 from __future__ import annotations
 
 from .base import CustomChoiceTweak, MultiTweaker, MultiTweakItem
@@ -1988,6 +1988,50 @@ class GmstTweak_Actor_MasterCostMultiplier(_AGmstCCTweak):
                      ('x5',   5),
                      ('x10', 10)]
     default_choice = 'x5'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeAverage(_AGmstCCTweak):
+    tweak_name = _('Combat: Block Time (Average)')
+    tweak_tip = _('The average time for which NPCs will keep their shield '
+                  'raised or block with their weapon during combat.')
+    tweak_key = ('fCombatBlockTimeMid',)
+    tweak_choices = [(_('2.5 Seconds'), 1.5),
+                     (_('4 Seconds'),   4.0),
+                     (_('8 Seconds'),   8.0),
+                     (_('12 Seconds'), 12.0),
+                     (_('16 Seconds'), 16.0)]
+    default_choice = _('8 Seconds')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeMaximum(_AGmstCCSecondsTweak):
+    tweak_name = _('Combat: Block Time (Maximum)')
+    tweak_tip = _('The maximum time for which NPCs will keep their shield '
+                  'raised or block with their weapon during combat.')
+    tweak_key = ('fCombatBlockTimeMax',)
+    tweak_choices = [(_('5 Seconds'),      5.0),
+                     (_('10 Seconds'),    10.0),
+                     (_('16 Seconds'),    16.0),
+                     (_('1 Minute'),      60.0),
+                     (_('Unlimited'),  10000.0)]
+    default_choice = _('16 Seconds')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeMaximum_Tes5(
+    GmstTweak_Combat_BlockTimeMaximum):
+    default_choice = _('Unlimited') # Nice one, Bethesda
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCTweak):
+    tweak_name = _('Combat: Block Time (Minimum)')
+    tweak_tip = _('The minimum time for which NPCs will keep their shield '
+                  'raised or block with their weapon during combat.')
+    tweak_key = ('fCombatBlockTimeMin',)
+    tweak_choices = [(_('1.5 Seconds'), 1.5),
+                     (_('2 Seconds'),   2.0),
+                     (_('4 Seconds'),   4.0),
+                     (_('8 Seconds'),   8.0),
+                     (_('12 Seconds'), 12.0)]
+    default_choice = _('4 Seconds')
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

@@ -1375,6 +1375,9 @@ class ASkyrimGameInfo(PatchGame):
         'GmstTweak_Combat_SpeakOnHitThreshold',
         'GmstTweak_Combat_MaxFriendHitsInCombat',
         'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
+        'GmstTweak_Combat_BlockTimeMaximum_Tes5',
+        'GmstTweak_Combat_BlockTimeAverage',
+        'GmstTweak_Combat_BlockTimeMinimum',
     }
 
     #--------------------------------------------------------------------------
