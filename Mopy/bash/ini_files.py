@@ -24,6 +24,7 @@
 related formats (e.g. simple TOML files)."""
 from __future__ import annotations
 
+import builtins
 import os
 import re
 from collections import Counter, OrderedDict
@@ -38,6 +39,15 @@ _comment_start_re = re.compile(r'^[^\S\r\n]*[;#][^\S\r\n]*')
 
 # All extensions supported by this parser
 supported_ini_exts = {'.ini', '.cfg', '.toml'}
+
+def _(s: str):
+    """As ini_files has to be used very early during boot for correct case
+    sensitivity handling in INIs, the gettext translation function may not be
+    set up yet."""
+    try:
+        return builtins._(s)
+    except AttributeError:
+        return s # We're being invoked very early in boot
 
 def _to_lower(ini_settings):
     """Transforms dict of dict to LowerDict of LowerDict, respecting

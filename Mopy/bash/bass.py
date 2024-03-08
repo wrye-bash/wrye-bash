@@ -45,9 +45,16 @@ is_standalone = False # whether or not we're on standalone
 dirs: dict[str, Path] = {}
 # settings read from the Mopy/bash.ini file in _parse_bash_ini()
 inisettings = {}
+
 # Settings read from the per-user boot-settings.toml file. Used to house things
 # like locale and last chosen game, which we need before we set the game
-boot_settings = {}
+boot_settings = defaultdict(dict)
+boot_settings_defaults = {
+    'Boot': {
+        'locale': '',
+        'last_game': '',
+    },
+}
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !

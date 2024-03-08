@@ -30,7 +30,6 @@ import os
 import platform
 import shutil
 import sys
-import tomllib
 import traceback
 
 # These local imports have to be carefully checked to make sure they don't pull
@@ -113,12 +112,25 @@ def _parse_boot_settings(curr_os: str):
             case _: return # Impossible, checked above
     global _boot_settings_path
     _boot_settings_path = user_config_dir.join(wcd_name, 'boot-settings.toml')
+    # We're in no shape to show an error to the user yet, so this import is
+    # dangerous. Guard against it breaking boot, so that we might at least get
+    # to the point where we can show the user a proper error message about this
+    # problem once it reoccurs at the next ini_files import
     try:
-        with open(_boot_settings_path, 'rb') as ins:
-            parsed_boot_settings = tomllib.load(ins)
+        from . import ini_files
+    except Exception as e:
+        bolt.deprint(f'ini_files.py failed to import, something is very '
+                     f'broken: {e}', traceback=True)
+        return
+    bs_file = ini_files.TomlFile(_boot_settings_path, ini_encoding='utf-8')
+    try:
+        for bs_section_key, bs_section in bass.boot_settings_defaults.items():
+            bs_dict = bass.boot_settings[bs_section_key]
+            for bs_setting_key, bs_setting_default in bs_section.items():
+                 bs_dict[bs_setting_key] = bs_file.getSetting(
+                     bs_section_key, bs_setting_key, bs_setting_default)
     except FileNotFoundError:
-        parsed_boot_settings = {}
-    bass.boot_settings.update(parsed_boot_settings.get('Boot', {}))
+        pass # That's fine, just means no boot settings have been saved yet
 
 def _install_bugdump():
     """Replaces sys.stdout/sys.stderr with tees that copy the output into the
