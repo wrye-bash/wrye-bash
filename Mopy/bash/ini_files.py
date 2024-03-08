@@ -351,8 +351,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         via TempFile or similar API."""
         return open(temp_path, 'w', encoding=self.out_encoding)
 
-    def target_ini_exists(self, msg=_(
-        u'The target ini must exist to apply a tweak to it.')):
+    def target_ini_exists(self, msg=None):
         return self.abs_path.is_file()
 
     def saveSettings(self, ini_settings, deleted_settings=None):

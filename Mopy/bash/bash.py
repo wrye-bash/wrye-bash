@@ -32,11 +32,18 @@ import shutil
 import sys
 import tomllib
 import traceback
-from configparser import ConfigParser
 
-from . import bass, bolt, exception, wbtemp, wrye_text
+# These local imports have to be carefully checked to make sure they don't pull
+# in anything unexpected, plus there has to be a good reason for them to be up
+# here instead of locally down below (which is preferred, because it vastly
+# decreases the chance of WB going up in flames without a usable error message
+# in case of e.g. a syntax error). Record your justifications here:
+#  - bass: Needed right below here, we need to set is_standalone
+#  - bolt: Needed by almost every method in here - paths, deprint, etc.
+#  - exception and wbtemp: Needed by bolt, so imported anyways - both were
+#                          designed with this in mind
+from . import bass, bolt, exception, wbtemp
 
-# NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
@@ -400,31 +407,34 @@ def _parse_bash_ini(bash_ini_path):
     for v in ini_set.values():
         bass.inisettings.update(v)
     # if bash.ini exists update those settings from there
-    if bash_ini_path is None or not os.path.exists(bash_ini_path):
+    if (bi_path := bolt.GPath(bash_ini_path)) is None or not bi_path.is_file():
         return
-    bash_ini_parser = ConfigParser()
     # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
     # English INI is ASCII)
-    bash_ini_parser.read(bash_ini_path, encoding='utf-8')
-    for section in bash_ini_parser.sections():
-        section_defaults = ini_set.get(section, {})
+    from . import ini_files
+    bash_ini = ini_files.IniFileInfo(bi_path, ini_encoding='utf-8')
+    for ci_section, section_values in bash_ini.get_ci_settings().items():
         section_defaults = {k.lower(): (k, v) for k, v in
-                            section_defaults.items()}
+                            ini_set.get(str(ci_section), {}).items()}
         # retrieving ini settings is case-insensitive - key: lowercase
-        for ini_key_lower, value in bash_ini_parser.items(section):
-            if not value: continue
-            if default := section_defaults.get(ini_key_lower[1:]):
+        for ci_ini_key, value_tup in section_values.items():
+            if not value_tup or not (value := value_tup[0]): continue
+            # [1:] to chop off the leading 's' in e.g. 'sBashModData'
+            ini_dict_key_lo = ci_ini_key[1:].lower()
+            if default := section_defaults.get(ini_dict_key_lo):
                 ini_settings_key, default_value = default
                 if type(default_value) is bool:
-                    value = bash_ini_parser.getboolean(section, ini_key_lower)
+                    # Based on ConfigParser.getboolean's behavior
+                    value = value.lower() in ('1', 'yes', 'true', 'on')
                 else:
                     value = value.strip()
                 bass.inisettings[ini_settings_key] = value
-            elif section == 'Tool Options':
+            elif ci_section == 'Tool Options':
                 ##:(570) provisional - we want to stop specifying tool paths
-                # in the ini but we need some UI for that
-                # stash all settings in here in case they match tool path keys
-                bass.inisettings[ini_key_lower[1:]] = value
+                # in the ini but we need some UI for that.
+                # Stash all settings in here in case they match tool path keys.
+                # Those are queried in lower case
+                bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------
 def main(opts):
@@ -456,6 +466,7 @@ def main(opts):
         if opts.genHtml is not None: ##: we should do this before localization and wx import
             print(_("Generating HTML file from '%(gen_target)s'") % {
                 'gen_target': opts.genHtml})
+            from . import wrye_text
             wrye_text.genHtml(opts.genHtml)
             print(_('Done'))
             return
