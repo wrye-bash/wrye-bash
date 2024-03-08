@@ -222,10 +222,9 @@ class ModFile(object):
         # Check if we need to handle strings
         self.strings.clear()
         if loadStrings and getattr(self.tes4.flags1, 'localized', False):
+            stringsProgress = SubProgress(# Use 10% of progress bar for strings
+                progress, 0, 0.1)
             from . import bosh
-            stringsProgress = SubProgress(progress, 0,
-                                          0.1)  # Use 10% of progress bar
-            # for strings
             lang = bosh.oblivionIni.get_ini_language()
             stringsPaths = self.fileInfo.getStringsPaths(lang)
             if stringsPaths: stringsProgress.setFull(len(stringsPaths))

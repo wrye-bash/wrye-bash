@@ -54,7 +54,7 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons):
               f'\n  - {dir_list}') % {'blocking_plugin_name': modInfo.fn_key}):
             return False
     #--Missing Strings Files?
-    if modInfo.isMissingStrings():
+    if modInfo.fn_key in minfos.missing_strings:
         if not verbose: return False
         from . import oblivionIni
         strings_example = (f'{os.path.join("Strings", modInfo.fn_key.fn_body)}'

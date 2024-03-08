@@ -836,15 +836,13 @@ class ModInfo(FileInfo):
         exist."""
         return self.fn_key.fn_body + '.ini'
 
-    def _string_files_paths(self, lang):
-        # type: (str) -> Iterable[str]
-        str_f_body = self.fn_key.fn_body
-        str_f_ext = self.get_extension()
+    def _string_files_paths(self, lang: str) -> Iterable[str]:
+        fmt_dict = {'body': self.fn_key.fn_body, 'ext': self.get_extension(),
+                    'language': lang}
         for str_format in bush.game.Esp.stringsFiles:
-            yield os.path.join(u'Strings', str_format % {
-                u'body': str_f_body, u'ext': str_f_ext, u'language': lang})
+            yield os.path.join('Strings', str_format % fmt_dict)
 
-    def getStringsPaths(self, lang=u'English'):
+    def getStringsPaths(self, lang):
         """If Strings Files are available as loose files, just point to
         those, otherwise extract needed files from BSA if needed."""
         baseDirJoin = self.info_dir.join
@@ -930,27 +928,20 @@ class ModInfo(FileInfo):
         ret_bsas.sort(key=lambda b: not b.fn_key.lower().startswith(plugin_prefix))
         return ret_bsas
 
-    def isMissingStrings(self, cached_ini_info=(None, None, None),
-            ci_cached_strings_paths=None):
+    def isMissingStrings(self, cached_ini_info, ci_cached_strings_paths):
         """True if the mod says it has .STRINGS files, but the files are
         missing.
 
         :param cached_ini_info: Passed to get_bsa_lo, see there for docs.
-        :param ci_cached_strings_paths: An optional set of lower-case versions
-            of the paths to all strings files. They must match the format
-            returned by _string_files_paths (i.e. starting with 'strings/'. If
-            specified, no stat calls will occur to determine if loose strings
-            files exist."""
+        :param ci_cached_strings_paths: Set of lower-case versions of the paths
+            to all strings files. They must match the format returned by
+            _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
         lang = oblivionIni.get_ini_language()
         bsa_infos = self._find_string_bsas(cached_ini_info)
-        info_dir_join = self.info_dir.join
         for assetPath in self._string_files_paths(lang):
             # Check loose files first
-            if ci_cached_strings_paths is not None:
-                if assetPath.lower() in ci_cached_strings_paths:
-                    continue
-            elif info_dir_join(assetPath).is_file():
+            if assetPath.lower() in ci_cached_strings_paths:
                 continue
             # Check in BSA's next
             for bsa_info in bsa_infos:
@@ -2421,7 +2412,7 @@ class ModInfos(TableFileInfos):
                 cached_ini_info=cached_ini_info,
                 ci_cached_strings_paths=ci_cached_strings_paths)}
         self.new_missing_strings = self.missing_strings - oldBad
-        return self.new_missing_strings ^ oldBad
+        return self.missing_strings ^ oldBad
 
     def _refresh_active_no_cp1252(self):
         """Refresh which filenames cannot be saved to plugins.txt - active
@@ -3102,38 +3093,27 @@ class ModInfos(TableFileInfos):
     ##: This will need caching in the future - invalidation will be *hard*.
     # Prerequisite for a fully functional BSA tab though (see #233), especially
     # for Morrowind
-    def get_bsa_lo(self, for_plugins=None, cached_ini_info=(None, None, None)):
+    def get_bsa_lo(self, for_plugins, cached_ini_info=None):
         """Returns the full BSA load order for this game, mapping each BSA to
         the position of its activator mods. Also returns a dict mapping each
         BSA to a string describing the reason it was loaded. If a mod activates
         more than one bsa, their relative order is undefined.
 
-        :param for_plugins: If not None, only returns plugin-name-specific BSAs
-            for those plugins. Otherwise, returns it for all plugins.
+        :param for_plugins: the plugins to return plugin-name-specific BSAs for
         :param cached_ini_info: Can contain the result of calling
             get_bsas_from_inis, in which case calling that (fairly expensive)
             method will be skipped."""
-        fetch_ini_info = any(c is None for c in cached_ini_info)
-        if fetch_ini_info:
-            # At least one part of the cached INI info we were passed in is
-            # None, which means we need to fetch the info from disk
-            available_bsas, bsa_lo, bsa_cause = self.get_bsas_from_inis()
-        else:
-            # We can use the cached INI info
+        try:
             available_bsas, bsa_lo, bsa_cause = cached_ini_info
+        except TypeError: # cached_ini_info is None - fetch it from disk
+            available_bsas, bsa_lo, bsa_cause = self.get_bsas_from_inis()
         # BSAs loaded based on plugin name load in the middle of the pack
-        if for_plugins is None: for_plugins = list(self)
         for i, p in enumerate(for_plugins):
             for binf in self[p].mod_bsas(available_bsas):
                 bsa_lo[binf] = i
                 bsa_cause[binf] = p
                 del available_bsas[binf.fn_key]
         return bsa_lo, bsa_cause
-
-    def get_active_bsas(self):
-        """Returns the load order of all active BSAs. See get_bsa_lo for more
-        information."""
-        return self.get_bsa_lo(for_plugins=load_order.cached_active_tuple())
 
     @staticmethod
     def plugin_wildcard(file_str=_('Plugins')):

@@ -40,7 +40,7 @@ from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
     best_ini_files, data_tracking_stores, RefrData, Corrupted
-from .. import archives, bass, bolt, bush, env
+from .. import archives, bass, bolt, bush, env, load_order
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
 from ..bass import Store
@@ -3094,8 +3094,9 @@ class InstallersData(DataStore):
         include_bsas = bass.settings[
             u'bash.installers.conflictsReport.showBSAConflicts']
         ##: Add support for showing inactive & excluding lower BSAs
-        if include_bsas:
-            active_bsas, bsa_cause = modInfos.get_active_bsas()
+        if include_bsas: # get the load order of all active BSAs
+            active_bsas, bsa_cause = modInfos.get_bsa_lo(
+                load_order.cached_active_tuple())
         else:
             active_bsas, bsa_cause = None, None
         lower_loose, higher_loose, lower_bsa, higher_bsa = self.find_conflicts(
