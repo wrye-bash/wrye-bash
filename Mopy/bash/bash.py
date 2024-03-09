@@ -719,13 +719,16 @@ def _import_bush_and_set_game(opts):
                 'manually.') % {'cli_game_detect': '-o',
                                 'bash_config_file': 'bash.ini'})
             return None
-        retCode = _select_game_popup(game_infos)
+        retCode = _select_game_popup(game_infos,
+            last_used_game=bass.boot_settings['Boot']['last_game'])
         if not retCode:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
-        # Add the game to the command line, so we use it if we restart
+        # Add the game to the command line, so we use it if we restart. Also,
+        # default to this game the next time we launch the game select popup
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
+        bass.boot_settings['Boot']['last_game'] = gname
         bush.detect_and_set_game(opts.oblivionPath, gname, gm_path)
     return bush.game
 
@@ -809,7 +812,7 @@ class _AppReturnCode(object):
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _select_game_popup(game_infos):
+def _select_game_popup(game_infos, last_used_game: str | None):
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
     from .balt import Resources
@@ -850,9 +853,12 @@ def _select_game_popup(game_infos):
             self._launch_button = ImageButton(self, launch_img,
                 btn_label=_('Launch'))
             self._launch_button.on_clicked.subscribe(self._handle_launch)
-            # Start out with an empty search and the alphabetically first game
-            # selected
-            self._perform_search(search_str=u'')
+            # Start out with an empty search and the last-used game selected,
+            # if any - otherwise, use the one that comes first alphabetically
+            initial_choice = None
+            if last_used_game and last_used_game in self._sorted_games:
+                initial_choice = last_used_game
+            self._perform_search(search_str='', choice_override=initial_choice)
             VLayout(item_expand=True, border=6, spacing=12, items=[
                 Label(self, _(u'Please choose a game to manage.'),
                       alignment=TextAlignment.CENTER),
@@ -890,8 +896,9 @@ def _select_game_popup(game_infos):
                         return p
                 return None # Should never happen
 
-        def _perform_search(self, search_str):
-            prev_choice = self._game_dropdown.get_value()
+        def _perform_search(self, search_str, *,
+                choice_override: str | None =None):
+            prev_choice = choice_override or self._game_dropdown.get_value()
             search_lower = search_str.strip().lower()
             filtered_games = [g for g in self._sorted_games
                               if search_lower in g.lower()]
