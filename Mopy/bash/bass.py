@@ -23,7 +23,7 @@
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
-
+import copy
 from collections import defaultdict
 from enum import Enum
 from typing import TYPE_CHECKING, NewType
@@ -48,13 +48,13 @@ inisettings = {}
 
 # Settings read from the per-user boot-settings.toml file. Used to house things
 # like locale and last chosen game, which we need before we set the game
-boot_settings = defaultdict(dict)
 boot_settings_defaults = {
     'Boot': {
         'locale': None,
         'last_game': None,
     },
 }
+boot_settings = copy.deepcopy(boot_settings_defaults)
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !

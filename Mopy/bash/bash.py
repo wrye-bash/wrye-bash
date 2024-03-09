@@ -283,14 +283,21 @@ def exit_cleanup():
                            "dialog."),
         },
     }
+    bs_defaults = bass.boot_settings_defaults
     # Write out only the boot settings that have been changed from their
     # defaults - add in comments as well
-    _boot_settings.saveSettings({
-        bs_sect: {bs_key: f'{bs_val} # {bs_comments[bs_sect][bs_key]}'
+    changed_settings = {
+        bs_sect: {bs_key: (bs_val, bs_comments.get(bs_sect, {}).get(bs_key))
                   for bs_key, bs_val in bass.boot_settings[bs_sect].items()
-                  if bs_val != bass.boot_settings_defaults[bs_sect][bs_key]}
-        for bs_sect in bass.boot_settings
-        if bs_sect in bass.boot_settings_defaults})
+                  if bs_val != bs_defaults[bs_sect][bs_key]}
+        for bs_sect in bass.boot_settings if bs_sect in bs_defaults
+    }
+    # Don't create the folder or file if no settings have been changed yet
+    if changed_settings and any(map(bool, changed_settings.values())):
+        _boot_settings.abs_path.head.makedirs()
+        _boot_settings.saveSettings(changed_settings)
+    # Do this after writing out boot-settings.toml, because ini_files uses
+    # wbtemp for the atomic write
     wbtemp.cleanup_temp()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args

@@ -343,7 +343,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                             "header (e.g. '[General]'), but it does not.")
                     isCorrupted = msg % {'tweak_ini': tweakPath}
                 sectionSettings[maSetting.group(1)] = (
-                    maSetting.group(2).strip(), i)
+                    self._parse_value(maSetting.group(2)), i)
             elif maDeleted:
                 if not section: continue
                 ci_deleted_settings[section][maDeleted.group(1)] = i
@@ -362,7 +362,8 @@ class IniFileInfo(AIniInfo, AFileInfo):
 
     def saveSettings(self, ini_settings, deleted_settings=None):
         """Apply dictionary of settings to ini file, latter must exist!
-        Values in settings dictionary must be actual (setting, value) pairs."""
+        Values in settings dictionary must be actual (setting, value) pairs.
+        'value' may be a tuple of (value, comment), which specifies an """
         ini_settings = _to_lower(ini_settings)
         deleted_settings = LowerDict((x, {CIstr(u) for u in y}) for x, y in
                                      (deleted_settings or {}).items())
@@ -377,7 +378,13 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     if section in ini_settings: del ini_settings[section]
                     if not sectionSettings: return
                     for sett, val in sectionSettings.items():
-                        tmp_ini.write(f'{self._fmt_setting(sett, val)}\n')
+                        # If it's a tuple, we want to add a comment too
+                        cmt = ''
+                        if isinstance(val, tuple):
+                            cmt = f' {self._comment_char} {val[1]}'
+                            val = val[0]
+                        print(sett, val, cmt)
+                        tmp_ini.write(f'{self._fmt_setting(sett, val)}{cmt}\n')
                     tmp_ini.write('\n')
                 for line in self.read_ini_content(as_unicode=True,
                         missing_ok=True): # We may have to create the file
@@ -396,6 +403,12 @@ class IniFileInfo(AIniInfo, AFileInfo):
                             setting = match_set_del.group(1)
                             if setting in sectionSettings:
                                 value = sectionSettings[setting]
+                                # If we're given a specific comment, use that
+                                # (and format it nicely)
+                                if isinstance(value, tuple):
+                                    comment = (f' {self._comment_char} '
+                                               f'{value[1]}')
+                                    value = value[0]
                                 line = self._fmt_setting(setting, value)
                                 if comment:
                                     line += comment # preserve inline comments
@@ -419,6 +432,11 @@ class IniFileInfo(AIniInfo, AFileInfo):
         format."""
         return f'{setting}={value}'
 
+    def _parse_value(self, value):
+        """Return a parsed version of the specified setting value. Just strips
+        whitespace by default."""
+        return value.strip()
+
     def applyTweakFile(self, tweak_lines):
         """Read ini tweak file and apply its settings to self (the target ini).
         """
@@ -436,8 +454,8 @@ class IniFileInfo(AIniInfo, AFileInfo):
             if maSection:
                 section = maSection.group(1)
             elif maSetting:
-                ini_settings[section][maSetting.group(1)] = maSetting.group(
-                    2).strip()
+                ini_settings[section][maSetting.group(1)] = self._parse_value(
+                    maSetting.group(2))
             elif maDeleted:
                 deleted_settings[section].add(CIstr(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
@@ -475,17 +493,55 @@ class TomlFile(IniFileInfo):
     """A TOML file. Encoding is always UTF-8 (demanded by spec). Note that
     ini_files only supports INI-like TOML files right now. That means TOML
     files must be tables of key-value pairs and the values may not be arrays or
-    inline tables."""
+    inline tables. Multi-line strings, escapes inside strings and any of the
+    weird date/time values are also not supported yet."""
     out_encoding = 'utf-8' # see above
     reComment = re.compile('#.*')
-    reDeletedSetting = re.compile(r'^[^\S\r\n]*#-[^\S\r\n]*(\w.*?)[^\S\r\n]*'
-                                  r'(#.*$|=.*$|$)')
-    reSetting = re.compile(r'^[^\S\r\n]*(.+?)[^\S\r\n]*=[^\S\r\n]*(.+?)'
-                           r'([^\S\r\n]*#.*)?$')
+    reSetting = re.compile(
+        r'^[^\S\r\n]*(.+?)' # Key on the left side
+        r'[^\S\r\n]*=[^\S\r\n]*(' # Equal sign
+        r'"[^"]+?"|' # Strings
+        r"'[^']+?'|" # Literal strings
+        r'[+-]?[\d_]+|' # Ints
+        r'0b[01_]+|' # Binary ints
+        r'0o[01234567_]+|' # Octal ints
+        r'0x[\dabcdefABCDEF_]+|' # Hexadecimal ints
+        r'[+-]?[\d_]+(?:\.[\d_]+)?(?:[eE][+-]?[\d_]+)?|' # Floats
+        r'[+-]?(?:nan|inf)|' # Special floats
+        r'true|false' # Booleans (lowercase only)
+        r')([^\S\r\n]*#.*)?$') # Inline comment
+    # Ignore this abomination of a regex, it's created by inserting '#-' right
+    # before the key-matching group in the above regex (the (.+?) part)
+    reDeletedSetting = re.compile(
+r"""^[^\S\r\n]*#-(.+?)[^\S\r\n]*=[^\S\r\n]*("[^"]+?"|'[^']+?'|[+-]?[\d_]+|
+0b[01_]+|0o[01234567_]+|0x[\dabcdefABCDEF_]+|[+-]?[\d_]+(?:\.[\d_]+)?
+(?:[eE][+-]?[\d_]+)?|[+-]?(?:nan|inf)|true|false)([^\S\r\n]*#.*)?$""")
     _comment_char = '#'
 
     def _fmt_setting(self, setting, value):
+        if isinstance(value, str):
+            value = f"'{value}'" # Prefer formatting with literal strings
+        elif isinstance(value, (int, float)):
+            value = str(value)
+        elif isinstance(value, bool):
+            value = str(value).lower()
         return f'{setting} = {value}'
+
+    def _parse_value(self, value):
+        if value.startswith(('"', "'")):
+            return value[1:-1] # Drop the string's quotes
+        try:
+            # Valid base 10 ints pass float() too, so this must go first
+            return int(value, base=0)
+        except ValueError:
+            pass
+        try:
+            return float(value)
+        except ValueError:
+            pass
+        if value in ('true', 'false'):
+            return value == 'true'
+        raise ValueError(f"Cannot parse TOML value '{value}' (yet)")
 
 class OBSEIniFile(IniFileInfo):
     """OBSE Configuration ini file.  Minimal support provided, only can
@@ -543,7 +599,7 @@ class OBSEIniFile(IniFileInfo):
                 ma_obse, section_key, _fmt = self._parse_obse_line(stripped)
                 if ma_obse:
                     settings_dict[section_key][ma_obse.group(1)] = (
-                        ma_obse.group(2).strip(), i)
+                        self._parse_value(ma_obse.group(2)), i)
         return ini_settings, deleted_settings, False
 
     def analyse_tweak(self, tweak_file):
@@ -620,6 +676,10 @@ class OBSEIniFile(IniFileInfo):
                             if isinstance(value, bytes):
                                 raise RuntimeError('Do not pass bytes into '
                                                    'saveSettings!')
+                            if isinstance(value, tuple):
+                                raise RuntimeError(
+                                    'OBSE INIs do not support writing inline '
+                                    'comments yet')
                             if isinstance(value, str) and value[-1:] == '\n':
                                 # Handle all newlines, this removes just \n too
                                 line = value.rstrip('\n\r')
