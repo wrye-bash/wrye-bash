@@ -23,6 +23,7 @@
 """This module starts the Wrye Bash application in console mode. Basically,
 it runs some initialization functions and then starts the main application
 loop."""
+from __future__ import annotations
 
 import atexit
 import locale
@@ -48,7 +49,8 @@ bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
 # The one and only wx
 _wx = None
-_boot_settings_path: bolt.Path | None = None
+# The boot settings file, tracked as a TomlFile
+_boot_settings = None
 
 ##: This should probably sit somewhere else. bass?
 # OS conventions-conformant names for WB's user config subdirectory
@@ -110,8 +112,7 @@ def _parse_boot_settings(curr_os: str):
                 user_config_dir = bolt.GPath_no_norm(os.path.expanduser(
                     '~/Library/Application Support'))
             case _: return # Impossible, checked above
-    global _boot_settings_path
-    _boot_settings_path = user_config_dir.join(wcd_name, 'boot-settings.toml')
+    boot_settings_path = user_config_dir.join(wcd_name, 'boot-settings.toml')
     # We're in no shape to show an error to the user yet, so this import is
     # dangerous. Guard against it breaking boot, so that we might at least get
     # to the point where we can show the user a proper error message about this
@@ -122,7 +123,7 @@ def _parse_boot_settings(curr_os: str):
         bolt.deprint(f'ini_files.py failed to import, something is very '
                      f'broken: {e}', traceback=True)
         return
-    bs_file = ini_files.TomlFile(_boot_settings_path, ini_encoding='utf-8')
+    bs_file = ini_files.TomlFile(boot_settings_path, ini_encoding='utf-8')
     try:
         for bs_section_key, bs_section in bass.boot_settings_defaults.items():
             bs_dict = bass.boot_settings[bs_section_key]
@@ -131,6 +132,8 @@ def _parse_boot_settings(curr_os: str):
                      bs_section_key, bs_setting_key, bs_setting_default)
     except FileNotFoundError:
         pass # That's fine, just means no boot settings have been saved yet
+    global _boot_settings
+    _boot_settings = bs_file
 
 def _install_bugdump():
     """Replaces sys.stdout/sys.stderr with tees that copy the output into the
@@ -270,6 +273,24 @@ def assure_single_instance(instance):
         sys.exit(1)
 
 def exit_cleanup():
+    # The _()s are safe because the exit_cleanup is only registered in _main,
+    # at which point locale has already been set up
+    bs_comments = {
+        'Boot': {
+            'locale': _('The locale to set when launching Wrye Bash.'),
+            'last_game': _("The display name of the last game that was "
+                           "launched through Wrye Bash's 'Select Game' "
+                           "dialog."),
+        },
+    }
+    # Write out only the boot settings that have been changed from their
+    # defaults - add in comments as well
+    _boot_settings.saveSettings({
+        bs_sect: {bs_key: f'{bs_val} # {bs_comments[bs_sect][bs_key]}'
+                  for bs_key, bs_val in bass.boot_settings[bs_sect].items()
+                  if bs_val != bass.boot_settings_defaults[bs_sect][bs_key]}
+        for bs_sect in bass.boot_settings
+        if bs_sect in bass.boot_settings_defaults})
     wbtemp.cleanup_temp()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args

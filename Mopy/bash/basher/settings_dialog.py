@@ -498,16 +498,13 @@ class LanguagePage(_AScrollablePage):
         return bass.dirs[u'l10n']
 
     def on_apply(self):
-        super(LanguagePage, self).on_apply()
+        super().on_apply()
         selected_lang = self._lang_dropdown.get_value()
         if selected_lang != self._initial_lang:
             internal_name = self._localized_to_internal[selected_lang]
-            ##: #26, our oldest open issue; This should be a
-            # parameterless restart request, with us having saved the
-            # new language to some 'early boot' info file
+            bass.boot_settings['Boot']['locale'] = internal_name
             self._request_restart(_('Language: %(selected_language)s') % {
-                'selected_language': selected_lang},
-                [('--Language', internal_name)])
+                'selected_language': selected_lang})
 
 # Misc Appearance -------------------------------------------------------------
 class MiscAppearancePage(_AFixedPage):

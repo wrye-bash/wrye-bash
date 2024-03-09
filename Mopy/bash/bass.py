@@ -51,8 +51,8 @@ inisettings = {}
 boot_settings = defaultdict(dict)
 boot_settings_defaults = {
     'Boot': {
-        'locale': '',
-        'last_game': '',
+        'locale': None,
+        'last_game': None,
     },
 }
 

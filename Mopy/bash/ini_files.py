@@ -24,7 +24,6 @@
 related formats (e.g. simple TOML files)."""
 from __future__ import annotations
 
-import builtins
 import os
 import re
 from collections import Counter, OrderedDict
@@ -32,6 +31,8 @@ from collections import Counter, OrderedDict
 # Keep local imports to a minimum, this module is important for booting!
 from .bolt import CIstr, DefaultLowerDict, ListInfo, LowerDict, \
     OrderedLowerDict, decoder, deprint, getbestencoding, AFileInfo
+# We may end up getting run very early in boot, make sure _() never breaks us
+from .bolt import failsafe_underscore as _
 from .exception import FailedIniInferError
 from .wbtemp import TempFile
 
@@ -39,15 +40,6 @@ _comment_start_re = re.compile(r'^[^\S\r\n]*[;#][^\S\r\n]*')
 
 # All extensions supported by this parser
 supported_ini_exts = {'.ini', '.cfg', '.toml'}
-
-def _(s: str):
-    """As ini_files has to be used very early during boot for correct case
-    sensitivity handling in INIs, the gettext translation function may not be
-    set up yet."""
-    try:
-        return builtins._(s)
-    except AttributeError:
-        return s # We're being invoked very early in boot
 
 def _to_lower(ini_settings):
     """Transforms dict of dict to LowerDict of LowerDict, respecting
@@ -281,7 +273,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         self._ci_settings_cache_linenum = self.__empty_settings
 
     # AIniInfo overrides ------------------------------------------------------
-    def read_ini_content(self, as_unicode=True):
+    def read_ini_content(self, as_unicode=True, missing_ok=False):
         try:
             with open(self.abs_path, mode='rb') as f:
                 content = f.read()
@@ -291,6 +283,10 @@ class IniFileInfo(AIniInfo, AFileInfo):
         except UnicodeDecodeError:
             deprint(f'Failed to decode {self.abs_path} using '
                     f'{self.ini_encoding}', traceback=True)
+        except FileNotFoundError:
+            if not missing_ok:
+                deprint(f'INI file {self.abs_path} missing when we tried '
+                        f'reading it', traceback=True)
         except OSError:
             deprint(f'Error reading ini file {self.abs_path}', traceback=True)
         return []
@@ -383,7 +379,8 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     for sett, val in sectionSettings.items():
                         tmp_ini.write(f'{self._fmt_setting(sett, val)}\n')
                     tmp_ini.write('\n')
-                for line in self.read_ini_content(as_unicode=True):
+                for line in self.read_ini_content(as_unicode=True,
+                        missing_ok=True): # We may have to create the file
                     maSection = reSection.match(line)
                     if maSection:
                         # 'new' entries still to be added from previous section

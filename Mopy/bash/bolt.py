@@ -22,6 +22,7 @@
 # =============================================================================
 from __future__ import annotations
 
+import builtins
 import collections
 import copy
 import datetime
@@ -234,6 +235,18 @@ def encode_complex_string(string_val: str, max_size: int | None = None,
     if min_size is not None and (num_nulls := min_size - len(bytes_val)) > 0:
         bytes_val += b'\x00' * num_nulls
     return bytes_val
+
+def failsafe_underscore(s: str):
+    """A version of _() that doesn't fail when gettext has not been set up yet.
+    Use as "from bolt import failsafe_underscore as _".
+
+    Used by e.g. ini_files, which has to be used very early during boot for
+    correct case sensitivity handling in INIs, so the gettext translation
+    function may not be set up yet."""
+    try:
+        return builtins._(s)
+    except AttributeError:
+        return s # We're being invoked very early in boot
 
 class Tee:
     """Similar to the Unix utility tee, this class redirects writes etc. to two
