@@ -937,26 +937,24 @@ class ModInfo(FileInfo):
         returning the true BSA order.
 
         :param cached_ini_info: Passed to get_bsa_lo, see there for docs."""
-        ret_bsas = list(reversed(
-            modInfos.get_bsa_lo(cached_ini_info=cached_ini_info,
-                                for_plugins=[self.fn_key])[0]))
+        ret_bsas = modInfos.get_bsa_lo([self.fn_key], cached_ini_info)[0]
         # First heuristic sorting pass: sort 'main', 'patch' and 'interface' to
         # the front. This avoids parsing expensive BSAs at startup for the game
         # master (e.g. Skyrim.esm -> Skyrim - Textures0.bsa).
         heuristics = self._bsa_heuristics
         last_index = len(heuristics) # last place to sort unwanted BSAs
-        def _bsa_heuristic(binf):
-            b_lower = binf.fn_key.fn_body.lower()
-            for i, h in heuristics:
-                if h in b_lower:
-                    return i
-            return last_index
-        ret_bsas.sort(key=_bsa_heuristic)
         # Second heuristic sorting pass: sort BSAs that begin with the body of
         # this plugin before others. This avoids parsing vanilla BSAs for third
         # party plugins, while being a noop for vanilla plugins (stable sort).
         plugin_prefix = self.fn_key.fn_body.lower()
-        ret_bsas.sort(key=lambda b: not b.fn_key.lower().startswith(plugin_prefix))
+        def _bsa_heuristic(binf):
+            b_lower = binf.fn_key.fn_body.lower()
+            startsw = not b_lower.startswith(plugin_prefix)
+            for i, h in heuristics:
+                if h in b_lower:
+                    return startsw, i
+            return startsw, last_index
+        ret_bsas = sorted(reversed(ret_bsas), key=_bsa_heuristic)
         return ret_bsas
 
     def isMissingStrings(self, cached_ini_info, ci_cached_strings_paths):
