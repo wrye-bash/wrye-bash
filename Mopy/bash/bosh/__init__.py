@@ -2397,8 +2397,10 @@ class ModInfos(TableFileInfos):
         # missing them (=CTD). For Skyrim you need to have a valid load order
         oldBad = self.missing_strings
         # Determine BSA LO from INIs once, this gets expensive very quickly
-        available_bsas, self.__bsa_lo, self.__bsa_cause = \
-            self._get_bsas_from_inis()
+        # We'll be removing BSAs from here once we've given them a position
+        available_bsas = FNDict(bsaInfos.items())
+        self.__bsa_lo, self.__bsa_cause = self.get_bsas_from_inis(available_bsas,
+                                                    self.plugin_inis.values())
         self.__available_bsas = available_bsas.copy() # cache for get_bsa_lo
         self.__calculate_bsa_lo = True # reset the cache
         # Determine the present strings files once to avoid stat'ing
@@ -3047,14 +3049,9 @@ class ModInfos(TableFileInfos):
                 return FName(modName)
         return None
 
-    def _get_bsas_from_inis(self):
-        """Retrieves BSA load order from INI files. This is separate so that we
-        can cache it during early boot for massive speedups. The real solution
-        to this is a full BSA LO cache though - see #233 as well."""
-        ini_files_cached = self.plugin_inis.values()
-        # We'll be removing BSAs from here once we've given them a position
-        available_bsas = FNDict(bsaInfos.items())
-        bsa_lo = OrderedDict() # Final load order, -1 means it came from an INI
+    def get_bsas_from_inis(self, available_bsas, ini_files_cached):
+        # INI loaded bsas load order indexes - in the vicinity of ±sys.maxsize
+        bsa_lo = {}
         bsa_cause = {} # Reason each BSA was loaded
         cls = bush.game.Ini
         start_dex_keys = {
@@ -3063,8 +3060,7 @@ class ModInfos(TableFileInfos):
             -sys.maxsize - 1: cls.resource_archives_keys,
             # Some games have INI settings that override all other BSAs,
             # make sure they come last
-            sys.maxsize: [cls.resource_override_key],
-        }
+            sys.maxsize: [cls.resource_override_key], }
         for group_dex, (ini_idx, keys) in enumerate(start_dex_keys.items()):
             bsas_cause = []
             for ini_k in keys:
@@ -3085,7 +3081,7 @@ class ModInfos(TableFileInfos):
                     bsa_cause[binf] = res_ov_cause
                     ini_idx -= -1 if ini_idx < 0 else 1
                     del available_bsas[binf.fn_key]
-        return available_bsas, bsa_lo, bsa_cause
+        return bsa_lo, bsa_cause
 
     # TODO(inf): Morrowind does not have attached BSAs, there is instead a
     #  'second load order' of BSAs in the INI
