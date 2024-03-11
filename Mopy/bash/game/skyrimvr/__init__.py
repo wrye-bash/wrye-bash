@@ -55,8 +55,7 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     class Ini(ASkyrimSEGameInfo.Ini):
         default_ini_file = u'Skyrim.ini' # yes, that's the default one
         dropdown_inis = [u'SkyrimVR.ini', u'SkyrimPrefs.ini']
-        resource_override_key = u'sVrResourceArchiveList'
-        resource_override_defaults = [u'Skyrim_VR - Main.bsa']
+        resource_overrides = ('sVrResourceArchiveList', 'Skyrim_VR - Main.bsa')
 
     class Xe(ASkyrimSEGameInfo.Xe):
         full_name = u'TES5VREdit'
