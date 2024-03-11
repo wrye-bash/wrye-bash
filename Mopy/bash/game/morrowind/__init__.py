@@ -87,6 +87,12 @@ class _AMorrowindGameInfo(PatchGame):
             'Bloodmoon.bsa': 1054587600, # '2003-06-03'
         })
 
+        @classmethod
+        def attached_bsas(cls, bsa_infos, fn_body):
+            """Morrowind does not load attached BSAs at all - they all have
+            to be registered via the INI."""
+            return []
+
     class Xe(GameInfo.Xe):
         full_name = u'TES3Edit'
         xe_key_prefix = u'tes3View'

@@ -846,24 +846,10 @@ class ModInfo(FileInfo):
         except UnicodeEncodeError:
             return True
 
-    def mod_bsas(self, bsa_infos=None):
-        """Returns a list of all BSAs that the game will attach to this plugin.
-        bsa_infos is optional and will default to bsaInfos."""
-        if bush.game.fsName == u'Morrowind':
-            # Morrowind does not load attached BSAs at all - they all have to
-            # be registered via the INI
-            return []
-        bsa_pattern = (re.escape(self.fn_key.fn_body) +
-                       bush.game.Bsa.attachment_regex +
-                       u'\\' + bush.game.Bsa.bsa_extension)
-        is_attached = re.compile(bsa_pattern, re.I | re.U).match
-        # bsaInfos must be updated and contain all existing bsas
-        if bsa_infos is None: bsa_infos = bsaInfos
-        return [binf for k, binf in bsa_infos.items() if is_attached(k)]
-
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
-        return bool(self.mod_bsas())
+        # bsaInfos must be updated and contain all existing bsas
+        return bool(bush.game.Bsa.attached_bsas(bsaInfos, self.fn_key))
 
     def get_ini_name(self):
         """Returns the name of the INI matching this plugin, if it were to
@@ -941,7 +927,7 @@ class ModInfo(FileInfo):
         if not getattr(self.header.flags1, 'localized', False): return False
         i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
         ret_bsas = bsa_lo_inis.copy()
-        for binf in self.mod_bsas(available_bsas):
+        for binf in bush.game.Bsa.attached_bsas(available_bsas, self.fn_key):
             ret_bsas[binf] = 0 # insert in the middle of the ini-loaded bsas
             del available_bsas[binf.fn_key] # we delete in place todo correct?
         plugin_prefix = self.fn_key.fn_body.lower()
@@ -3119,9 +3105,10 @@ class ModInfos(TableFileInfos):
         the inis, having ±sys.maxsize load order."""
         if self.__calculate_bsa_lo:
             self.__calculate_bsa_lo = False
+            attached_bsas = bush.game.Bsa.attached_bsas
             # BSAs loaded based on plugin name load in the middle of the pack
             for i, p in enumerate(load_order.cached_active_tuple()):
-                for binf in self[p].mod_bsas(self.__available_bsas):
+                for binf in attached_bsas(self.__available_bsas, p):
                     self.__bsa_lo[binf] = i
                     self.__bsa_cause[binf] = p
                     del self.__available_bsas[binf.fn_key]
