@@ -25,6 +25,7 @@ state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
+import re
 from enum import Enum
 from itertools import chain
 from os.path import join as _j
@@ -445,6 +446,15 @@ class GameInfo(object):
                     return startsw, i
             # noinspection PyUnboundLocalVariable
             return startsw, i + 1 # _str_heuristics is never empty
+
+        @classmethod
+        def attached_bsas(cls, bsa_infos, plugin_fn):
+            """Return a list of all BSAs that the game will attach to
+            plugin_fn."""
+            bsa_pattern = (re.escape(plugin_fn.fn_body) +
+                           f'{cls.attachment_regex}\\{cls.bsa_extension}')
+            is_attached = re.compile(bsa_pattern, re.I).match
+            return [binf for k, binf in bsa_infos.items() if is_attached(k)]
 
     class Psc(object):
         """Information about script sources (only Papyrus right now) for this
