@@ -940,14 +940,15 @@ class ModInfo(FileInfo):
             _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
         i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
-        ret_bsas = [*bsa_lo_inis]
+        ret_bsas = bsa_lo_inis.copy()
         for binf in self.mod_bsas(available_bsas):
-            ret_bsas.append(binf)
+            ret_bsas[binf] = 0 # insert in the middle of the ini-loaded bsas
             del available_bsas[binf.fn_key] # we delete in place todo correct?
         plugin_prefix = self.fn_key.fn_body.lower()
-        # todo why we use reverse?
-        self.str_bsas_sorted = sorted(reversed(ret_bsas), key=lambda binf:
-            binf.str_bsa_sort_key(plugin_prefix))
+        # give priority to the heuristic sort key then to the inverse of the
+        # actual bsa lo (so try and load strings from the bsas loading last)
+        self.str_bsas_sorted = sorted(ret_bsas, key=lambda binf:
+            (*binf.str_bsa_sort_key(plugin_prefix), -ret_bsas[binf]))
         for assetPath in self._string_files_paths(i_lang):
             # Check loose files first
             if assetPath.lower() in ci_cached_strings_paths:
