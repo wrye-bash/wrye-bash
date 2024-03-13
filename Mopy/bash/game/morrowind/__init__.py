@@ -79,6 +79,11 @@ class _AMorrowindGameInfo(PatchGame):
         screenshot_index_key = (u'General', u'Screen Shot Index', u'0')
         supports_mod_inis = False
 
+        @classmethod
+        def get_bsas_from_inis(cls, available_bsas, ini_files_cached):
+            # TODO(inf): fetch the 'second load order' of BSAs from the INI
+            return {}, {}
+
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
         redate_dict = bolt.DefaultFNDict(lambda: 1054674000, { # '2003-06-04'
@@ -92,6 +97,10 @@ class _AMorrowindGameInfo(PatchGame):
             """Morrowind does not load attached BSAs at all - they all have
             to be registered via the INI."""
             return []
+
+        @classmethod
+        def update_bsa_lo(cls, lo, av_bsas, bsa_lodex, cause):
+            """Nothing to do - bsa lo is read from the INI."""
 
     class Xe(GameInfo.Xe):
         full_name = u'TES3Edit'

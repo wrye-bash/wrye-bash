@@ -914,7 +914,8 @@ class ModInfo(FileInfo):
                 paths.update(map(out_path.join, assets))
         return paths
 
-    def isMissingStrings(self, available_bsas, bsa_lo_inis, ci_cached_strings_paths):
+    def isMissingStrings(self, available_bsas, bsa_lo_inis,
+                         ci_cached_strings_paths, i_lang):
         """True if the mod says it has .STRINGS files, but the files are
         missing. Sets the str_bsas_sorted attribute to the list of BSAs that
         may contain the strings files for this plugin.
@@ -925,7 +926,6 @@ class ModInfo(FileInfo):
             to all strings files. They must match the format returned by
             _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
-        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
         ret_bsas = bsa_lo_inis.copy()
         for binf in bush.game.Bsa.attached_bsas(available_bsas, self.fn_key):
             ret_bsas[binf] = 0 # insert in the middle of the ini-loaded bsas
@@ -2399,8 +2399,8 @@ class ModInfos(TableFileInfos):
         # Determine BSA LO from INIs once, this gets expensive very quickly
         # We'll be removing BSAs from here once we've given them a position
         available_bsas = FNDict(bsaInfos.items())
-        self.__bsa_lo, self.__bsa_cause = self.get_bsas_from_inis(available_bsas,
-                                                    self.plugin_inis.values())
+        self.__bsa_lo, self.__bsa_cause = bush.game.Ini.get_bsas_from_inis(
+            available_bsas, self.plugin_inis.values())
         self.__available_bsas = available_bsas.copy() # cache for get_bsa_lo
         self.__calculate_bsa_lo = True # reset the cache
         # Determine the present strings files once to avoid stat'ing
@@ -2412,9 +2412,10 @@ class ModInfos(TableFileInfos):
         except FileNotFoundError:
             # No loose strings folder -> all strings are in BSAs
             ci_cached_strings_paths = set()
-        self.missing_strings = {
-            k for k, v in self.items() if v.isMissingStrings(
-                available_bsas, self.__bsa_lo, ci_cached_strings_paths)}
+        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
+        self.missing_strings = {k for k, v in self.items() if
+            v.isMissingStrings(available_bsas, self.__bsa_lo,
+                               ci_cached_strings_paths, i_lang)}
         self.new_missing_strings = self.missing_strings - oldBad
         return self.missing_strings ^ oldBad
 
@@ -3049,56 +3050,15 @@ class ModInfos(TableFileInfos):
                 return FName(modName)
         return None
 
-    def get_bsas_from_inis(self, available_bsas, ini_files_cached):
-        # INI loaded bsas load order indexes - in the vicinity of ±sys.maxsize
-        bsa_lo = {}
-        bsa_cause = {} # Reason each BSA was loaded
-        cls = bush.game.Ini
-        start_dex_keys = {
-            # BSAs from INI files load first so make sure they come first by
-            # assigning negative indexes
-            -sys.maxsize - 1: cls.resource_archives_keys,
-            # Some games have INI settings that override all other BSAs,
-            # make sure they come last
-            sys.maxsize: [cls.resource_override_key], }
-        for group_dex, (ini_idx, keys) in enumerate(start_dex_keys.items()):
-            bsas_cause = []
-            for ini_k in keys:
-                for ini_f in ini_files_cached:
-                    if bsas := ini_f.getSetting('Archive', ini_k, ''):
-                        bsas = (x.strip() for x in bsas.split(','))
-                        bsas_cause.append(((available_bsas[b] for b in bsas if
-                            b in available_bsas),
-                            f'{ini_f.abs_path.stail} ({ini_k})'))
-                        break  # The first INI with the key wins ##: Test this
-            if not bsas_cause and group_dex == 1:
-                bsas_cause = ([ # fallback to the defaults set by the engine
-                    available_bsas[b] for b in cls.resource_override_defaults],
-                    f'{cls.dropdown_inis[0]} ({keys[0]})'),
-            for res_ov_bsas, res_ov_cause in bsas_cause:
-                for binf in res_ov_bsas:
-                    bsa_lo[binf] = ini_idx
-                    bsa_cause[binf] = res_ov_cause
-                    ini_idx -= -1 if ini_idx < 0 else 1
-                    del available_bsas[binf.fn_key]
-        return bsa_lo, bsa_cause
-
-    # TODO(inf): Morrowind does not have attached BSAs, there is instead a
-    #  'second load order' of BSAs in the INI
     def get_bsa_lo(self):
         """Get the load order of all active BSAs. Used from bain, so we
-        calculate it Jit using the cached result of _get_bsas_from_inis.
-        Therefore, self.__bsa_lo is initially populated by bsas loading from
+        calculate it Jit using the cached result of get_bsas_from_inis.
+        Therefore, self.__bsa_lo is initially populated by bsas loaded from
         the inis, having ±sys.maxsize load order."""
         if self.__calculate_bsa_lo:
             self.__calculate_bsa_lo = False
-            attached_bsas = bush.game.Bsa.attached_bsas
-            # BSAs loaded based on plugin name load in the middle of the pack
-            for i, p in enumerate(load_order.cached_active_tuple()):
-                for binf in attached_bsas(self.__available_bsas, p):
-                    self.__bsa_lo[binf] = i
-                    self.__bsa_cause[binf] = p
-                    del self.__available_bsas[binf.fn_key]
+            bush.game.Bsa.update_bsa_lo(load_order.cached_active_tuple(),
+                self.__available_bsas, self.__bsa_lo, self.__bsa_cause)
         return self.__bsa_lo, self.__bsa_cause
 
     @staticmethod
