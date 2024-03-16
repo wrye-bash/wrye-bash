@@ -635,8 +635,8 @@ class ModInfo(FileInfo):
     def setGhost(self, ghostify):
         """Set file to/from ghost mode. Return True if ghost status changed."""
         # Current status is already what we want it to be
-        if (ghostify == self.is_ghost or # Don't allow ghosting the master ESM
-            self.fn_key == bush.game.master_file):
+        if ghostify == self.is_ghost or ( # Don't allow ghosting the master ESM
+            ghostify and self.fn_key == bush.game.master_file):
             return False
         # Current status != what we want, so change it
         ghost = (normal := self._file_key) + '.ghost' # Path.__add__ !
@@ -2118,11 +2118,15 @@ class ModInfos(TableFileInfos):
         # the catch is that the UI refresh is triggered by
         # RefrData.redraw/to_add so we need to calculate these in refresh.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        if dirs[u'mods'].join(bush.game.master_file).is_file():
-            self._master_esm = bush.game.master_file
-        else:
+        masterpath = dirs['mods'].join(bush.game.master_file)
+        if (master_missing := not masterpath.is_file()) and (
+                ghost := masterpath + '.ghost').is_file():  # Path.__add__ !
+            ghost.moveTo(masterpath)
+            deprint(f'Unghosted master file - was: {ghost}')
+        elif master_missing:
             raise FileError(bush.game.master_file,
                             u'File is required, but could not be found')
+        self._master_esm = bush.game.master_file
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
         # values are tuples of int and str for displaying in the Indices column
         self.real_indices = defaultdict(lambda: (sys.maxsize, ''))
@@ -3130,7 +3134,7 @@ class ModInfos(TableFileInfos):
         to_remove = {FName(x) for x in to_remove}
         # Remove mods from cache
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
-        self._active_wip  = [x for x in self._active_wip if x not in to_remove]
+        self._active_wip = [x for x in self._active_wip if x not in to_remove]
 
     def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
@@ -3194,62 +3198,67 @@ class ModInfos(TableFileInfos):
         _('Try again?')]
     def setOblivionVersion(self, newVersion, ask_yes):
         """Swaps Oblivion.esm to specified version."""
-        baseName = self._master_esm # Oblivion.esm, say it's currently SI one
-        # if new version is '1.1' then newName is FName(Oblivion_1.1.esm)
-        newName = FName(f'{(fnb := baseName.fn_body)}_{newVersion}.esm')
-        newSize = bush.game.modding_esm_size[newName]
-        oldSize = self[baseName].fsize
+        master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
+        # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
+        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{newVersion}.esm')
+        newSize = bush.game.modding_esm_size[copy_from]
+        oldSize = self[master_esm].fsize
         if newSize == oldSize: return
-        try: # for instance: Oblivion_SI.esm, we rename Oblivion.esm to this
+        try: # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
             current_version = bush.game.size_esm_version[oldSize]
-            oldName = FName(f'{fnb}_{current_version}.esm')
+            move_to = FName(f'{fnb}_{current_version}.esm')
         except KeyError:
             raise StateError("Can't match current main ESM to known version.")
-        if self.store_dir.join(oldName).exists():
-            raise StateError(f"Can't swap: {oldName} already exists.")
-        if newName not in self:
-            raise StateError(f"Can't swap: {newName} doesn't exist.")
-        newInfo = self[newName]
+        if self.store_dir.join(move_to).exists():
+            raise StateError(f"Can't swap: {move_to} already exists.")
+        if copy_from not in self:
+            raise StateError(f"Can't swap: {copy_from} doesn't exist.")
+        newInfo = self[copy_from]
         #--Rename
-        baseInfo = self[self._master_esm]
+        baseInfo = self[master_esm]
         master_time = baseInfo.ftime
         new_info_time = newInfo.ftime
-        is_master_active = load_order.cached_is_active(self._master_esm)
-        is_new_info_active = load_order.cached_is_active(newName)
+        is_master_active = load_order.cached_is_active(master_esm)
+        is_new_info_active = load_order.cached_is_active(copy_from)
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
         rename_args = {baseInfo: baseInfo.abs_path,
-                       oldName: self.store_dir.join(oldName)}, {
-            newInfo: newInfo.abs_path, self._master_esm: baseInfo.abs_path}
+                       move_to: self.store_dir.join(move_to)}, {newInfo: (
+            deltd := newInfo.abs_path), master_esm: baseInfo.abs_path}
         for do_undo, args_dict in enumerate(rename_args):
             while True:
                 try:
                     file_info_rename_op(*args_dict)
                     break
                 except PermissionError: ##: can only occur if SHFileOperation
-                    # isn't called, yak - file operation API badly needed
+                    # isn't called - file operation API badly needed (#241)
                     old, new = args_dict.values()
                     msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
                         'xedit_name': bush.game.Xe.full_name, }
                     if ask_yes(self, msg, title=_('File in Use')):
                         continue
-                    if do_undo: file_info_rename_op(self[oldName], self._master_esm)
+                    if do_undo: file_info_rename_op(self[move_to], master_esm)
                     raise
                 except CancelError:
-                    if do_undo: file_info_rename_op(self[oldName], self._master_esm)
+                    if do_undo: file_info_rename_op(self[move_to], master_esm)
                     return
+        master_inf = self[master_esm]
         # set mtimes to previous respective values
-        self[self._master_esm].setmtime(master_time)
-        self[oldName].setmtime(new_info_time)
-        oldIndex = self._lo_wip.index(newName)
-        self._lo_caches_remove_mods([newName])
-        self._lo_wip.insert(oldIndex, oldName)
+        master_inf.setmtime(master_time)
+        self[move_to].setmtime(new_info_time)
+        oldIndex = self._lo_wip.index(copy_from)
+        self._lo_caches_remove_mods([copy_from])
+        self._lo_wip.insert(oldIndex, move_to)
         def _activate(active, mod):
             (self.lo_activate if active else self.lo_deactivate)(mod)
-        _activate(is_new_info_active, oldName)
-        _activate(is_master_active, self._master_esm)
-        # Save to disc (load order and plugins.txt)
+        _activate(is_new_info_active, move_to)
+        _activate(is_master_active, master_esm)
+        # Save to disc (load order and plugins.txt) - need to handle ghosting
+        if is_master_active and master_inf.is_ghost:
+            master_inf.setGhost(False)
         self.cached_lo_save_all() # sets ghost as needed
+        # make sure to notify BAIN rename_operation passes only renames param
+        self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = newVersion
         self.voAvailable.add(current_version)
         self.voAvailable.remove(newVersion)
