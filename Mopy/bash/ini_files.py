@@ -233,7 +233,7 @@ class AIniInfo(ListInfo):
                     lineNo = ci_deletedSettings[section][setting]
                 is_deleted = True
             else:
-                if re_comment.sub('', line).strip():
+                if re_comment.sub('', stripped).strip(): ## fixme test
                     status = -10
             lines.append((line, section, setting, value, status, lineNo,
                           is_deleted))
