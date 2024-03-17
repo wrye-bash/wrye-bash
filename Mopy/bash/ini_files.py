@@ -109,6 +109,7 @@ class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     reComment = re.compile('[;#].*')
+    _re_whole_line_com = re.compile(r'^[^\S\r\n]*[;#].*')
     # These are horrible - Perl's \h (horizontal whitespace) sorely missed
     reDeletedSetting = re.compile(r'^[^\S\r\n]*[;#]-[^\S\r\n]*(\w.*?)'
                                   r'[^\S\r\n]*([;#].*$|=.*$|$)')
@@ -188,7 +189,7 @@ class AIniInfo(ListInfo):
         deleted: deleted line (?)"""
         lines = []
         ci_settings, ci_deletedSettings = self.get_ci_settings(with_deleted=True)
-        reComment = self.reComment
+        re_comment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
         reSetting = self.reSetting
@@ -196,8 +197,9 @@ class AIniInfo(ListInfo):
         section = self.__class__.defaultSection
         for i, line in enumerate(tweak_file.read_ini_content()):
             maDeletedSetting = reDeleted.match(line)
-            maSection = reSection.match(line)
-            maSetting = reSetting.match(line)
+            stripped = self._re_whole_line_com.sub('', line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
             is_deleted = False
             setting = None
             value = u''
@@ -231,7 +233,7 @@ class AIniInfo(ListInfo):
                     lineNo = ci_deletedSettings[section][setting]
                 is_deleted = True
             else:
-                if reComment.sub('', line).strip():
+                if re_comment.sub('', line).strip():
                     status = -10
             lines.append((line, section, setting, value, status, lineNo,
                           is_deleted))
@@ -330,9 +332,10 @@ class IniFileInfo(AIniInfo, AFileInfo):
         sectionSettings = None
         section = None
         for i, line in enumerate(self.read_ini_content()):
-            maSection = reSection.match(line)
             maDeleted = reDeleted.match(line)
-            maSetting = reSetting.match(line)
+            stripped = self._re_whole_line_com.sub('', line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
             if maSection:
                 section = maSection.group(1)
                 sectionSettings = ci_settings[section]
@@ -497,6 +500,7 @@ class TomlFile(IniFileInfo):
     weird date/time values are also not supported yet."""
     out_encoding = 'utf-8' # see above
     reComment = re.compile('#.*')
+    _re_whole_line_com = re.compile(r'^[^\S\r\n]*#.*')
     reSetting = re.compile(
         r'^[^\S\r\n]*(.+?)' # Key on the left side
         r'[^\S\r\n]*=[^\S\r\n]*(' # Equal sign
@@ -586,7 +590,7 @@ class OBSEIniFile(IniFileInfo):
         ini_settings = DefaultLowerDict(LowerDict)
         deleted_settings = DefaultLowerDict(LowerDict)
         reDeleted = self.reDeleted
-        reComment = self.reComment
+        re_comment = self.reComment
         with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
@@ -595,7 +599,7 @@ class OBSEIniFile(IniFileInfo):
                     settings_dict = deleted_settings
                 else:
                     settings_dict = ini_settings
-                stripped = reComment.sub(u'',line).strip()
+                stripped = re_comment.sub('', line).strip()
                 ma_obse, section_key, _fmt = self._parse_obse_line(stripped)
                 if ma_obse:
                     settings_dict[section_key][ma_obse.group(1)] = (
@@ -606,13 +610,13 @@ class OBSEIniFile(IniFileInfo):
         lines = []
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         reDeleted = self.reDeleted
-        reComment = self.reComment
+        re_comment = self.reComment
         for line in tweak_file.read_ini_content():
             # Check for deleted lines
             maDeleted = reDeleted.match(line)
             if maDeleted: stripped = maDeleted.group(1)
             else: stripped = line
-            stripped = reComment.sub(u'',stripped).strip()
+            stripped = re_comment.sub('', stripped).strip()
             # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
             ma_obse, section, _fmt = self._parse_obse_line(stripped)
             if ma_obse:
@@ -650,7 +654,7 @@ class OBSEIniFile(IniFileInfo):
         ini_settings = _to_lower(ini_settings)
         deleted_settings = _to_lower(deleted_settings or {})
         reDeleted = self.reDeleted
-        reComment = self.reComment
+        re_comment = self.reComment
         with TempFile() as tmp_file_path:
             with self._open_for_writing(tmp_file_path) as tmpFile:
                 # Modify/Delete existing lines
@@ -659,10 +663,11 @@ class OBSEIniFile(IniFileInfo):
                     # Test if line is currently deleted
                     maDeleted = reDeleted.match(line)
                     if maDeleted: stripped = maDeleted.group(1)
-                    else: stripped = line
+                    else:
+                        stripped = self._re_whole_line_com.sub('', line).strip()
                     # Test what kind of line it is - 'set' or 'setGS' or
                     # 'SetNumericGameSetting'
-                    stripped = reComment.sub('', stripped).strip()
+                    stripped = re_comment.sub('', stripped).strip()
                     ma_obse, section_key, format_string = \
                         self._parse_obse_line(stripped)
                     if ma_obse:
@@ -700,7 +705,7 @@ class OBSEIniFile(IniFileInfo):
 
     def applyTweakFile(self, tweak_lines):
         reDeleted = self.reDeleted
-        reComment = self.reComment
+        re_comment = self.reComment
         ini_settings = DefaultLowerDict(LowerDict)
         deleted_settings = DefaultLowerDict(LowerDict)
         for line in tweak_lines:
@@ -713,7 +718,7 @@ class OBSEIniFile(IniFileInfo):
                 stripped = line
                 settings_ = ini_settings
             # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
-            stripped = reComment.sub(u'',stripped).strip()
+            stripped = re_comment.sub('', stripped).strip()
             ma_obse, section_key, _fmt = self._parse_obse_line(stripped)
             if ma_obse:
                 setting = ma_obse.group(1)
