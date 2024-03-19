@@ -1035,8 +1035,8 @@ class ModInfo(FileInfo):
 
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
-        if self.is_ghost:
-            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
+        if self.is_ghost: # add ghost extension to dest path - Path.__add__!
+            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
         return old_new_paths
 
     def _masters_order_status(self, status):
@@ -3222,20 +3222,20 @@ class ModInfos(TableFileInfos):
         is_new_info_active = load_order.cached_is_active(copy_from)
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
-        rename_args = {baseInfo: baseInfo.abs_path,
-                       move_to: self.store_dir.join(move_to)}, {swapped_inf: (
-            deltd := swapped_inf.abs_path), master_esm: baseInfo.abs_path}
-        for do_undo, args_dict in enumerate(rename_args):
+        rename_args = (baseInfo, move_to), (swapped_inf, master_esm)
+        deltd = swapped_inf.abs_path # will be (effectively) deleted
+        for do_undo, inf_fname in enumerate(rename_args):
             while True:
                 try:
-                    file_info_rename_op(*args_dict)
+                    file_info_rename_op(*inf_fname)
                     break
                 except PermissionError: ##: can only occur if SHFileOperation
                     # isn't called - file operation API badly needed (#241)
-                    old, new = args_dict.values()
+                    old = inf_fname[0].abs_path
+                    new = inf_fname[0].get_rename_paths(inf_fname[1])[0][1]
                     msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
                         'xedit_name': bush.game.Xe.full_name, }
-                    if ask_yes(self, msg, title=_('File in Use')):
+                    if ask_yes(None, msg, title=_('File in Use')):
                         continue
                     if do_undo: file_info_rename_op(self[move_to], master_esm)
                     raise
