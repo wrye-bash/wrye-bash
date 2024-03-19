@@ -500,10 +500,10 @@ class PluginChecker(WindowFrame):
                 self.check_mods_text = mods_metadata.checkMods(*args)
             except CancelError:
                 return # user pressed cancel early
+        log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
+        css_dir = bass.dirs[u'mopy'].join(u'Docs')
+        wrye_text.convert_wtext_to_html(log_path, self.check_mods_text, css_dir)
         if web_viewer_available():
-            log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
-            css_dir = bass.dirs[u'mopy'].join(u'Docs')
-            wrye_text.convert_wtext_to_html(log_path, self.check_mods_text, css_dir)
             self._html_ctrl.try_load_html(log_path)
         else:
             self._html_ctrl.load_text(self.check_mods_text)
