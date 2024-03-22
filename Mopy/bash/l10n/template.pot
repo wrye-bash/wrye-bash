@@ -557,124 +557,134 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: Mopy/bash/bash.py:535
+#: Mopy/bash/bash.py:539
 #, python-format
-msgid "Wrye Bash encountered an error. Please post the information below to the official thread at %(thread_url)s or to the Wrye Bash Discord at %(discord_url)s"
+msgid "Wrye Bash encountered OSError 22. This is often caused by OneDrive backing up the Documents folder. Please follow the directions in the following link under \"Change PC folder backup settings\", removing your Documents folder from backup: %(ms_docs_url)s"
 msgstr ""
 
-#: Mopy/bash/bash.py:606
+#: Mopy/bash/bash.py:544
+#, python-format
+msgid "Should the error persist, please post your BashBugDump to the official thread at %(thread_url)s or to the Wrye Bash Discord at %(discord_url)s"
+msgstr ""
+
+#: Mopy/bash/bash.py:550
+#, python-format
+msgid "Wrye Bash encountered an error. Please post the information below as well as your BashBugDump to the official thread at %(thread_url)s or to the Wrye Bash Discord at %(discord_url)s"
+msgstr ""
+
+#: Mopy/bash/bash.py:624
 msgid "Error! Unable to start Wrye Bash."
 msgstr ""
 
-#: Mopy/bash/bash.py:606
+#: Mopy/bash/bash.py:624
 msgid "Please ensure Wrye Bash is correctly installed."
 msgstr ""
 
-#: Mopy/bash/bash.py:627
+#: Mopy/bash/bash.py:645
 #, python-format
 msgid "Wrye Bash needs administrator privileges to make changes to the %(gameName)s directory. If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges."
 msgstr ""
 
-#: Mopy/bash/bash.py:651 Mopy/bash/basher/settings_dialog.py:755
+#: Mopy/bash/bash.py:669 Mopy/bash/basher/settings_dialog.py:755
 msgid "Backup Wrye Bash Settings"
 msgstr ""
 
-#: Mopy/bash/bash.py:663
+#: Mopy/bash/bash.py:681
 msgid "There was an error while trying to backup the Wrye Bash settings!"
 msgstr ""
 
-#: Mopy/bash/bash.py:665
+#: Mopy/bash/bash.py:683
 msgid "If you continue, your current settings may be overwritten."
 msgstr ""
 
-#: Mopy/bash/bash.py:667
+#: Mopy/bash/bash.py:685
 msgid "Do you want to quit Wrye Bash now?"
 msgstr ""
 
-#: Mopy/bash/bash.py:669
+#: Mopy/bash/bash.py:687
 msgid "Unable to create backup!"
 msgstr ""
 
-#: Mopy/bash/bash.py:699
+#: Mopy/bash/bash.py:717
 msgid "The following (non-critical) warnings were found during initialization:"
 msgstr ""
 
-#: Mopy/bash/bash.py:712
+#: Mopy/bash/bash.py:731
 msgid "Wrye Bash could not find a game to manage. Make sure to launch games you installed through Steam once and enable mods on games you installed through the Windows Store."
 msgstr ""
 
-#: Mopy/bash/bash.py:716
+#: Mopy/bash/bash.py:735
 #, python-format
 msgid "You can also use the %(cli_game_detect)s command line argument or %(bash_config_file)s to specify the path manually."
 msgstr ""
 
-#: Mopy/bash/bash.py:747
+#: Mopy/bash/bash.py:766
 msgid "Wrye Bash Error"
 msgstr ""
 
-#: Mopy/bash/bash.py:748
+#: Mopy/bash/bash.py:767
 msgid "Wrye Bash Warning"
 msgstr ""
 
-#: Mopy/bash/bash.py:759 Mopy/bash/bash.py:850
+#: Mopy/bash/bash.py:778 Mopy/bash/bash.py:869
 msgid "Quit"
 msgstr ""
 
-#: Mopy/bash/bash.py:761
+#: Mopy/bash/bash.py:780
 msgid "Continue"
 msgstr ""
 
-#: Mopy/bash/bash.py:762
+#: Mopy/bash/bash.py:781
 msgid "Abort"
 msgstr ""
 
-#: Mopy/bash/bash.py:827
+#: Mopy/bash/bash.py:846
 msgid "Select Game"
 msgstr ""
 
-#: Mopy/bash/bash.py:841
+#: Mopy/bash/bash.py:860
 msgid "Search Games"
 msgstr ""
 
-#: Mopy/bash/bash.py:854
+#: Mopy/bash/bash.py:873
 msgid "Launch"
 msgstr ""
 
-#: Mopy/bash/bash.py:863
+#: Mopy/bash/bash.py:882
 msgid "Please choose a game to manage."
 msgstr ""
 
-#: Mopy/bash/bash.py:866
+#: Mopy/bash/bash.py:885
 msgid "Game Details"
 msgstr ""
 
-#: Mopy/bash/bash.py:869
+#: Mopy/bash/bash.py:888
 msgid "Variant:"
 msgstr ""
 
-#: Mopy/bash/bash.py:875
+#: Mopy/bash/bash.py:894
 msgid "Install Path:"
 msgstr ""
 
-#: Mopy/bash/bash.py:925 Mopy/bash/bash.py:939
+#: Mopy/bash/bash.py:944 Mopy/bash/bash.py:958
 msgid "N/A"
 msgstr ""
 
-#: Mopy/bash/bash.py:968
+#: Mopy/bash/bash.py:987
 #, python-format
 msgid "Warning: you appear to be using a non-supported version of wxPython (%(curr_wx_ver)s). This will cause problems! It is highly recommended you use a %(supported_wx_series)s version. Do you still want to run Wrye Bash?"
 msgstr ""
 
-#: Mopy/bash/bash.py:974
+#: Mopy/bash/bash.py:993
 msgid "Unsupported wxPython Version Detected"
 msgstr ""
 
-#: Mopy/bash/bash.py:983
+#: Mopy/bash/bash.py:1002
 #, python-format
 msgid "Only Python %(min_py_ver)s and newer is supported (%(curr_py_ver)s detected). If you know what you're doing, install the Python version of Wrye Bash and edit this warning out. Wrye Bash will now exit."
 msgstr ""
 
-#: Mopy/bash/bash.py:989
+#: Mopy/bash/bash.py:1008
 msgid "Unsupported Python Version Detected"
 msgstr ""
 
@@ -3247,398 +3257,408 @@ msgstr ""
 msgid "Deactivate all currently visible tweaks."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:748
-msgid "Note: A floating point number is expected here."
+#: Mopy/bash/basher/gui_patchers.py:746
+#, python-format
+msgid "(Default: %(default_tweak_val)s)"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:748 Mopy/bash/basher/gui_patchers.py:770
+#: Mopy/bash/basher/gui_patchers.py:749
+#, python-format
+msgid "Default: %(default_tweak_val)s"
+msgstr ""
+
+#: Mopy/bash/basher/gui_patchers.py:752 Mopy/bash/basher/gui_patchers.py:774
 msgid "Enter the desired custom tweak value."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:753 Mopy/bash/basher/gui_patchers.py:772
+#: Mopy/bash/basher/gui_patchers.py:753
+msgid "Note: A floating point number is expected here."
+msgstr ""
+
+#: Mopy/bash/basher/gui_patchers.py:757 Mopy/bash/basher/gui_patchers.py:777
 #, python-format
 msgid "%(tweak_title)s - Custom Tweak Value"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:763
+#: Mopy/bash/basher/gui_patchers.py:767
 #, python-format
 msgid "'%(invalid_float)s' is not a valid floating point number."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:766 Mopy/bash/basher/gui_patchers.py:806
+#: Mopy/bash/basher/gui_patchers.py:770 Mopy/bash/basher/gui_patchers.py:812
 #, python-format
 msgid "%(tweak_title)s - Error"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:771 Mopy/bash/brec/record_structs.py:126
+#: Mopy/bash/basher/gui_patchers.py:776 Mopy/bash/brec/record_structs.py:126
 #: Mopy/bash/parsers.py:1110
 msgid "Value"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:780
+#: Mopy/bash/basher/gui_patchers.py:785
 msgid "Enter the desired custom tweak text."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:785
+#: Mopy/bash/basher/gui_patchers.py:791
 #, python-format
 msgid "%(tweak_title)s - Custom Tweak Text"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:998
+#: Mopy/bash/basher/gui_patchers.py:1004
 msgid "Mergeable Plugins"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:999
+#: Mopy/bash/basher/gui_patchers.py:1005
 msgid "Merge Patches"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1000
+#: Mopy/bash/basher/gui_patchers.py:1006
 msgid "Merge patch plugins into the Bashed Patch."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1007
+#: Mopy/bash/basher/gui_patchers.py:1013
 msgid "Import Graphics"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1008
+#: Mopy/bash/basher/gui_patchers.py:1014
 msgid "Import graphics (models, icons, etc.) from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1016
+#: Mopy/bash/basher/gui_patchers.py:1022
 msgid "Import Actors: AI Packages"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1017
+#: Mopy/bash/basher/gui_patchers.py:1023
 msgid "Import actor AI Package links from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1024
+#: Mopy/bash/basher/gui_patchers.py:1030
 msgid "Import Actors"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1025
+#: Mopy/bash/basher/gui_patchers.py:1031
 msgid "Import various actor attributes from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1032
+#: Mopy/bash/basher/gui_patchers.py:1038
 msgid "Import Actors: Perks"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1033
+#: Mopy/bash/basher/gui_patchers.py:1039
 msgid "Import actor perks from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1040
+#: Mopy/bash/basher/gui_patchers.py:1046
 msgid "Import Cells"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1041
+#: Mopy/bash/basher/gui_patchers.py:1047
 msgid "Import cells (climate, lighting, and water) from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1049
+#: Mopy/bash/basher/gui_patchers.py:1055
 msgid "Import Actors: Factions"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1050
+#: Mopy/bash/basher/gui_patchers.py:1056
 msgid "Import actor factions from source plugins/files."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1057 Mopy/bash/basher/mod_links.py:1982
+#: Mopy/bash/basher/gui_patchers.py:1063 Mopy/bash/basher/mod_links.py:1982
 msgid "Import Relations"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1058
+#: Mopy/bash/basher/gui_patchers.py:1064
 msgid "Import relations from source plugins/files."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1065
+#: Mopy/bash/basher/gui_patchers.py:1071
 msgid "Import Inventory"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1066
+#: Mopy/bash/basher/gui_patchers.py:1072
 msgid "Merges changes to items in various inventories."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1073
+#: Mopy/bash/basher/gui_patchers.py:1079
 msgid "Import Outfits"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1074
+#: Mopy/bash/basher/gui_patchers.py:1080
 msgid "Merges changes to NPC outfits."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1081
+#: Mopy/bash/basher/gui_patchers.py:1087
 msgid "Import Actors: Spells"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1082
+#: Mopy/bash/basher/gui_patchers.py:1088
 msgid "Merges changes to actor spell / effect lists."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1089 Mopy/bash/basher/mod_links.py:2378
+#: Mopy/bash/basher/gui_patchers.py:1095 Mopy/bash/basher/mod_links.py:2378
 msgid "Import Names"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1090
+#: Mopy/bash/basher/gui_patchers.py:1096
 msgid "Import names from source plugins/files."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1097
+#: Mopy/bash/basher/gui_patchers.py:1103
 msgid "Import Actors: Faces"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1098
+#: Mopy/bash/basher/gui_patchers.py:1104
 msgid "Import NPC face/eyes/hair from source plugins. For use with TNR and similar mods."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1106
+#: Mopy/bash/basher/gui_patchers.py:1112
 msgid "Import Sounds"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1107
+#: Mopy/bash/basher/gui_patchers.py:1113
 msgid "Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1116 Mopy/bash/basher/mod_links.py:2131
+#: Mopy/bash/basher/gui_patchers.py:1122 Mopy/bash/basher/mod_links.py:2131
 msgid "Import Stats"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1117
+#: Mopy/bash/basher/gui_patchers.py:1123
 msgid "Import stats from any pickupable items from source plugins/files."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1125 Mopy/bash/basher/mod_links.py:2076
+#: Mopy/bash/basher/gui_patchers.py:1131 Mopy/bash/basher/mod_links.py:2076
 #: Mopy/bash/basher/mod_links.py:2092 Mopy/bash/basher/mod_links.py:2094
 #: Mopy/bash/basher/mod_links.py:2100 Mopy/bash/basher/mod_links.py:2112
 msgid "Import Scripts"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1126
+#: Mopy/bash/basher/gui_patchers.py:1132
 msgid "Import scripts on various objects (e.g. containers, weapons, etc.) from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1134
+#: Mopy/bash/basher/gui_patchers.py:1140
 msgid "Import Races"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1135
+#: Mopy/bash/basher/gui_patchers.py:1141
 msgid "Import race eyes, hair, body, voice, etc. from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1143
+#: Mopy/bash/basher/gui_patchers.py:1149
 msgid "Import Races: Relations"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1144
+#: Mopy/bash/basher/gui_patchers.py:1150
 msgid "Import race-faction relations from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1151
+#: Mopy/bash/basher/gui_patchers.py:1157
 msgid "Import Races: Spells"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1152
+#: Mopy/bash/basher/gui_patchers.py:1158
 msgid "Import race abilities and spells from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1159
+#: Mopy/bash/basher/gui_patchers.py:1165
 msgid "Import Spell Stats"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1160
+#: Mopy/bash/basher/gui_patchers.py:1166
 msgid "Import stats from spells from source plugins/files."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1166
+#: Mopy/bash/basher/gui_patchers.py:1172
 msgid "Import Destructible"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1167
+#: Mopy/bash/basher/gui_patchers.py:1173
 msgid "Preserves changes to destructible records."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1173
+#: Mopy/bash/basher/gui_patchers.py:1179
 msgid "Import Keywords"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1174
+#: Mopy/bash/basher/gui_patchers.py:1180
 msgid "Import keyword changes from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1180
+#: Mopy/bash/basher/gui_patchers.py:1186
 msgid "Import Text"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1181
+#: Mopy/bash/basher/gui_patchers.py:1187
 msgid "Import various types of long-form text like book texts, effect descriptions, etc. from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1188
+#: Mopy/bash/basher/gui_patchers.py:1194
 msgid "Import Object Bounds"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1189
+#: Mopy/bash/basher/gui_patchers.py:1195
 msgid "Import object bounds for various actors, items and objects."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1196
+#: Mopy/bash/basher/gui_patchers.py:1202
 msgid "Import Enchantment Stats"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1197
+#: Mopy/bash/basher/gui_patchers.py:1203
 msgid "Import stats from enchantments from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1203
+#: Mopy/bash/basher/gui_patchers.py:1209
 msgid "Import Effect Stats"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1204
+#: Mopy/bash/basher/gui_patchers.py:1210
 msgid "Import stats from magic/base effects from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1211
+#: Mopy/bash/basher/gui_patchers.py:1217
 msgid "Import Enchantments"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1212
+#: Mopy/bash/basher/gui_patchers.py:1218
 msgid "Import enchantments from armor, weapons, etc. from source plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1219
+#: Mopy/bash/basher/gui_patchers.py:1225
 msgid "Tweak Assorted"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1220
+#: Mopy/bash/basher/gui_patchers.py:1226
 msgid "Tweak various records in miscellaneous ways."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1227
+#: Mopy/bash/basher/gui_patchers.py:1233
 msgid "Tweak Clothes"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1228
+#: Mopy/bash/basher/gui_patchers.py:1234
 msgid "Tweak clothing weight and blocking."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1234
+#: Mopy/bash/basher/gui_patchers.py:1240
 msgid "Tweak Settings"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1235
+#: Mopy/bash/basher/gui_patchers.py:1241
 msgid "Tweak game settings."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1241
+#: Mopy/bash/basher/gui_patchers.py:1247
 msgid "Tweak Names"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1242
+#: Mopy/bash/basher/gui_patchers.py:1248
 msgid "Tweak object names to sort them by type/stats or to improve things like lore friendliness."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1249
+#: Mopy/bash/basher/gui_patchers.py:1255
 msgid "Tweak Actors"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1250
+#: Mopy/bash/basher/gui_patchers.py:1256
 msgid "Tweak NPC and Creatures records in specified ways."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1256
+#: Mopy/bash/basher/gui_patchers.py:1262
 msgid "Tweak Races"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1257
+#: Mopy/bash/basher/gui_patchers.py:1263
 msgid "Tweak race records in specified ways."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1264
+#: Mopy/bash/basher/gui_patchers.py:1270
 msgid "Replace Form IDs"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1265
+#: Mopy/bash/basher/gui_patchers.py:1271
 msgid "Imports Form Id replacers from csv files into the Bashed Patch."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1283
+#: Mopy/bash/basher/gui_patchers.py:1289
 msgid "Leveled Lists"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1285
+#: Mopy/bash/basher/gui_patchers.py:1291
 msgid "Merges changes to leveled lists from all active and/or merged plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1287
+#: Mopy/bash/basher/gui_patchers.py:1293
 msgid "Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1291
+#: Mopy/bash/basher/gui_patchers.py:1297
 msgid "Override Delev/Relev Tags"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1292
+#: Mopy/bash/basher/gui_patchers.py:1298
 msgid "Add Delev/Relev Tags to Plugin"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1298
+#: Mopy/bash/basher/gui_patchers.py:1304
 msgid "FormID Lists"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1300
+#: Mopy/bash/basher/gui_patchers.py:1306
 msgid "Merges changes to FormID lists from all active and/or merged plugins."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1302
+#: Mopy/bash/basher/gui_patchers.py:1308
 msgid "Advanced users may override Deflst tags for any mod (active or inactive) using the list below."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1306
+#: Mopy/bash/basher/gui_patchers.py:1312
 msgid "Override Deflst Tag"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1307
+#: Mopy/bash/basher/gui_patchers.py:1313
 msgid "Add Deflst Tag to Plugin"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1316
+#: Mopy/bash/basher/gui_patchers.py:1322
 msgid "Contents Checker"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1317
+#: Mopy/bash/basher/gui_patchers.py:1323
 msgid "Checks contents of leveled lists, inventories and containers for correct types."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1326
+#: Mopy/bash/basher/gui_patchers.py:1332
 msgid "Race Checker"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1327
+#: Mopy/bash/basher/gui_patchers.py:1333
 msgid "Sorts race hairs and eyes."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1335
+#: Mopy/bash/basher/gui_patchers.py:1341
 msgid "NPC Checker"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1336
+#: Mopy/bash/basher/gui_patchers.py:1342
 msgid "This will randomly assign hairs and eyes to NPCs that are otherwise missing them."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1345
+#: Mopy/bash/basher/gui_patchers.py:1351
 msgid "Timescale Checker"
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1347
+#: Mopy/bash/basher/gui_patchers.py:1353
 msgid "Adjusts the wave period of grasses to match changes in the timescale."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1349
+#: Mopy/bash/basher/gui_patchers.py:1355
 msgid "Does nothing if you are not using a nonstandard timescale."
 msgstr ""
 
-#: Mopy/bash/basher/gui_patchers.py:1351
+#: Mopy/bash/basher/gui_patchers.py:1357
 msgid "Incompatible with plugins that change grass wave periods to match a different timescale. Uninstall such plugins before using this."
 msgstr ""
 
@@ -7178,11 +7198,11 @@ msgstr ""
 msgid "Flags: %(active_flags)s"
 msgstr ""
 
-#: Mopy/bash/basher/saves_links.py:452 Mopy/bash/game/oblivion/__init__.py:520
+#: Mopy/bash/basher/saves_links.py:452 Mopy/bash/game/oblivion/__init__.py:519
 msgid "Clothing"
 msgstr ""
 
-#: Mopy/bash/basher/saves_links.py:453 Mopy/bash/game/oblivion/__init__.py:518
+#: Mopy/bash/basher/saves_links.py:453 Mopy/bash/game/oblivion/__init__.py:517
 msgid "Armor"
 msgstr ""
 
@@ -10265,161 +10285,161 @@ msgstr ""
 msgid "Normanne"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:217
+#: Mopy/bash/game/oblivion/__init__.py:216
 #: Mopy/bash/game/skyrim/__init__.py:220
 msgid "Blade (1 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:218
+#: Mopy/bash/game/oblivion/__init__.py:217
 #: Mopy/bash/game/skyrim/__init__.py:221
 msgid "Blade (2 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:219
+#: Mopy/bash/game/oblivion/__init__.py:218
 #: Mopy/bash/game/skyrim/__init__.py:222
 msgid "Blunt (1 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:220
+#: Mopy/bash/game/oblivion/__init__.py:219
 #: Mopy/bash/game/skyrim/__init__.py:223
 msgid "Blunt (2 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:221
+#: Mopy/bash/game/oblivion/__init__.py:220
 #: Mopy/bash/game/skyrim/__init__.py:224
 msgid "Staff"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:222
+#: Mopy/bash/game/oblivion/__init__.py:221
 #: Mopy/bash/game/skyrim/__init__.py:225
 msgid "Bow"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:226
+#: Mopy/bash/game/oblivion/__init__.py:225
 #: Mopy/bash/game/skyrim/__init__.py:229
 msgid "Argonian"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:227
+#: Mopy/bash/game/oblivion/__init__.py:226
 #: Mopy/bash/game/skyrim/__init__.py:230
 msgid "Breton"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:228
+#: Mopy/bash/game/oblivion/__init__.py:227
 #: Mopy/bash/game/skyrim/__init__.py:231
 msgid "Dark Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:229
+#: Mopy/bash/game/oblivion/__init__.py:228
 #: Mopy/bash/game/skyrim/__init__.py:232
 msgid "High Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:230
+#: Mopy/bash/game/oblivion/__init__.py:229
 #: Mopy/bash/game/skyrim/__init__.py:233
 msgid "Imperial"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:231
+#: Mopy/bash/game/oblivion/__init__.py:230
 #: Mopy/bash/game/skyrim/__init__.py:234
 msgid "Khajiit"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:232
+#: Mopy/bash/game/oblivion/__init__.py:231
 #: Mopy/bash/game/skyrim/__init__.py:235
 msgid "Nord"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:233
+#: Mopy/bash/game/oblivion/__init__.py:232
 #: Mopy/bash/game/skyrim/__init__.py:236
 msgid "Orc"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:234
+#: Mopy/bash/game/oblivion/__init__.py:233
 #: Mopy/bash/game/skyrim/__init__.py:237
 msgid "Redguard"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:235
+#: Mopy/bash/game/oblivion/__init__.py:234
 msgid "Vampire"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:236
+#: Mopy/bash/game/oblivion/__init__.py:235
 #: Mopy/bash/game/skyrim/__init__.py:238
 msgid "Wood Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:516
+#: Mopy/bash/game/oblivion/__init__.py:515
 msgid "Faction"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:517
+#: Mopy/bash/game/oblivion/__init__.py:516
 msgid "Apparatus"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:519
+#: Mopy/bash/game/oblivion/__init__.py:518
 msgid "Book"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:521
+#: Mopy/bash/game/oblivion/__init__.py:520
 msgid "Ingredient"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:522
+#: Mopy/bash/game/oblivion/__init__.py:521
 #: Mopy/bash/game/oblivion/records.py:1500
 msgid "Light"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:523
+#: Mopy/bash/game/oblivion/__init__.py:522
 msgid "Misc. Item"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:524
+#: Mopy/bash/game/oblivion/__init__.py:523
 msgid "Weapon"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:525
+#: Mopy/bash/game/oblivion/__init__.py:524
 msgid "NPC"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:526
+#: Mopy/bash/game/oblivion/__init__.py:525
 #: Mopy/bash/patcher/patchers/mergers.py:842
 msgid "Creature"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:527
+#: Mopy/bash/game/oblivion/__init__.py:526
 msgid "Key"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:528
+#: Mopy/bash/game/oblivion/__init__.py:527
 msgid "Potion"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:529
+#: Mopy/bash/game/oblivion/__init__.py:528
 msgid "Cell"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:530
+#: Mopy/bash/game/oblivion/__init__.py:529
 msgid "Object Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:531
+#: Mopy/bash/game/oblivion/__init__.py:530
 msgid "NPC Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:532
+#: Mopy/bash/game/oblivion/__init__.py:531
 msgid "Creature Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:533
+#: Mopy/bash/game/oblivion/__init__.py:532
 msgid "Dialog Entry"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:534 Mopy/bash/parsers.py:709
+#: Mopy/bash/game/oblivion/__init__.py:533 Mopy/bash/parsers.py:709
 msgid "Quest"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:535
+#: Mopy/bash/game/oblivion/__init__.py:534
 msgid "AI Package"
 msgstr ""
 
@@ -12507,6 +12527,8 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:858
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:965
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1120
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2015
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2021
 msgid "Unlimited"
 msgstr ""
 
@@ -13346,6 +13368,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:483
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:522
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1421
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2014
 msgid "1 Minute"
 msgstr ""
 
@@ -13433,6 +13456,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1424
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1719
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1723
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2012
 msgid "10 Seconds"
 msgstr ""
 
@@ -14864,6 +14888,69 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1983
 msgid "The multiplier by which to increase Master level training costs."
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1994
+msgid "Combat: Block Time (Average)"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1995
+msgid "The average time for which NPCs will keep their shield raised or block with their weapon during combat."
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1998
+msgid "2.5 Seconds"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1999
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2031
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2034
+msgid "4 Seconds"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2000
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2003
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2032
+msgid "8 Seconds"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2001
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2033
+msgid "12 Seconds"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2002
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2013
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2016
+msgid "16 Seconds"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2007
+msgid "Combat: Block Time (Maximum)"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2008
+msgid "The maximum time for which NPCs will keep their shield raised or block with their weapon during combat."
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2011
+msgid "5 Seconds"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2025
+msgid "Combat: Block Time (Minimum)"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2026
+msgid "The minimum time for which NPCs will keep their shield raised or block with their weapon during combat."
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2029
+msgid "1.5 Seconds"
+msgstr ""
+
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2030
+msgid "2 Seconds"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/preservers.py:255
