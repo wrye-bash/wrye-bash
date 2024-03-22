@@ -159,8 +159,8 @@ msgstr ""
 msgid "Compressing files…"
 msgstr ""
 
-#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1561
-#: Mopy/bash/bosh/bain.py:1581 Mopy/bash/bosh/converters.py:318
+#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1562
+#: Mopy/bash/bosh/bain.py:1582 Mopy/bash/bosh/converters.py:318
 #: Mopy/bash/bosh/converters.py:338 Mopy/bash/bosh/converters.py:539
 msgid "Extracting files…"
 msgstr ""
@@ -292,7 +292,7 @@ msgid "Delete the selected items (some of the selected items cannot be deleted a
 msgstr ""
 
 #: Mopy/bash/balt.py:1937 Mopy/bash/basher/installer_links.py:1005
-#: Mopy/bash/basher/settings_dialog.py:693
+#: Mopy/bash/basher/settings_dialog.py:690
 msgid "Rename…"
 msgstr ""
 
@@ -513,159 +513,167 @@ msgstr ""
 msgid "Unable to restore backup!"
 msgstr ""
 
-#: Mopy/bash/bash.py:165
+#: Mopy/bash/bash.py:231
 msgid "This most likely means you are missing a certain version of the Microsoft Visual C++ Redistributable. Try installing the latest x64 version."
 msgstr ""
 
-#: Mopy/bash/bash.py:170
+#: Mopy/bash/bash.py:236
 msgid "Ensure you have installed these dependencies properly. Should the error still occur, check your installed Microsoft Visual C++ Redistributables and try installing the latest x64 version."
 msgstr ""
 
-#: Mopy/bash/bash.py:175
+#: Mopy/bash/bash.py:241
 msgid "The following dependencies could not be located or failed to load:"
 msgstr ""
 
-#: Mopy/bash/bash.py:186
+#: Mopy/bash/bash.py:252
 msgid "Installation appears incomplete. Please reinstall Wrye Bash so that all files are installed."
 msgstr ""
 
-#: Mopy/bash/bash.py:188
+#: Mopy/bash/bash.py:254
 #, python-format
 msgid "Correct installation will create a filled %(wb_folder)s folder."
 msgstr ""
 
-#: Mopy/bash/bash.py:205
+#: Mopy/bash/bash.py:271
 msgid "Only one instance of Wrye Bash can run."
 msgstr ""
 
-#: Mopy/bash/bash.py:410
+#: Mopy/bash/bash.py:280
+msgid "The locale to set when launching Wrye Bash."
+msgstr ""
+
+#: Mopy/bash/bash.py:281
+msgid "The display name of the last game that was launched through Wrye Bash's 'Select Game' dialog."
+msgstr ""
+
+#: Mopy/bash/bash.py:507
 #, python-format
 msgid "Generating HTML file from '%(gen_target)s'"
 msgstr ""
 
-#: Mopy/bash/bash.py:413 Mopy/bash/basher/__init__.py:4282
-#: Mopy/bash/bosh/bain.py:1858
+#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:4283
+#: Mopy/bash/bosh/bain.py:1859
 msgid "Done"
 msgstr ""
 
-#: Mopy/bash/bash.py:437
+#: Mopy/bash/bash.py:535
 #, python-format
 msgid "Wrye Bash encountered an error. Please post the information below to the official thread at %(thread_url)s or to the Wrye Bash Discord at %(discord_url)s"
 msgstr ""
 
-#: Mopy/bash/bash.py:508
+#: Mopy/bash/bash.py:606
 msgid "Error! Unable to start Wrye Bash."
 msgstr ""
 
-#: Mopy/bash/bash.py:508
+#: Mopy/bash/bash.py:606
 msgid "Please ensure Wrye Bash is correctly installed."
 msgstr ""
 
-#: Mopy/bash/bash.py:529
+#: Mopy/bash/bash.py:627
 #, python-format
 msgid "Wrye Bash needs administrator privileges to make changes to the %(gameName)s directory. If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges."
 msgstr ""
 
-#: Mopy/bash/bash.py:553 Mopy/bash/basher/settings_dialog.py:758
+#: Mopy/bash/bash.py:651 Mopy/bash/basher/settings_dialog.py:755
 msgid "Backup Wrye Bash Settings"
 msgstr ""
 
-#: Mopy/bash/bash.py:565
+#: Mopy/bash/bash.py:663
 msgid "There was an error while trying to backup the Wrye Bash settings!"
 msgstr ""
 
-#: Mopy/bash/bash.py:567
+#: Mopy/bash/bash.py:665
 msgid "If you continue, your current settings may be overwritten."
 msgstr ""
 
-#: Mopy/bash/bash.py:569
+#: Mopy/bash/bash.py:667
 msgid "Do you want to quit Wrye Bash now?"
 msgstr ""
 
-#: Mopy/bash/bash.py:571
+#: Mopy/bash/bash.py:669
 msgid "Unable to create backup!"
 msgstr ""
 
-#: Mopy/bash/bash.py:601
+#: Mopy/bash/bash.py:699
 msgid "The following (non-critical) warnings were found during initialization:"
 msgstr ""
 
-#: Mopy/bash/bash.py:614
+#: Mopy/bash/bash.py:712
 msgid "Wrye Bash could not find a game to manage. Make sure to launch games you installed through Steam once and enable mods on games you installed through the Windows Store."
 msgstr ""
 
-#: Mopy/bash/bash.py:618
+#: Mopy/bash/bash.py:716
 #, python-format
 msgid "You can also use the %(cli_game_detect)s command line argument or %(bash_config_file)s to specify the path manually."
 msgstr ""
 
-#: Mopy/bash/bash.py:646
+#: Mopy/bash/bash.py:747
 msgid "Wrye Bash Error"
 msgstr ""
 
-#: Mopy/bash/bash.py:647
+#: Mopy/bash/bash.py:748
 msgid "Wrye Bash Warning"
 msgstr ""
 
-#: Mopy/bash/bash.py:658 Mopy/bash/bash.py:749
+#: Mopy/bash/bash.py:759 Mopy/bash/bash.py:850
 msgid "Quit"
 msgstr ""
 
-#: Mopy/bash/bash.py:660
+#: Mopy/bash/bash.py:761
 msgid "Continue"
 msgstr ""
 
-#: Mopy/bash/bash.py:661
+#: Mopy/bash/bash.py:762
 msgid "Abort"
 msgstr ""
 
-#: Mopy/bash/bash.py:726
+#: Mopy/bash/bash.py:827
 msgid "Select Game"
 msgstr ""
 
-#: Mopy/bash/bash.py:740
+#: Mopy/bash/bash.py:841
 msgid "Search Games"
 msgstr ""
 
-#: Mopy/bash/bash.py:753
+#: Mopy/bash/bash.py:854
 msgid "Launch"
 msgstr ""
 
-#: Mopy/bash/bash.py:759
+#: Mopy/bash/bash.py:863
 msgid "Please choose a game to manage."
 msgstr ""
 
-#: Mopy/bash/bash.py:762
+#: Mopy/bash/bash.py:866
 msgid "Game Details"
 msgstr ""
 
-#: Mopy/bash/bash.py:765
+#: Mopy/bash/bash.py:869
 msgid "Variant:"
 msgstr ""
 
-#: Mopy/bash/bash.py:771
+#: Mopy/bash/bash.py:875
 msgid "Install Path:"
 msgstr ""
 
-#: Mopy/bash/bash.py:820 Mopy/bash/bash.py:834
+#: Mopy/bash/bash.py:925 Mopy/bash/bash.py:939
 msgid "N/A"
 msgstr ""
 
-#: Mopy/bash/bash.py:863
+#: Mopy/bash/bash.py:968
 #, python-format
 msgid "Warning: you appear to be using a non-supported version of wxPython (%(curr_wx_ver)s). This will cause problems! It is highly recommended you use a %(supported_wx_series)s version. Do you still want to run Wrye Bash?"
 msgstr ""
 
-#: Mopy/bash/bash.py:869
+#: Mopy/bash/bash.py:974
 msgid "Unsupported wxPython Version Detected"
 msgstr ""
 
-#: Mopy/bash/bash.py:878
+#: Mopy/bash/bash.py:983
 #, python-format
 msgid "Only Python %(min_py_ver)s and newer is supported (%(curr_py_ver)s detected). If you know what you're doing, install the Python version of Wrye Bash and edit this warning out. Wrye Bash will now exit."
 msgstr ""
 
-#: Mopy/bash/bash.py:884
+#: Mopy/bash/bash.py:989
 msgid "Unsupported Python Version Detected"
 msgstr ""
 
@@ -826,7 +834,7 @@ msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:835 Mopy/bash/basher/__init__.py:839
-#: Mopy/bash/basher/__init__.py:855 Mopy/bash/basher/__init__.py:4163
+#: Mopy/bash/basher/__init__.py:855 Mopy/bash/basher/__init__.py:4164
 msgid "Missing Game INI"
 msgstr ""
 
@@ -990,7 +998,7 @@ msgid "Remove all shown tags from the plugin."
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1840 Mopy/bash/basher/gui_patchers.py:309
-#: Mopy/bash/basher/settings_dialog.py:1089
+#: Mopy/bash/basher/settings_dialog.py:1086
 msgid "Automatic"
 msgstr ""
 
@@ -1220,10 +1228,10 @@ msgstr ""
 msgid "Refreshing from %(data_folder)s…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2922 Mopy/bash/basher/settings_dialog.py:590
-#: Mopy/bash/basher/settings_dialog.py:1555
+#: Mopy/bash/basher/__init__.py:2922 Mopy/bash/basher/settings_dialog.py:587
+#: Mopy/bash/basher/settings_dialog.py:1539
+#: Mopy/bash/basher/settings_dialog.py:1563
 #: Mopy/bash/basher/settings_dialog.py:1579
-#: Mopy/bash/basher/settings_dialog.py:1595
 msgid "General"
 msgstr ""
 
@@ -1362,7 +1370,7 @@ msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have alread
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3405 Mopy/bash/basher/__init__.py:3431
-#: Mopy/bash/basher/patcher_dialog.py:344 Mopy/bash/bosh/__init__.py:3213
+#: Mopy/bash/basher/patcher_dialog.py:344 Mopy/bash/bosh/__init__.py:3202
 msgid "Try again?"
 msgstr ""
 
@@ -1426,124 +1434,124 @@ msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3980 Mopy/bash/basher/saves_links.py:210
 #: Mopy/bash/basher/saves_links.py:639
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:439
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:443
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:477
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:481
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1573
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1576
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1587
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1590
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1612
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1615
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1639
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1640
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1665
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1668
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1678
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1681
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:469
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:473
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:507
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:511
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1603
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1606
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1617
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1620
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1642
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1645
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1669
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1670
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1695
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1698
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1708
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1711
 msgid "Default"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4030
+#: Mopy/bash/basher/__init__.py:4031
 msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4034 Mopy/bash/basher/mods_links.py:425
+#: Mopy/bash/basher/__init__.py:4035 Mopy/bash/basher/mods_links.py:425
 #: Mopy/bash/basher/mods_links.py:439
 msgid "Lock Load Order"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4042
+#: Mopy/bash/basher/__init__.py:4043
 #, python-format
 msgid "The following plugins could not be found in the %(data_folder)s folder or are corrupt and have thus been removed from the load order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4050
+#: Mopy/bash/basher/__init__.py:4051
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d regular plugins and %(max_esl_plugins)d ESL-flagged plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4055
+#: Mopy/bash/basher/__init__.py:4056
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4085
+#: Mopy/bash/basher/__init__.py:4086
 msgid "The following plugins could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4092
+#: Mopy/bash/basher/__init__.py:4093
 msgid "The following save files could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4101
+#: Mopy/bash/basher/__init__.py:4102
 msgid "The following plugins have header versions that are not valid for this game. This may mean that they are actually intended to be used for a different game."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4109
+#: Mopy/bash/basher/__init__.py:4110
 msgid "The following plugins use an older Form Version for their main header. This most likely means that they were not ported properly (if at all)."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4116
+#: Mopy/bash/basher/__init__.py:4117
 msgid "The following plugins are marked as localized, but are missing strings localization files in the language your game is set to. This will cause CTDs if they are activated."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4124
+#: Mopy/bash/basher/__init__.py:4125
 #, python-format
 msgid "The following BSAs have a version different from the one %(game_name)s expects. This can lead to CTDs, please extract and repack them using the %(ck_name)s-provided tool."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4134
+#: Mopy/bash/basher/__init__.py:4135
 msgid "The following BA2s have filenames whose hashes collide, which will cause one or more of them to fail to work correctly. This should be corrected by the mod authors by renaming the files to avoid the collision."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4144
+#: Mopy/bash/basher/__init__.py:4145
 #, python-format
 msgid "%(game_ini_file)s does not exist yet. %(game_name)s will create this file on first run. INI tweaks will not be usable until then."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4153
+#: Mopy/bash/basher/__init__.py:4154
 msgid "Please replace the INI with a default copy and restart Wrye Bash."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4156
+#: Mopy/bash/basher/__init__.py:4157
 msgid "Corrupted Game INI"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4267
+#: Mopy/bash/basher/__init__.py:4268
 msgid "Initializing"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4275
+#: Mopy/bash/basher/__init__.py:4276
 msgid "Initializing Data"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4277
+#: Mopy/bash/basher/__init__.py:4278
 msgid "Initializing Version"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4280
+#: Mopy/bash/basher/__init__.py:4281
 msgid "Initializing Windows"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4298
+#: Mopy/bash/basher/__init__.py:4299
 msgid "Initializing BSAs"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4302
+#: Mopy/bash/basher/__init__.py:4303
 msgid "Initializing plugins"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4305
+#: Mopy/bash/basher/__init__.py:4306
 msgid "Initializing saves"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4308
+#: Mopy/bash/basher/__init__.py:4309
 msgid "Initializing INIs"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4315
+#: Mopy/bash/basher/__init__.py:4316
 msgid "Generating Blank Bashed Patch"
 msgstr ""
 
@@ -1756,7 +1764,7 @@ msgstr ""
 msgid "Install this package"
 msgstr ""
 
-#: Mopy/bash/basher/belt.py:384 Mopy/bash/bosh/__init__.py:3134
+#: Mopy/bash/basher/belt.py:384 Mopy/bash/bosh/__init__.py:3123
 msgid "Plugins"
 msgstr ""
 
@@ -1990,7 +1998,7 @@ msgstr ""
 msgid "This is the text color used for invalid packages."
 msgstr ""
 
-#: Mopy/bash/basher/constants.py:82 Mopy/bash/bosh/bain.py:1407
+#: Mopy/bash/basher/constants.py:82 Mopy/bash/bosh/bain.py:1408
 msgid "Marker"
 msgstr ""
 
@@ -2487,7 +2495,7 @@ msgstr ""
 msgid "Move the following files out of the %(data_folder)s folder?"
 msgstr ""
 
-#: Mopy/bash/basher/dialogs.py:621 Mopy/bash/basher/settings_dialog.py:865
+#: Mopy/bash/basher/dialogs.py:621 Mopy/bash/basher/settings_dialog.py:862
 #: Mopy/bash/gui/popups.py:63
 msgid "Move"
 msgstr ""
@@ -3114,12 +3122,12 @@ msgid "This option cannot be selected."
 msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:327 Mopy/bash/basher/mod_links.py:443
-#: Mopy/bash/basher/settings_dialog.py:1409 Mopy/bash/bosh/__init__.py:1252
+#: Mopy/bash/basher/settings_dialog.py:1400 Mopy/bash/bosh/__init__.py:1248
 #: Mopy/bash/patcher/base.py:180 Mopy/bash/patcher/patchers/checkers.py:171
 #: Mopy/bash/patcher/patchers/mergers.py:961
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:233
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:236
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1571
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:263
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:266
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1601
 msgid "None"
 msgstr ""
 
@@ -4062,8 +4070,8 @@ msgid "No files to install for %(sel_pkg)s."
 msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:914
-#: Mopy/bash/basher/installer_links.py:920 Mopy/bash/bosh/bain.py:1905
-#: Mopy/bash/bosh/bain.py:2216
+#: Mopy/bash/basher/installer_links.py:920 Mopy/bash/bosh/bain.py:1908
+#: Mopy/bash/bosh/bain.py:2220
 msgid "Scanning Packages…"
 msgstr ""
 
@@ -4737,8 +4745,8 @@ msgid "Enable/Disable the Installers tab."
 msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:437
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1533
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1717
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1563
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1747
 msgid "Enabled"
 msgstr ""
 
@@ -5032,7 +5040,7 @@ msgstr ""
 #: Mopy/bash/basher/links_init.py:364 Mopy/bash/basher/links_init.py:435
 #: Mopy/bash/basher/links_init.py:678 Mopy/bash/basher/links_init.py:790
 #: Mopy/bash/basher/links_init.py:833 Mopy/bash/basher/links_init.py:884
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1808
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1838
 msgid "View"
 msgstr ""
 
@@ -5274,7 +5282,7 @@ msgstr ""
 msgid "Allows you to configure various settings that apply to the entirety of Wrye Bash, not just one tab."
 msgstr ""
 
-#: Mopy/bash/basher/misc_links.py:381 Mopy/bash/basher/settings_dialog.py:679
+#: Mopy/bash/basher/misc_links.py:381 Mopy/bash/basher/settings_dialog.py:676
 msgid "Save Data"
 msgstr ""
 
@@ -7599,7 +7607,7 @@ msgid "Brazilian Portuguese"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:436
-#: Mopy/bash/basher/settings_dialog.py:1092
+#: Mopy/bash/basher/settings_dialog.py:1089
 msgid "Russian"
 msgstr ""
 
@@ -7616,12 +7624,12 @@ msgid "Ukrainian"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:440
-#: Mopy/bash/basher/settings_dialog.py:1090
+#: Mopy/bash/basher/settings_dialog.py:1087
 msgid "Chinese (Simplified)"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:441
-#: Mopy/bash/basher/settings_dialog.py:1091
+#: Mopy/bash/basher/settings_dialog.py:1088
 msgid "Chinese (Traditional)"
 msgstr ""
 
@@ -7641,777 +7649,777 @@ msgstr ""
 msgid "Visit our Weblate page!"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:508
+#: Mopy/bash/basher/settings_dialog.py:506
 #, python-format
 msgid "Language: %(selected_language)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:520
+#: Mopy/bash/basher/settings_dialog.py:517
 msgid "Use Alternate Wrye Bash Name"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:521
+#: Mopy/bash/basher/settings_dialog.py:518
 msgid "Use an alternate display name for Wrye Bash based on the game it is managing."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:525
-#: Mopy/bash/basher/settings_dialog.py:556
+#: Mopy/bash/basher/settings_dialog.py:522
+#: Mopy/bash/basher/settings_dialog.py:553
 msgid "Reverse Icon Colors"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:526
+#: Mopy/bash/basher/settings_dialog.py:523
 msgid "Replace black icons used by Wrye Bash with white ones. Useful if you are using an OS theme that makes those icons hard to see."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:569
+#: Mopy/bash/basher/settings_dialog.py:566
 msgid "Show App Version"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:570
+#: Mopy/bash/basher/settings_dialog.py:567
 msgid "Show/hide version numbers for buttons on the status bar."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:576
+#: Mopy/bash/basher/settings_dialog.py:573
 msgid "Sets the status bar icons to the selected size in pixels."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:582
+#: Mopy/bash/basher/settings_dialog.py:579
 msgid "Hidden Buttons"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:582
+#: Mopy/bash/basher/settings_dialog.py:579
 msgid "Visible Buttons"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:583
+#: Mopy/bash/basher/settings_dialog.py:580
 msgid "Make the selected button visible again."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:584
+#: Mopy/bash/basher/settings_dialog.py:581
 msgid "Hide the selected button."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:594
+#: Mopy/bash/basher/settings_dialog.py:591
 msgid "Icon Size:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:599
+#: Mopy/bash/basher/settings_dialog.py:596
 msgid "Manage Hidden Buttons"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:634
+#: Mopy/bash/basher/settings_dialog.py:631
 #, python-format
 msgid "Icon Size: %(new_icon_size)d"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:680
+#: Mopy/bash/basher/settings_dialog.py:677
 msgid "Save all of Wrye Bash's settings/data now."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:682
+#: Mopy/bash/basher/settings_dialog.py:679
 msgid "New Backup…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:683
+#: Mopy/bash/basher/settings_dialog.py:680
 msgid "Backup all of Wrye Bash's settings/data to an archive file."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:686
+#: Mopy/bash/basher/settings_dialog.py:683
 msgid "Set Backups Directory…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:687
+#: Mopy/bash/basher/settings_dialog.py:684
 msgid "Select the directory containing your backups."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:689
+#: Mopy/bash/basher/settings_dialog.py:686
 msgid "Restore…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:690
+#: Mopy/bash/basher/settings_dialog.py:687
 msgid "Restore all of Wrye Bash's settings/data from the selected backup."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:694
+#: Mopy/bash/basher/settings_dialog.py:691
 msgid "Rename the selected backup archive."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:696
+#: Mopy/bash/basher/settings_dialog.py:693
 msgid "Delete…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:697
+#: Mopy/bash/basher/settings_dialog.py:694
 msgid "Delete the selected backup archive."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:748
+#: Mopy/bash/basher/settings_dialog.py:745
 msgid "Set Backups Directory"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:787
+#: Mopy/bash/basher/settings_dialog.py:784
 msgid "Rename Backup"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:788
+#: Mopy/bash/basher/settings_dialog.py:785
 msgid "Please enter the new name for this backup."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:799
+#: Mopy/bash/basher/settings_dialog.py:796
 #, python-format
 msgid "Are you sure you want to restore your Wrye Bash settings from '%(chosen_backup)s'?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:801
+#: Mopy/bash/basher/settings_dialog.py:798
 msgid "This will force a restart of Wrye Bash once your settings are restored."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:802
+#: Mopy/bash/basher/settings_dialog.py:799
 msgid "Restore Wrye Bash Settings?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:822
+#: Mopy/bash/basher/settings_dialog.py:819
 msgid "Your Wrye Bash settings have been successfully extracted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:824
+#: Mopy/bash/basher/settings_dialog.py:821
 #, python-format
 msgid "Backup Path: %(backup_file)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:827
+#: Mopy/bash/basher/settings_dialog.py:824
 msgid "Before the settings can take effect, Wrye Bash must restart."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:829
+#: Mopy/bash/basher/settings_dialog.py:826
 msgid "Click OK to restart now."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:830
+#: Mopy/bash/basher/settings_dialog.py:827
 msgid "Wrye Bash Settings Extracted"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:849
+#: Mopy/bash/basher/settings_dialog.py:846
 msgid "Wrye Bash settings files were successfully saved."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:850
+#: Mopy/bash/basher/settings_dialog.py:847
 msgid "Save Settings"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:863
+#: Mopy/bash/basher/settings_dialog.py:860
 msgid "Ask every time"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:864 Mopy/bash/bolt.py:1797
-#: Mopy/bash/bosh/bain.py:1416 Mopy/bash/gui/popups.py:65
+#: Mopy/bash/basher/settings_dialog.py:861 Mopy/bash/bolt.py:1810
+#: Mopy/bash/bosh/bain.py:1417 Mopy/bash/gui/popups.py:65
 msgid "Copy"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:875
+#: Mopy/bash/basher/settings_dialog.py:872
 msgid "[INI Edits] Applying an INI tweak"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:877
+#: Mopy/bash/basher/settings_dialog.py:874
 msgid "[Installers, Screenshots] Opening a lot of items"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:879
+#: Mopy/bash/basher/settings_dialog.py:876
 msgid "[Installers] Exporting package order"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:881
+#: Mopy/bash/basher/settings_dialog.py:878
 msgid "[Installers] Installing unconfigured complex packages"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:883
+#: Mopy/bash/basher/settings_dialog.py:880
 #, python-format
 msgid "[Installers] Opening a mod's page at the %(target_nexus_name)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:886
+#: Mopy/bash/basher/settings_dialog.py:883
 msgid "[Installers] Opening a mod's page at TES Alliance"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:888
+#: Mopy/bash/basher/settings_dialog.py:885
 msgid "[Installers] Overwriting a package via drag and drop"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:890
+#: Mopy/bash/basher/settings_dialog.py:887
 msgid "[Installers] Overwriting a BCF via drag and drop"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:892
+#: Mopy/bash/basher/settings_dialog.py:889
 msgid "[Installers] Searching for a mod on Google"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:894
+#: Mopy/bash/basher/settings_dialog.py:891
 msgid "[Installers] Trying to reorder installers, but Install Order column not selected"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:897
+#: Mopy/bash/basher/settings_dialog.py:894
 msgid "[Masters] Editing or updating a master list"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:899
+#: Mopy/bash/basher/settings_dialog.py:896
 msgid "[Mods] Adding or removing the ESL flag from a plugin"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:901
+#: Mopy/bash/basher/settings_dialog.py:898
 msgid "[Mods] Adding or removing the ESM flag from a plugin"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:903
+#: Mopy/bash/basher/settings_dialog.py:900
 msgid "[Mods] Adding or removing the ESM flag from a plugin's masters"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:905
+#: Mopy/bash/basher/settings_dialog.py:902
 msgid "[Mods] Applying the Nvidia Fog Fix"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:907
+#: Mopy/bash/basher/settings_dialog.py:904
 msgid "[Mods] Changing a plugin's version to 0.8"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:909
+#: Mopy/bash/basher/settings_dialog.py:906
 msgid "[Mods] Exporting NPC levels to a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:911
+#: Mopy/bash/basher/settings_dialog.py:908
 msgid "[Mods] Importing groups from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:913
+#: Mopy/bash/basher/settings_dialog.py:910
 msgid "[Mods] Importing editor IDs from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:915
+#: Mopy/bash/basher/settings_dialog.py:912
 msgid "[Mods] Importing ingredients from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:917
+#: Mopy/bash/basher/settings_dialog.py:914
 msgid "[Mods] Importing names from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:919
+#: Mopy/bash/basher/settings_dialog.py:916
 msgid "[Mods] Importing NPC levels from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:921
+#: Mopy/bash/basher/settings_dialog.py:918
 msgid "[Mods] Importing prices from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:923
+#: Mopy/bash/basher/settings_dialog.py:920
 msgid "[Mods] Importing relations from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:925
+#: Mopy/bash/basher/settings_dialog.py:922
 msgid "[Mods] Importing scripts from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:927
+#: Mopy/bash/basher/settings_dialog.py:924
 msgid "[Mods] Importing sigil stones from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:929
+#: Mopy/bash/basher/settings_dialog.py:926
 msgid "[Mods] Importing spells from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:931
+#: Mopy/bash/basher/settings_dialog.py:928
 msgid "[Mods] Importing stats from a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:933
+#: Mopy/bash/basher/settings_dialog.py:930
 msgid "[Mods] Locking or unlocking the load order"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:935
+#: Mopy/bash/basher/settings_dialog.py:932
 msgid "[Mods] Removing world orphans"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:937
+#: Mopy/bash/basher/settings_dialog.py:934
 #, python-format
 msgid "[Mods] Renaming a plugin to something that %(game_name)s can't load"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:940
+#: Mopy/bash/basher/settings_dialog.py:937
 msgid "[Mods] Reordering plugins by name"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:942
+#: Mopy/bash/basher/settings_dialog.py:939
 msgid "[Mods] Replacing a plugin's FormIDs based on a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:944
+#: Mopy/bash/basher/settings_dialog.py:941
 msgid "[Mods] Resetting groups to default ones"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:946
+#: Mopy/bash/basher/settings_dialog.py:943
 msgid "[Mods] Synchronizing groups to currently active ones"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:948
+#: Mopy/bash/basher/settings_dialog.py:945
 msgid "[Mods] Trying to activate plugins that can't be activated"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:950
+#: Mopy/bash/basher/settings_dialog.py:947
 msgid "[Mods] Trying to deactivate plugins that can't be deactivated"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:952
+#: Mopy/bash/basher/settings_dialog.py:949
 msgid "[Mods] Trying to reorder plugins, but Load Order column not selected"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:955
+#: Mopy/bash/basher/settings_dialog.py:952
 msgid "[Mods] Trying to reorder plugins that can't be reordered"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:957
+#: Mopy/bash/basher/settings_dialog.py:954
 msgid "[Mods] Using Decompile All to undo a 'Recompile All'"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:959
+#: Mopy/bash/basher/settings_dialog.py:956
 msgid "[Saves] Disabling a save"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:961
+#: Mopy/bash/basher/settings_dialog.py:958
 msgid "[Saves] Updating NPC levels in a save based on current plugins"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:963
+#: Mopy/bash/basher/settings_dialog.py:960
 msgid "[Settings] Switching the currently managed game"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:976
+#: Mopy/bash/basher/settings_dialog.py:973
 msgid "Show Internal Keys"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:977
+#: Mopy/bash/basher/settings_dialog.py:974
 msgid "If checked, show the internal key Wrye Bash uses to store these settings as well."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:985
+#: Mopy/bash/basher/settings_dialog.py:982
 msgid "Choose what to do with files that are dropped onto the Installers tab."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:994
+#: Mopy/bash/basher/settings_dialog.py:991
 msgid "Drop Action:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:997
+#: Mopy/bash/basher/settings_dialog.py:994
 msgid "Unchecking an entry below will reenable that prompt and vice versa."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1017
+#: Mopy/bash/basher/settings_dialog.py:1014
 msgid "Activating this setting will discard all changes you have made below. Are you sure you want to proceed?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1020
+#: Mopy/bash/basher/settings_dialog.py:1017
 msgid "Warning: Unapplied Changes"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1093
+#: Mopy/bash/basher/settings_dialog.py:1090
 msgid "Japanese (Shift_JIS)"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1095
+#: Mopy/bash/basher/settings_dialog.py:1092
 msgid "Western European (English, French, German, etc)"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1099
+#: Mopy/bash/basher/settings_dialog.py:1096
 msgid "Both"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1100
+#: Mopy/bash/basher/settings_dialog.py:1097
 msgid "Global Menu Only"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1101
+#: Mopy/bash/basher/settings_dialog.py:1098
 msgid "Column Menu Only"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1112
+#: Mopy/bash/basher/settings_dialog.py:1109
 msgid "Changes which game Wrye Bash is managing."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1116
+#: Mopy/bash/basher/settings_dialog.py:1113
 msgid "Changes the encoding Wrye Bash will use to read and write plugins."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1122
+#: Mopy/bash/basher/settings_dialog.py:1119
 msgid "'requests' not installed, update checking disabled."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1127
+#: Mopy/bash/basher/settings_dialog.py:1124
 msgid "Check on Startup"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1128
+#: Mopy/bash/basher/settings_dialog.py:1125
 msgid "Whether or not Wrye Bash should check to see if a newer version is available when it is launched."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1134
+#: Mopy/bash/basher/settings_dialog.py:1131
 msgid "Do not check for updates again until this many hours have elapsed since the last check. Set to 0 to check on every startup."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1140
+#: Mopy/bash/basher/settings_dialog.py:1137
 msgid "Cooldown (hours):"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1145
+#: Mopy/bash/basher/settings_dialog.py:1142
 msgid "Check for Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1146
+#: Mopy/bash/basher/settings_dialog.py:1143
 msgid "Check for Wrye Bash updates right now."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1152
+#: Mopy/bash/basher/settings_dialog.py:1149
 msgid "Choose whether only the global menu, only the column header menus, or both should be enabled."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1156
+#: Mopy/bash/basher/settings_dialog.py:1153
 msgid "Global or Column Menu:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1162
+#: Mopy/bash/basher/settings_dialog.py:1159
 msgid "Restore Scroll Positions on Start"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1163
+#: Mopy/bash/basher/settings_dialog.py:1160
 msgid "Remember where you left off last time and scroll back down to that plugin/save/etc. on startup. May cause a moderate slowdown in Wrye Bash's boot process if you have a very large number of plugins/saves/etc."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1171
-#: Mopy/bash/basher/settings_dialog.py:1343
+#: Mopy/bash/basher/settings_dialog.py:1168
+#: Mopy/bash/basher/settings_dialog.py:1340
 msgid "Administrator Mode"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1172
+#: Mopy/bash/basher/settings_dialog.py:1169
 msgid "Restart Wrye Bash with administrator privileges."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1183
+#: Mopy/bash/basher/settings_dialog.py:1180
 msgid "Open a file dialog to interactively choose the path at which Wrye Bash will store temporary files."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1189
+#: Mopy/bash/basher/settings_dialog.py:1186
 msgid "Reset the path at which Wrye Bash will store temporary files back to its default value."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1195
+#: Mopy/bash/basher/settings_dialog.py:1192
 msgid "Game"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1197
+#: Mopy/bash/basher/settings_dialog.py:1194
 msgid "Managed Game:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1200
+#: Mopy/bash/basher/settings_dialog.py:1197
 msgid "Plugin Encoding:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1203
+#: Mopy/bash/basher/settings_dialog.py:1200
 msgid "Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1212
-#: Mopy/bash/basher/settings_dialog.py:1330
+#: Mopy/bash/basher/settings_dialog.py:1209
+#: Mopy/bash/basher/settings_dialog.py:1327
 msgid "Temporary Folder"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1218
-#: Mopy/bash/basher/settings_dialog.py:1550
-#: Mopy/bash/basher/settings_dialog.py:1568
-#: Mopy/bash/basher/settings_dialog.py:1590
+#: Mopy/bash/basher/settings_dialog.py:1215
+#: Mopy/bash/basher/settings_dialog.py:1534
+#: Mopy/bash/basher/settings_dialog.py:1552
+#: Mopy/bash/basher/settings_dialog.py:1574
 msgid "Miscellaneous"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1267
+#: Mopy/bash/basher/settings_dialog.py:1264
 #, python-format
 msgid "You are already using the newest version of Wrye Bash, version %(wb_version)s."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1270
+#: Mopy/bash/basher/settings_dialog.py:1267
 msgid "No Newer Version Available"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1272
+#: Mopy/bash/basher/settings_dialog.py:1269
 msgid "Failed to contact GitHub for update checking. Check your Internet connection."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1274
+#: Mopy/bash/basher/settings_dialog.py:1271
 msgid "Failed To Check for Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1282
+#: Mopy/bash/basher/settings_dialog.py:1279
 msgid "Choose Temporary Folder"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1297
+#: Mopy/bash/basher/settings_dialog.py:1294
 #, python-format
 msgid "Switching games this way will simply relaunch this Wrye Bash installation with the %(cli_game_detect)s command line switch."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1301
+#: Mopy/bash/basher/settings_dialog.py:1298
 msgid "That means manually added application launchers in the status bar will not change after switching."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1306
+#: Mopy/bash/basher/settings_dialog.py:1303
 #, python-format
 msgid "Managed Game: %(chosen_game)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1316
+#: Mopy/bash/basher/settings_dialog.py:1313
 #, python-format
 msgid "Plugin Encoding: %(chosen_encoding)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1352
-#: Mopy/bash/basher/settings_dialog.py:1556
-#: Mopy/bash/basher/settings_dialog.py:1581
-#: Mopy/bash/basher/settings_dialog.py:1596
+#: Mopy/bash/basher/settings_dialog.py:1349
+#: Mopy/bash/basher/settings_dialog.py:1540
+#: Mopy/bash/basher/settings_dialog.py:1565
+#: Mopy/bash/basher/settings_dialog.py:1580
 msgid "Trusted Binaries"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1353
+#: Mopy/bash/basher/settings_dialog.py:1350
 msgid "Untrusted Binaries"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1354
+#: Mopy/bash/basher/settings_dialog.py:1351
 msgid "Mark the selected binary as trusted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1355
+#: Mopy/bash/basher/settings_dialog.py:1352
 msgid "Mark the selected binary as untrusted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1357
+#: Mopy/bash/basher/settings_dialog.py:1354
 msgid "Import…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1358
+#: Mopy/bash/basher/settings_dialog.py:1355
 msgid "Import list of allowed/disallowed binaries from a .txt file. This also allows more fine-grained control over trusted binary versions."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1362
+#: Mopy/bash/basher/settings_dialog.py:1359
 msgid "Export…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1363
+#: Mopy/bash/basher/settings_dialog.py:1360
 msgid "Export list of allowed/disallowed binaries to a .txt file. This also allows more fine-grained control over trusted binary versions."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1388
+#: Mopy/bash/basher/settings_dialog.py:1384
 msgid "Export list of allowed/disallowed plugin DLLs to:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1389
+#: Mopy/bash/basher/settings_dialog.py:1385
 msgid "DLL permissions"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1396
+#: Mopy/bash/basher/settings_dialog.py:1392
 #, python-format
 msgid "Exported by Wrye Bash v%(wb_version)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1398
+#: Mopy/bash/basher/settings_dialog.py:1394
 msgid "Binaries whose installation you have allowed"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1402
+#: Mopy/bash/basher/settings_dialog.py:1395
 msgid "Binaries whose installation you have forbidden"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1422
+#: Mopy/bash/basher/settings_dialog.py:1412
 msgid "dll permissions"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1423
+#: Mopy/bash/basher/settings_dialog.py:1413
 msgid "Import list of allowed/disallowed plugin DLLs from:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1427
+#: Mopy/bash/basher/settings_dialog.py:1417
 msgid "Merge permissions from file with current dll permissions?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1428
+#: Mopy/bash/basher/settings_dialog.py:1418
 msgid "('No' Replaces current permissions instead.)"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1429
+#: Mopy/bash/basher/settings_dialog.py:1419
 msgid "Merge permissions?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1491
+#: Mopy/bash/basher/settings_dialog.py:1476
 #, python-format
 msgid "Wrye Bash could not load %(import_file)s, because it is not saved in UTF-8 format. Please resave it in UTF-8 format and try again."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1497
+#: Mopy/bash/basher/settings_dialog.py:1482
 #, python-format
 msgid "Wrye Bash could not load %(import_file)s, because there was an error in the format of the file."
 msgstr ""
 
+#: Mopy/bash/basher/settings_dialog.py:1531
+#: Mopy/bash/basher/settings_dialog.py:1544
 #: Mopy/bash/basher/settings_dialog.py:1547
-#: Mopy/bash/basher/settings_dialog.py:1560
-#: Mopy/bash/basher/settings_dialog.py:1563
-#: Mopy/bash/basher/settings_dialog.py:1565
-#: Mopy/bash/basher/settings_dialog.py:1568
-#: Mopy/bash/basher/settings_dialog.py:1570
-#: Mopy/bash/basher/settings_dialog.py:1588
-#: Mopy/bash/basher/settings_dialog.py:1589
-#: Mopy/bash/basher/settings_dialog.py:1590
-#: Mopy/bash/basher/settings_dialog.py:1591
+#: Mopy/bash/basher/settings_dialog.py:1549
+#: Mopy/bash/basher/settings_dialog.py:1552
+#: Mopy/bash/basher/settings_dialog.py:1554
+#: Mopy/bash/basher/settings_dialog.py:1572
+#: Mopy/bash/basher/settings_dialog.py:1573
+#: Mopy/bash/basher/settings_dialog.py:1574
+#: Mopy/bash/basher/settings_dialog.py:1575
 msgid "Appearance"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1548
-#: Mopy/bash/basher/settings_dialog.py:1563
-#: Mopy/bash/basher/settings_dialog.py:1588
+#: Mopy/bash/basher/settings_dialog.py:1532
+#: Mopy/bash/basher/settings_dialog.py:1547
+#: Mopy/bash/basher/settings_dialog.py:1572
 msgid "Colors"
 msgstr ""
 
+#: Mopy/bash/basher/settings_dialog.py:1533
 #: Mopy/bash/basher/settings_dialog.py:1549
-#: Mopy/bash/basher/settings_dialog.py:1565
-#: Mopy/bash/basher/settings_dialog.py:1589
+#: Mopy/bash/basher/settings_dialog.py:1573
 msgid "Language"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1551
-#: Mopy/bash/basher/settings_dialog.py:1570
-#: Mopy/bash/basher/settings_dialog.py:1591
+#: Mopy/bash/basher/settings_dialog.py:1535
+#: Mopy/bash/basher/settings_dialog.py:1554
+#: Mopy/bash/basher/settings_dialog.py:1575
 msgid "Status Bar"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1553
-#: Mopy/bash/basher/settings_dialog.py:1573
-#: Mopy/bash/basher/settings_dialog.py:1593
+#: Mopy/bash/basher/settings_dialog.py:1537
+#: Mopy/bash/basher/settings_dialog.py:1557
+#: Mopy/bash/basher/settings_dialog.py:1577
 msgid "Backups"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1554
-#: Mopy/bash/basher/settings_dialog.py:1576
-#: Mopy/bash/basher/settings_dialog.py:1594
+#: Mopy/bash/basher/settings_dialog.py:1538
+#: Mopy/bash/basher/settings_dialog.py:1560
+#: Mopy/bash/basher/settings_dialog.py:1578
 msgid "Confirmations"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1561
+#: Mopy/bash/basher/settings_dialog.py:1545
 msgid "Personalize various aspects of how Wrye Bash looks, including colors and some GUI options."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1564
+#: Mopy/bash/basher/settings_dialog.py:1548
 msgid "Change colors of various GUI components."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1566
+#: Mopy/bash/basher/settings_dialog.py:1550
 msgid "Change the language that Wrye Bash is displayed in and manage localizations."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1569
+#: Mopy/bash/basher/settings_dialog.py:1553
 msgid "Change various miscellaneous appearance settings."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1571
+#: Mopy/bash/basher/settings_dialog.py:1555
 msgid "Change settings related to the status bar at the bottom and manage hidden buttons."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1574
+#: Mopy/bash/basher/settings_dialog.py:1558
 msgid "Create, manage and restore backups of Wrye Bash settings and other data. Click on a backup to manage it."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1577
+#: Mopy/bash/basher/settings_dialog.py:1561
 msgid "Enable or disable popups with a 'Don't show this in the future' option."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1580
+#: Mopy/bash/basher/settings_dialog.py:1564
 msgid "Change various general settings."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1582
+#: Mopy/bash/basher/settings_dialog.py:1566
 msgid "Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted binaries will be skipped by BAIN when installing packages."
 msgstr ""
 
-#: Mopy/bash/bolt.py:306
+#: Mopy/bash/bolt.py:319
 msgid "<very large>"
 msgstr ""
 
-#: Mopy/bash/bolt.py:1735
+#: Mopy/bash/bolt.py:1748
 msgid "Name may not be empty."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1738
+#: Mopy/bash/bolt.py:1751
 #, python-format
 msgid "%(new_name)s contains invalid character (%(bad_char)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1750
+#: Mopy/bash/bolt.py:1763
 #, python-format
 msgid "Bad extension or file root (%(ext_or_root)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1758
+#: Mopy/bash/bolt.py:1771
 #, python-format
 msgid "%(bad_name_str)s: Incorrect file extension (must be %(expected_ext)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1855
+#: Mopy/bash/bolt.py:1868
 #, python-format
 msgid "File %(bad_name_str)s already exists."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:173
+#: Mopy/bash/bosh/__init__.py:176
 msgid "Stored size does not match the one on disk."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:792
+#: Mopy/bash/bosh/__init__.py:795
 msgid "Active"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:793 Mopy/bash/patcher/patchers/mergers.py:959
+#: Mopy/bash/bosh/__init__.py:796 Mopy/bash/patcher/patchers/mergers.py:959
 msgid "Merged"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:794
+#: Mopy/bash/bosh/__init__.py:797
 msgid "Imported"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:795
+#: Mopy/bash/bosh/__init__.py:798
 msgid "Inactive"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:992
+#: Mopy/bash/bosh/__init__.py:986
 msgid "Has size-mismatched masters."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1028
+#: Mopy/bash/bosh/__init__.py:1022
 msgid "Contains dirty edits, needs cleaning."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1217
+#: Mopy/bash/bosh/__init__.py:1213
 msgid "Format mismatch:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1219
+#: Mopy/bash/bosh/__init__.py:1215
 msgid "Target format is INI, tweak format is Batch Script."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1222
+#: Mopy/bash/bosh/__init__.py:1218
 msgid "Target format is Batch Script, tweak format is INI."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1229
+#: Mopy/bash/bosh/__init__.py:1225
 msgid "No valid INI format lines."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1231
+#: Mopy/bash/bosh/__init__.py:1227
 msgid "No valid Batch Script format lines."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1240
+#: Mopy/bash/bosh/__init__.py:1236
 msgid "Invalid Header"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1249
+#: Mopy/bash/bosh/__init__.py:1245
 msgid "Settings missing from target INI:"
 msgstr ""
 
@@ -8522,41 +8530,41 @@ msgstr ""
 msgid "Plugin list is full, so some plugins were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3205
+#: Mopy/bash/bosh/__init__.py:3194
 #, python-format
 msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3208
+#: Mopy/bash/bosh/__init__.py:3197
 #, python-format
 msgid "The file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3211
+#: Mopy/bash/bosh/__init__.py:3200
 #, python-format
 msgid "Please close the other program that is accessing %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3216
+#: Mopy/bash/bosh/__init__.py:3205
 msgid "File in Use"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3699
+#: Mopy/bash/bosh/__init__.py:3719
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3707 Mopy/bash/bosh/__init__.py:3719
-#: Mopy/bash/bosh/__init__.py:3729
+#: Mopy/bash/bosh/__init__.py:3727 Mopy/bash/bosh/__init__.py:3739
+#: Mopy/bash/bosh/__init__.py:3749
 msgid "Settings Load Error"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3712
+#: Mopy/bash/bosh/__init__.py:3732
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3725
+#: Mopy/bash/bosh/__init__.py:3745
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
@@ -8582,60 +8590,60 @@ msgstr ""
 msgid "Has plugin-specific directory - one of the following:"
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:62
+#: Mopy/bash/bosh/_mergeability.py:63
 #, python-format
 msgid "Missing string translation files (%(strings_example)s, etc)."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:76
+#: Mopy/bash/bosh/_mergeability.py:77
 #, python-format
 msgid "Wrye Bash does not currently support loading plugins for %(game_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:89
+#: Mopy/bash/bosh/_mergeability.py:90
 #, python-format
 msgid "Wrye Bash does not support the following record types: %(unsupported_rec_types)s."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:94
+#: Mopy/bash/bosh/_mergeability.py:95
 msgid "This plugin is empty."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:106
+#: Mopy/bash/bosh/_mergeability.py:107
 #, python-format
 msgid "This plugin has new records in the following groups: %(new_rec_groups)s."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:109
+#: Mopy/bash/bosh/_mergeability.py:110
 #, python-format
 msgid "This plugin is a master of the following non-mergeable plugins: %(non_mergeable_plugins)s."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:139
+#: Mopy/bash/bosh/_mergeability.py:140
 msgid "This plugin is already ESL-flagged."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:141
+#: Mopy/bash/bosh/_mergeability.py:142
 msgid "This plugin has the Overlay flag."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:148
+#: Mopy/bash/bosh/_mergeability.py:149
 msgid "This plugin contains records with FormIDs greater than 0xFFF."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:166
+#: Mopy/bash/bosh/_mergeability.py:167
 msgid "This plugin is already Overlay-flagged."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:169
+#: Mopy/bash/bosh/_mergeability.py:170
 msgid "This plugin has the ESL flag."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:171
+#: Mopy/bash/bosh/_mergeability.py:172
 msgid "This plugin does not have any masters."
 msgstr ""
 
-#: Mopy/bash/bosh/_mergeability.py:179
+#: Mopy/bash/bosh/_mergeability.py:180
 msgid "This plugin contains new records."
 msgstr ""
 
@@ -8808,8 +8816,8 @@ msgstr ""
 msgid "Structure: Unrecognized"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:672 Mopy/bash/bosh/bain.py:915
-#: Mopy/bash/bosh/bain.py:972
+#: Mopy/bash/bosh/bain.py:672 Mopy/bash/bosh/bain.py:916
+#: Mopy/bash/bosh/bain.py:973
 msgid "[Vanilla Content]"
 msgstr ""
 
@@ -8834,125 +8842,125 @@ msgstr ""
 msgid "Make EXTRA sure you want to install this one before saying yes."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1339
+#: Mopy/bash/bosh/bain.py:1340
 msgid "Package Structure:"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1368
+#: Mopy/bash/bosh/bain.py:1369
 #, python-format
 msgid "Syncing from %(data_folder)s folder…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1445
+#: Mopy/bash/bosh/bain.py:1446
 msgid "Size: N/A"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1447
+#: Mopy/bash/bosh/bain.py:1448
 msgid "Structure: N/A"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1455
+#: Mopy/bash/bosh/bain.py:1456
 msgid "Archive"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1462
+#: Mopy/bash/bosh/bain.py:1463
 #, python-format
 msgid "Solid, Block Size: %(block_size)s"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1465
+#: Mopy/bash/bosh/bain.py:1466
 msgid "Solid, Block Size: Unknown"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1467
+#: Mopy/bash/bosh/bain.py:1468
 msgid "Solid, Block Size: 7z Default"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1469
+#: Mopy/bash/bosh/bain.py:1470
 msgid "Non-solid"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1470
+#: Mopy/bash/bosh/bain.py:1471
 #, python-format
 msgid "Size: %(package_size)s (%(package_solid)s)"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1479
+#: Mopy/bash/bosh/bain.py:1480
 #, python-format
 msgid "%(invalid_name)s does not have correct extension (%(allowed_extensions)s)."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1484
+#: Mopy/bash/bosh/bain.py:1485
 #, python-format
 msgid "The %(invalid_extension)s extension is unsupported. Using %(default_extension)s instead."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1565
+#: Mopy/bash/bosh/bain.py:1566
 msgid "Organizing files…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1584 Mopy/bash/bosh/bain.py:1756
+#: Mopy/bash/bosh/bain.py:1585 Mopy/bash/bosh/bain.py:1757
 #: Mopy/bash/bosh/converters.py:369
 msgid "Moving files…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1666
+#: Mopy/bash/bosh/bain.py:1667
 msgid "Project"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1726 Mopy/bash/bosh/bain.py:2315
+#: Mopy/bash/bosh/bain.py:1727 Mopy/bash/bosh/bain.py:2319
 #: Mopy/bash/patcher/patch_files.py:367
 msgid "Scanning…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1951
+#: Mopy/bash/bosh/bain.py:1954
 msgid "Loading Data…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2097
+#: Mopy/bash/bosh/bain.py:2101
 msgid "Some packages could not be found and were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2152
+#: Mopy/bash/bosh/bain.py:2156
 msgid "An error occurred while applying an Embedded BCF."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2275
+#: Mopy/bash/bosh/bain.py:2279
 msgid "Pre-Scanning…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2449
+#: Mopy/bash/bosh/bain.py:2453
 #, python-format
 msgid "%(data_folder)s: Skips overrides…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2600
+#: Mopy/bash/bosh/bain.py:2604
 #, python-format
 msgid "INI Tweak created by Wrye Bash %(wb_version)s, using settings from old file."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3095
+#: Mopy/bash/bosh/bain.py:3112
 msgid "Active BSA Conflicts"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3098 Mopy/bash/bosh/bain.py:3113
-#: Mopy/bash/bosh/bain.py:3118 Mopy/bash/bosh/bain.py:3131
+#: Mopy/bash/bosh/bain.py:3115 Mopy/bash/bosh/bain.py:3130
+#: Mopy/bash/bosh/bain.py:3135 Mopy/bash/bosh/bain.py:3148
 msgid "Lower"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3115 Mopy/bash/bosh/bain.py:3133
+#: Mopy/bash/bosh/bain.py:3132 Mopy/bash/bosh/bain.py:3150
 msgid "Higher"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3116
+#: Mopy/bash/bosh/bain.py:3133
 msgid "Loose File Conflicts"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3136
+#: Mopy/bash/bosh/bain.py:3153
 msgid "No Underrides. Mod is not completely un-installed."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3143
+#: Mopy/bash/bosh/bain.py:3160
 msgid "BAIN Packages:"
 msgstr ""
 
@@ -9987,10 +9995,6 @@ msgstr ""
 msgid "Weight"
 msgstr ""
 
-#: Mopy/bash/bush.py:231
-msgid "No game support modules found in Mopy/bash/game."
-msgstr ""
-
 #: Mopy/bash/env/common.py:254
 #, python-format
 msgid "Warning: %(game_file)s could not be parsed for version information."
@@ -10050,11 +10054,11 @@ msgstr ""
 msgid "You may use a loop device if your current filesystem does not support casefolding or try CIOPFS/CICPOFFS (FUSE), though those utilities are outdated and have known issues."
 msgstr ""
 
-#: Mopy/bash/env/windows.py:1072 Mopy/bash/env/windows.py:1076
+#: Mopy/bash/env/windows.py:1071 Mopy/bash/env/windows.py:1075
 msgid "Folder path retrieved via SHGetKnownFolderPath"
 msgstr ""
 
-#: Mopy/bash/env/windows.py:1262
+#: Mopy/bash/env/windows.py:1261
 msgid "On Windows, you can use fsutil.exe to mark the Data folder as case-insensitive again. See Microsoft's 'Adjust case sensitivity' page (https://learn.microsoft.com/en-us/windows/wsl/case-sensitivity) for more information."
 msgstr ""
 
@@ -11484,97 +11488,93 @@ msgstr ""
 msgid "Finish"
 msgstr ""
 
-#: Mopy/bash/ini_files.py:293
+#: Mopy/bash/ini_files.py:304
 #, python-format
 msgid "The INI file %(ini_full_path)s seems to have unencodable characters:"
 msgstr ""
 
-#: Mopy/bash/ini_files.py:331
+#: Mopy/bash/ini_files.py:342
 #, python-format
 msgid "Your %(tweak_ini)s should begin with a section header (e.g. '[General]'), but it does not."
 msgstr ""
 
-#: Mopy/bash/ini_files.py:349
-msgid "The target ini must exist to apply a tweak to it."
-msgstr ""
-
-#: Mopy/bash/ini_files.py:706
+#: Mopy/bash/ini_files.py:775
 msgid "The game INI must exist to apply a tweak to it."
 msgstr ""
 
-#: Mopy/bash/ini_files.py:709
+#: Mopy/bash/ini_files.py:778
 #, python-format
 msgid "%(ini_full_path)s does not exist."
 msgstr ""
 
-#: Mopy/bash/initialization.py:55
+#: Mopy/bash/initialization.py:56
 #, python-format
 msgid "Folder path specified on command line (%(cli_switch)s)"
 msgstr ""
 
-#: Mopy/bash/initialization.py:60
+#: Mopy/bash/initialization.py:61
 #, python-format
 msgid "Folder path specified in bash.ini (%(bash_ini_setting)s)"
 msgstr ""
 
-#: Mopy/bash/initialization.py:67 Mopy/bash/initialization.py:75
+#: Mopy/bash/initialization.py:68 Mopy/bash/initialization.py:76
 #, python-format
 msgid "Additional info: %(error_info)s"
 msgstr ""
 
-#: Mopy/bash/initialization.py:135
+#: Mopy/bash/initialization.py:136
 msgid "Failed to determine personal folder."
 msgstr ""
 
-#: Mopy/bash/initialization.py:135
+#: Mopy/bash/initialization.py:136
 #, python-format
 msgid "Personal folder does not exist: %(folder)s"
 msgstr ""
 
-#: Mopy/bash/initialization.py:154
+#: Mopy/bash/initialization.py:155
 msgid "Failed to determine LocalAppData folder."
 msgstr ""
 
-#: Mopy/bash/initialization.py:155
+#: Mopy/bash/initialization.py:156
 #, python-format
 msgid "LocalAppData folder does not exist: %(folder)s"
 msgstr ""
 
-#: Mopy/bash/initialization.py:193
+#: Mopy/bash/initialization.py:194
 #, python-format
 msgid "The global INI file in your game directory (%(global_ini)s) does not appear to be a valid game INI. It might come from an incorrectly installed third party tool. Consider deleting it and validating your game files."
 msgstr ""
 
-#: Mopy/bash/initialization.py:209
+#: Mopy/bash/initialization.py:210
 #, python-format
 msgid "The %(data_folder)s folder is case sensitive. This will cause serious problems for Wrye Bash, like BAIN not working if the case differs between a mod-added file and an existing version of that file in the Data folder."
 msgstr ""
 
-#: Mopy/bash/initialization.py:288
+#: Mopy/bash/initialization.py:289
 msgid "Please check the settings for the following paths in your bash.ini, the drive does not exist or you don't have write permissions"
 msgstr ""
 
-#: Mopy/bash/initialization.py:292
+#: Mopy/bash/initialization.py:293
 msgid "Please check the settings for the following paths in your bash.ini, the drive does not exist"
 msgstr ""
 
-#: Mopy/bash/initialization.py:294
+#: Mopy/bash/initialization.py:295
 msgid "Error creating required Wrye Bash directories."
 msgstr ""
 
-#: Mopy/bash/initialization.py:317
+#: Mopy/bash/initialization.py:318
 msgid "A path error was the result of relative paths."
 msgstr ""
 
-#: Mopy/bash/initialization.py:318
+#: Mopy/bash/initialization.py:319
 msgid "The following paths are causing the errors, however usually a relative path should be fine."
 msgstr ""
 
-#: Mopy/bash/initialization.py:320
+#: Mopy/bash/initialization.py:321
 msgid "Check your setup to see if you are using symbolic links or NTFS Junctions"
 msgstr ""
 
-#: Mopy/bash/mod_files.py:444
+#: Mopy/bash/mod_files.py:443
 #, python-format
 msgid "Loading: %(loading_plugin)s"
 msgstr ""
@@ -12498,14 +12498,14 @@ msgid "The charge amount and cast cost will be edited so that all enchanted weap
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_assorted.py:595
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:251
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:284
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:494
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:783
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:796
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:828
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:935
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1090
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:281
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:314
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:524
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:813
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:826
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:858
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:965
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1120
 msgid "Unlimited"
 msgstr ""
 
@@ -13271,1610 +13271,1598 @@ msgstr ""
 msgid "The amount of Bounty at which a jail sentence is mandatory"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:169
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:199
 msgid "Oblivion GMST values can't be negative"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:173
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:203
 #, python-format
 msgid "The value chosen for GMST '%(gmst_eid)s' must be a float, but is currently of type %(actual_type)s (%(actual_value)s)."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:225
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:255
 msgid "Custom (in seconds)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:229
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:259
 msgid "Custom (in units)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:235
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:265
 msgid "Hmm…"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:240
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:521
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:270
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:551
 msgid "Allow"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:241
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:242
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:271
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:272
 msgid "Disallow"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:264
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1504
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1859
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:294
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1534
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1889
 msgid "0% (Disabled)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:270
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1510
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1864
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1907
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:300
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1540
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1894
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1937
 msgid "100% (Always)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:271
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1512
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:301
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1542
 msgid "Custom (Max: 1.0)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:285
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:315
 msgid "Custom (Unlimited: 1000 or higher)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:289
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:319
 msgid "Arrow: Litter Count"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:290
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:320
 msgid "Maximum number of spent arrows allowed in cell."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:302
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:332
 msgid "Arrow: Litter Time"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:303
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:333
 msgid "Time before spent arrows fade away from cells and actors."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:305
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:392
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:453
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:492
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1391
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:335
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:422
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:483
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:522
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1421
 msgid "1 Minute"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:306
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:313
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:336
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:343
 msgid "1.5 Minutes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:307
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:393
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:396
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:455
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:337
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:423
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:426
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:485
 msgid "2 Minutes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:308
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:456
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1392
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:338
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:486
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1422
 msgid "3 Minutes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:309
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:394
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:457
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1393
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:339
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:424
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:487
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1423
 msgid "5 Minutes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:310
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:340
 msgid "10 Minutes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:311
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:341
 msgid "30 Minutes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:312
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:342
 msgid "1 Hour"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:317
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:347
 msgid "Arrow: Recovery From Actor"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:318
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:348
 msgid "Chance that an arrow shot into an actor can be recovered."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:335
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:365
 msgid "Arrow: Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:336
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:366
 msgid "Speed of a full power arrow."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:353
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:383
 msgid "Camera: Chase Tightness"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:354
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:384
 msgid "Tightness of chase camera to player turning."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:365
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:395
 msgid "Camera: Chase Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:366
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:396
 msgid "How far camera the can be moved away from the player using the mouse wheel."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:386
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:416
 msgid "Camera: Vanity Delay"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:387
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:417
 msgid "The number of seconds that must be spent idle before the automatic vanity camera mode starts."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:390
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:450
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:458
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1388
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1394
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1689
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1693
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:420
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:480
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:488
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1418
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1424
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1719
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1723
 msgid "10 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:391
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:452
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:491
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1390
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:421
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:482
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:521
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1420
 msgid "30 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:395
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:425
 msgid "Disabled"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:400
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:430
 msgid "Camera: Vanity Speed Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:401
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:431
 msgid "How quickly the manual vanity camera can be rotated."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:413
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:443
 msgid "Magic: Chameleon Refraction"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:414
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:444
 msgid "Chameleon with transparency instead of refraction effect."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:416
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:446
 msgid "Zero"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:417
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:419
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:447
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:449
 msgid "Normal"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:418
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:448
 msgid "Full"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:423
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:453
 msgid "Compass: Disable"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:424
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:454
 msgid "No quest and/or points of interest markers on compass."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:426
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:456
 msgid "Quests"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:427
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:457
 msgid "POIs"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:428
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:458
 msgid "Quests and POIs"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:432
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:462
 msgid "Compass: Recognition Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:433
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:463
 msgid "Distance at which markers (dungeons, towns etc.) begin to show on the compass."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:436
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:466
 msgid "75% Shorter"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:437
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:467
 msgid "50% Shorter"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:438
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:468
 msgid "25% Shorter"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:440
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:470
 msgid "25% Further"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:441
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:471
 msgid "50% Further"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:442
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:472
 msgid "75% Further"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:447
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:477
 msgid "Actor: Unconsciousness Duration"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:448
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:478
 msgid "Time which essential NPCs stay unconscious."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:451
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1389
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1690
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:481
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1419
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1720
 msgid "20 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:454
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:484
 msgid "1 1/2 Minutes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:462
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:492
 msgid "Movement: Fatigue From Running/Encumbrance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:463
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:493
 msgid "Fatigue cost of running and encumbrance."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:473
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:503
 msgid "Player: Horse Turning Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:474
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:504
 msgid "Speed at which your horse can turn."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:482
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:512
 msgid "Custom (Turning and ramp-up speeds)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:486
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:516
 msgid "Camera: Player Death Time"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:487
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:517
 msgid "Time after player's death before the last save is loaded/the reload menu appears."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:490
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:520
 msgid "15 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:493
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:523
 msgid "5 Minute"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:498
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:528
 msgid "World: Cell Respawn Time"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:499
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:529
 msgid "Time before unvisited cells respawn. Longer times increase save sizes."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:502
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1542
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:532
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1572
 msgid "1 Day"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:503
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:510
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:533
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:540
 msgid "3 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:504
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:534
 msgid "5 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:505
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:514
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1434
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:535
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:544
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1464
 msgid "10 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:506
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1436
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:536
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1466
 msgid "20 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:507
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1547
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:537
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1577
 msgid "1 Month"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:508
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1440
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:538
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1470
 msgid "6 Months"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:509
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1441
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:539
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1471
 msgid "1 Year"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:511
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1443
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:541
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1473
 msgid "Custom (in hours)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:518
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:548
 msgid "Combat: Recharge Weapons"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:519
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:549
 msgid "Allow recharging weapons during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:525
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:555
 msgid "Magic: Bolt Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:526
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:556
 msgid "Speed of magic bolt/projectile."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:541
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:571
 msgid "Msg: Equip Misc. Item"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:542
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:572
 msgid "Message upon equipping misc. item."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:547
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:577
 msgid "Msg: Auto Saving"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:548
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:578
 msgid "Message upon auto saving."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:553
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:583
 msgid "Msg: Harvest Failure"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:554
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:584
 msgid "Message upon failure at harvesting flora."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:559
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:589
 msgid "Msg: Harvest Success"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:560
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:590
 msgid "Message upon success at harvesting flora."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:565
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:595
 msgid "Msg: Quick Save"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:566
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:596
 msgid "Message upon quick saving."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:571
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:601
 msgid "Msg: Horse Stabled"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:572
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:602
 msgid "Message upon fast traveling with a horse to a city."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:577
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:607
 msgid "Msg: No Fast Travel"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:578
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:608
 msgid "Message when attempting to fast travel when fast travel is unavailable due to location."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:584
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:614
 msgid "Msg: Loading Area"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:585
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:615
 msgid "Message when background loading area."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:590
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:620
 msgid "Msg: Quick Load"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:591
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:621
 msgid "Message when quick loading."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:596
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:626
 msgid "Msg: Not Enough Charge"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:597
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:627
 msgid "Message when enchanted item is out of charge."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:605
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:635
 msgid "Cost Multiplier: Repair"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:606
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:636
 msgid "Cost factor for repairing items."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:633
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:663
 msgid "Actor: Greeting Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:634
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:664
 msgid "Distance (in units) at which NPCs will greet the player."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:646
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:676
 msgid "Cost Multiplier: Recharge"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:647
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:677
 msgid "Cost factor for recharging items."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:661
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:691
 msgid "Master Of Mercantile Extra Gold Amount"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:662
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:692
 msgid "How much more barter gold all merchants have for a master of mercantile."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:675
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:705
 msgid "Combat: Max Actors"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:676
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:706
 msgid "Maximum number of actors that can actively be in combat with the player."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:693
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:723
 msgid "Crime: Alarm Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:694
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:724
 msgid "Distance from player that NPCs (guards) will be alerted of a crime."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:708
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:738
 msgid "Crime: Prison Duration Modifier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:709
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:739
 msgid "Days in prison is your bounty divided by this number."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:721
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:751
 msgid "Cost Multiplier: Enchantment"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:722
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:752
 msgid "Cost factor for enchanting items."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:730
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:760
 msgid "120 (OOO default)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:736
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:766
 msgid "Cost Multiplier: Spell Making"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:737
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:767
 msgid "Cost factor for making spells."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:748
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:778
 msgid "AI: Max Active Actors"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:749
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:779
 msgid "Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:756
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:786
 msgid "MMM Default: 40"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:767
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:797
 msgid "Magic: Max Player Summons"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:768
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:798
 msgid "Maximum number of creatures the player can summon."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:779
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:809
 msgid "Combat: Max Ally Hits In Combat"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:780
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:810
 msgid "Number of hits allowed by allies in combat before attacking the player."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:787
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:817
 msgid "Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:798
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:830
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:828
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:860
 msgid "Custom (Unlimited: 0)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:802
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:832
 msgid "Combat: Max Ally Hits Out Of Combat"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:803
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:833
 msgid "Number of hits allowed by allies out of combat before attacking the player."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:810
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:840
 msgid "Combat: Max Friend Hits In Combat"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:811
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:841
 msgid "Number of hits allowed by non-ally friends in combat before attacking the player."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:818
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:848
 msgid "Maximum number of hits on a non-ally friend allowed in combat before the friend will attack the hitting character."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:834
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:864
 msgid "Combat: Max Friend Hits Out Of Combat"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:835
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:865
 msgid "Number of hits allowed by non-ally friends out of combat before attacking the player."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:842
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:872
 msgid "Magic: Max NPC Summons"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:843
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:873
 msgid "Maximum number of creatures that each NPC can summon"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:855
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:885
 msgid "Bounty: Assault"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:856
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:886
 msgid "Bounty for attacking a 'good' npc."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:874
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:904
 msgid "Bounty: Horse Theft"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:875
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:905
 msgid "Bounty for horse theft."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:892
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:922
 msgid "Bounty: Theft"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:893
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:923
 msgid "Bounty for stealing, as fraction of item value."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:903
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:933
 msgid "Combat: Alchemy"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:904
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:934
 msgid "Allow alchemy during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:909
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:939
 msgid "Combat: Repair"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:910
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:940
 msgid "Allow repairing armor/weapons during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:915
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:945
 msgid "Actor: Max Companions"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:916
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:946
 msgid "Maximum number of actors following the player."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:927
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:957
 msgid "Actor: Training Limit"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:928
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:958
 msgid "Maximum number of Training allowed by trainers."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:943
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:973
 msgid "Combat: Maximum Armor Rating"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:944
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:974
 msgid "The Maximum amount of protection you will get from armor."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:960
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:990
 msgid "Warning: Interior Distance To Hostiles"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:961
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:991
 msgid "The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:975
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1005
 msgid "Warning: Exterior Distance To Hostiles"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:976
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1006
 msgid "The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:992
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1022
 msgid "UOP Vampire Aging And Face Fix"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:993
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1023
 msgid "Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1002
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1032
 msgid "AI: Max Dead Actors"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1003
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1033
 msgid "Maximum number of dead actors allowed before they're removed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1021
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1051
 msgid "Player: Inventory Quantity Prompt"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1022
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1052
 msgid "Number of items in a stack at which point the game prompts for a quantity."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1025
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1055
 msgid "Always Prompt"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1032
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1062
 msgid "Never Prompt"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1041
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1071
 msgid "Bounty: Trespassing"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1042
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1072
 msgid "Bounty for trespassing."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1056
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1086
 msgid "Bounty: Pickpocketing"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1057
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1087
 msgid "Bounty for pickpocketing."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1069
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1099
 msgid "Level Difference: Creature Max"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1070
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1100
 msgid "Maximum difference to player level for leveled creatures."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1075
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1105
 msgid "Level Difference: Item Max"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1076
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1106
 msgid "Maximum difference to player level for leveled items."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1081
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1111
 msgid "Actor: Strength Encumbrance Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1082
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1112
 msgid "Actor's Strength X this = Actor's Encumbrance capacity."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1095
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1125
 msgid "Visuals: NPC Blood"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1096
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1126
 msgid "Changes or disables NPC Blood splatter textures."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1100
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1130
 msgid "No Blood"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1104
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1134
 msgid "AI: Max Smile Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1105
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1135
 msgid "Maximum distance for NPCs to start smiling."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1107
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1137
 msgid "No Smiles"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1108
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1109
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1138
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1139
 msgid "Default (128)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1113
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1143
 msgid "Player: Max Draggable Weight"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1114
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1144
 msgid "Maximum weight to be able move things with the drag key."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1120
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1150
 msgid "MovableBodies.esp (1500)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1129
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1159
 msgid "AI: Conversation Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1130
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1160
 msgid "Chance of NPCs engaging in conversation."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1143
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1173
 msgid "AI: Conversation Chance - Interior"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1144
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1174
 msgid "Chance of NPCs engaging in conversation - in interiors."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1154
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1184
 msgid "Crime: Pickpocketing Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1155
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1185
 msgid "Improve chances of successful pickpocketing."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1157
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1187
 msgid "0% to 50%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1158
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1188
 msgid "0% to 75%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1159
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1163
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1189
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1193
 msgid "0% to 90%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1160
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1190
 msgid "0% to 100%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1161
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1191
 msgid "25% to 100%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1162
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1192
 msgid "50% to 100%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1164
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1194
 msgid "Custom (Min and Max Chance)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1168
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1198
 msgid "Actor: Max Jump Height"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1169
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1199
 msgid "Increases the height to which you can jump."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1179
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1209
 msgid "Increases the height to which you can jump. First value is min, second is max."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1190
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1220
 msgid "Bounty: Murder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1191
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1221
 msgid "Bounty for committing a witnessed murder."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1202
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1232
 msgid "Bounty: Jailbreak"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1203
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1233
 msgid "Bounty for escaping from jail."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1219
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1249
 msgid "Gore: Combat Dismember Part Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1220
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1250
 msgid "The chance that body parts will be dismembered."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1235
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1265
 msgid "Gore: Combat Explode Part Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1236
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1266
 msgid "The chance that body parts will explode."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1257
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1287
 msgid "Gore: Combat Torso Explode Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1258
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1288
 msgid "The chance your hits will make enemies explode."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1269
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1299
 msgid "Movement: Base Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1270
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1300
 msgid "Changes base movement speed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1278
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1308
 msgid "Movement: Sneak Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1279
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1309
 msgid "Movement speed is multiplied by this when the actor is sneaking."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1288
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1318
 msgid "Combat: VATS Player Damage Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1289
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1319
 msgid "Multiplier of damage that player receives in VATS."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1300
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1330
 msgid "Combat: Auto Aim Fix"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1301
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1331
 msgid "Increase Auto Aim settings to a level at which snipers can benefit from them."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1310
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1340
 msgid "Player: PipBoy Light Keypress Delay"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1311
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1341
 msgid "Seconds of delay until the PipBoy light switches on."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1324
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1354
 msgid "Combat: VATS Playback Delay"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1325
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1355
 msgid "Seconds of delay after the VATS Camera finished playback."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1336
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1366
 msgid "Combat: NPC Death XP Threshold"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1337
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1367
 msgid "Percentage of total damage you have to inflict in order to get XP."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1349
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1379
 msgid "Hacking: Maximum Number Of Words"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1350
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1380
 msgid "The maximum number of words appearing in the terminal hacking mini-game."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1363
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1393
 msgid "Visuals: Terminal Display Rate"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1364
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1394
 msgid "Controls terminal text display speed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1372
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1402
 msgid "Visuals: Shell Camera Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1373
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1403
 msgid "Maximum distance at which gun arisings (shell case, particle, decal) show from camera."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1385
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1415
 msgid "Visuals: Shell Litter Time"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1386
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1416
 msgid "Time before shell cases fade away from cells."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1398
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1428
 msgid "Visuals: Shell Litter Count"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1399
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1429
 msgid "Maximum number of debris (shell case, etc) allowed in cell."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1411
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1441
 msgid "Hacking: Terminal Speed Adjustment"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1412
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1442
 msgid "The display speed at the time of terminal hacking."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1424
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1454
 msgid "Msg: Soul Captured"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1425
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1455
 msgid "Message upon capturing a soul in a Soul Gem."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1430
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1460
 msgid "World: Cell Respawn Time (Cleared)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1431
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1461
 msgid "Time before cleared cells respawn. Longer times increase save sizes."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1435
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1465
 msgid "15 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1437
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1467
 msgid "25 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1438
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1442
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1468
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1472
 msgid "30 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1439
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1469
 msgid "2 Months"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1447
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1477
 msgid "Magic: Max Resistance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1448
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1478
 msgid "Maximum level of resistance a player can have to various forms of magic and disease."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1462
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1492
 msgid "Magic: Max Summons"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1463
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1493
 msgid "Maximum number of creatures an actor can summon (affects both NPCs and the player)."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1475
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1505
 msgid "Actor: Vertical Object Detection"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1476
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1506
 msgid "Changes the vertical range in which NPCs detect objects. The first value must be >= 0 and the second one must be <= 0."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1489
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1519
 msgid "Player: Fast Travel Time Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1490
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1520
 msgid "Changes how much time passes while fast traveling. By default, it passes ~3x slower than if you had walked the distance."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1494
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1497
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1524
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1527
 msgid "Default Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1495
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1525
 msgid "Walking Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1496
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1526
 msgid "Horse Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1501
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1531
 msgid "Combat: Critical Hit Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1502
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1532
 msgid "The chance of a strike being a critical hit."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1516
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1546
 msgid "Arrow: Max Arrows Attached To NPC"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1517
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1547
 msgid "The Maximum number of arrows that can be sticking out of an actor."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1529
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1559
 msgid "Combat: Disable Projectile Dodging"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1530
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1560
 msgid "Removes the ability of NPCs to dodge projectiles being launched at them from range."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1537
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1567
 msgid "Actor: Merchant Restock Time"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1538
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1568
 msgid "The amount of time required for vendors to restock items and gold."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1541
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1571
 msgid "Instant"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1543
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1549
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1573
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1579
 msgid "2 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1544
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1574
 msgid "4 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1545
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1575
 msgid "1 Week"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1546
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1576
 msgid "2 Weeks"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1548
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1578
 msgid "Never"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1550
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1580
 msgid "Custom (in days)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1554
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1584
 msgid "Player: Fall Damage Threshold"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1555
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1585
 msgid "Changes the height at which you take fall damage."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1563
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1593
 msgid "No Fall Damage"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1568
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1598
 msgid "Player: Sprinting Cost"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1569
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1599
 msgid "Changes the stamina drain that occurs when sprinting."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1572
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1602
 msgid "Halved"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1574
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1604
 msgid "Doubled"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1575
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1605
 msgid "Tripled"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1577
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1607
 msgid "Custom (Lower = Less Drain)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1581
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1611
 msgid "Visuals: Masser Size"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1582
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1612
 msgid "Changes the size of the moon Masser (the larger one) in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1585
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1610
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1615
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1640
 msgid "50% Smaller"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1586
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1611
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1616
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1641
 msgid "25% Smaller"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1588
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1613
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1618
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1643
 msgid "25% Larger"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1589
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1614
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1619
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1644
 msgid "50% Larger"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1594
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1624
 msgid "Visuals: Masser Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1595
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1625
 msgid "Changes how quickly the moon Masser (the larger one) moves in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1606
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1636
 msgid "Visuals: Secunda Size"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1607
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1637
 msgid "Changes the size of the moon Secunda (the smaller one) in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1619
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1649
 msgid "Visuals: Secunda Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1620
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1650
 msgid "Changes how quickly the moon Secunda (the smaller one) moves in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1631
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1661
 msgid "AI: Bump Reaction Delay"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1632
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1662
 msgid "Changes how long it takes until NPCs (particularly followers) that have commented on you bumping into them repeat that dialog. Infinite effectively disables it."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1636
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1666
 msgid "Infinite"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1637
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1667
 msgid "10x Longer"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1638
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1668
 msgid "5x Longer"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1644
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1674
 msgid "Magic: Max Active Runes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1645
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1675
 msgid "How many rune spells the player can have active simultaneously."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1653
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1683
 msgid "No Limit"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1658
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1688
 msgid "Actor: Faster Shouts"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1659
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1689
 msgid "Decreases the time that the shout key must be held to shout multiple words. Custom is for the first word and the rest of the shout."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1663
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1693
 msgid "4x Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1664
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1694
 msgid "2x Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1666
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1696
 msgid "2x Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1667
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1697
 msgid "4x Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1669
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1699
 msgid "Custom (in milliseconds)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1673
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1703
 msgid "Combat: Faster Two-Handed Weapons"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1674
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1704
 msgid "Changes 2-hand weapon animation speed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1676
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1706
 msgid "50% Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1677
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1707
 msgid "25% Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1679
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1709
 msgid "25% Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1680
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1710
 msgid "50% Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1685
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1715
 msgid "Player: Underwater Breath Control"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1686
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1716
 msgid "How long the player can hold their breath while swimming - does not affect Argonians."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1691
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1721
 msgid "40 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1692
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1722
 msgid "60 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1694
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1724
 msgid "Custom (Base and Multiplier)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1698
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1728
 msgid "Combat: Stealth Damage Bonus"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1699
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1729
 msgid "Increases the amount of damage you do with daggers, bows and crossbows while sneaking."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1708
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1738
 msgid "Custom (Dagger, Bow, Crossbow)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1712
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1742
 msgid "Msg: Cannot Equip Item Fix"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1713
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1743
 msgid "Disables the 'You cannot equip this item' message because some Skyrim mods (e.g. Frostfall) use activatable misc objects that require it to be disabled."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1722
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1752
 msgid "Msg: Carrying Too Much"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1723
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1753
 msgid "Message when you are carrying too much to run."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1728
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1758
 msgid "Magic: Invisibility Detection Difficulty"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1729
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1759
 msgid "Determines how difficult it is for NPCs to see you while you are invisible."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1732
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1737
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1762
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1767
 msgid "Impossible"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1733
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1763
 msgid "75% Harder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1734
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1764
 msgid "50% Harder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1735
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1765
 msgid "25% Harder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1736
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1766
 msgid "Nullify Invisibility"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1741
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1771
 msgid "Bounty: Shapeshifting"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1742
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1772
 msgid "The bounty for transforming into a vampire lord or werewolf in front of people."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1754
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1784
 msgid "Soul Trap: Lesser Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1755
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1785
 msgid "The level at which NPC souls are considered 'lesser'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1761
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1791
 msgid "Soul Trap: Common Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1762
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1792
 msgid "The level at which NPC souls are considered 'common'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1768
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1798
 msgid "Soul Trap: Greater Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1769
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1799
 msgid "The level at which NPC souls are considered 'greater'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1775
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1805
 msgid "Soul Trap: Grand Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1776
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1806
 msgid "The level at which NPC souls are considered 'grand'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1782
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1812
 msgid "Prompt: Activate"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1783
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1813
 msgid "Changes the text on the 'Activate' prompt shown when interacting with objects."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1786
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1816
 msgid "Interact"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1793
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1823
 msgid "Prompt: Open"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1794
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1824
 msgid "Changes the text on the 'Open' prompt shown when trying to open a door."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1797
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1827
 msgid "Enter"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1804
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1834
 msgid "Prompt: Read"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1805
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1835
 msgid "Changes the text on the 'Read' prompt shown when interacting with books."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1815
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1845
 msgid "Prompt: Sit"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1816
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1846
 msgid "Changes the text on the 'Sit' prompt shown when interacting with chairs."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1819
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1849
 msgid "Sit Down"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1826
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1856
 msgid "Prompt: Take"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1827
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1857
 msgid "Changes the text on the 'Take' prompt shown when taking items."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1830
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1860
 msgid "Grab"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1837
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1867
 msgid "Prompt: Talk"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1838
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1868
 msgid "Changes the text on the 'Talk' prompt shown when interacting with people."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1841
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1871
 msgid "Speak"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1848
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1878
 msgid "Msg: No Soul Gem Large Enough"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1849
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1879
 msgid "Message when there is no soul gem large enough for a captured soul."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1855
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1885
 msgid "Combat: Speak on Attack Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1856
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1886
 msgid "The chance that an actor will speak after performing an attack."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1869
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1899
 msgid "Combat: Speak on Hit Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1870
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1900
 msgid "The chance that an actor will speak after being hit with a weapon."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1881
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1911
 msgid "Combat: Speak on Hit Threshold"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1882
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1912
 msgid "The percentage of an actor's health an attack must deal for the actor to speak when hit."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1885
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1915
 msgid "0% (Always)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1891
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1921
 msgid "100% (Disabled)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1900
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1930
 msgid "Combat: Speak on Power Attack Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1901
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1931
 msgid "The chance that an actor will speak after performing a power attack."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1911
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1941
 msgid "Combat: Random Taunt Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1912
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1942
 msgid "Determines how often actors randomly taunt during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1917
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1947
 msgid "Level Up: Skill Count"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1918
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1948
 msgid "The number of major skill point increases needed to level up."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1929
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1959
 msgid "Actor: Training Cost Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1930
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1960
 msgid "The multiplier by which to increase training costs."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1936
-msgid "x10"
-msgstr ""
-
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1940
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1970
 msgid "Actor: Expert Training Cost Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1941
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1971
 msgid "The multiplier by which to increase Expert level training costs."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1948
-msgid "x3"
-msgstr ""
-
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1952
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1982
 msgid "Actor: Master Training Cost Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1953
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1983
 msgid "The multiplier by which to increase Master level training costs."
-msgstr ""
-
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1960
-msgid "x5"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/preservers.py:255
