@@ -42,7 +42,7 @@ from .game import GameInfo, patch_game
 # Game detection --------------------------------------------------------------
 game: patch_game.PatchGame | None = None
 ws_info: 'env._LegacyWinAppInfo' | None = None
-foundGames: dict[str, Path] = {}    # dict used by the Settings switch game menu
+foundGames: dict[str, Path] = {} # dict used by the Settings switch game menu
 
 # Module Cache
 _allGames: dict[str, type[GameInfo]] = {}

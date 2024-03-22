@@ -477,7 +477,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
 
     def Execute(self):
         super(Installers_BsaRedirection, self).Execute()
-        if bass.settings[self._bl_key]:
+        if should_redirect := bass.settings[self._bl_key]:
             # Delete ArchiveInvalidation.txt, if it exists
             bosh.bsaInfos.remove_invalidation_file()
             ##: Hack, this should not use display_name
@@ -491,7 +491,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                 with balt.Progress(
                         _('Enabling BSA Redirection…')) as progress:
                     bsaFile.undo_alterations(progress)
-        bosh.oblivionIni.setBsaRedirection(bass.settings[self._bl_key])
+        bosh.bsaInfos.set_bsa_redirection(do_redirect=should_redirect)
 
 #------------------------------------------------------------------------------
 class Installers_ShowInactiveConflicts(_Installers_BoolLink_Refresh):

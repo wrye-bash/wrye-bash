@@ -35,6 +35,7 @@ from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_personal_path, shellMakeDirs, is_case_sensitive, \
     get_case_sensitivity_advice
 from .exception import BoltError
+##: This pulls in bush long before _import_bush_and_set_game!
 from .loot_parser import LOOTParser
 
 mopy_dirs_initialized = bash_dirs_initialized = False

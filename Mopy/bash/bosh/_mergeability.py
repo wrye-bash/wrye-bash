@@ -57,8 +57,9 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons):
     if modInfo.fn_key in minfos.missing_strings:
         if not verbose: return False
         from . import oblivionIni
+        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
         strings_example = (f'{os.path.join("Strings", modInfo.fn_key.fn_body)}'
-                           f'_{oblivionIni.get_ini_language()}.STRINGS')
+                           f'_{i_lang}.STRINGS')
         reasons.append(_('Missing string translation files '
                          '(%(strings_example)s, etc).') % {
             'strings_example': strings_example})

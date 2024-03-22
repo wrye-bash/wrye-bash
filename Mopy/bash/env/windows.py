@@ -188,13 +188,12 @@ _re_env = re.compile(r'%(\w+)%', re.U)
 
 def _subEnv(ma_env):
     env_var = ma_env.group(1).upper()
-    # NOTE: On Python 3, this would be better as a try...except KeyError,
-    # then raise BoltError(...) from None
-    env_val = os.environ.get(env_var, None)
-    if not env_val:
+    try:
+        return os.environ[env_var]
+    except KeyError as e:
         raise BoltError("Can't find user directories in windows registry.\n>> "
-                        'See "If Bash Won\'t Start" in bash docs for help.')
-    return env_val
+                        "See \"If Bash Won't Start\" in bash docs for "
+                        "help.") from e
 
 def _getShellPath(folderKey):
     regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,

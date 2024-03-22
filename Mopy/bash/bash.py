@@ -23,6 +23,7 @@
 """This module starts the Wrye Bash application in console mode. Basically,
 it runs some initialization functions and then starts the main application
 loop."""
+from __future__ import annotations
 
 import atexit
 import locale
@@ -30,18 +31,34 @@ import os
 import platform
 import shutil
 import sys
-import textwrap
 import traceback
-from configparser import ConfigParser
 
-from . import bass, bolt, exception, wbtemp, wrye_text
+# These local imports have to be carefully checked to make sure they don't pull
+# in anything unexpected, plus there has to be a good reason for them to be up
+# here instead of locally down below (which is preferred, because it vastly
+# decreases the chance of WB going up in flames without a usable error message
+# in case of e.g. a syntax error). Record your justifications here:
+#  - bass: Needed right below here, we need to set is_standalone
+#  - bolt: Needed by almost every method in here - paths, deprint, etc.
+#  - exception and wbtemp: Needed by bolt, so imported anyways - both were
+#                          designed with this in mind
+from . import bass, bolt, exception, wbtemp
 
-# NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
 # The one and only wx
 _wx = None
+# The boot settings file, tracked as a TomlFile
+_boot_settings = None
+
+##: This should probably sit somewhere else. bass?
+# OS conventions-conformant names for WB's user config subdirectory
+_wb_conf_dir_name = {
+    'Darwin': 'com.wrye-bash',
+    'Linux': 'wrye-bash',
+    'Windows': 'WryeBash',
+}
 
 def _early_setup():
     """Executes (very) early setup by changing working directory and installing
@@ -68,6 +85,55 @@ def _early_setup():
     _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
         buffering=1, encoding='utf-8')
     _install_bugdump()
+
+def _parse_boot_settings(curr_os: str):
+    """Parse the per-user config file boot-settings.toml, which is used to
+    store settings we need before we have a chance to set the game, like locale
+    and last chosen game."""
+    # No way to use env for this, we need this to be done before setting
+    # locale, which needs to be done before we import env
+    if not (wcd_name := _wb_conf_dir_name.get(curr_os)):
+        bolt.deprint(f'Early boot config not supported on {platform.system()} '
+                     f'yet')
+        return
+    if xdg_conf_dir := os.getenv('XDG_CONFIG_HOME'):
+        user_config_dir = bolt.GPath(xdg_conf_dir)
+    else:
+        match curr_os:
+            case 'Windows':
+                # Use AppData\Roaming since, conceptually, we'd want these
+                # settings to be shared for all the user's computers (even if
+                # Roaming isn't being used for that)
+                user_config_dir = bolt.GPath(os.environ['APPDATA'])
+            case 'Linux':
+                user_config_dir = bolt.GPath_no_norm(os.path.expanduser(
+                    '~/.config'))
+            case 'Darwin':
+                user_config_dir = bolt.GPath_no_norm(os.path.expanduser(
+                    '~/Library/Application Support'))
+            case _: return # Impossible, checked above
+    boot_settings_path = user_config_dir.join(wcd_name, 'boot-settings.toml')
+    # We're in no shape to show an error to the user yet, so this import is
+    # dangerous. Guard against it breaking boot, so that we might at least get
+    # to the point where we can show the user a proper error message about this
+    # problem once it reoccurs at the next ini_files import
+    try:
+        from . import ini_files
+    except Exception as e:
+        bolt.deprint(f'ini_files.py failed to import, something is very '
+                     f'broken: {e}', traceback=True)
+        return
+    bs_file = ini_files.TomlFile(boot_settings_path, ini_encoding='utf-8')
+    try:
+        for bs_section_key, bs_section in bass.boot_settings_defaults.items():
+            bs_dict = bass.boot_settings[bs_section_key]
+            for bs_setting_key, bs_setting_default in bs_section.items():
+                 bs_dict[bs_setting_key] = bs_file.getSetting(
+                     bs_section_key, bs_setting_key, bs_setting_default)
+    except FileNotFoundError:
+        pass # That's fine, just means no boot settings have been saved yet
+    global _boot_settings
+    _boot_settings = bs_file
 
 def _install_bugdump():
     """Replaces sys.stdout/sys.stderr with tees that copy the output into the
@@ -207,6 +273,31 @@ def assure_single_instance(instance):
         sys.exit(1)
 
 def exit_cleanup():
+    # The _()s are safe because the exit_cleanup is only registered in _main,
+    # at which point locale has already been set up
+    bs_comments = {
+        'Boot': {
+            'locale': _('The locale to set when launching Wrye Bash.'),
+            'last_game': _("The display name of the last game that was "
+                           "launched through Wrye Bash's 'Select Game' "
+                           "dialog."),
+        },
+    }
+    bs_defaults = bass.boot_settings_defaults
+    # Write out only the boot settings that have been changed from their
+    # defaults - add in comments as well
+    changed_settings = {
+        bs_sect: {bs_key: (bs_val, bs_comments.get(bs_sect, {}).get(bs_key))
+                  for bs_key, bs_val in bass.boot_settings[bs_sect].items()
+                  if bs_val != bs_defaults[bs_sect][bs_key]}
+        for bs_sect in bass.boot_settings if bs_sect in bs_defaults
+    }
+    # Don't create the folder or file if no settings have been changed yet
+    if changed_settings and any(map(bool, changed_settings.values())):
+        _boot_settings.abs_path.head.makedirs()
+        _boot_settings.saveSettings(changed_settings)
+    # Do this after writing out boot-settings.toml, because ini_files uses
+    # wbtemp for the atomic write
     wbtemp.cleanup_temp()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
@@ -356,31 +447,34 @@ def _parse_bash_ini(bash_ini_path):
     for v in ini_set.values():
         bass.inisettings.update(v)
     # if bash.ini exists update those settings from there
-    if bash_ini_path is None or not os.path.exists(bash_ini_path):
+    if (bi_path := bolt.GPath(bash_ini_path)) is None or not bi_path.is_file():
         return
-    bash_ini_parser = ConfigParser()
     # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
     # English INI is ASCII)
-    bash_ini_parser.read(bash_ini_path, encoding='utf-8')
-    for section in bash_ini_parser.sections():
-        section_defaults = ini_set.get(section, {})
+    from . import ini_files
+    bash_ini = ini_files.IniFileInfo(bi_path, ini_encoding='utf-8')
+    for ci_section, section_values in bash_ini.get_ci_settings().items():
         section_defaults = {k.lower(): (k, v) for k, v in
-                            section_defaults.items()}
+                            ini_set.get(str(ci_section), {}).items()}
         # retrieving ini settings is case-insensitive - key: lowercase
-        for ini_key_lower, value in bash_ini_parser.items(section):
-            if not value: continue
-            if default := section_defaults.get(ini_key_lower[1:]):
+        for ci_ini_key, value_tup in section_values.items():
+            if not value_tup or not (value := value_tup[0]): continue
+            # [1:] to chop off the leading 's' in e.g. 'sBashModData'
+            ini_dict_key_lo = ci_ini_key[1:].lower()
+            if default := section_defaults.get(ini_dict_key_lo):
                 ini_settings_key, default_value = default
                 if type(default_value) is bool:
-                    value = bash_ini_parser.getboolean(section, ini_key_lower)
+                    # Based on ConfigParser.getboolean's behavior
+                    value = value.lower() in ('1', 'yes', 'true', 'on')
                 else:
                     value = value.strip()
                 bass.inisettings[ini_settings_key] = value
-            elif section == 'Tool Options':
+            elif ci_section == 'Tool Options':
                 ##:(570) provisional - we want to stop specifying tool paths
-                # in the ini but we need some UI for that
-                # stash all settings in here in case they match tool path keys
-                bass.inisettings[ini_key_lower[1:]] = value
+                # in the ini but we need some UI for that.
+                # Stash all settings in here in case they match tool path keys.
+                # Those are queried in lower case
+                bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------
 def main(opts):
@@ -394,13 +488,16 @@ def main(opts):
                           f"the moment. If you know what you're doing, use "
                           f"the --unsupported switch to bypass this raise "
                           f"statement.")
-    # Change working dir and logging
+    # Change working dir and setup logging
     _early_setup()
-    # wx is needed to initialize locale, so that's first
+    # Parsing the boot settings needs logging to be available and, in turn, is
+    # needed for initializing locale
+    _parse_boot_settings(curr_os)
+    # wx is also needed to initialize locale
     wxver = _import_wx()
     try:
-        # Next, initialize locale so that we can show a translated error
-        # message if WB crashes
+        # We're now ready to initialize locale. That way, we can show a
+        # translated error message if WB crashes
         from . import localize
         wx_locale = localize.setup_locale(opts.language, _wx)
         if not bass.is_standalone and (not _rightWxVersion(wxver) or
@@ -409,6 +506,7 @@ def main(opts):
         if opts.genHtml is not None: ##: we should do this before localization and wx import
             print(_("Generating HTML file from '%(gen_target)s'") % {
                 'gen_target': opts.genHtml})
+            from . import wrye_text
             wrye_text.genHtml(opts.genHtml)
             print(_('Done'))
             return
@@ -621,13 +719,16 @@ def _import_bush_and_set_game(opts):
                 'manually.') % {'cli_game_detect': '-o',
                                 'bash_config_file': 'bash.ini'})
             return None
-        retCode = _select_game_popup(game_infos)
+        retCode = _select_game_popup(game_infos,
+            last_used_game=bass.boot_settings['Boot']['last_game'])
         if not retCode:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
-        # Add the game to the command line, so we use it if we restart
+        # Add the game to the command line, so we use it if we restart. Also,
+        # default to this game the next time we launch the game select popup
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
+        bass.boot_settings['Boot']['last_game'] = gname
         bush.detect_and_set_game(opts.oblivionPath, gname, gm_path)
     return bush.game
 
@@ -711,7 +812,7 @@ class _AppReturnCode(object):
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _select_game_popup(game_infos):
+def _select_game_popup(game_infos, last_used_game: str | None):
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
     from .balt import Resources
@@ -752,9 +853,12 @@ def _select_game_popup(game_infos):
             self._launch_button = ImageButton(self, launch_img,
                 btn_label=_('Launch'))
             self._launch_button.on_clicked.subscribe(self._handle_launch)
-            # Start out with an empty search and the alphabetically first game
-            # selected
-            self._perform_search(search_str=u'')
+            # Start out with an empty search and the last-used game selected,
+            # if any - otherwise, use the one that comes first alphabetically
+            initial_choice = None
+            if last_used_game and last_used_game in self._sorted_games:
+                initial_choice = last_used_game
+            self._perform_search(search_str='', choice_override=initial_choice)
             VLayout(item_expand=True, border=6, spacing=12, items=[
                 Label(self, _(u'Please choose a game to manage.'),
                       alignment=TextAlignment.CENTER),
@@ -792,8 +896,9 @@ def _select_game_popup(game_infos):
                         return p
                 return None # Should never happen
 
-        def _perform_search(self, search_str):
-            prev_choice = self._game_dropdown.get_value()
+        def _perform_search(self, search_str, *,
+                choice_override: str | None =None):
+            prev_choice = choice_override or self._game_dropdown.get_value()
             search_lower = search_str.strip().lower()
             filtered_games = [g for g in self._sorted_games
                               if search_lower in g.lower()]

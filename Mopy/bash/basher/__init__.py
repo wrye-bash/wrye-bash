@@ -3998,7 +3998,8 @@ class BashFrame(WindowFrame):
         #--Config helpers
         initialization.lootDb.refreshBashTags()
         #--Check bsas, needed to detect string files in modInfos refresh...
-        bosh.oblivionIni.get_ini_language(cached=False) # reread ini language
+        bosh.oblivionIni.get_ini_language(bush.game.Ini.default_game_lang,
+            cached=False) # Reread INI language
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
