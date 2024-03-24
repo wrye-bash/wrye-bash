@@ -79,8 +79,6 @@ def initialize_load_order_handle(mod_infos, game_handle):
     global _game_handle
     _game_handle = game_handle.lo_handler(mod_infos, _plugins_txt_path,
         loadorder_txt_path=_loadorder_txt_path)
-    _game_handle.parse_ccc_file()
-    _game_handle.print_lo_paths()
     __load_pickled_load_orders()
 
 # Saved load orders -----------------------------------------------------------
@@ -276,10 +274,6 @@ def get_ordered(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
     return sorted(mod_paths, key=lambda fn: (
         _cached_lord.mod_lo_index.get(fn, __m), fn))
 
-def filter_pinned(imods):
-    pinn = _game_handle.pinned_mods()
-    return [m for m in imods if m in pinn]
-
 # Get and set API -------------------------------------------------------------
 def save_lo(lord, acti=None, __index_move=0, quiet=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
@@ -416,8 +410,14 @@ def max_esls():
 def swap(old_dir, new_dir):
     return _game_handle.swap(old_dir, new_dir)
 
-def force_active_if_present():
-    return {*_game_handle.must_be_active_if_present, _game_handle.master_path}
+def filter_pinned(imods, remove=False):
+    """Keep only mods that are always active from imods (or remove them if
+    remove is True). If fixed_order is True, only always active mods with a
+    fixed order will be considered (one known case those differ)."""
+    pinned = {*_game_handle.must_be_active_if_present}
+    if remove:
+        return {m for m in imods if m not in pinned}
+    return {m for m in imods if m in pinned}
 
 def using_ini_file(): return isinstance(_game_handle, INIGame)
 

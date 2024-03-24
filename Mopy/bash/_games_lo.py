@@ -39,7 +39,7 @@ from collections import defaultdict
 from functools import partial
 
 from . import bass, bolt, env, exception
-from .bolt import AFile, FName, Path, dict_sort
+from .bolt import AFile, FName, Path, deprint, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -259,9 +259,29 @@ class LoGame:
         self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
-        if self.master_path in self.must_be_active_if_present:
-            raise SyntaxError("Don't include the game master in "
-                              "must_be_active_if_present!")
+        self._set_pinned_mods(self.master_path)
+        self._print_lo_paths()
+
+    # INITIALIZATION ----------------------------------------------------------
+    @classmethod
+    def _set_pinned_mods(cls, master_fn):
+        """Set the master file(s) that must always be active if present."""
+        cls.must_be_active_if_present = mbaip = (
+            master_fn, *cls.must_be_active_if_present)
+        if len(mbaip) != len(set(mbaip)):
+            raise ValueError(f'Duplicate entries in {mbaip}')
+
+    def _print_lo_paths(self):
+        """Prints the paths that will be used and what they'll be used for.
+        Useful for debugging."""
+        acti_lo = self.get_lo_files()
+        bolt.deprint('Using the following load order files:')
+        if len(acti_lo) == 2 and acti_lo[0] == acti_lo[1]:
+            bolt.deprint(f' - Load order and active plugins: {acti_lo[0]}')
+        else:
+            bolt.deprint(f' - Active plugins: {acti_lo.pop(0)}')
+            if acti_lo:
+                bolt.deprint(f' - Load order: {acti_lo.pop(0)}')
 
     # API ---------------------------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
@@ -375,11 +395,6 @@ class LoGame:
             self._persist_if_changed(active, lord, previous_active,
                                      previous_lord)
         return lord, active # return what we set or was previously set
-
-    def pinned_mods(self):
-        """Returns a set of plugin names that may not be reordered by the
-        user."""
-        return {self.master_path}
 
     # Conflicts - only for timestamp games
     def has_load_order_conflict(self, mod_name): return False
@@ -509,15 +524,15 @@ class LoGame:
                          and x.fn_ext != u'.esu']
         # Use sets to avoid O(n) lookups due to lists
         acti_filtered_set = set(acti_filtered)
-        lord_set = set(lord)
         fix_active.act_removed = set(acti) - acti_filtered_set
-        if self.master_path not in acti_filtered_set:
-            acti_filtered.insert(0, self.master_path)
-            acti_filtered_set.add(self.master_path)
-            fix_active.master_not_active = self.master_path
-        for path in self.must_be_active_if_present:
-            if path in lord_set and path not in acti_filtered_set:
-                fix_active.missing_must_be_active.append(path)
+        for path in self._fixed_order_plugins(): # existing mods that must be active
+            if path not in acti_filtered_set:
+                if path == self.master_path:
+                    acti_filtered.insert(0, path)
+                    acti_filtered_set.add(self.master_path)
+                    fix_active.master_not_active = self.master_path
+                else:
+                    fix_active.missing_must_be_active.append(path)
         # order - affects which mods are chopped off if > 255 (the ones that
         # load last) - won't trigger saving but for Skyrim
         fix_active.act_order_differs_from_load_order += \
@@ -568,23 +583,23 @@ class LoGame:
         return (set(acti_filtered_regular[self.max_espms:]),
                 set(acti_filtered_esl[self.max_esls:]))
 
-    def _fixed_order_plugins(self):
+    def _fixed_order_plugins(self, mods: set[FName] | None = None):
         """Returns a list of plugins that must have the order they have in this
         list. The list may only contain plugins that are actually present in
         the Data folder."""
-        return [self.master_path, *(x for x in self.must_be_active_if_present
-                                    if x in self.mod_infos)]
+        modset = self.mod_infos if mods is None else mods & set(self.mod_infos)
+        return [x for x in self.must_be_active_if_present if x in modset]
 
     def _order_fixed(self, lord_or_acti):
         # This may be acti, so don't force-activate fixed-order plugins
         # (plugins with a missing LO when this is lord will already have had a
         # load order set earlier in _fix_load_order)
-        la_set = set(lord_or_acti)
-        fixed_order = [p for p in self._fixed_order_plugins() if p in la_set]
-        if not fixed_order: return False # nothing to do
+        fixed_order = self._fixed_order_plugins(set(lord_or_acti))
+        if not fixed_order: # should not happen - master_esm is always present
+            return False
         fixed_order_set = set(fixed_order)
-        filtered_lo = [x for x in lord_or_acti if x not in fixed_order_set]
-        lo_with_fixed = [*fixed_order, *filtered_lo]
+        lo_with_fixed = [*fixed_order, *(x for x in lord_or_acti if
+                                         x not in fixed_order_set)]
         if lord_or_acti != lo_with_fixed:
             lord_or_acti[:] = lo_with_fixed
             return True
@@ -610,22 +625,6 @@ class LoGame:
             else:
                 mods_add(mod)
         return duplicates
-
-    # INITIALIZATION ----------------------------------------------------------
-    @classmethod
-    def parse_ccc_file(cls): pass
-
-    def print_lo_paths(self):
-        """Prints the paths that will be used and what they'll be used for.
-        Useful for debugging."""
-        acti_lo = self.get_lo_files()
-        bolt.deprint('Using the following load order files:')
-        if len(acti_lo) == 2 and acti_lo[0] == acti_lo[1]:
-            bolt.deprint(f' - Load order and active plugins: {acti_lo[0]}')
-        else:
-            bolt.deprint(f' - Active plugins: {acti_lo.pop(0)}')
-            if acti_lo:
-                bolt.deprint(f' - Load order: {acti_lo.pop(0)}')
 
 def _mk_ini(ini_key, star, ini_fpath):
     """Creates a new IniFile from the specified bolt.Path object."""
@@ -811,9 +810,6 @@ class TimestampGame(LoGame):
 class _TextFileLo(LoGame):
     """Common code for games that use a text file to store the load order."""
 
-    def pinned_mods(self):
-        return {self.master_path, *self.must_be_active_if_present}
-
     def _backup_load_order(self):
         """This method should make a backup of whatever file is storing the
         load order plugins list."""
@@ -971,7 +967,7 @@ class AsteriskGame(_TextFileLo):
     def _active_entries_to_remove(self):
         """Return a set of plugin names that should not be written into the LO
         file that stores active plugins."""
-        return self.pinned_mods()
+        return {*self.must_be_active_if_present}
 
     def request_cache_update(self, *args):
         if None in args or self._plugins_txt.do_update():
@@ -1007,8 +1003,7 @@ class AsteriskGame(_TextFileLo):
                     lo, active = self._persist_load_order(lo, active)
                 # Prepend all present fixed-order plugins that can't be in the
                 # plugins txt to the active and lord lists
-                sorted_rem = [x for x in self._fixed_order_plugins() if
-                              x in rem_from_acti]
+                sorted_rem = self._fixed_order_plugins(rem_from_acti)
                 ##: we rewrite lo here even if cached_load_order is passed in
                 active, lo = [*sorted_rem, *active], [*sorted_rem, *lo]
             else:
@@ -1044,26 +1039,27 @@ class AsteriskGame(_TextFileLo):
             self._persist_load_order(lord, active)
 
     @classmethod
-    def parse_ccc_file(cls):
-        if not cls._ccc_filename: return # Abort if this game has no CC
-        ccc_path = bass.dirs[u'app'].join(cls._ccc_filename)
-        try:
-            with open(ccc_path, 'rb') as ins:
-                ccc_contents = []
-                for ccc_line in ins.readlines():
-                    try:
-                        ccc_dec = bolt.decoder(ccc_line, encoding=u'cp1252')
-                        ccc_contents.append(FName(ccc_dec.strip()))
-                    except UnicodeError:
-                        bolt.deprint(f'Failed to decode CCC entry {ccc_line}')
-                        continue
-                cls.must_be_active_if_present += tuple(ccc_contents)
-        except OSError as e:
-            if not isinstance(e, FileNotFoundError):
-                bolt.deprint(f'Failed to open {ccc_path}', traceback=True)
-            bolt.deprint(f'{cls._ccc_filename} does not exist or could not be '
-                         f'read, falling back to hardcoded CCC list')
-            cls.must_be_active_if_present += cls._ccc_fallback
+    def _set_pinned_mods(cls, master_fn):
+        if cls._ccc_filename:
+            ccc_path = bass.dirs['app'].join(cls._ccc_filename)
+            try:
+                with open(ccc_path, 'rb') as ins:
+                    ccc_contents = []
+                    for ccc_line in ins.readlines():
+                        try:
+                            ccc_dec = bolt.decoder(ccc_line, encoding='cp1252')
+                            ccc_contents.append(FName(ccc_dec.strip()))
+                        except UnicodeError:
+                            deprint(f'Failed to decode CCC entry {ccc_line}')
+                            continue
+                    cls.must_be_active_if_present += tuple(ccc_contents)
+            except OSError as e:
+                if not isinstance(e, FileNotFoundError):
+                    deprint(f'Failed to open {ccc_path}', traceback=True)
+                deprint(f'{cls._ccc_filename} does not exist or could not be '
+                        f'read, falling back to hardcoded CCC list')
+                cls.must_be_active_if_present += cls._ccc_fallback
+        super()._set_pinned_mods(master_fn)
 
 # Print helpers
 def _pl(it, legend='', joint=', '):
