@@ -274,10 +274,6 @@ def get_ordered(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
     return sorted(mod_paths, key=lambda fn: (
         _cached_lord.mod_lo_index.get(fn, __m), fn))
 
-def filter_pinned(imods):
-    pinn = force_active_if_present()
-    return [m for m in imods if m in pinn]
-
 # Get and set API -------------------------------------------------------------
 def save_lo(lord, acti=None, __index_move=0, quiet=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
@@ -410,11 +406,15 @@ def max_espms():
 
 def max_esls():
     return _game_handle.max_esls
+
 def swap(old_dir, new_dir):
     return _game_handle.swap(old_dir, new_dir)
 
-def force_active_if_present():
-    return {*_game_handle.must_be_active_if_present}
+def filter_pinned(imods, remove=False):
+    pinned = {*_game_handle.must_be_active_if_present} # todo: use _active_entries_to_remove in some cases? (reorder)
+    if remove:
+        return [m for m in imods if m not in pinned]
+    return [m for m in imods if m in pinned]
 
 def using_ini_file(): return isinstance(_game_handle, INIGame)
 

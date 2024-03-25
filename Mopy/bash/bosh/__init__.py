@@ -2803,8 +2803,7 @@ class ModInfos(TableFileInfos):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
-        notDeactivatable = load_order.force_active_if_present()
-        fileNames = {x for x in fileName if x not in notDeactivatable}
+        fileNames = load_order.filter_pinned(fileName, remove=True)
         old = set_awip = set(self._active_wip)
         diff = set_awip - fileNames
         if len(diff) == len(set_awip): return set()
@@ -2882,8 +2881,7 @@ class ModInfos(TableFileInfos):
         for present_plugin in list(wip_actives):
             if present_plugin.fn_ext != '.esu':
                 _add_masters(present_plugin)
-        wip_actives |= (load_order.force_active_if_present() &
-                        present_plugins)
+        wip_actives.update(load_order.filter_pinned(present_plugins))
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.get_ordered(wip_actives)
         trim_regular, trim_esl = load_order.check_active_limit(ordered_wip)
