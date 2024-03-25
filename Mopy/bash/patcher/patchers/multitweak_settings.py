@@ -1995,7 +1995,7 @@ class GmstTweak_Combat_BlockTimeAverage(_AGmstCCTweak):
     tweak_tip = _('The average time for which NPCs will keep their shield '
                   'raised or block with their weapon during combat.')
     tweak_key = ('fCombatBlockTimeMid',)
-    tweak_choices = [(_('2.5 Seconds'), 1.5),
+    tweak_choices = [(_('2.5 Seconds'), 2.5),
                      (_('4 Seconds'),   4.0),
                      (_('8 Seconds'),   8.0),
                      (_('12 Seconds'), 12.0),

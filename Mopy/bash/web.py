@@ -77,8 +77,8 @@ class _RestOp(Enum):
 
 # Public API ------------------------------------------------------------------
 class ARestHandler:
-    """An abstract base class for APIs that need to use ."""
-    # The base URL for the REST API you're using. Set in
+    """An abstract base class for web APIs that use REST-like semantics."""
+    # The base URL for the REST API you're using. Set statically in subclasses
     _base_url: str
 
     def __init__(self, extra_headers: dict[str, str] | None = None):
