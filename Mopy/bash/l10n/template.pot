@@ -552,7 +552,7 @@ msgstr ""
 msgid "Generating HTML file from '%(gen_target)s'"
 msgstr ""
 
-#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:4283
+#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:4282
 #: Mopy/bash/bosh/bain.py:1859
 msgid "Done"
 msgstr ""
@@ -845,7 +845,7 @@ msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:835 Mopy/bash/basher/__init__.py:839
-#: Mopy/bash/basher/__init__.py:855 Mopy/bash/basher/__init__.py:4164
+#: Mopy/bash/basher/__init__.py:855 Mopy/bash/basher/__init__.py:4163
 msgid "Missing Game INI"
 msgstr ""
 
@@ -1464,105 +1464,105 @@ msgstr ""
 msgid "Default"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4031
+#: Mopy/bash/basher/__init__.py:4030
 msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4035 Mopy/bash/basher/mods_links.py:425
+#: Mopy/bash/basher/__init__.py:4034 Mopy/bash/basher/mods_links.py:425
 #: Mopy/bash/basher/mods_links.py:439
 msgid "Lock Load Order"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4043
+#: Mopy/bash/basher/__init__.py:4042
 #, python-format
 msgid "The following plugins could not be found in the %(data_folder)s folder or are corrupt and have thus been removed from the load order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4051
+#: Mopy/bash/basher/__init__.py:4050
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d regular plugins and %(max_esl_plugins)d ESL-flagged plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4056
+#: Mopy/bash/basher/__init__.py:4055
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4086
+#: Mopy/bash/basher/__init__.py:4085
 msgid "The following plugins could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4093
+#: Mopy/bash/basher/__init__.py:4092
 msgid "The following save files could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4102
+#: Mopy/bash/basher/__init__.py:4101
 msgid "The following plugins have header versions that are not valid for this game. This may mean that they are actually intended to be used for a different game."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4110
+#: Mopy/bash/basher/__init__.py:4109
 msgid "The following plugins use an older Form Version for their main header. This most likely means that they were not ported properly (if at all)."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4117
+#: Mopy/bash/basher/__init__.py:4116
 msgid "The following plugins are marked as localized, but are missing strings localization files in the language your game is set to. This will cause CTDs if they are activated."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4125
+#: Mopy/bash/basher/__init__.py:4124
 #, python-format
 msgid "The following BSAs have a version different from the one %(game_name)s expects. This can lead to CTDs, please extract and repack them using the %(ck_name)s-provided tool."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4135
+#: Mopy/bash/basher/__init__.py:4134
 msgid "The following BA2s have filenames whose hashes collide, which will cause one or more of them to fail to work correctly. This should be corrected by the mod authors by renaming the files to avoid the collision."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4145
+#: Mopy/bash/basher/__init__.py:4144
 #, python-format
 msgid "%(game_ini_file)s does not exist yet. %(game_name)s will create this file on first run. INI tweaks will not be usable until then."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4154
+#: Mopy/bash/basher/__init__.py:4153
 msgid "Please replace the INI with a default copy and restart Wrye Bash."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4157
+#: Mopy/bash/basher/__init__.py:4156
 msgid "Corrupted Game INI"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4268
+#: Mopy/bash/basher/__init__.py:4267
 msgid "Initializing"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4276
+#: Mopy/bash/basher/__init__.py:4275
 msgid "Initializing Data"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4278
+#: Mopy/bash/basher/__init__.py:4277
 msgid "Initializing Version"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4281
+#: Mopy/bash/basher/__init__.py:4280
 msgid "Initializing Windows"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4299
+#: Mopy/bash/basher/__init__.py:4298
 msgid "Initializing BSAs"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4303
+#: Mopy/bash/basher/__init__.py:4302
 msgid "Initializing plugins"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4306
+#: Mopy/bash/basher/__init__.py:4305
 msgid "Initializing saves"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4309
+#: Mopy/bash/basher/__init__.py:4308
 msgid "Initializing INIs"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4316
+#: Mopy/bash/basher/__init__.py:4315
 msgid "Generating Blank Bashed Patch"
 msgstr ""
 
