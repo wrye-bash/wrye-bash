@@ -398,6 +398,11 @@ class LoGame:
                                      previous_lord)
         return lord, active # return what we set or was previously set
 
+    def fixed_order_always_active(self):
+        """Always active plugins names that have a fixed load order - for
+        AsteriskGames those should not be written into plugins.txt."""
+        return {*self.must_be_active_if_present}
+
     # Conflicts - only for timestamp games
     def has_load_order_conflict(self, mod_name): return False
     def has_load_order_conflict_active(self, mod_name, active): return False
@@ -984,23 +989,18 @@ class AsteriskGame(_TextFileLo):
     _ccc_fallback = ()
     _star = True
 
-    def _active_entries_to_remove(self):
-        """Return a set of plugin names that should not be written into the LO
-        file that stores active plugins."""
-        return {*self.must_be_active_if_present}
-
     def _request_cache_update(self, *args):
         if any(x is None for x in args) or self._plugins_txt.do_update():
             return None, None
         return args
 
-    def _cached_or_fetch(self, cached_load_order, cached_active):
+    def _cached_or_fetch(self, ca_load_order, ca_active):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Discard information read if cached_* is passed in, but due
         to our caller being get_load_order *at least one* is None."""
         try:
             active, lo = self._plugins_txt.parse_modfile(self.mod_infos)
-            rem_from_acti = self._active_entries_to_remove()
+            rem_from_acti = self.fixed_order_always_active()
             if any_dropped := {x for x in lo if x in rem_from_acti}:
                 bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
                              f'{self._plugins_txt.abs_path}')
@@ -1010,14 +1010,13 @@ class AsteriskGame(_TextFileLo):
             # Prepend all present fixed-order plugins that can't be in the
             # plugins txt to the active and lord lists
             sorted_rem = self._fixed_order_plugins(rem_from_acti)
-            active, lo = [*sorted_rem, *active], [*sorted_rem, *lo]
-            lo = lo if cached_load_order is None else cached_load_order
-            active = active if cached_active is None else cached_active
+            lo = [*sorted_rem, *lo] if ca_load_order is None else ca_load_order
+            active = [*sorted_rem, *active] if ca_active is None else ca_active
         except FileNotFoundError:
             # Create it if it doesn't exist
             must_be_active = self._fixed_order_plugins()
-            self._persist_load_order(lo := cached_load_order or must_be_active,
-                                     active := cached_active or must_be_active)
+            self._persist_load_order(lo := ca_load_order or must_be_active,
+                                     active := ca_active or must_be_active)
             bolt.deprint(f'Created {self._plugins_txt.abs_path}')
         return lo, active
 
@@ -1029,7 +1028,7 @@ class AsteriskGame(_TextFileLo):
         raise NotImplementedError # no override for AsteriskGame
 
     def _persist_load_order(self, lord, active):
-        rem_from_acti = self._active_entries_to_remove()
+        rem_from_acti = self.fixed_order_always_active()
         lord = [x for x in lord if x not in rem_from_acti]
         active = [x for x in active if x not in rem_from_acti]
         self._write_plugins_txt(lord, active)

@@ -410,8 +410,12 @@ def max_esls():
 def swap(old_dir, new_dir):
     return _game_handle.swap(old_dir, new_dir)
 
-def filter_pinned(imods, remove=False):
-    pinned = {*_game_handle.must_be_active_if_present} # todo: use _active_entries_to_remove in some cases? (reorder)
+def filter_pinned(imods, remove=False, fixed_order=True):
+    """Keep only mods that are always active from imods (or remove them if
+    remove is True). If fixed_order is True, only always active mods with a
+    fixed order will be considered (one known case those differ)."""
+    pinned = _game_handle.fixed_order_always_active() if fixed_order else {
+        *_game_handle.must_be_active_if_present}
     if remove:
         return [m for m in imods if m not in pinned]
     return [m for m in imods if m in pinned]

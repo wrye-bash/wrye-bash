@@ -246,10 +246,10 @@ class _AStarfieldGameInfo(PatchGame):
 
         # The game tries to read a Starfield.ccc already, but it's not present yet
         # _ccc_filename = 'Starfield.ccc'
-        def _active_entries_to_remove(self):
+        def fixed_order_always_active(self):
             # BlueprintShips-Starfield.esm is hardcoded to be active, but does
             # not have a hardcoded load order, so don't remove it from the LO
-            return super()._active_entries_to_remove() - {
+            return super().fixed_order_always_active() - {
                 FName('BlueprintShips-Starfield.esm')}
     lo_handler = Starfield
 
