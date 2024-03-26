@@ -995,8 +995,31 @@ class AsteriskGame(_TextFileLo):
         return args
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
-        # read the file once
-        return self._fetch_load_order(cached_load_order, cached_active)
+        """Read data from plugins.txt file once. If plugins.txt does not exist
+        create it. Discard information read if cached_* is passed in, but due
+        to our caller being get_load_order *at least one* is None."""
+        try:
+            active, lo = self._plugins_txt.parse_modfile(self.mod_infos)
+            rem_from_acti = self._active_entries_to_remove()
+            if any_dropped := {x for x in lo if x in rem_from_acti}:
+                bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
+                             f'{self._plugins_txt.abs_path}')
+                # We removed plugins that don't belong here, back up first
+                self._backup_active_plugins()
+                lo, active = self._persist_load_order(lo, active)
+            # Prepend all present fixed-order plugins that can't be in the
+            # plugins txt to the active and lord lists
+            sorted_rem = self._fixed_order_plugins(rem_from_acti)
+            active, lo = [*sorted_rem, *active], [*sorted_rem, *lo]
+            lo = lo if cached_load_order is None else cached_load_order
+            active = active if cached_active is None else cached_active
+        except FileNotFoundError:
+            # Create it if it doesn't exist
+            must_be_active = self._fixed_order_plugins()
+            self._persist_load_order(lo := cached_load_order or must_be_active,
+                                     active := cached_active or must_be_active)
+            bolt.deprint(f'Created {self._plugins_txt.abs_path}')
+        return lo, active
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered): return True
@@ -1004,37 +1027,6 @@ class AsteriskGame(_TextFileLo):
     # Abstract overrides ------------------------------------------------------
     def _fetch_active_plugins(self) -> list[FName]:
         raise NotImplementedError # no override for AsteriskGame
-
-    def _fetch_load_order(self, cached_load_order, cached_active):
-        """Read data from plugins.txt file. If plugins.txt does not exist
-        create it. Discards information read if cached_* is passed in,
-        but due to our ultimate caller being get_load_order *at least one* is
-        None."""
-        try:
-            active, lo = self._plugins_txt.parse_modfile(self.mod_infos)
-            lo = lo if cached_load_order is None else cached_load_order
-            if cached_active is None:  # we fetched active, clean it up
-                rem_from_acti = self._active_entries_to_remove()
-                if any_dropped := ({*active, *lo} & rem_from_acti):
-                    bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
-                                 f'{self._plugins_txt.abs_path}')
-                    # We removed plugins that don't belong here, back up first
-                    self._backup_active_plugins()
-                    lo, active = self._persist_load_order(lo, active)
-                # Prepend all present fixed-order plugins that can't be in the
-                # plugins txt to the active and lord lists
-                sorted_rem = self._fixed_order_plugins(rem_from_acti)
-                ##: we rewrite lo here even if cached_load_order is passed in
-                active, lo = [*sorted_rem, *active], [*sorted_rem, *lo]
-            else:
-                active = cached_active
-        except FileNotFoundError:
-            # Create it if it doesn't exist
-            must_be_active = self._fixed_order_plugins()
-            lo = cached_load_order or must_be_active
-            self._persist_load_order(lo, active := cached_active or must_be_active)
-            bolt.deprint(f'Created {self._plugins_txt.abs_path}')
-        return lo, active
 
     def _persist_load_order(self, lord, active):
         rem_from_acti = self._active_entries_to_remove()
