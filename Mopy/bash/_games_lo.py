@@ -588,23 +588,23 @@ class LoGame:
         return (set(acti_filtered_regular[self.max_espms:]),
                 set(acti_filtered_esl[self.max_esls:]))
 
-    def _fixed_order_plugins(self):
+    def _fixed_order_plugins(self, mods: set[FName] | None = None):
         """Returns a list of plugins that must have the order they have in this
         list. The list may only contain plugins that are actually present in
         the Data folder."""
-        return [x for x in self.must_be_active_if_present if
-                x in self.mod_infos]
+        modset = self.mod_infos if mods is None else mods & set(self.mod_infos)
+        return [x for x in self.must_be_active_if_present if x in modset]
 
     def _order_fixed(self, lord_or_acti):
         # This may be acti, so don't force-activate fixed-order plugins
         # (plugins with a missing LO when this is lord will already have had a
         # load order set earlier in _fix_load_order)
-        la_set = set(lord_or_acti)
-        fixed_order = [p for p in self._fixed_order_plugins() if p in la_set]
-        if not fixed_order: return False # nothing to do
+        fixed_order = self._fixed_order_plugins(set(lord_or_acti))
+        if not fixed_order: # should not happen - master_esm is always present
+            return False
         fixed_order_set = set(fixed_order)
-        filtered_lo = [x for x in lord_or_acti if x not in fixed_order_set]
-        lo_with_fixed = [*fixed_order, *filtered_lo]
+        lo_with_fixed = [*fixed_order, *(x for x in lord_or_acti if
+                                         x not in fixed_order_set)]
         if lord_or_acti != lo_with_fixed:
             lord_or_acti[:] = lo_with_fixed
             return True
@@ -1023,8 +1023,7 @@ class AsteriskGame(_TextFileLo):
                     lo, active = self._persist_load_order(lo, active)
                 # Prepend all present fixed-order plugins that can't be in the
                 # plugins txt to the active and lord lists
-                sorted_rem = [x for x in self._fixed_order_plugins() if
-                              x in rem_from_acti]
+                sorted_rem = self._fixed_order_plugins(rem_from_acti)
                 ##: we rewrite lo here even if cached_load_order is passed in
                 active, lo = [*sorted_rem, *active], [*sorted_rem, *lo]
             else:
