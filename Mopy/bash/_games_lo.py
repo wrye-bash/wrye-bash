@@ -987,7 +987,7 @@ class AsteriskGame(_TextFileLo):
     def _active_entries_to_remove(self):
         """Return a set of plugin names that should not be written into the LO
         file that stores active plugins."""
-        return self.must_be_active_if_present
+        return {*self.must_be_active_if_present}
 
     def _request_cache_update(self, *args):
         if any(x is None for x in args) or self._plugins_txt.do_update():
