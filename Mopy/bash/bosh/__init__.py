@@ -2146,7 +2146,7 @@ class ModInfos(TableFileInfos):
         self.merged, self.imported, self.bashed_patches = set(), set(), set()
         #--Oblivion version
         self.voCurrent = None
-        self.voAvailable = set()
+        self._voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
         # used in RefreshData
         self.warn_missing_lo_act = set()
@@ -2352,7 +2352,7 @@ class ModInfos(TableFileInfos):
                 rdata.redraw |= self._file_or_active_updates()
         else: # we did all the refreshes above in _modinfos_cache_wrapper
             rdata.redraw |= act_ch | ldiff.reordered | ldiff.affected
-        self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
+        self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
         return rdata
 
@@ -3191,11 +3191,20 @@ class ModInfos(TableFileInfos):
         _('The file is in use by another process such as %(xedit_name)s.'), '',
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
-    def setOblivionVersion(self, newVersion, ask_yes):
-        """Swaps Oblivion.esm to specified version."""
+    def try_set_version(self, set_version, *, do_swap=None):
+        """Set Oblivion version to specified one - dry run if do_swap is False.
+        """
+        curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
+        if set_version is None or curr_ver is None:
+            # for do_swap False set_version != None => curr_ver == None
+            return curr_ver # return curr_ver as a convenience for saveInfos
+        if set_version != curr_ver and set_version in self._voAvailable:
+            if not do_swap: return True # we can swap
+        else: return False
+        # Swap Oblivion.esm to specified version - do_swap is askYes callback
         master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
-        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{newVersion}.esm')
+        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{set_version}.esm')
         newSize = bush.game.modding_esm_size[copy_from]
         oldSize = self[master_esm].fsize
         if newSize == oldSize: return
@@ -3230,7 +3239,7 @@ class ModInfos(TableFileInfos):
                     new = inf_fname[0].get_rename_paths(inf_fname[1])[0][1]
                     msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
                         'xedit_name': bush.game.Xe.full_name, }
-                    if ask_yes(None, msg, title=_('File in Use')):
+                    if do_swap(msg, title=_('File in Use')):
                         continue
                     if do_undo: file_info_rename_op(self[move_to], master_esm)
                     raise
@@ -3252,16 +3261,9 @@ class ModInfos(TableFileInfos):
         self.cached_lo_save_all()
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
-        self.voCurrent = newVersion
-        self.voAvailable.add(current_version)
-        self.voAvailable.remove(newVersion)
-
-    def try_set_version(self, set_version, do_swap): # do_swap is askYes here!
-        curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
-        if set_version is None: # just return current version
-            return curr_ver # as a convenience for saveInfos
-        if set_version != curr_ver and set_version in self.voAvailable:
-            self.setOblivionVersion(set_version, do_swap)
+        self.voCurrent = set_version
+        self._voAvailable.add(curr_ver)
+        self._voAvailable.remove(set_version)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size
@@ -3333,7 +3335,7 @@ class SaveInfos(TableFileInfos):
                     modInfos.refreshLoadOrder(unlock_lo=True)
                 # Swap Oblivion version to memorized version
                 voNew = self.get_profile_attr(save_dir, 'vOblivion', None)
-                if curr := modInfos.try_set_version(voNew, do_swap):
+                if curr := modInfos.try_set_version(voNew, do_swap=do_swap):
                     self.set_profile_attr(save_dir, 'vOblivion', curr)
             if not boot:
                 self.table.save()
