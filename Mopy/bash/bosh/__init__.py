@@ -3211,17 +3211,16 @@ class ModInfos(TableFileInfos):
         if set_version is None or curr_ver is None:
             # for do_swap False set_version != None => curr_ver == None
             return curr_ver # return curr_ver as a convenience for saveInfos
-        if set_version != curr_ver and set_version in self._voAvailable:
+        master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
+        # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
+        move_to = FName(f'{(fnb := master_esm.fn_body)}_{curr_ver}.esm')
+        if set_version != curr_ver and set_version in self._voAvailable and \
+                move_to not in self and move_to not in self.corrupted:
             if not do_swap: return True # we can swap
         else: return False
         # Swap Oblivion.esm to specified version - do_swap is askYes callback
-        master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
-        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{set_version}.esm')
-        # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
-        move_to = FName(f'{fnb}_{curr_ver}.esm')
-        if self.store_dir.join(move_to).exists():
-            raise StateError(f"Can't swap: {move_to} already exists.")
+        copy_from = FName(f'{fnb}_{set_version}.esm')
         swapped_inf = self[copy_from]
         swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
