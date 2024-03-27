@@ -2152,7 +2152,7 @@ class ModInfos(TableFileInfos):
         self.merged, self.imported, self.bashed_patches = set(), set(), set()
         #--Oblivion version
         self.voCurrent = None
-        self.voAvailable = set()
+        self._voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
         # used in RefreshData
         self.warn_missing_lo_act = set()
@@ -2364,7 +2364,7 @@ class ModInfos(TableFileInfos):
                 rdata.redraw |= self._file_or_active_updates()
         else: # we did all the refreshes above in _modinfos_cache_wrapper
             rdata.redraw |= act_ch | ldiff.reordered | ldiff.affected
-        self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
+        self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
         return rdata
 
@@ -3204,7 +3204,7 @@ class ModInfos(TableFileInfos):
         _('The file is in use by another process such as %(xedit_name)s.'), '',
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
-    def setOblivionVersion(self, newVersion, ask_yes):
+    def _setOblivionVersion(self, newVersion, ask_yes): ##: inline and drop StateError checks
         """Swaps Oblivion.esm to specified version."""
         master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
@@ -3266,15 +3266,21 @@ class ModInfos(TableFileInfos):
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = newVersion
-        self.voAvailable.add(current_version)
-        self.voAvailable.remove(newVersion)
+        self._voAvailable.add(current_version)
+        self._voAvailable.remove(newVersion)
 
-    def try_set_version(self, set_version, do_swap): # do_swap is askYes here!
+    def try_set_version(self, set_version, do_swap=False):
+        """Set Oblivion version to specified one - dry run if do_swap is False.
+        """
         curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
-        if set_version is None: # just return current version
-            return curr_ver # as a convenience for saveInfos
-        if set_version != curr_ver and set_version in self.voAvailable:
-            self.setOblivionVersion(set_version, do_swap)
+        if set_version is None or curr_ver is None:
+            # for do_swap False set_version != None => curr_ver == None
+            return curr_ver # return curr_ver as a convenience for saveInfos
+        if set_version != curr_ver and set_version in self._voAvailable:
+            if not do_swap: return True # we can swap
+        else: return False
+        # do_swap is True and we can swap
+        self._setOblivionVersion(set_version, do_swap)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size

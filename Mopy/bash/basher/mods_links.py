@@ -254,6 +254,8 @@ class Mods_ActiveFirst(CheckLink):
 # "Oblivion.esm" submenu ------------------------------------------------------
 class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     """Single link for setting an Oblivion.esm version."""
+    _version_key: str # must not be None!
+
     def __init__(self, version_key, setProfile=False):
         super().__init__()
         self._version_key = self._text = version_key
@@ -267,12 +269,11 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
     def _enable(self):
-        return bosh.modInfos.voCurrent is not None and not self._check() and \
-            self._version_key in bosh.modInfos.voAvailable
+        return bosh.modInfos.try_set_version(self._version_key)
 
     def Execute(self):
-        """Handle selection."""
-        bosh.modInfos.setOblivionVersion(self._version_key, askYes)
+        # we will repeat the check here should not be needed but won't harm
+        bosh.modInfos.try_set_version(self._version_key, askYes)
         ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
         # not any of the modding ESMs. Maybe we should enforce that those
         # modding ESMs are never active and drop this refresh_others?
