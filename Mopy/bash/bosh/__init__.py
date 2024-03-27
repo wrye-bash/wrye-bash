@@ -3218,18 +3218,10 @@ class ModInfos(TableFileInfos):
         master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
         copy_from = FName(f'{(fnb := master_esm.fn_body)}_{set_version}.esm')
-        newSize = bush.game.modding_esm_size[copy_from]
-        oldSize = self[master_esm].fsize
-        if newSize == oldSize: return
-        try: # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
-            current_version = bush.game.size_esm_version[oldSize]
-            move_to = FName(f'{fnb}_{current_version}.esm')
-        except KeyError:
-            raise StateError("Can't match current main ESM to known version.")
+        # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
+        move_to = FName(f'{fnb}_{curr_ver}.esm')
         if self.store_dir.join(move_to).exists():
             raise StateError(f"Can't swap: {move_to} already exists.")
-        if copy_from not in self:
-            raise StateError(f"Can't swap: {copy_from} doesn't exist.")
         swapped_inf = self[copy_from]
         swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
