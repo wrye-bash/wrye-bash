@@ -595,12 +595,12 @@ class GameInfo(object):
     def modding_esms(self, mod_infos):
         """Set current (and available) master game esm(s) - Oblivion only."""
         if not self.modding_esm_size: return set(), None
-        version_strs, current_esm = set(), None
+        version_strs = set()
         for modding_esm, esm_size in self.modding_esm_size.items():
             if (info := mod_infos.get(modding_esm)) and info.fsize == esm_size:
                 version_strs.add(self.size_esm_version[esm_size])
-        if _master_esm := mod_infos.get(self.master_file):
-            current_esm = self.size_esm_version.get(_master_esm.fsize, None)
+        current_esm = self.size_esm_version.get(
+            mod_infos[self.master_file].fsize, None)
         return version_strs, current_esm
 
     @classmethod

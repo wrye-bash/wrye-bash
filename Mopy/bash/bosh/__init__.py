@@ -57,7 +57,7 @@ from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
-    StateError, InvalidPluginFlagsError
+    InvalidPluginFlagsError
 from ..game import MergeabilityCheck
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
@@ -3192,31 +3192,23 @@ class ModInfos(TableFileInfos):
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
     def try_set_version(self, set_version, *, do_swap=None):
-        """Set Oblivion version to specified one - dry run if do_swap is False.
-        """
+        """Set Oblivion version to specified one - dry run if do_swap is None,
+        else do_swap must be an askYes callback. Our caches must be fresh from
+        refresh to detect versions properly."""
         curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
         if set_version is None or curr_ver is None:
             # for do_swap False set_version != None => curr_ver == None
             return curr_ver # return curr_ver as a convenience for saveInfos
-        if set_version != curr_ver and set_version in self._voAvailable:
+        master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
+        # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
+        move_to = FName(f'{(fnb := master_esm.fn_body)}_{curr_ver}.esm')
+        if set_version != curr_ver and set_version in self._voAvailable and \
+                not (move_to in self or move_to in self.corrupted):
             if not do_swap: return True # we can swap
         else: return False
         # Swap Oblivion.esm to specified version - do_swap is askYes callback
-        master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
-        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{set_version}.esm')
-        newSize = bush.game.modding_esm_size[copy_from]
-        oldSize = self[master_esm].fsize
-        if newSize == oldSize: return
-        try: # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
-            current_version = bush.game.size_esm_version[oldSize]
-            move_to = FName(f'{fnb}_{current_version}.esm')
-        except KeyError:
-            raise StateError("Can't match current main ESM to known version.")
-        if self.store_dir.join(move_to).exists():
-            raise StateError(f"Can't swap: {move_to} already exists.")
-        if copy_from not in self:
-            raise StateError(f"Can't swap: {copy_from} doesn't exist.")
+        copy_from = FName(f'{fnb}_{set_version}.esm')
         swapped_inf = self[copy_from]
         swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
