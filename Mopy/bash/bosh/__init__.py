@@ -3204,11 +3204,20 @@ class ModInfos(TableFileInfos):
         _('The file is in use by another process such as %(xedit_name)s.'), '',
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
-    def _setOblivionVersion(self, newVersion, ask_yes): ##: inline and drop StateError checks
-        """Swaps Oblivion.esm to specified version."""
+    def try_set_version(self, set_version, do_swap=False):
+        """Set Oblivion version to specified one - dry run if do_swap is False.
+        """
+        curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
+        if set_version is None or curr_ver is None:
+            # for do_swap False set_version != None => curr_ver == None
+            return curr_ver # return curr_ver as a convenience for saveInfos
+        if set_version != curr_ver and set_version in self._voAvailable:
+            if not do_swap: return True # we can swap
+        else: return False
+        # Swap Oblivion.esm to specified version - do_swap is askYes callback
         master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
-        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{newVersion}.esm')
+        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{set_version}.esm')
         newSize = bush.game.modding_esm_size[copy_from]
         oldSize = self[master_esm].fsize
         if newSize == oldSize: return
@@ -3243,7 +3252,7 @@ class ModInfos(TableFileInfos):
                     new = inf_fname[0].get_rename_paths(inf_fname[1])[0][1]
                     msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
                         'xedit_name': bush.game.Xe.full_name, }
-                    if ask_yes(self, msg, title=_('File in Use')):
+                    if do_swap(self, msg, title=_('File in Use')):
                         continue
                     if do_undo: file_info_rename_op(self[move_to], master_esm)
                     raise
@@ -3265,22 +3274,9 @@ class ModInfos(TableFileInfos):
         self.cached_lo_save_all()
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
-        self.voCurrent = newVersion
-        self._voAvailable.add(current_version)
-        self._voAvailable.remove(newVersion)
-
-    def try_set_version(self, set_version, do_swap=False):
-        """Set Oblivion version to specified one - dry run if do_swap is False.
-        """
-        curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
-        if set_version is None or curr_ver is None:
-            # for do_swap False set_version != None => curr_ver == None
-            return curr_ver # return curr_ver as a convenience for saveInfos
-        if set_version != curr_ver and set_version in self._voAvailable:
-            if not do_swap: return True # we can swap
-        else: return False
-        # do_swap is True and we can swap
-        self._setOblivionVersion(set_version, do_swap)
+        self.voCurrent = set_version
+        self._voAvailable.add(curr_ver)
+        self._voAvailable.remove(set_version)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size
