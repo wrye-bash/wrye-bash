@@ -192,7 +192,7 @@ class IcoFromPng(GuiImage):
         native.CopyFromBitmap(native_bmp)
         return native
 
-class _BmpFromIcoPath(_BitmapBundle): ##: .ico only in InitStatusBar (Custom Apps)
+class _BmpFromIcoPath(_BitmapBundle):
     """An .ico, or the icon of an exe or dll ('path;index')."""
 
     def _bitmaps(self):
@@ -208,6 +208,22 @@ class _BmpFromIcoPath(_BitmapBundle): ##: .ico only in InitStatusBar (Custom App
         img = bmp.ConvertToImage()
         return img if img.GetSize() == (size, size) else img.Scale(size, size,
             _wx.IMAGE_QUALITY_HIGH)
+
+class BmpFromIcoData(_BmpFromIcoPath):
+    """An icon from its images, as {width: .ico data} - see pe_icons."""
+
+    def __init__(self, ico_images: dict[int, bytes], iconSize: int):
+        super(GuiImage, self).__init__() # bypass GuiImage.__init__
+        self._ico_images = ico_images
+        self.iconSize = iconSize
+
+    def _icon_image(self, size: int) -> _wx.Image:
+        # the smallest image at least size wide, else the biggest one
+        w = min((w for w in self._ico_images if w >= size),
+                default=max(self._ico_images))
+        img = _wx.Image(io.BytesIO(self._ico_images[w]), _wx.BITMAP_TYPE_ICO)
+        return img if w == size else img.Scale(size, size,
+                                               _wx.IMAGE_QUALITY_HIGH)
 
 class ImgFromPath(GuiImage):
     """Used internally in _BmpFromPath but also used to create a wx.Image
