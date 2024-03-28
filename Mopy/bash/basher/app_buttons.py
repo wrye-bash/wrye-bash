@@ -30,10 +30,11 @@ from .. import balt, bass, bolt, bosh, bush
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bolt import GPath, deprint, os_name, undefinedPath
 from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
-    ExeLauncher, LnkLauncher, join_launcher_args, set_cwd, \
-    split_launcher_args
+    ExeLauncher, LnkLauncher, get_app_icon, join_launcher_args, \
+    set_cwd, split_launcher_args
 from ..gui import ClickableImage, ERROR_ICONS, EventResult, get_key_down, \
-    get_shift_down, Lazy, Links, WithDragEvents, get_image, showError
+    get_shift_down, Lazy, Links, WithDragEvents, get_image, showError, \
+    GuiImage
 ##: we need to move SB_Button to gui but we are blocked by Link
 from ..gui.base_components import _AComponent
 
@@ -216,8 +217,8 @@ class AppButton(AppLauncher, StatusBarButton):
                            **kwargs):
         """Create a launcher with its launcher settings applied - path_kwargs
         is where to search for app_launcher, or None for a custom launcher,
-        whose path is in its settings. images None means the 'x' icon,
-        appname None the uid."""
+        whose path is in its settings. images None means the icons of the
+        launched file, appname None the uid."""
         launcher_set = launcher_settings().get(kwargs['uid'], {})
         if path_kwargs is None: # displayed even if missing, with the 'x' icon
             exe_path = GPath(launcher_set['path']) # the user may type anything
@@ -235,7 +236,7 @@ class AppButton(AppLauncher, StatusBarButton):
                 deprint(f'Invalid arguments for launcher {kwargs["uid"]}: '
                         f'{launcher_set["args"]}', traceback=True)
         if images is None:
-            images = ERROR_ICONS
+            images = _launcher_icons(exe_path)
         button_cls = {'.exe': _ExeButton, '.jar': _JavaButton}.get(
             exe_path.cext, cls) if cls is AppButton else cls
         app_button = button_cls(exe_path, images, appname or kwargs['uid'],
@@ -283,6 +284,16 @@ class LnkButton(LnkLauncher, AppButton):
         if self._shortcut_desc is not None:
             return self._shortcut_desc
         return super().sb_button_tip
+
+def _launcher_icons(exe_path):
+    """Return the icons of a custom launcher - the ones the OS displays for
+    its file, else the 'x' icon."""
+    if not exe_path.exists():
+        return ERROR_ICONS
+    if icon_location := get_app_icon(exe_path): # Windows
+        return [GuiImage.from_path(icon_location, GuiImage.img_types['.ico'],
+                                   s) for s in (16, 24, 32)]
+    return ERROR_ICONS
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
