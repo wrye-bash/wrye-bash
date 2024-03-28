@@ -1077,6 +1077,21 @@ def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
+def get_app_icon(target: _Path, idex='0') -> _Path | None:
+    """Return the location of the icon Windows displays for target, as an
+    'icon file;index' Path that wx loads as an .ico (see _BmpFromIcoPath), or
+    None if there is no such file."""
+    if target.cext == '.exe':
+        if win32gui and win32gui.ExtractIconEx(target.s, -1):
+            # -1 queries num of icons embedded in the exe
+            icon_path = target
+        else: # generic exe icon, hardcoded and good to go
+            icon_path, idex = _GPath(os.path.expandvars(
+                r'%SystemRoot%\System32\shell32.dll')), '2'
+    else: # the icon of the file type (or of folders)
+        icon_path, idex = _get_default_app_icon(idex, target)
+    return _GPath(f'{icon_path.s};{idex}') if icon_path.exists() else None
+
 def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
     """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
 
@@ -1115,22 +1130,12 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
         if not custom_icon_paths[0].exists(): # try the shortcut specified icon
             win_icon_path, idex = win_icon_location.split(',')
             if win_icon_path == '':
-                if target.cext == u'.exe':
-                    if win32gui and win32gui.ExtractIconEx(target.s, -1):
-                        # -1 queries num of icons embedded in the exe
-                        win_icon_path = target
-                    else: # generic exe icon, hardcoded and good to go
-                        win_icon_path, idex = _GPath(os.path.expandvars(
-                            r'%SystemRoot%\System32\shell32.dll')), '2'
-                else:
-                    win_icon_path, idex = _get_default_app_icon(idex, target)
+                icon_location = get_app_icon(target, idex)
+            elif (win_icon_path := _GPath(win_icon_path)).exists():
+                icon_location = _GPath(f'{win_icon_path.s};{idex}')
             else:
-                win_icon_path = _GPath(win_icon_path)
-            if win_icon_path.exists():
-                g_path = _GPath(';'.join((win_icon_path.s, idex)))  ##: huh?
-                custom_icon_paths = [g_path] * 3
-            else:
-                custom_icon_paths = None
+                icon_location = None
+            custom_icon_paths = icon_location and [icon_location] * 3
         init_params.append((path, custom_icon_paths, shortcut_descr))
     return init_params
 
