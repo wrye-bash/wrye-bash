@@ -21,6 +21,7 @@
 #
 # =============================================================================
 import shlex
+import struct
 import subprocess
 import webbrowser
 
@@ -30,12 +31,17 @@ from .. import balt, bass, bolt, bosh, bush
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bolt import GPath, deprint, os_name, undefinedPath
 from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
-    ExeLauncher, LnkLauncher, join_launcher_args, set_cwd, \
-    split_launcher_args
-from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
-    Lazy, Links, WithDragEvents, error_icons, get_image, showError
+    ExeLauncher, LnkLauncher, get_app_icon, join_launcher_args, \
+    set_cwd, split_launcher_args
+from ..gui import BmpFromIcoData, ClickableImage, EventResult, Lazy, Links, \
+    WithDragEvents, error_icons, get_image, get_key_down, get_shift_down, \
+    showError, GuiImage
 ##: we need to move SB_Button to gui but we are blocked by Link
 from ..gui.base_components import _AComponent
+try: # optional, not installed on Windows - see _launcher_icons
+    import pefile
+except ImportError:
+    pefile = None
 
 __all__ = ['ObseButton', 'AutoQuitButton', 'GameButton', 'TESCSButton',
            'AppXEdit', 'AppBOSS', 'HelpButton', 'AppLOOT', 'DocBrowserButton',
@@ -216,8 +222,8 @@ class AppButton(AppLauncher, StatusBarButton):
                            **kwargs):
         """Create a launcher with its launcher settings applied - path_kwargs
         is where to search for app_launcher, or None for a custom launcher,
-        whose path is in its settings. images None means the 'x' icon,
-        appname None the uid."""
+        whose path is in its settings. images None means the icons of the
+        launched file, appname None the uid."""
         launcher_set = launcher_settings().get(kwargs['uid'], {})
         if path_kwargs is None: # displayed even if missing, with the 'x' icon
             exe_path = GPath(launcher_set['path']) # the user may type anything
@@ -235,7 +241,7 @@ class AppButton(AppLauncher, StatusBarButton):
                 deprint(f'Invalid arguments for launcher {kwargs["uid"]}: '
                         f'{launcher_set["args"]}', traceback=True)
         if images is None:
-            images = error_icons()
+            images = _launcher_icons(exe_path)
         button_cls = {'.exe': _ExeButton, '.jar': _JavaButton}.get(
             exe_path.cext, cls) if cls is AppButton else cls
         app_button = button_cls(exe_path, images, appname or kwargs['uid'],
@@ -283,6 +289,50 @@ class LnkButton(LnkLauncher, AppButton):
         if self._shortcut_desc is not None:
             return self._shortcut_desc
         return super().sb_button_tip
+
+def _pe_icons(pe_path: str) -> dict[int, bytes]:
+    """Return the images of the first icon of a Windows executable or dll - a
+    PE, for Portable Executable - as {width: .ico data}, keeping the one with
+    the most colors for each width."""
+    pe = pefile.PE(pe_path, fast_load=True) # parse the resources only
+    pe.parse_data_directories([pefile.DIRECTORY_ENTRY[
+        'IMAGE_DIRECTORY_ENTRY_RESOURCE']])
+    resources = {r.id: r.directory.entries for r in
+                 pe.DIRECTORY_ENTRY_RESOURCE.entries}
+    def _data(res): # of the first language of the resource
+        res_data = res.directory.entries[0].data.struct
+        return pe.get_data(res_data.OffsetToData, res_data.Size)
+    group = _data(resources[pefile.RESOURCE_TYPE['RT_GROUP_ICON']][0])
+    images = {i.id: i for i in resources[pefile.RESOURCE_TYPE['RT_ICON']]}
+    icons = {}
+    for off in range(6, 6 + 14 * struct.unpack_from('<H', group, 4)[0], 14):
+        # a GRPICONDIRENTRY is an ICONDIRENTRY ending in the resource id of
+        # the image instead of its offset in the .ico file
+        width, bit_count, img_id = struct.unpack_from('<B5xH4xH', group, off)
+        if bit_count >= icons.get(width := width or 256, (0,))[0]:
+            img = _data(images[img_id])
+            icons[width] = bit_count, struct.pack('<3H', 0, 1, 1) + group[
+                off:off + 8] + struct.pack('<2I', len(img), 22) + img
+    return {w: ico for w, (_bit_count, ico) in icons.items()}
+
+def _launcher_icons(exe_path):
+    """Return the icons of a custom launcher - the ones the OS displays for
+    its file, or the ones of its executable if we can read them, else the 'x'
+    icon."""
+    if not exe_path.exists():
+        return error_icons()
+    if icon_location := get_app_icon(exe_path): # Windows
+        return [GuiImage.from_path(icon_location, GuiImage.img_types['.ico'],
+                                   s) for s in (16, 24, 32)]
+    if pefile is not None and exe_path.is_file():
+        try:
+            ico_images = _pe_icons(exe_path.s)
+            return [BmpFromIcoData(ico_images, s) for s in (16, 24, 32)]
+        except pefile.PEFormatError:
+            pass # not a PE
+        except Exception: # no icon, or a malformed PE
+            deprint(f'Failed to read the icon of {exe_path}', traceback=True)
+    return error_icons()
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):

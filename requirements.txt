@@ -16,6 +16,8 @@ lxml==6.1.0
 packaging==26.0
 # For generating bash_default.ini section headers
 pyfiglet==1.0.4
+# For custom launcher icons on non-Windows platforms
+pefile==2024.8.26; sys_platform != 'win32'
 # For PDF support in the doc browser
 PyMuPDF==1.27.2.2
 # For reflink copies (does not support Windows/ReFS yet)

@@ -199,8 +199,10 @@ def _import_wx(opts, localize):
 _deps = {'chardet': 'chardet', **( # Only a dependency on Windows
     {'ifileoperation': 'ifileoperation'} if bolt.os_name == 'nt' else {}),
     'lz4': 'python-lz4', 'yaml': 'PyYAML', 'vdf': 'vdf'}
-_opt_deps = {'lxml': 'lxml', 'packaging': 'packaging', 'pyfiglet': 'pyfiglet',
-    'pymupdf': 'PyMuPDF', 'requests': 'requests', 'websocket': 'websocket'}
+_opt_deps = {'lxml': 'lxml', 'packaging': 'packaging', **( # not on Windows
+    {'pefile': 'pefile'} if bolt.os_name != 'nt' else {}), 'pyfiglet':
+    'pyfiglet', 'pymupdf': 'PyMuPDF', 'requests': 'requests',
+    'websocket': 'websocket'}
 # cached dependencies version strings, keyed by the display name
 _dep_versions = {}
 
