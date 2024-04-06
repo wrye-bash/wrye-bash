@@ -1083,7 +1083,7 @@ class ModList(_ModsUIList):
         if not modInfo: return
         if not Link.Frame.docBrowser:
             DocBrowser(self.data_store).show_frame()
-        Link.Frame.docBrowser.SetMod(modInfo.fn_key) ##: will GPath it
+        Link.Frame.docBrowser.SetMod(modInfo.fn_key)
         Link.Frame.docBrowser.raise_frame()
 
     def _handle_key_down(self, wrapped_evt):

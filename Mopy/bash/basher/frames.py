@@ -28,7 +28,7 @@ from collections import OrderedDict
 
 from .. import balt, bass, bolt, bosh, bush, load_order, wrye_text
 from ..balt import Link, Resources
-from ..bolt import FName
+from ..bolt import FName, FNDict
 from ..bosh import empty_path, mods_metadata, omods
 from ..env import canonize_ci_path
 from ..exception import StateError, CancelError
@@ -57,23 +57,15 @@ class DocBrowser(WindowFrame):
         root_window = Splitter(self)
         mod_list_window, main_window = root_window.make_panes(250,
                                                               vertically=True)
-        # Mod Name
-        self._full_lo = [FName(''), # == no plugin selected
-                         *sorted(mod_infos_singl)]
-        self._lower_lo = {}
         self._plugin_search = SearchBar(mod_list_window,
             hint=_('Search Plugins'))
         self._plugin_search.on_text_changed.subscribe(self._search_plugins)
         self._plugin_dropdown = DropDown(mod_list_window, value='',
             choices=[''])
         self._plugin_dropdown.on_combo_select.subscribe(self._do_select_free)
-        # Start out with an empty search -> everything shown
-        self._search_plugins(search_str='', boot_search=True)
         # Get mods that have a doc attribute set
-        documented = [mod_name for mod_name, mod_inf in mod_infos_singl.items()
-                      if mod_inf.get_table_prop('doc')]
-        self._mod_list = ListBox(mod_list_window, choices=sorted(documented),
-            isSort=True, onSelect=self._do_select_existing)
+        self._mod_list = ListBox(mod_list_window, isSort=True,
+                                 onSelect=self._do_select_existing)
         # Buttons
         self._set_btn = Button(main_window, _('Set Doc…'),
                                btn_tooltip=_('Associates this plugin file '
@@ -103,6 +95,9 @@ class DocBrowser(WindowFrame):
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
                          self._rename_btn, self._open_btn, self._prev_btn,
                          self._next_btn, self._reload_btn]
+        # Search bar and dropdown caches also used in checking for changes
+        self._full_lo = {}
+        self._dropdown_index = {}
         #--Mod list
         VLayout(spacing=4, item_expand=True, items=[
             self._plugin_search,
@@ -126,18 +121,48 @@ class DocBrowser(WindowFrame):
         ]).apply_to(self)
         for btn in self._buttons:
             btn.enabled = False
+        self.on_activate.subscribe(self._on_activation)
+
+    def _on_activation(self, evt_active):
+        """Update the list of mods every time the frame is shown."""
+        if evt_active: self._init_controls()
+
+    def _init_controls(self):
+        """Init the docs list and plugin dropdown - check for changes in mods
+        on init and activation."""
+        items = FNDict((('', ''),)) # '' == no plugin selected
+        items.update((k, k.lower()) for k in sorted(self._mod_infos_singl))
+        if self._full_lo != items:
+            self._full_lo = items
+            self._search_plugins(self._plugin_search.text_content, # empty on __init__
+                                 set_mod=False)
+        self._update_docs_list()
+
+    def _update_docs_list(self):
+        sel = self._mod_list.lb_get_selected_strings()
+        sel = sel[0] if sel else None # one selection right?
+        mods = [*map(FName, self._mod_list.lb_get_str_items())]
+        documented = {mod_name for mod_name, mod_inf in
+            self._mod_infos_singl.items() if mod_inf.get_table_prop('doc')}
+        if del_mods := (set_mods := {*mods}) - documented:
+            for mod_dex, mod in enumerate(reversed(mods)):
+                if mod in del_mods: # deleted or docs removed
+                    self._mod_list.lb_delete_at_index(len(mods) - mod_dex - 1)
+                    if sel == mod: # deselect previous plugin
+                        self.SetMod('') # needed
+        for mod in documented - set_mods:
+            self._mod_list.lb_append(mod)
 
     def _get_doc_prop(self, def_=None, mod_name=None, *, prop='doc'):
-        if mod_name is None: mod_name = self._mod_name
-        if not mod_name: return def_ # duh, why would this be empty?
+        if mod_name is None: mod_name = self._dropdown_item()
+        if not mod_name: return def_ # nothing selected in _plugin_dropdown
         return self._mod_infos_singl[mod_name].get_table_prop(prop, def_)
 
     def _set_doc_prop(self, doc_path, *, prop='doc'):
-        self._mod_infos_singl[self._mod_name].set_table_prop(prop, doc_path)
+        self._mod_infos_singl[self._dropdown_item].set_table_prop(prop, doc_path)
 
-    @property
-    def _mod_name(self):
-        """Return the currently selected plugin."""
+    def _dropdown_item(self) -> FName:
+        """Return the currently selected plugin in the dropdown."""
         return FName(self._plugin_dropdown.get_value())
 
     @staticmethod
@@ -150,28 +175,29 @@ class DocBrowser(WindowFrame):
         except (OSError, UnicodeDecodeError):
             return False
 
-    def _search_plugins(self, search_str, boot_search=False):
+    def _search_plugins(self, search_str, *, set_mod=True):
         """Called when text is entered into the search bar. Narrows the results
-        in the dropdown."""
-        # set_choices can change self._mod_name - we need the previous value so
-        # we can restore it after searching
-        prev_doc_plugin = self._mod_name
+        in the dropdown. Empty search_str populates the dropdown with the
+        modlist which must be up to date!"""
+        # set_choices can change self._dropdown_item - we need the previous
+        # value so we can restore it after searching
+        prev_doc_plugin = self._dropdown_item()
         search_lower = search_str.strip().lower()
-        filtered_plugins = [p for p in self._full_lo
-                            if search_lower in p.lower()]
-        self._lower_lo = {pl: i for i, pl in enumerate(filtered_plugins)}
+        filtered_plugins = [k for k, v in self._full_lo.items()
+                            if search_lower in v]
+        self._dropdown_index = {pl: i for i, pl in enumerate(filtered_plugins)}
         with self._plugin_dropdown.pause_drawing():
             self._plugin_dropdown.set_choices(filtered_plugins)
             # Check if the previous plugin can be restored now, otherwise
             # select the first plugin
             try:
-                new_doc_choice = filtered_plugins.index(prev_doc_plugin)
-            except ValueError:
+                new_doc_choice = self._dropdown_index[prev_doc_plugin]
+            except KeyError:
                 new_doc_choice = 0
             self._plugin_dropdown.set_selection(new_doc_choice)
-            if not boot_search:
+            if set_mod: # else we are called directly from _init_controls
                 # Update the doc viewer to match the new selection
-                self.SetMod(self._mod_name)
+                self.SetMod(self._dropdown_item())
 
     def _do_open(self):
         """Handle "Open Doc" button."""
@@ -197,7 +223,7 @@ class DocBrowser(WindowFrame):
         if self._get_doc_prop() is None:  ##: can it happen?
             return
         self._set_doc_prop(None)
-        p_index = self._mod_list.lb_index_for_str_item(self._mod_name)
+        p_index = self._mod_list.lb_index_for_str_item(self._dropdown_item())
         if p_index is None: return
         self._mod_list.lb_delete_at_index(p_index)
         remaining_plugins = self._mod_list.lb_get_str_items()
@@ -225,15 +251,15 @@ class DocBrowser(WindowFrame):
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = ''
         msg = _('Select document for %(target_file_name)s:') % {
-                    'target_file_name': self._mod_name}
+                    'target_file_name': self._dropdown_item()}
         doc_path = FileOpen.display_dialog(self, msg, docs_dir, file_name,
                                            '*.*', allow_create_file=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
         if not doc_:
-            self._mod_list.lb_append(self._mod_name)
+            self._mod_list.lb_append(self._dropdown_item())
         self._set_doc_prop(doc_path)
-        self.SetMod(self._mod_name)
+        self.SetMod(self._dropdown_item())
 
     def _do_rename(self):
         """Handle "Rename Doc" button click."""
@@ -290,21 +316,21 @@ class DocBrowser(WindowFrame):
 
     def SetMod(self, mod_name):
         """Sets the mod to show docs for."""
-        self.DoSave()
         # defaults
         self._edit_box.is_checked = False
         self._doc_ctrl.set_text_editable(False)
         if not mod_name:
             self._clear_doc()
             return
-        plugin_lower = mod_name.lower()
-        search_lower = self._plugin_search.text_content.strip().lower()
-        if search_lower not in plugin_lower:
-            # Clear the search since we ended up selecting something outside
-            # the search just now (this directly calls the subscribed
-            # _search_plugins and waits until it's done)
-            self._plugin_search.text_content = ''
-        self._plugin_dropdown.set_selection(self._lower_lo[plugin_lower])
+        # update _search_plugins caches as we may be called for new mods
+        self._init_controls()
+        self.DoSave()
+        # If we ended up selecting something outside the search clear the
+        # search which triggers the subscribed _search_plugins and waits until
+        # it's done - the latter might update _dropdown_index
+        self._plugin_search.clear_search_bar(mod_name)
+        self._plugin_dropdown.set_selection(
+            self._dropdown_index[FName(mod_name)])
         self._set_btn.enabled = True
         self._mod_list.lb_select_index(
             self._mod_list.lb_index_for_str_item(mod_name))
