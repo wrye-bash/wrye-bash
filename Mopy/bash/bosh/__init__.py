@@ -36,6 +36,7 @@ from collections.abc import Iterable, Callable
 from dataclasses import dataclass, field
 from functools import wraps
 from itertools import chain
+from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
@@ -635,8 +636,8 @@ class ModInfo(FileInfo):
     def setGhost(self, ghostify):
         """Set file to/from ghost mode. Return True if ghost status changed."""
         # Current status is already what we want it to be
-        if (ghostify == self.is_ghost or # Don't allow ghosting the master ESM
-            self.fn_key == bush.game.master_file):
+        if ghostify == self.is_ghost or ( # Don't allow ghosting the master ESM
+            ghostify and self.fn_key == bush.game.master_file):
             return False
         # Current status != what we want, so change it
         ghost = (normal := self._file_key) + '.ghost' # Path.__add__ !
@@ -1035,8 +1036,8 @@ class ModInfo(FileInfo):
 
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
-        if self.is_ghost:
-            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
+        if self.is_ghost: # add ghost extension to dest path - Path.__add__!
+            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
         return old_new_paths
 
     def _masters_order_status(self, status):
@@ -1476,26 +1477,26 @@ class DataStore(DataDict):
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
 
+    # Store operations --------------------------------------------------------
+    @final
     def delete(self, delete_keys, *, recycle=True):
         """Deletes member file(s)."""
-        full_delete_paths, delete_info = self.files_to_delete(delete_keys)
+        # factory is _AFileInfos only, but installers don't have corrupted so
+        # let it blow if we are called with non-existing keys(join(None), boom)
+        finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
+                  self.filter_essential(delete_keys).items()]
         try:
-            self._delete_operation(full_delete_paths, delete_info,
-                recycle=recycle)
+            self._delete_operation(finfos, recycle=recycle)
         finally:
-            if delete_info: # Installers - remove markers from keys
-                delete_keys = {k for k in delete_keys if k not in delete_info}
-            self.delete_refresh(delete_keys, True, delete_info)
+            self.delete_refresh(finfos, True)
 
-    def files_to_delete(self, filenames, **kwargs): # factory is _AFileInfos!
-        finfos = (v or self.factory(self.store_dir.join(k)) for k, v in
-                  self.filter_essential(filenames).items())
-        abs_delete_paths = [*chain.from_iterable(fileInfo.delete_paths() for
-            fileInfo in finfos)]
-        return abs_delete_paths, None # no extra delete info
+    def _delete_operation(self, finfos, *, recycle=True):
+        abs_del_paths = [*chain.from_iterable(
+            inf.delete_paths() for inf in finfos)]
+        env.shellDelete(abs_del_paths, recycle=recycle)
 
-    def _delete_operation(self, paths, delete_info, *, recycle=True):
-        env.shellDelete(paths, recycle=recycle)
+    def delete_refresh(self, infos, check_existence):
+        raise NotImplementedError
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1507,9 +1508,6 @@ class DataStore(DataDict):
         """Filter unopenable files out of the specified filenames. Returns the
         remaining ones as a dict, mapping file names to file infos."""
         return {k: self[k] for k in fn_items}
-
-    def delete_refresh(self, del_paths, check_existence, extra_del_data=None):
-        raise NotImplementedError
 
     def refresh(self): raise NotImplementedError
     def save(self): pass # for Screenshots
@@ -1611,8 +1609,8 @@ class _AFileInfos(DataStore):
                     deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                             traceback=True)
                     self.pop(new, None)
-            rdata.to_del = del_infos
-        self.delete_refresh(rdata.to_del, check_existence=False)
+            rdata.to_del = {d.fn_key for d in del_infos}
+        self.delete_refresh(del_infos, check_existence=False)
         if rdata.redraw:
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
@@ -1646,11 +1644,12 @@ class _AFileInfos(DataStore):
         return self._diff_dir(FNDict(((x, {}) for x in inodes)))
 
     def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
-        dict[FName, tuple[AFile | None, dict]], set[FName]]:
+        dict[FName, tuple[AFile | None, dict]], set[ListInfo]]:
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
-        oldNames = set(self) | self.corrupted.keys()
+        del_infos = {inf for inf in [*self.values(), *self.corrupted.values()]
+                     if inf.fn_key not in inodes}
         new_or_present = {}
         for k, kws in inodes.items():
             # corrupted that has been updated on disk - if cor.abs_path
@@ -1660,14 +1659,12 @@ class _AFileInfos(DataStore):
                 new_or_present[k] = (None, kws)
             elif not cor: # for default tweaks with a corrupted copy
                 new_or_present[k] = (self.get(k), kws)
-        return new_or_present, oldNames - inodes.keys()
+        return new_or_present, del_infos
 
-    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
+    def delete_refresh(self, infos, check_existence):
         """Special case for the saves, inis, mods and bsas.
-        :param del_keys: must be the data store keys and not full paths
-        :param extra_del_data: unused"""
-        #--Table
-        paths_to_keys = {self[n].abs_path: n for n in del_keys}
+        :param infos: the infos corresponding to deleted items."""
+        paths_to_keys = {inf.abs_path: inf.fn_key for inf in infos}
         if check_existence:
             for filePath in list(paths_to_keys):
                 if filePath.exists():
@@ -1759,17 +1756,16 @@ class TableFileInfos(_AFileInfos):
         self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join('Table.dat')))
         ##: fix nightly regression storing 'installer' property as FName
-        inst_column = self.table.getColumn('installer')
-        for fn_key, val in inst_column.items():
-            if type(val) is not str:
+        for fn_key, val in ((fnk, col_dict['installer']) for fnk, col_dict in
+                            self.table.items() if 'installer' in col_dict):
+            if val is not None and type(val) is not str:
                 deprint(f'stored installer for {fn_key} is {val!r}')
-                inst_column[fn_key] = str(val)
+                self.table[fn_key]['installer'] = str(val)
         return db
 
     #--Delete
-    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
-        deleted_keys = super().delete_refresh(deleted_keys, check_existence,
-                                              extra_del_data)
+    def delete_refresh(self, infos, check_existence):
+        deleted_keys = super().delete_refresh(infos, check_existence)
         for del_fn in deleted_keys:
             self.table.pop(del_fn, None)
         return deleted_keys
@@ -1799,6 +1795,7 @@ class Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
     def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
+        self.fn_key = FName(fullpath.stail)
         if itsa_ghost:
             fullpath = fullpath + '.ghost' # Path.__add__ !
         super().__init__(fullpath, **kwargs)
@@ -1978,13 +1975,13 @@ class INIInfos(TableFileInfos):
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
 
     def _diff_dir(self, inodes):
-        oldNames = {*(n for n, v in self.items() if not v.is_default_tweak),
-                    *self.corrupted}
+        old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
+                         *self.corrupted.values()}
         new_or_present, del_infos = super()._diff_dir(inodes)
         # if iinf is a default tweak a file has replaced it - set it to None
         new_or_present = {k: (inf and (None if inf.is_default_tweak else inf),
             kws) for k, (inf, kws) in new_or_present.items()}
-        return new_or_present, oldNames & del_infos
+        return new_or_present, del_infos & old_ini_infos # drop default tweaks
 
     def _missing_default_inis(self):
         return ((k, v) for k, v in self._default_tweaks.items() if
@@ -2011,9 +2008,8 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
-    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
-        del_keys = super().delete_refresh(del_keys, check_existence,
-                                          extra_del_data)
+    def delete_refresh(self, infos, check_existence):
+        del_keys = super().delete_refresh(infos, check_existence)
         if check_existence: # DataStore.delete() path - re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo
@@ -2085,11 +2081,10 @@ def _lo_cache(lord_func):
             # unghost new active plugins and ghost new inactive (if autoGhost)
             ghostify = dict.fromkeys(ldiff.act_new, False)
             if bass.settings['bash.mods.autoGhost']:
-                allowGhosting = self.table.getColumn('allowGhosting')
                 new_inactive = (ldiff.act_del - ldiff.missing) | (
                         ldiff.added - ldiff.act_new) # new mods, ghost
                 ghostify.update({k: True for k in new_inactive if
-                                 allowGhosting.get(k, True)})
+                    self[k].get_table_prop('allowGhosting', True)})
             ldiff.affected.update(mod for mod, modGhost in ghostify.items()
                                   if self[mod].setGhost(modGhost))
             return ldiff
@@ -2119,11 +2114,15 @@ class ModInfos(TableFileInfos):
         # the catch is that the UI refresh is triggered by
         # RefrData.redraw/to_add so we need to calculate these in refresh.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        if dirs[u'mods'].join(bush.game.master_file).is_file():
-            self._master_esm = bush.game.master_file
-        else:
+        masterpath = dirs['mods'].join(bush.game.master_file)
+        if (master_missing := not masterpath.is_file()) and (
+                ghost := masterpath + '.ghost').is_file():  # Path.__add__ !
+            ghost.moveTo(masterpath)
+            deprint(f'Unghosted master file - was: {ghost}')
+        elif master_missing:
             raise FileError(bush.game.master_file,
                             u'File is required, but could not be found')
+        self._master_esm = bush.game.master_file
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
         # values are tuples of int and str for displaying in the Indices column
         self.real_indices = defaultdict(lambda: (sys.maxsize, ''))
@@ -2458,10 +2457,10 @@ class ModInfos(TableFileInfos):
         # game
         quick_checks = {k: v for k, v in quick_checks.items()
                         if k in merg_checks}
-        name_mergeInfo = self.table.getColumn('mergeInfo')
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
-            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, {}))
+            cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
+                                                           (None, {}))
             if not isinstance(canMerge, dict):
                 canMerge = {} # Convert older settings (had a bool here)
             # Quickly check if some mergeability types are impossible for this
@@ -2477,7 +2476,7 @@ class ModInfos(TableFileInfos):
             for m in list(canMerge):
                 if m not in merg_checks_ints:
                     del canMerge[m]
-            name_mergeInfo[fn_mod] = (cached_size, canMerge)
+            modInfo.set_table_prop('mergeInfo', (cached_size, canMerge))
             if not (merg_checks - covered_checks):
                 # We've already covered all required checks with those checks
                 # above (e.g. an ESL-flagged plugin in a game with only ESL
@@ -2517,7 +2516,6 @@ class ModInfos(TableFileInfos):
         # The checks that are actually required for this game
         required_checks = {m: c for m, c in all_known_checks.items()
                            if m in bush.game.mergeability_checks}
-        mod_mergeInfo = self.table.getColumn('mergeInfo')
         with progress:
             progress.setFull(max(len(names),1))
             result, tagged_no_merge = {}, set()
@@ -2562,8 +2560,8 @@ class ModInfos(TableFileInfos):
                         merg_set.discard(fileName)
                 # Only store the enum values (i.e. the ints) in our settings
                 # files, we are moving away from pickling non-std classes
-                mod_mergeInfo[fileName] = (fileInfo.fsize, {
-                    k.value: v for k, v in check_results.items()})
+                fileInfo.set_table_prop('mergeInfo', (fileInfo.fsize, {
+                    k.value: v for k, v in check_results.items()}))
             return result, tagged_no_merge
 
     def _refresh_bash_tags(self):
@@ -2622,7 +2620,7 @@ class ModInfos(TableFileInfos):
             plugins."""
         merged_,imported_ = set(),set()
         for patch in patches & self.bashed_patches: # this must be up to date!
-            patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
+            patchConfigs = self[patch].get_table_prop('bash.patch.configs')
             if not patchConfigs: continue
             if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
                     u'isEnabled'):
@@ -2814,7 +2812,7 @@ class ModInfos(TableFileInfos):
             if fileName not in acti_set:
                 self._active_wip.append(fileName)
                 _activated.add(fileName)
-            return load_order.get_ordered(_activated or [])
+            return load_order.get_ordered(_activated)
         finally:
             if doSave: self.cached_lo_save_active()
 
@@ -3132,7 +3130,7 @@ class ModInfos(TableFileInfos):
         to_remove = {FName(x) for x in to_remove}
         # Remove mods from cache
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
-        self._active_wip  = [x for x in self._active_wip if x not in to_remove]
+        self._active_wip = [x for x in self._active_wip if x not in to_remove]
 
     def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
@@ -3148,17 +3146,15 @@ class ModInfos(TableFileInfos):
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
         # Update linked BP parts if the parent BP got renamed
-        for bp_part in self.table.getColumn('bp_split_parent'):
-            table_entry = self.table[bp_part]
-            if table_entry['bp_split_parent'] == old_key:
-                table_entry['bp_split_parent'] = newName
+        for mod_inf in self.values():
+            if mod_inf.get_table_prop('bp_split_parent') == old_key:
+                mod_inf.set_table_prop('bp_split_parent', newName)
         return old_key
 
     #--Delete
-    def delete_refresh(self, del_keys, check_existence, extra_del_data=None):
+    def delete_refresh(self, infos, check_existence):
         # adapted from refresh() (avoid refreshing from the data directory)
-        del_keys = super().delete_refresh(del_keys, check_existence,
-                                          extra_del_data)
+        del_keys = super().delete_refresh(infos, check_existence)
         # we need to call deactivate to deactivate dependents
         self.lo_deactivate(del_keys) # no-op if empty
         if del_keys and check_existence: # delete() path - refresh caches
@@ -3190,84 +3186,72 @@ class ModInfos(TableFileInfos):
         return self[fileName].get_version() if fileName in self else ''
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def _retry(self, old, new, ask_yes):  ##: we should check *before* writing the patch
-        m = [_('Wrye Bash encountered an error when renaming %(old)s to '
-               '%(new)s.'),
-             '', '',
-             _('The file is in use by another process such as '
-               '%(xedit_name)s.'),
-             '',
-             _('Please close the other program that is accessing %(new)s.'),
-             '', '',
-             _('Try again?')]
-        msg = '\n'.join(m) % {'xedit_name': bush.game.Xe.full_name,
-                              'old': old, 'new': new}
-        return ask_yes(self, msg, title=_('File in Use'))
-
+    _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
+                    '%(new)s.'), '', '',
+        _('The file is in use by another process such as %(xedit_name)s.'), '',
+        _('Please close the other program that is accessing %(new)s.'), '', '',
+        _('Try again?')]
     def setOblivionVersion(self, newVersion, ask_yes):
         """Swaps Oblivion.esm to specified version."""
-        baseName = self._master_esm # Oblivion.esm, say it's currently SI one
-        # if new version is '1.1' then newName is FName(Oblivion_1.1.esm)
-        newName = FName(f'{(fnb := baseName.fn_body)}_{newVersion}.esm')
-        newSize = bush.game.modding_esm_size[newName]
-        oldSize = self[baseName].fsize
+        master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
+        # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
+        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{newVersion}.esm')
+        newSize = bush.game.modding_esm_size[copy_from]
+        oldSize = self[master_esm].fsize
         if newSize == oldSize: return
-        current_version = bush.game.size_esm_version[oldSize]
-        try: # for instance: Oblivion_SI.esm, we rename Oblivion.esm to this
-            oldName = FName(f'{fnb}_{current_version}.esm')
+        try: # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
+            current_version = bush.game.size_esm_version[oldSize]
+            move_to = FName(f'{fnb}_{current_version}.esm')
         except KeyError:
             raise StateError("Can't match current main ESM to known version.")
-        if self.store_dir.join(oldName).exists():
-            raise StateError(f"Can't swap: {oldName} already exists.")
-        if newName not in self:
-            raise StateError(f"Can't swap: {newName} doesn't exist.")
-        newInfo = self[newName]
+        if self.store_dir.join(move_to).exists():
+            raise StateError(f"Can't swap: {move_to} already exists.")
+        if copy_from not in self:
+            raise StateError(f"Can't swap: {copy_from} doesn't exist.")
+        swapped_inf = self[copy_from]
+        swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
-        baseInfo = self[self._master_esm]
+        baseInfo = self[master_esm]
         master_time = baseInfo.ftime
-        new_info_time = newInfo.ftime
-        is_master_active = load_order.cached_is_active(self._master_esm)
-        is_new_info_active = load_order.cached_is_active(newName)
+        new_info_time = swapped_inf.ftime
+        is_new_info_active = load_order.cached_is_active(copy_from)
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
-        while True:
-            try:
-                file_info_rename_op(baseInfo, oldName)
-                break
-            except PermissionError: ##: can only occur if SHFileOperation
-                # isn't called, yak - file operation API badly needed
-                if self._retry(baseInfo.abs_path,
-                        self.store_dir.join(oldName), ask_yes):
-                    continue
-                raise
-            except CancelError:
-                return
-        while True:
-            try:
-                file_info_rename_op(newInfo, self._master_esm)
-                break
-            except PermissionError:
-                if self._retry(newInfo.abs_path, baseInfo.abs_path, ask_yes):
-                    continue
-                #Undo any changes
-                file_info_rename_op(oldName, self._master_esm)
-                raise
-            except CancelError:
-                #Undo any changes
-                file_info_rename_op(oldName, self._master_esm)
-                return
+        rename_args = (baseInfo, move_to), (swapped_inf, master_esm)
+        deltd = swapped_inf.abs_path # will be (effectively) deleted
+        for do_undo, inf_fname in enumerate(rename_args):
+            while True:
+                try:
+                    file_info_rename_op(*inf_fname)
+                    break
+                except PermissionError: ##: can only occur if SHFileOperation
+                    # isn't called - file operation API badly needed (#241)
+                    old = inf_fname[0].abs_path
+                    new = inf_fname[0].get_rename_paths(inf_fname[1])[0][1]
+                    msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
+                        'xedit_name': bush.game.Xe.full_name, }
+                    if ask_yes(None, msg, title=_('File in Use')):
+                        continue
+                    if do_undo: file_info_rename_op(self[move_to], master_esm)
+                    raise
+                except CancelError:
+                    if do_undo: file_info_rename_op(self[move_to], master_esm)
+                    return
+        master_inf = self[master_esm]
         # set mtimes to previous respective values
-        self[self._master_esm].setmtime(master_time)
-        self[oldName].setmtime(new_info_time)
-        oldIndex = self._lo_wip.index(newName)
-        self._lo_caches_remove_mods([newName])
-        self._lo_wip.insert(oldIndex, oldName)
-        def _activate(active, mod):
-            (self.lo_activate if active else self.lo_deactivate)(mod)
-        _activate(is_new_info_active, oldName)
-        _activate(is_master_active, self._master_esm)
+        master_inf.setmtime(master_time)
+        self[move_to].setmtime(new_info_time)
+        oldIndex = self._lo_wip.index(copy_from)
+        self._lo_caches_remove_mods([copy_from])
+        self._lo_wip.insert(oldIndex, move_to)
+        (self.lo_activate if is_new_info_active else self.lo_deactivate)(
+            move_to)
+        if swapping_a_ghost: # we need to unghost the master esm
+            master_inf.setGhost(False)
         # Save to disc (load order and plugins.txt)
-        self.cached_lo_save_all() # sets ghost as needed
+        self.cached_lo_save_all()
+        # make sure to notify BAIN rename_operation passes only renames param
+        self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = newVersion
         self.voAvailable.add(current_version)
         self.voAvailable.remove(newVersion)

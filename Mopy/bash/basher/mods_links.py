@@ -267,12 +267,11 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
     def _enable(self):
-        return bosh.modInfos.voCurrent is not None \
-               and self._version_key in bosh.modInfos.voAvailable
+        return bosh.modInfos.voCurrent is not None and not self._check() and \
+            self._version_key in bosh.modInfos.voAvailable
 
     def Execute(self):
         """Handle selection."""
-        if bosh.modInfos.voCurrent == self._version_key: return
         bosh.modInfos.setOblivionVersion(self._version_key, askYes)
         ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
         # not any of the modding ESMs. Maybe we should enforce that those
@@ -381,10 +380,9 @@ class Mods_AutoGhost(BoolLink):
         super(Mods_AutoGhost, self).Execute()
         flipped = []
         toGhost = bass.settings['bash.mods.autoGhost']
-        allowGhosting = bosh.modInfos.table.getColumn('allowGhosting')
         for mod, modInfo in bosh.modInfos.items():
             modGhost = toGhost and not load_order.cached_is_active(
-                mod) and allowGhosting.get(mod, True)
+                mod) and modInfo.get_table_prop('allowGhosting', True)
             if modInfo.setGhost(modGhost):
                 flipped.append(mod)
         self.window.RefreshUI(redraw=flipped)

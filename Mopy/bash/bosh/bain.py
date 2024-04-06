@@ -1996,30 +1996,29 @@ class InstallersData(DataStore):
         owned_per_store = []
         for store in data_tracking_stores():
             if not store.tracks_ownership: continue
-            storet = store.table
-            owned = [x for x in storet.getColumn('installer') if str(
-                storet[x]['installer']) == old_key]  # str due to Paths
+            owned = [v for v in store.values() if str( # str due to Paths
+                v.get_table_prop('installer')) == old_key]
             owned_per_store.append(owned)
-            for i in owned:
-                storet[i]['installer'] = '%s' % name_new
+            for v in owned:
+                v.set_table_prop('installer', '%s' % name_new)
         return True, *map(bool, owned_per_store)
 
     #--Dict Functions ---------------------------------------------------------
-    def files_to_delete(self, filenames, **kwargs):
+    def _delete_operation(self, infos, *, recycle=True):
         toDelete = []
-        markers = [k for k, inst in self.filter_essential(filenames).items() if
-                   inst.is_marker or toDelete.append(inst.abs_path)] # or None
-        return toDelete, markers
-
-    def _delete_operation(self, paths, markers, *, recycle=True):
+        markers = [inst.fn_key for inst in infos if
+                   inst.is_marker or toDelete.append(inst)] # or None
+        super()._delete_operation(toDelete, recycle=recycle)
         for m in markers: del self[m]
-        super()._delete_operation(paths, markers, recycle=recycle)
 
-    def delete_refresh(self, del_keys, check_existence, markers):
+    def delete_refresh(self, infos, check_existence):
+        del_insts = [inst for inst in infos if not inst.is_marker]
+        markers = len(del_insts) < len(infos)
         if check_existence:
-            del_keys = {i for i in del_keys if not self[i].abs_path.exists()}
-        if del_keys: # markers are popped in _delete_operation
-            self.irefresh(what='I', refresh_info=RefrData({*del_keys}))
+            del_insts = {i for i in del_insts if not i.abs_path.exists()}
+        if del_insts: # markers are popped in _delete_operation
+            self.irefresh(what='I',
+                          refresh_info=RefrData({i.fn_key for i in del_insts}))
         elif markers:
             self.refreshOrder()
 
@@ -2887,7 +2886,7 @@ class InstallersData(DataStore):
         from . import modInfos
         for bpatch in modInfos.bashed_patches: # type: FName
             ci_keep_files.add(CIstr(bpatch))
-            bp_doc = modInfos.table.getItem(bpatch, u'doc')
+            bp_doc = modInfos[bpatch].get_table_prop('doc')
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
                 try:
                     bp_doc = bp_doc.relpath(bass.dirs[u'mods'])
