@@ -295,7 +295,7 @@ class FileInfo(AFileInfo):
         if self.madeBackup and not forceBackup: return
         #--Backup
         cop = self.get_store().copy_info
-        cop(self.fn_key, self.backup_dir)
+        cop(self.fn_key, self.backup_dir, self.fn_key)
         #--First backup
         firstBackup = self.backup_dir.join(self.fn_key) + 'f'
         if not firstBackup.exists():
@@ -1712,7 +1712,7 @@ class _AFileInfos(DataStore):
         return res
 
     #--Copy
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
+    def copy_info(self, fileName, destDir, destName, set_mtime=None,
                   save_lo_cache=False):
         """Copies member file to destDir. Will overwrite! Will update
         internal self._data for the file if copied inside self.store_dir but the
@@ -1723,7 +1723,6 @@ class _AFileInfos(DataStore):
         :param set_mtime: if None self[fileName].ftime is copied to destination
         """
         destDir.makedirs()
-        if not destName: destName = fileName
         src_info = self[fileName]
         if destDir == self.store_dir and destName in self:
             destPath = self[destName].abs_path
@@ -1731,10 +1730,9 @@ class _AFileInfos(DataStore):
             destPath = destDir.join(destName)
         self._do_copy(src_info, destPath)
         if destDir == self.store_dir:
-            self._add_info(destDir, destName, set_mtime, fileName,
-                           save_lo_cache)
+            self._add_info(destName, set_mtime, fileName, save_lo_cache)
 
-    def _add_info(self, destDir, destName, set_mtime, fileNam, save_lo_cache):
+    def _add_info(self, destName, set_mtime, fileNam, save_lo_cache):
         # TODO(ut) : in duplicate pass the info in and load_cache=False
         return self.new_info(destName, notify_bain=True)
 
@@ -3172,9 +3170,8 @@ class ModInfos(TableFileInfos):
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
-    def _add_info(self, destDir, destName, set_mtime, fileName,
-                  save_lo_cache=None):
-        inf = super()._add_info(destDir, destName, set_mtime, fileName, save_lo_cache)
+    def _add_info(self, destName, set_mtime, fileName, save_lo_cache):
+        inf = super()._add_info(destName, set_mtime, fileName, save_lo_cache)
         if set_mtime is not None:
             inf.setmtime(set_mtime) # correctly update table
         self.cached_lo_insert_after(fileName, destName)
@@ -3414,12 +3411,12 @@ class SaveInfos(TableFileInfos):
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
         return old_key
 
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
+    def copy_info(self, fileName, destDir, destName, set_mtime=None,
                   save_lo_cache=False):
         """Copies savefile and associated cosaves file(s)."""
         super().copy_info(fileName, destDir, destName, set_mtime)
         self.co_copy_or_move(self[fileName]._co_saves,
-                             destDir.join(destName or fileName))
+                             destDir.join(destName))
 
     @staticmethod
     def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
