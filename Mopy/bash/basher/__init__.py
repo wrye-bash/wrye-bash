@@ -3477,7 +3477,7 @@ class ScreensList(UIList):
 
     def try_rename(self, scrinf, new_root, store_refr=None):
         newName = FName(new_root + scrinf.fn_key.fn_ext) # TODO: add ScreenInfo.unique_key()
-        if scrinf.get_store().store_dir.join(newName).exists():
+        if scrinf._store().store_dir.join(newName).exists():
             return None # break
         return super().try_rename(scrinf, newName, store_refr)
 

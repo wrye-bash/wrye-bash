@@ -1796,7 +1796,7 @@ class ListInfo:
     def unique_name(cls, name_str, check_exists=False):
         base_name = name_str
         unique_counter = 0
-        store = cls.get_store()
+        store = cls._store()
         while (store.store_dir.join(name_str).exists() if check_exists else
                name_str in store): # must wrap a FNDict
             unique_counter += 1
@@ -1822,8 +1822,8 @@ class ListInfo:
         return 0, len(text_str) # if selection not at start reset
 
     @classmethod
-    def get_store(cls):
-        raise NotImplementedError(f'{type(cls)} does not provide a data store')
+    def _store(cls):
+        raise NotImplementedError(f'{cls} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
     def copy_to(self, dup_path: Path, *, set_time=None, **kwargs):
@@ -1831,9 +1831,8 @@ class ListInfo:
         the data_store if copied inside the store_dir but the client is
         responsible for calling the final refresh of the data store."""
         self.fs_copy(dup_path, set_time=set_time)
-        destDir, destName = dup_path.head, dup_path.stail
-        if destDir == self.get_store().store_dir:
-            self.get_store().add_info(self, destName, **kwargs)
+        if dup_path.head == self._store().store_dir:
+            self._store().add_info(self, dup_path.stail, **kwargs)
 
     def fs_copy(self, dup_path, *, set_time=None):
         raise NotImplementedError
@@ -1864,7 +1863,7 @@ class AFileInfo(AFile, ListInfo):
     def get_rename_paths(self, newName):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
-        return [(self.abs_path, self.get_store().store_dir.join(newName))]
+        return [(self.abs_path, self._store().store_dir.join(newName))]
 
     def validate_name(self, name_str, check_store=True):
         super_validate = super().validate_name(name_str,

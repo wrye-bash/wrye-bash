@@ -202,7 +202,7 @@ class Installer(ListInfo):
             frozenset()) # block extension check
 
     @classmethod
-    def get_store(cls): return cls.instData
+    def _store(cls): return cls.instData
 
     @staticmethod
     def init_bain_dirs():
