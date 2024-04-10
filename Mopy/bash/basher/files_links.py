@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import re
 
 from .. import balt, bass, bolt, bosh, exception
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
@@ -29,9 +28,8 @@ from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 from ..wbtemp import TempFile
 
-__all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
-           u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
-           'File_ListMasters', 'File_Redate', 'File_JumpToSource']
+__all__ = ['File_Backup', 'File_Duplicate', 'File_JumpToSource', 'File_Redate',
+           'File_ListMasters', 'File_RevertToBackup', 'Files_Unhide']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -162,104 +160,6 @@ class File_ListMasters(OneItemLink):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
         copy_text_to_clipboard(list_of_mods)
         self._showLog(list_of_mods, title=self._selected_item)
-
-#------------------------------------------------------------------------------
-class File_Snapshot(ItemLink):
-    """Take a snapshot of the file."""
-    _help = _("Creates a snapshot copy of the selected files in a "
-              "'Snapshots' subdirectory.")
-
-    @property
-    def link_text(self):
-        return (_('Snapshot'), _('Snapshot…'))[len(self.selected) == 1]
-
-    def Execute(self):
-        for fileName, fileInfo in self.iselected_pairs():
-            (destDir,destName,wildcard) = fileInfo.getNextSnapshot()
-            destDir.makedirs()
-            if len(self.selected) == 1:
-                destPath = self._askSave(
-                    title=_(u'Save snapshot as:'), defaultDir=destDir,
-                    defaultFile=destName, wildcard=wildcard)
-                if not destPath: return
-                (destDir,destName) = destPath.headTail
-            #--Extract version number
-            fileRoot = fileName.fn_body
-            destRoot = destName.sroot
-            fileVersion = bolt.getMatch(
-                re.search(r'[ _]+v?([.\d]+)$', fileRoot), 1)
-            snapVersion = bolt.getMatch(re.search(r'-[\d.]+$', destRoot))
-            fileHedr = fileInfo.header
-            if (fileVersion or snapVersion) and bosh.reVersion.search(fileHedr.description):
-                if fileVersion and snapVersion:
-                    newVersion = fileVersion+snapVersion
-                elif snapVersion:
-                    newVersion = snapVersion[1:]
-                else:
-                    newVersion = fileVersion
-                newDescription = bosh.reVersion.sub(u'\\1 '+newVersion, fileHedr.description,1)
-                fileInfo.writeDescription(newDescription)
-                self.window.panel.SetDetails(fileName)
-            #--Copy file
-            fileInfo.fs_copy(destDir.join(destName))
-
-#------------------------------------------------------------------------------
-class File_RevertToSnapshot(OneItemLink):
-    """Revert to Snapshot."""
-    _text = _('Revert to Snapshot…')
-    _help = _(u'Revert to a previously created snapshot from the '
-              u'Bash/Snapshots dir.')
-
-    @balt.conversation
-    def Execute(self):
-        """Revert to Snapshot."""
-        fileName = self._selected_item
-        #--Snapshot finder
-        srcDir = self._selected_info.snapshot_dir
-        wildcard = self._selected_info.getNextSnapshot()[2]
-        #--File dialog
-        srcDir.makedirs()
-        snapPath = self._askOpen(_('Revert %(target_file_name)s to '
-                                   'snapshot:') % {
-            'target_file_name': fileName}, defaultDir=srcDir,
-            wildcard=wildcard)
-        if not snapPath: return
-        snapName = snapPath.tail
-        #--Warning box
-        message = (_('Revert %(target_file_name)s to snapshot '
-                     '%(snapsnot_file_name)s dated %(snapshot_date)s?') % {
-            'target_file_name': fileName, 'snapsnot_file_name': snapName,
-            'snapshot_date': format_date(snapPath.mtime)})
-        if not self._askYes(message, _(u'Revert to Snapshot')): return
-        with BusyCursor(), TempFile() as known_good_copy:
-            sel_inf = self._selected_info
-            destPath = sel_inf.abs_path
-            current_mtime = destPath.mtime
-            # Make a temp copy first in case reverting to snapshot fails
-            self._selected_info.fs_copy(known_good_copy)
-            # keep load order (so mtime)
-            snapPath.copyTo(destPath, set_time=current_mtime)
-            try:
-                inf = self._data_store.new_info(fileName, notify_bain=True)
-                inf.copy_persistent_attrs(sel_inf)
-            except exception.FileError:
-                # Reverting to snapshot failed - may be corrupt
-                bolt.deprint('Failed to revert to snapshot', traceback=True)
-                self.window.panel.ClearDetails()
-                if self._askYes(
-                    _("Failed to revert %(target_file_name)s to snapshot "
-                      "%(snapshot_file_name)s. The snapshot file may be "
-                      "corrupt. Do you want to restore the original file "
-                      "again? 'No' keeps the reverted, possibly broken "
-                      "snapshot instead.") % {'target_file_name': fileName,
-                                              'snapshot_file_name': snapName},
-                        title=_('Revert to Snapshot - Error')):
-                    # Restore the known good file again - no error check needed
-                    destPath.replace_with_temp(known_good_copy)
-                    inf = self._data_store.new_info(fileName, notify_bain=True)
-                    inf.copy_persistent_attrs(sel_inf)
-        # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[fileName])
 
 #------------------------------------------------------------------------------
 class File_Backup(ItemLink):
