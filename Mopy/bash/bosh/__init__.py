@@ -1581,7 +1581,7 @@ class _AFileInfos(DataStore):
 
     def _init_store(self, storedir):
         """Set up the self's _data/corrupted and return the former."""
-        self.corrupted: FNDict[FName, Corrupted] = FNDict()
+        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         deprint(f'Initializing {self.__class__.__name__}')
         deprint(f' store_dir: {storedir}')
         storedir.makedirs()
@@ -1589,36 +1589,37 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos=True, booting=False, *, stored_data={}):
+    def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
         rdata = self._rdata_type()
-        if True: # refresh_infos
-            new_or_present, del_infos = self._list_store_dir()
-            for new, (oldInfo, kws) in new_or_present.items():
-                try:
-                    if oldInfo is not None:
-                        # reread the header if any file attributes changed
-                        if oldInfo.do_update(**kws):
-                            rdata.redraw.add(new)
-                    else: # new file or updated corrupted, get a new info
-                        kws['att_val'] = stored_data.get(new)
-                        self.new_info(new, _in_refresh=True,
-                                      notify_bain=not booting, **kws)
-                        rdata.to_add.add(new)
-                except (FileError, UnicodeError, BoltError,
-                        NotImplementedError) as e:
-                    # old still corrupted, or new(ly) corrupted or we landed
-                    # here cause cor_path was un/ghosted but file remained
-                    # corrupted so in any case re-add to corrupted
-                    cor_path = self.store_dir.join(new)
-                    er = e.message if hasattr(e, 'message') else f'{e}'
-                    self.corrupted[new] = cor = Corrupted(cor_path, er, **kws)
-                    deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
-                            traceback=True)
-                    if new := self.pop(new, None): # effectively deleted
-                        del_infos.add(new)
-            rdata.to_del = {d.fn_key for d in del_infos}
-            self.delete_refresh(del_infos, check_existence=False)
+        if isinstance(refresh_infos, tuple):
+            new_or_present, del_infos = refresh_infos
+        else:
+            new_or_present, del_infos = self._list_store_dir(refresh_infos)
+        for new, (oldInfo, kws) in new_or_present.items():
+            try:
+                if oldInfo is not None:
+                    # reread the header if any file attributes changed
+                    if oldInfo.do_update(**kws):
+                        rdata.redraw.add(new)
+                else: # new file or updated corrupted, get a new info
+                    self.new_info(new, _in_refresh=True,
+                                  notify_bain=not booting, **kws)
+                    rdata.to_add.add(new)
+            except (FileError, UnicodeError, BoltError,
+                    NotImplementedError) as e:
+                # old still corrupted, or new(ly) corrupted or we landed
+                # here cause cor_path was un/ghosted but file remained
+                # corrupted so in any case re-add to corrupted
+                cor_path = self.store_dir.join(new)
+                er = e.message if hasattr(e, 'message') else f'{e}'
+                self.corrupted[new] = cor = _Corrupted(cor_path, er, **kws)
+                deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
+                        traceback=True)
+                if new := self.pop(new, None): # effectively deleted
+                    del_infos.add(new)
+        rdata.to_del = {d.fn_key for d in del_infos}
+        self.delete_refresh(del_infos, check_existence=False)
         if rdata.redraw:
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
@@ -1628,8 +1629,8 @@ class _AFileInfos(DataStore):
         # TODO(ut) : in duplicate pass the info in and load_cache=False
         return self.new_info(destName, notify_bain=True)
 
-    def new_info(self, fileName, *, _in_refresh=False, owner=None,
-                 notify_bain=False, **kwargs):
+    def new_info(self, fileName, *, _in_refresh=False, notify_bain=False,
+                 **kwargs):
         """Create, add to self and return a new info using self.factory.
         It will try to read the file to cache its header etc, so use on
         existing files. WIP, in particular _in_refresh must go, but that
@@ -1638,21 +1639,21 @@ class _AFileInfos(DataStore):
             info = self[fileName] = self.factory(self.store_dir.join(fileName),
                                                  load_cache=True, **kwargs)
             self.corrupted.pop(fileName, None)
-            if owner is not None: ##: ignore this - fixed later - belongs to info init
-                try:info.set_table_prop('installer', f'{owner}')
-                except KeyError:
-                    deprint(f'Failed to set {owner=} for {info=}')
             if notify_bain:
                 self._notify_bain(altered={info.abs_path})
             return info
         except FileError as error:
             if not _in_refresh: # if refresh just raise so we print the error
-                self.corrupted[fileName] = Corrupted(
+                self.corrupted[fileName] = _Corrupted(
                     self.store_dir.join(fileName), error.message, **kwargs)
                 self.pop(fileName, None)
             raise
 
-    def _list_store_dir(self): # performance intensive
+    def _list_store_dir(self, refresh_infos): # performance intensive
+        if refresh_infos is False:
+            return {}, set()
+        if isinstance(refresh_infos, dict): # create new infos for those
+            return {k: (None, v) for k, v in refresh_infos.items()}, set()
         file_matches_store = self.rightFileType
         inodes = FNDict()
         with os.scandir(self.store_dir) as it:
@@ -1741,11 +1742,16 @@ class TableFileInfos(_AFileInfos):
         return bolt.DataTable(self.bash_dir.join('Table.dat'),
                               load_pickle=True).pickled_data
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self, refresh_infos=True, *args, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
-            kwargs['stored_data'] = self._init_from_table()
-        return super().refresh(*args, **kwargs)
+            new_or_present, del_infos = self._list_store_dir(True)
+            table = self._init_from_table()
+            for fn, (_inf, kws) in new_or_present.items():
+                if props := table.get(fn):
+                    kws['att_val'] = props
+            refresh_infos = new_or_present, del_infos
+        return super().refresh(refresh_infos, *args, **kwargs)
 
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
@@ -1754,7 +1760,7 @@ class TableFileInfos(_AFileInfos):
                 pd.pickled_data[k] = pickle_dict
         pd.save()
 
-class Corrupted(AFile):
+class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
     def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
@@ -1957,7 +1963,7 @@ class INIInfos(TableFileInfos):
                 k not in self)
 
     def refresh(self, refresh_infos=True, booting=False, refresh_target=True):
-        rdata = super().refresh(booting=booting) if refresh_infos else _RDIni()
+        rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
         # delete should take care of this but needs to update redraw...)
         for k, default_info in self._missing_default_inis():
@@ -2204,21 +2210,6 @@ class ModInfos(TableFileInfos):
             self._lo_wip.append(mod)
         self._lo_wip[first_dex:first_dex] = modlist
 
-    def cached_lo_append_if_missing(self, mods):
-        lo_wip_set = set(self._lo_wip)
-        new = [x for x in mods if x not in lo_wip_set]
-        if not new: return
-        esms = [x for x in new if bush.game.master_flag.cached_type(self[x])]
-        if esms:
-            last = self.cached_lo_last_esm()
-            for esm in esms:
-                self.cached_lo_insert_after(last, esm)
-                last = esm
-            esms_set = set(esms)
-            new = [x for x in new if x not in esms_set]
-        self._lo_wip.extend(new)
-        self.cached_lo_save_lo()
-
     def masterWithVersion(self, master_name):
         if master_name == 'Oblivion.esm' and (curr_ver := self.voCurrent):
             master_name += f' [{curr_ver}]'
@@ -2270,8 +2261,7 @@ class ModInfos(TableFileInfos):
         some of the set_load_order methods, or pass unlock_lo=True
         (refreshLoadOrder only *gets* load order)."""
         # Scan the data dir, getting info on added, deleted and modified files
-        rdata = super().refresh(booting=booting) if refresh_infos else \
-            self._rdata_type()
+        rdata = super().refresh(refresh_infos, booting=booting)
         mods_changes = bool(rdata)
         self._refresh_bash_tags()
         # If refresh_infos is False and mods are added _do_ manually refresh
@@ -2495,11 +2485,11 @@ class ModInfos(TableFileInfos):
         return pairs
 
     #--Refresh File
-    def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, **kwargs):
+    def new_info(self, fileName, *, _in_refresh=False, notify_bain=False,
+                 **kwargs):
         try:
             return super().new_info(fileName, _in_refresh=_in_refresh,
-                owner=owner, notify_bain=notify_bain, **kwargs)
+                                    notify_bain=notify_bain, **kwargs)
         finally:
             # we should refresh info sets if we manage to add the info, but
             # also if we fail, which might mean that some info got corrupted
@@ -3214,8 +3204,7 @@ class SaveInfos(TableFileInfos):
                 do_swap=None):
         if not booting: # else we just called __init__
             self.set_store_dir(save_dir, do_swap)
-        return super().refresh(booting=booting) if refresh_infos else \
-           self._rdata_type()
+        return super().refresh(refresh_infos, booting=booting)
 
     def rename_operation(self, member_info, newName, rdata_ren,
                          store_refr=None):
@@ -3303,10 +3292,10 @@ class BSAInfos(TableFileInfos):
                         self.setmtime(default_mtime)
         super().__init__(BSAInfo)
 
-    def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, **kwargs):
+    def new_info(self, fileName, _in_refresh=False, notify_bain=False,
+                 **kwargs):
         new_bsa = super().new_info(fileName, _in_refresh=_in_refresh,
-            owner=owner, notify_bain=notify_bain, **kwargs)
+                                   notify_bain=notify_bain, **kwargs)
         new_bsa_name = new_bsa.fn_key
         # Check if the BSA has a mismatched version - if so, schedule a warning
         if bush.game.Bsa.valid_versions: # If empty, skip checks for this game
