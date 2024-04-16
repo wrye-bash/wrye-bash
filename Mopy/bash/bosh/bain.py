@@ -39,7 +39,7 @@ from operator import attrgetter, itemgetter
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files, data_tracking_stores, RefrData, Corrupted
+    best_ini_files, data_tracking_stores, RefrData
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
@@ -48,7 +48,7 @@ from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items, \
     DefaultFNDict, copy_or_reflink2, AFileInfo
-from ..exception import ArgumentError, BSAError, CancelError, FileError, \
+from ..exception import ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
 from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
@@ -1316,23 +1316,17 @@ class _InstallerPackage(Installer, AFileInfo):
         # Update relevant data stores, adding new/modified files
         refresh_ui = defaultdict(bool)
         for store, owned_files in store_to_paths.items():
-            lo_append = []
+            # some of those may just be modified but creating a new info is ok
+            new_infos = {k: {'att_val': {'installer': self.fn_key}} for
+                         k, _dest in owned_files}
+            refresh_ui[store.unique_store_key] = bool(store.refresh(
+                refresh_infos=new_infos, unlock_lo=True))
             for (owned_file, dest) in owned_files:
                 try:
-                    inf = store.new_info(owned_file, owner=self.fn_key,
-                         # we refresh info sets in cached_lo_append_if_missing
-                         _in_refresh=True)
-                    data_sizeCrcDate_update[dest][2] = inf.ftime
-                    lo_append.append(owned_file)
-                except FileError as error: # repeated from refresh
-                    store.corrupted[owned_file] = Corrupted(owned_file,
-                                                            error.message)
-                    store.pop(owned_file, None)
-            if lo_append:
-                refresh_ui[store.unique_store_key] = True
-                if store.unique_store_key is Store.MODS:
-                    store.cached_lo_append_if_missing(lo_append)
-                    store.refreshLoadOrder(unlock_lo=True)
+                    data_sizeCrcDate_update[dest][2] = store[owned_file].ftime
+                except KeyError: # failed to add the file - look in corrupted
+                    data_sizeCrcDate_update[dest][2] = store.corrupted[
+                        owned_file].ftime
         #--Update Installers data
         return data_sizeCrcDate_update, refresh_ui
 
