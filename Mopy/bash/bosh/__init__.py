@@ -1497,7 +1497,7 @@ class DataStore(DataDict):
         remaining ones as a dict, mapping file names to file infos."""
         return {k: self[k] for k in fn_items}
 
-    def refresh(self): raise NotImplementedError
+    def refresh(self, **kwargs): raise NotImplementedError
     def save_pickle(self): pass # for Screenshots
 
     def rename_operation(self, member_info, newName, rdata_ren,
@@ -1956,7 +1956,8 @@ class INIInfos(TableFileInfos):
         return ((k, v) for k, v in self._default_tweaks.items() if
                 k not in self)
 
-    def refresh(self, refresh_infos=True, booting=False, refresh_target=True):
+    def refresh(self, refresh_infos=True, booting=False, refresh_target=True,
+                **kwargs):
         rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
         # delete should take care of this but needs to update redraw...)
@@ -2247,7 +2248,8 @@ class ModInfos(TableFileInfos):
             (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
             inodes.items()))
 
-    def refresh(self, refresh_infos=True, booting=False, unlock_lo=False):
+    def refresh(self, refresh_infos=True, booting=False, unlock_lo=False,
+                **kwargs):
         """Update file data for additions, removals and date changes.
         See usages for how to use the refresh_infos and unlock_lo params.
         NB: if an operation *we* performed changed the load order we do not
@@ -3205,10 +3207,10 @@ class SaveInfos(TableFileInfos):
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
     def refresh(self, refresh_infos=True, booting=False, *, save_dir=None,
-                do_swap=None):
+                do_swap=None, **kwargs):
         if not booting: # else we just called __init__
             self.set_store_dir(save_dir, do_swap)
-        return super().refresh(refresh_infos, booting=booting)
+        return super().refresh(refresh_infos, booting=booting, **kwargs)
 
     def rename_operation(self, member_info, newName, rdata_ren,
                          store_refr=None):
@@ -3415,9 +3417,9 @@ class ScreenInfos(_AFileInfos):
             return None
         return super().data_path_to_info(filename, would_be)
 
-    def refresh(self, refresh_infos=True, booting=False):
+    def refresh(self, refresh_infos=True, booting=False, **kwargs):
         self.set_store_dir()
-        return super().refresh(refresh_infos, booting)
+        return super().refresh(refresh_infos, booting, **kwargs)
 
 # Initialization --------------------------------------------------------------
 def initBosh(game_ini_path):
