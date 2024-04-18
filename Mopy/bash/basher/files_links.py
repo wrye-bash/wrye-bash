@@ -21,7 +21,7 @@
 #
 # =============================================================================
 
-from .. import balt, bass, bolt, bosh, exception
+from .. import balt, bass, bolt, bosh, bush, exception
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bass import Store
 from ..bolt import GPath_no_norm
@@ -253,17 +253,14 @@ class File_Redate(ItemLink):
         for to_redate in self._infos_to_redate():
             to_redate.setmtime(user_timestamp)
             user_timestamp += 60.0
-        self._perform_refresh()
+        self._data_store.refresh(refresh_infos=False,
+                                 unlock_lo=not bush.game.using_txt_file)
         self.window.RefreshUI(refresh_others=Store.SAVES.DO())
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):
         """Returns an iterable of the FileInfo instances to redate."""
         return self.iselected_infos()
-
-    def _perform_refresh(self):
-        """Refreshes the data store - """
-        self._data_store.refresh(refresh_infos=False)
 
 #------------------------------------------------------------------------------
 class File_JumpToSource(AppendableLink, OneItemLink):
