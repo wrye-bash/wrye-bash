@@ -1150,6 +1150,7 @@ class MreDoor(MelRecord):
         has_distant_lod: bool = flag(15)
         random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
+        obstacle: bool = flag(25)
 
     melSet = MelSet(
         MelEdid(),
@@ -1404,6 +1405,7 @@ class MreFurn(AMreWithKeywords):
         has_distant_lod: bool = flag(15)
         random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
+        obstacle: bool = flag(25)
         must_exit_to_talk: bool = flag(28)
         child_can_use: bool = flag(29)
 
@@ -3415,6 +3417,7 @@ class MreTree(MelRecord):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         has_distant_lod: bool = flag(15)
+        obstacle: bool = flag(25)
 
     melSet = MelSet(
         MelEdid(),
