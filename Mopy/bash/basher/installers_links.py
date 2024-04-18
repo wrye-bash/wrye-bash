@@ -94,9 +94,9 @@ class Installers_MonitorExternalInstallation(Installers_Link):
                        'complete, press OK.'), _('External Installation'))
         # Refresh Data
         ui_refresh = defaultdict(bool)
-        with load_order.Unlock(): ##: single use outside refreshLoadOrder
-            for store in bosh.data_tracking_stores():
-                ui_refresh[store.unique_store_key] = bool(store.refresh())
+        for store in bosh.data_tracking_stores():
+            ui_refresh[store.unique_store_key] = bool(
+                store.refresh(unlock_lo=True))
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
