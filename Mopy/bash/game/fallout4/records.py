@@ -3171,16 +3171,17 @@ class MreSpgd(MelRecord):
         MelEdid(),
         # What on earth did you do to this struct, Bethesda? It was so nice and
         # normal in Skyrim...
-        MelExtra(MelStruct(b'DATA',
-            ['f', '4s', 'f', '4s', '3f', '4s', 'f', '4s', 'f', '4s', 'f', '4s',
-             'I', '4s', 'I', '4s', 'I', '4s', 'I', '4s', 'f'],
-            'gravity_velocity', 'unknown1', 'rotation_velocity', 'unknown2',
-            'particle_size_x', 'center_offset_min1', 'particle_size_y',
-            'unknown3', 'center_offset_min2', 'unknown4', 'center_offset_max',
-            'unknown5', 'initial_rotation', 'unknown6', 'num_subtextures_x',
-            'unknown7', 'num_subtextures_y', 'unknown8', 'spgd_type',
-            'unknown9', 'spgd_box_size', 'unknown10', 'particle_density'),
-            extra_attr='unknown11'),
+        ##: Might need to be a MelTruncatedStruct with the last 4s chopped off,
+        # keep an eye out in the future
+        MelStruct(b'DATA',
+            ['f', '4s', 'f', '4s', 'f', '4s', 'f', '4s', 'f', '4s', 'f', '4s',
+             'f', '4s', 'I', '4s', 'I', '4s', 'I', '4s', 'I', '4s', 'f', '4s'],
+            'gravity_velocity', 'unused1', 'rotation_velocity', 'unused2',
+            'particle_size_x', 'unused3', 'particle_size_y', 'unused4',
+            'center_offset_min2', 'unused5', 'center_offset_max', 'unused6',
+            'initial_rotation', 'unused7', 'num_subtextures_x', 'unused8',
+            'num_subtextures_y', 'unused9', 'spgd_type', 'unused10',
+            'spgd_box_size', 'unused11', 'particle_density', 'unused12'),
         MelString(b'MNAM', 'spgd_particle_texture'),
     )
 
