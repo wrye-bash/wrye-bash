@@ -20,8 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Temp module, remove when/if we switch to Qt."""
-# from .impl_wx import *
-# from .impl_wx.base_components import _AComponent # ugh
-from .impl_qt import *
-from .impl_qt.base_components import _AComponent # ugh
+"""This module houses parts of the GUI code that form the basis for the
+more specialized parts (e.g. _AComponent)."""
+from __future__ import annotations
+
+__author__ = 'Infernio'
+
+class _AComponent:
+    pass

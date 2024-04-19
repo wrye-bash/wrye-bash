@@ -28,27 +28,19 @@ __author__ = 'Infernio'
 import gettext
 import locale
 import os
-import sys
 import time
 import warnings
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
 
-def set_c_locale():
-    # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
-    if sys.platform.startswith('win') and sys.version_info > (3, 8):
-        for cat in (locale.LC_COLLATE, locale.LC_CTYPE, locale.LC_MONETARY,
-                    locale.LC_TIME):  # locale.LC_NUMERIC
-            locale.setlocale(cat, 'C')
-
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
 _WEBLATE_URL = 'https://hosted.weblate.org/engage/wrye-bash/'
 
-def setup_locale(cli_lang, _wx):
-    """Set up wx Locale and Wrye Bash translations. If cli_lang is given,
-    will validate it is a supported wx language code, otherwise will fallback
+def setup_locale(cli_lang):
+    """Set up Qt Locale and Wrye Bash translations. If cli_lang is given,
+    will validate it is a supported Qt language code, otherwise will fallback
     to user default locale. Then will try to find a matching translation file
     in the 'Mopy/bash/l10n' folder. If a translation file was found (even for
     a similar language) we will try to install the gettext translation
@@ -61,13 +53,14 @@ def setup_locale(cli_lang, _wx):
 
     :param cli_lang: The language the user specified on the command line, or
         None.
-    :return: The wx.Locale object we ended up using."""
+    :return: The QLocale object we ended up using."""
+    import PySide6.QtCore as _qc
     target_lang = cli_lang or bass.boot_settings['Boot']['locale']
     # Set the wx language - otherwise we will crash when loading any images
-    chosen_wx_lang = target_lang and _wx.Locale.FindLanguageInfo(target_lang)
-    if chosen_wx_lang:
-        # The user specified a language that wx recognizes
-        target_name = chosen_wx_lang.CanonicalName
+    chosen_qt_lang = target_lang and _qc.QLocale(target_lang)
+    if _qt_is_locale_usable(_qc, chosen_qt_lang):
+        # The user specified a language that Qt recognizes
+        target_name = _qt_get_language_code(_qc, chosen_qt_lang)
     else:
         # Fall back on the default language
         try:
@@ -81,12 +74,11 @@ def setup_locale(cli_lang, _wx):
             language_code, enc = locale.getlocale()
         bolt.deprint(f'{cli_lang=} - {target_lang=} - falling back to '
                      f'({language_code}, {enc}) from default locale')
-        lang_info = _wx.Locale.FindLanguageInfo(language_code)
-        target_name = lang_info and lang_info.CanonicalName
-        bolt.deprint(f'wx gave back {target_name}')
+        target_name = _qt_get_language_code(_qc, _qc.QLocale(language_code))
+        bolt.deprint(f'Qt gave back {target_name}')
     # We now have a language that wx supports, but we don't know if WB supports
     # it - so check that next
-    trans_path = __get_translations_dir()
+    trans_path = _get_translations_dir()
     def _advertise_weblate(base_msg: str):
         """Small helper for advertising our weblate to users who may end up
         reading the log."""
@@ -112,9 +104,9 @@ def setup_locale(cli_lang, _wx):
                    target_name == f or f.split('_', 1)[0] == wanted_prefix]
         # first check exact target then similar languages
         for f in sorted(matches, key=lambda x: x != target_name):
-            # Try switching wx to this locale as well
-            lang_info = _wx.Locale.FindLanguageInfo(f)
-            if lang_info:
+            # Try switching Qt to this locale as well
+            lang_info = _qc.QLocale(f)
+            if lang_info != _qc.QLocale.Language.C:
                 if target_name == f:
                     bolt.deprint(f"Found translation file for language "
                                  f"'{target_name}'")
@@ -133,10 +125,8 @@ def setup_locale(cli_lang, _wx):
             _advertise_weblate(f"wxPython does not support the language "
                                f"family '{wanted_prefix}', will fall back "
                                f"to '{target_name}'")
-    lang_info = _wx.Locale.FindLanguageInfo(target_name)
-    target_language = lang_info.Language
-    target_locale = _wx.Locale(target_language)
-    bolt.deprint(f"Set wxPython locale to '{target_name}'")
+    target_locale = _qc.QLocale(target_name)
+    bolt.deprint(f"Set Qt locale to '{target_name}'")
     # Next, set the Wrye Bash locale based on the one we grabbed from wx
     if mo is None:
         trans = gettext.NullTranslations() # We're using English
@@ -176,11 +166,27 @@ def setup_locale(cli_lang, _wx):
     # we ended up with as the final locale
     trans.install()
     bass.active_locale = target_name
-    # adieu, user locale
-    set_c_locale()
     return target_locale
 
-def __get_translations_dir():
+def _qt_is_locale_usable(_qc, qt_locale):
+    """Check if the specified Qt locale is a usable user-specified locale (i.e.
+    anything but the C locale, which is what Qt gives back for invalid/unknown
+    codes).
+
+    :param _qc: PySide6.QtCore.
+    :param qt_locale: The QLocale to check."""
+    return qt_locale and qt_locale.language() != _qc.QLocale.Language.C
+
+def _qt_get_language_code(_qc, qt_locale):
+    """Retrieve a language code for the specified Qt locale object.
+
+    :param _qc: PySide6.QtCore.
+    :param qt_locale: The QLocale object to work with."""
+    l_code = _qc.QLocale.languageToCode(qt_locale.language())
+    t_code = _qc.QLocale.territoryToCode(qt_locale.territory())
+    return f'{l_code}_{t_code}'
+
+def _get_translations_dir():
     trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
     if not os.path.exists(trans_path):
         # HACK: the CI has to run tests from the top dir, which causes us to

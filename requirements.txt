@@ -2,11 +2,10 @@
 chardet==5.2.0
 ifileoperation==1.2.6; sys_platform == 'win32'
 lz4==4.3.3
+PySide6==6.7.0
 pywin32==306; sys_platform == 'win32'
 PyYAML==6.0.1
 vdf==3.4
-wxPython==4.2.1; sys_platform != 'win32'
-https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2.2a1-cp312-cp312-win_amd64.whl; sys_platform == 'win32'
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
 lxml==5.1.0
