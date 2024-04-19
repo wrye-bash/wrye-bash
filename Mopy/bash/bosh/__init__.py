@@ -1528,9 +1528,6 @@ class DataStore(DataDict):
             rdata_ren.ren_paths.update(ren)
         return rdata_ren
 
-    def add_info(self, file_info, destName, **kwargs):
-        raise NotImplementedError
-
     @property
     def bash_dir(self) -> Path:
         """Return the folder where Bash persists its data.Create it on init!"""
@@ -1563,6 +1560,12 @@ class RefrData:
     def __bool__(self):
         return bool(self.to_add or self.to_del or self.redraw)
 
+@dataclass(slots=True)
+class _RefrIn:
+    """WIP! requesting refresh from the data store."""
+    new_or_present: field(default_factory=dict)
+    del_infos: field(default_factory=set)
+
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
@@ -1592,10 +1595,7 @@ class _AFileInfos(DataStore):
     def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
         rdata = self._rdata_type()
-        if isinstance(refresh_infos, tuple):
-            new_or_present, del_infos = refresh_infos
-        else:
-            new_or_present, del_infos = self._list_store_dir()
+        new_or_present, del_infos = self._list_store_dir(refresh_infos)
         for new, (oldInfo, kws) in new_or_present.items():
             try:
                 if oldInfo is not None:
@@ -1624,11 +1624,6 @@ class _AFileInfos(DataStore):
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
 
-    #--Copy
-    def add_info(self, file_info, destName, **kwargs):
-        # TODO(ut) : in duplicate pass the info in and load_cache=False
-        return self.new_info(destName, notify_bain=True)
-
     def new_info(self, fileName, *, _in_refresh=False, notify_bain=False,
                  **kwargs):
         """Create, add to self and return a new info using self.factory.
@@ -1649,9 +1644,13 @@ class _AFileInfos(DataStore):
                 self.pop(fileName, None)
             raise
 
-    def _list_store_dir(self, refresh_infos=True): # performance intensive
+    def _list_store_dir(self, refresh_infos): # performance intensive
+        if isinstance(refresh_infos, _RefrIn):
+            return refresh_infos.new_or_present, refresh_infos.del_infos
         if refresh_infos is False:
             return {}, set()
+        if isinstance(refresh_infos, (list, set, tuple)):
+            return {k: (None, {}) for k in refresh_infos}, set()
         if isinstance(refresh_infos, dict): # create new infos for those
             return {k: (None, v) for k, v in refresh_infos.items()}, set()
         file_matches_store = self.rightFileType
@@ -1739,12 +1738,12 @@ class TableFileInfos(_AFileInfos):
     def refresh(self, refresh_infos=True, *args, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
-            new_or_present, del_infos = self._list_store_dir()
+            new_or_present, del_infos = self._list_store_dir(True)
             table = self._init_from_table()
             for fn, (_inf, kws) in new_or_present.items():
                 if props := table.get(fn):
                     kws['att_val'] = props
-            refresh_infos = new_or_present, del_infos
+            refresh_infos = _RefrIn(new_or_present, del_infos)
         return super().refresh(refresh_infos, *args, **kwargs)
 
     def save_pickle(self):
@@ -1956,8 +1955,8 @@ class INIInfos(TableFileInfos):
         return ((k, v) for k, v in self._default_tweaks.items() if
                 k not in self)
 
-    def refresh(self, refresh_infos=True, booting=False, refresh_target=True,
-                **kwargs):
+    def refresh(self, refresh_infos=True, booting=False, *,
+                refresh_target=True, **kwargs):
         rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
         # delete should take care of this but needs to update redraw...)
@@ -2143,7 +2142,7 @@ class ModInfos(TableFileInfos):
             self._active_wip if active is None else active))
 
     @_lo_cache
-    def cached_lo_save_lo(self):
+    def _cached_lo_save_lo(self):
         """Save load order when active did not change."""
         return load_order.save_lo(self._lo_wip)
 
@@ -2163,7 +2162,7 @@ class ModInfos(TableFileInfos):
     def redo_load_order(self): return load_order.redo_load_order()
 
     #--Load Order utility methods - be sure cache is valid when using them
-    def cached_lo_insert_after(self, previous, new_mod):
+    def _cached_lo_insert_after(self, previous, new_mod):
         new_mod = self[new_mod].fn_key ##: new_mod is not always an FName
         if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
         dex = self._lo_wip.index(previous)
@@ -2248,8 +2247,8 @@ class ModInfos(TableFileInfos):
             (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
             inodes.items()))
 
-    def refresh(self, refresh_infos=True, booting=False, unlock_lo=False,
-                **kwargs):
+    def refresh(self, refresh_infos=True, booting=False, *, unlock_lo=False,
+                insert_after: FNDict[FName, FName] | None = None, **kwargs):
         """Update file data for additions, removals and date changes.
         See usages for how to use the refresh_infos and unlock_lo params.
         NB: if an operation *we* performed changed the load order we do not
@@ -2260,9 +2259,13 @@ class ModInfos(TableFileInfos):
         rdata = super().refresh(refresh_infos, booting=booting)
         mods_changes = bool(rdata)
         self._refresh_bash_tags()
-        # If refresh_infos is False and mods are added _do_ manually refresh
-        ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
-            unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+        if insert_after:
+            for k, v in insert_after.items():
+                self._cached_lo_insert_after(v, k)
+            ldiff = self._cached_lo_save_lo()
+        else: # if refresh_infos is False but mods are added force refresh
+            ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
+                unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
         if add_check := (refresh_infos and (ldiff.added ^ rdata.to_add)):
             ms = f'{ldiff.added=} differs from {rdata.to_add}: {add_check}'
             deprint(ms, traceback=True)
@@ -2844,7 +2847,7 @@ class ModInfos(TableFileInfos):
                 filtered_order.extend(collected_plugins)
         self._lo_wip = filtered_order
         if save_lo:
-            self.cached_lo_save_lo()
+            self._cached_lo_save_lo()
         message = u''
         if excess_plugins:
             message += _(u'Some plugins could not be found and were '
@@ -2896,10 +2899,11 @@ class ModInfos(TableFileInfos):
         if dir_path == self.store_dir:
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
-            inf = self.add_info(newInfo, newName, insert_after=last_selected,
-                                save_lo_cache=True)
-            self.refresh(refresh_infos=False)
-            return inf
+            rdata = self.refresh([newName := FName(newName)],
+                                 insert_after={newName: last_selected})
+            # if we failed to add this will raise KeyError we 'd want to
+            # return the message from corrupted
+            return self[rdata.to_add.pop()]
 
     def generateNextBashedPatch(self, selected_mods):
         """Attempt to create a new bashed patch, numbered from 0 to 9.  If
@@ -2980,16 +2984,9 @@ class ModInfos(TableFileInfos):
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)
-        self.refresh() # yak, it should have an "added" parameter
+        self.refresh(moved)
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
-
-    def add_info(self, file_info, destName, *, insert_after=None,
-                 save_lo_cache=False):
-        inf = super().add_info(file_info, destName)
-        self.cached_lo_insert_after(insert_after or file_info.fn_key, destName)
-        if save_lo_cache: self.cached_lo_save_lo()
-        return inf
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -3419,7 +3416,7 @@ class ScreenInfos(_AFileInfos):
 
     def refresh(self, refresh_infos=True, booting=False, **kwargs):
         self.set_store_dir()
-        return super().refresh(refresh_infos, booting, **kwargs)
+        return super().refresh(refresh_infos, booting)
 
 # Initialization --------------------------------------------------------------
 def initBosh(game_ini_path):
