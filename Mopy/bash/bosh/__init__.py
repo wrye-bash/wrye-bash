@@ -417,7 +417,7 @@ class ModInfo(FileInfo):
         if itsa_ghost is None and (fullpath.cs[-6:] == '.ghost'):
             fullpath = fullpath.root
             self.is_ghost = True
-        else:  # new_info() path
+        else:  # refresh() path
             self._refresh_ghost_state(itsa_ghost, regular_path=fullpath)
         super().__init__(fullpath, load_cache, **kwargs)
 
@@ -1610,7 +1610,9 @@ class _AFileInfos(DataStore):
                     if oldInfo.do_update(**kws):
                         rdata.redraw.add(new)
                 else: # new file or updated corrupted, get a new info
-                    self.new_info(new, **kws)
+                    self[new] = self.factory(self.store_dir.join(new),
+                        load_cache=True, **kws)
+                    self.corrupted.pop(new, None)
                     rdata.to_add.add(new)
             except (FileError, UnicodeError, BoltError,
                     NotImplementedError) as e:
@@ -1629,15 +1631,6 @@ class _AFileInfos(DataStore):
         if not booting and (alt :=(rdata.redraw | rdata.to_add)):
             self._notify_bain(altered={self[n].abs_path for n in alt})
         return rdata
-
-    def new_info(self, fileName, **kwargs):
-        """Create, add to self and return a new info using self.factory.
-        It will try to read the file to cache its header etc, so use on
-        existing files."""
-        info = self[fileName] = self.factory(self.store_dir.join(fileName),
-                                             load_cache=True, **kwargs)
-        self.corrupted.pop(fileName, None)
-        return info
 
     def _list_store_dir(self, refresh_infos):
         if isinstance(refresh_infos, RefrIn):
@@ -1819,7 +1812,6 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
     """INIInfos factory
 
     :param fullpath: Full path to the INI file to wrap
-    :param load_cache: Dummy param used in INIInfos.new_info factory call
     :param kwargs: Cached ghost status information, ignored for INIs"""
     inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
         consider_obse_inis=bush.game.Ini.has_obse_inis)
@@ -3269,23 +3261,24 @@ class BSAInfos(TableFileInfos):
                         self.setmtime(default_mtime)
         super().__init__(BSAInfo)
 
-    def new_info(self, fileName, **kwargs):
-        new_bsa = super().new_info(fileName, **kwargs)
-        new_bsa_name = new_bsa.fn_key
-        # Check if the BSA has a mismatched version - if so, schedule a warning
-        if bush.game.Bsa.valid_versions: # If empty, skip checks for this game
-            if new_bsa.inspect_version() not in bush.game.Bsa.valid_versions:
-                self.mismatched_versions.add(new_bsa_name)
-        # For BA2s, check for hash collisions
-        if new_bsa_name.fn_ext == u'.ba2':
-            ba2_entry = self._ba2_hashes[new_bsa.ba2_hash()]
-            # Drop the previous collision if it's present, then check if we
-            # have a new one
-            self.ba2_collisions.discard(u' & '.join(sorted(ba2_entry)))
-            ba2_entry.add(new_bsa_name)
-            if len(ba2_entry) >= 2:
-                self.ba2_collisions.add(u' & '.join(sorted(ba2_entry)))
-        return new_bsa
+    def refresh(self, *args, **kwargs):
+        rdata = super().refresh(*args, **kwargs)
+        for new_bsa_name in rdata.to_add:
+            binf = self[new_bsa_name]
+            # If the BSA has a mismatched version, schedule a warning
+            if bush.game.Bsa.valid_versions: # else skip checks for this game
+                if binf.inspect_version() not in bush.game.Bsa.valid_versions:
+                    self.mismatched_versions.add(new_bsa_name)
+            # For BA2s, check for hash collisions
+            if new_bsa_name.fn_ext == '.ba2':
+                ba2_entry = self._ba2_hashes[binf.ba2_hash()]
+                # Drop the previous collision if it's present, then check if we
+                # have a new one
+                self.ba2_collisions.discard(' & '.join(sorted(ba2_entry)))
+                ba2_entry.add(new_bsa_name)
+                if len(ba2_entry) >= 2:
+                    self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
+        return rdata
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')
