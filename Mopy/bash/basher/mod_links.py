@@ -179,7 +179,7 @@ class Mod_DumpRecordTypeNames(ItemLink):
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
-class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
+class Mod_CreateDummyMasters(OneItemLink):
     """xEdit tool, makes dummy plugins for each missing master, for use if
     looking at a 'Filter' patch."""
     _text = _('Create Dummy Masters…')
@@ -211,20 +211,19 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
                     # if previous master is an esp put this one after it
                     previous_master = master
                 continue
-            # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(self._selected_info.info_dir.join(master))
-            mod_previous[master] = previous_master
-            previous_master = master
-            newFile = ModFile(newInfo, self._load_fact()) ###
-            newFile.tes4.author = u'BASHED DUMMY'
+            # Missing master, create a dummy plugin for it --------------------
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
             force_flags = bush.game.plugin_flags.guess_flags(
-                newInfo.fn_key.fn_ext, bush.game)
-            for pl_flag, flag_val in force_flags.items():
-                pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
-            newFile.safeSave()
+                master.fn_ext, bush.game)
+            bosh.modInfos.create_new_mod(master, author_str='BASHED DUMMY',
+                flags_dict=force_flags,
+                wanted_masters=[], # previous behavior - correct?
+                # pass dir_path explicitly so refresh is skipped
+                dir_path=self._data_store.store_dir)
+            mod_previous[master] = previous_master
+            previous_master = master
         bosh.modInfos.refresh([*mod_previous], insert_after=mod_previous)
         self.window.RefreshUI(detail_item=next(reversed(mod_previous)),
                               refresh_others=Store.SAVES.DO())
