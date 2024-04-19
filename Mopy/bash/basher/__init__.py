@@ -56,7 +56,7 @@ import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
 from functools import partial
-from itertools import chain
+from itertools import chain, repeat
 
 import wx
 
@@ -529,9 +529,9 @@ class MasterList(_ModsUIList):
         all_esl_masters = (set(fileInfo.header.masters_esl) if can_have_esl
                            else None)
         all_master_sizes = (fileInfo.header.master_sizes if can_have_sizes
-                            else None)
-        for mi, ma_name in enumerate(fileInfo.masterNames):
-            ma_size = all_master_sizes[mi] if can_have_sizes else 0
+                            else repeat(0))
+        for mi, (ma_name, ma_size) in enumerate(
+                zip(fileInfo.masterNames, all_master_sizes)):
             ma_esl = can_have_esl and ma_name in all_esl_masters
             self.data_store[mi] = bosh.MasterInfo(parent_minf=fileInfo,
                 master_name=ma_name, master_size=ma_size, was_esl=ma_esl)

@@ -36,6 +36,7 @@ import sys
 import zlib
 from enum import Enum
 from functools import partial
+from itertools import repeat
 
 import lz4.block
 
@@ -461,22 +462,19 @@ class _AEslSaveHeader(SaveFileHeader):
         masters_expected = unpack_int(ins)
         # Store separate lists of regular and ESLs masters for the Indices
         # column on the Saves tab
-        self.masters_regular = []
-        self.masters_esl = []
         num_regular_masters = unpack_byte(ins)
-        append_regular = self.masters_regular.append
-        for count in range(num_regular_masters):
-            append_regular(unpack_str16(ins))
+        self.masters_regular = [
+            *map(unpack_str16, repeat(ins, num_regular_masters))]
         # SSE / FO4 save format with esl block
         if self._esl_block():
             num_esl_masters = unpack_short(ins)
-            # Remember if we had ESL masters for the inacurracy warning
+            # Remember if we had ESL masters for the inaccuracy warning
             self.has_esl_masters = num_esl_masters > 0
-            append_esl = self.masters_esl.append
-            for count in range(num_esl_masters):
-                append_esl(unpack_str16(ins))
+            self.masters_esl = [
+                *map(unpack_str16, repeat(ins, num_esl_masters))]
         else:
             self.has_esl_masters = False
+            self.masters_esl = []
         # Check for master's table size (-4 for the stored size at the start of
         # the master table)
         masters_actual = ins.tell() + sse_offset - self._mastersStart - 4

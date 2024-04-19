@@ -126,11 +126,12 @@ class MasterInfo:
     __slots__ = ('is_ghost', 'curr_name', 'mod_info', 'old_name',
                  'stored_size', '_was_esl', 'parent_mod_info')
 
-    def __init__(self, *, parent_minf, master_name, master_size, was_esl):
+    def __init__(self, *, parent_minf, master_name: FName, master_size,
+                 was_esl):
         self.parent_mod_info = parent_minf
         self.stored_size = master_size
         self._was_esl = was_esl
-        self.old_name = FName(master_name)
+        self.old_name = master_name
         self.mod_info = self.rename_if_present(master_name)
         if self.mod_info is None:
             self.curr_name = FName(master_name)
@@ -213,7 +214,6 @@ class FileInfo(AFileInfo):
     def __init__(self, fullpath, load_cache=False, **kwargs):
         self.header = None
         self.masterNames: tuple[FName, ...] = ()
-        self.masterOrder: tuple[FName, ...] = ()
         self.madeBackup = False
         # True if the masters for this file are not reliable
         self.has_inaccurate_masters = False
@@ -224,7 +224,6 @@ class FileInfo(AFileInfo):
     def _reset_masters(self):
         #--Master Names/Order
         self.masterNames = tuple(self._get_masters())
-        self.masterOrder = tuple() #--Reset to empty for now
 
     def _file_changed(self, stat_tuple):
         return (self.fsize, self.ftime, self.ctime) != stat_tuple
@@ -1041,15 +1040,14 @@ class ModInfo(FileInfo):
         return old_new_paths
 
     def _masters_order_status(self, status):
-        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        loads_before_its_masters = self.masterOrder and \
-                                   load_order.cached_lo_index(
-            self.masterOrder[-1]) > load_order.cached_lo_index(self.fn_key)
-        if self.masterOrder != self.masterNames and loads_before_its_masters:
+        mo = tuple(load_order.get_ordered(self.masterNames)) # masterOrder
+        loads_before_its_masters = mo and load_order.cached_lo_index(
+            mo[-1]) > load_order.cached_lo_index(self.fn_key)
+        if mo != self.masterNames and loads_before_its_masters:
             return 21
         elif loads_before_its_masters:
             return 20
-        elif self.masterOrder != self.masterNames:
+        elif mo != self.masterNames:
             return 10
         else:
             return status
@@ -1271,17 +1269,17 @@ class SaveInfo(FileInfo):
     def get_store(cls): return saveInfos
 
     def _masters_order_status(self, status):
-        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        if self.masterOrder != self.masterNames:
+        mo = tuple(load_order.get_ordered(self.masterNames))
+        if mo != self.masterNames:
             return 20 # Reordered masters are far more important in saves
         elif status > 0:
             # Missing or reordered masters -> orange or red
             return status
         active_tuple = load_order.cached_active_tuple()
-        if self.masterOrder == active_tuple:
+        if mo == active_tuple:
             # Exact match with LO -> purple
             return -20
-        if self.masterOrder == active_tuple[:len(self.masterOrder)]:
+        if mo == active_tuple[:len(mo)]:
             # Matches LO except for new plugins at the end -> blue
             return -10
         else:
@@ -1410,7 +1408,7 @@ class SaveInfo(FileInfo):
                     return [*map(FName, xse_cosave.get_master_list())]
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
-        return self.header.masters
+        return [*map(FName, self.header.masters)]
 
     def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
         return False # Saves can't have circular masters
@@ -3436,7 +3434,6 @@ class SaveInfos(TableFileInfos):
             if FName(d.stail) in moved:
                 co_instances = SaveInfo.get_cosaves_for_path(s)
                 self.co_copy_or_move(co_instances, d, move_cosave=True)
-                break
         for m in moved:
             try:
                 self.new_info(m, notify_bain=True) ##: why True??

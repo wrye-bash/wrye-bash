@@ -369,7 +369,7 @@ class Save_DiffMasters(EnabledLink):
         else:
             message = u''
             if missing:
-                message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName
+                message += '=== ' + _('Removed Masters') + f' ({oldName}):\n* '
                 message += u'\n* '.join(load_order.get_ordered(missing))
                 if added: message += u'\n\n'
             if added:
