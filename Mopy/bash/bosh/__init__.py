@@ -2377,8 +2377,9 @@ class ModInfos(TableFileInfos):
         # We'll be removing BSAs from here once we've given them a position
         self.__available_bsas = av_bsas = FNDict(bsaInfos.items())
         # Determine BSA LO from INIs once, this gets expensive very quickly
+        ##: What about SkyrimCustom.ini etc?
         self.__bsa_lo, self.__bsa_cause = bush.game.Ini.get_bsas_from_inis(
-            av_bsas, self.plugin_inis.values()) # will remove from av_bsas
+            av_bsas, *self.plugin_inis.values(), oblivionIni)
         if not bush.game.Esp.stringsFiles:
             return set()
         # refresh which mods are supposed to have strings files, but are
@@ -2405,7 +2406,7 @@ class ModInfos(TableFileInfos):
 
     def __load_plugin_inis(self, data_folder_path):
         if not bush.game.Ini.supports_mod_inis:
-            return FNDict()
+            return self.plugin_inis # empty FNDict
         # First, check the Data folder for INIs present in it. Order does not
         # matter, we will only use this to look up existence
         lower_data_cont = (f.lower() for f in os.listdir(data_folder_path))
@@ -2417,7 +2418,7 @@ class ModInfos(TableFileInfos):
         # Add new or modified INIs to the cache and copy the final order
         inis_active = []
         # check present inis for updates
-        prev_inis = {k.abs_path: k for k in [*self.plugin_inis.values()][:-1]}
+        prev_inis = {k.abs_path: k for k in self.plugin_inis.values()}
         for acti_ini_name in active_inis:
             # Need to restore the full path here since we'll stat that path
             # when resetting the cache during __init__
@@ -2427,9 +2428,7 @@ class ModInfos(TableFileInfos):
                 acti_ini = IniFileInfo(acti_ini_path, 'cp1252')
             inis_active.append(acti_ini)
         # values in active order, later loading inis override previous settings
-        ##: What about SkyrimCustom.ini etc?
-        return FNDict((k.abs_path.stail, k) for k in
-                      (*reversed(inis_active), oblivionIni))
+        return FNDict((k.abs_path.stail, k) for k in reversed(inis_active))
 
     def _refresh_active_no_cp1252(self):
         """Refresh which filenames cannot be saved to plugins.txt - active

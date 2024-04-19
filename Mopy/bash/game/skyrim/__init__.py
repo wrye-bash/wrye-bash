@@ -87,8 +87,8 @@ class ASkyrimGameInfo(PatchGame):
     class Ini(GameInfo.Ini):
         default_ini_file = u'Skyrim_default.ini'
         dropdown_inis = [u'Skyrim.ini', u'SkyrimPrefs.ini']
-        resource_archives_keys = ('sResourceArchiveList',
-                                  'sResourceArchiveList2')
+        start_dex_keys = {GameInfo.Ini.BSA_MIN: (
+            'sResourceArchiveList', 'sResourceArchiveList2')}
 
     class Bsa(GameInfo.Bsa):
         # Skyrim only accepts the base name

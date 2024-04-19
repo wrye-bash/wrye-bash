@@ -79,10 +79,10 @@ class _AStarfieldGameInfo(PatchGame):
         #  generate a StarfieldCustom.ini instead? Or will our copying of
         #  Starfield.ini work?
         dropdown_inis = ['StarfieldPrefs.ini']
-        resource_archives_keys = (
+        start_dex_keys = {GameInfo.Ini.BSA_MIN: (
             'sResourceIndexFileList', 'sResourceStartUpArchiveList',
             'sResourceArchiveList',
-        )
+        )}
 
     class Ess(GameInfo.Ess):
         ext = '.sfs'

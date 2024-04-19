@@ -124,14 +124,14 @@ def _parse_boot_settings(curr_os: str):
                      f'broken: {e}', traceback=True)
         return
     bs_file = ini_files.TomlFile(boot_settings_path, ini_encoding='utf-8')
-    try:
-        for bs_section_key, bs_section in bass.boot_settings_defaults.items():
-            bs_dict = bass.boot_settings[bs_section_key]
-            for bs_setting_key, bs_setting_default in bs_section.items():
-                 bs_dict[bs_setting_key] = bs_file.getSetting(
-                     bs_section_key, bs_setting_key, bs_setting_default)
-    except FileNotFoundError:
-        pass # That's fine, just means no boot settings have been saved yet
+    for bs_section_key, bs_section in bass.boot_settings_defaults.items():
+        # ini file is missing if no boot settings are saved yet - that's fine
+        section = bs_file.get_ci_settings(missing_ok=True).get(
+            bs_section_key, {})
+        bs_dict = bass.boot_settings[bs_section_key]
+        for bs_setting_key, bs_setting_default in bs_section.items():
+            bs_dict[bs_setting_key] = section.get(bs_setting_key,
+                                                  (bs_setting_default,))[0]
     global _boot_settings
     _boot_settings = bs_file
 

@@ -148,7 +148,7 @@ class AIniInfo(ListInfo):
         do a copy first !"""
         raise NotImplementedError
 
-    def _get_ci_settings(self, tweakPath):
+    def _get_ci_settings(self):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
         whitespace. "deleted settings" keep line number instead of value (?)
@@ -286,7 +286,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
             deprint(f'Error reading ini file {self.abs_path}', traceback=True)
         return []
 
-    def get_ci_settings(self, with_deleted=False):
+    def get_ci_settings(self, with_deleted=False, *, missing_ok=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
         try:
@@ -294,7 +294,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     or self.do_update(raise_on_error=True):
                 try:
                     self._ci_settings_cache_linenum, self._deleted_cache, \
-                        self.isCorrupted = self._get_ci_settings(self.abs_path)
+                        self.isCorrupted = self._get_ci_settings(missing_ok)
                 except UnicodeDecodeError as e:
                     msg = _('The INI file %(ini_full_path)s seems to have '
                             'unencodable characters:')
@@ -307,7 +307,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
 
-    def _get_ci_settings(self, tweakPath):
+    def _get_ci_settings(self, missing_ok=False):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
         whitespace. "deleted settings" keep line number instead of value (?)
@@ -324,7 +324,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         #--Read ini file
         sectionSettings = None
         section = None
-        for i, line in enumerate(self.read_ini_content()):
+        for i, line in enumerate(self.read_ini_content(missing_ok=missing_ok)):
             maSection = reSection.match(line)
             maDeleted = reDeleted.match(line)
             maSetting = reSetting.match(line)
@@ -336,7 +336,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     sectionSettings = ci_settings[default_section]
                     msg = _("Your %(tweak_ini)s should begin with a section "
                             "header (e.g. '[General]'), but it does not.")
-                    isCorrupted = msg % {'tweak_ini': tweakPath}
+                    isCorrupted = msg % {'tweak_ini': self.abs_path}
                 sectionSettings[maSetting.group(1)] = (
                     self._parse_value(maSetting.group(2)), i)
             elif maDeleted:
@@ -576,13 +576,13 @@ class OBSEIniFile(IniFileInfo):
                 return ma_obse, sectionKey, format_string
         return None, None, None
 
-    def _get_ci_settings(self, tweakPath):
+    def _get_ci_settings(self, missing_ok=False):
         """Get the settings in the ini script."""
         ini_settings = DefaultLowerDict(LowerDict)
         deleted_settings = DefaultLowerDict(LowerDict)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
+        with self.abs_path.open('r', encoding=self.ini_encoding) as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
                 if maDeleted:

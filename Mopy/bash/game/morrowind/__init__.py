@@ -80,15 +80,16 @@ class _AMorrowindGameInfo(PatchGame):
         supports_mod_inis = False
 
         @classmethod
-        def get_bsas_from_inis(cls, available_bsas, ini_files_cached):
+        def get_bsas_from_inis(cls, av_bsas, *ini_files_cached):
             """Get bsas loaded from the [Archives] section of Morrowind.ini.
             The keys follow the format Archive X (note the space) where X is a
-            number used to make the keys unique. Load order is set by ftime."""
-            mor_ini = ini_files_cached[0]
+            number used to make the keys unique. Load order is set by ftime. We
+            do not edit av_bsas - cf _AMorrowindGameInfo.Bsa.update_bsa_lo."""
+            mor_ini = ini_files_cached[0] # no plugin inis
             ci_section = mor_ini.get_setting_values('Archives', {})
             # keep only the (CIstr) keys that match the format Archive X
-            bsas = {bolt.FName(v): available_bsas.get(v) for ci_key, v in
-                    ci_section.items() if
+            bsas = {bolt.FName(v): av_bsas.get(v) #ci_section values are tuples
+                    for ci_key, (v, j) in ci_section.items() if
                     ci_key[:8].lower() == 'archive ' and ci_key[8:].isdigit()}
             if len(bsas) != len(bsalo := {v: k for k, v in bsas.items() if v}):
                 bolt.deprint(f'some BSAs in {mor_ini} are not present: '
@@ -110,8 +111,8 @@ class _AMorrowindGameInfo(PatchGame):
             return []
 
         @classmethod
-        def update_bsa_lo(cls, lo, av_bsas, bsa_lodex, cause):
-            """Sort the ini loaded bsas by timestamp then by name."""
+        def update_bsa_lo(cls, lo, _av_bsas, bsa_lodex, cause):
+            """Sort Ini loaded bsas by mtime then by name - av_bsas unused."""
             binfs_sorted = sorted([bi for bi in bsa_lodex],
                                   key=lambda x: (x.ftime, x.fn_key))
             # override the FName values with the int load order

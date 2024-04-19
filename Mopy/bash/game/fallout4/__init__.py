@@ -88,11 +88,11 @@ class AFallout4GameInfo(PatchGame):
         default_ini_file = u'Fallout4_default.ini'
         default_game_lang = 'en'
         dropdown_inis = [u'Fallout4.ini', u'Fallout4Prefs.ini']
-        resource_archives_keys = (
-            u'sResourceIndexFileList', u'sResourceStartUpArchiveList',
-            u'sResourceArchiveList', u'sResourceArchiveList2',
-            u'sResourceArchiveListBeta'
-        )
+        start_dex_keys = {GameInfo.Ini.BSA_MIN: (
+            'sResourceIndexFileList', 'sResourceStartUpArchiveList',
+            'sResourceArchiveList', 'sResourceArchiveList2',
+            'sResourceArchiveListBeta')
+        }
 
     class Ess(GameInfo.Ess):
         ext = u'.fos'
