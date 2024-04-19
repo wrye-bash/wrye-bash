@@ -1184,6 +1184,18 @@ class _InstallerPackage(Installer, AFileInfo):
         if load_cache: # load from disc, useful when adding a new installer
             AFile.__init__(self, self._file_key, progress=progress)
 
+    def copy_to(self, dup_path: Path, *, set_time=None):
+        super().copy_to(dup_path, set_time=set_time)
+        clone = self._store().new_info(FName(dup_path.stail),
+            is_proj=self.is_project, install_order=self.order + 1,
+            do_refresh=False, # we only need to call refresh_n()
+            load_cache=False) # don't load from disc - copy all attributes over
+        atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
+        for att in atts:
+            setattr(clone, att, copy.copy(getattr(self, att)))
+        clone.is_active = False # make sure we mark as inactive
+        self._store().refresh_n() # no need to change installer status here
+
     def _reset_cache(self, stat_tuple=None, *, __skips_start=tuple(
             s.replace(os_sep, '') for s in Installer._silentSkipsStart),
             __os_sep=os_sep, **kwargs):
@@ -2039,17 +2051,6 @@ class InstallersData(DataStore):
     def filter_unopenable(self, fn_items: Iterable[FName]):
         # Can't open markers since they're virtual
         return {i: self[i] for i in fn_items if not self[i].is_marker}
-
-    def add_info(self, file_info, destName, **kwargs):
-        clone = self.new_info(destName,
-            is_proj=file_info.is_project, install_order=file_info.order + 1,
-            do_refresh=False, # we only need to call refresh_n()
-            load_cache=False) # don't load from disc - copy all attributes over
-        atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
-        for att in atts:
-            setattr(clone, att, copy.copy(getattr(file_info, att)))
-        clone.is_active = False # make sure we mark as inactive
-        self.refresh_n() # no need to change installer status here
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)

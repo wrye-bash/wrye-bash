@@ -1827,13 +1827,12 @@ class ListInfo:
         raise NotImplementedError(f'{cls} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
-    def copy_to(self, dup_path: Path, *, set_time=None, **kwargs):
+    def copy_to(self, dup_path: Path, *, set_time=None):
         """Copies self to dup_path. Will overwrite! Will add the new file to
         the data_store if copied inside the store_dir but the client is
         responsible for calling the final refresh of the data store."""
+        # TODO(ut) : when duplicating pass the info in and load_cache=False
         self.fs_copy(dup_path, set_time=set_time)
-        if dup_path.head == self._store().store_dir:
-            self._store().add_info(self, dup_path.stail, **kwargs)
 
     def fs_copy(self, dup_path, *, set_time=None):
         raise NotImplementedError
