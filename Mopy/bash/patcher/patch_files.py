@@ -155,7 +155,7 @@ class PatchFile(ModFile):
     #--Instance
     def __init__(self, modInfo, pfile_minfos):
         """Initialization."""
-        ModFile.__init__(self,modInfo,None)
+        super().__init__(modInfo, None)
         self.tes4.author = 'BASHED PATCH'
         self.tes4.masters = [bush.game.master_file]
         # Start records at 0x800 to avoid problems where people use older
@@ -493,7 +493,8 @@ class PatchFile(ModFile):
             bp_part_counter += 1
             if not (new_part := self.p_file_minfos.get(new_part_name)):
                 new_part = self.p_file_minfos.create_new_mod(new_part_name,
-                  selected=[latest_sel.fileInfo.fn_key], is_bashed_patch=True)
+                    selected=[latest_sel.fileInfo.fn_key],
+                    author_str='BASHED PATCH')
             return self.__class__(new_part, self.p_file_minfos)
         # Find the top groups with the highest number
         master_dict = self.used_masters_by_top()
