@@ -2377,17 +2377,14 @@ class Mod_RevertToSnapshot(OneItemLink):
             'snapshot_date': format_date(snapPath.mtime)})
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with BusyCursor(), TempFile() as known_good_copy:
-            sel_inf = self._selected_info
-            destPath = sel_inf.abs_path
-            current_mtime = destPath.mtime
+            destPath = (sel_inf := self._selected_info).abs_path
             # Make a temp copy first in case reverting to snapshot fails
-            self._selected_info.fs_copy(known_good_copy)
+            sel_inf.fs_copy(known_good_copy)
             # keep load order (so mtime)
-            snapPath.copyTo(destPath, set_time=current_mtime)
-            try:
-                inf = self._data_store.new_info(fileName, notify_bain=True)
-                inf.copy_persistent_attrs(sel_inf)
-            except exception.FileError:
+            snapPath.copyTo(destPath, set_time=sel_inf.ftime)
+            self._data_store.refresh({fileName: {
+                'att_val': sel_inf.get_persistent_attrs()}})
+            if not self._data_store.get(fileName):
                 # Reverting to snapshot failed - may be corrupt
                 bolt.deprint('Failed to revert to snapshot', traceback=True)
                 self.window.panel.ClearDetails()
@@ -2401,7 +2398,7 @@ class Mod_RevertToSnapshot(OneItemLink):
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     destPath.replace_with_temp(known_good_copy)
-                    inf = self._data_store.new_info(fileName, notify_bain=True)
-                    inf.copy_persistent_attrs(self._selected_info)
+                    self._data_store.refresh({fileName: {'att_val':
+                        sel_inf.get_persistent_attrs(frozenset())}})
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[fileName])
