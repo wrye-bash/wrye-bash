@@ -36,7 +36,7 @@ from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
 from .files_links import File_Duplicate, File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
-from .. import balt, bass, bolt, bosh, bush, exception, load_order
+from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bass import Store
@@ -2366,10 +2366,9 @@ class Mod_RevertToSnapshot(OneItemLink):
             sel_inf.fs_copy(GPath_no_norm(known_good_copy))
             # keep load order (so mtime)
             self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
-            try:
-                inf = self._data_store.new_info(sel_file, notify_bain=True)
-                inf.copy_persistent_attrs(sel_inf)
-            except exception.FileError:
+            self._data_store.refresh({sel_file: {
+                'att_val': sel_inf.get_persistent_attrs(exclude=True)}})
+            if not self._data_store.get(sel_file):
                 # Reverting to snapshot failed - may be corrupt
                 bolt.deprint('Failed to revert to snapshot', traceback=True)
                 self.window.panel.ClearDetails()
@@ -2383,8 +2382,8 @@ class Mod_RevertToSnapshot(OneItemLink):
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    inf = self._data_store.new_info(sel_file, notify_bain=True)
-                    inf.copy_persistent_attrs(sel_inf)
+                    self._data_store.refresh({sel_file: {'att_val':
+                        sel_inf.get_persistent_attrs()}})
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 

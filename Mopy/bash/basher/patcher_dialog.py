@@ -278,21 +278,25 @@ class PatchDialog(DialogWindow):
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
             balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,
                           asDialog=True)
+            bps = {}
             for bp_file in bp_files_to_save:
                 bp_fname = bp_file.fileInfo.fn_key
                 # We have to parse the new infos first, since the masters may
                 # differ. Most people probably don't keep BAIN packages of BPs,
                 # but *I* do, so...
-                info = bosh.modInfos.new_info(bp_fname, notify_bain=True)
                 if bp_fname == patch_name:
                     # add the config on master patch so it is read afterwards
-                    info.copy_persistent_attrs(self.patchInfo)
+                    bps[bp_fname] = {'att_val': {
+                        **self.patchInfo.get_persistent_attrs(exclude=True),
+                        'doc': readme_html}}
                 else: # No need to link the parent to itself, of course
                     # Store a raw string here to avoid the FName.__reduce__
                     # stuff - new setting, so no backwards compat concerns
-                    info.set_table_prop('bp_split_parent', str(patch_name))
-                info.set_table_prop('doc', readme_html)
+                    bps[bp_fname] = {'att_val': {'doc': readme_html,
+                        'bp_split_parent': str(patch_name)}}
                 self._bps.append(bp_fname)
+            # We have to parse the new infos first since the masters may differ
+            bosh.modInfos.refresh(bps)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
