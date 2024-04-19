@@ -207,9 +207,8 @@ class _RevertBackup(OneItemLink):
             # Make a temp copy first in case reverting to backup fails
             info_path = sel.abs_path
             sel.fs_copy(known_good_copy)
-            try:
-                self._selected_info.revert_backup(self.first)
-            except exception.FileError:
+            self._selected_info.revert_backup(self.first)
+            if not self._data_store.get(self._selected_item):
                 # Reverting to backup failed - may be corrupt
                 bolt.deprint('Failed to revert to backup', traceback=True)
                 self.window.panel.ClearDetails()
@@ -223,8 +222,8 @@ class _RevertBackup(OneItemLink):
                         title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    inf = self._data_store.new_info(sel_file, notify_bain=True)
-                    inf.copy_persistent_attrs(sel)
+                    self._data_store.refresh({sel_file: { # re-add all attrs
+                        'att_val': sel.get_persistent_attrs(frozenset())}})
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 

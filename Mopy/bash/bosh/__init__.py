@@ -243,16 +243,12 @@ class _TabledInfo:
             except AttributeError: return
         else: setattr(self, self.__class__._key_to_attr[prop_key], val)
 
-    def get_persistent_attrs(self):
-        return {pickle_key: val for pickle_key in self.__class__._key_to_attr
-                if (val := self.get_table_prop(pickle_key)) is not None}
-
-    def copy_persistent_attrs(self, other, exclude=None):
+    def get_persistent_attrs(self, exclude=None):
         if exclude is None:
             exclude = self.__class__._ignore_on_revert
-        for pickle_key, val in other.get_persistent_attrs().items():
-            if pickle_key not in exclude:
-                self.set_table_prop(pickle_key, val)
+        return {pickle_key: val for pickle_key in self.__class__._key_to_attr
+                if pickle_key not in exclude and (
+                    val := self.get_table_prop(pickle_key)) is not None}
 
 class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
@@ -366,7 +362,7 @@ class FileInfo(_TabledInfo, AFileInfo):
         return [backPath for first in (True, False) for backPath, __path in
                 self.backup_restore_paths(first, fname)]
 
-    def revert_backup(self, first=False): # single call site - good
+    def revert_backup(self, first): # single call site - good
         backup_paths = self.backup_restore_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists():
@@ -376,16 +372,14 @@ class FileInfo(_TabledInfo, AFileInfo):
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self.ftime)
-        ##: _in_refresh=True is not entirely correct here but can't be made
-        # entirely correct by leaving _in_refresh to False either as we
-        # don't back up the config so we can't really detect changes in
-        # imported/merged - a (another) backup edge case - as backup is
-        # half-baked anyway let's agree for now that BPs remain BPs with the
-        # same config as before - if not, manually run a mergeability scan
-        # after updating the config (in case the restored file is a BP)
-        inf = self._store().new_info(self.fn_key, notify_bain=True,
-            _in_refresh=True)
-        inf.copy_persistent_attrs(self)
+        # refresh below will try to refresh info sets but we don't back up
+        # the config so we can't really detect changes in imported/merged -
+        # a (another) backup edge case - as backup is half-baked anyway
+        # let's agree for now that BPs remain BPs with the same config as
+        # before - if not, manually run a mergeability scan after updating
+        # the config (in case the restored file is a BP)
+        self._store().refresh(
+            {self.fn_key: {'att_val': self.get_persistent_attrs()}})
 
     @property
     def backup_dir(self):
@@ -451,10 +445,6 @@ class ModInfo(FileInfo):
             if groupDir.is_dir():
                 return groupDir
         return dest_dir
-
-    def copy_persistent_attrs(self, other, exclude=None):
-        super().copy_persistent_attrs(other, exclude)
-        modInfos._update_info_sets()#we need to recalculate merged/imported based on the config
 
     @classmethod
     def _store(cls): return modInfos
@@ -1603,8 +1593,7 @@ class _AFileInfos(DataStore):
                     if oldInfo.do_update(**kws):
                         rdata.redraw.add(new)
                 else: # new file or updated corrupted, get a new info
-                    self.new_info(new, _in_refresh=True,
-                                  notify_bain=not booting, **kws)
+                    self.new_info(new, **kws)
                     rdata.to_add.add(new)
             except (FileError, UnicodeError, BoltError,
                     NotImplementedError) as e:
@@ -1620,29 +1609,18 @@ class _AFileInfos(DataStore):
                     del_infos.add(new)
         rdata.to_del = {d.fn_key for d in del_infos}
         self.delete_refresh(del_infos, check_existence=False)
-        if rdata.redraw:
-            self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
+        if not booting and (alt :=(rdata.redraw | rdata.to_add)):
+            self._notify_bain(altered={self[n].abs_path for n in alt})
         return rdata
 
-    def new_info(self, fileName, *, _in_refresh=False, notify_bain=False,
-                 **kwargs):
+    def new_info(self, fileName, **kwargs):
         """Create, add to self and return a new info using self.factory.
         It will try to read the file to cache its header etc, so use on
-        existing files. WIP, in particular _in_refresh must go, but that
-        needs rewriting corrupted handling."""
-        try:
-            info = self[fileName] = self.factory(self.store_dir.join(fileName),
-                                                 load_cache=True, **kwargs)
-            self.corrupted.pop(fileName, None)
-            if notify_bain:
-                self._notify_bain(altered={info.abs_path})
-            return info
-        except FileError as error:
-            if not _in_refresh: # if refresh just raise so we print the error
-                self.corrupted[fileName] = _Corrupted(
-                    self.store_dir.join(fileName), error.message, **kwargs)
-                self.pop(fileName, None)
-            raise
+        existing files."""
+        info = self[fileName] = self.factory(self.store_dir.join(fileName),
+                                             load_cache=True, **kwargs)
+        self.corrupted.pop(fileName, None)
+        return info
 
     def _list_store_dir(self, refresh_infos): # performance intensive
         if isinstance(refresh_infos, _RefrIn):
@@ -1749,7 +1727,7 @@ class TableFileInfos(_AFileInfos):
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
         for k, v in self.items():
-            if pickle_dict := v.get_persistent_attrs():
+            if pickle_dict := v.get_persistent_attrs(exclude=frozenset()):
                 pd.pickled_data[k] = pickle_dict
         pd.save()
 
@@ -2001,7 +1979,8 @@ class INIInfos(TableFileInfos):
         """Duplicate tweak into fn_new_teak."""
         with open(self.store_dir.join(fn_new_tweak), 'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
-        return self.new_info(fn_new_tweak, notify_bain=True)
+        self.refresh([fn_new_tweak])
+        return self[fn_new_tweak]
 
     def copy_tweak_from_target(self, tweak, fn_new_tweak: FName):
         """Duplicate tweak into fn_new_teak, but with the settings that are
@@ -2487,18 +2466,6 @@ class ModInfos(TableFileInfos):
                 inf = self[mod_key]
                 pairs[mod_key] = inf.calculate_crc(recalculate=True)
         return pairs
-
-    #--Refresh File
-    def new_info(self, fileName, *, _in_refresh=False, notify_bain=False,
-                 **kwargs):
-        try:
-            return super().new_info(fileName, _in_refresh=_in_refresh,
-                                    notify_bain=notify_bain, **kwargs)
-        finally:
-            # we should refresh info sets if we manage to add the info, but
-            # also if we fail, which might mean that some info got corrupted
-            if not _in_refresh:
-                self._update_info_sets() # we may need to use the return value
 
     #--Mod selection ----------------------------------------------------------
     def getSemiActive(self, patches, skip_active=False):
@@ -3229,18 +3196,14 @@ class SaveInfos(TableFileInfos):
                 path_func(newPath)
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        # operations should be atomic - we should construct a list of filenames
-        # to unhide and pass that in
+        # we should use fs_copy in base method so cosaves are copied - we
+        # need to create infos for the hidden files using _store.factory
         moved = super().move_infos(sources, destinations, window, bash_frame)
         for s, d in zip(sources, destinations):
             if FName(d.stail) in moved:
                 co_instances = SaveInfo.get_cosaves_for_path(s)
                 self.co_copy_or_move(co_instances, d, move_cosave=True)
-        for m in moved:
-            try:
-                self.new_info(m, notify_bain=True) ##: why True??
-            except FileError:
-                pass # will warn below
+        self.refresh(moved)
         bash_frame.warn_corrupted(warn_saves=True)
         return moved
 
@@ -3295,10 +3258,8 @@ class BSAInfos(TableFileInfos):
                         self.setmtime(default_mtime)
         super().__init__(BSAInfo)
 
-    def new_info(self, fileName, _in_refresh=False, notify_bain=False,
-                 **kwargs):
-        new_bsa = super().new_info(fileName, _in_refresh=_in_refresh,
-                                   notify_bain=notify_bain, **kwargs)
+    def new_info(self, fileName, **kwargs):
+        new_bsa = super().new_info(fileName, **kwargs)
         new_bsa_name = new_bsa.fn_key
         # Check if the BSA has a mismatched version - if so, schedule a warning
         if bush.game.Bsa.valid_versions: # If empty, skip checks for this game

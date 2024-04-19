@@ -2557,7 +2557,7 @@ class InstallersData(DataStore):
     def _editTweaks(tweaksCreated):
         """Edit created ini tweaks with settings that differ and/or don't exist
         in the new ini."""
-        removed = set()
+        removed, created = set(), []
         from . import iniInfos
         pseudosections = set(OBSEIniFile.ci_pseudosections.values())
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
@@ -2598,9 +2598,8 @@ class InstallersData(DataStore):
                         'settings from old file.')
                 ini_.write(f'; {msg}\n\n' % {'wb_version': bass.AppVersion})
                 ini_.writelines(lines)
-            # We notify BAIN below, although highly improbable the created ini
-            # is included to a package
-            iniInfos.new_info(tweakPath.stail, notify_bain=True)
+            created.append(tweakPath.stail)
+        iniInfos.refresh(created)
         tweaksCreated -= removed
 
     def _installer_install(self, installer, destFiles, index, progress):
