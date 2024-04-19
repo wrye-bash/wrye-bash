@@ -40,7 +40,8 @@ from .. import balt, bass, bolt, bosh, bush, exception, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bass import Store
-from ..bolt import FName, SubProgress, dict_sort, sig_to_str, GPath_no_norm
+from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
+    GPath_no_norm
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
@@ -201,15 +202,18 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
               "to continue?") % {'xedit_name': bush.game.Xe.full_name},
             _("To remove these files later, use 'Remove Dummy Masters…'.")])
         if not self._askYes(msg, title=self._text): return
-        to_refresh = []
+        mod_previous = FNDict() # previous master for each master
         # creates esp files - so place them correctly after the last esm
         previous_master = bosh.modInfos.cached_lo_last_esm()
         for master in self._selected_info.masterNames:
             if master in bosh.modInfos:
+                if not bush.game.master_flag.cached_type(bosh.modInfos[master]):
+                    # if previous master is an esp put this one after it
+                    previous_master = master
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(self._selected_info.info_dir.join(master))
-            to_refresh.append((master, previous_master))
+            mod_previous[master] = previous_master
             previous_master = master
             newFile = ModFile(newInfo, self._load_fact()) ###
             newFile.tes4.author = u'BASHED DUMMY'
@@ -221,17 +225,10 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             for pl_flag, flag_val in force_flags.items():
                 pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
             newFile.safeSave()
-        to_select = []
-        for mod, previous in to_refresh:
-            # add it to modInfos or lo_insert_after blows for timestamp games
-            bosh.modInfos.new_info(mod, notify_bain=True, _in_refresh=True)
-            bosh.modInfos.cached_lo_insert_after(previous, mod)
-            to_select.append(mod)
-        bosh.modInfos.cached_lo_save_lo()
-        bosh.modInfos.refresh(refresh_infos=False)
-        self.window.RefreshUI(detail_item=to_select[-1],
+        bosh.modInfos.refresh([*mod_previous], insert_after=mod_previous)
+        self.window.RefreshUI(detail_item=next(reversed(mod_previous)),
                               refresh_others=Store.SAVES.DO())
-        self.window.SelectItemsNoCallback(to_select)
+        self.window.SelectItemsNoCallback(mod_previous)
 
 #------------------------------------------------------------------------------
 class Mod_OrderByName(EnabledLink):
@@ -1395,7 +1392,7 @@ class Mod_FogFixer(ItemLink):
 #------------------------------------------------------------------------------
 class _CopyToLink(EnabledLink):
     def __init__(self, plugin_ext):
-        super(_CopyToLink, self).__init__(plugin_ext)
+        super().__init__(plugin_ext)
         self._target_ext = plugin_ext
         self._help = _('Creates a copy of the selected plugins with the '
                        'extensions changed to %(new_plugin_ext)s.') % {
@@ -1405,18 +1402,19 @@ class _CopyToLink(EnabledLink):
         return any(p.get_extension() != self._target_ext
                    for p in self.iselected_infos())
 
+    @balt.conversation
     def Execute(self):
         modInfos, added = bosh.modInfos, []
-        do_save_lo = False
         pflags = bush.game.plugin_flags
         force_flags = pflags.guess_flags(self._target_ext, bush.game)
         force_flags = pflags.check_flag_assignments(force_flags)
+        mod_previous = FNDict()
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
-                newName = FName(curName.fn_body + self._target_ext)
+                newName = FName(f'{curName.fn_body}{self._target_ext}')
                 #--Replace existing file?
-                timeSource = None
+                newTime = None
                 if newName in modInfos:
                     existing = modInfos[newName]
                     # abs_path as existing may be ghosted
@@ -1425,21 +1423,18 @@ class _CopyToLink(EnabledLink):
                                 'existing_plugin': existing.abs_path.stail}):
                         continue
                     existing.makeBackup()
-                    timeSource = newName
-                newTime = modInfos[timeSource].ftime if timeSource else None
+                    newTime = existing.ftime
                 # Copy and set flag - will use ghosted path if needed
                 minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
                 added.append(newName)
-                newInfo = modInfos[newName]
-                if force_flags: newInfo.set_plugin_flags(force_flags)
-                if timeSource is None: # otherwise it has a load order already!
-                    modInfos.cached_lo_insert_after(
-                        modInfos.cached_lo_last_esm(), newName)
-                    do_save_lo = True
+                if newTime is None: # otherwise it has a load order already!
+                    mod_previous[newName] = curName
         #--Repopulate
         if added:
-            if do_save_lo: modInfos.cached_lo_save_lo()
-            modInfos.refresh(refresh_infos=False)
+            rdata = modInfos.refresh(added, insert_after=mod_previous) ##: we should copy the persistent attributes here
+            if force_flags:
+                for new in rdata.to_add:
+                    bosh.modInfos[new].set_plugin_flags(force_flags)
             self.window.RefreshUI(refresh_others=Store.SAVES.DO(),
                                   detail_item=added[-1])
             self.window.SelectItemsNoCallback(added)
