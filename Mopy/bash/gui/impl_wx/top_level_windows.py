@@ -34,7 +34,7 @@ from .buttons import OkButton
 from .doc_viewer import DocumentViewer
 from .layouts import HLayout, LayoutOptions, Stretch, VLayout, RIGHT
 from .text_components import TextArea
-from ..bolt import deprint
+from ...bolt import deprint
 
 # Special constant defining a window as having whatever position the underlying
 # GUI implementation picks for it by default.

@@ -30,8 +30,8 @@ import wx.svg as _svg
 
 from ._gui_globals import get_image, get_image_dir
 from .base_components import Lazy, scaled
-from ..bolt import deprint, Path
-from ..exception import ArgumentError
+from ...bolt import deprint, Path
+from ...exception import ArgumentError
 
 class GuiImage(Lazy):
     """Wrapper around various native image classes."""
@@ -111,7 +111,7 @@ class _SvgFromPath(GuiImage):
 
     @staticmethod
     def _should_invert_svg():
-        from .. import bass
+        from ... import bass
         return bass.settings['bash.use_reverse_icons']
 
 class IcoFromPng(GuiImage):

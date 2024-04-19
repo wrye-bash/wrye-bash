@@ -38,9 +38,9 @@ from .buttons import PureImageButton
 from .images import GuiImage
 from .layouts import VLayout
 from .text_components import TextArea
-from .. import env
-from ..bolt import decoder, deprint, redirect_stdout_to_deprint
-from ..exception import StateError
+from ... import env
+from ...bolt import decoder, deprint, redirect_stdout_to_deprint
+from ...exception import StateError
 
 # Try to import html2 webview, may not be available everywhere
 try:

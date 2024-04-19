@@ -25,7 +25,7 @@ those at minimum."""
 import os
 from itertools import product
 
-from ..bolt import Path as _Path
+from ...bolt import Path as _Path
 
 _gui_images = {} # todo defaultdict with fallback? mark final
 _image_resource_dir = ''

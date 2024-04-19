@@ -41,7 +41,7 @@ from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from .images import GuiImage
 from .menus import Links
-from ..bolt import Path, dict_sort
+from ...bolt import Path, dict_sort
 
 class Font(_wx.Font):
     @staticmethod
@@ -443,7 +443,7 @@ class GlobalMenu(_AEvtHandler):
         # support binding multiple methods to one event source. Also, it *has*
         # to be on Link.Frame, even if that looks weird.
         ##: de-wx! move links to gui
-        from ..balt import Link
+        from ...balt import Link
         menu_processor = lambda event: [event.GetMenu()]
         self._on_menu_opened = Link.Frame._evt_handler(_wx.EVT_MENU_OPEN,
             menu_processor)
@@ -482,7 +482,7 @@ class GlobalMenu(_AEvtHandler):
         text resetting, because wxPython does not permit more than one event
         handler."""
         ##: de-wx! move links to gui
-        from ..balt import Link
+        from ...balt import Link
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened

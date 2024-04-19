@@ -40,7 +40,7 @@ from .misc_components import HorizontalLine
 from .multi_choices import ListBox
 from .text_components import HyperlinkLabel, WrappingLabel
 from .top_level_windows import PanelWin, _APageComponent
-from ..bolt import dict_sort
+from ...bolt import dict_sort
 
 class DoubleListBox(PanelWin):
     """A combination of two ListBoxes and left/right buttons to move items

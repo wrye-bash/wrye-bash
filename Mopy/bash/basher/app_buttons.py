@@ -35,7 +35,7 @@ from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
     Lazy, Links, WithDragEvents, get_image, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
-from ..gui.base_components import _AComponent
+from ..gui import _AComponent
 
 __all__ = ['ObseButton', 'AutoQuitButton', 'GameButton', 'TESCSButton',
            'AppXEdit', 'AppBOSS', 'HelpButton', 'AppLOOT', 'DocBrowserButton',

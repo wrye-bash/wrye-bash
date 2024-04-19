@@ -50,7 +50,7 @@ from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     ContinueDialog, askText, askNumber, askYes, askWarning, showOk, showError, \
     showWarning, showInfo, TreeNodeFormat, DnDStatusBar, get_image, \
     get_color_checks, ImageList
-from .gui.base_components import _AComponent
+from .gui import _AComponent
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():

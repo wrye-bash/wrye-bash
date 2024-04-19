@@ -112,7 +112,7 @@ __author__ = 'Infernio'
 
 from enum import Enum
 
-from ..exception import ListenerBound, UnknownListener
+from ...exception import ListenerBound, UnknownListener
 
 # no other imports, everything else needs to be able to import this
 

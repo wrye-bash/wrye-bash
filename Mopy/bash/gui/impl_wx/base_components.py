@@ -35,7 +35,7 @@ import wx as _wx
 import wx.lib.newevent as _newevent
 
 from .events import EventHandler, null_processor
-from ..exception import GuiError
+from ...exception import GuiError
 
 # Utilities -------------------------------------------------------------------
 @functools.cache

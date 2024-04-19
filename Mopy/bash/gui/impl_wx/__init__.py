@@ -20,8 +20,28 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Temp module, remove when/if we switch to Qt."""
-from .impl_wx import *
-from .impl_wx.base_components import _AComponent # ugh
-# from .impl_qt import *
-# from .impl_qt.base_components import _AComponent # ugh
+"""This module acts as the central import point for all GUI classes. Any code
+outside the gui package should import from here, so that classes may be moved
+around without breaking third-party code."""
+
+__author__ = u'Infernio'
+
+from ._gui_globals import *
+from .base_components import *
+from .buttons import *
+from .checkables import *
+from .combos import *
+from .doc_viewer import *
+from .events import *
+from .functions import *
+from .images import *
+from .layouts import *
+from .list_ctrl import *
+from .misc_components import *
+from .menus import *
+from .multi_choices import *
+from .popups import *
+from .text_components import *
+from .top_level_windows import *
+from .trees import *
+from .wizards import *

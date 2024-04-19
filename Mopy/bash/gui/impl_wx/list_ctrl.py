@@ -34,7 +34,7 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from . import EventHandler
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
     _auto_size_to_wx
-from .. import bolt
+from ... import bolt
 
 class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
     """List control extended with the wxPython auto-width mixin class.

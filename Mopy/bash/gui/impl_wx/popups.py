@@ -44,10 +44,10 @@ from .text_components import Label, SearchBar, TextAlignment, TextField, \
     WrappingLabel
 from .top_level_windows import DialogWindow, _TopLevelWin
 ##: Remove GPath, it's for file dialogs
-from ..bolt import GPath, dict_sort, Path
-from ..env import TASK_DIALOG_AVAILABLE, BTN_OK, BTN_CANCEL, TaskDialog, \
+from ...bolt import GPath, dict_sort, Path
+from ...env import TASK_DIALOG_AVAILABLE, BTN_OK, BTN_CANCEL, TaskDialog, \
     GOOD_EXITS, BTN_YES, BTN_NO
-from ..exception import ArgumentError
+from ...exception import ArgumentError
 
 class CopyOrMovePopup(DialogWindow):
     """A popup that allows the user to choose between moving or copying a file
