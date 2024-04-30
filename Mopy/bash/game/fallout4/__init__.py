@@ -98,8 +98,8 @@ class AFallout4GameInfo(PatchGame):
         ext = u'.fos'
 
     class Bsa(GameInfo.Bsa):
-        bsa_extension = u'.ba2'
-        valid_versions = {0x01}
+        bsa_extension = '.ba2'
+        valid_versions = {0x01, 0x07, 0x08}
 
     class Psc(GameInfo.Psc):
         source_extensions = {u'.psc'}
