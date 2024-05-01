@@ -60,8 +60,7 @@ class ImportFaceDialog(DialogWindow):
             self.fdata = faces
         self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI
-        super(ImportFaceDialog, self).__init__(parent, title=title,
-                                               sizes_dict=bass.settings)
+        super().__init__(parent, title=title, sizes_dict=bass.settings)
         #--List Box
         self.listBox = ListBox(self, choices=self.list_items,
                                onSelect=self.EvtListBox)
@@ -130,7 +129,7 @@ class ImportFaceDialog(DialogWindow):
         pc_flags.pcf_race = self.raceCheck.is_checked
         pc_flags.pcf_gender = self.genderCheck.is_checked
         pc_flags.pcf_stats = self.statsCheck.is_checked
-        pc_flags.pcf_iclass = self.classCheck.is_checked
+        pc_flags.pcf_class = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],

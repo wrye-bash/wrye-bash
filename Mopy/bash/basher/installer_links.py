@@ -428,7 +428,9 @@ class Installer_Wizard(_Installer_AWizardLink):
             message = [_('The following INI Tweaks were not automatically '
                          'applied. Be sure to apply them after installing the '
                          'package.'), '', '']
-            message.extend(f' * {x}\n   TO: {y}' for x, y in manuallyApply)
+            message.extend(
+                f' * {x}\n {_("To: %(tweak_target)s") % {"tweak_target": y}}'
+                for x, y in manuallyApply)
             self._showInfo('\n'.join(message))
 
 class Installer_OpenReadme(_SingleInstallable):
