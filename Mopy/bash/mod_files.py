@@ -45,7 +45,9 @@ class MasterMap(object):
     TODO refactor to drop those"""
     def __init__(self, inMasters, outMasters):
         mast_map = {}
+        self._in_masters = {}
         for i, master in enumerate(inMasters):
+            self._in_masters[master] = i
             try:
                 mast_map[i] = outMasters.index(master)
             except ValueError:
@@ -59,8 +61,12 @@ class MasterMap(object):
         MasterMapError."""
         if not fid_to_map: return fid_to_map
         is_int = isinstance(fid_to_map, int)
-        mod_dex_in = int(fid_to_map >> 24) if is_int else fid_to_map.mod_dex
         try:
+            try:
+                mod_dex_in = int(fid_to_map >> 24) if is_int else \
+                    fid_to_map.mod_dex
+            except StateError: # fid_to_map comes from FormId.from_tuple
+                mod_dex_in = self._in_masters[fid_to_map.mod_fn] # may raise KE
             mod_dex_out = self._mast_map[mod_dex_in]
             mapped_object_dex = (
                 fid_to_map & 0xFFFFFF if is_int else fid_to_map.object_dex)
@@ -69,7 +75,7 @@ class MasterMap(object):
         except KeyError:
             if dflt_fid != ZERO_FID:
                 return dflt_fid
-        raise MasterMapError(mod_dex_in)
+        raise MasterMapError(fid_to_map)
 
 class LoadFactory:
     """Encapsulate info on which record type we use to load which record

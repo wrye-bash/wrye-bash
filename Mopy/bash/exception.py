@@ -268,9 +268,8 @@ class SkippedMergeablePluginsError(Exception):
 
 class MasterMapError(BoltError):
     """Attempt to map a fid when mapping does not exist."""
-    def __init__(self, modIndex):  # type: (int) -> None
-        super(MasterMapError, self).__init__(
-            f'No valid mapping for mod index 0x{modIndex:02X}')
+    def __init__(self, fid_to_map):
+        super().__init__(f'No valid mapping for mod index {fid_to_map!r}')
 
 class SaveHeaderError(Exception): pass
 
