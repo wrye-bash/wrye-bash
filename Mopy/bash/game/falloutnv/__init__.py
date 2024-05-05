@@ -317,17 +317,20 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         6368: ('GetGroundMaterial', 0, 0),
         6391: ('EquippedWeaponHasModType', 1, 0),
         6426: ('IsSpellTargetList', 2, 0),
-        # Added by JohnnyGuitar NVSE - up to date with v4.98
+        # Added by JohnnyGuitar NVSE - up to date with v5.06b
         8501: ('GetBaseScale', 0, 0),
         8549: ('GetQuestFailed', 2, 0),
         8623: ('GetLocationSpecificLoadScreensOnly', 0, 0),
         8684: ('GetPlayerCamFOV', 1, 0),
+        8692: ('AudioMarkerGetController', 0, 0),
+        8701: ('AudioMarkerGetCurrent', 0, 0),
+        8706: ('GameGetSecondsPassed', 0, 0),
         # Added by TTW nvse plugin
         10247: ('TTW_GetEquippedWeaponSkill', 0, 0),
         # Added by SUP NVSE - up to date with v8.55
         10648: ('IsPlayerOverencumbered', 0, 0),
         10758: ('SUPGetConditionVarFloat', 1, 0),
-        # Added by ShowOff xNVSE Plugin - up to date with v1.75
+        # Added by ShowOff xNVSE Plugin - up to date with v1.80
         11414: ('GetPlayerCanPickpocketEquippedItems', 0, 0),
         11415: ('GetPCHasSleepWaitOverride', 0, 0),
         11419: ('GetNumActorsInRangeFromRef', 3, 1),
@@ -367,6 +370,11 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         11524: ('GetItemCanHaveHealth', 0, 0),
         11557: ('GetCalculatedItemValue', 1, 2),
         11580: ('GetIsPlayerOverencumbered', 1, 0),
+        11604: ('GetIsActivationPromptShown', 0, 0),
+        11605: ('GetHitLocationLingering', 0, 0),
+        11611: ('GetVATSTargetable', 0, 0),
+        11615: ('IsPlayerLookingAround', 0, 0),
+        11617: ('IsActorInvisibleToPlayer', 0, 0),
     }
     # Remove functions with different indices in FNV
     del condition_function_data[1082] # IsKeyPressed, 1107 in FNV
