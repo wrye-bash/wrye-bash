@@ -110,7 +110,9 @@ class Saves_ProfilesData(balt.ListEditorData):
         oldDir.moveTo(newDir)
         oldSaves, newSaves = map(_win_join, (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
-            self._parent_list.set_local_save(newSaves, refreshSaveInfos=True)
+            # this will clear and refresh SaveInfos - we could be smarter as
+            # only the abs_path of the infos changes - not worth the complexity
+            self._parent_list.set_local_save(newSaves)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
@@ -192,12 +194,9 @@ class Saves_Profiles(ChoiceLink):
         def _enable(self): return not self._check()
 
         def Execute(self):
-            arcSaves = bosh.saveInfos.localSave
-            newSaves = self.relativePath
+            new_dir = self.relativePath
             with BusyCursor():
-                self.window.set_local_save(newSaves, refreshSaveInfos=False)
-                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves, askYes)
-                bosh.saveInfos.refresh()
+                self.window.set_local_save(new_dir, do_swap=self._askYes)
                 self.window.DeleteAll() # let call below repopulate
                 self.window.RefreshUI(detail_item=None,
                                       refresh_others=Store.MODS.DO())
@@ -677,21 +676,19 @@ class Save_Move(ChoiceLink):
             title=_('Saves Copied') if self.copyMode else _('Saves Moved'))
 
     def _move_saves(self, destDir, profile: str | None):
-        savesTable = bosh.saveInfos.table
         #--bashDir
         destTable = bolt.DataTable(bolt.PickleDict(destDir.join(
-            u'Bash', u'Table.dat')))
-        count = 0
+            'Bash', 'Table.dat')), load_pickle=True)
+        count = do_save = 0
         ask = True
-        for fileName in self.selected:
+        for fileName, save_inf in self.iselected_pairs():
             if ask and destDir.join(fileName).exists():
                 profile_dir = bush.game.Ini.save_prefix
                 if profile is not None:
                     profile_dir = os.path.join(profile_dir, profile)
                 message = (_('A file named %(conflicting_save)s already '
                              'exists in %(save_profile)s. Overwrite it?') % {
-                    'conflicting_save': fileName,
-                    'save_profile': profile_dir})
+                    'conflicting_save': fileName, 'save_profile': profile_dir})
                 result = self._askContinueShortTerm(message,
                                                     title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
@@ -699,14 +696,13 @@ class Save_Move(ChoiceLink):
                 ask = ask and result != 2 # so don't warn for rest of operation
             if self.copyMode:
                 bosh.saveInfos.copy_info(fileName, destDir, fileName)
-                if fileName in savesTable:
-                    destTable[fileName] = savesTable[fileName]
             else:
                 bosh.saveInfos[fileName].move_info(destDir)
-                if fileName in savesTable:
-                    destTable[fileName] = savesTable.pop(fileName)
+            if att_dict := save_inf.get_persistent_attrs():
+                destTable.pickled_data[fileName] = att_dict
+                do_save = 1
             count += 1
-        destTable.save()
+        if do_save: destTable.save()
         return count
 
 #------------------------------------------------------------------------------

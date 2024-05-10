@@ -242,9 +242,14 @@ class SearchBar(TextField):
         # search bar (which will then hide the button since this posts the
         # on_text_changed event)
         on_cancel = self._evt_handler(_wx.EVT_SEARCHCTRL_CANCEL_BTN)
-        def _clear_search_bar():
+        on_cancel.subscribe(self.clear_search_bar)
+
+    def clear_search_bar(self, keep_str=''): # use sparingly
+        """Clear us if we are not contained in keep_str. Fires wx.EVT_TEXT so
+        on_text_changed handler is called - see _ATextInput docs."""
+        if not keep_str or self.text_content.strip().lower() not in \
+                keep_str.lower():
             self.text_content = ''
-        on_cancel.subscribe(_clear_search_bar)
 
     def _set_hint(self, hint: str):
         # SearchCtrl.SetHint is broken (at least on Windows), avoid it

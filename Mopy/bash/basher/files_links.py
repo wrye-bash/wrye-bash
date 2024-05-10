@@ -238,10 +238,12 @@ class File_RevertToSnapshot(OneItemLink):
             # Make a temp copy first in case reverting to snapshot fails
             destPath.copyTo(known_good_copy)
             snapPath.copyTo(destPath)
+            sel_inf = self._selected_info
             # keep load order but recalculate the crc
-            self._selected_info.setmtime(current_mtime, crc_changed=True)
+            sel_inf.setmtime(current_mtime)
             try:
-                self._data_store.new_info(fileName, notify_bain=True)
+                inf = self._data_store.new_info(fileName, notify_bain=True)
+                inf.copy_persistent_attrs(sel_inf)
             except exception.FileError:
                 # Reverting to snapshot failed - may be corrupt
                 bolt.deprint('Failed to revert to snapshot', traceback=True)
@@ -256,7 +258,8 @@ class File_RevertToSnapshot(OneItemLink):
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     destPath.replace_with_temp(known_good_copy)
-                    self._data_store.new_info(fileName, notify_bain=True)
+                    inf = self._data_store.new_info(fileName, notify_bain=True)
+                    inf.copy_persistent_attrs(sel_inf)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[fileName])
 
@@ -306,6 +309,7 @@ class _RevertBackup(OneItemLink):
             # Make a temp copy first in case reverting to backup fails
             info_path = self._selected_info.abs_path
             info_path.copyTo(known_good_copy)
+            sel = self._selected_info
             try:
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:
@@ -322,9 +326,8 @@ class _RevertBackup(OneItemLink):
                         title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    self._data_store.new_info(sel_file, notify_bain=True,
-                        # see FileInfo.revert_backup (check also RUI.redraw)
-                        _in_refresh=True)
+                    inf = self._data_store.new_info(sel_file, notify_bain=True)
+                    inf.copy_persistent_attrs(sel)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 

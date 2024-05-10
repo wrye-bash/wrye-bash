@@ -48,16 +48,16 @@ from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
-from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
-    decoder, deprint, dict_sort, forward_compat_path_to_fn, \
+from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
+    ListInfo, Path, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
-    OrderedLowerDict, AFileInfo, attrgetter_cache
+    OrderedLowerDict, attrgetter_cache
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
-    StateError, InvalidPluginFlagsError
+    InvalidPluginFlagsError
 from ..game import MergeabilityCheck
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
@@ -205,7 +205,45 @@ class MasterInfo:
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
 
 #------------------------------------------------------------------------------
-class FileInfo(AFileInfo):
+class _TabledInfo:
+    """Stores some of its attributes in a pickled dict. Most of the (hacky)
+    internals are for translating the legacy dict keys to proper attr names."""
+    _key_to_attr = {}
+    _ignore_on_revert = frozenset()
+
+    def __init__(self, *args, att_val=None, **kwargs):
+        for k, v in (att_val or {}).items(): # set table props used in refresh
+            try: ##: nightly regression storing 'installer' as FName - drop!
+                if k == 'installer': v = str(v)
+                elif k == 'doc': v = GPath(v) # needed for updates from old settings
+                self.set_table_prop(k, v)
+            except KeyError:  # will this be 'mtime'?
+                deprint(f'Failed to set {k=} to {v=} for {self=}')
+        super().__init__(*args, **kwargs)
+
+    def get_table_prop(self, prop_key, default=None):
+        """Get Info attribute for given prop_key."""
+        return getattr(self, self.__class__._key_to_attr[prop_key], default)
+
+    def set_table_prop(self, prop_key, val):
+        if val is None:
+            try:
+                delattr(self, self.__class__._key_to_attr[prop_key])
+            except AttributeError: return
+        else: setattr(self, self.__class__._key_to_attr[prop_key], val)
+
+    def get_persistent_attrs(self):
+        return {pickle_key: val for pickle_key in self.__class__._key_to_attr
+                if (val := self.get_table_prop(pickle_key)) is not None}
+
+    def copy_persistent_attrs(self, other, exclude=None):
+        if exclude is None:
+            exclude = self.__class__._ignore_on_revert
+        for pickle_key, val in other.get_persistent_attrs().items():
+            if pickle_key not in exclude:
+                self.set_table_prop(pickle_key, val)
+
+class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
@@ -328,7 +366,7 @@ class FileInfo(AFileInfo):
                 backup_paths.remove(tup)
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
-        self.setmtime(self.ftime, crc_changed=True)
+        self.setmtime(self.ftime)
         ##: _in_refresh=True is not entirely correct here but can't be made
         # entirely correct by leaving _in_refresh to False either as we
         # don't back up the config so we can't really detect changes in
@@ -336,8 +374,9 @@ class FileInfo(AFileInfo):
         # half-baked anyway let's agree for now that BPs remain BPs with the
         # same config as before - if not, manually run a mergeability scan
         # after updating the config (in case the restored file is a BP)
-        self.get_store().new_info(self.fn_key, notify_bain=True,
+        inf = self.get_store().new_info(self.fn_key, notify_bain=True,
             _in_refresh=True)
+        inf.copy_persistent_attrs(self)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
@@ -395,14 +434,27 @@ class ModInfo(FileInfo):
     _has_esm_flag = _is_esl = _is_overlay = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
+    _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
+        'autoBashTags': 'mod_auto_bash_tags',
+        'bash.patch.configs': 'mod_bp_config', 'bashTags': 'mod_bash_tags',
+        'bp_split_parent': 'mod_bp_split_parent', 'crc': 'mod_crc',
+        'crc_mtime': 'mod_crc_mtime', 'crc_size': 'mod_crc_size',
+        'doc': 'mod_doc', 'docEdit': 'mod_editing_doc', 'group': 'mod_group',
+        'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
+        'mergeInfo': 'mod_merge_info', 'rating': 'mod_rating'}
+    _ignore_on_revert = frozenset([#'allowGhosting', 'bash.patch.configs',
+        'bp_split_parent', # 'doc', 'docEdit', 'group', 'installer', 'rating'
+        # 'autoBashTags', 'bashTags', ##: reset bashTags on reverting?
+        # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
+        'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+    def __init__(self, fullpath, load_cache=False, itsa_ghost=None, **kwargs):
         if itsa_ghost is None and (fullpath.cs[-6:] == '.ghost'):
             fullpath = fullpath.root
             self.is_ghost = True
         else:  # new_info() path
             self._refresh_ghost_state(itsa_ghost, regular_path=fullpath)
-        super().__init__(fullpath, load_cache)
+        super().__init__(fullpath, load_cache, **kwargs)
 
     def get_hide_dir(self):
         dest_dir = self.get_store().hidden_dir
@@ -430,6 +482,10 @@ class ModInfo(FileInfo):
             if bush.game.has_overlay_plugins:
                 self._recalc_overlay()
             self._recalc_esm()
+
+    def copy_persistent_attrs(self, other, exclude=None):
+        super().copy_persistent_attrs(other, exclude)
+        modInfos._update_info_sets()#we need to recalculate merged/imported based on the config
 
     @classmethod
     def get_store(cls): return modInfos
@@ -1115,10 +1171,11 @@ def best_ini_files(abs_ini_paths):
         ret[aip] = detected_type(aip, detected_enc)
     return ret
 
-class AINIInfo(AIniInfo):
+class AINIInfo(_TabledInfo, AIniInfo):
     """Ini info, adding cached status and functionality to the ini files."""
     _status = None
     is_default_tweak = False
+    _key_to_attr = {'installer': 'ini_owner_inst'}
 
     @classmethod
     def get_store(cls): return iniInfos
@@ -1253,6 +1310,7 @@ class SaveInfo(FileInfo):
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _valid_exts_re = r'(\.(?:' + '|'.join(
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
+    _key_to_attr = {'info': 'save_notes'}
     _co_saves: _CosaveDict
 
     def __init__(self, fullpath, load_cache=False, **kwargs):
@@ -1465,12 +1523,17 @@ class ScreenInfo(AFileInfo):
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
+    _dir_key: str # key in dirs dict for the store_dir
     # Each subclass must define this. Used when information related to the
     # store is passed between the GUI and the backend
     unique_store_key: Store
 
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
+
+    def set_store_dir(self):
+        self.store_dir = sd = dirs[self._dir_key]
+        return sd
 
     # Store operations --------------------------------------------------------
     @final
@@ -1505,7 +1568,7 @@ class DataStore(DataDict):
         return {k: self[k] for k in fn_items}
 
     def refresh(self): raise NotImplementedError
-    def save(self): pass # for Screenshots
+    def save_pickle(self): pass # for Screenshots
 
     def rename_operation(self, member_info, newName):
         rename_paths = member_info.get_rename_paths(newName)
@@ -1563,22 +1626,22 @@ class _AFileInfos(DataStore):
     # Whether these file infos track ownership in a table
     tracks_ownership = False
 
-    def __init__(self, dir_, factory):
+    def __init__(self, factory=None):
         """Init with specified directory and specified factory type."""
-        super().__init__(self._initDB(dir_))
-        self.factory = factory
+        super().__init__(self._init_store(self.set_store_dir()))
+        self.factory = factory or self.__class__.factory
 
-    def _initDB(self, dir_):
+    def _init_store(self, storedir):
+        """Set up the self's _data/corrupted and return the former."""
         self.corrupted: FNDict[FName, Corrupted] = FNDict()
-        self.store_dir = dir_ #--Path
         deprint(f'Initializing {self.__class__.__name__}')
-        deprint(f' store_dir: {self.store_dir}')
-        self.store_dir.makedirs()
+        deprint(f' store_dir: {storedir}')
+        storedir.makedirs()
         self._data = FNDict()
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos=True, booting=False):
+    def refresh(self, refresh_infos=True, booting=False, *, stored_data={}):
         """Refresh from file directory."""
         rdata = self._rdata_type()
         if True: # refresh_infos
@@ -1590,6 +1653,7 @@ class _AFileInfos(DataStore):
                         if oldInfo.do_update(**kws):
                             rdata.redraw.add(new)
                     else: # new file or updated corrupted, get a new info
+                        kws['att_val'] = stored_data.get(new)
                         self.new_info(new, _in_refresh=True,
                                       notify_bain=not booting, **kws)
                         rdata.to_add.add(new)
@@ -1621,8 +1685,10 @@ class _AFileInfos(DataStore):
             info = self[fileName] = self.factory(self.store_dir.join(fileName),
                                                  load_cache=True, **kwargs)
             self.corrupted.pop(fileName, None)
-            if owner is not None:
-                info.set_table_prop('installer', f'{owner}') ## fixme move out
+            if owner is not None: ##: ignore this - fixed later - belongs to info init
+                try:info.set_table_prop('installer', f'{owner}')
+                except KeyError:
+                    deprint(f'Failed to set {owner=} for {info=}')
             if notify_bain:
                 self._notify_bain(altered={info.abs_path})
             return info
@@ -1740,50 +1806,27 @@ class _AFileInfos(DataStore):
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
+    _table_loaded = False
 
-    def _initDB(self, dir_):
+    def _init_from_table(self):
         """Load pickled data for mods, saves, inis and bsas."""
-        db = super()._initDB(dir_)
-        deprint(f' bash_dir: {self.bash_dir}')
-        self.bash_dir.makedirs() # self.store_dir may need be set
-        # the type of the table keys is always bolt.FName
-        self.table = bolt.DataTable(
-            bolt.PickleDict(self.bash_dir.join('Table.dat')))
-        ##: fix nightly regression storing 'installer' property as FName
-        for fn_key, val in ((fnk, col_dict['installer']) for fnk, col_dict in
-                            self.table.items() if 'installer' in col_dict):
-            if val is not None and type(val) is not str:
-                deprint(f'stored installer for {fn_key} is {val!r}')
-                self.table[fn_key]['installer'] = str(val)
-        return db
+        deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
+        self.bash_dir.makedirs()
+        return bolt.DataTable(self.bash_dir.join('Table.dat'),
+                              load_pickle=True).pickled_data
 
-    #--Delete
-    def delete_refresh(self, infos, check_existence):
-        deleted_keys = super().delete_refresh(infos, check_existence)
-        for del_fn in deleted_keys:
-            self.table.pop(del_fn, None)
-        return deleted_keys
+    def refresh(self, *args, **kwargs):
+        if not self._table_loaded:
+            self._table_loaded = True
+            kwargs['stored_data'] = self._init_from_table()
+        return super().refresh(*args, **kwargs)
 
-    def save(self):
-        # items deleted outside Bash
-        for del_key in set(self.table) - set(self):
-            del self.table[del_key]
-        self.table.save()
-
-    #--Rename
-    def rename_operation(self, member_info, newName):
-        """Renames member file from oldName to newName."""
-        #--Update references
-        #--File system
-        old_key = super().rename_operation(member_info, newName)
-        self.table.moveRow(old_key, newName)
-        # self[newName]._mark_unchanged() # not needed with shellMove !
-        return old_key
-
-    def _add_info(self, destDir, destName, set_mtime, fileName, save_lo_cache):
-        self.table.copyRow(fileName, destName) ##: YAK table
-        return super()._add_info(destDir, destName, set_mtime, fileName,
-                                 save_lo_cache)
+    def save_pickle(self):
+        pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
+        for k, v in self.items():
+            if pickle_dict := v.get_persistent_attrs():
+                pd.pickled_data[k] = pickle_dict
+        pd.save()
 
 class Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
@@ -1871,11 +1914,12 @@ class INIInfos(TableFileInfos):
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
+    _dir_key = 'ini_tweaks'
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
                                       bush.game.default_tweaks.items())
-        super().__init__(dirs['ini_tweaks'], ini_info_factory)
+        super().__init__(ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -2098,11 +2142,12 @@ def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     unique_store_key = Store.MODS
+    _dir_key = 'mods'
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
-        super().__init__(dirs['mods'], ModInfo)
+        super().__init__(ModInfo)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
@@ -2139,7 +2184,7 @@ class ModInfos(TableFileInfos):
         self.merged, self.imported, self.bashed_patches = set(), set(), set()
         #--Oblivion version
         self.voCurrent = None
-        self.voAvailable = set()
+        self._voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
         # used in RefreshData
         self.warn_missing_lo_act = set()
@@ -2345,7 +2390,7 @@ class ModInfos(TableFileInfos):
                 rdata.redraw |= self._file_or_active_updates()
         else: # we did all the refreshes above in _modinfos_cache_wrapper
             rdata.redraw |= act_ch | ldiff.reordered | ldiff.affected
-        self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
+        self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
         return rdata
 
@@ -2568,13 +2613,14 @@ class ModInfos(TableFileInfos):
             bt_contents = set() # No BashTags folder -> no BashTags files
         for modinf in self.values(): # type: ModInfo
             autoTag = modinf.is_auto_tagged(default_auto=None)
-            if autoTag is None and modinf.get_table_prop(u'bashTags') is None:
-                # A new mod, set auto tags to True (default)
-                modinf.set_auto_tagged(True)
-                autoTag = True
-            elif autoTag is None:
-                # An old mod that had manual bash tags added, disable auto tags
-                modinf.set_auto_tagged(False)
+            if autoTag is None:
+                if modinf.get_table_prop('bashTags') is None:
+                    # A new mod, set auto tags to True (default)
+                    modinf.set_auto_tagged(True)
+                    autoTag = True
+                else:
+                    # An old mod that had manual bash tags added
+                    modinf.set_auto_tagged(False) # disable auto tags
             if autoTag:
                 modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
@@ -3184,23 +3230,24 @@ class ModInfos(TableFileInfos):
         _('The file is in use by another process such as %(xedit_name)s.'), '',
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
-    def setOblivionVersion(self, newVersion, ask_yes):
-        """Swaps Oblivion.esm to specified version."""
+    def try_set_version(self, set_version, *, do_swap=None):
+        """Set Oblivion version to specified one - dry run if do_swap is None,
+        else do_swap must be an askYes callback. Our caches must be fresh from
+        refresh to detect versions properly."""
+        curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
+        if set_version is None or curr_ver is None:
+            # for do_swap False set_version != None => curr_ver == None
+            return curr_ver # return curr_ver as a convenience for saveInfos
         master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
+        # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
+        move_to = FName(f'{(fnb := master_esm.fn_body)}_{curr_ver}.esm')
+        if set_version != curr_ver and set_version in self._voAvailable and \
+                not (move_to in self or move_to in self.corrupted):
+            if not do_swap: return True # we can swap
+        else: return False
+        # Swap Oblivion.esm to specified version - do_swap is askYes callback
         # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
-        copy_from = FName(f'{(fnb := master_esm.fn_body)}_{newVersion}.esm')
-        newSize = bush.game.modding_esm_size[copy_from]
-        oldSize = self[master_esm].fsize
-        if newSize == oldSize: return
-        try: # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
-            current_version = bush.game.size_esm_version[oldSize]
-            move_to = FName(f'{fnb}_{current_version}.esm')
-        except KeyError:
-            raise StateError("Can't match current main ESM to known version.")
-        if self.store_dir.join(move_to).exists():
-            raise StateError(f"Can't swap: {move_to} already exists.")
-        if copy_from not in self:
-            raise StateError(f"Can't swap: {copy_from} doesn't exist.")
+        copy_from = FName(f'{fnb}_{set_version}.esm')
         swapped_inf = self[copy_from]
         swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
@@ -3223,7 +3270,7 @@ class ModInfos(TableFileInfos):
                     new = inf_fname[0].get_rename_paths(inf_fname[1])[0][1]
                     msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
                         'xedit_name': bush.game.Xe.full_name, }
-                    if ask_yes(None, msg, title=_('File in Use')):
+                    if do_swap(msg, title=_('File in Use')):
                         continue
                     if do_undo: file_info_rename_op(self[move_to], master_esm)
                     raise
@@ -3245,24 +3292,9 @@ class ModInfos(TableFileInfos):
         self.cached_lo_save_all()
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
-        self.voCurrent = newVersion
-        self.voAvailable.add(current_version)
-        self.voAvailable.remove(newVersion)
-
-    def swapPluginsAndMasterVersion(self, arcSaves, newSaves, ask_yes):
-        """Save current plugins into arcSaves directory, load plugins from
-        newSaves directory and set oblivion version."""
-        # arcSave and newSaves always have backslash separators
-        arcPath, newPath = (dirs['saveBase'].join(env.convert_separators(s))
-                            for s in (arcSaves, newSaves))
-        if load_order.swap(arcPath, newPath):
-            self.refreshLoadOrder(unlock_lo=True)
-        # Swap Oblivion version to memorized version
-        voNew = saveInfos.get_profile_attr(newSaves, u'vOblivion', None)
-        if voNew is None:
-            saveInfos.set_profile_attr(newSaves, u'vOblivion', self.voCurrent)
-            voNew = self.voCurrent
-        if voNew in self.voAvailable: self.setOblivionVersion(voNew, ask_yes)
+        self.voCurrent = set_version
+        self._voAvailable.add(curr_ver)
+        self._voAvailable.remove(set_version)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size
@@ -3304,28 +3336,47 @@ class ModInfos(TableFileInfos):
 #------------------------------------------------------------------------------
 class SaveInfos(TableFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
-    _bain_notify = False
+    _bain_notify = tracks_ownership = False
     # Enabled and disabled saves, no .bak files ##: needed?
     file_pattern = re.compile('(%s)(f?)$' % '|'.join(fr'\.{s}' for s in
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
     unique_store_key = Store.SAVES
 
-    def _setLocalSaveFromIni(self):
-        """Read the current save profile from the oblivion.ini file and set
-        local save attribute to that value."""
+    def set_store_dir(self, save_dir=None, do_swap=None):
+        """If save_dir is None, read the current save profile from
+        oblivion.ini file, else update the ini with save_dir."""
         # saveInfos singleton is constructed in InitData after bosh.oblivionIni
         prev = getattr(self, 'localSave', None)
-        save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
-            default=bush.game.Ini.save_prefix).rstrip('\\')
+        if save_dir is None:
+            save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
+                default=bush.game.Ini.save_prefix).rstrip('\\')
+        else: # set SLocalSavePath in Oblivion.ini - the latter must exist
+            # not sure if appending the slash is needed for the game to parse
+            # the setting correctly, kept previous behavior
+            oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
+                                    value=f'{save_dir}\\')
         self.localSave = save_dir
-        if prev is not None and prev != save_dir:
-            self.table.save()
-            self.__init_db()
-        return prev != save_dir
+        if (boot := prev is None) or prev != save_dir:
+            old = not boot and self.store_dir
+            if not boot:
+                self.save_pickle() # save current data before setting store_dir
+                self._table_loaded = False
+            self.store_dir = sd = dirs['saveBase'].join(env.convert_separators(
+                save_dir)) # localSave always has backslashes
+            if do_swap:
+                # save current plugins into old directory, load plugins from sd
+                if load_order.swap(old, sd):
+                    modInfos.refreshLoadOrder(unlock_lo=True)
+                # Swap Oblivion version to memorized version
+                voNew = self.get_profile_attr(save_dir, 'vOblivion', None)
+                if curr := modInfos.try_set_version(voNew, do_swap=do_swap):
+                    self.set_profile_attr(save_dir, 'vOblivion', curr)
+            if not boot: # else in __init__,  calling _init_store right after
+                self._init_store(sd)
+        return self.store_dir
 
     def __init__(self):
-        self._setLocalSaveFromIni()
-        super().__init__(self.__saves_dir(), SaveInfo)
+        super().__init__(SaveInfo)
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
@@ -3393,9 +3444,10 @@ class SaveInfos(TableFileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos=True, booting=False):
-        if not booting:
-            self._setLocalSaveFromIni()
+    def refresh(self, refresh_infos=True, booting=False, *, save_dir=None,
+                do_swap=None):
+        if not booting: # else we just called __init__
+            self.set_store_dir(save_dir, do_swap)
         return super().refresh(booting=booting) if refresh_infos else \
            self._rdata_type()
 
@@ -3440,24 +3492,6 @@ class SaveInfos(TableFileInfos):
         bash_frame.warn_corrupted(warn_saves=True)
         return moved
 
-    #--Local Saves ------------------------------------------------------------
-    def __init_db(self):
-        self._initDB(self.__saves_dir())
-
-    def __saves_dir(self): # always has backslashes
-        return dirs['saveBase'].join(env.convert_separators(self.localSave))
-
-    def setLocalSave(self, localSave: str, refreshSaveInfos=True):
-        """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
-        self.table.save()
-        self.localSave = localSave
-        ##: not sure if appending the slash is needed for the game to parse
-        # the setting correctly, kept previous behavior
-        oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
-                                value=f'{localSave}\\')
-        self.__init_db()
-        if refreshSaveInfos: self.refresh()
-
 #------------------------------------------------------------------------------
 class BSAInfos(TableFileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
@@ -3467,6 +3501,7 @@ class BSAInfos(TableFileInfos):
     _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
     unique_store_key = Store.BSAS
+    _dir_key = 'mods'
 
     def __init__(self):
         ##: Hack, this should not use display_name
@@ -3487,6 +3522,7 @@ class BSAInfos(TableFileInfos):
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
                 self._reset_bsa_mtime()
+            _key_to_attr = {'info': 'bsa_notes', 'installer': 'bsa_owner_inst'}
 
             @classmethod
             def get_store(cls): return bsaInfos
@@ -3505,8 +3541,7 @@ class BSAInfos(TableFileInfos):
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
                     if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
-
-        super().__init__(dirs['mods'], BSAInfo)
+        super().__init__(BSAInfo)
 
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, **kwargs):
@@ -3585,31 +3620,28 @@ class ScreenInfos(_AFileInfos):
         'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
         'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
     unique_store_key = Store.SCREENSHOTS
+    file_pattern = re.compile(
+        r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
+    factory = ScreenInfo
 
-    def __init__(self):
-        self._orig_store_dir: bolt.Path = dirs[u'app']
-        self.__class__.file_pattern = re.compile(
-            r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$',
-            re.I | re.U)
-        self._set_store_dir()
-        super().__init__(self.store_dir, ScreenInfo)
-
-    def _set_store_dir(self):
+    def set_store_dir(self):
         # Check if we need to adjust the screenshot dir
         ss_base = GPath(oblivionIni.getSetting(
             u'Display', u'SScreenShotBaseName', u'ScreenShot'))
-        new_store_dir = self._orig_store_dir.join(ss_base.shead)
-        if getattr(self, 'store_dir', None) != new_store_dir:
+        new_store_dir = dirs['app'].join(ss_base.shead)
+        if (prev := getattr(self, 'store_dir', None)) != new_store_dir:
             self.store_dir = new_store_dir
-        # Also check if we're now relative to the Data folder and hence need to
-        # pay attention to BAIN
-        self._rel_to_data = self.store_dir.cs.startswith(bass.dirs['mods'].cs)
-        self._bain_notify = self._rel_to_data
-        if self._rel_to_data:
-            self._ci_curr_data_prefix = os.path.split(os.path.relpath(
-                self.store_dir, bass.dirs['mods']).lower())
-        else:
-            self._ci_curr_data_prefix = []
+            if prev is not None: # else we are in __init__
+                self._init_store(new_store_dir)
+            # Also check if we're now in the Data folder and hence need to
+            # pay attention to BAIN
+            if in_data := self.store_dir.cs.startswith(bass.dirs['mods'].cs):
+                self._ci_curr_data_prefix = os.path.split(os.path.relpath(
+                    new_store_dir, bass.dirs['mods']).lower())
+            else:
+                self._ci_curr_data_prefix = []
+            self._bain_notify = in_data
+        return new_store_dir
 
     @classmethod
     def rightFileType(cls, fileName: bolt.FName):
@@ -3619,7 +3651,7 @@ class ScreenInfos(_AFileInfos):
         return super().rightFileType(fileName)
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
-        if not self._rel_to_data:
+        if not self._bain_notify:
             # Current store_dir is not relative to Data folder, so we do not
             # need to pay attention to BAIN
             return None
@@ -3631,7 +3663,7 @@ class ScreenInfos(_AFileInfos):
         return super().data_path_to_info(filename, would_be)
 
     def refresh(self, refresh_infos=True, booting=False):
-        self._set_store_dir()
+        self.set_store_dir()
         return super().refresh(refresh_infos, booting)
 
 #------------------------------------------------------------------------------

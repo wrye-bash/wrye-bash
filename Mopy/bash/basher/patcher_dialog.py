@@ -170,12 +170,11 @@ class PatchDialog(DialogWindow):
         progress = None
         try:
             patch_name = self.patchInfo.fn_key
-            patch_size = self.patchInfo.fsize
             progress = balt.Progress(patch_name, abort=True)
             timer1 = time.time_ns()
             #--Save configs
             config = self.__config()
-            self.patchInfo.set_table_prop(u'bash.patch.configs', config)
+            self.patchInfo.set_table_prop('bash.patch.configs', config)
             #--Do it
             log = bolt.LogFile(io.StringIO())
             patchFile = self.bashed_patch
@@ -223,13 +222,6 @@ class PatchDialog(DialogWindow):
                     return # Abort, we can't fix this right now
                 for i, bp_file in enumerate(bp_files_to_save):
                     bp_file.set_attributes(was_split=True, split_part=i)
-                    # No need to link the parent to itself, of course
-                    if i > 0:
-                        # Store a raw string here so we avoid the
-                        # FName.__reduce__ stuff - this is a new format, so no
-                        # backwards compat concerns
-                        bp_file.fileInfo.set_table_prop('bp_split_parent',
-                            str(patch_name))
             parts_to_del = patchFile.find_unneded_parts(bp_files_to_save)
             if parts_to_del:
                 ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
@@ -282,8 +274,6 @@ class PatchDialog(DialogWindow):
                     readme = bass.dirs['saveBase'].join(readme.stail)
             readme_html = readme.root + u'.html'
             shown_log = readme_html if balt.web_viewer_available() else readme
-            for bp_file in bp_files_to_save:
-                bp_file.fileInfo.set_table_prop('doc', readme_html)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
             balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,
                           asDialog=True)
@@ -293,13 +283,14 @@ class PatchDialog(DialogWindow):
                 # differ. Most people probably don't keep BAIN packages of BPs,
                 # but *I* do, so...
                 info = bosh.modInfos.new_info(bp_fname, notify_bain=True)
-                if bp_fname == patch_name and info.fsize == patch_size:
-                    # Needed if size remains the same - ftime is set in
-                    # ModFile.safeSave which can't use setmtime(crc_changed),
-                    # as no info is there. In this case _reset_cache >
-                    # calculate_crc() would not detect the crc change. That's a
-                    # general problem with crc cache - API limits
-                    info.calculate_crc(recalculate=True)
+                if bp_fname == patch_name:
+                    # add the config on master patch so it is read afterwards
+                    info.copy_persistent_attrs(self.patchInfo)
+                else: # No need to link the parent to itself, of course
+                    # Store a raw string here to avoid the FName.__reduce__
+                    # stuff - new setting, so no backwards compat concerns
+                    info.set_table_prop('bp_split_parent', str(patch_name))
+                info.set_table_prop('doc', readme_html)
                 self._bps.append(bp_fname)
         except CancelError:
             pass

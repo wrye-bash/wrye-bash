@@ -1825,13 +1825,6 @@ class ListInfo:
     def get_store(cls):
         raise NotImplementedError(f'{type(cls)} does not provide a data store')
 
-    # Instance methods --------------------------------------------------------
-    def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
-        return self.get_store().table.getItem(self.fn_key, prop, default)
-
-    def set_table_prop(self, prop, val):
-        return self.get_store().table.setItem(self.fn_key, prop, val)
-
     def __str__(self):
         """Alias for self.fn_key."""
         return self.fn_key
@@ -2112,132 +2105,20 @@ def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
     return b''.join(wip_string)
 
 #------------------------------------------------------------------------------
-class DataTableColumn(object):
-    """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self, table: DataTable, column: str):
-        self._table = table
-        self.column = column
-    #--Dictionary Emulation
-    def __iter__(self):
-        """Dictionary emulation."""
-        column = self.column
-        return (key for key, col_dict in self._table.items() if
-                column in col_dict)
-    def values(self):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        column = self.column
-        return (tableData[k][column] for k in self)
-    def items(self):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        column = self.column
-        return ((k, tableData[k][column]) for k in self)
-    def clear(self):
-        """Dictionary emulation."""
-        self._table.delColumn(self.column)
-    def get(self,key,default=None):
-        """Dictionary emulation."""
-        return self._table.getItem(key, self.column, default)
-    #--Overloaded
-    def __contains__(self,key):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        return key in tableData and self.column in tableData[key]
-    def __getitem__(self,key):
-        """Dictionary emulation."""
-        return self._table._data[key][self.column]
-    def __setitem__(self,key,value):
-        """Dictionary emulation. Marks key as changed."""
-        self._table.setItem(key, self.column, value)
-    def __delitem__(self,key):
-        """Dictionary emulation. Marks key as deleted."""
-        self._table.delItem(key, self.column)
-
-#------------------------------------------------------------------------------
-class DataTable(DataDict):
+class DataTable(PickleDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
-    currently used by TableFileInfos to represent properties associated with
+    currently used by TableFileInfos to pickle properties associated with
     mod/save/bsa/ini files, where each file is a row, and each property (e.g.
     modified date or 'mtime') is a column.
 
-    The "table" is actually a dictionary of dictionaries. E.g.
-        propValue = table['fileName']['propName']
+    self.pickled_data is actually a dictionary of dictionaries. E.g.
+        propValue = self.pickled_data['fileName']['propName']
     Rows are the first index ('fileName') and columns are the second index
     ('propName')."""
 
-    def __init__(self, dictFile: PickleDict):
-        """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile
-        dictFile.load()
-        self.vdata = dictFile.vdata
-        self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
-            self.dictFile.pickled_data)
-        super().__init__(_data)
-        self.hasChanged = False ##: move to PickleDict
-
-    def save(self):
-        """Saves to pickle file."""
-        dictFile = self.dictFile
-        if self.hasChanged and not dictFile.readOnly:
-            dictFile.pickled_data = self._data # note we reassign pickled_data
-            self.hasChanged = not dictFile.save()
-
-    def getItem(self,row,column,default=None):
-        """Get item from row, column. Return default if row,column doesn't exist."""
-        if row in self._data and column in self._data[row]:
-            return self._data[row][column]
-        else:
-            return default
-
-    def getColumn(self,column):
-        """Returns a data accessor for column."""
-        return DataTableColumn(self, column)
-
-    def setItem(self,row,column,value):
-        """Set value for row, column."""
-        if row not in self._data:
-            self._data[row] = {}
-        self._data[row][column] = value
-        self.hasChanged = True
-
-    def delItem(self,row,column):
-        """Deletes item in row, column."""
-        if row in self._data and column in self._data[row]:
-            del self._data[row][column]
-            self.hasChanged = True
-
-    ##: DataTableColumn.clear is the only usage, and that seems unused too
-    def delColumn(self,column):
-        """Deletes column of data."""
-        for rowData in self._data.values():
-            if column in rowData:
-                del rowData[column]
-                self.hasChanged = True
-
-    def moveRow(self,oldRow,newRow):
-        """Renames a row of data."""
-        if oldRow in self._data:
-            self._data[newRow] = self._data[oldRow]
-            del self._data[oldRow]
-            self.hasChanged = True
-
-    def copyRow(self,oldRow,newRow):
-        """Copies a row of data."""
-        if oldRow in self._data:
-            self._data[newRow] = self._data[oldRow].copy()
-            self.hasChanged = True
-
-    #--Dictionary emulation
-    def __setitem__(self,key,value):
-        self._data[key] = value
-        self.hasChanged = True
-    def __delitem__(self,key):
-        del self._data[key]
-        self.hasChanged = True
-    def pop(self,key,default=None):
-        self.hasChanged = True
-        return self._data.pop(key, default)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pickled_data = forward_compat_path_to_fn(self.pickled_data)
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------

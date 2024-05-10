@@ -387,12 +387,11 @@ class _Mod_LabelsData(balt.ListEditorData):
         """Removes group."""
         self.mod_labels.remove(item)
         #--Edit table entries.
-        colGroup = bosh.modInfos.table.getColumn(self.column)
         deletd = []
-        for fileName, val in list(colGroup.items()):
-            if val == item:
-                del colGroup[fileName]
-                deletd.append(fileName)
+        for fn, mod_inf in bosh.modInfos.items():
+            if mod_inf.get_table_prop(self.column) == item:
+                mod_inf.set_table_prop(self.column, None)
+                deletd.append(fn)
         self._refresh(redraw=deletd)
         #--Done
         return True
@@ -442,9 +441,8 @@ class _Mod_Labels(ChoiceLink):
             _help = _('Remove all labels from the selected plugins.')
             def Execute(self):
                 """Handle selection of None."""
-                fileLabels = bosh.modInfos.table.getColumn(_self.column)
-                for fileName in self.selected:
-                    fileLabels[fileName] = u''
+                for finf in self.iselected_infos():
+                    finf.set_table_prop(_self.column, None)
                 _self._refresh()
             def _check(self):
                 return _self._none_checked
@@ -498,13 +496,13 @@ class _ModGroups(CsvParser):
     def writeToModInfos(self, mods):
         """Exports mod groups to modInfos."""
         mod_group = self.mod_group
-        changed_count = 0
+        changed = set()
         for x in mods:
             if x in mod_group and (g := mod_group[x]) != (
                     (inf := bosh.modInfos[x]).get_table_prop('group')):
                 inf.set_table_prop('group', g)
-                changed_count += 1
-        return changed_count
+                changed.add(x)
+        return changed
 
     def _parse_line(self, csv_fields):
         """Imports mod groups from specified text file."""
@@ -572,13 +570,12 @@ class _Mod_Groups_Import(ItemLink):
         #--Import
         modGroups = _ModGroups()
         modGroups.read_csv(textPath)
-        changed_count = modGroups.writeToModInfos(self.selected)
-        bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        changed = modGroups.writeToModInfos(self.selected)
+        self.window.RefreshUI(redraw=changed)
         self._showOk(_('Imported %(num_imported_groups)d groups '
                        '(%(num_changed_groups)d changed).') % {
             'num_imported_groups': len(modGroups.mod_group),
-            'num_changed_groups': changed_count}, title=_('Import Groups'))
+            'num_changed_groups': len(changed)}, title=_('Import Groups'))
 
 class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
@@ -666,7 +663,7 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser().show_frame()
+            DocBrowser(self.window.data_store).show_frame()
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 
