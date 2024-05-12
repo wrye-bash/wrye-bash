@@ -3168,11 +3168,9 @@ class MreWeap(MelRecord):
         )),
         if_fnv(
             fo3_version=MelSound(),
-            fnv_version=MelSequential(
-                MelFid(b'SNAM', 'sound_gun_shoot_3d'),
-                MelFid(b'SNAM', 'sound_gun_shoot_dist'),
-            ),
+            fnv_version=MelFid(b'SNAM', 'sound_gun_shoot_3d'),
         ),
+        fnv_only(MelFid(b'SNAM', 'sound_gun_shoot_dist')),
         MelFid(b'XNAM','soundGunShot2D'),
         MelFid(b'NAM7','soundGunShot3DLooping'),
         MelFid(b'TNAM','soundMeleeSwingGunNoAmmo'),
