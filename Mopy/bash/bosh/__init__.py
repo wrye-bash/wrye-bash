@@ -48,7 +48,7 @@ from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
-    ListInfo, Path, deprint, dict_sort, forward_compat_path_to_fn, \
+    ListInfo, Path, RefrIn, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
     OrderedLowerDict, attrgetter_cache
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
@@ -1465,16 +1465,21 @@ class DataStore(DataDict):
                   self.filter_essential(delete_keys).items()]
         try:
             self._delete_operation(finfos, recycle=recycle)
-        finally:
-            self.delete_refresh(finfos, True)
+        finally: # markers are popped from finfos - we refreshed in _delete_op
+            if finfos := self.check_exists(finfos):
+                # ok to suppose the only lo modification is due to deleted
+                # files at this point
+                self.refresh(RefrIn({}, del_infos=finfos), what='I',
+                             unlock_lo=True)
 
-    def _delete_operation(self, finfos, *, recycle=True):
-        abs_del_paths = [*chain.from_iterable(
-            inf.delete_paths() for inf in finfos)]
-        env.shellDelete(abs_del_paths, recycle=recycle)
+    def _delete_operation(self, finfos: list, *, recycle=True):
+        if abs_del_paths := [
+                *chain.from_iterable(inf.delete_paths() for inf in finfos)]:
+            env.shellDelete(abs_del_paths, recycle=recycle)
 
-    def delete_refresh(self, infos, check_existence):
-        raise NotImplementedError
+    def check_exists(self, infos):
+        """Lift your skirts, we are entering the realm of #241."""
+        return {inf for inf in infos if not inf.abs_path.exists()}
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1550,29 +1555,6 @@ class RefrData:
     def __bool__(self):
         return bool(self.to_add or self.to_del or self.redraw)
 
-@dataclass(slots=True)
-class RefrIn:
-    """WIP! requesting refresh from the data store."""
-    new_or_present: field(default_factory=dict)
-    del_infos: field(default_factory=set)
-
-    @classmethod
-    def from_tabled_infos(cls, fn_info_dict, *, extra_attrs=None,
-                          exclude: frozenset | True = frozenset()):
-        """Copy persistent attributes from info objects (or dict) - info
-        objects are discarded, so we request refresh for *adding* infos."""
-        try:
-            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
-                    for k, v in fn_info_dict.items()}
-        except AttributeError: # ScreenInfos
-            rinf = {k: (None, {}) for k, v in fn_info_dict.items()}
-        for k, v in (extra_attrs or {}).items():
-            try:
-                rinf[k][1]['att_val'].update(v)
-            except KeyError:
-                rinf[k] = None, {'att_val': v}
-        return cls(rinf, set())
-
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
@@ -1627,9 +1609,10 @@ class _AFileInfos(DataStore):
                 if new := self.pop(new, None): # effectively deleted
                     del_infos.add(new)
         rdata.to_del = {d.fn_key for d in del_infos}
-        self.delete_refresh(del_infos, check_existence=False)
-        if not booting and (alt :=(rdata.redraw | rdata.to_add)):
-            self._notify_bain(altered={self[n].abs_path for n in alt})
+        self._delete_refresh(del_infos)
+        if not booting and (alt := (rdata.redraw | rdata.to_add) or del_infos):
+            self._notify_bain(altered={self[n].abs_path for n in alt},
+                              del_set={inf.abs_path for inf in del_infos})
         return rdata
 
     def _list_store_dir(self, refresh_input):
@@ -1669,16 +1652,10 @@ class _AFileInfos(DataStore):
                 new_or_present[k] = (self.get(k), kws)
         return new_or_present, del_infos
 
-    def delete_refresh(self, infos, check_existence):
-        """Special case for the saves, inis, mods and bsas.
+    def _delete_refresh(self, infos):
+        """Only called from refresh - should be inlined but for ModInfos.
         :param infos: the infos corresponding to deleted items."""
-        paths_to_keys = {inf.abs_path: inf.fn_key for inf in infos}
-        if check_existence:
-            for filePath in list(paths_to_keys):
-                if filePath.exists():
-                    del paths_to_keys[filePath]  # item was not deleted
-        self._notify_bain(del_set={*paths_to_keys})
-        del_keys = list(paths_to_keys.values())
+        del_keys = [inf.fn_key for inf in infos]
         for del_fn in del_keys:
             self.pop(del_fn, None)
             self.corrupted.pop(del_fn, None)
@@ -1968,13 +1945,11 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
-    def delete_refresh(self, infos, check_existence):
-        del_keys = super().delete_refresh(infos, check_existence)
-        if check_existence: # DataStore.delete() path - re-add default tweaks
-            for k, default_info in self._missing_default_inis():
-                self[k] = default_info  # type: DefaultIniInfo
-                default_info.reset_status()
-        return del_keys
+    def check_exists(self, infos):
+        regular_tweaks = []
+        def_tweaks = {inf for inf in infos if inf.fn_key in
+                      self._default_tweaks or regular_tweaks.append(inf)}
+        return {*def_tweaks, *super().check_exists(regular_tweaks)}
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Can't remove default tweaks
@@ -2940,14 +2915,11 @@ class ModInfos(TableFileInfos):
         return rdata_ren
 
     #--Delete
-    def delete_refresh(self, infos, check_existence):
-        # adapted from refresh() (avoid refreshing from the data directory)
-        del_keys = super().delete_refresh(infos, check_existence)
-        # we need to call deactivate to deactivate dependents
+    def _delete_refresh(self, infos):
+        del_keys = super()._delete_refresh(infos)
+        # we need to call deactivate to deactivate dependents - refresh handles
+        # saving the load order - can't do in delete_op (due to check_exists)
         self.lo_deactivate(*del_keys) # no-op if empty
-        if del_keys and check_existence: # delete() path - refresh caches
-            self._lo_caches_remove_mods(del_keys)
-            self.cached_lo_save_all() # will perform the needed refreshes
         return del_keys
 
     def filter_essential(self, fn_items: Iterable[FName]):

@@ -41,6 +41,7 @@ import traceback as _traceback
 import webbrowser
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from itertools import chain
@@ -1857,7 +1858,7 @@ class AFileInfo(AFile, ListInfo):
 
     def move_info(self, destDir):
         """Hasty method used in UIList.hide(). Will overwrite! The client is
-        responsible for calling delete_refresh of the data store."""
+        responsible for calling _delete_refresh of the data store."""
         self.abs_path.moveTo(destDir.join(self.fn_key))
 
     def get_rename_paths(self, newName):
@@ -1880,6 +1881,30 @@ class AFileInfo(AFile, ListInfo):
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
         return super(AFile, self).__repr__()
+
+#------------------------------------------------------------------------------
+@dataclass(slots=True)
+class RefrIn:
+    """WIP! requesting refresh from the data store."""
+    new_or_present: field(default_factory=dict)
+    del_infos: field(default_factory=set)
+
+    @classmethod
+    def from_tabled_infos(cls, fn_info_dict, *, extra_attrs=None,
+                          exclude: frozenset | True = frozenset()):
+        """Copy persistent attributes from info objects (or dict) - info
+        objects are discarded, so we request refresh for *adding* infos."""
+        try:
+            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
+                    for k, v in fn_info_dict.items()}
+        except AttributeError: # ScreenInfos
+            rinf = {k: (None, {}) for k, v in fn_info_dict.items()}
+        for k, v in (extra_attrs or {}).items():
+            try:
+                rinf[k][1]['att_val'].update(v)
+            except KeyError:
+                rinf[k] = None, {'att_val': v}
+        return cls(rinf, set())
 
 #------------------------------------------------------------------------------
 class PickleDict(object):

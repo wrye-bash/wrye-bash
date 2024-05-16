@@ -30,8 +30,7 @@ from datetime import timedelta
 from .dialogs import DeleteBPPartsEditor
 from .. import balt, bass, bolt, bosh, bush, env, wrye_text
 from ..balt import Resources
-from ..bolt import GPath_no_norm, SubProgress
-from ..bosh import RefrIn
+from ..bolt import GPath_no_norm, RefrIn, SubProgress
 from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
     SkipError
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
