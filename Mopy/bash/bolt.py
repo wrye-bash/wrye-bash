@@ -41,6 +41,7 @@ import traceback as _traceback
 import webbrowser
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from itertools import chain
@@ -1857,7 +1858,7 @@ class AFileInfo(AFile, ListInfo):
 
     def move_info(self, destDir):
         """Hasty method used in UIList.hide(). Will overwrite! The client is
-        responsible for calling delete_refresh of the data store."""
+        responsible for calling _delete_refresh of the data store."""
         self.abs_path.moveTo(destDir.join(self.fn_key))
 
     def get_rename_paths(self, newName):
@@ -1880,6 +1881,13 @@ class AFileInfo(AFile, ListInfo):
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
         return super(AFile, self).__repr__()
+
+#------------------------------------------------------------------------------
+@dataclass(slots=True)
+class RefrIn:
+    """WIP! requesting refresh from the data store."""
+    new_or_present: field(default_factory=dict)
+    del_infos: field(default_factory=set)
 
 #------------------------------------------------------------------------------
 class PickleDict(object):
