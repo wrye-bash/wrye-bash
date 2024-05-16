@@ -1456,6 +1456,9 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
+    def refresh(self, refresh_infos: RefrIn | list[FName] | bool = True,
+                **kwargs): raise NotImplementedError
+
     @final
     def delete(self, delete_keys, *, recycle=True):
         """Deletes member file(s)."""
@@ -1480,20 +1483,6 @@ class DataStore(DataDict):
     def check_exists(self, infos):
         """Lift your skirts, we are entering the realm of #241."""
         return {inf for inf in infos if not inf.abs_path.exists()}
-
-    def filter_essential(self, fn_items: Iterable[FName]):
-        """Filters essential files out of the specified filenames. Returns the
-        remaining ones as a dict, mapping file names to file infos. Useful to
-        determine whether a file will cause instability when deleted/hidden."""
-        return {k: self.get(k) for k in fn_items}
-
-    def filter_unopenable(self, fn_items: Iterable[FName]):
-        """Filter unopenable files out of the specified filenames. Returns the
-        remaining ones as a dict, mapping file names to file infos."""
-        return {k: self[k] for k in fn_items}
-
-    def refresh(self, refresh_infos=True, **kwargs): raise NotImplementedError
-    def save_pickle(self): pass # for Screenshots
 
     def rename_operation(self, member_info, newName, rdata_ren,
                          store_refr=None):
@@ -1523,6 +1512,17 @@ class DataStore(DataDict):
             rdata_ren.ren_paths.update(ren)
         return rdata_ren
 
+    def filter_essential(self, fn_items: Iterable[FName]):
+        """Filters essential files out of the specified filenames. Returns the
+        remaining ones as a dict, mapping file names to file infos. Useful to
+        determine whether a file will cause instability when deleted/hidden."""
+        return {k: self.get(k) for k in fn_items}
+
+    def filter_unopenable(self, fn_items: Iterable[FName]):
+        """Filter unopenable files out of the specified filenames. Returns the
+        remaining ones as a dict, mapping file names to file infos."""
+        return {k: self[k] for k in fn_items}
+
     @property
     def bash_dir(self) -> Path:
         """Return the folder where Bash persists its data.Create it on init!"""
@@ -1541,6 +1541,8 @@ class DataStore(DataDict):
             pass
         return forward_compat_path_to_fn_list(
             {d.stail for d in destinations if d.exists()}, ret_type=set)
+
+    def save_pickle(self): pass # for Screenshots
 
 @dataclass(slots=True)
 class RefrData:
@@ -1641,7 +1643,7 @@ class _AFileInfos(DataStore):
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
-        del_infos = {inf for inf in [*self.values(), *self.corrupted.values()]
+        delinfos = {inf for inf in [*self.values(), *self.corrupted.values()]
                      if inf.fn_key not in inodes}
         new_or_present = {}
         for k, kws in inodes.items():
@@ -1652,7 +1654,7 @@ class _AFileInfos(DataStore):
                 new_or_present[k] = (None, kws)
             elif not cor: # for default tweaks with a corrupted copy
                 new_or_present[k] = (self.get(k), kws)
-        return new_or_present, del_infos
+        return new_or_present, delinfos
 
     def _delete_refresh(self, infos):
         """Only called from refresh - should be inlined but for ModInfos.
@@ -1867,6 +1869,54 @@ class INIInfos(TableFileInfos):
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings[u'bash.ini.choice']]
 
+    def refresh(self, refresh_infos=True, *, booting=False,
+                refresh_target=True, **kwargs):
+        rdata = super().refresh(refresh_infos, booting=booting)
+        # re-add default tweaks (booting / restoring a default over copy,
+        # delete should take care of this but needs to update redraw...)
+        for k, default_info in ((k1, v) for k1, v in
+                self._default_tweaks.items() if k1 not in self):
+            self[k] = default_info  # type: DefaultIniInfo
+            if k in rdata.to_del:  # we restore default over copy
+                rdata.redraw.add(k)
+                default_info.reset_status()
+            else: # booting
+                rdata.to_add.add(k)
+        rdata.ini_changed = refresh_target and (
+                    self.ini.updated or self.ini.do_update())
+        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
+            self.ini.updated = False
+            for ini_info in self.values(): ini_info.reset_status()
+        return rdata
+
+    def check_exists(self, infos):
+        regular_tweaks = []
+        def_tweaks = {inf for inf in infos if inf.fn_key in
+                      self._default_tweaks or regular_tweaks.append(inf)}
+        return {*def_tweaks, *super().check_exists(regular_tweaks)}
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        # Can't remove default tweaks
+        return {k: v for k in fn_items if # return None for corrupted
+                not (v := self.get(k)) or not v.is_default_tweak}
+
+    def filter_unopenable(self, fn_items: Iterable[FName]):
+        # Can't open default tweaks, they are entirely virtual
+        return self.filter_essential(fn_items)
+
+    @property
+    def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
+
+    # _AFileInfos overrides ---------------------------------------------------
+    def _diff_dir(self, inodes):
+        old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
+                         *self.corrupted.values()}
+        new_or_present, delinfos = super()._diff_dir(inodes)
+        # if iinf is a default tweak a file has replaced it - set it to None
+        new_or_present = {k: (inf and (None if inf.is_default_tweak else inf),
+            kws) for k, (inf, kws) in new_or_present.items()}
+        return new_or_present, delinfos & old_ini_infos # drop default tweaks
+
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         parts = os.path.split(os.fspath(data_path))
         # 1. Must have a single parent folder
@@ -1876,9 +1926,11 @@ class INIInfos(TableFileInfos):
             return super().data_path_to_info(parts[1], would_be)
         return None
 
+    # Target INI handling -----------------------------------------------------
     @property
     def ini(self):
         return self._ini
+
     @ini.setter
     def ini(self, ini_path):
         """:type ini_path: bolt.Path"""
@@ -1911,53 +1963,6 @@ class INIInfos(TableFileInfos):
         bass.settings[u'bash.ini.choices'] = OrderedDict(
             # convert stray Path instances back to unicode
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
-
-    def _diff_dir(self, inodes):
-        old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
-                         *self.corrupted.values()}
-        new_or_present, del_infos = super()._diff_dir(inodes)
-        # if iinf is a default tweak a file has replaced it - set it to None
-        new_or_present = {k: (inf and (None if inf.is_default_tweak else inf),
-            kws) for k, (inf, kws) in new_or_present.items()}
-        return new_or_present, del_infos & old_ini_infos # drop default tweaks
-
-    def refresh(self, refresh_infos=True, *, booting=False,
-                refresh_target=True, **kwargs):
-        rdata = super().refresh(refresh_infos, booting=booting)
-        # re-add default tweaks (booting / restoring a default over copy,
-        # delete should take care of this but needs to update redraw...)
-        for k, default_info in ((k1, v) for k1, v in
-                self._default_tweaks.items() if k1 not in self):
-            self[k] = default_info  # type: DefaultIniInfo
-            if k in rdata.to_del:  # we restore default over copy
-                rdata.redraw.add(k)
-                default_info.reset_status()
-            else: # booting
-                rdata.to_add.add(k)
-        rdata.ini_changed = refresh_target and (
-                    self.ini.updated or self.ini.do_update())
-        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
-            self.ini.updated = False
-            for ini_info in self.values(): ini_info.reset_status()
-        return rdata
-
-    @property
-    def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
-
-    def check_exists(self, infos):
-        regular_tweaks = []
-        def_tweaks = {inf for inf in infos if inf.fn_key in
-                      self._default_tweaks or regular_tweaks.append(inf)}
-        return {*def_tweaks, *super().check_exists(regular_tweaks)}
-
-    def filter_essential(self, fn_items: Iterable[FName]):
-        # Can't remove default tweaks
-        return {k: v for k in fn_items if # return None for corrupted
-                not (v := self.get(k)) or not v.is_default_tweak}
-
-    def filter_unopenable(self, fn_items: Iterable[FName]):
-        # Can't open default tweaks, they are entirely virtual
-        return self.filter_essential(fn_items)
 
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
