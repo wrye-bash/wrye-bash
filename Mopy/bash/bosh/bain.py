@@ -1867,11 +1867,11 @@ class InstallersData(DataStore):
         return cls.file_pattern.search(fileName)
 
     def refresh(self, *args, **kwargs):
-        #unused need to use in delete - (eventually) align with _AFileInfos one
+        """Only used in delete - align with _AFileInfos one."""
         return self.irefresh(*args, **kwargs)
 
     def irefresh(self, refresh_info: RefrIn | list | None = None, *,
-                 what='DIONSC', progress=None, fullRefresh=False) -> RefrData:
+        what='DIONSC', progress=None, fullRefresh=False, **kwargs) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
@@ -2034,16 +2034,9 @@ class InstallersData(DataStore):
                    inst.is_marker or toDelete.append(inst)] # or None
         super()._delete_operation(toDelete, recycle=recycle)
         for m in markers: del self[m]
-
-    def delete_refresh(self, infos, check_existence):
-        del_insts = {inst for inst in infos if not inst.is_marker}
-        markers = len(del_insts) < len(infos)
-        if check_existence:
-            del_insts = {i for i in del_insts if not i.abs_path.exists()}
-        if del_insts: # markers are popped in _delete_operation
-            self.refresh_i(RefrIn({}, del_infos=del_insts)) ##:WIP!! ({} ...)
-        elif markers:
-            self.refreshOrder()
+        if len(infos) == len(markers): # only markers - just refresh order
+            self.refreshOrder() # do the refresh here if we only have markers
+        infos[:] = toDelete # eliminate markers from the list, we are done
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
@@ -2933,7 +2926,7 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_keys in store_del.items():
-                store.delete_refresh(del_keys, check_existence=False)
+                store.refresh(RefrIn({}, del_keys), unlock_lo=True)
                 refresh_ui |= store.unique_store_key.DO()
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:
