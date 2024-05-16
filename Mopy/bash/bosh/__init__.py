@@ -1487,7 +1487,7 @@ class DataStore(DataDict):
         remaining ones as a dict, mapping file names to file infos."""
         return {k: self[k] for k in fn_items}
 
-    def refresh(self, **kwargs): raise NotImplementedError
+    def refresh(self, refresh_infos=True, **kwargs): raise NotImplementedError
     def save_pickle(self): pass # for Screenshots
 
     def rename_operation(self, member_info, newName, rdata_ren,
@@ -1599,7 +1599,7 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos=True, booting=False):
+    def refresh(self, refresh_infos=True, *, booting=False):
         """Refresh from file directory."""
         rdata = self._rdata_type()
         new_or_present, del_infos = self._list_store_dir(refresh_infos)
@@ -1632,13 +1632,13 @@ class _AFileInfos(DataStore):
             self._notify_bain(altered={self[n].abs_path for n in alt})
         return rdata
 
-    def _list_store_dir(self, refresh_infos):
-        if isinstance(refresh_infos, RefrIn):
-            return refresh_infos.new_or_present, refresh_infos.del_infos
-        if refresh_infos is False:
+    def _list_store_dir(self, refresh_input):
+        if isinstance(refresh_input, RefrIn):
+            return refresh_input.new_or_present, refresh_input.del_infos
+        if refresh_input is False:
             return {}, set()
-        if isinstance(refresh_infos, (list, set, tuple)):
-            return {k: (None, {}) for k in refresh_infos}, set()
+        if isinstance(refresh_input, (list, set, tuple)):
+            return {k: (None, {}) for k in refresh_input}, set()
         file_matches_store = self.rightFileType
         inodes = FNDict()
         with os.scandir(self.store_dir) as it: # performance intensive
@@ -1727,7 +1727,7 @@ class TableFileInfos(_AFileInfos):
         return bolt.DataTable(self.bash_dir.join('Table.dat'),
                               load_pickle=True).pickled_data
 
-    def refresh(self, refresh_infos=True, *args, **kwargs):
+    def refresh(self, refresh_infos=True, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
             new_or_present, del_infos = self._list_store_dir(True)
@@ -1736,7 +1736,7 @@ class TableFileInfos(_AFileInfos):
                 if props := table.get(fn):
                     kws['att_val'] = props
             refresh_infos = RefrIn(new_or_present, del_infos)
-        return super().refresh(refresh_infos, *args, **kwargs)
+        return super().refresh(refresh_infos, **kwargs)
 
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
@@ -1946,7 +1946,7 @@ class INIInfos(TableFileInfos):
         return ((k, v) for k, v in self._default_tweaks.items() if
                 k not in self)
 
-    def refresh(self, refresh_infos=True, booting=False, *,
+    def refresh(self, refresh_infos=True, *, booting=False,
                 refresh_target=True, **kwargs):
         rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
@@ -2239,7 +2239,7 @@ class ModInfos(TableFileInfos):
             (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
             inodes.items()))
 
-    def refresh(self, refresh_infos=True, booting=False, *, unlock_lo=False,
+    def refresh(self, refresh_infos=True, *, booting=False, unlock_lo=False,
                 insert_after: FNDict[FName, FName] | None = None, **kwargs):
         """Update file data for additions, removals and date changes.
         See usages for how to use the refresh_infos and unlock_lo params.
@@ -3173,7 +3173,7 @@ class SaveInfos(TableFileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos=True, booting=False, *, save_dir=None,
+    def refresh(self, refresh_infos=True, *, booting=False, save_dir=None,
                 do_swap=None, **kwargs):
         if not booting: # else we just called __init__
             self.set_store_dir(save_dir, do_swap)
@@ -3379,9 +3379,9 @@ class ScreenInfos(_AFileInfos):
             return None
         return super().data_path_to_info(filename, would_be)
 
-    def refresh(self, refresh_infos=True, booting=False, **kwargs):
+    def refresh(self, refresh_infos=True, *, booting=False, **kwargs):
         self.set_store_dir()
-        return super().refresh(refresh_infos, booting)
+        return super().refresh(refresh_infos, booting=booting)
 
 #------------------------------------------------------------------------------
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter

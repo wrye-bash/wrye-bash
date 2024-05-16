@@ -1880,13 +1880,12 @@ class InstallersData(DataStore):
         ##: What about projects? Do we have to just return True here?
         return cls.file_pattern.search(fileName)
 
-    def refresh(self, *args, **kwargs): ##: we should not be using this, track
+    def refresh(self, *args, **kwargs):
+        #unused need to use in delete - (eventually) align with _AFileInfos one
         return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
-            # installers refresh context parameters
-            refresh_info: RefrData | None = None, *,
-            added_archives: _fnames = ()) -> RefrData:
+    def irefresh(self, refresh_info: RefrIn | list | None = None, *,
+                 what='DIONSC', progress=None, fullRefresh=False) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
@@ -1909,24 +1908,13 @@ class InstallersData(DataStore):
             changes |= self._refresh_from_data_dir(progress, fullRefresh)
         if 'I' in what:
             progress = progress or bolt.Progress()
-            # if we are passed a refresh_info, update_installers was
-            # already called, and we only need to update for deleted
-            if refresh_info is None:
-                if added_archives: # if added we are passed existing installers
-                    refresh_info = RefrData(to_add=set(added_archives))
-                    # call update_installers to update those
-                    dirs_files = set(added_archives), ()
-                else: # we really need to scan installers
-                    dirs_files = top_level_items(bass.dirs['installers'])
-                if dirs_files:
-                    progress(0, _('Scanning Packages…'))
-                    refresh_info = self.update_installers(*dirs_files,
-                        fullRefresh, progress, refresh_info=refresh_info,
-                    fresh_load=fresh_load) # avoid re-stating freshly unpickled
+            refresh_info = self._list_store_dir(refresh_info, fresh_load,
+                                                fullRefresh, progress)
             for del_item in refresh_info.to_del:
                 self.pop(del_item)
             changes |= bool(refresh_info)
-        if refresh_info is None: refresh_info = RefrData()
+        elif refresh_info is None: # 'I' in what will set it to a RefrData instance
+            refresh_info = RefrData() # None only when called from ShowPanel (...)
         if 'O' in what or changes:
             reordered = self.refreshOrder()
             refresh_info.redraw.update(reordered)
@@ -1957,11 +1945,34 @@ class InstallersData(DataStore):
         if changes: self.hasChanged = True
         return refresh_info
 
-    def refresh_ns(self, *args, **kwargs):
-        self.irefresh(*args, **kwargs, what='NS')
+    def _list_store_dir(self, refresh_info, fresh_load, fullRefresh, progress):
+        """The BAIN version - illustrates the differences between _AFileInfos
+        and InstallersData refresh()."""
+        # if we are passed a RefrIn, we only need to update for deleted
+        if isinstance(refresh_info, RefrIn): ##: use RefrIn all along
+            return RefrData(to_del={i.fn_key for i in refresh_info.del_infos})
+        dirs_files = None
+        if isinstance(refresh_info, list): # we are passed existing installers
+            refresh_info = RefrData(to_add=set(refresh_info))
+            # call update_installers to update those
+            dirs_files = refresh_info.to_add, ()
+        elif refresh_info is None: # we really need to scan installers
+            dirs_files = top_level_items(bass.dirs['installers'])
+        if dirs_files:
+            progress(0, _('Scanning Packages…'))
+            refresh_info = self.update_installers(*dirs_files, fullRefresh,
+                progress, refresh_info=refresh_info,
+                fresh_load=fresh_load) # avoid re-stating freshly unpickled
+        return refresh_info
 
-    def refresh_n(self, *args, **kwargs):
-        self.irefresh(*args, **kwargs, what='N')
+    def refresh_ns(self, progress=None):
+        self.irefresh(what='NS', progress=progress)
+
+    def refresh_n(self):
+        self.irefresh(what='N')
+
+    def refresh_i(self, refresh_info: RefrIn | list):
+        self.irefresh(refresh_info, what='I')
 
     def __load(self, progress):
         progress = progress or bolt.Progress()
@@ -2034,13 +2045,12 @@ class InstallersData(DataStore):
         for m in markers: del self[m]
 
     def delete_refresh(self, infos, check_existence):
-        del_insts = [inst for inst in infos if not inst.is_marker]
+        del_insts = {inst for inst in infos if not inst.is_marker}
         markers = len(del_insts) < len(infos)
         if check_existence:
             del_insts = {i for i in del_insts if not i.abs_path.exists()}
         if del_insts: # markers are popped in _delete_operation
-            self.irefresh(what='I', refresh_info=RefrData({
-                i.fn_key for i in del_insts}))
+            self.refresh_i(RefrIn({}, del_infos=del_insts)) ##:WIP!! ({} ...)
         elif markers:
             self.refreshOrder()
 
@@ -2054,7 +2064,7 @@ class InstallersData(DataStore):
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)
-        self.irefresh(what='I', added_archives=moved)
+        self.refresh_i(moved)
         return moved
 
     def reorder_packages(self, partial_order: list[FName]) -> str:
@@ -2166,7 +2176,7 @@ class InstallersData(DataStore):
                 # installer.hasBCF = False
                 installers.remove(installer)
             finally: bcfFile.remove()
-        self.irefresh(what='I', added_archives=dest_archives)
+        self.refresh_i(dest_archives)
         return dest_archives, [x.fn_key for x in installers]
 
     def apply_converter(self, converter, destArchive, progress, msg,
@@ -2175,13 +2185,13 @@ class InstallersData(DataStore):
         try:
             converter.apply(destArchive, crc_installer, progress,
                             embedded=installer.crc if installer else 0)
-            #--Add the new archive to Bash
-            if destArchive not in self:
-                self[destArchive] = InstallerArchive(destArchive)
+            try:
+                iArchive = self[destArchive]
+                reorder = False
+            except KeyError: #--Add the new archive to Bash
+                iArchive = self[destArchive] = InstallerArchive(destArchive)
                 reorder = True
-            else: reorder = False
             #--Apply settings from the BCF to the new InstallerArchive
-            iArchive = self[destArchive]
             converter.applySettings(iArchive)
             if reorder and position >= 0:
                 self.moveArchives([destArchive], position)
@@ -2190,7 +2200,7 @@ class InstallersData(DataStore):
             if dest_archives is not None: # caller must call irefresh on those!
                 dest_archives.append(destArchive)
             else:
-                self.irefresh(what='I', added_archives=[destArchive])
+                self.refresh_i([destArchive])
                 return iArchive
         except StateError as e:
             deprint(msg, traceback=True)
