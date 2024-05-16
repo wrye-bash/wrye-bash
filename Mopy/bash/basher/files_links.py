@@ -24,8 +24,7 @@
 from .. import balt, bass, bolt, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bass import Store
-from ..bolt import FNDict, GPath_no_norm
-from ..bosh import RefrIn
+from ..bolt import FNDict, GPath_no_norm, RefrIn
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 from ..wbtemp import TempFile

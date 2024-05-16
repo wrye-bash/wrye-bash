@@ -34,7 +34,7 @@ from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
 from ..bass import Store
-from ..bolt import FName, GPath, Path, SubProgress
+from ..bolt import FName, GPath, Path, RefrIn, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
@@ -663,8 +663,9 @@ class Save_Move(ChoiceLink):
             count = self._move_saves(destDir, profile)
         finally:
             if not self.copyMode: # files moved to other profile, refresh
-                moved = bosh.saveInfos.delete_refresh(self.iselected_infos(),
-                                                      check_existence=True)
+                if moved := bosh.saveInfos.check_exists(
+                        self.iselected_infos()):
+                    bosh.saveInfos.refresh(RefrIn({}, moved))
                 self.window.RefreshUI(to_del=moved)
         profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
         msg = (_('%(num_save_files)d files copied to %(save_profile)s.')

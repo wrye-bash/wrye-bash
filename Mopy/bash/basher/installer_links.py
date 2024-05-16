@@ -47,8 +47,8 @@ from .. import archives, balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..bass import Store
-from ..bolt import FName, LogFile, SubProgress, deprint, round_size
-from ..bosh import InstallerConverter, converters, RefrIn
+from ..bolt import FName, LogFile, RefrIn, SubProgress, deprint, round_size
+from ..bosh import InstallerConverter, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 from ..wbtemp import cleanup_temp_dir

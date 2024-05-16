@@ -41,8 +41,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
-    GPath_no_norm
-from ..bosh import RefrIn
+    GPath_no_norm, RefrIn
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
