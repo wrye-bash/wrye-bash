@@ -1464,7 +1464,7 @@ class DataStore(DataDict):
         finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
                   self.filter_essential(delete_keys).items()]
         try:
-            self._delete_operation(finfos, recycle=recycle)
+            self._delete_operation(finfos, recycle)
         finally: # markers are popped from finfos - we refreshed in _delete_op
             if finfos := self.check_exists(finfos):
                 # ok to suppose the only lo modification is due to deleted
@@ -1472,7 +1472,7 @@ class DataStore(DataDict):
                 self.refresh(RefrIn({}, del_infos=finfos), what='I',
                              unlock_lo=True)
 
-    def _delete_operation(self, finfos: list, *, recycle=True):
+    def _delete_operation(self, finfos: list, recycle):
         if abs_del_paths := [
                 *chain.from_iterable(inf.delete_paths() for inf in finfos)]:
             env.shellDelete(abs_del_paths, recycle=recycle)
@@ -1919,16 +1919,13 @@ class INIInfos(TableFileInfos):
             kws) for k, (inf, kws) in new_or_present.items()}
         return new_or_present, del_infos & old_ini_infos # drop default tweaks
 
-    def _missing_default_inis(self):
-        return ((k, v) for k, v in self._default_tweaks.items() if
-                k not in self)
-
     def refresh(self, refresh_infos=True, *, booting=False,
                 refresh_target=True, **kwargs):
         rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
         # delete should take care of this but needs to update redraw...)
-        for k, default_info in self._missing_default_inis():
+        for k, default_info in ((k1, v) for k1, v in
+                self._default_tweaks.items() if k1 not in self):
             self[k] = default_info  # type: DefaultIniInfo
             if k in rdata.to_del:  # we restore default over copy
                 rdata.redraw.add(k)
@@ -2885,14 +2882,16 @@ class ModInfos(TableFileInfos):
         return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
 
     #--Mod move/delete/rename -------------------------------------------------
-    def _lo_caches_remove_mods(self, to_remove):
-        """Remove the specified mods from _lo_wip and _active_wip caches."""
-        # Use set to speed up lookups and note that these are strings (at least
-        # when they come from delete_refresh, check others?)
-        to_remove = {FName(x) for x in to_remove}
-        # Remove mods from cache
-        self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
-        self._active_wip = [x for x in self._active_wip if x not in to_remove]
+    def _lo_move_mod(self, old_name, new_name, do_activate, deactivate=False):
+        """Move new_name to the place of old_name and handle active state."""
+        oldIndex = self._lo_wip.index(old_name)
+        self._lo_wip[oldIndex] = new_name
+        self._active_wip = [x for x in self._active_wip if x != old_name]
+        if do_activate:
+            self.lo_activate(new_name)
+        elif deactivate:
+            self.lo_deactivate(new_name)
+        self.cached_lo_save_all()
 
     def rename_operation(self, member_info, newName, rdata_ren,
                          store_refr=None):
@@ -2902,16 +2901,12 @@ class ModInfos(TableFileInfos):
             self.lo_deactivate(member_info.fn_key)
         rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
         # rename in load order caches
-        oldIndex = self._lo_wip.index(old_key := next(iter(rdata_ren.renames)))
-        self._lo_caches_remove_mods([old_key])
-        self._lo_wip.insert(oldIndex, newName)
-        if isSelected: self.lo_activate(newName)
-        # Save to disc (load order and plugins.txt)
-        self.cached_lo_save_all()
+        self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
+                          FName(newName), isSelected)
         # Update linked BP parts if the parent BP got renamed
         for mod_inf in self.values():
             if mod_inf.get_table_prop('bp_split_parent') == old_key:
-                mod_inf.set_table_prop('bp_split_parent', newName)
+                mod_inf.set_table_prop('bp_split_parent', str(newName))
         return rdata_ren
 
     #--Delete
@@ -2993,16 +2988,11 @@ class ModInfos(TableFileInfos):
         master_inf = self[master_esm]
         # set mtimes to previous respective values
         master_inf.setmtime(master_time)
-        self[move_to].setmtime(new_info_time)
-        oldIndex = self._lo_wip.index(copy_from)
-        self._lo_caches_remove_mods([copy_from])
-        self._lo_wip.insert(oldIndex, move_to)
-        (self.lo_activate if is_new_info_active else self.lo_deactivate)(
-            move_to)
         if swapping_a_ghost: # we need to unghost the master esm
             master_inf.setGhost(False)
-        # Save to disc (load order and plugins.txt)
-        self.cached_lo_save_all()
+        self[move_to].setmtime(new_info_time)
+        self._lo_move_mod(copy_from, move_to, is_new_info_active,
+                          not is_new_info_active) # always deactivate?
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = set_version
