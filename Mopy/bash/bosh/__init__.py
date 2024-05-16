@@ -2075,124 +2075,6 @@ class ModInfos(TableFileInfos):
         modInfos = self ##: hack needed in ModInfo.readHeader
         super().__init__(ModInfo)
 
-    def _update_info_sets(self):
-        """Refresh bashed_patches/imported/merged - active state changes and/or
-        removal/addition of plugins should trigger a refresh."""
-        bps, self.bashed_patches = self.bashed_patches, {
-            mname for mname, modinf in self.items() if modinf.isBP()}
-        mrgd, imprtd = self.merged, self.imported
-        active_patches = {bp for bp in self.bashed_patches if
-               load_order.cached_is_active(bp)}
-        self.merged, self.imported = self.getSemiActive(active_patches)
-        return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
-                *(imprtd ^ self.imported)}
-
-    # Load order API for the rest of Bash to use - if the load order or
-    # active plugins changed, those methods run a refresh on modInfos data
-    @_lo_cache
-    def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
-                         unlock_lo=False):
-        # Needed for BAIN, which may have to reorder installed plugins
-        with load_order.Unlock(unlock_lo):
-            return load_order.refresh_lo(cached=not forceRefresh,
-                                         cached_active=not forceActive)
-
-    @_lo_cache
-    def cached_lo_save_active(self, active=None):
-        """Write data to Plugins.txt file.
-
-        Always call AFTER setting the load order - make sure we unghost
-        ourselves so ctime of the unghosted mods is not set."""
-        return load_order.save_lo(None, load_order.get_ordered(
-            self._active_wip if active is None else active))
-
-    @_lo_cache
-    def _cached_lo_save_lo(self):
-        """Save load order when active did not change."""
-        return load_order.save_lo(self._lo_wip)
-
-    @_lo_cache
-    def cached_lo_save_all(self):
-        """Save load order and plugins.txt"""
-        active_wip_set = set(self._active_wip)
-        dex = {x: i for i, x in enumerate(self._lo_wip) if
-               x in active_wip_set}
-        self._active_wip.sort(key=dex.__getitem__) # order in their load order
-        return load_order.save_lo(self._lo_wip, acti=self._active_wip)
-
-    @_lo_cache
-    def undo_load_order(self): return load_order.undo_load_order()
-
-    @_lo_cache
-    def redo_load_order(self): return load_order.redo_load_order()
-
-    #--Load Order utility methods - be sure cache is valid when using them
-    def _cached_lo_insert_after(self, previous, new_mod):
-        new_mod = self[new_mod].fn_key ##: new_mod is not always an FName
-        if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
-        dex = self._lo_wip.index(previous)
-        if not bush.game.using_txt_file:
-            t_prev = self[previous].ftime
-            if self._lo_wip[-1] == previous: # place it after the last mod
-                new_time = t_prev + 60
-            else:
-                # try to put it right before the next mod to avoid resetting
-                # ftimes of all subsequent mods - note (t_prev >= t_next)
-                # might be True at the esm boundary, we could be smarter here
-                t_next = self[self._lo_wip[dex + 1]].ftime
-                t_prev += 1 # add one second
-                new_time = t_prev if t_prev < t_next else None
-            if new_time is not None:
-                self[new_mod].setmtime(new_time)
-        self._lo_wip[dex + 1:dex + 1] = [new_mod]
-
-    def cached_lo_last_esm(self):
-        last_esm = self._master_esm
-        for mod in self._lo_wip[1:]:
-            if not bush.game.esm_flag.cached_type(self[mod]):
-                return last_esm
-            last_esm = mod
-        return last_esm
-
-    def cached_lo_insert_at(self, first, modlist):
-        # hasty method for Mod_OrderByName
-        mod_set = set(modlist)
-        first_dex = self._lo_wip.index(first)
-        # Begin by splitting out the remainder
-        rest = self._lo_wip[first_dex:]
-        del self._lo_wip[first_dex:]
-        # Clean out any duplicates left behind, in case we're moving forwards
-        self._lo_wip[:] = [x for x in self._lo_wip if x not in mod_set]
-        # Append the remainder, then insert the requested plugins
-        for mod in rest:
-            if mod in mod_set: continue
-            self._lo_wip.append(mod)
-        self._lo_wip[first_dex:first_dex] = modlist
-
-    def masterWithVersion(self, master_name):
-        if master_name == 'Oblivion.esm' and (curr_ver := self.voCurrent):
-            master_name += f' [{curr_ver}]'
-        return master_name
-
-    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
-        # Calculating indexes through order.index() cause we may be called in
-        # a row before saving the modified load order
-        order = self._lo_wip
-        newPos = order.index(dropItem)
-        if newPos <= 0: return False
-        start = order.index(firstItem)
-        stop = order.index(lastItem) + 1  # excluded
-        # Can't move the game's master file anywhere else but position 0
-        if self._master_esm in order[start:stop]: return False
-        # List of names to move removed and then reinserted at new position
-        toMove = order[start:stop]
-        del order[start:stop]
-        order[newPos:newPos] = toMove
-        return True
-
-    @property
-    def bash_dir(self): return dirs[u'modsBash']
-
     #--Refresh-----------------------------------------------------------------
     def _diff_dir(self, inodes):
         """ModInfos.rightFileType matches ghosts - filter those out from keys
@@ -2261,6 +2143,18 @@ class ModInfos(TableFileInfos):
         self._recalc_dependents()
         return {*self._refresh_active_no_cp1252(), *self._update_info_sets(),
                 *self._recalc_real_indices(), *self._refreshMergeable()}
+
+    def _update_info_sets(self):
+        """Refresh bashed_patches/imported/merged - active state changes and/or
+        removal/addition of plugins should trigger a refresh."""
+        bps, self.bashed_patches = self.bashed_patches, {
+            mname for mname, modinf in self.items() if modinf.isBP()}
+        mrgd, imprtd = self.merged, self.imported
+        active_patches = {bp for bp in self.bashed_patches if
+               load_order.cached_is_active(bp)}
+        self.merged, self.imported = self.getSemiActive(active_patches)
+        return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
+                *(imprtd ^ self.imported)}
 
     def _refresh_mod_inis_and_strings(self):
         """Refresh ini and str files from Data directory. Those need to be
@@ -2453,6 +2347,125 @@ class ModInfos(TableFileInfos):
                 pairs[mod_key] = inf.calculate_crc(recalculate=True)
         return pairs
 
+    # Rest of DataStore overrides ---------------------------------------------
+    def _delete_refresh(self, infos):
+        del_keys = super()._delete_refresh(infos)
+        # we need to call deactivate to deactivate dependents - refresh handles
+        # saving the load order - can't do in delete_op (due to check_exists)
+        self.lo_deactivate(*del_keys) # no-op if empty
+        return del_keys
+
+    def rename_operation(self, member_info, newName, rdata_ren,
+                         store_refr=None):
+        """Renames member file from oldName to newName."""
+        isSelected = load_order.cached_is_active(member_info.fn_key)
+        if isSelected:
+            self.lo_deactivate(member_info.fn_key)
+        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
+        # rename in load order caches
+        self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
+                          FName(newName), isSelected)
+        # Update linked BP parts if the parent BP got renamed
+        for mod_inf in self.values():
+            if mod_inf.get_table_prop('bp_split_parent') == old_key:
+                mod_inf.set_table_prop('bp_split_parent', str(newName))
+        return rdata_ren
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        # Removing the game master breaks everything, for obvious reasons
+        return {k: self.get(k) for k in fn_items if k != self._master_esm}
+
+    def move_infos(self, sources, destinations, window, bash_frame):
+        moved = super().move_infos(sources, destinations, window, bash_frame)
+        self.refresh(moved)
+        bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
+        return moved
+
+    @property
+    def bash_dir(self): return dirs[u'modsBash']
+
+    # Load order API for the rest of Bash to use - if the load order or
+    # active plugins changed, those methods run a refresh on modInfos data
+    @_lo_cache
+    def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
+                         unlock_lo=False):
+        # Needed for BAIN, which may have to reorder installed plugins
+        with load_order.Unlock(unlock_lo):
+            return load_order.refresh_lo(cached=not forceRefresh,
+                                         cached_active=not forceActive)
+
+    @_lo_cache
+    def cached_lo_save_active(self, active=None):
+        """Write data to Plugins.txt file.
+
+        Always call AFTER setting the load order - make sure we unghost
+        ourselves so ctime of the unghosted mods is not set."""
+        return load_order.save_lo(None, load_order.get_ordered(
+            self._active_wip if active is None else active))
+
+    @_lo_cache
+    def _cached_lo_save_lo(self):
+        """Save load order when active did not change."""
+        return load_order.save_lo(self._lo_wip)
+
+    @_lo_cache
+    def cached_lo_save_all(self):
+        """Save load order and plugins.txt"""
+        active_wip_set = set(self._active_wip)
+        dex = {x: i for i, x in enumerate(self._lo_wip) if
+               x in active_wip_set}
+        self._active_wip.sort(key=dex.__getitem__) # order in their load order
+        return load_order.save_lo(self._lo_wip, acti=self._active_wip)
+
+    @_lo_cache
+    def undo_load_order(self): return load_order.undo_load_order()
+
+    @_lo_cache
+    def redo_load_order(self): return load_order.redo_load_order()
+
+    #--Load Order utility methods - be sure cache is valid when using them
+    def _cached_lo_insert_after(self, previous, new_mod):
+        new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
+        if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
+        dex = self._lo_wip.index(previous)
+        if not bush.game.using_txt_file:
+            t_prev = self[previous].ftime
+            if self._lo_wip[-1] == previous:  # place it after the last mod
+                new_time = t_prev + 60
+            else:
+                # try to put it right before the next mod to avoid resetting
+                # ftimes of all subsequent mods - note (t_prev >= t_next)
+                # might be True at the esm boundary, we could be smarter here
+                t_next = self[self._lo_wip[dex + 1]].ftime
+                t_prev += 1  # add one second
+                new_time = t_prev if t_prev < t_next else None
+            if new_time is not None:
+                self[new_mod].setmtime(new_time)
+        self._lo_wip[dex + 1:dex + 1] = [new_mod]
+
+    def cached_lo_last_esm(self):
+        last_esm = self._master_esm
+        for mod in self._lo_wip[1:]:
+            if not bush.game.esm_flag.cached_type(self[mod]):
+                return last_esm
+            last_esm = mod
+        return last_esm
+
+    def cached_lo_insert_at(self, first, modlist):
+        # hasty method for Mod_OrderByName
+        mod_set = set(modlist)
+        first_dex = self._lo_wip.index(first)
+        # Begin by splitting out the remainder
+        rest = self._lo_wip[first_dex:]
+        del self._lo_wip[first_dex:]
+        # Clean out any duplicates left behind, in case we're moving forwards
+        self._lo_wip[:] = [x for x in self._lo_wip if x not in mod_set]
+        # Append the remainder, then insert the requested plugins
+        for mod in rest:
+            if mod in mod_set: continue
+            self._lo_wip.append(mod)
+        self._lo_wip[first_dex:first_dex] = modlist
+
     #--Mod selection ----------------------------------------------------------
     def getSemiActive(self, patches, skip_active=False):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
@@ -2484,72 +2497,6 @@ class ModInfos(TableFileInfos):
                             imp_name): continue
                     imported_.add(imp_name)
         return merged_,imported_
-
-    def getModList(self, showCRC=False, showVersion=True, fileInfo=None,
-                   wtxt=False, log_problems=True):
-        """Returns mod list as text. If fileInfo is provided will show mod list
-        for its masters. Otherwise will show currently loaded mods."""
-        #--Setup
-        log = bolt.LogFile(io.StringIO())
-        head, bul, sMissing, sDelinquent, sImported = (
-            '=== ',
-            '* ',
-            f"  * __{_('Missing Master: %(m_master)s')}__",
-            f"  * __{_('Delinquent Master: %(d_master)s')}__",
-            '&bull; &bull;'
-            ) if wtxt else (
-            '',
-            '',
-            f"----> {_('MISSING MASTER: %(m_master)s')}",
-            f"----> {_('DELINQUENT MASTER: %(d_master)s')}",
-            '**')
-        if fileInfo:
-            masters_set = set(fileInfo.masterNames)
-            missing = sorted(x for x in masters_set if x not in self)
-            log.setHeader(head + _('Missing Masters for %(mm_plugin)s:') % {
-                'mm_plugin': fileInfo})
-            for mod in missing:
-                log(bul + f'xx {mod}')
-            log.setHeader(head + _('Masters for %(m_plugin)s:') % {
-                'm_plugin': fileInfo})
-            present = {x for x in masters_set if x in self}
-            if fileInfo.fn_key in self: #--In case is bashed patch (cf getSemiActive)
-                present.add(fileInfo.fn_key)
-            merged, imported = self.getSemiActive(present)
-        else:
-            log.setHeader(head + _(u'Active Plugins:'))
-            masters_set = set(load_order.cached_active_tuple())
-            merged, imported = self.merged, self.imported
-        all_mods = (masters_set | merged | imported) & set(self)
-        all_mods = load_order.get_ordered(all_mods)
-        #--List
-        modIndex = 0
-        if not wtxt: log(u'[spoiler]\n', appendNewline=False)
-        for mname in all_mods:
-            if mname in masters_set:
-                prefix = f'{bul}{modIndex:02X}'
-                modIndex += 1
-            elif mname in merged:
-                prefix = f'{bul}++'
-            else:
-                prefix = f'{bul}{sImported}'
-            log_str = f'{prefix}  {mname}'
-            if showVersion and (vers := self.getVersion(mname)):
-                log_str += '  ' + _('[Version %(plugin_ver)s]') % {
-                    'plugin_ver': vers}
-            if showCRC:
-                log_str += '  ' + _('[CRC: %(plugin_crc)s]') % {
-                    'plugin_crc': self[mname].crc_string()}
-            log(log_str)
-            if log_problems and mname in masters_set:
-                for master2 in self[mname].masterNames:
-                    if master2 not in self:
-                        log(sMissing % {'m_master': master2})
-                    elif load_order.get_ordered(
-                            (mname, master2))[1] == master2:
-                        log(sDelinquent % {'d_master': master2})
-        if not wtxt: log(u'[/spoiler]')
-        return log.out.getvalue()
 
     @staticmethod
     def _tagsies(modInfo, tagList):
@@ -2890,7 +2837,6 @@ class ModInfos(TableFileInfos):
         joinstar = ';*'.join(bush.game.espm_extensions)
         return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
 
-    #--Mod move/delete/rename -------------------------------------------------
     def _lo_move_mod(self, old_name, new_name, do_activate, deactivate=False):
         """Move new_name to the place of old_name and handle active state."""
         oldIndex = self._lo_wip.index(old_name)
@@ -2902,44 +2848,97 @@ class ModInfos(TableFileInfos):
             self.lo_deactivate(new_name)
         self.cached_lo_save_all()
 
-    def rename_operation(self, member_info, newName, rdata_ren,
-                         store_refr=None):
-        """Renames member file from oldName to newName."""
-        isSelected = load_order.cached_is_active(member_info.fn_key)
-        if isSelected:
-            self.lo_deactivate(member_info.fn_key)
-        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
-        # rename in load order caches
-        self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
-                          FName(newName), isSelected)
-        # Update linked BP parts if the parent BP got renamed
-        for mod_inf in self.values():
-            if mod_inf.get_table_prop('bp_split_parent') == old_key:
-                mod_inf.set_table_prop('bp_split_parent', str(newName))
-        return rdata_ren
-
-    #--Delete
-    def _delete_refresh(self, infos):
-        del_keys = super()._delete_refresh(infos)
-        # we need to call deactivate to deactivate dependents - refresh handles
-        # saving the load order - can't do in delete_op (due to check_exists)
-        self.lo_deactivate(*del_keys) # no-op if empty
-        return del_keys
-
-    def filter_essential(self, fn_items: Iterable[FName]):
-        # Removing the game master breaks everything, for obvious reasons
-        return {k: self.get(k) for k in fn_items if k != self._master_esm}
-
-    def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super().move_infos(sources, destinations, window, bash_frame)
-        self.refresh(moved)
-        bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
-        return moved
-
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
         """Check we have a fileInfo for fileName and call get_version on it."""
         return self[fileName].get_version() if fileName in self else ''
+
+    def getModList(self, showCRC=False, showVersion=True, fileInfo=None,
+                   wtxt=False, log_problems=True):
+        """Returns mod list as text. If fileInfo is provided will show mod list
+        for its masters. Otherwise will show currently loaded mods."""
+        #--Setup
+        log = bolt.LogFile(io.StringIO())
+        head, bul, sMissing, sDelinquent, sImported = (
+            '=== ',
+            '* ',
+            f"  * __{_('Missing Master: %(m_master)s')}__",
+            f"  * __{_('Delinquent Master: %(d_master)s')}__",
+            '&bull; &bull;'
+            ) if wtxt else (
+            '',
+            '',
+            f"----> {_('MISSING MASTER: %(m_master)s')}",
+            f"----> {_('DELINQUENT MASTER: %(d_master)s')}",
+            '**')
+        if fileInfo:
+            masters_set = set(fileInfo.masterNames)
+            missing = sorted(x for x in masters_set if x not in self)
+            log.setHeader(head + _('Missing Masters for %(mm_plugin)s:') % {
+                'mm_plugin': fileInfo})
+            for mod in missing:
+                log(bul + f'xx {mod}')
+            log.setHeader(head + _('Masters for %(m_plugin)s:') % {
+                'm_plugin': fileInfo})
+            present = {x for x in masters_set if x in self}
+            if fileInfo.fn_key in self: #--In case is bashed patch (cf getSemiActive)
+                present.add(fileInfo.fn_key)
+            merged, imported = self.getSemiActive(present)
+        else:
+            log.setHeader(head + _(u'Active Plugins:'))
+            masters_set = set(load_order.cached_active_tuple())
+            merged, imported = self.merged, self.imported
+        all_mods = (masters_set | merged | imported) & set(self)
+        all_mods = load_order.get_ordered(all_mods)
+        #--List
+        modIndex = 0
+        if not wtxt: log(u'[spoiler]\n', appendNewline=False)
+        for mname in all_mods:
+            if mname in masters_set:
+                prefix = f'{bul}{modIndex:02X}'
+                modIndex += 1
+            elif mname in merged:
+                prefix = f'{bul}++'
+            else:
+                prefix = f'{bul}{sImported}'
+            log_str = f'{prefix}  {mname}'
+            if showVersion and (vers := self.getVersion(mname)):
+                log_str += '  ' + _('[Version %(plugin_ver)s]') % {
+                    'plugin_ver': vers}
+            if showCRC:
+                log_str += '  ' + _('[CRC: %(plugin_crc)s]') % {
+                    'plugin_crc': self[mname].crc_string()}
+            log(log_str)
+            if log_problems and mname in masters_set:
+                for master2 in self[mname].masterNames:
+                    if master2 not in self:
+                        log(sMissing % {'m_master': master2})
+                    elif load_order.get_ordered(
+                            (mname, master2))[1] == master2:
+                        log(sDelinquent % {'d_master': master2})
+        if not wtxt: log(u'[/spoiler]')
+        return log.out.getvalue()
+
+    def masterWithVersion(self, master_name):
+        if master_name == 'Oblivion.esm' and (curr_ver := self.voCurrent):
+            master_name += f' [{curr_ver}]'
+        return master_name
+
+    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
+        # Calculating indexes through order.index() cause we may be called in
+        # a row before saving the modified load order
+        order = self._lo_wip
+        newPos = order.index(dropItem)
+        if newPos <= 0: return False
+        start = order.index(firstItem)
+        stop = order.index(lastItem) + 1  # excluded
+        # Can't move the game's master file anywhere else but position 0
+        if self._master_esm in order[start:stop]: return False
+        # List of names to move removed and then reinserted at new position
+        toMove = order[start:stop]
+        del order[start:stop]
+        order[newPos:newPos] = toMove
+        return True
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
