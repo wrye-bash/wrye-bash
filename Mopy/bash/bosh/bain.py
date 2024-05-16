@@ -2041,7 +2041,7 @@ class InstallersData(DataStore):
         toDelete = []
         markers = [inst.fn_key for inst in infos if
                    inst.is_marker or toDelete.append(inst)] # or None
-        super()._delete_operation(toDelete, recycle=recycle)
+        super()._delete_operation(toDelete, recycle)
         for m in markers: del self[m]
         if len(infos) == len(markers): # only markers - just refresh order
             self.refreshOrder() # do the refresh here if we only have markers
