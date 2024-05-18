@@ -949,14 +949,9 @@ class ModInfo(FileInfo):
             to all strings files. They must match the format returned by
             _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
-        ret_bsas = bsa_lo_inis.copy()
-        for binf in bush.game.Bsa.attached_bsas(available_bsas, self.fn_key):
-            ret_bsas[binf] = 0 # insert in the middle of the ini-loaded bsas
-        plugin_prefix = self.fn_key.fn_body.lower()
-        # give priority to the heuristic sort key then to the inverse of the
-        # actual bsa lo (so try and load strings from the bsas loading last)
-        self.str_bsas_sorted = sorted(ret_bsas, key=lambda binf:
-            binf.str_bsa_sort_key(plugin_prefix, bush.game.Bsa, ret_bsas))
+        # put plugin loaded bsas first - for master esm these should be empty
+        self.str_bsas_sorted = *bush.game.Bsa.attached_bsas(available_bsas,
+            self.fn_key), *bsa_lo_inis # pl_bsas order is undefined
         for assetPath in self._string_files_paths(i_lang):
             # Check loose files first
             if assetPath.lower() in ci_cached_strings_paths:
@@ -2395,8 +2390,11 @@ class ModInfos(TableFileInfos):
             # No loose strings folder -> all strings are in BSAs
             ci_cached_strings_paths = set()
         i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
+        # sort the ini-loaded bsas in an optimal way for detecting strings
+        hi_to_lo = sorted(self.__bsa_lo, key=lambda bi:
+            bush.game.Bsa.heuristic_sort_key(bi, self.__bsa_lo))
         self.missing_strings = {k for k, v in self.items() if
-            v.isMissingStrings(av_bsas, self.__bsa_lo, ci_cached_strings_paths,
+            v.isMissingStrings(av_bsas, hi_to_lo, ci_cached_strings_paths,
                                i_lang)}
         self.new_missing_strings = self.missing_strings - oldBad
         return self.missing_strings ^ oldBad

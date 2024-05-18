@@ -644,14 +644,6 @@ class ABsa(AFile):
             del self._filenames[:]
         return wanted_assets
 
-    def str_bsa_sort_key(self, plugin_prefix, game_bsa, bsa_lo):
-        """Used in sorting bsa files, to get strings files from. Note that this
-        is *only* meant for strings files. Return the sort key as a tuple built
-        in such a way as to prioritize files that are likely to contain the
-        strings, instead of returning the true BSA order."""
-        c = game_bsa.heuristic_sort(self.fn_key.fn_body.lower(), plugin_prefix)
-        return *c, -bsa_lo[self]
-
 class BSA(ABsa):
     """Bsa file. Notes:
     - We require that include_directory_names and include_file_names are True.

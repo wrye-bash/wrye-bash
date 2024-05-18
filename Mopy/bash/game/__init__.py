@@ -469,22 +469,20 @@ class GameInfo(object):
         # skipped entirely.
         valid_versions = set()
 
-        # Heuristics for finding string files in bsas - try main then interface
         _str_heuristics = tuple(enumerate(('main', 'interface')))
         @classmethod
-        def heuristic_sort(cls, bsa_body_lo, plugin_prefix):
-            """Heuristics used are:
-                - sort BSAs that begin with the body of this plugin before
-                others. Avoids parsing vanilla BSAs for third party plugins
-                - sort 'main', 'patch' and 'interface' to the front in each
-                group. Avoids parsing expensive BSAs at startup for the game
-                master (e.g. Skyrim.esm -> Skyrim - Textures0.bsa)."""
-            startsw = not bsa_body_lo.startswith(plugin_prefix)
+        def heuristic_sort_key(cls, master_bsa_inf, ini_loaded):
+            """Heuristics key to order ini-loaded bsas which might contain
+            localized string files. Sort 'main', 'patch' and 'interface' to
+            the front then follow the INI load order placing higher loading
+            bsas first. Avoids parsing expensive BSAs for the game master
+            strings (e.g. Skyrim.esm -> Skyrim - Textures0.bsa)."""
+            bsa_body_lo = master_bsa_inf.fn_key.fn_body.lower()
+            ini_lo = -ini_loaded[master_bsa_inf] # sort higher loading first
             for i, h in cls._str_heuristics:
                 if h in bsa_body_lo:
-                    return startsw, i
-            # noinspection PyUnboundLocalVariable
-            return startsw, i + 1 # _str_heuristics is never empty
+                    return i, ini_lo
+            return len(cls._str_heuristics), ini_lo
 
         @classmethod
         def attached_bsas(cls, bsa_infos, plugin_fn):
