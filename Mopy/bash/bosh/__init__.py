@@ -940,9 +940,10 @@ class ModInfo(FileInfo):
                          ci_cached_strings_paths, i_lang):
         """True if the mod says it has .STRINGS files, but the files are
         missing. Sets the str_bsas_sorted attribute to the list of BSAs that
-        may contain the strings files for this plugin.
+        may contain the strings files for this plugin. We assume some games
+        will load strings from 'A - B.bsa' for both 'A.esp' and 'A - B.esp'.
 
-        :param available_bsas: bsas that no other plugin has claimed
+        :param available_bsas: all bsas apart from ini-loaded ones
         :param bsa_lo_inis: bsas that are loaded by inis
         :param ci_cached_strings_paths: Set of lower-case versions of the paths
             to all strings files. They must match the format returned by
@@ -951,8 +952,6 @@ class ModInfo(FileInfo):
         ret_bsas = bsa_lo_inis.copy()
         for binf in bush.game.Bsa.attached_bsas(available_bsas, self.fn_key):
             ret_bsas[binf] = 0 # insert in the middle of the ini-loaded bsas
-            # we delete in place as Foo.bsa won't contain strings for Bar.esp
-            del available_bsas[binf.fn_key]
         plugin_prefix = self.fn_key.fn_body.lower()
         # give priority to the heuristic sort key then to the inverse of the
         # actual bsa lo (so try and load strings from the bsas loading last)
@@ -2374,12 +2373,37 @@ class ModInfos(TableFileInfos):
         centralize data dir scanning. String files depend on inis."""
         ##: depends on bsaInfos thus a bsaInfos.refresh should trigger
         # a modInfos.refresh - see comments in get_bsa_lo
-        if not (bush.game.Ini.supports_mod_inis or bush.game.Esp.stringsFiles):
-            self.__available_bsas = FNDict(bsaInfos.items())
-            self.__bsa_lo, self.__bsa_cause = bush.game.Ini.get_bsas_from_inis(
-                self.__available_bsas, [])
-            return set() # happily current games support both or neither
         data_folder_path = bass.dirs['mods']
+        self.plugin_inis = self.__load_plugin_inis(data_folder_path)
+        # We'll be removing BSAs from here once we've given them a position
+        self.__available_bsas = av_bsas = FNDict(bsaInfos.items())
+        # Determine BSA LO from INIs once, this gets expensive very quickly
+        self.__bsa_lo, self.__bsa_cause = bush.game.Ini.get_bsas_from_inis(
+            av_bsas, self.plugin_inis.values()) # will remove from av_bsas
+        if not bush.game.Esp.stringsFiles:
+            return set()
+        # refresh which mods are supposed to have strings files, but are
+        # missing them (=CTD). For Skyrim you need to have a valid load order
+        oldBad = self.missing_strings
+        # Determine the present strings files once to avoid stat'ing
+        # non-existent strings files hundreds of times
+        try:
+            strings_files = os.listdir(data_folder_path.join('strings'))
+            ci_cached_strings_paths = {f'strings{os.path.sep}{s.lower()}'
+                                       for s in strings_files}
+        except FileNotFoundError:
+            # No loose strings folder -> all strings are in BSAs
+            ci_cached_strings_paths = set()
+        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
+        self.missing_strings = {k for k, v in self.items() if
+            v.isMissingStrings(av_bsas, self.__bsa_lo, ci_cached_strings_paths,
+                               i_lang)}
+        self.new_missing_strings = self.missing_strings - oldBad
+        return self.missing_strings ^ oldBad
+
+    def __load_plugin_inis(self, data_folder_path):
+        if not bush.game.Ini.supports_mod_inis:
+            return FNDict()
         # First, check the Data folder for INIs present in it. Order does not
         # matter, we will only use this to look up existence
         lower_data_cont = (f.lower() for f in os.listdir(data_folder_path))
@@ -2402,32 +2426,8 @@ class ModInfos(TableFileInfos):
             inis_active.append(acti_ini)
         # values in active order, later loading inis override previous settings
         ##: What about SkyrimCustom.ini etc?
-        self.plugin_inis = FNDict((k.abs_path.stail, k) for k in
-                                  (*reversed(inis_active), oblivionIni))
-        # refresh which mods are supposed to have strings files, but are
-        # missing them (=CTD). For Skyrim you need to have a valid load order
-        oldBad = self.missing_strings
-        # Determine BSA LO from INIs once, this gets expensive very quickly
-        # We'll be removing BSAs from here once we've given them a position
-        available_bsas = FNDict(bsaInfos.items())
-        self.__bsa_lo, self.__bsa_cause = bush.game.Ini.get_bsas_from_inis(
-            available_bsas, self.plugin_inis.values())
-        self.__available_bsas = available_bsas.copy() # cache for get_bsa_lo
-        # Determine the present strings files once to avoid stat'ing
-        # non-existent strings files hundreds of times
-        try:
-            strings_files = os.listdir(bass.dirs['mods'].join('strings'))
-            ci_cached_strings_paths = {f'strings{os.path.sep}{s.lower()}'
-                                       for s in strings_files}
-        except FileNotFoundError:
-            # No loose strings folder -> all strings are in BSAs
-            ci_cached_strings_paths = set()
-        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
-        self.missing_strings = {k for k, v in self.items() if
-            v.isMissingStrings(available_bsas, self.__bsa_lo,
-                               ci_cached_strings_paths, i_lang)}
-        self.new_missing_strings = self.missing_strings - oldBad
-        return self.missing_strings ^ oldBad
+        return FNDict((k.abs_path.stail, k) for k in
+                      (*reversed(inis_active), oblivionIni))
 
     def _refresh_active_no_cp1252(self):
         """Refresh which filenames cannot be saved to plugins.txt - active
