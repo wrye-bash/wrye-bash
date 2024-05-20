@@ -899,9 +899,13 @@ class ModInfo(FileInfo):
         #--If there were some missing Loose Files
         if extract:
             bsa_assets = {}
-            ##: note for SkyrimVR that has resource overriding BSAs we
-            # should reset the order to have the overriding BSAs first
-            for bsa_info in self.str_bsas_sorted: # None for non-localized mods
+            # calculate (once per refresh cycle) and return the bsa_lo
+            bsa_lo = self.get_store().get_bsa_lo()[0]
+            # reorder bsa list as ordered by bsa_lo - what happens to patch
+            # and interface here depends on what's their order in the ini
+            str_bsas = sorted(self.str_bsas_sorted, key=bsa_lo.__getitem__,
+                              reverse=True) # sort higher loading bsas first
+            for bsa_info in str_bsas: # None for non-localized mods
                 try:
                     found_assets = bsa_info.has_assets(extract)
                 except BSAError:
@@ -916,11 +920,11 @@ class ModInfo(FileInfo):
                 msg = [f'This plugin is localized, but the following strings '
                        f'files seem to be missing:']
                 msg.extend(f' - {e}' for e in extract)
-                if self.str_bsas_sorted:
+                if str_bsas:
                     msg.append('The following BSAs were scanned (based on '
                                'name and INI settings), but none of them '
                                'contain the missing files:')
-                    msg.extend(f' - {binf}' for binf in self.str_bsas_sorted)
+                    msg.extend(f' - {binf}' for binf in str_bsas)
                 else:
                     msg.append('No BSAs were found that could contain the '
                         'missing strings - this is bad, validate your game '
@@ -931,8 +935,8 @@ class ModInfo(FileInfo):
                 try:
                     bsa_inf.extract_assets(assets, out_path.s)
                 except BSAError as e:
-                    raise ModError(self.fn_key,
-                      f"Could not extract Strings File from '{bsa_inf}': {e}")
+                    m = f"Could not extract Strings File from '{bsa_inf}': {e}"
+                    raise ModError(self.fn_key, m) from e
                 paths.update(map(out_path.join, assets))
         return paths
 
