@@ -282,7 +282,7 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         4833: ('GetDistance3D', 2, 0),
         4843: ('PlayerHasKey', 0, 0),
         4897: ('ActorHasEffect', 2, 0),
-        # Added by JIP NVSE Plugin - up to date with v57.21
+        # Added by JIP NVSE Plugin - up to date with v57.30
         5637: ('GetIsPoisoned', 0, 0),
         5708: ('IsEquippedWeaponSilenced', 0, 0),
         5709: ('IsEquippedWeaponScoped', 0, 0),
@@ -317,6 +317,7 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         6368: ('GetGroundMaterial', 0, 0),
         6391: ('EquippedWeaponHasModType', 1, 0),
         6426: ('IsSpellTargetList', 2, 0),
+        6462: ('HasKeywordCond', 1, 0),
         # Added by JohnnyGuitar NVSE - up to date with v5.06b
         8501: ('GetBaseScale', 0, 0),
         8549: ('GetQuestFailed', 2, 0),
