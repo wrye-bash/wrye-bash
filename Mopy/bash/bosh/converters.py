@@ -88,13 +88,13 @@ class ConvertersData(DataDict):
         ends_bcf = (lo := fn_conv.fn_body.lower())[-4:] == '-bcf'
         return fn_conv.fn_ext == defaultExt and ends_bcf or '-bcf-' in lo
 
-    def refreshConverters(self, progress=None, fullRefresh=False):
+    def refreshConverters(self, progress=None, full_refresh=False):
         """Refresh converter status, and move duplicate BCFs out of the way."""
         #--Current converters
         bcfs_list = [bcf_arch for bcf_arch in top_level_files(converters_dir)
                      if self.validConverterName(bcf_arch)] # few files
         bcf_scd = self.bcfPath_sizeCrcDate
-        if change := fullRefresh: # clear all data structures
+        if change := full_refresh: # clear all data structures
             bcf_scd.clear()
             self.srcCRC_converters.clear()
             self.bcfCRC_converter.clear()
@@ -135,7 +135,7 @@ class ConvertersData(DataDict):
                 for index, bcfPath in enumerate(sorted(pending_)):
                     progress(index,
                              _('Scanning Converter…') + f'\n{bcfPath}')
-                    path_crc = not fullRefresh and bcf_scd[bcfPath][1]
+                    path_crc = not full_refresh and bcf_scd[bcfPath][1]
                     try:
                         converter = InstallerConverter.from_path(bcfPath,
                             cached_crc=path_crc)
@@ -143,7 +143,7 @@ class ConvertersData(DataDict):
                         cor_dir = self.corrupt_bcfs_dir
                         try:
                             bcfPath.moveTo(cor_dir.join(bcfPath.tail))
-                            if not fullRefresh: del bcf_scd[bcfPath]
+                            if not full_refresh: del bcf_scd[bcfPath]
                             bolt.deprint(f'{bcfPath} is corrupt, moved to '
                                          f'{cor_dir}', traceback=True)
                         except StateError:
@@ -267,7 +267,7 @@ class InstallerConverter(object):
 
     def load(self, fullLoad=False):
         """Load BCF.dat. Called once when a BCF is first installed, during a
-        fullRefresh, and when the BCF is applied"""
+        full_refresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(
             f"\nLoading {self.fullPath}:\nBCF doesn't exist.")
         def translate(out):

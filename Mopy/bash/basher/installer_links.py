@@ -391,7 +391,7 @@ class Installer_Wizard(_Installer_AWizardLink):
             with outFile.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
-            bosh.iniInfos.new_info(outFile.stail, owner=installer.fn_key)
+            inf = bosh.iniInfos.new_info(outFile.stail, owner=installer.fn_key)
             # trigger refresh UI
             ui_refresh |= Store.INIS.DO()
             # We wont automatically apply tweaks to anything other than
@@ -412,8 +412,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                     manuallyApply.append((outFile.stail, iniFile))
                     continue
                 target_ini_file = bosh.BestIniFile(target_path)
-            if INIList.apply_tweaks((bosh.iniInfos[outFile.stail],),
-                                    target_ini_file):
+            if INIList.apply_tweaks([inf], target_ini_file):
                 lastApplied = FName(outFile.stail)
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:

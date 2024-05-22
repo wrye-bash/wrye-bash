@@ -540,7 +540,7 @@ class LoGame(object):
         fix_active.act_order_differs_from_load_order += \
             self._check_active_order(acti_filtered, lord)
         for index_of_first_esp, act in enumerate(acti_filtered):
-            if not self.mod_infos[act].in_master_block(): break
+            if not cached_minfs[act].in_master_block(): break
         else: # no masters *not even the game master* - previous behavior
             ##: disallow this for games that allow deactivating the master esm?
             index_of_first_esp = 0

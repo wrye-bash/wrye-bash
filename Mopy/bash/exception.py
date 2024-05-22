@@ -269,7 +269,7 @@ class SkippedMergeablePluginsError(Exception):
 class MasterMapError(BoltError):
     """Attempt to map a fid when mapping does not exist."""
     def __init__(self, fid_to_map):
-        super().__init__(f'No valid mapping for mod index {fid_to_map!r}')
+        super().__init__(f'No valid mapping for form id {fid_to_map!r}')
 
 class SaveHeaderError(Exception): pass
 

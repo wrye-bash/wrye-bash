@@ -1110,16 +1110,15 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
         bain_idata = self._bain_parent.data_store
         pkg_fname = bolt.FName(pkg_fstr)
         pkg_present = pkg_fname in bain_idata
-        pkg_is_marker = pkg_fstr.startswith('==') and pkg_fstr.endswith('==')
-        if (self._create_markers.is_checked and pkg_is_marker and
-                not pkg_present):
-            bain_idata.new_info(pkg_fname, is_mark=True)
-            pkg_present = True
-        if pkg_present:
+        if pkg_fstr.startswith('==') and pkg_fstr.endswith('=='): # marker
+            if self._create_markers.is_checked and not pkg_present:
+                bain_idata.new_info(pkg_fname, is_mark=True)
+        elif pkg_present:
             # If we import something other than purely order (and this isn't a
             # marker, which can't be enabled anyways)
-            order_only = self._key_to_import['imp_order']
-            if (not pkg_is_marker and
-                    self._import_what.get_value() != order_only):
+            if self._import_what.get_value() != self._key_to_import[
+                    'imp_order']:
                 bain_idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
-            self._partial_package_order.append(pkg_fname)
+        else: # Skip non-marker packages that aren't present
+            return
+        self._partial_package_order.append(pkg_fname)

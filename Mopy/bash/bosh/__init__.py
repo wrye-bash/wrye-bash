@@ -217,7 +217,8 @@ class _TabledInfo:
                 if k == 'installer': v = str(v)
                 elif k == 'doc': v = GPath(v) # needed for updates from old settings
                 self.set_table_prop(k, v)
-            except KeyError:  # will this be 'mtime'?
+            except KeyError:  # 'mtime' - we don't need another mtime cache
+                self.fn_key = FName(GPath(args[0]).stail) # for repr below
                 deprint(f'Failed to set {k=} to {v=} for {self=}')
         super().__init__(*args, **kwargs)
 
@@ -471,17 +472,6 @@ class ModInfo(FileInfo):
             if groupDir.is_dir():
                 return groupDir
         return dest_dir
-
-    def _reset_cache(self, stat_tuple, **kwargs):
-        super()._reset_cache(stat_tuple, **kwargs)
-        # check if we have a cached crc for this file, use fresh mtime and size
-        if kwargs['load_cache']:
-            self.calculate_crc() # for added and hopefully updated
-            if bush.game.has_esl:
-                self._recalc_esl()
-            if bush.game.has_overlay_plugins:
-                self._recalc_overlay()
-            self._recalc_esm()
 
     def copy_persistent_attrs(self, other, exclude=None):
         super().copy_persistent_attrs(other, exclude)
@@ -794,6 +784,13 @@ class ModInfo(FileInfo):
             if self.header.header.form_version != RecordHeader.plugin_form_version:
                 modInfos.older_form_versions.add(self.fn_key)
         self._reset_masters()
+        # check if we have a cached crc for this file, use fresh mtime and size
+        self.calculate_crc() # for added and hopefully updated
+        if bush.game.has_esl:
+            self._recalc_esl()
+        if bush.game.has_overlay_plugins:
+            self._recalc_overlay()
+        self._recalc_esm()
 
     def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""
@@ -1410,7 +1407,7 @@ class SaveInfo(FileInfo):
 
     def backup_restore_paths(self, first, fname=None):
         """Return as parent and in addition back up paths for the cosaves."""
-        back_to_dest = super(SaveInfo, self).backup_restore_paths(first, fname)
+        back_to_dest = super().backup_restore_paths(first, fname)
         # see if we have cosave backups - we must delete cosaves when restoring
         # if the backup does not have a cosave
         for co_type in self.cosave_types:
@@ -1593,9 +1590,8 @@ class DataStore(DataDict):
         raise NotImplementedError
 
     @property
-    def hidden_dir(self):
-        """Return the folder where Bash should move the file info to hide it
-        :rtype: bolt.Path"""
+    def hidden_dir(self) -> Path:
+        """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 
     def move_infos(self, sources, destinations, window, bash_frame):
@@ -1670,7 +1666,7 @@ class _AFileInfos(DataStore):
                     if new := self.pop(new, None): # effectively deleted
                         del_infos.add(new)
             rdata.to_del = {d.fn_key for d in del_infos}
-        self.delete_refresh(del_infos, check_existence=False)
+            self.delete_refresh(del_infos, check_existence=False)
         if rdata.redraw:
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata

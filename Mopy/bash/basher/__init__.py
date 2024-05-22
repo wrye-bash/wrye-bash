@@ -795,18 +795,17 @@ class INIList(UIList):
     # INI-specific methods ----------------------------------------------------
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
-        tweak_infos_list = list(tweak_infos) # may be a generator
         target_ini_file = target_ini or bosh.iniInfos.ini
         if not cls.ask_create_target_ini(target_ini_file):
             return False
         # Default tweaks are tested, so no need to warn about trust and
         # crashes, etc.
-        tweaks_are_trusted = all(t.is_default_tweak for t in tweak_infos_list)
+        tweaks_are_trusted = all(t.is_default_tweak for t in tweak_infos)
         if (not tweaks_are_trusted and
                 not cls._warn_tweak_game_ini(target_ini_file.abs_path.stail)):
             return False
         needsRefresh = False
-        for ini_info in tweak_infos_list:
+        for ini_info in tweak_infos:
             #--No point applying a tweak that's already applied
             if target_ini: # if target was given calculate the status for it
                 stat = ini_info.getStatus(target_ini_file)

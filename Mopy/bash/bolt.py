@@ -1866,6 +1866,9 @@ class AFileInfo(AFile, ListInfo):
     def info_dir(self):
         return self.abs_path.head
 
+    def __repr__(self): # bypass AFInfo - abs path is not always set
+        return super(AFile, self).__repr__()
+
 #------------------------------------------------------------------------------
 class PickleDict(object):
     """Dictionary saved in a pickle file.

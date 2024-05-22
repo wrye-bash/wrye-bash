@@ -101,7 +101,7 @@ class INI_Apply(EnabledLink):
 
     def Execute(self):
         """Handle applying INI Tweaks."""
-        if self.window.apply_tweaks(self.iselected_infos()):
+        if self.window.apply_tweaks([*self.iselected_infos()]):
             self.window.panel.ShowPanel()
 
 #------------------------------------------------------------------------------
