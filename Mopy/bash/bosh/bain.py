@@ -1673,7 +1673,7 @@ class InstallerProject(_InstallerPackage):
         return f'{base_name} ({count})'
 
     # AFile API - InstallerProject is a folder not a file, special handling
-    def do_update(self, raise_on_error=False, force_update=False, **kwargs):
+    def do_update(self, *, raise_on_error=False, force_update=False, **kwargs):
         # refresh projects once on boot, even if skipRefresh is on
         force_update |= not self.project_refreshed
         if not force_update and (self.skipRefresh or not bass.settings[
