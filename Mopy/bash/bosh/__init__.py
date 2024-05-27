@@ -414,11 +414,15 @@ class ModInfo(FileInfo):
         # list of string bsas sorted by search order for localized plugins -
         # None otherwise
         self.str_bsas_sorted = None
-        if itsa_ghost is None and (fullpath.cs[-6:] == '.ghost'):
-            fullpath = fullpath.root
-            self.is_ghost = True
-        else:  # refresh() path
-            self._refresh_ghost_state(itsa_ghost, regular_path=fullpath)
+        if itsa_ghost is not None:  # refresh() path when coming from _list_dir
+            self.is_ghost = itsa_ghost
+        else:
+            if fullpath.cs[-6:] == '.ghost':
+                fullpath = fullpath.root
+                self.is_ghost = True
+            else:
+                self.is_ghost = not fullpath.is_file() and os.path.isfile(
+                    f'{fullpath}.ghost')
         super().__init__(fullpath, load_cache, **kwargs)
 
     def get_hide_dir(self):
@@ -569,20 +573,12 @@ class ModInfo(FileInfo):
         return ret_masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def _refresh_ghost_state(self, itsa_ghost, *, regular_path=None): # TODO(ut): absorb in _reset_cache
-        """Refreshes the is_ghost state by checking existence on disk."""
-        if itsa_ghost is not None:
-            self.is_ghost = itsa_ghost
-            return
-        if regular_path is None: regular_path = self._file_key
-        self.is_ghost = not regular_path.is_file() and os.path.isfile(
-            f'{regular_path}.ghost')
-
-    def do_update(self, raise_on_error=False, itsa_ghost=None, **kwargs):
+    def do_update(self, *, itsa_ghost, raise_on_error=False, **kwargs):
+        # only call in refresh and always pass itsa_ghost
         old_ghost = self.is_ghost
-        self._refresh_ghost_state(itsa_ghost)
+        self.is_ghost = itsa_ghost
         # mark updated if ghost state changed but only reread header if needed
-        did_change = super(ModInfo, self).do_update(raise_on_error)
+        did_change = super().do_update(raise_on_error=raise_on_error)
         return did_change or self.is_ghost != old_ghost
 
     @FileInfo.abs_path.getter
@@ -1306,7 +1302,7 @@ class SaveInfo(FileInfo):
             raise SaveFileError(self.fn_key, e.args[0]) from e
         self._reset_masters()
 
-    def do_update(self, raise_on_error=False, **kwargs):
+    def do_update(self, *, raise_on_error=False, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
@@ -1329,8 +1325,8 @@ class SaveInfo(FileInfo):
         if cosaves_changed:
             self._reset_masters()
         # Delegate the call first, but also take the cosaves into account
-        return super(SaveInfo, self).do_update(raise_on_error) or \
-               cosaves_changed
+        return super().do_update(raise_on_error=raise_on_error) or \
+            cosaves_changed
 
     def write_masters(self, master_map):
         """Rewrites masters of existing save file and cosaves."""
@@ -3211,8 +3207,8 @@ class BSAInfos(TableFileInfos):
             @classmethod
             def _store(cls): return bsaInfos
 
-            def do_update(self, raise_on_error=False, **kwargs):
-                did_change = super(BSAInfo, self).do_update(raise_on_error)
+            def do_update(self, *, raise_on_error=False, **kwargs):
+                did_change = super().do_update(raise_on_error=raise_on_error)
                 self._reset_bsa_mtime()
                 return did_change
 
