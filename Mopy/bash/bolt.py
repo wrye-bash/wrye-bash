@@ -1679,7 +1679,7 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False, force_update=False,
+    def do_update(self, *, raise_on_error=False, force_update=False,
                   cached_stat=None, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we

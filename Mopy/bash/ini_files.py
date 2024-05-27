@@ -236,7 +236,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         self.updated = False # notify iniInfos which should clear this flag
 
     # AFile overrides ---------------------------------------------------------
-    def do_update(self, raise_on_error=False, **kwargs):
+    def do_update(self, *, raise_on_error=False, **kwargs):
         try:
             # do_update will return True if the file was deleted then restored
             self.updated |= super().do_update(raise_on_error=True)
