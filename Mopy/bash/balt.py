@@ -1100,12 +1100,12 @@ class UIList(PanelWin):
     # Renaming - note the @conversation, this needs to be atomic with respect
     # to refreshes and ideally atomic short - store_refr is Installers only
     @conversation
-    def try_rename(self, info, newName, store_refr=None):
+    def try_rename(self, info, newName, rdata_ren, store_refr=None):
         """Mods/BSAs - Inis won't be added and Screens/Installers/Saves
         override - reduce this."""
         try:
-            return self.data_store.rename_operation(info, newName,
-                store_refr)[0] # return the renamed keys old -> new
+            return self.data_store.rename_operation(info, newName, rdata_ren,
+                store_refr=store_refr) # a RefrData instance
         except (CancelError, OSError):
             deprint(f'Renaming {info} to {newName} failed', traceback=True)
             # When using moveTo I would get "WindowsError:[Error 32]The process

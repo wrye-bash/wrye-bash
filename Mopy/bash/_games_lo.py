@@ -750,12 +750,13 @@ class TimestampGame(LoGame):
             (self._mtime_mods[ti] - {mod_name}) & active)
 
     # Abstract overrides ------------------------------------------------------
-    def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
-        # sort case insensitive (for time conflicts)
-        mods = sorted(self.mod_infos if mods is None else mods)
-        mods.sort(key=lambda x: self.mod_infos[x].ftime)
-        mods.sort(key=lambda x: not self.mod_infos[x].in_master_block())
-        return mods
+    def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
+        mods = ((k, self.mod_infos[k]) for k in
+                (self.mod_infos if mods is None else mods))
+        return [m for m, _inf in sorted(mods, key=lambda x: (
+            # split into master block and not master block then sort by ftime
+            # then by name case insensitive (for time conflicts)
+            not x[1].in_master_block(), x[1].ftime, x[0]))]
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
@@ -778,7 +779,7 @@ class TimestampGame(LoGame):
                 older += 60.0
                 info.setmtime(older)
         restamp = []
-        for ordered, mod in zip(lord, current):
+        for ordered, mod in zip(lord, current, strict=True):
             if ordered == mod: continue
             restamp.append((ordered, self.mod_infos[mod].ftime))
         for ordered, modification_time in restamp:
