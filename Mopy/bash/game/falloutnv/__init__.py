@@ -81,7 +81,12 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         xe_key_prefix = u'fnvView'
 
     class Bain(AFallout3GameInfo.Bain):
-        data_dirs = (AFallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
+        data_dirs = (AFallout3GameInfo.Bain.data_dirs - {'fose'}) | {
+            'baseobjectswapper', # 3P: Base Object Swapper
+            'keywords', # 3P: KEYWORDS
+            'nvse', # 3P: NVSE
+            'racemenupresets', # 3P: Character Preset Menu
+        }
         no_skip = AFallout3GameInfo.Bain.no_skip | {
             'aaid.txt', # 3P: Auto Activate Invisible Doors
             _j('uio', 'supported.txt'), # 3P: UIO - User Interface Organizer
@@ -326,6 +331,9 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         8692: ('AudioMarkerGetController', 0, 0),
         8701: ('AudioMarkerGetCurrent', 0, 0),
         8706: ('GameGetSecondsPassed', 0, 0),
+        # Added by AnhNVSE - up to date with v1.3.1
+        9732: ('GetQuestCompletedAlt', 2, 0),
+        9753: ('GetArmorARAlt', 2, 0),
         # Added by TTW nvse plugin
         10247: ('TTW_GetEquippedWeaponSkill', 0, 0),
         # Added by SUP NVSE - up to date with v8.55

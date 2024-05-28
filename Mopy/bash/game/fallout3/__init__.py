@@ -123,6 +123,7 @@ class AFallout3GameInfo(PatchGame):
             'facegen',
             'fonts',
             'fose', # 3P: FOSE
+            'lodsettings',
             'menus',
             'uio', # 3P: User Interface Organizer
             'scripts',
