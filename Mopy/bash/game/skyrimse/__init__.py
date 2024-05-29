@@ -83,6 +83,10 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         # Skyrim SE accepts the base name and ' - Textures'
         attachment_regex = r'(?: \- Textures)?'
         valid_versions = {0x69}
+        # patch BSA (which only exists in SSE) will always load after the
+        # interface BSA and hence should win all conflicts when fetching
+        # strings
+        _str_heuristics = tuple(enumerate(('main', 'patch', 'interface')))
 
     class Xe(ASkyrimGameInfo.Xe):
         full_name = u'SSEEdit'

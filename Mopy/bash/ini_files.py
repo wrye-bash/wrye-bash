@@ -125,11 +125,6 @@ class AIniInfo(ListInfo):
         ListInfo.__init__(self, filekey)
         self._deleted_cache = LowerDict()
 
-    def has_setting(self, section, key):
-        """Returns True if this INI file has the specified section and key."""
-        ci_temp = self.get_ci_settings()
-        return section in ci_temp and key in ci_temp[section]
-
     def getSetting(self, section, key, default):
         """Gets a single setting from the file."""
         try:
@@ -567,7 +562,7 @@ class OBSEIniFile(IniFileInfo):
 
     def get_setting_values(self, section, default):
         section = self.ci_pseudosections.get(section, section)
-        return super(OBSEIniFile, self).get_setting_values(section, default)
+        return super().get_setting_values(section, default)
 
     _regex_tuples = ((reSet, u']set[', u'set %s to %s'),
       (reSetGS, u']setGS[', u'setGS %s %s'),
