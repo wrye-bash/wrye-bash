@@ -1445,8 +1445,8 @@ class _CopyToLink(EnabledLink):
                                    set_mtime=newTime)
                 added.append(newName)
                 newInfo = modInfos[newName]
-                newInfo.set_esm_flag(add_esm_flag)
-                newInfo.set_esl_flag(add_esl_flag)
+                newInfo.set_plugin_flags(set_esm=add_esm_flag,
+                                         set_esl=add_esl_flag)
                 if timeSource is None: # otherwise it has a load order already!
                     modInfos.cached_lo_insert_after(
                         modInfos.cached_lo_last_esm(), newName)
@@ -1584,7 +1584,7 @@ class Mod_FlipEsm(_AFlipFlagLink):
 
     def _exec_flip(self):
         for modInfo in self.iselected_infos():
-            modInfo.set_esm_flag(not modInfo.has_esm_flag())
+            modInfo.set_plugin_flags(set_esm=not modInfo.has_esm_flag())
 
 #------------------------------------------------------------------------------
 class Mod_FlipEsl(_AFlipFlagLink):
@@ -1608,7 +1608,7 @@ class Mod_FlipEsl(_AFlipFlagLink):
 
     def _exec_flip(self):
         for modInfo in self.iselected_infos():
-            modInfo.set_esl_flag(not modInfo.has_esl_flag())
+            modInfo.set_plugin_flags(set_esl=not modInfo.has_esl_flag())
 
 #------------------------------------------------------------------------------
 class Mod_FlipOverlay(_AFlipFlagLink):
@@ -1641,7 +1641,8 @@ class Mod_FlipOverlay(_AFlipFlagLink):
         if not self._askContinue(message, 'bash.flip_to_overlay.continue',
                 _('Flip to Overlay')): return
         for modInfo in self.iselected_infos():
-            modInfo.set_overlay_flag(not modInfo.has_overlay_flag())
+            modInfo.set_plugin_flags(
+                set_overlay=not modInfo.has_overlay_flag())
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, _AFlipFlagLink):
@@ -1685,7 +1686,7 @@ class Mod_FlipMasters(OneItemLink, _AFlipFlagLink):
         for masterPath in self.espMasters:
             master_mod_info = bosh.modInfos.get(masterPath)
             if master_mod_info:
-                master_mod_info.set_esm_flag(self.toEsm)
+                master_mod_info.set_plugin_flags(set_esm=self.toEsm)
                 self.selected.append(masterPath) # for refresh in Execute
 
 #------------------------------------------------------------------------------

@@ -303,12 +303,11 @@ class Installer_Wizard(_Installer_AWizardLink):
     """Runs the install wizard to select sub-packages and filter plugins."""
     def __init__(self, *, auto_wizard):
         super(Installer_Wizard, self).__init__()
-        self.bAuto = auto_wizard
-        self._text = (_('Auto Wizard…') if self.bAuto else
-                      _('Manual Wizard…'))
+        self._auto = auto_wizard
+        self._text = (_('Auto Wizard…') if self._auto else _('Manual Wizard…'))
         self._help = (
             _(u'Run the install wizard, selecting the default options.')
-            if self.bAuto else _(u'Run the install wizard.'))
+            if self._auto else _(u'Run the install wizard.'))
 
     def _enable(self):
         return super(Installer_Wizard, self)._enable() and all(
@@ -338,7 +337,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                         else:
                             progress = None
                         wizard = InstallerWizard(self.window, sel_package,
-                                                 self.bAuto, progress)
+                                                 self._auto, progress)
                     except CancelError:
                         return
                     wizard.ensureDisplayed()

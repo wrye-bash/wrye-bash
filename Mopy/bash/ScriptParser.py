@@ -593,7 +593,7 @@ class Parser(object):
         tokens = tokens or self.tokens
         parenDepth = 0
         bracketDepth = 0
-        ret = [[]]
+        result = [[]]
         for tok in tokens:
             if tok.type == OPEN_PARENS:
                 parenDepth += 1
@@ -608,10 +608,10 @@ class Parser(object):
                 if bracketDepth < 0:
                     error(_(u'Mismatched brackets.'))
             if tok.type == COMMA and parenDepth == 0 and bracketDepth == 0:
-                    ret.append([])
+                    result.append([])
             else:
-                ret[-1].append(tok)
-        return ret
+                result[-1].append(tok)
+        return result
 
     def StripOuterParens(self, tokens=None):
         tokens = tokens or self.tokens
@@ -768,11 +768,11 @@ class Parser(object):
                 while len(args) < tkn_min_args:
                     args.append(stack.pop())
                 args.reverse()
-                ret = i(*args)
-                if isinstance(ret, list):
-                    stack.extend([Parser.Token(x) for x in ret])
+                res = i(*args)
+                if isinstance(res, list):
+                    stack.extend([Parser.Token(x) for x in res])
                 else:
-                    stack.append(Parser.Token(ret))
+                    stack.append(Parser.Token(res))
             elif i.type == FUNCTION:
                 if len(stack) < i.numArgs:
                     _err_too_few_args('function', i.text, len(stack),
@@ -781,11 +781,11 @@ class Parser(object):
                 while len(args) < i.numArgs:
                     args.append(stack.pop())
                 args.reverse()
-                ret = i(*args)
-                if isinstance(ret, list):
-                    stack.extend([Parser.Token(x) for x in ret])
+                res = i(*args)
+                if isinstance(res, list):
+                    stack.extend([Parser.Token(x) for x in res])
                 else:
-                    stack.append(Parser.Token(ret))
+                    stack.append(Parser.Token(res))
             else:
                 stack.append(i)
         if len(stack) == 1:
@@ -1454,7 +1454,7 @@ class PreParser(Parser):
     def kwdDeSelectAll(self): self._SelectAll(False)
 
     def _SelectAll(self, bSelect):
-       raise NotImplementedError # needs self.sublist/_plugin_enabled
+       raise NotImplementedError # needs self.sublist/plugin_enabled
 
     @staticmethod
     def _set_all_values(di, common_value):
@@ -1468,13 +1468,13 @@ class PreParser(Parser):
         self._select_plugin(False, plugin_name)
 
     def _select_plugin(self, should_activate, plugin_name):
-        raise NotImplementedError # needs self._plugin_enabled
+        raise NotImplementedError # needs self.plugin_enabled
 
     def kwd_select_all_plugins(self): self._select_all_plugins(True)
     def kwd_de_select_all_plugins(self): self._select_all_plugins(False)
 
     def _select_all_plugins(self, should_activate):
-        raise NotImplementedError # needs self._plugin_enabled
+        raise NotImplementedError # needs self.plugin_enabled
 
     def kwd_rename_plugin(self, plugin_name, new_plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)
@@ -1494,7 +1494,7 @@ class PreParser(Parser):
             del self.plugin_renames[plugin_name]
 
     def _resolve_plugin_rename(self, plugin_name: str) -> FName | None:
-        raise NotImplementedError # needs self._plugin_enabled
+        raise NotImplementedError # needs self.plugin_enabled
 
     def kwd_reset_all_plugin_names(self):
         self.plugin_renames.clear()

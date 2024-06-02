@@ -303,14 +303,14 @@ class ModFile(object):
     def used_masters_by_top(self) -> dict[bytes, set[FName]]:
         """Get a dict mapping top group signatures to sets that indicate what
         masters those top groups depend on."""
-        ret = {}
+        sig_mas = {}
         for block_sig, block in self.tops.items():
             masters_set = MasterSet([bush.game.master_file])
             block.updateMasters(masters_set.add)
             # The file itself is always implicitly available, so discard it
             masters_set.discard(self.fileInfo.fn_key)
-            ret[block_sig] = set(masters_set) ##: drop once MasterSet is gone
-        return ret
+            sig_mas[block_sig] = set(masters_set) ##: drop once MasterSet is gone
+        return sig_mas
 
     def count_new_records(self, next_object_start=None):
         """Count the number of new records in this file. self.tes4.masters must

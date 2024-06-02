@@ -974,7 +974,7 @@ class AsteriskGame(_TextFileLo):
         return self.pinned_mods()
 
     def request_cache_update(self, *args):
-        if any(x is None for x in args) or self._plugins_txt.do_update():
+        if None in args or self._plugins_txt.do_update():
             return None, None
         return args
 

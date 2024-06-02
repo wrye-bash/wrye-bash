@@ -394,10 +394,10 @@ def reverse_dict_multi(source_dict: dict[K, V]) -> dict[V, set[K]]:
     """Create a dict that represents the reverse/inverse mapping of the
     specified dict, with support for duplicate values in the source dict. See
     also reverse_dict for simple 1-to-1 mappings."""
-    ret = {}
+    di = {}
     for k, v in source_dict.items():
-        ret.setdefault(v, set()).add(k)
-    return ret
+        di.setdefault(v, set()).add(k)
+    return di
 
 def flatten_multikey_dict(multikey_dict: dict[K | tuple[K, ...], V]) \
         -> dict[K, V]:

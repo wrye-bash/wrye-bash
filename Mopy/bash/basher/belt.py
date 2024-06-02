@@ -334,14 +334,14 @@ class PageFinish(PageInstaller):
     """Page displayed at the end of a wizard, showing which sub-packages and
     which plugins will be selected. Also displays some notes for the user."""
 
-    def __init__(self, parent, sublist, plugin_enabled, plugin_renames_, bAuto,
-                 notes, iniedits):
+    def __init__(self, parent, wrye_parser: WryeParser):
         PageInstaller.__init__(self, parent)
-        subs = sorted(sublist)
+        subs = sorted(wrye_parser.sublist)
         #--make the list that will be displayed
-        displayed_plugins = [f'{x} -> {plugin_renames_[x]}'
-            if x in plugin_renames_ else x for x in plugin_enabled]
-        self._wiz_parent.ret.rename_plugins = plugin_renames_
+        renames = wrye_parser.plugin_renames
+        displayed_plugins = [f'{x} -> {renames[x]}' if x in renames else x for
+                             x in wrye_parser.plugin_enabled]
+        self._wiz_parent.ret.rename_plugins = renames
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _('The installer script has finished, and '
                                   'will apply the following settings:'))
@@ -350,23 +350,23 @@ class PageFinish(PageInstaller):
         self.listSubs = CheckListBox(self, choices=subs)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index, fn_key in enumerate(subs):
-            if sublist[fn_key]:
+            if wrye_parser.sublist[fn_key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.add(str(fn_key))
         self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
-        for index, (key, do_enable) in enumerate(plugin_enabled.items()):
+        for index, (key, do_enable) in enumerate(wrye_parser.plugin_enabled.items()):
             if do_enable:
                 self.plugin_selection.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_plugins.add(key)
         # Ini tweaks
         self.listInis = ListBox(self, onSelect=self._on_select_ini,
-                                choices=list(iniedits))
+                                choices=list(wrye_parser.iniedits))
         self.listTweaks = ListBox(self)
-        self._wiz_parent.ret.ini_edits = iniedits
+        self._wiz_parent.ret.ini_edits = wrye_parser.iniedits
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _('Apply these selections'),
-                                   checked=bAuto)
+                                   checked=wrye_parser.bAuto)
         self.checkApply.on_checked.subscribe(parent.enable_forward)
         auto = bass.settings['bash.installers.autoWizard']
         self.checkInstall = CheckBox(self, _('Install this package'),
@@ -390,15 +390,15 @@ class PageFinish(PageInstaller):
                      items=[self.listInis, self.listTweaks]),
              LayoutOptions(weight=1)),
             Label(self, _('Notes:')),
-            (TextArea(self, init_text=''.join(notes), auto_tooltip=False),
-             LayoutOptions(weight=1)),
+            (TextArea(self, init_text=''.join(wrye_parser.notes),
+                      auto_tooltip=False), LayoutOptions(weight=1)),
             HLayout(items=[
                 Stretch(),
                 VLayout(spacing=2, items=[self.checkApply, self.checkInstall])
             ])
         ])
         layout.apply_to(self)
-        parent.enable_forward(bAuto)
+        parent.enable_forward(wrye_parser.bAuto)
         self._wiz_parent.finishing = True
         self.update_layout()
 
@@ -503,7 +503,7 @@ class WryeParser(PreParser):
         # everywhere. Broke this part of the code, hence the 'if s' below.
         self.sublist = bolt.FNDict.fromkeys([*installer.subNames][1:], False)
         # all plugins mapped to their must-install state - initially False
-        self._plugin_enabled = FNDict.fromkeys(  # type:FNDict[(f:=FName),f]
+        self.plugin_enabled = FNDict.fromkeys(  # type:FNDict[(f:=FName),f]
             sorted(fn_ for sub_plugins in installer.espmMap.values() for fn_ in
                    sub_plugins), False)
 
@@ -538,9 +538,7 @@ class WryeParser(PreParser):
         self.cLine += 1
         self.cLineStart = self.cLine
         self.parser_finished = True
-        return PageFinish(self._wiz_parent, self.sublist, self._plugin_enabled,
-                          self.plugin_renames, self.bAuto, self.notes,
-                          self.iniedits)
+        return PageFinish(self._wiz_parent, self)
 
     def Back(self):
         if self.choiceIdex == 0:
@@ -564,14 +562,13 @@ class WryeParser(PreParser):
         return self.Continue()
 
     def _resolve_plugin_rename(self, plugin_name: str) -> FName | None:
-        return fn if (fn := FName(plugin_name)) in self._plugin_enabled \
+        return fn if (fn := FName(plugin_name)) in self.plugin_enabled \
             else None
 
     # Functions...
     def fnCompareGameVersion(self, obWant):
         want_version = self._TestVersion_Want(obWant)
-        ret = _need_have(want_version, bush.game_version())
-        return ret[0]
+        return _need_have(want_version, bush.game_version())[0]
 
     def fnCompareSEVersion(self, seWant):
         if bush.game.Se.se_abbrev:
@@ -579,16 +576,15 @@ class WryeParser(PreParser):
             for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs['app'].join(ver_file)
                 if ver_path.exists(): break
-            ret = self._TestVersion(self._TestVersion_Want(seWant), ver_path)
-            return ret[0]
+            return self._TestVersion(self._TestVersion_Want(seWant), ver_path)[
+                0]
         else:
             # No script extender available for this game
             return 1
 
     def fnCompareGEVersion(self, geWant):
         if bush.game.Ge.ge_abbrev != '':
-            ret = self._TestVersion_GE(self._TestVersion_Want(geWant))
-            return ret[0]
+            return self._TestVersion_GE(self._TestVersion_Want(geWant))[0]
         else:
             # No graphics extender available for this game
             return 1
@@ -795,18 +791,18 @@ class WryeParser(PreParser):
 
     def _SelectAll(self, bSelect):
         self._set_all_values(self.sublist, bSelect)
-        self._set_all_values(self._plugin_enabled, bSelect)
+        self._set_all_values(self.plugin_enabled, bSelect)
 
     def _select_plugin(self, should_activate, plugin_name):
         resolved_name = self._resolve_plugin_rename(plugin_name)
         if resolved_name:
-            self._plugin_enabled[resolved_name] = should_activate
+            self.plugin_enabled[resolved_name] = should_activate
         else:
             error(_("Plugin '%(selected_plugin_name)s' is not a part of the "
                     "package.") % {'selected_plugin_name': plugin_name})
 
     def _select_all_plugins(self, should_activate):
-        self._set_all_values(self._plugin_enabled, should_activate)
+        self._set_all_values(self.plugin_enabled, should_activate)
 
     def kwdRequireVersions(self, game, se='None', ge='None', wbWant='0.0'):
         if self.bAuto: return
@@ -818,24 +814,24 @@ class WryeParser(PreParser):
         if geWant == 'None': ge = 'None'
         if not wbWant: wbWant = '0.0'
         wbHave = bass.AppVersion
-        ret = _need_have(gameWant, bush.game_version())
-        bGameOk = ret[0] >= 0
-        gameHave = ret[1]
+        need_have = _need_have(gameWant, bush.game_version())
+        bGameOk = need_have[0] >= 0
+        gameHave = need_have[1]
         if bush.game.Se.se_abbrev:
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs['app'].join(ver_file)
                 if ver_path.exists(): break
-            ret = self._TestVersion(seWant, ver_path)
-            bSEOk = ret[0] >= 0
-            seHave = ret[1]
+            need_have = self._TestVersion(seWant, ver_path)
+            bSEOk = need_have[0] >= 0
+            seHave = need_have[1]
         else:
             bSEOk = True
             seHave = 'None'
         if bush.game.Ge.ge_abbrev != '':
-            ret = self._TestVersion_GE(geWant)
-            bGEOk = ret[0] >= 0
-            geHave = ret[1]
+            need_have = self._TestVersion_GE(geWant)
+            bGEOk = need_have[0] >= 0
+            geHave = need_have[1]
         else:
             bGEOk = True
             geHave = 'None'
@@ -850,12 +846,12 @@ class WryeParser(PreParser):
             files = [bass.dirs['mods'].join(bush.game.Ge.exe)]
         else:
             files = [bass.dirs['mods'].join(*x) for x in bush.game.Ge.exe]
-        ret = [-1, 'None']
+        need_have = [-1, 'None']
         for file in reversed(files):
-            ret = self._TestVersion(want, file)
-            if ret[1] != 'None':
-                return ret
-        return ret
+            need_have = self._TestVersion(want, file)
+            if need_have[1] != 'None':
+                return need_have
+        return need_have
 
     @staticmethod
     def _TestVersion_Want(want):
@@ -876,9 +872,7 @@ class WryeParser(PreParser):
         return [-1, 'None']
 
     def kwdReturn(self):
-        self.page = PageFinish(self._wiz_parent, self.sublist,
-                               self._plugin_enabled, self.plugin_renames,
-                               self.bAuto, self.notes, self.iniedits)
+        self.page = PageFinish(self._wiz_parent, self)
 
     def kwdCancel(self, msg=_('No reason given')):
         self.page = PageError(self._wiz_parent, _('The installer wizard was canceled:'), msg)

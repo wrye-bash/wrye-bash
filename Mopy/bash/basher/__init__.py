@@ -878,6 +878,7 @@ class INITweakLineCtrl(INIListCtrl):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
         self.Freeze()
         try:
+            # Clear the list, then populate it with the new lines
             self.DeleteAllItems()
             if tweakPath is None:
                 return
@@ -886,7 +887,6 @@ class INITweakLineCtrl(INIListCtrl):
             self.Thaw()
 
     def _RefreshTweakLineCtrl(self, tweakPath):
-        # Clear the list, then populate it with the new lines
         # TODO(ut) avoid if ini tweak did not change
         self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
         updated_line_nums = set()
@@ -2129,11 +2129,11 @@ class ModPanel(BashTab):
                 sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                            '%(status_num_espm)d, ESL: %(status_num_esl)d, '
                            'Overlay: %(status_num_overlay)d)')
-        return sb_fmt %  {'status_num': len(all_mods),
-                          'total_status_num': len(bosh.modInfos),
-                          'status_num_espm': regular_count,
-                          'status_num_esl': esl_count,
-                          'status_num_overlay': overlay_count}
+        return sb_fmt % {'status_num': len(all_mods),
+                         'total_status_num': len(bosh.modInfos),
+                         'status_num_espm': regular_count,
+                         'status_num_esl': esl_count,
+                         'status_num_overlay': overlay_count}
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()

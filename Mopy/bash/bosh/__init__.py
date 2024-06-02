@@ -487,19 +487,37 @@ class ModInfo(FileInfo):
         """Returns the file extension of this mod."""
         return self.fn_key.fn_ext
 
+    def set_plugin_flags(self, *, set_esm=None, set_esl=None,
+                         set_overlay=None):
+        """Set plugin flags. If a flag is None, it is left alone. If both ESL
+        and Overlay flags are requested to be set a ValueError is raised. We
+        then proceed to set the other flag to False if the game supports it."""
+        if not (set_esl is None or set_overlay is None):
+            raise ValueError('Cannot set both ESL and Overlay flags.')
+        if set_overlay := set_overlay if (
+                bush.game.has_overlay_plugins) else None:
+            set_esl = False  # Can't have both, so unset the ESL flag
+        if set_esl := set_esl if bush.game.has_esl else None:
+            set_overlay = False if bush.game.has_overlay_plugins else None
+        if set_esm is not None:
+            # set this file's ESM flag to the specified value - recalculate
+            # ONAM info if necessary
+            self.header.flags1.esm_flag = set_esm
+            self._recalc_esm()
+            self.update_onam()
+        if set_esl is not None:
+            self.header.flags1.esl_flag = set_esl
+            self._recalc_esl()
+        if set_overlay is not None:
+            self.header.flags1.overlay_flag = set_overlay
+            self._recalc_overlay()
+        self.writeHeader()
+
     # ESM flag ----------------------------------------------------------------
     def has_esm_flag(self):
         """Check if the mod info is a master file based on ESM flag alone -
         header must be set. You generally want in_master_block() instead."""
         return self._has_esm_flag
-
-    def set_esm_flag(self, new_esm_flag: bool):
-        """Changes this file's ESM flag to the specified value. Recalculates
-        ONAM info if necessary."""
-        self.header.flags1.esm_flag = new_esm_flag
-        self._recalc_esm()
-        self.update_onam()
-        self.writeHeader()
 
     def in_master_block(self, __master_exts=frozenset(('.esm', '.esl'))):
         """Return true for files that load in the masters' block."""
@@ -536,19 +554,6 @@ class ModInfo(FileInfo):
         must be set. You generally want is_esl() instead."""
         return self.header.flags1.esl_flag
 
-    def set_esl_flag(self, new_esl_flag: bool):
-        """Change this file's ESL flag to the specified value. Disables the
-        Overlay flag if the ESL flag is set and the game supports the Overlay
-        flag."""
-        if bush.game.has_esl:
-            self.header.flags1.esl_flag = new_esl_flag
-            if new_esl_flag and bush.game.has_overlay_plugins:
-                # Can't have both, so unset the Overlay flag
-                self.header.flags1.overlay_flag = False
-                self._recalc_overlay()
-            self._recalc_esl()
-            self.writeHeader()
-
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
         set the light flag, for espms check the flag."""
@@ -563,19 +568,6 @@ class ModInfo(FileInfo):
         """Check if the mod info is an Overlay plugin based on Overlay flag
         alone - header must be set. You generally want is_overlay() instead."""
         return self.header.flags1.overlay_flag
-
-    def set_overlay_flag(self, new_overlay_flag: bool):
-        """Change this file's Overlay flag to the specified value. Disables the
-        ESL flag if the Overlay flag is set and the game supports the ESL
-        flag."""
-        if bush.game.has_overlay_plugins:
-            self.header.flags1.overlay_flag = new_overlay_flag
-            if new_overlay_flag and bush.game.has_esl:
-                # Can't have both, so unset the ESL flag
-                self.header.flags1.esl_flag = False
-                self._recalc_esl()
-            self._recalc_overlay()
-            self.writeHeader()
 
     def is_overlay(self):
         """Check if this is an overlay plugin."""
