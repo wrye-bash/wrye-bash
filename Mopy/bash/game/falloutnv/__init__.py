@@ -35,7 +35,7 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
     display_name = 'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
-    game_icon = u'falloutnv_%u.png'
+    game_icon = u'falloutnv.svg'
     bash_root_prefix = u'FalloutNV'
     bak_game_name = u'FalloutNV'
     my_games_name = u'FalloutNV'

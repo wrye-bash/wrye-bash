@@ -37,7 +37,7 @@ class AOblivionGameInfo(PatchGame):
     display_name = 'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
-    game_icon = u'oblivion_%u.png'
+    game_icon = u'oblivion.svg'
     bash_root_prefix = u'Oblivion'
     bak_game_name = u'Oblivion'
     template_dir = u'Oblivion'

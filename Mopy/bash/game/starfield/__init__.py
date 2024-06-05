@@ -52,7 +52,7 @@ class _AStarfieldGameInfo(PatchGame):
     display_name = 'Starfield'
     fsName = 'Starfield'
     altName = 'Wrye Stash'
-    game_icon = 'starfield_%u.png'
+    game_icon = 'starfield.svg'
     bash_root_prefix = 'Starfield'
     bak_game_name = 'Starfield'
     my_games_name = 'Starfield'

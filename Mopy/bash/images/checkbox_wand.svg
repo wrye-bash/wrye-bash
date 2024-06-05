@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 16 16">
+   <defs>
+      <linearGradient id="dark_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+         <stop offset="0%" stop-color="#050505" />
+         <stop offset="100%" stop-color="#BBBBBB" />
+      </linearGradient>
+      <linearGradient id="light_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+         <stop offset="40%" stop-color="#AAAAAA" />
+         <stop offset="60%" stop-color="#FFFFFF" />
+      </linearGradient>
+   </defs>
+   <polygon points="11,9 16,14 17,12 12,7" stroke="black" stroke-width="0.5" fill="url(#dark_grad)" />
+   <polyline points="11,9 8,6 9,4 12,7" stroke="#DDDDDD" stroke-width="0.5" stroke-opacity="0.9" fill="url(#light_grad)" stroke-linejoin="round" />
+   <polygon id="star" points="15,3 15.5,4.5 17,5 15.5,5.5 15,7 14.5,5.5 13,5 14.5,4.5" fill="#C9B647" fill-opacity="0.5" stroke="#F3EFD2" stroke-width="0.25" stroke-opacity="0.5" />
+   <!--
+      Want to just use: <use href="#star" x="-10" />
+      But NanoSVG doesn't support <use> tags, so we'll just copy paste instead, with transforms
+   -->
+   <polygon id="star" points="15,3 15.5,4.5 17,5 15.5,5.5 15,7 14.5,5.5 13,5 14.5,4.5" fill="#C9B647" fill-opacity="0.5" stroke="#F3EFD2" stroke-width="0.25" stroke-opacity="0.5" transform="translate(5, 1) scale(0.33)" />
+   <polygon id="star" points="15,3 15.5,4.5 17,5 15.5,5.5 15,7 14.5,5.5 13,5 14.5,4.5" fill="#C9B647" fill-opacity="0.5" stroke="#F3EFD2" stroke-width="0.25" stroke-opacity="0.5" transform="translate(11, 6) scale(0.33)" />
+</svg>

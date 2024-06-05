@@ -35,7 +35,7 @@ class AFallout3GameInfo(PatchGame):
     display_name = 'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
-    game_icon = u'fallout3_%u.png'
+    game_icon = u'fallout3.svg'
     bash_root_prefix = u'Fallout3'
     bak_game_name = u'Fallout3'
     template_dir = u'Fallout3'

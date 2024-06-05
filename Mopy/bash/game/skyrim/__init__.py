@@ -34,7 +34,7 @@ class ASkyrimGameInfo(PatchGame):
     display_name = 'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
-    game_icon = u'skyrim_%u.png'
+    game_icon = u'skyrim.svg'
     bash_root_prefix = u'Skyrim'
     bak_game_name = u'Skyrim'
     my_games_name = u'Skyrim'
