@@ -38,7 +38,7 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
     """GameInfo override for TES V: Skyrim Special Edition."""
     display_name = 'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
-    game_icon = u'skyrimse_%u.png'
+    game_icon = u'skyrimse.svg'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     bak_game_name = u'Skyrim Special Edition'
     my_games_name = u'Skyrim Special Edition'

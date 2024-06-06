@@ -31,7 +31,7 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     display_name = 'Skyrim VR'
     fsName = u'Skyrim VR'
     altName = u'Wrye VRash'
-    game_icon = u'skyrimvr_%u.png'
+    game_icon = u'skyrimvr.svg'
     bash_root_prefix = u'Skyrim VR' # backwards compat :(
     bak_game_name = u'Skyrim VR'
     my_games_name = u'Skyrim VR'

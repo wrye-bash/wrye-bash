@@ -29,7 +29,7 @@ class AEnderalGameInfo(ASkyrimGameInfo):
     """GameInfo override for Enderal."""
     display_name = 'Enderal'
     fsName = u'Enderal'
-    game_icon = u'enderal_%u.png'
+    game_icon = u'enderal.svg'
     bash_root_prefix = u'Enderal'
     bak_game_name = u'Enderal'
     my_games_name = u'Enderal'
