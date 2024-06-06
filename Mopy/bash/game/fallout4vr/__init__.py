@@ -30,7 +30,7 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
     """GameInfo override for Fallout 4 VR."""
     display_name = 'Fallout 4 VR'
     fsName = u'Fallout4VR'
-    game_icon = u'fallout4vr_%u.png'
+    game_icon = u'fallout4vr.svg'
     altName = u'Wrye VRash'
     bash_root_prefix = u'Fallout4VR'
     bak_game_name = u'Fallout4VR'

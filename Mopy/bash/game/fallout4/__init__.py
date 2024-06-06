@@ -37,7 +37,7 @@ class AFallout4GameInfo(PatchGame):
     display_name = 'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
-    game_icon = u'fallout4_%u.png'
+    game_icon = u'fallout4.svg'
     bash_root_prefix = u'Fallout4'
     bak_game_name = u'Fallout4'
     my_games_name = u'Fallout4'
