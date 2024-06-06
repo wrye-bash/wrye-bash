@@ -29,7 +29,7 @@ _GOG_IDS = [1497007810]
 class _ANehrimGameInfo(AOblivionGameInfo):
     """GameInfo override for Nehrim: At Fate's Edge."""
     display_name = 'Nehrim'
-    game_icon = u'nehrim_%u.png'
+    game_icon = u'nehrim.svg'
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
     game_detect_includes = {'NehrimLauncher.exe'}

@@ -71,7 +71,7 @@ def init_image_resources(images_dir):
         else:
             layers = ['checkbox_box.svg']
         if st == 'on':
-            layers.append('checkbox_check.svg')
+            layers.append('checkbox_plus.svg')
         if overlay == '.wiz':
             layers.append('checkbox_wand.svg')
         svg = _icc(layers[0])
