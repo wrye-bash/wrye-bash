@@ -70,7 +70,7 @@ def InitStatusBar():
     all_links = [
         obse_button,
         AutoQuitButton('AutoQuit'),
-        GameButton(_png_list(f'games/{bush.game.game_icon}'))
+        GameButton(_svg_list(f'games/{bush.game.game_icon}'))
     ]
     all_xes = dict.fromkeys( # keep order to not reorder much
         game_class.Xe.full_name for game_class in PatchGame.supported_games())

@@ -849,8 +849,7 @@ def _select_game_popup(game_infos, last_used_game: str | None):
                                   in game_infos.items()}
             self._game_to_info = {g.unique_display_name: g for g in game_infos}
             ij = bass.dirs['images'].join # images not yet initialized
-            ico_paths = {g: ij(os.path.join('games', g.game_icon % 32)) for g
-                         in game_infos}
+            ico_paths = {g: ij('games', g.game_icon) for g in game_infos}
             self._game_to_bitmap = {g.unique_display_name: GuiImage.from_path(
                 p, iconSize=32) for g, p in ico_paths.items()}
             # Construction of the actual GUI begins here
