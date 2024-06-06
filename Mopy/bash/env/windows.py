@@ -728,7 +728,8 @@ def _get_known_path(known_folder_id, user_handle=_UserHandle.current):
                              byref(pPath)) != S_OK:
         raise RuntimeError(
             f"Failed to retrieve known folder path '{known_folder_id!r}' - "
-            f"this is most likely caused by OneDrive, see General Readme")
+            f"this is most likely caused by OneDrive, see Common Issues "
+            f"section of General Readme")
     path = pPath.value
     _CoTaskMemFree(pPath)
     return path

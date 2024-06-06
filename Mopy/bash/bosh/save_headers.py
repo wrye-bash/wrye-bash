@@ -57,7 +57,7 @@ def _pack_c(out, value, __pack=structs_cache['=c'].pack):
 def _pack_string(out, val: bytes):
     out.write(val)
 def _skip_str8(ins):
-    ins.seeek(unpack_byte(ins), 1)
+    ins.seek(unpack_byte(ins), 1)
 def _skip_str16(ins):
     ins.seek(unpack_short(ins), 1)
 def _write_s16_list(out, master_bstrs):
@@ -401,7 +401,7 @@ class OblivionSaveHeader(SaveFileHeader):
 
     def _write_masters(self, ins, out):
         #--Skip old masters
-        ins.skip(1, 1)
+        ins.seek(1, 1)
         for x in range(len(self.masters)):
             _skip_str8(ins)
         #--Write new masters
