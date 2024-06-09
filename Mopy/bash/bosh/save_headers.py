@@ -749,9 +749,15 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         ##: Starfield 1.9 made this worse. Since form version 109 (or 108, not
         # sure yet), another 4 unknown bytes (which seem to always be zero) got
         # added right before the unknown short and count as part of the
-        # masters. Still no clue what any of that is for.
-        self._load_masters_16(ins,
-            sse_offset=2 if self._formVersion < 109 else 6)
+        # masters. Still no clue what any of that is for. 1.11 added another 14
+        # bytes.
+        if self._formVersion >= 119:
+            offset = 20
+        elif self._formVersion >= 109:
+            offset = 6
+        else:
+            offset = 2
+        self._load_masters_16(ins, sse_offset=offset)
 
     def calc_time(self):
         self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
