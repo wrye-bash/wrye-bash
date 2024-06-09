@@ -51,7 +51,7 @@ class _AStarfieldGameInfo(PatchGame):
     nexusKey = 'bash.installers.openStarfieldNexus.continue'
 
     espm_extensions = {*GameInfo.espm_extensions, '.esl'}
-    has_achlist = False # TODO(SF) check once CK is out
+    has_achlist = True
     mergeability_checks = {MergeabilityCheck.ESL_CHECK,
                            MergeabilityCheck.OVERLAY_CHECK}
     has_overlay_plugins = True
@@ -60,8 +60,9 @@ class _AStarfieldGameInfo(PatchGame):
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
     ]
 
-    class Ck(GameInfo.Ck): # TODO(SF) add once it exists
-        pass
+    class Ck(GameInfo.Ck): # TODO(SF) add rest when CK is public
+        ck_abbrev = 'CK'
+        long_name = 'Creation Kit'
 
     class Se(GameInfo.Se):
         se_abbrev = 'SFSE'
@@ -151,6 +152,13 @@ class _AStarfieldGameInfo(PatchGame):
         'oldmars - localization.ba2',
         'oldmars - textures.ba2',
         'oldmars.esm',
+        'sfbgs006 - main.ba2',
+        'sfbgs006 - textures.ba2',
+        'sfbgs006.esm',
+        'sfbgs007 - main.ba2',
+        'sfbgs007.esm',
+        'sfbgs008 - main.ba2',
+        'sfbgs008.esm',
         'starfield - animations.ba2',
         'starfield - densitymaps.ba2',
         'starfield - faceanimation01.ba2',
@@ -164,6 +172,8 @@ class _AStarfieldGameInfo(PatchGame):
         'starfield - lodmeshes.ba2',
         'starfield - lodmeshespatch.ba2',
         'starfield - lodtextures.ba2',
+        'starfield - lodtextures01.ba2',
+        'starfield - lodtextures02.ba2',
         'starfield - localization.ba2',
         'starfield - materials.ba2',
         'starfield - meshes01.ba2',
