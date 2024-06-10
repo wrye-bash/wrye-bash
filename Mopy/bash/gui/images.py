@@ -34,7 +34,7 @@ import wx.svg as _svg
 from ._gui_globals import get_image, get_image_dir
 from .base_components import Lazy, scaled
 from ..bolt import deprint, Path
-from ..exception import ArgumentError
+from ..exception import ArgumentError, GuiError
 
 ET.register_namespace('', 'http://www.w3.org/2000/svg')
 
@@ -63,6 +63,12 @@ class GuiImage(Lazy):
         self.iconSize = iconSize
         self._img_type = imageType
         self._quality = quality
+
+    def set_icon_size(self, icon_size: int) -> None:
+        if self._is_created():
+            raise GuiError(f'Cannot change icon size for {self._img_path} '
+                           'after native widget initialization.')
+        self.iconSize = icon_size
 
     def allow_create(self):
         return os.path.exists(self._img_path.split(';')[0])

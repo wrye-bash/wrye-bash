@@ -23,6 +23,7 @@
 """Collection of data structures the gui package needs from outside. Keep
 those at minimum."""
 import os
+from copy import copy
 from itertools import product
 
 from ..bolt import Path as _Path
@@ -107,8 +108,9 @@ def init_image_resources(images_dir):
     # Checkboxes
     pixs = (16, 24, 32)
     for st, col, pix in product(['off', 'on'], ('blue', 'green', 'red'), pixs):
-        checks_key = f'{st}.{col}' # TODO: sizes
-        _gui_images[f'checkbox.{col}.{st}.{pix}'] = _color_checks[checks_key]
+        svg = copy(_color_checks[f'{st}.{col}'])
+        svg.set_icon_size(pix)
+        _gui_images[f'checkbox.{col}.{st}.{pix}'] = svg
     # SVGs --------------------------------------------------------------------
     # Modification time button
     _gui_images['calendar.16'] = _icc('calendar.svg')
