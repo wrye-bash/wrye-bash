@@ -60,9 +60,11 @@ class _AStarfieldGameInfo(PatchGame):
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
     ]
 
-    class Ck(GameInfo.Ck): # TODO(SF) add rest when CK is public
+    class Ck(GameInfo.Ck):
         ck_abbrev = 'CK'
         long_name = 'Creation Kit'
+        exe = 'CreationKit.exe'
+        image_name = 'creationkit%s.png' # TODO(SF) update icon
 
     class Se(GameInfo.Se):
         se_abbrev = 'SFSE'
@@ -107,8 +109,9 @@ class _AStarfieldGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            # TODO(SF) verify vanilla dirs
+            'dataviews', # Creation Kit
             'distantlod',
+            'editorfiles', # Creation Kit
             'geometries',
             'interface',
             'lodsettings',
@@ -121,6 +124,7 @@ class _AStarfieldGameInfo(PatchGame):
             'seq',
             'sfse', # 3P: SFSE
             'shadersfx',
+            'source', # Creation Kit
             'space',
             'strings',
             'terrain',
@@ -149,9 +153,18 @@ class _AStarfieldGameInfo(PatchGame):
         'constellation - localization.ba2',
         'constellation - textures.ba2',
         'constellation.esm',
+        'creationkit - shaders.ba2',
         'oldmars - localization.ba2',
         'oldmars - textures.ba2',
         'oldmars.esm',
+        'sfbgs003 - main.ba2',
+        'sfbgs003 - textures.ba2',
+        'sfbgs003 - voices_de.ba2',
+        'sfbgs003 - voices_en.ba2',
+        'sfbgs003 - voices_es.ba2',
+        'sfbgs003 - voices_fr.ba2',
+        'sfbgs003 - voices_ja.ba2',
+        'sfbgs003.esm',
         'sfbgs006 - main.ba2',
         'sfbgs006 - textures.ba2',
         'sfbgs006.esm',
@@ -251,16 +264,14 @@ class _AStarfieldGameInfo(PatchGame):
 
     class _LoStarfield(AsteriskGame):
         must_be_active_if_present = tuple(map(FName, (
-            'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
+            'BlueprintShips-Starfield.esm', 'SFBGS003.esm', 'SFBGS006.esm',
+            'SFBGS007.esm', 'SFBGS008.esm', 'Constellation.esm', 'OldMars.esm',
         )))
 
-        # The game tries to read a Starfield.ccc already, but it's not present yet
+        # TODO(SF) The game tries to read a Starfield.ccc already, but it's not
+        # present yet. Also, official Creations are written to plugins.txt &
+        # can be disabled & reordered in the LO, so it may have been dropped.
         # _ccc_filename = 'Starfield.ccc'
-        def _active_entries_to_remove(self):
-            # BlueprintShips-Starfield.esm is hardcoded to be active, but does
-            # not have a hardcoded load order, so don't remove it from the LO
-            return super()._active_entries_to_remove() - {
-                FName('BlueprintShips-Starfield.esm')}
     lo_handler = _LoStarfield
 
     @classmethod
