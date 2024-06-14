@@ -3,7 +3,7 @@
 # pulling in the tons of extra stuff from requirements.txt.
 isort==5.13.2
 pyfiglet==1.0.2
-pygit2==1.14.1
-PyGithub==2.3.0
-pyinstaller==6.7.0
-pytest==8.2.0
+pygit2==1.15.1
+PyGithub==2.4.0
+pyinstaller==6.10.0
+pytest==8.3.3

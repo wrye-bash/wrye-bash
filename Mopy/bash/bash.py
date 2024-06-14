@@ -349,9 +349,9 @@ def dump_environment(wxver=None):
     except ImportError:
         packaging_ver = 'not found (optional)'
     try:
-        import fitz
-        pymupdf_ver = (f'{fitz.VersionBind}; bundled MuPDF version: '
-                       f'{fitz.VersionFitz}')
+        import pymupdf
+        pymupdf_ver = (f'{pymupdf.pymupdf_version}; bundled MuPDF version: '
+                       f'{pymupdf.mupdf_version}')
     except ImportError:
         pymupdf_ver = 'not found (optional)'
     try:
