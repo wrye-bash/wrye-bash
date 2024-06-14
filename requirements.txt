@@ -9,15 +9,15 @@ wxPython==4.2.1; sys_platform != 'win32'
 https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2.2a1-cp312-cp312-win_amd64.whl; sys_platform == 'win32'
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
-lxml==5.2.1
+lxml==5.2.2
 # For parsing download conditions when checking for updates
-packaging==24.0
+packaging==24.1
 # For PDF support in the doc browser
-PyMuPDF==1.24.2
+PyMuPDF==1.24.5
 # For reflink copies (does not support Windows/ReFS yet)
 reflink==0.2.2; sys_platform != 'win32'
 # For various Internet-based functionality
-requests[use_chardet_on_py3]==2.31.0
+requests[use_chardet_on_py3]==2.32.3
 # For sending files to the recycle bin on non-Windows platforms
 send2trash==1.8.3; sys_platform != 'win32'
 # For Nexus Mods integration
