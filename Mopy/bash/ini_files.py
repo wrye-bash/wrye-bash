@@ -105,8 +105,8 @@ def _scan_ini(lines, scan_comments=False):
 class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
-    reComment = re.compile('[;#].*') # todo remove # ?
-    reDeletedSetting = re.compile(fr'^{_h}(\w.*?){_h}([;#].*$|=.*$|$)') # todo remove # ? remove first {_h} ?
+    reComment = re.compile('[;#].*') # we read both characters as comment start
+    reDeletedSetting = re.compile(fr'^(\w.*?){_h}([;#].*$|=.*$|$)')
     reSection = re.compile(fr'^\[{_h}(.+?){_h}\]$')
     reSetting = re.compile(fr'^(\w+?){_h}={_h}(.*?)({_h}[;#].*)?$')
     formatRes = (reSetting, reSection)
@@ -185,13 +185,14 @@ class AIniInfo(ListInfo):
             lineNo = -1
             lstripped, setting = self._check_deleted(line)
             if is_deleted := setting is not None: # we got a "deleted" setting
-                status = 20
                 try:
                     lineNo = ci_settings[section][setting][1]
                     status = 10
                 except KeyError:
                     with suppress(KeyError):
                         lineNo = ci_deletedSettings[section][setting]
+                        status = 20
+                    # else leave it to 0 to be treated as a comment
             elif lstripped:
                 stripped = lstripped.rstrip() # can't be empty
                 if maSetting := reSetting.match(stripped):
@@ -199,10 +200,7 @@ class AIniInfo(ListInfo):
                         setting = maSetting.group(1)
                         self_val, lineNo = ci_settings[section][setting]
                         value = maSetting.group(2).strip()
-                        if self_val == value:
-                            status = 20
-                        else:
-                            status = 10
+                        status = 20 if self_val == value else 10
                     except KeyError:
                         status = -10
                 elif maSection := reSection.match(stripped):
@@ -311,7 +309,6 @@ class IniFileInfo(AIniInfo, AFileInfo):
         :rtype: tuple(LowerDict, LowerDict, boolean)"""
         ci_settings = LowerDict()
         ci_deleted_settings = LowerDict()
-        default_section = self.__class__.defaultSection
         isCorrupted = u''
         reSection = self.__class__.reSection
         reSetting = self.__class__.reSetting
@@ -328,7 +325,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                 stripped = lstripped.rstrip()
                 if maSetting := reSetting.match(stripped):
                     if sectionSettings is None:
-                        sectionSettings = ci_settings[default_section] = {}
+                        sectionSettings = ci_settings[self.defaultSection] = {}
                         isCorrupted = _("Your %(tweak_ini)s should begin with "
                             "a section header (e.g. '[General]'), but it does "
                             "not.") % {'tweak_ini': self.abs_path}
@@ -521,15 +518,15 @@ class TomlFile(IniFileInfo):
             return value == 'true'
         raise ValueError(f"Cannot parse TOML value '{value}' (yet)")
 
+_h_req = r'[^\S\r\n]+' # required horizontal whitespace
 class OBSEIniFile(IniFileInfo):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
-    reDeletedSetting = re.compile(r'(\w.*?)$')
-    reSet     = re.compile(fr'{_h}set[^\S\r\n]+(.+?)[^\S\r\n]+to'
-                           fr'[^\S\r\n]+(.*)', re.I)
-    reSetGS   = re.compile(fr'{_h}setGS[^\S\r\n]+(.+?)[^\S\r\n]+(.*)', re.I)
-    reSetNGS  = re.compile(fr'{_h}SetNumericGameSetting[^\S\r\n]+(.+?)'
-                           fr'[^\S\r\n]+(.*)', re.I)
+    reDeletedSetting = reSetting = None
+    reSet     = re.compile(fr'set{_h_req}(.+?){_h_req}to{_h_req}(.*)', re.I)
+    reSetGS   = re.compile(fr'setGS{_h_req}(.+?){_h_req}(.*)', re.I)
+    reSetNGS  = re.compile(fr'SetNumericGameSetting{_h_req}(.+?){_h_req}(.*)',
+                           re.I)
     out_encoding = 'utf-8' # FIXME: ask
     formatRes = (reSet, reSetGS, reSetNGS)
     defaultSection = u'' # Change the default section to something that
@@ -561,10 +558,20 @@ class OBSEIniFile(IniFileInfo):
 
     @classmethod
     def _check_deleted(cls, whole_line):
-        lstripped, setting = super()._check_deleted(whole_line)
-        if is_del := setting is not None: lstripped = setting
+        lstripped = whole_line.lstrip()
+        is_del = False
+        try:
+            if lstripped[0] == cls._comment_char:
+                if lstripped[1] == '-':
+                    is_del = True
+                    lstripped = lstripped[2:] # pass this to _parse_obse_line
+                else:
+                    lstripped = '' # a full line comment
+        except IndexError: # empty or a single comment character
+           lstripped = ''
         # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-        return cls._parse_obse_line(lstripped), is_del
+        ma_obse, *_fmt = cls._parse_obse_line(lstripped)
+        return (ma_obse, *_fmt), is_del and ma_obse
 
     def _get_ci_settings(self, missing_ok=False):
         """Get the settings in the ini script."""
@@ -606,9 +613,9 @@ class OBSEIniFile(IniFileInfo):
             except KeyError:
                 try:
                     _del_value, lineNo = deletedSettings[section][setting]
-                    status = 20 if is_del else 10
+                    status = 20 if is_del else -10
                 except KeyError:
-                    status = -10
+                    status = 0 if is_del else -10
                     lineNo = -1
             lines.append((line, section, setting, value, status, lineNo,
                           is_del))
