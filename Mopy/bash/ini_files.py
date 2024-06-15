@@ -523,17 +523,16 @@ class OBSEIniFile(IniFileInfo):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
     reDeletedSetting = reSetting = None
-    reSet     = re.compile(fr'set{_h_req}(.+?){_h_req}to{_h_req}(.*)', re.I)
-    reSetGS   = re.compile(fr'setGS{_h_req}(.+?){_h_req}(.*)', re.I)
-    reSetNGS  = re.compile(fr'SetNumericGameSetting{_h_req}(.+?){_h_req}(.*)',
-                           re.I)
+    _xse_regexes = {f']set[': (re.compile(
+         fr'set{_h_req}(.+?){_h_req}to{_h_req}(.*)', re.I), 'set %s to %s')}
     out_encoding = 'utf-8' # FIXME: ask
-    formatRes = (reSet, reSetGS, reSetNGS)
+    _xse_regexes.update({f']{k}[':
+        (re.compile(fr'{k}{_h_req}(.+?){_h_req}(.*)', re.I), f'{k} %s %s')
+        for k in ('setGS', 'SetNumericGameSetting')})
+    ci_pseudosections = LowerDict((f'{k[1:-1]}', k) for k in _xse_regexes)
+    formatRes = tuple(v[0] for v in _xse_regexes.values())
     defaultSection = u'' # Change the default section to something that
     # can't occur in a normal ini
-
-    ci_pseudosections = LowerDict({u'set': u']set[', u'setGS': u']setGS[',
-        u'SetNumericGameSetting': u']SetNumericGameSetting['})
 
     def getSetting(self, section, key, default):
         section = self.ci_pseudosections.get(section, section)
@@ -543,18 +542,14 @@ class OBSEIniFile(IniFileInfo):
         section = self.ci_pseudosections.get(section, section)
         return super().get_setting_values(section, default)
 
-    _regex_tuples = ((reSet, u']set[', u'set %s to %s'),
-      (reSetGS, u']setGS[', u'setGS %s %s'),
-      (reSetNGS, u']SetNumericGameSetting[', u'SetNumericGameSetting %s %s'))
-
     @classmethod
     def _parse_obse_line(cls, line):
         stripped = cls.reComment.sub('', line).strip() # for inline comments?
-        for regex, sectionKey, format_string in cls._regex_tuples:
+        for sectionKey, (regex, _fmt_str) in cls._xse_regexes.items():
             ma_obse = regex.match(stripped)
             if ma_obse:
-                return ma_obse, sectionKey, format_string, stripped
-        return None, None, None, stripped
+                return ma_obse, sectionKey, stripped
+        return None, None, stripped
 
     @classmethod
     def _check_deleted(cls, whole_line):
@@ -579,7 +574,7 @@ class OBSEIniFile(IniFileInfo):
         del_settings = LowerDict()
         with self.abs_path.open('r', encoding=self.ini_encoding) as iniFile:
             for i,line in enumerate(iniFile.readlines()):
-                (ma_obse, section_key, *_fmt), is_del = self._check_deleted(
+                (ma_obse, section_key, _strip), is_del = self._check_deleted(
                     line)
                 if ma_obse:
                     settings_dict = del_settings if is_del else ini_settings
@@ -597,7 +592,7 @@ class OBSEIniFile(IniFileInfo):
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         for line in tweak_inf.read_ini_content():
             # Check for deleted lines
-            (ma_obse, section, _fmt, stripped), is_del = self._check_deleted(line)
+            (ma_obse, section, stripped), is_del = self._check_deleted(line)
             if ma_obse:
                 groups = ma_obse.groups()
             else:
@@ -632,16 +627,14 @@ class OBSEIniFile(IniFileInfo):
                 # Modify/Delete existing lines
                 for line in self.read_ini_content(as_unicode=True):
                     # Test if line is currently deleted
-                    (ma_obse, section_key, format_string, stripped), is_del = \
+                    (ma_obse, section_key, stripped), is_del = \
                         self._check_deleted(line)
                     if ma_obse:
                         setting = ma_obse.group(1)
                         # Apply the modification
-                        if (section_key in ini_settings and
-                                setting in ini_settings[section_key]):
+                        try:
                             # Un-delete/modify it
-                            value = ini_settings[section_key][setting]
-                            del ini_settings[section_key][setting]
+                            value = ini_settings[section_key].pop(setting)
                             if isinstance(value, bytes):
                                 raise RuntimeError('Do not pass bytes into '
                                                    'saveSettings!')
@@ -653,12 +646,13 @@ class OBSEIniFile(IniFileInfo):
                                 # Handle all newlines, this removes just \n too
                                 line = value.rstrip('\n\r')
                             else:
-                                line = format_string % (setting, value)
-                        elif (not is_del and
-                              section_key in deleted_settings and
-                              setting in deleted_settings[section_key]):
-                            # It isn't deleted, but we want it deleted
-                            line = f';-{stripped}'
+                                line = self._xse_regexes[section_key][1] % (
+                                    setting, value)
+                        except KeyError:
+                            if (not is_del and section_key in deleted_settings
+                                and setting in deleted_settings[section_key]):
+                                # It isn't deleted, but we want it deleted
+                                line = f';-{stripped}'
                     tmpFile.write(f'{line}\n')
                 # Add new lines
                 for sectionKey in ini_settings:
@@ -672,7 +666,7 @@ class OBSEIniFile(IniFileInfo):
         deleted_settings = DefaultLowerDict(LowerDict)
         for line in tweak_lines:
             # Check for deleted lines
-            (ma_obse, section_key, *_fmt), is_del = self._check_deleted(line)
+            (ma_obse, section_key, _strip), is_del = self._check_deleted(line)
             if ma_obse:
                 setting = ma_obse.group(1)
                 # Save the setting for applying
@@ -692,8 +686,7 @@ class OBSEIniFile(IniFileInfo):
             with self._open_for_writing(out_path) as out:
                 for line in self.read_ini_content(as_unicode=True):
                     # Try checking if it's an OBSE line first
-                    _ma_obse, section, _fmt, stripped = self._parse_obse_line(
-                        line)
+                    _ma_obse, section, stripped = self._parse_obse_line(line)
                     if not section:
                         # It's not, assume it's a regular line
                         match_section = re_section.match(stripped)
