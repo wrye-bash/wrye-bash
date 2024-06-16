@@ -353,10 +353,13 @@ class IniFileInfo(AIniInfo, AFileInfo):
     def target_ini_exists(self, msg=None):
         return self.abs_path.is_file()
 
-    def saveSettings(self, ini_settings, deleted_settings=None):
+    def saveSettings(self, ini_settings, deleted_settings=None, *,
+                     skip_sections=frozenset()):
         """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary must be actual (setting, value) pairs.
-        'value' may be a tuple of (value, comment), which specifies an """
+        'value' may be a tuple of (value, comment), which specifies an inline
+        comment. Sections in skip_sections will be added to the ini only if
+        they are in ini_settings."""
         ini_settings = _to_lower(ini_settings)
         deleted_settings = LowerDict((x, {*map(CIstr, y)}) for x, y in
                                      (deleted_settings or {}).items())
@@ -370,6 +373,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     for sett, val in sectionSettings.items():
                         tmp_ini.write(f'{self._fmt_setting(sett, val)}\n')
                     tmp_ini.write('\n')
+                skip = False
                 for line in self.read_ini_content(as_unicode=True,
                         missing_ok=True): # We may have to create the file
                     stripped, setting, val, new_section, is_del = \
@@ -391,7 +395,11 @@ class IniFileInfo(AIniInfo, AFileInfo):
                         _add_remaining_new_items()
                         section = new_section # _add_remaining uses the section
                         sectionSettings = ini_settings.get(section, {})
-                    tmp_ini.write(f'{line}\n')
+                        if skip := section.lower() in skip_sections:
+                            if sectionSettings:
+                                tmp_ini.write(f'{line}\n')
+                    if not skip:
+                        tmp_ini.write(f'{line}\n')
                 # This will occur for the last INI section in the ini file
                 _add_remaining_new_items()
                 # Add remaining new entries - list() because
@@ -432,34 +440,6 @@ class IniFileInfo(AIniInfo, AFileInfo):
             elif new_section: section = new_section
         self.saveSettings(ini_settings,deleted_settings)
         return True
-
-    def remove_section(self, target_section: str):
-        """Removes a section and all its contents from the INI file. Note that
-        this will only remove the first matching section. If you want to remove
-        multiple, you will have to call this in a loop and check if the section
-        still exists after each iteration."""
-        re_section = self.reSection
-        # Tri-State: If None, we haven't hit the section yet. If True, then
-        # we've hit it and are actively removing it. If False, then we've fully
-        # removed the section already and should ignore further occurences.
-        remove_current = None
-        with TempFile() as out_path:
-            with self._open_for_writing(out_path) as out:
-                for line in self.read_ini_content(as_unicode=True):
-                    match_section = re_section.match(line.strip())
-                    if match_section:
-                        section = match_section.group(1)
-                        # Check if we need to remove this section
-                        if (remove_current is None and
-                                section.lower() == target_section.lower()):
-                            # Yes, so start removing every read line
-                            remove_current = True
-                        elif remove_current:
-                            # We've removed the target section, remember that
-                            remove_current = False
-                    if not remove_current:
-                        out.write(line + '\n')
-            self.abs_path.replace_with_temp(out_path)
 
 class TomlFile(IniFileInfo):
     """A TOML file. Encoding is always UTF-8 (demanded by spec). Note that
@@ -616,7 +596,7 @@ class OBSEIniFile(IniFileInfo):
                                 raise RuntimeError(
                                     'OBSE INIs do not support writing inline '
                                     'comments yet')
-                            if isinstance(value, str) and value[-1:] == '\n':
+                            if isinstance(value, str) and value[-1:] == '\n': # we come from applyTweakFile
                                 # Handle all newlines, this removes just \n too
                                 line = value.rstrip('\n\r')
                             else:
@@ -649,36 +629,6 @@ class OBSEIniFile(IniFileInfo):
                     setting] = line
         self.saveSettings(ini_settings,deleted_settings)
         return True
-
-    def remove_section(self, target_section: str): # todo remove let's not support sections in OBSE INIs
-        re_section = self.reSection
-        # Tri-State: If None, we haven't hit the section yet. If True, then
-        # we've hit it and are actively removing it. If False, then we've fully
-        # removed the section already and should ignore further occurences.
-        remove_current = None
-        with TempFile() as out_path:
-            with self._open_for_writing(out_path) as out:
-                for line in self.read_ini_content(as_unicode=True):
-                    # Try checking if it's an OBSE line first
-                    stripped, setting, val, _section, _is_del = \
-                        self._parse_setting(line, False)
-                    if not setting:
-                        # It's not, assume it's a regular line
-                        match_section = re_section.match(stripped)
-                        section = (match_section.group(1)
-                                   if match_section else '')
-                        if section:
-                            # Check if we need to remove this section
-                            if (remove_current is None and
-                                    section.lower() == target_section.lower()):
-                                # Yes, so start removing every read line
-                                remove_current = True
-                            elif remove_current:
-                                # We've removed the target section, remember that
-                                remove_current = False
-                    if not remove_current:
-                        out.write(f'{line}\n')
-            self.abs_path.replace_with_temp(out_path)
 
 class GameIni(IniFileInfo):
     """Main game ini file. Only use to instantiate bosh.oblivionIni"""
