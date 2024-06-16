@@ -890,20 +890,19 @@ class INITweakLineCtrl(INIListCtrl):
         # TODO(ut) avoid if ini tweak did not change
         self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
         updated_line_nums = set()
-        for i,line in enumerate(self.tweakLines):
+        for i, (line, _sec, _sett, _val, status, lineNo, is_del) in enumerate(
+                self.tweakLines):
             #--Line
-            self.InsertItem(i, line[0])
+            self.InsertItem(i, line)
             #--Line color
-            status, is_deleted = line[4], line[6]
             if status == -10: color = colors[u'tweak.bkgd.invalid']
             elif status == 10: color = colors[u'tweak.bkgd.mismatched']
             elif status == 20: color = colors[u'tweak.bkgd.matched']
-            elif is_deleted: color = colors[u'tweak.bkgd.mismatched']
+            elif is_del: color = colors['tweak.bkgd.mismatched']
             else: color = Color.from_wx(self.GetBackgroundColour())
             color = color.to_rgba_tuple()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
-            lineNo = line[5]
             if lineNo != -1:
                 self.iniContents.SetItemBackgroundColour(lineNo,color)
                 updated_line_nums.add(lineNo)

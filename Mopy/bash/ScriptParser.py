@@ -1189,7 +1189,7 @@ class PreParser(Parser):
         self._handleINIEdit(ini_name, section, setting, value, comment, False)
 
     def fnDisableINILine(self, ini_name, section, setting):
-        self._handleINIEdit(ini_name, section, setting, '', '', True)
+        self._handleINIEdit(ini_name, section, setting, 'DELETED', '', True)
 
     def _handleINIEdit(self, ini_name, section, setting, value, comment,
                        disable):

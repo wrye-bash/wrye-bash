@@ -2572,7 +2572,7 @@ class InstallersData(DataStore):
             data_ini, tweak_ini = bif[iniAbsDataPath], bif[tweakPath]
             currSection = None
             lines = []
-            for (line_text, section, setting, value, status, lineNo,
+            for (line_text, section, setting, _val, status, _lineNo,
                  _deleted) in data_ini.analyse_tweak(tweak_ini):
                 if not line_text.rstrip():
                     continue # possible empty lines at the start

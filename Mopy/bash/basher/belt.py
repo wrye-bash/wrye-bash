@@ -627,8 +627,8 @@ class WryeParser(PreParser):
             to the Data folder.
         :param section: The section of the INI file to edit.
         :param setting: The name of the setting to edit.
-        :param value: The value to assign. If disabling a line, this is
-            ignored.
+        :param value: The value to assign. If disabling a line, this must be
+            'DELETED'.
         :param comment: The comment to place with the edit. Pass an empty
             string if no comment should be placed.
         :param disable: Whether or not this edit should disable the setting in
