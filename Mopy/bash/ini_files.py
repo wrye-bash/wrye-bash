@@ -38,7 +38,6 @@ from .exception import FailedIniInferError
 from .wbtemp import TempFile
 
 _h = r'[^\S\r\n]*' # Perl's \h (horizontal whitespace) sorely missed
-_comment_start_re = re.compile(fr'^{_h}[;#]{_h}')
 
 # All extensions supported by this parser
 supported_ini_exts = {'.ini', '.cfg', '.toml'}
@@ -91,24 +90,16 @@ def get_ini_type_and_encoding(abs_ini_path, *, fallback_type=None,
 def _scan_ini(lines, scan_comments=False):
     count = Counter()
     for ini_type in (IniFileInfo, OBSEIniFile):
-        comment_re = _comment_start_re if scan_comments else ini_type.reComment
         for line in lines:
-            line_stripped = comment_re.sub('', line).strip()
-            if not line_stripped:
-                continue # No need to try matching an empty string
-            for ini_format_re in ini_type.formatRes:
-                if ini_format_re.match(line_stripped):
-                    count[ini_type] += 1
-                    break
+            if ini_type.parse_ini_line(line, analyze_comments=scan_comments)[0]:
+                count[ini_type] += 1
     return count.most_common(1)[0][0] if count else None
 
 class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     reComment = re.compile('[;#].*') # we read both characters as comment start
-    reSection = re.compile(fr'^\[{_h}(.+?){_h}\]$')
     reSetting = re.compile(fr'^(\w+?){_h}={_h}(.*?)({_h}[;#].*)?$')
-    formatRes = (reSetting, reSection)
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     defaultSection = u'General'
     # The comment character to use when writing new comments into this file
@@ -180,24 +171,21 @@ class AIniInfo(ListInfo):
             status = 0
             lineNo = -1
             stripped, setting, value, new_section, is_del = \
-                self._check_deleted(line)
-            if is_del: # we got a "deleted" setting
-                try:
-                    lineNo = ci_settings[section][setting][1]
-                    status = 10
-                except KeyError:
-                    with suppress(KeyError):
-                        lineNo = ci_deletedSettings[section][setting]
-                        status = 20
-                    # else leave it to 0 to be treated as a comment
-            elif setting:
+                self.parse_ini_line(line)
+            if setting:
                 try:
                     self_val, lineNo = ci_settings[section][setting]
                     value = value.strip()
-                    status = 20 if self_val == value else 10
+                    status = 10 if is_del or self_val != value else 20
                 except KeyError:
-                    status = -10
-            elif new_section: # we got a section
+                    if not is_del:
+                        status = -10
+                    else:
+                        with suppress(KeyError):
+                            lineNo = ci_deletedSettings[section][setting]
+                            status = 20
+                        # else leave it to 0 to be treated as a comment
+            elif new_section:  # we got a section
                 if (section := new_section) not in ci_settings:
                     status = -10
             elif stripped: # not a section/setting/line comment but not empty
@@ -207,8 +195,8 @@ class AIniInfo(ListInfo):
         return lines
 
     @classmethod
-    def _check_deleted(cls, whole_line, *, parse_comments=False,
-                       __comments=('#', ';')):
+    def parse_ini_line(cls, whole_line, *, inline_comments=False,
+                       analyze_comments=False, __comments=('#', ';')):
         lstripped = whole_line.lstrip()
         # deleted settings are comments with a dash after the comment character
         is_del = False
@@ -216,15 +204,18 @@ class AIniInfo(ListInfo):
             if lstripped[0] in __comments:
                 if lstripped[1] == '-':
                     is_del = True
-                    lstripped = lstripped[2:] # pass this to reSetting
-                else:
-                    lstripped = ''  # a full line comment
+                    lstripped = lstripped[2:].lstrip() if analyze_comments \
+                        else lstripped[2:] # del settings dont start with space
+                else: # a full line comment
+                    lstripped = lstripped[1:].lstrip() if analyze_comments \
+                        else ''
         except IndexError: # empty or a single comment character
             lstripped = ''
-        return cls._parse_setting(lstripped, is_del, parse_comments)
+        return cls._parse_setting(lstripped, is_del, inline_comments)
 
     @classmethod
-    def _parse_setting(cls, lstripped, is_del, parse_comments=False):
+    def _parse_setting(cls, lstripped, is_del, parse_comments=False, *,
+                       __re_section=re.compile(fr'^\[{_h}(.+?){_h}\]$')):
         # stripped, setting, value, section, del_sett
         if not lstripped:
             return '', None, None, None, False
@@ -233,7 +224,7 @@ class AIniInfo(ListInfo):
             val = ((ma_setting.group(2), ma_setting.group(3)) if parse_comments
                    else ma_setting.group(2))
             return stripped, ma_setting.group(1), val, None, is_del
-        elif ma_section := cls.reSection.match(stripped):
+        elif ma_section := __re_section.match(stripped):
             return stripped, None, None, ma_section.group(1), False
         return '', None, None, None, False
 
@@ -324,7 +315,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         sectionSettings = None
         section = None
         for i, line in enumerate(self.read_ini_content(missing_ok=missing_ok)):
-            _strip, setting, val, new_section, is_del = self._check_deleted(
+            _strip, setting, val, new_section, is_del = self.parse_ini_line(
                 line)
             if is_del: # we got a "deleted" setting
                 if section: # else treat it as a comment (skip it)
@@ -377,7 +368,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                 for line in self.read_ini_content(as_unicode=True,
                         missing_ok=True): # We may have to create the file
                     stripped, setting, val, new_section, is_del = \
-                        self._check_deleted(line, parse_comments=True)
+                        self.parse_ini_line(line, inline_comments=True)
                     if setting: # modify? we need be in a section
                         try: # Check if we have a value for this setting
                             value = sectionSettings.pop(setting) # KE
@@ -431,7 +422,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         deleted_settings = DefaultLowerDict(set) #only delete existing settings
         section = None
         for line in tweak_lines:
-            _strip, setting, val, new_section, is_del = self._check_deleted(
+            _strip, setting, val, new_section, is_del = self.parse_ini_line(
                 line) # could parse comments? would need modify _parse_value
             if is_del:
                 if section: deleted_settings[section].add(CIstr(setting))
@@ -505,7 +496,6 @@ class OBSEIniFile(IniFileInfo):
         (re.compile(fr'{k}{_h_req}(.+?){_h_req}(.*)', re.I), f'{k} %s %s')
         for k in ('setGS', 'SetNumericGameSetting')})
     ci_pseudosections = LowerDict((f'{k[1:-1]}', k) for k in _xse_regexes)
-    formatRes = tuple(v[0] for v in _xse_regexes.values())
     defaultSection = u'' # Change the default section to something that
     # can't occur in a normal ini
 
@@ -533,7 +523,7 @@ class OBSEIniFile(IniFileInfo):
         with self.abs_path.open('r', encoding=self.ini_encoding) as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 _stripped, setting, val, section_key, is_del = \
-                    self._check_deleted(line)
+                    self.parse_ini_line(line)
                 if setting:
                     settings_dict = del_settings if is_del else ini_settings
                     val = self._parse_value(val)
@@ -549,7 +539,7 @@ class OBSEIniFile(IniFileInfo):
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         for line in tweak_inf.read_ini_content():
             # Check for deleted lines
-            stripped, setting, val, section, is_del = self._check_deleted(line)
+            stripped, setting, val, section, is_del = self.parse_ini_line(line)
             if not setting:
                 # Some other kind of line else just a comment line
                 status = -10 if stripped else 0
@@ -583,7 +573,7 @@ class OBSEIniFile(IniFileInfo):
                 for line in self.read_ini_content(as_unicode=True):
                     # Test if line is currently deleted
                     stripped, setting, _val, section_key, is_del = \
-                        self._check_deleted(line)
+                        self.parse_ini_line(line)
                     if setting:
                         # Apply the modification
                         try:
@@ -620,7 +610,7 @@ class OBSEIniFile(IniFileInfo):
         deleted_settings = DefaultLowerDict(LowerDict)
         for line in tweak_lines:
             # Check for deleted lines
-            _strip, setting, _val, section_key, is_del = self._check_deleted(
+            _strip, setting, _val, section_key, is_del = self.parse_ini_line(
                 line)
             if setting:
                 # Save the setting for applying
