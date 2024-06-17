@@ -878,15 +878,15 @@ class INITweakLineCtrl(INIListCtrl):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
         self.Freeze()
         try:
+            self.DeleteAllItems()
+            if tweakPath is None:
+                return
             self._RefreshTweakLineCtrl(tweakPath)
         finally:
             self.Thaw()
 
     def _RefreshTweakLineCtrl(self, tweakPath):
         # Clear the list, then populate it with the new lines
-        self.DeleteAllItems()
-        if tweakPath is None:
-            return
         # TODO(ut) avoid if ini tweak did not change
         self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
         updated_line_nums = set()
@@ -929,28 +929,25 @@ class TargetINILineCtrl(INIListCtrl):
 
     def refresh_ini_contents(self):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
+        if bosh.iniInfos.ini.isCorrupted: return
         self.Freeze()
         try:
-            self._RefreshIniContents()
+            # Clear the list, then populate it with the new lines
+            self.DeleteAllItems()
+            main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
+                                 bosh.iniInfos.ini.abs_path.stail)
+            try:
+                sel_ini_lines = bosh.iniInfos.ini.read_ini_content()
+                if main_ini_selected: # If we got here, reading the INI worked
+                    Link.Frame.oblivionIniMissing = False
+                for i, line in enumerate(sel_ini_lines):
+                    self.InsertItem(i, line.rstrip())
+            except OSError:
+                if main_ini_selected:
+                    Link.Frame.oblivionIniMissing = True
+            self.fit_column_to_header(0)
         finally:
             self.Thaw()
-
-    def _RefreshIniContents(self):
-        if bosh.iniInfos.ini.isCorrupted: return
-        # Clear the list, then populate it with the new lines
-        self.DeleteAllItems()
-        main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
-                             bosh.iniInfos.ini.abs_path.stail)
-        try:
-            sel_ini_lines = bosh.iniInfos.ini.read_ini_content()
-            if main_ini_selected: # If we got here, reading the INI worked
-                Link.Frame.oblivionIniMissing = False
-            for i, line in enumerate(sel_ini_lines):
-                self.InsertItem(i, line.rstrip())
-        except OSError:
-            if main_ini_selected:
-                Link.Frame.oblivionIniMissing = True
-        self.fit_column_to_header(0)
 
 #------------------------------------------------------------------------------
 _common_sort_keys = {'File': None,  # just sort by name

@@ -159,7 +159,8 @@ class DocBrowser(WindowFrame):
         return self._mod_infos_singl[mod_name].get_table_prop(prop, def_)
 
     def _set_doc_prop(self, doc_path, *, prop='doc'):
-        self._mod_infos_singl[self._dropdown_item].set_table_prop(prop, doc_path)
+        self._mod_infos_singl[self._dropdown_item()].set_table_prop(prop,
+                                                                    doc_path)
 
     def _dropdown_item(self) -> FName:
         """Return the currently selected plugin in the dropdown."""

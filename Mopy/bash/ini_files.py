@@ -26,11 +26,11 @@ from __future__ import annotations
 
 import os
 import re
-from collections import Counter, OrderedDict
+from collections import Counter
 
 # Keep local imports to a minimum, this module is important for booting!
-from .bolt import CIstr, DefaultLowerDict, ListInfo, LowerDict, \
-    OrderedLowerDict, decoder, deprint, getbestencoding, AFileInfo
+from .bolt import CIstr, DefaultLowerDict, ListInfo, LowerDict, decoder, \
+    deprint, getbestencoding, AFileInfo
 # We may end up getting run very early in boot, make sure _() never breaks us
 from .bolt import failsafe_underscore as _
 from .exception import FailedIniInferError
@@ -42,13 +42,8 @@ _comment_start_re = re.compile(r'^[^\S\r\n]*[;#][^\S\r\n]*')
 supported_ini_exts = {'.ini', '.cfg', '.toml'}
 
 def _to_lower(ini_settings):
-    """Transforms dict of dict to LowerDict of LowerDict, respecting
-    OrdererdDicts if they're used."""
-    def _mk_dict(input_dict):
-        ret_type = OrderedLowerDict if isinstance(input_dict,
-                                                  OrderedDict) else LowerDict
-        return ret_type(input_dict)
-    return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.items())
+    """Transforms dict of dict to LowerDict of LowerDict"""
+    return LowerDict((x, LowerDict(y)) for x, y in ini_settings.items())
 
 def get_ini_type_and_encoding(abs_ini_path, *, fallback_type=None,
         consider_obse_inis=False) -> tuple[type[IniFileInfo], str]:
@@ -164,7 +159,7 @@ class AIniInfo(ListInfo):
         Note we strip line endings at the end of the line in unicode mode."""
         raise NotImplementedError
 
-    def analyse_tweak(self, tweak_file):
+    def analyse_tweak(self, tweak_inf):
         """Analyse the tweak lines based on self settings and type. Return a
         list of line info tuples in this format:
         [(fulltext,section,setting,value,status,ini_line_number, deleted)]
@@ -189,7 +184,7 @@ class AIniInfo(ListInfo):
         reSetting = self.reSetting
         #--Read ini file
         section = self.__class__.defaultSection
-        for i, line in enumerate(tweak_file.read_ini_content()):
+        for line in tweak_inf.read_ini_content():
             maDeletedSetting = reDeleted.match(line)
             maSection = reSection.match(line)
             maSetting = reSetting.match(line)
@@ -360,7 +355,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         Values in settings dictionary must be actual (setting, value) pairs.
         'value' may be a tuple of (value, comment), which specifies an """
         ini_settings = _to_lower(ini_settings)
-        deleted_settings = LowerDict((x, {CIstr(u) for u in y}) for x, y in
+        deleted_settings = LowerDict((x, {*map(CIstr, y)}) for x, y in
                                      (deleted_settings or {}).items())
         reDeleted = self.reDeletedSetting
         reSection = self.reSection
@@ -597,12 +592,12 @@ class OBSEIniFile(IniFileInfo):
                         self._parse_value(ma_obse.group(2)), i)
         return ini_settings, deleted_settings, False
 
-    def analyse_tweak(self, tweak_file):
+    def analyse_tweak(self, tweak_inf):
         lines = []
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        for line in tweak_file.read_ini_content():
+        for line in tweak_inf.read_ini_content():
             # Check for deleted lines
             maDeleted = reDeleted.match(line)
             if maDeleted: stripped = maDeleted.group(1)
