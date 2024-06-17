@@ -171,11 +171,10 @@ class AIniInfo(ListInfo):
             status = 0
             lineNo = -1
             stripped, setting, value, new_section, is_del = \
-                self.parse_ini_line(line)
+                self.parse_ini_line(line, parse_value=True)
             if setting:
                 try:
                     self_val, lineNo = ci_settings[section][setting]
-                    value = value.strip()
                     status = 10 if is_del or self_val != value else 20
                 except KeyError:
                     if not is_del:
@@ -196,7 +195,7 @@ class AIniInfo(ListInfo):
 
     @classmethod
     def parse_ini_line(cls, whole_line, *, inline_comments=False,
-                       analyze_comments=False, __comments=('#', ';')):
+            parse_value=False, analyze_comments=False, __comments=('#', ';')):
         lstripped = whole_line.lstrip()
         # deleted settings are comments with a dash after the comment character
         is_del = False
@@ -211,22 +210,30 @@ class AIniInfo(ListInfo):
                         else ''
         except IndexError: # empty or a single comment character
             lstripped = ''
-        return cls._parse_setting(lstripped, is_del, inline_comments)
+        return cls._parse_setting(lstripped, is_del, inline_comments,
+                                  parse_value)
 
     @classmethod
-    def _parse_setting(cls, lstripped, is_del, parse_comments=False, *,
+    def _parse_setting(cls, lstripped, is_del, parse_comments, parse_value, *,
                        __re_section=re.compile(fr'^\[{_h}(.+?){_h}\]$')):
         # stripped, setting, value, section, del_sett
         if not lstripped:
             return '', None, None, None, False
         stripped = lstripped.rstrip()  # can't be empty
         if ma_setting := cls.reSetting.match(stripped):
-            val = ((ma_setting.group(2), ma_setting.group(3)) if parse_comments
-                   else ma_setting.group(2))
+            val = cls._parse_value(ma_setting.group(2)) if parse_value else \
+                ma_setting.group(2)
+            val = (val, ma_setting.group(3)) if parse_comments else val
             return stripped, ma_setting.group(1), val, None, is_del
         elif ma_section := __re_section.match(stripped):
             return stripped, None, None, ma_section.group(1), False
         return '', None, None, None, False
+
+    @staticmethod
+    def _parse_value(value):
+        """Return a parsed version of the specified setting value. Just strips
+        whitespace by default."""
+        return value.strip()
 
 class IniFileInfo(AIniInfo, AFileInfo):
     """Any old ini file."""
@@ -316,7 +323,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         section = None
         for i, line in enumerate(self.read_ini_content(missing_ok=missing_ok)):
             _strip, setting, val, new_section, is_del = self.parse_ini_line(
-                line)
+                line, parse_value=True)
             if is_del: # we got a "deleted" setting
                 if section: # else treat it as a comment (skip it)
                     ci_deleted_settings.setdefault(section, LowerDict())[
@@ -327,7 +334,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     isCorrupted = _("Your %(tweak_ini)s should begin with "
                         "a section header (e.g. '[General]'), but it does "
                         "not.") % {'tweak_ini': self.abs_path}
-                sectionSettings[setting] = (self._parse_value(val), i)
+                sectionSettings[setting] = (val, i)
             elif new_section: # we got a section
                 sectionSettings = ci_settings[section := new_section] = \
                     LowerDict()
@@ -409,11 +416,6 @@ class IniFileInfo(AIniInfo, AFileInfo):
             value = value[0]
         return f'{setting}={value}{comment}'
 
-    def _parse_value(self, value):
-        """Return a parsed version of the specified setting value. Just strips
-        whitespace by default."""
-        return value.strip()
-
     def applyTweakFile(self, tweak_lines):
         """Read ini tweak file and apply its settings to self (the target ini).
         """
@@ -423,11 +425,11 @@ class IniFileInfo(AIniInfo, AFileInfo):
         section = None
         for line in tweak_lines:
             _strip, setting, val, new_section, is_del = self.parse_ini_line(
-                line) # could parse comments? would need modify _parse_value
+                line, parse_value=True) # could parse comments? would need modify _parse_value
             if is_del:
                 if section: deleted_settings[section].add(CIstr(setting))
             elif setting:
-                ini_settings[section][setting] = self._parse_value(val)
+                ini_settings[section][setting] = val
             elif new_section: section = new_section
         self.saveSettings(ini_settings,deleted_settings)
         return True
@@ -468,7 +470,8 @@ class TomlFile(IniFileInfo):
             value = str(value).lower()
         return f'{setting} = {value}{comment}'
 
-    def _parse_value(self, value):
+    @staticmethod
+    def _parse_value(value):
         if value.startswith(('"', "'")):
             return value[1:-1] # Drop the string's quotes
         try:
@@ -508,12 +511,13 @@ class OBSEIniFile(IniFileInfo):
         return super().get_setting_values(section, default)
 
     @classmethod
-    def _parse_setting(cls, line, is_del, parse_comments=False):
+    def _parse_setting(cls, line, is_del, parse_comments, parse_value):
         stripped = cls.reComment.sub('', line).strip() # for inline comments?
         for sectionKey, (regex, _fmt_str) in cls._xse_regexes.items():
             if ma_obse := regex.match(stripped):
-                return stripped, ma_obse.group(1), ma_obse.group(2), \
-                    sectionKey, is_del
+                val = cls._parse_value(ma_obse.group(2)) if parse_value else \
+                    ma_obse.group(2)
+                return stripped, ma_obse.group(1), val, sectionKey, is_del
         return '', None, None, None, False
 
     def _get_ci_settings(self, missing_ok=False):
@@ -523,10 +527,9 @@ class OBSEIniFile(IniFileInfo):
         with self.abs_path.open('r', encoding=self.ini_encoding) as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 _stripped, setting, val, section_key, is_del = \
-                    self.parse_ini_line(line)
+                    self.parse_ini_line(line, parse_value=True)
                 if setting:
                     settings_dict = del_settings if is_del else ini_settings
-                    val = self._parse_value(val)
                     try:
                         settings_dict[section_key][setting] = (val, i)
                     except KeyError:
@@ -539,17 +542,17 @@ class OBSEIniFile(IniFileInfo):
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         for line in tweak_inf.read_ini_content():
             # Check for deleted lines
-            stripped, setting, val, section, is_del = self.parse_ini_line(line)
+            stripped, setting, val, section, is_del = self.parse_ini_line(line,
+                parse_value=True)
             if not setting:
                 # Some other kind of line else just a comment line
                 status = -10 if stripped else 0
                 lines.append((line, '', '', '',  status, -1, False))
                 continue
             setting = setting.strip() # todo needed?
-            value = val.strip() # todo parse_value?
             try:
                 ini_value, lineNo = ci_settings[section][setting]
-                status = 10 if is_del or ini_value != value else 20
+                status = 10 if is_del or ini_value != val else 20
             except KeyError:
                 try:
                     _del_value, lineNo = deletedSettings[section][setting]
@@ -557,8 +560,7 @@ class OBSEIniFile(IniFileInfo):
                 except KeyError:
                     status = 0 if is_del else -10
                     lineNo = -1
-            lines.append((line, section, setting, value, status, lineNo,
-                          is_del))
+            lines.append((line, section, setting, val, status, lineNo, is_del))
         return lines
 
     def saveSettings(self, ini_settings, deleted_settings=None):
