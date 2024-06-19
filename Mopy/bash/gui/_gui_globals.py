@@ -67,6 +67,8 @@ def rebuild_all_checkbox_images():
             layers.append('checkbox_plus.svg')
         elif st == 'on':
             layers.append('checkbox_check.svg')
+        if overlay == '.wiz':
+            layers.append('checkbox_wand.svg')
         svg = _icc(layers[0])
         svg.composite(*layers)
         for col, (primary, secondary) in default_checkbox_colors.items():
