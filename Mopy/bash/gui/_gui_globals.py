@@ -38,7 +38,7 @@ default_checkbox_colors = { # name: (primary, secondary)
     'green': (b'#C1FFC1', b'#005700'),
     'grey': (b'#C0C0C0', b'#000000'),
     'orange': (b'#FFD5AA', b'#663300'),
-    'purple': (b'#FAB0FF', b'#FAB0FF'),
+    'purple': (b'#FAB0FF', b'#413252'),
     'red': (b'#FF9494', b'#570000'),
     'white': (b'#F4F4F4', b'#000000'),
     'yellow': (b'#FFFFBF', b'#575700'),
