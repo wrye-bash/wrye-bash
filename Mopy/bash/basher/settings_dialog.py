@@ -24,6 +24,7 @@ import io
 import os
 import webbrowser
 from collections import defaultdict
+from functools import partial
 
 from . import tabInfo
 from .constants import colorInfo, settingDefaults
@@ -31,7 +32,7 @@ from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
 from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
-    reverse_dict
+    reverse_dict, fast_cached_property
 from ..env import is_uac, shellDelete, shellMove
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
@@ -41,7 +42,8 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
-    get_image, HyperlinkLabel
+    get_image, HyperlinkLabel, UIListCtrl, rebuild_all_checkbox_images, \
+    SearchBar
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -215,6 +217,93 @@ class _ASettingsPage(ATreeMixin):
 
 class _AScrollablePage(_ASettingsPage, ScrollableWindow): pass
 class _AFixedPage(_ASettingsPage, PanelWin): pass
+
+class CheckboxesPage(_AFixedPage):
+    """Checkbox customization page."""
+    def __init__(self, parent, page_desc):
+        super().__init__(parent, page_desc)
+        self._search_bar = SearchBar(self, hint=_('Search Checkboxes'))
+        self._search_bar.on_text_changed.subscribe(self._handle_search)
+        self._preview_uilist = UIListCtrl(self, allow_edit=False,
+            is_border_sunken=False, is_single_select=True,
+            fnDndAllow=lambda: False)
+        self._check_icons = rebuild_all_checkbox_images()
+        self._image_list = balt.ColorChecks(self._check_icons)
+        self._image_list.native_init(recreate=False)
+        self._preview_uilist.set_image_list(self._image_list)
+        self._preview_uilist.lc_insert_column(0, 'Checkbox Key')
+        self._preview_uilist.on_item_selected.subscribe(self._handle_select)
+        self._temp_label = Label(self, 'Select something :)')
+        self._populate_preview_list()
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._page_desc_label,
+            HorizontalLine(self),
+            self._search_bar,
+            self._preview_uilist,
+            self._temp_label,
+        ]).apply_to(self)
+
+    def _populate_preview_list(self, search_text=''):
+        """Repopulate the entire checkbox preview list using the specified
+        search term."""
+        search_term = search_text.strip().lower()
+        with self._preview_uilist.pause_drawing():
+            self._preview_uilist.DeleteAll()
+            for i, color_key in enumerate(self._sorted_checkbox_keys):
+                if search_term not in color_key.lower():
+                    continue
+                decorate_fn = partial(self._decorate_item, color_key=color_key)
+                # FIXME We're currently using the color key for everything,
+                #  translate it into a human-readable form somehow (the second
+                #  item aka str_label, the third should remain the key)
+                self._preview_uilist.InsertListCtrlItem(i, color_key,
+                    color_key, decorate_cb=decorate_fn)
+
+    @fast_cached_property
+    def _sorted_checkbox_keys(self):
+        """Helper for calculating the sorted checkbox key list once."""
+        # 1. Sort wizards after non-wizards
+        to_sort = sorted(self._check_icons,
+            key=lambda color_key: '.wiz' in color_key)
+        # 2. Sort by color
+        to_sort.sort(key=lambda color_key: color_key.split('.')[1])
+        # 3. Sort diamonds after regular boxes
+        to_sort.sort(key=lambda color_key: '.dir' in color_key)
+        return to_sort
+
+    def _decorate_item(self, gItem, color_key):
+        """Callback to assign an image to the specified list item."""
+        icon_index = self._image_list.img_dex(color_key)
+        if icon_index is not None:
+            gItem.SetImage(icon_index)
+
+    def _handle_search(self, new_search_text: str):
+        """Internal callback, called when the user enters text into the search
+        bar."""
+        selected_item = None
+        prev_index = self._preview_uilist.get_selected_index()
+        if prev_index != -1:
+            selected_item = self._preview_uilist.FindItemAt(prev_index)
+        self._populate_preview_list(search_text=new_search_text)
+        if selected_item is not None:
+            try:
+                next_index = self._preview_uilist.FindIndexOf(selected_item)
+                if next_index != -1:
+                    # Only in this case can we successfully select something.
+                    # In all other cases, full through to the None below
+                    self._preview_uilist.lc_select_item_at_index(next_index)
+                    return
+            except KeyError:
+                pass
+        self._handle_select(None)
+
+    def _handle_select(self, item_key: str | None):
+        """Internal callback, called when the user selects an item in the
+        preview list."""
+        if item_key is None:
+            self._temp_label.label_text = 'Select something :)'
+        else:
+            self._temp_label.label_text = f"You've selected {item_key}!"
 
 # Colors ----------------------------------------------------------------------
 class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
@@ -1528,54 +1617,58 @@ class TrustedBinariesPage(_AFixedPage):
 
 # Page Definitions ------------------------------------------------------------
 _settings_pages = {
-    _(u'Appearance'): {
-        _(u'Colors'): ColorsPage,
-        _(u'Language'): LanguagePage,
+    _('Appearance'): {
+        _('Checkboxes'): CheckboxesPage,
+        _('Colors'): ColorsPage,
+        _('Language'): LanguagePage,
         _('Miscellaneous'): MiscAppearancePage,
-        _(u'Status Bar'): StatusBarPage,
+        _('Status Bar'): StatusBarPage,
     },
-    _(u'Backups'): BackupsPage,
-    _(u'Confirmations'): ConfirmationsPage,
-    _(u'General'): GeneralPage,
-    _(u'Trusted Binaries'): TrustedBinariesPage,
+    _('Backups'): BackupsPage,
+    _('Confirmations'): ConfirmationsPage,
+    _('General'): GeneralPage,
+    _('Trusted Binaries'): TrustedBinariesPage,
 }
 
 _page_descriptions = {
-    _(u'Appearance'):
-        _(u'Personalize various aspects of how Wrye Bash looks, including '
-          u'colors and some GUI options.'),
-    _(u'Appearance') + u'/' + _(u'Colors'):
-        _(u'Change colors of various GUI components.'),
-    _(u'Appearance') + u'/' + _(u'Language'):
-        _(u'Change the language that Wrye Bash is displayed in and manage '
-          u'localizations.'),
+    _('Appearance'):
+        _('Personalize various aspects of how Wrye Bash looks, including '
+          'colors and some GUI options.'),
+    _('Appearance') + '/' + _('Checkboxes'):
+        _('Customize the colors of checkboxes.'),
+    _('Appearance') + '/' + _('Colors'):
+        _('Change colors of various GUI components.'),
+    _('Appearance') + '/' + _('Language'):
+        _('Change the language that Wrye Bash is displayed in and manage '
+          'localizations.'),
     _('Appearance') + '/' + _('Miscellaneous'):
         _('Change various miscellaneous appearance settings.'),
-    _(u'Appearance') + u'/' + _(u'Status Bar'):
-        _(u'Change settings related to the status bar at the bottom and '
-          u'manage hidden buttons.'),
-    _(u'Backups'):
-        _(u'Create, manage and restore backups of Wrye Bash settings and '
-          u'other data. Click on a backup to manage it.'),
-    _(u'Confirmations'):
-        _(u"Enable or disable popups with a 'Don't show this in the future' "
-          u'option.'),
-    _(u'General'):
-        _(u'Change various general settings.'),
-    _(u'Trusted Binaries'):
-        _(u'Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
-          u'binaries will be skipped by BAIN when installing packages.')
+    _('Appearance') + '/' + _('Status Bar'):
+        _('Change settings related to the status bar at the bottom and '
+          'manage hidden buttons.'),
+    _('Backups'):
+        _('Create, manage and restore backups of Wrye Bash settings and '
+          'other data. Click on a backup to manage it.'),
+    _('Confirmations'):
+        _("Enable or disable popups with a 'Don't show this in the future' "
+          'option.'),
+    _('General'):
+        _('Change various general settings.'),
+    _('Trusted Binaries'):
+        _('Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
+          'binaries will be skipped by BAIN when installing packages.')
 }
 
 # Anchor refs into the WB Advanced Readme
 _page_anchors = defaultdict(lambda: u'settings', {
-    _(u'Appearance') + u'/' + _(u'Colors'): u'settings-appearance-colors',
-    _(u'Appearance') + u'/' + _(u'Language'): u'settings-appearance-language',
+    _('Appearance') + '/' + _('Checkboxes'): 'settings-appearance-checkboxes',
+    _('Appearance') + '/' + _('Colors'): 'settings-appearance-colors',
+    _('Appearance') + '/' + _('Language'): 'settings-appearance-language',
     _('Appearance') + '/' + _('Miscellaneous'): 'settings-appearance-misc',
-    _(u'Appearance') + u'/' + _(u'Status Bar'):
+    _('Appearance') + '/' + _('Status Bar'):
         u'settings-appearance-status-bar',
-    _(u'Backups'): u'settings-backups',
-    _(u'Confirmations'): u'settings-confirmations',
-    _(u'General'): u'settings-general',
-    _(u'Trusted Binaries'): u'settings-trusted-binaries',
+    _('Backups'): 'settings-backups',
+    _('Confirmations'): 'settings-confirmations',
+    _('General'): 'settings-general',
+    _('Trusted Binaries'): 'settings-trusted-binaries',
 })

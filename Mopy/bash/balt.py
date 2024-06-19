@@ -82,7 +82,6 @@ colors: dict[str, Color] = {}
 class ColorChecks(ImageList):
     """ColorChecks ImageList. Used by several UIList classes."""
     _int_to_state = {0: 'off', 1: 'on', 2: 'inc', 3: 'imp'}
-    _statuses = ('purple', 'blue', 'green', 'orange', 'yellow', 'red')
 
     def __init__(self, icons_dict):
         super().__init__(16, 16)
@@ -582,7 +581,7 @@ class UIList(PanelWin):
     #--Style params
     _editLabels = False # allow editing the labels - also enables F2 shortcut
     _sunkenBorder = True
-    _singleCell = False # allow only single selections (no ctrl/shift+click)
+    _single_select = False # allow only single selections (no ctrl/shift+click)
     #--Sorting
     nonReversibleCols = {u'Load Order', u'Current Order'}
     _default_sort_col = u'File' # override as needed
@@ -612,7 +611,7 @@ class UIList(PanelWin):
         #--gList
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
                                   self.__class__._sunkenBorder,
-                                  self.__class__._singleCell, self.dndAllow,
+                                  self.__class__._single_select, self.dndAllow,
                                   dndFiles=self.__class__._dndFiles,
                                   dndList=self.__class__._dndList,
                                   fnDropFiles=self.OnDropFiles,

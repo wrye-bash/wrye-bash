@@ -33,34 +33,59 @@ _image_resource_dir = ''
 _color_checks = None
 _installer_icons = None
 
+default_checkbox_colors = { # name: (primary, secondary)
+    'blue': (b'#B3D9FF', b'#003D7A'),
+    'green': (b'#C1FFC1', b'#005700'),
+    'grey': (b'#C0C0C0', b'#000000'),
+    'orange': (b'#FFD5AA', b'#663300'),
+    'purple': (b'#FAB0FF', b'#FAB0FF'),
+    'red': (b'#FF9494', b'#570000'),
+    'white': (b'#F4F4F4', b'#000000'),
+    'yellow': (b'#FFFFBF', b'#575700'),
+}
+
+def _icc(fname, bm_px_size=16):
+    """Creates an Image wrapper.
+
+    :param fname: The image' filename, relative to bash/images.
+    :param bm_px_size: The size of the resulting bitmap, in
+        device-independent pixels (DIP)."""
+    from .images import GuiImage ##: Can we figure out a way around this?
+    return GuiImage.from_path(fname, iconSize=bm_px_size)
+
+def rebuild_all_checkbox_images():
+    ret_colors = {}
+    statuses = ['off', 'on', 'imp', 'inc']
+    checkbox_types = ['', '.dir']
+    overlays = ['', '.wiz']
+    for st, typ, overlay, in product(statuses, checkbox_types, overlays):
+        layers = (['checkbox_diamond.svg'] if typ == '.dir' else
+                  ['checkbox_box.svg'])
+        if st == 'imp':
+            layers.append('checkbox_dot.svg')
+        elif st == 'inc':
+            layers.append('checkbox_plus.svg')
+        elif st == 'on':
+            layers.append('checkbox_check.svg')
+        svg = _icc(layers[0])
+        svg.composite(*layers)
+        for col, (primary, secondary) in default_checkbox_colors.items():
+            ret_colors[f'{st}.{col}{typ}{overlay}'] = svg.with_svg_vars(
+                primary_color=primary, secondary_color=secondary)
+    return ret_colors
+
+# FIXME Consider just calling rebuild_all_checkbox_images once and retrieving
+#  from cache? Or is that too wasteful/inelegant?
 def init_image_resources(images_dir):
     global _image_resource_dir, _color_checks, _installer_icons
     _image_resource_dir = images_dir
     if not os.path.isdir(images_dir): # CI Hack we could move to caller or add a param
         _image_resource_dir = _Path.getcwd().join('Mopy', 'bash', 'images')
-    from .images import GuiImage
-    def _icc(fname, bm_px_size=16):
-        """Creates an Image wrapper.
-
-        :param fname: The image' filename, relative to bash/images.
-        :param bm_px_size: The size of the resulting bitmap, in
-            device-independent pixels (DIP)."""
-        return GuiImage.from_path(fname, iconSize=bm_px_size)
     # Up/Down arrows for UIList columns
     arrows = {}
     for arr in ['up', 'down']:
         arrows[f'arrow.{arr}.16'] = _icc(f'arrow_{arr}.svg')
     # collect the installer icons
-    box_colors = { # name: (primary, secondary)
-        'blue': (b'#B3D9FF', b'#003D7A'),
-        'green': (b'#C1FFC1', b'#005700'),
-        'grey': (b'#C0C0C0', b'#000000'),
-        'orange': (b'#FFD5AA', b'#663300'),
-        'purple': (b'#FAB0FF', b'#FAB0FF'),
-        'red': (b'#FF9494', b'#570000'),
-        'white': (b'#F4F4F4', b'#000000'),
-        'yellow': (b'#FFFFBF', b'#575700'),
-    }
     _installer_icons = dict(arrows)
     statuses = ['off', 'on']
     installer_types = ['', '.dir']
@@ -77,7 +102,7 @@ def init_image_resources(images_dir):
             layers.append('checkbox_wand.svg')
         svg = _icc(layers[0])
         svg.composite(*layers)
-        for col, (primary, secondary) in box_colors.items():
+        for col, (primary, secondary) in default_checkbox_colors.items():
             _installer_icons[f'{st}.{col}{typ}{overlay}'] = svg.with_svg_vars(
                 primary_color=primary, secondary_color=secondary)
     _installer_icons['corrupt'] = _icc('red_x.svg')
@@ -85,7 +110,7 @@ def init_image_resources(images_dir):
     # collect color checks for the rest of the UILists
     _color_checks = dict(arrows)
     for st, col in product(['imp', 'inc', 'off', 'on'],
-                           box_colors.keys() - {'white', 'grey'}):
+                           default_checkbox_colors.keys() - {'white', 'grey'}):
         inst_key = 'on' if st == 'inc' else ('inc' if st == 'on' else st)
         if inst_key in _installer_icons:
             colored_check = _installer_icons[f'{inst_key}.{col}']
@@ -99,7 +124,7 @@ def init_image_resources(images_dir):
                 layers.append('checkbox_check.svg')
             svg = _icc(layers[0])
             svg.composite(*layers)
-            primary, secondary = box_colors[col]
+            primary, secondary = default_checkbox_colors[col]
             colored_check = svg.with_svg_vars(primary_color=primary,
                                               secondary_color=secondary)
         _color_checks[f'{st}.{col}'] = colored_check

@@ -411,7 +411,7 @@ class MasterList(_ModsUIList):
     }
     def _item_name(self, x):
        return self.data_store[x].curr_name
-    _sunkenBorder, _singleCell = False, True
+    _sunkenBorder, _single_select = False, True
     #--Labels
     labels = {
         'File': lambda self, mi: bosh.modInfos.masterWithVersion(
