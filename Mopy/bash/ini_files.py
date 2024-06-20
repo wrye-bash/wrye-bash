@@ -126,18 +126,10 @@ class AIniInfo(ListInfo):
             return default
 
     # Abstract API - getting settings varies depending on if we are an ini
-    # file or a hardcoded default tweak, and what kind of ini file we are
+    # file or a hardcoded default tweak
     def get_ci_settings(self, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
-        raise NotImplementedError
-
-    def _get_ci_settings(self):
-        """Get settings as defaultdict[dict] of section -> (setting -> value).
-        Keys in both levels are case insensitive. Values are stripped of
-        whitespace. "deleted settings" keep line number instead of value (?)
-        Only used in get_ci_settings should be bypassed for ADefaultIniInfo.
-        :rtype: tuple(LowerDict, LowerDict, boolean)"""
         raise NotImplementedError
 
     def read_ini_content(self, as_unicode=True) -> list[str] | bytes:
@@ -181,7 +173,7 @@ class AIniInfo(ListInfo):
                         status = -10
                     else:
                         with suppress(KeyError):
-                            lineNo = ci_deletedSettings[section][setting]
+                            lineNo = ci_deletedSettings[section][setting][1]
                             status = 20
                         # else leave it to 0 to be treated as a comment
             elif new_section:  # we got a section
@@ -290,14 +282,43 @@ class IniFileInfo(AIniInfo, AFileInfo):
         return []
 
     def get_ci_settings(self, with_deleted=False, *, missing_ok=False):
-        """Populate and return cached settings - if not just reading them
-        do a copy first !"""
+        """Return cached settings as LD[LD] of section -> (setting -> value).
+        Keys in both levels are case insensitive. Values are stripped of
+        whitespace. If you modify them do a copy first !"""
         try:
             if self._ci_settings_cache_linenum is self.__empty_settings \
                     or self.do_update(raise_on_error=True):
                 try:
-                    self._ci_settings_cache_linenum, self._deleted_cache, \
-                        self.isCorrupted = self._get_ci_settings(missing_ok)
+                    ci_settings = LowerDict()
+                    ci_deleted_settings = LowerDict()
+                    self.isCorrupted = ''
+                    #--Read ini file
+                    section = None
+                    for i, line in enumerate(self.read_ini_content(
+                            missing_ok=missing_ok)):
+                        _strip, setting, val, new_section, is_del = \
+                            self.parse_ini_line(line, parse_value=True)
+                        if setting: # OBSEIni has `new_section` if setting=True
+                            section = new_section or section
+                            if is_del:
+                                if not section: continue #treat it as a comment
+                                settings_dict = ci_deleted_settings
+                            else: settings_dict = ci_settings
+                            try:
+                                settings_dict[section][setting] = (val, i)
+                            except KeyError:
+                                if not section: # can't happen for OBSEIniFile
+                                    self.isCorrupted = _("Your %(tweak_ini)s "
+                                        "should begin with a section header "
+                                        "(e.g. '[General]'), but it does not."
+                                    ) % {'tweak_ini': self.abs_path}
+                                    section = self.__class__.defaultSection
+                                settings_dict[section] = LowerDict(
+                                    [(setting, (val, i))])
+                        elif new_section: # we got a section
+                            section = new_section
+                    self._ci_settings_cache_linenum, self._deleted_cache = \
+                        ci_settings, ci_deleted_settings
                 except UnicodeDecodeError as e:
                     msg = _('The INI file %(ini_full_path)s seems to have '
                             'unencodable characters:')
@@ -309,36 +330,6 @@ class IniFileInfo(AIniInfo, AFileInfo):
         if with_deleted:
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
-
-    def _get_ci_settings(self, missing_ok=False):
-        """Get settings as defaultdict[dict] of section -> (setting -> value).
-        Keys in both levels are case insensitive. Values are stripped of
-        whitespace. "deleted settings" keep line number instead of value (?)
-        :rtype: tuple(LowerDict, LowerDict, boolean)"""
-        ci_settings = LowerDict()
-        ci_deleted_settings = LowerDict()
-        isCorrupted = u''
-        #--Read ini file
-        sectionSettings = None
-        section = None
-        for i, line in enumerate(self.read_ini_content(missing_ok=missing_ok)):
-            _strip, setting, val, new_section, is_del = self.parse_ini_line(
-                line, parse_value=True)
-            if is_del: # we got a "deleted" setting
-                if section: # else treat it as a comment (skip it)
-                    ci_deleted_settings.setdefault(section, LowerDict())[
-                        setting] = i
-            elif setting:
-                if sectionSettings is None:
-                    sectionSettings = ci_settings[self.defaultSection] = {}
-                    isCorrupted = _("Your %(tweak_ini)s should begin with "
-                        "a section header (e.g. '[General]'), but it does "
-                        "not.") % {'tweak_ini': self.abs_path}
-                sectionSettings[setting] = (val, i)
-            elif new_section: # we got a section
-                sectionSettings = ci_settings[section := new_section] = \
-                    LowerDict()
-        return ci_settings, ci_deleted_settings, isCorrupted
 
     # Modify ini file ---------------------------------------------------------
     def _open_for_writing(self, temp_path): # preserve windows EOL
@@ -499,8 +490,6 @@ class OBSEIniFile(IniFileInfo):
         (re.compile(fr'{k}{_h_req}(.+?){_h_req}(.*)', re.I), f'{k} %s %s')
         for k in ('setGS', 'SetNumericGameSetting')})
     ci_pseudosections = LowerDict((f'{k[1:-1]}', k) for k in _xse_regexes)
-    defaultSection = u'' # Change the default section to something that
-    # can't occur in a normal ini
 
     def getSetting(self, section, key, default):
         section = self.ci_pseudosections.get(section, section)
@@ -519,23 +508,6 @@ class OBSEIniFile(IniFileInfo):
                     ma_obse.group(2)
                 return stripped, ma_obse.group(1), val, sectionKey, is_del
         return '', None, None, None, False
-
-    def _get_ci_settings(self, missing_ok=False):
-        """Get the settings in the ini script."""
-        ini_settings = LowerDict()
-        del_settings = LowerDict()
-        with self.abs_path.open('r', encoding=self.ini_encoding) as iniFile:
-            for i,line in enumerate(iniFile.readlines()):
-                _stripped, setting, val, section_key, is_del = \
-                    self.parse_ini_line(line, parse_value=True)
-                if setting:
-                    settings_dict = del_settings if is_del else ini_settings
-                    try:
-                        settings_dict[section_key][setting] = (val, i)
-                    except KeyError:
-                        settings_dict[section_key] = LowerDict(
-                            (setting, (val, i)))
-        return ini_settings, del_settings, False
 
     def analyse_tweak(self, tweak_inf):
         lines = []
