@@ -98,7 +98,7 @@ def _scan_ini(lines, scan_comments=False):
 class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
-    reComment = re.compile('[;#].*') # we read both characters as comment start
+    _comments_start = ('#', ';') # we read both characters as comment starters
     reSetting = re.compile(fr'^(\w+?){_h}={_h}(.*?)({_h}[;#].*)?$')
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     defaultSection = u'General'
@@ -187,12 +187,12 @@ class AIniInfo(ListInfo):
 
     @classmethod
     def parse_ini_line(cls, whole_line, *, inline_comments=False,
-            parse_value=False, analyze_comments=False, __comments=('#', ';')):
+                       parse_value=False, analyze_comments=False):
         lstripped = whole_line.lstrip()
         # deleted settings are comments with a dash after the comment character
         is_del = False
         try:
-            if lstripped[0] in __comments:
+            if lstripped[0] in cls._comments_start:
                 if lstripped[1] == '-':
                     is_del = True
                     lstripped = lstripped[2:].lstrip() if analyze_comments \
@@ -432,7 +432,7 @@ class TomlFile(IniFileInfo):
     inline tables. Multi-line strings, escapes inside strings and any of the
     weird date/time values are also not supported yet."""
     out_encoding = 'utf-8' # see above
-    reComment = re.compile('#.*')
+    _comments_start = ('#',)
     reSetting = re.compile(
         fr'^(.+?)' # Key on the left side --> group 1
         fr'{_h}={_h}(' # Equal sign --> start group 2
@@ -485,7 +485,7 @@ class OBSEIniFile(IniFileInfo):
     reSetting = None # not used
     _xse_regexes = {f']set[': (re.compile(
          fr'set{_h_req}(.+?){_h_req}to{_h_req}(.*)', re.I), 'set %s to %s')}
-    out_encoding = 'utf-8' # FIXME: ask
+    out_encoding = 'utf-8' # we would very much wish so
     _xse_regexes.update({f']{k}[':
         (re.compile(fr'{k}{_h_req}(.+?){_h_req}(.*)', re.I), f'{k} %s %s')
         for k in ('setGS', 'SetNumericGameSetting')})
@@ -500,8 +500,9 @@ class OBSEIniFile(IniFileInfo):
         return super().get_setting_values(section, default)
 
     @classmethod
-    def _parse_setting(cls, line, is_del, parse_comments, parse_value):
-        stripped = cls.reComment.sub('', line).strip() # for inline comments?
+    def _parse_setting(cls, line, is_del, parse_comments, parse_value, *,
+            __re_comment=re.compile('[#;].*')): # only keep `;` here?
+        stripped = __re_comment.sub('', line).rstrip() # for inline comments
         for sectionKey, (regex, _fmt_str) in cls._xse_regexes.items():
             if ma_obse := regex.match(stripped):
                 val = cls._parse_value(ma_obse.group(2)) if parse_value else \
