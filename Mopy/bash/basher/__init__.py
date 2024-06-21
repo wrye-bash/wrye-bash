@@ -812,8 +812,7 @@ class INIList(UIList):
                 ini_info.reset_status() # iniInfos.ini may differ from target
             else: stat = ini_info.tweak_status()
             if stat == 20 or not ini_info.is_applicable(stat): continue
-            needsRefresh |= target_ini_file.applyTweakFile(
-                ini_info.read_ini_content())
+            needsRefresh |= target_ini_file.apply_tweak(ini_info)
         return needsRefresh
 
     @staticmethod

@@ -360,7 +360,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     if section in ini_settings: del ini_settings[section]
                     if not sectionSettings: return
                     for sett, val in sectionSettings.items():
-                        tmp_ini.write(f'{self._fmt_setting(sett, val)}\n')
+                        tmp_ini.write(f'{self.fmt_setting(sett, val)}\n')
                     tmp_ini.write('\n')
                 skip = False
                 for line in self.read_ini_content(as_unicode=True,
@@ -370,8 +370,9 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     if setting: # modify? we need be in a section
                         try: # Check if we have a value for this setting
                             value = sectionSettings.pop(setting) # KE
-                            line = self._fmt_setting(setting,
-                                                     (value, val[1] or ''))
+                            # preserve the comment if we don't pass one in
+                            line = self.fmt_setting(setting, value,
+                                                    comment=(val[1] or ''))
                         except KeyError:
                             # Check if was enabled and we want to delete it. We
                             # only delete existing settings by commenting out
@@ -399,29 +400,33 @@ class IniFileInfo(AIniInfo, AFileInfo):
                         _add_remaining_new_items()
             self.abs_path.replace_with_temp(tmp_ini_path)
 
-    def _fmt_setting(self, setting, value, comment=''):
+    @classmethod
+    def fmt_setting(cls, setting, value, section=None, comment=''):
         """Format a key-value setting appropriately for the current INI
         format."""
-        if comment := isinstance(value, tuple) or '':
-            comment = f' {self._comment_char} {value[1]}' if value[1] else ''
-            value = value[0]
+        if isinstance(value, str) and value[-1:] == '\n':
+            return value.rstrip('\n\r') # we come from apply_tweak
+        if isinstance(value, tuple): # takes precedence over comment
+            value, comment = value
+        if comment:
+            comment = f' {cls._comment_char} {comment}'
         return f'{setting}={value}{comment}'
 
-    def applyTweakFile(self, tweak_lines):
-        """Read ini tweak file and apply its settings to self (the target ini).
-        """
-        #--Read Tweak file
+    def apply_tweak(self, tweak_inf):
+        """Create dictionaries of updated/new and deleted settings mapped to
+        the lines of the tweak to pass to saveSettings."""
         ini_settings = DefaultLowerDict(LowerDict)
-        deleted_settings = DefaultLowerDict(set) #only delete existing settings
+        deleted_settings = DefaultLowerDict(LowerDict)
         section = None
-        for line in tweak_lines:
-            _strip, setting, val, new_section, is_del = self.parse_ini_line(
-                line, parse_value=True) # could parse comments? would need modify _parse_value
-            if is_del:
-                if section: deleted_settings[section].add(CIstr(setting))
-            elif setting:
-                ini_settings[section][setting] = val
-            elif new_section: section = new_section
+        for line in tweak_inf.read_ini_content():
+            _strip, setting, _val, new_section, is_del = self.parse_ini_line(
+                line)
+            if not (section := new_section or section):
+                continue # skip if we don't have a section
+            if setting:
+                # Save the whole ini line for applying (replacing the setting)
+                (deleted_settings if is_del else ini_settings)[section][
+                    setting] = f'{line}\n' # if is_del `line` is ignored
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
@@ -448,11 +453,15 @@ class TomlFile(IniFileInfo):
         fr')({_h}#.*)?$') # Inline comment --> group 3
     _comment_char = '#'
 
-    def _fmt_setting(self, setting, value):
+    @classmethod
+    def fmt_setting(cls, setting, value, section=None, comment=''):
         # If we're given a specific comment, use that (and format it nicely)
-        if comment := isinstance(value, tuple) or '':
-            comment = f' {self._comment_char} {value[1]}' if value[1] else ''
-            value = value[0]
+        if isinstance(value, str) and value[-1:] == '\n':
+            return value.rstrip('\n\r') # we come from apply_tweak
+        if isinstance(value, tuple): # takes precedence over comment
+            value, comment = value
+        if comment:
+            comment = f' {cls._comment_char} {comment}'
         if isinstance(value, str):
             value = f"'{value}'" # Prefer formatting with literal strings
         elif isinstance(value, (int, float)):
@@ -554,19 +563,8 @@ class OBSEIniFile(IniFileInfo):
                         try:
                             # Un-delete/modify it
                             value = ini_settings[section_key].pop(setting)
-                            if isinstance(value, bytes):
-                                raise RuntimeError('Do not pass bytes into '
-                                                   'saveSettings!')
-                            if isinstance(value, tuple):
-                                raise RuntimeError(
-                                    'OBSE INIs do not support writing inline '
-                                    'comments yet')
-                            if isinstance(value, str) and value[-1:] == '\n': # we come from applyTweakFile
-                                # Handle all newlines, this removes just \n too
-                                line = value.rstrip('\n\r')
-                            else:
-                                line = self._xse_regexes[section_key][1] % (
-                                    setting, value)
+                            line = self.fmt_setting(setting, value,
+                                                    section_key)
                         except KeyError:
                             if (not is_del and section_key in deleted_settings
                                 and setting in deleted_settings[section_key]):
@@ -580,20 +578,18 @@ class OBSEIniFile(IniFileInfo):
                         tmpFile.write(section[setting])
             self.abs_path.replace_with_temp(tmp_file_path)
 
-    def applyTweakFile(self, tweak_lines):
-        ini_settings = DefaultLowerDict(LowerDict)
-        deleted_settings = DefaultLowerDict(LowerDict)
-        for line in tweak_lines:
-            # Check for deleted lines
-            _strip, setting, _val, section_key, is_del = self.parse_ini_line(
-                line)
-            if setting:
-                # Save the setting for applying
-                if line[-1] != u'\n': line += u'\n'
-                (deleted_settings if is_del else ini_settings)[section_key][
-                    setting] = line
-        self.saveSettings(ini_settings,deleted_settings)
-        return True
+    @classmethod
+    def fmt_setting(cls, setting, value, section=None, comment=''):
+        if isinstance(value, str) and value[-1:] == '\n':
+            return value.rstrip('\n\r') # we come from apply_tweak
+        if isinstance(value, bytes): # huh?
+            raise RuntimeError('Do not pass bytes into saveSettings!')
+        if isinstance(value, tuple):
+            raise RuntimeError('OBSE INIs do not support writing inline '
+                               'comments yet')
+        else:
+            line = cls._xse_regexes[section][1] % (setting, value)
+        return line
 
 class GameIni(IniFileInfo):
     """Main game ini file. Only use to instantiate bosh.oblivionIni"""
