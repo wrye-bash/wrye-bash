@@ -2149,7 +2149,7 @@ class ModInfos(TableFileInfos):
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
-        load_order.initialize_load_order_handle(self, bush.game.fsName)
+        load_order.initialize_load_order_handle(self, bush.game)
         # cache the bsa_lo for the current load order - expensive to calculate
         self.__bsa_lo = self.__bsa_cause = self.__available_bsas = None
         global modInfos
@@ -2228,22 +2228,23 @@ class ModInfos(TableFileInfos):
 
     #--Load Order utility methods - be sure cache is valid when using them
     def cached_lo_insert_after(self, previous, new_mod):
-        previous_index = self._lo_wip.index(previous)
+        new_mod = self[new_mod].fn_key ##: new_mod is not always an FName
+        if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
+        dex = self._lo_wip.index(previous)
         if not bush.game.using_txt_file:
-            # set the mtime to avoid reordering all subsequent mods
-            try:
-                next_mod = self._lo_wip[previous_index + 1]
-            except IndexError: # last mod
-                next_mod = None
-            end_time = self[next_mod].ftime if next_mod else None
-            start_time = self[previous].ftime
-            if end_time is not None and \
-                    end_time <= start_time: # can happen on esm/esp boundary
-                start_time = end_time - 60.0
-            set_time = load_order.get_free_time(start_time, end_time=end_time)
-            self[new_mod].setmtime(set_time)
-        self._lo_wip[previous_index + 1:previous_index + 1] = [
-            self[new_mod].fn_key] ##: new_mod is not always an FName
+            t_prev = self[previous].ftime
+            if self._lo_wip[-1] == previous: # place it after the last mod
+                new_time = t_prev + 60
+            else:
+                # try to put it right before the next mod to avoid resetting
+                # ftimes of all subsequent mods - note (t_prev >= t_next)
+                # might be True at the esm boundary, we could be smarter here
+                t_next = self[self._lo_wip[dex + 1]].ftime
+                t_prev += 1 # add one second
+                new_time = t_prev if t_prev < t_next else None
+            if new_time is not None:
+                self[new_mod].setmtime(new_time)
+        self._lo_wip[dex + 1:dex + 1] = [new_mod]
 
     def cached_lo_last_esm(self):
         last_esm = self._master_esm

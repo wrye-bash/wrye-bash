@@ -25,6 +25,7 @@ import importlib
 
 from . import GameInfo
 from .. import bolt
+from .._games_lo import LoGame, TimestampGame
 from ..bolt import structs_cache
 
 class PatchGame(GameInfo):
@@ -34,6 +35,7 @@ class PatchGame(GameInfo):
     in the class body. This is done for decluttering the game overrides from
     too specific (and often big) data structures - however the exact constants
     included here is still WIP."""
+    lo_handler: type[LoGame] = TimestampGame
 
     @classmethod
     def check_loaded_mod(cls, patch_file, modFile):

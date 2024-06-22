@@ -25,7 +25,8 @@ import importlib
 from .. import WS_COMMON_FILES, MergeabilityCheck, ObjectIndexRange
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
-from ...bolt import classproperty
+from ..._games_lo import AsteriskGame
+from ...bolt import classproperty, FName
 
 _GOG_IDS = [
     1801825368, # Game
@@ -327,6 +328,89 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'VOLI', b'MOVT', b'SNDR',
         b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS',
     ]
+
+    class LoSkyrimSE(AsteriskGame):
+        must_be_active_if_present = tuple(map(FName, ('Update.esm',
+            'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
+        _ccc_filename = 'Skyrim.ccc'
+        _ccc_fallback = tuple(map(FName, ( # Up to date as of 2024/04/30
+            'ccASVSSE001-ALMSIVI.esm',
+            'ccBGSSSE001-Fish.esm',
+            'ccBGSSSE002-ExoticArrows.esl',
+            'ccBGSSSE003-Zombies.esl',
+            'ccBGSSSE004-RuinsEdge.esl',
+            'ccBGSSSE005-Goldbrand.esl',
+            'ccBGSSSE006-StendarsHammer.esl',
+            'ccBGSSSE007-Chrysamere.esl',
+            'ccBGSSSE010-PetDwarvenArmoredMudcrab.esl',
+            'ccBGSSSE011-HrsArmrElvn.esl',
+            'ccBGSSSE012-HrsArmrStl.esl',
+            'ccBGSSSE014-SpellPack01.esl',
+            'ccBGSSSE019-StaffofSheogorath.esl',
+            'ccBGSSSE020-GrayCowl.esl',
+            'ccBGSSSE021-LordsMail.esl',
+            'ccMTYSSE001-KnightsoftheNine.esl',
+            'ccQDRSSE001-SurvivalMode.esl',
+            'ccTWBSSE001-PuzzleDungeon.esm',
+            'ccEEJSSE001-Hstead.esm',
+            'ccQDRSSE002-Firewood.esl',
+            'ccBGSSSE018-Shadowrend.esl',
+            'ccBGSSSE035-PetNHound.esl',
+            'ccFSVSSE001-Backpacks.esl',
+            'ccEEJSSE002-Tower.esl',
+            'ccEDHSSE001-NorJewel.esl',
+            'ccVSVSSE002-Pets.esl',
+            'ccBGSSSE037-Curios.esl',
+            'ccBGSSSE034-MntUni.esl',
+            'ccBGSSSE045-Hasedoki.esl',
+            'ccBGSSSE008-Wraithguard.esl',
+            'ccBGSSSE036-PetBWolf.esl',
+            'ccFFBSSE001-ImperialDragon.esl',
+            'ccMTYSSE002-VE.esl',
+            'ccBGSSSE043-CrossElv.esl',
+            'ccVSVSSE001-Winter.esl',
+            'ccEEJSSE003-Hollow.esl',
+            'ccBGSSSE016-Umbra.esm',
+            'ccBGSSSE031-AdvCyrus.esm',
+            'ccBGSSSE038-BowofShadows.esl',
+            'ccBGSSSE040-AdvObGobs.esl',
+            'ccBGSSSE050-BA_Daedric.esl',
+            'ccBGSSSE052-BA_Iron.esl',
+            'ccBGSSSE054-BA_Orcish.esl',
+            'ccBGSSSE058-BA_Steel.esl',
+            'ccBGSSSE059-BA_Dragonplate.esl',
+            'ccBGSSSE061-BA_Dwarven.esl',
+            'ccPEWSSE002-ArmsOfChaos.esl',
+            'ccBGSSSE041-NetchLeather.esl',
+            'ccEDHSSE002-SplKntSet.esl',
+            'ccBGSSSE064-BA_Elven.esl',
+            'ccBGSSSE063-BA_Ebony.esl',
+            'ccBGSSSE062-BA_DwarvenMail.esl',
+            'ccBGSSSE060-BA_Dragonscale.esl',
+            'ccBGSSSE056-BA_Silver.esl',
+            'ccBGSSSE055-BA_OrcishScaled.esl',
+            'ccBGSSSE053-BA_Leather.esl',
+            'ccBGSSSE051-BA_DaedricMail.esl',
+            'ccBGSSSE057-BA_Stalhrim.esl',
+            'ccBGSSSE066-Staves.esl',
+            'ccBGSSSE067-DaedInv.esm',
+            'ccBGSSSE068-Bloodfall.esl',
+            'ccBGSSSE069-Contest.esl',
+            'ccVSVSSE003-NecroArts.esl',
+            'ccVSVSSE004-BeAFarmer.esl',
+            'ccBGSSSE025-AdvDSGS.esm',
+            'ccFFBSSE002-CrossbowPack.esl',
+            'ccBGSSSE013-Dawnfang.esl',
+            'ccRMSSSE001-NecroHouse.esl',
+            'ccEDHSSE003-Redguard.esl',
+            'ccEEJSSE004-Hall.esl',
+            'ccEEJSSE005-Cave.esm',
+            'ccKRTSSE001_Altar.esl',
+            'ccCBHSSE001-Gaunt.esl',
+            'ccAFDSSE001-DweSanctuary.esm',
+            '_ResourcePack.esl',
+        )))
+    lo_handler = LoSkyrimSE
 
     @classmethod
     def init(cls, _package_name=None):
