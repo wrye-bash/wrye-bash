@@ -205,8 +205,11 @@
     <li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
     <li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existence of a file in the Data directory. If the file you are
-    testing for is a plugin, this will also detect ghosted versions of the file.</p>
+<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the
+    existence of one or more files, relative to the Data directory. If the
+    files you are testing for are plugins, this will also detect ghosted
+    versions of them. All specified files must exist for this to return
+    <code>True</code>.</p>
 <code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
 <ul>
     <li><var>file_name</var> - A string or variable holding a string,
