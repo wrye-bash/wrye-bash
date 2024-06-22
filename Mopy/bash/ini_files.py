@@ -27,7 +27,6 @@ from __future__ import annotations
 import os
 import re
 from collections import Counter
-from contextlib import suppress
 
 # Keep local imports to a minimum, this module is important for booting!
 from .bolt import CIstr, DefaultLowerDict, ListInfo, LowerDict, decoder, \
@@ -139,9 +138,9 @@ class AIniInfo(ListInfo):
         raise NotImplementedError
 
     def analyse_tweak(self, tweak_inf):
-        """Analyse the tweak lines based on self settings and type. Return a
+        """Analyse the tweak lines based on self settings. Return a
         list of line info tuples in this format:
-        [(fulltext,section,setting,value,status,ini_line_number, deleted)]
+        [(fulltext, section, setting, value, status, ini_line_number, deleted)]
         where:
         fulltext = full line of text from the ini with newline characters
         stripped from the end
@@ -154,35 +153,34 @@ class AIniInfo(ListInfo):
              10: does exist, but value isn't the same
              20: does exist, and value is the same
         ini_line_number = line number in the ini that this tweak applies to
-        deleted: deleted line (?)"""
+        deleted: deleted setting"""
         lines = []
-        ci_settings, ci_deletedSettings = self.get_ci_settings(with_deleted=True)
+        ci_settings, ci_del_settings = self.get_ci_settings(with_deleted=True)
         #--Read ini file
-        section = self.__class__.defaultSection
+        section = self.__class__.defaultSection #doesn't matter for OBSEIniFile
         for line in tweak_inf.read_ini_content():
             status = 0
             lineNo = -1
-            stripped, setting, value, new_section, is_del = \
+            stripped, setting, val, new_section, is_del = \
                 self.parse_ini_line(line, parse_value=True)
-            if setting:
+            if setting: # for IniFile if setting is True, new_section is None
+                section = new_section or section
                 try:
                     self_val, lineNo = ci_settings[section][setting]
-                    status = 10 if is_del or self_val != value else 20
+                    status = 10 if is_del or self_val != val else 20
                 except KeyError:
-                    if not is_del:
-                        status = -10
-                    else:
-                        with suppress(KeyError):
-                            lineNo = ci_deletedSettings[section][setting][1]
-                            status = 20
-                        # else leave it to 0 to be treated as a comment
-            elif new_section:  # we got a section
+                    try:
+                        lineNo = ci_del_settings[section][setting][1]
+                        status = 20 if is_del else -10
+                    except KeyError: # not present or deleted
+                        if not is_del: # else 0 (treat it as a comment)
+                            status = -10
+            elif new_section: # for OBSEIniFile True only if bool(setting)=True
                 if (section := new_section) not in ci_settings:
                     status = -10
             elif stripped: # not a section/setting/line comment but not empty
                 status = -10
-            lines.append((line, section, setting, value, status, lineNo,
-                          is_del))
+            lines.append((line, section, setting, val, status, lineNo, is_del))
         return lines
 
     @classmethod
@@ -518,32 +516,6 @@ class OBSEIniFile(IniFileInfo):
                     ma_obse.group(2)
                 return stripped, ma_obse.group(1), val, sectionKey, is_del
         return '', None, None, None, False
-
-    def analyse_tweak(self, tweak_inf):
-        lines = []
-        ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
-        for line in tweak_inf.read_ini_content():
-            # Check for deleted lines
-            stripped, setting, val, section, is_del = self.parse_ini_line(line,
-                parse_value=True)
-            if not setting:
-                # Some other kind of line else just a comment line
-                status = -10 if stripped else 0
-                lines.append((line, '', '', '',  status, -1, False))
-                continue
-            setting = setting.strip() # todo needed?
-            try:
-                ini_value, lineNo = ci_settings[section][setting]
-                status = 10 if is_del or ini_value != val else 20
-            except KeyError:
-                try:
-                    _del_value, lineNo = deletedSettings[section][setting]
-                    status = 20 if is_del else -10
-                except KeyError:
-                    status = 0 if is_del else -10
-                    lineNo = -1
-            lines.append((line, section, setting, val, status, lineNo, is_del))
-        return lines
 
     def saveSettings(self, ini_settings, deleted_settings=None):
         """Apply dictionary of settings to self, latter must exist!
