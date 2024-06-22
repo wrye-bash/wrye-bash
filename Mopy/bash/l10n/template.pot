@@ -740,7 +740,7 @@ msgstr ""
 msgid "Bashed Patch."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:373 Mopy/bash/bosh/__init__.py:2564
+#: Mopy/bash/basher/__init__.py:373 Mopy/bash/bosh/__init__.py:2565
 msgid "Technically mergeable, but has NoMerge tag."
 msgstr ""
 
@@ -1381,7 +1381,7 @@ msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have alread
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3400 Mopy/bash/basher/__init__.py:3426
-#: Mopy/bash/basher/patcher_dialog.py:335 Mopy/bash/bosh/__init__.py:3152
+#: Mopy/bash/basher/patcher_dialog.py:335 Mopy/bash/bosh/__init__.py:3153
 msgid "Try again?"
 msgstr ""
 
@@ -1755,7 +1755,7 @@ msgstr ""
 msgid "Install this package"
 msgstr ""
 
-#: Mopy/bash/basher/belt.py:384 Mopy/bash/bosh/__init__.py:3081
+#: Mopy/bash/basher/belt.py:384 Mopy/bash/bosh/__init__.py:3082
 msgid "Plugins"
 msgstr ""
 
@@ -7816,7 +7816,7 @@ msgstr ""
 msgid "Ask every time"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:861 Mopy/bash/bolt.py:1810
+#: Mopy/bash/basher/settings_dialog.py:861 Mopy/bash/bolt.py:1805
 #: Mopy/bash/bosh/bain.py:1415 Mopy/bash/gui/popups.py:65
 msgid "Copy"
 msgstr ""
@@ -8349,26 +8349,26 @@ msgstr ""
 msgid "<very large>"
 msgstr ""
 
-#: Mopy/bash/bolt.py:1748
+#: Mopy/bash/bolt.py:1743
 msgid "Name may not be empty."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1751
+#: Mopy/bash/bolt.py:1746
 #, python-format
 msgid "%(new_name)s contains invalid character (%(bad_char)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1763
+#: Mopy/bash/bolt.py:1758
 #, python-format
 msgid "Bad extension or file root (%(ext_or_root)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1771
+#: Mopy/bash/bolt.py:1766
 #, python-format
 msgid "%(bad_name_str)s: Incorrect file extension (must be %(expected_ext)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1861
+#: Mopy/bash/bolt.py:1856
 #, python-format
 msgid "File %(bad_name_str)s already exists."
 msgstr ""
@@ -8434,159 +8434,159 @@ msgstr ""
 msgid "Browse…"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2548
+#: Mopy/bash/bosh/__init__.py:2549
 msgid "Is Vanilla Plugin."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2607
+#: Mopy/bash/bosh/__init__.py:2608
 msgid "Calculating crc:"
-msgstr ""
-
-#: Mopy/bash/bosh/__init__.py:2665
-#, python-format
-msgid "Missing Master: %(m_master)s"
 msgstr ""
 
 #: Mopy/bash/bosh/__init__.py:2666
 #, python-format
-msgid "Delinquent Master: %(d_master)s"
+msgid "Missing Master: %(m_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2671
+#: Mopy/bash/bosh/__init__.py:2667
 #, python-format
-msgid "MISSING MASTER: %(m_master)s"
+msgid "Delinquent Master: %(d_master)s"
 msgstr ""
 
 #: Mopy/bash/bosh/__init__.py:2672
 #, python-format
+msgid "MISSING MASTER: %(m_master)s"
+msgstr ""
+
+#: Mopy/bash/bosh/__init__.py:2673
+#, python-format
 msgid "DELINQUENT MASTER: %(d_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2677
+#: Mopy/bash/bosh/__init__.py:2678
 #, python-format
 msgid "Missing Masters for %(mm_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2681
+#: Mopy/bash/bosh/__init__.py:2682
 #, python-format
 msgid "Masters for %(m_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2688
+#: Mopy/bash/bosh/__init__.py:2689
 msgid "Active Plugins:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2706
+#: Mopy/bash/bosh/__init__.py:2707
 #, python-format
 msgid "[Version %(plugin_ver)s]"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2709
+#: Mopy/bash/bosh/__init__.py:2710
 #, python-format
 msgid "[CRC: %(plugin_crc)s]"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2730 Mopy/bash/bosh/__init__.py:2761
+#: Mopy/bash/bosh/__init__.py:2731 Mopy/bash/bosh/__init__.py:2762
 msgid "No tags"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2735
+#: Mopy/bash/bosh/__init__.py:2736
 msgid "From Plugin Description:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2740
+#: Mopy/bash/bosh/__init__.py:2741
 msgid "From LOOT Masterlist and/or Userlist:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2743
+#: Mopy/bash/bosh/__init__.py:2744
 msgid "Removed by LOOT Masterlist and/or Userlist:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2750
+#: Mopy/bash/bosh/__init__.py:2751
 #, python-format
 msgid "Added by %(tags_file)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2753
+#: Mopy/bash/bosh/__init__.py:2754
 #, python-format
 msgid "Removed by %(tags_file)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2758
+#: Mopy/bash/bosh/__init__.py:2759
 msgid "From Manual (overrides all other sources):"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2760
+#: Mopy/bash/bosh/__init__.py:2761
 msgid "Result:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2767
+#: Mopy/bash/bosh/__init__.py:2768
 msgid "Current Bash Tags:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2769
+#: Mopy/bash/bosh/__init__.py:2770
 msgid "Note: Sources are processed from top to bottom, meaning that lower-ranking sources override higher-ranking ones."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2927 Mopy/bash/bosh/__init__.py:2980
+#: Mopy/bash/bosh/__init__.py:2928 Mopy/bash/bosh/__init__.py:2981
 msgid "Some plugins could not be found and were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2933
+#: Mopy/bash/bosh/__init__.py:2934
 msgid "Plugin list is full, so some plugins were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3148
+#: Mopy/bash/bosh/__init__.py:3149
 #, python-format
 msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3150
+#: Mopy/bash/bosh/__init__.py:3151
 #, python-format
 msgid "The file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3151
+#: Mopy/bash/bosh/__init__.py:3152
 #, python-format
 msgid "Please close the other program that is accessing %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3193
+#: Mopy/bash/bosh/__init__.py:3194
 msgid "File in Use"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3646
+#: Mopy/bash/bosh/__init__.py:3647
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3654 Mopy/bash/bosh/__init__.py:3666
-#: Mopy/bash/bosh/__init__.py:3676
+#: Mopy/bash/bosh/__init__.py:3655 Mopy/bash/bosh/__init__.py:3667
+#: Mopy/bash/bosh/__init__.py:3677
 msgid "Settings Load Error"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3659
+#: Mopy/bash/bosh/__init__.py:3660
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3672
+#: Mopy/bash/bosh/__init__.py:3673
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3687
+#: Mopy/bash/bosh/__init__.py:3688
 msgid "Initializing BSAs"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3689
+#: Mopy/bash/bosh/__init__.py:3690
 msgid "Initializing plugins"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3691
+#: Mopy/bash/bosh/__init__.py:3692
 msgid "Initializing saves"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3693
+#: Mopy/bash/bosh/__init__.py:3694
 msgid "Initializing INIs"
 msgstr ""
 
@@ -10134,23 +10134,23 @@ msgstr ""
 msgid "%(se_name)s version %(ver_want)s or higher is required, but version %(ver_have)s was found instead."
 msgstr ""
 
-#: Mopy/bash/game/enderal/__init__.py:62
+#: Mopy/bash/game/enderal/__init__.py:64
 msgid "Half Kilénian"
 msgstr ""
 
-#: Mopy/bash/game/enderal/__init__.py:63 Mopy/bash/game/enderal/__init__.py:64
+#: Mopy/bash/game/enderal/__init__.py:65 Mopy/bash/game/enderal/__init__.py:66
 msgid "Half Aeterna"
 msgstr ""
 
-#: Mopy/bash/game/enderal/__init__.py:65
+#: Mopy/bash/game/enderal/__init__.py:67
 msgid "Half Arazealean"
 msgstr ""
 
-#: Mopy/bash/game/enderal/__init__.py:66
+#: Mopy/bash/game/enderal/__init__.py:68
 msgid "Half Qyranian"
 msgstr ""
 
-#: Mopy/bash/game/enderal/__init__.py:115 Mopy/bash/game/nehrim/__init__.py:96
+#: Mopy/bash/game/enderal/__init__.py:117 Mopy/bash/game/nehrim/__init__.py:96
 msgid "Vynroots"
 msgstr ""
 
@@ -10287,77 +10287,77 @@ msgid "Normanne"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:216
-#: Mopy/bash/game/skyrim/__init__.py:220
+#: Mopy/bash/game/skyrim/__init__.py:222
 msgid "Blade (1 Handed)"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:217
-#: Mopy/bash/game/skyrim/__init__.py:221
+#: Mopy/bash/game/skyrim/__init__.py:223
 msgid "Blade (2 Handed)"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:218
-#: Mopy/bash/game/skyrim/__init__.py:222
+#: Mopy/bash/game/skyrim/__init__.py:224
 msgid "Blunt (1 Handed)"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:219
-#: Mopy/bash/game/skyrim/__init__.py:223
+#: Mopy/bash/game/skyrim/__init__.py:225
 msgid "Blunt (2 Handed)"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:220
-#: Mopy/bash/game/skyrim/__init__.py:224
+#: Mopy/bash/game/skyrim/__init__.py:226
 msgid "Staff"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:221
-#: Mopy/bash/game/skyrim/__init__.py:225
+#: Mopy/bash/game/skyrim/__init__.py:227
 msgid "Bow"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:225
-#: Mopy/bash/game/skyrim/__init__.py:229
+#: Mopy/bash/game/skyrim/__init__.py:231
 msgid "Argonian"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:226
-#: Mopy/bash/game/skyrim/__init__.py:230
+#: Mopy/bash/game/skyrim/__init__.py:232
 msgid "Breton"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:227
-#: Mopy/bash/game/skyrim/__init__.py:231
+#: Mopy/bash/game/skyrim/__init__.py:233
 msgid "Dark Elf"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:228
-#: Mopy/bash/game/skyrim/__init__.py:232
+#: Mopy/bash/game/skyrim/__init__.py:234
 msgid "High Elf"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:229
-#: Mopy/bash/game/skyrim/__init__.py:233
+#: Mopy/bash/game/skyrim/__init__.py:235
 msgid "Imperial"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:230
-#: Mopy/bash/game/skyrim/__init__.py:234
+#: Mopy/bash/game/skyrim/__init__.py:236
 msgid "Khajiit"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:231
-#: Mopy/bash/game/skyrim/__init__.py:235
+#: Mopy/bash/game/skyrim/__init__.py:237
 msgid "Nord"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:232
-#: Mopy/bash/game/skyrim/__init__.py:236
+#: Mopy/bash/game/skyrim/__init__.py:238
 msgid "Orc"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:233
-#: Mopy/bash/game/skyrim/__init__.py:237
+#: Mopy/bash/game/skyrim/__init__.py:239
 msgid "Redguard"
 msgstr ""
 
@@ -10366,7 +10366,7 @@ msgid "Vampire"
 msgstr ""
 
 #: Mopy/bash/game/oblivion/__init__.py:235
-#: Mopy/bash/game/skyrim/__init__.py:238
+#: Mopy/bash/game/skyrim/__init__.py:240
 msgid "Wood Elf"
 msgstr ""
 
@@ -11394,7 +11394,7 @@ msgstr ""
 msgid "Summon Zombie"
 msgstr ""
 
-#: Mopy/bash/game/patch_game.py:250
+#: Mopy/bash/game/patch_game.py:252
 msgid "Nirnroots"
 msgstr ""
 
