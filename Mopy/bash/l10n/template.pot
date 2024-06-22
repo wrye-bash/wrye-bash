@@ -193,7 +193,7 @@ msgstr ""
 msgid "Rename"
 msgstr ""
 
-#: Mopy/bash/balt.py:239 Mopy/bash/basher/__init__.py:1924
+#: Mopy/bash/balt.py:239 Mopy/bash/basher/__init__.py:1921
 #: Mopy/bash/basher/gui_patchers.py:313
 msgid "Remove"
 msgstr ""
@@ -552,7 +552,7 @@ msgstr ""
 msgid "Generating HTML file from '%(gen_target)s'"
 msgstr ""
 
-#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:4281
+#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:4278
 #: Mopy/bash/bosh/bain.py:1858
 msgid "Done"
 msgstr ""
@@ -740,7 +740,7 @@ msgstr ""
 msgid "Bashed Patch."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:373 Mopy/bash/bosh/__init__.py:2565
+#: Mopy/bash/basher/__init__.py:373 Mopy/bash/bosh/__init__.py:2564
 msgid "Technically mergeable, but has NoMerge tag."
 msgstr ""
 
@@ -784,11 +784,11 @@ msgstr ""
 msgid "Update Masters"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:550 Mopy/bash/basher/__init__.py:1050
+#: Mopy/bash/basher/__init__.py:550 Mopy/bash/basher/__init__.py:1047
 msgid "Plugin name incompatible, will not load."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:553 Mopy/bash/basher/__init__.py:1053
+#: Mopy/bash/basher/__init__.py:553 Mopy/bash/basher/__init__.py:1050
 msgid "Plugin name incompatible, cannot be activated."
 msgstr ""
 
@@ -845,7 +845,7 @@ msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:832 Mopy/bash/basher/__init__.py:836
-#: Mopy/bash/basher/__init__.py:852 Mopy/bash/basher/__init__.py:4161
+#: Mopy/bash/basher/__init__.py:852 Mopy/bash/basher/__init__.py:4158
 msgid "Missing Game INI"
 msgstr ""
 
@@ -867,583 +867,583 @@ msgstr ""
 msgid "INI Tweaks"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1014
+#: Mopy/bash/basher/__init__.py:1011
 msgid "Reordering mods is only allowed when they are sorted by Load Order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1019
+#: Mopy/bash/basher/__init__.py:1016
 msgid "You can't reorder the following mods:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1056
+#: Mopy/bash/basher/__init__.py:1053
 msgid "Plugin is missing string localization files."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1059
+#: Mopy/bash/basher/__init__.py:1056
 msgid "Has master names that will not load."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1066
+#: Mopy/bash/basher/__init__.py:1063
 msgid "One or more masters are missing."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1069
+#: Mopy/bash/basher/__init__.py:1066
 msgid "Loads before its masters."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1071
+#: Mopy/bash/basher/__init__.py:1068
 msgid "Masters have been re-ordered."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1073
+#: Mopy/bash/basher/__init__.py:1070
 msgid "Active in load order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1075
+#: Mopy/bash/basher/__init__.py:1072
 msgid "Imported into Bashed Patch."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1241
+#: Mopy/bash/basher/__init__.py:1238
 msgid "You can't deactivate the following mods:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1245
+#: Mopy/bash/basher/__init__.py:1242
 msgid "You can't activate the following mods:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1286
+#: Mopy/bash/basher/__init__.py:1283
 msgid "Unable to create new Bashed Patch: 10 Bashed Patches already exist!"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1412
+#: Mopy/bash/basher/__init__.py:1409
 msgid "File corrupted on save!"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1450 Mopy/bash/basher/__init__.py:2372
+#: Mopy/bash/basher/__init__.py:1447 Mopy/bash/basher/__init__.py:2369
 msgid "Masters:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1499
+#: Mopy/bash/basher/__init__.py:1496
 msgid "Change this value using an interactive dialog."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1516
+#: Mopy/bash/basher/__init__.py:1513
 msgid "Add bash tags to this plugin."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1520
+#: Mopy/bash/basher/__init__.py:1517
 msgid "Remove the selected tags from this plugin."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1527 Mopy/bash/basher/__init__.py:3595
+#: Mopy/bash/basher/__init__.py:1524 Mopy/bash/basher/__init__.py:3592
 msgid "File:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1531
+#: Mopy/bash/basher/__init__.py:1528
 msgid "Modified:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1541
+#: Mopy/bash/basher/__init__.py:1538
 msgid "Bash Tags:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1593
+#: Mopy/bash/basher/__init__.py:1590
 #, python-format
 msgid "Author - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1605
+#: Mopy/bash/basher/__init__.py:1602
 #, python-format
 msgid "Description - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1651
+#: Mopy/bash/basher/__init__.py:1648
 #, python-format
 msgid "Invalid date \"%(unrecognized_date)s\", formatting is likely incorrect."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1673
+#: Mopy/bash/basher/__init__.py:1670
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s) and an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will become detached when the plugin is renamed."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1676
+#: Mopy/bash/basher/__init__.py:1673
 msgid "Note that the BSA may also contain a plugin-name-specific directory, which would remain detached even if the archive name were adjusted."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1679
+#: Mopy/bash/basher/__init__.py:1676
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s), which will become detached when the plugin is renamed."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1681
+#: Mopy/bash/basher/__init__.py:1678
 #, python-format
 msgid "Note that the BSA may contain a plugin-name-specific directory (e.g. %(pnd_example)s), which would remain detached even if the archive file name were adjusted."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1685
+#: Mopy/bash/basher/__init__.py:1682
 #, python-format
 msgid "This plugin has an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will become detached when the plugin is renamed."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1698
+#: Mopy/bash/basher/__init__.py:1695
 #, python-format
 msgid "File name %(bad_file_name)s cannot be encoded to Windows-1252. %(game_name)s may not be able to activate this plugin because of this. Do you want to rename the plugin anyway?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1717
+#: Mopy/bash/basher/__init__.py:1714
 #, python-format
 msgid "Rename %(target_file_name)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1795
+#: Mopy/bash/basher/__init__.py:1792
 msgid "Check a tag to add it to the plugin."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1796
+#: Mopy/bash/basher/__init__.py:1793
 msgid "Add all shown tags to the plugin."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1797
+#: Mopy/bash/basher/__init__.py:1794
 msgid "Remove all shown tags from the plugin."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1838 Mopy/bash/basher/gui_patchers.py:308
+#: Mopy/bash/basher/__init__.py:1835 Mopy/bash/basher/gui_patchers.py:308
 #: Mopy/bash/basher/settings_dialog.py:1086
 msgid "Automatic"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1839
+#: Mopy/bash/basher/__init__.py:1836
 msgid "Use the tags from the description and masterlist/userlist."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1860
+#: Mopy/bash/basher/__init__.py:1857
 msgid "Copy to BashTags"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1861
+#: Mopy/bash/basher/__init__.py:1858
 #, python-format
 msgid "Copies a diff between currently applied tags and description/LOOT tags to %(bashtags_path)s."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1874
+#: Mopy/bash/basher/__init__.py:1871
 msgid "Copy to Description"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1875
+#: Mopy/bash/basher/__init__.py:1872
 msgid "Copies currently applied tags to the plugin description."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1885
+#: Mopy/bash/basher/__init__.py:1882
 msgid "Description field including the Bash Tags must be at most 511 characters. Edit the description to leave enough room."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1890 Mopy/bash/basher/belt.py:282
+#: Mopy/bash/basher/__init__.py:1887 Mopy/bash/basher/belt.py:282
 #: Mopy/bash/basher/gui_fomod.py:567 Mopy/bash/basher/installer_links.py:984
 #: Mopy/bash/basher/installer_links.py:1092 Mopy/bash/gui/buttons.py:163
 msgid "Select All"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1891
+#: Mopy/bash/basher/__init__.py:1888
 msgid "Selects all currently applied tags."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1895 Mopy/bash/basher/belt.py:289
+#: Mopy/bash/basher/__init__.py:1892 Mopy/bash/basher/belt.py:289
 #: Mopy/bash/basher/gui_fomod.py:574 Mopy/bash/basher/installer_links.py:994
 #: Mopy/bash/basher/installer_links.py:1098 Mopy/bash/gui/buttons.py:171
 msgid "Deselect All"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1896
+#: Mopy/bash/basher/__init__.py:1893
 msgid "Deselects all currently applied tags."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:1927
+#: Mopy/bash/basher/__init__.py:1924
 msgid "Edit…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2015
+#: Mopy/bash/basher/__init__.py:2012
 msgid "Supported files"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2017
+#: Mopy/bash/basher/__init__.py:2014
 msgid "INI files"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2018
+#: Mopy/bash/basher/__init__.py:2015
 msgid "Config files"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2019
+#: Mopy/bash/basher/__init__.py:2016
 msgid "TOML files"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2097
+#: Mopy/bash/basher/__init__.py:2094
 #, python-format
 msgid "Tweaks: %(status_num)d/%(total_status_num)d"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2123
+#: Mopy/bash/basher/__init__.py:2120
 #, python-format
 msgid "Mods: %(status_num)d/%(total_status_num)d"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2125
+#: Mopy/bash/basher/__init__.py:2122
 #, python-format
 msgid "Mods: %(status_num)d/%(total_status_num)d (ESP/M: %(status_num_espm)d, ESL: %(status_num_esl)d)"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2128
+#: Mopy/bash/basher/__init__.py:2125
 #, python-format
 msgid "Mods: %(status_num)d/%(total_status_num)d (ESP/M: %(status_num_espm)d, Overlay: %(status_num_overlay)d)"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2132
+#: Mopy/bash/basher/__init__.py:2129
 #, python-format
 msgid "Mods: %(status_num)d/%(total_status_num)d (ESP/M: %(status_num_espm)d, ESL: %(status_num_esl)d, Overlay: %(status_num_overlay)d)"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2197
+#: Mopy/bash/basher/__init__.py:2194
 msgid "Save files"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2217
+#: Mopy/bash/basher/__init__.py:2214
 msgid "You cannot enable save backups."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2221
+#: Mopy/bash/basher/__init__.py:2218
 #, python-format
 msgid "Clicking on a save icon will disable/enable the save by changing its extension to %(save_ext_on)s (enabled) or %(save_ext_off)s (disabled)."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2235
+#: Mopy/bash/basher/__init__.py:2232
 msgid "Setting the save profile is done by editing the game ini."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2310
+#: Mopy/bash/basher/__init__.py:2307
 msgid "Save Notes:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2359
+#: Mopy/bash/basher/__init__.py:2356
 #, python-format
 msgid "Level %(player_level)d, Day %(save_day)d, Play %(play_time)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2371
+#: Mopy/bash/basher/__init__.py:2368
 msgid "Masters (likely inaccurate, hover for more info):"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2374
+#: Mopy/bash/basher/__init__.py:2371
 #, python-format
 msgid "This save has ESL masters and cannot be displayed accurately without an up-to-date cosave. Please install the latest version of %(se_name)s and create a new save to see the true master order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2439
+#: Mopy/bash/basher/__init__.py:2436
 #, python-format
 msgid "Saves: %(status_num)d"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2455
+#: Mopy/bash/basher/__init__.py:2452
 msgid "Last"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2518
+#: Mopy/bash/basher/__init__.py:2515
 msgid "Needs Annealing due to a change in configuration."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2521
+#: Mopy/bash/basher/__init__.py:2518
 msgid "Needs Annealing due to a change in Install Order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2544
+#: Mopy/bash/basher/__init__.py:2541
 msgid "Wrye Bash can't rename mixed package types."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2598
+#: Mopy/bash/basher/__init__.py:2595
 msgid "Mod Archives"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2626
+#: Mopy/bash/basher/__init__.py:2623
 #, python-format
 msgid "The project '%(omod_project)s' already exists. Do you want to overwrite it with '%(omod_name)s'?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2649
+#: Mopy/bash/basher/__init__.py:2646
 msgid "The following OMODs were unpacked:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2650
+#: Mopy/bash/basher/__init__.py:2647
 msgid "The following OMODs were skipped:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2655
+#: Mopy/bash/basher/__init__.py:2652
 msgid "The following OMODs failed to extract:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2657
+#: Mopy/bash/basher/__init__.py:2654
 msgid "OMOD Extraction Canceled"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2659
+#: Mopy/bash/basher/__init__.py:2656
 msgid "The following OMODs failed to extract. This could be a file IO error, or an unsupported OMOD format:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2662
+#: Mopy/bash/basher/__init__.py:2659
 msgid "OMOD Extraction Complete"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2664
+#: Mopy/bash/basher/__init__.py:2661
 msgid "Refreshing…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2669
+#: Mopy/bash/basher/__init__.py:2666
 msgid "You have dragged the following files into Wrye Bash:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2672
+#: Mopy/bash/basher/__init__.py:2669
 msgid "What would you like to do with them?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2686
+#: Mopy/bash/basher/__init__.py:2683
 #, python-format
 msgid "A package with the name '%(target_fname)s' already exists. Do you want to overwrite it?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2690
+#: Mopy/bash/basher/__init__.py:2687
 msgid "Overwrite Package?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2692
+#: Mopy/bash/basher/__init__.py:2689
 #, python-format
 msgid "A BCF with the name '%(target_fname)s' already exists. Do you want to overwrite it?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2696
+#: Mopy/bash/basher/__init__.py:2693
 msgid "Overwrite BCF?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2715 Mopy/bash/basher/__init__.py:3370
+#: Mopy/bash/basher/__init__.py:2712 Mopy/bash/basher/__init__.py:3367
 msgid "Extracting OMODs…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2751
+#: Mopy/bash/basher/__init__.py:2748
 msgid "Drag and drop in the Installer's list is only allowed when the list is sorted by install order"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2859 Mopy/bash/basher/__init__.py:2865
+#: Mopy/bash/basher/__init__.py:2856 Mopy/bash/basher/__init__.py:2862
 msgid "Refreshing Packages…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2875
+#: Mopy/bash/basher/__init__.py:2872
 #, python-format
 msgid "Refreshing from %(data_folder)s…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2920 Mopy/bash/basher/settings_dialog.py:587
+#: Mopy/bash/basher/__init__.py:2917 Mopy/bash/basher/settings_dialog.py:587
 #: Mopy/bash/basher/settings_dialog.py:1539
 #: Mopy/bash/basher/settings_dialog.py:1563
 #: Mopy/bash/basher/settings_dialog.py:1579
 msgid "General"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2921
+#: Mopy/bash/basher/__init__.py:2918
 msgid "Matched"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2922
+#: Mopy/bash/basher/__init__.py:2919
 msgid "Missing"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2923
+#: Mopy/bash/basher/__init__.py:2920
 msgid "Mismatched"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2924
+#: Mopy/bash/basher/__init__.py:2921
 msgid "Conflicts"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2925
+#: Mopy/bash/basher/__init__.py:2922
 msgid "Underridden"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2926
+#: Mopy/bash/basher/__init__.py:2923
 msgid "Dirty"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2927
+#: Mopy/bash/basher/__init__.py:2924
 msgid "Skipped"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2946
+#: Mopy/bash/basher/__init__.py:2943
 msgid "Disable the regular BAIN sub-packages and use the results of the last FOMOD installer run instead."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2949 Mopy/bash/basher/__init__.py:2953
+#: Mopy/bash/basher/__init__.py:2946 Mopy/bash/basher/__init__.py:2950
 #: Mopy/bash/basher/belt.py:381
 msgid "Sub-Packages"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2950
+#: Mopy/bash/basher/__init__.py:2947
 msgid "Use the regular BAIN sub-packages."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2974
+#: Mopy/bash/basher/__init__.py:2971
 msgid "Plugin Filter"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:2981
+#: Mopy/bash/basher/__init__.py:2978
 msgid "Comments"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3091
+#: Mopy/bash/basher/__init__.py:3088
 #, python-format
 msgid "Type: %(package_type)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3091 Mopy/bash/basher/installer_links.py:1456
+#: Mopy/bash/basher/__init__.py:3088 Mopy/bash/basher/installer_links.py:1456
 #: Mopy/bash/patcher/patch_files.py:55
 msgid "Overview"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3100
+#: Mopy/bash/basher/__init__.py:3097
 #, python-format
 msgid "Modified: %(modified_date)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3103
+#: Mopy/bash/basher/__init__.py:3100
 #, python-format
 msgid "Data CRC: %(data_crc)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3105
+#: Mopy/bash/basher/__init__.py:3102
 #, python-format
 msgid "Files: %(num_files)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3107
+#: Mopy/bash/basher/__init__.py:3104
 #, python-format
 msgid "Configured: %(files_and_size)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3110
+#: Mopy/bash/basher/__init__.py:3107
 #, python-format
 msgid "Matched: %(num_files)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3112
+#: Mopy/bash/basher/__init__.py:3109
 #, python-format
 msgid "Missing: %(num_files)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3114
+#: Mopy/bash/basher/__init__.py:3111
 #, python-format
 msgid "Conflicts: %(num_files)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3118
+#: Mopy/bash/basher/__init__.py:3115
 msgid "Configured Files"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3137
+#: Mopy/bash/basher/__init__.py:3134
 msgid "Skipped (Extension)"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3139
+#: Mopy/bash/basher/__init__.py:3136
 msgid "Skipped (Dir)"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3300 Mopy/bash/basher/installers_links.py:440
+#: Mopy/bash/basher/__init__.py:3297 Mopy/bash/basher/installers_links.py:440
 msgid "Do you want to enable Installers?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3300 Mopy/bash/basher/installers_links.py:441
+#: Mopy/bash/basher/__init__.py:3297 Mopy/bash/basher/installers_links.py:441
 msgid "If you do, Wrye Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3303
+#: Mopy/bash/basher/__init__.py:3300
 msgid "If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3307
+#: Mopy/bash/basher/__init__.py:3304
 msgid "Enable Installers?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3347
+#: Mopy/bash/basher/__init__.py:3344
 msgid "Refreshing Installers…"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3394
+#: Mopy/bash/basher/__init__.py:3391
 msgid "OMOD Extraction - Cleanup Error"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3400
+#: Mopy/bash/basher/__init__.py:3397
 msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have already been extracted."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3403 Mopy/bash/basher/__init__.py:3429
-#: Mopy/bash/basher/patcher_dialog.py:335 Mopy/bash/bosh/__init__.py:3153
+#: Mopy/bash/basher/__init__.py:3400 Mopy/bash/basher/__init__.py:3426
+#: Mopy/bash/basher/patcher_dialog.py:335 Mopy/bash/bosh/__init__.py:3152
 msgid "Try again?"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3426
+#: Mopy/bash/basher/__init__.py:3423
 msgid "Wrye Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3439
+#: Mopy/bash/basher/__init__.py:3436
 #, python-format
 msgid "Packages: %(status_num)d/%(total_status_num)d"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3549
+#: Mopy/bash/basher/__init__.py:3546
 #, python-format
 msgid "Screenshots: %(status_num)d"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3613 Mopy/bash/basher/__init__.py:3615
+#: Mopy/bash/basher/__init__.py:3610 Mopy/bash/basher/__init__.py:3612
 #: Mopy/bash/basher/belt.py:392
 msgid "Notes:"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3637
+#: Mopy/bash/basher/__init__.py:3634
 #, python-format
 msgid "BSAs: %(status_num)d"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3654
+#: Mopy/bash/basher/__init__.py:3651
 #, python-format
 msgid "Show/Hide the %(tabtitle)s Tab."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3904
+#: Mopy/bash/basher/__init__.py:3901
 #, python-format
 msgid "It appears that you have more than 325 plugins and BSAs in your %(data_folder)s folder and auto-ghosting is disabled. This may cause problems in %(game_name)s; see the auto-ghost section of the readme for more details and consider enabling auto-ghosting."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3913
+#: Mopy/bash/basher/__init__.py:3910
 #, python-format
 msgid "It appears that you have more than 400 plugins and BSAs in your %(data_folder)s folder and auto-ghosting is disabled. This will cause problems in %(game_name)s; see the auto-ghost section of the readme for more details."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3920
+#: Mopy/bash/basher/__init__.py:3917
 msgid "Too Many Plugins."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3959
+#: Mopy/bash/basher/__init__.py:3956
 #, python-format
 msgid "%(wb_alt_name)s %(wb_version)s (Standalone)"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3964
+#: Mopy/bash/basher/__init__.py:3961
 #, python-format
 msgid "Wrye Bash %(wb_version)s (Standalone) for %(game_name)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3967
+#: Mopy/bash/basher/__init__.py:3964
 #, python-format
 msgid "Wrye Bash %(wb_version)s for %(game_name)s"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:3978 Mopy/bash/basher/saves_links.py:209
+#: Mopy/bash/basher/__init__.py:3975 Mopy/bash/basher/saves_links.py:209
 #: Mopy/bash/basher/saves_links.py:638
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:469
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:473
@@ -1464,85 +1464,85 @@ msgstr ""
 msgid "Default"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4028
+#: Mopy/bash/basher/__init__.py:4025
 msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4032 Mopy/bash/basher/mods_links.py:424
+#: Mopy/bash/basher/__init__.py:4029 Mopy/bash/basher/mods_links.py:424
 #: Mopy/bash/basher/mods_links.py:438
 msgid "Lock Load Order"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4040
+#: Mopy/bash/basher/__init__.py:4037
 #, python-format
 msgid "The following plugins could not be found in the %(data_folder)s folder or are corrupt and have thus been removed from the load order."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4048
+#: Mopy/bash/basher/__init__.py:4045
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d regular plugins and %(max_esl_plugins)d ESL-flagged plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4053
+#: Mopy/bash/basher/__init__.py:4050
 #, python-format
 msgid "The following plugins have been deactivated because only %(max_regular_plugins)d plugins may be active at the same time."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4083
+#: Mopy/bash/basher/__init__.py:4080
 msgid "The following plugins could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4090
+#: Mopy/bash/basher/__init__.py:4087
 msgid "The following save files could not be read. This most likely means that they are corrupt."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4099
+#: Mopy/bash/basher/__init__.py:4096
 msgid "The following plugins have header versions that are not valid for this game. This may mean that they are actually intended to be used for a different game."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4107
+#: Mopy/bash/basher/__init__.py:4104
 msgid "The following plugins use an older Form Version for their main header. This most likely means that they were not ported properly (if at all)."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4114
+#: Mopy/bash/basher/__init__.py:4111
 msgid "The following plugins are marked as localized, but are missing strings localization files in the language your game is set to. This will cause CTDs if they are activated."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4122
+#: Mopy/bash/basher/__init__.py:4119
 #, python-format
 msgid "The following BSAs have a version different from the one %(game_name)s expects. This can lead to CTDs, please extract and repack them using the %(ck_name)s-provided tool."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4132
+#: Mopy/bash/basher/__init__.py:4129
 msgid "The following BA2s have filenames whose hashes collide, which will cause one or more of them to fail to work correctly. This should be corrected by the mod authors by renaming the files to avoid the collision."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4142
+#: Mopy/bash/basher/__init__.py:4139
 #, python-format
 msgid "%(game_ini_file)s does not exist yet. %(game_name)s will create this file on first run. INI tweaks will not be usable until then."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4151
+#: Mopy/bash/basher/__init__.py:4148
 msgid "Please replace the INI with a default copy and restart Wrye Bash."
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4154
+#: Mopy/bash/basher/__init__.py:4151
 msgid "Corrupted Game INI"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4260
+#: Mopy/bash/basher/__init__.py:4257
 msgid "Initializing"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4266
+#: Mopy/bash/basher/__init__.py:4263
 msgid "Generating Blank Bashed Patch"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4271
+#: Mopy/bash/basher/__init__.py:4268
 msgid "Initializing Version"
 msgstr ""
 
-#: Mopy/bash/basher/__init__.py:4279
+#: Mopy/bash/basher/__init__.py:4276
 msgid "Initializing Windows"
 msgstr ""
 
@@ -1699,7 +1699,7 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#: Mopy/bash/basher/app_buttons.py:630 Mopy/bash/basher/frames.py:436
+#: Mopy/bash/basher/app_buttons.py:630 Mopy/bash/basher/frames.py:437
 msgid "Plugin Checker"
 msgstr ""
 
@@ -1755,7 +1755,7 @@ msgstr ""
 msgid "Install this package"
 msgstr ""
 
-#: Mopy/bash/basher/belt.py:384 Mopy/bash/bosh/__init__.py:3082
+#: Mopy/bash/basher/belt.py:384 Mopy/bash/bosh/__init__.py:3081
 msgid "Plugins"
 msgstr ""
 
@@ -2463,7 +2463,7 @@ msgstr ""
 msgid "Uncheck any files you want to keep unchanged."
 msgstr ""
 
-#: Mopy/bash/basher/dialogs.py:602 Mopy/bash/basher/frames.py:475
+#: Mopy/bash/basher/dialogs.py:602 Mopy/bash/basher/frames.py:476
 msgid "Update"
 msgstr ""
 
@@ -2961,92 +2961,92 @@ msgstr ""
 msgid "Opens the document in your default viewer/editor."
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:208
+#: Mopy/bash/basher/frames.py:209
 msgid "The assigned document is not present:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:253
+#: Mopy/bash/basher/frames.py:254
 #, python-format
 msgid "Select document for %(target_file_name)s:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:269
+#: Mopy/bash/basher/frames.py:270
 msgid "Rename file to:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:463 Mopy/bash/basher/installer_links.py:1060
+#: Mopy/bash/basher/frames.py:464 Mopy/bash/basher/installer_links.py:1060
 msgid "Plugin List"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:464
+#: Mopy/bash/basher/frames.py:465
 msgid "Show a list of all installed plugins as well."
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:465
+#: Mopy/bash/basher/frames.py:466
 msgid "Version Numbers"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:466
+#: Mopy/bash/basher/frames.py:467
 msgid "Show verion numbers alongside the plugin list."
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:467
+#: Mopy/bash/basher/frames.py:468
 msgid "CRCs"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:468
+#: Mopy/bash/basher/frames.py:469
 msgid "Show CRCs alongside the plugin list."
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:469
+#: Mopy/bash/basher/frames.py:470
 msgid "Load Plugins"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:470
+#: Mopy/bash/basher/frames.py:471
 msgid "Detect more types of problems that require loading every plugin."
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:472
+#: Mopy/bash/basher/frames.py:473
 msgid "Copy Text"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:473
+#: Mopy/bash/basher/frames.py:474
 msgid "Copy a text version of the report to the clipboard."
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:476
+#: Mopy/bash/basher/frames.py:477
 msgid "Regenerate the report from scratch."
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:522
+#: Mopy/bash/basher/frames.py:523
 msgid "Checking Plugins…"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:572
+#: Mopy/bash/basher/frames.py:573
 msgid "OMOD Config"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:594
+#: Mopy/bash/basher/frames.py:595
 msgid "Name:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:595
+#: Mopy/bash/basher/frames.py:596
 msgid "Version:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:596
+#: Mopy/bash/basher/frames.py:597
 msgid "Website:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:597
+#: Mopy/bash/basher/frames.py:598
 msgid "Author:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:598
+#: Mopy/bash/basher/frames.py:599
 msgid "Email:"
 msgstr ""
 
-#: Mopy/bash/basher/frames.py:600
+#: Mopy/bash/basher/frames.py:601
 msgid "Abstract"
 msgstr ""
 
@@ -8434,159 +8434,159 @@ msgstr ""
 msgid "Browse…"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2549
+#: Mopy/bash/bosh/__init__.py:2548
 msgid "Is Vanilla Plugin."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2608
+#: Mopy/bash/bosh/__init__.py:2607
 msgid "Calculating crc:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2666
+#: Mopy/bash/bosh/__init__.py:2665
 #, python-format
 msgid "Missing Master: %(m_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2667
+#: Mopy/bash/bosh/__init__.py:2666
 #, python-format
 msgid "Delinquent Master: %(d_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2672
+#: Mopy/bash/bosh/__init__.py:2671
 #, python-format
 msgid "MISSING MASTER: %(m_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2673
+#: Mopy/bash/bosh/__init__.py:2672
 #, python-format
 msgid "DELINQUENT MASTER: %(d_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2678
+#: Mopy/bash/bosh/__init__.py:2677
 #, python-format
 msgid "Missing Masters for %(mm_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2682
+#: Mopy/bash/bosh/__init__.py:2681
 #, python-format
 msgid "Masters for %(m_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2689
+#: Mopy/bash/bosh/__init__.py:2688
 msgid "Active Plugins:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2707
+#: Mopy/bash/bosh/__init__.py:2706
 #, python-format
 msgid "[Version %(plugin_ver)s]"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2710
+#: Mopy/bash/bosh/__init__.py:2709
 #, python-format
 msgid "[CRC: %(plugin_crc)s]"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2731 Mopy/bash/bosh/__init__.py:2762
+#: Mopy/bash/bosh/__init__.py:2730 Mopy/bash/bosh/__init__.py:2761
 msgid "No tags"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2736
+#: Mopy/bash/bosh/__init__.py:2735
 msgid "From Plugin Description:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2741
+#: Mopy/bash/bosh/__init__.py:2740
 msgid "From LOOT Masterlist and/or Userlist:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2744
+#: Mopy/bash/bosh/__init__.py:2743
 msgid "Removed by LOOT Masterlist and/or Userlist:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2751
+#: Mopy/bash/bosh/__init__.py:2750
 #, python-format
 msgid "Added by %(tags_file)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2754
+#: Mopy/bash/bosh/__init__.py:2753
 #, python-format
 msgid "Removed by %(tags_file)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2759
+#: Mopy/bash/bosh/__init__.py:2758
 msgid "From Manual (overrides all other sources):"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2761
+#: Mopy/bash/bosh/__init__.py:2760
 msgid "Result:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2768
+#: Mopy/bash/bosh/__init__.py:2767
 msgid "Current Bash Tags:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2770
+#: Mopy/bash/bosh/__init__.py:2769
 msgid "Note: Sources are processed from top to bottom, meaning that lower-ranking sources override higher-ranking ones."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2928 Mopy/bash/bosh/__init__.py:2981
+#: Mopy/bash/bosh/__init__.py:2927 Mopy/bash/bosh/__init__.py:2980
 msgid "Some plugins could not be found and were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2934
+#: Mopy/bash/bosh/__init__.py:2933
 msgid "Plugin list is full, so some plugins were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3149
+#: Mopy/bash/bosh/__init__.py:3148
 #, python-format
 msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3151
+#: Mopy/bash/bosh/__init__.py:3150
 #, python-format
 msgid "The file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3152
+#: Mopy/bash/bosh/__init__.py:3151
 #, python-format
 msgid "Please close the other program that is accessing %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3194
+#: Mopy/bash/bosh/__init__.py:3193
 msgid "File in Use"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3647
+#: Mopy/bash/bosh/__init__.py:3646
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3655 Mopy/bash/bosh/__init__.py:3667
-#: Mopy/bash/bosh/__init__.py:3677
+#: Mopy/bash/bosh/__init__.py:3654 Mopy/bash/bosh/__init__.py:3666
+#: Mopy/bash/bosh/__init__.py:3676
 msgid "Settings Load Error"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3660
+#: Mopy/bash/bosh/__init__.py:3659
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3673
+#: Mopy/bash/bosh/__init__.py:3672
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3688
+#: Mopy/bash/bosh/__init__.py:3687
 msgid "Initializing BSAs"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3690
+#: Mopy/bash/bosh/__init__.py:3689
 msgid "Initializing plugins"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3692
+#: Mopy/bash/bosh/__init__.py:3691
 msgid "Initializing saves"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3694
+#: Mopy/bash/bosh/__init__.py:3693
 msgid "Initializing INIs"
 msgstr ""
 
@@ -11510,21 +11510,21 @@ msgstr ""
 msgid "Finish"
 msgstr ""
 
-#: Mopy/bash/ini_files.py:299
+#: Mopy/bash/ini_files.py:294
 #, python-format
 msgid "The INI file %(ini_full_path)s seems to have unencodable characters:"
 msgstr ""
 
-#: Mopy/bash/ini_files.py:337
+#: Mopy/bash/ini_files.py:332
 #, python-format
 msgid "Your %(tweak_ini)s should begin with a section header (e.g. '[General]'), but it does not."
 msgstr ""
 
-#: Mopy/bash/ini_files.py:770
+#: Mopy/bash/ini_files.py:765
 msgid "The game INI must exist to apply a tweak to it."
 msgstr ""
 
-#: Mopy/bash/ini_files.py:773
+#: Mopy/bash/ini_files.py:768
 #, python-format
 msgid "%(ini_full_path)s does not exist."
 msgstr ""
