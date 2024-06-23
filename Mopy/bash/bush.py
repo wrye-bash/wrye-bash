@@ -42,7 +42,7 @@ from .game import GameInfo, patch_game
 # Game detection --------------------------------------------------------------
 game: patch_game.PatchGame | None = None
 ws_info: 'env._LegacyWinAppInfo' | None = None
-foundGames: dict[str, Path] = {} # dict used by the Settings switch game menu
+foundGames: dict[str, list[Path]] = {} # dict used by the Settings switch game menu
 
 # Module Cache
 _allGames: dict[str, type[GameInfo]] = {}
@@ -290,9 +290,9 @@ def detect_and_set_game(cli_game_dir, gname=None, gm_path=None):
     if gname is not None and gm_path is not None:
         __setGame(gname, gm_path, u'Using %(gamename)s game:')
         return None
-    elif len(foundGames) == 1 and len(next(iter(foundGames))) == 1:
-        single_game = next(iter(foundGames))
-        __setGame(single_game, next(iter(foundGames[single_game])),
+    elif len(foundGames) == 1 and len(single_game_paths := next(
+            iter(foundGames.values()))) == 1:
+        __setGame(next(iter(foundGames)), single_game_paths[0],
                   u'Single game found [%(gamename)s]:')
         return None
     # No match found, return the list of possible games (may be empty if

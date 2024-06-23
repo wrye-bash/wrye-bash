@@ -1005,7 +1005,7 @@ class ModList(_ModsUIList):
     def dndAllow(self, event):
         msg = u''
         continue_key = u'bash.mods.dnd.column.continue'
-        if not self.sort_column in self._dndColumns:
+        if self.sort_column not in self._dndColumns:
             msg = _(u'Reordering mods is only allowed when they are sorted '
                     u'by Load Order.')
         else:
@@ -1013,7 +1013,7 @@ class ModList(_ModsUIList):
                                               fixed_order=True)
             if pinned:
                 msg = (_(u"You can't reorder the following mods:") + u'\n' +
-                       u', '.join(str(s) for s in pinned))
+                       ', '.join(pinned))
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key, show_cancel=False)

@@ -1064,8 +1064,8 @@ def get_ws_game_paths(submod):
 def get_steam_game_paths(submod):
     """Read Steam config information to determine which Steam games are
     installed and return their install paths."""
-    return [_GPath_no_norm(p) for p in
-            _parse_steam_manifests(submod, _get_steam_path())]
+    return [*map(_GPath_no_norm, _parse_steam_manifests(
+        submod, _get_steam_path()))]
 
 def get_personal_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.Documents)),

@@ -420,9 +420,9 @@ class OblivionSaveHeader(SaveFileHeader):
         out.write(self.__class__.save_magic)
         var_fields_size = 0
         for attr, (_pack, __unpack) in self._unpackers.items():
-            ret = _pack(out, getattr(self, attr))
-            if ret is not None:
-                var_fields_size += ret
+            num_chars = _pack(out, getattr(self, attr))
+            if num_chars is not None:
+                var_fields_size += num_chars
         # Update the header size before writing it out. Note that all fields
         # before saveNum do not count towards this
         # TODO(inf) We need a nicer way to do this (query size before dump) -

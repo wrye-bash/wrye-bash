@@ -177,8 +177,8 @@ def get_ws_game_paths(_submod):
     return [] # no Windows Store on Linux
 
 def get_steam_game_paths(submod):
-    return [_GPath_no_norm(p) for p in
-            _parse_steam_manifests(submod, _get_steam_path())]
+    return [*map(_GPath_no_norm, _parse_steam_manifests(
+        submod, _get_steam_path()))]
 
 def get_personal_path(submod):
     if sys.platform == 'darwin':

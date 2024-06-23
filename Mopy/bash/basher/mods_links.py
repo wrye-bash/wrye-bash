@@ -362,12 +362,12 @@ class Mods_CleanDummyMasters(EnabledLink):
         return False
 
     def Execute(self):
-        remove = []
+        to_remove = []
         for fileName, fileInfo in bosh.modInfos.items():
             if fileInfo.header.author == u'BASHED DUMMY':
-                remove.append(fileName)
-        remove = load_order.get_ordered(remove)
-        self.window.DeleteItems(items=remove, order=False,
+                to_remove.append(fileName)
+        to_remove = load_order.get_ordered(to_remove)
+        self.window.DeleteItems(items=to_remove, order=False,
                                 dialogTitle=_(u'Delete Dummy Masters'))
 
 #------------------------------------------------------------------------------

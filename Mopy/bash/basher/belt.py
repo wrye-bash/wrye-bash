@@ -750,8 +750,8 @@ class WryeParser(PreParser):
                 self._select_plugin(False, fn_espm)
 
     def _SelectAll(self, bSelect):
-        self._set_all_values(self.sublist, bSelect)
-        self._set_all_values(self.plugin_enabled, bSelect)
+        self.sublist = FNDict.fromkeys(self.sublist, bSelect)
+        self.plugin_enabled = FNDict.fromkeys(self.plugin_enabled, bSelect)
 
     def _select_plugin(self, should_activate, plugin_name):
         resolved_name = self._resolve_plugin_rename(plugin_name)
@@ -762,7 +762,8 @@ class WryeParser(PreParser):
                     "package.") % {'selected_plugin_name': plugin_name})
 
     def _select_all_plugins(self, should_activate):
-        self._set_all_values(self.plugin_enabled, should_activate)
+        self.plugin_enabled = FNDict.fromkeys(self.plugin_enabled,
+                                              should_activate)
 
     def kwdRequireVersions(self, game, se='None', ge='None', wbWant='0.0'):
         if self.bAuto: return

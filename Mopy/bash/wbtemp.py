@@ -89,7 +89,11 @@ def _get_global_dir() -> PPath:
     try:
         configured_dir = configured_dir.resolve(strict=True)
     except FileNotFoundError:
-        os.makedirs(configured_dir, exist_ok=True)
+        try:
+            os.makedirs(configured_dir, exist_ok=True)
+        except FileNotFoundError: # drive does not exist
+            _reset_temp_dir_setting()
+            configured_dir = PPath(raw_configured_path).resolve(strict=True)
     try:
         wbtemp_readme = os.path.join(configured_dir, 'README.md')
         # Keep this construction here, it relies on _(), which won't have been

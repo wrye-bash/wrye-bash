@@ -129,6 +129,11 @@ def _walk_data_dirs(apath, siz_apath_mtime, new_sizeCrcDate, root_len,
     # else let calling scope decide if we need to be removed
     return has_files
 
+class _DirFiles(dict):
+    __slots__ = ()
+    def __missing__(self, key):
+        return self.setdefault(key, {'dirs': _DirFiles(), 'files': False})
+
 class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
@@ -1012,8 +1017,7 @@ class Installer(ListInfo):
         self.extras_dict.pop(u'root_path', None)
         self.fileRootIdex = 0
         dataDirsPlus = Installer.dataDirsPlus
-        layout = {}
-        layoutSetdefault = layout.setdefault
+        layout = _DirFiles()
         for full, _cached_size, crc in self.fileSizeCrcs:
             fileLower = full.lower()
             if fileLower.startswith(skips_start): continue
@@ -1029,9 +1033,9 @@ class Installer(ListInfo):
                 if dirName not in layout and layout:
                     # A second directory in the archive root, start in the root
                     break
-                root = layoutSetdefault(dirName,{u'dirs':{},u'files':False})
+                root = layout[dirName]
                 for frag in frags[1:-1]:
-                    root = root[u'dirs'].setdefault(frag,{u'dirs':{},u'files':False})
+                    root = root['dirs'][frag]
                 # the last frag is a file, so its parent dir has files
                 root[u'files'] = True
         else:

@@ -1480,11 +1480,6 @@ class PreParser(Parser):
     def _SelectAll(self, bSelect):
        raise NotImplementedError # needs self.sublist/plugin_enabled
 
-    @staticmethod
-    def _set_all_values(di, common_value):
-        for k in di:
-            di[k] = common_value
-
     def kwd_select_plugin(self, plugin_name):
         self._select_plugin(True, plugin_name)
 

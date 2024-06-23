@@ -1154,7 +1154,7 @@ class UIList(PanelWin):
 
     def get_selected_infos_filtered(self, selected=None):
         """Version of GetSelectedInfos that filters out essential infos."""
-        return [v for v in self.data_store.filter_essential(
+        return [*self.data_store.filter_essential(
             selected or self.GetSelected()).values()]
 
     def SelectItem(self, item, deselectOthers=False):
