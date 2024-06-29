@@ -29,8 +29,8 @@ import re
 from collections import Counter
 
 # Keep local imports to a minimum, this module is important for booting!
-from .bolt import CIstr, DefaultLowerDict, ListInfo, LowerDict, decoder, \
-    deprint, getbestencoding, AFileInfo
+from .bolt import DefaultLowerDict, ListInfo, LowerDict, decoder, deprint, \
+    getbestencoding, AFileInfo
 # We may end up getting run very early in boot, make sure _() never breaks us
 from .bolt import failsafe_underscore as _
 from .exception import FailedIniInferError
@@ -40,10 +40,6 @@ _h = r'[^\S\r\n]*' # Perl's \h (horizontal whitespace) sorely missed
 
 # All extensions supported by this parser
 supported_ini_exts = {'.ini', '.cfg', '.toml'}
-
-def _to_lower(ini_settings):
-    """Transforms dict of dict to LowerDict of LowerDict"""
-    return LowerDict((x, LowerDict(y)) for x, y in ini_settings.items())
 
 def get_ini_type_and_encoding(abs_ini_path, *, fallback_type=None,
         consider_obse_inis=False) -> tuple[type[IniFileInfo], str]:
@@ -341,69 +337,71 @@ class IniFileInfo(AIniInfo, AFileInfo):
         return self.abs_path.is_file()
 
     def saveSettings(self, ini_settings, deleted_settings=None, *,
-                     skip_sections=frozenset()):
-        """Apply dictionary of settings to ini file, latter must exist!
-        Values in settings dictionary must be actual (setting, value) pairs.
-        'value' may be a tuple of (value, comment), which specifies an inline
-        comment. Sections in skip_sections will be added to the ini only if
-        they are in ini_settings."""
-        ini_settings = _to_lower(ini_settings)
-        deleted_settings = LowerDict((x, {*map(CIstr, y)}) for x, y in
+                     skip_sections=frozenset(), line_fmt=False):
+        """Apply dictionary of settings to ini file. Leaf values in settings
+        dictionary can be full ini lines, actual values or (value, comment)
+        tuples, specifying an inline comment. Sections in skip_sections will
+        be replaced with the values in ini_settings if given else removed."""
+        ini_settings = LowerDict(
+            (x1, LowerDict(y1)) for x1, y1 in ini_settings.items())
+        deleted_settings = LowerDict((x, y) for x, y in
                                      (deleted_settings or {}).items())
         section = None
-        sectionSettings = {}
         with TempFile() as tmp_ini_path:
             with self._open_for_writing(tmp_ini_path) as tmp_ini:
-                def _add_remaining_new_items():
-                    if section in ini_settings: del ini_settings[section]
-                    if not sectionSettings: return
-                    for sett, val in sectionSettings.items():
-                        tmp_ini.write(f'{self.fmt_setting(sett, val)}\n')
-                    tmp_ini.write('\n')
+                def _add_remaining_new_items(section_setts=None):
+                    section_setts = ini_settings.pop(section, {}) \
+                        if section_setts is None else section_setts
+                    for sett, val in section_setts.items():
+                        line = val if line_fmt else self.fmt_setting(sett, val)
+                        tmp_ini.write(f'{line}\n')
                 skip = False
-                for line in self.read_ini_content(as_unicode=True,
-                        missing_ok=True): # We may have to create the file
+                # We may have to create the file
+                for line in self.read_ini_content(missing_ok=True):
                     stripped, setting, val, new_section, is_del = \
                         self.parse_ini_line(line, inline_comments=True)
                     if setting: # modify? we need be in a section
+                        sect = new_section or section
                         try: # Check if we have a value for this setting
-                            value = sectionSettings.pop(setting) # KE
+                            value = ini_settings[sect].pop(setting) # KeyError
                             # preserve the comment if we don't pass one in
-                            line = self.fmt_setting(setting, value,
-                                                    comment=(val[1] or ''))
+                            line = value if line_fmt else self.fmt_setting(
+                                setting, value, new_section,
+                                comment=(val[1] or ''))
                         except KeyError:
                             # Check if was enabled and we want to delete it. We
                             # only delete existing settings by commenting out
-                            if not is_del and (section in deleted_settings
-                                and setting in deleted_settings[section]):
+                            if not is_del and (sect in deleted_settings
+                                    and setting in deleted_settings[sect]):
                                 # we remove all indentation/trailing spaces
                                 line = f'{self._comment_char}-{stripped}'
-                    elif new_section:
+                    elif new_section: # we never enter this block for OBSEIni
                         # 'new' entries still to be added from previous section
                         _add_remaining_new_items()
+                        if section is not None:
+                            tmp_ini.write('\n') # newline between sections
                         section = new_section # _add_remaining uses the section
-                        sectionSettings = ini_settings.get(section, {})
                         if skip := section.lower() in skip_sections:
-                            if sectionSettings:
+                            if section in ini_settings:
                                 tmp_ini.write(f'{line}\n')
                     if not skip:
                         tmp_ini.write(f'{line}\n')
                 # This will occur for the last INI section in the ini file
                 _add_remaining_new_items()
-                # Add remaining new entries - list() because
-                # _add_remaining_new_items may modify ini_settings
-                for section, sectionSettings in list(ini_settings.items()):
-                    if sectionSettings:
-                        tmp_ini.write(f'[{section}]\n')
-                        _add_remaining_new_items()
+                # Add remaining new entries that were not in the ini file
+                for sect, sectionSettings in ini_settings.items():
+                    if sectionSettings and not isinstance(self, OBSEIniFile):
+                        if section is not None:
+                            tmp_ini.write('\n') #separate section from previous
+                        section = sect
+                        tmp_ini.write(f'[{sect}]\n')
+                    _add_remaining_new_items(sectionSettings)
             self.abs_path.replace_with_temp(tmp_ini_path)
 
     @classmethod
     def fmt_setting(cls, setting, value, section=None, comment=''):
         """Format a key-value setting appropriately for the current INI
         format."""
-        if isinstance(value, str) and value[-1:] == '\n':
-            return value.rstrip('\n\r') # we come from apply_tweak
         if isinstance(value, tuple): # takes precedence over comment
             value, comment = value
         if comment:
@@ -424,8 +422,8 @@ class IniFileInfo(AIniInfo, AFileInfo):
             if setting:
                 # Save the whole ini line for applying (replacing the setting)
                 (deleted_settings if is_del else ini_settings)[section][
-                    setting] = f'{line}\n' # if is_del `line` is ignored
-        self.saveSettings(ini_settings,deleted_settings)
+                    setting] = line # if is_del `line` is ignored
+        self.saveSettings(ini_settings, deleted_settings, line_fmt=True)
         return True
 
 class TomlFile(IniFileInfo):
@@ -454,8 +452,6 @@ class TomlFile(IniFileInfo):
     @classmethod
     def fmt_setting(cls, setting, value, section=None, comment=''):
         # If we're given a specific comment, use that (and format it nicely)
-        if isinstance(value, str) and value[-1:] == '\n':
-            return value.rstrip('\n\r') # we come from apply_tweak
         if isinstance(value, tuple): # takes precedence over comment
             value, comment = value
         if comment:
@@ -476,13 +472,11 @@ class TomlFile(IniFileInfo):
             # Valid base 10 ints pass float() too, so this must go first
             return int(value, base=0)
         except ValueError:
-            pass
-        try:
-            return float(value)
-        except ValueError:
-            pass
-        if value in ('true', 'false'):
-            return value == 'true'
+            try:
+                return float(value)
+            except ValueError:
+                if value in ('true', 'false'):
+                    return value == 'true'
         raise ValueError(f"Cannot parse TOML value '{value}' (yet)")
 
 _h_req = r'[^\S\r\n]+' # required horizontal whitespace
@@ -517,43 +511,8 @@ class OBSEIniFile(IniFileInfo):
                 return stripped, ma_obse.group(1), val, sectionKey, is_del
         return '', None, None, None, False
 
-    def saveSettings(self, ini_settings, deleted_settings=None):
-        """Apply dictionary of settings to self, latter must exist!
-        Values in settings dictionary can be either actual values or
-        full ini lines ending in newline char."""
-        ini_settings = _to_lower(ini_settings)
-        deleted_settings = _to_lower(deleted_settings or {})
-        with TempFile() as tmp_file_path:
-            with self._open_for_writing(tmp_file_path) as tmpFile:
-                # Modify/Delete existing lines
-                for line in self.read_ini_content(as_unicode=True):
-                    # Test if line is currently deleted
-                    stripped, setting, _val, section_key, is_del = \
-                        self.parse_ini_line(line)
-                    if setting:
-                        # Apply the modification
-                        try:
-                            # Un-delete/modify it
-                            value = ini_settings[section_key].pop(setting)
-                            line = self.fmt_setting(setting, value,
-                                                    section_key)
-                        except KeyError:
-                            if (not is_del and section_key in deleted_settings
-                                and setting in deleted_settings[section_key]):
-                                # It isn't deleted, but we want it deleted
-                                line = f'{self._comment_char}-{stripped}'
-                    tmpFile.write(f'{line}\n')
-                # Add new lines
-                for sectionKey in ini_settings:
-                    section = ini_settings[sectionKey]
-                    for setting in section:
-                        tmpFile.write(section[setting])
-            self.abs_path.replace_with_temp(tmp_file_path)
-
     @classmethod
     def fmt_setting(cls, setting, value, section=None, comment=''):
-        if isinstance(value, str) and value[-1:] == '\n':
-            return value.rstrip('\n\r') # we come from apply_tweak
         if isinstance(value, bytes): # huh?
             raise RuntimeError('Do not pass bytes into saveSettings!')
         if isinstance(value, tuple):
