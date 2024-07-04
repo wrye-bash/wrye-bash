@@ -436,7 +436,9 @@ class _Mods_LOOTAutoSort(BoolLink):
 
 class AppLOOT(_AAppLOManager):
     """Runs LOOT if it's present."""
-    _registry_keys = ('LOOT', 'Installed Path')
+    _registry_keys = ('Microsoft\\Windows\\CurrentVersion\\Uninstall\\'
+                      '{BF634210-A0D4-443F-A657-0DCE38040374}_is1',
+                      'InstallLocation')
 
     def _init_menu(self, bt_links):
         bt_links.append_link(_Mods_LOOTAutoSort())
