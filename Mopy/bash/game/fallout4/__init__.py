@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import re
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo, MergeabilityCheck, ObjectIndexRange
@@ -134,6 +135,12 @@ class AFallout4GameInfo(PatchGame):
             # This rule is to allow mods with string translation enabled.
             _j('interface', 'translations'): {'.txt'},
         }
+        no_skip_regexes = (
+            # 3P: xSE PluginPreloader F4
+            # f4se\plugins\<F4SE plugin name>_preload.txt
+            re.compile(bolt.os_sep_re.join([
+                'f4se', 'plugins', r'.+_preload\.txt'])),
+        )
         skip_bain_refresh = {u'fo4edit backups', u'fo4edit cache'}
 
     class Esp(GameInfo.Esp):
