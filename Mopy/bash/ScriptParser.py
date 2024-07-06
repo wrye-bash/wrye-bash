@@ -1189,11 +1189,35 @@ class PreParser(Parser):
         self._handleINIEdit(ini_name, section, setting, value, comment, False)
 
     def fnDisableINILine(self, ini_name, section, setting):
-        self._handleINIEdit(ini_name, section, setting, '', '', True)
+        self._handleINIEdit(ini_name, section, setting, 'DELETED', '', True)
 
     def _handleINIEdit(self, ini_name, section, setting, value, comment,
                        disable):
-        raise NotImplementedError # needs ini_files.OBSEIniFile
+        """
+        Common implementation for the EditINI and DisableINILine wizard
+        functions.
+
+        :param ini_name: The name of the INI file to edit. If it's not one of
+            the game's default INIs (e.g. Skyrim.ini), it's treated as relative
+            to the Data folder.
+        :param section: The section of the INI file to edit.
+        :param setting: The name of the setting to edit.
+        :param value: The value to assign. If disabling a line, this must be
+            'DELETED'.
+        :param comment: The comment to place with the edit. Pass an empty
+            string if no comment should be placed.
+        :param disable: Whether this edit should disable the setting in
+            question.
+        """
+        section = section.strip()
+        setting = setting.strip()
+        comment = comment.strip()
+        iedits = self.iniedits[ini_name]
+        try:
+            ci_section = iedits[section]
+        except KeyError:
+            ci_section = iedits[section] = bolt.LowerDict()
+        ci_section[setting] = (value, comment, disable)
 
     def fnExec(self, strLines):
         lines = strLines.split('\n')

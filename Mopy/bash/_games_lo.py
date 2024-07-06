@@ -651,13 +651,12 @@ def _mk_ini(ini_key, star, ini_fpath):
 
         def write_modfile(self, lord, active):
             """Write out the lord/active using the section/key format attrs."""
-            # Remove any existing section - also prevents duplicate sections
-            # with different case
-            self.remove_section(self._section)
-            # Now, write out the changed values - no backup here
             section_contents = {self._key_fmt % {'lo_idx': i}: lo_mod for
                                 i, lo_mod in enumerate(lord)}
-            self.saveSettings({self._section: section_contents})
+            # Remove any existing section - also prevents duplicate sections
+            # with different case
+            self.saveSettings({self._section: section_contents},
+                              skip_sections={self._section.lower()})
 
         def upd_on_swap(self, old_dir, new_dir):
             # If there's no INI inside the old (saves) directory, copy it
