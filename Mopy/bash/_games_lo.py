@@ -252,17 +252,17 @@ class LoGame:
         self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
-        self._set_pinned_mods(self.master_path)
+        self.active_if_present, self._fixed_order_plugins = \
+            self._set_pinned_mods(self.master_path)
         self._print_lo_paths()
 
     # INITIALIZATION ----------------------------------------------------------
-    @classmethod
-    def _set_pinned_mods(cls, master_fn):
+    def _set_pinned_mods(self, master_fn):
         """Set the master file(s) that must always be active if present."""
-        cls.must_be_active_if_present = mbaip = (
-            master_fn, *cls.must_be_active_if_present)
-        if len(mbaip) != len(set(mbaip)):
-            raise ValueError(f'Duplicate entries in {mbaip}')
+        fo_plugins = (master_fn, *self.must_be_active_if_present)
+        if len(fo_plugins) != len(mbaip := set(fo_plugins)):
+            raise ValueError(f'Duplicate entries in {fo_plugins}')
+        return mbaip, fo_plugins
 
     def _print_lo_paths(self):
         """Prints the paths that will be used and what they'll be used for.
@@ -501,13 +501,11 @@ class LoGame:
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
-        # end textfile get
-        fixed_order = self._fixed_order_plugins(set(lord))
-        fixed_order_set = set(fixed_order)
-        lo_with_fixed = [*fixed_order,
-                         *(x1 for x1 in lord if x1 not in fixed_order_set)]
-        if lord != lo_with_fixed:
-            lord[:] = lo_with_fixed
+        # set(lord) should be equal to set(modInfos) but pass it anyway
+        fo_mods = self.pinned_plugins(set(lord), fixed_order=True)
+        if lord[:len(fo_mods)] != fo_mods:
+            fo_set = set(fo_mods)
+            lord[:] = [*fo_mods, *(x for x in lord if x not in fo_set)]
             lo_order_changed = True
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
@@ -528,7 +526,7 @@ class LoGame:
         fix_active.act_removed = set(acti) - acti_filtered_set
         # present mods that are always active - noop for AsteriskGame as always
         # active plugins are manually added on getting the load order
-        for fn_plugin in self._fixed_order_plugins():
+        for fn_plugin in self.pinned_plugins():
             if fn_plugin not in acti_filtered_set:
                 if fn_plugin == self.master_path:
                     acti_filtered.insert(0, fn_plugin)
@@ -577,12 +575,19 @@ class LoGame:
         return (set(acti_filtered_regular[self.max_espms:]),
                 set(acti_filtered_esl[self.max_esls:]))
 
-    def _fixed_order_plugins(self, mods: set[FName] | None = None):
-        """Returns a list of plugins that must have the order they have in this
-        list. The list may only contain plugins that are actually present in
-        the Data folder."""
+    def pinned_plugins(self, mods: set[FName] | None = None, fixed_order=False,
+                       filter_mods=False) -> list[FName]:
+        """Return a list of plugins (in random order) that are always active
+        or a list of plugins that must have the order they have in this list
+        (the first list is always contained in the second). Both lists may only
+        contain plugins that are present in modInfos (excluding corrupted)."""
         modset = self.mod_infos if mods is None else mods & set(self.mod_infos)
-        return [x for x in self.must_be_active_if_present if x in modset]
+        mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
+            self.active_if_present
+        if filter_mods:
+            if fixed_order: mod_set_or_tuple = set(mod_set_or_tuple)
+            return [x for x in modset if x not in mod_set_or_tuple]
+        return [x for x in mod_set_or_tuple if x in modset]
 
     @staticmethod
     def _check_active_order(acti, lord):
@@ -950,9 +955,9 @@ class AsteriskGame(_TextFileLo):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Discard information read if cached_* is passed in, but due
         to our caller being get_load_order *at least one* is None."""
+        rem_from_acti = self.active_if_present
         try:
             active, lo = self._plugins_txt.parse_modfile(self.mod_infos)
-            rem_from_acti = {*self.must_be_active_if_present}
             if any_dropped := {x for x in lo if x in rem_from_acti}:
                 bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
                              f'{self._plugins_txt.abs_path}')
@@ -961,14 +966,14 @@ class AsteriskGame(_TextFileLo):
                 lo, active = self._persist_load_order(lo, active)
             # Prepend all present fixed-order plugins that can't be in the
             # plugins txt to the active and lord lists
-            sorted_rem = self._fixed_order_plugins(rem_from_acti)
+            sorted_rem = self.pinned_plugins(rem_from_acti, fixed_order=True)
             lo = [*sorted_rem, *lo] if ca_load_order is None else ca_load_order
             active = [*sorted_rem, *active] if ca_active is None else ca_active
         except FileNotFoundError:
-            # Create it if it doesn't exist
-            must_be_active = self._fixed_order_plugins()
-            self._persist_load_order(lo := ca_load_order or must_be_active,
-                                     active := ca_active or must_be_active)
+            # Create it if it doesn't exist - we could use sorted_rem but
+            # those are removed in _persist_load_order
+            self._persist_load_order(lo := ca_load_order or [],
+                                     active := ca_active or [])
             bolt.deprint(f'Created {self._plugins_txt.abs_path}')
         return lo, active
 
@@ -980,7 +985,7 @@ class AsteriskGame(_TextFileLo):
         raise NotImplementedError # no override for AsteriskGame
 
     def _persist_load_order(self, lord, active):
-        rem_from_acti = {*self.must_be_active_if_present}
+        rem_from_acti = self.active_if_present # remove those from plugins.txt
         lord = [x for x in lord if x not in rem_from_acti]
         active = [x for x in active if x not in rem_from_acti]
         self._write_plugins_txt(lord, active)
@@ -1001,10 +1006,9 @@ class AsteriskGame(_TextFileLo):
                 previous_active is None or previous_active != active):
             self._persist_load_order(lord, active)
 
-    @classmethod
-    def _set_pinned_mods(cls, master_fn):
-        if cls._ccc_filename:
-            ccc_path = bass.dirs['app'].join(cls._ccc_filename)
+    def _set_pinned_mods(self, master_fn):
+        if self._ccc_filename:
+            ccc_path = bass.dirs['app'].join(self._ccc_filename)
             try:
                 with open(ccc_path, 'rb') as ins:
                     ccc_contents = []
@@ -1015,14 +1019,18 @@ class AsteriskGame(_TextFileLo):
                         except UnicodeError:
                             deprint(f'Failed to decode CCC entry {ccc_line}')
                             continue
-                    cls.must_be_active_if_present += tuple(ccc_contents)
-            except OSError as e:
-                if not isinstance(e, FileNotFoundError):
-                    deprint(f'Failed to open {ccc_path}', traceback=True)
-                deprint(f'{cls._ccc_filename} does not exist or could not be '
-                        f'read, falling back to hardcoded CCC list')
-                cls.must_be_active_if_present += cls._ccc_fallback
-        super()._set_pinned_mods(master_fn)
+                    self.must_be_active_if_present += tuple(ccc_contents)
+            except FileNotFoundError:
+                deprint(f'{self._ccc_filename} does not exist')
+            except OSError:
+                deprint(f'Failed to open {ccc_path}', traceback=True)
+        mbaip, fo_mods = super()._set_pinned_mods(master_fn)
+        # override what set in super - the game won't care, but we do
+        # we first put the must_be_active_if_present (if those are in the
+        # ccc_contents an error is raised) then the ccc contents, then whatever
+        # in the ccc_fallback that remains - note set(fo_mods) == mbaip
+        return mbaip, (*fo_mods, *(
+            p for p in self._ccc_fallback if p not in mbaip))
 
 # Print helpers
 def _pl(it, legend='', joint=', '):

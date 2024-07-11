@@ -410,14 +410,10 @@ def max_esls():
 def swap(old_dir, new_dir):
     return _game_handle.swap(old_dir, new_dir)
 
-def filter_pinned(imods, remove=False):
-    """Keep only mods that are always active from imods (or remove them if
-    remove is True). If fixed_order is True, only always active mods with a
-    fixed order will be considered (one known case those differ)."""
-    pinned = {*_game_handle.must_be_active_if_present}
-    if remove:
-        return {m for m in imods if m not in pinned}
-    return {m for m in imods if m in pinned}
+def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> list[FName]:
+    """See LoGame.pinned_plugins."""
+    return _game_handle.pinned_plugins(set(imods), fixed_order=fixed_order,
+                                       filter_mods=filter_mods)
 
 def using_ini_file(): return isinstance(_game_handle, INIGame)
 

@@ -244,8 +244,8 @@ class Mod_OrderByName(EnabledLink):
 
     def _enable(self):
         # Can't be used if at least one of the selected mods is pinned
-        return (len(self.selected) > 1
-                and not load_order.filter_pinned(self.selected))
+        return len(self.selected) > 1 and not load_order.filter_pinned(
+            self.selected, fixed_order=True)
 
     @balt.conversation
     def Execute(self):
@@ -278,7 +278,7 @@ class Mod_Move(EnabledLink):
 
     def _enable(self):
         # Can't be used if at least one of the selected mods is pinned
-        return not load_order.filter_pinned(self.selected)
+        return not load_order.filter_pinned(self.selected, fixed_order=True)
 
     def Execute(self):
         entered_text = u''

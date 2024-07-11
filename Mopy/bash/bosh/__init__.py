@@ -2814,7 +2814,7 @@ class ModInfos(TableFileInfos):
     def lo_deactivate(self, *filenames, doSave=False):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
-        filenames = load_order.filter_pinned(filenames, remove=True)
+        filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
         old = set_awip = set(self._active_wip)
         diff = set_awip - filenames
         if len(diff) == len(set_awip): return set()
