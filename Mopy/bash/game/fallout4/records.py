@@ -2135,8 +2135,8 @@ class MreLigh(AMreWithKeywords, _AMreWithProperties):
         MelLighFade(),
         MelString(b'NAM0', 'light_gobo'),
         MelLighLensFlare(),
-        MelGodRays(),
         MelSound(),
+        MelGodRays(),
     )
 
 #------------------------------------------------------------------------------
