@@ -430,7 +430,7 @@ class Installer(ListInfo):
             deprint(f'Failed loading {values[0]}', traceback=True)
         self.fn_key = '' # reset self.fn_key to '' to remove self in __load()
 
-    def get_hide_dir(self): ##: Copy-pasted from InstallersData.hidden_dir!
+    def get_hide_dir(self): ##: Copy-pasted from InstallersData.hide_dir!
         return bass.dirs[u'modsBash'].join(u'Hidden')
 
     def __setstate(self,values):
@@ -1831,7 +1831,7 @@ class InstallersData(DataStore):
     def bash_dir(self): return bass.dirs[u'bainData']
 
     @property
-    def hidden_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
+    def hide_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
             install_order=None, do_refresh=True, _index=None, load_cache=True):
