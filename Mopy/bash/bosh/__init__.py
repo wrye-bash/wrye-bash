@@ -1565,7 +1565,7 @@ class DataStore(DataDict):
         raise NotImplementedError
 
     @property
-    def hidden_dir(self) -> Path:
+    def hide_dir(self) -> Path:
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 

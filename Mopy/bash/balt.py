@@ -1433,7 +1433,7 @@ class UIList(PanelWin):
     @staticmethod
     def _unhide_wildcard(): raise NotImplementedError
     def unhide(self):
-        srcDir = self.data_store.hidden_dir
+        srcDir = self.data_store.hide_dir
         # Otherwise the unhide command will open some random directory
         srcDir.makedirs()
         wildcard = self._unhide_wildcard()
@@ -2027,7 +2027,7 @@ class UIList_Hide(EnabledLink):
         if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
-                          {'hdir': self._data_store.hidden_dir})
+                          {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
         self.window.RefreshUI(refresh_others=Store.SAVES.DO())
