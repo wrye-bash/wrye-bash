@@ -271,9 +271,6 @@ class FileInfo(_TabledInfo, AFileInfo):
         self.fsize, self.ftime, self.ctime = stat_tuple
         if kwargs['load_cache']: self.readHeader()
 
-    def _mark_unchanged(self):
-        self._reset_cache(self._stat_tuple(), load_cache=False)
-
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Sets ftime. Defaults to current value (i.e. reset)."""
         set_to = set_time or self.ftime
@@ -324,20 +321,19 @@ class FileInfo(_TabledInfo, AFileInfo):
 
     # Backup stuff - beta, see #292 -------------------------------------------
     def get_hide_dir(self):
-        return self.get_store().hidden_dir
+        return self._store().hidden_dir
 
     def makeBackup(self, forceBackup=False):
         """Creates backup(s) of file."""
         #--Skip backup?
-        if self not in self.get_store().values(): return
+        if self not in self._store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        cop = self.get_store().copy_info
-        cop(self.fn_key, self.backup_dir, self.fn_key)
+        self.fs_copy(self.backup_dir.join(self.fn_key))
         #--First backup
         firstBackup = self.backup_dir.join(self.fn_key) + 'f'
         if not firstBackup.exists():
-            cop(self.fn_key, self.backup_dir, firstBackup.tail)
+            self.fs_copy(self.backup_dir.join(firstBackup.tail))
         self.madeBackup = True
 
     def backup_restore_paths(self, first, fname=None) -> list[tuple[Path, Path]]:
@@ -345,7 +341,7 @@ class FileInfo(_TabledInfo, AFileInfo):
         destinations. If fname is not given returns the (first) backup
         filename corresponding to self.abs_path, else the backup filename
         for fname mapped to its restore location in data_store.store_dir."""
-        restore_path = (fname and self.get_store().store_dir.join(
+        restore_path = (fname and self._store().store_dir.join(
             fname)) or self.abs_path
         fname = fname or self.fn_key
         return [(self.backup_dir.join(fname + 'f' * first), restore_path)]
@@ -375,46 +371,13 @@ class FileInfo(_TabledInfo, AFileInfo):
         # half-baked anyway let's agree for now that BPs remain BPs with the
         # same config as before - if not, manually run a mergeability scan
         # after updating the config (in case the restored file is a BP)
-        inf = self.get_store().new_info(self.fn_key, notify_bain=True,
+        inf = self._store().new_info(self.fn_key, notify_bain=True,
             _in_refresh=True)
         inf.copy_persistent_attrs(self)
 
-    def getNextSnapshot(self):
-        """Returns parameters for next snapshot."""
-        destDir = self.snapshot_dir
-        destDir.makedirs()
-        root, ext = self.fn_key.fn_body, self.fn_key.fn_ext
-        separator = u'-'
-        snapLast = [u'00']
-        #--Look for old snapshots.
-        reSnap = re.compile(f'^{root}[ -]([0-9.]*[0-9]+){ext}$')
-        for fileName in destDir.ilist():
-            maSnap = reSnap.match(fileName)
-            if not maSnap: continue
-            snapNew = maSnap.group(1).split(u'.')
-            #--Compare shared version numbers
-            sharedNums = min(len(snapNew),len(snapLast))
-            for index in range(sharedNums):
-                (numNew,numLast) = (int(snapNew[index]),int(snapLast[index]))
-                if numNew > numLast:
-                    snapLast = snapNew
-                    continue
-            #--Compare length of numbers
-            if len(snapNew) > len(snapLast):
-                snapLast = snapNew
-                continue
-        #--New
-        snapLast[-1] = (u'%0'+str(len(snapLast[-1]))+u'd') % (int(snapLast[-1])+1,)
-        destName = root+separator+(u'.'.join(snapLast))+ext
-        return destDir, destName, f'{root}*{ext}'
-
     @property
     def backup_dir(self):
-        return self.get_store().bash_dir.join(u'Backups')
-
-    @property
-    def snapshot_dir(self):
-        return self.get_store().bash_dir.join(u'Snapshots')
+        return self._store().bash_dir.join('Backups')
 
     def delete_paths(self): # will include cosave ones
         return *super().delete_paths(), *self.all_backup_paths()
@@ -461,7 +424,7 @@ class ModInfo(FileInfo):
         super().__init__(fullpath, load_cache, **kwargs)
 
     def get_hide_dir(self):
-        dest_dir = self.get_store().hidden_dir
+        dest_dir = self._store().hidden_dir
         #--Use author subdirectory instead?
         mod_author = self.header.author
         if mod_author:
@@ -481,7 +444,7 @@ class ModInfo(FileInfo):
         modInfos._update_info_sets()#we need to recalculate merged/imported based on the config
 
     @classmethod
-    def get_store(cls): return modInfos
+    def _store(cls): return modInfos
 
     def get_extension(self):
         """Returns the file extension of this mod."""
@@ -689,9 +652,10 @@ class ModInfo(FileInfo):
             return False
         self.is_ghost = ghostify
         # reset cache info as un/ghosting should not make do_update return True
-        self._mark_unchanged()
+        self._reset_cache((self.fsize, self.ftime, self.ctime),
+                          load_cache=False)
         # This is necessary if BAIN externally tracked the (un)ghosted file
-        self.get_store()._notify_bain(renamed={ghost_source: ghost_target})
+        self._store()._notify_bain(renamed={ghost_source: ghost_target})
         return True
 
     #--Bash Tags --------------------------------------------------------------
@@ -892,7 +856,7 @@ class ModInfo(FileInfo):
         if extract:
             bsa_assets = {}
             # calculate (once per refresh cycle) and return the bsa_lo
-            bsa_lo = self.get_store().get_bsa_lo()[0]
+            bsa_lo = self._store().get_bsa_lo()[0]
             # reorder bsa list as ordered by bsa_lo - what happens to patch
             # and interface here depends on what's their order in the ini
             str_bsas = sorted(self.str_bsas_sorted, key=bsa_lo.__getitem__,
@@ -1041,6 +1005,12 @@ class ModInfo(FileInfo):
         # in this case the file is marked as normal but let's delete the ghost
         return *sup, self.abs_path + '.ghost' # Path.__add__!
 
+    def fs_copy(self, dup_path, *, set_time=None):
+        destDir, destName = dup_path.head, dup_path.stail
+        if destDir == (st := self._store()).store_dir and destName in st:
+            dup_path = st[destName].abs_path # used the (possibly) ghosted path
+        super().fs_copy(dup_path, set_time=set_time)
+
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
         if self.is_ghost: # add ghost extension to dest path - Path.__add__!
@@ -1070,6 +1040,35 @@ class ModInfo(FileInfo):
         return msg % {
             'assoc_bsa_name': assoc_bsa,
             'pnd_example': os.path.join('Sound', 'Voice', self.fn_key)}
+
+    def getNextSnapshot(self):
+        """Returns parameters for next snapshot."""
+        snapshot_dir = self._store().bash_dir.join('Snapshots')
+        snapshot_dir.makedirs()
+        root, ext = self.fn_key.fn_body, self.fn_key.fn_ext
+        separator = '-'
+        snapLast = ['00']
+        #--Look for old snapshots.
+        reSnap = re.compile(f'^{root}[ -]([0-9.]*[0-9]+){ext}$')
+        for fileName in snapshot_dir.ilist():
+            maSnap = reSnap.match(fileName)
+            if not maSnap: continue
+            snapNew = maSnap.group(1).split(u'.')
+            #--Compare shared version numbers
+            sharedNums = min(len(snapNew),len(snapLast))
+            for index in range(sharedNums):
+                (numNew,numLast) = (int(snapNew[index]),int(snapLast[index]))
+                if numNew > numLast:
+                    snapLast = snapNew
+                    continue
+            #--Compare length of numbers
+            if len(snapNew) > len(snapLast):
+                snapLast = snapNew
+                continue
+        #--New
+        snapLast[-1] = f'%0{len(snapLast[-1])}d' % (int(snapLast[-1]) + 1)
+        destName = root+separator+('.'.join(snapLast))+ext
+        return snapshot_dir, destName, f'{root}*{ext}'
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):
@@ -1133,7 +1132,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
     _key_to_attr = {'installer': 'ini_owner_inst'}
 
     @classmethod
-    def get_store(cls): return iniInfos
+    def _store(cls): return iniInfos
 
     def tweak_status(self, target_ini_settings=None):
         if self._status is None:
@@ -1276,7 +1275,7 @@ class SaveInfo(FileInfo):
         super().__init__(fullpath, load_cache, **kwargs)
 
     @classmethod
-    def get_store(cls): return saveInfos
+    def _store(cls): return saveInfos
 
     def _masters_order_status(self, status):
         mo = tuple(load_order.get_ordered(self.masterNames))
@@ -1442,6 +1441,11 @@ class SaveInfo(FileInfo):
         SaveInfos.co_copy_or_move(self._co_saves, destDir.join(self.fn_key),
                                   move_cosave=True)
 
+    def fs_copy(self, dup_path, *, set_time=None):
+        """Copies savefile and associated cosaves file(s)."""
+        super().fs_copy(dup_path, set_time=set_time)
+        SaveInfos.co_copy_or_move(self._co_saves, dup_path)
+
     def get_rename_paths(self, newName):
         old_new_paths = super().get_rename_paths(newName)
         # super call added the backup paths but not the actual rename cosave
@@ -1468,7 +1472,7 @@ class ScreenInfo(AFileInfo):
         super()._reset_cache(stat_tuple, **kwargs)
 
     @classmethod
-    def get_store(cls): return screen_infos
+    def _store(cls): return screen_infos
 
     def validate_name(self, name_str, check_store=True):
         file_root, num_str = super().validate_name(name_str, check_store)
@@ -1525,7 +1529,7 @@ class DataStore(DataDict):
     def refresh(self): raise NotImplementedError
     def save_pickle(self): pass # for Screenshots
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
@@ -1533,14 +1537,19 @@ class DataStore(DataDict):
             # saves) shellMove will offer to skip and raise SkipError
             if tup[0] == tup[1] or not tup[0].exists():
                 rename_paths.remove(tup)
-        env.shellMove(dict(rename_paths))
+        env.shellMove(ren := dict(rename_paths))
+        # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
         old_key = member_info.fn_key
         ##: Make sure we pass FName in, then drop this FName call
         member_info.fn_key = FName(newName)
-        #--FileInfos
+        #--FileInfo
         self[newName] = member_info
+        member_info.abs_path = self.store_dir.join(newName)
         del self[old_key]
-        return old_key
+        return {old_key: newName}, ren
+
+    def add_info(self, file_info, destName, **kwargs):
+        raise NotImplementedError
 
     @property
     def bash_dir(self) -> Path:
@@ -1570,6 +1579,11 @@ class RefrData:
 
     def __bool__(self):
         return bool(self.to_add or self.to_del or self.redraw)
+
+    @classmethod
+    def from_renamed(cls, renamed: dict[FName, FName]) -> 'RefrData':
+        """Return a RefrData instance with the specified renamed filenames."""
+        return cls(to_del=set(renamed), redraw=set(renamed.values()))
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -1630,6 +1644,11 @@ class _AFileInfos(DataStore):
         if rdata.redraw:
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
+
+    #--Copy
+    def add_info(self, file_info, destName, **kwargs):
+        # TODO(ut) : in duplicate pass the info in and load_cache=False
+        return self.new_info(destName, notify_bain=True)
 
     def new_info(self, fileName, *, _in_refresh=False, owner=None,
                  notify_bain=False, **kwargs):
@@ -1719,46 +1738,11 @@ class _AFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         # Override to allow us to notify BAIN if necessary
-        ##: This is *very* inelegant/inefficient, we calculate these paths
-        # twice (once here and once in super)
-        self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
-        res = super().rename_operation(member_info, newName)
-        #--FileInfo
-        member_info.abs_path = self.store_dir.join(newName)
-        return res
-
-    #--Copy
-    def copy_info(self, fileName, destDir, destName, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies member file to destDir. Will overwrite! Will update
-        internal self._data for the file if copied inside self.store_dir but the
-        client is responsible for calling the final refresh of the data store.
-        See usages.
-
-        :param save_lo_cache: ModInfos only save the mod infos load order cache
-        :param set_mtime: if None self[fileName].ftime is copied to destination
-        """
-        destDir.makedirs()
-        src_info = self[fileName]
-        if destDir == self.store_dir and destName in self:
-            destPath = self[destName].abs_path
-        else:
-            destPath = destDir.join(destName)
-        self._do_copy(src_info, destPath)
-        if destDir == self.store_dir:
-            self._add_info(destName, set_mtime, fileName, save_lo_cache)
-
-    def _add_info(self, destName, set_mtime, fileNam, save_lo_cache):
-        # TODO(ut) : in duplicate pass the info in and load_cache=False
-        return self.new_info(destName, notify_bain=True)
-
-    def _do_copy(self, cp_file_info, cp_dest_path):
-        """Performs the actual copy operation, copying the file represented by
-        the specified FileInfo to the specified destination path."""
-        # Will set the destination's mtime to the source's mtime
-        cp_file_info.abs_path.copyTo(cp_dest_path)
+        ren_keys, ren_paths = super().rename_operation(member_info, newName)
+        self._notify_bain(renamed=ren_paths)
+        return ren_keys, ren_paths
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
@@ -1841,6 +1825,10 @@ class DefaultIniInfo(AINIInfo):
     @property
     def info_dir(self):
         return dirs['ini_tweaks']
+
+    def copy_to(self, cp_dest_path, **kwargs):
+        # Default tweak, so the file doesn't actually exist
+        self._store().copy_to_new_tweak(self, FName(cp_dest_path.stail))
 
 # noinspection PyUnusedLocal
 def ini_info_factory(fullpath, **kwargs) -> INIInfo:
@@ -2023,7 +2011,7 @@ class INIInfos(TableFileInfos):
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
 
-    def _copy_to_new_tweak(self, info, fn_new_tweak: FName):
+    def copy_to_new_tweak(self, info, fn_new_tweak: FName):
         """Duplicate tweak into fn_new_teak."""
         with open(self.store_dir.join(fn_new_tweak), 'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
@@ -2033,7 +2021,7 @@ class INIInfos(TableFileInfos):
         """Duplicate tweak into fn_new_teak, but with the settings that are
         currently written in the target INI."""
         if not fn_new_tweak: return False
-        dup_info = self._copy_to_new_tweak(self[tweak], fn_new_tweak)
+        dup_info = self.copy_to_new_tweak(self[tweak], fn_new_tweak)
         # Now edit it with the values from the target INI
         new_tweak_settings = bolt.LowerDict(dup_info.get_ci_settings())
         target_settings = self.ini.get_ci_settings()
@@ -2048,14 +2036,6 @@ class INIInfos(TableFileInfos):
                 sett: val[0] for sett, val in v.items()}
         dup_info.saveSettings(new_tweak_settings)
         return True
-
-    # _AFileInfos stuff -------------------------------------------------------
-    def _do_copy(self, cp_file_info, cp_dest_path):
-        if cp_file_info.is_default_tweak:
-            # Default tweak, so the file doesn't actually exist
-            self._copy_to_new_tweak(cp_file_info, FName(cp_dest_path.stail))
-        else:
-            super()._do_copy(cp_file_info, cp_dest_path)
 
 #-- ModInfos ------------------------------------------------------------------
 def _lo_cache(lord_func):
@@ -3035,11 +3015,10 @@ class ModInfos(TableFileInfos):
             newFile.tes4.flags1.overlay_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
-            inf = self.new_info(newName, notify_bain=True) #notify just in case
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
-            self.cached_lo_insert_after(last_selected, newName)
-            self.cached_lo_save_lo()
+            inf = self.add_info(newInfo, newName, insert_after=last_selected,
+                                save_lo_cache=True)
             self.refresh(refresh_infos=False)
             return inf
 
@@ -3085,14 +3064,14 @@ class ModInfos(TableFileInfos):
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip = [x for x in self._active_wip if x not in to_remove]
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(member_info.fn_key)
         if isSelected:
             self.lo_deactivate(member_info.fn_key)
-        old_key = super(ModInfos, self).rename_operation(member_info, newName)
+        ren_keys, ren_paths = super().rename_operation(member_info, newName)
         # rename in load order caches
-        oldIndex = self._lo_wip.index(old_key)
+        oldIndex = self._lo_wip.index(old_key := next(iter(ren_keys)))
         self._lo_caches_remove_mods([old_key])
         self._lo_wip.insert(oldIndex, newName)
         if isSelected: self.lo_activate(newName)
@@ -3102,7 +3081,7 @@ class ModInfos(TableFileInfos):
         for mod_inf in self.values():
             if mod_inf.get_table_prop('bp_split_parent') == old_key:
                 mod_inf.set_table_prop('bp_split_parent', newName)
-        return old_key
+        return ren_keys, ren_paths
 
     #--Delete
     def delete_refresh(self, infos, check_existence):
@@ -3125,12 +3104,12 @@ class ModInfos(TableFileInfos):
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
-    def _add_info(self, destName, set_mtime, fileName, save_lo_cache):
-        inf = super()._add_info(destName, set_mtime, fileName, save_lo_cache)
-        if set_mtime is not None:
-            inf.setmtime(set_mtime) # correctly update table
-        self.cached_lo_insert_after(fileName, destName)
+    def add_info(self, file_info, destName, *, insert_after=None,
+                 save_lo_cache=False):
+        inf = super().add_info(file_info, destName)
+        self.cached_lo_insert_after(insert_after or file_info.fn_key, destName)
         if save_lo_cache: self.cached_lo_save_lo()
+        return inf
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -3364,20 +3343,13 @@ class SaveInfos(TableFileInfos):
         return super().refresh(booting=booting) if refresh_infos else \
            self._rdata_type()
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, store_refr=None):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        old_key = super(SaveInfos, self).rename_operation(member_info, newName)
+        ren_keys, ren_paths = super().rename_operation(member_info, newName)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
-        return old_key
-
-    def copy_info(self, fileName, destDir, destName, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies savefile and associated cosaves file(s)."""
-        super().copy_info(fileName, destDir, destName, set_mtime)
-        self.co_copy_or_move(self[fileName]._co_saves,
-                             destDir.join(destName))
+        return ren_keys, ren_paths
 
     @staticmethod
     def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
@@ -3438,7 +3410,7 @@ class BSAInfos(TableFileInfos):
             _key_to_attr = {'info': 'bsa_notes', 'installer': 'bsa_owner_inst'}
 
             @classmethod
-            def get_store(cls): return bsaInfos
+            def _store(cls): return bsaInfos
 
             def do_update(self, raise_on_error=False, **kwargs):
                 did_change = super(BSAInfo, self).do_update(raise_on_error)
