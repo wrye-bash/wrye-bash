@@ -50,7 +50,6 @@ class Files_Unhide(ItemLink):
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
-        destFiles = []
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
@@ -70,11 +69,10 @@ class Files_Unhide(ItemLink):
                 continue
             # File
             srcFiles.append(srcPath)
-            destFiles.append(destPath)
         #--Now move everything at once
         if not srcFiles:
             return
-        moved = self._data_store.move_infos(srcFiles, destFiles,
+        moved = self._data_store.move_infos(srcFiles, destDir,
             self.window, balt.Link.Frame)
         if moved:
             self.window.RefreshUI( # pick one at random to show details for

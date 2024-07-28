@@ -329,7 +329,7 @@ class FileInfo(_TabledInfo, AFileInfo):
 
     # Backup stuff - beta, see #292 -------------------------------------------
     def get_hide_dir(self):
-        return self._store().hidden_dir
+        return self._store().hide_dir
 
     def makeBackup(self, forceBackup=False):
         """Creates backup(s) of file."""
@@ -435,7 +435,7 @@ class ModInfo(FileInfo):
         super().__init__(fullpath, load_cache, **kwargs)
 
     def get_hide_dir(self):
-        dest_dir = self._store().hidden_dir
+        dest_dir = self._store().hide_dir
         #--Use author subdirectory instead?
         mod_author = self.header.author
         if mod_author:
@@ -1432,9 +1432,9 @@ class SaveInfo(FileInfo):
         # now add backups and cosaves backups
         return *super().delete_paths(), *map(__abs, self._co_saves.values())
 
-    def move_info(self, destDir):
+    def move_info(self, destDir, *, _window=None):
         """Moves member file to destDir. Will overwrite!"""
-        super().move_info(destDir)
+        super().move_info(destDir, _window=_window)
         SaveInfos.co_copy_or_move(self._co_saves, destDir.join(self.fn_key),
                                   move_cosave=True)
 
@@ -1569,12 +1569,13 @@ class DataStore(DataDict):
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 
-    def move_infos(self, sources, destinations, window, bash_frame):
+    def move_infos(self, sources, dest_dir, window, bash_frame):
         """Hasty hack for Files_Unhide - only use on files, not folders!"""
-        try:
-            env.shellMove(dict(zip(sources, destinations)), parent=window)
-        except (CancelError, SkipError):
-            pass
+        for inf in map(self.factory, sources):
+            try:
+                inf.move_info(dest_dir, parent=window)
+            except (CancelError, SkipError):
+                pass
         return forward_compat_path_to_fn_list(
             {d.stail for d in destinations if d.exists()}, ret_type=set)
 
@@ -3167,13 +3168,7 @@ class SaveInfos(TableFileInfos):
                 path_func(newPath)
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        # we should use fs_copy in base method so cosaves are copied - we
-        # need to create infos for the hidden files using _store.factory
         moved = super().move_infos(sources, destinations, window, bash_frame)
-        for s, d in zip(sources, destinations):
-            if FName(d.stail) in moved:
-                co_instances = SaveInfo.get_cosaves_for_path(s)
-                self.co_copy_or_move(co_instances, d, move_cosave=True)
         self.refresh(moved)
         bash_frame.warn_corrupted(warn_saves=True)
         return moved
