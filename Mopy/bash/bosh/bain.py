@@ -2047,10 +2047,7 @@ class InstallersData(DataStore):
         return {i: self[i] for i in fn_items if not self[i].is_marker}
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        try:
-            env.shellMove(dict(zip(sources, destinations)), parent=window)
-        except (CancelError, SkipError):
-            pass
+        moved = super().move_infos(sources, destinations, window, bash_frame)
         self.refresh_i(moved)
         return moved
 

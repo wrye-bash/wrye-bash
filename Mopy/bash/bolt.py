@@ -61,7 +61,7 @@ except ImportError:
     # Optional, no reflink copies will be possible if missing
     reflink = ReflinkImpossibleError = None
 
-from . import exception, env
+from . import exception
 from .wbtemp import TempFile
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
@@ -1856,15 +1856,10 @@ class AFileInfo(AFile, ListInfo):
         """Paths to delete when this item is deleted - abs_path comes first!"""
         return self.abs_path,
 
-    def move_info(self, destDir, *, _window=None):
-        """Hasty method used in UIList.un/hide(). Will overwrite! The client is
+    def move_info(self, destDir):
+        """Hasty method used in UIList.hide(). Will overwrite! The client is
         responsible for calling _delete_refresh of the data store."""
-        if not _window:
-            self.abs_path.moveTo(destDir.join(self.fn_key))
-        else:
-            from . import env # previous behavior - we should settle on one
-            env.shellMove({self.abs_path: destDir.join(self.fn_key)},
-                          parent=_window)
+        self.abs_path.moveTo(destDir.join(self.fn_key))
 
     def get_rename_paths(self, newName):
         """Return possible paths this file's renaming might affect (possibly
