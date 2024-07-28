@@ -675,8 +675,8 @@ class Save_Move(ChoiceLink):
 
     def _move_saves(self, destDir, profile: str | None):
         #--bashDir
-        destTable = bolt.DataTable(bolt.PickleDict(destDir.join(
-            'Bash', 'Table.dat')), load_pickle=True)
+        destTable = bolt.DataTable(destDir.join('Bash', 'Table.dat'),
+                                   load_pickle=True)
         count = do_save = 0
         ask = True
         for fileName, save_inf in self.iselected_pairs():

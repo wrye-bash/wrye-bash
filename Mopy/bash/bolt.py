@@ -1888,14 +1888,14 @@ class PickleDict(object):
     def __init__(self, pkl_path, readOnly=False, load_pickle=False):
         """Initialize."""
         self._pkl_path = pkl_path
-        self.backup = pkl_path.backup
+        self._backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
         self.pickled_data = {}
         if load_pickle: self.load()
 
     def exists(self):
-        return self._pkl_path.exists() or self.backup.exists()
+        return self._pkl_path.exists() or self._backup.exists()
 
     class Mold(Exception):
         def __init__(self, moldedFile):
@@ -1925,7 +1925,7 @@ class PickleDict(object):
         def _perform_load():
             self.vdata.update(pickle.load(ins, encoding='bytes'))
             self.pickled_data.update(pickle.load(ins, encoding='bytes'))
-        for path in (self._pkl_path, self.backup):
+        for path in (self._pkl_path, self._backup):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
@@ -1957,7 +1957,7 @@ class PickleDict(object):
                     # saving over it
                     path.copyTo(path.root + '-vdata2.dat.bak') # Path.__add__!
                     self.save()
-                return 1 + (path == self.backup)
+                return 1 + (path == self._backup)
             except (OSError, EOFError, ValueError,
                     pickle.UnpicklingError): #PY3:FileNotFound
                 pass
@@ -1980,7 +1980,7 @@ class PickleDict(object):
                 for pkl in ('VDATA3', self.vdata, self.pickled_data):
                     pickle.dump(pkl, out, -1)
             try:
-                self._pkl_path.copyTo(self._pkl_path.backup)
+                self._pkl_path.copyTo(self._backup)
             except FileNotFoundError:
                 pass # No settings file to back up yet, this is fine
             self._pkl_path.replace_with_temp(temp_pkl)

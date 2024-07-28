@@ -668,13 +668,13 @@ def _main(opts, wx_locale, wxver):
                 defaultDir=base_dir, wildcard='*.7z', defaultFile=bkf)
         if settings_file:
             with gui.BusyCursor():
-                backup = barb.BackupSettings(
+                bkp_setts = barb.BackupSettings(
                     settings_file, bush_game.bak_game_name,
                     bush_game.my_games_name, bush_game.bash_root_prefix,
                     bush_game.mods_dir)
             try:
                 with gui.BusyCursor():
-                    backup.backup_settings(balt)
+                    bkp_setts.backup_settings(balt)
             except exception.StateError:
                 msg = [_('There was an error while trying to backup the Wrye '
                          'Bash settings!'),

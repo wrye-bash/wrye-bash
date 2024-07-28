@@ -360,7 +360,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                 for line in self.read_ini_content(missing_ok=True):
                     stripped, setting, val, new_section, is_del = \
                         self.parse_ini_line(line, inline_comments=True)
-                    if setting: # modify? we need be in a section
+                    if setting and not skip: # modify? we need be in a section
                         sect = new_section or section
                         try: # Check if we have a value for this setting
                             value = ini_settings[sect].pop(setting) # KeyError
@@ -378,8 +378,6 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     elif new_section: # we never enter this block for OBSEIni
                         # 'new' entries still to be added from previous section
                         _add_remaining_new_items()
-                        if section is not None:
-                            tmp_ini.write('\n') # newline between sections
                         section = new_section # _add_remaining uses the section
                         if skip := section.lower() in skip_sections:
                             if section in ini_settings:
@@ -391,9 +389,6 @@ class IniFileInfo(AIniInfo, AFileInfo):
                 # Add remaining new entries that were not in the ini file
                 for sect, sectionSettings in ini_settings.items():
                     if sectionSettings and not isinstance(self, OBSEIniFile):
-                        if section is not None:
-                            tmp_ini.write('\n') #separate section from previous
-                        section = sect
                         tmp_ini.write(f'[{sect}]\n')
                     _add_remaining_new_items(sectionSettings)
             self.abs_path.replace_with_temp(tmp_ini_path)

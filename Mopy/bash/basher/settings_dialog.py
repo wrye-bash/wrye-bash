@@ -757,15 +757,15 @@ class BackupsPage(_AFixedPage):
                 bush.game.bak_game_name))
         if not settings_file: return
         with BusyCursor():
-            backup = barb.BackupSettings(
+            bkp_setts = barb.BackupSettings(
                 settings_file, bush.game.bak_game_name,
                 bush.game.my_games_name, bush.game.bash_root_prefix,
                 bush.game.mods_dir)
         try:
-            with BusyCursor(): backup.backup_settings(balt)
+            with BusyCursor(): bkp_setts.backup_settings(balt)
         except exception.StateError:
             deprint(u'Backup settings failed', traceback=True)
-            backup.warn_message(balt)
+            bkp_setts.warn_message(balt)
         finally:
             self._populate_backup_list()
 
