@@ -130,6 +130,7 @@ class AFallout4GameInfo(PatchGame):
             'strings',
             'tools', # 3P: BodySlide
             'vis',
+            'xdi', # 3P: Extended Dialogue Interface
         }
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
