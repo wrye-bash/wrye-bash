@@ -987,35 +987,44 @@ class GmstTweak_Combat_MaximumArmorRating_Tes5(
 
 #------------------------------------------------------------------------------
 class GmstTweak_Warning_InteriorDistanceToHostiles(_AGmstCCUnitsTweak):
-    tweak_name = _(u'Warning: Interior Distance To Hostiles')
-    tweak_tip = _(u'The minimum distance hostile actors have to be to be '
-                  u'allowed to sleep, travel etc, when inside interiors.')
-    tweak_key = (u'fHostileActorInteriorDistance',)
-    tweak_choices = [(u'10',     10.0),
-                     (u'100',   100.0),
-                     (u'500',   500.0),
-                     (u'1000', 1000.0),
-                     (u'2000', 2000.0),
-                     (u'3000', 3000.0),
-                     (u'4000', 4000.0)]
-    default_choice = u'2000'
+    tweak_name = _('Warning: Interior Distance To Hostiles')
+    tweak_tip = _('The minimum distance hostile actors have to be to be '
+                  'allowed to sleep, travel etc, when inside interiors.')
+    tweak_key = ('fHostileActorInteriorDistance',)
+    tweak_choices = [('10',     10.0),
+                     ('100',   100.0),
+                     ('500',   500.0),
+                     ('1000', 1000.0),
+                     ('2000', 2000.0),
+                     ('3000', 3000.0),
+                     ('4000', 4000.0)]
+    default_choice = '2000'
+
+class GmstTweak_Warning_InteriorDistanceToHostiles_Fo4(
+    GmstTweak_Warning_InteriorDistanceToHostiles):
+    default_choice = '1000'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Warning_ExteriorDistanceToHostiles(_AGmstCCUnitsTweak):
-    tweak_name = _(u'Warning: Exterior Distance To Hostiles')
-    tweak_tip = _(u'The minimum distance hostile actors have to be to be '
-                  u'allowed to sleep, travel etc, when outside.')
-    tweak_key = (u'fHostileActorExteriorDistance',)
-    tweak_choices = [(u'10',     10.0),
-                     (u'100',   100.0),
-                     (u'500',   500.0),
-                     (u'1000', 1000.0),
-                     (u'2000', 2000.0),
-                     (u'3000', 3000.0),
-                     (u'4000', 4000.0),
-                     (u'5000', 5000.0),
-                     (u'6000', 6000.0)]
-    default_choice = u'3000'
+    tweak_name = _('Warning: Exterior Distance To Hostiles')
+    tweak_tip = _('The minimum distance hostile actors have to be to be '
+                  'allowed to sleep, travel etc, when outside.')
+    tweak_key = ('fHostileActorExteriorDistance',)
+    tweak_choices = [('10',     10.0),
+                     ('100',   100.0),
+                     ('500',   500.0),
+                     ('1000', 1000.0),
+                     ('1500', 1500.0),
+                     ('2000', 2000.0),
+                     ('3000', 3000.0),
+                     ('4000', 4000.0),
+                     ('5000', 5000.0),
+                     ('6000', 6000.0)]
+    default_choice = '3000'
+
+class GmstTweak_Warning_ExteriorDistanceToHostiles_Fo4(
+    GmstTweak_Warning_ExteriorDistanceToHostiles):
+    default_choice = '1500'
 
 #------------------------------------------------------------------------------
 class GmstTweak_UOPVampireAgingAndFaceFix(_AGmstTweak):
