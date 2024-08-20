@@ -165,6 +165,14 @@ class _AStarfieldGameInfo(PatchGame):
         'sfbgs003 - voices_fr.ba2',
         'sfbgs003 - voices_ja.ba2',
         'sfbgs003.esm',
+        'sfbgs004 - main.ba2',
+        'sfbgs004 - textures.ba2',
+        'sfbgs004 - voices_de.ba2',
+        'sfbgs004 - voices_en.ba2',
+        'sfbgs004 - voices_es.ba2',
+        'sfbgs004 - voices_fr.ba2',
+        'sfbgs004 - voices_ja.ba2',
+        'sfbgs004.esm',
         'sfbgs006 - main.ba2',
         'sfbgs006 - textures.ba2',
         'sfbgs006.esm',
@@ -264,14 +272,16 @@ class _AStarfieldGameInfo(PatchGame):
 
     class _LoStarfield(AsteriskGame):
         must_be_active_if_present = tuple(map(FName, (
-            'BlueprintShips-Starfield.esm', 'SFBGS003.esm', 'SFBGS006.esm',
-            'SFBGS007.esm', 'SFBGS008.esm', 'Constellation.esm', 'OldMars.esm',
+            'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
+            'SFBGS007.esm', 'SFBGS008.esm', 'SFBGS006.esm', 'SFBGS003.esm',
+            'SFBGS004.esm',
         )))
 
-        # TODO(SF) The game tries to read a Starfield.ccc already, but it's not
-        # present yet. Also, official Creations are written to plugins.txt &
-        # can be disabled & reordered in the LO, so it may have been dropped.
-        # _ccc_filename = 'Starfield.ccc'
+        # The game tries to read a Starfield.ccc already, but it's not present
+        # yet. Also, official Creations are written to plugins.txt & can be
+        # disabled & reordered in the LO. LOOT uses it to force vanilla masters
+        # to load before plugins.txt plugins instead of after.
+        _ccc_filename = 'Starfield.ccc'
     lo_handler = _LoStarfield
 
     @classmethod
