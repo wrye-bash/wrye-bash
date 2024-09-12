@@ -1449,18 +1449,18 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:473
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:507
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:511
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1603
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1606
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1617
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1620
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1642
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1645
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1669
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1670
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1695
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1698
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1708
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1711
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1612
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1615
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1626
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1629
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1651
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1654
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1678
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1679
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1704
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1707
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1717
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1720
 msgid "Default"
 msgstr ""
 
@@ -3071,7 +3071,7 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/mergers.py:961
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:263
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:266
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1601
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1610
 msgid "None"
 msgstr ""
 
@@ -4704,8 +4704,8 @@ msgid "Enable/Disable the Installers tab."
 msgstr ""
 
 #: Mopy/bash/basher/installers_links.py:437
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1563
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1747
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1572
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1756
 msgid "Enabled"
 msgstr ""
 
@@ -4999,7 +4999,7 @@ msgstr ""
 #: Mopy/bash/basher/links_init.py:364 Mopy/bash/basher/links_init.py:435
 #: Mopy/bash/basher/links_init.py:678 Mopy/bash/basher/links_init.py:790
 #: Mopy/bash/basher/links_init.py:833 Mopy/bash/basher/links_init.py:884
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1838
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1847
 msgid "View"
 msgstr ""
 
@@ -12527,9 +12527,9 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:826
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:858
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:965
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1120
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2015
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2021
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1129
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2024
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2030
 msgid "Unlimited"
 msgstr ""
 
@@ -13327,20 +13327,20 @@ msgid "Disallow"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:294
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1534
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1889
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1543
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1898
 msgid "0% (Disabled)"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:300
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1540
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1894
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1937
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1549
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1903
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1946
 msgid "100% (Always)"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:301
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1542
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1551
 msgid "Custom (Max: 1.0)"
 msgstr ""
 
@@ -13368,8 +13368,8 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:422
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:483
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:522
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1421
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2014
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1430
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2023
 msgid "1 Minute"
 msgstr ""
 
@@ -13387,14 +13387,14 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:338
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:486
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1422
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1431
 msgid "3 Minutes"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:339
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:424
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:487
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1423
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1432
 msgid "5 Minutes"
 msgstr ""
 
@@ -13453,18 +13453,18 @@ msgstr ""
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:420
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:480
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:488
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1418
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1424
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1719
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1723
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2012
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1427
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1433
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1728
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1732
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2021
 msgid "10 Seconds"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:421
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:482
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:521
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1420
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1429
 msgid "30 Seconds"
 msgstr ""
 
@@ -13562,8 +13562,8 @@ msgid "Time which essential NPCs stay unconscious."
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:481
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1419
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1720
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1428
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1729
 msgid "20 Seconds"
 msgstr ""
 
@@ -13616,7 +13616,7 @@ msgid "Time before unvisited cells respawn. Longer times increase save sizes."
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:532
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1572
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1581
 msgid "1 Day"
 msgstr ""
 
@@ -13631,32 +13631,32 @@ msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:535
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:544
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1464
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1473
 msgid "10 Days"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:536
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1466
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1475
 msgid "20 Days"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:537
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1577
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1586
 msgid "1 Month"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:538
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1470
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1479
 msgid "6 Months"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:539
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1471
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1480
 msgid "1 Year"
 msgstr ""
 
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:541
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1473
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1482
 msgid "Custom (in hours)"
 msgstr ""
 
@@ -13977,980 +13977,980 @@ msgstr ""
 msgid "The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1005
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1009
 msgid "Warning: Exterior Distance To Hostiles"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1006
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1010
 msgid "The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1022
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1031
 msgid "UOP Vampire Aging And Face Fix"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1023
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1032
 msgid "Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1032
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1041
 msgid "AI: Max Dead Actors"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1033
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1042
 msgid "Maximum number of dead actors allowed before they're removed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1051
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1060
 msgid "Player: Inventory Quantity Prompt"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1052
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1061
 msgid "Number of items in a stack at which point the game prompts for a quantity."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1055
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1064
 msgid "Always Prompt"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1062
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1071
 msgid "Never Prompt"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1071
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1080
 msgid "Bounty: Trespassing"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1072
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1081
 msgid "Bounty for trespassing."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1086
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1095
 msgid "Bounty: Pickpocketing"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1087
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1096
 msgid "Bounty for pickpocketing."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1099
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1108
 msgid "Level Difference: Creature Max"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1100
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1109
 msgid "Maximum difference to player level for leveled creatures."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1105
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1114
 msgid "Level Difference: Item Max"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1106
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1115
 msgid "Maximum difference to player level for leveled items."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1111
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1120
 msgid "Actor: Strength Encumbrance Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1112
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1121
 msgid "Actor's Strength X this = Actor's Encumbrance capacity."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1125
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1134
 msgid "Visuals: NPC Blood"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1126
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1135
 msgid "Changes or disables NPC Blood splatter textures."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1130
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1139
 msgid "No Blood"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1134
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1143
 msgid "AI: Max Smile Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1135
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1144
 msgid "Maximum distance for NPCs to start smiling."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1137
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1146
 msgid "No Smiles"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1138
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1139
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1147
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1148
 msgid "Default (128)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1143
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1152
 msgid "Player: Max Draggable Weight"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1144
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1153
 msgid "Maximum weight to be able move things with the drag key."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1150
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1159
 msgid "MovableBodies.esp (1500)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1159
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1168
 msgid "AI: Conversation Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1160
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1169
 msgid "Chance of NPCs engaging in conversation."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1173
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1182
 msgid "AI: Conversation Chance - Interior"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1174
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1183
 msgid "Chance of NPCs engaging in conversation - in interiors."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1184
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1193
 msgid "Crime: Pickpocketing Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1185
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1194
 msgid "Improve chances of successful pickpocketing."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1187
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1196
 msgid "0% to 50%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1188
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1197
 msgid "0% to 75%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1189
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1193
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1198
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1202
 msgid "0% to 90%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1190
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1199
 msgid "0% to 100%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1191
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1200
 msgid "25% to 100%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1192
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1201
 msgid "50% to 100%"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1194
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1203
 msgid "Custom (Min and Max Chance)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1198
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1207
 msgid "Actor: Max Jump Height"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1199
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1208
 msgid "Increases the height to which you can jump."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1209
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1218
 msgid "Increases the height to which you can jump. First value is min, second is max."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1220
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1229
 msgid "Bounty: Murder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1221
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1230
 msgid "Bounty for committing a witnessed murder."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1232
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1241
 msgid "Bounty: Jailbreak"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1233
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1242
 msgid "Bounty for escaping from jail."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1249
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1258
 msgid "Gore: Combat Dismember Part Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1250
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1259
 msgid "The chance that body parts will be dismembered."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1265
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1274
 msgid "Gore: Combat Explode Part Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1266
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1275
 msgid "The chance that body parts will explode."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1287
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1296
 msgid "Gore: Combat Torso Explode Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1288
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1297
 msgid "The chance your hits will make enemies explode."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1299
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1308
 msgid "Movement: Base Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1300
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1309
 msgid "Changes base movement speed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1308
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1317
 msgid "Movement: Sneak Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1309
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1318
 msgid "Movement speed is multiplied by this when the actor is sneaking."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1318
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1327
 msgid "Combat: VATS Player Damage Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1319
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1328
 msgid "Multiplier of damage that player receives in VATS."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1330
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1339
 msgid "Combat: Auto Aim Fix"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1331
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1340
 msgid "Increase Auto Aim settings to a level at which snipers can benefit from them."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1340
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1349
 msgid "Player: PipBoy Light Keypress Delay"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1341
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1350
 msgid "Seconds of delay until the PipBoy light switches on."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1354
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1363
 msgid "Combat: VATS Playback Delay"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1355
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1364
 msgid "Seconds of delay after the VATS Camera finished playback."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1366
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1375
 msgid "Combat: NPC Death XP Threshold"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1367
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1376
 msgid "Percentage of total damage you have to inflict in order to get XP."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1379
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1388
 msgid "Hacking: Maximum Number Of Words"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1380
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1389
 msgid "The maximum number of words appearing in the terminal hacking mini-game."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1393
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1402
 msgid "Visuals: Terminal Display Rate"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1394
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1403
 msgid "Controls terminal text display speed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1402
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1411
 msgid "Visuals: Shell Camera Distance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1403
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1412
 msgid "Maximum distance at which gun arisings (shell case, particle, decal) show from camera."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1415
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1424
 msgid "Visuals: Shell Litter Time"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1416
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1425
 msgid "Time before shell cases fade away from cells."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1428
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1437
 msgid "Visuals: Shell Litter Count"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1429
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1438
 msgid "Maximum number of debris (shell case, etc) allowed in cell."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1441
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1450
 msgid "Hacking: Terminal Speed Adjustment"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1442
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1451
 msgid "The display speed at the time of terminal hacking."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1454
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1463
 msgid "Msg: Soul Captured"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1455
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1464
 msgid "Message upon capturing a soul in a Soul Gem."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1460
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1469
 msgid "World: Cell Respawn Time (Cleared)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1461
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1470
 msgid "Time before cleared cells respawn. Longer times increase save sizes."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1465
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1474
 msgid "15 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1467
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1476
 msgid "25 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1468
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1472
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1477
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1481
 msgid "30 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1469
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1478
 msgid "2 Months"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1477
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1486
 msgid "Magic: Max Resistance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1478
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1487
 msgid "Maximum level of resistance a player can have to various forms of magic and disease."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1492
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1501
 msgid "Magic: Max Summons"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1493
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1502
 msgid "Maximum number of creatures an actor can summon (affects both NPCs and the player)."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1505
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1514
 msgid "Actor: Vertical Object Detection"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1506
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1515
 msgid "Changes the vertical range in which NPCs detect objects. The first value must be >= 0 and the second one must be <= 0."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1519
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1528
 msgid "Player: Fast Travel Time Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1520
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1529
 msgid "Changes how much time passes while fast traveling. By default, it passes ~3x slower than if you had walked the distance."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1524
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1527
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1533
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1536
 msgid "Default Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1525
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1534
 msgid "Walking Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1526
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1535
 msgid "Horse Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1531
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1540
 msgid "Combat: Critical Hit Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1532
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1541
 msgid "The chance of a strike being a critical hit."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1546
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1555
 msgid "Arrow: Max Arrows Attached To NPC"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1547
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1556
 msgid "The Maximum number of arrows that can be sticking out of an actor."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1559
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1568
 msgid "Combat: Disable Projectile Dodging"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1560
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1569
 msgid "Removes the ability of NPCs to dodge projectiles being launched at them from range."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1567
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1576
 msgid "Actor: Merchant Restock Time"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1568
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1577
 msgid "The amount of time required for vendors to restock items and gold."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1571
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1580
 msgid "Instant"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1573
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1579
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1582
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1588
 msgid "2 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1574
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1583
 msgid "4 Days"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1575
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1584
 msgid "1 Week"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1576
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1585
 msgid "2 Weeks"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1578
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1587
 msgid "Never"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1580
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1589
 msgid "Custom (in days)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1584
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1593
 msgid "Player: Fall Damage Threshold"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1585
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1594
 msgid "Changes the height at which you take fall damage."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1593
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1602
 msgid "No Fall Damage"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1598
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1607
 msgid "Player: Sprinting Cost"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1599
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1608
 msgid "Changes the stamina drain that occurs when sprinting."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1602
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1611
 msgid "Halved"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1604
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1613
 msgid "Doubled"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1605
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1614
 msgid "Tripled"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1607
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1616
 msgid "Custom (Lower = Less Drain)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1611
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1620
 msgid "Visuals: Masser Size"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1612
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1621
 msgid "Changes the size of the moon Masser (the larger one) in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1615
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1640
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1624
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1649
 msgid "50% Smaller"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1616
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1641
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1625
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1650
 msgid "25% Smaller"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1618
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1643
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1627
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1652
 msgid "25% Larger"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1619
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1644
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1628
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1653
 msgid "50% Larger"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1624
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1633
 msgid "Visuals: Masser Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1625
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1634
 msgid "Changes how quickly the moon Masser (the larger one) moves in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1636
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1645
 msgid "Visuals: Secunda Size"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1637
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1646
 msgid "Changes the size of the moon Secunda (the smaller one) in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1649
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1658
 msgid "Visuals: Secunda Speed"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1650
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1659
 msgid "Changes how quickly the moon Secunda (the smaller one) moves in the night sky."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1661
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1670
 msgid "AI: Bump Reaction Delay"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1662
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1671
 msgid "Changes how long it takes until NPCs (particularly followers) that have commented on you bumping into them repeat that dialog. Infinite effectively disables it."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1666
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1675
 msgid "Infinite"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1667
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1676
 msgid "10x Longer"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1668
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1677
 msgid "5x Longer"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1674
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1683
 msgid "Magic: Max Active Runes"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1675
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1684
 msgid "How many rune spells the player can have active simultaneously."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1683
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1692
 msgid "No Limit"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1688
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1697
 msgid "Actor: Faster Shouts"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1689
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1698
 msgid "Decreases the time that the shout key must be held to shout multiple words. Custom is for the first word and the rest of the shout."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1693
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1702
 msgid "4x Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1694
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1703
 msgid "2x Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1696
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1705
 msgid "2x Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1697
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1706
 msgid "4x Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1699
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1708
 msgid "Custom (in milliseconds)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1703
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1712
 msgid "Combat: Faster Two-Handed Weapons"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1704
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1713
 msgid "Changes 2-hand weapon animation speed."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1706
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1715
 msgid "50% Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1707
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1716
 msgid "25% Slower"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1709
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1718
 msgid "25% Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1710
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1719
 msgid "50% Faster"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1715
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1724
 msgid "Player: Underwater Breath Control"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1716
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1725
 msgid "How long the player can hold their breath while swimming - does not affect Argonians."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1721
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1730
 msgid "40 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1722
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1731
 msgid "60 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1724
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1733
 msgid "Custom (Base and Multiplier)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1728
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1737
 msgid "Combat: Stealth Damage Bonus"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1729
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1738
 msgid "Increases the amount of damage you do with daggers, bows and crossbows while sneaking."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1738
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1747
 msgid "Custom (Dagger, Bow, Crossbow)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1742
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1751
 msgid "Msg: Cannot Equip Item Fix"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1743
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1752
 msgid "Disables the 'You cannot equip this item' message because some Skyrim mods (e.g. Frostfall) use activatable misc objects that require it to be disabled."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1752
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1761
 msgid "Msg: Carrying Too Much"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1753
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1762
 msgid "Message when you are carrying too much to run."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1758
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1767
 msgid "Magic: Invisibility Detection Difficulty"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1759
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1768
 msgid "Determines how difficult it is for NPCs to see you while you are invisible."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1762
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1767
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1771
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1776
 msgid "Impossible"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1763
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1772
 msgid "75% Harder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1764
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1773
 msgid "50% Harder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1765
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1774
 msgid "25% Harder"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1766
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1775
 msgid "Nullify Invisibility"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1771
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1780
 msgid "Bounty: Shapeshifting"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1772
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1781
 msgid "The bounty for transforming into a vampire lord or werewolf in front of people."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1784
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1793
 msgid "Soul Trap: Lesser Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1785
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1794
 msgid "The level at which NPC souls are considered 'lesser'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1791
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1800
 msgid "Soul Trap: Common Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1792
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1801
 msgid "The level at which NPC souls are considered 'common'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1798
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1807
 msgid "Soul Trap: Greater Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1799
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1808
 msgid "The level at which NPC souls are considered 'greater'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1805
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1814
 msgid "Soul Trap: Grand Soul Level"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1806
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1815
 msgid "The level at which NPC souls are considered 'grand'."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1812
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1821
 msgid "Prompt: Activate"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1813
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1822
 msgid "Changes the text on the 'Activate' prompt shown when interacting with objects."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1816
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1825
 msgid "Interact"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1823
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1832
 msgid "Prompt: Open"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1824
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1833
 msgid "Changes the text on the 'Open' prompt shown when trying to open a door."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1827
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1836
 msgid "Enter"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1834
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1843
 msgid "Prompt: Read"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1835
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1844
 msgid "Changes the text on the 'Read' prompt shown when interacting with books."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1845
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1854
 msgid "Prompt: Sit"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1846
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1855
 msgid "Changes the text on the 'Sit' prompt shown when interacting with chairs."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1849
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1858
 msgid "Sit Down"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1856
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1865
 msgid "Prompt: Take"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1857
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1866
 msgid "Changes the text on the 'Take' prompt shown when taking items."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1860
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1869
 msgid "Grab"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1867
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1876
 msgid "Prompt: Talk"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1868
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1877
 msgid "Changes the text on the 'Talk' prompt shown when interacting with people."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1871
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1880
 msgid "Speak"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1878
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1887
 msgid "Msg: No Soul Gem Large Enough"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1879
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1888
 msgid "Message when there is no soul gem large enough for a captured soul."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1885
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1894
 msgid "Combat: Speak on Attack Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1886
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1895
 msgid "The chance that an actor will speak after performing an attack."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1899
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1908
 msgid "Combat: Speak on Hit Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1900
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1909
 msgid "The chance that an actor will speak after being hit with a weapon."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1911
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1920
 msgid "Combat: Speak on Hit Threshold"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1912
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1921
 msgid "The percentage of an actor's health an attack must deal for the actor to speak when hit."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1915
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1924
 msgid "0% (Always)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1921
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1930
 msgid "100% (Disabled)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1930
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1939
 msgid "Combat: Speak on Power Attack Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1931
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1940
 msgid "The chance that an actor will speak after performing a power attack."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1941
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1950
 msgid "Combat: Random Taunt Chance"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1942
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1951
 msgid "Determines how often actors randomly taunt during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1947
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1956
 msgid "Level Up: Skill Count"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1948
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1957
 msgid "The number of major skill point increases needed to level up."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1959
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1968
 msgid "Actor: Training Cost Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1960
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1969
 msgid "The multiplier by which to increase training costs."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1970
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1979
 msgid "Actor: Expert Training Cost Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1971
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1980
 msgid "The multiplier by which to increase Expert level training costs."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1982
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1991
 msgid "Actor: Master Training Cost Multiplier"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1983
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:1992
 msgid "The multiplier by which to increase Master level training costs."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1994
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2003
 msgid "Combat: Block Time (Average)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1995
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2004
 msgid "The average time for which NPCs will keep their shield raised or block with their weapon during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1998
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2007
 msgid "2.5 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:1999
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2031
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2034
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2008
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2040
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2043
 msgid "4 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2000
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2003
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2032
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2009
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2012
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2041
 msgid "8 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2001
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2033
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2010
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2042
 msgid "12 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2002
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2013
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2016
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2011
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2022
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2025
 msgid "16 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2007
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2016
 msgid "Combat: Block Time (Maximum)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2008
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2017
 msgid "The maximum time for which NPCs will keep their shield raised or block with their weapon during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2011
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2020
 msgid "5 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2025
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2034
 msgid "Combat: Block Time (Minimum)"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2026
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2035
 msgid "The minimum time for which NPCs will keep their shield raised or block with their weapon during combat."
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2029
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2038
 msgid "1.5 Seconds"
 msgstr ""
 
-#: Mopy/bash/patcher/patchers/multitweak_settings.py:2030
+#: Mopy/bash/patcher/patchers/multitweak_settings.py:2039
 msgid "2 Seconds"
 msgstr ""
 
