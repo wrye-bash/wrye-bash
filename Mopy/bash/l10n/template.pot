@@ -11520,11 +11520,11 @@ msgstr ""
 msgid "The INI file %(ini_full_path)s seems to have unencodable characters:"
 msgstr ""
 
-#: Mopy/bash/ini_files.py:543
+#: Mopy/bash/ini_files.py:538
 msgid "The game INI must exist to apply a tweak to it."
 msgstr ""
 
-#: Mopy/bash/ini_files.py:546
+#: Mopy/bash/ini_files.py:541
 #, python-format
 msgid "%(ini_full_path)s does not exist."
 msgstr ""
