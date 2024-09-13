@@ -32,7 +32,7 @@ from itertools import chain
 
 from .constants import settingDefaults
 from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
-    MasterErrorsDialog
+    ListDependentDialog, MasterErrorsDialog
 from .files_links import File_Duplicate, File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
@@ -771,43 +771,26 @@ class Mod_CopyModInfo(ItemLink):
         copy_text_to_clipboard(info_txt)
         self._showLog(info_txt, title=_('Plugin Info Report'))
 
+#------------------------------------------------------------------------------
 class Mod_ListDependent(OneItemLink):
     """Copies list of dependents to clipboard."""
     _text = _('List Dependent…')
 
     @property
     def link_help(self):
-        return _(u'Displays and copies to the clipboard a list of mods that '
-                 u'have %(filename)s as master.') % (
-            {u'filename': self._selected_item})
+        return _('Displays and copies to the clipboard a list of plugins that '
+                 'have %(master_name)s as master.') % (
+            {'master_name': self._selected_item})
 
     def Execute(self):
-        ##: HACK - refactor getModList
-        sel_target = self._selected_item
-        legend = _(u'Mods dependent on %(filename)s') % (
-            {u'filename': sel_target})
-        modInfos = self._data_store
-        merged_, imported_ = modInfos.merged, modInfos.imported
-        log = bolt.LogFile(io.StringIO())
-        log(u'[spoiler]')
-        log.setHeader(f'=== {legend}: ')
-        text_list = u''
-        for mod in load_order.get_ordered(
-                self._selected_info.get_dependents()):
-            hexIndex = load_order.cached_active_index_str(mod)
-            if hexIndex:
-                prefix = hexIndex # active mods are prefixed with their index
-            elif mod in merged_:
-                prefix = '++'
-            else:
-                prefix = '**' if mod in imported_ else '__'
-            text_list = f'* {prefix}  {mod}'
-            log(text_list)
-        if not text_list:  log(u'None')
-        log(u'[/spoiler]')
-        text_list = log.out.getvalue()
-        copy_text_to_clipboard(text_list)
-        self._showLog(text_list, title=legend)
+        dependent = ListDependentDialog.make_highlight_entry(
+            _('The following plugins are dependent on %(master_name)s, '
+              'meaning they have that plugin as a master.') % {
+                'master_name': self._selected_item},
+            load_order.get_ordered(self._selected_info.get_dependents()),
+        )
+        ListDependentDialog(self.window,
+            highlight_items=[dependent]).show_modeless()
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1079,18 +1062,18 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
         bp_master_errors = []
         if missing:
-            bp_master_errors.append(MasterErrorsDialog.make_change_entry(_(
+            bp_master_errors.append(MasterErrorsDialog.make_highlight_entry(_(
                 'The following plugins have missing masters and are active. '
                 'This will cause the game to crash. Please disable them.'),
                 missing))
         if delinquent:
-            bp_master_errors.append(MasterErrorsDialog.make_change_entry(_(
+            bp_master_errors.append(MasterErrorsDialog.make_highlight_entry(_(
                 'These mods have delinquent masters, which means they load '
                 'before their masters. This is undefined behavior. Please '
                 'adjust your load order to fix this.'), delinquent))
         if bp_master_errors:
             MasterErrorsDialog.display_dialog(self.window,
-                highlight_changes=bp_master_errors)
+                highlight_items=bp_master_errors)
             return False
         # No errors, proceed with building the BP
         PatchDialog.display_dialog(self.window, bashed_patch,

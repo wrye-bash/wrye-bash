@@ -846,15 +846,15 @@ class UpdateNotification(DialogWindow):
 
 #------------------------------------------------------------------------------
 @dataclass(slots=True, kw_only=True)
-class _ChangeData:
-    """Records a change to some items in a UIList."""
-    # An optional description for this change
-    change_desc: str | None
-    # The ImageList used by the parent UIList that hosts the items that this
-    # change happened to
+class _HighlightData:
+    """Represents a highlighting of some items in a UIList."""
+    # An optional description for this highlighting
+    highlight_desc: str | None
+    # The ImageList used by the parent UIList that hosts the items that are
+    # being highlighted
     uil_image_list: ImageList
-    # A decorated tree dict storing the items that the change happened to
-    changed_items: DecoratedTreeDict
+    # A decorated tree dict storing the items that are being highlighted
+    highlighted_items: DecoratedTreeDict
     # The internal key for the parent tab in tabInfo. E.g. 'Mods'
     parent_tab_key: str
 
@@ -877,30 +877,29 @@ def _mk_node_class(node_tab_key: str):
             return EventResult.FINISH # Don't collapse/expand nodes
     return _TabTreeNode
 
-class _AChangeHighlightDialog(MaybeModalDialogWindow):
-    """Base class for dialogs that highlights certain changes having been
-    made to UIList items."""
+class _AItemHighlightDialog(MaybeModalDialogWindow):
+    """Base class for dialogs that highlights certain UIList items."""
     _def_size = (350, 400)
     _min_size = (250, 300)
 
-    def __init__(self, parent, *, highlight_changes: list[_ChangeData],
+    def __init__(self, parent, *, highlight_items: list[_HighlightData],
             add_cancel_btn=False):
         super().__init__(parent, stay_over_parent=True,
             sizes_dict=bass.settings, icon_bundle=balt.Resources.bashBlue)
         ch_layout = VLayout(border=4, spacing=6, item_expand=True)
         labels_to_wrap = []
-        for change_data in highlight_changes:
-            # First add the description for the change, if any
-            if change_data.change_desc:
-                desc_label = WrappingLabel(self, change_data.change_desc)
+        for highlight_data in highlight_items:
+            # First add the description for the highlighting, if any
+            if highlight_data.highlight_desc:
+                desc_label = WrappingLabel(self, highlight_data.highlight_desc)
                 ch_layout.add(desc_label)
                 labels_to_wrap.append(desc_label)
-            node_type = _mk_node_class(change_data.parent_tab_key)
-            # Then create the actual tree listing the changes, which will take
-            # up most of the space
-            new_tree = Tree(self, change_data.uil_image_list)
+            node_type = _mk_node_class(highlight_data.parent_tab_key)
+            # Then create the actual tree listing the highlightings, which will
+            # take up most of the space
+            new_tree = Tree(self, highlight_data.uil_image_list)
             temp_root = new_tree.root_node
-            affected_items = change_data.changed_items
+            affected_items = highlight_data.highlighted_items
             for hp, (hp_tf, hp_children) in affected_items.items():
                 hp_node = temp_root.append_child(hp,
                     child_node_type=node_type)
@@ -926,29 +925,29 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
         self.update_layout()
 
     @classmethod
-    def make_change_entry(cls, warn_change_desc: str,
-            warning_items: Iterable[FName] | dict[FName, list[FName]],
+    def make_highlight_entry(cls, highlight_desc: str,
+            highlighted_items: Iterable[FName] | dict[FName, list[FName]],
             data_key=Store.MODS):
-        """Create a _ChangeData object for multi-warning dialogs."""
+        """Create a _HighlightData object for highlighting dialogs."""
         target_uil = Link.Frame.all_uilists[data_key]
         if target_uil is not None:
-            tree_dict = warning_items if isinstance(warning_items, dict) else {
-                i: [] for i in sorted(warning_items)}
+            tree_dict = highlighted_items if isinstance(highlighted_items,
+                dict) else {i: [] for i in sorted(highlighted_items)}
             warning_dec_items = target_uil.decorate_tree_dict(tree_dict)
             uil_images = target_uil.icons
         else:
             # Tab is not enabled, no way to decorate with it
-            warning_dec_items = {
-                i: (None, []) for i in sorted(warning_items)}
+            warning_dec_items = {i: (None, []) for i in
+                sorted(highlighted_items)}
             uil_images = None
-        return _ChangeData(uil_image_list=uil_images,
-            change_desc=warn_change_desc, changed_items=warning_dec_items,
+        return _HighlightData(uil_image_list=uil_images,
+            highlight_desc=highlight_desc, highlighted_items=warning_dec_items,
             parent_tab_key=data_key.value[0])
 
 # Note: we sometimes use 'unnecessary' subclasses here for the separate
 # bass.settings['bash.window.sizes'] key provided by the unique class name
 #------------------------------------------------------------------------------
-class _ALORippleHighlightDialog(_AChangeHighlightDialog):
+class _ALORippleHighlightDialog(_AItemHighlightDialog):
     """Base class for dialogs highlighting when a load order change had a
     'ripple' effect, e.g. deactivating a certain master caused its dependents
     to be deactivated too."""
@@ -959,7 +958,7 @@ class _ALORippleHighlightDialog(_AChangeHighlightDialog):
         # Only count the additional masters/dependents
         total_affected = sum(map(len, changes_dict.values()))
         change_desc = self._change_desc % {'num_affected': total_affected}
-        super().__init__(parent, highlight_changes=[self.make_change_entry(
+        super().__init__(parent, highlight_items=[self.make_highlight_entry(
             change_desc, changes_dict)])
 
 class MastersAffectedDialog(_ALORippleHighlightDialog):
@@ -981,21 +980,26 @@ class DependentsAffectedDialog(_ALORippleHighlightDialog):
                      'dependents to be deactivated as well.')
 
 #------------------------------------------------------------------------------
-class LoadOrderSanitizedDialog(_AChangeHighlightDialog):
+class LoadOrderSanitizedDialog(_AItemHighlightDialog):
     """Dialog shown when certain load order problems have been fixed."""
     title = _('Warning: Load Order Sanitized')
 
 #------------------------------------------------------------------------------
-class MultiWarningDialog(_AChangeHighlightDialog):
+class MultiWarningDialog(_AItemHighlightDialog):
     """Dialog shown when Wrye Bash detected certain problems with a user's
     setup."""
     title = _('Warnings')
 
 #------------------------------------------------------------------------------
-class MasterErrorsDialog(_AChangeHighlightDialog):
+class MasterErrorsDialog(_AItemHighlightDialog):
     """Dialog shown when Wrye Bash detected master errors before building a
     BP."""
     title = _('Master Errors')
+
+#------------------------------------------------------------------------------
+class ListDependentDialog(_AItemHighlightDialog):
+    """Dialog shown when the List Depedent command is executed."""
+    title = _('Dependent Plugins')
 
 #------------------------------------------------------------------------------
 class AImportOrderParser(CsvParser):
