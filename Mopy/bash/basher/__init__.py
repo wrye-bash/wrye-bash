@@ -4020,7 +4020,7 @@ class BashFrame(WindowFrame):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         lo_warnings = []
         if bosh.modInfos.warn_missing_lo_act:
-            lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
+            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
                 _('The following plugins could not be found in the '
                   '%(data_folder)s folder or are corrupt and have thus been '
                   'removed from the load order.') % {
@@ -4037,7 +4037,7 @@ class BashFrame(WindowFrame):
                 warn_msg = _('The following plugins have been deactivated '
                              'because only %(max_regular_plugins)d plugins '
                              'may be active at the same time.')
-            lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
+            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
                 warn_msg % {'max_regular_plugins': bush.game.max_espms,
                             'max_esl_plugins': bush.game.max_esls},
                 bosh.modInfos.selectedExtra))
@@ -4054,11 +4054,11 @@ class BashFrame(WindowFrame):
         #     bosh.modInfos.activeBad = set()
         if lo_warnings:
             LoadOrderSanitizedDialog(self,
-                highlight_changes=lo_warnings).show_modeless()
+                highlight_items=lo_warnings).show_modeless()
 
     def warn_corrupted(self, warn_mods=False, warn_saves=False,
                        warn_strings=False, warn_bsas=False):
-        _mk_warning = MultiWarningDialog.make_change_entry # to wrap better
+        _mk_warning = MultiWarningDialog.make_highlight_entry # to wrap better
         multi_warnings = []
         corruptMods = set(bosh.modInfos.corrupted)
         key_mods, key_bsas = Store.MODS, Store.BSAS
@@ -4121,7 +4121,7 @@ class BashFrame(WindowFrame):
             self.known_ba2_collisions |= ba2_colls
         if multi_warnings:
             MultiWarningDialog(self,
-                highlight_changes=multi_warnings).show_modeless()
+                highlight_items=multi_warnings).show_modeless()
 
     _ini_missing = _('%(game_ini_file)s does not exist yet. %(game_name)s '
                      'will create this file on first run. INI tweaks will not '
