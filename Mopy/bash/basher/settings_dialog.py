@@ -903,6 +903,8 @@ class ConfirmationsPage(_AFixedPage):
             'bash.cleanMod.continue',
         _("[Mods] Changing a plugin's version to 0.8"):
             'bash.setModVersion.continue',
+        _('[Mods] Exporting load order to a text file: OBMM warning'):
+            'bash.load_order.no_obmm_export.continue',
         _('[Mods] Exporting NPC levels to a text file'):
             'bash.actorLevels.export.continue',
         _('[Mods] Importing groups from a text file'):
@@ -911,6 +913,8 @@ class ConfirmationsPage(_AFixedPage):
             'bash.editorIds.import.continue',
         _('[Mods] Importing ingredients from a text file'):
             'bash.Ingredient.import.continue',
+        _('[Mods] Importing load order from a text file: OBMM warning'):
+        'bash.load_order.use_obmm_import.continue',
         _('[Mods] Importing names from a text file'):
             'bash.fullNames.import.continue',
         _('[Mods] Importing NPC levels from a text file'):
@@ -975,8 +979,7 @@ class ConfirmationsPage(_AFixedPage):
                             u'uses to store these settings as well.'),
             checked=bass.settings[u'bash.show_internal_keys'])
         self._show_keys_checkbox.on_checked.subscribe(self._on_show_keys)
-        self._confirmation_list = CheckListBox(self, isSort=True,
-            isHScroll=True)
+        self._confirmation_list = CheckListBox(self, isHScroll=True)
         self._confirmation_list.on_box_checked.subscribe(self._on_check_conf)
         self._file_drop_dropdown = DropDown(self, value=self._saved_action,
             choices=sorted(self._label_to_action), dd_tooltip=_(
