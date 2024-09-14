@@ -2649,7 +2649,8 @@ class ModInfos(TableFileInfos):
         finally:
             if wip_actives: self.cached_lo_save_active(active=wip_actives)
 
-    def lo_activate_exact(self, partial_actives: Iterable[FName]):
+    def lo_activate_exact(self, partial_actives: Iterable[FName],
+            save_actives=True):
         """Activate exactly the specified iterable of plugin names (plus
         required masters and plugins that can't be deactivated). May contain
         missing plugins. Returns a warning message or an empty string."""
@@ -2674,7 +2675,8 @@ class ModInfos(TableFileInfos):
         trimmed_plugins = load_order.check_active_limit(ordered_wip)
         # Trim off any excess plugins and commit
         self._active_wip = [p for p in ordered_wip if p not in trimmed_plugins]
-        self.cached_lo_save_active()
+        if save_actives:
+            self.cached_lo_save_active()
         message = ''
         if missing_plugins:
             message += _('Some plugins could not be found and were '
@@ -2688,7 +2690,7 @@ class ModInfos(TableFileInfos):
             message += '\n* '.join(load_order.get_ordered(trimmed_plugins))
         return message
 
-    def lo_reorder(self, partial_order: list[FName]):
+    def lo_reorder(self, partial_order: list[FName], save_lo=True):
         """Changes the load order to match the specified potentially invalid
         'partial' load order as much as possible. To that end, it filters out
         plugins that don't exist in the Data folder and tries to insert plugins
@@ -2727,7 +2729,8 @@ class ModInfos(TableFileInfos):
                 # be appended at the end
                 filtered_order.extend(collected_plugins)
         self._lo_wip = filtered_order
-        self._cached_lo_save_lo()
+        if save_lo:
+            self._cached_lo_save_lo()
         message = u''
         if excess_plugins:
             message += _(u'Some plugins could not be found and were '

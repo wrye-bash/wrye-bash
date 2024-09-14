@@ -66,6 +66,7 @@ class AOblivionGameInfo(PatchGame):
         _j('textures', 'faces'),
     ]
     check_legacy_paths = True
+    has_obmm = True
 
     @classmethod
     def check_loaded_mod(cls, patch_file, modFile):

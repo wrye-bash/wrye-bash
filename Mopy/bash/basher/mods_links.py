@@ -22,7 +22,6 @@
 # =============================================================================
 """Menu items for the _main_ menu of the mods tab - their window attribute
 points to ModList singleton."""
-
 from .dialogs import CreateNewPlugin
 from .frames import PluginChecker
 from .. import bush # for _Mods_ActivePluginsData, Mods_ActivePlugins
@@ -30,7 +29,7 @@ from .. import balt, bass, bosh, exception, load_order
 from ..balt import AppendableLink, BoolLink, CheckLink, EnabledLink, \
     ItemLink, Link, MenuLink, MultiLink, SeparatorLink
 from ..bass import Store
-from ..bolt import FName, deprint, dict_sort, fast_cached_property
+from ..bolt import FName, decoder, deprint, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
     get_shift_down, showError
 from ..parsers import CsvParser
@@ -43,7 +42,8 @@ __all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
            u'Mods_LockActivePlugins', u'Mods_PluginChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
            'Mods_ClearManualBashTags', 'Mods_OpenLOFileMenu', 'Mods_LOUndo',
-           'Mods_LORedo', 'Mods_IgnoreDirtyVanillaFiles']
+           'Mods_LORedo', 'Mods_IgnoreDirtyVanillaFiles', 'Mods_LOExport',
+           'Mods_LOImport', 'Mods_LOImportFromOBMM']
 
 # "Active Plugins" submenu ----------------------------------------------------
 class _Mods_ActivePluginsData(balt.ListEditorData):
@@ -626,3 +626,196 @@ class Mods_LORedo(ItemLink):
 
     def Execute(self):
         self.window.lo_redo()
+
+#------------------------------------------------------------------------------
+class Mods_LOExport(ItemLink):
+    """Export the current load order to a text file (format inspired by the
+    Asterisk games' plugins.txt)."""
+    _text = _('Export...')
+    _help = _('Exports the current load order (and active plugins) to a text '
+              'file.')
+
+    def Execute(self):
+        if bush.game.has_obmm:
+            if not self._askContinue(_(
+                    'Note that the resulting export is not compatible with '
+                    'OBMM. Its main purpose is to be imported by Wrye Bash '
+                    'again.'), 'bash.load_order.no_obmm_export.continue',
+                    title=_('Export Load Order - OBMM Interoperability '
+                            'Warning')):
+                return
+        export_path = self._askSave(title=_('Export Load Order - Destination'),
+            defaultDir=bass.dirs['patches'],
+            defaultFile=f"{_('Exported Load Order')}.txt",
+            wildcard='*.txt')
+        if not export_path:
+            return
+        self._export_lo(export_path)
+        self._showInfo(_('Successfully exported the current load order to '
+                         '%(target_path)s.') % {
+            'target_path': export_path,
+        }, title=_('Export Load Order - Success'))
+
+    @staticmethod
+    def _export_lo(export_path):
+        """Export the current load order to the specified path."""
+        current_lo = load_order.cached_lo_tuple()
+        current_acti_set = set(load_order.cached_active_tuple())
+        header_comment = _("Load order exported by Wrye Bash v%(wb_ver)s for "
+                           "%(game_name)s") % {
+            'wb_ver': bass.AppVersion,
+            'game_name': bush.game.display_name,
+        }
+        # See specification in the technical readme - skip plugins with
+        # asterisks (illegal on Windows anyways, so very unlikely we'd ever get
+        # such a plugin)
+        formatted_lo = [f'{"*" if p in current_acti_set else ""}{p}'
+                        for p in current_lo if '*' not in p]
+        with open(export_path, 'w', encoding='utf-8') as out:
+            out.write(f'# {header_comment}\n')
+            out.write('\n'.join(formatted_lo) + '\n')
+
+#------------------------------------------------------------------------------
+def _get_import_err_msg(offending_line: str) -> str:
+    return (_('Failed to import the given load order. The file is malformed. '
+              'The following line is causing a problem:') + '\n\n' +
+            offending_line)
+
+class _AImportLOBaseLink(ItemLink):
+    """Base class for deduplicating logic from the two LO imports."""
+    _success_title: str
+    _warning_title: str
+
+    def _apply_lo(self, import_path, imp_lo, imp_acti):
+        msg_lo = bosh.modInfos.lo_reorder(imp_lo, save_lo=False)
+        if msg_lo:
+            self._showWarning(msg_lo, title=self._warning_title)
+        msg_acti = bosh.modInfos.lo_activate_exact(imp_acti,
+            save_actives=False)
+        # Don't show the exact same message twice
+        if msg_acti and msg_lo != msg_acti:
+            self._showWarning(msg_acti, title=self._warning_title)
+        bosh.modInfos.cached_lo_save_all()
+        self.window.RefreshUI()
+        self._showInfo(_('Successfully imported a load order from '
+                         '%(source_path)s.') % {
+            'source_path': import_path,
+        }, title=self._success_title)
+
+class Mods_LOImport(_AImportLOBaseLink):
+    """Import a previously exported load order from a text file (format
+    inspired by the Asterisk games' plugins.txt)."""
+    _text = _('Import...')
+    _help = _('Imports a previously exported load order (and active plugins) '
+              'from a text file.')
+    _success_title = _('Import Load Order - Success')
+    _warning_title = _('Import Load Order - Warning')
+
+    def Execute(self):
+        if bush.game.has_obmm:
+            if not self._askContinue(_(
+                    "Note that this command is not compatible with exports "
+                    "made in OBMM. They will not cause an error, but the "
+                    "result will be wrong. Use the dedicated 'Import From "
+                    "OBMM...' command to handle such exports."),
+                    'bash.load_order.use_obmm_import.continue',
+                    title=_('Import Load Order - OBMM Interoperability '
+                            'Warning')):
+                return
+        import_path = self._askOpen(title=_('Import Load Order - Source'),
+            defaultDir=bass.dirs['patches'],
+            defaultFile=f"{_('Exported Load Order')}.txt",
+            wildcard='*.txt')
+        if not import_path:
+            return
+        imp_first, imp_second = self._import_lo(import_path)
+        if imp_first is None:
+            self._showError(imp_second, title=_('Import Load Order - Error'))
+            return
+        # If imp_first is not None, the import worked and the first value is
+        # the load order, while the second value is the actives
+        self._apply_lo(import_path, imp_first, imp_second)
+
+    @staticmethod
+    def _import_lo(import_path) -> (tuple[list[FName], set[FName]] |
+                                    tuple[None, str]):
+        """Import a previous LO export from the specified path.
+
+        :return: Either a tuple containing None and a line that caused the
+            import to fail, or a tuple containing a list of FNames and a set of
+            FNames, the former representing the load order and the latter the
+            active plugins."""
+        with open(import_path, 'r', encoding='utf-8') as ins:
+            exported_lines = ins.read().splitlines()
+        imported_lo = []
+        imported_acti = set()
+        for ex_line in exported_lines:
+            stripped_line = (ex_line[:ex_line.index('#')]
+                             if '#' in ex_line else ex_line)
+            if not stripped_line or stripped_line.isspace():
+                continue
+            is_line_active = stripped_line.startswith('*')
+            # rstrip instead of strip because leading spaces are fine, see
+            # specification in technical readme
+            trimmed_plugin = FName((stripped_line[1:] if is_line_active else
+                                    stripped_line).rstrip())
+            if trimmed_plugin.fn_ext not in bush.game.espm_extensions:
+                return None, _get_import_err_msg(ex_line)
+            imported_lo.append(trimmed_plugin)
+            if is_line_active:
+                imported_acti.add(trimmed_plugin)
+        return imported_lo, imported_acti
+
+#------------------------------------------------------------------------------
+class Mods_LOImportFromOBMM(AppendableLink, _AImportLOBaseLink):
+    """Import active plugins from a text file exported by OBMM."""
+    _text = _('Import From OBMM...')
+    _help = _('Imports active plugins from a text file exported by OBMM.')
+    _success_title = _('Import From OBMM - Success')
+    _warning_title = _('Import From OBMM - Warning')
+
+    def _append(self, window):
+        return bush.game.has_obmm
+
+    def Execute(self):
+        if not self._askContinue(_(
+                'Note that this command is always going to result in '
+                'imperfect imports, because OBMM does not export the order '
+                'of inactive plugins. Wrye Bash will do its best, but you '
+                'should check the result manually.'),
+                'bash.load_order.flawed_obmm_import.continue',
+                title=_('Import From OBMM - Warning')):
+            return
+        import_path = self._askOpen(title=_('Import From OBMM - Source'),
+            defaultDir=bass.dirs['patches'],
+            defaultFile=f"{_('OBMM Export')}.txt",
+            wildcard='*.txt')
+        if not import_path:
+            return
+        imp_result = self._import_lo(import_path)
+        if isinstance(imp_result, str):
+            self._showError(imp_result, title=_('Import From OBMM - Error'))
+            return
+        # If imp_result is not a string, the import worked and we've got a load
+        # order
+        self._apply_lo(import_path, imp_result, imp_result)
+
+    @staticmethod
+    def _import_lo(import_path) -> list[FName] | str:
+        """Import a previous LO export from the specified path.
+
+        :return: Either a tuple containing None and an error message, or a list
+            of FNames representing the load order and active plugins."""
+        with open(import_path, 'rb') as ins:
+            obmm_data = ins.read()
+        try:
+            exported_lines = decoder(obmm_data).splitlines()
+        except UnicodeDecodeError:
+            return _('Could not determine encoding.')
+        imported_lo = []
+        for ex_line in exported_lines:
+            parsed_plugin = FName(ex_line)
+            if parsed_plugin.fn_ext not in bush.game.espm_extensions:
+                return _get_import_err_msg(ex_line)
+            imported_lo.append(parsed_plugin)
+        return imported_lo

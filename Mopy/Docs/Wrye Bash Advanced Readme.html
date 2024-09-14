@@ -2308,7 +2308,7 @@ tab. The directories skipped are:
                 (including DLCs).</td>
         </tr>
         <tr>
-            <td rowspan="4">Load Order..</td>
+            <td rowspan="7">Load Order..</td>
             <td id="mods-undo">Undo</td>
             <td>Revert a change made to the plugin load order. Can also be used
                 to accept a change made by an external program if you have
@@ -2327,6 +2327,32 @@ tab. The directories skipped are:
                 <a href="#modsLockLoadOrder">Lock Load Order</a> to make it
                 reverse changes to the enabled/disabled status of plugins in
                 your load order as well.</td>
+        </tr>
+        <tr>
+            <td id="mods-lo-export">Export...</td>
+            <td>Export the current load order and information regarding which
+                plugins are active to a text file. From there, it can be
+                imported again via <a href="#mods-lo-import">Import...</a>.
+                This can be useful for backups, sharing a load order with
+                friends, etc.</td>
+        </tr>
+        <tr>
+            <td id="mods-lo-import">Import...</td>
+            <td>Import a previously exported load order and active plugins
+                information (exported via
+                <a href="#mods-lo-export">Export...</a>). If any plugins listed
+                in the file are no longer present, a warning will be shown.
+                This command behaves very similarly to a combination of the
+                Saves tab commands
+                <a href="#savesActivateMasters">Activate Masters</a> and
+                <a href="#savesReorderMasters">Reorder Masters</a>.</td>
+        </tr>
+        <tr>
+            <td id="mods-lo-import-obmm">Import From OBMM...</td>
+            <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
+                Import a list of active plugins exported by OBMM. Note that
+                this is always going to be imperfect, because OBMM does not
+                export the load order of inactive plugins.</td>
         </tr>
         <tr>
             <td>Open <var>&lt;file&gt;</var></td>
