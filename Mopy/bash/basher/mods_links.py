@@ -604,7 +604,8 @@ class _Mods_OpenLOFile(ItemLink):
 class Mods_OpenLOFileMenu(MultiLink):
     """Shows one or more links for opening LO management files."""
     def _links(self):
-        return [_Mods_OpenLOFile(lo_f) for lo_f in load_order.get_lo_files()]
+        return [_Mods_OpenLOFile(lo_f) for lo_f
+                in sorted(load_order.get_lo_files())]
 
 #------------------------------------------------------------------------------
 class Mods_LOUndo(ItemLink):

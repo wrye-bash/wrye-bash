@@ -2201,7 +2201,7 @@ class _AValueComponent(_AVmadComponent):
         elif val_ty == 17: # struct array
             map_struct = self._struct_loader.map_fids
             for val_struct in record.val_data:
-                map_struct(val_struct, map_struct, save_fids)
+                map_struct(val_struct, map_function, save_fids)
 
     @property
     def used_slots(self):

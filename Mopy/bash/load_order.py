@@ -417,10 +417,11 @@ def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> list[FName]
 
 def using_ini_file(): return isinstance(_game_handle, INIGame)
 
-def get_lo_files():
-    """Returns a list of all files used by this game for storing load
-    order."""
-    return sorted(_game_handle.get_lo_files())
+def get_lo_files() -> set[bolt.Path]:
+    """Retrieve a set of all files used by this game for storing load order."""
+    # The order of these is an implementation detail, hide it ouside the game
+    # implementations
+    return set(_game_handle.get_lo_files())
 
 # Timestamp games helpers
 def has_load_order_conflict(mod_name):
