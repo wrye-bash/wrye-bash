@@ -307,8 +307,10 @@ _SFPluginFlag.unflaggable = {**_EslMixin.unflaggable,
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
     # The name of the game that will be shown to the user. That is its *only*
-    # use! There are a few places where this is (mis)used for other purposes
-    # left, those should be hunted down and replaced with dedicated game vars
+    # purpose! Basically, if you want to show the game name to the user in as
+    # understandable and nice looking a way as possible, use this var.
+    # There are a few places where this is (mis)used for other purposes left,
+    # those should be hunted down and replaced with dedicated game vars.
     display_name = '' ## Example: 'Skyrim'
     # A name that must be 100% unique per game, but will also be shown in the
     # GUI (namely when picking what game to launch). This is automatically set
@@ -423,6 +425,8 @@ class GameInfo(object):
     master_flags = _MasterFlag
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
+    # Whether OBMM exists for this game
+    has_obmm = False
     # Information about Plugin-Name-specific Directories supported by this
     # game. Some examples are sound\voice\PLUGIN_NAME.esp, or the facegendata
     # ones. An empty list means that the game does not have any such
