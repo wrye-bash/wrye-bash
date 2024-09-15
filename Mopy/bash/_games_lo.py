@@ -55,49 +55,34 @@ class _LoFile(AFile):
         self._star = star
         super().__init__(self._resolve_case_ambiguity(path), *args, **kwargs)
 
-    def parse_modfile(self, mod_infos, *,
-            __re_plugins_txt_comment=re.compile(b'^#.*')) -> _ParsedLo:
+    def parse_modfile(self, *, __re_comment=re.compile(b'^#.*')) -> _ParsedLo:
         """Parse loadorder.txt and plugins.txt files with or without stars.
 
         Return two lists which are identical except when _star is True,
         whereupon the second list is the load order while the first the
         active plugins. In all other cases use the first list, which is
         either the list of active mods (when parsing plugins.txt) or the
-        load order (when parsing loadorder.txt)
-        :type mod_infos: bosh.ModInfos"""
+        load order (when parsing loadorder.txt)."""
         with self.abs_path.open('rb') as ins:
             #--Load Files
             active, modnames = [], []
             for line in ins:
                 # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
                 # It wont accept filenames in any other encoding
-                modname = __re_plugins_txt_comment.sub(b'', line.strip())
+                modname = __re_comment.sub(b'', line.strip())
                 if not modname: continue
                 # use raw strings below
                 is_active_ = not self._star or modname.startswith(b'*')
                 if self._star and is_active_: modname = modname[1:]
                 try:
-                    test = bolt.decoder(modname, encoding=u'cp1252')
+                    mod_fn = FName(modname.decode(encoding='cp1252'))
                 except UnicodeError:
                     bolt.deprint(f'{modname!r} failed to properly decode')
                     continue
-                mod_g_path = FName(test)
-                if mod_g_path.fn_ext == '.ghost':  # Vortex keeps the .ghost extension!
-                    mod_g_path = mod_g_path.fn_body
-                if mod_g_path not in mod_infos:  # TODO(ut): is this really needed??
-                    # The automatic encoding detector could have returned
-                    # an encoding it actually wasn't.  Luckily, we
-                    # have a way to double check: modInfos.data
-                    for encoding in bolt.encodingOrder:
-                        try: # FName does not accept bytes
-                            test2 = str(modname, encoding)
-                            if test2 in mod_infos:
-                                mod_g_path = FName(test2)
-                                break
-                        except UnicodeError:
-                            pass
-                modnames.append(mod_g_path)
-                if is_active_: active.append(mod_g_path)
+                if mod_fn.fn_ext == '.ghost':
+                    mod_fn = mod_fn.fn_body # Vortex keeps the .ghost extension
+                modnames.append(mod_fn)
+                if is_active_: active.append(mod_fn)
         self.do_update() # update the cache info
         return active, modnames
 
@@ -415,7 +400,7 @@ class LoGame:
 
     def _fetch_active_plugins(self):
         try:
-            active, _lo = self._plugins_txt.parse_modfile(self.mod_infos)
+            active, _lo = self._plugins_txt.parse_modfile()
             return active
         except FileNotFoundError:
             return []
@@ -623,7 +608,7 @@ def _mk_ini(ini_key, star, ini_fpath):
             super().__init__(*args, **kwargs)
             _ini, self._section, self._key_fmt = ini_key
 
-        def parse_modfile(self, mod_infos, *, __re=None) -> _ParsedLo:
+        def parse_modfile(self, *, __re=None) -> _ParsedLo:
             """Read the section specified in self._section and return all
             its values as FName objects. Handles missing INI file and an
             absent section gracefully."""
@@ -653,8 +638,7 @@ def _mk_ini(ini_key, star, ini_fpath):
             # Read from the new INI if it exists and write to our main INI
             move_ini = self._resolve_case_ambiguity(new_dir.join(ini_key[0]))
             if move_ini.is_file():
-                loact = _mk_ini(ini_key, self._star, move_ini).parse_modfile(
-                    None)
+                loact = _mk_ini(ini_key, self._star, move_ini).parse_modfile()
                 self.write_modfile(*loact)
                 return True
             return False
@@ -854,7 +838,7 @@ class TextfileGame(_TextFileLo):
         cached_active."""
         pl_path = self._plugins_txt.abs_path
         try: #--Read file
-            _acti, lo = self._loadorder_txt.parse_modfile(self.mod_infos)
+            _acti, lo = self._loadorder_txt.parse_modfile()
         except FileNotFoundError:
             mods = cached_active or []
             if cached_active is not None and not pl_path.exists():
@@ -957,7 +941,7 @@ class AsteriskGame(_TextFileLo):
         to our caller being get_load_order *at least one* is None."""
         rem_from_acti = self.active_if_present
         try:
-            active, lo = self._plugins_txt.parse_modfile(self.mod_infos)
+            active, lo = self._plugins_txt.parse_modfile()
             if any_dropped := {x for x in lo if x in rem_from_acti}:
                 bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
                              f'{self._plugins_txt.abs_path}')
