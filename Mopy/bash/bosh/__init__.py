@@ -2777,11 +2777,11 @@ class ModInfos(TableFileInfos):
             if espms_extra or esls_extra:
                 msg = f'{fileName}: Trying to activate more than '
                 if espms_extra:
-                    msg += f'{load_order.max_espms():d} regular plugins'
+                    msg += f'{bush.game.max_espms:d} regular plugins'
                 if esls_extra:
                     if espms_extra:
                         msg += ' and '
-                    msg += f'{load_order.max_esls():d} light plugins'
+                    msg += f'{bush.game.max_esls:d} light plugins'
                 raise PluginsFullError(msg)
             if _children:
                 if fileName in _children:
@@ -3205,7 +3205,7 @@ class ModInfos(TableFileInfos):
         Return a set of mods whose real index changed."""
         regular_index = 0
         esl_index = 0
-        esl_offset = load_order.max_espms() - 1
+        esl_offset = bush.game.max_espms - 1
         # Note that inactive plugins are handled by our defaultdict factory
         old, self.real_indices = self.real_indices, defaultdict(
             lambda: (sys.maxsize, ''))

@@ -4040,8 +4040,8 @@ class BashFrame(WindowFrame):
                              'because only %(max_regular_plugins)d plugins '
                              'may be active at the same time.')
             lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
-                warn_msg % {'max_regular_plugins': load_order.max_espms(),
-                            'max_esl_plugins': load_order.max_esls()},
+                warn_msg % {'max_regular_plugins': bush.game.max_espms,
+                            'max_esl_plugins': bush.game.max_esls},
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can

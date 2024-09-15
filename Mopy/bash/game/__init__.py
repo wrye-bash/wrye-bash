@@ -200,10 +200,10 @@ class GameInfo(object):
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
-
-    @fast_cached_property
-    def has_esl(self):
-        return '.esl' in self.espm_extensions
+        self.has_esl = '.esl' in self.espm_extensions
+        self.max_espms = 254 if self.has_esl else 255
+        # hard limit, game runs out of fds sooner, testing needed
+        self.max_esls = 4096 if self.has_esl else 0
 
     # Master esm form ids factory
     __master_fids = {}
@@ -689,8 +689,7 @@ class GameInfo(object):
             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
 
-    @classmethod
-    def post_init(cls):
+    def post_init(self):
         """Post-initialize this game module. This runs after all directories
         for the game have been set."""
 

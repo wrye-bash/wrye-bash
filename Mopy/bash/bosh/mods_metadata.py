@@ -613,7 +613,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         return ret_fmt
     if bush.game.has_esl:
         # Need to undo the offset we applied to sort ESLs after regulars
-        sort_offset = load_order.max_espms() - 1
+        sort_offset = bush.game.max_espms - 1
         def format_fid(whole_lo_fid, fid_orig_plugin):
             """Format a whole-LO FormID, which can exceed normal FormID limits
             (e.g. 211000800 is perfectly fine in a load order with ESLs), so
