@@ -52,7 +52,7 @@ from ._games_lo import FixInfo, INIGame, LoGame, LoList, LoTuple
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 
 # LoGame instance providing load order operations API
-_game_handle: LoGame | None = None
+_lo_handler: LoGame | None = None
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
 locked = False
@@ -76,9 +76,9 @@ def initialize_load_order_files():
     _lord_pickle_path = bass.dirs['saveBase'].join('BashLoadOrders.dat')
 
 def initialize_load_order_handle(mod_infos, game_handle):
-    global _game_handle
-    _game_handle = game_handle.lo_handler(mod_infos, _plugins_txt_path,
-        loadorder_txt_path=_loadorder_txt_path)
+    global _lo_handler
+    _lo_handler = game_handle.lo_handler(mod_infos, game_handle,
+        _plugins_txt_path, loadorder_txt_path=_loadorder_txt_path)
     __load_pickled_load_orders()
 
 # Saved load orders -----------------------------------------------------------
@@ -291,7 +291,7 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     args = (None if seq is None else [*seq] for seq in ( # pass lists
         lord, acti, _cached_lord.loadOrder, _cached_lord.activeOrdered))
     fix_lo = None if quiet else FixInfo()
-    lord, acti = _game_handle.set_load_order(*args, fix_lo=fix_lo)
+    lord, acti = _lo_handler.set_load_order(*args, fix_lo=fix_lo)
     if not quiet:
         fix_lo.lo_deprint()
     return _update_cache(lord, acti, __index_move=__index_move)
@@ -306,8 +306,8 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
     try:
         if lord is None or acti_sorted is None: # really go get load order
             fix_lo = FixInfo()
-            lord, acti_sorted = _game_handle.get_load_order(lord, acti_sorted,
-                                                            fix_lo)
+            lord, acti_sorted = _lo_handler.get_load_order(lord, acti_sorted,
+                                                           fix_lo)
             fix_lo.lo_deprint()
         return _cached_lord.lo_diff(
             (_cached_lord := LoadOrder(lord, acti_sorted)))
@@ -358,7 +358,7 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
             saved = fixed
     else: saved = __lo_unset
     if _cached_lord is not __lo_unset:
-        lo, active = _game_handle.request_cache_update(
+        lo, active = _lo_handler.request_cache_update(
             _cached_lord.loadOrder if cached else None,
             _cached_lord.activeOrdered if cached_active else None)
     else: lo = active = None
@@ -378,7 +378,7 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
     return ldiff
 
 def __validate(saved):
-    return _game_handle.set_load_order( # not passing cached results in dry-run
+    return _lo_handler.set_load_order( # not passing cached results in dry-run
         *map(list, (saved.loadOrder, saved.activeOrdered)))
 
 def get_active_mods_lists():
@@ -409,38 +409,32 @@ def _restore_lo(index_move):
 
 # _game_handle wrappers -------------------------------------------------------
 def check_active_limit(mods):
-    return _game_handle.check_active_limit(mods)
-
-def max_espms():
-    return _game_handle.max_espms
-
-def max_esls():
-    return _game_handle.max_esls
+    return _lo_handler.check_active_limit(mods)
 
 def swap(old_dir, new_dir):
-    return _game_handle.swap(old_dir, new_dir)
+    return _lo_handler.swap(old_dir, new_dir)
 
 def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> list[FName]:
     """See LoGame.pinned_plugins."""
-    return _game_handle.pinned_plugins(set(imods), fixed_order=fixed_order,
-                                       filter_mods=filter_mods)
+    return _lo_handler.pinned_plugins(set(imods), fixed_order=fixed_order,
+                                      filter_mods=filter_mods)
 
-def using_ini_file(): return isinstance(_game_handle, INIGame)
+def using_ini_file(): return isinstance(_lo_handler, INIGame)
 
 def get_lo_files() -> set[bolt.Path]:
     """Retrieve a set of all files used by this game for storing load order."""
     # The order of these is an implementation detail, hide it ouside the game
     # implementations
-    return set(_game_handle.get_lo_files())
+    return set(_lo_handler.get_lo_files())
 
 # Timestamp games helpers
 def has_load_order_conflict(mod_name):
-    return _game_handle.has_load_order_conflict(mod_name)
+    return _lo_handler.has_load_order_conflict(mod_name)
 
 def has_load_order_conflict_active(mod_name):
     if not cached_is_active(mod_name): return False
-    return _game_handle.has_load_order_conflict_active(mod_name,
-                                                       _cached_lord.active)
+    return _lo_handler.has_load_order_conflict_active(mod_name,
+                                                      _cached_lord.active)
 
 # Lock load order -------------------------------------------------------------
 def toggle_lock_load_order(user_warning_callback):
