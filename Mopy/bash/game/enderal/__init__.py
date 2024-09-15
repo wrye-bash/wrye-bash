@@ -121,7 +121,7 @@ class AEnderalGameInfo(ASkyrimGameInfo):
                     {'NamesTweak_RenameGold'})
 
     class _LoEnderal(TextfileGame):
-        must_be_active_if_present = tuple(
+        force_load_first = tuple(
             map(FName, ('Update.esm', 'Enderal - Forgotten Stories.esm')))
     lo_handler = _LoEnderal
 

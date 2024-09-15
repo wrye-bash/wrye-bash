@@ -22,7 +22,7 @@
 #
 # =============================================================================
 """Load order handling backend featuring a LoGame hierarchy implementing base
-load order handling, and _LoFile hierarchy for reading and writing load order
+load order handling, and LoFile hierarchy for reading and writing load order
 files. Imported in the game package for defining specific LoGame overrides (to
 keep this file readable and avoid the need of a factory), and in load_order.py,
 where it is initialized and used to implement the load order API."""
@@ -47,7 +47,7 @@ LoTuple = tuple[FName, ...]
 LoList = LoTuple | list[FName] | None
 _ParsedLo = tuple[list[FName], list[FName]]
 
-class _LoFile(AFile):
+class LoFile(AFile):
     """A file holding load order information (plugins.txt/loadorder.txt but
     also ini files for INIGame). We need to be careful in case sensitive
     file systems and backup could use more work but that's a proud beta."""
@@ -226,28 +226,26 @@ class FixInfo(object):
 class LoGame:
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
-    must_be_active_if_present: LoTuple = ()
+    force_load_first: LoTuple = ()
     max_espms = 255
     max_esls = 0
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
     def __init__(self, mod_infos, plugins_txt_path: Path, *,
-                 plugins_txt_type=_LoFile, **kwargs):
+                 plugins_txt_type=LoFile, **kwargs):
         """:type mod_infos: bosh.ModInfos"""
         self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
-        self.active_if_present, self._fixed_order_plugins = \
-            self._set_pinned_mods(self.master_path)
+        self._active_if_present, self._fixed_order_plugins = \
+            self._set_pinned_mods()
         self._print_lo_paths()
 
     # INITIALIZATION ----------------------------------------------------------
-    def _set_pinned_mods(self, master_fn):
+    def _set_pinned_mods(self):
         """Set the master file(s) that must always be active if present."""
-        fo_plugins = (master_fn, *self.must_be_active_if_present)
-        if len(fo_plugins) != len(mbaip := set(fo_plugins)):
-            raise ValueError(f'Duplicate entries in {fo_plugins}')
-        return mbaip, fo_plugins
+        fo_plugins = (self.master_path, *self.force_load_first)
+        return set(fo_plugins), fo_plugins
 
     def _print_lo_paths(self):
         """Prints the paths that will be used and what they'll be used for.
@@ -568,7 +566,7 @@ class LoGame:
         contain plugins that are present in modInfos (excluding corrupted)."""
         modset = self.mod_infos if mods is None else mods & set(self.mod_infos)
         mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
-            self.active_if_present
+            self._active_if_present
         if filter_mods:
             if fixed_order: mod_set_or_tuple = set(mod_set_or_tuple)
             return [x for x in modset if x not in mod_set_or_tuple]
@@ -603,7 +601,7 @@ def _mk_ini(ini_key, star, ini_fpath):
     """Creates a new IniFile from the specified bolt.Path object."""
     # We don't support OBSE INIs here, only regular IniFile objects
     ini_type, ini_encoding = get_ini_type_and_encoding(ini_fpath)
-    class _IniLoFile(_LoFile, ini_type):
+    class _IniLoFile(LoFile, ini_type):
         def __init__(self, ini_key, *args, **kwargs):
             super().__init__(*args, **kwargs)
             _ini, self._section, self._key_fmt = ini_key
@@ -801,7 +799,7 @@ class _TextFileLo(LoGame):
 class TextfileGame(_TextFileLo):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path,
-                 *, lo_txt_type=_LoFile, **kwargs):
+                 *, lo_txt_type=LoFile, **kwargs):
         super().__init__(mod_infos, plugins_txt_path, **kwargs)
         self._loadorder_txt = lo_txt_type(self._star, loadorder_txt_path)
 
@@ -939,7 +937,7 @@ class AsteriskGame(_TextFileLo):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Discard information read if cached_* is passed in, but due
         to our caller being get_load_order *at least one* is None."""
-        rem_from_acti = self.active_if_present
+        rem_from_acti = self._active_if_present
         try:
             active, lo = self._plugins_txt.parse_modfile()
             if any_dropped := {x for x in lo if x in rem_from_acti}:
@@ -969,7 +967,7 @@ class AsteriskGame(_TextFileLo):
         raise NotImplementedError # no override for AsteriskGame
 
     def _persist_load_order(self, lord, active):
-        rem_from_acti = self.active_if_present # remove those from plugins.txt
+        rem_from_acti = self._active_if_present # remove those from plugins.txt
         lord = [x for x in lord if x not in rem_from_acti]
         active = [x for x in active if x not in rem_from_acti]
         self._write_plugins_txt(lord, active)
@@ -990,29 +988,26 @@ class AsteriskGame(_TextFileLo):
                 previous_active is None or previous_active != active):
             self._persist_load_order(lord, active)
 
-    def _set_pinned_mods(self, master_fn):
+    def _set_pinned_mods(self):
         if self._ccc_filename:
             ccc_path = bass.dirs['app'].join(self._ccc_filename)
             try:
-                with open(ccc_path, 'rb') as ins:
-                    ccc_contents = []
-                    for ccc_line in ins.readlines():
-                        try:
-                            ccc_dec = bolt.decoder(ccc_line, encoding='cp1252')
-                            ccc_contents.append(FName(ccc_dec.strip()))
-                        except UnicodeError:
-                            deprint(f'Failed to decode CCC entry {ccc_line}')
-                            continue
-                    self.must_be_active_if_present += tuple(ccc_contents)
+                ccc_file = LoFile(False, ccc_path, raise_on_error=True)
+                _act, ccc_contents = ccc_file.parse_modfile()
+                ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
+                force_active = {*self.__class__.force_load_first}
+                self.force_load_first = (*self.__class__.force_load_first, *(
+                    m for m in ccc_contents if m != self.master_path and
+                                               m not in force_active))
             except FileNotFoundError:
                 deprint(f'{self._ccc_filename} does not exist')
             except OSError:
                 deprint(f'Failed to open {ccc_path}', traceback=True)
-        mbaip, fo_mods = super()._set_pinned_mods(master_fn)
-        # override what set in super - the game won't care, but we do
-        # we first put the must_be_active_if_present (if those are in the
-        # ccc_contents an error is raised) then the ccc contents, then whatever
-        # in the ccc_fallback that remains - note set(fo_mods) == mbaip
+        mbaip, fo_mods = super()._set_pinned_mods()
+        # override what set in super - the game won't care, but we do. We first
+        # put the static force_load_first then the ccc contents (minus the mods
+        # already in force_load_first), then whatever in the ccc_fallback that
+        # remains - note set(fo_mods) == mbaip as returned above
         return mbaip, (*fo_mods, *(
             p for p in self._ccc_fallback if p not in mbaip))
 

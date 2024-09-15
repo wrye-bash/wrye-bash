@@ -81,9 +81,8 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
     }
 
     class _LoFallout4VR(AFallout4GameInfo.LoFallout4):
-        must_be_active_if_present = (
-            *AFallout4GameInfo.LoFallout4.must_be_active_if_present,
-            FName('Fallout4_VR.esm'))
+        force_load_first = (*AFallout4GameInfo.LoFallout4.force_load_first,
+                            FName('Fallout4_VR.esm'))
         # No ESLs, reset these back to their pre-ESL versions
         _ccc_filename = ''
         max_espms = 255

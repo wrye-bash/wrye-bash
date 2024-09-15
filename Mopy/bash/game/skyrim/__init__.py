@@ -1473,10 +1473,10 @@ class ASkyrimGameInfo(PatchGame):
         b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
     ]
 
-    class _LoSkyrim(TextfileGame):
-        must_be_active_if_present = tuple(map(FName, ('Update.esm',
+    class LoSkyrim(TextfileGame):
+        force_load_first = tuple(map(FName, ('Update.esm',
             'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
-    lo_handler = _LoSkyrim
+    lo_handler = LoSkyrim
 
     @classmethod
     def init(cls, _package_name=None):

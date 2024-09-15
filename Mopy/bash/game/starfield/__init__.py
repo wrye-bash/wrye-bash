@@ -26,7 +26,7 @@ from .. import GameInfo, MergeabilityCheck, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
-from ..._games_lo import AsteriskGame
+from ..._games_lo import AsteriskGame, LoFile
 from ...bolt import FName
 
 class _AStarfieldGameInfo(PatchGame):
@@ -271,17 +271,32 @@ class _AStarfieldGameInfo(PatchGame):
     complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'} # TODO(SF) verify
 
     class _LoStarfield(AsteriskGame):
-        must_be_active_if_present = tuple(map(FName, (
+        force_load_first = tuple(map(FName, (
             'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
             'SFBGS007.esm', 'SFBGS008.esm', 'SFBGS006.esm', 'SFBGS003.esm',
             'SFBGS004.esm',
         )))
-
         # The game tries to read a Starfield.ccc already, but it's not present
         # yet. Also, official Creations are written to plugins.txt & can be
         # disabled & reordered in the LO. LOOT uses it to force vanilla masters
         # to load before plugins.txt plugins instead of after.
         _ccc_filename = 'Starfield.ccc'
+
+        def _set_pinned_mods(self):
+            """Write the CCC file out if not present."""
+            from ... import bass
+            ccc_path = bass.dirs['app'].join(self._ccc_filename)
+            try:
+                LoFile(False, ccc_path, raise_on_error=True)
+            except FileNotFoundError:
+                bolt.deprint(f'{ccc_path} does not exist - creating it')
+                ccc_file = LoFile(False, ccc_path)
+                ccc_file.write_modfile(self.__class__.force_load_first,
+                                       self.__class__.force_load_first)
+            except OSError:
+                bolt.deprint(f'Failed to open {ccc_path}', traceback=True)
+            return super()._set_pinned_mods()
+
     lo_handler = _LoStarfield
 
     @classmethod
