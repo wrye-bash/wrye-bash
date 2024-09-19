@@ -149,6 +149,7 @@ class AOblivionGameInfo(PatchGame):
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
             '_tejon', # 3P: tejon's mods
+            'baseobjectswapper', # 3P: Base Object Swapper
             'config', # 3P: mod config files (INIs)
             'distantlod',
             'enhanced economy', # 3P: Enhanced Economy
@@ -160,6 +161,7 @@ class AOblivionGameInfo(PatchGame):
             'pluggy', # 3P: Pluggy
             'scripts',
             'shaders',
+            'spellfactionitemdistributor', # 3P: Spell Faction Item Distributor
             'streamline', # 3P: Streamline
             'trees',
         }
