@@ -217,6 +217,19 @@ class GameInfo(object):
             return cls.__master_fids.setdefault(object_id,
                 brec.FormId.from_tuple((cls.master_file, object_id)))
 
+    @staticmethod
+    def get_fid_class(augmented_masters, in_overlay_plugin):
+        from ..brec import FormId
+        class _FormID(FormId):
+            @fast_cached_property
+            def long_fid(self, *, __masters=augmented_masters):
+                try:
+                    return __masters[self.mod_dex], self.short_fid & 0xFFFFFF
+                except IndexError:
+                    # Clamp HITMEs to the plugin's own address space
+                    return __masters[-1], self.short_fid & 0xFFFFFF
+        return _FormID
+
     class St:
         """Information about this game on Steam."""
         # The app IDs on Steam. An empty list indicates the game is not

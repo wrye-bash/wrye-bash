@@ -27,7 +27,7 @@ from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
 from ..._games_lo import AsteriskGame, LoFile
-from ...bolt import FName
+from ...bolt import FName, fast_cached_property
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -59,6 +59,28 @@ class _AStarfieldGameInfo(PatchGame):
         _j('textures', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
     ]
+
+    @staticmethod
+    def get_fid_class(augmented_masters, in_overlay_plugin):
+        if not in_overlay_plugin:
+            return super(_AStarfieldGameInfo, _AStarfieldGameInfo
+                         ).get_fid_class(augmented_masters, in_overlay_plugin)
+        overlay_threshold = len(augmented_masters) - 1
+        from ...brec import FormId
+        class _FormID(FormId):
+            @fast_cached_property
+            def long_fid(self, *, __masters=augmented_masters):
+                try:
+                    if self.mod_dex >= overlay_threshold:
+                        # Overlay plugins can't have new records (or
+                        # HITMEs), those get injected into the first
+                        # master instead
+                        return __masters[0], self.short_fid & 0xFFFFFF
+                    return __masters[self.mod_dex], self.short_fid & 0xFFFFFF
+                except IndexError:
+                    # Clamp HITMEs to the plugin's own address space
+                    return __masters[-1], self.short_fid & 0xFFFFFF
+        return _FormID
 
     class Ck(GameInfo.Ck):
         ck_abbrev = 'CK'
