@@ -889,6 +889,7 @@ class ASkyrimGameInfo(PatchGame):
                   'female_model_1st', 'biped_flags'),
         b'ARMO': ('maleWorld', 'maleIconPath', 'femaleWorld', 'femaleIconPath',
                   'addons', 'biped_flags'),
+        b'AVIF': ('iconPath',),
         b'BOOK': ('iconPath', 'model'),
         b'CLAS': ('iconPath',),
         b'CONT': ('model',),

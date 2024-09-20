@@ -722,23 +722,24 @@ class MreAvif(MelRecord):
         MelEdid(),
         MelFull(),
         MelDescription(),
+        MelIcon(),
         MelString(b'ANAM', 'abbreviation'),
-        MelBase(b'CNAM', 'unknown_cnam'),
+        MelUInt32(b'CNAM', 'skill_category'),
         MelStruct(b'AVSK', ['4f'], 'skill_use_mult', 'skill_offset_mult',
             'skill_improve_mult', 'skill_improve_offset'),
         MelGroups('perk_tree',
-            MelFid(b'PNAM', 'perk_fid'),
-            MelBase(b'FNAM', 'unknown_fnam'),
-            MelUInt32(b'XNAM', 'perk_grid_x'),
-            MelUInt32(b'YNAM', 'perk_grid_y'),
-            MelFloat(b'HNAM', 'perk_horizontal_position'),
-            MelFloat(b'VNAM', 'perk_vertical_position'),
-            MelFid(b'SNAM', 'associated_skill'),
+            MelFid(b'PNAM', 'perk_fid'), # required
+            MelUInt32(b'FNAM', 'parent_required'), # required, really a bool
+            MelUInt32(b'XNAM', 'perk_grid_x'), # required
+            MelUInt32(b'YNAM', 'perk_grid_y'), # required
+            MelFloat(b'HNAM', 'perk_horizontal_position'), # required
+            MelFloat(b'VNAM', 'perk_vertical_position'), # required
+            MelFid(b'SNAM', 'associated_skill'), # required
             MelSimpleGroups('perk_connections', MelUInt32(b'CNAM')),
-            MelUInt32(b'INAM', 'perk_index'),
+            MelUInt32(b'INAM', 'perk_index'), # required
         ),
     ).with_distributor({
-        b'CNAM': 'unknown_cnam',
+        b'CNAM': 'skill_category',
         b'PNAM': {
             b'CNAM': 'perk_tree',
         },
