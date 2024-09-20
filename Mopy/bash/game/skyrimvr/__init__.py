@@ -108,6 +108,7 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
             self.has_esl = True
             self.max_esls = 4096
             self.max_espms = 254
+        super().post_init()
 
 class SteamSkyrimVRGameInfo(SteamMixin, _ASkyrimVRGameInfo):
     """GameInfo override for the Steam version of Skyrim VR."""

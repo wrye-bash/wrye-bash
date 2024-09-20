@@ -48,7 +48,7 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
 from ..bolt import os_name
 from ..env import init_app_links
-from ..game import MergeabilityCheck
+from ..game import MergeabilityCheck, MasterFlag
 from ..game.patch_game import PatchGame
 from ..gui import GuiImage, get_image
 
@@ -546,11 +546,13 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_CheckQualifications())
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
-        ModList.context_links.append_link(Mod_FlipEsm())
+        ModList.context_links.append_link(Mod_FlipEsm(MasterFlag.ESM))
         if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipEsl())
+            ModList.context_links.append_link(Mod_FlipEsl(
+                bush.game.scale_flags.ESL))
         if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipOverlay())
+            ModList.context_links.append_link(Mod_FlipOverlay(
+                bush.game.scale_flags.OVERLAY))
         ModList.context_links.append_link(Mod_FlipMasters())
         ModList.context_links.append_link(Mod_CreateDummyMasters())
     ModList.context_links.append_link(SeparatorLink())

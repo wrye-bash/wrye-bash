@@ -32,6 +32,7 @@ from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict
 from ..bosh import ModInfo, faces
 from ..fomod_schema import default_moduleconfig
+from ..game import MasterFlag
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     CheckBox, CheckListBox, DeselectAllButton, DialogWindow, DocumentViewer, \
     DropDown, EventResult, FileOpen, GridLayout, HBoxedLayout, HLayout, \
@@ -309,27 +310,12 @@ class CreateNewPlugin(DialogWindow):
         # want)
         self._plugin_name.set_focus()
         self._plugin_name.select_all_text()
-        self._esm_flag = CheckBox(self, _(u'ESM Flag'),
-            chkbx_tooltip=_(u'Whether or not the the resulting plugin will be '
-                            u'a master, i.e. have the ESM flag.'))
-        # Completely hide the ESL checkbox for non-ESL games, but check it by
-        # default for ESL games, since one of the most common use cases for
-        # this command on those games is to create BSA-loading dummies. But for
-        # Overlay games, we want to disable it by default again since the ESL
-        # flag disables the Overlay flag and both flags are very valid use
-        # cases for this command.
-        self._esl_flag = CheckBox(self, _(u'ESL Flag'),
-            chkbx_tooltip=_(u'Whether or not the resulting plugin will be '
-                            u'light, i.e have the ESL flag.'),
-            checked=bush.game.has_esl and not bush.game.has_overlay_plugins)
-        self._esl_flag.visible = bush.game.has_esl
-        # Hide the Overlay checkbox for non-Overlay games
-        self._overlay_flag = CheckBox(self, _('Overlay Flag'),
-            chkbx_tooltip=_('Whether or not the resulting plugin will only be '
-                            'able to contain overrides, i.e. have the Overlay flag.'))
-        self._overlay_flag.visible = bush.game.has_overlay_plugins
-        for flag_chkbx in (self._esm_flag, self._esl_flag, self._overlay_flag):
-            flag_chkbx.on_checked.subscribe(self._handle_flag_checked)
+        # flag checkboxes - TODO: use a radio button for incompatible flags
+        self._flags_chkboxes = {}
+        for en in (MasterFlag, bush.game.scale_flags):
+            for member, kwargs in en.checkboxes().items():
+                self._flags_chkboxes[member] = chkbx = CheckBox(self, **kwargs)
+                chkbx.on_checked.subscribe(self._handle_flag_checked)
         self._master_search = SearchBar(self, hint=_('Search Masters'))
         self._master_search.on_text_changed.subscribe(self._handle_search)
         self._masters_box = CheckListBox(self)
@@ -355,16 +341,14 @@ class CreateNewPlugin(DialogWindow):
         self._too_many_masters.set_foreground_color(colors[u'default.warn'])
         self._too_many_masters.visible = False
         self._check_flag_states()
+        it = iter(self._flags_chkboxes.values())
         VLayout(border=6, spacing=6, item_expand=True, items=[
             HLayout(spacing=4, items=[
                 (self._plugin_name, LayoutOptions(weight=1)),
                 self._plugin_ext,
             ]),
             VBoxedLayout(self, title=_('Flags'), items=[
-                self._esm_flag,
-                HLayout(spacing=4, items=[
-                    self._esl_flag, self._overlay_flag,
-                ]),
+                next(it), HLayout(spacing=4, items=[*it] or [None]),
             ]),
             (HBoxedLayout(self, title=_(u'Masters'), spacing=4,
                 item_expand=True, items=[
@@ -412,30 +396,22 @@ class CreateNewPlugin(DialogWindow):
         should also be disabled. And ensure that the file extension forces the
         right flags."""
         curr_p_ext = self._plugin_ext.get_value()
-        p_is_esl = curr_p_ext == '.esl'
-        p_is_master = p_is_esl or curr_p_ext == '.esm'
-        # For .esm and .esl files, force-check the ESM flag
-        if p_is_master:
-            self._esm_flag.is_checked = True
-        self._esm_flag.enabled = not p_is_master
-        # For .esl files, force-check the ESL flag
-        if p_is_esl:
-            self._esl_flag.is_checked = True
-        self._esl_flag.enabled = not p_is_esl
-        # Ensure that the ESL and Overlay flags are mutually exclusive
-        if self._esl_flag.is_checked:
-            self._overlay_flag.is_checked = False
-            self._overlay_flag.enabled = False
-        else:
-            # If no masters are selected, the Overlay flag isn't valid
-            if not self._chosen_masters:
-                self._overlay_flag.is_checked = False
-                self._overlay_flag.enabled = False
-            else:
-                self._overlay_flag.enabled = True
-                if self._overlay_flag.is_checked:
-                    self._esl_flag.is_checked = False
-                    self._esl_flag.enabled = False
+        # For .esl files force-check the ESM/ESL flags, for .esm the ESM flag
+        # and force disable the OVERLAY flag if no masters are present
+        force_flags = bush.game.scale_flags.guess_flags(curr_p_ext,
+                                                        self._chosen_masters)
+        for pflag, chkbox in self._flags_chkboxes.items():
+            chkbox.is_checked = force_flags.get(pflag, chkbox.is_checked)
+            chkbox.enabled = pflag not in force_flags
+        checks = {pflag: chkbox.is_checked for pflag, chkbox in
+                  self._flags_chkboxes.items()}
+        checks = bush.game.scale_flags.check_flag_assignments(
+            checks, raise_on_invalid=False)
+        for pflag, is_checked in checks.items():
+            self._flags_chkboxes[pflag].is_checked = is_checked
+            if pflag is not MasterFlag.ESM:
+                # disable setting mutually exclusive flags
+                self._flags_chkboxes[pflag].enabled = is_checked
 
     def _handle_plugin_ext(self, _new_p_ext):
         """Internal callback to handle a change in extension."""
@@ -484,10 +460,8 @@ class CreateNewPlugin(DialogWindow):
             return EventResult.FINISH # leave the dialog open
         chosen_name = ModInfo.unique_name(newName)
         created_plugin = pw.data_store.create_new_mod(chosen_name,
-            windowSelected := pw.GetSelected(),
-            with_esm_flag=self._esm_flag.is_checked,
-            with_esl_flag=self._esl_flag.is_checked,
-            with_overlay_flag=self._overlay_flag.is_checked,
+            windowSelected := pw.GetSelected(), flags_dict={k: v for k, v in
+                self._flags_chkboxes.items() if v.is_checked},
             wanted_masters=[*map(FName, self._chosen_masters)])
         # Check if we made a plugin with circular masters - we need the ModInfo
         # object itself to check this. A bit ugly from a UX perspective, but OK

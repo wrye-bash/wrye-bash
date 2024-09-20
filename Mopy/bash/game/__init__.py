@@ -33,6 +33,7 @@ from os.path import join as _j
 
 from .. import bass, bolt
 from ..bolt import FNDict, fast_cached_property
+from ..exception import InvalidPluginFlagsError
 
 # Constants and Helpers -------------------------------------------------------
 # Files shared by versions of games that are published on the Windows Store
@@ -65,6 +66,119 @@ class ObjectIndexRange(Enum):
     # Plugins with at least one master can use the range 0x001-0x7FF
     # for their own purposes
     EXPANDED_ALWAYS = 2
+#------------------------------------------------------------------------------
+class PluginFlag(Enum):
+    """Enum for plugin flags and plugin types - they're friends with ModInfo
+    to the point the latter lets it modify its private attributes. This
+    intimate class relationship drastically simplifies client code."""
+
+    def __init__(self, flag_attr, mod_info_attr):
+        self._flag_attr = flag_attr # the ModInfo.header.flags1 attribute
+        self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
+
+    def set_mod_flag(self, mod_info, set_flag):
+        """Set the flag on the mod info and update the internal mod info state.
+        """
+        try:
+            if set_flag is not None:
+                setattr(mod_info.header.flags1, self._flag_attr, set_flag)
+                setattr(mod_info, self._mod_info_attr, set_flag)
+            else: # just init
+                set_flag = self.has_flagged(mod_info)
+                setattr(mod_info, self._mod_info_attr, set_flag)
+            return set_flag # if we are not flagged check the file extension
+        except AttributeError: # mod_info is a ModInfo.header.flags1 instance
+            setattr(mod_info, self._flag_attr, set_flag)
+            return True
+
+    @classmethod
+    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
+        """Guess the flags of a mod/master info from its filename extension."""
+        return {MasterFlag.ESM: True} if mod_fn_ext == '.esm' else {}
+
+    @classmethod
+    def checkboxes(cls):
+        """Return a list of checkboxes init params for the plugin flags."""
+        return {}
+
+    def has_flagged(self, mod_info):
+        """Check if the self._flag_attr is set on the mod info flags."""
+        return getattr(mod_info.header.flags1, self._flag_attr)
+
+    @classmethod
+    def check_flag_assignments(cls, flag_dict, raise_on_invalid=True):
+        return flag_dict
+
+class MasterFlag(PluginFlag):
+    ESM = ('esm_flag', '_has_esm_flag')
+
+    @classmethod
+    def checkboxes(cls):
+        return {cls.ESM: {'cb_label': _('ESM Flag'), 'chkbx_tooltip': _(
+            'Whether or not the the resulting plugin will be a master, i.e. '
+            'have the ESM flag.')}}
+
+class EslMixin(PluginFlag):
+
+    def set_mod_flag(self, mod_info, set_flag):
+        if super().set_mod_flag(mod_info, set_flag):
+            return # we were passed a flags1 instance or we set the flag
+        if self is type(self).ESL: # if ESL flag wasn't set check the extension
+            setattr(mod_info, self._mod_info_attr,
+                    mod_info.get_extension() == '.esl')
+
+    @classmethod
+    def checkboxes(cls):
+        # Check the ESL checkbox by default for ESL games, since one of the
+        # most common use cases for the create mod command on those games is
+        # to create BSA-loading dummies.
+        return {cls.ESL: {'cb_label': _('ESL Flag'), 'chkbx_tooltip': _(
+            'Whether or not the resulting plugin will be '
+            'light, i.e have the ESL flag.'), 'checked': True}}
+
+    @classmethod
+    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
+        return {MasterFlag.ESM: True, cls.ESL: True} if mod_fn_ext == '.esl' \
+            else super().guess_flags(mod_fn_ext)
+
+    @classmethod
+    def check_flag_assignments(cls, flag_dict: dict[PluginFlag, bool],
+                               raise_on_invalid=True):
+        set_true = [k for k, v in flag_dict.items() if k in cls and v]
+        if raise_on_invalid and len(set_true) > 1:
+            raise InvalidPluginFlagsError([k.name for k in set_true])
+        elif not set_true:
+            return flag_dict
+        return {**flag_dict, **{ # set all other flags to False
+            k: k in set_true for k in cls}}
+
+class EslPluginFlag(EslMixin, PluginFlag):
+    ESL = ('esl_flag', '_is_esl')
+
+class SFPluginFlag(EslMixin, PluginFlag):
+    ESL = ('esl_flag', '_is_esl')
+    OVERLAY = ('overlay_flag', '_is_overlay')
+
+    def set_mod_flag(self, mod_info, set_flag):
+        if super().set_mod_flag(mod_info, set_flag):
+            return  # we were passed a flags1 instance or the flag was set
+        if self is (cls := type(self)).ESL:
+            # .esl extension does not matter for overlay flagged plugins todo ESM?
+            if not cls.OVERLAY.has_flagged(mod_info):
+                setattr(mod_info, self._mod_info_attr,
+                        mod_info.get_extension() == '.esl')
+
+    @classmethod
+    def checkboxes(cls):
+        ttip = _('Whether or not the resulting plugin will only be able to '
+                 'contain overrides, i.e. have the Overlay flag.')
+        return {**super().checkboxes(), cls.OVERLAY: {
+            'cb_label': _('Overlay Flag'), 'chkbx_tooltip': ttip}}
+
+    @classmethod
+    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
+        sup = super().guess_flags(mod_fn_ext)
+        return sup if masters_supplied else {**sup, cls.OVERLAY: False}
 
 # Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
@@ -187,6 +301,8 @@ class GameInfo(object):
     # list or the first plugin in the whole LO - probably the former)
     # TODO(SF) check which of those two is true
     has_overlay_plugins = False
+    # enum type of supported scale flags
+    scale_flags = PluginFlag
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this
@@ -705,6 +821,8 @@ class GameInfo(object):
     def post_init(self):
         """Post-initialize this game module. This runs after all directories
         for the game have been set."""
+        if self.has_esl: # this might need the bass.dirs be initialized
+            self.scale_flags = EslPluginFlag
 
     @classmethod
     def supported_games(cls):

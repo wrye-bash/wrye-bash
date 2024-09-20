@@ -55,10 +55,9 @@ from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
-    FailedIniInferError, FileError, ModError, PluginsFullError, \
-    SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
-    InvalidPluginFlagsError
-from ..game import MergeabilityCheck
+    FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
+    SaveHeaderError, SkipError, SkippedMergeablePluginsError
+from ..game import MergeabilityCheck, PluginFlag, MasterFlag
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
 from ..load_order import LordDiff
@@ -157,11 +156,12 @@ class MasterInfo:
 
     @_mod_info_delegate
     def has_esm_flag(self):
-        return self.get_extension() in ('.esm', '.esl')
+        return MasterFlag.ESM in bush.game.scale_flags.guess_flags(
+            self.get_extension())
 
     @_mod_info_delegate
     def in_master_block(self):
-        return self.get_extension() in ('.esm', '.esl')
+        return self.has_esm_flag()
 
     @_mod_info_delegate
     def is_esl(self):
@@ -449,30 +449,15 @@ class ModInfo(FileInfo):
         """Returns the file extension of this mod."""
         return self.fn_key.fn_ext
 
-    def set_plugin_flags(self, *, set_esm=None, set_esl=None,
-                         set_overlay=None):
+    def set_plugin_flags(self, flags_dict: dict[PluginFlag, bool | None]):
         """Set plugin flags. If a flag is None, it is left alone. If both ESL
         and Overlay flags are requested to be set a ValueError is raised. We
         then proceed to set the other flag to False if the game supports it."""
-        if not (set_esl is None or set_overlay is None):
-            raise ValueError('Cannot set both ESL and Overlay flags.')
-        if set_overlay := set_overlay if (
-                bush.game.has_overlay_plugins) else None:
-            set_esl = False  # Can't have both, so unset the ESL flag
-        if set_esl := set_esl if bush.game.has_esl else None:
-            set_overlay = False if bush.game.has_overlay_plugins else None
-        if set_esm is not None:
-            # set this file's ESM flag to the specified value - recalculate
-            # ONAM info if necessary
-            self.header.flags1.esm_flag = set_esm
-            self._recalc_esm()
-            self.update_onam()
-        if set_esl is not None:
-            self.header.flags1.esl_flag = set_esl
-            self._recalc_esl()
-        if set_overlay is not None:
-            self.header.flags1.overlay_flag = set_overlay
-            self._recalc_overlay()
+        flags_dict = bush.game.scale_flags.check_flag_assignments(flags_dict)
+        for pl_flag, flag_val in flags_dict.items():
+            pl_flag.set_mod_flag(self, flag_val)
+            if pl_flag is MasterFlag.ESM:
+                self._update_onam() # recalculate ONAM info if necessary
         self.writeHeader()
 
     # ESM flag ----------------------------------------------------------------
@@ -497,10 +482,6 @@ class ModInfo(FileInfo):
         else:
             return self.has_esm_flag()
 
-    def _recalc_esm(self):
-        """Forcibly recalculates the cached ESM status."""
-        self._has_esm_flag = self.header.flags1.esm_flag
-
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         mod_ext = self.get_extension()
@@ -511,33 +492,15 @@ class ModInfo(FileInfo):
                 mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
 
     # ESL flag ----------------------------------------------------------------
-    def has_esl_flag(self):
-        """Check if the mod info is an ESL based on ESL flag alone - header
-        must be set. You generally want is_esl() instead."""
-        return self.header.flags1.esl_flag
-
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
         set the light flag, for espms check the flag."""
         return self._is_esl
 
-    def _recalc_esl(self):
-        """Forcibly recalculates the cached ESL status."""
-        self._is_esl = self.has_esl_flag() or self.get_extension() == u'.esl'
-
     # Overlay flag ------------------------------------------------------------
-    def has_overlay_flag(self):
-        """Check if the mod info is an Overlay plugin based on Overlay flag
-        alone - header must be set. You generally want is_overlay() instead."""
-        return self.header.flags1.overlay_flag
-
     def is_overlay(self):
         """Check if this is an overlay plugin."""
         return self._is_overlay
-
-    def _recalc_overlay(self):
-        """Forcibly recalculate the cached overlay status."""
-        self._is_overlay = self.has_overlay_flag()
 
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
@@ -744,11 +707,8 @@ class ModInfo(FileInfo):
         self._reset_masters()
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
-        if bush.game.has_esl:
-            self._recalc_esl()
-        if bush.game.has_overlay_plugins:
-            self._recalc_overlay()
-        self._recalc_esm()
+        for v in chain(MasterFlag, bush.game.scale_flags):
+            v.set_mod_flag(self, None) # initialize _is_esl/overlay/ etc
 
     def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""
@@ -957,7 +917,7 @@ class ModInfo(FileInfo):
                 return _('Has size-mismatched masters.')
         return ''
 
-    def update_onam(self):
+    def _update_onam(self):
         """Checks if this plugin needs ONAM data and either adds or removes it
         based on that."""
         # Skip for games that don't need the ONAM generation
@@ -2971,8 +2931,7 @@ class ModInfos(TableFileInfos):
     def create_new_mod(self, newName: str | FName,
             selected: tuple[FName, ...] = (),
             wanted_masters: list[FName] | None = None, dir_path=empty_path,
-            is_bashed_patch=False, with_esm_flag=False, with_esl_flag=False,
-            with_overlay_flag=False) -> ModInfo | None:
+            is_bashed_patch=False, flags_dict=None) -> ModInfo | None:
         """Create a new plugin.
 
         :param newName: The name the created plugin will have.
@@ -2985,19 +2944,8 @@ class ModInfos(TableFileInfos):
             empty, defaults to the Data folder.
         :param is_bashed_patch: If True, mark the created plugin as a Bashed
             Patch.
-        :param with_esm_flag: If True, set the created plugin's ESM flag.
-        :param with_esl_flag: If True, set the created plugin's ESL flag. Only
-            set this to True if the game actually supports ESLs, otherwise an
-            InvalidPluginFlagsError will be raised. Mutually exclusive with
-            with_overlay_flag, setting both to True raises an
-            InvalidPluginFlagsError as well.
-        :param with_overlay_flag: If True, set the created plugin's Overlay
-            flag. Only set this to True if the game actually supports overlay
-            plugins, otherwise an InvalidPluginFlagsError will be raised.
-            Mutually exclusive with with_esl_flag, setting both to True raises
-            an InvalidPluginFlagsError as well."""
-        if with_esl_flag and with_overlay_flag:
-            raise InvalidPluginFlagsError(esl_flag=True, overlay_flag=True)
+        :param flags_dict: set plugin flags - incompatible flags will raise an
+            InvalidPluginFlagsError."""
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
         dir_path = dir_path or self.store_dir
@@ -3006,16 +2954,10 @@ class ModInfos(TableFileInfos):
         newFile.tes4.masters = wanted_masters
         if is_bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
-        if with_esm_flag:
-            newFile.tes4.flags1.esm_flag = True
-        if with_esl_flag:
-            if not bush.game.has_esl:
-                raise InvalidPluginFlagsError(esl_flag=True)
-            newFile.tes4.flags1.esl_flag = True
-        elif with_overlay_flag:
-            if not bush.game.has_overlay_plugins:
-                raise InvalidPluginFlagsError(overlay_flag=True)
-            newFile.tes4.flags1.overlay_flag = True
+        flags_dict = bush.game.scale_flags.check_flag_assignments(
+            flags_dict or {})
+        for pl_flag, flag_val in flags_dict.items():
+            pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val)
         newFile.safeSave()
         if dir_path == self.store_dir:
             last_selected = load_order.get_ordered(selected)[
