@@ -241,16 +241,8 @@ class XMLParsingError(Exception):
 class InvalidPluginFlagsError(Exception):
     """Indicates that an attempt was made to create a plugin with invalid flags
     for the current game."""
-    def __init__(self, esl_flag=False, overlay_flag=False):
-        if esl_flag and overlay_flag:
-            message = 'both ESL and Overlay flags set.'
-        elif esl_flag:
-            message = 'an ESL flag, but the game does not support ESLs.'
-        elif overlay_flag:
-            message = 'an Overlay flag, but the game does not support ' \
-                      'Overlay plugins.'
-        else: raise ValueError("esl_flag and overlay_flag can't be both False")
-        super().__init__(f'Attempted to create a plugin with {message}')
+    def __init__(self, flags):
+        super().__init__(f'Attempted setting conflicting {flags=} to true')
 
 class StateError(BoltError):
     """Error: Object is corrupted."""
