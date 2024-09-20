@@ -440,7 +440,7 @@ class OblivionSaveHeader(SaveFileHeader):
 
 class _AEslSaveHeader(SaveFileHeader):
     """Base class for save headers that may have ESLs."""
-    __slots__ = ('has_esl_masters', 'masters_regular', 'masters_esl')
+    __slots__ = ('masters_regular', 'masters_esl')
 
     def _esl_block(self) -> bool:
         """Return True if this save file has an ESL block."""
@@ -468,12 +468,9 @@ class _AEslSaveHeader(SaveFileHeader):
         # SSE / FO4 save format with esl block
         if self._esl_block():
             num_esl_masters = unpack_short(ins)
-            # Remember if we had ESL masters for the inaccuracy warning
-            self.has_esl_masters = num_esl_masters > 0
             self.masters_esl = [
                 *map(unpack_str16, repeat(ins, num_esl_masters))]
         else:
-            self.has_esl_masters = False
             self.masters_esl = []
         # Check for master's table size (-4 for the stored size at the start of
         # the master table)

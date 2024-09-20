@@ -1485,6 +1485,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
 
         :return: True if the master list retrieved by get_master_list will be
             accurate."""
+        raise NotImplementedError
 
     def dump_to_log(self, log, save_masters_):
         # We need the entire cosave to dump

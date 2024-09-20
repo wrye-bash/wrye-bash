@@ -1409,12 +1409,13 @@ class SaveInfo(FileInfo):
         list. For esl games this order might not reflect the actual order the
         masters are mapped to form ids, hence we try to return the correct
         order if a suitable to this end cosave is present."""
-        if bush.game.has_esl:
+        try:
             xse_cosave = self.get_xse_cosave()
-            if xse_cosave is not None: # the cached cosave should be valid
-                # Make sure the cosave's masters are actually useful
-                if xse_cosave.has_accurate_master_list():
-                    return [*map(FName, xse_cosave.get_master_list())]
+            # Make sure the cosave's masters are actually useful
+            if xse_cosave.has_accurate_master_list():
+                return [*map(FName, xse_cosave.get_master_list())]
+        except (AttributeError, NotImplementedError):
+            pass
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
         return [*map(FName, self.header.masters)]
@@ -1426,10 +1427,12 @@ class SaveInfo(FileInfo):
         super(SaveInfo, self)._reset_masters()
         # If this save has ESL masters, and no cosave or a cosave from an
         # older version, then the masters are unreliable and we need to warn
-        if bush.game.has_esl and self.header.has_esl_masters:
-            xse_cosave = self.get_xse_cosave()
-            self.has_inaccurate_masters = xse_cosave is None or \
-                not xse_cosave.has_accurate_master_list()
+        try:
+            self.has_inaccurate_masters = self.header.masters_esl and (
+                (xse_cosave := self.get_xse_cosave()) is None or
+                not xse_cosave.has_accurate_master_list())
+        except (AttributeError, NotImplementedError):
+            self.has_inaccurate_masters = False
 
     def delete_paths(self, *, __abs=attrgetter_cache['abs_path']):
         # now add backups and cosaves backups
