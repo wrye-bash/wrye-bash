@@ -26,12 +26,13 @@ import os
 from .. import bush
 from ..bolt import sig_to_str
 from ..exception import ModError
+from ..game import MasterFlag
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 __exit = lambda x: True # trick to exit early on non-verbose mode
 
 def _pbash_mergeable_no_load(modInfo, minfos, reasons):
-    _exit = __exit if reasons is None else reasons.append  # append returns None
-    if modInfo.has_esm_flag() and _exit(_('This plugin has the ESM flag.')):
+    _exit = __exit if reasons is None else reasons.append # append returns None
+    if MasterFlag.ESM.has_flagged(modInfo) and _exit(_('This plugin has the ESM flag.')):
         return False
     #--Bashed Patch
     if modInfo.isBP() and _exit(_('This plugin is a Bashed Patch.')):
