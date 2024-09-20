@@ -277,8 +277,7 @@ class AMreHeader(MelRecord):
         # Load each subrecord
         ins_at_end = ins.atEnd
         masters_loaded = False
-        in_overlay_plugin = (bush.game.has_overlay_plugins and
-                             self.flags1.overlay_flag)
+        in_overlay_plugin = getattr(self.flags1, 'overlay_flag', False)
         while not ins_at_end(endPos, self._rec_sig):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
                                                  file_offset=file_offset)

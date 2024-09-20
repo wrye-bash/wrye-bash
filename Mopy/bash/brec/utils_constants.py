@@ -87,33 +87,10 @@ class FormId:
             form_id_type = FormId._form_id_classes[(augmented_masters,
                                                     in_overlay_plugin)]
         except KeyError:
-            if in_overlay_plugin:
-                overlay_threshold = len(augmented_masters) - 1
-                class _FormID(FormId):
-                    @fast_cached_property
-                    def long_fid(self, *, __masters=augmented_masters):
-                        try:
-                            if self.mod_dex >= overlay_threshold:
-                                # Overlay plugins can't have new records (or
-                                # HITMEs), those get injected into the first
-                                # master instead
-                                return __masters[0], self.short_fid & 0xFFFFFF
-                            return __masters[self.mod_dex], \
-                                   self.short_fid & 0xFFFFFF
-                        except IndexError:
-                            # Clamp HITMEs to the plugin's own address space
-                            return __masters[-1], self.short_fid & 0xFFFFFF
-            else:
-                class _FormID(FormId):
-                    @fast_cached_property
-                    def long_fid(self, *, __masters=augmented_masters):
-                        try:
-                            return __masters[self.mod_dex], \
-                                   self.short_fid & 0xFFFFFF
-                        except IndexError:
-                            # Clamp HITMEs to the plugin's own address space
-                            return __masters[-1], self.short_fid & 0xFFFFFF
-            form_id_type = FormId._form_id_classes[augmented_masters] = _FormID
+            _FormID = bush.game.get_fid_class(augmented_masters,
+                                              in_overlay_plugin)
+            form_id_type = FormId._form_id_classes[
+                (augmented_masters, in_overlay_plugin)] = _FormID
         return form_id_type
 
     @fast_cached_property
