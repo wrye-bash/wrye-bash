@@ -30,6 +30,7 @@ from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
 from ..exception import CancelError
+from ..game import MergeabilityCheck
 from ..mod_files import ModHeaderReader
 from ..wbtemp import TempFile
 
@@ -216,7 +217,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     overlays_with_new_recs = set()
     overlays_with_no_masters = set()
     conflicting_esl_overlay_flags = set()
-    if bush.game.check_esl:
+    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
         for m, modinf in modInfos.items():
             if m_is_esl := modinf.is_esl():
                 if not ModHeaderReader.formids_in_esl_range(modinf):

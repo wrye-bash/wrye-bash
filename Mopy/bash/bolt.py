@@ -1465,15 +1465,14 @@ class Flags:
                     current_index += 1
                     continue
                 # Error checks
-                if isinstance(override, int):
-                    if override < 0:
-                        raise ValueError(
-                            f'{cls.__name__} flag field index must be a '
-                            f'positive integer or None, got {override}')
-                    current_index = override
-                else:
+                if not isinstance(override, int):
                     raise TypeError(f'{cls.__name__} flag field index must '
                                     f'be an integer or None, got {override!r}')
+                if override < 0:
+                    raise ValueError(
+                        f'{cls.__name__} flag field index must be a '
+                        f'positive integer or None, got {override}')
+                current_index = override
             names_dict[attr] = current_index
             current_index += 1
         cls._names = names_dict
@@ -1515,11 +1514,11 @@ class Flags:
         return self._field
 
     #--As list
-    def __getitem__(self, index):
+    def __getitem__(self, index): # internal use only - remove!
         """Get value by index. E.g., flags[3]"""
         return bool((self._field >> index) & 1)
 
-    def __setitem__(self,index,value):
+    def __setitem__(self,index,value): # internal use only - remove!
         """Set value by index. E.g., flags[3] = True"""
         value = ((value or 0) and 1) << index
         mask = 1 << index
@@ -1581,9 +1580,8 @@ class Flags:
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [flname for flname in self.__class__._names if
-                     getattr(self, flname)]
-        return tuple(trueNames)
+        return tuple(flname for flname in self.__class__._names if
+                     getattr(self, flname))
 
     def __repr__(self):
         """Shows all set flags."""

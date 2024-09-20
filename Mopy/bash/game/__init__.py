@@ -66,7 +66,7 @@ class ObjectIndexRange(Enum):
     # for their own purposes
     EXPANDED_ALWAYS = 2
 
-# Abstract class - to be overriden --------------------------------------------
+# Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
     # The name of the game that will be shown to the user. That is its *only*
@@ -180,7 +180,6 @@ class GameInfo(object):
     # What mergeability checks to perform for this game. See MergeabilityCheck
     # above for more information
     mergeability_checks = {MergeabilityCheck.MERGE}
-    check_esl = False # FIXME TEMP DROP
     # True if this game supports overlay plugins (i.e. its TES4 record's header
     # flags feature an overlay_flag); these are plugins that don't take up a
     # load order slot but can only contain overrides (any non-override records

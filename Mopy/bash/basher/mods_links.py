@@ -120,7 +120,7 @@ class _Mods_ActivateNonMergeable(AppendableLink, _Mods_ActivateAll):
     _activate_mergeable = False
 
     def _append(self, window):
-        return bush.game.Esp.canBash and not bush.game.check_esl
+        return bush.game.Esp.canBash and 'NoMerge' in bush.game.allTags
 
 class _Mods_DeactivateAll(_AMods_ActivePlugins):
     _text = _('Deactivate All')
