@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim VR."""
-from .. import MergeabilityCheck, ObjectIndexRange
+from .. import ObjectIndexRange
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
 from ... import bass
@@ -45,7 +45,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     loot_game_name = 'Skyrim VR'
 
     espm_extensions = ASkyrimSEGameInfo.espm_extensions - {'.esl'}
-    mergeability_checks = {MergeabilityCheck.MERGE}
 
     class Se(ASkyrimSEGameInfo.Se):
         se_abbrev = u'SKSEVR'
@@ -92,7 +91,7 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-    def post_init(self):
+    def _init_plugin_types(self, pflags=None):
         from ... import env
         cls = self.__class__
         esl_plugin_path = env.to_os_path(bass.dirs['mods'].join(
@@ -100,14 +99,11 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
         if esl_plugin_path and esl_plugin_path.is_file():
             # ESL-support plugin installed, enable ESL support in WB
             cls.espm_extensions |= {'.esl'}
-            cls.mergeability_checks = {MergeabilityCheck.ESL_CHECK}
             cls.Esp.master_limit = 253
             cls.Esp.object_index_range = ObjectIndexRange.RESERVED
             cls.Esp.object_index_range_expansion_ver = 0.0
             cls.Esp.validHeaderVersions = (0.94, 1.70, 1.71)
-            self.has_esl = True
-            self.max_esls = 4096
-            self.max_espms = 254
+        super()._init_plugin_types(pflags)
 
 class SteamSkyrimVRGameInfo(SteamMixin, _ASkyrimVRGameInfo):
     """GameInfo override for the Steam version of Skyrim VR."""

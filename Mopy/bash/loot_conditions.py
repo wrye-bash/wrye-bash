@@ -31,14 +31,12 @@ __author__ = 'Infernio'
 import operator
 import os
 import re
+from functools import partial
 
 from . import bass
 from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
 from .exception import EvalError, FileError
-##: below is too tight coupling with Bash internals - pass those as
-# parameters along with modInfos currently imported locally
-from .load_order import cached_active_tuple, cached_is_active
 
 # Internal helpers
 def _process_path(file_path: str) -> Path:
@@ -248,7 +246,7 @@ class ConditionOr(_ACondition):
         return f'({self.first_cond!r} or {self.second_cond!r})'
 
 # Functions
-def _fn_active(path_or_regex: str) -> bool:
+def _fn_active(path_or_regex: str, _load_order_module) -> bool:
     """Takes either a file path or a regex. Returns True iff at least one
     active plugin matches the specified path or regex.
 
@@ -257,9 +255,10 @@ def _fn_active(path_or_regex: str) -> bool:
         # Regex means we have to look at each active plugin - plugins can
         # obviously only be in Data, no need to process the path here
         matches_regex = re.compile(path_or_regex).match
-        return any(map(matches_regex, cached_active_tuple()))
+        return any(
+            map(matches_regex, _load_order_module.cached_active_tuple()))
     else:
-        return cached_is_active(FName(path_or_regex))
+        return _load_order_module.cached_is_active(FName(path_or_regex))
 
 def _fn_checksum(file_path: str, expected_crc: int) -> bool:
     """Takes a file path. Returns True if the file that the path resolves to
@@ -293,15 +292,14 @@ def _fn_file(path_or_regex: str) -> bool:
     else:
         return _process_path(path_or_regex).exists()
 
-def _fn_is_master(file_name: str) -> bool:
+def _fn_is_master(fname: str, _bosh, _game_handle) -> bool:
     """Takes a file name. Returns True iff a plugin with the specified name
     exists and is treated as a master by the currently managed game.
 
-    :param file_name: The file path to check."""
-    from .bosh import modInfos
-
+    :param fname: The file name to check."""
     # Need to check if it's on disk first, otherwise modInfos[x] errors
-    return file_name in modInfos and modInfos[file_name].in_master_block()
+    return fname in _bosh.modInfos and _game_handle.master_flag.cached_type(
+        _bosh.modInfos[fname])
 
 def _fn_many(path_regex: str) -> bool:
     """Takes a regex. Returns True iff more than 1 file matching the specified
@@ -321,7 +319,7 @@ def _fn_many(path_regex: str) -> bool:
                 return True
     return False
 
-def _fn_many_active(path_regex: str) -> bool:
+def _fn_many_active(path_regex: str, _load_order_module) -> bool:
     """Takes a regex. Returns True iff more than 1 active plugin matches the
     specified regex.
 
@@ -329,7 +327,7 @@ def _fn_many_active(path_regex: str) -> bool:
     matches_regex = re.compile(path_regex).match
     # Check if we have more than one matching active plugin
     matching_count = 0
-    for p in cached_active_tuple():
+    for p in _load_order_module.cached_active_tuple():
         if matches_regex(p):
             matching_count += 1
             if matching_count > 1:
@@ -382,8 +380,8 @@ def _fn_readable(file_path):
     except OSError:
         return False
 
-def _fn_version(file_path: str, expected_ver: str,
-        comparison: Comparison) -> bool:
+def _fn_version(file_path: str, expected_ver: str, comparison: Comparison,
+                _bosh) -> bool:
     """Behaves like product_version, but extends its behavior to also allow
     plugin version checks. If the plugin's description contains a
     'Version: ...' section, then the version specified by that section is
@@ -398,11 +396,10 @@ def _fn_version(file_path: str, expected_ver: str,
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    from .bosh import modInfos
-    if modInfos.rightFileType(file_path.s):
+    if _bosh.modInfos.rightFileType(file_path.s):
         # Read version from the description
         actual_ver = LooseVersion(
-            modInfos.getVersion(file_path.stail) or '0')
+            _bosh.modInfos.getVersion(file_path.stail) or '0')
     elif file_path.cext in ('.exe', '.dll'):
         # Read version from executable fields
         actual_ver = LooseVersion(_read_binary_ver(file_path.s))
@@ -413,13 +410,21 @@ def _fn_version(file_path: str, expected_ver: str,
 
 # Maps the function names used in conditions to the functions implementing them
 _function_mapping = {
-    'active':          _fn_active,
     'checksum':        _fn_checksum,
     'file':            _fn_file,
-    'is_master':       _fn_is_master,
     'many':            _fn_many,
-    'many_active':     _fn_many_active,
     'product_version': _fn_product_version,
     'readable':        _fn_readable,
-    'version':         _fn_version,
 }
+
+def init_loot_cond_functions(load_order_module, bosh, game_handle):
+    """Pass handles to liblo, bosh and the game to some of the condition
+    functions - WIP!"""
+    _function_mapping.update({
+        'active': partial(_fn_active, _load_order_module=load_order_module),
+        'is_master': partial(_fn_is_master, _bosh=bosh,
+                             _game_handle=game_handle),
+        'many_active': partial(_fn_many_active,
+                               _load_order_module=load_order_module),
+        'version': partial(_fn_version, _bosh=bosh),
+    })

@@ -22,12 +22,30 @@
 # =============================================================================
 from os.path import join as _j
 
-from .. import GameInfo, MergeabilityCheck, ObjectIndexRange
+from .. import GameInfo, ObjectIndexRange, _SFPluginFlag
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
 from ..._games_lo import AsteriskGame
 from ...bolt import FName, fast_cached_property
+from ...plugin_types import AMasterFlag
+
+class _SFMasterFlag(AMasterFlag):
+    # order matters for the ui keys
+    BLUEPRINT = ('blueprint_flag', '_is_blueprint', 'b')
+    ESM = ('esm_flag', '_is_master', 'm')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.name == 'BLUEPRINT':
+            self.help_flip = _('Flip the BLUEPRINT flag on the selected '
+                               'plugins.')
+
+    @classmethod
+    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first and blueprint masters last."""
+        is_master = cls.ESM.cached_type(mod_inf)
+        return is_master and cls.BLUEPRINT.cached_type(mod_inf), not is_master
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -52,9 +70,6 @@ class _AStarfieldGameInfo(PatchGame):
 
     espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    mergeability_checks = {MergeabilityCheck.ESL_CHECK,
-                           MergeabilityCheck.OVERLAY_CHECK}
-    has_overlay_plugins = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
@@ -62,6 +77,11 @@ class _AStarfieldGameInfo(PatchGame):
 
     @staticmethod
     def get_fid_class(augmented_masters, in_overlay_plugin):
+        # Overlay plugins (whose TES4 record header flags feature an
+        # overlay_flag) can only contain overrides (any non-override records
+        # in them will become injected into either the first plugin in the
+        # master list or the first plugin in the whole LO - probably the
+        # former) TODO(SF) check which of those two is true
         if not in_overlay_plugin:
             return super(_AStarfieldGameInfo, _AStarfieldGameInfo
                          ).get_fid_class(augmented_masters, in_overlay_plugin)
@@ -328,6 +348,10 @@ class _AStarfieldGameInfo(PatchGame):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
         cls._import_records(__name__)
+
+    def _init_plugin_types(self, pflags=None):
+        self.master_flags = _SFMasterFlag
+        super()._init_plugin_types(_SFPluginFlag)
 
 class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
     """GameInfo override for the Steam version of Starfield."""

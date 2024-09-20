@@ -390,38 +390,6 @@ _ModDataDict = defaultdict[bytes, list[tuple[RecHeader, str]]]
 class ModHeaderReader(object):
     """Allows very fast reading of a plugin's headers, skipping reading and
     decoding of anything but the headers."""
-    @staticmethod
-    def _scan_fids(mod_info, fid_cond):
-        with ModReader.from_info(mod_info) as ins:
-            try:
-                while not ins.atEnd():
-                    next_header = unpack_header(ins)
-                    # Skip GRUPs themselves, only process their records
-                    if next_header.recType != b'GRUP':
-                        if fid_cond(next_header.fid):
-                            return True
-                        next_header.skip_blob(ins)
-            except (OSError, struct_error) as e:
-                raise ModError(ins.inName, f"Error scanning {mod_info}, file "
-                    f"read pos: {ins.tell():d}\nCaused by: '{e!r}'")
-        return False
-
-    @staticmethod
-    def formids_in_esl_range(mod_info):
-        """Checks if all FormIDs in the specified mod are in the ESL range."""
-        num_masters = len(mod_info.masterNames)
-        return not ModHeaderReader._scan_fids(mod_info,
-            lambda header_fid: header_fid.mod_dex >= num_masters and
-                               header_fid.object_dex > 0xFFF)
-
-    @staticmethod
-    def has_new_records(mod_info):
-        """Checks if all the specified mod has any new records."""
-        num_masters = len(mod_info.masterNames)
-        # Check for NULL to skip the main file header (i.e. TES3/TES4)
-        return ModHeaderReader._scan_fids(mod_info,
-            lambda header_fid: not header_fid.is_null() and
-                               header_fid.mod_dex >= num_masters)
 
     @staticmethod
     def extract_mod_data(mod_info, progress) -> _ModDataDict:

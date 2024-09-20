@@ -28,31 +28,18 @@ import importlib
 import re
 import sys
 from enum import Enum
-from itertools import chain
+from itertools import chain, product
 from os.path import join as _j
 
-from .. import bass, bolt
+from .. import bass, bolt, initialization
+from ..plugin_types import MergeabilityCheck, PluginFlag, AMasterFlag, \
+    isPBashMergeable, is_vanilla
 from ..bolt import FNDict, fast_cached_property
+from ..exception import InvalidPluginFlagsError, ModError
 
 # Constants and Helpers -------------------------------------------------------
 # Files shared by versions of games that are published on the Windows Store
 WS_COMMON_FILES = {'appxmanifest.xml'}
-
-# The int values get stored in the settings files (mergeability cache), so they
-# should always remain the same just to be safe
-class MergeabilityCheck(Enum):
-    """The various mergeability checks that a game can have. See the comment
-    above each of them for more information."""
-    # If set for the game, the Merge Patches patcher will be enabled, the
-    # NoMerge tag will be available and WB will check plugins for their BP
-    # mergeability.
-    MERGE = 0
-    # If set for the game, the Add ESL Flag command will be available and WB
-    # will check plugins for their ESL capability.
-    ESL_CHECK = 1
-    # If set for the game, the Add Overlay Flag command will be available and
-    # WB will check plugins for their Overlay capability.
-    OVERLAY_CHECK = 2
 
 class ObjectIndexRange(Enum):
     """Valid values for object_index_range."""
@@ -65,6 +52,216 @@ class ObjectIndexRange(Enum):
     # Plugins with at least one master can use the range 0x001-0x7FF
     # for their own purposes
     EXPANDED_ALWAYS = 2
+
+class _MasterFlag(AMasterFlag):
+    """Enum with a single member for the Master flag."""
+    ESM = ('esm_flag', '_is_master', 'm')
+
+class _EslMixin(PluginFlag):
+    """Mixin for ESL and newer games. The flags in this emum can not be set
+    together but seems they are always compatible with AMasterFlag's."""
+    _ignore_ = ('ESL', 'unflaggable', 'error_msgs', '_error_msgs') # typing
+    unflaggable = {}
+    _error_msgs = {}
+    error_msgs = {}
+    ESL = PluginFlag
+
+    def __init__(self, flag_attr, mod_info_attr, ui_letter_key,
+                 max_plugins=None, merge_check=None, offset=None, **kwargs):
+        kwargs.setdefault('convert_exts', ('.esm', '.esp', '.esu'))
+        super().__init__(flag_attr, mod_info_attr, ui_letter_key, **kwargs)
+        self.max_plugins = max_plugins
+        self.merge_check: MergeabilityCheck | None = merge_check
+        self._offset = offset
+        if self.name == 'ESL':
+            self.help_flip = _('Flip the ESL flag on the selected plugins, '
+                'turning light plugins into regular ones and vice versa.')
+
+    # Additional API for ESL and newer games ----------------------------------
+    def can_convert(self, modInfo, _minfos, reasons, game_handle):
+        """Determine whether the specified mod can be converted to our type.
+        Optionally also return the reasons it can't be converted.
+
+        :param modInfo: The mod to check.
+        :param _minfos: Ignored. Needed to mirror the signature of
+                        isPBashMergeable.
+        :param reasons: A list of strings that should be filled with the
+                        reasons why we can't flag this mod, or None if only the
+                        return value of this method is of interest.
+        :param game_handle: used to exclude vanilla plugins.
+        :return: True if we can flag the specified mod."""
+        if is_vanilla(modInfo, reasons, game_handle) and reasons is None:
+            return False
+        it = iter(self.unflaggable[self.name])
+        ##: dragons - needs to generalize to arbitrary flag combinations and
+        ##: be unified with validate_type - so we need changes in checkMods
+        already_flagged, conflicting_flag = next(it)
+        for mem in type(self):
+            if mem.cached_type(modInfo):
+                if reasons is None: return False
+                reasons.append(already_flagged if mem is self else
+                               conflicting_flag)
+        chks = [*type(self).error_msgs[self].values()][:2] #len(it)=2 for OVERLAY
+        try:
+            return self.validate_type(modInfo, it, reasons, chks)
+        except ModError as e:
+            if reasons is not None: reasons.append(str(e))
+            return False
+
+    def validate_type(self, modinf, error_sets, reasons=None, merge_checks=None):
+        merge_checks = merge_checks or type(self).error_msgs[self].values()
+        for err_set, typecheck in zip(error_sets, merge_checks, strict=True):
+            if typecheck(modinf):
+                try:
+                    err_set.add(modinf.fn_key)
+                except AttributeError:
+                    if reasons is None: return False
+                    reasons.append(err_set)
+        return not reasons
+
+    @classmethod
+    def check_flag_assignments(cls, flag_dict: dict[PluginFlag, bool],
+                               raise_on_invalid=True):
+        """Check if the flags in flag_dict are compatible."""
+        set_true = [k for k, v in flag_dict.items() if k in cls and v]
+        if raise_on_invalid and len(set_true) > 1:
+            raise InvalidPluginFlagsError([k.name for k in set_true])
+        elif not set_true:
+            return flag_dict
+        return {**flag_dict, **{ # set all other flags to False
+            k: k in set_true for k in cls}}
+
+    # Overrides ---------------------------------------------------------------
+    def _force_ext_flags(self, mod_info, game_handle, mext):
+        return self is type(self).ESL and self in self.guess_flags(mext,
+                                                                   game_handle)
+
+    @classmethod
+    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
+        return {game_handle.master_flag: True, cls.ESL: True} if \
+            mod_fn_ext == '.esl' else super().guess_flags(
+            mod_fn_ext, game_handle)
+
+    @classmethod
+    def format_fid(cls, whole_lo_fid, fid_orig_plugin, mod_infos):
+        """Format a whole-LO FormID, which can exceed normal FormID limits
+        (e.g. 211000800 is perfectly fine in a load order with ESLs), so
+        that xEdit (and the game) can understand it."""
+        orig_minf = mod_infos[fid_orig_plugin]
+        proper_index = mod_infos.real_indices[fid_orig_plugin][0]
+        for pflag in cls: ##: optimize this (and some few other pflag-loops)
+            if pflag._offset and pflag.cached_type(orig_minf):
+                return (f'FE{proper_index - pflag._offset:03X}'
+                        f'{whole_lo_fid & 0x00000FFF:03X}')
+        return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
+
+    @classmethod
+    def checkboxes(cls):
+        # Check the ESL checkbox by default for ESL games, since one of the
+        # most common use cases for the create mod command on those games is
+        # to create BSA-loading dummies.
+        return {cls.ESL: {'cb_label': _('ESL Flag'), 'chkbx_tooltip': _(
+            'Whether or not the resulting plugin will be '
+            'light, i.e have the ESL flag.'), 'checked': True}}
+
+    @classmethod
+    def deactivate_msg(cls):
+        return _('The following plugins have been deactivated because only '
+            '%(max_regular_plugins)d regular plugins and %(max_esl_plugins)d '
+            'ESL-flagged plugins may be active at the same time.') % {
+                'max_regular_plugins': cls.max_plugins,
+                'max_esl_plugins': cls.ESL.max_plugins}
+
+_EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                        '%(status_num_espm)d, ESL: %(ESL)d)')
+# EslMixin.ESL.name must always be 'ESL'
+_EslMixin._error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
+    _("The following plugins have an ESL flag, but do not qualify. Either "
+      "remove the flag with 'Remove ESL Flag', or change the extension to "
+      "'.esp' if it is '.esl'.")): lambda minfo:
+                not minfo.formids_in_esl_range()}}
+_EslMixin.unflaggable = {'ESL': [[_('This plugin is already ESL-flagged.'),
+    _('This plugin has the Overlay flag.')],
+    _('This plugin contains records with FormIDs greater than 0xFFF.')]}
+
+class EslPluginFlag(_EslMixin, PluginFlag):
+    # 4096 is hard limit, game runs out of fds sooner, testing needed
+    ESL = ('esl_flag', '_is_esl', 'l', 4096,
+           MergeabilityCheck.ESL_CHECK, 253)
+
+class _SFPluginFlag(_EslMixin, PluginFlag):
+    # order matters for UI keys
+    ESL = ('esl_flag', '_is_esl', 'l', 4096,
+           MergeabilityCheck.ESL_CHECK, 253)
+    OVERLAY = ('overlay_flag', '_is_overlay', 'o', 0,
+               MergeabilityCheck.OVERLAY_CHECK)
+    # MEDIUM = ('mid_flag', '_is_mid', 256)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.name == 'OVERLAY':
+            msg = _('WARNING! For advanced modders only!') + '\n\n' + _(
+                'This command flips an internal bit in the mod, '
+                'converting a regular plugin to an overlay plugin and '
+                'vice versa. The Overlay flag is still new and our '
+                'understanding of how it works may be incomplete. Back '
+                'up your plugins and saves before using this!')
+            self.continue_message = (
+                msg, 'bash.flip_to_overlay.continue', _('Flip to Overlay'))
+            self.help_flip = _(
+                'Flip the Overlay flag on the selected plugins, turning '
+                'overlay plugins into regular ones and vice versa.')
+
+    def _force_ext_flags(self, mod_info, game_handle, mext):
+        # .esl extension does not matter for overlay flagged plugins
+        # check the flag attribute directly we may be called in
+        # ESL.set_mod_flag(None), before OVERLAY.set_mod_flag(None)
+        return not type(self).OVERLAY.has_flagged(mod_info) and \
+            super()._force_ext_flags(mod_info, game_handle, mext)
+
+    @classmethod
+    def checkboxes(cls):
+        ttip = _('Whether or not the resulting plugin will only be able to '
+                 'contain overrides, i.e. have the Overlay flag.')
+        return {**super().checkboxes(), cls.OVERLAY: {
+            'cb_label': _('Overlay Flag'), 'chkbx_tooltip': ttip}}
+
+    @classmethod
+    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
+        sup = super().guess_flags(mod_fn_ext, game_handle)
+        return sup if masters_supplied else {**sup, cls.OVERLAY: False}
+
+_SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                           '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '
+                           '%(OVERLAY)d)')
+_SFPluginFlag._error_msgs = {**_EslMixin._error_msgs,
+  _SFPluginFlag.OVERLAY.name: {
+    ('=== ' + _('Incorrect Overlay Flag: No Masters'), _(
+        "The following plugins have an Overlay flag, but do not qualify "
+        "because they do not have any masters. %(game_name)s will not treat "
+        "these as Overlay plugins. Either remove the flag with 'Remove "
+        "Overlay Flag', or use %(xedit_name)s to add at least one master to "
+        "the plugin.")): lambda minfo: not minfo.masterNames,
+    ('=== ' + _('Incorrect Overlay Flag: New Records'), _(
+        "The following plugins have an Overlay flag, but do not qualify "
+        "because they contain new records. These will be injected into the "
+        "first master of the plugins in question, which can seriously break "
+        "basic game data. Either remove the flag with 'Remove Overlay "
+        "Flag', or remove the new records.")): lambda minfo:
+                minfo.has_new_records(),
+    ('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'), _(
+        "The following plugins have an Overlay flag, but do not qualify "
+        "because they also have an ESL flag. These flags are mutually "
+        "exclusive. %(game_name)s will not treat these as overlay plugins. "
+        "Either remove the Overlay flag with 'Remove Overlay Flag', or "
+        "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo:
+                _SFPluginFlag.ESL.cached_type(minfo),
+}}
+_SFPluginFlag.unflaggable = {**_EslMixin.unflaggable,
+    _SFPluginFlag.OVERLAY.name: [[_('This plugin is already Overlay-flagged.'),
+                               _('This plugin has the ESL flag.')],
+                              _('This plugin does not have any masters.'),
+                              _('This plugin contains new records.')]}
 
 # Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
@@ -180,15 +377,12 @@ class GameInfo(object):
     # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
     # What mergeability checks to perform for this game. See MergeabilityCheck
-    # above for more information
-    mergeability_checks = {MergeabilityCheck.MERGE}
-    # True if this game supports overlay plugins (i.e. its TES4 record's header
-    # flags feature an overlay_flag); these are plugins that don't take up a
-    # load order slot but can only contain overrides (any non-override records
-    # in it will become injected into either the first plugin in the master
-    # list or the first plugin in the whole LO - probably the former)
-    # TODO(SF) check which of those two is true
-    has_overlay_plugins = False
+    # for more information
+    mergeability_checks = {MergeabilityCheck.MERGE: isPBashMergeable}
+    # enum type of supported plugin flags - by default empty
+    plugin_flags = PluginFlag
+    # enum type of supported master plugin flags
+    master_flags = _MasterFlag
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Whether OBMM exists for this game
@@ -201,13 +395,24 @@ class GameInfo(object):
     # Whether or not to check for 'Bash' and 'Installers' folders inside the
     # game folder and use those instead of the default paths when present
     check_legacy_paths = False
+    # define which types will have color key/mouse text - impose priority order
+    plugin_type_text = {
+        'l': _('Light plugin.'),
+        'o': _('Overlay plugin.'),
+        'b': _('Blueprint plugin.'),
+        'm': _('Master plugin.'),
+        'lm': _('Light Master plugin.'),
+        'om': _('Overlay Master plugin.'),
+        'bm': _('Blueprint Master plugin.'),
+    }
 
-    def __init__(self, gamePath):
+    def __init__(self, gamePath, *args):
         self.gamePath = gamePath # absolute bolt Path to the game directory
-        self.has_esl = '.esl' in self.espm_extensions
-        self.max_espms = 254 if self.has_esl else 255
-        # hard limit, game runs out of fds sooner, testing needed
-        self.max_esls = 4096 if self.has_esl else 0
+        #--Initialize Directories to perform backup/restore operations
+        #--They depend on setting the bash.ini and the game
+        if args:
+            self.game_ini_path = initialization.init_dirs(self, *args)
+        self._init_plugin_types()
 
     # Master esm form ids factory
     __master_fids = {}
@@ -706,9 +911,57 @@ class GameInfo(object):
             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
 
-    def post_init(self):
-        """Post-initialize this game module. This runs after all directories
-        for the game have been set."""
+    def _init_plugin_types(self, pflags=None):
+        """Initialize plugin types for this game. This runs after all game
+        directories have been set (see _ASkyrimVRGameInfo override) and
+        *after* all overrides."""
+        self.has_esl = '.esl' in self.espm_extensions
+        pflags = pflags or (self.has_esl and EslPluginFlag)
+        def _prod(*it):
+            return (lio for b in product(*it) if (lio := ''.join(b)))
+        if pflags:
+            self.plugin_flags = pflags
+            self.mergeability_checks = {mc: pflag.can_convert for pflag in
+                pflags if (mc := pflag.merge_check) is not None}
+            fmt = {'xedit_name': self.Xe.full_name,
+                   'game_name': self.display_name}
+            pflags.error_msgs = {
+                pflags[k]: {(h, msg % fmt): lam for (h, msg), lam in v.items()}
+                for k, v in pflags._error_msgs.items()}
+            scale_flags = [f for f in pflags if f._offset is not None]
+            # leave magic 255 below we might re-initialize!
+            PluginFlag.max_plugins = 255 - len(scale_flags)
+        pflags = self.plugin_flags
+        self.all_flags = self.master_flags, pflags
+        self.master_flag = self.master_flags.ESM
+        master_suffixes = ['', *_prod(*
+            (('', f.ui_letter_key) for f in self.master_flags))]
+        type_suffixes = ['', *_prod(*(('', f.ui_letter_key) for f in pflags))]
+        # plugin flags are mutually exclusive - generate mouse texts
+        forbidden_suffixes = [su for su in type_suffixes if len(su) > 1]
+        letter_flag = {f.ui_letter_key: f for f in pflags}
+        con = _('Conflicting flags: %(conf_flags)s')
+        flag_conflicts = {su: ', '.join(sorted(letter_flag[le].name
+            for le in su)) for su in forbidden_suffixes}
+        flag_conflicts = {su: con % {'conf_flags': flag_names} for
+                          su, flag_names in flag_conflicts.items()}
+        # add master suffixes to the forbidden suffixes
+        self.forbidden_suffixes = {forb: fcons for su, fcons in
+            flag_conflicts.items() for forb in _prod([su], master_suffixes)}
+        # add the rest of the mouse texts
+        combinations = {bm for b in product(
+            [s for s in type_suffixes if s not in forbidden_suffixes],
+            master_suffixes) if (bm := ''.join(b))}
+        self.mod_keys = [f'mods.text.es{suff}' for suff in
+                         self.plugin_type_text if suff in combinations]
+        if self.mergeability_checks:
+            self.mod_keys.append('mods.text.mergeable')
+            if MergeabilityCheck.MERGE in self.mergeability_checks:
+                self.mod_keys.append('mods.text.noMerge')
+        if self.Esp.canBash:
+            self.mod_keys.append('mods.text.bashedPatch')
+        if self.forbidden_suffixes:
+            self.mod_keys.append('mods.text.flags_conflict')
 
     @classmethod
     def supported_games(cls):
