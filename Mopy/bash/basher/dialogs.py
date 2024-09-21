@@ -326,8 +326,7 @@ class CreateNewPlugin(DialogWindow):
         # Hide the Overlay checkbox for non-Overlay games
         self._overlay_flag = CheckBox(self, _('Overlay Flag'),
             chkbx_tooltip=_('Whether or not the resulting plugin will only be '
-                            'able to contain overrides (but not take up a '
-                            'load order slot), i.e. have the Overlay flag.'))
+                            'able to contain overrides, i.e. have the Overlay flag.'))
         self._overlay_flag.visible = bush.game.has_overlay_plugins
         for flag_chkbx in (self._esm_flag, self._esl_flag, self._overlay_flag):
             flag_chkbx.on_checked.subscribe(self._handle_flag_checked)

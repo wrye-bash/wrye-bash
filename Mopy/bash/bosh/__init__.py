@@ -170,8 +170,7 @@ class MasterInfo:
 
     @_mod_info_delegate
     def is_overlay(self):
-        """Delegate to self.modInfo.is_overlay if exists - we should deprint,
-        overlay plugins won't be in master lists."""
+        """Delegate to self.modInfo.is_overlay if exists."""
         return False
 
     def has_master_size_mismatch(self, do_test): # used in set_item_format
@@ -3204,8 +3203,8 @@ class ModInfos(TableFileInfos):
     def _recalc_real_indices(self):
         """Recalculate the real indices cache, which is the index the game will
         assign to plugins. ESLs will land in the 0xFE spot, while inactive
-        plugins and overlay plugins don't get any - so we sort them last.
-        Return a set of mods whose real index changed."""
+        plugins don't get any - so we sort them last. Return a set of mods
+        whose real index changed."""
         regular_index = 0
         esl_index = 0
         esl_offset = bush.game.max_espms - 1
@@ -3213,13 +3212,12 @@ class ModInfos(TableFileInfos):
         old, self.real_indices = self.real_indices, defaultdict(
             lambda: (sys.maxsize, ''))
         for p in load_order.cached_active_tuple():
-            if (pi := self[p]).is_esl():
+            if self[p].is_esl():
                 # sort ESLs after all regular plugins
                 self.real_indices[p] = (
                     esl_offset + esl_index, f'FE {esl_index:03X}')
                 esl_index += 1
-            elif not pi.is_overlay():
-                # Skip overlay plugins as they get no active index at runtime
+            else:
                 self.real_indices[p] = (regular_index, f'{regular_index:02X}')
                 regular_index += 1
         return {k for k, v in old.items() ^ self.real_indices.items()}
