@@ -27,6 +27,7 @@ and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
 import re
 import sys
+from collections import Counter
 from enum import Enum
 from itertools import chain
 from os.path import join as _j
@@ -109,6 +110,27 @@ class PluginFlag(Enum):
     def check_flag_assignments(cls, flag_dict, raise_on_invalid=True):
         return flag_dict
 
+    def check_type(self, mod_info): # will deprecate the API of ModInfo
+        """Return the cached type of mod info - depends on the corresponding
+        flag state and possibly on the file extension."""
+        return getattr(mod_info, self._mod_info_attr)
+
+    @classmethod
+    def plugin_counts(cls, mod_infos, active_mods):
+        counts = Counter(dict.fromkeys((mem.name for mem in cls), 0))
+        regular_count = 0
+        for m in active_mods:
+            for member in cls:
+                if member.check_type(m):
+                    counts[member.name] += 1
+                    break
+            else:
+                regular_count += 1
+        return cls.count_str % {**counts, 'status_num': len(active_mods),
+          'total_status_num': len(mod_infos), 'status_num_espm': regular_count}
+
+PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
+
 class MasterFlag(PluginFlag):
     ESM = ('esm_flag', '_has_esm_flag')
 
@@ -152,6 +174,9 @@ class EslMixin(PluginFlag):
         return {**flag_dict, **{ # set all other flags to False
             k: k in set_true for k in cls}}
 
+EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                       '%(status_num_espm)d, ESL: %(ESL)d)')
+
 class EslPluginFlag(EslMixin, PluginFlag):
     ESL = ('esl_flag', '_is_esl')
 
@@ -179,6 +204,10 @@ class SFPluginFlag(EslMixin, PluginFlag):
     def guess_flags(cls, mod_fn_ext, masters_supplied=()):
         sup = super().guess_flags(mod_fn_ext)
         return sup if masters_supplied else {**sup, cls.OVERLAY: False}
+
+SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                           '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '
+                           '%(OVERLAY)d)')
 
 # Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
