@@ -2102,35 +2102,8 @@ class ModPanel(BashTab):
         super(ModPanel, self).__init__(parent)
 
     def sb_count_str(self):
-        all_mods = load_order.cached_active_tuple()
-        esl_count = 0
-        overlay_count = 0
-        for m in all_mods:
-            if (mi := bosh.modInfos[m]).is_esl():
-                esl_count += 1
-            elif mi.is_overlay():
-                overlay_count += 1
-        regular_count = len(all_mods) - esl_count - overlay_count
-        sb_fmt = '' # Shut up, PyCharm
-        match bush.game.has_esl, bush.game.has_overlay_plugins:
-            case False, False: # No ESLs or overlays
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d')
-            case True, False:  # ESLs, but no overlays
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                           '%(status_num_espm)d, ESL: %(status_num_esl)d)')
-            case False, True:  # Overlays, but no ESLs
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                           '%(status_num_espm)d, Overlay: '
-                           '%(status_num_overlay)d)')
-            case True, True:   # ESLs and overlays
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                           '%(status_num_espm)d, ESL: %(status_num_esl)d, '
-                           'Overlay: %(status_num_overlay)d)')
-        return sb_fmt % {'status_num': len(all_mods),
-                         'total_status_num': len(bosh.modInfos),
-                         'status_num_espm': regular_count,
-                         'status_num_esl': esl_count,
-                         'status_num_overlay': overlay_count}
+        all_mods = [bosh.modInfos[m] for m in load_order.cached_active_tuple()]
+        return bush.game.scale_flags.plugin_counts(bosh.modInfos, all_mods)
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()
