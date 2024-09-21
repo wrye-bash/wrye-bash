@@ -548,8 +548,7 @@ class LoGame:
             mi = self.mod_infos[m]
             if mi.is_esl():
                 acti_filtered_esl.append(m)
-            elif not mi.is_overlay():
-                # Overlay plugins take up no LO slot, so skip them entirely
+            else:
                 acti_filtered_regular.append(m)
         return (set(acti_filtered_regular[self._game_handle.max_espms:]),
                 set(acti_filtered_esl[self._game_handle.max_esls:]))
