@@ -23,7 +23,7 @@
 import re
 from os.path import join as _j
 
-from .. import WS_COMMON_FILES, GameInfo, MergeabilityCheck, ObjectIndexRange
+from .. import WS_COMMON_FILES, GameInfo, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
@@ -61,7 +61,6 @@ class AFallout4GameInfo(PatchGame):
 
     espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    mergeability_checks = {MergeabilityCheck.ESL_CHECK}
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('meshes', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),

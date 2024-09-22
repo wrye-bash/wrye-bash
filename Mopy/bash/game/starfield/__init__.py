@@ -52,8 +52,6 @@ class _AStarfieldGameInfo(PatchGame):
 
     espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    mergeability_checks = {MergeabilityCheck.ESL_CHECK,
-                           MergeabilityCheck.OVERLAY_CHECK}
     has_overlay_plugins = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'actors', 'character', 'facecustomization'),
@@ -331,6 +329,8 @@ class _AStarfieldGameInfo(PatchGame):
 
     def post_init(self):
         self.scale_flags = SFPluginFlag
+        self.mergeability_checks = {MergeabilityCheck.ESL_CHECK,
+                                    MergeabilityCheck.OVERLAY_CHECK}
 
 class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
     """GameInfo override for the Steam version of Starfield."""
