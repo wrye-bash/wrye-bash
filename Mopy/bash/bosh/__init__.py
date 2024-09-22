@@ -2107,7 +2107,6 @@ class ModInfos(TableFileInfos):
         # Map each mergeability type to a set of plugins that can be handled
         # via that type
         self._mergeable_by_type = {m: set() for m in MergeabilityCheck}
-        self._mergeable_parser = bolt.gen_enum_parser(MergeabilityCheck)
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
@@ -2125,7 +2124,7 @@ class ModInfos(TableFileInfos):
         # removed/extra mods in plugins.txt - set in load_order.py,
         # used in RefreshData
         self.warn_missing_lo_act = set()
-        self.selectedExtra = []
+        self.selectedExtra = set()
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
@@ -2480,13 +2479,7 @@ class ModInfos(TableFileInfos):
                   set(canMerge) == merg_checks_ints):
                 # The cached size matches what we have on disk and we have data
                 # for all required mergeability checks, so use the cached info
-                for m, m_merg in canMerge.items():
-                    merg_set = self._mergeable_by_type[
-                        self._mergeable_parser[m]]
-                    if m_merg:
-                        merg_set.add(fn_mod)
-                    else:
-                        merg_set.discard(fn_mod)
+                self._update_mergeable(fn_mod, canMerge)
             else:
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
@@ -2546,17 +2539,23 @@ class ModInfos(TableFileInfos):
                             'Technically mergeable, but has NoMerge tag.'))
                 result[fileName] = all_reasons is not None and {
                     m: (check_results[m], r) for m, r in all_reasons.items()}
-                for m, m_mergeable in check_results.items():
-                    merg_set = self._mergeable_by_type[m]
-                    if m_mergeable:
-                        merg_set.add(fileName)
-                    else:
-                        merg_set.discard(fileName)
+                self._update_mergeable(fileName, check_results)
                 # Only store the enum values (i.e. the ints) in our settings
                 # files, we are moving away from pickling non-std classes
                 fileInfo.set_table_prop('mergeInfo', (fileInfo.fsize, {
                     k.value: v for k, v in check_results.items()}))
             return result, tagged_no_merge
+
+    def _update_mergeable(self, fileName,
+                          check_results: dict[MergeabilityCheck | int, bool]):
+        """Update internal _mergeable_by_type cache - should be replaced by
+        ModInfo properties."""
+        for m, m_mergeable in check_results.items():
+            merg_set = self._mergeable_by_type[MergeabilityCheck(m)]
+            if m_mergeable:
+                merg_set.add(fileName)
+            else:
+                merg_set.discard(fileName)
 
     def _refresh_bash_tags(self):
         """Reloads bash tags for all mods set to receive automatic bash

@@ -264,10 +264,10 @@ class ModFile(object):
             raise StateError('Insufficient data to write file.')
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
-        if self.tes4.num_masters > bush.game.Esp.master_limit:
+        mlimit = bush.game.Esp.master_limit
+        if self.tes4.num_masters > mlimit:
             raise ModError(self.fileInfo.fn_key,
-                           f'Attempting to write a file with too many '
-                           f'masters (>{bush.game.Esp.master_limit}).')
+              f'Attempting to write a file with too many masters (>{mlimit}).')
         outPath = outPath or self.fileInfo.abs_path
         with FormIdWriteContext(outPath, self.augmented_masters(),
                                 self.tes4.version) as out:

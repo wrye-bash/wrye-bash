@@ -27,6 +27,10 @@ from ..bolt import GPath
 from ..game import MergeabilityCheck
 from ..gui import DEFAULT_POSITION
 
+# some repetitive strings
+_mod_tab = _('Tabs: Mods') + '\n\n'
+_mod_save_tabs = _('Tabs: Mods, Saves') + '\n\n'
+
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
     'default.text': (_('Default Text'),
@@ -42,14 +46,12 @@ colorInfo = {
         _('This is the color used for text that is communicating some sort '
           'of warning or error.'),
     ),
-    'mods.text.esm': ('ESM',
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESMs on the Mods Tab, and in the '
-          'Masters info on both the Mods Tab and Saves Tab.'),
+    'mods.text.esm': ('ESM', _mod_save_tabs + _(
+        'This is the text color used for ESMs on the Mods Tab, and in the '
+        'Masters info on both the Mods Tab and Saves Tab.')
     ),
-    'mods.bkgd.ghosted': (_('Ghosted Plugin'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a ghosted plugin.'),
+    'mods.bkgd.ghosted': (_('Ghosted Plugin'), _mod_tab + _(
+        'This is the background color used for a ghosted plugin.')
     ),
     'ini.bkgd.invalid': (_('Invalid INI Tweak'),
         _('Tabs: INI Edits') + '\n\n' +
@@ -112,34 +114,30 @@ colorInfo = {
 # Only show color options when the game actually supports them
 # Do masters have working DATA subrecords? ------------------------------------
 if bush.game.Esp.check_master_sizes:
-    colorInfo['mods.bkgd.size_mismatch'] = (_('Size Mismatch'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for plugin masters that have a '
-          'stored size not matching the one of the plugin on disk, and for '
-          'plugins that have at least one such master.'),
+    colorInfo['mods.bkgd.size_mismatch'] = (_('Size Mismatch'), _mod_tab + _(
+        'This is the background color used for plugin masters that have a '
+        'stored size not matching the one of the plugin on disk, and for '
+        'plugins that have at least one such master.')
     )
 
 # Does the LO use timestamps? -------------------------------------------------
 ##: Is this condition OK? We can't really call load_order to check...
 if not bush.game.using_txt_file:
     colorInfo['mods.bkgd.doubleTime.exists'] = (_('Inactive Time Conflict'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a plugin with an inactive '
-          'time conflict. This means that two or more plugins have the same '
-          'timestamp, but only one (or none) of them is active.'),
+        _mod_tab + _('This is the background color used for a plugin with an '
+            'inactive time conflict. This means that two or more plugins have '
+            ' the same timestamp, but only one (or none) of them is active.')
     )
     colorInfo['mods.bkgd.doubleTime.load'] = (_('Active Time Conflict'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a plugin with an active '
-          'time conflict. This means that two or more plugins with the same '
-          'timestamp are active.'),
+        _mod_tab + _('This is the background color used for a plugin with an '
+            'active time conflict. This means that two or more plugins with '
+            'the same timestamp are active.')
     )
 
 # Can we create a BP? ---------------------------------------------------------
 if bush.game.Esp.canBash:
-    colorInfo['mods.text.bashedPatch'] = ('Bashed Patch',
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Bashed Patches.'),
+    colorInfo['mods.text.bashedPatch'] = ('Bashed Patch', _mod_tab + _(
+        'This is the text color used for Bashed Patches.')
     )
 
 # Are ESLs supported? ---------------------------------------------------------
@@ -169,9 +167,10 @@ if bush.game.has_overlay_plugins:
     )
 
 # What do we check w.r.t. mergeability? ---------------------------------------
-if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+__m_checks = bush.game.mergeability_checks
+if MergeabilityCheck.OVERLAY_CHECK in __m_checks:
+    if MergeabilityCheck.ESL_CHECK in __m_checks:
+        if MergeabilityCheck.MERGE in __m_checks:
             mc_title = _('Mergeable, ESL-Capable or Overlay-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch, ESL-flagged or '
@@ -181,7 +180,7 @@ if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
             mc_desc = _('This is the text color used for plugins that could '
                         'be ESL-flagged or Overlay-flagged.')
     else: # -> no ESLs
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+        if MergeabilityCheck.MERGE in __m_checks:
             mc_title = _('Mergeable or Overlay-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch or Overlay-flagged.')
@@ -190,8 +189,8 @@ if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
             mc_desc = _('This is the text color used for plugins that could '
                         'be Overlay-flagged.')
 else: # -> no overlays
-    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+    if MergeabilityCheck.ESL_CHECK in __m_checks:
+        if MergeabilityCheck.MERGE in __m_checks:
             mc_title = _('Mergeable or ESL-Capable')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch or ESL-flagged.')
@@ -200,24 +199,20 @@ else: # -> no overlays
             mc_desc = _('This is the text color used for plugins that could '
                         'be ESL-flagged.')
     else: # -> no ESLs
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+        if MergeabilityCheck.MERGE in __m_checks:
             mc_title = _('Mergeable')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch.')
         else:
             mc_title = mc_desc = None
 if mc_title is not None and mc_desc is not None:
-    colorInfo['mods.text.mergeable'] = (mc_title,
-        _('Tabs: Mods') + '\n\n' +
-        mc_desc,
-    )
+    colorInfo['mods.text.mergeable'] = mc_title, _mod_tab + mc_desc
 
 # Does NoMerge exist? ---------------------------------------------------------
-if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
-    colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for a mergeable plugin that is '
-          "tagged 'NoMerge'."),
+if MergeabilityCheck.MERGE in __m_checks: # no merge in alltags?
+    colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"), _mod_tab + _(
+        'This is the text color used for a mergeable plugin that is '
+        "tagged 'NoMerge'."),
     )
 
 #--Load config/defaults

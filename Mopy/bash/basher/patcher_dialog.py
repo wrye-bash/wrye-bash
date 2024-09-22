@@ -188,8 +188,9 @@ class PatchDialog(DialogWindow):
             # Convert masters to short fids
             master_dict = patchFile.used_masters_by_top()
             all_bp_masters = set()
+            mlimit = bush.game.Esp.master_limit
             for t_sig, t_masters in master_dict.items():
-                if len(t_masters) > bush.game.Esp.master_limit:
+                if len(t_masters) > mlimit:
                     showError(self, _(
                         'Congratulations on managing to get a single top '
                         'group to >%(max_num_masters)d masters (you got '
@@ -199,13 +200,13 @@ class PatchDialog(DialogWindow):
                         'would manage this. This error is fatal by the way, '
                         'Wrye Bash currently does not support splitting the '
                         'Bashed Patch within a top group.') % {
-                        'max_num_masters': bush.game.Esp.master_limit,
+                        'max_num_masters': mlimit,
                         'curr_num_masters': len(t_masters),
                         'top_group_sig': bolt.sig_to_str(t_sig)},
                         title=_('Achievement Unlocked: Modaholic!'))
                     return # Abort, we can't fix this right now
                 all_bp_masters |= t_masters
-            if len(all_bp_masters) <= bush.game.Esp.master_limit:
+            if len(all_bp_masters) <= mlimit:
                 # Everything is OK, just need to set masters and attributes
                 patchFile.set_attributes()
                 bp_files_to_save = [patchFile]
