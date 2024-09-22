@@ -106,7 +106,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
             cls.Esp.object_index_range_expansion_ver = 0.0
             cls.Esp.validHeaderVersions = (0.94, 1.70, 1.71)
             self.has_esl = True
-            self.max_esls = 4096
             self.max_espms = 254
         super().post_init()
 

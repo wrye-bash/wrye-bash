@@ -4001,18 +4001,8 @@ class BashFrame(WindowFrame):
                 }, bosh.modInfos.warn_missing_lo_act))
             bosh.modInfos.warn_missing_lo_act.clear()
         if bosh.modInfos.selectedExtra:
-            if bush.game.has_esl:
-                warn_msg = _('The following plugins have been deactivated '
-                             'because only %(max_regular_plugins)d regular '
-                             'plugins and %(max_esl_plugins)d ESL-flagged '
-                             'plugins may be active at the same time.')
-            else:
-                warn_msg = _('The following plugins have been deactivated '
-                             'because only %(max_regular_plugins)d plugins '
-                             'may be active at the same time.')
             lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                warn_msg % {'max_regular_plugins': bush.game.max_espms,
-                            'max_esl_plugins': bush.game.max_esls},
+                bush.game.scale_flags.deactivate_msg(bush.game.max_espms),
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can

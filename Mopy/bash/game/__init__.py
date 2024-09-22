@@ -129,6 +129,13 @@ class PluginFlag(Enum):
         return cls.count_str % {**counts, 'status_num': len(active_mods),
           'total_status_num': len(mod_infos), 'status_num_espm': regular_count}
 
+    @classmethod
+    def deactivate_msg(cls, max_regular_plugins):
+        return _('The following plugins have been deactivated '
+                 'because only %(max_regular_plugins)d plugins '
+                 'may be active at the same time.') % {
+            'max_regular_plugins': max_regular_plugins}
+
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 
 class MasterFlag(PluginFlag):
@@ -141,6 +148,10 @@ class MasterFlag(PluginFlag):
             'have the ESM flag.')}}
 
 class EslMixin(PluginFlag):
+
+    def __init__(self, flag_attr, mod_info_attr, max_plugins=None):
+        super().__init__(flag_attr, mod_info_attr)
+        self.max_plugins = max_plugins
 
     def set_mod_flag(self, mod_info, set_flag):
         if super().set_mod_flag(mod_info, set_flag):
@@ -174,14 +185,23 @@ class EslMixin(PluginFlag):
         return {**flag_dict, **{ # set all other flags to False
             k: k in set_true for k in cls}}
 
+    @classmethod
+    def deactivate_msg(cls, max_regular_plugins):
+        return _('The following plugins have been deactivated because only '
+            '%(max_regular_plugins)d regular plugins and %(max_esl_plugins)d '
+            'ESL-flagged plugins may be active at the same time.') % {
+                'max_regular_plugins': max_regular_plugins,
+                'max_esl_plugins': cls.ESL.max_plugins}
+
 EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                        '%(status_num_espm)d, ESL: %(ESL)d)')
 
 class EslPluginFlag(EslMixin, PluginFlag):
-    ESL = ('esl_flag', '_is_esl')
+    # 4096 is hard limit, game runs out of fds sooner, testing needed
+    ESL = ('esl_flag', '_is_esl', 4096)
 
 class SFPluginFlag(EslMixin, PluginFlag):
-    ESL = ('esl_flag', '_is_esl')
+    ESL = ('esl_flag', '_is_esl', 4096)
     OVERLAY = ('overlay_flag', '_is_overlay')
 
     def set_mod_flag(self, mod_info, set_flag):
@@ -347,8 +367,6 @@ class GameInfo(object):
         self.gamePath = gamePath # absolute bolt Path to the game directory
         self.has_esl = '.esl' in self.espm_extensions
         self.max_espms = 254 if self.has_esl else 255
-        # hard limit, game runs out of fds sooner, testing needed
-        self.max_esls = 4096 if self.has_esl else 0
 
     # Master esm form ids factory
     __master_fids = {}

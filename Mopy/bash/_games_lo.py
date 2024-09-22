@@ -37,6 +37,7 @@ import re
 import time
 from collections import defaultdict
 from functools import partial
+from itertools import chain
 
 from . import bass, bolt, env, exception
 from .bolt import AFile, FName, Path, deprint, dict_sort
@@ -522,8 +523,7 @@ class LoGame:
         fix_active.act_order_differs_from_load_order = \
             self._check_active_order(acti_filtered, lord)
         # check if we have more than 256 active mods
-        drop_espms, drop_esls = self.check_active_limit(acti_filtered)
-        disable = drop_espms | drop_esls
+        disable = self.check_active_limit(acti_filtered)
         # update acti in place - this must always be done, since acti may
         # contain files that are no longer on disk (i.e. not in acti_filtered)
         acti[:] = [x for x in acti_filtered if x not in disable]
@@ -541,17 +541,31 @@ class LoGame:
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
 
-    def check_active_limit(self, acti_filtered):
-        acti_filtered_regular = []
-        acti_filtered_esl = []
+    def check_active_limit(self, acti_filtered, *, as_type=set):
+        maxespms = self._game_handle.max_espms
+        key_espms = f'{maxespms:d} regular plugins'
+        pl_type_active = defaultdict(list)
+        limit_flags = [pf for pf in self._game_handle.scale_flags if
+                       pf.max_plugins]
+        filtered = {key_espms: []}
         for m in acti_filtered:
             mi = self.mod_infos[m]
-            if mi.is_esl():
-                acti_filtered_esl.append(m)
+            for pflag in limit_flags:
+                if pflag.check_type(mi):
+                    pl_type_active[pflag].append(m)
+                    break
             else:
-                acti_filtered_regular.append(m)
-        return (set(acti_filtered_regular[self._game_handle.max_espms:]),
-                set(acti_filtered_esl[self._game_handle.max_esls:]))
+                filtered[key_espms].append(m)
+        if dropped := filtered.pop(key_espms)[maxespms:]:
+            filtered[key_espms] = dropped
+        filtered.update(
+            (f'{pflag.max_plugins:d} {pflag.name} plugins', drop) for pflag, v
+            in pl_type_active.items() if (drop := v[pflag.max_plugins:]))
+        if as_type is set:
+            return set(chain(*filtered.values()))
+        if as_type is str:
+            return ' and '.join(k for k in filtered)
+        raise ValueError(f'Invalid {as_type=}')
 
     def pinned_plugins(self, mods: set[FName] | None = None, fixed_order=False,
                        filter_mods=False) -> list[FName]:

@@ -2731,16 +2731,10 @@ class ModInfos(TableFileInfos):
         # actives related lo_* methods
         if fileName.fn_ext == u'.esu': return []
         try:
-            espms_extra, esls_extra = load_order.check_active_limit(
-                [*self._active_wip , fileName])
-            if espms_extra or esls_extra:
-                msg = f'{fileName}: Trying to activate more than '
-                if espms_extra:
-                    msg += f'{bush.game.max_espms:d} regular plugins'
-                if esls_extra:
-                    if espms_extra:
-                        msg += ' and '
-                    msg += f'{bush.game.max_esls:d} light plugins'
+            msg = load_order.check_active_limit([*self._active_wip, fileName],
+                                                as_type=str)
+            if msg:
+                msg = f'{fileName}: Trying to activate more than {msg}'
                 raise PluginsFullError(msg)
             if _children:
                 if fileName in _children:
@@ -2853,8 +2847,7 @@ class ModInfos(TableFileInfos):
         wip_actives.update(load_order.filter_pinned(present_plugins))
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.get_ordered(wip_actives)
-        trim_regular, trim_esl = load_order.check_active_limit(ordered_wip)
-        trimmed_plugins = trim_regular | trim_esl
+        trimmed_plugins = load_order.check_active_limit(ordered_wip)
         # Trim off any excess plugins and commit
         self._active_wip = [p for p in ordered_wip if p not in trimmed_plugins]
         self.cached_lo_save_active()
