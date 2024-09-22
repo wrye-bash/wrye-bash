@@ -408,8 +408,8 @@ def _restore_lo(index_move):
                    __index_move=index_move, quiet=True)
 
 # _game_handle wrappers -------------------------------------------------------
-def check_active_limit(mods):
-    return _lo_handler.check_active_limit(mods)
+def check_active_limit(mods, as_type=set):
+    return _lo_handler.check_active_limit(mods, as_type=as_type)
 
 def swap(old_dir, new_dir):
     return _lo_handler.swap(old_dir, new_dir)
