@@ -28,6 +28,23 @@ from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
 from ..._games_lo import AsteriskGame, LoFile
 from ...bolt import FName, fast_cached_property
+from ...plugin_types import AMasterFlag
+
+class _SFMasterFlag(AMasterFlag):
+    # order matters for the ui keys
+    BLUEPRINT = ('blueprint_flag', '_is_blueprint', 'b')
+    ESM = ('esm_flag', '_is_master', 'm')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.name == 'BLUEPRINT': # todo translate - use template
+            self.help_flip = 'Flip the BLUEPRINT flag on the selected plugins'
+
+    @classmethod
+    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first and blueprint masters last."""
+        is_master = cls.ESM.cached_type(mod_inf)
+        return cls.BLUEPRINT.cached_type(mod_inf) and is_master, not is_master
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -332,6 +349,7 @@ class _AStarfieldGameInfo(PatchGame):
         cls._import_records(__name__)
 
     def _init_plugin_types(self, pflags=None):
+        self.master_flags = _SFMasterFlag
         super()._init_plugin_types(_SFPluginFlag)
 
 class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
