@@ -2402,14 +2402,8 @@ class ModInfos(TableFileInfos):
         merg_checks = bush.game.mergeability_checks
         # We store ints in the settings files, so use those for comparing
         merg_checks_ints = {c.value for c in merg_checks}
-        quick_checks = {
-            MergeabilityCheck.ESL_CHECK: ModInfo.is_esl,
-            MergeabilityCheck.OVERLAY_CHECK: ModInfo.is_overlay,
-        }
-        # No need to do quick checks that aren't actually required for this
-        # game
-        quick_checks = {k: v for k, v in quick_checks.items()
-                        if k in merg_checks}
+        quick_checks = {mc: pflag.check_type for pflag in bush.game.scale_flags
+                        if (mc := pflag.merge_check) is not None}
         # We need to scan dependent mods first to account for mergeability of
         # their masters
         for fn_mod, modInfo in dict_sort(self, reverse=True,

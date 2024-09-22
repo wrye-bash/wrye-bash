@@ -217,6 +217,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     overlays_with_new_recs = set()
     overlays_with_no_masters = set()
     conflicting_esl_overlay_flags = set()
+    # TODO(ut) this needs to use scale_flags -> if pfalg.check_type: pflag.warn
     if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
         for m, modinf in modInfos.items():
             if m_is_esl := modinf.is_esl():

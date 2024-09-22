@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim VR."""
-from .. import MergeabilityCheck, ObjectIndexRange
+from .. import ObjectIndexRange
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
 from ... import bass
@@ -45,7 +45,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     loot_game_name = 'Skyrim VR'
 
     espm_extensions = ASkyrimSEGameInfo.espm_extensions - {'.esl'}
-    mergeability_checks = {MergeabilityCheck.MERGE}
 
     class Se(ASkyrimSEGameInfo.Se):
         se_abbrev = u'SKSEVR'
@@ -100,7 +99,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
         if esl_plugin_path and esl_plugin_path.is_file():
             # ESL-support plugin installed, enable ESL support in WB
             cls.espm_extensions |= {'.esl'}
-            cls.mergeability_checks = {MergeabilityCheck.ESL_CHECK}
             cls.Esp.master_limit = 253
             cls.Esp.object_index_range = ObjectIndexRange.RESERVED
             cls.Esp.object_index_range_expansion_ver = 0.0

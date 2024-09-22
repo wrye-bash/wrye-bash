@@ -547,6 +547,7 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
         ModList.context_links.append_link(Mod_FlipEsm(MasterFlag.ESM))
+        # TODO(ut) this is flags not mergeability checks - make _AFlipFlagLink more dynamical
         if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
             ModList.context_links.append_link(Mod_FlipEsl(
                 bush.game.scale_flags.ESL))

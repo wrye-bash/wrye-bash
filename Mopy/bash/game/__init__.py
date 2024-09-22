@@ -149,9 +149,11 @@ class MasterFlag(PluginFlag):
 
 class EslMixin(PluginFlag):
 
-    def __init__(self, flag_attr, mod_info_attr, max_plugins=None):
+    def __init__(self, flag_attr, mod_info_attr, max_plugins=None,
+                 merge_check=None):
         super().__init__(flag_attr, mod_info_attr)
         self.max_plugins = max_plugins
+        self.merge_check = merge_check
 
     def set_mod_flag(self, mod_info, set_flag):
         if super().set_mod_flag(mod_info, set_flag):
@@ -198,11 +200,12 @@ EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
 
 class EslPluginFlag(EslMixin, PluginFlag):
     # 4096 is hard limit, game runs out of fds sooner, testing needed
-    ESL = ('esl_flag', '_is_esl', 4096)
+    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK)
 
 class SFPluginFlag(EslMixin, PluginFlag):
-    ESL = ('esl_flag', '_is_esl', 4096)
-    OVERLAY = ('overlay_flag', '_is_overlay')
+    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK)
+    OVERLAY = ('overlay_flag', '_is_overlay', 0,
+               MergeabilityCheck.OVERLAY_CHECK)
 
     def set_mod_flag(self, mod_info, set_flag):
         if super().set_mod_flag(mod_info, set_flag):
@@ -870,6 +873,7 @@ class GameInfo(object):
         for the game have been set."""
         if self.has_esl: # this might need the bass.dirs be initialized
             self.scale_flags = EslPluginFlag
+            self.mergeability_checks = {MergeabilityCheck.ESL_CHECK}
 
     @classmethod
     def supported_games(cls):
