@@ -43,7 +43,7 @@ from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
-from ..game import MergeabilityCheck, PluginFlag
+from ..game import MergeabilityCheck, PluginFlag, MasterFlag
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
 from ..localize import format_date
@@ -71,11 +71,10 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_SpellRecords_Import', u'Mod_Face_Import', u'Mod_Fids_Replace',
            u'Mod_SkipDirtyCheck', u'Mod_ScanDirty', u'Mod_RemoveWorldOrphans',
            u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
-           u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
-           'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
-           'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords',
-           'Mod_DumpRecordTypeNames', 'Mod_FlipOverlay', 'Mod_Snapshot',
-           'Mod_RevertToSnapshot']
+           'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
+           'Mod_Move', 'Mod_RecalcRecordCounts', 'Mod_Duplicate',
+           'Mod_DumpSubrecords', 'Mod_DumpRecordTypeNames', 'Mod_Snapshot',
+           'Mod_RevertToSnapshot', 'AFlipFlagLink']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -1517,14 +1516,15 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 self._showOk(msg, fileInfo.fn_key)
 
 #------------------------------------------------------------------------------
-class _AFlipFlagLink(EnabledLink):
+class AFlipFlagLink(EnabledLink):
     """Base class for links that enable or disable a flag in the plugin
     header."""
-    _allowed_ext = ('.esm', '.esp', '.esu')
 
-    def __init__(self, plugin_flag=None):
+    def __init__(self, plugin_flag: PluginFlag | None = None):
         super().__init__()
         self._plugin_flag: PluginFlag = plugin_flag
+        self._allowed_ext, self._continue_msg, self._help = \
+            plugin_flag.link_args()
 
     def _enable(self):
         """Allow if all selected mods have valid extensions, have the same
@@ -1535,6 +1535,7 @@ class _AFlipFlagLink(EnabledLink):
             self._plugin_flag.has_flagged(minfo) == first_flagged and
             (first_flagged or self._plugin_flag.can_flag(m, bosh.modInfos))
                    for m, minfo in self.iselected_pairs())
+
     @property
     def link_text(self):
         return (_('Remove %(pflag)s Flag') if self._already_flagged else _(
@@ -1543,7 +1544,11 @@ class _AFlipFlagLink(EnabledLink):
     @balt.conversation
     def Execute(self):
         with BusyCursor():
-            self._exec_flip()
+            if self._continue_msg and not self._askContinue(*self._continue_msg):
+                return
+            set_flags = {self._plugin_flag: self._flag_value}
+            for minfo in self._collect_mods():
+                minfo.set_plugin_flags(set_flags)
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
             ldiff = bosh.modInfos.refreshLoadOrder()
@@ -1561,49 +1566,23 @@ class _AFlipFlagLink(EnabledLink):
     def _already_flagged(self):
         return self._plugin_flag.has_flagged(self._first_selected())
 
-    def _exec_flip(self):
-        set_flags = {self._plugin_flag: self._flag_value}
-        for minfo in self._collect_mods():
-            minfo.set_plugin_flags(set_flags)
-
     def _collect_mods(self):
         return self.iselected_infos()
 
-class Mod_FlipEsm(_AFlipFlagLink):
-    """Add or remove the ESM flag. Extension must be .esp or .esu."""
-    _help = _('Flip the ESM flag on the selected plugins, turning masters '
-              'into regular plugins and vice versa.')
-    _allowed_ext = ('.esp', '.esu')
-
 #------------------------------------------------------------------------------
-class Mod_FlipEsl(_AFlipFlagLink):
-    """Add or remove the ESL flag. Extension must be .esm, .esp or .esu."""
-    _help = _('Flip the ESL flag on the selected plugins, turning light '
-              'plugins into regular ones and vice versa.')
-
-#------------------------------------------------------------------------------
-class Mod_FlipOverlay(_AFlipFlagLink):
-    """Add or remove the Overlay flag. Extension must be .esm, .esp or .esu."""
-    _help = _('Flip the Overlay flag on the selected plugins, turning overlay '
-              'plugins into regular ones and vice versa.')
-
-    def _exec_flip(self):
-        message = (_('WARNING! For advanced modders only!') + '\n\n' +
-            _('This command flips an internal bit in the mod, converting a '
-              'regular plugin to an overlay plugin and vice versa. The '
-              'Overlay flag is still new and our understanding of how it '
-              'works may be incomplete. Back up your plugins and saves '
-              'before using this!'))
-        if not self._askContinue(message, 'bash.flip_to_overlay.continue',
-                _('Flip to Overlay')): return
-        super()._exec_flip()
-
-#------------------------------------------------------------------------------
-class Mod_FlipMasters(OneItemLink, _AFlipFlagLink):
+class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
     """Swaps masters between esp and esm versions."""
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(ck_name)s.') % (
               {u'ck_name': bush.game.Ck.long_name})
+    _continue_msg = (_('WARNING! For advanced modders only! Flips the ESM flag '
+        'of all ESP masters of the selected plugin. Useful for '
+        'loading ESP-mastered mods in the %(ck_name)s.') % {
+            'ck_name': bush.game.Ck.long_name}, 'bash.flipMasters.continue')
+
+    def __init__(self):
+        super(AFlipFlagLink, self).__init__()
+        self._plugin_flag = MasterFlag.ESM
 
     @property
     def _already_flagged(self): return not self._flag_value
@@ -1631,14 +1610,6 @@ class Mod_FlipMasters(OneItemLink, _AFlipFlagLink):
             else _('Add ESM Flag to Masters')
 
     def _enable(self): return bool(self.espMasters)
-
-    def _exec_flip(self):
-        message = _(u'WARNING! For advanced modders only! Flips the ESM flag '
-                    u'of all ESP masters of the selected plugin. Useful for '
-                    u'loading ESP-mastered mods in the %(ck_name)s.') % (
-                    {u'ck_name': bush.game.Ck.long_name})
-        if not self._askContinue(message, u'bash.flipMasters.continue'): return
-        super()._exec_flip()
 
     def _collect_mods(self):
         flips = []
