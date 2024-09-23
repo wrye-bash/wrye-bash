@@ -610,24 +610,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         if raw_eid:
             ret_fmt = f'{raw_eid} {ret_fmt}'
         return ret_fmt
-    if bush.game.has_esl:
-        # Need to undo the offset we applied to sort ESLs after regulars
-        sort_offset = bush.game.max_espms - 1
-        def format_fid(whole_lo_fid, fid_orig_plugin):
-            """Format a whole-LO FormID, which can exceed normal FormID limits
-            (e.g. 211000800 is perfectly fine in a load order with ESLs), so
-            that xEdit (and the game) can understand it."""
-            orig_minf = modInfos[fid_orig_plugin]
-            proper_index = modInfos.real_indices[fid_orig_plugin][0]
-            if orig_minf.is_esl():
-                return (f'FE{proper_index - sort_offset:03X}'
-                        f'{whole_lo_fid & 0x00000FFF:03X}')
-            else:
-                return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
-    else:
-        def format_fid(whole_lo_fid: int, _fid_orig_plugin):
-            # For non-ESL games simple hexadecimal formatting will do
-            return f'{whole_lo_fid:08X}'
+    format_fid = bush.game.scale_flags.format_fid
     def log_collision(coll_fid, coll_inj, coll_plugin, coll_versions):
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""
