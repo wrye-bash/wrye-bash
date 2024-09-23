@@ -76,6 +76,7 @@ class PluginFlag(Enum):
     def __init__(self, flag_attr, mod_info_attr):
         self._flag_attr = flag_attr # the ModInfo.header.flags1 attribute
         self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
+        self._offset = None
 
     def set_mod_flag(self, mod_info, set_flag):
         """Set the flag on the mod info and update the internal mod info state.
@@ -139,6 +140,26 @@ class PluginFlag(Enum):
           'total_status_num': len(mod_infos), 'status_num_espm': regular_count}
 
     @classmethod
+    def get_indexes(cls, infos, real_indexes):
+        limit_flags = [m for m in cls if m._offset]
+        indexes = Counter()
+        indexes.update(dict(((m, m._offset) for m in limit_flags)))
+        for p, inf in infos:
+            for pflag in limit_flags: # currently only ESL - revisit
+                if pflag.check_type(inf):
+                    msg, sub = 'FE%03X', pflag._offset
+                    break
+            else:
+                msg, pflag, sub = '%02X', 'regular', 0
+            real_indexes[p] = (indexes[pflag], msg % (indexes[pflag] - sub))
+            indexes[pflag] += 1
+
+    @classmethod
+    def format_fid(cls, whole_lo_fid: int, _fid_orig_plugin, mod_infos):
+        """For non-ESL games simple hexadecimal formatting will do."""
+        return f'{whole_lo_fid:08X}'
+
+    @classmethod
     def deactivate_msg(cls, max_regular_plugins):
         return _('The following plugins have been deactivated '
                  'because only %(max_regular_plugins)d plugins '
@@ -167,10 +188,11 @@ class MasterFlag(PluginFlag):
 class EslMixin(PluginFlag):
 
     def __init__(self, flag_attr, mod_info_attr, max_plugins=None,
-                 merge_check=None):
+                 merge_check=None, offset=None):
         super().__init__(flag_attr, mod_info_attr)
         self.max_plugins = max_plugins
         self.merge_check = merge_check
+        self._offset = offset
 
     def cached_types(self, mod_infos):
         match self.merge_check: # I use MergeabilityCheck to avoid overriding
@@ -235,15 +257,28 @@ class EslMixin(PluginFlag):
                 'max_regular_plugins': max_regular_plugins,
                 'max_esl_plugins': cls.ESL.max_plugins}
 
+    @classmethod
+    def format_fid(cls, whole_lo_fid, fid_orig_plugin, mod_infos):
+        """Format a whole-LO FormID, which can exceed normal FormID limits
+        (e.g. 211000800 is perfectly fine in a load order with ESLs), so
+        that xEdit (and the game) can understand it."""
+        orig_minf = mod_infos[fid_orig_plugin]
+        proper_index = mod_infos.real_indices[fid_orig_plugin][0]
+        for pflag in cls: ##: optimize this (and some few other pflag-loops)
+            if pflag._offset and pflag.check_type(orig_minf):
+                return (f'FE{proper_index - pflag._offset:03X}'
+                        f'{whole_lo_fid & 0x00000FFF:03X}')
+        return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
+
 EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                        '%(status_num_espm)d, ESL: %(ESL)d)')
 
 class EslPluginFlag(EslMixin, PluginFlag):
     # 4096 is hard limit, game runs out of fds sooner, testing needed
-    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK)
+    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK, 253)
 
 class SFPluginFlag(EslMixin, PluginFlag):
-    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK)
+    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK, 253)
     OVERLAY = ('overlay_flag', '_is_overlay', 0,
                MergeabilityCheck.OVERLAY_CHECK)
 

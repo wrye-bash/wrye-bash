@@ -3119,21 +3119,12 @@ class ModInfos(TableFileInfos):
         assign to plugins. ESLs will land in the 0xFE spot, while inactive
         plugins don't get any - so we sort them last. Return a set of mods
         whose real index changed."""
-        regular_index = 0
-        esl_index = 0
-        esl_offset = bush.game.max_espms - 1
         # Note that inactive plugins are handled by our defaultdict factory
         old, self.real_indices = self.real_indices, defaultdict(
             lambda: (sys.maxsize, ''))
-        for p in load_order.cached_active_tuple():
-            if self[p].is_esl():
-                # sort ESLs after all regular plugins
-                self.real_indices[p] = (
-                    esl_offset + esl_index, f'FE {esl_index:03X}')
-                esl_index += 1
-            else:
-                self.real_indices[p] = (regular_index, f'{regular_index:02X}')
-                regular_index += 1
+        bush.game.scale_flags.get_indexes(
+            ((p, self[p]) for p in load_order.cached_active_tuple()),
+            self.real_indices)
         return {k for k, v in old.items() ^ self.real_indices.items()}
 
     def _recalc_dependents(self):
