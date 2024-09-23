@@ -145,6 +145,14 @@ class PluginFlag(Enum):
                  'may be active at the same time.') % {
             'max_regular_plugins': max_regular_plugins}
 
+    def link_args(self):
+        match self:
+            case MasterFlag.ESM:
+               return [('.esp', '.esu'), (), _('Flip the ESM flag on '
+                    'the selected plugins, turning masters into regular '
+                    'plugins and vice versa.')]
+        return []
+
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 
 class MasterFlag(PluginFlag):
@@ -177,6 +185,15 @@ class EslMixin(PluginFlag):
             case _:
                 return None, '', ''
         return getattr(mod_infos, '_mergeable_by_type')[self.merge_check], h, m
+
+    def link_args(self):
+        cls = type(self)
+        match self:
+            case cls.ESL:
+                return [('.esm', '.esp', '.esu'), (), _('Flip the ESL flag on '
+                    'the selected plugins, turning light plugins into regular '
+                    'ones and vice versa.')]
+        return []
 
     def set_mod_flag(self, mod_info, set_flag):
         if super().set_mod_flag(mod_info, set_flag):
@@ -250,6 +267,23 @@ class SFPluginFlag(EslMixin, PluginFlag):
     def guess_flags(cls, mod_fn_ext, masters_supplied=()):
         sup = super().guess_flags(mod_fn_ext)
         return sup if masters_supplied else {**sup, cls.OVERLAY: False}
+
+    def link_args(self):
+        cls = type(self)
+        match self:
+            case cls.OVERLAY:
+                msg = _('WARNING! For advanced modders only!') + '\n\n' + _(
+                    'This command flips an internal bit in the mod, '
+                    'converting a regular plugin to an overlay plugin and '
+                    'vice versa. The Overlay flag is still new and our '
+                    'understanding of how it works may be incomplete. Back '
+                    'up your plugins and saves before using this!')
+                ckey = 'bash.flip_to_overlay.continue'
+                return [('.esm', '.esp', '.esu'), (msg, ckey, _(
+                    'Flip to Overlay')), _(
+                    'Flip the Overlay flag on the selected plugins, turning '
+                    'overlay plugins into regular ones and vice versa.')]
+        return super().link_args()
 
 SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                            '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '

@@ -26,8 +26,8 @@ also defined in these functions."""
 import os
 import shlex
 
-from . import BSAList, INIList, InstallersList, \
-    InstallersPanel, MasterList, ModList, SaveList, ScreensList
+from . import BSAList, INIList, InstallersList, InstallersPanel, MasterList, \
+    ModList, SaveList, ScreensList
 # modules below define the __all__ directive
 from .app_buttons import *
 from .bsa_links import *
@@ -48,7 +48,7 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
 from ..bolt import os_name
 from ..env import init_app_links
-from ..game import MergeabilityCheck, MasterFlag
+from ..game import MasterFlag
 from ..game.patch_game import PatchGame
 from ..gui import GuiImage, get_image
 
@@ -546,14 +546,9 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_CheckQualifications())
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
-        ModList.context_links.append_link(Mod_FlipEsm(MasterFlag.ESM))
-        # TODO(ut) this is flags not mergeability checks - make _AFlipFlagLink more dynamical
-        if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipEsl(
-                bush.game.scale_flags.ESL))
-        if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipOverlay(
-                bush.game.scale_flags.OVERLAY))
+        ModList.context_links.append_link(AFlipFlagLink(MasterFlag.ESM))
+        for pflag in bush.game.scale_flags:
+            ModList.context_links.append_link(AFlipFlagLink(pflag))
         ModList.context_links.append_link(Mod_FlipMasters())
         ModList.context_links.append_link(Mod_CreateDummyMasters())
     ModList.context_links.append_link(SeparatorLink())
