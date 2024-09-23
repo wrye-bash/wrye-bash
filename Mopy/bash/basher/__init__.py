@@ -378,12 +378,11 @@ class _ModsUIList(UIList):
                     mouseText += _('Merged into Bashed Patch.') + ' '
                 else:
                     mouseText += _('Can be merged into Bashed Patch.') + ' '
-        if item_name in bosh.modInfos.esl_capable_plugins:
-            item_format.text_key = 'mods.text.mergeable'
-            mouseText += _('Can be ESL-flagged.') + ' '
-        if item_name in bosh.modInfos.overlay_capable_plugins:
-            item_format.text_key = 'mods.text.mergeable'
-            mouseText += _('Can be Overlay-flagged.') + ' '
+        for pflag in bush.game.scale_flags:
+            if pflag.can_flag(item_name, bosh.modInfos):
+                item_format.text_key = 'mods.text.mergeable'
+                mouseText += (_('Can be %(plugin_type)s-flagged.') + ' '
+                              ) % {'plugin_type': pflag.name.title()}
         final_text_key = 'mods.text.es'
         if minf.is_esl():
             final_text_key += 'l'

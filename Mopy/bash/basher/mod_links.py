@@ -1532,8 +1532,8 @@ class _AFlipFlagLink(EnabledLink):
         first_flagged = self._already_flagged
         self._flag_value = not first_flagged # flip the (common) flag value
         return all(m.fn_ext in self._allowed_ext and
-                   self._plugin_flag.has_flagged(minfo) == first_flagged and
-                   (first_flagged or self._can_flag(m))
+            self._plugin_flag.has_flagged(minfo) == first_flagged and
+            (first_flagged or self._plugin_flag.can_flag(m, bosh.modInfos))
                    for m, minfo in self.iselected_pairs())
     @property
     def link_text(self):
@@ -1556,10 +1556,6 @@ class _AFlipFlagLink(EnabledLink):
             # plugin that was affected to update the Indices column
             self.window.RefreshUI(refresh_others=Store.SAVES.DO(), redraw={
                 *self.selected, *ldiff.reordered, *ldiff.act_index_change})
-
-    def _can_flag(self, fn_mod):
-        """Check cached ModInfos info on whether we can flag this mod."""
-        return True
 
     @property
     def _already_flagged(self):
@@ -1585,17 +1581,11 @@ class Mod_FlipEsl(_AFlipFlagLink):
     _help = _('Flip the ESL flag on the selected plugins, turning light '
               'plugins into regular ones and vice versa.')
 
-    def _can_flag(self, modinf):
-        return modinf in bosh.modInfos.esl_capable_plugins
-
 #------------------------------------------------------------------------------
 class Mod_FlipOverlay(_AFlipFlagLink):
     """Add or remove the Overlay flag. Extension must be .esm, .esp or .esu."""
     _help = _('Flip the Overlay flag on the selected plugins, turning overlay '
               'plugins into regular ones and vice versa.')
-
-    def _can_flag(self, fn_mod):
-        return fn_mod in bosh.modInfos.overlay_capable_plugins
 
     def _exec_flip(self):
         message = (_('WARNING! For advanced modders only!') + '\n\n' +
