@@ -115,6 +115,15 @@ class PluginFlag(Enum):
         flag state and possibly on the file extension."""
         return getattr(mod_info, self._mod_info_attr)
 
+    def can_flag(self, fn_mod, mod_infos):
+        """Check if the self._flag_attr can be set on the mod info flags -
+        for now delegate to the modInfos cache."""
+        try:
+            return fn_mod in getattr(mod_infos, '_mergeable_by_type')[
+                self.merge_check]
+        except (AttributeError, KeyError):
+            return True
+
     @classmethod
     def plugin_counts(cls, mod_infos, active_mods):
         counts = Counter(dict.fromkeys((mem.name for mem in cls), 0))
@@ -154,6 +163,20 @@ class EslMixin(PluginFlag):
         super().__init__(flag_attr, mod_info_attr)
         self.max_plugins = max_plugins
         self.merge_check = merge_check
+
+    def cached_types(self, mod_infos):
+        match self.merge_check: # I use MergeabilityCheck to avoid overriding
+            case MergeabilityCheck.ESL_CHECK:
+                h, m = '=== ' + _('ESL-Capable'), _(
+                    'The following plugins could be assigned an ESL flag, but '
+                    'do not have one right now.')
+            case MergeabilityCheck.OVERLAY_CHECK:
+                h, m = '=== ' + _('Overlay-Capable'), _(
+                    'The following plugins could be assigned an Overlay flag, '
+                    'but do not have one right now.')
+            case _:
+                return None, '', ''
+        return getattr(mod_infos, '_mergeable_by_type')[self.merge_check], h, m
 
     def set_mod_flag(self, mod_info, set_flag):
         if super().set_mod_flag(mod_info, set_flag):

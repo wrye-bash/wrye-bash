@@ -202,8 +202,6 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
     can_merge = modInfos.mergeable_plugins
-    can_esl_flag = modInfos.esl_capable_plugins
-    can_overlay_flag = modInfos.overlay_capable_plugins
     # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
     # already been merged into a BP
     for m in list(can_merge):
@@ -667,19 +665,15 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log(_(u'Wrye Bash could not read the follow plugins. They most likely '
               u'have corrupt or otherwise malformed headers.'))
         log_plugin_messages(all_corrupted) ##: Just log_plugins?
-    if can_esl_flag:
-        _log_plugins('=== ' + _('ESL-Capable'),
-        _('The following plugins could be assigned an ESL flag, but do '
-          'not have one right now.'), can_esl_flag)
+    for pflag in bush.game.scale_flags:
+        minfos_cache, head, msg = pflag.cached_types(modInfos)
+        if minfos_cache:
+            _log_plugins(head, msg, minfos_cache)
     if remove_esl_flag:
         _log_plugins(u'=== ' + _('Incorrect ESL Flag'), _(
             'The following plugins have an ESL flag, but do not qualify. '
             "Either remove the flag with 'Remove ESL Flag', or "
             "change the extension to '.esp' if it is '.esl'."),remove_esl_flag)
-    if can_overlay_flag:
-        _log_plugins('=== ' + _('Overlay-Capable'),
-        _('The following plugins could be assigned an Overlay flag, but '
-          'do not have one right now.'), can_overlay_flag)
     if overlays_with_new_recs:
         _log_plugins('=== ' + _('Incorrect Overlay Flag: New Records'),
         _("The following plugins have an Overlay flag, but do not "
