@@ -2116,18 +2116,6 @@ class ModInfos(TableFileInfos):
         already *be* merged - see ModInfos.merged)."""
         return self._mergeable_by_type[MergeabilityCheck.MERGE]
 
-    @property
-    def esl_capable_plugins(self) -> set[FName]:
-        """All plugins that could receive an ESL flag, but don't have one
-        yet."""
-        return self._mergeable_by_type[MergeabilityCheck.ESL_CHECK]
-
-    @property
-    def overlay_capable_plugins(self) -> set[FName]:
-        """All plugins that could receive al Overlay flag, but don't have one
-        yet."""
-        return self._mergeable_by_type[MergeabilityCheck.OVERLAY_CHECK]
-
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
     @_lo_cache
