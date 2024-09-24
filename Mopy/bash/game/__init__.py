@@ -174,6 +174,7 @@ class PluginFlag(Enum):
                     'plugins and vice versa.')]
         return []
 
+# easiest way to define enum class variables
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 
 class MasterFlag(PluginFlag):
@@ -270,8 +271,20 @@ class EslMixin(PluginFlag):
                         f'{whole_lo_fid & 0x00000FFF:03X}')
         return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
 
+    def validate_type(self, modinf, error_sets, mod_header_reader):
+        for err_set, merge_check in zip(error_sets, type(self).error_msgs[
+                self].values(), strict=True):
+            if merge_check(modinf, mod_header_reader):
+                err_set.add(modinf.fn_key)
+
 EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                        '%(status_num_espm)d, ESL: %(ESL)d)')
+# EslMixin.ESL.name must always be 'ESL'
+EslMixin.error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
+    _("The following plugins have an ESL flag, but do not qualify. Either "
+      "remove the flag with 'Remove ESL Flag', or change the extension to "
+      "'.esp' if it is '.esl'.")): lambda minfo, mreader:
+                not mreader.formids_in_esl_range(minfo)}}
 
 class EslPluginFlag(EslMixin, PluginFlag):
     # 4096 is hard limit, game runs out of fds sooner, testing needed
@@ -323,6 +336,28 @@ class SFPluginFlag(EslMixin, PluginFlag):
 SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                            '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '
                            '%(OVERLAY)d)')
+SFPluginFlag.error_msgs = {**EslMixin.error_msgs, SFPluginFlag.OVERLAY.name: {
+    ('=== ' + _('Incorrect Overlay Flag: No Masters'), _(
+        "The following plugins have an Overlay flag, but do not qualify "
+        "because they do not have any masters. %(game_name)s will not treat "
+        "these as Overlay plugins. Either remove the flag with 'Remove "
+        "Overlay Flag', or use %(xedit_name)s to add at least one master to "
+        "the plugin.")): lambda minfo, mreader: not minfo.masterNames,
+    ('=== ' + _('Incorrect Overlay Flag: New Records'), _(
+        "The following plugins have an Overlay flag, but do not qualify "
+        "because they contain new records. These will be injected into the "
+        "first master of the plugins in question, which can seriously break "
+        "basic game data. Either remove the flag with 'Remove Overlay "
+        "Flag', or remove the new records.")): lambda minfo, mreader:
+                mreader.has_new_records(minfo),
+    ('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'), _(
+        "The following plugins have an Overlay flag, but do not qualify "
+        "because they also have an ESL flag. These flags are mutually "
+        "exclusive. %(game_name)s will not treat these as overlay plugins. "
+        "Either remove the Overlay flag with 'Remove Overlay Flag', or "
+        "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo, mreader:
+                SFPluginFlag.ESL.check_type(minfo),
+}}
 
 # Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
@@ -966,6 +1001,11 @@ class GameInfo(object):
         if self.has_esl: # this might need the bass.dirs be initialized
             self.scale_flags = EslPluginFlag
             self.mergeability_checks = {MergeabilityCheck.ESL_CHECK}
+            strs = {'xedit_name': self.Xe.full_name,
+                    'game_name': self.display_name}
+            EslPluginFlag.error_msgs = {EslPluginFlag[k]: {(h, msg % strs): lam
+                for (h, msg), lam in v.items()} for k, v in
+                    EslMixin.error_msgs.items()}
 
     @classmethod
     def supported_games(cls):
