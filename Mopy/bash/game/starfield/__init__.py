@@ -331,6 +331,10 @@ class _AStarfieldGameInfo(PatchGame):
         self.scale_flags = SFPluginFlag
         self.mergeability_checks = {MergeabilityCheck.ESL_CHECK,
                                     MergeabilityCheck.OVERLAY_CHECK}
+        SFPluginFlag.error_msgs = {SFPluginFlag[k]: {(h, msg % {
+            'xedit_name': self.Xe.full_name, 'game_name': self.display_name}):
+                lam for (h, msg), lam in v.items()} for k, v in
+             SFPluginFlag.error_msgs.items()}
 
 class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
     """GameInfo override for the Steam version of Starfield."""
