@@ -40,7 +40,7 @@ from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
-from ._mergeability import is_esl_capable, isPBashMergeable, is_overlay_capable
+from ._mergeability import isPBashMergeable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
@@ -2439,14 +2439,13 @@ class ModInfos(TableFileInfos):
                         return_results=False):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
-        all_known_checks = {
-            MergeabilityCheck.MERGE: isPBashMergeable,
-            MergeabilityCheck.ESL_CHECK: is_esl_capable,
-            MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
-        }
+        merge = MergeabilityCheck.MERGE
+        checks = bush.game.mergeability_checks
         # The checks that are actually required for this game
-        required_checks = {m: c for m, c in all_known_checks.items()
-                           if m in bush.game.mergeability_checks}
+        required_checks = {merge: isPBashMergeable} if merge in checks else {}
+        required_checks.update(
+            {mc: pflag.can_convert for pflag in bush.game.scale_flags if
+             (mc := pflag.merge_check) in checks})
         with progress:
             progress.setFull(max(len(names),1))
             result = {}
@@ -2467,7 +2466,7 @@ class ModInfos(TableFileInfos):
                     else:
                         try:
                             check_results[merg_type] = merg_check(
-                                fileInfo, self, reasons)
+                                fileInfo, self, reasons, ModHeaderReader)
                         except Exception: # as e
                             # deprint(f'Error scanning mod {fileName} ({e})')
                             # # Assume it's not mergeable
@@ -2475,9 +2474,9 @@ class ModInfos(TableFileInfos):
                             raise
                 # Special handling for MERGE: NoMerge-tagged plugins
                 if return_results:
-                    if check_results.get(MergeabilityCheck.MERGE) and \
+                    if check_results.get(merge) and \
                             'NoMerge' in fileInfo.getBashTags():
-                        all_reasons[MergeabilityCheck.MERGE].append(
+                        all_reasons[merge].append(
                             _('Technically mergeable, but has NoMerge tag.'))
                     result[fileName] = all_reasons
                 self._update_mergeable(fileName, check_results)

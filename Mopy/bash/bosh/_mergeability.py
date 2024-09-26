@@ -27,7 +27,7 @@ from .. import bush
 from ..bolt import sig_to_str
 from ..exception import ModError
 from ..game import MasterFlag
-from ..mod_files import LoadFactory, ModFile, ModHeaderReader
+from ..mod_files import LoadFactory, ModFile
 __exit = lambda x: True # trick to exit early on non-verbose mode
 
 def _pbash_mergeable_no_load(modInfo, minfos, reasons):
@@ -68,7 +68,7 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons):
     # don't show up as mergeable.
     return False if reasons else True
 
-def isPBashMergeable(modInfo, minfos, reasons):
+def isPBashMergeable(modInfo, minfos, reasons, _mod_header_reader):
     """Returns True or error message indicating whether specified mod is mergeable."""
     if not _pbash_mergeable_no_load(modInfo, minfos, reasons) and \
             reasons is None:
@@ -124,58 +124,3 @@ def _dependent(minfo_key, minfos):
                  minfo_key in info.masterNames and mname not in
                  minfos.mergeable_plugins]
     return dependent
-
-def is_esl_capable(modInfo, _minfos, reasons):
-    """Determine whether or not the specified mod can be converted to a light
-    plugin. Optionally also return the reasons it can't be converted.
-
-    :param modInfo: The mod to check.
-    :param _minfos: Ignored. Needed to mirror the signature of
-                    isPBashMergeable.
-    :param reasons: A list of strings that should be filled with the reasons
-                    why this mod can't be ESL flagged, or None if only the
-                    return value of this method is of interest.
-    :return: True if the specified mod could be flagged as ESL."""
-    _exit = __exit if reasons is None else reasons.append # append returns None
-    if modInfo.is_esl() and _exit(_('This plugin is already ESL-flagged.')):
-        return False
-    if modInfo.is_overlay() and _exit(_('This plugin has the Overlay flag.')):
-        return False
-    formids_valid = True
-    try:
-        formids_valid = ModHeaderReader.formids_in_esl_range(modInfo)
-    except ModError as e:
-        if _exit(f'{e}.'): return False
-    if not formids_valid and _exit(_('This plugin contains records with '
-                                     'FormIDs greater than 0xFFF.')):
-        return False
-    return False if reasons else True
-
-def is_overlay_capable(modInfo, _minfos, reasons):
-    """Determine whether or not the specified mod can be converted to an
-    overlay plugin. Optionally also return the reasons it can't be converted.
-
-    :param modInfo: The mod to check.
-    :param _minfos: Ignored. Needed to mirror the signature of
-        isPBashMergeable.
-    :param reasons: A list of strings that should be filled with the reasons
-        why this mod can't be Overlay-flagged, or None if only the return value
-        of this method is of interest.
-    :return: True if the specified mod could be flagged as Overlay."""
-    _exit = __exit if reasons is None else reasons.append # append returns None
-    if modInfo.is_overlay() and _exit(_('This plugin is already '
-                                        'Overlay-flagged.')):
-        return False
-    if modInfo.is_esl() and _exit(_('This plugin has the ESL flag.')):
-        return False
-    if not modInfo.masterNames and _exit(_('This plugin does not have any '
-                                           'masters.')):
-        return False
-    has_new_recs = False
-    try:
-        has_new_recs = ModHeaderReader.has_new_records(modInfo)
-    except ModError as e:
-        if _exit(f'{e}.'): return False
-    if has_new_recs and _exit(_('This plugin contains new records.')):
-        return False
-    return False if reasons else True
