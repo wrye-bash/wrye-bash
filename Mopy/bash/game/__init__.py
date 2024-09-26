@@ -34,7 +34,7 @@ from os.path import join as _j
 
 from .. import bass, bolt
 from ..bolt import FNDict, fast_cached_property
-from ..exception import InvalidPluginFlagsError
+from ..exception import InvalidPluginFlagsError, ModError
 
 # Constants and Helpers -------------------------------------------------------
 # Files shared by versions of games that are published on the Windows Store
@@ -271,11 +271,46 @@ class EslMixin(PluginFlag):
                         f'{whole_lo_fid & 0x00000FFF:03X}')
         return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
 
-    def validate_type(self, modinf, error_sets, mod_header_reader):
-        for err_set, merge_check in zip(error_sets, type(self).error_msgs[
-                self].values(), strict=True):
+    def validate_type(self, modinf, error_sets, mod_header_reader,
+                      reasons=None, merge_checks=None):
+        merge_checks = merge_checks or type(self).error_msgs[self].values()
+        for err_set, merge_check in zip(error_sets, merge_checks, strict=True):
             if merge_check(modinf, mod_header_reader):
-                err_set.add(modinf.fn_key)
+                try:
+                    err_set.add(modinf.fn_key)
+                except AttributeError:
+                    if reasons is None: return False
+                    reasons.append(err_set)
+        return not reasons
+
+    def can_convert(self, modInfo, _minfos, reasons, mod_header_reader):
+        """Determine whether the specified mod can be converted to our type.
+        Optionally also return the reasons it can't be converted.
+
+        :param modInfo: The mod to check.
+        :param _minfos: Ignored. Needed to mirror the signature of
+                        isPBashMergeable.
+        :param reasons: A list of strings that should be filled with the
+                        reasons why we can't flag this mod, or None if only the
+                        return value of this method is of interest.
+        :param mod_header_reader: the ModHeaderReader type
+        :return: True if we can flag the specified mod."""
+        it = iter(self.unflaggable[self.name])
+        ##: dragons - needs to generalize to arbitrary flag combinations and
+        ##: be unified with validate_type - so we need changes in checkMods
+        already_flagged, conflicting_flag = next(it)
+        for mem in type(self):
+            if mem.check_type(modInfo):
+                if reasons is None: return False
+                reasons.append(already_flagged if mem is self else
+                               conflicting_flag)
+        chks = [*type(self).error_msgs[self].values()][:2] #len(it)=2 for OVERLAY
+        try:
+            return self.validate_type(modInfo, it, mod_header_reader, reasons,
+                                      chks)
+        except ModError as e:
+            if reasons is not None: reasons.append(str(e))
+            return False
 
 EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                        '%(status_num_espm)d, ESL: %(ESL)d)')
@@ -285,6 +320,9 @@ EslMixin.error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
       "remove the flag with 'Remove ESL Flag', or change the extension to "
       "'.esp' if it is '.esl'.")): lambda minfo, mreader:
                 not mreader.formids_in_esl_range(minfo)}}
+EslMixin.unflaggable = {'ESL': [[_('This plugin is already ESL-flagged.'),
+                                 _('This plugin has the Overlay flag.')],
+    _('This plugin contains records with FormIDs greater than 0xFFF.')]}
 
 class EslPluginFlag(EslMixin, PluginFlag):
     # 4096 is hard limit, game runs out of fds sooner, testing needed
@@ -358,6 +396,11 @@ SFPluginFlag.error_msgs = {**EslMixin.error_msgs, SFPluginFlag.OVERLAY.name: {
         "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo, mreader:
                 SFPluginFlag.ESL.check_type(minfo),
 }}
+SFPluginFlag.unflaggable = {**EslMixin.unflaggable,
+    SFPluginFlag.OVERLAY.name: [[_('This plugin is already Overlay-flagged.'),
+                                 _('This plugin has the ESL flag.')],
+                                _('This plugin does not have any masters.'),
+                                _('This plugin contains new records.')]}
 
 # Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
