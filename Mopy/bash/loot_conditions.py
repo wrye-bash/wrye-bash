@@ -36,6 +36,7 @@ from . import bass
 from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
 from .exception import EvalError, FileError
+from .game import MasterFlag
 ##: below is too tight coupling with Bash internals - pass those as
 # parameters along with modInfos currently imported locally
 from .load_order import cached_active_tuple, cached_is_active
@@ -293,15 +294,14 @@ def _fn_file(path_or_regex: str) -> bool:
     else:
         return _process_path(path_or_regex).exists()
 
-def _fn_is_master(file_name: str) -> bool:
+def _fn_is_master(fname: str) -> bool:
     """Takes a file name. Returns True iff a plugin with the specified name
     exists and is treated as a master by the currently managed game.
 
-    :param file_name: The file path to check."""
+    :param fname: The file name to check."""
     from .bosh import modInfos
-
     # Need to check if it's on disk first, otherwise modInfos[x] errors
-    return file_name in modInfos and modInfos[file_name].in_master_block()
+    return fname in modInfos and MasterFlag.ESM.cached_type(modInfos[fname])
 
 def _fn_many(path_regex: str) -> bool:
     """Takes a regex. Returns True iff more than 1 file matching the specified

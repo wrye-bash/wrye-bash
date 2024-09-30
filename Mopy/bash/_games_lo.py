@@ -441,6 +441,7 @@ class LoGame:
         Called in get_load_order() to fix a newly fetched LO and in
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as saving load and active should be an atomic operation."""
+        from .game import MasterFlag
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
@@ -477,7 +478,8 @@ class LoGame:
             else: # append all to the end, even esms, will be reordered below
                 lord.append(mod)
         # See if any esm files are loaded below an esp and reorder as necessary
-        lord.sort(key=lambda m: not cached_minfs[m].in_master_block())
+        is_m = MasterFlag.ESM.cached_type
+        lord.sort(key=lambda m: not is_m(cached_minfs[m]))
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
@@ -736,10 +738,12 @@ class TimestampGame(LoGame):
     def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
         mods = ((k, self.mod_infos[k]) for k in
                 (self.mod_infos if mods is None else mods))
+        from .game import MasterFlag
+        is_m = MasterFlag.ESM.cached_type
         return [m for m, _inf in sorted(mods, key=lambda x: (
             # split into master block and not master block then sort by ftime
             # then by name case insensitive (for time conflicts)
-            not x[1].in_master_block(), x[1].ftime, x[0]))]
+            not is_m(x[1]), x[1].ftime, x[0]))]
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
