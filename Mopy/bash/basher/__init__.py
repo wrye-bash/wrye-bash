@@ -81,6 +81,7 @@ from ..bosh import ModInfo, omods, RefrData
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
+from ..game import MasterFlag
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -289,7 +290,8 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=lambda a: not self.data_store[a].in_master_block())
+            items.sort(key=lambda a: not MasterFlag.ESM.cached_type(
+                self.data_store[a]))
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -363,7 +365,8 @@ class _ModsUIList(UIList):
     # belongs to EslMixin - stashing it here to keep that minimal, revisit
     # when rest of plugin types for Starfield are implemented
     __plugin_types = {'ESL': ('l', _('Light plugin.') + ' '),
-                      'OVERLAY': ('o', _('Overlay plugin.') + ' ')}
+                      'OVERLAY': ('o', _('Overlay plugin.') + ' '),
+                      'ESM': ('m', _('Master plugin.') + ' ')}
     def _set_color(self, checkMark, mouseText, minf, item_name, item_format):
         #--Font color
         fileBashTags = minf.getBashTags()
@@ -388,7 +391,7 @@ class _ModsUIList(UIList):
                 mouseText += (_('Can be %(plugin_type)s-flagged.') + ' '
                               ) % {'plugin_type': pflag.name.title()}
         suffix = ''
-        for pflag in bush.game.scale_flags:
+        for pflag in chain(bush.game.scale_flags, MasterFlag):
             if pflag.cached_type(minf):
                 letter, mousetxt = self.__plugin_types[pflag.name]
                 suffix += letter
@@ -397,9 +400,6 @@ class _ModsUIList(UIList):
                     mousetxt = 'Plugin has conflicting ESL/OVERLAY flags.' ##: tmp
                     suffix = ''
                 mouseText += mousetxt
-        if minf.in_master_block():
-            suffix += 'm'
-            mouseText += _('Master plugin.') + ' '
         # Check if it's special, leave ESPs alone
         if suffix:
             item_format.text_key = f'mods.text.es{suffix}'

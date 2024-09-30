@@ -154,18 +154,17 @@ class MasterInfo:
         self.is_ghost = False
         self.mod_info = None
 
-    @_mod_info_delegate
-    def has_esm_flag(self):
-        return MasterFlag.ESM in bush.game.scale_flags.guess_flags(
-            self.get_extension())
-
-    @_mod_info_delegate
-    def in_master_block(self):
-        return self.has_esm_flag()
-
     def has_master_size_mismatch(self, do_test): # used in set_item_format
         return _('Stored size does not match the one on disk.') if do_test \
           and modInfos.size_mismatch(self.curr_name, self.stored_size) else ''
+
+    def flag_fallback(self, pflag):
+        """For esm missing masters check extension - for esl rely on the
+        mysterious _was_esl."""
+        if pflag is MasterFlag.ESM:
+            return pflag in bush.game.scale_flags.guess_flags(
+                self.get_extension())
+        return getattr(self, '_was_esl', False) # we only might set ESL to True
 
     @_mod_info_delegate
     def getDirtyMessage(self, scan_beth=False):
@@ -384,7 +383,7 @@ class FileInfo(_TabledInfo, AFileInfo):
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     # Cached, since we need them so often
-    _has_esm_flag = _is_esl = _is_overlay = False
+    _is_master = _is_esl = _is_overlay = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
     _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
@@ -445,33 +444,12 @@ class ModInfo(FileInfo):
         then proceed to set the other flag to False if the game supports it."""
         flags_dict = bush.game.scale_flags.check_flag_assignments(flags_dict)
         for pl_flag, flag_val in flags_dict.items():
-            pl_flag.set_mod_flag(self, flag_val)
+            pl_flag.set_mod_flag(self, flag_val, bush.game)
             if pl_flag is MasterFlag.ESM:
                 self._update_onam() # recalculate ONAM info if necessary
         self.writeHeader()
 
     # ESM flag ----------------------------------------------------------------
-    def has_esm_flag(self):
-        """Check if the mod info is a master file based on ESM flag alone -
-        header must be set. You generally want in_master_block() instead."""
-        return self._has_esm_flag
-
-    def in_master_block(self, __master_exts=frozenset(('.esm', '.esl'))):
-        """Return true for files that load in the masters' block."""
-        ##: we should cache this and calculate in reset_cache and co
-        mod_ext = self.get_extension()
-        if bush.game.Esp.extension_forces_flags:
-            # For games since FO4/SSE, .esm and .esl files set the master flag
-            # in memory even if not set on the file on disk. For .esp files we
-            # must check for the flag explicitly.
-            return mod_ext in __master_exts or self.has_esm_flag()
-        elif bush.game.fsName == 'Morrowind':
-            ##: This is wrong, but works for now. We need game-specific
-            # record headers to parse the ESM flag for MW correctly - #480!
-            return mod_ext == '.esm'
-        else:
-            return self.has_esm_flag()
-
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         mod_ext = self.get_extension()
@@ -687,7 +665,7 @@ class ModInfo(FileInfo):
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
         for v in chain(MasterFlag, bush.game.scale_flags):
-            v.set_mod_flag(self, None) # initialize _is_esl/overlay/ etc
+            v.set_mod_flag(self, None, bush.game) # initialize _is_master etc
 
     def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""
@@ -901,7 +879,7 @@ class ModInfo(FileInfo):
         based on that."""
         # Skip for games that don't need the ONAM generation
         if bush.game.Esp.generate_temp_child_onam:
-            if self.in_master_block():
+            if MasterFlag.ESM.cached_type(self):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)
@@ -2157,7 +2135,7 @@ class ModInfos(TableFileInfos):
     def cached_lo_last_esm(self):
         last_esm = self._master_esm
         for mod in self._lo_wip[1:]:
-            if not self[mod].in_master_block(): return last_esm
+            if not MasterFlag.ESM.cached_type(self[mod]): return last_esm
             last_esm = mod
         return last_esm
 
@@ -2180,7 +2158,7 @@ class ModInfos(TableFileInfos):
         lo_wip_set = set(self._lo_wip)
         new = [x for x in mods if x not in lo_wip_set]
         if not new: return
-        esms = [x for x in new if self[x].in_master_block()]
+        esms = [x for x in new if MasterFlag.ESM.cached_type(self[x])]
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
@@ -2910,7 +2888,7 @@ class ModInfos(TableFileInfos):
         flags_dict = bush.game.scale_flags.check_flag_assignments(
             flags_dict or {})
         for pl_flag, flag_val in flags_dict.items():
-            pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val)
+            pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
         newFile.safeSave()
         if dir_path == self.store_dir:
             last_selected = load_order.get_ordered(selected)[
