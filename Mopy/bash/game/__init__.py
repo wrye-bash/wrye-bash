@@ -111,10 +111,15 @@ class PluginFlag(Enum):
     def check_flag_assignments(cls, flag_dict, raise_on_invalid=True):
         return flag_dict
 
-    def check_type(self, mod_info): # will deprecate the API of ModInfo
+    def cached_type(self, minf):
         """Return the cached type of mod info - depends on the corresponding
         flag state and possibly on the file extension."""
-        return getattr(mod_info, self._mod_info_attr)
+        try:
+            return getattr(minf, self._mod_info_attr)
+        except AttributeError: # MasterInfo
+            if minf.mod_info:
+                return getattr(minf.mod_info, self._mod_info_attr)
+            return getattr(minf, '_was_esl', False)
 
     def can_flag(self, fn_mod, mod_infos):
         """Check if the self._flag_attr can be set on the mod info flags -
@@ -131,7 +136,7 @@ class PluginFlag(Enum):
         regular_count = 0
         for m in active_mods:
             for member in cls:
-                if member.check_type(m):
+                if member.cached_type(m):
                     counts[member.name] += 1
                     break
             else:
@@ -146,7 +151,7 @@ class PluginFlag(Enum):
         indexes.update(dict(((m, m._offset) for m in limit_flags)))
         for p, inf in infos:
             for pflag in limit_flags: # currently only ESL - revisit
-                if pflag.check_type(inf):
+                if pflag.cached_type(inf):
                     msg, sub = 'FE%03X', pflag._offset
                     break
             else:
@@ -266,7 +271,7 @@ class EslMixin(PluginFlag):
         orig_minf = mod_infos[fid_orig_plugin]
         proper_index = mod_infos.real_indices[fid_orig_plugin][0]
         for pflag in cls: ##: optimize this (and some few other pflag-loops)
-            if pflag._offset and pflag.check_type(orig_minf):
+            if pflag._offset and pflag.cached_type(orig_minf):
                 return (f'FE{proper_index - pflag._offset:03X}'
                         f'{whole_lo_fid & 0x00000FFF:03X}')
         return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
@@ -300,7 +305,7 @@ class EslMixin(PluginFlag):
         ##: be unified with validate_type - so we need changes in checkMods
         already_flagged, conflicting_flag = next(it)
         for mem in type(self):
-            if mem.check_type(modInfo):
+            if mem.cached_type(modInfo):
                 if reasons is None: return False
                 reasons.append(already_flagged if mem is self else
                                conflicting_flag)
@@ -394,7 +399,7 @@ SFPluginFlag.error_msgs = {**EslMixin.error_msgs, SFPluginFlag.OVERLAY.name: {
         "exclusive. %(game_name)s will not treat these as overlay plugins. "
         "Either remove the Overlay flag with 'Remove Overlay Flag', or "
         "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo, mreader:
-                SFPluginFlag.ESL.check_type(minfo),
+                SFPluginFlag.ESL.cached_type(minfo),
 }}
 SFPluginFlag.unflaggable = {**EslMixin.unflaggable,
     SFPluginFlag.OVERLAY.name: [[_('This plugin is already Overlay-flagged.'),

@@ -551,7 +551,7 @@ class LoGame:
         for m in acti_filtered:
             mi = self.mod_infos[m]
             for pflag in limit_flags:
-                if pflag.check_type(mi):
+                if pflag.cached_type(mi):
                     pl_type_active[pflag].append(m)
                     break
             else:
