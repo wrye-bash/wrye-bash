@@ -163,16 +163,6 @@ class MasterInfo:
     def in_master_block(self):
         return self.has_esm_flag()
 
-    @_mod_info_delegate
-    def is_esl(self):
-        """Delegate to self.modInfo.is_esl if exists, else rely on _was_esl."""
-        return self._was_esl
-
-    @_mod_info_delegate
-    def is_overlay(self):
-        """Delegate to self.modInfo.is_overlay if exists."""
-        return False
-
     def has_master_size_mismatch(self, do_test): # used in set_item_format
         return _('Stored size does not match the one on disk.') if do_test \
           and modInfos.size_mismatch(self.curr_name, self.stored_size) else ''
@@ -490,17 +480,6 @@ class ModInfo(FileInfo):
                 f'isInvertedMod: {mod_ext} - only esm/esp allowed')
         return (self.header and
                 mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
-
-    # ESL flag ----------------------------------------------------------------
-    def is_esl(self):
-        """Check if this is a light plugin - .esl files are automatically
-        set the light flag, for espms check the flag."""
-        return self._is_esl
-
-    # Overlay flag ------------------------------------------------------------
-    def is_overlay(self):
-        """Check if this is an overlay plugin."""
-        return self._is_overlay
 
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
@@ -2390,7 +2369,7 @@ class ModInfos(TableFileInfos):
         merg_checks = bush.game.mergeability_checks
         # We store ints in the settings files, so use those for comparing
         merg_checks_ints = {c.value for c in merg_checks}
-        quick_checks = {mc: pflag.check_type for pflag in bush.game.scale_flags
+        quick_checks = {mc: pflag.cached_type for pflag in bush.game.scale_flags
                         if (mc := pflag.merge_check) is not None}
         # We need to scan dependent mods first to account for mergeability of
         # their masters
