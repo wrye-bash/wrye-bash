@@ -215,7 +215,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                    bush.game.scale_flags.error_msgs.items()}
     for m, modinf in modInfos.items():
         for pflag in bush.game.scale_flags:
-            if pflag in type(pflag).error_msgs and pflag.check_type(modinf):
+            if pflag in type(pflag).error_msgs and pflag.cached_type(modinf):
                 pflag.validate_type(modinf, flag_errors[pflag].values(),
                                     ModHeaderReader)
     # -------------------------------------------------------------------------
