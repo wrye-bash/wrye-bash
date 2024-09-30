@@ -219,7 +219,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             force_flags = bush.game.scale_flags.guess_flags(
                 newInfo.fn_key.fn_ext)
             for pl_flag, flag_val in force_flags.items():
-                pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val)
+                pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
             newFile.safeSave()
         to_select = []
         for mod, previous in to_refresh:
@@ -260,7 +260,7 @@ class Mod_OrderByName(EnabledLink):
                                  title=self._text): return
         #--Do it
         self.selected.sort(# sort masters first
-            key=lambda m: (not bosh.modInfos[m].in_master_block(), m))
+            key=lambda m: (not MasterFlag.ESM.cached_type(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings

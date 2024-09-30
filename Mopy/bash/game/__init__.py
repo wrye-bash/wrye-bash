@@ -78,7 +78,7 @@ class PluginFlag(Enum):
         self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
         self._offset = None
 
-    def set_mod_flag(self, mod_info, set_flag):
+    def set_mod_flag(self, mod_info, set_flag, game_handle):
         """Set the flag on the mod info and update the internal mod info state.
         """
         try:
@@ -86,14 +86,17 @@ class PluginFlag(Enum):
                 setattr(mod_info.header.flags1, self._flag_attr, set_flag)
                 setattr(mod_info, self._mod_info_attr, set_flag)
             else: # just init
-                setattr(mod_info, self._mod_info_attr, self.has_flagged(mod_info))
+                set_flag = self.has_flagged(mod_info)
+                setattr(mod_info, self._mod_info_attr, set_flag)
+            return set_flag # if we are not flagged check the file extension
         except AttributeError: # mod_info is a ModInfo.header.flags1 instance
             setattr(mod_info, self._flag_attr, set_flag)
             return True
 
     @classmethod
     def guess_flags(cls, mod_fn_ext, masters_supplied=()):
-        """Guess the flags of a mod/master info from its filename extension."""
+        """Guess the flags of a mod/master info from its filename extension.
+        Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
         return {MasterFlag.ESM: True} if mod_fn_ext == '.esm' else {}
 
     @classmethod
@@ -117,7 +120,7 @@ class PluginFlag(Enum):
         except AttributeError: # MasterInfo
             if minf.mod_info:
                 return getattr(minf.mod_info, self._mod_info_attr)
-            return getattr(minf, '_was_esl', False)
+            return minf.flag_fallback(self)
 
     def can_flag(self, fn_mod, mod_infos):
         """Check if the self._flag_attr can be set on the mod info flags -
@@ -181,7 +184,23 @@ class PluginFlag(Enum):
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 
 class MasterFlag(PluginFlag):
-    ESM = ('esm_flag', '_has_esm_flag')
+    ESM = ('esm_flag', '_is_master')
+
+    def set_mod_flag(self, mod_info, set_flag, game_handle):
+        if super().set_mod_flag(mod_info, set_flag, game_handle) or \
+                self is not self.ESM: # only check extension for esms
+            return
+        mext = mod_info.get_extension()
+        if game_handle.fsName == 'Morrowind':
+            ##: This is wrong, but works for now. We need game-specific
+            # record headers to parse the ESM flag for MW correctly - #480!
+            setattr(mod_info, self._mod_info_attr, mext == '.esm')
+        elif game_handle.Esp.extension_forces_flags:
+            # For games since FO4/SSE, .esm and .esl files set the master flag
+            # in memory even if not set on the file on disk. For .esp files we
+            # must check for the flag explicitly.
+            setattr(mod_info, self._mod_info_attr,
+                    self in self.guess_flags(mext))
 
     @classmethod
     def checkboxes(cls):
@@ -221,10 +240,10 @@ class EslMixin(PluginFlag):
                     'ones and vice versa.')]
         return []
 
-    def set_mod_flag(self, mod_info, set_flag):
-        if super().set_mod_flag(mod_info, set_flag):
+    def set_mod_flag(self, mod_info, set_flag, game_handle):
+        if super().set_mod_flag(mod_info, set_flag, game_handle):
             return # we were passed a flags1 instance
-        if not set_flag and self is type(self).ESL: # None or False
+        if self is type(self).ESL: # None or False
             setattr(mod_info, self._mod_info_attr,
                     mod_info.get_extension() == '.esl')
 
@@ -334,10 +353,10 @@ class SFPluginFlag(EslMixin, PluginFlag):
     OVERLAY = ('overlay_flag', '_is_overlay', 0,
                MergeabilityCheck.OVERLAY_CHECK)
 
-    def set_mod_flag(self, mod_info, set_flag):
-        if super().set_mod_flag(mod_info, set_flag):
+    def set_mod_flag(self, mod_info, set_flag, game_handle):
+        if super().set_mod_flag(mod_info, set_flag, game_handle):
             return # we were passed a flags1 instance
-        if not set_flag and self is (cls := type(self)).ESL: # None or False
+        if self is (cls := type(self)).ESL: # None or False
             # .esl extension does not matter for overlay flagged plugins todo ESM?
             if not cls.OVERLAY.has_flagged(mod_info):
                 setattr(mod_info, self._mod_info_attr,
