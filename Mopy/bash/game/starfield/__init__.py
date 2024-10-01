@@ -202,6 +202,11 @@ class _AStarfieldGameInfo(PatchGame):
         'sfbgs007.esm',
         'sfbgs008 - main.ba2',
         'sfbgs008.esm',
+        'shatteredspace - main01.ba2',
+        'shatteredspace - main02.ba2',
+        'shatteredspace - textures.ba2',
+        'shatteredspace - voices_en.ba2',
+        'shatteredspace.esm',
         'starfield - animations.ba2',
         'starfield - densitymaps.ba2',
         'starfield - faceanimation01.ba2',
@@ -294,14 +299,13 @@ class _AStarfieldGameInfo(PatchGame):
 
     class _LoStarfield(AsteriskGame):
         force_load_first = tuple(map(FName, (
-            'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
-            'SFBGS007.esm', 'SFBGS008.esm', 'SFBGS006.esm', 'SFBGS003.esm',
-            'SFBGS004.esm',
+            'ShatteredSpace.esm', 'Constellation.esm', 'OldMars.esm',
+            'SFBGS003.esm', 'SFBGS004.esm', 'SFBGS006.esm', 'SFBGS007.esm',
+            'SFBGS008.esm', 'BlueprintShips-Starfield.esm',
         )))
         # The game tries to read a Starfield.ccc already, but it's not present
         # yet. Also, official Creations are written to plugins.txt & can be
-        # disabled & reordered in the LO. LOOT uses it to force vanilla masters
-        # to load before plugins.txt plugins instead of after.
+        # disabled & reordered in the LO.
         _ccc_filename = 'Starfield.ccc'
 
         def _set_pinned_mods(self):
