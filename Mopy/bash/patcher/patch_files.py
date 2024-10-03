@@ -34,6 +34,7 @@ from .. import bolt # for type hints
 from .. import bush # for game etc
 from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url, FName
 from ..exception import BoltError, CancelError, ModError
+from ..game import MergeabilityCheck
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile
 
@@ -224,7 +225,8 @@ class PatchFile(ModFile):
         # Set of all Bash Tags that don't trigger an import from some patcher
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
-        mi_mergeable = pfile_minfos.mergeable_plugins
+        mi_mergeable = [modinfo.fn_key for modinfo in
+                        MergeabilityCheck.MERGE.cached_types(pfile_minfos)[0]]
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
             bashTags = self.all_tags[modName]

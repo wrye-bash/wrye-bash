@@ -23,14 +23,13 @@
 """Tmp module to get mergeability stuff out of bosh.__init__.py."""
 import os
 
-from .. import bush
 from ..bolt import sig_to_str
 from ..exception import ModError
-from ..game import MasterFlag
+from ..game import MasterFlag, MergeabilityCheck
 from ..mod_files import LoadFactory, ModFile
 __exit = lambda x: True # trick to exit early on non-verbose mode
 
-def _pbash_mergeable_no_load(modInfo, minfos, reasons):
+def _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
     _exit = __exit if reasons is None else reasons.append # append returns None
     if MasterFlag.ESM.has_flagged(modInfo) and _exit(_('This plugin has the ESM flag.')):
         return False
@@ -46,11 +45,11 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons):
     #--Bsa / blocking resources?
     hasBsa, has_blocking_resources = modInfo.hasResources()
     if hasBsa and _exit(_('This plugin has an associated %(bsa_ext)s '
-                          'file.') % {'bsa_ext': bush.game.Bsa.bsa_extension}):
+                          'file.') % {'bsa_ext': game_handle.Bsa.bsa_extension}):
         return False
     if has_blocking_resources:
         dir_list = '\n  - '.join(f'{pnd}{os.sep}%(blocking_plugin_name)s'
-            for pnd in bush.game.plugin_name_specific_dirs if pnd)
+            for pnd in game_handle.plugin_name_specific_dirs if pnd)
         if _exit((_('Has plugin-specific directory - one of the following:') +
               f'\n  - {dir_list}') % {'blocking_plugin_name': modInfo.fn_key}):
             return False
@@ -58,7 +57,7 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons):
     if modInfo.fn_key in minfos.missing_strings:
         if reasons is None: return False
         from . import oblivionIni
-        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
+        i_lang = oblivionIni.get_ini_language(game_handle.Ini.default_game_lang)
         strings_example = (f'{os.path.join("Strings", modInfo.fn_key.fn_body)}'
                            f'_{i_lang}.STRINGS')
         reasons.append(_('Missing string translation files '
@@ -68,19 +67,19 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons):
     # don't show up as mergeable.
     return False if reasons else True
 
-def isPBashMergeable(modInfo, minfos, reasons, _mod_header_reader):
+def isPBashMergeable(modInfo, minfos, reasons, game_handle):
     """Returns True or error message indicating whether specified mod is mergeable."""
-    if not _pbash_mergeable_no_load(modInfo, minfos, reasons) and \
-            reasons is None:
+    if not _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle) \
+            and reasons is None:
         return False  # non verbose mode
     _exit = __exit if reasons is None else reasons.append # append returns None
-    if not bush.game.Esp.canBash and _exit(
+    if not game_handle.Esp.canBash and _exit(
         _('Wrye Bash does not currently support loading plugins for '
-          '%(game_name)s.') % {'game_name': bush.game.display_name}):
+          '%(game_name)s.') % {'game_name': game_handle.display_name}):
         return False
     #--Load test: use generic MreRecord (without unpacking). ModFile.load will
     # unpack the header which is enough for record.flags1|fid checks
-    merge_types_fact = LoadFactory(False, generic=bush.game.mergeable_sigs)
+    merge_types_fact = LoadFactory(False, generic=game_handle.mergeable_sigs)
     modFile = ModFile(modInfo, merge_types_fact)
     try:
         modFile.load_plugin(loadStrings=False, catch_errors=False)
@@ -120,7 +119,7 @@ def _join_sigs(rec_sigs):
 def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and
     mergeable)."""
-    dependent = [mname for mname, info in minfos.items() if not info.isBP() and
-                 minfo_key in info.masterNames and mname not in
-                 minfos.mergeable_plugins]
+    dependent = [mname for mname, info in minfos.items() if
+                 not info.isBP() and minfo_key in info.masterNames and
+                 MergeabilityCheck.MERGE not in info.merge_types]
     return dependent

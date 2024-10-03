@@ -1081,9 +1081,12 @@ class Mod_RebuildPatch(_Mod_BP_Link):
 
     def _ask_deactivate_mergeable(self, bashed_patch):
         merge, noMerge, deactivate = [], [], []
+        mergeable = MergeabilityCheck.MERGE.cached_types(
+            bashed_patch.p_file_minfos)[0]
         for mod in bashed_patch.load_dict:
-            tags = bosh.modInfos[mod].getBashTags()
-            if mod in bosh.modInfos.mergeable_plugins:
+            mod_inf = bosh.modInfos[mod]
+            tags = mod_inf.getBashTags()
+            if mod_inf in mergeable:
                 if 'MustBeActiveIfImported' in tags:
                     continue
                 elif 'NoMerge' in tags:
@@ -1533,8 +1536,12 @@ class AFlipFlagLink(EnabledLink):
         self._flag_value = not first_flagged # flip the (common) flag value
         return all(m.fn_ext in self._allowed_ext and
             self._plugin_flag.has_flagged(minfo) == first_flagged and
-            (first_flagged or self._plugin_flag.can_flag(m, bosh.modInfos))
+            (first_flagged or self._can_convert(minfo))
                    for m, minfo in self.iselected_pairs())
+
+    def _can_convert(self, m):
+        return not hasattr(self._plugin_flag, 'merge_check') or (
+                    self._plugin_flag.merge_check in m.merge_types)
 
     @property
     def link_text(self):

@@ -52,8 +52,8 @@ from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
     OrderedLowerDict, attrgetter_cache
-from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
-    RemapWriteContext
+from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
+    RecordHeader, RemapWriteContext, unpack_header
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
@@ -185,6 +185,11 @@ class MasterInfo:
     def getBashTags(self):
         """Retrieve bash tags for master info if it's present in Data."""
         return set()
+
+    @property
+    def merge_types(self):
+        """Ask the mod info or shrug."""
+        return set() if self.mod_info is None else self.mod_info.merge_types
 
     def getStatus(self):
         return 30 if not self.mod_info else 0
@@ -409,6 +414,8 @@ class ModInfo(FileInfo):
             self.is_ghost = True
         else:  # new_info() path
             self._refresh_ghost_state(itsa_ghost, regular_path=fullpath)
+        # cache the results of mergeability checks for a refresh round
+        self.merge_types = set()
         super().__init__(fullpath, load_cache, **kwargs)
 
     def get_hide_dir(self):
@@ -448,6 +455,43 @@ class ModInfo(FileInfo):
             if pl_flag is MasterFlag.ESM:
                 self._update_onam() # recalculate ONAM info if necessary
         self.writeHeader()
+
+    def cache_mergeability(self, check_results: dict[
+            MergeabilityCheck | int, bool]):
+        """Cache the results of mergeability checks in merge_types."""
+        mset = {MergeabilityCheck(m) for m, m_mergeable in
+                check_results.items() if m_mergeable}
+        if changed := mset != self.merge_types:
+            self.merge_types = mset
+        return changed
+
+    def _scan_fids(self, fid_cond):
+        with ModReader.from_info(self) as ins:
+            try:
+                while not ins.atEnd():
+                    next_header = unpack_header(ins)
+                    # Skip GRUPs themselves, only process their records
+                    if next_header.recType != b'GRUP':
+                        if fid_cond(next_header.fid):
+                            return True
+                        next_header.skip_blob(ins)
+            except (OSError, struct_error) as e:
+                raise ModError(ins.inName, f"Error scanning {self}, file read "
+                    f"pos: {ins.tell():d}\nCaused by: '{e!r}'")
+        return False
+
+    def formids_in_esl_range(self):
+        """Check if all FormIDs are in the ESL range."""
+        num_masters = len(self.masterNames)
+        return not self._scan_fids(lambda header_fid: header_fid.mod_dex >=
+            num_masters and header_fid.object_dex > 0xFFF)
+
+    def has_new_records(self):
+        """Checks we have any new records."""
+        num_masters = len(self.masterNames)
+        # Check for NULL to skip the main file header (i.e. TES3/TES4)
+        return self._scan_fids(lambda header_fid: header_fid.mod_dex >=
+            num_masters and not header_fid.is_null())
 
     # ESM flag ----------------------------------------------------------------
     def isInvertedMod(self):
@@ -2023,9 +2067,6 @@ class ModInfos(TableFileInfos):
         self.real_indices = defaultdict(lambda: (sys.maxsize, ''))
         # Maps each plugin to a set of all plugins that have it as a master
         self.dependents = defaultdict(set)
-        # Map each mergeability type to a set of plugins that can be handled
-        # via that type
-        self._mergeable_by_type = {m: set() for m in MergeabilityCheck}
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
@@ -2065,13 +2106,6 @@ class ModInfos(TableFileInfos):
         self.merged, self.imported = self.getSemiActive(active_patches)
         return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
                 *(imprtd ^ self.imported)}
-
-    ##: Do we need fast_cached_property here?
-    @property
-    def mergeable_plugins(self) -> set[FName]:
-        """All plugins that can be merged into the Bashed Patch (they may
-        already *be* merged - see ModInfos.merged)."""
-        return self._mergeable_by_type[MergeabilityCheck.MERGE]
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -2338,17 +2372,14 @@ class ModInfos(TableFileInfos):
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
-        # All plugins that could be merged, ESL-flagged or Overlay-flagged
-        oldMergeable = {*chain.from_iterable(self._mergeable_by_type.values())}
         #--Mods that need to be rescanned
         rescan_mods = set()
-        for m in self._mergeable_by_type.values():
-            m.clear()
         merg_checks = bush.game.mergeability_checks
         # We store ints in the settings files, so use those for comparing
         merg_checks_ints = {c.value for c in merg_checks}
         quick_checks = {mc: pflag.cached_type for pflag in bush.game.scale_flags
                         if (mc := pflag.merge_check) is not None}
+        changed = set()
         # We need to scan dependent mods first to account for mergeability of
         # their masters
         for fn_mod, modInfo in dict_sort(self, reverse=True,
@@ -2380,7 +2411,8 @@ class ModInfos(TableFileInfos):
                   set(canMerge) == merg_checks_ints):
                 # The cached size matches what we have on disk and we have data
                 # for all required mergeability checks, so use the cached info
-                self._update_mergeable(fn_mod, canMerge)
+                if modInfo.cache_mergeability(canMerge):
+                    changed.add(fn_mod)
             else:
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
@@ -2388,9 +2420,7 @@ class ModInfos(TableFileInfos):
                 rescan_mods.add(fn_mod)
         if rescan_mods:
             self.rescanMergeable(rescan_mods) ##: maybe re-add progress?
-        difMergeable = (oldMergeable ^ {*chain.from_iterable(
-            self._mergeable_by_type.values())}) & set(self)
-        return rescan_mods | difMergeable
+        return rescan_mods | changed
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
                         return_results=False):
@@ -2423,7 +2453,7 @@ class ModInfos(TableFileInfos):
                     else:
                         try:
                             check_results[merg_type] = merg_check(
-                                fileInfo, self, reasons, ModHeaderReader)
+                                fileInfo, self, reasons, bush.game)
                         except Exception: # as e
                             # deprint(f'Error scanning mod {fileName} ({e})')
                             # # Assume it's not mergeable
@@ -2436,23 +2466,12 @@ class ModInfos(TableFileInfos):
                         all_reasons[merge].append(
                             _('Technically mergeable, but has NoMerge tag.'))
                     result[fileName] = all_reasons
-                self._update_mergeable(fileName, check_results)
+                fileInfo.cache_mergeability(check_results)
                 # Only store the enum values (i.e. the ints) in our settings
                 # files, we are moving away from pickling non-std classes
                 fileInfo.set_table_prop('mergeInfo', (fileInfo.fsize, {
                     k.value: v for k, v in check_results.items()}))
             return result
-
-    def _update_mergeable(self, fileName,
-                          check_results: dict[MergeabilityCheck | int, bool]):
-        """Update internal _mergeable_by_type cache - should be replaced by
-        ModInfo properties."""
-        for m, m_mergeable in check_results.items():
-            merg_set = self._mergeable_by_type[MergeabilityCheck(m)]
-            if m_mergeable:
-                merg_set.add(fileName)
-            else:
-                merg_set.discard(fileName)
 
     def _refresh_bash_tags(self):
         """Reloads bash tags for all mods set to receive automatic bash
@@ -2742,19 +2761,20 @@ class ModInfos(TableFileInfos):
             """Helper for checking if a plugin should be activated."""
             return (p.fn_ext != '.esu' and
                     'Deactivate' not in modInfos[p].getBashTags())
+        mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
         try:
             s_plugins = load_order.get_ordered(filter(_activatable, self))
             try:
                 # First, activate non-mergeable plugins not tagged Deactivate
                 for p in s_plugins:
-                    if p not in self.mergeable_plugins: _add_to_actives(p)
+                    if modInfos[p] not in mergeable: _add_to_actives(p)
             except PluginsFullError:
                 raise
-            if activate_mergeable:
+            if mergeable and activate_mergeable:
                 try:
                     # Then activate as many of the mergeable plugins as we can
                     for p in s_plugins:
-                        if p in self.mergeable_plugins: _add_to_actives(p)
+                        if modInfos[p] in mergeable: _add_to_actives(p)
                 except PluginsFullError as e:
                     raise SkippedMergeablePluginsError() from e
         except (BoltError, NotImplementedError):

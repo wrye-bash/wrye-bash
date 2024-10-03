@@ -201,12 +201,11 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for corrupt plugins
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
-    can_merge = modInfos.mergeable_plugins
     # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
     # already been merged into a BP
-    for m in list(can_merge):
-        if 'NoMerge' in modInfos[m].getBashTags() or m in modInfos.merged:
-            can_merge.discard(m)
+    mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
+    can_merge = {m for m, inf in modInfos.items() if inf in mergeable and
+        m not in modInfos.merged and 'NoMerge' not in inf.getBashTags()}
     # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
@@ -216,8 +215,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     for m, modinf in modInfos.items():
         for pflag in bush.game.scale_flags:
             if pflag in type(pflag).error_msgs and pflag.cached_type(modinf):
-                pflag.validate_type(modinf, flag_errors[pflag].values(),
-                                    ModHeaderReader)
+                pflag.validate_type(modinf, flag_errors[pflag].values())
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and
     # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
@@ -639,9 +637,10 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
               u'have corrupt or otherwise malformed headers.'))
         log_plugin_messages(all_corrupted) ##: Just _log_plugins?
     for pflag in bush.game.scale_flags:
-        minfos_cache, head, msg = pflag.cached_types(modInfos)
-        if minfos_cache:
-            _log_plugins(head, msg, minfos_cache)
+        if pflag.merge_check is not None:
+            minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
+            if minfos_cache:
+                _log_plugins(head, msg, minfos_cache)
         for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
             if pl_set:
                 _log_plugins(head, msg, pl_set)

@@ -56,6 +56,40 @@ class MergeabilityCheck(Enum):
     # WB will check plugins for their Overlay capability.
     OVERLAY_CHECK = 2
 
+    def cached_types(self, mod_infos):
+        """Return all the mods that passed our mergeability check with a
+        header and message for the mod checker UI."""
+        match self:
+            case MergeabilityCheck.ESL_CHECK:
+                h, m = '=== ' + _('ESL-Capable'), _(
+                    'The following plugins could be assigned an ESL flag, but '
+                    'do not have one right now.')
+            case MergeabilityCheck.OVERLAY_CHECK:
+                h, m = '=== ' + _('Overlay-Capable'), _(
+                    'The following plugins could be assigned an Overlay flag, '
+                    'but do not have one right now.')
+            case _:
+                h, m = '', ''
+        return [p for p in mod_infos.values() if self in p.merge_types], h, m
+
+    def can_convert_cached(self, minf, checkMark):
+        """Return a text key and a message for the mod list UI."""
+        if self not in minf.merge_types: return '', ''
+        match self:
+            case MergeabilityCheck.MERGE:
+                if 'NoMerge' in minf.getBashTags():
+                    return 'mods.text.noMerge', _('Technically mergeable, '
+                                                  'but has NoMerge tag.')
+                if checkMark == 2: # Merged plugins won't be in master lists
+                    mtext = _('Merged into Bashed Patch.')
+                else:
+                    mtext = _('Can be merged into Bashed Patch.')
+            case MergeabilityCheck.ESL_CHECK:
+                mtext = _('Can be ESL-flagged.')
+            case MergeabilityCheck.OVERLAY_CHECK:
+                mtext = _('Can be Overlay-flagged.')
+        return 'mods.text.mergeable', mtext
+
 class ObjectIndexRange(Enum):
     """Valid values for object_index_range."""
     # FormIDs with object indices in the range 0x000-0x7FF are always
@@ -121,15 +155,6 @@ class PluginFlag(Enum):
             if minf.mod_info:
                 return getattr(minf.mod_info, self._mod_info_attr)
             return minf.flag_fallback(self)
-
-    def can_flag(self, fn_mod, mod_infos):
-        """Check if the self._flag_attr can be set on the mod info flags -
-        for now delegate to the modInfos cache."""
-        try:
-            return fn_mod in getattr(mod_infos, '_mergeable_by_type')[
-                self.merge_check]
-        except (AttributeError, KeyError):
-            return True
 
     @classmethod
     def plugin_counts(cls, mod_infos, active_mods):
@@ -214,22 +239,8 @@ class EslMixin(PluginFlag):
                  merge_check=None, offset=None):
         super().__init__(flag_attr, mod_info_attr)
         self.max_plugins = max_plugins
-        self.merge_check = merge_check
+        self.merge_check: MergeabilityCheck | None = merge_check
         self._offset = offset
-
-    def cached_types(self, mod_infos):
-        match self.merge_check: # I use MergeabilityCheck to avoid overriding
-            case MergeabilityCheck.ESL_CHECK:
-                h, m = '=== ' + _('ESL-Capable'), _(
-                    'The following plugins could be assigned an ESL flag, but '
-                    'do not have one right now.')
-            case MergeabilityCheck.OVERLAY_CHECK:
-                h, m = '=== ' + _('Overlay-Capable'), _(
-                    'The following plugins could be assigned an Overlay flag, '
-                    'but do not have one right now.')
-            case _:
-                return None, '', ''
-        return getattr(mod_infos, '_mergeable_by_type')[self.merge_check], h, m
 
     def link_args(self):
         cls = type(self)
@@ -293,11 +304,10 @@ class EslMixin(PluginFlag):
                         f'{whole_lo_fid & 0x00000FFF:03X}')
         return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
 
-    def validate_type(self, modinf, error_sets, mod_header_reader,
-                      reasons=None, merge_checks=None):
+    def validate_type(self, modinf, error_sets, reasons=None, merge_checks=None):
         merge_checks = merge_checks or type(self).error_msgs[self].values()
-        for err_set, merge_check in zip(error_sets, merge_checks, strict=True):
-            if merge_check(modinf, mod_header_reader):
+        for err_set, typecheck in zip(error_sets, merge_checks, strict=True):
+            if typecheck(modinf):
                 try:
                     err_set.add(modinf.fn_key)
                 except AttributeError:
@@ -305,7 +315,7 @@ class EslMixin(PluginFlag):
                     reasons.append(err_set)
         return not reasons
 
-    def can_convert(self, modInfo, _minfos, reasons, mod_header_reader):
+    def can_convert(self, modInfo, _minfos, reasons, _game_handle):
         """Determine whether the specified mod can be converted to our type.
         Optionally also return the reasons it can't be converted.
 
@@ -315,7 +325,7 @@ class EslMixin(PluginFlag):
         :param reasons: A list of strings that should be filled with the
                         reasons why we can't flag this mod, or None if only the
                         return value of this method is of interest.
-        :param mod_header_reader: the ModHeaderReader type
+        :param _game_handle: unused - mirror the signature of isPBashMergeable.
         :return: True if we can flag the specified mod."""
         it = iter(self.unflaggable[self.name])
         ##: dragons - needs to generalize to arbitrary flag combinations and
@@ -328,8 +338,7 @@ class EslMixin(PluginFlag):
                                conflicting_flag)
         chks = [*type(self).error_msgs[self].values()][:2] #len(it)=2 for OVERLAY
         try:
-            return self.validate_type(modInfo, it, mod_header_reader, reasons,
-                                      chks)
+            return self.validate_type(modInfo, it, reasons, chks)
         except ModError as e:
             if reasons is not None: reasons.append(str(e))
             return False
@@ -340,8 +349,8 @@ EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
 EslMixin.error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
     _("The following plugins have an ESL flag, but do not qualify. Either "
       "remove the flag with 'Remove ESL Flag', or change the extension to "
-      "'.esp' if it is '.esl'.")): lambda minfo, mreader:
-                not mreader.formids_in_esl_range(minfo)}}
+      "'.esp' if it is '.esl'.")): lambda minfo:
+                not minfo.formids_in_esl_range()}}
 EslMixin.unflaggable = {'ESL': [[_('This plugin is already ESL-flagged.'),
                                  _('This plugin has the Overlay flag.')],
     _('This plugin contains records with FormIDs greater than 0xFFF.')]}
@@ -402,20 +411,20 @@ SFPluginFlag.error_msgs = {**EslMixin.error_msgs, SFPluginFlag.OVERLAY.name: {
         "because they do not have any masters. %(game_name)s will not treat "
         "these as Overlay plugins. Either remove the flag with 'Remove "
         "Overlay Flag', or use %(xedit_name)s to add at least one master to "
-        "the plugin.")): lambda minfo, mreader: not minfo.masterNames,
+        "the plugin.")): lambda minfo: not minfo.masterNames,
     ('=== ' + _('Incorrect Overlay Flag: New Records'), _(
         "The following plugins have an Overlay flag, but do not qualify "
         "because they contain new records. These will be injected into the "
         "first master of the plugins in question, which can seriously break "
         "basic game data. Either remove the flag with 'Remove Overlay "
-        "Flag', or remove the new records.")): lambda minfo, mreader:
-                mreader.has_new_records(minfo),
+        "Flag', or remove the new records.")): lambda minfo:
+                minfo.has_new_records(),
     ('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'), _(
         "The following plugins have an Overlay flag, but do not qualify "
         "because they also have an ESL flag. These flags are mutually "
         "exclusive. %(game_name)s will not treat these as overlay plugins. "
         "Either remove the Overlay flag with 'Remove Overlay Flag', or "
-        "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo, mreader:
+        "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo:
                 SFPluginFlag.ESL.cached_type(minfo),
 }}
 SFPluginFlag.unflaggable = {**EslMixin.unflaggable,
