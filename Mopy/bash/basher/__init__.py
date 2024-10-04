@@ -1009,7 +1009,8 @@ class ModList(_ModsUIList):
             msg = _(u'Reordering mods is only allowed when they are sorted '
                     u'by Load Order.')
         else:
-            pinned = load_order.filter_pinned(self.GetSelected())
+            pinned = load_order.filter_pinned(self.GetSelected(),
+                                              fixed_order=True)
             if pinned:
                 msg = (_(u"You can't reorder the following mods:") + u'\n' +
                        u', '.join(str(s) for s in pinned))

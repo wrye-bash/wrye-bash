@@ -966,7 +966,7 @@ class AFallout4GameInfo(PatchGame):
     complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'}
 
     class LoFallout4(AsteriskGame):
-        must_be_active_if_present = tuple(map(FName, (
+        force_load_first = tuple(map(FName, (
             'DLCRobot.esm', 'DLCworkshop01.esm', 'DLCCoast.esm',
             'DLCWorkshop02.esm', 'DLCWorkshop03.esm', 'DLCNukaWorld.esm',
             'DLCUltraHighResolution.esm')))

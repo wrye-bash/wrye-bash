@@ -105,7 +105,7 @@ class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
 
     class _LoEnderalSE(ASkyrimSEGameInfo.LoSkyrimSE):
         # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
-        must_be_active_if_present = tuple(map(FName, (
+        force_load_first = tuple(map(FName, (
             'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm', 'Update.esm',
             'Enderal - Forgotten Stories.esm',)))
     lo_handler = _LoEnderalSE

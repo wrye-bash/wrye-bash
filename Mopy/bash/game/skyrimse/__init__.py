@@ -330,8 +330,7 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
     ]
 
     class LoSkyrimSE(AsteriskGame):
-        must_be_active_if_present = tuple(map(FName, ('Update.esm',
-            'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
+        force_load_first = ASkyrimGameInfo.LoSkyrim.force_load_first
         _ccc_filename = 'Skyrim.ccc'
         _ccc_fallback = tuple(map(FName, ( # Up to date as of 2024/04/30
             'ccASVSSE001-ALMSIVI.esm',

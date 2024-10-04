@@ -2811,21 +2811,19 @@ class ModInfos(TableFileInfos):
         finally:
             if doSave: self.cached_lo_save_active()
 
-    def lo_deactivate(self, fileName, doSave=False):
+    def lo_deactivate(self, *filenames, doSave=False):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
-        if not isinstance(fileName, (set, list)): fileName = {fileName}
-        notDeactivatable = load_order.force_active_if_present()
-        fileNames = {x for x in fileName if x not in notDeactivatable}
+        filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
         old = set_awip = set(self._active_wip)
-        diff = set_awip - fileNames
+        diff = set_awip - filenames
         if len(diff) == len(set_awip): return set()
         #--Unselect self
         set_awip = diff
         #--Unselect children
         children = set()
         cached_dependents = self.dependents
-        for fileName in fileNames:
+        for fileName in filenames:
             children |= cached_dependents[fileName]
         while children:
             child = children.pop()
@@ -2894,8 +2892,7 @@ class ModInfos(TableFileInfos):
         for present_plugin in list(wip_actives):
             if present_plugin.fn_ext != '.esu':
                 _add_masters(present_plugin)
-        wip_actives |= (load_order.force_active_if_present() &
-                        present_plugins)
+        wip_actives.update(load_order.filter_pinned(present_plugins))
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.get_ordered(wip_actives)
         trim_regular, trim_esl = load_order.check_active_limit(ordered_wip)
@@ -3097,7 +3094,7 @@ class ModInfos(TableFileInfos):
         # adapted from refresh() (avoid refreshing from the data directory)
         del_keys = super().delete_refresh(infos, check_existence)
         # we need to call deactivate to deactivate dependents
-        self.lo_deactivate(del_keys) # no-op if empty
+        self.lo_deactivate(*del_keys) # no-op if empty
         if del_keys and check_existence: # delete() path - refresh caches
             self._lo_caches_remove_mods(del_keys)
             self.cached_lo_save_all() # will perform the needed refreshes

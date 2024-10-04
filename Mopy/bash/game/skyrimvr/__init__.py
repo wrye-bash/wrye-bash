@@ -84,9 +84,8 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     }
 
     class _LoSkyrimVR(ASkyrimSEGameInfo.LoSkyrimSE):
-        must_be_active_if_present = (
-            *ASkyrimSEGameInfo.LoSkyrimSE.must_be_active_if_present,
-            FName('SkyrimVR.esm'))
+        force_load_first = (*ASkyrimSEGameInfo.LoSkyrimSE.force_load_first,
+                            FName('SkyrimVR.esm'))
         ##: This is nasty, figure out a way to get rid of it
         @classproperty
         def max_espms(cls):
