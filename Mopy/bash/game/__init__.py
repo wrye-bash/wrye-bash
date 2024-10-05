@@ -31,8 +31,9 @@ from enum import Enum
 from itertools import chain
 from os.path import join as _j
 
-from .. import bass, bolt
-from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag
+from .. import bass, bolt, initialization
+from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag, \
+    isPBashMergeable
 from ..bolt import FNDict, fast_cached_property
 from ..exception import InvalidPluginFlagsError, ModError
 
@@ -170,7 +171,7 @@ class _EslMixin(PluginFlag):
 _EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                         '%(status_num_espm)d, ESL: %(ESL)d)')
 # EslMixin.ESL.name must always be 'ESL'
-_EslMixin.error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
+_EslMixin._error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
     _("The following plugins have an ESL flag, but do not qualify. Either "
       "remove the flag with 'Remove ESL Flag', or change the extension to "
       "'.esp' if it is '.esl'.")): lambda minfo:
@@ -229,7 +230,7 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
 _SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                            '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '
                            '%(OVERLAY)d)')
-_SFPluginFlag.error_msgs = {**_EslMixin.error_msgs,
+_SFPluginFlag._error_msgs = {**_EslMixin._error_msgs,
   _SFPluginFlag.OVERLAY.name: {
     ('=== ' + _('Incorrect Overlay Flag: No Masters'), _(
         "The following plugins have an Overlay flag, but do not qualify "
@@ -370,8 +371,8 @@ class GameInfo(object):
     # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
     # What mergeability checks to perform for this game. See MergeabilityCheck
-    # above for more information
-    mergeability_checks = {MergeabilityCheck.MERGE}
+    # for more information
+    mergeability_checks = {MergeabilityCheck.MERGE: isPBashMergeable}
     # True if this game supports overlay plugins (i.e. its TES4 record's header
     # flags feature an overlay_flag); these are plugins that don't take up a
     # load order slot but can only contain overrides (any non-override records
@@ -392,10 +393,13 @@ class GameInfo(object):
     # game folder and use those instead of the default paths when present
     check_legacy_paths = False
 
-    def __init__(self, gamePath):
+    def __init__(self, gamePath, *args):
         self.gamePath = gamePath # absolute bolt Path to the game directory
-        self.has_esl = '.esl' in self.espm_extensions
-        self.max_espms = 254 if self.has_esl else 255
+        #--Initialize Directories to perform backup/restore operations
+        #--They depend on setting the bash.ini and the game
+        if args:
+            self.game_ini_path = initialization.init_dirs(self, *args)
+        self._init_plugin_types()
 
     # Master esm form ids factory
     __master_fids = {}
@@ -894,17 +898,19 @@ class GameInfo(object):
             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
 
-    def post_init(self):
-        """Post-initialize this game module. This runs after all directories
-        for the game have been set."""
-        if self.has_esl: # this might need the bass.dirs be initialized
-            self.scale_flags = EslPluginFlag
-            self.mergeability_checks = {MergeabilityCheck.ESL_CHECK}
-            strs = {'xedit_name': self.Xe.full_name,
-                    'game_name': self.display_name}
-            EslPluginFlag.error_msgs = {EslPluginFlag[k]: {(h, msg % strs): lam
-                for (h, msg), lam in v.items()} for k, v in
-                _EslMixin.error_msgs.items()}
+    def _init_plugin_types(self, pflags=None):
+        """Initialize plugin types for this game. This runs after all game
+        directories have been set (see _ASkyrimVRGameInfo override)."""
+        self.has_esl = '.esl' in self.espm_extensions
+        self.max_espms = 254 if self.has_esl else 255
+        pflags = pflags or (self.has_esl and EslPluginFlag)
+        if not pflags: return
+        self.scale_flags = pflags
+        self.mergeability_checks = {mc: pflag.can_convert for pflag in pflags
+            if (mc := pflag.merge_check) is not None}
+        fmt = {'xedit_name': self.Xe.full_name, 'game_name': self.display_name}
+        pflags.error_msgs = {pflags[k]: {(h, msg % fmt): lam for (h, msg), lam
+            in v.items()} for k, v in pflags._error_msgs.items()}
 
     @classmethod
     def supported_games(cls):

@@ -91,7 +91,7 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-    def post_init(self):
+    def _init_plugin_types(self, pflags=None):
         from ... import env
         cls = self.__class__
         esl_plugin_path = env.to_os_path(bass.dirs['mods'].join(
@@ -103,9 +103,7 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
             cls.Esp.object_index_range = ObjectIndexRange.RESERVED
             cls.Esp.object_index_range_expansion_ver = 0.0
             cls.Esp.validHeaderVersions = (0.94, 1.70, 1.71)
-            self.has_esl = True
-            self.max_espms = 254
-        super().post_init()
+        super()._init_plugin_types(pflags)
 
 class SteamSkyrimVRGameInfo(SteamMixin, _ASkyrimVRGameInfo):
     """GameInfo override for the Steam version of Skyrim VR."""

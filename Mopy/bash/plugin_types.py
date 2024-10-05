@@ -298,6 +298,8 @@ class PluginFlag(Enum):
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 
 class MasterFlag(PluginFlag):
+    """Enum with a single member for the Master flag - PluginFlag knows we
+    exist."""
     ESM = ('esm_flag', '_is_master')
 
     def set_mod_flag(self, mod_info, set_flag, game_handle):

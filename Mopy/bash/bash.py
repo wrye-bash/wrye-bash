@@ -705,26 +705,14 @@ def _detect_game(opts, backup_bash_ini):
         os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
     bush_game = _import_bush_and_set_game(opts)
-    if not bush_game:
-        return None, None
-    #--Initialize Directories to perform backup/restore operations
-    #--They depend on setting the bash.ini and the game
-    from . import initialization
-    game_ini_path, init_warnings = initialization.init_dirs(
-        opts.personalPath, opts.localAppDataPath, bush_game)
-    if init_warnings:
-        warning_msg = _('The following (non-critical) warnings were found '
-                        'during initialization:')
-        warning_msg += '\n\n'
-        warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
-        _show_boot_popup(warning_msg, is_critical=False)
-    bush_game.post_init()
-    return bush_game, game_ini_path
+    return (bush_game, bush_game.game_ini_path) if bush_game else (None, None)
 
 def _import_bush_and_set_game(opts):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
-    game_infos = bush.detect_and_set_game(opts.oblivionPath)
+    # Warnings found during game dirs initialization are added here as strings
+    init_warnings = []
+    game_infos = bush.detect_and_set_game(opts, init_warnings)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             _show_boot_popup(_(
@@ -747,7 +735,13 @@ def _import_bush_and_set_game(opts):
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
         bass.boot_settings['Boot']['last_game'] = gname
-        bush.detect_and_set_game(opts.oblivionPath, gname, gm_path)
+        bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
+    if init_warnings:
+        warning_msg = _('The following (non-critical) warnings were found '
+                        'during initialization:')
+        warning_msg += '\n\n'
+        warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
+        _show_boot_popup(warning_msg, is_critical=False)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
