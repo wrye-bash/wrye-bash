@@ -27,68 +27,18 @@ and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
 import re
 import sys
-from collections import Counter
 from enum import Enum
 from itertools import chain
 from os.path import join as _j
 
 from .. import bass, bolt
+from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag
 from ..bolt import FNDict, fast_cached_property
 from ..exception import InvalidPluginFlagsError, ModError
 
 # Constants and Helpers -------------------------------------------------------
 # Files shared by versions of games that are published on the Windows Store
 WS_COMMON_FILES = {'appxmanifest.xml'}
-
-# The int values get stored in the settings files (mergeability cache), so they
-# should always remain the same just to be safe
-class MergeabilityCheck(Enum):
-    """The various mergeability checks that a game can have. See the comment
-    above each of them for more information."""
-    # If set for the game, the Merge Patches patcher will be enabled, the
-    # NoMerge tag will be available and WB will check plugins for their BP
-    # mergeability.
-    MERGE = 0
-    # If set for the game, the Add ESL Flag command will be available and WB
-    # will check plugins for their ESL capability.
-    ESL_CHECK = 1
-    # If set for the game, the Add Overlay Flag command will be available and
-    # WB will check plugins for their Overlay capability.
-    OVERLAY_CHECK = 2
-
-    def cached_types(self, mod_infos):
-        """Return all the mods that passed our mergeability check with a
-        header and message for the mod checker UI."""
-        match self:
-            case MergeabilityCheck.ESL_CHECK:
-                h, m = '=== ' + _('ESL-Capable'), _(
-                    'The following plugins could be assigned an ESL flag, but '
-                    'do not have one right now.')
-            case MergeabilityCheck.OVERLAY_CHECK:
-                h, m = '=== ' + _('Overlay-Capable'), _(
-                    'The following plugins could be assigned an Overlay flag, '
-                    'but do not have one right now.')
-            case _:
-                h, m = '', ''
-        return [p for p in mod_infos.values() if self in p.merge_types], h, m
-
-    def can_convert_cached(self, minf, checkMark):
-        """Return a text key and a message for the mod list UI."""
-        if self not in minf.merge_types: return '', ''
-        match self:
-            case MergeabilityCheck.MERGE:
-                if 'NoMerge' in minf.getBashTags():
-                    return 'mods.text.noMerge', _('Technically mergeable, '
-                                                  'but has NoMerge tag.')
-                if checkMark == 2: # Merged plugins won't be in master lists
-                    mtext = _('Merged into Bashed Patch.')
-                else:
-                    mtext = _('Can be merged into Bashed Patch.')
-            case MergeabilityCheck.ESL_CHECK:
-                mtext = _('Can be ESL-flagged.')
-            case MergeabilityCheck.OVERLAY_CHECK:
-                mtext = _('Can be Overlay-flagged.')
-        return 'mods.text.mergeable', mtext
 
 class ObjectIndexRange(Enum):
     """Valid values for object_index_range."""
@@ -101,139 +51,10 @@ class ObjectIndexRange(Enum):
     # Plugins with at least one master can use the range 0x001-0x7FF
     # for their own purposes
     EXPANDED_ALWAYS = 2
-#------------------------------------------------------------------------------
-class PluginFlag(Enum):
-    """Enum for plugin flags and plugin types - they're friends with ModInfo
-    to the point the latter lets it modify its private attributes. This
-    intimate class relationship drastically simplifies client code."""
 
-    def __init__(self, flag_attr, mod_info_attr):
-        self._flag_attr = flag_attr # the ModInfo.header.flags1 attribute
-        self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
-        self._offset = None
-
-    def set_mod_flag(self, mod_info, set_flag, game_handle):
-        """Set the flag on the mod info and update the internal mod info state.
-        """
-        try:
-            if set_flag is not None:
-                setattr(mod_info.header.flags1, self._flag_attr, set_flag)
-                setattr(mod_info, self._mod_info_attr, set_flag)
-            else: # just init
-                set_flag = self.has_flagged(mod_info)
-                setattr(mod_info, self._mod_info_attr, set_flag)
-            return set_flag # if we are not flagged check the file extension
-        except AttributeError: # mod_info is a ModInfo.header.flags1 instance
-            setattr(mod_info, self._flag_attr, set_flag)
-            return True
-
-    @classmethod
-    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
-        """Guess the flags of a mod/master info from its filename extension.
-        Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
-        return {MasterFlag.ESM: True} if mod_fn_ext == '.esm' else {}
-
-    @classmethod
-    def checkboxes(cls):
-        """Return a list of checkboxes init params for the plugin flags."""
-        return {}
-
-    def has_flagged(self, mod_info):
-        """Check if the self._flag_attr is set on the mod info flags."""
-        return getattr(mod_info.header.flags1, self._flag_attr)
-
-    @classmethod
-    def check_flag_assignments(cls, flag_dict, raise_on_invalid=True):
-        return flag_dict
-
-    def cached_type(self, minf):
-        """Return the cached type of mod info - depends on the corresponding
-        flag state and possibly on the file extension."""
-        try:
-            return getattr(minf, self._mod_info_attr)
-        except AttributeError: # MasterInfo
-            if minf.mod_info:
-                return getattr(minf.mod_info, self._mod_info_attr)
-            return minf.flag_fallback(self)
-
-    @classmethod
-    def plugin_counts(cls, mod_infos, active_mods):
-        counts = Counter(dict.fromkeys((mem.name for mem in cls), 0))
-        regular_count = 0
-        for m in active_mods:
-            for member in cls:
-                if member.cached_type(m):
-                    counts[member.name] += 1
-                    break
-            else:
-                regular_count += 1
-        return cls.count_str % {**counts, 'status_num': len(active_mods),
-          'total_status_num': len(mod_infos), 'status_num_espm': regular_count}
-
-    @classmethod
-    def get_indexes(cls, infos, real_indexes):
-        limit_flags = [m for m in cls if m._offset]
-        indexes = Counter()
-        indexes.update(dict(((m, m._offset) for m in limit_flags)))
-        for p, inf in infos:
-            for pflag in limit_flags: # currently only ESL - revisit
-                if pflag.cached_type(inf):
-                    msg, sub = 'FE%03X', pflag._offset
-                    break
-            else:
-                msg, pflag, sub = '%02X', 'regular', 0
-            real_indexes[p] = (indexes[pflag], msg % (indexes[pflag] - sub))
-            indexes[pflag] += 1
-
-    @classmethod
-    def format_fid(cls, whole_lo_fid: int, _fid_orig_plugin, mod_infos):
-        """For non-ESL games simple hexadecimal formatting will do."""
-        return f'{whole_lo_fid:08X}'
-
-    @classmethod
-    def deactivate_msg(cls, max_regular_plugins):
-        return _('The following plugins have been deactivated '
-                 'because only %(max_regular_plugins)d plugins '
-                 'may be active at the same time.') % {
-            'max_regular_plugins': max_regular_plugins}
-
-    def link_args(self):
-        match self:
-            case MasterFlag.ESM:
-               return [('.esp', '.esu'), (), _('Flip the ESM flag on '
-                    'the selected plugins, turning masters into regular '
-                    'plugins and vice versa.')]
-        return []
-
-# easiest way to define enum class variables
-PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
-
-class MasterFlag(PluginFlag):
-    ESM = ('esm_flag', '_is_master')
-
-    def set_mod_flag(self, mod_info, set_flag, game_handle):
-        if super().set_mod_flag(mod_info, set_flag, game_handle) or \
-                self is not self.ESM: # only check extension for esms
-            return
-        mext = mod_info.get_extension()
-        if game_handle.fsName == 'Morrowind':
-            ##: This is wrong, but works for now. We need game-specific
-            # record headers to parse the ESM flag for MW correctly - #480!
-            setattr(mod_info, self._mod_info_attr, mext == '.esm')
-        elif game_handle.Esp.extension_forces_flags:
-            # For games since FO4/SSE, .esm and .esl files set the master flag
-            # in memory even if not set on the file on disk. For .esp files we
-            # must check for the flag explicitly.
-            setattr(mod_info, self._mod_info_attr,
-                    self in self.guess_flags(mext))
-
-    @classmethod
-    def checkboxes(cls):
-        return {cls.ESM: {'cb_label': _('ESM Flag'), 'chkbx_tooltip': _(
-            'Whether or not the the resulting plugin will be a master, i.e. '
-            'have the ESM flag.')}}
-
-class EslMixin(PluginFlag):
+class _EslMixin(PluginFlag):
+    """Mixin for ESL and newer games. The flags in this emum can not be set
+    together but seems they are always compatible with MasterFlag.ESM."""
 
     def __init__(self, flag_attr, mod_info_attr, max_plugins=None,
                  merge_check=None, offset=None):
@@ -242,79 +63,7 @@ class EslMixin(PluginFlag):
         self.merge_check: MergeabilityCheck | None = merge_check
         self._offset = offset
 
-    def link_args(self):
-        cls = type(self)
-        match self:
-            case cls.ESL:
-                return [('.esm', '.esp', '.esu'), (), _('Flip the ESL flag on '
-                    'the selected plugins, turning light plugins into regular '
-                    'ones and vice versa.')]
-        return []
-
-    def set_mod_flag(self, mod_info, set_flag, game_handle):
-        if super().set_mod_flag(mod_info, set_flag, game_handle):
-            return # we were passed a flags1 instance or we set the flag
-        if self is type(self).ESL: # if ESL flag wasn't set check the extension
-            setattr(mod_info, self._mod_info_attr,
-                    mod_info.get_extension() == '.esl')
-
-    @classmethod
-    def checkboxes(cls):
-        # Check the ESL checkbox by default for ESL games, since one of the
-        # most common use cases for the create mod command on those games is
-        # to create BSA-loading dummies.
-        return {cls.ESL: {'cb_label': _('ESL Flag'), 'chkbx_tooltip': _(
-            'Whether or not the resulting plugin will be '
-            'light, i.e have the ESL flag.'), 'checked': True}}
-
-    @classmethod
-    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
-        return {MasterFlag.ESM: True, cls.ESL: True} if mod_fn_ext == '.esl' \
-            else super().guess_flags(mod_fn_ext)
-
-    @classmethod
-    def check_flag_assignments(cls, flag_dict: dict[PluginFlag, bool],
-                               raise_on_invalid=True):
-        set_true = [k for k, v in flag_dict.items() if k in cls and v]
-        if raise_on_invalid and len(set_true) > 1:
-            raise InvalidPluginFlagsError([k.name for k in set_true])
-        elif not set_true:
-            return flag_dict
-        return {**flag_dict, **{ # set all other flags to False
-            k: k in set_true for k in cls}}
-
-    @classmethod
-    def deactivate_msg(cls, max_regular_plugins):
-        return _('The following plugins have been deactivated because only '
-            '%(max_regular_plugins)d regular plugins and %(max_esl_plugins)d '
-            'ESL-flagged plugins may be active at the same time.') % {
-                'max_regular_plugins': max_regular_plugins,
-                'max_esl_plugins': cls.ESL.max_plugins}
-
-    @classmethod
-    def format_fid(cls, whole_lo_fid, fid_orig_plugin, mod_infos):
-        """Format a whole-LO FormID, which can exceed normal FormID limits
-        (e.g. 211000800 is perfectly fine in a load order with ESLs), so
-        that xEdit (and the game) can understand it."""
-        orig_minf = mod_infos[fid_orig_plugin]
-        proper_index = mod_infos.real_indices[fid_orig_plugin][0]
-        for pflag in cls: ##: optimize this (and some few other pflag-loops)
-            if pflag._offset and pflag.cached_type(orig_minf):
-                return (f'FE{proper_index - pflag._offset:03X}'
-                        f'{whole_lo_fid & 0x00000FFF:03X}')
-        return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
-
-    def validate_type(self, modinf, error_sets, reasons=None, merge_checks=None):
-        merge_checks = merge_checks or type(self).error_msgs[self].values()
-        for err_set, typecheck in zip(error_sets, merge_checks, strict=True):
-            if typecheck(modinf):
-                try:
-                    err_set.add(modinf.fn_key)
-                except AttributeError:
-                    if reasons is None: return False
-                    reasons.append(err_set)
-        return not reasons
-
+    # Additional API for ESL and newer games ----------------------------------
     def can_convert(self, modInfo, _minfos, reasons, _game_handle):
         """Determine whether the specified mod can be converted to our type.
         Optionally also return the reasons it can't be converted.
@@ -343,30 +92,105 @@ class EslMixin(PluginFlag):
             if reasons is not None: reasons.append(str(e))
             return False
 
-EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                       '%(status_num_espm)d, ESL: %(ESL)d)')
+    def validate_type(self, modinf, error_sets, reasons=None, merge_checks=None):
+        merge_checks = merge_checks or type(self).error_msgs[self].values()
+        for err_set, typecheck in zip(error_sets, merge_checks, strict=True):
+            if typecheck(modinf):
+                try:
+                    err_set.add(modinf.fn_key)
+                except AttributeError:
+                    if reasons is None: return False
+                    reasons.append(err_set)
+        return not reasons
+
+    @classmethod
+    def check_flag_assignments(cls, flag_dict: dict[PluginFlag, bool],
+                               raise_on_invalid=True):
+        """Check if the flags in flag_dict are compatible."""
+        set_true = [k for k, v in flag_dict.items() if k in cls and v]
+        if raise_on_invalid and len(set_true) > 1:
+            raise InvalidPluginFlagsError([k.name for k in set_true])
+        elif not set_true:
+            return flag_dict
+        return {**flag_dict, **{ # set all other flags to False
+            k: k in set_true for k in cls}}
+
+    # Overrides ---------------------------------------------------------------
+    def set_mod_flag(self, mod_info, set_flag, game_handle):
+        if super().set_mod_flag(mod_info, set_flag, game_handle):
+            return # we were passed a flags1 instance or we set the flag
+        if self is type(self).ESL: # if ESL flag wasn't set check the extension
+            setattr(mod_info, self._mod_info_attr,
+                    mod_info.get_extension() == '.esl')
+
+    @classmethod
+    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
+        return {MasterFlag.ESM: True, cls.ESL: True} if mod_fn_ext == '.esl' \
+            else super().guess_flags(mod_fn_ext)
+
+    @classmethod
+    def format_fid(cls, whole_lo_fid, fid_orig_plugin, mod_infos):
+        """Format a whole-LO FormID, which can exceed normal FormID limits
+        (e.g. 211000800 is perfectly fine in a load order with ESLs), so
+        that xEdit (and the game) can understand it."""
+        orig_minf = mod_infos[fid_orig_plugin]
+        proper_index = mod_infos.real_indices[fid_orig_plugin][0]
+        for pflag in cls: ##: optimize this (and some few other pflag-loops)
+            if pflag._offset and pflag.cached_type(orig_minf):
+                return (f'FE{proper_index - pflag._offset:03X}'
+                        f'{whole_lo_fid & 0x00000FFF:03X}')
+        return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
+
+    @classmethod
+    def checkboxes(cls):
+        # Check the ESL checkbox by default for ESL games, since one of the
+        # most common use cases for the create mod command on those games is
+        # to create BSA-loading dummies.
+        return {cls.ESL: {'cb_label': _('ESL Flag'), 'chkbx_tooltip': _(
+            'Whether or not the resulting plugin will be '
+            'light, i.e have the ESL flag.'), 'checked': True}}
+
+    @classmethod
+    def deactivate_msg(cls, max_regular_plugins):
+        return _('The following plugins have been deactivated because only '
+            '%(max_regular_plugins)d regular plugins and %(max_esl_plugins)d '
+            'ESL-flagged plugins may be active at the same time.') % {
+                'max_regular_plugins': max_regular_plugins,
+                'max_esl_plugins': cls.ESL.max_plugins}
+
+    def link_args(self):
+        cls = type(self)
+        match self:
+            case cls.ESL:
+                return [('.esm', '.esp', '.esu'), (), _('Flip the ESL flag on '
+                    'the selected plugins, turning light plugins into regular '
+                    'ones and vice versa.')]
+        return []
+
+_EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                        '%(status_num_espm)d, ESL: %(ESL)d)')
 # EslMixin.ESL.name must always be 'ESL'
-EslMixin.error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
+_EslMixin.error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
     _("The following plugins have an ESL flag, but do not qualify. Either "
       "remove the flag with 'Remove ESL Flag', or change the extension to "
       "'.esp' if it is '.esl'.")): lambda minfo:
                 not minfo.formids_in_esl_range()}}
-EslMixin.unflaggable = {'ESL': [[_('This plugin is already ESL-flagged.'),
-                                 _('This plugin has the Overlay flag.')],
+_EslMixin.unflaggable = {'ESL': [[_('This plugin is already ESL-flagged.'),
+    _('This plugin has the Overlay flag.')],
     _('This plugin contains records with FormIDs greater than 0xFFF.')]}
 
-class EslPluginFlag(EslMixin, PluginFlag):
+class EslPluginFlag(_EslMixin, PluginFlag):
     # 4096 is hard limit, game runs out of fds sooner, testing needed
     ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK, 253)
 
-class SFPluginFlag(EslMixin, PluginFlag):
+class _SFPluginFlag(_EslMixin, PluginFlag):
     ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK, 253)
     OVERLAY = ('overlay_flag', '_is_overlay', 0,
                MergeabilityCheck.OVERLAY_CHECK)
 
     def set_mod_flag(self, mod_info, set_flag, game_handle):
         if super().set_mod_flag(mod_info, set_flag, game_handle):
-            return  # we were passed a flags1 instance or the flag was set
+            return # we were passed a flags1 instance or the flag was set
         if self is (cls := type(self)).ESL:
             # .esl extension does not matter for overlay flagged plugins todo ESM?
             if not cls.OVERLAY.has_flagged(mod_info):
@@ -402,10 +226,11 @@ class SFPluginFlag(EslMixin, PluginFlag):
                     'overlay plugins into regular ones and vice versa.')]
         return super().link_args()
 
-SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+_SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                            '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '
                            '%(OVERLAY)d)')
-SFPluginFlag.error_msgs = {**EslMixin.error_msgs, SFPluginFlag.OVERLAY.name: {
+_SFPluginFlag.error_msgs = {**_EslMixin.error_msgs,
+  _SFPluginFlag.OVERLAY.name: {
     ('=== ' + _('Incorrect Overlay Flag: No Masters'), _(
         "The following plugins have an Overlay flag, but do not qualify "
         "because they do not have any masters. %(game_name)s will not treat "
@@ -425,13 +250,13 @@ SFPluginFlag.error_msgs = {**EslMixin.error_msgs, SFPluginFlag.OVERLAY.name: {
         "exclusive. %(game_name)s will not treat these as overlay plugins. "
         "Either remove the Overlay flag with 'Remove Overlay Flag', or "
         "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo:
-                SFPluginFlag.ESL.cached_type(minfo),
+                _SFPluginFlag.ESL.cached_type(minfo),
 }}
-SFPluginFlag.unflaggable = {**EslMixin.unflaggable,
-    SFPluginFlag.OVERLAY.name: [[_('This plugin is already Overlay-flagged.'),
-                                 _('This plugin has the ESL flag.')],
-                                _('This plugin does not have any masters.'),
-                                _('This plugin contains new records.')]}
+_SFPluginFlag.unflaggable = {**_EslMixin.unflaggable,
+    _SFPluginFlag.OVERLAY.name: [[_('This plugin is already Overlay-flagged.'),
+                               _('This plugin has the ESL flag.')],
+                              _('This plugin does not have any masters.'),
+                              _('This plugin contains new records.')]}
 
 # Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
@@ -1079,7 +904,7 @@ class GameInfo(object):
                     'game_name': self.display_name}
             EslPluginFlag.error_msgs = {EslPluginFlag[k]: {(h, msg % strs): lam
                 for (h, msg), lam in v.items()} for k, v in
-                    EslMixin.error_msgs.items()}
+                _EslMixin.error_msgs.items()}
 
     @classmethod
     def supported_games(cls):

@@ -40,6 +40,7 @@ from functools import partial
 from itertools import chain
 
 from . import bass, bolt, env, exception
+from .plugin_types import MasterFlag
 from .bolt import AFile, FName, Path, deprint, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
@@ -441,7 +442,6 @@ class LoGame:
         Called in get_load_order() to fix a newly fetched LO and in
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as saving load and active should be an atomic operation."""
-        from .game import MasterFlag
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
@@ -738,7 +738,6 @@ class TimestampGame(LoGame):
     def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
         mods = ((k, self.mod_infos[k]) for k in
                 (self.mod_infos if mods is None else mods))
-        from .game import MasterFlag
         is_m = MasterFlag.ESM.cached_type
         return [m for m, _inf in sorted(mods, key=lambda x: (
             # split into master block and not master block then sort by ftime

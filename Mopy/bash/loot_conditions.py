@@ -36,7 +36,7 @@ from . import bass
 from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
 from .exception import EvalError, FileError
-from .game import MasterFlag
+from .plugin_types import MasterFlag
 ##: below is too tight coupling with Bash internals - pass those as
 # parameters along with modInfos currently imported locally
 from .load_order import cached_active_tuple, cached_is_active

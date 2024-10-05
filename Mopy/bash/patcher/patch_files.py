@@ -34,7 +34,7 @@ from .. import bolt # for type hints
 from .. import bush # for game etc
 from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url, FName
 from ..exception import BoltError, CancelError, ModError
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile
 

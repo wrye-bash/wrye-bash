@@ -40,7 +40,6 @@ from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
-from ._mergeability import isPBashMergeable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
@@ -57,7 +56,8 @@ from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
-from ..game import MergeabilityCheck, PluginFlag, MasterFlag
+from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag, \
+    isPBashMergeable
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
 from ..load_order import LordDiff
