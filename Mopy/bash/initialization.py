@@ -105,7 +105,7 @@ def _get_ini_path(ini_key, dir_key, *args):
         src = 'Relative Path'
     return idata_path, src
 
-def init_dirs(personal, localAppData, game_info):
+def init_dirs(game_info, opts, init_warnings):
     """Initialize bass.dirs dictionary. We need the bash.ini and the game
     being set, so this is called upon setting the game. Global structures
     that need info on Bash / Game dirs should be initialized here and set
@@ -113,8 +113,7 @@ def init_dirs(personal, localAppData, game_info):
     settings fails."""
     if not mopy_dirs_initialized:
         raise BoltError(u'init_dirs: Mopy dirs uninitialized')
-    # Any warnings found during this stage can be added here as strings
-    init_warnings = []
+    personal, localAppData = opts.personalPath, opts.localAppDataPath
     #--Oblivion (Application) Directories
     dirs[u'app'] = game_info.gamePath
     dirs[u'defaultPatches'] = (
@@ -275,7 +274,7 @@ def init_dirs(personal, localAppData, game_info):
     lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     global bash_dirs_initialized
     bash_dirs_initialized = True
-    return game_ini_path, init_warnings
+    return game_ini_path
 
 def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
                   oblivionModsSrc):

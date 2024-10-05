@@ -56,8 +56,7 @@ from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
-from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag, \
-    isPBashMergeable
+from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
 from ..load_order import LordDiff
@@ -2374,11 +2373,11 @@ class ModInfos(TableFileInfos):
         """Refreshes set of mergeable mods."""
         #--Mods that need to be rescanned
         rescan_mods = set()
-        merg_checks = bush.game.mergeability_checks
+        full_checks = bush.game.mergeability_checks
         # We store ints in the settings files, so use those for comparing
-        merg_checks_ints = {c.value for c in merg_checks}
-        quick_checks = {mc: pflag.cached_type for pflag in bush.game.scale_flags
-                        if (mc := pflag.merge_check) is not None}
+        merg_checks_ints = {c.value for c in full_checks}
+        quick_checks = {mc: pflag.cached_type for pflag in
+            bush.game.scale_flags if (mc := pflag.merge_check) in full_checks}
         changed = set()
         # We need to scan dependent mods first to account for mergeability of
         # their masters
@@ -2402,7 +2401,7 @@ class ModInfos(TableFileInfos):
                 if m not in merg_checks_ints:
                     del canMerge[m]
             modInfo.set_table_prop('mergeInfo', (cached_size, canMerge))
-            if not (merg_checks - covered_checks):
+            if not (full_checks.keys() - covered_checks):
                 # We've already covered all required checks with those checks
                 # above (e.g. an ESL-flagged plugin in a game with only ESL
                 # support -> not ESL-flaggable), so move on
@@ -2427,23 +2426,19 @@ class ModInfos(TableFileInfos):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
         merge = MergeabilityCheck.MERGE
-        checks = bush.game.mergeability_checks
-        # The checks that are actually required for this game
-        required_checks = {merge: isPBashMergeable} if merge in checks else {}
-        required_checks.update(
-            {mc: pflag.can_convert for pflag in bush.game.scale_flags if
-             (mc := pflag.merge_check) in checks})
+        full_checks = bush.game.mergeability_checks
+        nones = dict.fromkeys(full_checks) # avoid creating a dict per mod
         with progress:
             progress.setFull(max(len(names),1))
             result = {}
             for i, fileName in enumerate(names): ##: this must be sorted in inverted load order for _dependent
-                all_reasons = {m: [] if return_results else None for m in
-                               required_checks}
+                all_reasons = {m: [] for m in full_checks} if return_results \
+                    else nones
                 progress(i, fileName)
                 fileInfo = self[fileName]
                 cs_name = fileName.lower()
                 check_results = {}
-                for merg_type, merg_check in required_checks.items():
+                for merg_type, merg_check in full_checks.items():
                     reasons = all_reasons[merg_type]
                     if cs_name in bush.game.bethDataFiles:
                         # Fail all mergeability checks for vanilla plugins

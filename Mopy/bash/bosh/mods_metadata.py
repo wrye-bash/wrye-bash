@@ -214,8 +214,8 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     flag_errors = {k: {h_msg: set() for h_msg in v} for k, v in
                    pflags.error_msgs.items()}
     for m, modinf in modInfos.items():
-        for pflag in pflags:
-            if pflag in pflags.error_msgs and pflag.cached_type(modinf):
+        for pflag in flag_errors:
+            if pflag.cached_type(modinf):
                 pflag.validate_type(modinf, flag_errors[pflag].values())
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and

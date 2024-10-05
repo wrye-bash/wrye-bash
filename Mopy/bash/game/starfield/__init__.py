@@ -23,7 +23,6 @@
 from os.path import join as _j
 
 from .. import GameInfo, ObjectIndexRange, _SFPluginFlag
-from ...plugin_types import MergeabilityCheck
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
@@ -328,14 +327,8 @@ class _AStarfieldGameInfo(PatchGame):
         super().init(_package_name or __name__)
         cls._import_records(__name__)
 
-    def post_init(self):
-        self.scale_flags = _SFPluginFlag
-        self.mergeability_checks = {MergeabilityCheck.ESL_CHECK,
-                                    MergeabilityCheck.OVERLAY_CHECK}
-        _SFPluginFlag.error_msgs = {_SFPluginFlag[k]: {(h, msg % {
-            'xedit_name': self.Xe.full_name, 'game_name': self.display_name}):
-                lam for (h, msg), lam in v.items()} for k, v in
-             _SFPluginFlag.error_msgs.items()}
+    def _init_plugin_types(self, pflags=None):
+        super()._init_plugin_types(_SFPluginFlag)
 
 class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
     """GameInfo override for the Steam version of Starfield."""
