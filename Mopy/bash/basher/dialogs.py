@@ -32,7 +32,7 @@ from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict
 from ..bosh import ModInfo, faces
 from ..fomod_schema import default_moduleconfig
-from ..game import MasterFlag
+from ..plugin_types import MasterFlag
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     CheckBox, CheckListBox, DeselectAllButton, DialogWindow, DocumentViewer, \
     DropDown, EventResult, FileOpen, GridLayout, HBoxedLayout, HLayout, \

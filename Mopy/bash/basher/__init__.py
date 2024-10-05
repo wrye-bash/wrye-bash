@@ -81,7 +81,7 @@ from ..bosh import ModInfo, omods, RefrData
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
-from ..game import MasterFlag
+from ..plugin_types import MasterFlag
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -375,7 +375,7 @@ class _ModsUIList(UIList):
             item_format.text_key = 'mods.text.bashedPatch'
             mouse_text.append(_('Bashed Patch.'))
         for mchk in bush.game.mergeability_checks:
-            txtkey, mtext = mchk.can_convert_cached(minf, checkMark)
+            txtkey, mtext = mchk.display_info(minf, checkMark)
             if txtkey:
                 item_format.text_key = txtkey
                 mouse_text.append(mtext)

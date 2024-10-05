@@ -48,7 +48,7 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
 from ..bolt import os_name
 from ..env import init_app_links
-from ..game import MasterFlag
+from ..plugin_types import MasterFlag
 from ..game.patch_game import PatchGame
 from ..gui import GuiImage, get_image
 

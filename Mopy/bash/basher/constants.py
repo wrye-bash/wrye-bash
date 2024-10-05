@@ -24,7 +24,7 @@
 """This module contains some constants ripped out of basher.py"""
 from .. import bush
 from ..bolt import GPath
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..gui import DEFAULT_POSITION
 
 # some repetitive strings
