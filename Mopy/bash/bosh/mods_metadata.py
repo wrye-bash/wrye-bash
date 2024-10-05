@@ -30,7 +30,7 @@ from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
 from ..exception import CancelError
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..mod_files import ModHeaderReader
 from ..wbtemp import TempFile
 
@@ -210,11 +210,12 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
     # between ESL and Overlay flags.
+    pflags = bush.game.scale_flags
     flag_errors = {k: {h_msg: set() for h_msg in v} for k, v in
-                   bush.game.scale_flags.error_msgs.items()}
+                   pflags.error_msgs.items()}
     for m, modinf in modInfos.items():
-        for pflag in bush.game.scale_flags:
-            if pflag in type(pflag).error_msgs and pflag.cached_type(modinf):
+        for pflag in pflags:
+            if pflag in pflags.error_msgs and pflag.cached_type(modinf):
                 pflag.validate_type(modinf, flag_errors[pflag].values())
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and
@@ -598,7 +599,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         if raw_eid:
             ret_fmt = f'{raw_eid} {ret_fmt}'
         return ret_fmt
-    format_fid = bush.game.scale_flags.format_fid
+    format_fid = pflags.format_fid
     def log_collision(coll_fid, coll_inj, coll_plugin, coll_versions):
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""
@@ -636,7 +637,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log(_(u'Wrye Bash could not read the follow plugins. They most likely '
               u'have corrupt or otherwise malformed headers.'))
         log_plugin_messages(all_corrupted) ##: Just _log_plugins?
-    for pflag in bush.game.scale_flags:
+    for pflag in pflags:
         if pflag.merge_check is not None:
             minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
             if minfos_cache:

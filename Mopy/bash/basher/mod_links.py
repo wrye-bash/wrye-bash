@@ -43,7 +43,7 @@ from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
-from ..game import MergeabilityCheck, PluginFlag, MasterFlag
+from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
 from ..localize import format_date
