@@ -547,7 +547,7 @@ class LoGame:
         maxespms = self._game_handle.max_espms
         key_espms = f'{maxespms:d} regular plugins'
         pl_type_active = defaultdict(list)
-        limit_flags = [pf for pf in self._game_handle.scale_flags if
+        limit_flags = [pf for pf in self._game_handle.plugin_flags if
                        pf.max_plugins]
         filtered = {key_espms: []}
         for m in acti_filtered:

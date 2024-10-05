@@ -56,6 +56,11 @@ class ObjectIndexRange(Enum):
 class _EslMixin(PluginFlag):
     """Mixin for ESL and newer games. The flags in this emum can not be set
     together but seems they are always compatible with MasterFlag.ESM."""
+    _ignore_ = ('ESL', 'unflaggable', 'error_msgs', '_error_msgs') # typing
+    unflaggable = {}
+    _error_msgs = {}
+    error_msgs = {}
+    ESL = PluginFlag
 
     def __init__(self, flag_attr, mod_info_attr, max_plugins=None,
                  merge_check=None, offset=None):
@@ -380,8 +385,8 @@ class GameInfo(object):
     # list or the first plugin in the whole LO - probably the former)
     # TODO(SF) check which of those two is true
     has_overlay_plugins = False
-    # enum type of supported scale flags
-    scale_flags = PluginFlag
+    # enum type of supported plugin flags - by default empty
+    plugin_flags = PluginFlag
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this
@@ -905,7 +910,7 @@ class GameInfo(object):
         self.max_espms = 254 if self.has_esl else 255
         pflags = pflags or (self.has_esl and EslPluginFlag)
         if not pflags: return
-        self.scale_flags = pflags
+        self.plugin_flags = pflags
         self.mergeability_checks = {mc: pflag.can_convert for pflag in pflags
             if (mc := pflag.merge_check) is not None}
         fmt = {'xedit_name': self.Xe.full_name, 'game_name': self.display_name}

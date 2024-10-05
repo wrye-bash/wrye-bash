@@ -161,7 +161,7 @@ class MasterInfo:
         """For esm missing masters check extension - for esl rely on the
         mysterious _was_esl."""
         if pflag is MasterFlag.ESM:
-            return pflag in bush.game.scale_flags.guess_flags(
+            return pflag in bush.game.plugin_flags.guess_flags(
                 self.get_extension())
         return getattr(self, '_was_esl', False) # we only might set ESL to True
 
@@ -448,7 +448,7 @@ class ModInfo(FileInfo):
         """Set plugin flags. If a flag is None, it is left alone. If both ESL
         and Overlay flags are requested to be set a ValueError is raised. We
         then proceed to set the other flag to False if the game supports it."""
-        flags_dict = bush.game.scale_flags.check_flag_assignments(flags_dict)
+        flags_dict = bush.game.plugin_flags.check_flag_assignments(flags_dict)
         for pl_flag, flag_val in flags_dict.items():
             pl_flag.set_mod_flag(self, flag_val, bush.game)
             if pl_flag is MasterFlag.ESM:
@@ -707,7 +707,7 @@ class ModInfo(FileInfo):
         self._reset_masters()
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
-        for v in chain(MasterFlag, bush.game.scale_flags):
+        for v in chain(MasterFlag, bush.game.plugin_flags):
             v.set_mod_flag(self, None, bush.game) # initialize _is_master etc
 
     def writeHeader(self, old_masters: list[FName] | None = None):
@@ -2377,7 +2377,7 @@ class ModInfos(TableFileInfos):
         # We store ints in the settings files, so use those for comparing
         merg_checks_ints = {c.value for c in full_checks}
         quick_checks = {mc: pflag.cached_type for pflag in
-            bush.game.scale_flags if (mc := pflag.merge_check) in full_checks}
+            bush.game.plugin_flags if (mc := pflag.merge_check) in full_checks}
         changed = set()
         # We need to scan dependent mods first to account for mergeability of
         # their masters
@@ -2900,7 +2900,7 @@ class ModInfos(TableFileInfos):
         newFile.tes4.masters = wanted_masters
         if is_bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
-        flags_dict = bush.game.scale_flags.check_flag_assignments(
+        flags_dict = bush.game.plugin_flags.check_flag_assignments(
             flags_dict or {})
         for pl_flag, flag_val in flags_dict.items():
             pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
@@ -3093,7 +3093,7 @@ class ModInfos(TableFileInfos):
         # Note that inactive plugins are handled by our defaultdict factory
         old, self.real_indices = self.real_indices, defaultdict(
             lambda: (sys.maxsize, ''))
-        bush.game.scale_flags.get_indexes(
+        bush.game.plugin_flags.get_indexes(
             ((p, self[p]) for p in load_order.cached_active_tuple()),
             self.real_indices)
         return {k for k, v in old.items() ^ self.real_indices.items()}

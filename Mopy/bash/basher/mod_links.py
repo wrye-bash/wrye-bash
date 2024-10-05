@@ -216,7 +216,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
-            force_flags = bush.game.scale_flags.guess_flags(
+            force_flags = bush.game.plugin_flags.guess_flags(
                 newInfo.fn_key.fn_ext)
             for pl_flag, flag_val in force_flags.items():
                 pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
@@ -1412,7 +1412,7 @@ class _CopyToLink(EnabledLink):
     def Execute(self):
         modInfos, added = bosh.modInfos, []
         do_save_lo = False
-        force_flags = bush.game.scale_flags.guess_flags(self._target_ext)
+        force_flags = bush.game.plugin_flags.guess_flags(self._target_ext)
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue

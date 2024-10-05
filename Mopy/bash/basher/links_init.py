@@ -547,7 +547,7 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
         ModList.context_links.append_link(AFlipFlagLink(MasterFlag.ESM))
-        for pflag in bush.game.scale_flags:
+        for pflag in bush.game.plugin_flags:
             ModList.context_links.append_link(AFlipFlagLink(pflag))
         ModList.context_links.append_link(Mod_FlipMasters())
         ModList.context_links.append_link(Mod_CreateDummyMasters())
