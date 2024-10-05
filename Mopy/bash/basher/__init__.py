@@ -380,7 +380,7 @@ class _ModsUIList(UIList):
                 item_format.text_key = txtkey
                 mouse_text.append(mtext)
         suffix = ''
-        for pflag in chain(bush.game.scale_flags, MasterFlag):
+        for pflag in chain(bush.game.plugin_flags, MasterFlag):
             if pflag.cached_type(minf):
                 letter, mousetxt = self.__plugin_types[pflag.name]
                 if suffix == 'lo': ##: tmp we need to add more statuses and the relevant colors
@@ -2096,7 +2096,7 @@ class ModPanel(BashTab):
 
     def sb_count_str(self):
         all_mods = [bosh.modInfos[m] for m in load_order.cached_active_tuple()]
-        return bush.game.scale_flags.plugin_counts(bosh.modInfos, all_mods)
+        return bush.game.plugin_flags.plugin_counts(bosh.modInfos, all_mods)
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()
@@ -3995,7 +3995,7 @@ class BashFrame(WindowFrame):
             bosh.modInfos.warn_missing_lo_act.clear()
         if bosh.modInfos.selectedExtra:
             lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                bush.game.scale_flags.deactivate_msg(bush.game.max_espms),
+                bush.game.plugin_flags.deactivate_msg(bush.game.max_espms),
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can

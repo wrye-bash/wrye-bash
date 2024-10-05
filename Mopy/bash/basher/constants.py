@@ -487,8 +487,8 @@ settingDefaults = { # keep current naming format till refactored
     f'{bush.game.Xe.xe_key_prefix}.skip_bsas': False,
 }
 
-# Enable Index columns by default for ESL and Overlay games
-if bush.game.has_esl or bush.game.has_overlay_plugins:
+# Enable Index columns by default for ESL and newer games
+if any(bush.game.plugin_flags):
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')
     settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 

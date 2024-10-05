@@ -196,7 +196,7 @@ class PluginFlag(Enum):
     def __init__(self, flag_attr, mod_info_attr):
         self._flag_attr = flag_attr # the ModInfo.header.flags1 attribute
         self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
-        self._offset = None
+        self._offset = None # index offset for games that support scale flags
 
     def has_flagged(self, mod_info):
         """Check if the self._flag_attr is set on the mod info flags."""

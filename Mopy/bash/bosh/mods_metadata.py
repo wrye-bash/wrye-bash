@@ -210,7 +210,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
     # between ESL and Overlay flags.
-    pflags = bush.game.scale_flags
+    pflags = bush.game.plugin_flags
     flag_errors = {k: {h_msg: set() for h_msg in v} for k, v in
                    pflags.error_msgs.items()}
     for m, modinf in modInfos.items():
