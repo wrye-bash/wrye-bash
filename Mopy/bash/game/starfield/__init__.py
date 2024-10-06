@@ -327,8 +327,8 @@ class _AStarfieldGameInfo(PatchGame):
         super().init(_package_name or __name__)
         cls._import_records(__name__)
 
-    def post_init(self, pflags=None):
-        super().post_init(_SFPluginFlag)
+    def _init_plugin_types(self, pflags=None):
+        super()._init_plugin_types(_SFPluginFlag)
 
 class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
     """GameInfo override for the Steam version of Starfield."""
