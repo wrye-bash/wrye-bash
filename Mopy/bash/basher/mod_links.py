@@ -43,7 +43,6 @@ from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
-from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
 from ..localize import format_date
@@ -52,6 +51,7 @@ from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     FactionRelations, FidReplacer, FullNames, IngredientDetails, ItemPrices, \
     ItemStats, ScriptText, SigilStoneDetails, SpellRecords, _AParser
 from ..patcher.patch_files import PatchFile
+from ..plugin_types import MergeabilityCheck, PluginFlag
 from ..wbtemp import TempFile
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
@@ -217,7 +217,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
             force_flags = bush.game.plugin_flags.guess_flags(
-                newInfo.fn_key.fn_ext)
+                newInfo.fn_key.fn_ext, bush.game)
             for pl_flag, flag_val in force_flags.items():
                 pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
             newFile.safeSave()
@@ -259,8 +259,8 @@ class Mod_OrderByName(EnabledLink):
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  title=self._text): return
         #--Do it
-        self.selected.sort(# sort masters first
-            key=lambda m: (not MasterFlag.ESM.cached_type(bosh.modInfos[m]), m))
+        self.selected.sort(key=lambda m: ( # sort masters first
+            not bush.game.master_flags.ESM.cached_type(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings
@@ -1412,7 +1412,8 @@ class _CopyToLink(EnabledLink):
     def Execute(self):
         modInfos, added = bosh.modInfos, []
         do_save_lo = False
-        force_flags = bush.game.plugin_flags.guess_flags(self._target_ext)
+        force_flags = bush.game.plugin_flags.guess_flags(self._target_ext,
+                                                         bush.game)
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
@@ -1589,7 +1590,7 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
 
     def __init__(self):
         super(AFlipFlagLink, self).__init__()
-        self._plugin_flag = MasterFlag.ESM
+        self._plugin_flag = bush.game.master_flags.ESM
 
     @property
     def _already_flagged(self): return not self._flag_value

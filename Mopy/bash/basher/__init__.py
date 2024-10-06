@@ -81,7 +81,6 @@ from ..bosh import ModInfo, omods, RefrData
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
-from ..plugin_types import MasterFlag
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -290,7 +289,7 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=lambda a: not MasterFlag.ESM.cached_type(
+            items.sort(key=lambda a: not bush.game.master_flags.ESM.cached_type(
                 self.data_store[a]))
 
     def _activeModsFirst(self, items):
@@ -380,7 +379,7 @@ class _ModsUIList(UIList):
                 item_format.text_key = txtkey
                 mouse_text.append(mtext)
         suffix = ''
-        for pflag in chain(bush.game.plugin_flags, MasterFlag):
+        for pflag in chain(bush.game.plugin_flags, bush.game.master_flags):
             if pflag.cached_type(minf):
                 letter, mousetxt = self.__plugin_types[pflag.name]
                 suffix += letter

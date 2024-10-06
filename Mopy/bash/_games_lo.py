@@ -40,7 +40,6 @@ from functools import partial
 from itertools import chain
 
 from . import bass, bolt, env, exception
-from .plugin_types import MasterFlag
 from .bolt import AFile, FName, Path, deprint, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
@@ -478,8 +477,9 @@ class LoGame:
             else: # append all to the end, even esms, will be reordered below
                 lord.append(mod)
         # See if any esm files are loaded below an esp and reorder as necessary
-        is_m = MasterFlag.ESM.cached_type
-        lord.sort(key=lambda m: not is_m(cached_minfs[m]))
+        is_m = lambda fn: self._game_handle.master_flags.sort_masters_key(
+            cached_minfs[fn])
+        lord.sort(key=is_m)
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
@@ -738,11 +738,11 @@ class TimestampGame(LoGame):
     def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
         mods = ((k, self.mod_infos[k]) for k in
                 (self.mod_infos if mods is None else mods))
-        is_m = MasterFlag.ESM.cached_type
+        is_m = self._game_handle.master_flags.sort_masters_key
         return [m for m, _inf in sorted(mods, key=lambda x: (
             # split into master block and not master block then sort by ftime
             # then by name case insensitive (for time conflicts)
-            not is_m(x[1]), x[1].ftime, x[0]))]
+            *is_m(x[1]), x[1].ftime, x[0]))]
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order

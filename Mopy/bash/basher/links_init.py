@@ -48,7 +48,6 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
 from ..bolt import os_name
 from ..env import init_app_links
-from ..plugin_types import MasterFlag
 from ..game.patch_game import PatchGame
 from ..gui import GuiImage, get_image
 
@@ -546,7 +545,8 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_CheckQualifications())
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
-        ModList.context_links.append_link(AFlipFlagLink(MasterFlag.ESM))
+        ModList.context_links.append_link(AFlipFlagLink(
+            bush.game.master_flags.ESM))
         for pflag in bush.game.plugin_flags:
             ModList.context_links.append_link(AFlipFlagLink(pflag))
         ModList.context_links.append_link(Mod_FlipMasters())

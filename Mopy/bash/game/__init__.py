@@ -130,9 +130,10 @@ class _EslMixin(PluginFlag):
                     mod_info.get_extension() == '.esl')
 
     @classmethod
-    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
-        return {MasterFlag.ESM: True, cls.ESL: True} if mod_fn_ext == '.esl' \
-            else super().guess_flags(mod_fn_ext)
+    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
+        return {game_handle.master_flags.ESM: True, cls.ESL: True} if \
+            mod_fn_ext == '.esl' else super().guess_flags(
+            mod_fn_ext, game_handle)
 
     @classmethod
     def format_fid(cls, whole_lo_fid, fid_orig_plugin, mod_infos):
@@ -211,8 +212,8 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
             'cb_label': _('Overlay Flag'), 'chkbx_tooltip': ttip}}
 
     @classmethod
-    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
-        sup = super().guess_flags(mod_fn_ext)
+    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
+        sup = super().guess_flags(mod_fn_ext, game_handle)
         return sup if masters_supplied else {**sup, cls.OVERLAY: False}
 
     def link_args(self):
@@ -387,6 +388,8 @@ class GameInfo(object):
     has_overlay_plugins = False
     # enum type of supported plugin flags - by default empty
     plugin_flags = PluginFlag
+    # enum type of supported master plugin flags
+    master_flags = MasterFlag
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this

@@ -32,7 +32,6 @@ from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict
 from ..bosh import ModInfo, faces
 from ..fomod_schema import default_moduleconfig
-from ..plugin_types import MasterFlag
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     CheckBox, CheckListBox, DeselectAllButton, DialogWindow, DocumentViewer, \
     DropDown, EventResult, FileOpen, GridLayout, HBoxedLayout, HLayout, \
@@ -312,7 +311,7 @@ class CreateNewPlugin(DialogWindow):
         self._plugin_name.select_all_text()
         # flag checkboxes - TODO: use a radio button for incompatible flags
         self._flags_chkboxes = {}
-        for en in (MasterFlag, bush.game.plugin_flags):
+        for en in (bush.game.master_flags, bush.game.plugin_flags):
             for member, kwargs in en.checkboxes().items():
                 self._flags_chkboxes[member] = chkbx = CheckBox(self, **kwargs)
                 chkbx.on_checked.subscribe(self._handle_flag_checked)
@@ -398,18 +397,19 @@ class CreateNewPlugin(DialogWindow):
         curr_p_ext = self._plugin_ext.get_value()
         # For .esl files force-check the ESM/ESL flags, for .esm the ESM flag
         # and force disable the OVERLAY flag if no masters are present
-        force_flags = bush.game.plugin_flags.guess_flags(curr_p_ext,
-                                                         self._chosen_masters)
+        pflags = bush.game.plugin_flags
+        force_flags = pflags.guess_flags(curr_p_ext, bush.game,
+                                         self._chosen_masters)
         for pflag, chkbox in self._flags_chkboxes.items():
             chkbox.is_checked = force_flags.get(pflag, chkbox.is_checked)
             chkbox.enabled = pflag not in force_flags
         checks = {pflag: chkbox.is_checked for pflag, chkbox in
                   self._flags_chkboxes.items()}
-        checks = bush.game.plugin_flags.check_flag_assignments(
+        checks = pflags.check_flag_assignments(
             checks, raise_on_invalid=False)
         for pflag, is_checked in checks.items():
             self._flags_chkboxes[pflag].is_checked = is_checked
-            if pflag is not MasterFlag.ESM:
+            if pflag not in bush.game.master_flags:
                 # disable setting mutually exclusive flags
                 self._flags_chkboxes[pflag].enabled = is_checked
 
