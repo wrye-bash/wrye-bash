@@ -52,7 +52,6 @@ class _AStarfieldGameInfo(PatchGame):
 
     espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    has_overlay_plugins = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
@@ -60,6 +59,11 @@ class _AStarfieldGameInfo(PatchGame):
 
     @staticmethod
     def get_fid_class(augmented_masters, in_overlay_plugin):
+        # Overlay plugins (whose TES4 record header flags feature an
+        # overlay_flag) can only contain overrides (any non-override records
+        # in them will become injected into either the first plugin in the
+        # master list or the first plugin in the whole LO - probably the
+        # former) TODO(SF) check which of those two is true
         if not in_overlay_plugin:
             return super(_AStarfieldGameInfo, _AStarfieldGameInfo
                          ).get_fid_class(augmented_masters, in_overlay_plugin)
