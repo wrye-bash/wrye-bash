@@ -194,10 +194,12 @@ class PluginFlag(Enum):
     _ignore_ = ('count_str', )
     count_str = ''
 
-    def __init__(self, flag_attr, mod_info_attr):
+    def __init__(self, flag_attr, mod_info_attr, ui_letter_key, type_name):
         self._flag_attr = flag_attr # the ModInfo.header.flags1 attribute
         self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
         self._offset = None # index offset for games that support scale flags
+        self.type_name = type_name
+        self.ui_letter_key = ui_letter_key
 
     def has_flagged(self, mod_info):
         """Check if the self._flag_attr is set on the mod info flags."""
@@ -301,7 +303,7 @@ PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 class MasterFlag(PluginFlag):
     """Enum with a single member for the Master flag - PluginFlag knows we
     exist."""
-    ESM = ('esm_flag', '_is_master')
+    ESM = ('esm_flag', '_is_master', 'm', _('Master plugin.'))
 
     def set_mod_flag(self, mod_info, set_flag, game_handle):
         if super().set_mod_flag(mod_info, set_flag, game_handle) or \
