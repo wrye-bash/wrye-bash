@@ -39,7 +39,8 @@ __exit = lambda x: True # trick to exit early on non-verbose mode
 
 def _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
     _exit = __exit if reasons is None else reasons.append # append returns None
-    if MasterFlag.ESM.has_flagged(modInfo) and _exit(_('This plugin has the ESM flag.')):
+    if game_handle.master_flags.ESM.has_flagged(modInfo) and _exit(_(
+            'This plugin has the ESM flag.')):
         return False
     #--Bashed Patch
     if modInfo.isBP() and _exit(_('This plugin is a Bashed Patch.')):
@@ -232,7 +233,7 @@ class PluginFlag(Enum):
         return flag_dict
 
     @classmethod
-    def guess_flags(cls, mod_fn_ext, masters_supplied=()):
+    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
         """Guess the flags of a mod/master info from its filename extension.
         Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
         return {MasterFlag.ESM: True} if mod_fn_ext == '.esm' else {}
@@ -316,10 +317,15 @@ class MasterFlag(PluginFlag):
             # in memory even if not set on the file on disk. For .esp files we
             # must check for the flag explicitly.
             setattr(mod_info, self._mod_info_attr,
-                    self in self.guess_flags(mext))
+                    self in self.guess_flags(mext, game_handle))
 
     @classmethod
     def checkboxes(cls):
         return {cls.ESM: {'cb_label': _('ESM Flag'), 'chkbx_tooltip': _(
             'Whether or not the the resulting plugin will be a master, i.e. '
             'have the ESM flag.')}}
+
+    @classmethod
+    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first."""
+        return not cls.ESM.cached_type(mod_inf),

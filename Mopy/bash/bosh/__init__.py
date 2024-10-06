@@ -56,11 +56,11 @@ from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
-from ..plugin_types import MergeabilityCheck, PluginFlag, MasterFlag
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
 from ..load_order import LordDiff
 from ..mod_files import ModFile, ModHeaderReader
+from ..plugin_types import MergeabilityCheck, PluginFlag
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -160,9 +160,9 @@ class MasterInfo:
     def flag_fallback(self, pflag):
         """For esm missing masters check extension - for esl rely on the
         mysterious _was_esl."""
-        if pflag is MasterFlag.ESM:
+        if pflag is bush.game.master_flags.ESM:
             return pflag in bush.game.plugin_flags.guess_flags(
-                self.get_extension())
+                self.get_extension(), bush.game)
         return getattr(self, '_was_esl', False) # we only might set ESL to True
 
     @_mod_info_delegate
@@ -451,7 +451,7 @@ class ModInfo(FileInfo):
         flags_dict = bush.game.plugin_flags.check_flag_assignments(flags_dict)
         for pl_flag, flag_val in flags_dict.items():
             pl_flag.set_mod_flag(self, flag_val, bush.game)
-            if pl_flag is MasterFlag.ESM:
+            if pl_flag is bush.game.master_flags.ESM:
                 self._update_onam() # recalculate ONAM info if necessary
         self.writeHeader()
 
@@ -707,7 +707,7 @@ class ModInfo(FileInfo):
         self._reset_masters()
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
-        for v in chain(MasterFlag, bush.game.plugin_flags):
+        for v in chain(bush.game.master_flags, bush.game.plugin_flags):
             v.set_mod_flag(self, None, bush.game) # initialize _is_master etc
 
     def writeHeader(self, old_masters: list[FName] | None = None):
@@ -922,7 +922,7 @@ class ModInfo(FileInfo):
         based on that."""
         # Skip for games that don't need the ONAM generation
         if bush.game.Esp.generate_temp_child_onam:
-            if MasterFlag.ESM.cached_type(self):
+            if bush.game.master_flags.ESM.cached_type(self):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)
@@ -2168,7 +2168,8 @@ class ModInfos(TableFileInfos):
     def cached_lo_last_esm(self):
         last_esm = self._master_esm
         for mod in self._lo_wip[1:]:
-            if not MasterFlag.ESM.cached_type(self[mod]): return last_esm
+            if not bush.game.master_flags.ESM.cached_type(self[mod]):
+                return last_esm
             last_esm = mod
         return last_esm
 
@@ -2191,7 +2192,7 @@ class ModInfos(TableFileInfos):
         lo_wip_set = set(self._lo_wip)
         new = [x for x in mods if x not in lo_wip_set]
         if not new: return
-        esms = [x for x in new if MasterFlag.ESM.cached_type(self[x])]
+        esms = [x for x in new if bush.game.master_flags.ESM.cached_type(self[x])]
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
