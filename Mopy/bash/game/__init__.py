@@ -62,9 +62,9 @@ class _EslMixin(PluginFlag):
     error_msgs = {}
     ESL = PluginFlag
 
-    def __init__(self, flag_attr, mod_info_attr, max_plugins=None,
-                 merge_check=None, offset=None):
-        super().__init__(flag_attr, mod_info_attr)
+    def __init__(self, flag_attr, mod_info_attr, ui_letter_key, type_name,
+                 max_plugins=None, merge_check=None, offset=None):
+        super().__init__(flag_attr, mod_info_attr, ui_letter_key, type_name)
         self.max_plugins = max_plugins
         self.merge_check: MergeabilityCheck | None = merge_check
         self._offset = offset
@@ -188,11 +188,13 @@ _EslMixin.unflaggable = {'ESL': [[_('This plugin is already ESL-flagged.'),
 
 class EslPluginFlag(_EslMixin, PluginFlag):
     # 4096 is hard limit, game runs out of fds sooner, testing needed
-    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK, 253)
+    ESL = ('esl_flag', '_is_esl', 'l', _('Light plugin.'), 4096,
+           MergeabilityCheck.ESL_CHECK, 253)
 
 class _SFPluginFlag(_EslMixin, PluginFlag):
-    ESL = ('esl_flag', '_is_esl', 4096, MergeabilityCheck.ESL_CHECK, 253)
-    OVERLAY = ('overlay_flag', '_is_overlay', 0,
+    ESL = ('esl_flag', '_is_esl', 'l', _('Light plugin.'), 4096,
+           MergeabilityCheck.ESL_CHECK, 253)
+    OVERLAY = ('overlay_flag', 'o', _('Overlay plugin.'), '_is_overlay', 0,
                MergeabilityCheck.OVERLAY_CHECK)
 
     def set_mod_flag(self, mod_info, set_flag, game_handle):
@@ -379,13 +381,6 @@ class GameInfo(object):
     # What mergeability checks to perform for this game. See MergeabilityCheck
     # for more information
     mergeability_checks = {MergeabilityCheck.MERGE: isPBashMergeable}
-    # True if this game supports overlay plugins (i.e. its TES4 record's header
-    # flags feature an overlay_flag); these are plugins that don't take up a
-    # load order slot but can only contain overrides (any non-override records
-    # in it will become injected into either the first plugin in the master
-    # list or the first plugin in the whole LO - probably the former)
-    # TODO(SF) check which of those two is true
-    has_overlay_plugins = False
     # enum type of supported plugin flags - by default empty
     plugin_flags = PluginFlag
     # enum type of supported master plugin flags

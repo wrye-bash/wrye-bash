@@ -140,31 +140,30 @@ if bush.game.Esp.canBash:
         'This is the text color used for Bashed Patches.')
     )
 
-# Are ESLs supported? ---------------------------------------------------------
-if bush.game.has_esl:
-    colorInfo['mods.text.esl'] = ('ESL',
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs on the Mods Tab, and in the '
-          'Masters info on both the Mods Tab and Saves Tab.'),
-    )
-    colorInfo['mods.text.eslm'] = ('ESLM',
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs with a master flag on the '
-          'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
-          'Tab.'),
-    )
-
-# Are Overlay plugins supported? ----------------------------------------------
-if bush.game.has_overlay_plugins:
-    colorInfo['mods.text.eso'] = (_('Overlay Plugin'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Overlay plugins on the Mods Tab.'),
-    )
-    colorInfo['mods.text.esom'] = (_('Overlay Master'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Overlay plugins with a master flag '
-          'on the Mods Tab.'),
-    )
+# Iterate through plugin flags and add the ui keys ----------------------------
+for flag in bush.game.plugin_flags:
+    if flag.ui_letter_key == 'l': # Are ESLs supported?
+        colorInfo['mods.text.esl'] = ('ESL',
+            _('Tabs: Mods, Saves') + '\n\n' +
+            _('This is the text color used for ESLs on the Mods Tab, and in the '
+              'Masters info on both the Mods Tab and Saves Tab.'),
+        )
+        colorInfo['mods.text.eslm'] = ('ESLM',
+            _('Tabs: Mods, Saves') + '\n\n' +
+            _('This is the text color used for ESLs with a master flag on the '
+              'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
+              'Tab.'),
+        )
+    elif flag.ui_letter_key == 'o': # Are Overlay plugins supported?
+        colorInfo['mods.text.eso'] = (_('Overlay Plugin'),
+            _('Tabs: Mods') + '\n\n' +
+            _('This is the text color used for Overlay plugins on the Mods Tab.'),
+        )
+        colorInfo['mods.text.esom'] = (_('Overlay Master'),
+            _('Tabs: Mods') + '\n\n' +
+            _('This is the text color used for Overlay plugins with a master flag '
+              'on the Mods Tab.'),
+        )
 
 # What do we check w.r.t. mergeability? ---------------------------------------
 __m_checks = bush.game.mergeability_checks

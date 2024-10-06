@@ -361,11 +361,6 @@ class _ModsUIList(UIList):
                 item_format.underline = True
         self.mouseTexts[item_key] = ' '.join(mouseText)
 
-    # belongs to EslMixin - stashing it here to keep that minimal, revisit
-    # when rest of plugin types for Starfield are implemented
-    __plugin_types = {'ESL': ('l', _('Light plugin.')),
-                      'OVERLAY': ('o', _('Overlay plugin.')),
-                      'ESM': ('m', _('Master plugin.'))}
     def _set_color(self, checkMark, mouse_text, minf, item_name, item_format):
         #--Font color
         fileBashTags = minf.getBashTags()
@@ -381,13 +376,13 @@ class _ModsUIList(UIList):
         suffix = ''
         for pflag in chain(bush.game.plugin_flags, bush.game.master_flags):
             if pflag.cached_type(minf):
-                letter, mousetxt = self.__plugin_types[pflag.name]
-                suffix += letter
+                suffix += pflag.ui_letter_key
                 if suffix == 'lo': ##: tmp we need to add more statuses and the relevant colors
                     item_format.back_key = 'mods.bkgd.doubleTime.load'
-                    mousetxt = 'Plugin has conflicting ESL/OVERLAY flags.' ##: tmp
+                    mouse_text[-1] = 'Plugin has conflicting ESL/OVERLAY flags. ' ##: tmp
                     suffix = ''
-                mouse_text.append(mousetxt)
+                else:
+                    mouse_text.append(pflag.type_name)
         # Check if it's special, leave ESPs alone
         if suffix:
             item_format.text_key = f'mods.text.es{suffix}'
