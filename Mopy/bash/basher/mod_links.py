@@ -260,7 +260,7 @@ class Mod_OrderByName(EnabledLink):
                                  title=self._text): return
         #--Do it
         self.selected.sort(key=lambda m: ( # sort masters first
-            not bush.game.master_flags.ESM.cached_type(bosh.modInfos[m]), m))
+            *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings
@@ -1527,8 +1527,9 @@ class AFlipFlagLink(EnabledLink):
     def __init__(self, plugin_flag: PluginFlag | None = None):
         super().__init__()
         self._plugin_flag: PluginFlag = plugin_flag
-        self._allowed_ext, self._continue_msg, self._help = \
-            plugin_flag.link_args()
+        self._allowed_ext = plugin_flag.convert_exts
+        self._continue_msg = plugin_flag.continue_message
+        self._help = plugin_flag.help_flip
 
     def _enable(self):
         """Allow if all selected mods have valid extensions, have the same
