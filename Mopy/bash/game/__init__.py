@@ -158,11 +158,11 @@ class _EslMixin(PluginFlag):
             'light, i.e have the ESL flag.'), 'checked': True}}
 
     @classmethod
-    def deactivate_msg(cls, max_regular_plugins):
+    def deactivate_msg(cls):
         return _('The following plugins have been deactivated because only '
             '%(max_regular_plugins)d regular plugins and %(max_esl_plugins)d '
             'ESL-flagged plugins may be active at the same time.') % {
-                'max_regular_plugins': max_regular_plugins,
+                'max_regular_plugins': cls.max_plugins,
                 'max_esl_plugins': cls.ESL.max_plugins}
 
     def link_args(self):
@@ -905,7 +905,6 @@ class GameInfo(object):
         """Initialize plugin types for this game. This runs after all game
         directories have been set (see _ASkyrimVRGameInfo override)."""
         self.has_esl = '.esl' in self.espm_extensions
-        self.max_espms = 254 if self.has_esl else 255
         pflags = pflags or (self.has_esl and EslPluginFlag)
         if not pflags: return
         self.plugin_flags = pflags
@@ -914,6 +913,9 @@ class GameInfo(object):
         fmt = {'xedit_name': self.Xe.full_name, 'game_name': self.display_name}
         pflags.error_msgs = {pflags[k]: {(h, msg % fmt): lam for (h, msg), lam
             in v.items()} for k, v in pflags._error_msgs.items()}
+        scale_flags = [f for f in pflags if f._offset is not None]
+        # leave magic 255 below we might re-initialize!
+        PluginFlag.max_plugins = 255 - len(scale_flags)
 
     @classmethod
     def supported_games(cls):

@@ -3993,7 +3993,7 @@ class BashFrame(WindowFrame):
             bosh.modInfos.warn_missing_lo_act.clear()
         if bosh.modInfos.selectedExtra:
             lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                bush.game.plugin_flags.deactivate_msg(bush.game.max_espms),
+                bush.game.plugin_flags.deactivate_msg(),
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can

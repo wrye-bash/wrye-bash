@@ -42,6 +42,7 @@ from itertools import chain
 from . import bass, bolt, env, exception
 from .bolt import AFile, FName, Path, deprint, dict_sort
 from .ini_files import get_ini_type_and_encoding
+from .plugin_types import PluginFlag
 
 # Typing
 LoTuple = tuple[FName, ...]
@@ -544,12 +545,9 @@ class LoGame:
         return False # no changes, not saved
 
     def check_active_limit(self, acti_filtered, *, as_type=set):
-        maxespms = self._game_handle.max_espms
-        key_espms = f'{maxespms:d} regular plugins'
         pl_type_active = defaultdict(list)
-        limit_flags = [pf for pf in self._game_handle.plugin_flags if
-                       pf.max_plugins]
-        filtered = {key_espms: []}
+        limit_flags = {pf: (pf.name.title(), mp) for pf in
+            self._game_handle.plugin_flags if (mp := pf.max_plugins)}
         for m in acti_filtered:
             mi = self.mod_infos[m]
             for pflag in limit_flags:
@@ -557,12 +555,10 @@ class LoGame:
                     pl_type_active[pflag].append(m)
                     break
             else:
-                filtered[key_espms].append(m)
-        if dropped := filtered.pop(key_espms)[maxespms:]:
-            filtered[key_espms] = dropped
-        filtered.update(
-            (f'{pflag.max_plugins:d} {pflag.name} plugins', drop) for pflag, v
-            in pl_type_active.items() if (drop := v[pflag.max_plugins:]))
+                pl_type_active[PluginFlag].append(m)
+        limit_flags[PluginFlag] = ('regular', PluginFlag.max_plugins)
+        filtered = {f'{mp:d} {type_name} plugins': drop for f, (type_name, mp)
+            in limit_flags.items() if (drop := pl_type_active[f][mp:])}
         if as_type is set:
             return set(chain(*filtered.values()))
         if as_type is str:

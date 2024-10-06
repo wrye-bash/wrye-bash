@@ -283,11 +283,11 @@ class PluginFlag(Enum):
           'total_status_num': len(mod_infos), 'status_num_espm': regular_count}
 
     @classmethod
-    def deactivate_msg(cls, max_regular_plugins):
+    def deactivate_msg(cls):
         return _('The following plugins have been deactivated '
                  'because only %(max_regular_plugins)d plugins '
                  'may be active at the same time.') % {
-            'max_regular_plugins': max_regular_plugins}
+            'max_regular_plugins': cls.max_plugins}
 
     def link_args(self):
         match self:
@@ -299,6 +299,7 @@ class PluginFlag(Enum):
 
 # easiest way to define enum class variables
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
+PluginFlag.max_plugins = 255
 
 class MasterFlag(PluginFlag):
     """Enum with a single member for the Master flag - PluginFlag knows we
