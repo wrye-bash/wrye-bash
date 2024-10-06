@@ -124,7 +124,7 @@ msgstr ""
 msgid "Unexpected quotation mark (%(wrong_mark)s) following parenthesis."
 msgstr ""
 
-#: Mopy/bash/ScriptParser.py:1081 Mopy/bash/basher/belt.py:837
+#: Mopy/bash/ScriptParser.py:1081 Mopy/bash/basher/belt.py:838
 msgid "No reason given"
 msgstr ""
 
@@ -143,16 +143,16 @@ msgstr ""
 msgid "Cannot decrement %(lhs_name)s, type is %(lhs_type)s."
 msgstr ""
 
-#: Mopy/bash/ScriptParser.py:1509
+#: Mopy/bash/ScriptParser.py:1504
 #, python-format
 msgid "Cannot rename %(old_plugin_name)s to %(new_plugin_name)s: the extensions must match."
 msgstr ""
 
-#: Mopy/bash/ScriptParser.py:1543
+#: Mopy/bash/ScriptParser.py:1538
 msgid "Could not read the wizard file. Please ensure it is encoded in UTF-8 format."
 msgstr ""
 
-#: Mopy/bash/ScriptParser.py:1546
+#: Mopy/bash/ScriptParser.py:1541
 msgid "Could not open the wizard file."
 msgstr ""
 
@@ -160,8 +160,8 @@ msgstr ""
 msgid "Compressing files…"
 msgstr ""
 
-#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1560
-#: Mopy/bash/bosh/bain.py:1580 Mopy/bash/bosh/converters.py:318
+#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1564
+#: Mopy/bash/bosh/bain.py:1584 Mopy/bash/bosh/converters.py:318
 #: Mopy/bash/bosh/converters.py:338 Mopy/bash/bosh/converters.py:539
 msgid "Extracting files…"
 msgstr ""
@@ -553,7 +553,7 @@ msgid "Generating HTML file from '%(gen_target)s'"
 msgstr ""
 
 #: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:4267
-#: Mopy/bash/bosh/bain.py:1863
+#: Mopy/bash/bosh/bain.py:1867
 msgid "Done"
 msgstr ""
 
@@ -1825,7 +1825,7 @@ msgstr ""
 msgid "Plugin '%(selected_plugin_name)s' is not a part of the package."
 msgstr ""
 
-#: Mopy/bash/basher/belt.py:838
+#: Mopy/bash/basher/belt.py:839
 msgid "The installer wizard was canceled:"
 msgstr ""
 
@@ -1989,7 +1989,7 @@ msgstr ""
 msgid "This is the text color used for invalid packages."
 msgstr ""
 
-#: Mopy/bash/basher/constants.py:82 Mopy/bash/bosh/bain.py:1406
+#: Mopy/bash/basher/constants.py:82 Mopy/bash/bosh/bain.py:1410
 msgid "Marker"
 msgstr ""
 
@@ -2126,7 +2126,7 @@ msgid "This is the text color used for plugins that could be merged into the Bas
 msgstr ""
 
 #: Mopy/bash/basher/constants.py:199 Mopy/bash/basher/mod_links.py:961
-#: Mopy/bash/bosh/mods_metadata.py:667
+#: Mopy/bash/bosh/mods_metadata.py:668
 msgid "ESL-Capable"
 msgstr ""
 
@@ -2134,7 +2134,7 @@ msgstr ""
 msgid "This is the text color used for plugins that could be ESL-flagged."
 msgstr ""
 
-#: Mopy/bash/basher/constants.py:204 Mopy/bash/bosh/mods_metadata.py:711
+#: Mopy/bash/basher/constants.py:204 Mopy/bash/bosh/mods_metadata.py:712
 msgid "Mergeable"
 msgstr ""
 
@@ -4029,8 +4029,8 @@ msgid "No files to install for %(sel_pkg)s."
 msgstr ""
 
 #: Mopy/bash/basher/installer_links.py:912
-#: Mopy/bash/basher/installer_links.py:918 Mopy/bash/bosh/bain.py:1912
-#: Mopy/bash/bosh/bain.py:2223
+#: Mopy/bash/basher/installer_links.py:918 Mopy/bash/bosh/bain.py:1916
+#: Mopy/bash/bosh/bain.py:2227
 msgid "Scanning Packages…"
 msgstr ""
 
@@ -5611,7 +5611,7 @@ msgstr ""
 msgid "Not Overlay-Capable"
 msgstr ""
 
-#: Mopy/bash/basher/mod_links.py:963 Mopy/bash/bosh/mods_metadata.py:678
+#: Mopy/bash/basher/mod_links.py:963 Mopy/bash/bosh/mods_metadata.py:679
 msgid "Overlay-Capable"
 msgstr ""
 
@@ -5746,7 +5746,7 @@ msgstr ""
 msgid "Deleted Records"
 msgstr ""
 
-#: Mopy/bash/basher/mod_links.py:1268 Mopy/bash/bosh/mods_metadata.py:339
+#: Mopy/bash/basher/mod_links.py:1268 Mopy/bash/bosh/mods_metadata.py:340
 #, python-format
 msgid "Scanning: %(scanning_plugin)s"
 msgstr ""
@@ -5760,7 +5760,7 @@ msgstr ""
 msgid "%(dirty_formid)s (from master %(orig_master)s)"
 msgstr ""
 
-#: Mopy/bash/basher/mod_links.py:1311 Mopy/bash/bosh/mods_metadata.py:798
+#: Mopy/bash/basher/mod_links.py:1311 Mopy/bash/bosh/mods_metadata.py:799
 msgid "Deleted Navmeshes"
 msgstr ""
 
@@ -5768,7 +5768,7 @@ msgstr ""
 msgid "Deleted References"
 msgstr ""
 
-#: Mopy/bash/basher/mod_links.py:1315 Mopy/bash/bosh/mods_metadata.py:806
+#: Mopy/bash/basher/mod_links.py:1315 Mopy/bash/bosh/mods_metadata.py:807
 msgid "Deleted Base Records"
 msgstr ""
 
@@ -6049,7 +6049,7 @@ msgstr ""
 msgid "%(filename)s is missing one or more masters. Without these, a data export is not possible:"
 msgstr ""
 
-#: Mopy/bash/basher/mod_links.py:1833 Mopy/bash/bosh/mods_metadata.py:728
+#: Mopy/bash/basher/mod_links.py:1833 Mopy/bash/bosh/mods_metadata.py:729
 msgid "Missing Masters"
 msgstr ""
 
@@ -7816,8 +7816,8 @@ msgstr ""
 msgid "Ask every time"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:861 Mopy/bash/bolt.py:1810
-#: Mopy/bash/bosh/bain.py:1415 Mopy/bash/gui/popups.py:65
+#: Mopy/bash/basher/settings_dialog.py:861 Mopy/bash/bolt.py:1808
+#: Mopy/bash/bosh/bain.py:1419 Mopy/bash/gui/popups.py:65
 msgid "Copy"
 msgstr ""
 
@@ -8349,26 +8349,26 @@ msgstr ""
 msgid "<very large>"
 msgstr ""
 
-#: Mopy/bash/bolt.py:1748
+#: Mopy/bash/bolt.py:1746
 msgid "Name may not be empty."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1751
+#: Mopy/bash/bolt.py:1749
 #, python-format
 msgid "%(new_name)s contains invalid character (%(bad_char)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1763
+#: Mopy/bash/bolt.py:1761
 #, python-format
 msgid "Bad extension or file root (%(ext_or_root)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1771
+#: Mopy/bash/bolt.py:1769
 #, python-format
 msgid "%(bad_name_str)s: Incorrect file extension (must be %(expected_ext)s)."
 msgstr ""
 
-#: Mopy/bash/bolt.py:1873
+#: Mopy/bash/bolt.py:1871
 #, python-format
 msgid "File %(bad_name_str)s already exists."
 msgstr ""
@@ -8801,188 +8801,188 @@ msgstr ""
 msgid "Scanning change records."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:148
+#: Mopy/bash/bosh/bain.py:153
 msgid "Unrecognized"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:231
+#: Mopy/bash/bosh/bain.py:236
 msgid "Calculating CRCs…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:319
+#: Mopy/bash/bosh/bain.py:324
 #, python-format
 msgid "Size: %(package_size)s"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:357
+#: Mopy/bash/bosh/bain.py:362
 msgid "Structure: Simple"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:360
+#: Mopy/bash/bosh/bain.py:365
 msgid "Structure: Complex/Simple"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:362
+#: Mopy/bash/bosh/bain.py:367
 msgid "Structure: Complex"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:365
+#: Mopy/bash/bosh/bain.py:370
 msgid "Structure: Scattered (FOMOD)"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:367
+#: Mopy/bash/bosh/bain.py:372
 msgid "Structure: Corrupt/Incomplete"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:369
+#: Mopy/bash/bosh/bain.py:374
 msgid "Structure: Unrecognized"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:670 Mopy/bash/bosh/bain.py:914
-#: Mopy/bash/bosh/bain.py:971
+#: Mopy/bash/bosh/bain.py:675 Mopy/bash/bosh/bain.py:919
+#: Mopy/bash/bosh/bain.py:976
 msgid "[Vanilla Content]"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:719
+#: Mopy/bash/bosh/bain.py:724
 msgid "Executable Binary Warning"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:742
+#: Mopy/bash/bosh/bain.py:747
 #, python-format
 msgid "This package (%(source_package)s) contains an executable binary file (%(executable_name)s). Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate. Are you sure you want to install this?"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:749
+#: Mopy/bash/bosh/bain.py:754
 msgid "You have previously chosen to install an executable binary with the same name, but with a different size, CRC and/or source package name."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:754
+#: Mopy/bash/bosh/bain.py:759
 msgid "You have previously chosen NOT to install an executable binary with the same name, but with a different size, CRC and/or source archive name."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:758
+#: Mopy/bash/bosh/bain.py:763
 msgid "Make EXTRA sure you want to install this one before saying yes."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1338
+#: Mopy/bash/bosh/bain.py:1342
 msgid "Package Structure:"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1367
+#: Mopy/bash/bosh/bain.py:1371
 #, python-format
 msgid "Syncing from %(data_folder)s folder…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1444
+#: Mopy/bash/bosh/bain.py:1448
 msgid "Size: N/A"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1446
+#: Mopy/bash/bosh/bain.py:1450
 msgid "Structure: N/A"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1454
+#: Mopy/bash/bosh/bain.py:1458
 msgid "Archive"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1461
+#: Mopy/bash/bosh/bain.py:1465
 #, python-format
 msgid "Solid, Block Size: %(block_size)s"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1464
+#: Mopy/bash/bosh/bain.py:1468
 msgid "Solid, Block Size: Unknown"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1466
+#: Mopy/bash/bosh/bain.py:1470
 msgid "Solid, Block Size: 7z Default"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1468
+#: Mopy/bash/bosh/bain.py:1472
 msgid "Non-solid"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1469
+#: Mopy/bash/bosh/bain.py:1473
 #, python-format
 msgid "Size: %(package_size)s (%(package_solid)s)"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1478
+#: Mopy/bash/bosh/bain.py:1482
 #, python-format
 msgid "%(invalid_name)s does not have correct extension (%(allowed_extensions)s)."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1483
+#: Mopy/bash/bosh/bain.py:1487
 #, python-format
 msgid "The %(invalid_extension)s extension is unsupported. Using %(default_extension)s instead."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1564
+#: Mopy/bash/bosh/bain.py:1568
 msgid "Organizing files…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1583 Mopy/bash/bosh/bain.py:1760
+#: Mopy/bash/bosh/bain.py:1587 Mopy/bash/bosh/bain.py:1764
 #: Mopy/bash/bosh/converters.py:369
 msgid "Moving files…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1665
+#: Mopy/bash/bosh/bain.py:1669
 msgid "Project"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1730 Mopy/bash/bosh/bain.py:2322
+#: Mopy/bash/bosh/bain.py:1734 Mopy/bash/bosh/bain.py:2326
 #: Mopy/bash/patcher/patch_files.py:367
 msgid "Scanning…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:1958
+#: Mopy/bash/bosh/bain.py:1962
 msgid "Loading Data…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2104
+#: Mopy/bash/bosh/bain.py:2108
 msgid "Some packages could not be found and were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2159
+#: Mopy/bash/bosh/bain.py:2163
 msgid "An error occurred while applying an Embedded BCF."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2282
+#: Mopy/bash/bosh/bain.py:2286
 msgid "Pre-Scanning…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2456
+#: Mopy/bash/bosh/bain.py:2460
 #, python-format
 msgid "%(data_folder)s: Skips overrides…"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:2607
+#: Mopy/bash/bosh/bain.py:2611
 #, python-format
 msgid "INI Tweak created by Wrye Bash %(wb_version)s, using settings from old file."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3114
+#: Mopy/bash/bosh/bain.py:3118
 msgid "Active BSA Conflicts"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3117 Mopy/bash/bosh/bain.py:3132
-#: Mopy/bash/bosh/bain.py:3137 Mopy/bash/bosh/bain.py:3150
+#: Mopy/bash/bosh/bain.py:3121 Mopy/bash/bosh/bain.py:3136
+#: Mopy/bash/bosh/bain.py:3141 Mopy/bash/bosh/bain.py:3154
 msgid "Lower"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3134 Mopy/bash/bosh/bain.py:3152
+#: Mopy/bash/bosh/bain.py:3138 Mopy/bash/bosh/bain.py:3156
 msgid "Higher"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3135
+#: Mopy/bash/bosh/bain.py:3139
 msgid "Loose File Conflicts"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3155
+#: Mopy/bash/bosh/bain.py:3159
 msgid "No Underrides. Mod is not completely un-installed."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3162
+#: Mopy/bash/bosh/bain.py:3166
 msgid "BAIN Packages:"
 msgstr ""
 
@@ -9392,321 +9392,321 @@ msgstr ""
 msgid "Face dump from save game."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:164
+#: Mopy/bash/bosh/mods_metadata.py:165
 #, python-format
 msgid "Generated by Wrye Bash %(wb_version)s"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:196
+#: Mopy/bash/bosh/mods_metadata.py:197
 msgid "Check Plugins"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:197
+#: Mopy/bash/bosh/mods_metadata.py:198
 msgid "This is a report of any problems Wrye Bash was able to identify in your currently installed plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:419
+#: Mopy/bash/bosh/mods_metadata.py:420
 msgid "Looking for collisions…"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:486
+#: Mopy/bash/bosh/mods_metadata.py:487
 msgid "1 deleted reference"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:488
+#: Mopy/bash/bosh/mods_metadata.py:489
 #, python-format
 msgid "%(num_del_refs)d deleted references"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:505
+#: Mopy/bash/bosh/mods_metadata.py:506
 msgid "1 deleted navmesh"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:507
+#: Mopy/bash/bosh/mods_metadata.py:508
 #, python-format
 msgid "%(num_del_navms)d deleted navmeshes"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:524
+#: Mopy/bash/bosh/mods_metadata.py:525
 msgid "1 deleted base record"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:526
+#: Mopy/bash/bosh/mods_metadata.py:527
 #, python-format
 msgid "%(num_del_bases)d deleted base records"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:538
+#: Mopy/bash/bosh/mods_metadata.py:539
 msgid "1 old weapon record"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:540
+#: Mopy/bash/bosh/mods_metadata.py:541
 #, python-format
 msgid "%(num_old_weaps)d old weapon records"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:564
+#: Mopy/bash/bosh/mods_metadata.py:565
 msgid "1 HITME"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:566
+#: Mopy/bash/bosh/mods_metadata.py:567
 #, python-format
 msgid "%(num_hitmes)d HITMEs"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:583
+#: Mopy/bash/bosh/mods_metadata.py:584
 msgid "Note: the FormIDs in this section are relative to the whole load order, not any individual plugin."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:586
+#: Mopy/bash/bosh/mods_metadata.py:587
 #, python-format
 msgid "To view the records with these FormIDs in %(xedit_name)s, make sure to load your entire load order (simply accept the 'Module Selection' prompt in %(xedit_name)s with OK)."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:596
+#: Mopy/bash/bosh/mods_metadata.py:597
 msgid "Note: the FormIDs in this section are relative to each individual listed plugin, not the whole load order."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:599
+#: Mopy/bash/bosh/mods_metadata.py:600
 #, python-format
 msgid "To view the records with these FormIDs in %(xedit_name)s, double-click the plugin in the 'Module Selection' prompt in %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:635
+#: Mopy/bash/bosh/mods_metadata.py:636
 #, python-format
 msgid "%(injected_formid)s injected into %(injection_target)s, colliding versions:"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:640
+#: Mopy/bash/bosh/mods_metadata.py:641
 #, python-format
 msgid "%(overriden_formid)s from %(source_plugin)s, colliding versions:"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:647
+#: Mopy/bash/bosh/mods_metadata.py:648
 #, python-format
 msgid "%(colliding_formid)s from %(colliding_plugin)s (base record)"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:650
+#: Mopy/bash/bosh/mods_metadata.py:651
 #, python-format
 msgid "%(colliding_formid)s from %(colliding_plugin)s"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:657
+#: Mopy/bash/bosh/mods_metadata.py:658
 msgid "Plugin Loading Canceled"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:658
+#: Mopy/bash/bosh/mods_metadata.py:659
 msgid "The loading of plugins was canceled and the resulting report may not be accurate. You can use the 'Update' button to load plugins and generate a new report."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:662
+#: Mopy/bash/bosh/mods_metadata.py:663
 msgid "Corrupted"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:663
+#: Mopy/bash/bosh/mods_metadata.py:664
 msgid "Wrye Bash could not read the follow plugins. They most likely have corrupt or otherwise malformed headers."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:668
+#: Mopy/bash/bosh/mods_metadata.py:669
 msgid "The following plugins could be assigned an ESL flag, but do not have one right now."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:672
+#: Mopy/bash/bosh/mods_metadata.py:673
 msgid "Incorrect ESL Flag"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:673
+#: Mopy/bash/bosh/mods_metadata.py:674
 msgid "The following plugins have an ESL flag, but do not qualify. Either remove the flag with 'Remove ESL Flag', or change the extension to '.esp' if it is '.esl'."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:679
+#: Mopy/bash/bosh/mods_metadata.py:680
 msgid "The following plugins could be assigned an Overlay flag, but do not have one right now."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:683
+#: Mopy/bash/bosh/mods_metadata.py:684
 msgid "Incorrect Overlay Flag: New Records"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:684
+#: Mopy/bash/bosh/mods_metadata.py:685
 msgid "The following plugins have an Overlay flag, but do not qualify because they contain new records. These will be injected into the first master of the plugins in question, which can seriously break basic game data. Either remove the flag with 'Remove Overlay Flag', or remove the new records."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:691
+#: Mopy/bash/bosh/mods_metadata.py:692
 msgid "Incorrect Overlay Flag: No Masters"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:692
+#: Mopy/bash/bosh/mods_metadata.py:693
 #, python-format
 msgid "The following plugins have an Overlay flag, but do not qualify because they do not have any masters. %(game_name)s will not treat these as Overlay plugins. Either remove the flag with 'Remove Overlay Flag', or use %(xedit_name)s to add at least one master to the plugin."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:701
+#: Mopy/bash/bosh/mods_metadata.py:702
 msgid "Incorrect Overlay Flag: ESL-Flagged"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:702
+#: Mopy/bash/bosh/mods_metadata.py:703
 #, python-format
 msgid "The following plugins have an Overlay flag, but do not qualify because they also have an ESL flag. These flags are mutually exclusive. %(game_name)s will not treat these as overlay plugins. Either remove the Overlay flag with 'Remove Overlay Flag', or remove the ESL flag with 'Remove ESL Flag'."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:712
+#: Mopy/bash/bosh/mods_metadata.py:713
 msgid "The following plugins could be merged into a Bashed Patch, but are currently not merged."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:716
+#: Mopy/bash/bosh/mods_metadata.py:717
 msgid "Deactivate-tagged But Active"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:717
+#: Mopy/bash/bosh/mods_metadata.py:718
 msgid "The following plugins are tagged with 'Deactivate' and should be deactivated and imported into the Bashed Patch."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:721
+#: Mopy/bash/bosh/mods_metadata.py:722
 msgid "MustBeActiveIfImported-tagged But Inactive"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:722
+#: Mopy/bash/bosh/mods_metadata.py:723
 msgid "The following plugins are tagged with 'MustBeActiveIfImported' and should be activated if they are also imported into the Bashed Patch. They are currently imported, but not active."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:729
+#: Mopy/bash/bosh/mods_metadata.py:730
 msgid "The following plugins have missing masters and are active. This will cause a CTD at the main menu and must be corrected by installing the missing plugins or removing the plugins with missing masters."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:735
+#: Mopy/bash/bosh/mods_metadata.py:736
 msgid "Delinquent Masters"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:736
+#: Mopy/bash/bosh/mods_metadata.py:737
 msgid "The following plugins have delinquent masters, i.e. masters that are set to load after their dependent plugins. The game will try to force them to load before the dependent plugins, which can lead to unpredictable or undefined behavior and must be corrected. You should correct the load order."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:743
+#: Mopy/bash/bosh/mods_metadata.py:744
 msgid "Circular Masters"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:744
+#: Mopy/bash/bosh/mods_metadata.py:745
 #, python-format
 msgid "The following plugins have circular masters, i.e. they depend on themselves. This can happen either directly (%(example_a)s has %(example_a)s as a master) or transitively (%(example_a)s has %(example_b)s as a master, which, in turn, has %(example_a)s as a master - such a chain may be even longer). Resolving this is impossible for the game, which will most likely crash when trying to load these plugins. You can try to investigate by using the 'Change To…' command to reassign the circular master so that the plugin can be opened in %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:762
+#: Mopy/bash/bosh/mods_metadata.py:763
 #, python-format
 msgid "Invalid %(file_header_label)s versions"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:764
+#: Mopy/bash/bosh/mods_metadata.py:765
 #, python-format
 msgid "The following plugins have a %(file_header_label)s version that isn't recognized as one of the versions created by the %(ck_name)s (%(accepted_header_versions)s). This is undefined behavior and most likely indicates the plugin was created for a different game."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:773
+#: Mopy/bash/bosh/mods_metadata.py:774
 msgid "Old Header Form Versions"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:774
+#: Mopy/bash/bosh/mods_metadata.py:775
 #, python-format
 msgid "The following have a form version on their headers that is older than the minimum version created by the %(ck_name)s. This probably means that the plugin was not properly converted to work with %(game_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:783
+#: Mopy/bash/bosh/mods_metadata.py:784
 #, python-format
 msgid "Cleaning With %(xedit_name)s Needed"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:785
+#: Mopy/bash/bosh/mods_metadata.py:786
 #, python-format
 msgid "The following plugins have deleted references or other issues that can and should be fixed with %(xedit_name)s. Visit the %(tome_of_xedit)s for more information."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:792
+#: Mopy/bash/bosh/mods_metadata.py:793
 #, python-format
 msgid "Additionally, %(num_ignored_vanilla)d vanilla plugins were reported dirty by LOOT. They were ignored because you have enabled 'Ignore Dirty Vanilla Files'."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:799
+#: Mopy/bash/bosh/mods_metadata.py:800
 msgid "The following plugins have deleted navmeshes. They will cause a CTD if another plugin references the deleted navmesh or a nearby navmesh. They can only be fixed manually, which should usually be done by the mod author. Failing that, the safest course of action is to uninstall the plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:807
+#: Mopy/bash/bosh/mods_metadata.py:808
 msgid "The following plugins have deleted base records. If another plugin references the deleted record, the resulting behavior is undefined. It may CTD, fail to delete the record or do any number of other things. They can only be fixed manually, which should usually be done by the mod author. Failing that, the safest course of action is to uninstall the plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:815
+#: Mopy/bash/bosh/mods_metadata.py:816
 msgid "Unnecessary Deleted Records"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:816
+#: Mopy/bash/bosh/mods_metadata.py:817
 #, python-format
 msgid "The following plugins have unnecessary deleted records. These are new records introduced by the plugin that also have the Deleted flag set. This is most likely a mistake by the mod author. If the record was not intended to be used (e.g. if it is a leftover from an abandoned idea), this can be corrected by simply removing the entire record in %(xedit_name)s. In any case, the mod author should be notified so they can figure out what they meant to do here and correct it properly."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:832
+#: Mopy/bash/bosh/mods_metadata.py:833
 msgid "Old Weapon Records"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:833
+#: Mopy/bash/bosh/mods_metadata.py:834
 #, python-format
 msgid "The following plugins have old weapon (WEAP) records. These cannot be loaded by %(game_name)s and the %(ck_name)s cannot automatically fix them by resaving. They have to be manually fixed in the %(ck_name)s by changing the critical data (CRDT) subrecord to restore the correct data, which should usually be done by the mod author. Failing that, the safest course of action is to uninstall the plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:845
+#: Mopy/bash/bosh/mods_metadata.py:846
 msgid "NULL FormIDs"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:846
+#: Mopy/bash/bosh/mods_metadata.py:847
 #, python-format
 msgid "The following plugins have records with NULL (00000000) FormIDs besides the main file header (%(main_file_sig)s). This is undefined behavior, as the NULL FormID is a special reserved value, and may result in the records not working correctly or causing CTDs. This is most likely a sign that the mod author broke something via scripted edits. They can only be fixed manually, by assigning them a new FormID (or removing them if the records are unnecessary), which should usually be done by the mod author. Failing that, the safest course of action is to uninstall the plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:866
+#: Mopy/bash/bosh/mods_metadata.py:867
 msgid "HITMEs"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:867
+#: Mopy/bash/bosh/mods_metadata.py:868
 #, python-format
 msgid "The following plugins have HITMEs (%(hitme_acronym)s), which most commonly occur when the %(ck_name)s or an advanced mode of %(xedit_name)s were used to improperly remove a master. The behavior of these plugins is undefined and may lead to them not working correctly or causing CTDs. Such a plugin is usually beyond saving and mod authors should revert to a backup from before the plugin was corrupted. The safest course of action for a user is to uninstall it."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:882
+#: Mopy/bash/bosh/mods_metadata.py:883
 msgid "Duplicate FormIDs"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:883
+#: Mopy/bash/bosh/mods_metadata.py:884
 msgid "The following FormIDs occur twice (or more) in the listed plugins. This is undefined behavior and may result in CTDs or unpredictable issues at runtime. Such problems can only be fixed manually, which should usually be done by the mod author. Failing that, the safest course of action is to uninstall the plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:892
+#: Mopy/bash/bosh/mods_metadata.py:893
 #, python-format
 msgid "%(full_fid)s in %(orig_plugin)s: occurs %(num_duplicates)d times"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:899
+#: Mopy/bash/bosh/mods_metadata.py:900
 msgid "Record Type Collisions"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:900
+#: Mopy/bash/bosh/mods_metadata.py:901
 msgid "The following records override each other, but have different record types. This is undefined behavior, but will almost certainly lead to CTDs. Such conflicts can only be fixed manually, which should usually be done by the mod author. Failing that, the safest course of action is to uninstall the plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:911
+#: Mopy/bash/bosh/mods_metadata.py:912
 msgid "Probable Injected Collisions"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:912
+#: Mopy/bash/bosh/mods_metadata.py:913
 msgid "The following injected records override each other, but have different Editor IDs (EDIDs). This probably means that two different injected records have collided, but have the same record signature. The resulting behavior depends on what the injecting plugins are trying to do with the record, but they will most likely not work as intended. Such conflicts can only be fixed manually, which should usually be done by the mod author. Failing that, the safest course of action is to uninstall the plugins."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:929
+#: Mopy/bash/bosh/mods_metadata.py:930
 msgid "No Problems Found"
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:932
+#: Mopy/bash/bosh/mods_metadata.py:933
 msgid "Wrye Bash did not find any problems with your installed plugins without loading them. Turning on loading of plugins may find more problems."
 msgstr ""
 
-#: Mopy/bash/bosh/mods_metadata.py:936
+#: Mopy/bash/bosh/mods_metadata.py:937
 msgid "Wrye Bash did not find any problems with your installed plugins. Congratulations!"
 msgstr ""
 
@@ -14974,14 +14974,14 @@ msgstr ""
 msgid "Cells Patched"
 msgstr ""
 
-#: Mopy/bash/wbtemp.py:98
+#: Mopy/bash/wbtemp.py:102
 msgid "Wrye Bash Temporary Directory"
 msgstr ""
 
-#: Mopy/bash/wbtemp.py:100
+#: Mopy/bash/wbtemp.py:104
 msgid "This folder is used by Wrye Bash to store temporary directories and files. As long as Wrye Bash always exits properly, this folder should remain empty (except for this README)."
 msgstr ""
 
-#: Mopy/bash/wbtemp.py:105
+#: Mopy/bash/wbtemp.py:109
 msgid "If all instances of Wrye Bash are closed and you still see directories and/or files in here, you can freely delete them."
 msgstr ""
