@@ -1526,7 +1526,7 @@ class AFlipFlagLink(EnabledLink):
         super().__init__()
         self._plugin_flag: PluginFlag = plugin_flag
         self._allowed_ext, self._continue_msg, self._help = \
-            plugin_flag.link_args()
+            plugin_flag.link_args(bush.game)
 
     def _enable(self):
         """Allow if all selected mods have valid extensions, have the same

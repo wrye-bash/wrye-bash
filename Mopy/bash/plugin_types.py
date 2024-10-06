@@ -288,9 +288,9 @@ class PluginFlag(Enum):
                  'may be active at the same time.') % {
             'max_regular_plugins': cls.max_plugins}
 
-    def link_args(self):
+    def link_args(self, game_handle):
         match self:
-            case MasterFlag.ESM:
+            case game_handle.master_flags.ESM:
                return [('.esp', '.esu'), (), _('Flip the ESM flag on '
                     'the selected plugins, turning masters into regular '
                     'plugins and vice versa.')]
@@ -301,8 +301,7 @@ PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 PluginFlag.max_plugins = 255
 
 class MasterFlag(PluginFlag):
-    """Enum with a single member for the Master flag - PluginFlag knows we
-    exist."""
+    """Enum with a single member for the Master flag."""
     ESM = ('esm_flag', '_is_master', 'm', _('Master plugin.'))
 
     def set_mod_flag(self, mod_info, set_flag, game_handle):

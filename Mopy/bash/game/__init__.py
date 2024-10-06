@@ -163,7 +163,7 @@ class _EslMixin(PluginFlag):
                 'max_regular_plugins': cls.max_plugins,
                 'max_esl_plugins': cls.ESL.max_plugins}
 
-    def link_args(self):
+    def link_args(self, game_handle):
         cls = type(self)
         match self:
             case cls.ESL:
@@ -216,7 +216,7 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
         sup = super().guess_flags(mod_fn_ext, game_handle)
         return sup if masters_supplied else {**sup, cls.OVERLAY: False}
 
-    def link_args(self):
+    def link_args(self, game_handle):
         cls = type(self)
         match self:
             case cls.OVERLAY:
@@ -231,7 +231,7 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
                     'Flip to Overlay')), _(
                     'Flip the Overlay flag on the selected plugins, turning '
                     'overlay plugins into regular ones and vice versa.')]
-        return super().link_args()
+        return super().link_args(game_handle)
 
 _SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                            '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '
