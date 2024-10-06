@@ -942,11 +942,11 @@ class AsteriskGame(_TextFileLo):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Discard information read if cached_* is passed in, but due
         to our caller being get_load_order *at least one* is None."""
-        rem_from_acti = self._active_if_present
+        rem_from_acti, blue = self._rem_from_plugins_txt()
         try:
             active, lo = self._plugins_txt.parse_modfile()
-            if any_dropped := {x for x in lo if x in rem_from_acti}:
-                bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
+            if any_dropped := [x for x in lo if x in rem_from_acti]:
+                bolt.deprint(f'Removing {_pl(any_dropped)} from '
                              f'{self._plugins_txt.abs_path}')
                 # We removed plugins that don't belong here, back up first
                 self._backup_active_plugins()
@@ -954,6 +954,17 @@ class AsteriskGame(_TextFileLo):
             # Prepend all present fixed-order plugins that can't be in the
             # plugins txt to the active and lord lists
             sorted_rem = self.pinned_plugins(rem_from_acti, fixed_order=True)
+            if blue is not None:
+                # silently add Blueprint masters to the load order - if they
+                # were new mods we should have recorded that in modInfos
+                # refresh else they might have been removed from the
+                # plugins.txt while still present - so do not issue a warning
+                in_plugins_tx = {m for m in lo if m in blue}
+                blue = [m for m in blue if m not in in_plugins_tx] # keep order
+                lo.extend(blue)
+                if always_active_missing := [b for b in blue if
+                                             b in self._active_if_present]:
+                    active.extend(always_active_missing)
             lo = [*sorted_rem, *lo] if ca_load_order is None else ca_load_order
             active = [*sorted_rem, *active] if ca_active is None else ca_active
         except FileNotFoundError:
@@ -963,6 +974,9 @@ class AsteriskGame(_TextFileLo):
                                      active := ca_active or [])
             bolt.deprint(f'Created {self._plugins_txt.abs_path}')
         return lo, active
+
+    def _rem_from_plugins_txt(self):
+        return self._active_if_present, None # no blueprints
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered): return True

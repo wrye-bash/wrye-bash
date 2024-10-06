@@ -28,6 +28,24 @@ from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
 from ..._games_lo import AsteriskGame
 from ...bolt import FName, fast_cached_property
+from ...plugin_types import AMasterFlag
+
+class _SFMasterFlag(AMasterFlag):
+    # order matters for the ui keys
+    BLUEPRINT = ('blueprint_flag', '_is_blueprint', 'b')
+    ESM = ('esm_flag', '_is_master', 'm')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.name == 'BLUEPRINT':
+            self.help_flip = _('Flip the BLUEPRINT flag on the selected '
+                               'plugins.')
+
+    @classmethod
+    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first and blueprint masters last."""
+        is_master = cls.ESM.cached_type(mod_inf)
+        return is_master and cls.BLUEPRINT.cached_type(mod_inf), not is_master
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -310,6 +328,21 @@ class _AStarfieldGameInfo(PatchGame):
         # disabled & reordered in the LO.
         _ccc_filename = 'Starfield.ccc'
 
+        def _rem_from_plugins_txt(self):
+            # don't remove blueprint masters, let the game do that rather
+            # than overwritte user edits (the ones we do remove are harcoded
+            # and whatever the user has done with lo files does not seem to
+            # matter, but Blueprint load order seems to be affected)
+            act = self._active_if_present - {FName(
+                'BlueprintShips-Starfield.esm')}
+            # we won't remove Blueprint masters from plugins.txt but we need
+            # to append them in lo if present so we don't warn
+            blue = {k: v for k, v in self.mod_infos.items() if all(
+                pf.cached_type(v) for pf in self._game_handle.master_flags)}
+            blue = [t[0] for t in # sort blueprint masters ftime/mod ascending
+                    sorted(blue.items(), key=lambda x: (x[1].ftime, x[0]))]
+            return act, blue
+
         def _set_pinned_mods(self):
             """Override for making BlueprintShips.esm always active while not
             having a fixed position in the load order."""
@@ -332,6 +365,7 @@ class _AStarfieldGameInfo(PatchGame):
         cls._import_records(__name__)
 
     def _init_plugin_types(self, pflags=None):
+        self.master_flags = _SFMasterFlag
         super()._init_plugin_types(_SFPluginFlag)
 
 class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):

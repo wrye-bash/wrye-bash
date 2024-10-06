@@ -386,8 +386,8 @@ class FileInfo(_TabledInfo, AFileInfo):
 #------------------------------------------------------------------------------
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
-    # Cached, since we need them so often
-    _is_master = _is_esl = _is_overlay = False
+    # Cached, since we need them so often - set by PluginFlag
+    _is_master = _is_esl = _is_overlay = _is_blueprint = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
     _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',

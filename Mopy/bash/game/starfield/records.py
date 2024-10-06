@@ -41,6 +41,7 @@ class MreTes4(AMreHeader):
         localized: bool = flag(7)
         esl_flag: bool = flag(8)
         overlay_flag: bool = flag(9)
+        blueprint_flag: bool = flag(11)
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.96), 'numRecords',

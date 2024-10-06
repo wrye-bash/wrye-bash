@@ -194,12 +194,15 @@ class PluginFlag(Enum):
     _ignore_ = ('count_str', )
     count_str = ''
 
-    def __init__(self, flag_attr, mod_info_attr, ui_letter_key, type_name):
+    def __init__(self, flag_attr, mod_info_attr, ui_letter_key,
+                 convert_exts=('.esp', '.esu')):
         self._flag_attr = flag_attr # the ModInfo.header.flags1 attribute
         self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
         self._offset = None # index offset for games that support scale flags
-        self.type_name = type_name
-        self.ui_letter_key = ui_letter_key
+        self.ui_letter_key = ui_letter_key # UI key mods.text.es{ui_letter_key}
+        self.convert_exts = convert_exts # allowed exts for the AFlipFlagLink
+        self.continue_message = () # continue message for the AFlipFlagLink
+        self.help_flip = '' # help text for the AFlipFlagLink
 
     def has_flagged(self, mod_info):
         """Check if the self._flag_attr is set on the mod info flags."""
@@ -238,7 +241,7 @@ class PluginFlag(Enum):
     def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
         """Guess the flags of a mod/master info from its filename extension.
         Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
-        return {MasterFlag.ESM: True} if mod_fn_ext == '.esm' else {}
+        return {game_handle.master_flags.ESM: True} if mod_fn_ext == '.esm' else {}
 
     # FIDs and mod index handling
     @classmethod
@@ -289,22 +292,20 @@ class PluginFlag(Enum):
                  'may be active at the same time.') % {
             'max_regular_plugins': cls.max_plugins}
 
-    def link_args(self):
-        match self:
-            case MasterFlag.ESM:
-               return [('.esp', '.esu'), (), _('Flip the ESM flag on '
-                    'the selected plugins, turning masters into regular '
-                    'plugins and vice versa.')]
-        return []
-
 # easiest way to define enum class variables
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 PluginFlag.max_plugins = 255
 
-class MasterFlag(PluginFlag):
-    """Enum with a single member for the Master flag - PluginFlag knows we
-    exist."""
-    ESM = ('esm_flag', '_is_master', 'm', _('Master plugin.'))
+class AMasterFlag(PluginFlag):
+    """Master flags - affect load order - mutually compatible and compatible
+    with scale flags."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('convert_exts', ('.esp', '.esu'))
+        super().__init__(*args, **kwargs)
+        if self.name == 'ESM':
+            self.help_flip = _('Flip the ESM flag on the selected plugins, '
+                'turning masters into regular plugins and vice versa.')
 
     def set_mod_flag(self, mod_info, set_flag, game_handle):
         if super().set_mod_flag(mod_info, set_flag, game_handle) or \

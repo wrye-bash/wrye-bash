@@ -373,19 +373,17 @@ class _ModsUIList(UIList):
             if txtkey:
                 item_format.text_key = txtkey
                 mouse_text.append(mtext)
-        suffix = ''
-        for pflag in chain(bush.game.plugin_flags, bush.game.master_flags):
-            if pflag.cached_type(minf):
-                suffix += pflag.ui_letter_key
-                if suffix == 'lo': ##: tmp we need to add more statuses and the relevant colors
-                    item_format.back_key = 'mods.bkgd.doubleTime.load'
-                    mouse_text[-1] = 'Plugin has conflicting ESL/OVERLAY flags. ' ##: tmp
-                    suffix = ''
-                else:
-                    mouse_text.append(pflag.type_name)
-        # Check if it's special, leave ESPs alone
-        if suffix:
+        # ESL, OVERLAY, BLUEPRINT then ESM
+        suffix = ''.join(pflag.ui_letter_key for pflag in
+                         chain(bush.game.plugin_flags, bush.game.master_flags)
+                         if pflag.cached_type(minf))
+        if suffix in bush.game.forbidden_suffixes:
+            item_format.back_key = 'mods.bkgd.doubleTime.load'
+            item_format.text_key = 'mods.text.flags_conflict'
+            mouse_text.append(bush.game.forbidden_suffixes[suffix])
+        elif suffix in bush.game.plugin_type_text:
             item_format.text_key = f'mods.text.es{suffix}'
+            mouse_text.append(bush.game.plugin_type_text[suffix])
         if 'Deactivate' in fileBashTags: # was for mods only
             item_format.italics = True
         return fileBashTags

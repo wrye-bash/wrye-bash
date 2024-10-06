@@ -25,6 +25,7 @@ attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 import os
 import shlex
+from itertools import chain
 
 from . import BSAList, INIList, InstallersList, InstallersPanel, MasterList, \
     ModList, SaveList, ScreensList
@@ -545,9 +546,7 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_CheckQualifications())
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
-        ModList.context_links.append_link(AFlipFlagLink(
-            bush.game.master_flags.ESM))
-        for pflag in bush.game.plugin_flags:
+        for pflag in chain(bush.game.master_flags, bush.game.plugin_flags):
             ModList.context_links.append_link(AFlipFlagLink(pflag))
         ModList.context_links.append_link(Mod_FlipMasters())
         ModList.context_links.append_link(Mod_CreateDummyMasters())
