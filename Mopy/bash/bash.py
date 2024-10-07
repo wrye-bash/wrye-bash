@@ -616,6 +616,10 @@ def _main(opts, wx_locale, wxver):
                 bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
         from . import bosh
         bosh.initBosh(game_ini_path)
+        # hacky should maybe be somewhere else
+        from .loot_conditions import init_loot_cond_functions
+        from . import load_order
+        init_loot_cond_functions(load_order, bosh, bush_game)
         from . import env
         env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher # share this instance with _close_dialog_windows
