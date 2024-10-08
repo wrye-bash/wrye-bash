@@ -1589,7 +1589,7 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
 
     def __init__(self):
         super(AFlipFlagLink, self).__init__()
-        self._plugin_flag = bush.game.master_flags.ESM
+        self._plugin_flag = bush.game.esm_flag
 
     @property
     def _already_flagged(self): return not self._flag_value

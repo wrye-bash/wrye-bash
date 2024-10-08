@@ -311,7 +311,7 @@ class CreateNewPlugin(DialogWindow):
         self._plugin_name.select_all_text()
         # flag checkboxes - TODO: use a radio button for incompatible flags
         self._flags_chkboxes = {}
-        for en in (bush.game.master_flags, bush.game.plugin_flags):
+        for en in bush.game.all_flags:
             for member, kwargs in en.checkboxes().items():
                 self._flags_chkboxes[member] = chkbx = CheckBox(self, **kwargs)
                 chkbx.on_checked.subscribe(self._handle_flag_checked)
