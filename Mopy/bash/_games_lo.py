@@ -983,7 +983,7 @@ class AsteriskGame(_TextFileLo):
 
     def _set_pinned_mods(self):
         if self._ccc_filename:
-            ccc_path = bass.dirs['app'].join(self._ccc_filename)
+            ccc_path = self._get_ccc_path()
             try:
                 ccc_file = LoFile(False, ccc_path, raise_on_error=True)
                 _act, ccc_contents = ccc_file.parse_modfile()
@@ -1002,6 +1002,9 @@ class AsteriskGame(_TextFileLo):
         # remains - note set(fo_mods) == mbaip as returned above
         return mbaip, (*fo_mods, *(
             p for p in self._ccc_fallback if p not in mbaip))
+
+    def _get_ccc_path(self):
+        return bass.dirs['app'].join(self._ccc_filename)
 
 # Print helpers
 def _pl(it, legend=''):
