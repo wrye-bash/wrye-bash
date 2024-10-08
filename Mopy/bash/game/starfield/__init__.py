@@ -26,7 +26,7 @@ from .. import GameInfo, MergeabilityCheck, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
-from ..._games_lo import AsteriskGame, LoFile
+from ..._games_lo import AsteriskGame
 from ...bolt import FName, fast_cached_property
 
 class _AStarfieldGameInfo(PatchGame):
@@ -301,7 +301,7 @@ class _AStarfieldGameInfo(PatchGame):
         force_load_first = tuple(map(FName, (
             'ShatteredSpace.esm', 'Constellation.esm', 'OldMars.esm',
             'SFBGS003.esm', 'SFBGS004.esm', 'SFBGS006.esm', 'SFBGS007.esm',
-            'SFBGS008.esm', 'BlueprintShips-Starfield.esm',
+            'SFBGS008.esm', # 'BlueprintShips-Starfield.esm',
         )))
         # The game tries to read a Starfield.ccc already, but it's not present
         # yet. Also, official Creations are written to plugins.txt & can be
@@ -309,19 +309,18 @@ class _AStarfieldGameInfo(PatchGame):
         _ccc_filename = 'Starfield.ccc'
 
         def _set_pinned_mods(self):
-            """Write the CCC file out if not present."""
+            """Override for making BlueprintShips.esm always active while not
+            having a fixed position in the load order."""
+            mbaip, fo_mods = super()._set_pinned_mods()
+            mbaip.add(FName('BlueprintShips-Starfield.esm')) #active if present
+            return mbaip, fo_mods
+
+        def _get_ccc_path(self):
             from ... import bass
-            ccc_path = bass.dirs['app'].join(self._ccc_filename)
-            try:
-                LoFile(False, ccc_path, raise_on_error=True)
-            except FileNotFoundError:
-                bolt.deprint(f'{ccc_path} does not exist - creating it')
-                ccc_file = LoFile(False, ccc_path)
-                ccc_file.write_modfile(self.__class__.force_load_first,
-                                       self.__class__.force_load_first)
-            except OSError:
-                bolt.deprint(f'Failed to open {ccc_path}', traceback=True)
-            return super()._set_pinned_mods()
+            if (mg_ccc := bass.dirs['saveBase'].join(self._ccc_filename
+                                                     )).exists():
+                return mg_ccc
+            return super()._get_ccc_path()
 
     lo_handler = _LoStarfield
 
