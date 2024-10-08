@@ -289,7 +289,7 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=lambda a: not bush.game.master_flags.ESM.cached_type(
+            items.sort(key=lambda a: not bush.game.master_flag.cached_type(
                 self.data_store[a]))
 
     def _activeModsFirst(self, items):
@@ -374,9 +374,8 @@ class _ModsUIList(UIList):
                 item_format.text_key = txtkey
                 mouse_text.append(mtext)
         # ESL, OVERLAY, BLUEPRINT then ESM
-        suffix = ''.join(pflag.ui_letter_key for pflag in
-                         chain(bush.game.plugin_flags, bush.game.master_flags)
-                         if pflag.cached_type(minf))
+        suffix = ''.join(pflag.ui_letter_key for pflag in chain(
+            *reversed(bush.game.all_flags)) if pflag.cached_type(minf))
         if suffix in bush.game.forbidden_suffixes:
             item_format.back_key = 'mods.bkgd.doubleTime.load'
             item_format.text_key = 'mods.text.flags_conflict'
