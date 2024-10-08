@@ -1598,11 +1598,11 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
         present_mods = window.data_store
         modinfo_masters = present_mods[selection[0]].masterNames
         if len(selection) == 1 and len(modinfo_masters) > 1:
-            self.espMasters = [m for m in modinfo_masters if
-                               m in present_mods and m.fn_ext == '.esp']
+            self._to_flip = [m for m in modinfo_masters if # espMasters
+                             m in present_mods and m.fn_ext == '.esp']
         else:
-            self.espMasters = []
-        for mastername in self.espMasters:
+            self._to_flip = []
+        for mastername in self._to_flip:
             masterInfo = bosh.modInfos.get(mastername, None)
             if masterInfo and masterInfo.isInvertedMod():
                 self._flag_value = False
@@ -1616,14 +1616,11 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
         return _('Remove ESM Flag From Masters') if self._already_flagged \
             else _('Add ESM Flag to Masters')
 
-    def _enable(self): return bool(self.espMasters)
+    def _enable(self): return bool(self._to_flip)
 
     def _collect_mods(self):
-        flips = []
-        for masterPath in self.espMasters:
-            if master_mod_info := bosh.modInfos.get(masterPath):
-                flips.append(master_mod_info)
-                self.selected.append(masterPath) # for refresh in Execute
+        flips = [bosh.modInfos[masterPath] for masterPath in self._to_flip]
+        self.selected.extend(flips)  # for refresh in Execute
         return flips
 
 #------------------------------------------------------------------------------
