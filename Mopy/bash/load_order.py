@@ -166,6 +166,14 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
     def lo_changed(self):
         return self.added or self.missing or self.reordered
 
+    def __str__(self):
+        st = []
+        for att in ('missing', 'added', 'reordered', 'active_flips'):
+            if diff := getattr(self, att):
+                st.append(f'{att[0].upper()}{" ".join(att[1:].split("_"))}:'
+                          f' {", ".join(sorted(diff))}')
+        return '\n'.join(st)
+
 class LoadOrder(object):
     """Immutable class representing a load order."""
     __empty = ()
@@ -343,8 +351,10 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
         lord, acti = __validate(saved)
         fixed = LoadOrder(lord, acti)
         if fixed != saved:
-            bolt.deprint(f'*** Saved load order is no longer valid: {saved}\n'
-                         f'*** Corrected to {fixed}: {saved.lo_diff(fixed)}')
+            sstr, fstr = ', '.join(saved.loadOrder), ', '.join(fixed.loadOrder)
+            bolt.deprint('\n'.join([f'Saved load order is no longer valid:',
+                f'{saved.lo_diff(fixed)}', f'*** saved: {sstr}',
+                f'*** fixed: {fstr}']))
             saved = fixed
     else: saved = __lo_unset
     if _cached_lord is not __lo_unset:

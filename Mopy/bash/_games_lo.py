@@ -166,7 +166,7 @@ class FixInfo(object):
         self.act_removed = set()
         self.act_added = set()
         self.act_duplicates = set()
-        self.act_order_differs_from_load_order = u''
+        self.act_order_differs_from_load_order = []
         self.master_not_active = False
         self.missing_must_be_active = set()
         self.selectedExtra = []
@@ -191,15 +191,13 @@ class FixInfo(object):
 
     def _warn_lo(self):
         if not self.lo_changed(): return
-        added = _pl(self.lo_added) or u'None'
-        removed = _pl(self.lo_removed) or u'None'
-        duplicates = f'lo_duplicates({_pl(self.lo_duplicates)}), ' \
-            if self.lo_duplicates else u''
-        reordered = u'(No)' if not any(self.lo_reordered) else _pl(
-            self.lo_reordered[0], u'from:\n', joint=u'\n') + _pl(
-            self.lo_reordered[1], u'\nto:\n', joint=u'\n')
-        bolt.deprint(f'Fixed Load Order: {added=}, {removed=}, '
-                     f'{duplicates=}, reordered {reordered}')
+        msg = [_pl(li, f'{at[3:]}: ') for at in ('lo_removed', 'lo_added',
+            'lo_duplicates') if (li := getattr(self, at))]
+        if any(self.lo_reordered):
+            msg.append('reordered:')
+            msg.append(_pl(self.lo_reordered[0], 'from: '))
+            msg.append(_pl(self.lo_reordered[1], 'to  : '))
+        bolt.deprint(f'Fixed Load Order: {"\n".join(msg)}')
 
     def _warn_active(self):
         if not self.act_header: return
@@ -213,7 +211,7 @@ class FixInfo(object):
         for path in self.missing_must_be_active:
             msg.append(f'{path} not present in active list while present in '
                        f'Data folder')
-        msg += self.act_order_differs_from_load_order
+        msg.extend(self.act_order_differs_from_load_order)
         if self.selectedExtra:
             msg.append('Active list contains more plugins than allowed - the '
                        'following plugins will be deactivated:')
@@ -523,7 +521,7 @@ class LoGame:
         fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # order - won't trigger saving for TimestampGame - affects which mods
         # are chopped off if > 255 (the ones that load last)
-        fix_active.act_order_differs_from_load_order += \
+        fix_active.act_order_differs_from_load_order = \
             self._check_active_order(acti_filtered, lord)
         # check if we have more than 256 active mods
         drop_espms, drop_esls = self.check_active_limit(acti_filtered)
@@ -578,9 +576,9 @@ class LoGame:
         dex_dict = {mod: index for index, mod in enumerate(lord)}
         acti.sort(key=dex_dict.__getitem__)
         if acti != old: # active mods order that disagrees with lord ?
-            return (f'Reordered active plugins with fixed order from: '
-                    f'({_pl(old)})to: ({_pl(acti)})')
-        return ''
+            return [f'Reordered active plugins with fixed order',
+                    f'from: ({_pl(old)})', f'to  : ({_pl(acti)})']
+        return []
 
     # HELPERS -----------------------------------------------------------------
     @staticmethod
@@ -709,7 +707,7 @@ class TimestampGame(LoGame):
     @staticmethod
     def _check_active_order(acti, lord):
         super(TimestampGame, TimestampGame)._check_active_order(acti, lord)
-        return '' # no need to reorder plugins.txt - fix_lo.act_reordered False
+        return [] # no need to reorder plugins.txt - fix_lo.act_reordered False
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered): return deleted_plugins
@@ -800,8 +798,8 @@ class TextfileGame(_TextFileLo):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path,
                  *, lo_txt_type=LoFile, **kwargs):
-        super().__init__(mod_infos, plugins_txt_path, **kwargs)
         self._loadorder_txt = lo_txt_type(self._star, loadorder_txt_path)
+        super().__init__(mod_infos, plugins_txt_path, **kwargs)
 
     def request_cache_update(self, cached_load_order, cached_active):
         _lo, act = super().request_cache_update(cached_load_order, cached_active)
@@ -1012,5 +1010,5 @@ class AsteriskGame(_TextFileLo):
             p for p in self._ccc_fallback if p not in mbaip))
 
 # Print helpers
-def _pl(it, legend='', joint=', '):
-    return legend + joint.join(it)
+def _pl(it, legend=''):
+    return legend + ', '.join(it)
