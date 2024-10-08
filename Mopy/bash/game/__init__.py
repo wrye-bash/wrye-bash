@@ -139,7 +139,7 @@ class _EslMixin(PluginFlag):
 
     @classmethod
     def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
-        return {game_handle.master_flags.ESM: True, cls.ESL: True} if \
+        return {game_handle.master_flag: True, cls.ESL: True} if \
             mod_fn_ext == '.esl' else super().guess_flags(
             mod_fn_ext, game_handle)
 
@@ -930,6 +930,8 @@ class GameInfo(object):
             # leave magic 255 below we might re-initialize!
             PluginFlag.max_plugins = 255 - len(scale_flags)
         pflags = self.plugin_flags
+        self.all_flags = self.master_flags, pflags
+        self.master_flag = self.master_flags.ESM
         master_suffixes = ['', *_prod(*
             (('', f.ui_letter_key) for f in self.master_flags))]
         type_prefixes = ['', *_prod(*(('', f.ui_letter_key) for f in pflags))]

@@ -39,7 +39,7 @@ __exit = lambda x: True # trick to exit early on non-verbose mode
 
 def _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
     _exit = __exit if reasons is None else reasons.append # append returns None
-    if game_handle.master_flags.ESM.has_flagged(modInfo) and _exit(_(
+    if game_handle.master_flag.has_flagged(modInfo) and _exit(_(
             'This plugin has the ESM flag.')):
         return False
     #--Bashed Patch
@@ -238,7 +238,7 @@ class PluginFlag(Enum):
     def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
         """Guess the flags of a mod/master info from its filename extension.
         Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
-        return {game_handle.master_flags.ESM: True} if mod_fn_ext == '.esm' else {}
+        return {game_handle.master_flag: True} if mod_fn_ext == '.esm' else {}
 
     # FIDs and mod index handling
     @classmethod

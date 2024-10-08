@@ -298,7 +298,7 @@ def _fn_is_master(fname: str, _bosh, _game_handle) -> bool:
 
     :param fname: The file name to check."""
     # Need to check if it's on disk first, otherwise modInfos[x] errors
-    return fname in _bosh.modInfos and _game_handle.master_flags.ESM.cached_type(
+    return fname in _bosh.modInfos and _game_handle.master_flag.cached_type(
         _bosh.modInfos[fname])
 
 def _fn_many(path_regex: str) -> bool:

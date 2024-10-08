@@ -1585,8 +1585,8 @@ class Flags:
 
     def __repr__(self):
         """Shows all set flags."""
-        all_flags = u', '.join(self.getTrueAttrs()) if self._field else u'None'
-        return f'0x{self.hex()} ({all_flags})'
+        allflags = ', '.join(self.getTrueAttrs()) if self._field else 'None'
+        return f'0x{self.hex()} ({allflags})'
 
 class TrimmedFlags(Flags):
     """Flags subtype that will discard unnamed flags on __init__ and dump."""

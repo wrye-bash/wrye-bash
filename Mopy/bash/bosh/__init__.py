@@ -160,7 +160,7 @@ class MasterInfo:
     def flag_fallback(self, pflag):
         """For esm missing masters check extension - for esl rely on the
         mysterious _was_esl."""
-        if pflag is bush.game.master_flags.ESM:
+        if pflag is bush.game.master_flag:
             return pflag in bush.game.plugin_flags.guess_flags(
                 self.get_extension(), bush.game)
         return getattr(self, '_was_esl', False) # we only might set ESL to True
@@ -451,7 +451,7 @@ class ModInfo(FileInfo):
         flags_dict = bush.game.plugin_flags.check_flag_assignments(flags_dict)
         for pl_flag, flag_val in flags_dict.items():
             pl_flag.set_mod_flag(self, flag_val, bush.game)
-            if pl_flag is bush.game.master_flags.ESM:
+            if pl_flag is bush.game.master_flag:
                 self._update_onam() # recalculate ONAM info if necessary
         self.writeHeader()
 
@@ -707,7 +707,7 @@ class ModInfo(FileInfo):
         self._reset_masters()
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
-        for v in chain(bush.game.master_flags, bush.game.plugin_flags):
+        for v in chain(*bush.game.all_flags):
             v.set_mod_flag(self, None, bush.game) # initialize _is_master etc
 
     def writeHeader(self, old_masters: list[FName] | None = None):
@@ -922,7 +922,7 @@ class ModInfo(FileInfo):
         based on that."""
         # Skip for games that don't need the ONAM generation
         if bush.game.Esp.generate_temp_child_onam:
-            if bush.game.master_flags.ESM.cached_type(self):
+            if bush.game.master_flag.cached_type(self):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)
@@ -2168,7 +2168,7 @@ class ModInfos(TableFileInfos):
     def cached_lo_last_esm(self):
         last_esm = self._master_esm
         for mod in self._lo_wip[1:]:
-            if not bush.game.master_flags.ESM.cached_type(self[mod]):
+            if not bush.game.master_flag.cached_type(self[mod]):
                 return last_esm
             last_esm = mod
         return last_esm
@@ -2192,7 +2192,7 @@ class ModInfos(TableFileInfos):
         lo_wip_set = set(self._lo_wip)
         new = [x for x in mods if x not in lo_wip_set]
         if not new: return
-        esms = [x for x in new if bush.game.master_flags.ESM.cached_type(self[x])]
+        esms = [x for x in new if bush.game.master_flag.cached_type(self[x])]
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
