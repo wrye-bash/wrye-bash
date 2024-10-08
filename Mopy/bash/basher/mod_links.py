@@ -1531,24 +1531,28 @@ class AFlipFlagLink(EnabledLink):
         self._continue_msg = plugin_flag.continue_message
         self._help = plugin_flag.help_flip
 
-    def _enable(self):
+    def _initData(self, window, selection):
+        super()._initData(window, selection)
+        first_flagged = self._plugin_flag.has_flagged(self._first_selected())
+        self._flag_value = not first_flagged # flip the (common) flag value
+        do_enable = all(
+            self._can_convert(k, v) for k, v in self.iselected_pairs())
+        self._to_flip = [*self.iselected_infos()] if do_enable else []
+
+    def _can_convert(self, fn_mod, m):
         """Allow if all selected mods have valid extensions, have the same
         flag state and are capable to be flagged with self._plugin_flag."""
-        first_flagged = self._already_flagged
-        self._flag_value = not first_flagged # flip the (common) flag value
-        return all(m.fn_ext in self._allowed_ext and
-            self._plugin_flag.has_flagged(minfo) == first_flagged and
-            (first_flagged or self._can_convert(minfo))
-                   for m, minfo in self.iselected_pairs())
+        pf = self._plugin_flag
+        return fn_mod.fn_ext in self._allowed_ext and pf.has_flagged(
+            m) != self._flag_value and (not self._flag_value or not hasattr(
+            pf, 'merge_check') or (pf.merge_check in m.merge_types))
 
-    def _can_convert(self, m):
-        return not hasattr(self._plugin_flag, 'merge_check') or (
-                    self._plugin_flag.merge_check in m.merge_types)
+    def _enable(self): return bool(self._to_flip)
 
     @property
     def link_text(self):
-        return (_('Remove %(pflag)s Flag') if self._already_flagged else _(
-            'Add %(pflag)s Flag')) % {'pflag': self._plugin_flag.name.title()}
+        return (_('Add %(pflag)s Flag') if self._flag_value else _(
+          'Remove %(pflag)s Flag')) % {'pflag': self._plugin_flag.name.title()}
 
     @balt.conversation
     def Execute(self):
@@ -1556,7 +1560,7 @@ class AFlipFlagLink(EnabledLink):
             if self._continue_msg and not self._askContinue(*self._continue_msg):
                 return
             set_flags = {self._plugin_flag: self._flag_value}
-            for minfo in self._collect_mods():
+            for minfo in self._to_flip:
                 minfo.set_plugin_flags(set_flags)
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
@@ -1570,13 +1574,6 @@ class AFlipFlagLink(EnabledLink):
             # plugin that was affected to update the Indices column
             self.window.RefreshUI(refresh_others=Store.SAVES.DO(), redraw={
                 *self.selected, *ldiff.reordered, *ldiff.act_index_change})
-
-    @property
-    def _already_flagged(self):
-        return self._plugin_flag.has_flagged(self._first_selected())
-
-    def _collect_mods(self):
-        return self.iselected_infos()
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
@@ -1593,40 +1590,23 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
         super(AFlipFlagLink, self).__init__()
         self._plugin_flag = bush.game.master_flag
 
-    @property
-    def _already_flagged(self): return not self._flag_value
-
     def _initData(self, window, selection):
+        super(AFlipFlagLink, self)._initData(window, selection)
         present_mods = window.data_store
         modinfo_masters = present_mods[selection[0]].masterNames
         if len(selection) == 1 and len(modinfo_masters) > 1:
-            self.espMasters = [m for m in modinfo_masters if
-                               m in present_mods and m.fn_ext == '.esp']
+            self._to_flip = [present_mods[m] for m in # espMasters
+                modinfo_masters if m in present_mods and m.fn_ext == '.esp']
+            # for refresh in Execute - selection is shared with all other links
+            self.selected = [selection[0], *self._to_flip]
         else:
-            self.espMasters = []
-        for mastername in self.espMasters:
-            masterInfo = bosh.modInfos.get(mastername, None)
-            if masterInfo and masterInfo.isInvertedMod():
-                self._flag_value = False
-                break
-        else:
-            self._flag_value = True
-        super()._initData(window, selection)
+            self._to_flip = []
+        self._flag_value = not any(m.isInvertedMod() for m in self._to_flip)
 
     @property
     def link_text(self):
-        return _('Remove ESM Flag From Masters') if self._already_flagged \
-            else _('Add ESM Flag to Masters')
-
-    def _enable(self): return bool(self.espMasters)
-
-    def _collect_mods(self):
-        flips = []
-        for masterPath in self.espMasters:
-            if master_mod_info := bosh.modInfos.get(masterPath):
-                flips.append(master_mod_info)
-                self.selected.append(masterPath) # for refresh in Execute
-        return flips
+        return _('Add ESM Flag to Masters') if self._flag_value else _(
+            'Remove ESM Flag From Masters')
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):
