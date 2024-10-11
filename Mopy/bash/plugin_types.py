@@ -38,7 +38,16 @@ from .exception import ModError
 
 __exit = lambda x: True # trick to exit early on non-verbose mode
 
+def is_vanilla(mod_info, reasons, game_handle):
+    """Mark vanilla plugins as non-mergeable - don't do the load checks in
+    PBash."""
+    if mod_info.fn_key.lower() in game_handle.bethDataFiles:
+        return True if reasons is None else not reasons.append(_(
+            'Is Vanilla Plugin')) # return True - block rest of checks
+
 def _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
+    if is_vanilla(modInfo, reasons, game_handle):
+        return False # don't do further checks even in verbose mode
     _exit = __exit if reasons is None else reasons.append # append returns None
     if game_handle.master_flag.has_flagged(modInfo) and _exit(_(
             'This plugin has the ESM flag.')):
@@ -80,7 +89,7 @@ def isPBashMergeable(modInfo, minfos, reasons, game_handle):
     """Return True or error message indicating whether specified mod is
     mergeable."""
     if not _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
-        return False  # non verbose mode
+        return False  # non verbose mode or vanilla plugin
     _exit = __exit if reasons is None else reasons.append # append returns None
     if not game_handle.Esp.canBash and _exit(
         _('Wrye Bash does not currently support loading plugins for '

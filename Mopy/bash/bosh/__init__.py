@@ -207,7 +207,19 @@ class _TabledInfo:
         for k, v in (att_val or {}).items(): # set table props used in refresh
             try: ##: nightly regression storing 'installer' as FName - drop!
                 if k == 'installer': v = str(v)
-                elif k == 'doc': v = GPath(v) # needed for updates from old settings
+                elif k == 'doc': # needed for updates from old settings
+                    v = GPath(v)
+                elif k == 'mergeInfo':
+                    cached_size, canMerge = v
+                    # Clean up cached mergeability info - can get out of sync
+                    # if we add or remove a mergeability type from a game or
+                    # change a mergeability type's int key in the enum
+                    if isinstance(canMerge, dict):
+                        canMerge = {m: v for m, v in canMerge.items() if (
+                            MergeabilityCheck(m)) in bush.game.mergeability_checks}
+                    else: # Convert older settings (had a bool here)
+                        canMerge = {}
+                    v = cached_size, canMerge
                 self.set_table_prop(k, v)
             except KeyError:  # 'mtime' - we don't need another mtime cache
                 self.fn_key = FName(GPath(args[0]).stail) # for repr below
@@ -2375,8 +2387,6 @@ class ModInfos(TableFileInfos):
                                          key_f=load_order.cached_lo_index):
             cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
                                                            (None, {}))
-            if not isinstance(canMerge, dict):
-                canMerge = {} # Convert older settings (had a bool here)
             # Quickly check if some mergeability types are impossible for this
             # plugin (because it already has the target type)
             covered_checks = set()
@@ -2384,12 +2394,6 @@ class ModInfos(TableFileInfos):
                 if m_check(modInfo):
                     canMerge[m.value] = False
                     covered_checks.add(m)
-            # Clean up cached mergeability info - this can get out of sync if
-            # we add or remove a mergeability type from a game or change a
-            # mergeability type's int key in the enum
-            for m in list(canMerge):
-                if m not in merg_checks_ints:
-                    del canMerge[m]
             modInfo.set_table_prop('mergeInfo', (cached_size, canMerge))
             if not (full_checks.keys() - covered_checks):
                 # We've already covered all required checks with those checks
@@ -2426,24 +2430,16 @@ class ModInfos(TableFileInfos):
                     else nones
                 progress(i, fileName)
                 fileInfo = self[fileName]
-                cs_name = fileName.lower()
                 check_results = {}
                 for merg_type, merg_check in full_checks.items():
-                    reasons = all_reasons[merg_type]
-                    if cs_name in bush.game.bethDataFiles:
-                        # Fail all mergeability checks for vanilla plugins
-                        if return_results:
-                            reasons.append(_('Is Vanilla Plugin.'))
-                        check_results[merg_type] = False
-                    else:
-                        try:
-                            check_results[merg_type] = merg_check(
-                                fileInfo, self, reasons, bush.game)
-                        except Exception: # as e
-                            # deprint(f'Error scanning mod {fileName} ({e})')
-                            # # Assume it's not mergeable
-                            # check_results[merg_type] = False
-                            raise
+                    try:
+                        check_results[merg_type] = merg_check(fileInfo, self,
+                            all_reasons[merg_type], bush.game)
+                    except Exception:  # as e
+                        # deprint(f'Error scanning mod {fileName} ({e})')
+                        # # Assume it's not mergeable
+                        # check_results[merg_type] = False
+                        raise
                 # Special handling for MERGE: NoMerge-tagged plugins
                 if return_results:
                     if check_results.get(merge) and \
