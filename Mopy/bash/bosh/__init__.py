@@ -2426,24 +2426,16 @@ class ModInfos(TableFileInfos):
                     else nones
                 progress(i, fileName)
                 fileInfo = self[fileName]
-                cs_name = fileName.lower()
                 check_results = {}
                 for merg_type, merg_check in full_checks.items():
-                    reasons = all_reasons[merg_type]
-                    if cs_name in bush.game.bethDataFiles:
-                        # Fail all mergeability checks for vanilla plugins
-                        if return_results:
-                            reasons.append(_('Is Vanilla Plugin.'))
-                        check_results[merg_type] = False
-                    else:
-                        try:
-                            check_results[merg_type] = merg_check(
-                                fileInfo, self, reasons, bush.game)
-                        except Exception: # as e
-                            # deprint(f'Error scanning mod {fileName} ({e})')
-                            # # Assume it's not mergeable
-                            # check_results[merg_type] = False
-                            raise
+                    try:
+                        check_results[merg_type] = merg_check(fileInfo, self,
+                            all_reasons[merg_type], bush.game)
+                    except Exception:  # as e
+                        # deprint(f'Error scanning mod {fileName} ({e})')
+                        # # Assume it's not mergeable
+                        # check_results[merg_type] = False
+                        raise
                 # Special handling for MERGE: NoMerge-tagged plugins
                 if return_results:
                     if check_results.get(merge) and \
