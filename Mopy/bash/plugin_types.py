@@ -224,14 +224,17 @@ class PluginFlag(Enum):
         try:
             if set_flag is not None:
                 setattr(mod_info.header.flags1, self._flag_attr, set_flag)
-                setattr(mod_info, self._mod_info_attr, set_flag)
             else: # just init
                 set_flag = self.has_flagged(mod_info)
-                setattr(mod_info, self._mod_info_attr, set_flag)
-            return set_flag # if we are not flagged check the file extension
+            if not set_flag: # if we are not flagged check the file extension
+                set_flag = self._force_ext_flags(mod_info, game_handle,
+                                                 mod_info.get_extension())
+            setattr(mod_info, self._mod_info_attr, set_flag)
         except AttributeError: # mod_info is a ModInfo.header.flags1 instance
             setattr(mod_info, self._flag_attr, set_flag)
-            return True # don't do any extension checks
+
+    def _force_ext_flags(self, mod_info, game_handle, mext):
+        return False
 
     @classmethod
     def check_flag_assignments(cls, flag_dict, raise_on_invalid=True):
@@ -307,21 +310,18 @@ class AMasterFlag(PluginFlag):
             self.help_flip = _('Flip the ESM flag on the selected plugins, '
                 'turning masters into regular plugins and vice versa.')
 
-    def set_mod_flag(self, mod_info, set_flag, game_handle):
-        if super().set_mod_flag(mod_info, set_flag, game_handle) or \
-                self is not self.ESM: # only check extension for esms
-            return
-        mext = mod_info.get_extension()
+    def _force_ext_flags(self, mod_info, game_handle, mext):
+        if self is not self.ESM: # only check extension for esms
+            return False
         if game_handle.fsName == 'Morrowind':
             ##: This is wrong, but works for now. We need game-specific
             # record headers to parse the ESM flag for MW correctly - #480!
-            setattr(mod_info, self._mod_info_attr, mext == '.esm')
+            return mext == '.esm'
         elif game_handle.Esp.extension_forces_flags:
             # For games since FO4/SSE, .esm and .esl files set the master flag
             # in memory even if not set on the file on disk. For .esp files we
             # must check for the flag explicitly.
-            setattr(mod_info, self._mod_info_attr,
-                    self in self.guess_flags(mext, game_handle))
+            return self in self.guess_flags(mext, game_handle)
 
     @classmethod
     def checkboxes(cls):

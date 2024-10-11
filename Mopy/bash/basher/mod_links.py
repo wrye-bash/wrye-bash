@@ -1412,8 +1412,9 @@ class _CopyToLink(EnabledLink):
     def Execute(self):
         modInfos, added = bosh.modInfos, []
         do_save_lo = False
-        force_flags = bush.game.plugin_flags.guess_flags(self._target_ext,
-                                                         bush.game)
+        pflags = bush.game.plugin_flags
+        force_flags = pflags.guess_flags(self._target_ext, bush.game)
+        force_flags = pflags.check_flag_assignments(force_flags)
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
@@ -1552,13 +1553,14 @@ class AFlipFlagLink(EnabledLink):
     @property
     def link_text(self):
         return (_('Add %(pflag)s Flag') if self._flag_value else _(
-          'Remove %(pflag)s Flag')) % {'pflag': self._plugin_flag.name.title()}
+          'Remove %(pflag)s Flag')) % {'pflag': self._plugin_flag.name} # .title()}
 
     @balt.conversation
     def Execute(self):
         with BusyCursor():
-            if self._continue_msg and not self._askContinue(*self._continue_msg):
-                return
+            if self._continue_msg and not self._askContinue(
+                    *self._continue_msg): return
+            # if _flag_value=True no other conflicting flags should be on
             set_flags = {self._plugin_flag: self._flag_value}
             for minfo in self._to_flip:
                 minfo.set_plugin_flags(set_flags)
@@ -1601,7 +1603,9 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
             self.selected = [selection[0], *self._to_flip]
         else:
             self._to_flip = []
-        self._flag_value = not any(m.isInvertedMod() for m in self._to_flip)
+        # all elements in _to_flip have an .esp extension - check the esm flag
+        self._flag_value = not any(map(bush.game.master_flag.has_flagged,
+                                       self._to_flip))
 
     @property
     def link_text(self):
