@@ -53,7 +53,7 @@ from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     OrderedLowerDict, attrgetter_cache
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
-from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
+from ..exception import BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
@@ -444,16 +444,15 @@ class ModInfo(FileInfo):
         """Returns the file extension of this mod."""
         return self.fn_key.fn_ext
 
-    def set_plugin_flags(self, flags_dict: dict[PluginFlag, bool | None]):
-        """Set plugin flags. If a flag is None, it is left alone. If both ESL
-        and Overlay flags are requested to be set a ValueError is raised. We
-        then proceed to set the other flag to False if the game supports it."""
-        flags_dict = bush.game.plugin_flags.check_flag_assignments(flags_dict)
+    def set_plugin_flags(self, flags_dict: dict[PluginFlag, bool | None],
+                         save_flags=True):
+        """Set plugin flags. If a flag is None, we initialize the ModInfo
+        flag attribute. Do not pass invalid flag values combinations."""
         for pl_flag, flag_val in flags_dict.items():
             pl_flag.set_mod_flag(self, flag_val, bush.game)
-            if pl_flag is bush.game.master_flag:
+            if flag_val is not None and pl_flag is bush.game.master_flag:
                 self._update_onam() # recalculate ONAM info if necessary
-        self.writeHeader()
+        if save_flags: self.writeHeader()
 
     def cache_mergeability(self, check_results: dict[
             MergeabilityCheck | int, bool]):
@@ -491,16 +490,6 @@ class ModInfo(FileInfo):
         # Check for NULL to skip the main file header (i.e. TES3/TES4)
         return self._scan_fids(lambda header_fid: header_fid.mod_dex >=
             num_masters and not header_fid.is_null())
-
-    # ESM flag ----------------------------------------------------------------
-    def isInvertedMod(self):
-        """Extension indicates esp/esm, but byte setting indicates opposite."""
-        mod_ext = self.get_extension()
-        if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
-            raise ArgumentError(
-                f'isInvertedMod: {mod_ext} - only esm/esp allowed')
-        return (self.header and
-                mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
 
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
@@ -707,8 +696,8 @@ class ModInfo(FileInfo):
         self._reset_masters()
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
-        for v in chain(*bush.game.all_flags):
-            v.set_mod_flag(self, None, bush.game) # initialize _is_master etc
+        flags_dict = dict.fromkeys(chain(*bush.game.all_flags))
+        self.set_plugin_flags(flags_dict, save_flags=False) # set _is_esl etc
 
     def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""

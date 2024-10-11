@@ -464,7 +464,8 @@ class PatchFile(ModFile):
         num_new_recs = self.count_new_records(next_object_start=0x800)
         if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
             num_new_recs <= 2048):
-            self.tes4.flags1.esl_flag = True
+            bush.game.plugin_flags.ESL.set_mod_flag(self.tes4.flags1, True,
+                                                    bush.game)
             msg = '\n\n' + _('This patch has been automatically ESL-flagged '
                              'to save a load order slot.')
             self.tes4.description += msg

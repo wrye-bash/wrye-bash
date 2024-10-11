@@ -130,12 +130,9 @@ class _EslMixin(PluginFlag):
             k: k in set_true for k in cls}}
 
     # Overrides ---------------------------------------------------------------
-    def set_mod_flag(self, mod_info, set_flag, game_handle):
-        if super().set_mod_flag(mod_info, set_flag, game_handle):
-            return # we were passed a flags1 instance or we set the flag
-        if self is type(self).ESL: # if ESL flag wasn't set check the extension
-            setattr(mod_info, self._mod_info_attr,
-                    mod_info.get_extension() == '.esl')
+    def _force_ext_flags(self, mod_info, game_handle, mext):
+        return self is type(self).ESL and self in self.guess_flags(mext,
+                                                                   game_handle)
 
     @classmethod
     def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
@@ -212,14 +209,12 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
                 'Flip the Overlay flag on the selected plugins, turning '
                 'overlay plugins into regular ones and vice versa.')
 
-    def set_mod_flag(self, mod_info, set_flag, game_handle):
-        if super().set_mod_flag(mod_info, set_flag, game_handle):
-            return # we were passed a flags1 instance or the flag was set
-        if self is (cls := type(self)).ESL:
-            # .esl extension does not matter for overlay flagged plugins todo ESM?
-            if not cls.OVERLAY.has_flagged(mod_info):
-                setattr(mod_info, self._mod_info_attr,
-                        mod_info.get_extension() == '.esl')
+    def _force_ext_flags(self, mod_info, game_handle, mext):
+        # .esl extension does not matter for overlay flagged plugins
+        # check the flag attribute directly we may be called in
+        # ESL.set_mod_flag(None), before OVERLAY.set_mod_flag(None)
+        return not type(self).OVERLAY.has_flagged(mod_info) and \
+            super()._force_ext_flags(mod_info, game_handle, mext)
 
     @classmethod
     def checkboxes(cls):
