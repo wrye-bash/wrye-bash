@@ -33,7 +33,7 @@ from os.path import join as _j
 
 from .. import bass, bolt, initialization
 from ..plugin_types import MergeabilityCheck, PluginFlag, AMasterFlag, \
-    isPBashMergeable
+    isPBashMergeable, is_vanilla
 from ..bolt import FNDict, fast_cached_property
 from ..exception import InvalidPluginFlagsError, ModError
 
@@ -78,7 +78,7 @@ class _EslMixin(PluginFlag):
                 'turning light plugins into regular ones and vice versa.')
 
     # Additional API for ESL and newer games ----------------------------------
-    def can_convert(self, modInfo, _minfos, reasons, _game_handle):
+    def can_convert(self, modInfo, _minfos, reasons, game_handle):
         """Determine whether the specified mod can be converted to our type.
         Optionally also return the reasons it can't be converted.
 
@@ -88,8 +88,9 @@ class _EslMixin(PluginFlag):
         :param reasons: A list of strings that should be filled with the
                         reasons why we can't flag this mod, or None if only the
                         return value of this method is of interest.
-        :param _game_handle: unused - mirror the signature of isPBashMergeable.
+        :param game_handle: used to exclude vanilla plugins.
         :return: True if we can flag the specified mod."""
+        if is_vanilla(modInfo, reasons, game_handle): return False
         it = iter(self.unflaggable[self.name])
         ##: dragons - needs to generalize to arbitrary flag combinations and
         ##: be unified with validate_type - so we need changes in checkMods
