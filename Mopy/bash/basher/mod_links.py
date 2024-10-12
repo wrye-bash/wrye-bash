@@ -936,8 +936,8 @@ class Mod_CheckQualifications(ItemLink):
     @balt.conversation
     def Execute(self):
         prog = balt.Progress(self._text + ' ' * 30)
-        result, tagged_no_merge = bosh.modInfos.rescanMergeable(self.selected,
-            prog, return_results=True)
+        result = bosh.modInfos.rescanMergeable(self.selected, prog,
+                                               return_results=True)
         mergeability_strs = {
             MergeabilityCheck.MERGE: (_('Not Mergeable Into Bashed Patch'),
                                       _('Mergeable Into Bashed Patch')),
@@ -950,8 +950,9 @@ class Mod_CheckQualifications(ItemLink):
         for p in self.selected:
             message.append('')
             message.append(f'== {p}')
-            for chk_ty, (chk_result, chk_reason) in result[p].items():
+            for chk_ty, chk_reason in result[p].items():
                 message.append('')
+                chk_result = not chk_reason # no reason why we shouldn't merge
                 message.append(f'=== {mergeability_strs[chk_ty][chk_result]}')
                 for r in chk_reason:
                     message.append(f'.    {r}')

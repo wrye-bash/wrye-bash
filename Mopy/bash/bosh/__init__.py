@@ -2439,8 +2439,6 @@ class ModInfos(TableFileInfos):
         rescan_mods = set()
         for m in self._mergeable_by_type.values():
             m.clear()
-        #--Add known/unchanged and esms - we need to scan dependent mods
-        # first to account for mergeability of their masters
         merg_checks = bush.game.mergeability_checks
         # We store ints in the settings files, so use those for comparing
         merg_checks_ints = {c.value for c in merg_checks}
@@ -2452,6 +2450,8 @@ class ModInfos(TableFileInfos):
         # game
         quick_checks = {k: v for k, v in quick_checks.items()
                         if k in merg_checks}
+        # We need to scan dependent mods first to account for mergeability of
+        # their masters
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
             cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
@@ -2507,17 +2507,16 @@ class ModInfos(TableFileInfos):
                            if m in bush.game.mergeability_checks}
         with progress:
             progress.setFull(max(len(names),1))
-            result, tagged_no_merge = {}, set()
-            for i, fileName in enumerate(names):
-                all_reasons = (None if not return_results else
-                               {m: [] for m in bush.game.mergeability_checks})
+            result = {}
+            for i, fileName in enumerate(names): ##: this must be sorted in inverted load order for _dependent
+                all_reasons = {m: [] if return_results else None for m in
+                               required_checks}
                 progress(i, fileName)
                 fileInfo = self[fileName]
                 cs_name = fileName.lower()
                 check_results = {}
                 for merg_type, merg_check in required_checks.items():
-                    reasons = (None if not return_results else
-                               all_reasons[merg_type])
+                    reasons = all_reasons[merg_type]
                     if cs_name in bush.game.bethDataFiles:
                         # Fail all mergeability checks for vanilla plugins
                         if return_results:
@@ -2533,20 +2532,18 @@ class ModInfos(TableFileInfos):
                             # check_results[merg_type] = False
                             raise
                 # Special handling for MERGE: NoMerge-tagged plugins
-                if (fileName in self.mergeable_plugins and
-                        'NoMerge' in fileInfo.getBashTags()):
-                    tagged_no_merge.add(fileName)
-                    if return_results:
-                        all_reasons[MergeabilityCheck.MERGE].append(_(
-                            'Technically mergeable, but has NoMerge tag.'))
-                result[fileName] = all_reasons is not None and {
-                    m: (check_results[m], r) for m, r in all_reasons.items()}
+                if return_results:
+                    if check_results.get(MergeabilityCheck.MERGE) and \
+                            'NoMerge' in fileInfo.getBashTags():
+                        all_reasons[MergeabilityCheck.MERGE].append(
+                            _('Technically mergeable, but has NoMerge tag.'))
+                    result[fileName] = all_reasons
                 self._update_mergeable(fileName, check_results)
                 # Only store the enum values (i.e. the ints) in our settings
                 # files, we are moving away from pickling non-std classes
                 fileInfo.set_table_prop('mergeInfo', (fileInfo.fsize, {
                     k.value: v for k, v in check_results.items()}))
-            return result, tagged_no_merge
+            return result
 
     def _update_mergeable(self, fileName,
                           check_results: dict[MergeabilityCheck | int, bool]):
