@@ -2751,19 +2751,20 @@ class ModInfos(TableFileInfos):
             """Helper for checking if a plugin should be activated."""
             return (p.fn_ext != '.esu' and
                     'Deactivate' not in modInfos[p].getBashTags())
+        mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
         try:
             s_plugins = load_order.get_ordered(filter(_activatable, self))
             try:
                 # First, activate non-mergeable plugins not tagged Deactivate
                 for p in s_plugins:
-                    if not self[p].is_mergeable(): _add_to_actives(p)
+                    if modInfos[p] not in mergeable: _add_to_actives(p)
             except PluginsFullError:
                 raise
-            if activate_mergeable:
+            if mergeable and activate_mergeable:
                 try:
                     # Then activate as many of the mergeable plugins as we can
                     for p in s_plugins:
-                        if self[p].is_mergeable(): _add_to_actives(p)
+                        if modInfos[p] in mergeable: _add_to_actives(p)
                 except PluginsFullError as e:
                     raise SkippedMergeablePluginsError() from e
         except (BoltError, NotImplementedError):

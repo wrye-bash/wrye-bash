@@ -1081,10 +1081,12 @@ class Mod_RebuildPatch(_Mod_BP_Link):
 
     def _ask_deactivate_mergeable(self, bashed_patch):
         merge, noMerge, deactivate = [], [], []
+        mergeable = MergeabilityCheck.MERGE.cached_types(
+            bashed_patch.p_file_minfos)[0]
         for mod in bashed_patch.load_dict:
             mod_inf = bosh.modInfos[mod]
             tags = mod_inf.getBashTags()
-            if mod_inf.is_mergeable():
+            if mod_inf in mergeable:
                 if 'MustBeActiveIfImported' in tags:
                     continue
                 elif 'NoMerge' in tags:
