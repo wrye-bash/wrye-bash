@@ -1546,7 +1546,7 @@ class AFlipFlagLink(EnabledLink):
         pf = self._plugin_flag
         return fn_mod.fn_ext in self._allowed_ext and pf.has_flagged(
             m) != self._flag_value and (not self._flag_value or not hasattr(
-            pf, 'merge_check') or (pf.merge_check in m.merge_types))
+            pf, 'merge_check') or (pf.merge_check in m.merge_types()))
 
     def _enable(self): return bool(self._to_flip)
 

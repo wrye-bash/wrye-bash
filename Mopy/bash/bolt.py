@@ -743,7 +743,7 @@ class FNDict(dict):
         return f'{type(self).__name__}({super().__repr__()})'
 
     def __reduce__(self): #[backwards compat]we 'd rather not save custom types
-        return dict, (dict(self),)
+        return dict, (dict(self),) # you need the dict here - recursion!
 
 # Forward compat functions - as we only want to pickle std types those stay
 def forward_compat_path_to_fn(di, value_type=lambda x: x):

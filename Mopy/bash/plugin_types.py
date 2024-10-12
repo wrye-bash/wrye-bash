@@ -142,7 +142,7 @@ def _dependent(minfo_key, minfos):
     mergeable)."""
     dependent = [mname for mname, info in minfos.items() if
                  not info.isBP() and minfo_key in info.masterNames and
-                 MergeabilityCheck.MERGE not in info.merge_types]
+                 MergeabilityCheck.MERGE not in info.merge_types()]
     return dependent
 
 #------------------------------------------------------------------------------
@@ -173,11 +173,11 @@ class MergeabilityCheck(Enum):
             case _:
                 h, m = ('=== ' + _('%(FLAG)s-Capable') % (n := {'FLAG': self}),
                     _('The following plugins could be %(FLAG)s-flagged.' % n))
-        return [p for p in mod_infos.values() if self in p.merge_types], h, m
+        return [p for p in mod_infos.values() if self in p.merge_types()], h, m
 
     def display_info(self, minf, checkMark):
         """Return a UI settings key and a mouse text for the mod list UI."""
-        if self not in minf.merge_types: return '', ''
+        if self not in minf.merge_types(): return '', ''
         match self:
             case MergeabilityCheck.MERGE:
                 if 'NoMerge' in minf.getBashTags():
@@ -192,6 +192,12 @@ class MergeabilityCheck(Enum):
             case MergeabilityCheck.OVERLAY_CHECK:
                 mtext = _('Can be Overlay-flagged.')
         return 'mods.text.mergeable', mtext
+
+    def __reduce_ex__(self, protocol): # pickle enum members as int
+        return int, (self.value, )
+
+    def __repr__(self):
+        return self.name
 
 #------------------------------------------------------------------------------
 class PluginFlag(Enum):

@@ -185,10 +185,10 @@ class MasterInfo:
         """Retrieve bash tags for master info if it's present in Data."""
         return set()
 
-    @property
+    @_mod_info_delegate
     def merge_types(self):
         """Ask the mod info or shrug."""
-        return set() if self.mod_info is None else self.mod_info.merge_types
+        return set()
 
     def getStatus(self):
         return 30 if not self.mod_info else 0
@@ -210,16 +210,18 @@ class _TabledInfo:
                 elif k == 'doc': # needed for updates from old settings
                     v = GPath(v)
                 elif k == 'mergeInfo':
-                    cached_size, canMerge = v
                     # Clean up cached mergeability info - can get out of sync
                     # if we add or remove a mergeability type from a game or
                     # change a mergeability type's int key in the enum
-                    if isinstance(canMerge, dict):
-                        canMerge = {m: v for m, v in canMerge.items() if (
-                            MergeabilityCheck(m)) in bush.game.mergeability_checks}
-                    else: # Convert older settings (had a bool here)
-                        canMerge = {}
-                    v = cached_size, canMerge
+                    try:
+                        cached_size, canMerge = v
+                        canMerge = {mc: v for m, v in canMerge.items() if (
+                            (mc := MergeabilityCheck(m))) in
+                                    bush.game.mergeability_checks}
+                        v = cached_size, canMerge
+                    except (TypeError, ValueError, AttributeError):
+                        # Convert older settings (had a bool in canMerge)
+                        v = -1, {}
                 self.set_table_prop(k, v)
             except KeyError:  # 'mtime' - we don't need another mtime cache
                 self.fn_key = FName(GPath(args[0]).stail) # for repr below
@@ -425,8 +427,6 @@ class ModInfo(FileInfo):
             self.is_ghost = True
         else:  # new_info() path
             self._refresh_ghost_state(itsa_ghost, regular_path=fullpath)
-        # cache the results of mergeability checks for a refresh round
-        self.merge_types = set()
         super().__init__(fullpath, load_cache, **kwargs)
 
     def get_hide_dir(self):
@@ -466,15 +466,6 @@ class ModInfo(FileInfo):
                 self._update_onam() # recalculate ONAM info if necessary
         if save_flags: self.writeHeader()
 
-    def cache_mergeability(self, check_results: dict[
-            MergeabilityCheck | int, bool]):
-        """Cache the results of mergeability checks in merge_types."""
-        mset = {MergeabilityCheck(m) for m, m_mergeable in
-                check_results.items() if m_mergeable}
-        if changed := mset != self.merge_types:
-            self.merge_types = mset
-        return changed
-
     def _scan_fids(self, fid_cond):
         with ModReader.from_info(self) as ins:
             try:
@@ -502,6 +493,11 @@ class ModInfo(FileInfo):
         # Check for NULL to skip the main file header (i.e. TES3/TES4)
         return self._scan_fids(lambda header_fid: header_fid.mod_dex >=
             num_masters and not header_fid.is_null())
+
+    def merge_types(self):
+        """Get all merge types for this mod info."""
+        return {m for m, m_mergeable in self.get_table_prop('mergeInfo', (
+            None, {}))[1].items() if m_mergeable}
 
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
@@ -2376,10 +2372,9 @@ class ModInfos(TableFileInfos):
         #--Mods that need to be rescanned
         rescan_mods = set()
         full_checks = bush.game.mergeability_checks
-        # We store ints in the settings files, so use those for comparing
-        merg_checks_ints = {c.value for c in full_checks}
         quick_checks = {mc: pflag.cached_type for pflag in
             bush.game.plugin_flags if (mc := pflag.merge_check) in full_checks}
+        all_checks = len(full_checks)
         changed = set()
         # We need to scan dependent mods first to account for mergeability of
         # their masters
@@ -2389,23 +2384,18 @@ class ModInfos(TableFileInfos):
                                                            (None, {}))
             # Quickly check if some mergeability types are impossible for this
             # plugin (because it already has the target type)
-            covered_checks = set()
-            for m, m_check in quick_checks.items():
-                if m_check(modInfo):
-                    canMerge[m.value] = False
-                    covered_checks.add(m)
-            modInfo.set_table_prop('mergeInfo', (cached_size, canMerge))
-            if not (full_checks.keys() - covered_checks):
-                # We've already covered all required checks with those checks
-                # above (e.g. an ESL-flagged plugin in a game with only ESL
-                # support -> not ESL-flaggable), so move on
-                continue
-            elif (cached_size == modInfo.fsize and
-                  set(canMerge) == merg_checks_ints):
-                # The cached size matches what we have on disk and we have data
-                # for all required mergeability checks, so use the cached info
-                if modInfo.cache_mergeability(canMerge):
+            new_checks = {m: False for m, m_check in quick_checks.items() if
+                          m_check(modInfo)}
+            # If ve already covered all required checks with the quick checks
+            # above (e.g. an ESL-flagged plugin in a game with only ESL
+            # support -> not ESL-flaggable), or the cached size matches what we
+            # have on disk, and we have data for all required mergeability
+            # checks, we can cache the info
+            if len(new_checks) == all_checks or (len(canMerge) == all_checks
+                    and cached_size == modInfo.fsize):
+                if canMerge != (canMerge := canMerge | new_checks):
                     changed.add(fn_mod)
+                modInfo.set_table_prop('mergeInfo', (modInfo.fsize, canMerge))
             else:
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
@@ -2447,11 +2437,8 @@ class ModInfos(TableFileInfos):
                         all_reasons[merge].append(
                             _('Technically mergeable, but has NoMerge tag.'))
                     result[fileName] = all_reasons
-                fileInfo.cache_mergeability(check_results)
-                # Only store the enum values (i.e. the ints) in our settings
-                # files, we are moving away from pickling non-std classes
-                fileInfo.set_table_prop('mergeInfo', (fileInfo.fsize, {
-                    k.value: v for k, v in check_results.items()}))
+                fileInfo.set_table_prop('mergeInfo',
+                                        (fileInfo.fsize, check_results))
             return result
 
     def _refresh_bash_tags(self):
