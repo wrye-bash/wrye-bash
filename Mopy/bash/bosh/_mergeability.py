@@ -25,7 +25,7 @@ import os
 
 from ..bolt import sig_to_str
 from ..exception import ModError
-from ..game import MasterFlag
+from ..game import MasterFlag, MergeabilityCheck
 from ..mod_files import LoadFactory, ModFile
 __exit = lambda x: True # trick to exit early on non-verbose mode
 
@@ -119,6 +119,7 @@ def _join_sigs(rec_sigs):
 def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and
     mergeable)."""
-    dependent = [mname for mname, info in minfos.items() if not info.isBP() and
-                 minfo_key in info.masterNames and not info.is_mergeable()]
+    dependent = [mname for mname, info in minfos.items() if
+                 not info.isBP() and minfo_key in info.masterNames and
+                 MergeabilityCheck.MERGE not in info.merge_types]
     return dependent

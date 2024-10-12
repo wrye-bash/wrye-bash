@@ -203,7 +203,8 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # -------------------------------------------------------------------------
     # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
     # already been merged into a BP
-    can_merge = {m for m, inf in modInfos.items() if inf.is_mergeable() and
+    mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
+    can_merge = {m for m, inf in modInfos.items() if inf in mergeable and
         m not in modInfos.merged and 'NoMerge' not in inf.getBashTags()}
     # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
