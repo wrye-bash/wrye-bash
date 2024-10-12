@@ -195,6 +195,12 @@ class MergeabilityCheck(Enum):
                 mtext = _('Can be Overlay-flagged.')
         return 'mods.text.mergeable', mtext
 
+    def __reduce_ex__(self, protocol): # pickle enum members as int
+        return int, (self.value, )
+
+    def __repr__(self):
+        return self.name
+
 #------------------------------------------------------------------------------
 class PluginFlag(Enum):
     """Enum for plugin flags and plugin types - they're friends with ModInfo
