@@ -416,7 +416,8 @@ class ModInfo(FileInfo):
         'bp_split_parent', # 'doc', 'docEdit', 'group', 'installer', 'rating'
         # 'autoBashTags', 'bashTags', ##: reset bashTags on reverting?
         # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
-        'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
+        'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', #'mergeInfo'
+    ])
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None, **kwargs):
         # list of string bsas sorted by search order for localized plugins -
@@ -447,6 +448,7 @@ class ModInfo(FileInfo):
 
     def copy_persistent_attrs(self, other, exclude=None):
         super().copy_persistent_attrs(other, exclude)
+        modInfos.rescanMergeable(self.fn_key)
         modInfos._update_info_sets()#we need to recalculate merged/imported based on the config
 
     @classmethod
@@ -496,8 +498,9 @@ class ModInfo(FileInfo):
 
     @property
     def merge_types(self):
-        return {m for m, m_mergeable in
-                self.get_table_prop('mergeInfo')[1].items() if m_mergeable}
+        """Get all merge types for this mod info."""
+        return {m for m, m_mergeable in self.get_table_prop('mergeInfo', (
+            None, {}))[1].items() if m_mergeable}
 
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
