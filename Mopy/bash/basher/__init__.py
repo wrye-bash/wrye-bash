@@ -374,7 +374,7 @@ class _ModsUIList(UIList):
                 item_format.text_key = txtkey
                 mouse_text.append(mtext)
         # ESL, OVERLAY, BLUEPRINT then ESM
-        suffix = ''.join(pflag.ui_letter_key for pflag in chain(
+        suffix = ''.join(pflag.ui_letter_key for pflag in chain( # todo mid
             *reversed(bush.game.all_flags)) if pflag.cached_type(minf))
         if suffix in bush.game.forbidden_suffixes:
             item_format.back_key = 'mods.bkgd.doubleTime.load'
@@ -386,6 +386,9 @@ class _ModsUIList(UIList):
         if 'Deactivate' in fileBashTags: # was for mods only
             item_format.italics = True
         return fileBashTags
+
+    def _set_status_text(self, item_format, minf, item_key):
+        raise NotImplementedError
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -2088,7 +2091,7 @@ class ModPanel(BashTab):
 
     def sb_count_str(self):
         all_mods = [bosh.modInfos[m] for m in load_order.cached_active_tuple()]
-        return bush.game.plugin_flags.plugin_counts(bosh.modInfos, all_mods)
+        return bush.game.plugin_flags.plugin_counts(bosh.modInfos, all_mods) # todo mid
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()
@@ -2198,7 +2201,7 @@ class _SaveMasterList(MasterList):
         self._save_lo_real_index.clear()
         self._save_lo_hex_string.clear()
         # Check if we have to worry about ESL masters
-        try:
+        try: # fixme(SF) medium plugins
             save_lo_regular = {m: i for i, m in enumerate(
                 new_file_info.header.masters_regular)}
             num_regular = len(save_lo_regular)
@@ -3987,7 +3990,7 @@ class BashFrame(WindowFrame):
             bosh.modInfos.warn_missing_lo_act.clear()
         if bosh.modInfos.selectedExtra:
             lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                bush.game.plugin_flags.deactivate_msg(),
+                bush.game.plugin_flags.deactivate_msg(), # todo mid
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can

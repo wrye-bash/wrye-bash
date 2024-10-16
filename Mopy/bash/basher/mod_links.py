@@ -934,6 +934,7 @@ class Mod_CheckQualifications(ItemLink):
     @balt.conversation
     def Execute(self):
         prog = balt.Progress(self._text + ' ' * 30)
+        # todo sort
         result = bosh.modInfos.rescanMergeable(self.selected, prog,
                                                return_results=True)
         mergeability_strs = {
@@ -1568,7 +1569,7 @@ class AFlipFlagLink(EnabledLink):
             # we then need to sync order in skyrim's plugins.txt
             ldiff = bosh.modInfos.refreshLoadOrder()
             # converted to esps/esls - rescan mergeable
-            bosh.modInfos.rescanMergeable(self.selected)
+            bosh.modInfos.rescanMergeable(self.selected) # TODO move this in set_mod_flags
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
                 altered={p.abs_path for p in self.iselected_infos()})
@@ -1600,7 +1601,7 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
             self._to_flip = [present_mods[m] for m in # espMasters
                 modinfo_masters if m in present_mods and m.fn_ext == '.esp']
             # for refresh in Execute - selection is shared with all other links
-            self.selected = [selection[0], *self._to_flip]
+            self.selected = [selection[0], *reversed(self._to_flip)]
         else:
             self._to_flip = []
         # all elements in _to_flip have an .esp extension - check the esm flag

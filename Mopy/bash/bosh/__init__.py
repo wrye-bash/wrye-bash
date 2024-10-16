@@ -2382,7 +2382,7 @@ class ModInfos(TableFileInfos):
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
         #--Mods that need to be rescanned
-        rescan_mods = set()
+        rescan_mods = list()
         full_checks = bush.game.mergeability_checks
         quick_checks = {mc: pflag.cached_type for pflag in
             bush.game.plugin_flags if (mc := pflag.merge_check) in full_checks}
@@ -2403,6 +2403,7 @@ class ModInfos(TableFileInfos):
             # support -> not ESL-flaggable), or the cached size matches what we
             # have on disk, and we have data for all required mergeability
             # checks, we can cache the info
+            deprint(f'{fn_mod}: {new_checks=}, {canMerge=}')
             if len(new_checks) == all_checks or (len(canMerge) == all_checks
                     and cached_size == modInfo.fsize):
                 if canMerge != (canMerge := canMerge | new_checks):
@@ -2412,10 +2413,10 @@ class ModInfos(TableFileInfos):
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
                 # we have not yet run for this plugin
-                rescan_mods.add(fn_mod)
+                rescan_mods.append(fn_mod)
         if rescan_mods:
             self.rescanMergeable(rescan_mods) ##: maybe re-add progress?
-        return rescan_mods | changed
+        return {*changed, *rescan_mods}
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
                         return_results=False):

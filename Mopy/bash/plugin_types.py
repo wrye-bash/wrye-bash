@@ -272,7 +272,7 @@ class PluginFlag(Enum):
         indexes = Counter()
         indexes.update(dict(((m, m._offset) for m in limit_flags)))
         for p, inf in iter_infos:
-            for pflag in limit_flags: # currently only ESL - revisit
+            for pflag in limit_flags: # currently only ESL - revisit todo mid
                 if pflag.cached_type(inf):
                     msg = 'FE %03X'
                     break
