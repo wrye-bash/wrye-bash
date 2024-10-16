@@ -545,9 +545,9 @@ def InitModLinks():
         if bush.game.Esp.canBash:
             info_menu.links.append_link(Mod_Details())
         ModList.context_links.append_link(info_menu)
+    ModList.context_links.append_link(SeparatorLink())
+    ModList.context_links.append_link(Mod_CheckQualifications())
     if bush.game.Esp.canBash:
-        ModList.context_links.append_link(SeparatorLink())
-        ModList.context_links.append_link(Mod_CheckQualifications())
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
         for pflag in chain(*reversed(bush.game.all_flags)):

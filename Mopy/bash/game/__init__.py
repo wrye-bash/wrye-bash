@@ -90,7 +90,8 @@ class _EslMixin(PluginFlag):
                         return value of this method is of interest.
         :param game_handle: used to exclude vanilla plugins.
         :return: True if we can flag the specified mod."""
-        if is_vanilla(modInfo, reasons, game_handle): return False
+        if is_vanilla(modInfo, reasons, game_handle) and reasons is None:
+            return False
         it = iter(self.unflaggable[self.name])
         ##: dragons - needs to generalize to arbitrary flag combinations and
         ##: be unified with validate_type - so we need changes in checkMods
