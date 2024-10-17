@@ -6899,19 +6899,19 @@ msgstr ""
 msgid "Opens the load order management file '%(lo_file_name)s' in a text editor."
 msgstr ""
 
-#: Mopy/bash/basher/mods_links.py:612
+#: Mopy/bash/basher/mods_links.py:613
 msgid "Undo"
 msgstr ""
 
-#: Mopy/bash/basher/mods_links.py:613
+#: Mopy/bash/basher/mods_links.py:614
 msgid "Undoes a load order or active plugins change."
 msgstr ""
 
-#: Mopy/bash/basher/mods_links.py:622
+#: Mopy/bash/basher/mods_links.py:623
 msgid "Redo"
 msgstr ""
 
-#: Mopy/bash/basher/mods_links.py:623
+#: Mopy/bash/basher/mods_links.py:624
 msgid "Redoes a load order or active plugins change."
 msgstr ""
 
@@ -7183,11 +7183,11 @@ msgstr ""
 msgid "Flags: %(active_flags)s"
 msgstr ""
 
-#: Mopy/bash/basher/saves_links.py:450 Mopy/bash/game/oblivion/__init__.py:519
+#: Mopy/bash/basher/saves_links.py:450 Mopy/bash/game/oblivion/__init__.py:521
 msgid "Clothing"
 msgstr ""
 
-#: Mopy/bash/basher/saves_links.py:451 Mopy/bash/game/oblivion/__init__.py:517
+#: Mopy/bash/basher/saves_links.py:451 Mopy/bash/game/oblivion/__init__.py:519
 msgid "Armor"
 msgstr ""
 
@@ -10286,161 +10286,161 @@ msgstr ""
 msgid "Normanne"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:216
+#: Mopy/bash/game/oblivion/__init__.py:218
 #: Mopy/bash/game/skyrim/__init__.py:222
 msgid "Blade (1 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:217
+#: Mopy/bash/game/oblivion/__init__.py:219
 #: Mopy/bash/game/skyrim/__init__.py:223
 msgid "Blade (2 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:218
+#: Mopy/bash/game/oblivion/__init__.py:220
 #: Mopy/bash/game/skyrim/__init__.py:224
 msgid "Blunt (1 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:219
+#: Mopy/bash/game/oblivion/__init__.py:221
 #: Mopy/bash/game/skyrim/__init__.py:225
 msgid "Blunt (2 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:220
+#: Mopy/bash/game/oblivion/__init__.py:222
 #: Mopy/bash/game/skyrim/__init__.py:226
 msgid "Staff"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:221
+#: Mopy/bash/game/oblivion/__init__.py:223
 #: Mopy/bash/game/skyrim/__init__.py:227
 msgid "Bow"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:225
+#: Mopy/bash/game/oblivion/__init__.py:227
 #: Mopy/bash/game/skyrim/__init__.py:231
 msgid "Argonian"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:226
+#: Mopy/bash/game/oblivion/__init__.py:228
 #: Mopy/bash/game/skyrim/__init__.py:232
 msgid "Breton"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:227
+#: Mopy/bash/game/oblivion/__init__.py:229
 #: Mopy/bash/game/skyrim/__init__.py:233
 msgid "Dark Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:228
+#: Mopy/bash/game/oblivion/__init__.py:230
 #: Mopy/bash/game/skyrim/__init__.py:234
 msgid "High Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:229
+#: Mopy/bash/game/oblivion/__init__.py:231
 #: Mopy/bash/game/skyrim/__init__.py:235
 msgid "Imperial"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:230
+#: Mopy/bash/game/oblivion/__init__.py:232
 #: Mopy/bash/game/skyrim/__init__.py:236
 msgid "Khajiit"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:231
+#: Mopy/bash/game/oblivion/__init__.py:233
 #: Mopy/bash/game/skyrim/__init__.py:237
 msgid "Nord"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:232
+#: Mopy/bash/game/oblivion/__init__.py:234
 #: Mopy/bash/game/skyrim/__init__.py:238
 msgid "Orc"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:233
+#: Mopy/bash/game/oblivion/__init__.py:235
 #: Mopy/bash/game/skyrim/__init__.py:239
 msgid "Redguard"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:234
+#: Mopy/bash/game/oblivion/__init__.py:236
 msgid "Vampire"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:235
+#: Mopy/bash/game/oblivion/__init__.py:237
 #: Mopy/bash/game/skyrim/__init__.py:240
 msgid "Wood Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:515
+#: Mopy/bash/game/oblivion/__init__.py:517
 msgid "Faction"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:516
+#: Mopy/bash/game/oblivion/__init__.py:518
 msgid "Apparatus"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:518
+#: Mopy/bash/game/oblivion/__init__.py:520
 msgid "Book"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:520
+#: Mopy/bash/game/oblivion/__init__.py:522
 msgid "Ingredient"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:521
+#: Mopy/bash/game/oblivion/__init__.py:523
 #: Mopy/bash/game/oblivion/records.py:1500
 msgid "Light"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:522
+#: Mopy/bash/game/oblivion/__init__.py:524
 msgid "Misc. Item"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:523
+#: Mopy/bash/game/oblivion/__init__.py:525
 msgid "Weapon"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:524
+#: Mopy/bash/game/oblivion/__init__.py:526
 msgid "NPC"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:525
+#: Mopy/bash/game/oblivion/__init__.py:527
 #: Mopy/bash/patcher/patchers/mergers.py:842
 msgid "Creature"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:526
+#: Mopy/bash/game/oblivion/__init__.py:528
 msgid "Key"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:527
+#: Mopy/bash/game/oblivion/__init__.py:529
 msgid "Potion"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:528
+#: Mopy/bash/game/oblivion/__init__.py:530
 msgid "Cell"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:529
+#: Mopy/bash/game/oblivion/__init__.py:531
 msgid "Object Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:530
+#: Mopy/bash/game/oblivion/__init__.py:532
 msgid "NPC Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:531
+#: Mopy/bash/game/oblivion/__init__.py:533
 msgid "Creature Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:532
+#: Mopy/bash/game/oblivion/__init__.py:534
 msgid "Dialog Entry"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:533 Mopy/bash/parsers.py:709
+#: Mopy/bash/game/oblivion/__init__.py:535 Mopy/bash/parsers.py:709
 msgid "Quest"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:534
+#: Mopy/bash/game/oblivion/__init__.py:536
 msgid "AI Package"
 msgstr ""
 
