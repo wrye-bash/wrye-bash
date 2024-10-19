@@ -940,22 +940,24 @@ class GameInfo(object):
         flag_conflicts = {su: con % {'conf_flags': flag_names} for
                           su, flag_names in flag_conflicts.items()}
         # add master suffixes to the forbidden suffixes
-        self.forbidden_suffixes = {forb: fconf_msg for su, fconf_msg in
+        forbidden_suffixes = {forb: fconf_msg for su, fconf_msg in
             flag_conflicts.items() for forb in _prod([su], master_suffixes)}
         # add the rest of the mouse texts
         combinations = {*_prod(
             [s for s in type_prefixes if s not in forbidden_suffixes],
             master_suffixes)}
-        self.mod_keys = [f'mods.text.es{suff}' for suff in
-                         self.plugin_type_text if suff in combinations]
+        self.mod_keys = {su: f'mods.text.es{su}' # insertion order == priority
+            for su in self.plugin_type_text if su in combinations}
         if self.mergeability_checks:
-            self.mod_keys.append('mods.text.mergeable')
+            self.mod_keys['mods.text.mergeable'] = 'mods.text.mergeable'
             if MergeabilityCheck.MERGE in self.mergeability_checks:
-                self.mod_keys.append('mods.text.noMerge')
+                self.mod_keys['mods.text.noMerge'] = 'mods.text.noMerge'
         if self.Esp.canBash:
-            self.mod_keys.append('mods.text.bashedPatch')
-        if self.forbidden_suffixes:
-            self.mod_keys.append('mods.text.flags_conflict')
+            self.mod_keys['mods.text.bashedPatch'] = 'mods.text.bashedPatch'
+        if forbidden_suffixes:
+            self.mod_keys.update((su, 'mods.text.flags_conflict') for su in
+                                 forbidden_suffixes)
+            self.plugin_type_text.update(forbidden_suffixes)
 
     @classmethod
     def supported_games(cls):

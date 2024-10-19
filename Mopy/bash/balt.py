@@ -860,7 +860,7 @@ class UIList(PanelWin):
         from . import bush
         return {k: j for j, k in enumerate([
             # Plugins ---------------------------------------------------------
-            'default.text', *bush.game.mod_keys,
+            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
             # Installers ------------------------------------------------------
             'installers.text.invalid', 'installers.text.marker',
             'installers.text.complex',

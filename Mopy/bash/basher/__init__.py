@@ -376,13 +376,11 @@ class _ModsUIList(UIList):
         # ESL, OVERLAY, BLUEPRINT then ESM
         suffix = ''.join(pflag.ui_letter_key for pflag in chain(
             *reversed(bush.game.all_flags)) if pflag.cached_type(minf))
-        if suffix in bush.game.forbidden_suffixes:
-            item_format.back_key = 'mods.bkgd.doubleTime.load'
-            item_format.text_key = 'mods.text.flags_conflict'
-            mouse_text.append(bush.game.forbidden_suffixes[suffix])
-        elif suffix in bush.game.plugin_type_text:
-            item_format.text_key = f'mods.text.es{suffix}'
+        try:
+            item_format.text_key = bush.game.mod_keys[suffix]
             mouse_text.append(bush.game.plugin_type_text[suffix])
+        except KeyError:
+            pass
         if 'Deactivate' in fileBashTags: # was for mods only
             item_format.italics = True
         return fileBashTags
