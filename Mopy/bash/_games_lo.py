@@ -225,16 +225,14 @@ class LoGame:
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
     force_load_first: LoTuple = ()
-    max_espms = 255
-    max_esls = 0
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
-    def __init__(self, mod_infos, plugins_txt_path: Path, *,
+    def __init__(self, mod_infos, game_handle, plugins_txt_path: Path, *,
                  plugins_txt_type=LoFile, **kwargs):
         """:type mod_infos: bosh.ModInfos"""
         self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
-        self.master_path = mod_infos._master_esm
+        self._game_handle = game_handle
         self._active_if_present, self._fixed_order_plugins = \
             self._set_pinned_mods()
         self._print_lo_paths()
@@ -242,7 +240,7 @@ class LoGame:
     # INITIALIZATION ----------------------------------------------------------
     def _set_pinned_mods(self):
         """Set the master file(s) that must always be active if present."""
-        fo_plugins = (self.master_path, *self.force_load_first)
+        fo_plugins = (self._game_handle.master_file, *self.force_load_first)
         return set(fo_plugins), fo_plugins
 
     def _print_lo_paths(self):
@@ -445,7 +443,7 @@ class LoGame:
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
-        master_name = self.master_path
+        master_name = self._game_handle.master_file
         # Tracks if fix_lo.lo_reordered needs updating
         lo_order_changed = any(fix_lo.lo_reordered)
         cached_minfs = self.mod_infos
@@ -509,7 +507,7 @@ class LoGame:
         # active plugins are manually added on getting the load order
         for fn_plugin in self.pinned_plugins():
             if fn_plugin not in acti_filtered_set:
-                if fn_plugin == self.master_path:
+                if fn_plugin == self._game_handle.master_file:
                     acti_filtered.insert(0, fn_plugin)
                     acti_filtered_set.add(fn_plugin)
                     fix_active.master_not_active = fn_plugin
@@ -550,11 +548,10 @@ class LoGame:
             mi = self.mod_infos[m]
             if mi.is_esl():
                 acti_filtered_esl.append(m)
-            elif not mi.is_overlay():
-                # Overlay plugins take up no LO slot, so skip them entirely
+            else:
                 acti_filtered_regular.append(m)
-        return (set(acti_filtered_regular[self.max_espms:]),
-                set(acti_filtered_esl[self.max_esls:]))
+        return (set(acti_filtered_regular[self._game_handle.max_espms:]),
+                set(acti_filtered_esl[self._game_handle.max_esls:]))
 
     def pinned_plugins(self, mods: set[FName] | None = None, fixed_order=False,
                        filter_mods=False) -> list[FName]:
@@ -664,7 +661,7 @@ class INIGame(LoGame):
     ini_key_actives = None
     ini_key_lo = None
 
-    def __init__(self, mod_infos, plugins_txt_path, **kwargs):
+    def __init__(self, mod_infos, plugins_txt_path, game_handle, **kwargs):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
         if self.__class__.ini_key_actives:
@@ -676,7 +673,7 @@ class INIGame(LoGame):
             kwargs.update({ # we must come just before TextfileGame in the MRO
                 'loadorder_txt_path': self.ini_dir_lo.join(self.ini_key_lo[0]),
                 'lo_txt_type': partial(_mk_ini, self.ini_key_lo)})
-        super().__init__(mod_infos, **kwargs)
+        super().__init__(mod_infos, game_handle, **kwargs)
 
     # INI directories, override if needed
     @property
@@ -796,10 +793,10 @@ class _TextFileLo(LoGame):
 
 class TextfileGame(_TextFileLo):
 
-    def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path,
-                 *, lo_txt_type=LoFile, **kwargs):
+    def __init__(self, mod_infos, game_handle, plugins_txt_path,
+                 loadorder_txt_path: Path, *, lo_txt_type=LoFile, **kwargs):
         self._loadorder_txt = lo_txt_type(self._star, loadorder_txt_path)
-        super().__init__(mod_infos, plugins_txt_path, **kwargs)
+        super().__init__(mod_infos, game_handle, plugins_txt_path, **kwargs)
 
     def request_cache_update(self, cached_load_order, cached_active):
         _lo, act = super().request_cache_update(cached_load_order, cached_active)
@@ -889,20 +886,20 @@ class TextfileGame(_TextFileLo):
         """Fetch what's in the plugins.txt - if something shouldn't be there,
         remove it and rewrite the plugins.txt."""
         act = super()._fetch_active_plugins()
-        if self.master_path in act: # remove master_path from plugins.txt
-            bolt.deprint(f'Removing {self.master_path} from '
+        if self._game_handle.master_file in act:
+            bolt.deprint(f'Removing {self._game_handle.master_file} from '
                          f'{self._plugins_txt.abs_path}')
-            self._backup_active_plugins() #we removed master_path back up first
+            self._backup_active_plugins() # we removed master esm back up first
             act = self._persist_active_plugins(act, act)
         # Prepend the game master - should be present and is always active
-        return [self.master_path, *act]
+        return [self._game_handle.master_file, *act]
 
     def _persist_load_order(self, lord, active):
         self._loadorder_txt.write_modfile(lord, lord)
         self._loadorder_txt.do_update()
 
     def _persist_active_plugins(self, active, lord):
-        active_filtered = [x for x in active if x != self.master_path]
+        active_filtered = [x for x in active if x != self._game_handle.master_file]
         super()._persist_active_plugins(active_filtered, active_filtered)
         return active_filtered
 
@@ -916,9 +913,6 @@ class TextfileGame(_TextFileLo):
 class AsteriskGame(_TextFileLo):
     """_TextFileLo storing also active state in the lo file - active plugins
     are marked with a star."""
-
-    max_espms = 254
-    max_esls = 4096 # hard limit, game runs out of fds sooner, testing needed
     # Creation Club content file - if empty, indicates that this game has no CC
     _ccc_filename = u''
     # Hardcoded list used if the file specified above does not exist or could
@@ -988,15 +982,14 @@ class AsteriskGame(_TextFileLo):
 
     def _set_pinned_mods(self):
         if self._ccc_filename:
-            ccc_path = bass.dirs['app'].join(self._ccc_filename)
+            ccc_path = self._get_ccc_path()
             try:
                 ccc_file = LoFile(False, ccc_path, raise_on_error=True)
                 _act, ccc_contents = ccc_file.parse_modfile()
                 ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
-                force_active = {*self.__class__.force_load_first}
-                self.force_load_first = (*self.__class__.force_load_first, *(
-                    m for m in ccc_contents if m != self.master_path and
-                                               m not in force_active))
+                force_active = {*(fload := self.__class__.force_load_first)}
+                self.force_load_first = (*fload, *(m for m in ccc_contents if m
+                  not in force_active and m != self._game_handle.master_file))
             except FileNotFoundError:
                 deprint(f'{self._ccc_filename} does not exist')
             except OSError:
@@ -1008,6 +1001,9 @@ class AsteriskGame(_TextFileLo):
         # remains - note set(fo_mods) == mbaip as returned above
         return mbaip, (*fo_mods, *(
             p for p in self._ccc_fallback if p not in mbaip))
+
+    def _get_ccc_path(self):
+        return bass.dirs['app'].join(self._ccc_filename)
 
 # Print helpers
 def _pl(it, legend=''):

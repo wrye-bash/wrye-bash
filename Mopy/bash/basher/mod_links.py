@@ -908,9 +908,10 @@ class Mod_CheckQualifications(ItemLink):
 
     @property
     def link_help(self):
-        if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-            if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-                if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+        m_checks = bush.game.mergeability_checks
+        if MergeabilityCheck.OVERLAY_CHECK in m_checks:
+            if MergeabilityCheck.ESL_CHECK in m_checks:
+                if MergeabilityCheck.MERGE in m_checks:
                     # Overlay + ESL + Merge
                     return _('Scan the selected plugins to determine '
                              'whether or not they can be merged into the '
@@ -922,7 +923,7 @@ class Mod_CheckQualifications(ItemLink):
                          'not they can be assigned the ESL flag or assigned '
                          'the Overlay flag, reporting also the reasons if '
                          'they cannot.')
-            elif MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            elif MergeabilityCheck.MERGE in m_checks:
                 # Overlay + Merge
                 return _('Scan the selected plugins to determine whether or '
                          'not they can be merged into the Bashed Patch or '
@@ -933,8 +934,8 @@ class Mod_CheckQualifications(ItemLink):
                      'they can be assigned the Overlay flag, reporting also '
                      'the reasons if they cannot.')
         else:
-            if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-                if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            if MergeabilityCheck.ESL_CHECK in m_checks:
+                if MergeabilityCheck.MERGE in m_checks:
                     # ESL + Merge
                     return _('Scan the selected plugins to determine '
                              'whether or not they can be merged into the '

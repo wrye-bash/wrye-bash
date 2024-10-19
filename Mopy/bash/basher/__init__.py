@@ -521,11 +521,9 @@ class MasterList(_ModsUIList):
         self._update_real_indices(fileInfo)
         self.is_inaccurate = fileInfo.has_inaccurate_masters
         # info attributes?
-        can_have_sizes = (is_mod := isinstance(fileInfo, bosh.ModInfo)) and \
+        can_have_sizes = isinstance(fileInfo, bosh.ModInfo) and \
             bush.game.Esp.check_master_sizes
-        can_have_esl = (not is_mod) and bush.game.has_esl
-        all_esl_masters = (set(fileInfo.header.masters_esl) if can_have_esl
-                           else set())
+        all_esl_masters = set(getattr(fileInfo.header, 'masters_esl', []))
         all_master_sizes = (fileInfo.header.master_sizes if can_have_sizes
                             else repeat(0))
         for mi, (ma_name, ma_size) in enumerate(
@@ -2242,7 +2240,7 @@ class _SaveMasterList(MasterList):
         self._save_lo_real_index.clear()
         self._save_lo_hex_string.clear()
         # Check if we have to worry about ESL masters
-        if bush.game.has_esl and new_file_info.header.has_esl_masters:
+        try:
             save_lo_regular = {m: i for i, m in enumerate(
                 new_file_info.header.masters_regular)}
             num_regular = len(save_lo_regular)
@@ -2250,7 +2248,7 @@ class _SaveMasterList(MasterList):
             for i, m in enumerate(new_file_info.header.masters_esl):
                 self._save_lo_real_index[m] = num_regular + i
                 self._save_lo_hex_string[m] = f'FE {i:03X}'
-        else:
+        except AttributeError: # no masters_regular/esl
             save_lo_regular = {m: i for i, m in enumerate(
                 new_file_info.masterNames)}
         # For regular masters, simply store the LO index
@@ -4040,8 +4038,8 @@ class BashFrame(WindowFrame):
                              'because only %(max_regular_plugins)d plugins '
                              'may be active at the same time.')
             lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
-                warn_msg % {'max_regular_plugins': load_order.max_espms(),
-                            'max_esl_plugins': load_order.max_esls()},
+                warn_msg % {'max_regular_plugins': bush.game.max_espms,
+                            'max_esl_plugins': bush.game.max_esls},
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can

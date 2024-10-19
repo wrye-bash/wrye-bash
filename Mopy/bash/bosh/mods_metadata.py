@@ -570,8 +570,10 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # -------------------------------------------------------------------------
     # Some helpers for building the log
     p_header_str = sig_to_str(plgn_header_sig)
-    def log_plugins(plugin_list_):
+    def _log_plugins(head_, msg_, plugin_list_):
         """Logs a simple list of plugins."""
+        log.setHeader(head_)
+        log(msg_)
         for p in sorted(plugin_list_):
             log(f'* __{p}__')
     def log_plugin_messages(plugin_dict):
@@ -611,7 +613,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         return ret_fmt
     if bush.game.has_esl:
         # Need to undo the offset we applied to sort ESLs after regulars
-        sort_offset = load_order.max_espms() - 1
+        sort_offset = bush.game.max_espms - 1
         def format_fid(whole_lo_fid, fid_orig_plugin):
             """Format a whole-LO FormID, which can exceed normal FormID limits
             (e.g. 211000800 is perfectly fine in a load order with ESLs), so
@@ -665,98 +667,88 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
               u'have corrupt or otherwise malformed headers.'))
         log_plugin_messages(all_corrupted) ##: Just log_plugins?
     if can_esl_flag:
-        log.setHeader('=== ' + _('ESL-Capable'))
-        log(_('The following plugins could be assigned an ESL flag, but do '
-              'not have one right now.'))
-        log_plugins(can_esl_flag)
+        _log_plugins('=== ' + _('ESL-Capable'),
+        _('The following plugins could be assigned an ESL flag, but do '
+          'not have one right now.'), can_esl_flag)
     if remove_esl_flag:
-        log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
-        log(_(u'The following plugins have an ESL flag, but do not qualify. '
-              u"Either remove the flag with 'Remove ESL Flag', or "
-              u"change the extension to '.esp' if it is '.esl'."))
-        log_plugins(remove_esl_flag)
+        _log_plugins(u'=== ' + _('Incorrect ESL Flag'), _(
+            'The following plugins have an ESL flag, but do not qualify. '
+            "Either remove the flag with 'Remove ESL Flag', or "
+            "change the extension to '.esp' if it is '.esl'."),remove_esl_flag)
     if can_overlay_flag:
-        log.setHeader('=== ' + _('Overlay-Capable'))
-        log(_('The following plugins could be assigned an Overlay flag, but '
-              'do not have one right now.'))
-        log_plugins(can_overlay_flag)
+        _log_plugins('=== ' + _('Overlay-Capable'),
+        _('The following plugins could be assigned an Overlay flag, but '
+          'do not have one right now.'), can_overlay_flag)
     if overlays_with_new_recs:
-        log.setHeader('=== ' + _('Incorrect Overlay Flag: New Records'))
-        log(_("The following plugins have an Overlay flag, but do not "
-              "qualify because they contain new records. These will be "
-              "injected into the first master of the plugins in question, "
-              "which can seriously break basic game data. Either remove the "
-              "flag with 'Remove Overlay Flag', or remove the new records."))
-        log_plugins(overlays_with_new_recs)
+        _log_plugins('=== ' + _('Incorrect Overlay Flag: New Records'),
+        _("The following plugins have an Overlay flag, but do not "
+          "qualify because they contain new records. These will be "
+          "injected into the first master of the plugins in question, "
+          "which can seriously break basic game data. Either remove the "
+          "flag with 'Remove Overlay Flag', or remove the new records."),
+        overlays_with_new_recs)
     if overlays_with_no_masters:
-        log.setHeader('=== ' + _('Incorrect Overlay Flag: No Masters'))
-        log(_("The following plugins have an Overlay flag, but do not "
-              "qualify because they do not have any masters. %(game_name)s "
-              "will not treat these as Overlay plugins. Either remove the "
-              "flag with 'Remove Overlay Flag', or use %(xedit_name)s to add "
-              "at least one master to the plugin.") % {
-            'xedit_name': bush.game.Xe.full_name,
-            'game_name': bush.game.display_name})
-        log_plugins(overlays_with_no_masters)
+        _log_plugins('=== ' + _('Incorrect Overlay Flag: No Masters'),
+        _("The following plugins have an Overlay flag, but do not "
+          "qualify because they do not have any masters. %(game_name)s "
+          "will not treat these as Overlay plugins. Either remove the "
+          "flag with 'Remove Overlay Flag', or use %(xedit_name)s to add "
+          "at least one master to the plugin.") % {
+        'xedit_name': bush.game.Xe.full_name,
+            'game_name': bush.game.display_name}, overlays_with_no_masters)
     if conflicting_esl_overlay_flags:
-        log.setHeader('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'))
-        log(_("The following plugins have an Overlay flag, but do not "
-              "qualify because they also have an ESL flag. These flags are "
-              "mutually exclusive. %(game_name)s will not treat these as "
-              "overlay plugins. Either remove the Overlay flag with "
-              "'Remove Overlay Flag', or remove the ESL flag with 'Remove "
-              "ESL Flag'.") % {
-            'game_name': bush.game.display_name})
-        log_plugins(conflicting_esl_overlay_flags)
+        _log_plugins('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'),
+        _("The following plugins have an Overlay flag, but do not "
+          "qualify because they also have an ESL flag. These flags are "
+          "mutually exclusive. %(game_name)s will not treat these as overlay "
+          "plugins. Either remove the Overlay flag with 'Remove Overlay "
+          "Flag', or remove the ESL flag with 'Remove ESL Flag'.") % {
+            'game_name': bush.game.display_name},
+        conflicting_esl_overlay_flags)
     if can_merge:
-        log.setHeader('=== ' + _('Mergeable'))
-        log(_('The following plugins could be merged into a Bashed Patch, but '
-              'are currently not merged.'))
-        log_plugins(can_merge)
+        _log_plugins('=== ' + _('Mergeable'), _(
+            'The following plugins could be merged into a Bashed Patch, but '
+            'are currently not merged.'), can_merge)
     if should_deactivate:
-        log.setHeader(u'=== ' + _(u'Deactivate-tagged But Active'))
-        log(_(u"The following plugins are tagged with 'Deactivate' and should "
-              u'be deactivated and imported into the Bashed Patch.'))
-        log_plugins(should_deactivate)
+        _log_plugins('=== ' + _(u'Deactivate-tagged But Active'), _(
+            "The following plugins are tagged with 'Deactivate' and should "
+            'be deactivated and imported into the Bashed Patch.'),
+                    should_deactivate)
     if should_activate:
-        log.setHeader(u'=== '+_(u'MustBeActiveIfImported-tagged But Inactive'))
-        log(_(u'The following plugins are tagged with '
-              u"'MustBeActiveIfImported' and should be activated if they are "
-              u'also imported into the Bashed Patch. They are currently '
-              u'imported, but not active.'))
-        log_plugins(should_activate)
+        _log_plugins('=== '+_(u'MustBeActiveIfImported-tagged But Inactive'),
+            _("The following plugins are tagged with 'MustBeActiveIfImported' "
+              "and should be activated if they are also imported into the "
+              'Bashed Patch. They are currently imported, but not active.'),
+                    should_activate)
     if p_missing_masters:
-        log.setHeader('=== ' + _('Missing Masters'))
-        log(_('The following plugins have missing masters and are active. '
-              'This will cause a CTD at the main menu and must be corrected '
-              'by installing the missing plugins or removing the plugins with '
-              'missing masters.'))
-        log_plugins(p_missing_masters)
+        _log_plugins('=== ' + _('Missing Masters'), _(
+            'The following plugins have missing masters and are active. This '
+            'will cause a CTD at the main menu and must be corrected by '
+            'installing the missing plugins or removing the plugins with '
+            'missing masters.'), p_missing_masters)
     if p_delinquent_masters:
-        log.setHeader('=== ' + _('Delinquent Masters'))
-        log(_('The following plugins have delinquent masters, i.e. masters '
-              'that are set to load after their dependent plugins. The game '
-              'will try to force them to load before the dependent plugins, '
-              'which can lead to unpredictable or undefined behavior and '
-              'must be corrected. You should correct the load order.'))
-        log_plugins(p_delinquent_masters)
+        _log_plugins('=== ' + _('Delinquent Masters'), _(
+            'The following plugins have delinquent masters, i.e. masters '
+            'that are set to load after their dependent plugins. The game '
+            'will try to force them to load before the dependent plugins, '
+            'which can lead to unpredictable or undefined behavior and must '
+            'be corrected. You should correct the load order.'),
+                    p_delinquent_masters)
     if p_circular_masters:
-        log.setHeader('=== ' + _('Circular Masters'))
-        log(_("The following plugins have circular masters, i.e. they depend "
-              "on themselves. This can happen either directly (%(example_a)s "
-              "has %(example_a)s as a master) or transitively (%(example_a)s "
-              "has %(example_b)s as a master, which, in turn, has "
-              "%(example_a)s as a master - such a chain may be even longer). "
-              "Resolving this is impossible for the game, which will most "
-              "likely crash when trying to load these plugins. You can try to "
-              "investigate by using the 'Change To…' command to reassign "
-              "the circular master so that the plugin can be opened in "
-              "%(xedit_name)s.") % {
-            'example_a': 'foo.esp',
-            'example_b': 'bar.esp',
-            'xedit_name': bush.game.Xe.full_name,
-        })
-        log_plugins(p_circular_masters)
+        _log_plugins('=== ' + _('Circular Masters'), _(
+            "The following plugins have circular masters, i.e. they depend "
+            "on themselves. This can happen either directly (%(example_a)s "
+            "has %(example_a)s as a master) or transitively (%(example_a)s "
+            "has %(example_b)s as a master, which, in turn, has %("
+            "example_a)s as a master - such a chain may be even longer). "
+            "Resolving this is impossible for the game, which will most "
+            "likely crash when trying to load these plugins. You can try to "
+            "investigate by using the 'Change To…' command to reassign the "
+            "circular master so that the plugin can be opened in "
+            "%(xedit_name)s.") % {'example_a': 'foo.esp',
+                                  'example_b': 'bar.esp',
+                                  'xedit_name': bush.game.Xe.full_name},
+                    p_circular_masters)
     if invalid_tes4_versions:
         ver_list = ', '.join(
             sorted(str(v) for v in bush.game.Esp.validHeaderVersions))
@@ -771,15 +763,12 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                                       'accepted_header_versions': ver_list})
         log_plugin_messages(invalid_tes4_versions)
     if old_fvers:
-        log.setHeader(u'=== ' + _(u'Old Header Form Versions'))
-        log(_(u'The following have a form version on their headers that is '
-              u'older than the minimum version created by the %(ck_name)s. '
-              u'This probably means that the plugin was not properly '
-              u'converted to work with %(game_name)s.') % {
-            u'ck_name': bush.game.Ck.long_name,
-            'game_name': bush.game.display_name,
-        })
-        log_plugins(old_fvers)
+        _log_plugins('=== ' + _('Old Header Form Versions'), _(
+            'The following have a form version on their headers that is '
+            'older than the minimum version created by the %(ck_name)s. This '
+            'probably means that the plugin was not properly converted to '
+            'work with %(game_name)s.') % {'ck_name': bush.game.Ck.long_name,
+                        'game_name': bush.game.display_name, }, old_fvers)
     if cleaning_messages:
         log.setHeader('=== ' + _('Cleaning With %(xedit_name)s Needed') % {
             'xedit_name': bush.game.Xe.full_name})

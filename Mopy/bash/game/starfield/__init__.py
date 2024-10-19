@@ -26,8 +26,8 @@ from .. import GameInfo, MergeabilityCheck, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
-from ..._games_lo import AsteriskGame, LoFile
-from ...bolt import FName
+from ..._games_lo import AsteriskGame
+from ...bolt import FName, fast_cached_property
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -59,6 +59,28 @@ class _AStarfieldGameInfo(PatchGame):
         _j('textures', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
     ]
+
+    @staticmethod
+    def get_fid_class(augmented_masters, in_overlay_plugin):
+        if not in_overlay_plugin:
+            return super(_AStarfieldGameInfo, _AStarfieldGameInfo
+                         ).get_fid_class(augmented_masters, in_overlay_plugin)
+        overlay_threshold = len(augmented_masters) - 1
+        from ...brec import FormId
+        class _FormID(FormId):
+            @fast_cached_property
+            def long_fid(self, *, __masters=augmented_masters):
+                try:
+                    if self.mod_dex >= overlay_threshold:
+                        # Overlay plugins can't have new records (or
+                        # HITMEs), those get injected into the first
+                        # master instead
+                        return __masters[0], self.short_fid & 0xFFFFFF
+                    return __masters[self.mod_dex], self.short_fid & 0xFFFFFF
+                except IndexError:
+                    # Clamp HITMEs to the plugin's own address space
+                    return __masters[-1], self.short_fid & 0xFFFFFF
+        return _FormID
 
     class Ck(GameInfo.Ck):
         ck_abbrev = 'CK'
@@ -180,6 +202,11 @@ class _AStarfieldGameInfo(PatchGame):
         'sfbgs007.esm',
         'sfbgs008 - main.ba2',
         'sfbgs008.esm',
+        'shatteredspace - main01.ba2',
+        'shatteredspace - main02.ba2',
+        'shatteredspace - textures.ba2',
+        'shatteredspace - voices_en.ba2',
+        'shatteredspace.esm',
         'starfield - animations.ba2',
         'starfield - densitymaps.ba2',
         'starfield - faceanimation01.ba2',
@@ -272,30 +299,28 @@ class _AStarfieldGameInfo(PatchGame):
 
     class _LoStarfield(AsteriskGame):
         force_load_first = tuple(map(FName, (
-            'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
-            'SFBGS007.esm', 'SFBGS008.esm', 'SFBGS006.esm', 'SFBGS003.esm',
-            'SFBGS004.esm',
+            'ShatteredSpace.esm', 'Constellation.esm', 'OldMars.esm',
+            'SFBGS003.esm', 'SFBGS004.esm', 'SFBGS006.esm', 'SFBGS007.esm',
+            'SFBGS008.esm', # 'BlueprintShips-Starfield.esm',
         )))
         # The game tries to read a Starfield.ccc already, but it's not present
         # yet. Also, official Creations are written to plugins.txt & can be
-        # disabled & reordered in the LO. LOOT uses it to force vanilla masters
-        # to load before plugins.txt plugins instead of after.
+        # disabled & reordered in the LO.
         _ccc_filename = 'Starfield.ccc'
 
         def _set_pinned_mods(self):
-            """Write the CCC file out if not present."""
+            """Override for making BlueprintShips.esm always active while not
+            having a fixed position in the load order."""
+            mbaip, fo_mods = super()._set_pinned_mods()
+            mbaip.add(FName('BlueprintShips-Starfield.esm')) #active if present
+            return mbaip, fo_mods
+
+        def _get_ccc_path(self):
             from ... import bass
-            ccc_path = bass.dirs['app'].join(self._ccc_filename)
-            try:
-                LoFile(False, ccc_path, raise_on_error=True)
-            except FileNotFoundError:
-                bolt.deprint(f'{ccc_path} does not exist - creating it')
-                ccc_file = LoFile(False, ccc_path)
-                ccc_file.write_modfile(self.__class__.force_load_first,
-                                       self.__class__.force_load_first)
-            except OSError:
-                bolt.deprint(f'Failed to open {ccc_path}', traceback=True)
-            return super()._set_pinned_mods()
+            if (mg_ccc := bass.dirs['saveBase'].join(self._ccc_filename
+                                                     )).exists():
+                return mg_ccc
+            return super()._get_ccc_path()
 
     lo_handler = _LoStarfield
 

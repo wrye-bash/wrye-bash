@@ -25,7 +25,7 @@ from .. import MergeabilityCheck, ObjectIndexRange
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
 from ... import bass
-from ...bolt import FName, classproperty
+from ...bolt import FName
 
 class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     display_name = 'Skyrim VR'
@@ -86,25 +86,15 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     class _LoSkyrimVR(ASkyrimSEGameInfo.LoSkyrimSE):
         force_load_first = (*ASkyrimSEGameInfo.LoSkyrimSE.force_load_first,
                             FName('SkyrimVR.esm'))
-        ##: This is nasty, figure out a way to get rid of it
-        @classproperty
-        def max_espms(cls):
-            from ... import bush
-            return 253 if bush.game.has_esl else 255
-
-        @classproperty
-        def max_esls(cls):
-            from ... import bush
-            return 4096 if bush.game.has_esl else 0
     lo_handler = _LoSkyrimVR
 
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-    @classmethod
-    def post_init(cls):
+    def post_init(self):
         from ... import env
+        cls = self.__class__
         esl_plugin_path = env.to_os_path(bass.dirs['mods'].join(
                 cls.Se.plugin_dir, 'plugins', 'skyrimvresl.dll'))
         if esl_plugin_path and esl_plugin_path.is_file():
@@ -115,6 +105,9 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
             cls.Esp.object_index_range = ObjectIndexRange.RESERVED
             cls.Esp.object_index_range_expansion_ver = 0.0
             cls.Esp.validHeaderVersions = (0.94, 1.70, 1.71)
+            self.has_esl = True
+            self.max_esls = 4096
+            self.max_espms = 254
 
 class SteamSkyrimVRGameInfo(SteamMixin, _ASkyrimVRGameInfo):
     """GameInfo override for the Steam version of Skyrim VR."""

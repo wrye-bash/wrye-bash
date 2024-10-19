@@ -170,8 +170,7 @@ class MasterInfo:
 
     @_mod_info_delegate
     def is_overlay(self):
-        """Delegate to self.modInfo.is_overlay if exists - we should deprint,
-        overlay plugins won't be in master lists."""
+        """Delegate to self.modInfo.is_overlay if exists."""
         return False
 
     def has_master_size_mismatch(self, do_test): # used in set_item_format
@@ -1409,12 +1408,13 @@ class SaveInfo(FileInfo):
         list. For esl games this order might not reflect the actual order the
         masters are mapped to form ids, hence we try to return the correct
         order if a suitable to this end cosave is present."""
-        if bush.game.has_esl:
+        try:
             xse_cosave = self.get_xse_cosave()
-            if xse_cosave is not None: # the cached cosave should be valid
-                # Make sure the cosave's masters are actually useful
-                if xse_cosave.has_accurate_master_list():
-                    return [*map(FName, xse_cosave.get_master_list())]
+            # Make sure the cosave's masters are actually useful
+            if xse_cosave.has_accurate_master_list():
+                return [*map(FName, xse_cosave.get_master_list())]
+        except (AttributeError, NotImplementedError):
+            pass
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
         return [*map(FName, self.header.masters)]
@@ -1426,10 +1426,12 @@ class SaveInfo(FileInfo):
         super(SaveInfo, self)._reset_masters()
         # If this save has ESL masters, and no cosave or a cosave from an
         # older version, then the masters are unreliable and we need to warn
-        if bush.game.has_esl and self.header.has_esl_masters:
-            xse_cosave = self.get_xse_cosave()
-            self.has_inaccurate_masters = xse_cosave is None or \
-                not xse_cosave.has_accurate_master_list()
+        try:
+            self.has_inaccurate_masters = self.header.masters_esl and (
+                (xse_cosave := self.get_xse_cosave()) is None or
+                not xse_cosave.has_accurate_master_list())
+        except (AttributeError, NotImplementedError):
+            self.has_inaccurate_masters = False
 
     def delete_paths(self, *, __abs=attrgetter_cache['abs_path']):
         # now add backups and cosaves backups
@@ -2107,7 +2109,6 @@ class ModInfos(TableFileInfos):
         # Map each mergeability type to a set of plugins that can be handled
         # via that type
         self._mergeable_by_type = {m: set() for m in MergeabilityCheck}
-        self._mergeable_parser = bolt.gen_enum_parser(MergeabilityCheck)
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
@@ -2125,7 +2126,7 @@ class ModInfos(TableFileInfos):
         # removed/extra mods in plugins.txt - set in load_order.py,
         # used in RefreshData
         self.warn_missing_lo_act = set()
-        self.selectedExtra = []
+        self.selectedExtra = set()
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
@@ -2480,13 +2481,7 @@ class ModInfos(TableFileInfos):
                   set(canMerge) == merg_checks_ints):
                 # The cached size matches what we have on disk and we have data
                 # for all required mergeability checks, so use the cached info
-                for m, m_merg in canMerge.items():
-                    merg_set = self._mergeable_by_type[
-                        self._mergeable_parser[m]]
-                    if m_merg:
-                        merg_set.add(fn_mod)
-                    else:
-                        merg_set.discard(fn_mod)
+                self._update_mergeable(fn_mod, canMerge)
             else:
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
@@ -2546,17 +2541,23 @@ class ModInfos(TableFileInfos):
                             'Technically mergeable, but has NoMerge tag.'))
                 result[fileName] = all_reasons is not None and {
                     m: (check_results[m], r) for m, r in all_reasons.items()}
-                for m, m_mergeable in check_results.items():
-                    merg_set = self._mergeable_by_type[m]
-                    if m_mergeable:
-                        merg_set.add(fileName)
-                    else:
-                        merg_set.discard(fileName)
+                self._update_mergeable(fileName, check_results)
                 # Only store the enum values (i.e. the ints) in our settings
                 # files, we are moving away from pickling non-std classes
                 fileInfo.set_table_prop('mergeInfo', (fileInfo.fsize, {
                     k.value: v for k, v in check_results.items()}))
             return result, tagged_no_merge
+
+    def _update_mergeable(self, fileName,
+                          check_results: dict[MergeabilityCheck | int, bool]):
+        """Update internal _mergeable_by_type cache - should be replaced by
+        ModInfo properties."""
+        for m, m_mergeable in check_results.items():
+            merg_set = self._mergeable_by_type[MergeabilityCheck(m)]
+            if m_mergeable:
+                merg_set.add(fileName)
+            else:
+                merg_set.discard(fileName)
 
     def _refresh_bash_tags(self):
         """Reloads bash tags for all mods set to receive automatic bash
@@ -2778,11 +2779,11 @@ class ModInfos(TableFileInfos):
             if espms_extra or esls_extra:
                 msg = f'{fileName}: Trying to activate more than '
                 if espms_extra:
-                    msg += f'{load_order.max_espms():d} regular plugins'
+                    msg += f'{bush.game.max_espms:d} regular plugins'
                 if esls_extra:
                     if espms_extra:
                         msg += ' and '
-                    msg += f'{load_order.max_esls():d} light plugins'
+                    msg += f'{bush.game.max_esls:d} light plugins'
                 raise PluginsFullError(msg)
             if _children:
                 if fileName in _children:
@@ -3202,22 +3203,21 @@ class ModInfos(TableFileInfos):
     def _recalc_real_indices(self):
         """Recalculate the real indices cache, which is the index the game will
         assign to plugins. ESLs will land in the 0xFE spot, while inactive
-        plugins and overlay plugins don't get any - so we sort them last.
-        Return a set of mods whose real index changed."""
+        plugins don't get any - so we sort them last. Return a set of mods
+        whose real index changed."""
         regular_index = 0
         esl_index = 0
-        esl_offset = load_order.max_espms() - 1
+        esl_offset = bush.game.max_espms - 1
         # Note that inactive plugins are handled by our defaultdict factory
         old, self.real_indices = self.real_indices, defaultdict(
             lambda: (sys.maxsize, ''))
         for p in load_order.cached_active_tuple():
-            if (pi := self[p]).is_esl():
+            if self[p].is_esl():
                 # sort ESLs after all regular plugins
                 self.real_indices[p] = (
                     esl_offset + esl_index, f'FE {esl_index:03X}')
                 esl_index += 1
-            elif not pi.is_overlay():
-                # Skip overlay plugins as they get no active index at runtime
+            else:
                 self.real_indices[p] = (regular_index, f'{regular_index:02X}')
                 regular_index += 1
         return {k for k, v in old.items() ^ self.real_indices.items()}

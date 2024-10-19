@@ -85,8 +85,6 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
                             FName('Fallout4_VR.esm'))
         # No ESLs, reset these back to their pre-ESL versions
         _ccc_filename = ''
-        max_espms = 255
-        max_esls = 0
     lo_handler = _LoFallout4VR
 
     @classmethod
