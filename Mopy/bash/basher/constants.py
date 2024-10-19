@@ -212,7 +212,7 @@ else: # -> no overlays
 __all_mkeys['mods.text.mergeable'] = mc_title, _mod_tab + mc_desc
 
 # Add all the keys for this game to the color info dict
-for k in bush.game.mod_keys:
+for k in dict.fromkeys(bush.game.mod_keys.values()):
     colorInfo[k] = __all_mkeys[k]
 
 #--Load config/defaults
