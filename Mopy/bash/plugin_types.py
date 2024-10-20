@@ -28,12 +28,16 @@ might need game specific information (check the game_handle argument) but these
 classes are above GameInfo - keep this module top level. PF was created after
 MC as plugin types started proliferating - their contract is still WIP."""
 import os
-from collections import Counter
+import sys
+from collections import Counter, defaultdict
 from enum import Enum
 
 # we are imported early (in game/__init__), so only import from library modules
 from .bolt import sig_to_str
 from .exception import ModError
+
+# global holding the scale flags mapped to their offsets see _init_plugin_types
+scale_flags = {} # ESL, MID
 
 __exit = lambda x: True # trick to exit early on non-verbose mode
 
@@ -268,19 +272,20 @@ class PluginFlag(Enum):
         return f'{whole_lo_fid:08X}'
 
     @classmethod
-    def get_indexes(cls, iter_infos, real_indexes):
-        limit_flags = [m for m in cls if m._offset]
+    def get_indexes(cls, iter_infos, *, __scale_flags=scale_flags):
+        real_indexes = defaultdict(lambda: (sys.maxsize, ''))
         indexes = Counter()
-        indexes.update(dict(((m, m._offset) for m in limit_flags)))
+        indexes.update(scale_flags)
         for p, inf in iter_infos:
-            for pflag in limit_flags: # currently only ESL - revisit
+            for pflag in __scale_flags:
                 if pflag.cached_type(inf):
-                    msg, sub = 'FE%03X', pflag._offset
+                    dexstr = pflag.index_str(proper_index := indexes[pflag])
                     break
             else:
-                msg, pflag, sub = '%02X', 'regular', 0
-            real_indexes[p] = (indexes[pflag], msg % (indexes[pflag] - sub))
+                dexstr = '%02X' % (proper_index := indexes[pflag := 'regular'])
+            real_indexes[p] = (proper_index, dexstr)
             indexes[pflag] += 1
+        return real_indexes
 
     # UI and menu info
     @classmethod
