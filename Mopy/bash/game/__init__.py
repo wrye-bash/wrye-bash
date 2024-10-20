@@ -33,7 +33,7 @@ from os.path import join as _j
 
 from .. import bass, bolt, initialization
 from ..plugin_types import MergeabilityCheck, PluginFlag, AMasterFlag, \
-    isPBashMergeable, is_vanilla
+    isPBashMergeable, is_vanilla, scale_flags
 from ..bolt import FNDict, fast_cached_property
 from ..exception import InvalidPluginFlagsError, ModError
 
@@ -72,10 +72,13 @@ class _EslMixin(PluginFlag):
         super().__init__(flag_attr, mod_info_attr, ui_letter_key, **kwargs)
         self.max_plugins = max_plugins
         self.merge_check: MergeabilityCheck | None = merge_check
-        self._offset = offset
+        self.fl_offset = offset
         if self.name == 'ESL':
             self.help_flip = _('Flip the ESL flag on the selected plugins, '
                 'turning light plugins into regular ones and vice versa.')
+            self._index_fmt_str = 'FE%03X'
+            self._fid_fmt_str = '%03X'
+            self.fid_mask = 0x00000FFF
 
     # Additional API for ESL and newer games ----------------------------------
     def can_convert(self, modInfo, _minfos, reasons, game_handle):
@@ -148,11 +151,14 @@ class _EslMixin(PluginFlag):
         that xEdit (and the game) can understand it."""
         orig_minf = mod_infos[fid_orig_plugin]
         proper_index = mod_infos.real_indices[fid_orig_plugin][0]
-        for pflag in cls: ##: optimize this (and some few other pflag-loops)
-            if pflag._offset and pflag.cached_type(orig_minf):
-                return (f'FE{proper_index - pflag._offset:03X}'
-                        f'{whole_lo_fid & 0x00000FFF:03X}')
+        for pflag in scale_flags:
+            if pflag.cached_type(orig_minf):
+                return (pflag.index_str(proper_index) + pflag._fid_fmt_str %
+                        (whole_lo_fid & pflag.fid_mask))
         return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
+
+    def index_str(self, proper_index):
+        return self._index_fmt_str % (proper_index - self.fl_offset)
 
     @classmethod
     def checkboxes(cls):
@@ -921,12 +927,14 @@ class GameInfo(object):
             pflags.error_msgs = {
                 pflags[k]: {(h, msg % fmt): lam for (h, msg), lam in v.items()}
                 for k, v in pflags._error_msgs.items()}
-            scale_flags = [f for f in pflags if f._offset is not None]
-            # leave magic 255 below we might re-initialize!
-            PluginFlag.max_plugins = 255 - len(scale_flags)
         pflags = self.plugin_flags
         self.all_flags = self.master_flags, pflags
         self.master_flag = self.master_flags.ESM
+        # careful here, we might be re-initializing (bash.ini handling in bash)
+        scale_flags.clear()
+        scale_flags.update((m, m.fl_offset) for m in pflags if m.fl_offset)
+        # leave magic 255 below we might re-initialize!
+        PluginFlag.max_plugins = 255 - len(scale_flags)
         master_suffixes = ['', *_prod(*
             (('', f.ui_letter_key) for f in self.master_flags))]
         type_prefixes = ['', *_prod(*(('', f.ui_letter_key) for f in pflags))]

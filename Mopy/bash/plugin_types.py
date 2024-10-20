@@ -28,13 +28,18 @@ might need game specific information (check the game_handle argument) but these
 classes are above GameInfo - keep this module top level. PF was created after
 MC as plugin types started proliferating - their contract is still WIP."""
 import os
-from collections import Counter
+import sys
+from collections import Counter, defaultdict
 from enum import Enum
 from typing import final
 
 # we are imported early (in game/__init__), so only import from library modules
 from .bolt import sig_to_str
 from .exception import ModError
+
+# global holding the scale flags mapped to their offsets see _init_plugin_types
+# ESL, MID in this order - avoid using it, it's for caching function parameters
+scale_flags = {}
 
 __exit = lambda x: True # trick to exit early on non-verbose mode
 
@@ -211,7 +216,7 @@ class PluginFlag(Enum):
                  convert_exts=('.esp', '.esu')):
         self._flag_attr = flag_attr # the ModInfo.header.flags1 attribute
         self._mod_info_attr = mod_info_attr # (private) ModInfo cache attribute
-        self._offset = None # index offset for games that support scale flags
+        self.fl_offset = None # index offset for games that support scale flags
         self.ui_letter_key = ui_letter_key # UI key mods.text.es{ui_letter_key}
         self.convert_exts = convert_exts # allowed exts for the AFlipFlagLink
         self.continue_message = () # continue message for the AFlipFlagLink
@@ -269,19 +274,20 @@ class PluginFlag(Enum):
         return f'{whole_lo_fid:08X}'
 
     @classmethod
-    def get_indexes(cls, iter_infos, real_indexes):
-        limit_flags = [m for m in cls if m._offset]
+    def get_indexes(cls, iter_infos, *, __scale_flags=scale_flags):
+        real_indexes = defaultdict(lambda: (sys.maxsize, ''))
         indexes = Counter()
-        indexes.update(dict(((m, m._offset) for m in limit_flags)))
+        indexes.update(scale_flags)
         for p, inf in iter_infos:
-            for pflag in limit_flags: # currently only ESL - revisit
+            for pflag in __scale_flags:
                 if pflag.cached_type(inf):
-                    msg, sub = 'FE%03X', pflag._offset
+                    dexstr = pflag.index_str(proper_index := indexes[pflag])
                     break
             else:
-                msg, pflag, sub = '%02X', 'regular', 0
-            real_indexes[p] = (indexes[pflag], msg % (indexes[pflag] - sub))
+                dexstr = '%02X' % (proper_index := indexes[pflag := 'regular'])
+            real_indexes[p] = (proper_index, dexstr)
             indexes[pflag] += 1
+        return real_indexes
 
     # UI and menu info
     @classmethod

@@ -3064,11 +3064,9 @@ class ModInfos(TableFileInfos):
         plugins don't get any - so we sort them last. Return a set of mods
         whose real index changed."""
         # Note that inactive plugins are handled by our defaultdict factory
-        old, self.real_indices = self.real_indices, defaultdict(
-            lambda: (sys.maxsize, ''))
-        bush.game.plugin_flags.get_indexes(
-            ((p, self[p]) for p in load_order.cached_active_tuple()),
-            self.real_indices)
+        old = self.real_indices
+        self.real_indices = bush.game.plugin_flags.get_indexes(
+            ((p, self[p]) for p in load_order.cached_active_tuple()))
         return {k for k, v in old.items() ^ self.real_indices.items()}
 
     def _recalc_dependents(self):
