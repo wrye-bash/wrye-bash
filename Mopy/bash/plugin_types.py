@@ -162,7 +162,7 @@ class MergeabilityCheck(Enum):
     ESL_CHECK = 1
     # If set for the game, WB will check plugins for their Overlay flaggability
     OVERLAY_CHECK = 2 # disabled
-    # If set for the game, WB will check plugins for their Mid flaggability
+    # If set for the game, WB will check plugins for their MID flaggability
     MID_CHECK = 3
 
     def cached_types(self, mod_infos):
@@ -174,7 +174,7 @@ class MergeabilityCheck(Enum):
                     'The following plugins could be assigned an ESL flag, but '
                     'do not have one right now.')
             case MergeabilityCheck.MID_CHECK:
-                h, m = '=== ' + _('Mid-Capable'), _(
+                h, m = '=== ' + _('MID-Capable'), _(
                     'The following plugins could be assigned an MID flag, '
                     'but do not have one right now.')
             case _:
@@ -196,7 +196,7 @@ class MergeabilityCheck(Enum):
             case MergeabilityCheck.ESL_CHECK:
                 mtext = _('Can be ESL-flagged.')
             case MergeabilityCheck.MID_CHECK:
-                mtext = _('Can be Mid-flagged.')
+                mtext = _('Can be MID-flagged.')
         return 'mods.text.mergeable', mtext
 
     def __reduce_ex__(self, protocol): # pickle enum members as int
