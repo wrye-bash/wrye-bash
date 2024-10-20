@@ -172,26 +172,26 @@ __all_mkeys = {
 
 # What do we check w.r.t. mergeability? ---------------------------------------
 __m_checks = bush.game.mergeability_checks
-if MergeabilityCheck.OVERLAY_CHECK in __m_checks:
+if MergeabilityCheck.MID_CHECK in __m_checks:
     if MergeabilityCheck.ESL_CHECK in __m_checks:
         if MergeabilityCheck.MERGE in __m_checks:
-            mc_title = _('Mergeable, ESL-Capable or Overlay-Capable Plugin')
+            mc_title = _('Mergeable, ESL-Capable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch, ESL-flagged or '
-                        'Overlay-flagged.')
+                        'MID-flagged.')
         else: # -> no mergeables
-            mc_title = _('ESL-Capable or Overlay-Capable Plugin')
+            mc_title = _('ESL-Capable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be ESL-flagged or Overlay-flagged.')
+                        'be ESL-flagged or MID-flagged.')
     else: # -> no ESLs
         if MergeabilityCheck.MERGE in __m_checks:
-            mc_title = _('Mergeable or Overlay-Capable Plugin')
+            mc_title = _('Mergeable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be merged into the Bashed Patch or Overlay-flagged.')
+                        'be merged into the Bashed Patch or MID-flagged.')
         else: # -> no ESLs or mergeables
-            mc_title = _('Overlay-Capable Plugin')
+            mc_title = _('MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be Overlay-flagged.')
+                        'be MID-flagged.')
 else: # -> no overlays
     if MergeabilityCheck.ESL_CHECK in __m_checks:
         if MergeabilityCheck.MERGE in __m_checks:

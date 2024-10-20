@@ -884,35 +884,35 @@ class Mod_AllowGhosting(TransLink):
 #------------------------------------------------------------------------------
 class Mod_CheckQualifications(ItemLink):
     """Check various mergeability criteria - BP mergeability, ESL capability
-    and Overlay capability."""
+    and MID capability."""
     _text = _('Check Qualifications…')
 
     @property
     def link_help(self):
         m_checks = bush.game.mergeability_checks
-        if MergeabilityCheck.OVERLAY_CHECK in m_checks:
+        if MergeabilityCheck.MID_CHECK in m_checks:
             if MergeabilityCheck.ESL_CHECK in m_checks:
                 if MergeabilityCheck.MERGE in m_checks:
-                    # Overlay + ESL + Merge
+                    # MID + ESL + Merge
                     return _('Scan the selected plugins to determine '
                              'whether or not they can be merged into the '
                              'Bashed Patch, assigned the ESL flag or assigned '
-                             'the Overlay flag, reporting also the reasons '
+                             'the MID flag, reporting also the reasons '
                              'if they cannot.')
-                # Overlay + ESL
+                # MID + ESL
                 return _('Scan the selected plugins to determine whether or '
                          'not they can be assigned the ESL flag or assigned '
-                         'the Overlay flag, reporting also the reasons if '
+                         'the MID flag, reporting also the reasons if '
                          'they cannot.')
             elif MergeabilityCheck.MERGE in m_checks:
-                # Overlay + Merge
+                # MID + Merge
                 return _('Scan the selected plugins to determine whether or '
                          'not they can be merged into the Bashed Patch or '
-                         'assigned the Overlay flag, reporting also the '
+                         'assigned the MID flag, reporting also the '
                          'reasons if they cannot.')
-            # Overlay
+            # MID
             return _('Scan the selected plugins to determine whether or not '
-                     'they can be assigned the Overlay flag, reporting also '
+                     'they can be assigned the MID flag, reporting also '
                      'the reasons if they cannot.')
         else:
             if MergeabilityCheck.ESL_CHECK in m_checks:
@@ -941,8 +941,8 @@ class Mod_CheckQualifications(ItemLink):
                                       _('Mergeable Into Bashed Patch')),
             MergeabilityCheck.ESL_CHECK: (_('Not ESL-Capable'),
                                           _('ESL-Capable')),
-            MergeabilityCheck.OVERLAY_CHECK: (_('Not Overlay-Capable'),
-                                              _('Overlay-Capable')),
+            MergeabilityCheck.MID_CHECK: (_('Not MID-Capable'),
+                                          _('MID-Capable')),
         }
         message = ['= ' + _('Qualification Check Results')]
         for p in self.selected:
