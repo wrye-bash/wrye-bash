@@ -457,8 +457,6 @@ class PatchFile(ModFile):
         self.tes4.description = (_('Updated: %(update_time)s') % {
             'update_time': format_date(time.time())} + '\n\n' + _(
             'Records Changed: %(num_recs)d') % {'num_recs': num_records})
-        ##: Consider flagging as Overlay instead if that flag is supported by
-        # the game and no new records have been included?
         # Flag as ESL if the game supports them, the option is enabled and the
         # BP has <= 2048 new records
         num_new_recs = self.count_new_records(next_object_start=0x800)

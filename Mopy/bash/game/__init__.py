@@ -192,8 +192,7 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
     # order matters for UI keys
     ESL = ('esl_flag', '_is_esl', 'l', 4096,
            MergeabilityCheck.ESL_CHECK, 253)
-    OVERLAY = ('overlay_flag', '_is_overlay', 'o', 0,
-               MergeabilityCheck.OVERLAY_CHECK)
+    OVERLAY = ('overlay_flag', '_is_overlay', 'o')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

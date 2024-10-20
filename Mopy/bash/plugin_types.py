@@ -155,12 +155,12 @@ class MergeabilityCheck(Enum):
     # NoMerge tag will be available and WB will check plugins for their BP
     # mergeability.
     MERGE = 0
-    # If set for the game, the Add ESL Flag command will be available and WB
-    # will check plugins for their ESL capability.
+    # If set for the game, WB will check plugins for their ESL flaggability
     ESL_CHECK = 1
-    # If set for the game, the Add Overlay Flag command will be available and
-    # WB will check plugins for their Overlay capability.
-    OVERLAY_CHECK = 2
+    # If set for the game, WB will check plugins for their Overlay flaggability
+    _OVERLAY_CHECK = 2 # disabled
+    # If set for the game, WB will check plugins for their MID flaggability
+    MID_CHECK = 3
 
     def cached_types(self, mod_infos):
         """Return *all* mod infos that passed our mergeability check, with a
@@ -189,8 +189,8 @@ class MergeabilityCheck(Enum):
                     mtext = _('Can be merged into Bashed Patch.')
             case MergeabilityCheck.ESL_CHECK:
                 mtext = _('Can be ESL-flagged.')
-            case MergeabilityCheck.OVERLAY_CHECK:
-                mtext = _('Can be Overlay-flagged.')
+            case MergeabilityCheck.MID_CHECK:
+                mtext = _('Can be MID-flagged.')
         return 'mods.text.mergeable', mtext
 
     def __reduce_ex__(self, protocol): # pickle enum members as int
