@@ -407,7 +407,7 @@ class MasterList(_ModsUIList):
         u'Current Order': lambda self, a: self._curr_lo_index[
             self.data_store[a].curr_name],
         'Indices': lambda self, a: self._save_lo_real_index[
-            self.data_store[a].curr_name],
+            self.data_store[a].curr_name][0],
         'Current Index': lambda self, a: self._curr_real_index[
             self.data_store[a].curr_name],
     }
@@ -421,8 +421,8 @@ class MasterList(_ModsUIList):
         'Num': lambda self, mi: f'{mi:02X}',
         'Current Order': lambda self, mi: load_order.cached_active_index_str(
             self._item_name(mi)),
-        'Indices': lambda self, mi: self._save_lo_hex_string[
-            self._item_name(mi)],
+        'Indices': lambda self, mi: self._save_lo_real_index[
+            self._item_name(mi)][1],
         'Current Index': lambda self, mi: bosh.modInfos.real_indices[
             self._item_name(mi)][1],
     }
@@ -454,8 +454,7 @@ class MasterList(_ModsUIList):
         self._curr_lo_index = {} # cache, orders missing last alphabetically
         self._curr_real_index = {}
         # Cache based on SaveHeader.masters_regular and masters_esl
-        self._save_lo_real_index = defaultdict(lambda: sys.maxsize)
-        self._save_lo_hex_string = defaultdict(lambda: '')
+        self._save_lo_real_index = defaultdict(lambda: (sys.maxsize, ''))
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
@@ -2197,23 +2196,19 @@ class _SaveMasterList(MasterList):
 
     def _update_real_indices(self, new_file_info):
         self._save_lo_real_index.clear()
-        self._save_lo_hex_string.clear()
         # Check if we have to worry about ESL masters
         try:
-            save_lo_regular = {m: i for i, m in enumerate(
+            save_lo_regular = {m: (i, f'{i:02X}') for i, m in enumerate(
                 new_file_info.header.masters_regular)}
             num_regular = len(save_lo_regular)
             # For ESL masters, we have to add an offset to the real index
             for i, m in enumerate(new_file_info.header.masters_esl):
-                self._save_lo_real_index[m] = num_regular + i
-                self._save_lo_hex_string[m] = f'FE {i:03X}'
+                self._save_lo_real_index[m] = num_regular + i, f'FE {i:03X}'
         except AttributeError: # no masters_regular/esl
-            save_lo_regular = {m: i for i, m in enumerate(
+            save_lo_regular = {m: (i, f'{i:02X}') for i, m in enumerate(
                 new_file_info.masterNames)}
         # For regular masters, simply store the LO index
         self._save_lo_real_index.update(save_lo_regular)
-        self._save_lo_hex_string.update({m: f'{i:02X}' for m, i
-                                         in save_lo_regular.items()})
 
 class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""
