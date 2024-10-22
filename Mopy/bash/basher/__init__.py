@@ -509,15 +509,16 @@ class MasterList(_ModsUIList):
         # info attributes?
         can_have_sizes = isinstance(fileInfo, bosh.ModInfo) and \
             bush.game.Esp.check_master_sizes
-        all_esl_masters = set(
-            getattr(fileInfo.header, 'scale_masters', {'ESL': []})['ESL'])
+        pf_mas_set = {pf: set(v) for pf, v in
+                      getattr(fileInfo.header, 'scale_masters', {}).items()}
         all_master_sizes = (fileInfo.header.master_sizes if can_have_sizes
                             else repeat(0))
         for mi, (ma_name, ma_size) in enumerate(
                 zip(fileInfo.masterNames, all_master_sizes)):
             self.data_store[mi] = bosh.MasterInfo(parent_minf=fileInfo,
-                master_name=ma_name, master_size=ma_size,
-                was_esl=ma_name in all_esl_masters)
+                master_name=ma_name, master_size=ma_size, was_scale={
+                    pf for pf, sc_masters in pf_mas_set.items() if
+                    ma_name in sc_masters})
         self._reList()
 
     def set_item_format(self, item_key, item_format, target_ini_setts):
