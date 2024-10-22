@@ -659,17 +659,16 @@ class _ABcpsSaveHeader(SaveFileHeader):
     # TODO(SF) Before we can enable editing save headers, all the ##: questions
     #  here have to be answered
     _bcps_unpackers = {
-        '_bcps_header_version': (00, unpack_int),
-        ##: Where do we start counting for the 'header size' here?
-        '_bcps_header_size':    (00, unpack_int64),
+        '_bcps_header_version': (00, unpack_int), # version0
+        '_bcps_chunkSizesOffset':(00, unpack_int64),
         ##: What are unknown1 and unknown2?
-        '_bcps_unknown1':       (00, unpack_int64),
-        '_bcps_comp_location':  (00, unpack_int64),
+        '_bcps_unknown1':       (00, unpack_int64), # unknown0
+        '_bcps_comp_location':  (00, unpack_int64), # compressedDataOffset
         ##: MO2 calls this 'totalSize', but it seems to be much too big for
         # either the compressed or decompressed size - what is it?
-        '_bcps_unknown2':      (00, unpack_int64),
-        '_bcps_unknown3':      (00, unpack_int64),
-        '_bcps_decomp_size':   (00, unpack_int64),
+        '_bcps_unknown2':      (00, unpack_int64), # uncompressedDataSize
+        '_bcps_unknown3':      (00, unpack_int64), # version1 (read as float)
+        '_bcps_decomp_size':   (00, unpack_int64), # unknown1
         ##: There's a bunch more after this - read as _bcps_rest below. Figure
         # out what that all is
     }
@@ -694,20 +693,15 @@ class _ABcpsSaveHeader(SaveFileHeader):
 
 class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     save_magic = b'SFS_SAVEGAME'
-    __slots__ = ('version', 'unknown1', 'saveNumber', 'gameDate', 'raceEid',
-                 'pcSex', 'pcExp', 'pcLvlExp', 'filetime', 'unknown3',
-                 '_formVersion', 'game_ver', 'other_game_ver',
-                 'plugin_info_size', '_bcps_header_version',
-                 '_bcps_header_size', '_bcps_unknown1', '_bcps_comp_location',
-                 '_bcps_unknown2', '_bcps_unknown3', '_bcps_decomp_size',
-                 '_bcps_rest')
-
-    # TODO(SF) What are the unknowns in here?
+    __slots__ = ('engineVersion', 'saveVersion', 'saveNumber', 'gameDate',
+                 'raceEid', 'pcSex', 'pcExp', 'pcLvlExp', 'filetime',
+                 'unknown3', '_formVersion', 'game_ver', 'other_game_ver',
+                 'plugin_info_size', '_padding', *_ABcpsSaveHeader._bcps_unpackers,
+                 '_bcps_rest', '_plugin_info_size')
     _unpackers = {
         'header_size':      (00, unpack_int),
-        'version':          (00, unpack_int),
-        ##: Seems to be equal to _formVersion?
-        'unknown1':         (00, unpack_byte),
+        'engineVersion':    (00, unpack_int),
+        'saveVersion':      (00, unpack_byte),
         'saveNumber':       (00, unpack_int),
         'pcName':           (00, unpack_str16),
         'pcLevel':          (00, unpack_int),
@@ -718,48 +712,40 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         'pcExp':            (00, unpack_float),
         'pcLvlExp':         (00, unpack_float),
         'filetime':         (00, unpack_int64),
-        'ssWidth':          (00, unpack_int), ##: Seems unused - always(?) zero
-        'ssHeight':         (00, unpack_int), ##: Seems unused - always(?) zero
-        'unknown3':         (00, unpack_int), ##: Seems to always be 1?
+        'unknown3':         (00, unpack_int),
+        '_padding':         (00, lambda ins: ins.read(8)),
     }
     _unpackers_post_ss = {
-        '_formVersion':     (00, unpack_byte),
+        '_formVersion':     (00, unpack_byte), # saveVersion?
         'game_ver':         (00, unpack_str16),
-        ##: Maybe this is the version the playthrough was started on, it seems
+        # Maybe this is the version the playthrough was started on, it seems
         # to not change when the game version is upgraded
         'other_game_ver':   (00, unpack_str16),
+        'plugin_info_size': (00, unpack_short), # pluginInfoSize
     }
 
     def _esl_block(self):
         return True # Some sources say if form version >= 82, MO2 says always
 
-    def load_image_data(self, ins, load_image=False):
+    def load_image_data(self, ins, load_image=False): # just do the check
         # -4 for the header size itself (uint32)
         actual = ins.tell() - len(self.__class__.save_magic) - 4
         if actual != self.header_size:
             raise SaveHeaderError(f'New Save game header size ({actual}) not '
                                   f'as expected ({self.header_size}).')
-        super().load_image_data(ins, load_image)
 
     def _load_masters(self, ins):
         self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
         self._mastersStart = ins.tell()
-        # TODO(SF) For some reason we're off by 2 when reading, though we read
-        #  the master list correctly - maybe there's a new block for the
-        #  override-only plugins? There does seem to be a valid short after
-        #  this, but it has a value of 1 and is followed by no valid plugin
-        #  strings? For now, just HACK our way past the check via sse_offset
         ##: Starfield 1.9 made this worse. Since form version 109 (or 108, not
         # sure yet), another 4 unknown bytes (which seem to always be zero) got
         # added right before the unknown short and count as part of the
         # masters. Still no clue what any of that is for. 1.11 added another 14
         # bytes.
         if self._formVersion >= 119:
-            offset = 20
+            offset = 18
         elif self._formVersion >= 109:
-            offset = 6
-        else:
-            offset = 2
+            offset = 4
         self._load_masters_16(ins, sse_offset=offset)
 
     def calc_time(self):

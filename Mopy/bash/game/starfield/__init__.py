@@ -133,10 +133,7 @@ class _AStarfieldGameInfo(PatchGame):
 
     class Ess(GameInfo.Ess):
         ext = '.sfs'
-        # TODO(SF) Did the screenshot get moved or does it just not exist
-        #  anymore? ssWidth and ssHeight do seem to exist, but they are now
-        #  always 0
-        has_screenshots = False
+        has_screenshots = False # TODO(SF) verify
 
     class Bsa(GameInfo.Bsa):
         bsa_extension = '.ba2'
