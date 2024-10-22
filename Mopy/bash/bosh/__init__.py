@@ -120,15 +120,15 @@ def _mod_info_delegate(fn):
 
 class MasterInfo:
     """Slight abstraction over ModInfo that allows us to represent masters that
-    are missing an active mod counterpart."""
+    are missing a present mod counterpart."""
     __slots__ = ('is_ghost', 'curr_name', 'mod_info', 'old_name',
-                 'stored_size', '_was_esl', 'parent_mod_info')
+                 'stored_size', '_was_scale', 'parent_mod_info')
 
     def __init__(self, *, parent_minf, master_name: FName, master_size,
-                 was_esl):
+                 was_scale):
         self.parent_mod_info = parent_minf
         self.stored_size = master_size
-        self._was_esl = was_esl
+        self._was_scale = was_scale
         self.old_name = master_name
         self.mod_info = self.rename_if_present(master_name)
         if self.mod_info is None:
@@ -158,12 +158,12 @@ class MasterInfo:
           and modInfos.size_mismatch(self.curr_name, self.stored_size) else ''
 
     def flag_fallback(self, pflag):
-        """For esm missing masters check extension - for esl rely on the
-        mysterious _was_esl."""
+        """For esm missing masters check extension - for scale flags rely on
+        cached info."""
         if pflag is bush.game.master_flag:
             return pflag in bush.game.plugin_flags.guess_flags(
                 self.get_extension(), bush.game)
-        return getattr(self, '_was_esl', False) # we only might set ESL to True
+        return pflag in self._was_scale # should we use ext heuristics for esl?
 
     @_mod_info_delegate
     def getDirtyMessage(self, scan_beth=False):

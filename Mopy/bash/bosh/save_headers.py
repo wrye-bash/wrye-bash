@@ -37,10 +37,11 @@ import zlib
 from enum import Enum
 from functools import partial
 from itertools import repeat, chain
+from typing import final
 
 import lz4.block
 
-from .. import bolt
+from .. import bolt, load_order, plugin_types
 from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
     pack_bzstr8, pack_float, pack_int, pack_short, pack_str8, \
     remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
@@ -48,6 +49,7 @@ from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
     unpack_str16, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_str_int_delim, gen_enum_parser, unpack_int64
 from ..exception import SaveHeaderError
+from ..plugin_types import PluginFlag
 
 # Utilities -------------------------------------------------------------------
 def _unpack_fstr16(ins) -> bytes:
@@ -228,6 +230,9 @@ def calc_time_fo4(gameDate: bytes) -> (float, int):
 # Save Headers ----------------------------------------------------------------
 class SaveFileHeader(object):
     save_magic: bytes
+    # Whether this header can be edited - if False, it will still be read and
+    # displayed, but the Save/Cancel buttons will be disabled
+    can_edit_header: bool = True
     # common slots Bash code expects from SaveHeader (added header_size and
     # turned image to a property)
     __slots__ = (u'header_size', u'pcName', u'pcLevel', u'pcLocation',
@@ -245,6 +250,7 @@ class SaveFileHeader(object):
         self.ssData = None # lazily loaded at runtime
         self.read_save_header(load_image, ins)
 
+    @final
     def read_save_header(self, load_image=False, ins=None):
         """Fully reads this save header, optionally loading the image as
         well."""
@@ -260,6 +266,7 @@ class SaveFileHeader(object):
             deprint(err_msg, traceback=True)
             raise SaveHeaderError(err_msg) from e
 
+    @final
     def _load_from_unpackers(self, ins, target_unpackers):
         for attr, (__pack, _unpack) in target_unpackers.items():
             setattr(self, attr, _unpack(ins))
@@ -368,12 +375,6 @@ class SaveFileHeader(object):
     def _master_block_size(self):
         return 1 + sum(len(x) + 2 for x in self.masters)
 
-    @property
-    def can_edit_header(self):
-        """Whether or not this header can be edited - if False, it will still
-        be read and displayed, but the Save/Cancel buttons will be disabled."""
-        return True
-
 class OblivionSaveHeader(SaveFileHeader):
     save_magic = b'TES4SAVEGAME'
     __slots__ = (u'major_version', u'minor_version', u'exe_time',
@@ -442,9 +443,9 @@ class _AEslSaveHeader(SaveFileHeader):
     """Base class for save headers that may have ESLs."""
     __slots__ = ('masters_regular', 'scale_masters')
 
-    def _esl_block(self) -> bool:
+    def _scale_blocks(self) -> tuple[PluginFlag, ...]:
         """Return True if this save file has an ESL block."""
-        raise NotImplementedError
+        return ()
 
     @property
     def masters(self):
@@ -454,29 +455,31 @@ class _AEslSaveHeader(SaveFileHeader):
         # Skip super, that would try to load and assign self.masters
         self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
         self._mastersStart = ins.tell()
-        self._load_masters_16(ins)
+        self._load_masters_16(ins, masters_expected=unpack_int(ins))
 
-    def _load_masters_16(self, ins, sse_offset=0):
+    def _load_masters_16(self, ins, sse_offset=0, masters_expected=None):
         """Load regular masters and ESL masters, with an optional offset for
         the compressed SSE saves."""
-        masters_expected = unpack_int(ins)
         # Store separate lists of regular and ESLs masters for the Indices
         # column on the Saves tab
         num_regular_masters = unpack_byte(ins)
         self.masters_regular = [
-            *map(unpack_str16, repeat(ins, num_regular_masters))]
+            *map(self._unpack_master, repeat(ins, num_regular_masters))]
         # SSE / FO4 save format with esl block
         self.scale_masters = {}
-        if self._esl_block():
+        for pf in self._scale_blocks():
             num_esl_masters = unpack_short(ins)
-            self.scale_masters['ESL'] = [
-                *map(unpack_str16, repeat(ins, num_esl_masters))]
+            self.scale_masters[pf] = [
+                *map(self._unpack_master, repeat(ins, num_esl_masters))]
         # Check for master's table size (-4 for the stored size at the start of
         # the master table)
         masters_actual = ins.tell() + sse_offset - self._mastersStart - 4
-        if masters_actual != masters_expected:
+        if masters_expected is not None and masters_actual != masters_expected:
             raise SaveHeaderError(f'Save game masters size ({masters_actual}) '
                                   f'not as expected ({masters_expected}).')
+
+    def _unpack_master(self, ins):
+        return unpack_str16(ins)
 
     def _decode_masters(self):
         _dec = lambda x: FName(decoder(x, bolt.pluginEncoding,
@@ -502,22 +505,22 @@ class _AEslSaveHeader(SaveFileHeader):
         for x in range(reg_master_count):
             _skip_str16(ins)
         # SSE/FO4 format has separate ESL block
-        has_esl_block = self._esl_block()
-        if has_esl_block:
-            esl_master_count = len(self.scale_masters.get('ESL', ()))
+        scale_masters = []
+        for pf in self._scale_blocks():
             ins.seek(2, 1) # skip ESL count
-            for count in range(esl_master_count):
-                _skip_str16(ins)
+            masts = self.scale_masters.get(pf, ())
+            scale_masters.append(masts)
+            for count in range(len(masts)):
+                _skip_str16(ins) # TODO(SF) variable len skips - see _master_info_block_size
         # Write out the (potentially altered) masters
         pack_byte(out, len(self.masters_regular))
         _write_s16_list(out, self.masters_regular)
-        if has_esl_block:
-            masts = self.scale_masters.get('ESL', ())
+        for masts in scale_masters:
             pack_short(out, len(masts))
             _write_s16_list(out, masts)
 
     def _master_block_size(self):
-        return (3 if self._esl_block() else 1) + sum(
+        return (2 * len(self._scale_blocks()) + 1) + sum(
             len(x) + 2 for x in self.masters)
 
 class SkyrimSaveHeader(_AEslSaveHeader):
@@ -552,7 +555,9 @@ class SkyrimSaveHeader(_AEslSaveHeader):
 
     def __is_sse(self): return self.version == 12
 
-    def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
+    def _scale_blocks(self):
+        return plugin_types.scale_flags if self.__is_sse() and \
+            self._formVersion >= 78 else []
 
     @property
     def has_alpha(self):
@@ -581,7 +586,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
             sse_offset = 0
         self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
         self._mastersStart = ins.tell() + sse_offset
-        self._load_masters_16(ins, sse_offset)
+        self._load_masters_16(ins, sse_offset, masters_expected=unpack_int(ins))
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
@@ -626,7 +631,9 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     }
     _compress_type = _SaveCompressionType.NONE
 
-    def _esl_block(self): return self.version == 15 and self._formVersion >= 68
+    def _scale_blocks(self):
+        return plugin_types.scale_flags if self.version == 15 and \
+            self._formVersion >= 68 else []
 
     @property
     def has_alpha(self):
@@ -656,8 +663,6 @@ class _ABcpsSaveHeader(SaveFileHeader):
     # have to be filled out in subclasses - really annoying, plus causes
     # PyCharm warnings down below
     __slots__ = ()
-    # TODO(SF) Before we can enable editing save headers, all the ##: questions
-    #  here have to be answered
     _bcps_unpackers = {
         '_bcps_header_version': (00, unpack_int), # version0
         '_bcps_chunkSizesOffset':(00, unpack_int64),
@@ -693,11 +698,13 @@ class _ABcpsSaveHeader(SaveFileHeader):
 
 class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     save_magic = b'SFS_SAVEGAME'
+    can_edit_header = False
     __slots__ = ('engineVersion', 'saveVersion', 'saveNumber', 'gameDate',
                  'raceEid', 'pcSex', 'pcExp', 'pcLvlExp', 'filetime',
                  'unknown3', '_formVersion', 'game_ver', 'other_game_ver',
                  'plugin_info_size', '_padding', *_ABcpsSaveHeader._bcps_unpackers,
-                 '_bcps_rest', '_plugin_info_size')
+                 '_bcps_rest', '_master_info_block_size',
+                 'plugin_info_unknown1', 'plugin_info_unknown2')
     _unpackers = {
         'header_size':      (00, unpack_int),
         'engineVersion':    (00, unpack_int),
@@ -722,10 +729,35 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         # to not change when the game version is upgraded
         'other_game_ver':   (00, unpack_str16),
         'plugin_info_size': (00, unpack_short), # pluginInfoSize
+        'plugin_info_unknown1':  (00, unpack_byte),
+        'plugin_info_unknown2':  (00, unpack_byte),
     }
 
-    def _esl_block(self):
-        return True # Some sources say if form version >= 82, MO2 says always
+    def __init__(self, save_inf, load_image=False, ins=None):
+        self._master_info_block_size = {}
+        super().__init__(save_inf, load_image, ins)
+
+    def _unpack_master(self, ins):
+        mas = unpack_str16(ins)
+        self._master_info_block_size[mas] = 0
+        if self._formVersion < 122:
+            return mas
+        if self._formVersion >= 140:
+            has_extra_data = unpack_byte(ins)
+            self._master_info_block_size[mas] += 1
+        else:
+            has_extra_data = not (load_order.filter_pinned({mas}))
+        if has_extra_data: # 122 <= formVersion < 140
+            for __ in range(3): # creationName, creationId, flags
+                self._master_info_block_size[mas] += len(unpack_str16(ins))
+            unpack_byte(ins) # achievementCompatible
+            self._master_info_block_size[mas] += 1
+        return mas
+
+    def _scale_blocks(self):
+        # ESL: some sources say if form version >= 82, MO2 says always
+        return plugin_types.scale_flags if self._formVersion >= 122 else [
+            next(iter(plugin_types.scale_flags))]
 
     def load_image_data(self, ins, load_image=False): # just do the check
         # -4 for the header size itself (uint32)
@@ -737,22 +769,17 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     def _load_masters(self, ins):
         self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
         self._mastersStart = ins.tell()
-        ##: Starfield 1.9 made this worse. Since form version 109 (or 108, not
-        # sure yet), another 4 unknown bytes (which seem to always be zero) got
-        # added right before the unknown short and count as part of the
-        # masters. Still no clue what any of that is for. 1.11 added another 14
-        # bytes.
-        if self._formVersion >= 119:
-            offset = 18
-        elif self._formVersion >= 109:
-            offset = 4
-        self._load_masters_16(ins, sse_offset=offset)
+        self._load_masters_16(ins)
 
     def calc_time(self):
         self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
 
     def _do_write_header(self, ins, out):
-        raise NotImplementedError # TODO(SF) Implement
+        raise NotImplementedError # TODO(SF) Implement - can_edit_header ->True
+
+    def _master_block_size(self):
+        return super()._master_block_size() + sum(
+            self._master_info_block_size.values())
 
 class FalloutNVSaveHeader(SaveFileHeader):
     save_magic = b'FO3SAVEGAME'
@@ -836,6 +863,9 @@ class MorrowindSaveHeader(SaveFileHeader):
     """Morrowind saves are identical in format to record definitions.
     Accordingly, we delegate loading the header to our existing mod API."""
     save_magic = b'TES3'
+    # TODO(inf) Once we support writing Morrowind plugins, implement
+    #  writeMasters properly and drop this override
+    can_edit_header = False
     __slots__ = (u'pc_curr_health', u'pc_max_health')
 
     def load_header(self, ins, load_image=False):
@@ -861,12 +891,6 @@ class MorrowindSaveHeader(SaveFileHeader):
                     structs_cache[u'3B'].pack(pxl.red, pxl.green, pxl.blue))
             self.ssData = out.getvalue()
         self.ssHeight = self.ssWidth = 128 # fixed size for Morrowind
-
-    @property
-    def can_edit_header(self):
-        # TODO(inf) Once we support writing Morrowind plugins, implement
-        #  writeMasters properly and drop this override
-        return False
 
 # Factory
 def get_save_header_type(game_fsName) -> type[SaveFileHeader]:
