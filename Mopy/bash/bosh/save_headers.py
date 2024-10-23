@@ -262,15 +262,18 @@ class SaveFileHeader(object):
 
     @final
     def _load_from_unpackers(self, ins, target_unpackers):
+        t = ins.tell()
         for attr, (__pack, _unpack) in target_unpackers.items():
             setattr(self, attr, _unpack(ins))
+            t = ins.tell()
 
     def load_header(self, ins, load_image=False):
         save_magic = ins.read(len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
-        self._load_from_unpackers(ins, self.__class__._unpackers)
+        t = ins.tell()
+        self._load_from_unpackers(ins, self.__class__._unpackers) # assert self.header_size + len(save_magic) + 4 == ins.tell()
         self.load_image_data(ins, load_image)
         self._load_masters(ins)
         # additional calculations - TODO(ut): rework decoding

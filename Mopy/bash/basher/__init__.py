@@ -2090,7 +2090,7 @@ class ModPanel(BashTab):
 
     def sb_count_str(self):
         all_mods = [bosh.modInfos[m] for m in load_order.cached_active_tuple()]
-        return bush.game.plugin_flags.plugin_counts(bosh.modInfos, all_mods)
+        return bush.game.plugin_flags.plugin_counts(bosh.modInfos, all_mods) # todo mid
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()
@@ -2319,7 +2319,7 @@ class SaveDetails(_ModsSavesDetails):
             _(u'Masters (likely inaccurate, hover for more info):')
             if show_warning else _(u'Masters:'))
         self._masters_label.tooltip = (
-            _('This save has ESL masters and cannot be displayed accurately '
+            _('This save has ESL masters and cannot be displayed accurately ' ###
               'without an up-to-date cosave. Please install the latest '
               'version of %(se_name)s and create a new save to see the true '
               'master order.') % {'se_name': bush.game.Se.se_abbrev}
@@ -3985,7 +3985,7 @@ class BashFrame(WindowFrame):
             bosh.modInfos.warn_missing_lo_act.clear()
         if bosh.modInfos.selectedExtra:
             lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                bush.game.plugin_flags.deactivate_msg(),
+                bush.game.plugin_flags.deactivate_msg(), # todo mid
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can
