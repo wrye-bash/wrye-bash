@@ -131,7 +131,7 @@ if not bush.game.using_txt_file:
     )
 
 # Asemble all possible keys for the mod list UI text color --------------------
-__all_mkeys = {
+__all_mkeys = { # we could use plugin_type_text for the 'color_description'
     'mods.text.bashedPatch': ('Bashed Patch', _mod_tab + _(
         'This is the text color used for Bashed Patches.')),
     'mods.text.esm': ('ESM', _mod_save_tabs + _(
@@ -162,12 +162,21 @@ __all_mkeys = {
         'This is the text color used for Blueprint plugins with a master '
         'flag on the Mods Tab.')
     ),
+    'mods.text.esi': (_('Medium Plugin'), _mod_save_tabs + _(
+        'This is the text color used for Medium plugins on the Mods Tabb, '
+        'and in the Masters info on both the Mods Tab and Saves Tab.')
+    ),
+    'mods.text.esim': (_('Medium Master'), _mod_save_tabs + _(
+        'This is the text color used for Medium plugins with a master '
+        'flag on the Mods Tabb, and in the Masters info on both the Mods '
+        'Tab and Saves Tab.')
+    ),
     'mods.text.noMerge': (_("'NoMerge' Plugin"), _mod_tab + _(
         'This is the text color used for a mergeable plugin that is '
         "tagged 'NoMerge'.")),
-    'mods.text.flags_conflict': (_('Conflicting Plugin Flags'), _mod_tab + _(
-        'This is the text color used for a plugin that has conflicting flags '
-        'set.')),
+    'mods.text.flags_conflict': (_('Conflicting Plugin Flags'), _mod_save_tabs
+        + _('This is the text color used for a plugin that has conflicting '
+            'flags set.')),
 }
 
 # What do we check w.r.t. mergeability? ---------------------------------------
@@ -253,7 +262,8 @@ settingDefaults = { # keep current naming format till refactored
         'mods.text.eslm':               (123, 29,  223),
         'mods.text.eso':                (235, 119, 44),
         'mods.text.esom':               (234, 49, 9),
-        ##: revisit on MID support
+        'mods.text.esi':                (0,   0,   0),   # 'BLACK'
+        'mods.text.esim':               (0,   0,   0),   # 'BLACK'
         'mods.text.esb':                (0,   0,   0),   # 'BLACK'
         'mods.text.esbm':               (255, 255, 0),
         'mods.text.flags_conflict':     (255, 0, 0),
