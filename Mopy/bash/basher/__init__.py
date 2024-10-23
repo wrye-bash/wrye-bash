@@ -373,7 +373,7 @@ class _ModsUIList(UIList):
             if txtkey:
                 item_format.text_key = txtkey
                 mouse_text.append(mtext)
-        # ESL, OVERLAY, BLUEPRINT then ESM
+        # ESL, OVERLAY, MID, BLUEPRINT then ESM
         suffix = ''.join(pflag.ui_letter_key for pflag in chain(
             *reversed(bush.game.all_flags)) if pflag.cached_type(minf))
         try:
@@ -2197,23 +2197,21 @@ class _SaveMasterList(MasterList):
     banned_columns = ()
 
     def _update_real_indices(self, new_file_info):
-        self._save_lo_real_index.clear()
-        # Check if we have to worry about ESL masters
-        try:
-            save_lo_regular = {m: (i, f'{i:02X}') for i, m in enumerate(
-                new_file_info.header.masters_regular)}
-            num_regular = len(save_lo_regular)
+        (rdex := self._save_lo_real_index).clear() # it's a defaultdict!
+        try: # Check if we have to worry about scale masters
+            rdex.update({m: (i, f'{i:02X}') for i, m in
+                         enumerate(new_file_info.header.masters_regular)})
+            num_regular = len(rdex)
             # For ESL masters, we have to add an offset to the real index
-            for li in new_file_info.header.scale_masters.values():
+            for pf, li in new_file_info.header.scale_masters.items():
                 i = num_regular
                 for i, m in enumerate(li, num_regular):
-                    self._save_lo_real_index[m] = i, f'FE {i-num_regular:03X}'
+                    rdex[m] = i, pf.index_str(i, num_regular)
                 num_regular = i
         except AttributeError: # no masters_regular/scale_masters attributes
-            save_lo_regular = {m: (i, f'{i:02X}') for i, m in enumerate(
-                new_file_info.masterNames)}
-        # For regular masters, simply store the LO index
-        self._save_lo_real_index.update(save_lo_regular)
+            # For regular masters, simply store the LO index
+            rdex.update({m: (i, f'{i:02X}') for i, m in
+                         enumerate(new_file_info.masterNames)})
 
 class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""

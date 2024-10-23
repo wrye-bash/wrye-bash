@@ -211,8 +211,7 @@ class _TabledInfo:
                     v = GPath(v)
                 elif k == 'mergeInfo':
                     # Clean up cached mergeability info - can get out of sync
-                    # if we add or remove a mergeability type from a game or
-                    # change a mergeability type's int key in the enum
+                    # if we add or remove a mergeability type from a game
                     try:
                         cached_size, canMerge = v
                         canMerge = {mc: v for m, v in canMerge.items() if (
@@ -401,7 +400,7 @@ class FileInfo(_TabledInfo, AFileInfo):
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     # Cached, since we need them so often - set by PluginFlag
-    _is_master = _is_esl = _is_overlay = _is_blueprint = False
+    _is_master = _is_esl = _is_overlay = _is_blueprint = _is_mid = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
     _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
@@ -481,11 +480,13 @@ class ModInfo(FileInfo):
                     f"pos: {ins.tell():d}\nCaused by: '{e!r}'")
         return False
 
-    def formids_in_esl_range(self):
-        """Check if all FormIDs are in the ESL range."""
+    def formids_out_of_range(self, pf_name: str):
+        """Check if the plugin contains any FormIDs out of the range of
+        the named scale flag."""
         num_masters = len(self.masterNames)
-        return not self._scan_fids(lambda header_fid: header_fid.mod_dex >=
-            num_masters and header_fid.object_dex > 0xFFF)
+        mask = bush.game.plugin_flags[pf_name].fid_mask
+        return self._scan_fids(lambda header_fid: header_fid.mod_dex >=
+            num_masters and header_fid.object_dex > mask)
 
     def has_new_records(self):
         """Checks we have any new records."""

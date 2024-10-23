@@ -77,7 +77,7 @@ class _EslMixin(PluginFlag):
             self.help_flip = _('Flip the ESL flag on the selected plugins, '
                 'turning light plugins into regular ones and vice versa.')
             self._index_fmt_str = 'FE%03X'
-            self._fid_fmt_str = '%03X'
+            self.fid_fmt_str = '%03X'
             self.fid_mask = 0x00000FFF
 
     # Additional API for ESL and newer games ----------------------------------
@@ -94,31 +94,45 @@ class _EslMixin(PluginFlag):
         :param game_handle: used to exclude vanilla plugins.
         :return: True if we can flag the specified mod."""
         if is_vanilla(modInfo, reasons, game_handle): return False
-        it = iter(self.unflaggable[self.name])
-        ##: dragons - needs to generalize to arbitrary flag combinations and
-        ##: be unified with validate_type - so we need changes in checkMods
-        already_flagged, conflicting_flag = next(it)
-        for mem in type(self):
-            if mem.cached_type(modInfo):
-                if reasons is None: return False
-                reasons.append(already_flagged if mem is self else
-                               conflicting_flag)
-        chks = [*type(self).error_msgs[self].values()][:2] #len(it)=2 for OVERLAY
-        try:
-            return self.validate_type(modInfo, it, reasons, chks)
-        except ModError as e:
-            if reasons is not None: reasons.append(str(e))
+        if self.cached_type(modInfo):
+            if reasons is None: return False
+            reasons.append(_('This plugin is already %(FLAG)s-flagged.') % {
+                'FLAG': self.name})
+        if self._check_flag_conflicts(modInfo, reasons):
             return False
+        chks = [*type(self).error_msgs[self].values()][1:] # skip flag checks
+        return self.validate_type(modInfo, self.unflaggable[self.name],
+                                  reasons, chks)
 
-    def validate_type(self, modinf, error_sets, reasons=None, merge_checks=None):
+    def _check_flag_conflicts(self, modInfo, reasons=None):
+        conflicting_flags = []
+        for mem in (m for m in type(self) if m is not self):
+            if mem.cached_type(modInfo):
+                if reasons is None: return True
+                conflicting_flags.append(mem)
+        if conflicting_flags:
+            reasons.append(_('This plugin has already been flagged with: '
+                '%(conflicting_flags)s') % {'conflicting_flags': ', '.join(
+                    f.name for f in conflicting_flags)})
+
+    def validate_type(self, modinf, error_sets, reasons=None,
+                      merge_checks=None):
+        """If called from checkMods add the mod to the error set if it fails
+        the typechecks - return value is not used. If called from can_convert,
+        return if the mod is flaggable by us, optionally populating reasons."""
         merge_checks = merge_checks or type(self).error_msgs[self].values()
         for err_set, typecheck in zip(error_sets, merge_checks, strict=True):
-            if typecheck(modinf):
-                try:
-                    err_set.add(modinf.fn_key)
-                except AttributeError:
-                    if reasons is None: return False
-                    reasons.append(err_set)
+            try:
+                if typecheck(modinf):
+                    try:
+                        err_set.add(modinf.fn_key)
+                    except AttributeError:
+                        if reasons is None: return False
+                        reasons.append(err_set)
+            except ModError as e:
+                if reasons is not None:
+                    reasons.append(f'Mergeability scan failed: {str(e)}')
+                return False
         return not reasons
 
     @classmethod
@@ -153,12 +167,13 @@ class _EslMixin(PluginFlag):
         proper_index = mod_infos.real_indices[fid_orig_plugin][0]
         for pflag in scale_flags:
             if pflag.cached_type(orig_minf):
-                return (pflag.index_str(proper_index) + pflag._fid_fmt_str %
+                return (pflag.index_str(proper_index) + pflag.fid_fmt_str %
                         (whole_lo_fid & pflag.fid_mask))
         return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
 
-    def index_str(self, proper_index):
-        return self._index_fmt_str % (proper_index - self.fl_offset)
+    def index_str(self, proper_index, offset=None):
+        return self._index_fmt_str % (proper_index - (
+            self.fl_offset if offset is None else offset))
 
     @classmethod
     def checkboxes(cls):
@@ -177,16 +192,22 @@ class _EslMixin(PluginFlag):
                 'max_regular_plugins': cls.max_plugins,
                 'max_esl_plugins': cls.ESL.max_plugins}
 
+# UI strings ------------------------------------------------------------------
+_cf = ('=== ' + _('Incorrect %(FLAG)s Flag: Conflicting Flags'), _(
+    "The following plugins are %(FLAG)s-flagged, but are also flagged with "
+    "other mutually exclusive flags. Remove the conflicting flags using the "
+    "'Remove XXX Flag' menu item(s)."))
+
 _EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                         '%(status_num_espm)d, ESL: %(ESL)d)')
 # EslMixin.ESL.name must always be 'ESL'
-_EslMixin._error_msgs = {'ESL': {('=== ' + _('Incorrect ESL Flag'),
-    _("The following plugins have an ESL flag, but do not qualify. Either "
-      "remove the flag with 'Remove ESL Flag', or change the extension to "
-      "'.esp' if it is '.esl'.")): lambda minfo:
-                not minfo.formids_in_esl_range()}}
-_EslMixin.unflaggable = {'ESL': [[_('This plugin is already ESL-flagged.'),
-    _('This plugin has the Overlay flag.')],
+_incor = '=== ' + _('Incorrect %(FLAG)s Flag')
+_EslMixin._error_msgs = {'ESL': {(_incor, _(
+    "The following plugins have an ESL flag, but do not qualify. Either "
+    "remove the flag with 'Remove ESL Flag', or change the extension to "
+    "'.esp' if it is '.esl'.")): lambda minfo: minfo.formids_out_of_range(
+    'ESL')}}
+_EslMixin.unflaggable = {'ESL': [
     _('This plugin contains records with FormIDs greater than 0xFFF.')]}
 
 class EslPluginFlag(_EslMixin, PluginFlag):
@@ -199,6 +220,8 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
     ESL = ('esl_flag', '_is_esl', 'l', 4096,
            MergeabilityCheck.ESL_CHECK, 253)
     OVERLAY = ('overlay_flag', '_is_overlay', 'o')
+    MID = ('mid_flag', '_is_mid', 'i', 256,
+           MergeabilityCheck.MID_CHECK, 252)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -214,6 +237,13 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
             self.help_flip = _(
                 'Flip the Overlay flag on the selected plugins, turning '
                 'overlay plugins into regular ones and vice versa.')
+        if self.name == 'MID':
+            self.help_flip = _(
+                'Flip the MID flag on the selected plugins, turning '
+                'medium plugins into regular ones and vice versa.')
+            self._index_fmt_str = 'FD%02X'
+            self.fid_fmt_str = '%04X'
+            self.fid_mask = 0x0000FFFF
 
     def _force_ext_flags(self, mod_info, game_handle, mext):
         # .esl extension does not matter for overlay flagged plugins
@@ -224,19 +254,28 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
 
     @classmethod
     def checkboxes(cls):
-        ttip = _('Whether or not the resulting plugin will only be able to '
-                 'contain overrides, i.e. have the Overlay flag.')
-        return {**super().checkboxes(), cls.OVERLAY: {
-            'cb_label': _('Overlay Flag'), 'chkbx_tooltip': ttip}}
+        ttip = _('Whether or not the resulting plugin will only be limited to '
+                 '0xFFFF form ids, i.e. have the MID flag.')
+        return {**super().checkboxes(), cls.MID: {
+            'cb_label': _('MID Flag'), 'chkbx_tooltip': ttip}}
+
+    @classmethod
+    def deactivate_msg(cls):
+        return _('The following plugins have been deactivated because only '
+            '%(max_regular_plugins)d regular plugins, %(max_esl_plugins)d '
+            'ESL-flagged plugins and %(max_mid_plugins)d MID-flagged plugins '
+            'may be active at the same time.') % {
+                'max_regular_plugins': cls.max_plugins,
+                'max_esl_plugins': cls.ESL.max_plugins,
+                'max_mid_plugins': cls.MID.max_plugins}
 
     @classmethod
     def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
         sup = super().guess_flags(mod_fn_ext, game_handle)
         return sup if masters_supplied else {**sup, cls.OVERLAY: False}
 
-_SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                           '%(status_num_espm)d, ESL: %(ESL)d, Overlay: '
-                           '%(OVERLAY)d)')
+_SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M:'
+    ' %(status_num_espm)d, ESL: %(ESL)d, MID: %(MID)d, Overlay: %(OVERLAY)d)')
 _SFPluginFlag._error_msgs = {**_EslMixin._error_msgs,
   _SFPluginFlag.OVERLAY.name: {
     ('=== ' + _('Incorrect Overlay Flag: No Masters'), _(
@@ -252,19 +291,17 @@ _SFPluginFlag._error_msgs = {**_EslMixin._error_msgs,
         "basic game data. Either remove the flag with 'Remove Overlay "
         "Flag', or remove the new records.")): lambda minfo:
                 minfo.has_new_records(),
-    ('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'), _(
-        "The following plugins have an Overlay flag, but do not qualify "
-        "because they also have an ESL flag. These flags are mutually "
-        "exclusive. %(game_name)s will not treat these as overlay plugins. "
-        "Either remove the Overlay flag with 'Remove Overlay Flag', or "
-        "remove the ESL flag with 'Remove ESL Flag'.")): lambda minfo:
-                _SFPluginFlag.ESL.cached_type(minfo),
-}}
+  },
+  _SFPluginFlag.MID.name:  {(_incor, _(
+      "The following plugins have a MID flag, but do not qualify. Remove the "
+      "flag with 'Remove MID Flag.")): lambda minfo:
+        minfo.formids_out_of_range('MID')}
+}
 _SFPluginFlag.unflaggable = {**_EslMixin.unflaggable,
-    _SFPluginFlag.OVERLAY.name: [[_('This plugin is already Overlay-flagged.'),
-                               _('This plugin has the ESL flag.')],
-                              _('This plugin does not have any masters.'),
-                              _('This plugin contains new records.')]}
+    _SFPluginFlag.OVERLAY.name: [_('This plugin does not have any masters.'),
+                                 _('This plugin contains new records.')],
+    _SFPluginFlag.MID.name: [_('This plugin contains records with FormIDs '
+                               'greater than 0xFFFF.')]}
 
 # Abstract class - to be overridden -------------------------------------------
 class GameInfo(object):
@@ -403,6 +440,14 @@ class GameInfo(object):
         'lm': _('Light Master plugin.'),
         'om': _('Overlay Master plugin.'),
         'bm': _('Blueprint Master plugin.'),
+        'i': _('Mid plugin.'),
+        'im': _('Mid Master plugin.'),
+        # 'ib': _('Mid Blueprint plugin.'),
+        # 'lb': _('Light Blueprint plugin.'),
+        # 'obm': _('Overlay Blueprint Master plugin.'),
+        # 'ibm': _('Mid Blueprint Master plugin.'),
+        # 'lbm': _('Light Blueprint Master plugin.'),
+        # 'ob': _('Overlay Blueprint plugin.'),
     }
 
     def __init__(self, gamePath, *args):
@@ -924,9 +969,13 @@ class GameInfo(object):
                 pflags if (mc := pflag.merge_check) is not None}
             fmt = {'xedit_name': self.Xe.full_name,
                    'game_name': self.display_name}
-            pflags.error_msgs = {
-                pflags[k]: {(h, msg % fmt): lam for (h, msg), lam in v.items()}
-                for k, v in pflags._error_msgs.items()}
+            pflags.error_msgs = {pf: {(_cf[0] % {'FLAG': pf.name},
+                _cf[1] % {'FLAG': pf.name}): pf._check_flag_conflicts} for pf
+                                 in pflags}
+            for k, v in pflags._error_msgs.items():
+                pflags.error_msgs[pflags[k]].update(
+                    {(h % {'FLAG': k}, msg % fmt): lam for (h, msg), lam in
+                     v.items()})
         pflags = self.plugin_flags
         self.all_flags = self.master_flags, pflags
         self.master_flag = self.master_flags.ESM

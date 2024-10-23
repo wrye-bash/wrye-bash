@@ -442,6 +442,7 @@ class OblivionSaveHeader(SaveFileHeader):
 class _AEslSaveHeader(SaveFileHeader):
     """Base class for save headers that may have ESLs."""
     __slots__ = ('masters_regular', 'scale_masters')
+    _scale_unpackers = {'ESL': unpack_short, 'MID': unpack_int}
 
     def _scale_blocks(self) -> tuple[PluginFlag, ...]:
         """Return True if this save file has an ESL block."""
@@ -468,9 +469,9 @@ class _AEslSaveHeader(SaveFileHeader):
         # SSE / FO4 save format with esl block
         self.scale_masters = {}
         for pf in self._scale_blocks():
-            num_esl_masters = unpack_short(ins)
+            num_masts = self._scale_unpackers[pf.name](ins)
             self.scale_masters[pf] = [
-                *map(self._unpack_master, repeat(ins, num_esl_masters))]
+                *map(self._unpack_master, repeat(ins, num_masts))]
         # Check for master's table size (-4 for the stored size at the start of
         # the master table)
         masters_actual = ins.tell() + sse_offset - self._mastersStart - 4
