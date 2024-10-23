@@ -1384,9 +1384,9 @@ class SaveInfo(FileInfo):
         # If this save has ESL masters, and no cosave or a cosave from an
         # older version, then the masters are unreliable and we need to warn
         try:
-            self.has_inaccurate_masters = self.header.masters_esl and (
-                (xse_cosave := self.get_xse_cosave()) is None or
-                not xse_cosave.has_accurate_master_list())
+            self.has_inaccurate_masters = any(self.header.scale_masters.values(
+                )) and ((xse_cosave := self.get_xse_cosave()) is None or not
+            xse_cosave.has_accurate_master_list())
         except (AttributeError, NotImplementedError):
             self.has_inaccurate_masters = False
 

@@ -36,7 +36,7 @@ import sys
 import zlib
 from enum import Enum
 from functools import partial
-from itertools import repeat
+from itertools import repeat, chain
 
 import lz4.block
 
@@ -440,7 +440,7 @@ class OblivionSaveHeader(SaveFileHeader):
 
 class _AEslSaveHeader(SaveFileHeader):
     """Base class for save headers that may have ESLs."""
-    __slots__ = ('masters_regular', 'masters_esl')
+    __slots__ = ('masters_regular', 'scale_masters')
 
     def _esl_block(self) -> bool:
         """Return True if this save file has an ESL block."""
@@ -448,7 +448,7 @@ class _AEslSaveHeader(SaveFileHeader):
 
     @property
     def masters(self):
-        return self.masters_regular + self.masters_esl
+        return *self.masters_regular, *chain(*self.scale_masters.values())
 
     def _load_masters(self, ins):
         # Skip super, that would try to load and assign self.masters
@@ -466,12 +466,11 @@ class _AEslSaveHeader(SaveFileHeader):
         self.masters_regular = [
             *map(unpack_str16, repeat(ins, num_regular_masters))]
         # SSE / FO4 save format with esl block
+        self.scale_masters = {}
         if self._esl_block():
             num_esl_masters = unpack_short(ins)
-            self.masters_esl = [
+            self.scale_masters['ESL'] = [
                 *map(unpack_str16, repeat(ins, num_esl_masters))]
-        else:
-            self.masters_esl = []
         # Check for master's table size (-4 for the stored size at the start of
         # the master table)
         masters_actual = ins.tell() + sse_offset - self._mastersStart - 4
@@ -480,29 +479,32 @@ class _AEslSaveHeader(SaveFileHeader):
                                   f'not as expected ({masters_expected}).')
 
     def _decode_masters(self):
-        self.masters_regular = [FName(decoder(x, bolt.pluginEncoding,
-            avoidEncodings=('utf8', 'utf-8'))) for x in self.masters_regular]
-        self.masters_esl = [FName(decoder(x, bolt.pluginEncoding,
-            avoidEncodings=('utf8', 'utf-8'))) for x in self.masters_esl]
+        _dec = lambda x: FName(decoder(x, bolt.pluginEncoding,
+                                       avoidEncodings=('utf8', 'utf-8')))
+        self.masters_regular = [*map(_dec, self.masters_regular)]
+        self.scale_masters = {pf: [*map(_dec, li)] for pf, li in
+                              self.scale_masters.items()}
 
     def _encode_masters(self):
-        self.masters_regular = [encode(x) for x in self.masters_regular]
-        self.masters_esl = [encode(x) for x in self.masters_esl]
+        self.masters_regular = [*map(encode, self.masters_regular)]
+        self.scale_masters = {pf: [*map(encode, li)] for pf, li in
+                              self.scale_masters.items()}
 
     def remap_masters(self, master_map):
         self.masters_regular = [master_map.get(x, x)
                                 for x in self.masters_regular]
-        self.masters_esl = [master_map.get(x, x) for x in self.masters_esl]
+        self.scale_masters = {pf: [master_map.get(x, x) for x in li] for pf, li
+                              in self.scale_masters.items()}
 
     def _dump_masters(self, ins, out):
         # Skip the old masters
         reg_master_count = len(self.masters_regular)
-        esl_master_count = len(self.masters_esl)
         for x in range(reg_master_count):
             _skip_str16(ins)
         # SSE/FO4 format has separate ESL block
         has_esl_block = self._esl_block()
         if has_esl_block:
+            esl_master_count = len(self.scale_masters.get('ESL', ()))
             ins.seek(2, 1) # skip ESL count
             for count in range(esl_master_count):
                 _skip_str16(ins)
@@ -510,8 +512,9 @@ class _AEslSaveHeader(SaveFileHeader):
         pack_byte(out, len(self.masters_regular))
         _write_s16_list(out, self.masters_regular)
         if has_esl_block:
-            pack_short(out, len(self.masters_esl))
-            _write_s16_list(out, self.masters_esl)
+            masts = self.scale_masters.get('ESL', ())
+            pack_short(out, len(masts))
+            _write_s16_list(out, masts)
 
     def _master_block_size(self):
         return (3 if self._esl_block() else 1) + sum(

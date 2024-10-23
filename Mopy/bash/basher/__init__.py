@@ -453,7 +453,7 @@ class MasterList(_ModsUIList):
         self.fileInfo = None
         self._curr_lo_index = {} # cache, orders missing last alphabetically
         self._curr_real_index = {}
-        # Cache based on SaveHeader.masters_regular and masters_esl
+        # Cache based on SaveHeader.masters_regular and scale_masters
         self._save_lo_real_index = defaultdict(lambda: (sys.maxsize, ''))
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
@@ -509,7 +509,8 @@ class MasterList(_ModsUIList):
         # info attributes?
         can_have_sizes = isinstance(fileInfo, bosh.ModInfo) and \
             bush.game.Esp.check_master_sizes
-        all_esl_masters = set(getattr(fileInfo.header, 'masters_esl', []))
+        all_esl_masters = set(
+            getattr(fileInfo.header, 'scale_masters', {'ESL': []})['ESL'])
         all_master_sizes = (fileInfo.header.master_sizes if can_have_sizes
                             else repeat(0))
         for mi, (ma_name, ma_size) in enumerate(
@@ -2202,9 +2203,12 @@ class _SaveMasterList(MasterList):
                 new_file_info.header.masters_regular)}
             num_regular = len(save_lo_regular)
             # For ESL masters, we have to add an offset to the real index
-            for i, m in enumerate(new_file_info.header.masters_esl):
-                self._save_lo_real_index[m] = num_regular + i, f'FE {i:03X}'
-        except AttributeError: # no masters_regular/esl
+            for li in new_file_info.header.scale_masters.values():
+                i = num_regular
+                for i, m in enumerate(li, num_regular):
+                    self._save_lo_real_index[m] = i, f'FE {i-num_regular:03X}'
+                num_regular = i
+        except AttributeError: # no masters_regular/scale_masters attributes
             save_lo_regular = {m: (i, f'{i:02X}') for i, m in enumerate(
                 new_file_info.masterNames)}
         # For regular masters, simply store the LO index
