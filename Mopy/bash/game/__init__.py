@@ -123,7 +123,11 @@ class _EslMixin(PluginFlag):
                 '%(conflicting_flags)s') % {'conflicting_flags': ', '.join(
                     f.name for f in conflicting_flags)})
 
-    def validate_type(self, modinf, error_sets, reasons=None, merge_checks=None):
+    def validate_type(self, modinf, error_sets, reasons=None,
+                      merge_checks=None):
+        """If called from checkMods add the mod to the error set if it fails
+        the typechecks - return value is not used. If called from can_convert,
+        return if the mod is flaggable by us, optionally populating reasons."""
         merge_checks = merge_checks or type(self).error_msgs[self].values()
         for err_set, typecheck in zip(error_sets, merge_checks, strict=True):
             if typecheck(modinf):
