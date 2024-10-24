@@ -242,20 +242,17 @@ class SaveFileHeader(object):
     # read
     _unpackers_post_ss = {}
 
-    def __init__(self, save_inf, load_image=False, ins=None):
+    def __init__(self, save_inf, load_image=False):
         self._save_info = save_inf
         self.ssData = None # lazily loaded at runtime
-        self.read_save_header(load_image, ins)
+        self.read_save_header(load_image)
 
     @final
-    def read_save_header(self, load_image=False, ins=None):
+    def read_save_header(self, load_image=False):
         """Fully reads this save header, optionally loading the image as
         well."""
         try:
-            if ins is None:
-                with self._save_info.abs_path.open(u'rb') as ins:
-                    self.load_header(ins, load_image)
-            else:
+            with self._save_info.abs_path.open('rb') as ins:
                 self.load_header(ins, load_image)
         #--Errors
         except (OSError, struct_error) as e:
@@ -736,9 +733,9 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         'plugin_info_unknown2':  (00, unpack_byte),
     }
 
-    def __init__(self, save_inf, load_image=False, ins=None):
+    def __init__(self, save_inf, load_image=False):
         self._plugin_info_size = {}
-        super().__init__(save_inf, load_image, ins)
+        super().__init__(save_inf, load_image)
 
     def _unpack_master(self, ins):
         mas = unpack_str16(ins)
