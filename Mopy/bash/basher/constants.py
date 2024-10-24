@@ -264,8 +264,8 @@ settingDefaults = { # keep current naming format till refactored
         'mods.text.esom':               (234, 49, 9),
         'mods.text.esi':                (0,   0,   0),   # 'BLACK'
         'mods.text.esim':               (0,   0,   0),   # 'BLACK'
-        'mods.text.esb':                (0,   0,   0),   # 'BLACK'
-        'mods.text.esbm':               (255, 255, 0),
+        'mods.text.esb':                (0,   128,   192),
+        'mods.text.esbm':               (0,   128,   255),
         'mods.text.flags_conflict':     (255, 0, 0),
         'mods.text.bashedPatch':        (30,  157, 251),
         #--INI Edits Tab
