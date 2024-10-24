@@ -95,21 +95,21 @@ class _EslMixin(PluginFlag):
         :return: True if we can flag the specified mod."""
         if is_vanilla(modInfo, reasons, game_handle) and reasons is None:
             return False
-        it = iter(self.unflaggable[self.name])
         if self._check_flag_conflicts(modInfo, reasons):
             return False
         chks = [*type(self).error_msgs[self].values()][1:] # skip flag checks
         try:
-            return self.validate_type(modInfo, it, reasons, chks)
+            return self.validate_type(modInfo, self.unflaggable[self.name],
+                                      reasons, chks)
         except ModError as e:
             if reasons is not None: reasons.append(str(e))
             return False
 
     def _check_flag_conflicts(self, modInfo, reasons=None, skip_self=False):
         conflicting_flags = []
-        for mem in type(self):
-            if skip_self and mem is self:
-                continue
+        it = (m for m in type(self) if m is not self) if skip_self else type(
+            self)
+        for mem in it:
             if mem.cached_type(modInfo):
                 if reasons is None:
                     return True
