@@ -243,22 +243,21 @@ class SaveFileHeader(object):
     _unpackers = {}
     # Same as _unpackers, but processed immediately after the screenshot is
     # read
-    _unpackers_post_ss = {}
+    _unpackers_post_ss = {
+        '_mastersStart': (00, lambda ins: ins.tell()),
+    }
 
-    def __init__(self, save_inf, load_image=False, ins=None):
+    def __init__(self, save_inf, load_image=False):
         self._save_info = save_inf
         self.ssData = None # lazily loaded at runtime
-        self.read_save_header(load_image, ins)
+        self.read_save_header(load_image)
 
     @final
-    def read_save_header(self, load_image=False, ins=None):
+    def read_save_header(self, load_image=False):
         """Fully reads this save header, optionally loading the image as
         well."""
         try:
-            if ins is None:
-                with self._save_info.abs_path.open(u'rb') as ins:
-                    self.load_header(ins, load_image)
-            else:
+            with self._save_info.abs_path.open('rb') as ins:
                 self.load_header(ins, load_image)
         #--Errors
         except (OSError, struct_error) as e:
@@ -300,7 +299,6 @@ class SaveFileHeader(object):
 
     def _load_masters(self, ins):
         self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
-        self._mastersStart = ins.tell()
         self.masters = []
         numMasters = unpack_byte(ins)
         append_master = self.masters.append
@@ -441,8 +439,11 @@ class OblivionSaveHeader(SaveFileHeader):
 
 class _AEslSaveHeader(SaveFileHeader):
     """Base class for save headers that may have ESLs."""
-    __slots__ = ('masters_regular', 'scale_masters')
+    __slots__ = ('masters_regular', 'scale_masters', 'plugin_info_size')
     _scale_unpackers = {'ESL': unpack_short, 'MID': unpack_int}
+    _unpackers_post_ss = {**SaveFileHeader._unpackers_post_ss,
+        'plugin_info_size': (00, unpack_int)} # size of the master table
+    _masters_offset = 4
 
     def _scale_blocks(self) -> tuple[PluginFlag, ...]:
         """Return True if this save file has an ESL block."""
@@ -455,10 +456,9 @@ class _AEslSaveHeader(SaveFileHeader):
     def _load_masters(self, ins):
         # Skip super, that would try to load and assign self.masters
         self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
-        self._mastersStart = ins.tell()
-        self._load_masters_16(ins, masters_expected=unpack_int(ins))
+        self._load_masters_16(ins)
 
-    def _load_masters_16(self, ins, sse_offset=0, masters_expected=None):
+    def _load_masters_16(self, ins):
         """Load regular masters and ESL masters, with an optional offset for
         the compressed SSE saves."""
         # Store separate lists of regular and ESLs masters for the Indices
@@ -472,12 +472,11 @@ class _AEslSaveHeader(SaveFileHeader):
             num_masts = self._scale_unpackers[pf.name](ins)
             self.scale_masters[pf] = [
                 *map(self._unpack_master, repeat(ins, num_masts))]
-        # Check for master's table size (-4 for the stored size at the start of
-        # the master table)
-        masters_actual = ins.tell() + sse_offset - self._mastersStart - 4
-        if masters_expected is not None and masters_actual != masters_expected:
+        # Check for master's table size (- the size of plugin_info_size)
+        masters_actual = ins.tell() - self._mastersStart - self._masters_offset
+        if masters_actual != self.plugin_info_size:
             raise SaveHeaderError(f'Save game masters size ({masters_actual}) '
-                                  f'not as expected ({masters_expected}).')
+                f'not as expected ({self.plugin_info_size}).')
 
     def _unpack_master(self, ins):
         return unpack_str16(ins)
@@ -552,6 +551,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
     }
     _unpackers_post_ss = {
         '_formVersion': (00, unpack_byte),
+        **_AEslSaveHeader._unpackers_post_ss,
     }
 
     def __is_sse(self): return self.version == 12
@@ -575,19 +575,17 @@ class SkyrimSaveHeader(_AEslSaveHeader):
         super().load_image_data(ins, load_image)
 
     def _load_masters(self, ins):
-        if (self.__is_sse() and
-                self._compress_type is not _SaveCompressionType.NONE):
+        if self.__compressed():
             self._sse_start = ins.tell()
             decompressed_size = unpack_int(ins)
             compressed_size = unpack_int(ins)
-            sse_offset = ins.tell()
             ins = _decompress_save(ins, compressed_size, decompressed_size,
                 self._compress_type, light_decompression=True)
-        else:
-            sse_offset = 0
-        self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
-        self._mastersStart = ins.tell() + sse_offset
-        self._load_masters_16(ins, sse_offset, masters_expected=unpack_int(ins))
+        super()._load_masters(ins)
+
+    def __compressed(self):
+        return self.__is_sse() and self._compress_type is not \
+            _SaveCompressionType.NONE
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
@@ -597,8 +595,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
         self.gameTicks = playSeconds * 1000
 
     def _do_write_header(self, ins, out):
-        if (not self.__is_sse() or
-                self._compress_type is _SaveCompressionType.NONE):
+        if not self.__compressed():
             # Skyrim LE or uncompressed - can use the default implementation
             return super()._do_write_header(ins, out)
         # Write out everything up until the compressed portion
@@ -629,6 +626,7 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     _unpackers_post_ss = {
         '_formVersion': (00, unpack_byte),
         'game_ver':     (00, unpack_str16),
+        **_AEslSaveHeader._unpackers_post_ss,
     }
     _compress_type = _SaveCompressionType.NONE
 
@@ -701,11 +699,10 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     save_magic = b'SFS_SAVEGAME'
     can_edit_header = False
     __slots__ = ('engineVersion', 'saveVersion', 'saveNumber', 'gameDate',
-                 'raceEid', 'pcSex', 'pcExp', 'pcLvlExp', 'filetime',
-                 'unknown3', '_formVersion', 'game_ver', 'other_game_ver',
-                 'plugin_info_size', '_padding', *_ABcpsSaveHeader._bcps_unpackers,
-                 '_bcps_rest', '_master_info_block_size',
-                 'plugin_info_unknown1', 'plugin_info_unknown2')
+        'raceEid', 'pcSex', 'pcExp', 'pcLvlExp', 'filetime', 'unknown3',
+        '_formVersion', 'game_ver', 'other_game_ver', '_padding',
+        *_ABcpsSaveHeader._bcps_unpackers, '_master_info_block_size',
+        '_bcps_rest', 'plugin_info_unknown1', 'plugin_info_unknown2')
     _unpackers = {
         'header_size':      (00, unpack_int),
         'engineVersion':    (00, unpack_int),
@@ -729,14 +726,16 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         # Maybe this is the version the playthrough was started on, it seems
         # to not change when the game version is upgraded
         'other_game_ver':   (00, unpack_str16),
+        **SaveFileHeader._unpackers_post_ss,
         'plugin_info_size': (00, unpack_short), # pluginInfoSize
         'plugin_info_unknown1':  (00, unpack_byte),
         'plugin_info_unknown2':  (00, unpack_byte),
     }
+    _masters_offset = 2
 
-    def __init__(self, save_inf, load_image=False, ins=None):
+    def __init__(self, save_inf, load_image=False):
         self._master_info_block_size = {}
-        super().__init__(save_inf, load_image, ins)
+        super().__init__(save_inf, load_image)
 
     def _unpack_master(self, ins):
         mas = unpack_str16(ins)
@@ -766,11 +765,6 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         if actual != self.header_size:
             raise SaveHeaderError(f'New Save game header size ({actual}) not '
                                   f'as expected ({self.header_size}).')
-
-    def _load_masters(self, ins):
-        self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
-        self._mastersStart = ins.tell()
-        self._load_masters_16(ins)
 
     def calc_time(self):
         self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
