@@ -2207,7 +2207,7 @@ class _SaveMasterList(MasterList):
                 for i, m in enumerate(li, num_regular):
                     rdex[m] = i, pf.index_str(i, num_regular)
                 num_regular = i
-        except AttributeError: # no masters_regular/esl
+        except AttributeError: # no masters_regular/scale_masters attributes
             # For regular masters, simply store the LO index
             self._save_lo_real_index = {m: (i, f'{i:02X}') for i, m in
                                         enumerate(new_file_info.masterNames)}
