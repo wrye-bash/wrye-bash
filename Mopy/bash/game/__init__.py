@@ -200,11 +200,12 @@ _cf = ('=== ' + _('Incorrect %(FLAG)s Flag: Conflicting Flags'), _(
 _EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                         '%(status_num_espm)d, ESL: %(ESL)d)')
 # EslMixin.ESL.name must always be 'ESL'
-_EslMixin._error_msgs = {'ESL': {('=== ' + _('Incorrect %(FLAG)s Flag'),
-    _("The following plugins have an ESL flag, but do not qualify. Either "
-      "remove the flag with 'Remove ESL Flag', or change the extension to "
-      "'.esp' if it is '.esl'.")): lambda minfo:
-                not minfo.formids_in_range('ESL')}}
+_incor = '=== ' + _('Incorrect %(FLAG)s Flag')
+_EslMixin._error_msgs = {'ESL': {(_incor, _(
+    "The following plugins have an ESL flag, but do not qualify. Either "
+    "remove the flag with 'Remove ESL Flag', or change the extension to "
+    "'.esp' if it is '.esl'.")): lambda minfo: minfo.formids_out_of_range(
+    'ESL')}}
 _EslMixin.unflaggable = {'ESL': [
     _('This plugin contains records with FormIDs greater than 0xFFF.')]}
 
@@ -290,10 +291,10 @@ _SFPluginFlag._error_msgs = {**_EslMixin._error_msgs,
         "Flag', or remove the new records.")): lambda minfo:
                 minfo.has_new_records(),
   },
-  _SFPluginFlag.MID.name:  {('=== ' + _('Incorrect %(FLAG)s Flag'),
-    _("The following plugins have a MID flag, but do not qualify. Remove the "
+  _SFPluginFlag.MID.name:  {(_incor, _(
+      "The following plugins have a MID flag, but do not qualify. Remove the "
       "flag with 'Remove MID Flag.")): lambda minfo:
-                not minfo.formids_in_range('MID')}
+        minfo.formids_out_of_range('MID')}
 }
 _SFPluginFlag.unflaggable = {**_EslMixin.unflaggable,
     _SFPluginFlag.OVERLAY.name: [_('This plugin does not have any masters.'),

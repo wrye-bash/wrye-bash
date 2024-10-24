@@ -483,11 +483,11 @@ class ModInfo(FileInfo):
                     f"pos: {ins.tell():d}\nCaused by: '{e!r}'")
         return False
 
-    def formids_in_range(self, pf_name: str):
+    def formids_out_of_range(self, pf_name: str):
         """Check if all FormIDs are in the range of pf_name plugin type.."""
         num_masters = len(self.masterNames)
         mask = bush.game.plugin_flags[pf_name]._fid_mask
-        return not self._scan_fids(lambda header_fid: header_fid.mod_dex >=
+        return self._scan_fids(lambda header_fid: header_fid.mod_dex >=
             num_masters and header_fid.object_dex > mask)
 
     def has_new_records(self):
