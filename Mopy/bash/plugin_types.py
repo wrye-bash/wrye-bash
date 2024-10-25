@@ -178,7 +178,7 @@ class MergeabilityCheck(Enum):
                     'The following plugins could be assigned an MID flag, '
                     'but do not have one right now.')
             case _:
-                return None, '', ''
+                h, m = '', ''
         return [p for p in mod_infos.values() if self in p.merge_types], h, m
 
     def display_info(self, minf, checkMark):

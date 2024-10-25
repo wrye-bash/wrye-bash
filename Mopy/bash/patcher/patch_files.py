@@ -225,7 +225,8 @@ class PatchFile(ModFile):
         # Set of all Bash Tags that don't trigger an import from some patcher
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
-        mi_mergeable = MergeabilityCheck.MERGE.cached_types(pfile_minfos)[0]
+        mi_mergeable = [modinfo.fn_key for modinfo in
+                        MergeabilityCheck.MERGE.cached_types(pfile_minfos)[0]]
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
             bashTags = self.all_tags[modName]
