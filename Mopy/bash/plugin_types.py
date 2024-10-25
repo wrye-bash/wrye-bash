@@ -156,16 +156,13 @@ class MergeabilityCheck(Enum):
         """Return *all* mod infos that passed our mergeability check, with a
         header and message for the mod checker UI."""
         match self:
-            case MergeabilityCheck.ESL_CHECK:
-                h, m = '=== ' + _('ESL-Capable'), _(
-                    'The following plugins could be assigned an ESL flag, but '
-                    'do not have one right now.')
-            case MergeabilityCheck.OVERLAY_CHECK:
-                h, m = '=== ' + _('Overlay-Capable'), _(
-                    'The following plugins could be assigned an Overlay flag, '
-                    'but do not have one right now.')
+            case MergeabilityCheck.MERGE:
+                h, m = '=== ' + _('Mergeable'), _(
+                    'The following plugins could be merged into a Bashed '
+                    'Patch, but are currently not merged.')
             case _:
-                h, m = '', ''
+                h, m = ('=== ' + _('%(FLAG)s-Capable') % (n := {'FLAG': self}),
+                    _('The following plugins could be %(FLAG)s-flagged.' % n))
         return [p for p in mod_infos.values() if self in p.merge_types], h, m
 
     def display_info(self, minf, checkMark):
@@ -291,6 +288,12 @@ class PluginFlag(Enum):
                  'because only %(max_regular_plugins)d plugins '
                  'may be active at the same time.') % {
             'max_regular_plugins': cls.max_plugins}
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
 
 # easiest way to define enum class variables
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')

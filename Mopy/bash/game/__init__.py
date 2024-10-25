@@ -123,7 +123,7 @@ class _EslMixin(PluginFlag):
         """Check if the flags in flag_dict are compatible."""
         set_true = [k for k, v in flag_dict.items() if k in cls and v]
         if raise_on_invalid and len(set_true) > 1:
-            raise InvalidPluginFlagsError([k.name for k in set_true])
+            raise InvalidPluginFlagsError(set_true)
         elif not set_true:
             return flag_dict
         return {**flag_dict, **{ # set all other flags to False

@@ -201,12 +201,6 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for corrupt plugins
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
-    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
-    # already been merged into a BP
-    mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
-    can_merge = {m for m, inf in modInfos.items() if inf in mergeable and
-        m not in modInfos.merged and 'NoMerge' not in inf.getBashTags()}
-    # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
     # between ESL and Overlay flags.
@@ -645,10 +639,15 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
             if pl_set:
                 _log_plugins(head, msg, pl_set)
-    if can_merge:
-        _log_plugins('=== ' + _('Mergeable'), _(
-            'The following plugins could be merged into a Bashed Patch, but '
-            'are currently not merged.'), can_merge)
+    # -------------------------------------------------------------------------
+    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
+    # already been merged into a BP
+    if (merge := MergeabilityCheck.MERGE) in bush.game.mergeability_checks:
+        minfos_cache, head, msg = merge.cached_types(modInfos)
+        can_merge = {m for inf in minfos_cache if (m := inf.fn_key) not in
+                     modInfos.merged and 'NoMerge' not in inf.getBashTags()}
+        if can_merge:
+            _log_plugins(head, msg, can_merge)
     if should_deactivate:
         _log_plugins('=== ' + _(u'Deactivate-tagged But Active'), _(
             "The following plugins are tagged with 'Deactivate' and should "
