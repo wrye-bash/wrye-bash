@@ -380,7 +380,7 @@ class _ModsUIList(UIList):
             item_format.text_key = bush.game.mod_keys[suffix]
             mouse_text.append(bush.game.plugin_type_text[suffix])
         except KeyError:
-            deprint(f'No key for suffix {suffix} in {item_name}') # XXX debug
+            pass
         if 'Deactivate' in fileBashTags: # was for mods only
             item_format.italics = True
         return fileBashTags

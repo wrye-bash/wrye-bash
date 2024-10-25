@@ -2395,7 +2395,6 @@ class ModInfos(TableFileInfos):
             # support -> not ESL-flaggable), or the cached size matches what we
             # have on disk, and we have data for all required mergeability
             # checks, we can cache the info
-            deprint(f'{fn_mod}: {new_checks=}, {canMerge=}')
             if len(new_checks) == all_checks or (len(canMerge) == all_checks
                     and cached_size == modInfo.fsize):
                 if canMerge != (canMerge := canMerge | new_checks):
