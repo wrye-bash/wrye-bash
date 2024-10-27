@@ -1567,8 +1567,6 @@ class AFlipFlagLink(EnabledLink):
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
             ldiff = bosh.modInfos.refreshLoadOrder()
-            # converted to esps/esls - rescan mergeable
-            bosh.modInfos.rescanMergeable(self.selected)
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
                 altered={p.abs_path for p in self.iselected_infos()})

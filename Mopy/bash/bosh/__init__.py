@@ -453,6 +453,7 @@ class ModInfo(FileInfo):
 
     def copy_persistent_attrs(self, other, exclude=None):
         super().copy_persistent_attrs(other, exclude)
+        modInfos.rescanMergeable([self.fn_key], sort_descending_lo=False)
         modInfos._update_info_sets()#we need to recalculate merged/imported based on the config
 
     @classmethod
@@ -470,7 +471,7 @@ class ModInfo(FileInfo):
             pl_flag.set_mod_flag(self, flag_val, bush.game)
             if flag_val is not None and pl_flag is bush.game.master_flag:
                 self._update_onam() # recalculate ONAM info if necessary
-        if save_flags: self.writeHeader()
+        if save_flags: self.writeHeader(rescan_merge=True)
 
     def _scan_fids(self, fid_cond):
         with ModReader.from_info(self) as ins:
@@ -712,10 +713,11 @@ class ModInfo(FileInfo):
         self._reset_masters()
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
-        flags_dict = dict.fromkeys(chain(*bush.game.all_flags))
+        flags_dict = dict.fromkeys(chain(*bush.game.all_flags)) # values = None
         self.set_plugin_flags(flags_dict, save_flags=False) # set _is_esl etc
 
-    def writeHeader(self, old_masters: list[FName] | None = None):
+    def writeHeader(self, old_masters: list[FName] | None = None, *,
+                    rescan_merge=False):
         """Write Header. Actually have to rewrite entire file."""
         with TempFile() as tmp_plugin:
             with FormIdReadContext.from_info(self) as ins:
@@ -742,8 +744,10 @@ class ModInfo(FileInfo):
         self.setmtime(crc_changed=True)
         #--Merge info
         merge_size, canMerge = self.get_table_prop('mergeInfo', (None, {}))
-        if merge_size is not None:
+        if not rescan_merge and merge_size is not None:
             self.set_table_prop('mergeInfo', (self.abs_path.psize, canMerge))
+        else:
+            modInfos.rescanMergeable([self.fn_key], sort_descending_lo=False)
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -2385,7 +2389,7 @@ class ModInfos(TableFileInfos):
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
         #--Mods that need to be rescanned
-        rescan_mods = set()
+        rescan_mods = []
         full_checks = bush.game.mergeability_checks
         quick_checks = {mc: pflag.cached_type for pflag in
             bush.game.plugin_flags if (mc := pflag.merge_check) in full_checks}
@@ -2415,24 +2419,25 @@ class ModInfos(TableFileInfos):
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
                 # we have not yet run for this plugin
-                rescan_mods.add(fn_mod)
+                rescan_mods.append(fn_mod)
         if rescan_mods:
-            self.rescanMergeable(rescan_mods) ##: maybe re-add progress?
-        return rescan_mods | changed
+            self.rescanMergeable(rescan_mods, sort_descending_lo=False) ##: maybe re-add progress?
+        return {*changed, *rescan_mods}
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
-                        return_results=False):
+                        return_results=False, sort_descending_lo=True):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
         merge = MergeabilityCheck.MERGE
         full_checks = bush.game.mergeability_checks
-        nones = dict.fromkeys(full_checks) # avoid creating a dict per mod
+        all_reasons = defaultdict(list) if return_results else dict.fromkeys(
+            full_checks)
+        if sort_descending_lo: # sort in inverted load order for _dependent
+            names = sorted(names, key=load_order.cached_lo_index, reverse=True)
         with progress:
             progress.setFull(max(len(names),1))
             result = {}
-            for i, fileName in enumerate(names): ##: this must be sorted in inverted load order for _dependent
-                all_reasons = {m: [] for m in full_checks} if return_results \
-                    else nones
+            for i, fileName in enumerate(names):
                 progress(i, fileName)
                 fileInfo = self[fileName]
                 check_results = {}
@@ -2452,6 +2457,7 @@ class ModInfos(TableFileInfos):
                         all_reasons[merge].append(
                             _('Technically mergeable, but has NoMerge tag.'))
                     result[fileName] = all_reasons
+                    all_reasons = defaultdict(list)
                 fileInfo.set_table_prop('mergeInfo',
                                         (fileInfo.fsize, check_results))
             return result
