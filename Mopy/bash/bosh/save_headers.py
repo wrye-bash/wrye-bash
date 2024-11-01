@@ -47,7 +47,7 @@ from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
     remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
     unpack_float, unpack_int, unpack_many, unpack_short, unpack_str8, \
     unpack_str16, unpack_str16_delim, unpack_str_byte_delim, \
-    unpack_str_int_delim, gen_enum_parser, unpack_int64
+    unpack_str_int_delim, unpack_int64
 from ..exception import SaveHeaderError
 from ..plugin_types import PluginFlag
 
@@ -71,8 +71,7 @@ def _pack_str8_1(out, val): # TODO: val = val.reencode(...)
     pack_bzstr8(out, val)
     return len(val) + 2
 
-##: Maybe all this (de)compression stuff should go to bolt? Then we could try
-# deduplicating the BSA ones as well
+# Compression types for saves -------------------------------------------------
 class _SaveCompressionType(Enum):
     """The possible types of compression that saves can have. Not all games
     have all of these available."""
@@ -80,52 +79,59 @@ class _SaveCompressionType(Enum):
     ZLIB = 1
     LZ4 = 2
 
-_sc_parser = gen_enum_parser(_SaveCompressionType)
+    def decompress_save(self, ins, compressed_size: int,
+                        decompressed_size: int, *, light_decompression=False):
+        """Decompress the specified data using either LZ4 or zlib."""
+        match self:
+            case _SaveCompressionType.ZLIB:
+                decompressor = _decompress_save_zlib
+            case _SaveCompressionType.LZ4:
+                if light_decompression:
+                    decompressor = _decompress_save_lz4_light
+                else:
+                    decompressor = _decompress_save_lz4
+            case _:
+                raise SaveHeaderError(f'Unknown compression type: {self}')
+        try:
+            decompressed_data = decompressor(ins, compressed_size,
+                                             decompressed_size)
+        except (zlib.error, lz4.block.LZ4BlockError) as e:
+            raise SaveHeaderError(f'{self.name} error while '
+                f'decompressing {self.name.lower}-compressed header: {e!r}')
+        if not light_decompression and len(decompressed_data) != decompressed_size:
+            raise SaveHeaderError(f'{self.name.lower}-decompressed header '
+                f'size incorrect - expected {decompressed_size}, but got '
+                f'{len(decompressed_data)}.')
+        # Wrap the decompressed data in a file-like object and return it
+        return io.BytesIO(decompressed_data)
 
-def _decompress_save(ins, compressed_size: int, decompressed_size: int,
-        compression_type: _SaveCompressionType, *, light_decompression=False):
-    """Decompress the specified data using either LZ4 or zlib, depending on
-    compression_type. Do not call for uncompressed files!"""
-    match compression_type:
-        case _SaveCompressionType.ZLIB:
-            decompressor = _decompress_save_zlib
-        case _SaveCompressionType.LZ4:
-            if light_decompression:
-                decompressor = _decompress_save_lz4_light
-            else:
-                decompressor = _decompress_save_lz4
-        case _:
-            raise SaveHeaderError(f'Unknown compression type '
-                                  f'{compression_type} or uncompressed file')
-    return decompressor(ins, compressed_size, decompressed_size)
+    def compress_save(self, to_compress: io.BytesIO):
+        """Compress the specified data using either LZ4 or zlib."""
+        try:
+            match self:
+                case _SaveCompressionType.ZLIB:
+                    # SSE uses zlib level 1 # TODO(SF) What does Starfield use?
+                    return zlib.compress(to_compress.getvalue(), 1)
+                case _SaveCompressionType.LZ4:
+                    # SSE uses default lz4 settings; store_size is not in docs, so:
+                    # noinspection PyArgumentList
+                    return lz4.block.compress(to_compress.getvalue(),
+                                              store_size=False)
+                case _:
+                    raise SaveHeaderError(f'Unknown compression type: {self}')
+        except (zlib.error, lz4.block.LZ4BlockError) as e:
+            raise SaveHeaderError(f'Failed to compress header: {e!r}')
 
-def _decompress_save_zlib(ins, compressed_size: int, decompressed_size: int):
+def _decompress_save_zlib(ins, compressed_size: int, _decomp_size: int):
     """Decompress compressed_size bytes from the specified input stream using
     zlib, sanity-checking decompressed size afterwards."""
-    try:
-        decompressed_data = zlib.decompress(ins.read(compressed_size))
-    except zlib.error as e:
-        raise SaveHeaderError(f'zlib error while decompressing '
-                              f'zlib-compressed header: {e!r}')
-    if len(decompressed_data) != decompressed_size:
-        raise SaveHeaderError(
-            f'zlib-decompressed header size incorrect - expected '
-            f'{decompressed_size}, but got {len(decompressed_data)}.')
-    return io.BytesIO(decompressed_data)
+    return zlib.decompress(ins.read(compressed_size))
 
 def _decompress_save_lz4(ins, compressed_size: int, decompressed_size: int):
     """Decompress compressed_size bytes from the specified input stream using
     LZ4, sanity-checking decompressed size afterwards."""
-    try:
-        decompressed_data = lz4.block.decompress(
-            ins.read(compressed_size), uncompressed_size=decompressed_size * 2)
-    except lz4.block.LZ4BlockError as e:
-        raise SaveHeaderError(f'LZ4 error while decompressing '
-                              f'lz4-compressed header: {e!r}')
-    if (len_data := len(decompressed_data)) != decompressed_size:
-        raise SaveHeaderError(f'lz4-decompressed header size incorrect - '
-            f'expected {decompressed_size}, but got {len_data}.')
-    return io.BytesIO(decompressed_data)
+    return lz4.block.decompress(ins.read(compressed_size),
+        uncompressed_size=decompressed_size * 2)
 
 def _decompress_save_lz4_light(ins, _comp_size: int, _decomp_size: int):
     """Read the start of the LZ4 compressed data in the SSE savefile and
@@ -180,30 +186,7 @@ def _decompress_save_lz4_light(ins, _comp_size: int, _decomp_size: int):
         if masters_size is not None:
             if len(uncompressed) >= masters_size + 5:
                 break
-    # Wrap the decompressed data in a file-like object and return it
-    return io.BytesIO(uncompressed)
-
-def _compress_save(to_compress: io.BytesIO,
-        compression_type: _SaveCompressionType):
-    """Compress the specified data using either LZ4 or zlib, depending on
-    compression_type. Do not call for uncompressed files!"""
-    try:
-        match compression_type:
-            case _SaveCompressionType.ZLIB:
-                # SSE uses zlib level 1
-                # TODO(SF) What does Starfield use?
-                return zlib.compress(to_compress.getvalue(), 1)
-            case _SaveCompressionType.LZ4:
-                # SSE uses default lz4 settings; store_size is not in docs, so:
-                # noinspection PyArgumentList
-                return lz4.block.compress(to_compress.getvalue(),
-                                          store_size=False)
-            case _:
-                raise SaveHeaderError(f'Unknown compression type '
-                                      f'{compression_type} or uncompressed '
-                                      f'file')
-    except (zlib.error, lz4.block.LZ4BlockError) as e:
-        raise SaveHeaderError(f'Failed to compress header: {e!r}')
+    return uncompressed
 
 def calc_time_fo4(gameDate: bytes) -> (float, int):
     """Handle time calculation from FO4 and newer games. Takes gameDate and
@@ -566,7 +549,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
 
     def load_image_data(self, ins, load_image=False):
         if self.__is_sse():
-            self._compress_type = _sc_parser[unpack_short(ins)]
+            self._compress_type = _SaveCompressionType(unpack_short(ins))
         # -4 for the header size itself (uint32)
         actual = ins.tell() - len(self.__class__.save_magic) - 4
         if actual != self.header_size:
@@ -579,8 +562,8 @@ class SkyrimSaveHeader(_AEslSaveHeader):
             self._sse_start = ins.tell()
             decompressed_size = unpack_int(ins)
             compressed_size = unpack_int(ins)
-            ins = _decompress_save(ins, compressed_size, decompressed_size,
-                self._compress_type, light_decompression=True)
+            ins = self._compress_type.decompress_save(ins, compressed_size,
+                decompressed_size, light_decompression=True)
         super()._load_masters(ins)
 
     def __compressed(self):
@@ -603,8 +586,8 @@ class SkyrimSaveHeader(_AEslSaveHeader):
         # Now we need to decompress the portion again
         decompressed_size = unpack_int(ins)
         compressed_size = unpack_int(ins)
-        ins = _decompress_save(ins, compressed_size, decompressed_size,
-            self._compress_type)
+        ins = self._compress_type.decompress_save(ins, compressed_size,
+                                                  decompressed_size)
         # Gather the data that will be compressed
         to_compress = io.BytesIO()
         pack_byte(to_compress, self._formVersion)
@@ -614,7 +597,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
             to_compress.write(block)
         # Compress the gathered data, write out the sizes and finally write out
         # the actual compressed data
-        compressed_data = _compress_save(to_compress, self._compress_type)
+        compressed_data = self._compress_type.compress_save(to_compress)
         pack_int(out, to_compress.tell())   # decompressed_size
         pack_int(out, len(compressed_data)) # compressed_size
         out.write(compressed_data)
@@ -689,8 +672,8 @@ class _ABcpsSaveHeader(SaveFileHeader):
         ins.seek(0, os.SEEK_END)
         ins_size = ins.tell()
         ins.seek(self._bcps_comp_location)
-        ins = _decompress_save(ins, ins_size - self._bcps_comp_location,
-            self._bcps_decomp_size, compression_type=_SaveCompressionType.ZLIB)
+        ins = _SaveCompressionType.ZLIB.decompress_save(ins,
+            ins_size - self._bcps_comp_location, self._bcps_decomp_size)
         super().load_header(ins, load_image)
 
     ##: Add writing support

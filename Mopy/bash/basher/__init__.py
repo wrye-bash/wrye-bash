@@ -340,8 +340,7 @@ class _ModsUIList(UIList):
         checkMark, mouseText = self._set_status_text(item_format, minf,
                                                      item_key)
         item_name = self._item_name(item_key)
-        fileBashTags = self._set_color(checkMark, mouseText, minf, item_name,
-                                       item_format)
+        self._set_color(checkMark, mouseText, minf, item_name, item_format)
         # Text background
         if minf.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
@@ -361,9 +360,9 @@ class _ModsUIList(UIList):
                 item_format.underline = True
         self.mouseTexts[item_key] = ' '.join(mouseText)
 
-    def _set_color(self, checkMark, mouse_text, minf, item_name, item_format):
+    @staticmethod
+    def _set_color(checkMark, mouse_text, minf, item_name, item_format):
         #--Font color
-        fileBashTags = minf.getBashTags()
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
         if item_name in bosh.modInfos.bashed_patches:
             item_format.text_key = 'mods.text.bashedPatch'
@@ -381,9 +380,8 @@ class _ModsUIList(UIList):
             mouse_text.append(bush.game.plugin_type_text[suffix])
         except KeyError:
             pass
-        if 'Deactivate' in fileBashTags: # was for mods only
+        if 'Deactivate' in minf.getBashTags(): # was for mods only
             item_format.italics = True
-        return fileBashTags
 
     def _set_status_text(self, item_format, minf, item_key):
         raise NotImplementedError
@@ -538,17 +536,7 @@ class MasterList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText.append(_('Plugin name incompatible, cannot be '
                                'activated.'))
-        status = masterInfo.getStatus()
-        if status < 30:  # 30: does not exist
-            # current load order of master relative to other masters
-            loadOrderIndex = self._curr_lo_index[item_name]
-            ordered = load_order.cached_active_tuple()
-            if mi != loadOrderIndex:  # there are active masters out of order
-                status = 20  # orange
-            elif status > 0:
-                pass  # never happens
-            elif (mi < len(ordered)) and (ordered[mi] == item_name):
-                status = -10  # Blue else 0, Green
+        status = masterInfo.getStatus(self._curr_lo_index[item_name], mi)
         #--Image
         oninc = load_order.cached_is_active(item_name) or (
             item_name in bosh.modInfos.merged and 2)

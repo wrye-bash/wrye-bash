@@ -190,8 +190,16 @@ class MasterInfo:
         """Ask the mod info or shrug."""
         return set()
 
-    def getStatus(self):
-        return 30 if not self.mod_info else 0
+    def getStatus(self, loadOrderIndex, mi):
+        if self.mod_info:
+            ordered = load_order.cached_active_tuple()
+            # current load order of master relative to other masters
+            if mi != loadOrderIndex:  # there are active masters out of order
+                return 20  # orange
+            elif (mi < len(ordered)) and (ordered[mi] == self.curr_name):
+                return -10  # Blue else 0, Green
+            return 0
+        return 30 # 30: does not exist
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
