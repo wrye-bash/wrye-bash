@@ -22,7 +22,7 @@
 # =============================================================================
 import importlib
 
-from .. import WS_COMMON_FILES, MergeabilityCheck, ObjectIndexRange
+from .. import WS_COMMON_FILES, ObjectIndexRange
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ..._games_lo import AsteriskGame
@@ -66,7 +66,6 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
 
     espm_extensions = {*ASkyrimGameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    mergeability_checks = {MergeabilityCheck.ESL_CHECK}
 
     class Se(ASkyrimGameInfo.Se):
         se_abbrev = u'SKSE64'

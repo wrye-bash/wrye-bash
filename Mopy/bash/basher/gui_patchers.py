@@ -31,7 +31,7 @@ from .. import bass, bolt, bosh, bush, load_order
 from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, text_wrap
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
     ListBox, Links, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, \

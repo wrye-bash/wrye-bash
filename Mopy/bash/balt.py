@@ -523,6 +523,7 @@ def conversation(func):
 #------------------------------------------------------------------------------
 @dataclass(slots=True)
 class _ListItemFormat:
+    _parent_uil: UIList
     icon_key: tuple[str | None, ...] = (None,)
     bold: bool = False
     italics: bool = False
@@ -530,32 +531,13 @@ class _ListItemFormat:
     _text_key: str = 'default.text'
     _back_key: str = 'default.bkgd'
 
-    _back_key_priority = {k: j for j, k in enumerate([
-        # Plugins -------------------------------------------------------------
-        'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
-        'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
-        # INIs ----------------------------------------------------------------
-        'ini.bkgd.invalid',
-        # Installers ----------------------------------------------------------
-        'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
-        'installers.bkgd.dirty'])}
-    _text_key_priority = {k: j for j, k in enumerate([
-        # Plugins -------------------------------------------------------------
-        'default.text',
-        *(f'mods.text.es{suff}' for suff in ('l', 'o', 'm', 'lm', 'om')),
-        'mods.text.mergeable', 'mods.text.noMerge', 'mods.text.bashedPatch',
-        # Installers ----------------------------------------------------------
-        'installers.text.invalid', 'installers.text.marker',
-        'installers.text.complex',
-    ])}
-
-    def to_tree_node_format(self, parent_uil: UIList):
+    def to_tree_node_format(self):
         """Convert this list item format to an equivalent tree node format,
         relative to the specified parent UIList."""
         return TreeNodeFormat(
-            icon_idx=parent_uil.icons.img_dex(*self.icon_key),
-            back_color=parent_uil.lookup_back_key(self.back_key),
-            text_color=parent_uil.lookup_text_key(self.text_key),
+            icon_idx=self._parent_uil.icons.img_dex(*self.icon_key),
+            back_color=self._parent_uil.lookup_back_key(self.back_key),
+            text_color=self._parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
 
     @property
@@ -565,7 +547,7 @@ class _ListItemFormat:
     @back_key.setter
     def back_key(self, val: str):
         self._back_key = max(val, self._back_key,
-                             key=self._back_key_priority.__getitem__)
+            key=self._parent_uil.back_key_priority.__getitem__)
 
     @property
     def text_key(self) -> str:
@@ -574,7 +556,7 @@ class _ListItemFormat:
     @text_key.setter
     def text_key(self, val: str):
         self._text_key = max(val, self._text_key,
-                             key=self._text_key_priority.__getitem__)
+            key=self._parent_uil.text_key_priority.__getitem__)
 
 DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
     list[tuple[FName, TreeNodeFormat | None]]]]
@@ -861,6 +843,29 @@ class UIList(PanelWin):
         self.__gList.set_focus()
 
     #--Decorating -------------------------------------------------------------
+    @fast_cached_property
+    def back_key_priority(self):
+        return {k: j for j, k in enumerate([
+            # Plugins ---------------------------------------------------------
+            'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
+            'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
+            # INIs ------------------------------------------------------------
+            'ini.bkgd.invalid',
+            # Installers ------------------------------------------------------
+            'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
+            'installers.bkgd.dirty'])}
+
+    @fast_cached_property
+    def text_key_priority(self):
+        from . import bush
+        return {k: j for j, k in enumerate([
+            # Plugins ---------------------------------------------------------
+            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
+            # Installers ------------------------------------------------------
+            'installers.text.invalid', 'installers.text.marker',
+            'installers.text.complex',
+        ])}
+
     def set_item_format(self, item, item_format, target_ini_setts):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
@@ -870,7 +875,7 @@ class UIList(PanelWin):
 
     def __setUI(self, fileName, target_ini_setts, gItem):
         """Set font, status icon, background text etc."""
-        df = _ListItemFormat()
+        df = _ListItemFormat(self)
         self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
         icon_index = self.icons.img_dex(*df.icon_key)
         if icon_index is not None:
@@ -901,14 +906,14 @@ class UIList(PanelWin):
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
         def _decorate(i):
-            lif = _ListItemFormat()
+            lif = _ListItemFormat(self)
             # Only run set_item_format when the item is actually present,
             # otherwise just use the default settings (we do still have to use
             # those since the default text/background colors may have been
             # changed from the OS default)
             if i in self.data_store:
                 self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
-            return lif.to_tree_node_format(self)
+            return lif.to_tree_node_format()
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
 

@@ -154,11 +154,11 @@ class _AMerger(ImportPatcher):
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
                 master_keys = {en_key(x) for x in masterEntries}
-                mod_keys = {en_key(x) for x in entries}
-                remove_keys = master_keys - mod_keys if can_remove else set()
+                modkeys = {en_key(x) for x in entries}
+                remove_keys = master_keys - modkeys if can_remove else set()
                 # Note that we need to calculate these whether or not we're
                 # Add-tagged, because Change needs them as well.
-                addItems = mod_keys - master_keys
+                addItems = modkeys - master_keys
                 addEntries = [x for x in entries if en_key(x) in addItems]
                 # Changed entries are those entries that haven't been newly
                 # added but also differ from the master entries

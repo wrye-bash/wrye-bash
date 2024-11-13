@@ -34,6 +34,7 @@ from .. import bolt # for type hints
 from .. import bush # for game etc
 from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url, FName
 from ..exception import BoltError, CancelError, ModError
+from ..plugin_types import MergeabilityCheck
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile
 
@@ -224,7 +225,8 @@ class PatchFile(ModFile):
         # Set of all Bash Tags that don't trigger an import from some patcher
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
-        mi_mergeable = pfile_minfos.mergeable_plugins
+        mi_mergeable = [modinfo.fn_key for modinfo in
+                        MergeabilityCheck.MERGE.cached_types(pfile_minfos)[0]]
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
             bashTags = self.all_tags[modName]
@@ -455,14 +457,13 @@ class PatchFile(ModFile):
         self.tes4.description = (_('Updated: %(update_time)s') % {
             'update_time': format_date(time.time())} + '\n\n' + _(
             'Records Changed: %(num_recs)d') % {'num_recs': num_records})
-        ##: Consider flagging as Overlay instead if that flag is supported by
-        # the game and no new records have been included?
         # Flag as ESL if the game supports them, the option is enabled and the
         # BP has <= 2048 new records
         num_new_recs = self.count_new_records(next_object_start=0x800)
         if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
             num_new_recs <= 2048):
-            self.tes4.flags1.esl_flag = True
+            bush.game.plugin_flags.ESL.set_mod_flag(self.tes4.flags1, True,
+                                                    bush.game)
             msg = '\n\n' + _('This patch has been automatically ESL-flagged '
                              'to save a load order slot.')
             self.tes4.description += msg

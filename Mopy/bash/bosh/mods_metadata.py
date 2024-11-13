@@ -30,7 +30,7 @@ from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
 from ..exception import CancelError
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..mod_files import ModHeaderReader
 from ..wbtemp import TempFile
 
@@ -201,34 +201,16 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for corrupt plugins
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
-    can_merge = modInfos.mergeable_plugins
-    can_esl_flag = modInfos.esl_capable_plugins
-    can_overlay_flag = modInfos.overlay_capable_plugins
-    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
-    # already been merged into a BP
-    for m in list(can_merge):
-        if 'NoMerge' in modInfos[m].getBashTags() or m in modInfos.merged:
-            can_merge.discard(m)
-    # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
     # between ESL and Overlay flags.
-    remove_esl_flag = set()
-    overlays_with_new_recs = set()
-    overlays_with_no_masters = set()
-    conflicting_esl_overlay_flags = set()
-    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-        for m, modinf in modInfos.items():
-            if m_is_esl := modinf.is_esl():
-                if not ModHeaderReader.formids_in_esl_range(modinf):
-                    remove_esl_flag.add(m)
-            if modinf.is_overlay():
-                if not modinf.masterNames:
-                    overlays_with_no_masters.add(m)
-                if ModHeaderReader.has_new_records(modinf):
-                    overlays_with_new_recs.add(m)
-                if m_is_esl:
-                    conflicting_esl_overlay_flags.add(m)
+    pflags = bush.game.plugin_flags
+    flag_errors = {k: {h_msg: set() for h_msg in v} for k, v in
+                   pflags.error_msgs.items()}
+    for m, modinf in modInfos.items():
+        for pflag in flag_errors:
+            if pflag.cached_type(modinf):
+                pflag.validate_type(modinf, flag_errors[pflag].values())
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and
     # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
@@ -611,24 +593,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         if raw_eid:
             ret_fmt = f'{raw_eid} {ret_fmt}'
         return ret_fmt
-    if bush.game.has_esl:
-        # Need to undo the offset we applied to sort ESLs after regulars
-        sort_offset = bush.game.max_espms - 1
-        def format_fid(whole_lo_fid, fid_orig_plugin):
-            """Format a whole-LO FormID, which can exceed normal FormID limits
-            (e.g. 211000800 is perfectly fine in a load order with ESLs), so
-            that xEdit (and the game) can understand it."""
-            orig_minf = modInfos[fid_orig_plugin]
-            proper_index = modInfos.real_indices[fid_orig_plugin][0]
-            if orig_minf.is_esl():
-                return (f'FE{proper_index - sort_offset:03X}'
-                        f'{whole_lo_fid & 0x00000FFF:03X}')
-            else:
-                return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
-    else:
-        def format_fid(whole_lo_fid: int, _fid_orig_plugin):
-            # For non-ESL games simple hexadecimal formatting will do
-            return f'{whole_lo_fid:08X}'
+    format_fid = pflags.format_fid
     def log_collision(coll_fid, coll_inj, coll_plugin, coll_versions):
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""
@@ -665,50 +630,24 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log.setHeader(u'=== ' + _(u'Corrupted'))
         log(_(u'Wrye Bash could not read the follow plugins. They most likely '
               u'have corrupt or otherwise malformed headers.'))
-        log_plugin_messages(all_corrupted) ##: Just log_plugins?
-    if can_esl_flag:
-        _log_plugins('=== ' + _('ESL-Capable'),
-        _('The following plugins could be assigned an ESL flag, but do '
-          'not have one right now.'), can_esl_flag)
-    if remove_esl_flag:
-        _log_plugins(u'=== ' + _('Incorrect ESL Flag'), _(
-            'The following plugins have an ESL flag, but do not qualify. '
-            "Either remove the flag with 'Remove ESL Flag', or "
-            "change the extension to '.esp' if it is '.esl'."),remove_esl_flag)
-    if can_overlay_flag:
-        _log_plugins('=== ' + _('Overlay-Capable'),
-        _('The following plugins could be assigned an Overlay flag, but '
-          'do not have one right now.'), can_overlay_flag)
-    if overlays_with_new_recs:
-        _log_plugins('=== ' + _('Incorrect Overlay Flag: New Records'),
-        _("The following plugins have an Overlay flag, but do not "
-          "qualify because they contain new records. These will be "
-          "injected into the first master of the plugins in question, "
-          "which can seriously break basic game data. Either remove the "
-          "flag with 'Remove Overlay Flag', or remove the new records."),
-        overlays_with_new_recs)
-    if overlays_with_no_masters:
-        _log_plugins('=== ' + _('Incorrect Overlay Flag: No Masters'),
-        _("The following plugins have an Overlay flag, but do not "
-          "qualify because they do not have any masters. %(game_name)s "
-          "will not treat these as Overlay plugins. Either remove the "
-          "flag with 'Remove Overlay Flag', or use %(xedit_name)s to add "
-          "at least one master to the plugin.") % {
-        'xedit_name': bush.game.Xe.full_name,
-            'game_name': bush.game.display_name}, overlays_with_no_masters)
-    if conflicting_esl_overlay_flags:
-        _log_plugins('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'),
-        _("The following plugins have an Overlay flag, but do not "
-          "qualify because they also have an ESL flag. These flags are "
-          "mutually exclusive. %(game_name)s will not treat these as overlay "
-          "plugins. Either remove the Overlay flag with 'Remove Overlay "
-          "Flag', or remove the ESL flag with 'Remove ESL Flag'.") % {
-            'game_name': bush.game.display_name},
-        conflicting_esl_overlay_flags)
-    if can_merge:
-        _log_plugins('=== ' + _('Mergeable'), _(
-            'The following plugins could be merged into a Bashed Patch, but '
-            'are currently not merged.'), can_merge)
+        log_plugin_messages(all_corrupted) ##: Just _log_plugins?
+    for pflag in pflags:
+        if pflag.merge_check is not None:
+            minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
+            if minfos_cache:
+                _log_plugins(head, msg, minfos_cache)
+        for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
+            if pl_set:
+                _log_plugins(head, msg, pl_set)
+    # -------------------------------------------------------------------------
+    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
+    # already been merged into a BP
+    if (merge := MergeabilityCheck.MERGE) in bush.game.mergeability_checks:
+        minfos_cache, head, msg = merge.cached_types(modInfos)
+        can_merge = {m for inf in minfos_cache if (m := inf.fn_key) not in
+                     modInfos.merged and 'NoMerge' not in inf.getBashTags()}
+        if can_merge:
+            _log_plugins(head, msg, can_merge)
     if should_deactivate:
         _log_plugins('=== ' + _(u'Deactivate-tagged But Active'), _(
             "The following plugins are tagged with 'Deactivate' and should "

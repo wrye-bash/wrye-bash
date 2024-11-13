@@ -25,9 +25,10 @@ attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 import os
 import shlex
+from itertools import chain
 
-from . import BSAList, INIList, InstallersList, \
-    InstallersPanel, MasterList, ModList, SaveList, ScreensList
+from . import BSAList, INIList, InstallersList, InstallersPanel, MasterList, \
+    ModList, SaveList, ScreensList
 # modules below define the __all__ directive
 from .app_buttons import *
 from .bsa_links import *
@@ -48,7 +49,6 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
 from ..bolt import os_name
 from ..env import init_app_links
-from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
 from ..gui import GuiImage, get_image
 
@@ -546,11 +546,8 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_CheckQualifications())
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
-        ModList.context_links.append_link(Mod_FlipEsm())
-        if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipEsl())
-        if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipOverlay())
+        for pflag in chain(*reversed(bush.game.all_flags)):
+            ModList.context_links.append_link(AFlipFlagLink(pflag))
         ModList.context_links.append_link(Mod_FlipMasters())
         ModList.context_links.append_link(Mod_CreateDummyMasters())
     ModList.context_links.append_link(SeparatorLink())

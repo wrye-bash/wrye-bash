@@ -24,7 +24,7 @@
 """This module contains some constants ripped out of basher.py"""
 from .. import bush
 from ..bolt import GPath
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..gui import DEFAULT_POSITION
 
 # some repetitive strings
@@ -45,10 +45,6 @@ colorInfo = {
     'default.warn': (_('Default Warning'),
         _('This is the color used for text that is communicating some sort '
           'of warning or error.'),
-    ),
-    'mods.text.esm': ('ESM', _mod_save_tabs + _(
-        'This is the text color used for ESMs on the Mods Tab, and in the '
-        'Masters info on both the Mods Tab and Saves Tab.')
     ),
     'mods.bkgd.ghosted': (_('Ghosted Plugin'), _mod_tab + _(
         'This is the background color used for a ghosted plugin.')
@@ -134,60 +130,77 @@ if not bush.game.using_txt_file:
             'the same timestamp are active.')
     )
 
-# Can we create a BP? ---------------------------------------------------------
-if bush.game.Esp.canBash:
-    colorInfo['mods.text.bashedPatch'] = ('Bashed Patch', _mod_tab + _(
-        'This is the text color used for Bashed Patches.')
-    )
-
-# Are ESLs supported? ---------------------------------------------------------
-if bush.game.has_esl:
-    colorInfo['mods.text.esl'] = ('ESL',
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs on the Mods Tab, and in the '
-          'Masters info on both the Mods Tab and Saves Tab.'),
-    )
-    colorInfo['mods.text.eslm'] = ('ESLM',
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs with a master flag on the '
-          'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
-          'Tab.'),
-    )
-
-# Are Overlay plugins supported? ----------------------------------------------
-if bush.game.has_overlay_plugins:
-    colorInfo['mods.text.eso'] = (_('Overlay Plugin'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Overlay plugins on the Mods Tab.'),
-    )
-    colorInfo['mods.text.esom'] = (_('Overlay Master'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Overlay plugins with a master flag '
-          'on the Mods Tab.'),
-    )
+# Asemble all possible keys for the mod list UI text color --------------------
+__all_mkeys = { # we could use plugin_type_text for the 'color_description'
+    'mods.text.bashedPatch': ('Bashed Patch', _mod_tab + _(
+        'This is the text color used for Bashed Patches.')),
+    'mods.text.esm': ('ESM', _mod_save_tabs + _(
+        'This is the text color used for ESMs on the Mods Tab, and in the '
+        'Masters info on both the Mods Tab and Saves Tab.')),
+    'mods.text.esl': ('ESL', _mod_save_tabs + _(
+        'This is the text color used for ESLs on the Mods Tab, and in the '
+        'Masters info on both the Mods Tab and Saves Tab.')
+    ),
+    'mods.text.eslm': ('ESLM', _mod_save_tabs + _(
+        'This is the text color used for ESLs with a master flag on the '
+        'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
+        'Tab.')
+    ),
+    'mods.text.eso': (_('Overlay Plugin'), _mod_tab + _(
+        'This is the text color used for Overlay plugins on the Mods '
+        'Tab.')
+    ),
+    'mods.text.esom': (_('Overlay Master'), _mod_tab + _(
+        'This is the text color used for Overlay plugins with a master '
+        'flag on the Mods Tab.')
+    ),
+    'mods.text.esb': (_('Blueprint Plugin'), _mod_tab + _(
+        'This is the text color used for Blueprint plugins on the Mods '
+        'Tab.')
+    ),
+    'mods.text.esbm': (_('Blueprint Master'), _mod_tab + _(
+        'This is the text color used for Blueprint plugins with a master '
+        'flag on the Mods Tab.')
+    ),
+    'mods.text.esi': (_('Medium Plugin'), _mod_save_tabs + _(
+        'This is the text color used for Medium plugins on the Mods Tabb, '
+        'and in the Masters info on both the Mods Tab and Saves Tab.')
+    ),
+    'mods.text.esim': (_('Medium Master'), _mod_save_tabs + _(
+        'This is the text color used for Medium plugins with a master '
+        'flag on the Mods Tabb, and in the Masters info on both the Mods '
+        'Tab and Saves Tab.')
+    ),
+    'mods.text.noMerge': (_("'NoMerge' Plugin"), _mod_tab + _(
+        'This is the text color used for a mergeable plugin that is '
+        "tagged 'NoMerge'.")),
+    'mods.text.flags_conflict': (_('Conflicting Plugin Flags'), _mod_save_tabs
+        + _('This is the text color used for a plugin that has conflicting '
+            'flags set.')),
+}
 
 # What do we check w.r.t. mergeability? ---------------------------------------
 __m_checks = bush.game.mergeability_checks
-if MergeabilityCheck.OVERLAY_CHECK in __m_checks:
+if MergeabilityCheck.MID_CHECK in __m_checks:
     if MergeabilityCheck.ESL_CHECK in __m_checks:
         if MergeabilityCheck.MERGE in __m_checks:
-            mc_title = _('Mergeable, ESL-Capable or Overlay-Capable Plugin')
+            mc_title = _('Mergeable, ESL-Capable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch, ESL-flagged or '
-                        'Overlay-flagged.')
+                        'MID-flagged.')
         else: # -> no mergeables
-            mc_title = _('ESL-Capable or Overlay-Capable Plugin')
+            mc_title = _('ESL-Capable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be ESL-flagged or Overlay-flagged.')
+                        'be ESL-flagged or MID-flagged.')
     else: # -> no ESLs
         if MergeabilityCheck.MERGE in __m_checks:
-            mc_title = _('Mergeable or Overlay-Capable Plugin')
+            mc_title = _('Mergeable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be merged into the Bashed Patch or Overlay-flagged.')
+                        'be merged into the Bashed Patch or MID-flagged.')
         else: # -> no ESLs or mergeables
-            mc_title = _('Overlay-Capable Plugin')
+            mc_title = _('MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be Overlay-flagged.')
+                        'be MID-flagged.')
 else: # -> no overlays
     if MergeabilityCheck.ESL_CHECK in __m_checks:
         if MergeabilityCheck.MERGE in __m_checks:
@@ -204,16 +217,12 @@ else: # -> no overlays
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch.')
         else:
-            mc_title = mc_desc = None
-if mc_title is not None and mc_desc is not None:
-    colorInfo['mods.text.mergeable'] = mc_title, _mod_tab + mc_desc
+            mc_title, mc_desc = None, ''
+__all_mkeys['mods.text.mergeable'] = mc_title, _mod_tab + mc_desc
 
-# Does NoMerge exist? ---------------------------------------------------------
-if MergeabilityCheck.MERGE in __m_checks: # no merge in alltags?
-    colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"), _mod_tab + _(
-        'This is the text color used for a mergeable plugin that is '
-        "tagged 'NoMerge'."),
-    )
+# Add all the keys for this game to the color info dict
+for k in dict.fromkeys(bush.game.mod_keys.values()):
+    colorInfo[k] = __all_mkeys[k]
 
 #--Load config/defaults
 settingDefaults = { # keep current naming format till refactored
@@ -243,16 +252,21 @@ settingDefaults = { # keep current naming format till refactored
         'default.warn':                 (255, 0,   0),
         #--Mods Tab
         'mods.text.esm':                (0,   0,   255), # 'BLUE'
-        'mods.text.mergeable':          (0,   153, 0),
-        'mods.text.noMerge':            (150, 130, 0),
+        'mods.text.mergeable':          (0,   153,   0),
+        'mods.text.noMerge':            (150, 130,   0),
         'mods.bkgd.doubleTime.exists':  (255, 220, 220),
         'mods.bkgd.doubleTime.load':    (255, 149, 149),
         'mods.bkgd.ghosted':            (232, 232, 232),
         'mods.bkgd.size_mismatch':      (255, 238, 217),
         'mods.text.esl':                (226, 54,  197),
         'mods.text.eslm':               (123, 29,  223),
-        'mods.text.eso':                (235, 119, 44),
-        'mods.text.esom':               (234, 49, 9),
+        'mods.text.eso':                (235, 119,  44),
+        'mods.text.esom':               (234, 49,    9),
+        'mods.text.esi':                (188, 133, 250),
+        'mods.text.esim':               (255, 128, 128),
+        'mods.text.esb':                (0,   128, 192),
+        'mods.text.esbm':               (0,   128, 255),
+        'mods.text.flags_conflict':     (255,   0,   0),
         'mods.text.bashedPatch':        (30,  157, 251),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (223, 223, 223),
@@ -487,8 +501,8 @@ settingDefaults = { # keep current naming format till refactored
     f'{bush.game.Xe.xe_key_prefix}.skip_bsas': False,
 }
 
-# Enable Index columns by default for ESL and Overlay games
-if bush.game.has_esl or bush.game.has_overlay_plugins:
+# Enable Index columns by default for ESL and newer games
+if any(bush.game.plugin_flags):
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')
     settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 

@@ -43,7 +43,6 @@ from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
-from ..game import MergeabilityCheck
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
 from ..localize import format_date
@@ -52,6 +51,7 @@ from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     FactionRelations, FidReplacer, FullNames, IngredientDetails, ItemPrices, \
     ItemStats, ScriptText, SigilStoneDetails, SpellRecords, _AParser
 from ..patcher.patch_files import PatchFile
+from ..plugin_types import MergeabilityCheck, PluginFlag
 from ..wbtemp import TempFile
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
@@ -71,11 +71,10 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_SpellRecords_Import', u'Mod_Face_Import', u'Mod_Fids_Replace',
            u'Mod_SkipDirtyCheck', u'Mod_ScanDirty', u'Mod_RemoveWorldOrphans',
            u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
-           u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
-           'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
-           'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords',
-           'Mod_DumpRecordTypeNames', 'Mod_FlipOverlay', 'Mod_Snapshot',
-           'Mod_RevertToSnapshot']
+           'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
+           'Mod_Move', 'Mod_RecalcRecordCounts', 'Mod_Duplicate',
+           'Mod_DumpSubrecords', 'Mod_DumpRecordTypeNames', 'Mod_Snapshot',
+           'Mod_RevertToSnapshot', 'AFlipFlagLink']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -217,11 +216,10 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
-            ciext = newInfo.fn_key.fn_ext
-            if ciext in ('.esl', '.esm'):
-                newFile.tes4.flags1.esm_flag = True
-            if ciext == '.esl' and bush.game.has_esl:
-                newFile.tes4.flags1.esl_flag = True
+            force_flags = bush.game.plugin_flags.guess_flags(
+                newInfo.fn_key.fn_ext, bush.game)
+            for pl_flag, flag_val in force_flags.items():
+                pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
             newFile.safeSave()
         to_select = []
         for mod, previous in to_refresh:
@@ -261,8 +259,8 @@ class Mod_OrderByName(EnabledLink):
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  title=self._text): return
         #--Do it
-        self.selected.sort(# sort masters first
-            key=lambda m: (not bosh.modInfos[m].in_master_block(), m))
+        self.selected.sort(key=lambda m: ( # sort masters first
+            *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings
@@ -886,35 +884,35 @@ class Mod_AllowGhosting(TransLink):
 #------------------------------------------------------------------------------
 class Mod_CheckQualifications(ItemLink):
     """Check various mergeability criteria - BP mergeability, ESL capability
-    and Overlay capability."""
+    and MID capability."""
     _text = _('Check Qualifications…')
 
     @property
     def link_help(self):
         m_checks = bush.game.mergeability_checks
-        if MergeabilityCheck.OVERLAY_CHECK in m_checks:
+        if MergeabilityCheck.MID_CHECK in m_checks:
             if MergeabilityCheck.ESL_CHECK in m_checks:
                 if MergeabilityCheck.MERGE in m_checks:
-                    # Overlay + ESL + Merge
+                    # MID + ESL + Merge
                     return _('Scan the selected plugins to determine '
                              'whether or not they can be merged into the '
                              'Bashed Patch, assigned the ESL flag or assigned '
-                             'the Overlay flag, reporting also the reasons '
+                             'the MID flag, reporting also the reasons '
                              'if they cannot.')
-                # Overlay + ESL
+                # MID + ESL
                 return _('Scan the selected plugins to determine whether or '
                          'not they can be assigned the ESL flag or assigned '
-                         'the Overlay flag, reporting also the reasons if '
+                         'the MID flag, reporting also the reasons if '
                          'they cannot.')
             elif MergeabilityCheck.MERGE in m_checks:
-                # Overlay + Merge
+                # MID + Merge
                 return _('Scan the selected plugins to determine whether or '
                          'not they can be merged into the Bashed Patch or '
-                         'assigned the Overlay flag, reporting also the '
+                         'assigned the MID flag, reporting also the '
                          'reasons if they cannot.')
-            # Overlay
+            # MID
             return _('Scan the selected plugins to determine whether or not '
-                     'they can be assigned the Overlay flag, reporting also '
+                     'they can be assigned the MID flag, reporting also '
                      'the reasons if they cannot.')
         else:
             if MergeabilityCheck.ESL_CHECK in m_checks:
@@ -936,22 +934,23 @@ class Mod_CheckQualifications(ItemLink):
     @balt.conversation
     def Execute(self):
         prog = balt.Progress(self._text + ' ' * 30)
-        result, tagged_no_merge = bosh.modInfos.rescanMergeable(self.selected,
-            prog, return_results=True)
+        result = bosh.modInfos.rescanMergeable(self.selected, prog,
+                                               return_results=True)
         mergeability_strs = {
             MergeabilityCheck.MERGE: (_('Not Mergeable Into Bashed Patch'),
                                       _('Mergeable Into Bashed Patch')),
             MergeabilityCheck.ESL_CHECK: (_('Not ESL-Capable'),
                                           _('ESL-Capable')),
-            MergeabilityCheck.OVERLAY_CHECK: (_('Not Overlay-Capable'),
-                                              _('Overlay-Capable')),
+            MergeabilityCheck.MID_CHECK: (_('Not MID-Capable'),
+                                          _('MID-Capable')),
         }
         message = ['= ' + _('Qualification Check Results')]
         for p in self.selected:
             message.append('')
             message.append(f'== {p}')
-            for chk_ty, (chk_result, chk_reason) in result[p].items():
+            for chk_ty, chk_reason in result[p].items():
                 message.append('')
+                chk_result = not chk_reason # no reason why we shouldn't merge
                 message.append(f'=== {mergeability_strs[chk_ty][chk_result]}')
                 for r in chk_reason:
                     message.append(f'.    {r}')
@@ -1082,9 +1081,12 @@ class Mod_RebuildPatch(_Mod_BP_Link):
 
     def _ask_deactivate_mergeable(self, bashed_patch):
         merge, noMerge, deactivate = [], [], []
+        mergeable = MergeabilityCheck.MERGE.cached_types(
+            bashed_patch.p_file_minfos)[0]
         for mod in bashed_patch.load_dict:
-            tags = bosh.modInfos[mod].getBashTags()
-            if mod in bosh.modInfos.mergeable_plugins:
+            mod_inf = bosh.modInfos[mod]
+            tags = mod_inf.getBashTags()
+            if mod_inf in mergeable:
                 if 'MustBeActiveIfImported' in tags:
                     continue
                 elif 'NoMerge' in tags:
@@ -1410,8 +1412,9 @@ class _CopyToLink(EnabledLink):
     def Execute(self):
         modInfos, added = bosh.modInfos, []
         do_save_lo = False
-        add_esl_flag = self._target_ext == u'.esl'
-        add_esm_flag = add_esl_flag or self._target_ext == '.esm'
+        pflags = bush.game.plugin_flags
+        force_flags = pflags.guess_flags(self._target_ext, bush.game)
+        force_flags = pflags.check_flag_assignments(force_flags)
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
@@ -1432,8 +1435,7 @@ class _CopyToLink(EnabledLink):
                 minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
                 added.append(newName)
                 newInfo = modInfos[newName]
-                newInfo.set_plugin_flags(set_esm=add_esm_flag,
-                                         set_esl=add_esl_flag)
+                if force_flags: newInfo.set_plugin_flags(force_flags)
                 if timeSource is None: # otherwise it has a load order already!
                     modInfos.cached_lo_insert_after(
                         modInfos.cached_lo_last_esm(), newName)
@@ -1519,25 +1521,49 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 self._showOk(msg, fileInfo.fn_key)
 
 #------------------------------------------------------------------------------
-class _AFlipFlagLink(EnabledLink):
+class AFlipFlagLink(EnabledLink):
     """Base class for links that enable or disable a flag in the plugin
     header."""
-    _add_flag: str
-    _remove_flag: str
 
-    @property
-    def _already_flagged(self): raise NotImplementedError
+    def __init__(self, plugin_flag: PluginFlag | None = None):
+        super().__init__()
+        self._plugin_flag: PluginFlag = plugin_flag
+        self._allowed_ext = plugin_flag.convert_exts
+        self._continue_msg = plugin_flag.continue_message
+        self._help = plugin_flag.help_flip
 
-    def _exec_flip(self): raise NotImplementedError
+    def _initData(self, window, selection):
+        super()._initData(window, selection)
+        first_flagged = self._plugin_flag.has_flagged(self._first_selected())
+        self._flag_value = not first_flagged # flip the (common) flag value
+        do_enable = all(
+            self._can_convert(k, v) for k, v in self.iselected_pairs())
+        self._to_flip = [*self.iselected_infos()] if do_enable else []
+
+    def _can_convert(self, fn_mod, m):
+        """Allow if all selected mods have valid extensions, have the same
+        flag state and are capable to be flagged with self._plugin_flag."""
+        pf = self._plugin_flag
+        return fn_mod.fn_ext in self._allowed_ext and pf.has_flagged(
+            m) != self._flag_value and (not self._flag_value or not hasattr(
+            pf, 'merge_check') or (pf.merge_check in m.merge_types()))
+
+    def _enable(self): return bool(self._to_flip)
 
     @property
     def link_text(self):
-        return self._remove_flag if self._already_flagged else self._add_flag
+        return (_('Add %(pflag)s Flag') if self._flag_value else _(
+          'Remove %(pflag)s Flag')) % {'pflag': self._plugin_flag.name} # .title()}
 
     @balt.conversation
     def Execute(self):
         with BusyCursor():
-            self._exec_flip()
+            if self._continue_msg and not self._askContinue(
+                    *self._continue_msg): return
+            # if _flag_value=True no other conflicting flags should be on
+            set_flags = {self._plugin_flag: self._flag_value}
+            for minfo in self._to_flip:
+                minfo.set_plugin_flags(set_flags)
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
             ldiff = bosh.modInfos.refreshLoadOrder()
@@ -1551,130 +1577,40 @@ class _AFlipFlagLink(EnabledLink):
             self.window.RefreshUI(refresh_others=Store.SAVES.DO(), redraw={
                 *self.selected, *ldiff.reordered, *ldiff.act_index_change})
 
-class Mod_FlipEsm(_AFlipFlagLink):
-    """Add or remove the ESM flag. Extension must be .esp or .esu."""
-    _help = _('Flip the ESM flag on the selected plugins, turning masters '
-              'into regular plugins and vice versa.')
-    _add_flag, _remove_flag = _('Add ESM Flag'), _('Remove ESM Flag')
-
-    @property
-    def _already_flagged(self):
-        return self._first_selected().has_esm_flag()
-
-    def _enable(self):
-        """Allow if all selected mods have valid extensions and have the same
-        ESM flag state."""
-        first_is_esm = self._already_flagged
-        return all(m.fn_ext in ('.esp', '.esu') and
-                   minfo.has_esm_flag() == first_is_esm
-                   for m, minfo in self.iselected_pairs())
-
-    def _exec_flip(self):
-        for modInfo in self.iselected_infos():
-            modInfo.set_plugin_flags(set_esm=not modInfo.has_esm_flag())
-
 #------------------------------------------------------------------------------
-class Mod_FlipEsl(_AFlipFlagLink):
-    """Add or remove the ESL flag. Extension must be .esm, .esp or .esu."""
-    _help = _('Flip the ESL flag on the selected plugins, turning light '
-              'plugins into regular ones and vice versa.')
-    _add_flag, _remove_flag = _('Add ESL Flag'), _('Remove ESL Flag')
-
-    @property
-    def _already_flagged(self):
-        return self._first_selected().has_esl_flag()
-
-    def _enable(self):
-        """Allow if all selected mods have valid extensions, have the same ESL
-        flag state and are ESL-capable if converting to ESL."""
-        first_is_esl = self._already_flagged
-        return all(m.fn_ext in ('.esm', '.esp', '.esu') and
-                   minfo.has_esl_flag() == first_is_esl and
-                   (first_is_esl or m in bosh.modInfos.esl_capable_plugins)
-                   for m, minfo in self.iselected_pairs())
-
-    def _exec_flip(self):
-        for modInfo in self.iselected_infos():
-            modInfo.set_plugin_flags(set_esl=not modInfo.has_esl_flag())
-
-#------------------------------------------------------------------------------
-class Mod_FlipOverlay(_AFlipFlagLink):
-    """Add or remove the Overlay flag. Extension must be .esm, .esp or .esu."""
-    _help = _('Flip the Overlay flag on the selected plugins, turning overlay '
-              'plugins into regular ones and vice versa.')
-    _add_flag, _remove_flag = _('Add Overlay Flag'), _('Remove Overlay Flag')
-
-    @property
-    def _already_flagged(self):
-        return self._first_selected().has_overlay_flag()
-
-    def _enable(self):
-        """Allow if all selected mods have valid extensions, have the same
-        Overlay flag state and are Overlay-capable if converting to Overlay."""
-        first_is_overlay = self._already_flagged
-        return all(m.fn_ext in ('.esm', '.esp', '.esu') and
-                   minfo.has_overlay_flag() == first_is_overlay and
-                   (first_is_overlay or
-                    m in bosh.modInfos.overlay_capable_plugins)
-                   for m, minfo in self.iselected_pairs())
-
-    def _exec_flip(self):
-        message = (_('WARNING! For advanced modders only!') + '\n\n' +
-            _('This command flips an internal bit in the mod, converting a '
-              'regular plugin to an overlay plugin and vice versa. The '
-              'Overlay flag is still new and our understanding of how it '
-              'works may be incomplete. Back up your plugins and saves '
-              'before using this!'))
-        if not self._askContinue(message, 'bash.flip_to_overlay.continue',
-                _('Flip to Overlay')): return
-        for modInfo in self.iselected_infos():
-            modInfo.set_plugin_flags(
-                set_overlay=not modInfo.has_overlay_flag())
-
-#------------------------------------------------------------------------------
-class Mod_FlipMasters(OneItemLink, _AFlipFlagLink):
+class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
     """Swaps masters between esp and esm versions."""
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(ck_name)s.') % (
               {u'ck_name': bush.game.Ck.long_name})
-    _add_flag = _('Add ESM Flag to Masters')
-    _remove_flag = _(u'Remove ESM Flag From Masters')
+    _continue_msg = (_('WARNING! For advanced modders only! Flips the ESM flag '
+        'of all ESP masters of the selected plugin. Useful for '
+        'loading ESP-mastered mods in the %(ck_name)s.') % {
+            'ck_name': bush.game.Ck.long_name}, 'bash.flipMasters.continue')
 
-    @property
-    def _already_flagged(self): return not self.toEsm
+    def __init__(self):
+        super(AFlipFlagLink, self).__init__()
+        self._plugin_flag = bush.game.master_flag
 
     def _initData(self, window, selection):
+        super(AFlipFlagLink, self)._initData(window, selection)
         present_mods = window.data_store
         modinfo_masters = present_mods[selection[0]].masterNames
         if len(selection) == 1 and len(modinfo_masters) > 1:
-            self.espMasters = [m for m in modinfo_masters if
-                               m in present_mods and m.fn_ext == '.esp']
-            self._do_enable = bool(self.espMasters)
+            self._to_flip = [present_mods[m] for m in # espMasters
+                modinfo_masters if m in present_mods and m.fn_ext == '.esp']
+            # for refresh in Execute - selection is shared with all other links
+            self.selected = [selection[0], *self._to_flip]
         else:
-            self.espMasters = []
-            self._do_enable = False
-        for mastername in self.espMasters:
-            masterInfo = bosh.modInfos.get(mastername, None)
-            if masterInfo and masterInfo.isInvertedMod():
-                self.toEsm = False
-                break
-        else:
-            self.toEsm = True
-        super(Mod_FlipMasters, self)._initData(window, selection)
+            self._to_flip = []
+        # all elements in _to_flip have an .esp extension - check the esm flag
+        self._flag_value = not any(map(bush.game.master_flag.has_flagged,
+                                       self._to_flip))
 
-    def _enable(self): return self._do_enable
-
-    def _exec_flip(self):
-        message = _(u'WARNING! For advanced modders only! Flips the ESM flag '
-                    u'of all ESP masters of the selected plugin. Useful for '
-                    u'loading ESP-mastered mods in the %(ck_name)s.') % (
-                    {u'ck_name': bush.game.Ck.long_name})
-        if not self._askContinue(message, u'bash.flipMasters.continue'): return
-        for masterPath in self.espMasters:
-            master_mod_info = bosh.modInfos.get(masterPath)
-            if master_mod_info:
-                master_mod_info.set_plugin_flags(set_esm=self.toEsm)
-                self.selected.append(masterPath) # for refresh in Execute
+    @property
+    def link_text(self):
+        return _('Add ESM Flag to Masters') if self._flag_value else _(
+            'Remove ESM Flag From Masters')
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):

@@ -37,10 +37,12 @@ import re
 import time
 from collections import defaultdict
 from functools import partial
+from itertools import chain
 
 from . import bass, bolt, env, exception
 from .bolt import AFile, FName, Path, deprint, dict_sort
 from .ini_files import get_ini_type_and_encoding
+from .plugin_types import PluginFlag
 
 # Typing
 LoTuple = tuple[FName, ...]
@@ -476,7 +478,9 @@ class LoGame:
             else: # append all to the end, even esms, will be reordered below
                 lord.append(mod)
         # See if any esm files are loaded below an esp and reorder as necessary
-        lord.sort(key=lambda m: not cached_minfs[m].in_master_block())
+        is_m = lambda fn: self._game_handle.master_flags.sort_masters_key(
+            cached_minfs[fn])
+        lord.sort(key=is_m)
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
@@ -522,8 +526,7 @@ class LoGame:
         fix_active.act_order_differs_from_load_order = \
             self._check_active_order(acti_filtered, lord)
         # check if we have more than 256 active mods
-        drop_espms, drop_esls = self.check_active_limit(acti_filtered)
-        disable = drop_espms | drop_esls
+        disable = self.check_active_limit(acti_filtered)
         # update acti in place - this must always be done, since acti may
         # contain files that are no longer on disk (i.e. not in acti_filtered)
         acti[:] = [x for x in acti_filtered if x not in disable]
@@ -541,17 +544,26 @@ class LoGame:
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
 
-    def check_active_limit(self, acti_filtered):
-        acti_filtered_regular = []
-        acti_filtered_esl = []
+    def check_active_limit(self, acti_filtered, *, as_type=set):
+        pl_type_active = defaultdict(list)
+        limit_flags = {pf: (pf.name.title(), mp) for pf in
+            self._game_handle.plugin_flags if (mp := pf.max_plugins)}
         for m in acti_filtered:
             mi = self.mod_infos[m]
-            if mi.is_esl():
-                acti_filtered_esl.append(m)
+            for pflag in limit_flags:
+                if pflag.cached_type(mi):
+                    pl_type_active[pflag].append(m)
+                    break
             else:
-                acti_filtered_regular.append(m)
-        return (set(acti_filtered_regular[self._game_handle.max_espms:]),
-                set(acti_filtered_esl[self._game_handle.max_esls:]))
+                pl_type_active[PluginFlag].append(m)
+        limit_flags[PluginFlag] = ('regular', PluginFlag.max_plugins)
+        filtered = {f'{mp:d} {type_name} plugins': drop for f, (type_name, mp)
+            in limit_flags.items() if (drop := pl_type_active[f][mp:])}
+        if as_type is set:
+            return set(chain(*filtered.values()))
+        if as_type is str:
+            return ' and '.join(k for k in filtered)
+        raise ValueError(f'Invalid {as_type=}')
 
     def pinned_plugins(self, mods: set[FName] | None = None, fixed_order=False,
                        filter_mods=False) -> list[FName]:
@@ -722,10 +734,11 @@ class TimestampGame(LoGame):
     def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
         mods = ((k, self.mod_infos[k]) for k in
                 (self.mod_infos if mods is None else mods))
+        is_m = self._game_handle.master_flags.sort_masters_key
         return [m for m, _inf in sorted(mods, key=lambda x: (
             # split into master block and not master block then sort by ftime
             # then by name case insensitive (for time conflicts)
-            not x[1].in_master_block(), x[1].ftime, x[0]))]
+            *is_m(x[1]), x[1].ftime, x[0]))]
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
@@ -929,11 +942,11 @@ class AsteriskGame(_TextFileLo):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Discard information read if cached_* is passed in, but due
         to our caller being get_load_order *at least one* is None."""
-        rem_from_acti = self._active_if_present
+        rem_from_acti, blue = self._rem_from_plugins_txt()
         try:
             active, lo = self._plugins_txt.parse_modfile()
-            if any_dropped := {x for x in lo if x in rem_from_acti}:
-                bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
+            if any_dropped := [x for x in lo if x in rem_from_acti]:
+                bolt.deprint(f'Removing {_pl(any_dropped)} from '
                              f'{self._plugins_txt.abs_path}')
                 # We removed plugins that don't belong here, back up first
                 self._backup_active_plugins()
@@ -941,6 +954,17 @@ class AsteriskGame(_TextFileLo):
             # Prepend all present fixed-order plugins that can't be in the
             # plugins txt to the active and lord lists
             sorted_rem = self.pinned_plugins(rem_from_acti, fixed_order=True)
+            if blue is not None:
+                # silently add Blueprint masters to the load order - if they
+                # were new mods we should have recorded that in modInfos
+                # refresh else they might have been removed from the
+                # plugins.txt while still present - so do not issue a warning
+                in_plugins_tx = {m for m in lo if m in blue}
+                blue = [m for m in blue if m not in in_plugins_tx] # keep order
+                lo.extend(blue)
+                if always_active_missing := [b for b in blue if
+                                             b in self._active_if_present]:
+                    active.extend(always_active_missing)
             lo = [*sorted_rem, *lo] if ca_load_order is None else ca_load_order
             active = [*sorted_rem, *active] if ca_active is None else ca_active
         except FileNotFoundError:
@@ -950,6 +974,9 @@ class AsteriskGame(_TextFileLo):
                                      active := ca_active or [])
             bolt.deprint(f'Created {self._plugins_txt.abs_path}')
         return lo, active
+
+    def _rem_from_plugins_txt(self):
+        return self._active_if_present, None # no blueprints
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered): return True
