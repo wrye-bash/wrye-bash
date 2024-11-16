@@ -665,7 +665,7 @@ class Save_Move(ChoiceLink):
             if not self.copyMode: # files moved to other profile, refresh
                 if moved := bosh.saveInfos.check_exists(
                         self.iselected_infos()):
-                    bosh.saveInfos.refresh(RefrIn({}, moved))
+                    bosh.saveInfos.refresh(RefrIn(del_infos=moved))
                 self.window.RefreshUI(to_del=moved)
         profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
         msg = (_('%(num_save_files)d files copied to %(save_profile)s.')

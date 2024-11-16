@@ -1330,7 +1330,7 @@ class _InstallerPackage(Installer, AFileInfo):
         for store, owned_files in store_to_paths.items():
             # some of those may just be modified but creating a new info is ok
             refresh_ui[store.unique_store_key] = bool(store.refresh(
-                refresh_infos=RefrIn.from_tabled_infos({}, extra_attrs={
+                refresh_infos=RefrIn.from_tabled_infos(extra_attrs={
                     k: {'installer': self.fn_key} for k, _dest in
                     owned_files}), unlock_lo=True))
             for (owned_file, dest) in owned_files:
@@ -2611,7 +2611,7 @@ class InstallersData(DataStore):
                 ini_.write(f'; {msg}\n\n' % {'wb_version': bass.AppVersion})
                 ini_.writelines(lines)
             created.append(FName(tweakPath.stail))
-        iniInfos.refresh(created)
+        iniInfos.refresh(RefrIn.from_added(created))
         tweaksCreated -= removed
 
     def _installer_install(self, installer, destFiles, index, progress):
@@ -2931,7 +2931,7 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_keys in store_del.items():
-                store.refresh(RefrIn({}, del_keys), unlock_lo=True)
+                store.refresh(RefrIn(del_infos=del_keys), unlock_lo=True)
                 refresh_ui |= store.unique_store_key.DO()
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:
