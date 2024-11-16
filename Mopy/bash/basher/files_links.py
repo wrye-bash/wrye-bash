@@ -25,6 +25,7 @@ from .. import balt, bass, bolt, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bass import Store
 from ..bolt import FNDict, GPath_no_norm
+from ..bosh import RefrIn
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 from ..wbtemp import TempFile
@@ -111,8 +112,8 @@ class File_Duplicate(ItemLink):
     def Execute(self):
         mod_previous = FNDict()
         fileInfos = self._data_store
-        pairs = [*self.iselected_pairs()]
-        for to_duplicate, fileInfo in pairs:
+        pairs = dict(self.iselected_pairs())
+        for to_duplicate, fileInfo in pairs.items():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
@@ -135,7 +136,9 @@ class File_Duplicate(ItemLink):
             fileInfo.copy_to(destDir.join(destName))
             mod_previous[destName] = to_duplicate
         if mod_previous:
-            fileInfos.refresh([*mod_previous], insert_after=mod_previous)
+            rinf = RefrIn.from_tabled_infos(
+                {k: pairs[v] for k, v in mod_previous.items()})
+            fileInfos.refresh(rinf, insert_after=mod_previous)
             self.window.RefreshUI(redraw=mod_previous,
                 detail_item=next(reversed(mod_previous)))
             self.window.SelectItemsNoCallback(mod_previous)
@@ -217,8 +220,8 @@ class _RevertBackup(OneItemLink):
                                 title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh({sel_file: { # re-add all attrs
-                        'att_val': sel_inf.get_persistent_attrs()}})
+                    self._data_store.refresh(RefrIn.from_tabled_infos({
+                        sel_file: sel_inf})) # re-add all attrs
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 

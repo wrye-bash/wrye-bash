@@ -77,7 +77,7 @@ from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property, attrgetter_cache, top_level_files
-from ..bosh import ModInfo, omods, RefrData
+from ..bosh import ModInfo, omods, RefrData, RefrIn
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -1366,11 +1366,12 @@ class _EditableMixinOnFileInfos(_EditableMixin):
             self.SetEdited()
 
     @balt.conversation
-    def _refresh_detail_info(self, refresh_info, **kwargs):
-        # Although we could avoid rereading the header I leave it here as
-        # an extra error check - error handling is WIP
+    def _refresh_detail_info(self, refresh_info=True, **kwargs):
+        # Although we could avoid rereading the header by passing the info in I
+        # leave it here as an extra error check - error handling is WIP
         store = self.panel_uilist.data_store
-        store.refresh(refresh_info, **kwargs)
+        store.refresh(refresh_info and RefrIn.from_tabled_infos(
+            {self.file_info.fn_key: self.file_info}, exclude=True), **kwargs)
         if not store.get(fn := self.file_info.fn_key):
             showError(self, _('File corrupted on save!') +
                       f'\n{store.corrupted[fn].error_message}')
@@ -1681,15 +1682,14 @@ class ModDetails(_ModsSavesDetails):
             if msg and not askWarning(
                     self, msg, title=_('Rename %(target_file_name)s') % {
                         'target_file_name': modInfo}): return
+        unlock_lo = changeDate and not bush.game.using_txt_file
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
-            bosh.modInfos.refresh(refresh_infos=False,
-                                  unlock_lo=not bush.game.using_txt_file)
+            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
             self.panel_uilist.RefreshUI( # refresh saves if lo changed
                 refresh_others=Store.SAVES.IF(not bush.game.using_txt_file))
             return
-        unlock = False
         #--Backup
         modInfo.makeBackup()
         #--Change Name?
@@ -1705,7 +1705,7 @@ class ModDetails(_ModsSavesDetails):
             settings[u'bash.mods.renames'][oldName] = newName
             changeName = self.panel_uilist.try_rename(modInfo, newName, None)
         #--Change hedr/masters?
-        if changeHedr or changeMasters:
+        if refr_inf := (changeHedr or changeMasters):
             modInfo.header.author = self.authorStr.strip()
             modInfo.header.description = self.descriptionStr.strip()
             old_mi_masters = modInfo.header.masters
@@ -1715,18 +1715,10 @@ class ModDetails(_ModsSavesDetails):
         #--Change date?
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
-            unlock = not bush.game.using_txt_file
-        kw = {'unlock_lo': unlock}
-        if changeDate or changeHedr or changeMasters:
-            # we reread header to make sure was written correctly
-            kw['refresh_infos'] = {self.file_info.fn_key: {
-                'att_val': self.file_info.get_persistent_attrs(exclude=True)}}
-        else:
-            kw['refresh_infos'] = False
-        detail_item = self._refresh_detail_info(**kw)
-        should_refresh_saves = detail_item is None or changeName or unlock
+        detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
         self.panel_uilist.RefreshUI(detail_item=detail_item,
-            refresh_others=Store.SAVES.IF(should_refresh_saves))
+            refresh_others=Store.SAVES.IF(
+                detail_item is None or changeName or unlock_lo))
 
     def _set_date(self, modInfo):
         modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
@@ -2354,8 +2346,7 @@ class SaveDetails(_ModsSavesDetails):
                              in zip(prev_masters, curr_masters) if m1 != m2}
             saveInfo.write_masters(master_remaps)
             saveInfo.setmtime(prevMTime)
-            detail_item = self._refresh_detail_info({self.file_info.fn_key: {
-              'att_val': {self.file_info.get_persistent_attrs()}}})
+            detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
         kwargs = {'to_del': rdata.to_del if changeName else set()}
         if detail_item is None:

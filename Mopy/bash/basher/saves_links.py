@@ -697,7 +697,7 @@ class Save_Move(ChoiceLink):
                 save_inf.fs_copy(destDir.join(fileName))
             else:
                 save_inf.move_info(destDir)
-            if att_dict := save_inf.get_persistent_attrs():
+            if att_dict := save_inf.get_persistent_attrs(frozenset()):
                 destTable.pickled_data[fileName] = att_dict
                 do_save = 1
             count += 1

@@ -48,7 +48,7 @@ from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..bass import Store
 from ..bolt import FName, LogFile, SubProgress, deprint, round_size
-from ..bosh import InstallerConverter, converters
+from ..bosh import InstallerConverter, converters, RefrIn
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 from ..wbtemp import cleanup_temp_dir
@@ -391,8 +391,8 @@ class Installer_Wizard(_Installer_AWizardLink):
             with outFile.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
-            new_infos[ini_name := outFile.stail] = {'att_val':
-                {'installer': installer.fn_key}}
+            new_infos[ini_name := outFile.stail] = {
+                'installer': installer.fn_key}
             # We wont automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
             game_ini = bosh.get_game_ini(iniFile, is_abs=False)
@@ -411,8 +411,8 @@ class Installer_Wizard(_Installer_AWizardLink):
                     continue
                 target_ini_file = bosh.BestIniFile(target_path)
                 apply_to[target_ini_file].append(ini_name)
-        rdata = bosh.iniInfos.refresh(refresh_infos=new_infos,
-                                      refresh_target=False)
+        rdata = bosh.iniInfos.refresh(refresh_infos=RefrIn.from_tabled_infos(
+            {}, extra_attrs=new_infos), refresh_target=False)
         lastApplied = None
         for target_ini_file, tweaks in apply_to.items():
             infos = [inf for t in tweaks if (inf := bosh.iniInfos.get(t))]
