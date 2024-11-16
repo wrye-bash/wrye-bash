@@ -40,7 +40,7 @@ from .. import balt, bass, bolt, bosh, bush, exception, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bass import Store
-from ..bolt import FName, SubProgress, dict_sort, sig_to_str
+from ..bolt import FName, SubProgress, dict_sort, sig_to_str, GPath_no_norm
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
@@ -2370,32 +2370,16 @@ class Mod_RevertToSnapshot(OneItemLink):
     @balt.conversation
     def Execute(self):
         """Revert to Snapshot."""
-        fileName = self._selected_item
-        #--Snapshot finder
-        srcDir, _destName, wildcard = self._selected_info.getNextSnapshot()
-        #--File dialog
-        snapPath = self._askOpen(_('Revert %(target_file_name)s to '
-                                   'snapshot:') % {
-            'target_file_name': fileName}, defaultDir=srcDir,
-            wildcard=wildcard)
-        if not snapPath: return
-        snapName = snapPath.tail
-        #--Warning box
-        message = (_('Revert %(target_file_name)s to snapshot '
-                     '%(snapsnot_file_name)s dated %(snapshot_date)s?') % {
-            'target_file_name': fileName, 'snapsnot_file_name': snapName,
-            'snapshot_date': format_date(snapPath.mtime)})
-        if not self._askYes(message, _(u'Revert to Snapshot')): return
+        if not self._ask_revert(): return
+        sel_file = self._selected_item
         with BusyCursor(), TempFile() as known_good_copy:
-            sel_inf = self._selected_info
-            destPath = sel_inf.abs_path
-            current_mtime = destPath.mtime
+            info_path = (sel_inf := self._selected_info).abs_path
             # Make a temp copy first in case reverting to snapshot fails
-            self._selected_info.fs_copy(known_good_copy)
+            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
             # keep load order (so mtime)
-            snapPath.copyTo(destPath, set_time=current_mtime)
+            self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
             try:
-                inf = self._data_store.new_info(fileName, notify_bain=True)
+                inf = self._data_store.new_info(sel_file, notify_bain=True)
                 inf.copy_persistent_attrs(sel_inf)
             except exception.FileError:
                 # Reverting to snapshot failed - may be corrupt
@@ -2406,12 +2390,35 @@ class Mod_RevertToSnapshot(OneItemLink):
                       "%(snapshot_file_name)s. The snapshot file may be "
                       "corrupt. Do you want to restore the original file "
                       "again? 'No' keeps the reverted, possibly broken "
-                      "snapshot instead.") % {'target_file_name': fileName,
-                                              'snapshot_file_name': snapName},
+                      "snapshot instead.") % {'target_file_name': sel_file,
+                            'snapshot_file_name': self._backup_path.tail},
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
-                    destPath.replace_with_temp(known_good_copy)
-                    inf = self._data_store.new_info(fileName, notify_bain=True)
-                    inf.copy_persistent_attrs(self._selected_info)
+                    info_path.replace_with_temp(known_good_copy)
+                    inf = self._data_store.new_info(sel_file, notify_bain=True)
+                    inf.copy_persistent_attrs(sel_inf)
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[fileName])
+        self.window.RefreshUI(redraw=[sel_file])
+
+    @property
+    def _backup_path(self):
+        if self.__backup_path: return self.__backup_path
+        #--Snapshot finder
+        srcDir, _destName, wildcard = self._selected_info.getNextSnapshot()
+        #--File dialog
+        msg = _('Revert %(target_file_name)s to snapshot:') % {
+            'target_file_name': self._selected_item}
+        self.__backup_path = self._askOpen(msg, defaultDir=srcDir,
+                                           wildcard=wildcard)
+        return self.__backup_path
+
+    def _ask_revert(self):
+        self.__backup_path = None
+        sel_file = self._selected_item
+        if not (snapPath := self._backup_path): return
+        #--Warning box
+        message = (_('Revert %(target_file_name)s to snapshot '
+                     '%(snapsnot_file_name)s dated %(snapshot_date)s?') % {
+            'target_file_name': sel_file, 'snapsnot_file_name': snapPath.tail,
+            'snapshot_date': format_date(snapPath.mtime)})
+        return self._askYes(message, _('Revert to Snapshot'))

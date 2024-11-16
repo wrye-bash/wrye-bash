@@ -342,11 +342,11 @@ class FileInfo(_TabledInfo, AFileInfo):
         if self not in self._store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.fs_copy(self.backup_dir.join(self.fn_key))
+        self.fs_copy(self.backup_restore_paths(False)[0][0])
         #--First backup
-        firstBackup = self.backup_dir.join(self.fn_key) + 'f'
+        firstBackup = self.backup_restore_paths(True)[0][0]
         if not firstBackup.exists():
-            self.fs_copy(self.backup_dir.join(firstBackup.tail))
+            self.fs_copy(firstBackup)
         self.madeBackup = True
 
     def backup_restore_paths(self, first, fname=None) -> list[tuple[Path, Path]]:
@@ -357,7 +357,8 @@ class FileInfo(_TabledInfo, AFileInfo):
         restore_path = (fname and self._store().store_dir.join(
             fname)) or self.abs_path
         fname = fname or self.fn_key
-        return [(self.backup_dir.join(fname + 'f' * first), restore_path)]
+        return [(self._store().bash_dir.join('Backups').join(
+            fname + 'f' * first), restore_path)]
 
     def all_backup_paths(self, fname=None):
         """Return the list of all possible paths a backup operation may create.
@@ -387,10 +388,6 @@ class FileInfo(_TabledInfo, AFileInfo):
         inf = self._store().new_info(self.fn_key, notify_bain=True,
             _in_refresh=True)
         inf.copy_persistent_attrs(self)
-
-    @property
-    def backup_dir(self):
-        return self._store().bash_dir.join('Backups')
 
     def delete_paths(self): # will include cosave ones
         return *super().delete_paths(), *self.all_backup_paths()
@@ -1534,7 +1531,7 @@ class DataStore(DataDict):
         raise NotImplementedError
 
     @property
-    def hidden_dir(self) -> Path:
+    def hide_dir(self) -> Path:
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 

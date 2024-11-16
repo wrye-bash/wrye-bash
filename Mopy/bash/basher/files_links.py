@@ -24,6 +24,7 @@
 from .. import balt, bass, bolt, bosh, exception
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bass import Store
+from ..bolt import GPath_no_norm
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 from ..wbtemp import TempFile
@@ -182,8 +183,7 @@ class _RevertBackup(OneItemLink):
 
     @property
     def _backup_path(self):
-        return self._selected_info.backup_dir.join(
-            self._selected_item) + ('f' if self.first else '')
+        return self._selected_info.backup_restore_paths(self.first)[0][0]
 
     @property
     def link_help(self):
@@ -197,17 +197,13 @@ class _RevertBackup(OneItemLink):
     @balt.conversation
     def Execute(self):
         #--Warning box
+        if not self._ask_revert(): return
         sel_file = self._selected_item
-        backup_date_fmt = format_date(self._backup_path.mtime)
-        message = _('Revert %(target_file_name)s to backup dated '
-                    '%(backup_date)s?') % {'target_file_name': sel_file,
-                                           'backup_date': backup_date_fmt}
-        if not self._askYes(message): return
         with BusyCursor(), TempFile() as known_good_copy:
-            sel = self._selected_info
+            sel_inf = self._selected_info
             # Make a temp copy first in case reverting to backup fails
-            info_path = sel.abs_path
-            sel.fs_copy(known_good_copy)
+            info_path = sel_inf.abs_path
+            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
             try:
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:
@@ -220,14 +216,19 @@ class _RevertBackup(OneItemLink):
                         "corrupt. Do you want to restore the original file "
                         "again? 'No' keeps the reverted, possibly broken "
                         "backup instead.") % {'target_file_name': sel_file,
-                                              'backup_date': backup_date_fmt},
-                        title=_('Revert to Backup - Error')):
+                          'backup_date': format_date(self._backup_path.mtime)},
+                                title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
                     inf = self._data_store.new_info(sel_file, notify_bain=True)
-                    inf.copy_persistent_attrs(sel)
+                    inf.copy_persistent_attrs(sel_inf)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
+
+    def _ask_revert(self):
+        msg = _('Revert %(target_file_name)s to backup dated %(backup_date)s?')
+        return self._askYes(msg % {'target_file_name': self._selected_item,
+            'backup_date': format_date(self._backup_path.mtime)})
 
 class File_RevertToBackup(MultiLink):
     """Revert to last or first backup."""
