@@ -1883,28 +1883,35 @@ class AFileInfo(AFile, ListInfo):
         return super(AFile, self).__repr__()
 
 #------------------------------------------------------------------------------
+# show your type off - it's unique, maps existing [new] infos fn_keys to tuples
+# of (info (call its do_update) [None (call init)], kwargs for the method call)
+_RIn = dict[FName, tuple[None | ListInfo, dict]]
 @dataclass(slots=True)
 class RefrIn:
     """WIP! requesting refresh from the data store."""
-    new_or_present: field(default_factory=dict)
-    del_infos: field(default_factory=set)
+    new_or_present: _RIn = field(default_factory=dict)
+    del_infos: set = field(default_factory=set)
 
     @classmethod
-    def from_tabled_infos(cls, fn_info_dict, *, extra_attrs=None,
+    def from_tabled_infos(cls, fn_info_dict=None, *, extra_attrs=None,
                           exclude: frozenset | True = frozenset()):
         """Copy persistent attributes from info objects (or dict) - info
         objects are discarded, so we request refresh for *adding* infos."""
         try:
             rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
                     for k, v in fn_info_dict.items()}
-        except AttributeError: # ScreenInfos
-            rinf = {k: (None, {}) for k, v in fn_info_dict.items()}
+        except AttributeError: # ScreenInfos or fn_info_dict is None
+            rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}
         for k, v in (extra_attrs or {}).items():
             try:
                 rinf[k][1]['att_val'].update(v)
             except KeyError:
                 rinf[k] = None, {'att_val': v}
-        return cls(rinf, set())
+        return cls(rinf)
+
+    @classmethod
+    def from_added(cls, added_fns):
+        return cls({k: (None, {}) for k in added_fns})
 
 #------------------------------------------------------------------------------
 class PickleDict(object):

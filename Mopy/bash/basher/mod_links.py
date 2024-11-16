@@ -224,7 +224,8 @@ class Mod_CreateDummyMasters(OneItemLink):
                 dir_path=self._data_store.store_dir)
             mod_previous[master] = previous_master
             previous_master = master
-        bosh.modInfos.refresh([*mod_previous], insert_after=mod_previous)
+        bosh.modInfos.refresh(RefrIn.from_added(mod_previous),
+                              insert_after=mod_previous)
         self.window.RefreshUI(detail_item=next(reversed(mod_previous)),
                               refresh_others=Store.SAVES.DO())
         self.window.SelectItemsNoCallback(mod_previous)

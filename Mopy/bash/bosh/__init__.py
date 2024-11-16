@@ -1508,7 +1508,7 @@ class DataStore(DataDict):
             if finfos := self.check_exists(finfos):
                 # ok to suppose the only lo modification is due to deleted
                 # files at this point
-                self.refresh(RefrIn({}, del_infos=finfos), what='I',
+                self.refresh(RefrIn(del_infos=finfos), what='I',
                              unlock_lo=True)
 
     def _delete_operation(self, finfos: list, recycle):
@@ -1619,10 +1619,15 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos=True, *, booting=False):
+    def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False):
         """Refresh from file directory."""
         rdata = self._rdata_type()
-        new_or_present, del_infos = self._list_store_dir(refresh_infos)
+        try:
+            new_or_present, delinfos = (refresh_infos.new_or_present,
+                                        refresh_infos.del_infos)
+        except AttributeError:
+            new_or_present, delinfos = self._list_store_dir() \
+                if refresh_infos else ({}, set())
         for new, (oldInfo, kws) in new_or_present.items():
             try:
                 if oldInfo is not None:
@@ -1645,21 +1650,15 @@ class _AFileInfos(DataStore):
                 deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                         traceback=True)
                 if new := self.pop(new, None): # effectively deleted
-                    del_infos.add(new)
-        rdata.to_del = {d.fn_key for d in del_infos}
-        self._delete_refresh(del_infos)
-        if not booting and (alt := (rdata.redraw | rdata.to_add) or del_infos):
+                    delinfos.add(new)
+        rdata.to_del = {d.fn_key for d in delinfos}
+        self._delete_refresh(delinfos)
+        if not booting and (alt := (rdata.redraw | rdata.to_add) or delinfos):
             self._notify_bain(altered={self[n].abs_path for n in alt},
-                              del_set={inf.abs_path for inf in del_infos})
+                              del_set={inf.abs_path for inf in delinfos})
         return rdata
 
-    def _list_store_dir(self, refresh_input):
-        if isinstance(refresh_input, RefrIn):
-            return refresh_input.new_or_present, refresh_input.del_infos
-        if refresh_input is False:
-            return {}, set()
-        if isinstance(refresh_input, (list, set, tuple)):
-            return {k: (None, {}) for k in refresh_input}, set()
+    def _list_store_dir(self):
         file_matches_store = self.rightFileType
         inodes = FNDict()
         with os.scandir(self.store_dir) as it: # performance intensive
@@ -1745,12 +1744,12 @@ class TableFileInfos(_AFileInfos):
     def refresh(self, refresh_infos=True, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
-            new_or_present, del_infos = self._list_store_dir(True)
+            new_or_present, delinfos = self._list_store_dir()
             table = self._init_from_table()
             for fn, (_inf, kws) in new_or_present.items():
                 if props := table.get(fn):
                     kws['att_val'] = props
-            refresh_infos = RefrIn(new_or_present, del_infos)
+            refresh_infos = RefrIn(new_or_present, delinfos)
         return super().refresh(refresh_infos, **kwargs)
 
     def save_pickle(self):
@@ -2005,7 +2004,7 @@ class INIInfos(TableFileInfos):
         """Duplicate tweak into fn_new_teak."""
         with open(self.store_dir.join(fn_new_tweak), 'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
-        self.refresh([fn_new_tweak])
+        self.refresh(RefrIn.from_added([fn_new_tweak]))
         return self[fn_new_tweak]
 
     def copy_tweak_from_target(self, tweak, fn_new_tweak: FName):
@@ -2455,7 +2454,7 @@ class ModInfos(TableFileInfos):
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)
-        self.refresh(moved)
+        self.refresh(RefrIn.from_added(moved))
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
@@ -2788,10 +2787,10 @@ class ModInfos(TableFileInfos):
             pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
         newFile.safeSave()
         if dir_path is None:
-            last_selected = load_order.get_ordered(selected)[
-                -1] if selected else self._lo_wip[-1]
-            rdata = self.refresh([newName := FName(newName)],
-                                 insert_after={newName: last_selected})
+            last_selected = (load_order.get_ordered(selected) if selected
+                             else self._lo_wip)[-1]
+            new = FNDict([(newName, last_selected)])
+            rdata = self.refresh(RefrIn.from_added(new), insert_after=new)
             # if we failed to add this will raise KeyError we 'd want to
             # return the message from corrupted
             return self[rdata.to_add.pop()]
@@ -3168,7 +3167,7 @@ class SaveInfos(TableFileInfos):
             if FName(d.stail) in moved:
                 co_instances = SaveInfo.get_cosaves_for_path(s)
                 self.co_copy_or_move(co_instances, d, move_cosave=True)
-        self.refresh(moved)
+        self.refresh(RefrIn.from_added(moved))
         bash_frame.warn_corrupted(warn_saves=True)
         return moved
 
