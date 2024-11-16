@@ -42,6 +42,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
     GPath_no_norm
+from ..bosh import RefrIn
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
@@ -1403,7 +1404,7 @@ class _CopyToLink(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        modInfos, added = bosh.modInfos, []
+        modInfos, added = bosh.modInfos, {}
         pflags = bush.game.plugin_flags
         force_flags = pflags.guess_flags(self._target_ext, bush.game)
         force_flags = pflags.check_flag_assignments(force_flags)
@@ -1425,17 +1426,18 @@ class _CopyToLink(EnabledLink):
                     newTime = existing.ftime
                 # Copy and set flag - will use ghosted path if needed
                 minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
-                added.append(newName)
+                added[newName] = minfo
                 if newTime is None: # otherwise it has a load order already!
                     mod_previous[newName] = curName
         #--Repopulate
         if added:
-            rdata = modInfos.refresh(added, insert_after=mod_previous) ##: we should copy the persistent attributes here
+            rinf = RefrIn.from_tabled_infos(added, exclude=True)
+            rdata = modInfos.refresh(rinf, insert_after=mod_previous)
             if force_flags:
                 for new in rdata.to_add:
                     bosh.modInfos[new].set_plugin_flags(force_flags)
             self.window.RefreshUI(refresh_others=Store.SAVES.DO(),
-                                  detail_item=added[-1])
+                                  detail_item=next(reversed(added)))
             self.window.SelectItemsNoCallback(added)
 
 class Mod_CopyToMenu(MenuLink):
@@ -2366,8 +2368,8 @@ class Mod_RevertToSnapshot(OneItemLink):
             sel_inf.fs_copy(GPath_no_norm(known_good_copy))
             # keep load order (so mtime)
             self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
-            self._data_store.refresh({sel_file: {
-                'att_val': sel_inf.get_persistent_attrs(exclude=True)}})
+            self._data_store.refresh(RefrIn.from_tabled_infos({
+                sel_file: sel_inf}, exclude=True))
             if not self._data_store.get(sel_file):
                 # Reverting to snapshot failed - may be corrupt
                 bolt.deprint('Failed to revert to snapshot', traceback=True)
@@ -2382,8 +2384,8 @@ class Mod_RevertToSnapshot(OneItemLink):
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh({sel_file: {'att_val':
-                        sel_inf.get_persistent_attrs()}})
+                    self._data_store.refresh(RefrIn.from_tabled_infos({
+                        sel_file: sel_inf}))
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 

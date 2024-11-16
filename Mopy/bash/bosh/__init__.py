@@ -245,7 +245,7 @@ class _TabledInfo:
             except AttributeError: return
         else: setattr(self, self.__class__._key_to_attr[prop_key], val)
 
-    def get_persistent_attrs(self, *, exclude: frozenset | True = frozenset()):
+    def get_persistent_attrs(self, exclude):
         return {pickle_key: val for pickle_key in self.__class__._key_to_attr
                 if pickle_key not in exclude and (
                     val := self.get_table_prop(pickle_key)) is not None}
@@ -379,8 +379,8 @@ class FileInfo(_TabledInfo, AFileInfo):
         # case - as backup is half-baked anyway let's agree for now that BPs
         # remain BPs with the same config as before - if not, manually run a
         # mergeability scan after updating the config
-        self._store().refresh({self.fn_key: {
-            'att_val': self.get_persistent_attrs(exclude=True)}})
+        self._store().refresh(RefrIn.from_tabled_infos(
+            {self.fn_key: self}, exclude=True))
 
     def delete_paths(self): # will include cosave ones
         return *super().delete_paths(), *self.all_backup_paths()
@@ -437,14 +437,14 @@ class ModInfo(FileInfo):
                 return groupDir
         return dest_dir
 
-    def get_persistent_attrs(self, *, exclude: frozenset | True = frozenset()):
+    def get_persistent_attrs(self, exclude):
         if exclude is True:
             exclude = frozenset([ #'allowGhosting', 'bash.patch.configs',
                 'bp_split_parent', # 'doc', 'docEdit', 'group', 'installer',
                 # 'rating', 'autoBashTags', 'bashTags', ##: reset bashTags on reverting?
                 # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
                 'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
-        return super().get_persistent_attrs(exclude=exclude)
+        return super().get_persistent_attrs(exclude)
 
     @classmethod
     def _store(cls): return modInfos
@@ -1551,10 +1551,27 @@ class RefrData:
         return bool(self.to_add or self.to_del or self.redraw)
 
 @dataclass(slots=True)
-class _RefrIn:
+class RefrIn:
     """WIP! requesting refresh from the data store."""
     new_or_present: field(default_factory=dict)
     del_infos: field(default_factory=set)
+
+    @classmethod
+    def from_tabled_infos(cls, fn_info_dict, *, extra_attrs=None,
+                          exclude: frozenset | True = frozenset()):
+        """Copy persistent attributes from info objects (or dict) - info
+        objects are discarded, so we request refresh for *adding* infos."""
+        try:
+            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
+                    for k, v in fn_info_dict.items()}
+        except AttributeError: # ScreenInfos
+            rinf = {k: (None, {}) for k, v in fn_info_dict.items()}
+        for k, v in (extra_attrs or {}).items():
+            try:
+                rinf[k][1]['att_val'].update(v)
+            except KeyError:
+                rinf[k] = None, {'att_val': v}
+        return cls(rinf, set())
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -1622,18 +1639,16 @@ class _AFileInfos(DataStore):
         self.corrupted.pop(fileName, None)
         return info
 
-    def _list_store_dir(self, refresh_infos): # performance intensive
-        if isinstance(refresh_infos, _RefrIn):
+    def _list_store_dir(self, refresh_infos):
+        if isinstance(refresh_infos, RefrIn):
             return refresh_infos.new_or_present, refresh_infos.del_infos
         if refresh_infos is False:
             return {}, set()
         if isinstance(refresh_infos, (list, set, tuple)):
             return {k: (None, {}) for k in refresh_infos}, set()
-        if isinstance(refresh_infos, dict): # create new infos for those
-            return {k: (None, v) for k, v in refresh_infos.items()}, set()
         file_matches_store = self.rightFileType
         inodes = FNDict()
-        with os.scandir(self.store_dir) as it:
+        with os.scandir(self.store_dir) as it: # performance intensive
             for x in it:
                 try:
                     if x.is_file() and file_matches_store(n := x.name):
@@ -1727,13 +1742,13 @@ class TableFileInfos(_AFileInfos):
             for fn, (_inf, kws) in new_or_present.items():
                 if props := table.get(fn):
                     kws['att_val'] = props
-            refresh_infos = _RefrIn(new_or_present, del_infos)
+            refresh_infos = RefrIn(new_or_present, del_infos)
         return super().refresh(refresh_infos, *args, **kwargs)
 
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
         for k, v in self.items():
-            if pickle_dict := v.get_persistent_attrs():
+            if pickle_dict := v.get_persistent_attrs(frozenset()):
                 pd.pickled_data[k] = pickle_dict
         pd.save()
 

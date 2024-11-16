@@ -39,7 +39,7 @@ from operator import attrgetter, itemgetter
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files, data_tracking_stores, RefrData
+    best_ini_files, data_tracking_stores, RefrData, RefrIn
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
@@ -1329,10 +1329,10 @@ class _InstallerPackage(Installer, AFileInfo):
         refresh_ui = defaultdict(bool)
         for store, owned_files in store_to_paths.items():
             # some of those may just be modified but creating a new info is ok
-            new_infos = {k: {'att_val': {'installer': self.fn_key}} for
-                         k, _dest in owned_files}
             refresh_ui[store.unique_store_key] = bool(store.refresh(
-                refresh_infos=new_infos, unlock_lo=True))
+                refresh_infos=RefrIn.from_tabled_infos({}, extra_attrs={
+                    k: {'installer': self.fn_key} for k, _dest in
+                    owned_files}), unlock_lo=True))
             for (owned_file, dest) in owned_files:
                 try:
                     data_sizeCrcDate_update[dest][2] = store[owned_file].ftime
