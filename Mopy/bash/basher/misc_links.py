@@ -54,7 +54,7 @@ class Screens_NextScreenShot(EnabledLink):
         if not self._enable():
             return self._help + ' ' + _('%(game_ini_name)s must exist.') % {
                 'game_ini_name': bush.game.Ini.dropdown_inis[0]}
-        else: return self._help
+        return self._help
 
     def Execute(self):
         base_key = bush.game.Ini.screenshot_base_key
