@@ -820,14 +820,6 @@ class UIList(PanelWin):
                 del refresh_others[self.data_store_key]
             Link.Frame.distribute_ui_refresh(refresh_others)
 
-    def issue_warnings(self,
-            warn_others: defaultdict[str, bool] | None = None):
-        """Show warnings for this tab and any others that are specified."""
-        final_warn_dict = defaultdict(bool, {self.data_store_key: True})
-        if warn_others:
-            final_warn_dict |= warn_others
-        Link.Frame.distribute_warnings(final_warn_dict)
-
     def _refresh_details(self, to_redraw, detail_item):
         if detail_item is None:
             self.panel.ClearDetails()
@@ -2031,6 +2023,27 @@ class UIList_Hide(EnabledLink):
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
         self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+
+class Installer_Op(ItemLink):
+    """Common refresh logic for BAIN operations."""
+    _prog_args = ()
+
+    @conversation
+    def Execute(self):
+        ui_refresh = defaultdict(bool)
+        try:
+            with (Progress(*self._prog_args) if self._prog_args else
+                  bolt.Progress() as progress):
+                return self._perform_action(ui_refresh, progress)
+        except (CancelError, SkipError):
+            return None
+        finally:
+            self.window.RefreshUI(refresh_others=ui_refresh)
+            ui_refresh[self.window.data_store_key] = True
+            Link.Frame.distribute_warnings(ui_refresh)
+
+    def _perform_action(self, ui_refresh_, progress):
+        raise NotImplementedError
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------

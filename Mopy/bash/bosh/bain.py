@@ -1636,7 +1636,7 @@ class InstallerArchive(_InstallerPackage):
             pass
 
     def _make_wizard_file_dir(self, wizard_file_name, progress):
-        with progress:
+        with progress(_('Extracting images…'), abort=True) as progress:
             # Extract the wizard, and any images as well
             files_to_extract = [wizard_file_name]
             image_exts = ('bmp', 'jpg', 'jpeg', 'png', 'gif', 'pcx', 'pnm',
@@ -2053,7 +2053,8 @@ class InstallersData(DataStore):
 
     def filter_unopenable(self, fn_items: Iterable[FName]):
         # Can't open markers since they're virtual
-        return {i: self[i] for i in fn_items if not self[i].is_marker}
+        return {i: p for i in fn_items if
+                isinstance(p := self[i], _InstallerPackage)}
 
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)
@@ -2770,22 +2771,16 @@ class InstallersData(DataStore):
                     cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
         return set(dest_sc)
 
-    def bain_uninstall_all(self, refresh_ui, progress=None):
-        """Uninstall all present packages."""
-        self._do_uninstall(frozenset(self.values()), refresh_ui, progress)
-
-    def bain_uninstall(self, unArchives, refresh_ui, progress=None):
+    def bain_uninstall(self, unArchives, refresh_ui_, progress=None):
         """Uninstall selected packages."""
-        self._do_uninstall(frozenset(self[x] for x in unArchives), refresh_ui,
-            progress)
-
-    def _do_uninstall(self, unArchives, refresh_ui, progress):
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
         #  may block (mask) them from deleting files and/or may provide files
         #  that should be restored to make up for previous files. However,
         #  restore can be skipped, if existing files matches the file being
         #  removed.
+        unArchives = self.filterInstallables(self) if unArchives is None else {
+            self[package] for package in unArchives}
         masked = set()
         removes = set()
         #--March through packages in reverse order...
@@ -2808,11 +2803,11 @@ class InstallersData(DataStore):
                 masked |= self.__restore(installer, removes, restores,
                                          _cede_ownership)
         anneal = bass.settings[u'bash.installers.autoAnneal']
-        self._remove_restore(removes, restores, refresh_ui, _cede_ownership,
+        self._remove_restore(removes, restores, refresh_ui_, _cede_ownership,
                              progress, unArchives, anneal)
 
     def _remove_restore(self, removes, restores, refresh_ui, cede_ownership,
-                        progress, unArchives=frozenset(), anneal=True):
+            progress, unArchives: list | set = frozenset(), anneal=True):
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, refresh_ui, progress)
@@ -2848,14 +2843,14 @@ class InstallersData(DataStore):
         finally:
             self.refresh_ns()
 
-    def bain_anneal(self, anPackages, refresh_ui, progress=None):
+    def bain_anneal(self, anPackages, refresh_ui_, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = (self[package] for package in
-                      (anPackages or self.filterInstallables(self)))
+        anPackages = self.filterInstallables(self) if anPackages is None else {
+            self[package] for package in anPackages}
         #--Get remove/refresh files from anPackages
         removes = set()
         for installer in anPackages:
@@ -2872,7 +2867,7 @@ class InstallersData(DataStore):
             #  And/or may block later uninstalls.
             if installer.is_active:
                 self.__restore(installer, removes, restores, _cede_ownership)
-        self._remove_restore(removes, restores, refresh_ui, _cede_ownership,
+        self._remove_restore(removes, restores, refresh_ui_, _cede_ownership,
                              progress)
 
     def get_clean_data_dir_list(self):
@@ -3174,7 +3169,8 @@ class InstallersData(DataStore):
 
     def ipackages(self, installerKeys: Iterable[FName]) -> Iterable[FName]:
         """Remove markers from installerKeys."""
-        return (x for x in installerKeys if not self[x].is_marker)
+        return (x for x in installerKeys if
+                isinstance(self[x], _InstallerPackage))
 
     def createFromData(self, projectPath, ci_files: list[CIstr], progress,
                        mod_infos):
