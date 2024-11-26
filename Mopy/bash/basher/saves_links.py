@@ -198,8 +198,7 @@ class Saves_Profiles(ChoiceLink):
             with BusyCursor():
                 self.window.set_local_save(new_dir, do_swap=self._askYes)
                 self.window.DeleteAll() # let call below repopulate
-                self.window.RefreshUI(detail_item=None,
-                                      refresh_others=Store.MODS.DO())
+                self.window.propagate_refresh(Store.MODS.DO(),detail_item=None)
                 self.window.panel.ShowPanel()
                 Link.Frame.warn_corrupted(warn_saves=True)
 
@@ -235,7 +234,7 @@ class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
         lo_warn_msg = self._lo_operation()
-        self.window.RefreshUI(focus_list=False, refresh_others=Store.MODS.DO())
+        self.window.propagate_refresh(Store.MODS.DO(), focus_list=False)
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)

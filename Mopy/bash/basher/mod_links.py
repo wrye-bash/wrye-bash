@@ -226,8 +226,8 @@ class Mod_CreateDummyMasters(OneItemLink):
             previous_master = master
         bosh.modInfos.refresh(RefrIn.from_added(mod_previous),
                               insert_after=mod_previous)
-        self.window.RefreshUI(detail_item=next(reversed(mod_previous)),
-                              refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO(), detail_item=next(
+            reversed(mod_previous)))
         self.window.SelectItemsNoCallback(mod_previous)
 
 #------------------------------------------------------------------------------
@@ -262,7 +262,7 @@ class Mod_OrderByName(EnabledLink):
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
 
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
@@ -306,8 +306,8 @@ class Mod_Move(EnabledLink):
         # Reorder the actives too to avoid bogus LO warnings
         ldiff = bosh.modInfos.cached_lo_save_all()
         loch = ldiff.reordered | ldiff.act_index_change
-        self.window.RefreshUI(detail_item=self.selected[0], redraw=loch,
-                              refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO(), redraw=loch,
+                                      detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
 class Mod_Redate(File_Redate):
@@ -1015,7 +1015,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                         break # don't keep trying
             if resave:
                 bosh.modInfos.cached_lo_save_active()
-            self.window.RefreshUI(refresh_others=Store.SAVES.IF(count))
+            self.window.propagate_refresh(Store.SAVES.IF(count))
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
@@ -1100,7 +1100,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         self._reactivate_mods = ed_nomerge
         with BusyCursor():
             bosh.modInfos.lo_deactivate(*to_deselect, doSave=True)
-            self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+            self.window.propagate_refresh(Store.SAVES.DO())
         return True
 
 #------------------------------------------------------------------------------
@@ -1436,7 +1436,7 @@ class _CopyToLink(EnabledLink):
             if force_flags:
                 for new in rdata.to_add:
                     bosh.modInfos[new].set_plugin_flags(force_flags)
-            self.window.RefreshUI(refresh_others=Store.SAVES.DO(),
+            self.window.propagate_refresh(Store.SAVES.DO(),
                                   detail_item=next(reversed(added)))
             self.window.SelectItemsNoCallback(added)
 
@@ -1564,7 +1564,7 @@ class AFlipFlagLink(EnabledLink):
                 altered={p.abs_path for p in self.iselected_infos()})
             # We need to RefreshUI all higher-loading plugins than the lowest
             # plugin that was affected to update the Indices column
-            self.window.RefreshUI(refresh_others=Store.SAVES.DO(), redraw={
+            self.window.propagate_refresh(Store.SAVES.DO(), redraw={
                 *self.selected, *ldiff.reordered, *ldiff.act_index_change})
 
 #------------------------------------------------------------------------------

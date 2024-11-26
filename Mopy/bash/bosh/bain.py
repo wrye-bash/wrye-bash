@@ -1916,9 +1916,9 @@ class InstallersData(DataStore):
         elif refresh_info is None: # 'I' in what will set it to a RefrData instance
             refresh_info = RefrData() # None only when called from ShowPanel (...)
         if 'O' in what or changes:
-            reordered = self.refreshOrder()
-            refresh_info.redraw.update(reordered)
-            changes |= bool(reordered)
+            order_changed = self.refreshOrder()
+            refresh_info.redraw.update(order_changed)
+            changes |= bool(order_changed)
         if 'N' in what or changes:
             #--dict mapping all should-be-installed files to their attributes
             norm_sizeCrc = bolt.LowerDict()
