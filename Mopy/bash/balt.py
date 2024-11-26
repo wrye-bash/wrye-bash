@@ -780,8 +780,7 @@ class UIList(PanelWin):
     _same_item = object()
     @final
     def RefreshUI(self, *, redraw=__all, to_del=__all,
-            detail_item=_same_item, focus_list=True,
-            refresh_others: defaultdict[str, bool] | None = None):
+            detail_item=_same_item, focus_list=True):
         """Populate specified files or ALL files, sort, set status bar count,
         etc. See parameter docs below.
 
@@ -789,10 +788,7 @@ class UIList(PanelWin):
         :param to_del: If specified, delete only these UIList items. If both
             this and redraw are kept at the default, entirely repopulate this
             UIList.
-        :param focus_list: If True, focus this UIList.
-        :param refresh_others: A dict mapping unique data store keys (see
-            bass.Store) to booleans that indicate whether or not to refresh
-            that tab. If None, no other tab will be refreshed."""
+        :param focus_list: If True, focus this UIList."""
         if redraw is to_del is self.__all:
             self.populate_items()
         else:  #--Iterable
@@ -813,12 +809,15 @@ class UIList(PanelWin):
             # mods count flickering when deleting a save in saves tab
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
-        if refresh_others:
-            if refresh_others[self.data_store_key]:
-                deprint(f"A tab's {self.data_store_key=} got passed to "
-                        f"refresh_others")
-                del refresh_others[self.data_store_key]
-            Link.Frame.distribute_ui_refresh(refresh_others)
+
+    def propagate_refresh(self, refresh_others: defaultdict[str, bool | dict],
+                          **kwargs):
+        """Refresh this UIList and propagate the refresh to other tabs.
+        :param refresh_others: A dict mapping unique data store keys (see
+            bass.Store) to RefreshUI kwargs."""
+        kwargs.setdefault('focus_list', True)
+        refresh_others[self.data_store_key] = kwargs
+        Link.Frame.distribute_ui_refresh(refresh_others)
 
     def _refresh_details(self, to_redraw, detail_item):
         if detail_item is None:
@@ -1394,7 +1393,7 @@ class UIList(PanelWin):
             self.data_store.delete(dd_items, recycle=dd_recycle)
         except (PermissionError, CancelError, SkipError): pass
         # Also cleans _gList internal dicts
-        self.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.propagate_refresh(Store.SAVES.DO())
 
     def open_data_store(self):
         try:
@@ -2022,7 +2021,7 @@ class UIList_Hide(EnabledLink):
                           {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""
@@ -2038,8 +2037,7 @@ class Installer_Op(ItemLink):
         except (CancelError, SkipError):
             return None
         finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
-            ui_refresh[self.window.data_store_key] = True
+            self.window.propagate_refresh(ui_refresh)
             Link.Frame.distribute_warnings(ui_refresh)
 
     def _perform_action(self, ui_refresh_, progress):

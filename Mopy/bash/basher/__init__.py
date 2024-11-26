@@ -999,7 +999,7 @@ class ModList(_ModsUIList):
         try:
             ldiff = bosh.modInfos.cached_lo_save_all()
             loch = ldiff.reordered | ldiff.act_index_change #no additions/removals
-            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(), redraw=loch)
         except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
             showError(self, f'{e}')
 
@@ -1224,14 +1224,14 @@ class ModList(_ModsUIList):
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
             loch = ldiff.active_flips | ldiff.act_index_change
-            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(), redraw=loch)
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
         ldiff = undo_or_redo() # no additions or removals
         if changed := (ldiff.act_changed() | ldiff.reordered):
-            self.RefreshUI(redraw=changed, refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(), redraw=changed)
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -1248,8 +1248,7 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.RefreshUI(redraw=[new_patch_name],
-                           refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(), redraw=[new_patch_name])
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -1687,8 +1686,8 @@ class ModDetails(_ModsSavesDetails):
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
             bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
-            self.panel_uilist.RefreshUI( # refresh saves if lo changed
-                refresh_others=Store.SAVES.IF(not bush.game.using_txt_file))
+            self.panel_uilist.propagate_refresh( # refresh saves if lo changed
+                Store.SAVES.IF(not bush.game.using_txt_file))
             return
         #--Backup
         modInfo.makeBackup()
@@ -1716,9 +1715,9 @@ class ModDetails(_ModsSavesDetails):
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
         detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
-        self.panel_uilist.RefreshUI(detail_item=detail_item,
-            refresh_others=Store.SAVES.IF(
-                detail_item is None or changeName or unlock_lo))
+        self.panel_uilist.propagate_refresh(Store.SAVES.IF(
+                detail_item is None or changeName or unlock_lo),
+            detail_item=detail_item)
 
     def _set_date(self, modInfo):
         modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
@@ -2500,8 +2499,8 @@ class InstallersList(UIList):
                 pass # ren_keys.update(None)
             #--Refresh UI
             if rdata:
-                self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
-                               refresh_others=refreshes)
+                self.propagate_refresh(refreshes, redraw=rdata.redraw,
+                                       to_del=rdata.to_del)
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
@@ -3788,9 +3787,13 @@ class BashFrame(WindowFrame):
     def distribute_ui_refresh(self, ui_refresh: defaultdict[Store, bool]):
         """Distribute a RefreshUI to all tabs, based on the specified
         ui_refresh information."""
-        for list_key, candidate_uilist in self.all_uilists.items():
-            if candidate_uilist is not None and ui_refresh[list_key]:
-                candidate_uilist.RefreshUI(focus_list=False)
+        for list_key, do_refr in ui_refresh.items():
+            if do_refr and self.all_uilists[list_key] is not None:
+                if isinstance(do_refr, dict):
+                    do_refr.setdefault('focus_list', False)
+                else:  # do_refr is True
+                    do_refr = dict(focus_list=False)
+                self.all_uilists[list_key].RefreshUI(**do_refr)
 
     def distribute_warnings(self, ui_refresh):
         """Issue warnings for all tabs, based on the specified ui_refresh

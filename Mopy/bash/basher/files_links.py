@@ -76,9 +76,9 @@ class Files_Unhide(ItemLink):
             return
         moved = self._data_store.move_infos(srcFiles, destFiles,
             self.window, balt.Link.Frame)
-        if moved:
-            self.window.RefreshUI( # pick one at random to show details for
-                detail_item=next(iter(moved)), refresh_others=Store.SAVES.DO())
+        if moved: # pick one at random to show details for
+            self.window.propagate_refresh(Store.SAVES.DO(),
+                detail_item=next(iter(moved)))
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -254,7 +254,7 @@ class File_Redate(ItemLink):
             user_timestamp += 60.0
         self._data_store.refresh(refresh_infos=False,
                                  unlock_lo=not bush.game.using_txt_file)
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):

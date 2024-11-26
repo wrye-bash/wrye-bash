@@ -80,7 +80,7 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
 class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
     def _refresh_mods_ui(self):
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
 
     def _select_exact(self, mods):
         lo_warn_msg = bosh.modInfos.lo_activate_exact(mods)
@@ -277,7 +277,7 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
         ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
         # not any of the modding ESMs. Maybe we should enforce that those
         # modding ESMs are never active and drop this refresh_others?
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)

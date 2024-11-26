@@ -138,7 +138,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         try:
             self.idata.bain_install([pr_path], ui_refresh, override=False)
         finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.propagate_refresh(ui_refresh)
         # Select new installer
         self.window.SelectLast()
 
