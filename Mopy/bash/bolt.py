@@ -2775,3 +2775,16 @@ else:
         https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
         information."""
         shutil.copy2(a, b)
+
+@dataclass(slots=True)
+class RefrData:
+    """Encapsulate info the backend needs to pass on to the UI for refresh."""
+    redraw: set[FName] = field(default_factory=set)
+    to_del: set[FName] = field(default_factory=set, kw_only=True)
+    to_add: set[FName] = field(default_factory=set, kw_only=True)
+    # renames are a dict of old fn keys to new fn keys
+    renames: dict[FName, FName] = field(default_factory=dict)
+    ren_paths: dict[Path, Path] = field(default_factory=dict)
+
+    def __bool__(self):
+        return bool(self.to_add or self.to_del or self.redraw)

@@ -73,11 +73,11 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
 from ..bass import Store
-from ..bolt import FName, GPath, RefrIn, SubProgress, deprint, dict_sort, \
-    forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
+from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, deprint, \
+    dict_sort, forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property, attrgetter_cache, top_level_files
-from ..bosh import ModInfo, omods, RefrData
+from ..bosh import ModInfo, omods
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -998,7 +998,7 @@ class ModList(_ModsUIList):
         #--Save and Refresh
         try:
             ldiff = bosh.modInfos.cached_lo_save_all()
-            loch = ldiff.reordered | ldiff.act_index_change #no additions/removals
+            loch = ldiff.to_rdata().redraw # no additions/removals
             self.propagate_refresh(Store.SAVES.DO(), redraw=loch)
         except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
             showError(self, f'{e}')
@@ -1223,14 +1223,14 @@ class ModList(_ModsUIList):
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            loch = ldiff.active_flips | ldiff.act_index_change
+            loch = ldiff.to_rdata().redraw # no ldiff.reordered
             self.propagate_refresh(Store.SAVES.DO(), redraw=loch)
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
         ldiff = undo_or_redo() # no additions or removals
-        if changed := (ldiff.act_changed() | ldiff.reordered):
+        if changed := ldiff.to_rdata().redraw:
             self.propagate_refresh(Store.SAVES.DO(), redraw=changed)
 
     def lo_undo(self):

@@ -39,7 +39,7 @@ from operator import attrgetter, itemgetter
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files, data_tracking_stores, RefrData
+    best_ini_files, data_tracking_stores
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
@@ -47,7 +47,7 @@ from ..bass import Store
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     RefrIn, SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items, \
-    DefaultFNDict, copy_or_reflink2, AFileInfo
+    DefaultFNDict, copy_or_reflink2, AFileInfo, RefrData
 from ..exception import ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
@@ -2016,7 +2016,7 @@ class InstallersData(DataStore):
             new = member_info.fn_key = FName(name_new) ##: make sure newName is fn
             self[new] = member_info
             if rdata_ren is None:
-                rdata_ren = RefrData({old}, redraw={new}, renames={old: new})
+                rdata_ren = RefrData({new}, to_del={old}, renames={old: new})
             else:
                 rdata_ren.to_del.add(old)
                 rdata_ren.redraw.add(new)
