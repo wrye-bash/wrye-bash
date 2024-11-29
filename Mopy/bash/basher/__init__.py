@@ -998,8 +998,7 @@ class ModList(_ModsUIList):
         #--Save and Refresh
         try:
             ldiff = bosh.modInfos.cached_lo_save_all()
-            loch = ldiff.to_rdata().redraw # no additions/removals
-            self.propagate_refresh(Store.SAVES.DO(), redraw=loch)
+            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
         except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
             showError(self, f'{e}')
 
@@ -1223,15 +1222,14 @@ class ModList(_ModsUIList):
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            loch = ldiff.to_rdata().redraw # no ldiff.reordered
-            self.propagate_refresh(Store.SAVES.DO(), redraw=loch)
+            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
         ldiff = undo_or_redo() # no additions or removals
-        if changed := ldiff.to_rdata().redraw:
-            self.propagate_refresh(Store.SAVES.DO(), redraw=changed)
+        if changed := ldiff.to_rdata():
+            self.propagate_refresh(Store.SAVES.DO(), rdata=changed)
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -1248,7 +1246,8 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.propagate_refresh(Store.SAVES.DO(), redraw=[new_patch_name])
+            self.propagate_refresh(Store.SAVES.DO(),
+                                   rdata=RefrData({new_patch_name}))
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -2110,8 +2109,7 @@ class SaveList(UIList):
             if (rdata := self.try_rename(saveInfo, root, rdata)) is None:
                 break
         if rdata:
-            self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
-                           detail_item=rdata.renames.get(item_edited))
+            self.RefreshUI(rdata, detail_item=rdata.renames.get(item_edited))
             #--Reselect the renamed items
             self.SelectItemsNoCallback(rdata.redraw)
         return EventResult.CANCEL # needed ! clears new name from label on exception
@@ -2158,7 +2156,7 @@ class SaveList(UIList):
         extension = enabled_ext if do_enable else disabled_ext
         if rdata := self.try_rename(sinf, fn_item.fn_body, None,
                                     force_ext=extension):
-            self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del)
+            self.RefreshUI(rdata) # that's what a RefreshUI call should look like
 
     # Save profiles
     def set_local_save(self, new_saves, *, do_swap=None):
@@ -2329,6 +2327,7 @@ class SaveDetails(_ModsSavesDetails):
         saveInfo.makeBackup() ##: why backup when just renaming - #292
         prevMTime = saveInfo.ftime
         #--Change Name?
+        rdata = RefrData()
         if changeName:
             newName = FName(self.fileStr.strip()).fn_body
             # if you were wondering: OnFileEdited checked if file existed,
@@ -2347,12 +2346,11 @@ class SaveDetails(_ModsSavesDetails):
             saveInfo.setmtime(prevMTime)
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
-        kwargs = {'to_del': rdata.to_del if changeName else set()}
         if detail_item is None:
-            kwargs['to_del'] |= {self.file_info.fn_key} # we failed rewriting
+            rdata.to_del |= {self.file_info.fn_key} # we failed rewriting
         else:
-            kwargs[u'redraw'] = [detail_item]
-        self.panel_uilist.RefreshUI(**kwargs, detail_item=detail_item)
+            rdata.redraw.add(detail_item)
+        self.panel_uilist.RefreshUI(rdata, detail_item=detail_item)
 
     def RefreshUIColors(self):
         self._update_masters_warning()
@@ -2499,8 +2497,7 @@ class InstallersList(UIList):
                 pass # ren_keys.update(None)
             #--Refresh UI
             if rdata:
-                self.propagate_refresh(refreshes, redraw=rdata.redraw,
-                                       to_del=rdata.to_del)
+                self.propagate_refresh(refreshes, rdata=rdata)
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
@@ -3066,7 +3063,7 @@ class InstallersDetails(_SashDetailsPanel):
         subScrollPos  = self.gSubList.lb_get_vertical_scroll_pos()
         espmScrollPos = self.gEspmList.lb_get_vertical_scroll_pos()
         subIndices = self.gSubList.lb_get_selections()
-        self.installersPanel.uiList.RefreshUI(redraw=[self.displayed_item])
+        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}))
         for subIndex in subIndices:
             self.gSubList.lb_select_index(subIndex)
         # Reset the scroll bars back to their original position
@@ -3403,7 +3400,7 @@ class ScreensList(UIList):
                 num += 1
                 numStr = str(num).zfill(digits)
             if rdata:
-                self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
+                self.RefreshUI(rdata,
                                detail_item=rdata.renames.get(item_edited))
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
