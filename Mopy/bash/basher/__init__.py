@@ -3781,15 +3781,15 @@ class BashFrame(WindowFrame):
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
 
-    def distribute_ui_refresh(self, ui_refresh: defaultdict[Store, bool]):
+    def distribute_ui_refresh(self, ui_refresh: dict[Store, bool]):
         """Distribute a RefreshUI to all tabs, based on the specified
         ui_refresh information."""
         for list_key, do_refr in ui_refresh.items():
             if do_refr and self.all_uilists[list_key] is not None:
-                if isinstance(do_refr, dict):
-                    do_refr.setdefault('focus_list', False)
-                else:  # do_refr is True
-                    do_refr = dict(focus_list=False)
+                if not isinstance(do_refr, dict): # do_refr is True or RefrData
+                    do_refr = {'rdata': do_refr} if isinstance(
+                        do_refr, RefrData) else {}
+                do_refr.setdefault('focus_list', False)
                 self.all_uilists[list_key].RefreshUI(**do_refr)
 
     def distribute_warnings(self, ui_refresh):
@@ -3920,10 +3920,10 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        ui_refresh: defaultdict[Store, bool] = defaultdict(bool, {
-            store.unique_store_key: not booting and bool(store.refresh())
-            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)})
-        ui_refresh[Store.SAVES] |= ui_refresh[Store.MODS] # for save masters
+        ui_refresh = {store.unique_store_key: not booting and store.refresh()
+            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)}
+        if ui_refresh[Store.MODS]:
+            ui_refresh[Store.SAVES] = True # for save masters
         #--Repopulate, focus will be set in ShowPanel
         self.distribute_ui_refresh(ui_refresh)
         self.distribute_warnings(ui_refresh)
