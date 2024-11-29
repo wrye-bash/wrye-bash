@@ -305,7 +305,7 @@ class Mod_Move(EnabledLink):
                                           self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         ldiff = bosh.modInfos.cached_lo_save_all()
-        loch = ldiff.reordered | ldiff.act_index_change
+        loch = ldiff.to_rdata().redraw
         self.window.propagate_refresh(Store.SAVES.DO(), redraw=loch,
                                       detail_item=self.selected[0])
 
@@ -1565,7 +1565,7 @@ class AFlipFlagLink(EnabledLink):
             # We need to RefreshUI all higher-loading plugins than the lowest
             # plugin that was affected to update the Indices column
             self.window.propagate_refresh(Store.SAVES.DO(), redraw={
-                *self.selected, *ldiff.reordered, *ldiff.act_index_change})
+                *self.selected, *ldiff.to_rdata().redraw})
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
