@@ -24,8 +24,7 @@
 attribute points to IniList singleton."""
 
 from .. import balt, bass, bosh
-from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink, \
-    UIList_OpenItems
+from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink
 from ..gui import copy_text_to_clipboard
 
 __all__ = ['INI_ValidTweaksFirst', 'INI_AllowNewLines', 'INI_ListINIs',
@@ -139,5 +138,4 @@ class INI_CreateNew(OneItemLink):
             self._showError(fn_tweak) # it's an error message in this case
             return
         if bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
-            ##: we need a 'to_add' param in RefreshUI
-            self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)
+            self.refresh_sel({fn_tweak}, detail_item=fn_tweak)

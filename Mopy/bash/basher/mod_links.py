@@ -305,8 +305,7 @@ class Mod_Move(EnabledLink):
                                           self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         ldiff = bosh.modInfos.cached_lo_save_all()
-        loch = ldiff.to_rdata().redraw
-        self.window.propagate_refresh(Store.SAVES.DO(), redraw=loch,
+        self.window.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata(),
                                       detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
@@ -354,9 +353,6 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.mod_labels.sort()
         return newName
 
-    def _refresh(self, redraw): # editing mod labels should not affect saves
-        self.parent.RefreshUI(redraw=redraw)
-
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
         #--Right length?
@@ -374,7 +370,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if mod_inf.get_table_prop(self.column) == oldName:
                 mod_inf.set_table_prop(self.column, newName)
                 renamed.append(fn)
-        self._refresh(renamed)
+        Link.refresh_sel(self.parent, renamed)
         #--Done
         return newName
 
@@ -387,7 +383,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if mod_inf.get_table_prop(self.column) == item:
                 mod_inf.set_table_prop(self.column, None)
                 deletd.append(fn)
-        self._refresh(deletd)
+        Link.refresh_sel(self.parent, deletd)
         #--Done
         return True
 
@@ -412,9 +408,6 @@ class _Mod_Labels(ChoiceLink):
     setKey     = u'bash.mods.groups'
     addPrompt  = _(u'Add group:')
 
-    def _refresh(self): # editing mod labels should not affect saves
-        self.window.RefreshUI(redraw=self.selected)
-
     def __init__(self):
         super(_Mod_Labels, self).__init__()
         self.mod_labels = bass.settings[self.setKey]
@@ -438,7 +431,7 @@ class _Mod_Labels(ChoiceLink):
                 """Handle selection of None."""
                 for finf in self.iselected_infos():
                     finf.set_table_prop(_self.column, None)
-                _self._refresh()
+                _self.refresh_sel()
             def _check(self):
                 return _self._none_checked
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
@@ -454,7 +447,7 @@ class _Mod_Labels(ChoiceLink):
             def Execute(self):
                 for fileInfo in self.iselected_infos():
                     fileInfo.set_table_prop(_self.column, self._text)
-                _self._refresh()
+                _self.refresh_sel()
             @property
             def link_help(self):
                 return _("Applies the label '%(target_label)s' to the "
@@ -566,7 +559,7 @@ class _Mod_Groups_Import(ItemLink):
         modGroups = _ModGroups()
         modGroups.read_csv(textPath)
         changed = modGroups.writeToModInfos(self.selected)
-        self.window.RefreshUI(redraw=changed)
+        self.refresh_sel(changed)
         self._showOk(_('Imported %(num_imported_groups)d groups '
                        '(%(num_changed_groups)d changed).') % {
             'num_imported_groups': len(modGroups.mod_group),
@@ -806,7 +799,7 @@ class _GhostLink(ItemLink):
             fileInfo.set_table_prop('allowGhosting', set_allow(fileName))
             if fileInfo.setGhost(to_ghost(fileName)):
                 ghost_changed.append(fileName)
-        self.window.RefreshUI(redraw=ghost_changed)
+        self.refresh_sel(ghost_changed)
 
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     _text, _help = _(u'Allow Ghosting'), _(u'Allow Ghosting for selected mods')
@@ -947,7 +940,7 @@ class Mod_CheckQualifications(ItemLink):
                 message.append(f'=== {mergeability_strs[chk_ty][chk_result]}')
                 for r in chk_reason:
                     message.append(f'.    {r}')
-        self.window.RefreshUI(redraw=self.selected)
+        self.refresh_sel()
         self._showWryeLog('\n'.join(message), title=self._text)
 
 #------------------------------------------------------------------------------
@@ -1156,7 +1149,7 @@ class _DirtyLink(ItemLink):
         for fileName, fileInfo in self.iselected_pairs():
             fileInfo.set_table_prop(u'ignoreDirty',
                                     self._ignoreDirty(fileName))
-        self.window.RefreshUI(redraw=self.selected)
+        self.refresh_sel()
 
 class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
     _help = _("Set whether to check or not the selected plugins against "
@@ -1383,7 +1376,7 @@ class Mod_FogFixer(ItemLink):
                 f'* {fixed_pname}: {len(cells_fixed)}'
                 for fixed_pname, cells_fixed in fixed.items()])
             self._showWryeLog(message)
-            self.window.RefreshUI(redraw=list(fixed))
+            self.refresh_sel(fixed)
         else:
             message = _(u'No changes required.')
             self._showOk(message)
@@ -1564,8 +1557,9 @@ class AFlipFlagLink(EnabledLink):
                 altered={p.abs_path for p in self.iselected_infos()})
             # We need to RefreshUI all higher-loading plugins than the lowest
             # plugin that was affected to update the Indices column
-            self.window.propagate_refresh(Store.SAVES.DO(), redraw={
-                *self.selected, *ldiff.to_rdata().redraw})
+            rdata = ldiff.to_rdata()
+            rdata.redraw.update(self.selected)
+            self.window.propagate_refresh(Store.SAVES.DO(), rdata=rdata)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
@@ -1626,7 +1620,7 @@ class Mod_SetVersion(OneItemLink):
         self._selected_info.header.version = 0.8
         self._selected_info.header.setChanged()
         self._selected_info.writeHeader()
-        self.window.RefreshUI(redraw=[self._selected_item])
+        self.refresh_sel()
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------
@@ -1702,7 +1696,7 @@ class Mod_Face_Import(OneItemLink):
             image = BmpFromStream(*srcInfo.header.image_parameters)
             imagePath.head.makedirs()
             image.save_bmp(imagePath.s)
-        self.window.RefreshUI()
+        self.refresh_sel()
         self._showOk(_('Imported face to: %(target_npc_edid)s') % {
             'target_npc_edid': npc.eid}, title=self._selected_item)
 
@@ -2387,7 +2381,7 @@ class Mod_RevertToSnapshot(OneItemLink):
                     self._data_store.refresh(RefrIn.from_tabled_infos({
                         sel_file: sel_inf}))
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[sel_file])
+        self.refresh_sel()
 
     @property
     def _backup_path(self):

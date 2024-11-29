@@ -39,7 +39,7 @@ from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
 from .bass import Store
 from .bolt import FName, Path, RefrIn, deprint, readme_url, \
-    fast_cached_property
+    fast_cached_property, RefrData
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
@@ -776,33 +776,32 @@ class UIList(PanelWin):
             self.SortItems()
             self.autosizeColumns()
 
-    __all = ()
     _same_item = object()
     @final
-    def RefreshUI(self, *, redraw=__all, to_del=__all,
-            detail_item=_same_item, focus_list=True):
+    def RefreshUI(self, rdata=None, *, detail_item=_same_item,
+                  focus_list=True):
         """Populate specified files or ALL files, sort, set status bar count,
         etc. See parameter docs below.
 
-        :param redraw: If specified, refresh only these UIList items.
-        :param to_del: If specified, delete only these UIList items. If both
-            this and redraw are kept at the default, entirely repopulate this
-            UIList.
+        :param rdata: If passed, refresh/add the UIList items specified in
+            rdata.redraw and delete the items in rdata.to_del. Else,
+            entirely repopulate this UIList.
         :param focus_list: If True, focus this UIList."""
-        if redraw is to_del is self.__all:
+        if rdata is None:
             self.populate_items()
-        else:  #--Iterable
+            updated = ()
+        else: # a RefrData instance
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
             with self.pause_drawing():
-                for d in to_del:
+                for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in redraw:
+                for upd in (updated := rdata.redraw | rdata.to_add):
                     self.PopulateItem(item=upd)
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
-        self._refresh_details(redraw, detail_item)
+        self._refresh_details(updated, detail_item)
         if Link.Frame.notebook.currentPage is self.panel:
             # we need to check if our Panel is currently shown because we may
             # call Refresh UI of other tabs too - this results for instance in
@@ -1553,6 +1552,11 @@ class Link(object):
     def _first_selected(self):
         """Return the first selected info."""
         return next(self.iselected_infos())
+
+    def refresh_sel(self, to_refr=None, **kwargs):
+        """Refresh selected items (or items in to_refr) in the UIList."""
+        to_refr = self.selected if to_refr is None else to_refr
+        self.window.RefreshUI(RefrData(set(to_refr)), **kwargs)
 
     # Wrappers around balt dialogs - used to single out non trivial uses of
     # self->window

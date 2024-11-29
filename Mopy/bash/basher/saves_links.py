@@ -34,7 +34,7 @@ from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
 from ..bass import Store
-from ..bolt import FName, GPath, Path, RefrIn, SubProgress
+from ..bolt import FName, GPath, Path, RefrIn, SubProgress, RefrData
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
@@ -318,7 +318,7 @@ class Save_RenamePlayer(ItemLink):
             savedPlayer = _saves.Save_NPCEdits(save_inf)
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
-        self.window.RefreshUI(redraw=self.selected)
+        self.refresh_sel()
 
 #------------------------------------------------------------------------------
 class Save_ExportScreenshot(OneItemLink):
@@ -407,7 +407,7 @@ class Save_Renumber(EnabledLink):
                     break
                 nfn_number += 1
         if rdata:
-            self.window.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del)
+            self.window.RefreshUI(rdata)
             self.window.SelectItemsNoCallback(rdata.redraw)
 
 #------------------------------------------------------------------------------
@@ -665,7 +665,7 @@ class Save_Move(ChoiceLink):
                 if moved := bosh.saveInfos.check_existence(
                         self.iselected_infos()):
                     bosh.saveInfos.refresh(RefrIn(del_infos=moved))
-                self.window.RefreshUI(to_del=moved)
+                self.window.RefreshUI(RefrData(to_del=moved))
         profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
         msg = (_('%(num_save_files)d files copied to %(save_profile)s.')
                if self.copyMode else
@@ -894,7 +894,7 @@ class Save_Unbloat(OneItemLink):
                                        'num_uncreated_refs': nums[1],
                                        'num_unnulled_refs': nums[2]},
             self._selected_item)
-        self.window.RefreshUI(redraw=[self._selected_item])
+        self.refresh_sel()
 
 #------------------------------------------------------------------------------
 class Save_UpdateNPCLevels(EnabledLink):

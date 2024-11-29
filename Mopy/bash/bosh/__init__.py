@@ -2136,7 +2136,6 @@ class ModInfos(TableFileInfos):
         else: # we did all the refreshes above in _modinfos_cache_wrapper
             rdata.redraw |= act_ch | ldiff.affected
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
         return rdata
 
     # _AFileInfos overrides that are used in refresh - ghosts ahead
