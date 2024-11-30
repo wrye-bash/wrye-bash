@@ -828,14 +828,14 @@ class UIList(PanelWin):
             final_warn_dict |= warn_others
         Link.Frame.distribute_warnings(final_warn_dict)
 
-    def _refresh_details(self, redraw, detail_item):
+    def _refresh_details(self, to_redraw, detail_item):
         if detail_item is None:
             self.panel.ClearDetails()
         elif detail_item is not self._same_item:
             self.SelectAndShowItem(detail_item)
         else: # if it was a single item, refresh details for it
-            if len(redraw) == 1:
-                self.SelectAndShowItem(next(iter(redraw)))
+            if len(to_redraw) == 1:
+                self.SelectAndShowItem(next(iter(to_redraw)))
             else:
                 self.panel.SetDetails()
 

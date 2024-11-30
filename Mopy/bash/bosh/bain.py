@@ -1262,12 +1262,12 @@ class _InstallerPackage(Installer, AFileInfo):
         raise NotImplementedError
 
     #--ABSTRACT ---------------------------------------------------------------
-    def install(self, destFiles: set[CIstr], progress=None):
+    def install(self, destFiles: set[CIstr], progress):
         """Install specified files to Data directory."""
         dest_src = self.refreshDataSizeCrc(True)
         for k in list(dest_src):
             if k not in destFiles: del dest_src[k]
-        if not dest_src: return bolt.LowerDict(), set(), set(), set()
+        if not dest_src: return bolt.LowerDict(), defaultdict(bool)
         progress = progress if progress else bolt.Progress()
         return self._install(dest_src, progress)
 
@@ -2544,11 +2544,11 @@ class InstallersData(DataStore):
                 and os.path.split(x)[0].lower() != u'ini tweaks')
         for relPath in dest_files:
             try:
-                oldCrc = self.data_sizeCrcDate[relPath][1]
-                newCrc = installer.ci_dest_sizeCrc[relPath][1]
+                if self.data_sizeCrcDate[relPath][1] == \
+                        installer.ci_dest_sizeCrc[relPath][1]:
+                    continue # newCrc == oldCrc
             except KeyError:
                 continue
-            if newCrc == oldCrc: continue
             iniAbsDataPath = bass.dirs[u'mods'].join(relPath)
             # Create a copy of the old one
             co_path = f'{iniAbsDataPath.sbody}, ~Old Settings ' \
@@ -2824,7 +2824,18 @@ class InstallersData(DataStore):
                 inst.is_active = False
             #--Restore files
             if anneal:
-                self._restoreFiles(restores, refresh_ui, progress)
+                restores = dict_sort(restores, by_value=True)
+                fninst_dests = {fn_inst: {dest for dest, _fn_inst in group}
+                    for fn_inst, group in groupby(restores, key=itemgetter(1))}
+                if fninst_dests:
+                    progress.setFull(len(fninst_dests))
+                    fninst_dests = dict_sort(fninst_dests,
+                                             key_f=lambda k: self[k].order)
+                    for index, (fn_inst, destFiles) in enumerate(fninst_dests):
+                        progress(index, fn_inst)
+                        if destFiles:
+                            refresh_ui.update(self._installer_install(
+                                self[fn_inst], destFiles, index, progress))
             # Set the 'installer' column for files that track their owner
             stores = data_tracking_stores()
             for ikey, owned_files in cede_ownership.items():
@@ -2839,21 +2850,6 @@ class InstallersData(DataStore):
                             break
         finally:
             self.refresh_ns()
-
-    def _restoreFiles(self, restores, refresh_ui, progress):
-        installer_destinations = {}
-        restores = dict_sort(restores, by_value=True)
-        for key, group in groupby(restores, key=itemgetter(1)):
-            installer_destinations[key] = {dest for dest, _key in group}
-        if not installer_destinations: return
-        progress.setFull(len(installer_destinations))
-        installer_destinations = dict_sort(installer_destinations,
-                                           key_f=lambda k: self[k].order)
-        for index, (fn_inst, destFiles) in enumerate(installer_destinations):
-            progress(index, fn_inst)
-            if destFiles:
-                refresh_ui.update(self._installer_install(
-                    self[fn_inst], destFiles, index, progress))
 
     def bain_anneal(self, anPackages, refresh_ui, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.

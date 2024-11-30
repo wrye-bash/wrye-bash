@@ -201,23 +201,23 @@ class LoadOrder(object):
     def activeOrdered(self): return self._activeOrdered
 
     def lo_diff(self, other: LoadOrder):
-        ldiff = LordDiff()
+        lodiff = LordDiff()
         # plugins missing from other and plugins that appear fresh in other
-        ldiff.missing = self.mod_lo_index.keys() - other.mod_lo_index
-        ldiff.added = other.mod_lo_index.keys() - self.mod_lo_index
-        new_del = ldiff.missing | ldiff.added
+        lodiff.missing = self.mod_lo_index.keys() - other.mod_lo_index
+        lodiff.added = other.mod_lo_index.keys() - self.mod_lo_index
+        new_del = lodiff.missing | lodiff.added
         diff = self.mod_lo_index.items() ^ other.mod_lo_index.items()
         # present plugins that are not new and their load order differs
-        ldiff.reordered = {k for k, _v in diff if k not in new_del}
+        lodiff.reordered = {k for k, _v in diff if k not in new_del}
         diff = self.mod_act_index.items() ^ other.mod_act_index.items()
         diff_count = collections.Counter(k for k, _v in diff)
         # if it appears twice, its active order changed
-        ldiff.act_index_change = {k for k, c in diff_count.items() if c == 2}
+        lodiff.act_index_change = {k for k, c in diff_count.items() if c == 2}
         act_state_change = {k for k, c in diff_count.items() if c == 1}
-        ldiff.active_flips = {k for k in act_state_change if k not in new_del}
-        ldiff.act_del = act_state_change & self.active
-        ldiff.act_new = act_state_change & other.active
-        return ldiff
+        lodiff.active_flips = {k for k in act_state_change if k not in new_del}
+        lodiff.act_del = act_state_change & self.active
+        lodiff.act_new = act_state_change & other.active
+        return lodiff
 
     def __eq__(self, other):
         return isinstance(other, LoadOrder) and self._active == other._active \

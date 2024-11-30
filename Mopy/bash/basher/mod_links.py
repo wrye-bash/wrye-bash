@@ -381,7 +381,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if mod_inf.get_table_prop(self.column) == oldName:
                 mod_inf.set_table_prop(self.column, newName)
                 renamed.append(fn)
-        self._refresh(redraw=renamed)
+        self._refresh(renamed)
         #--Done
         return newName
 
@@ -394,7 +394,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if mod_inf.get_table_prop(self.column) == item:
                 mod_inf.set_table_prop(self.column, None)
                 deletd.append(fn)
-        self._refresh(redraw=deletd)
+        self._refresh(deletd)
         #--Done
         return True
 

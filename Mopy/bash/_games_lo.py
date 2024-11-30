@@ -374,7 +374,7 @@ class LoGame:
     def has_load_order_conflict_active(self, mod_name, active): return False
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reordered):
+    def _must_update_active(cls, deleted_plugins, reord_plugins):
         raise NotImplementedError
 
     def request_cache_update(self, cached_load_order, cached_active): # one use
@@ -702,10 +702,10 @@ class INIGame(LoGame):
 
     # Misc overrides
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reordered):
+    def _must_update_active(cls, deleted_plugins, reord_plugins):
         if cls.ini_key_actives is not None:
             return True # Assume order is important for the INI
-        return super()._must_update_active(deleted_plugins, reordered)
+        return super()._must_update_active(deleted_plugins, reord_plugins)
 
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
@@ -719,7 +719,7 @@ class TimestampGame(LoGame):
         return [] # no need to reorder plugins.txt - fix_lo.act_reordered False
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reordered): return deleted_plugins
+    def _must_update_active(cls, deleted_plugins, reord_plugins): return deleted_plugins
 
     def has_load_order_conflict(self, mod_name):
         ti = int(self.mod_infos[mod_name].ftime)
@@ -822,8 +822,8 @@ class TextfileGame(_TextFileLo):
                 None if active_changed else cached_active)
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reordered):
-        return deleted_plugins or reordered
+    def _must_update_active(cls, deleted_plugins, reord_plugins):
+        return deleted_plugins or reord_plugins
 
     def swap(self, old_dir, new_dir):
         swapped_pl = super().swap(old_dir, new_dir)
@@ -979,7 +979,7 @@ class AsteriskGame(_TextFileLo):
         return self._active_if_present, None # no blueprints
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reordered): return True
+    def _must_update_active(cls, deleted_plugins, reord_plugins): return True
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_active_plugins(self) -> list[FName]:

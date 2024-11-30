@@ -2267,10 +2267,10 @@ class ModInfos(TableFileInfos):
         # If refresh_infos is False and mods are added _do_ manually refresh
         ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
             unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+        rdata.redraw |= ldiff.reordered
         # if active did not change, we must perform the refreshes below
         if not ((act_ch := ldiff.act_changed()) or ldiff.added or
                 ldiff.missing):
-            rdata.redraw |= ldiff.reordered
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
@@ -2278,7 +2278,7 @@ class ModInfos(TableFileInfos):
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
         else: # we did all the refreshes above in _modinfos_cache_wrapper
-            rdata.redraw |= act_ch | ldiff.reordered | ldiff.affected
+            rdata.redraw |= act_ch | ldiff.affected
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
         return rdata

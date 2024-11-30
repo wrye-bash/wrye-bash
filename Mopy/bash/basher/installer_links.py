@@ -559,7 +559,7 @@ class Installer_Install(_NoMarkerLink):
                               'packages. Never overwrites files.')}
 
     def __init__(self,mode=u'DEFAULT'):
-        super(Installer_Install, self).__init__()
+        super().__init__()
         self.mode = mode
         self._text = self.mode_title[self.mode]
         self._help = self.mode_help[self.mode]
