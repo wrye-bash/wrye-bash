@@ -1329,7 +1329,7 @@ msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have alread
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3332 Mopy/bash/basher/__init__.py:3358
-#: Mopy/bash/basher/patcher_dialog.py:336 Mopy/bash/bosh/__init__.py:2998
+#: Mopy/bash/basher/patcher_dialog.py:336 Mopy/bash/bosh/__init__.py:2995
 msgid "Try again?"
 msgstr ""
 
@@ -1693,7 +1693,7 @@ msgstr ""
 msgid "Install this package"
 msgstr ""
 
-#: Mopy/bash/basher/belt.py:373 Mopy/bash/bosh/__init__.py:2926
+#: Mopy/bash/basher/belt.py:373 Mopy/bash/bosh/__init__.py:2923
 msgid "Plugins"
 msgstr ""
 
@@ -2702,82 +2702,82 @@ msgstr ""
 msgid "Import Order - Done"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:39
+#: Mopy/bash/basher/files_links.py:40
 msgid "Unhide…"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:57
+#: Mopy/bash/basher/files_links.py:58
 msgid "You can't unhide files from this directory."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:62
+#: Mopy/bash/basher/files_links.py:63
 #, python-format
 msgid "File skipped: %(skipped_file)s. File is not valid."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:67
+#: Mopy/bash/basher/files_links.py:68
 #, python-format
 msgid "File skipped: %(skipped_file)s. File is already present."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:88 Mopy/bash/basher/installer_links.py:468
+#: Mopy/bash/basher/files_links.py:89 Mopy/bash/basher/installer_links.py:468
 msgid "Duplicate…"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:89
+#: Mopy/bash/basher/files_links.py:90
 msgid "Make a copy of the selected files."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:91
+#: Mopy/bash/basher/files_links.py:92
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s) and an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will not be attached to the duplicate plugin."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:94
+#: Mopy/bash/basher/files_links.py:95
 msgid "Note that the BSA may also contain a plugin-name-specific directory, which would remain detached even if a duplicate BSA were also created."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:98
+#: Mopy/bash/basher/files_links.py:99
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s), which will not be attached to the duplicate plugin."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:100
+#: Mopy/bash/basher/files_links.py:101
 #, python-format
 msgid "Note that the BSA may contain a plugin-name-specific directory (e.g. %(pnd_example)s), which would remain detached even if a duplicate BSA were also created."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:104
+#: Mopy/bash/basher/files_links.py:105
 #, python-format
 msgid "This plugin has an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will not be attached to the duplicate plugin."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:125
+#: Mopy/bash/basher/files_links.py:126
 msgid "Duplicate as:"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:152
+#: Mopy/bash/basher/files_links.py:153
 msgid "List Masters…"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:156
+#: Mopy/bash/basher/files_links.py:157
 #, python-format
 msgid "Copies list of %(filename)s's masters to the clipboard."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:167
+#: Mopy/bash/basher/files_links.py:168
 msgid "Backup"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:168
+#: Mopy/bash/basher/files_links.py:169
 msgid "Creates a backup of the selected files."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:179
+#: Mopy/bash/basher/files_links.py:180
 msgid "Revert to First Backup…"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:180
+#: Mopy/bash/basher/files_links.py:181
 msgid "Revert to Backup…"
 msgstr ""
 
@@ -2791,33 +2791,33 @@ msgstr ""
 msgid "Revert %(file)s to its last backup"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:202
-#, python-format
-msgid "Revert %(target_file_name)s to backup dated %(backup_date)s?"
-msgstr ""
-
-#: Mopy/bash/basher/files_links.py:217
+#: Mopy/bash/basher/files_links.py:213
 #, python-format
 msgid "Failed to revert %(target_file_name)s to backup dated %(backup_date)s. The backup file may be corrupt. Do you want to restore the original file again? 'No' keeps the reverted, possibly broken backup instead."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:224
+#: Mopy/bash/basher/files_links.py:220
 msgid "Revert to Backup - Error"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:240
-msgid "Redate…"
+#: Mopy/bash/basher/files_links.py:229
+#, python-format
+msgid "Revert %(target_file_name)s to backup dated %(backup_date)s?"
 msgstr ""
 
 #: Mopy/bash/basher/files_links.py:241
+msgid "Redate…"
+msgstr ""
+
+#: Mopy/bash/basher/files_links.py:242
 msgid "Changes the modification times of the selected files to start at a specified date."
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:270
+#: Mopy/bash/basher/files_links.py:271
 msgid "Jump to Source"
 msgstr ""
 
-#: Mopy/bash/basher/files_links.py:274
+#: Mopy/bash/basher/files_links.py:275
 #, python-format
 msgid "Jump to the package associated with %(filename)s. You can Alt-Click on the file to the same effect."
 msgstr ""
@@ -3018,7 +3018,7 @@ msgid "This option cannot be selected."
 msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:327 Mopy/bash/basher/mod_links.py:442
-#: Mopy/bash/basher/settings_dialog.py:1400 Mopy/bash/bosh/__init__.py:1220
+#: Mopy/bash/basher/settings_dialog.py:1400 Mopy/bash/bosh/__init__.py:1217
 #: Mopy/bash/patcher/base.py:180 Mopy/bash/patcher/patchers/checkers.py:171
 #: Mopy/bash/patcher/patchers/mergers.py:961
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:263
@@ -6469,27 +6469,27 @@ msgstr ""
 msgid "Revert to a previously created snapshot from the Bash/Snapshots dir."
 msgstr ""
 
-#: Mopy/bash/basher/mod_links.py:2377
-#, python-format
-msgid "Revert %(target_file_name)s to snapshot:"
-msgstr ""
-
-#: Mopy/bash/basher/mod_links.py:2384
-#, python-format
-msgid "Revert %(target_file_name)s to snapshot %(snapsnot_file_name)s dated %(snapshot_date)s?"
-msgstr ""
-
-#: Mopy/bash/basher/mod_links.py:2388
-msgid "Revert to Snapshot"
-msgstr ""
-
-#: Mopy/bash/basher/mod_links.py:2405
+#: Mopy/bash/basher/mod_links.py:2389
 #, python-format
 msgid "Failed to revert %(target_file_name)s to snapshot %(snapshot_file_name)s. The snapshot file may be corrupt. Do you want to restore the original file again? 'No' keeps the reverted, possibly broken snapshot instead."
 msgstr ""
 
-#: Mopy/bash/basher/mod_links.py:2411
+#: Mopy/bash/basher/mod_links.py:2395
 msgid "Revert to Snapshot - Error"
+msgstr ""
+
+#: Mopy/bash/basher/mod_links.py:2409
+#, python-format
+msgid "Revert %(target_file_name)s to snapshot:"
+msgstr ""
+
+#: Mopy/bash/basher/mod_links.py:2420
+#, python-format
+msgid "Revert %(target_file_name)s to snapshot %(snapsnot_file_name)s dated %(snapshot_date)s?"
+msgstr ""
+
+#: Mopy/bash/basher/mod_links.py:2424
+msgid "Revert to Snapshot"
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:92
@@ -8291,216 +8291,216 @@ msgstr ""
 msgid "Stored size does not match the one on disk."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:769
+#: Mopy/bash/bosh/__init__.py:766
 msgid "Active"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:770 Mopy/bash/patcher/patchers/mergers.py:959
+#: Mopy/bash/bosh/__init__.py:767 Mopy/bash/patcher/patchers/mergers.py:959
 msgid "Merged"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:771
+#: Mopy/bash/bosh/__init__.py:768
 msgid "Imported"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:772
+#: Mopy/bash/bosh/__init__.py:769
 msgid "Inactive"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:923
+#: Mopy/bash/bosh/__init__.py:920
 msgid "Has size-mismatched masters."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:959
+#: Mopy/bash/bosh/__init__.py:956
 msgid "Contains dirty edits, needs cleaning."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1185
+#: Mopy/bash/bosh/__init__.py:1182
 msgid "Format mismatch:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1187
+#: Mopy/bash/bosh/__init__.py:1184
 msgid "Target format is INI, tweak format is Batch Script."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1190
+#: Mopy/bash/bosh/__init__.py:1187
 msgid "Target format is Batch Script, tweak format is INI."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1197
+#: Mopy/bash/bosh/__init__.py:1194
 msgid "No valid INI format lines."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1199
+#: Mopy/bash/bosh/__init__.py:1196
 msgid "No valid Batch Script format lines."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1208
+#: Mopy/bash/bosh/__init__.py:1205
 msgid "Invalid Header"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1217
+#: Mopy/bash/bosh/__init__.py:1214
 msgid "Settings missing from target INI:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1862 Mopy/bash/bosh/__init__.py:1881
-#: Mopy/bash/bosh/__init__.py:1882 Mopy/bash/bosh/__init__.py:1931
+#: Mopy/bash/bosh/__init__.py:1859 Mopy/bash/bosh/__init__.py:1878
+#: Mopy/bash/bosh/__init__.py:1879 Mopy/bash/bosh/__init__.py:1928
 msgid "Browse…"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2447 Mopy/bash/plugin_types.py:189
+#: Mopy/bash/bosh/__init__.py:2444 Mopy/bash/plugin_types.py:189
 msgid "Technically mergeable, but has NoMerge tag."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2480
+#: Mopy/bash/bosh/__init__.py:2477
 msgid "Calculating crc:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2538
+#: Mopy/bash/bosh/__init__.py:2535
 #, python-format
 msgid "Missing Master: %(m_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2539
+#: Mopy/bash/bosh/__init__.py:2536
 #, python-format
 msgid "Delinquent Master: %(d_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2544
+#: Mopy/bash/bosh/__init__.py:2541
 #, python-format
 msgid "MISSING MASTER: %(m_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2545
+#: Mopy/bash/bosh/__init__.py:2542
 #, python-format
 msgid "DELINQUENT MASTER: %(d_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2550
+#: Mopy/bash/bosh/__init__.py:2547
 #, python-format
 msgid "Missing Masters for %(mm_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2554
+#: Mopy/bash/bosh/__init__.py:2551
 #, python-format
 msgid "Masters for %(m_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2561
+#: Mopy/bash/bosh/__init__.py:2558
 msgid "Active Plugins:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2579
+#: Mopy/bash/bosh/__init__.py:2576
 #, python-format
 msgid "[Version %(plugin_ver)s]"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2582
+#: Mopy/bash/bosh/__init__.py:2579
 #, python-format
 msgid "[CRC: %(plugin_crc)s]"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2603 Mopy/bash/bosh/__init__.py:2634
+#: Mopy/bash/bosh/__init__.py:2600 Mopy/bash/bosh/__init__.py:2631
 msgid "No tags"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2608
+#: Mopy/bash/bosh/__init__.py:2605
 msgid "From Plugin Description:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2613
+#: Mopy/bash/bosh/__init__.py:2610
 msgid "From LOOT Masterlist and/or Userlist:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2616
+#: Mopy/bash/bosh/__init__.py:2613
 msgid "Removed by LOOT Masterlist and/or Userlist:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2623
+#: Mopy/bash/bosh/__init__.py:2620
 #, python-format
 msgid "Added by %(tags_file)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2626
+#: Mopy/bash/bosh/__init__.py:2623
 #, python-format
 msgid "Removed by %(tags_file)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2631
+#: Mopy/bash/bosh/__init__.py:2628
 msgid "From Manual (overrides all other sources):"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2633
+#: Mopy/bash/bosh/__init__.py:2630
 msgid "Result:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2640
+#: Mopy/bash/bosh/__init__.py:2637
 msgid "Current Bash Tags:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2642
+#: Mopy/bash/bosh/__init__.py:2639
 msgid "Note: Sources are processed from top to bottom, meaning that lower-ranking sources override higher-ranking ones."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2791 Mopy/bash/bosh/__init__.py:2844
+#: Mopy/bash/bosh/__init__.py:2788 Mopy/bash/bosh/__init__.py:2841
 msgid "Some plugins could not be found and were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2797
+#: Mopy/bash/bosh/__init__.py:2794
 msgid "Plugin list is full, so some plugins were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2994
+#: Mopy/bash/bosh/__init__.py:2991
 #, python-format
 msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2996
+#: Mopy/bash/bosh/__init__.py:2993
 #, python-format
 msgid "The file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2997
+#: Mopy/bash/bosh/__init__.py:2994
 #, python-format
 msgid "Please close the other program that is accessing %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3039
+#: Mopy/bash/bosh/__init__.py:3036
 msgid "File in Use"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3474
+#: Mopy/bash/bosh/__init__.py:3471
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3482 Mopy/bash/bosh/__init__.py:3494
-#: Mopy/bash/bosh/__init__.py:3504
+#: Mopy/bash/bosh/__init__.py:3479 Mopy/bash/bosh/__init__.py:3491
+#: Mopy/bash/bosh/__init__.py:3501
 msgid "Settings Load Error"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3487
+#: Mopy/bash/bosh/__init__.py:3484
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3500
+#: Mopy/bash/bosh/__init__.py:3497
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3515
+#: Mopy/bash/bosh/__init__.py:3512
 msgid "Initializing BSAs"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3517
+#: Mopy/bash/bosh/__init__.py:3514
 msgid "Initializing plugins"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3519
+#: Mopy/bash/bosh/__init__.py:3516
 msgid "Initializing saves"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3521
+#: Mopy/bash/bosh/__init__.py:3518
 msgid "Initializing INIs"
 msgstr ""
 
@@ -8796,28 +8796,28 @@ msgstr ""
 msgid "INI Tweak created by Wrye Bash %(wb_version)s, using settings from old file."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3118
+#: Mopy/bash/bosh/bain.py:3114
 msgid "Active BSA Conflicts"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3121 Mopy/bash/bosh/bain.py:3136
-#: Mopy/bash/bosh/bain.py:3141 Mopy/bash/bosh/bain.py:3154
+#: Mopy/bash/bosh/bain.py:3117 Mopy/bash/bosh/bain.py:3132
+#: Mopy/bash/bosh/bain.py:3137 Mopy/bash/bosh/bain.py:3150
 msgid "Lower"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3138 Mopy/bash/bosh/bain.py:3156
+#: Mopy/bash/bosh/bain.py:3134 Mopy/bash/bosh/bain.py:3152
 msgid "Higher"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3139
+#: Mopy/bash/bosh/bain.py:3135
 msgid "Loose File Conflicts"
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3159
+#: Mopy/bash/bosh/bain.py:3155
 msgid "No Underrides. Mod is not completely un-installed."
 msgstr ""
 
-#: Mopy/bash/bosh/bain.py:3166
+#: Mopy/bash/bosh/bain.py:3162
 msgid "BAIN Packages:"
 msgstr ""
 
