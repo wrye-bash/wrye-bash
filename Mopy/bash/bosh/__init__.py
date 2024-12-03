@@ -211,7 +211,7 @@ class _TabledInfo:
 
     def __init__(self, *args, att_val=None, **kwargs):
         for k, v in (att_val or {}).items(): # set table props used in refresh
-            try: ##: nightly regression storing 'installer' as FName - drop!
+            try: ##: nightly regression storing 'installer' as FName - convert to fname actually!
                 if k == 'installer': v = str(v)
                 elif k == 'doc': # needed for updates from old settings
                     v = GPath(v)
@@ -616,7 +616,7 @@ class ModInfo(_WithMastersInfo):
         # reset cache info as un/ghosting should not make do_update return True
         self._reset_cache((self.fsize, self.ftime, self.ctime))
         # This is necessary if BAIN externally tracked the (un)ghosted file
-        self._store()._notify_bain(renamed={ghost_source: ghost_target})
+        self._store()._notify_bain({ghost_source}, altered={ghost_target})
         return True
 
     #--Bash Tags --------------------------------------------------------------
@@ -1502,7 +1502,7 @@ class DataStore(DataDict):
         raise NotImplementedError
 
     @final
-    def delete(self, delete_keys, *, recycle=True):
+    def delete(self, delete_keys, *, recycle=True, do_refr=True):
         """Deletes member file(s)."""
         # factory is _AFileInfos only, but installers don't have corrupted so
         # let it blow if we are called with non-existing keys(join(None), boom)
@@ -1514,8 +1514,9 @@ class DataStore(DataDict):
             if finfos := self.check_removed(finfos):
                 # ok to suppose the only lo modification is due to deleted
                 # files at this point
-                self.refresh(RefrIn(del_infos=finfos), what='I',
-                             unlock_lo=True)
+                if do_refr: self.refresh(RefrIn(del_infos=finfos), what='I',
+                                         unlock_lo=True)
+            return finfos
 
     def _delete_operation(self, finfos: list, recycle):
         if abs_del_paths := [
@@ -1690,11 +1691,10 @@ class _AFileInfos(DataStore):
         return del_keys
 
     def _notify_bain(self, del_set: set[Path] = frozenset(),
-        altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
+                     altered: set[Path] = frozenset()):
         """Note that all of these parameters need to be absolute paths!"""
         if self._bain_notify:
-            InstallersData.notify_external(del_set=del_set, altered=altered,
-                                           renamed=renamed)
+            InstallersData.notify_external(del_set=del_set, altered=altered)
 
     #--Right File Type?
     @classmethod
@@ -1717,7 +1717,7 @@ class _AFileInfos(DataStore):
     def rename_operation(self, member_info, newName, store_refr=None):
         # Override to allow us to notify BAIN if necessary
         rdata_ren = super().rename_operation(member_info, newName)
-        self._notify_bain(renamed=rdata_ren.ren_paths)
+        self._notify_bain(set(rp := rdata_ren.ren_paths), set(rp.values()))
         return rdata_ren
 
 class TableFileInfos(_AFileInfos):

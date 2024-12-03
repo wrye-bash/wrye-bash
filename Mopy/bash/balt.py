@@ -2075,18 +2075,24 @@ class Installer_Op(ItemLink):
     _prog_args = ()
 
     @conversation
-    def Execute(self):
-        ui_refresh = defaultdict(bool)
+    def Execute(self, *, rd_refresh=None):
+        rin = defaultdict(RefrIn)
         try:
             with (Progress(*self._prog_args) if self._prog_args else
                   bolt.Progress() as progress):
-                return self._perform_action(ui_refresh, progress)
+                return self._perform_action(progress=progress, rui_data=rin)
         except (CancelError, SkipError):
             return None
         finally:
-            self.window.propagate_refresh(True, ui_refresh)
+            if rd_refresh is None:
+                rd_refresh = rin
+            else: # Installers_MonitorExternalInstallation
+                for k, v in rin.items(): # merge giving priority to rin
+                    rd_refresh[k] |= v
+            ui_refs = {st.unique_store_key: v for st, v in rd_refresh.items()}
+            self.window.propagate_refresh(True, ui_refs)
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         raise NotImplementedError
 
 # wx Wrappers -----------------------------------------------------------------
