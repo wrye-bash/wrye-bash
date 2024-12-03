@@ -1482,7 +1482,7 @@ class DataStore(DataDict):
         raise NotImplementedError
 
     @final
-    def delete(self, delete_keys, *, recycle=True):
+    def delete(self, delete_keys, *, recycle=True, do_refr=True):
         """Deletes member file(s)."""
         # factory is _AFileInfos only, but installers don't have corrupted so
         # let it blow if we are called with non-existing keys(join(None), boom)
@@ -1494,8 +1494,9 @@ class DataStore(DataDict):
             if finfos := self.check_removed(finfos):
                 # ok to suppose the only lo modification is due to deleted
                 # files at this point
-                self.refresh(RefrIn(del_infos=finfos), what='I',
-                             unlock_lo=True)
+                if do_refr: self.refresh(RefrIn(del_infos=finfos), what='I',
+                                         unlock_lo=True)
+            return finfos
 
     def _delete_operation(self, finfos: list, recycle):
         if abs_del_paths := [
