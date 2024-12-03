@@ -2086,7 +2086,7 @@ class Installer_Op(ItemLink):
         finally:
             self.window.propagate_refresh(True, ui_refresh)
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         raise NotImplementedError
 
 # wx Wrappers -----------------------------------------------------------------

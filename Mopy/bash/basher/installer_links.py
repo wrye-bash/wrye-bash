@@ -133,15 +133,14 @@ class _NoMarkerLink(_InstallerLink):
 #------------------------------------------------------------------------------
 class _Installer_AWizardLink(_NoMarkerLink):
     """Base class for wizard links."""
-    def _perform_install(self, sel_package, ui_refresh_):
+    def _perform_install(self, sel_package, **kwargs):
         if sel_package.is_active: # If it's currently installed, anneal
-            title = _('Annealing…')
-            do_it = self.idata.bain_anneal
+            title, do_it = _('Annealing…'), self.idata.bain_anneal
         else: # Install if it's not installed
-            title = _('Installing…')
-            do_it = self.idata.bain_install
+            title, do_it = _('Installing…'), self.idata.bain_install
         with balt.Progress(title) as progress:
-            do_it([sel_package.fn_key], ui_refresh_, progress)
+            kwargs['progress'] = progress
+            do_it([sel_package.fn_key], **kwargs)
 
 class _Installer_AViewOrEditFile(_SingleInstallable):
     """Base class for View/Edit wizard/FOMOD links."""
@@ -176,7 +175,7 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
     """Base class for FOMOD links that need to run the FOMOD wizard."""
     _wants_install_checkbox: bool
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         # Use list() since we're going to deselect packages
         for sel_package in list(self.iselected_infos()):
             try:
@@ -198,7 +197,7 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
                 if ret.canceled:
                     continue
                 # Now we're ready to execute the link's specific action
-                self._execute_action(sel_package, ret, ui_refresh_)
+                self._execute_action(sel_package, ret, **kwargs)
             except XMLParsingError:
                 deprint('Invalid FOMOD XML syntax:', traceback=True)
                 msg = _("The ModuleConfig.xml file that comes with "
@@ -210,7 +209,7 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
                 self._showError(msg % {'package_name': sel_package.fn_key},
                                 title=_('Invalid FOMOD XML Syntax'))
 
-    def _execute_action(self, sel_package, ret, ui_refresh_):
+    def _execute_action(self, sel_package, ret, **kwargs):
         raise NotImplementedError
 
 class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
@@ -219,14 +218,14 @@ class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
     _help = _('Run the FOMOD installer and install the output.')
     _wants_install_checkbox = True
 
-    def _execute_action(self, sel_package, ret, ui_refresh_):
+    def _execute_action(self, sel_package, ret, **kwargs):
         # Switch the GUI to FOMOD mode and pass selected files to BAIN
         idetails = self.iPanel.detailsPanel
         idetails.set_fomod_mode(fomod_enabled=True)
         sel_package.extras_dict['fomod_dict_v2'] = ret.install_files
         idetails.refreshCurrent(sel_package)
         if ret.should_install:
-            self._perform_install(sel_package, ui_refresh_)
+            self._perform_install(sel_package, **kwargs)
 
 class Installer_CaptureFomodOutput(_Installer_ARunFomod):
     _text = _dialog_title = _('Capture FOMOD Output…')
@@ -236,7 +235,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
     # would have the same behavior as hitting 'Cancel' for this link
     _wants_install_checkbox = False
 
-    def _execute_action(self, sel_package, ret, ui_refresh_):
+    def _execute_action(self, sel_package, ret, **kwargs):
         working_on_archive = sel_package.is_archive
         proj_default = (sel_package.abs_path.sbody if working_on_archive
                         else sel_package.fn_key)
@@ -302,7 +301,7 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
         return super(Installer_Wizard, self)._enable() and all(
             i.hasWizard for i in self.iselected_infos())
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         ##: Investigate why we have so many refreshCurrents in here.
         # Installer_RunFomod has just one!
         idetails = self.iPanel.detailsPanel
@@ -436,8 +435,8 @@ class Installer_Anneal(Installer_Op, _NoMarkerLink):
               'packages.') % {'data_folder': bush.game.mods_dir}
     _prog_args = _('Annealing…'),
 
-    def _perform_action(self, ui_refresh_, progress):
-        self.idata.bain_anneal(self._installables, ui_refresh_, progress)
+    def _perform_action(self, **kwargs):
+        self.idata.bain_anneal(self._installables, **kwargs)
 
 class Installer_Duplicate(_SingleInstallable):
     """Duplicate selected Installer."""
@@ -549,12 +548,12 @@ class Installer_Install(Installer_Op, _NoMarkerLink):
         self._warn_nothing_installed()
         self._warn_mismatched_ini_tweaks_created(new_tweaks)
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         last = (self.mode == 'LAST')
         override = (self.mode != 'MISSING')
         try:
-            return self.idata.bain_install(self._installables, ui_refresh_,
-                                           progress, last, override)
+            return self.idata.bain_install(self._installables, last, override,
+                                           **kwargs)
         except (CancelError, SkipError):
             return
         except StateError as e:
@@ -852,8 +851,8 @@ class Installer_Uninstall(Installer_Op, _NoMarkerLink):
         'data_folder': bush.game.mods_dir}
     _prog_args = _('Uninstalling…'),
 
-    def _perform_action(self, ui_refresh_, progress):
-        self.idata.bain_uninstall(self._installables, ui_refresh_, progress)
+    def _perform_action(self, **kwargs):
+        self.idata.bain_uninstall(self._installables, **kwargs)
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""

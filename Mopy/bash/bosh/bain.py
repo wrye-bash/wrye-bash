@@ -33,7 +33,7 @@ import sys
 import time
 from collections import defaultdict
 from collections.abc import Iterable
-from functools import partial
+from functools import partial, wraps
 from itertools import chain, groupby
 from operator import attrgetter, itemgetter
 from zlib import crc32
@@ -1304,15 +1304,15 @@ class _InstallerPackage(Installer, AFileInfo):
         raise NotImplementedError
 
     #--ABSTRACT ---------------------------------------------------------------
-    def install(self, destFiles: set[CIstr], progress):
+    def install(self, destFiles: set[CIstr], progress, **kwargs):
         """Install specified files to Data directory."""
         dest_src = self.refreshDataSizeCrc(True)
         dest_src = {k: v for k, v in dest_src.items() if k in destFiles}
         if not dest_src: return bolt.LowerDict(), defaultdict(bool)
         progress = progress if progress else bolt.Progress()
-        return self._install(dest_src, progress)
+        return self._install(dest_src, progress, **kwargs)
 
-    def _install(self, dest_src, progress):
+    def _install(self, dest_src, progress, **kwargs):
         raise NotImplementedError
 
     def _fs_install(self, dest_src, srcDirJoin, progress, subprogressPlus,
@@ -1596,7 +1596,7 @@ class InstallerArchive(_InstallerPackage):
                 bolt.clearReadOnly(unpack_dir)
         return GPath_no_norm(unpack_dir)
 
-    def _install(self, dest_src, progress):
+    def _install(self, dest_src, progress, **kwargs):
         #--Extract
         progress(0, ('%s\n' % self) + _('Extracting files…'))
         unpackDir = self.unpackToTemp(list(dest_src.values()),
@@ -1799,7 +1799,7 @@ class InstallerProject(_InstallerPackage):
         self.project_refreshed = True
 
     # Installer API -----------------------------------------------------------
-    def _install(self, dest_src, progress):
+    def _install(self, dest_src, progress, **kwargs):
         progress.setFull(len(dest_src))
         progress(0, f'{self}\n' + _('Moving files…'))
         progressPlus = progress.plus
@@ -2637,7 +2637,8 @@ class InstallersData(DataStore):
         iniInfos.refresh(RefrIn.from_added(created))
         tweaksCreated -= removed
 
-    def _installer_install(self, installer, destFiles, index, progress):
+    def _installer_install(self, installer, destFiles, index, progress,
+                           **kwargs):
         """Wrap installer.install to update data_sizeCrcDate."""
         sub_progress = SubProgress(progress, index, index + 1)
         data_sizeCrcDate_update, refresh_ui_ = installer.install(
@@ -2794,7 +2795,8 @@ class InstallersData(DataStore):
                     cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
         return set(dest_sc)
 
-    def bain_uninstall(self, unArchives, refresh_ui_, progress=None):
+    @_bain_op
+    def bain_uninstall(self, unArchives, **kwargs):
         """Uninstall selected packages."""
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that

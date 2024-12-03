@@ -167,9 +167,9 @@ class Installers_AnnealAll(Installer_Op, Installers_Link):
         'data_folder': bush.game.mods_dir}
     _prog_args = _('Annealing…'),
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         """Anneal all packages."""
-        self.idata.bain_anneal(None, ui_refresh_, progress=progress)
+        self.idata.bain_anneal(None, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_UninstallAllPackages(Installer_Op, Installers_Link):
@@ -184,9 +184,9 @@ class Installers_UninstallAllPackages(Installer_Op, Installers_Link):
         if not self._askYes(_('Really uninstall all packages?')): return
         super().Execute()
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         """Uninstall all present packages."""
-        self.idata.bain_uninstall(None, ui_refresh_, progress)
+        self.idata.bain_uninstall(None, **kwargs)
 
 #------------------------------------------------------------------------------
 class _AInstallers_Refresh(AppendableLink, Installers_Link):
@@ -262,9 +262,9 @@ class Installers_CleanData(Installer_Op, Installers_Link):
         return _('Cleaning %(data_folder)s contents…') % {
             'data_folder': bush.game.mods_dir}, f'\n{" " * 65}'
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         """Clean the data directory."""
-        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_)
+        self.idata.clean_data_dir(self.__ed_unknown, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
