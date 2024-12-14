@@ -297,6 +297,31 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
             _(u'Run the install wizard, selecting the default options.')
             if self._auto else _(u'Run the install wizard.'))
 
+    @balt.conversation
+    def Execute(self):
+        apply_to, new_targets, manuallyApply = super().Execute()
+        lastApplied = target_ini_file = None
+        for target_ini_file, tweaks in apply_to.items():
+            infos = [inf for t in tweaks if (inf := bosh.iniInfos.get(t))]
+            if INIList.apply_tweaks(infos, target_ini_file):
+                lastApplied = infos[-1].fn_key
+        #--Refresh after all the tweaks are applied
+        if lastApplied is not None:
+            target_updated = bosh.INIInfos.update_targets(new_targets)
+            if (ini_uilist := BashFrame.all_uilists[Store.INIS]) is not None:
+                ini_uilist.panel.detailsPanel.set_choice(
+                  target_ini_file.abs_path.stail, reset_choices=target_updated)
+                ini_uilist.panel.ShowPanel(focus_list=False,
+                    refresh_infos=False, detail_item=lastApplied)
+        if manuallyApply:
+            message = [_('The following INI Tweaks were not automatically '
+                         'applied. Be sure to apply them after installing the '
+                         'package.'), '', '']
+            message.extend(
+                f' * {x}\n {_("To: %(tweak_target)s") % {"tweak_target": y}}'
+                for x, y in manuallyApply)
+            self._showInfo('\n'.join(message))
+
     def _enable(self):
         return super(Installer_Wizard, self)._enable() and all(
             i.hasWizard for i in self.iselected_infos())
@@ -305,6 +330,10 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
         ##: Investigate why we have so many refreshCurrents in here.
         # Installer_RunFomod has just one!
         idetails = self.iPanel.detailsPanel
+        # Build any ini tweaks
+        manuallyApply = [] # List of tweaks the user needs to  manually apply
+        new_targets = {}
+        apply_to = defaultdict(list)
         # Use list() since we're going to deselect packages
         for sel_package in list(self.iselected_infos()):
             with BusyCursor():
@@ -348,15 +377,14 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
             idetails.refreshCurrent(sel_package)
             #Install if necessary
             if ret.should_install:
-                self._perform_install(sel_package, ui_refresh_)
-            self._apply_tweaks(sel_package, ret, ui_refresh_)
+                self._perform_install(sel_package, **kwargs)
+            self._apply_tweaks(sel_package, ret, apply_to, new_targets,
+                               manuallyApply, **kwargs)
+        return apply_to, new_targets, manuallyApply
 
-    def _apply_tweaks(self, installer, ret, ui_refresh):
-        #Build any ini tweaks
-        manuallyApply = []  # List of tweaks the user needs to  manually apply
-        new_targets = {}
-        new_infos = {}
-        apply_to = defaultdict(list)
+    def _apply_tweaks(self, installer, ret, apply_to, new_targets,
+                      manuallyApply, *, rui_data, **kwargs):
+        from ..bosh import iniInfos
         for iniFile, wizardEdits in ret.ini_edits.items():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
@@ -367,9 +395,9 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
             with outFile.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
-            new_infos[ini_name := outFile.stail] = {
-                'installer': installer.fn_key}
-            # We wont automatically apply tweaks to anything other than
+            rui_data[iniInfos] |= RefrIn.from_tabled_infos(extra_attrs={(
+                ini_name := outFile.stail): {'installer': installer.fn_key}})
+            # We won't automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
             game_ini = bosh.get_game_ini(iniFile, is_abs=False)
             if game_ini:
@@ -387,32 +415,6 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
                     continue
                 target_ini_file = bosh.BestIniFile(target_path)
                 apply_to[target_ini_file].append(ini_name)
-        rdata = bosh.iniInfos.refresh(refresh_infos=RefrIn.from_tabled_infos(
-            extra_attrs=new_infos))
-        lastApplied = None
-        for target_ini_file, tweaks in apply_to.items():
-            infos = [inf for t in tweaks if (inf := bosh.iniInfos.get(t))]
-            if INIList.apply_tweaks(infos, target_ini_file):
-                lastApplied = infos[-1].fn_key, target_ini_file.abs_path.stail
-        #--Refresh after all the tweaks are applied
-        if rdata: ui_refresh |= Store.INIS.DO() # trigger refresh UI
-        if lastApplied is not None:
-            lastApplied, target_name = lastApplied
-            target_updated = bosh.INIInfos.update_targets(new_targets)
-            if (ini_uilist := BashFrame.all_uilists[Store.INIS]) is not None:
-                ini_uilist.panel.detailsPanel.set_choice(
-                    target_name, reset_choices=target_updated)
-                ini_uilist.panel.ShowPanel(focus_list=False,
-                    refresh_infos=False, detail_item=lastApplied)
-            ui_refresh[Store.INIS] = False # None or we refreshed in ShowPanel
-        if manuallyApply:
-            message = [_('The following INI Tweaks were not automatically '
-                         'applied. Be sure to apply them after installing the '
-                         'package.'), '', '']
-            message.extend(
-                f' * {x}\n {_("To: %(tweak_target)s") % {"tweak_target": y}}'
-                for x, y in manuallyApply)
-            self._showInfo('\n'.join(message))
 
 class Installer_OpenReadme(_SingleInstallable):
     """Opens the installer's readme if BAIN can find one."""

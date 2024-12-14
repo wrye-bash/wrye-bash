@@ -1917,9 +1917,11 @@ class RefrIn:
 
     @classmethod
     def from_tabled_infos(cls, fn_info_dict=None, *, extra_attrs=None,
-                          exclude: frozenset | True = frozenset()):
+                          exclude: frozenset | True = frozenset(), store=None):
         """Copy persistent attributes from info objects (or dict) - info
         objects are discarded, so we request refresh for *adding* infos."""
+        if store: # fish the infos so we copy table attributes over
+            fn_info_dict = {k: v for k in extra_attrs if (v := store.get(k))}
         try:
             rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude=exclude)})
                     for k, v in fn_info_dict.items()}
@@ -1936,6 +1938,23 @@ class RefrIn:
     def from_added(cls, added_fns):
         return cls({k: (None, {}) for k in added_fns})
 
+    def __ior__(self, other, *, __np=attrgetter_cache['new_or_present']):
+        nps, npo = __np(self), __np(other)
+        self.del_infos.update(other.del_infos)
+        self.del_infos = {v for v in self.del_infos if v.fn_key not in npo}
+        for fn in nps.keys() & npo:
+            attrs = nps[fn][1]
+            for k, v in npo[fn][1].items():
+                if isinstance(v, dict):
+                    attrs.setdefault(k, {}).update(v)
+                else: attrs[k] = v
+            nps[fn] = npo[fn][0], attrs  # first assignment ever needed?
+        for fn in npo.keys() - nps.keys():
+            nps[fn] = npo[fn]
+        for fn in (nps.keys() & {v.fn_key for v in self.del_infos}):
+            del nps[fn]
+        return self
+
 #------------------------------------------------------------------------------
 @dataclass(slots=True)
 class RefrData:
@@ -1951,8 +1970,16 @@ class RefrData:
         return bool(self.to_add or self.to_del or self.redraw)
 
     def __ior__(self, other):
+        # we suppose `other` is more up to date so deleted infos might reappear
+        new = (other.redraw | other.to_add)
         for att in self.__slots__:
+            if att == 'to_del':
+                self.to_del = {d for d in self. to_del if d not in new}
             getattr(self, att).update(getattr(other, att)) # sets and dicts
+        for att in ('redraw', 'to_add'):
+            setattr(self, att, {a for a in getattr(self, att)
+                                if a not in self.to_del})
+        # we suppose renames/ren_paths key/values are unique while we ior them
         return self
 
 #------------------------------------------------------------------------------

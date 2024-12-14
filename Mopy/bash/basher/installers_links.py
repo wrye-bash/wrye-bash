@@ -68,7 +68,7 @@ class Installers_AddMarker(ItemLink):
         self.window.addMarker()
 
 #------------------------------------------------------------------------------
-class Installers_MonitorExternalInstallation(Installers_Link):
+class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
     """Monitors Data folder for external installation."""
     _text = _dialog_title = _('Monitor External Installation…')
     _help = _('Monitors the %(data_folder)s folder to capture changes made '
@@ -92,7 +92,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         self._showOk(_('You may now install your mod. When installation is '
                        'complete, press OK.'), _('External Installation'))
         # Refresh Data
-        rd_refresh = {store: bool(store.refresh(True, unlock_lo=True)) for store in
+        rd_refresh = {store: store.refresh(True, unlock_lo=True) for store in
                       bosh.data_tracking_stores()}
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
@@ -127,17 +127,17 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             check_exists=False) # we will use unique_name
         if not projectName:
             return
-        pr_path = bosh.InstallerProject.unique_name(projectName)
+        self.__pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
         with balt.Progress(_('Creating Project…')) as prog: # will order last
-            self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
+            self.idata.createFromData(self.__pr_path, include, prog, bosh.modInfos)
         # createFromData placed the new project last in install order - install
-        try:
-            self.idata.bain_install([pr_path], rd_refresh, override=False)
-        finally:
-            self.window.propagate_refresh(True, rd_refresh)
+        super().Execute(rd_refresh=rd_refresh)
         # Select new installer
         self.window.SelectLast()
+        
+    def _perform_action(self, **kwargs):
+        self.idata.bain_install([self.__pr_path], override=False, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_ListPackages(Installers_Link):
@@ -264,7 +264,7 @@ class Installers_CleanData(Installer_Op, Installers_Link):
 
     def _perform_action(self, **kwargs):
         """Clean the data directory."""
-        self.idata.clean_data_dir(self.__ed_unknown, **kwargs)
+        self.idata.bain_clean_data_dir(self.__ed_unknown, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):

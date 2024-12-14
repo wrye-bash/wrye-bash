@@ -198,7 +198,7 @@ class Saves_Profiles(ChoiceLink):
             with BusyCursor():
                 self.window.set_local_save(new_dir, do_swap=self._askYes)
                 self.window.DeleteAll() # let call below repopulate
-                self.window.propagate_refresh(True, Store.MODS.DO(),
+                self.window.propagate_refresh(True, {Store.MODS: True},
                                               detail_item=None)
                 self.window.panel.ShowPanel()
 
