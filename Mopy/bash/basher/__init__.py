@@ -1594,9 +1594,11 @@ class ModDetails(_ModsSavesDetails):
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(mod_inf)
-            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
+            rdata = bosh.modInfos.refresh(refresh_infos=False,
+                                          unlock_lo=unlock_lo)
+            rdata.redraw.add(mod_inf.fn_key) # needed!
             self.panel_uilist.propagate_refresh( # refresh saves if lo changed
-                True, refr_saves=not bush.game.using_txt_file)
+                rdata, refr_saves=unlock_lo)
             return
         #--Change hedr/masters?
         if refr_inf := (changeHedr or changeMasters):

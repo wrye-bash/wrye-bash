@@ -135,8 +135,9 @@ class File_Duplicate(ItemLink):
         if mod_previous:
             rinf = RefrIn.from_tabled_infos(
                 {k: pairs[v] for k, v in mod_previous.items()})
-            fileInfos.refresh(rinf, insert_after=mod_previous)
-            self.refresh_sel(mod_previous,
+            ##:(701) we should reset-status here for lower loading mods
+            rdata = fileInfos.refresh(rinf, insert_after=mod_previous)
+            self.refresh_sel(rdata.redraw | rdata.to_add,
                              detail_item=next(reversed(mod_previous)))
             self.window.SelectItemsNoCallback(mod_previous)
 

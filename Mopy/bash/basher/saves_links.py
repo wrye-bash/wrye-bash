@@ -663,11 +663,10 @@ class Save_Move(ChoiceLink):
         try:
             count = self._move_saves(destDir, profile)
         finally:
-            if not self.copyMode: # files moved to other profile, refresh
-                if moved := bosh.saveInfos.check_existence(
-                        self.iselected_infos()):
-                    bosh.saveInfos.refresh(RefrIn(del_infos=moved))
-                self.window.RefreshUI(RefrData(to_del=moved))
+            if not self.copyMode and (moved := bosh.saveInfos.check_removed(
+                        self.iselected_infos())):
+                rdata = bosh.saveInfos.refresh(RefrIn(del_infos=moved))
+                self.window.RefreshUI(rdata)
         profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
         msg = (_('%(num_save_files)d files copied to %(save_profile)s.')
                if self.copyMode else
