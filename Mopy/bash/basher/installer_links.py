@@ -47,7 +47,7 @@ from .. import archives, balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..bass import Store
-from ..bolt import FName, LogFile, SubProgress, deprint, round_size
+from ..bolt import FName, LogFile, RefrIn, SubProgress, deprint, round_size
 from ..bosh import InstallerConverter, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
@@ -378,8 +378,9 @@ class Installer_Wizard(_Installer_AWizardLink):
     def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
-        lastApplied = None
         new_targets = {}
+        new_infos = {}
+        apply_to = defaultdict(list)
         for iniFile, wizardEdits in ret.ini_edits.items():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
@@ -390,15 +391,13 @@ class Installer_Wizard(_Installer_AWizardLink):
             with outFile.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
-            inf = bosh.iniInfos.new_info(outFile.stail, owner=installer.fn_key)
-            # trigger refresh UI
-            ui_refresh |= Store.INIS.DO()
+            new_infos[ini_name := outFile.stail] = {
+                'installer': installer.fn_key}
             # We wont automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
             game_ini = bosh.get_game_ini(iniFile, is_abs=False)
             if game_ini:
-                target_path = game_ini.abs_path
-                target_ini_file = game_ini
+                apply_to[game_ini].append(ini_name)
             else: # suppose that the target ini file is in the Data/ dir
                 target_path = bass.dirs[u'mods'].join(iniFile)
                 new_targets[target_path.stail] = target_path
@@ -411,16 +410,24 @@ class Installer_Wizard(_Installer_AWizardLink):
                     manuallyApply.append((outFile.stail, iniFile))
                     continue
                 target_ini_file = bosh.BestIniFile(target_path)
-            if INIList.apply_tweaks([inf], target_ini_file):
-                lastApplied = FName(outFile.stail)
+                apply_to[target_ini_file].append(ini_name)
+        rdata = bosh.iniInfos.refresh(refresh_infos=RefrIn.from_tabled_infos(
+            extra_attrs=new_infos), refresh_target=False)
+        lastApplied = None
+        for target_ini_file, tweaks in apply_to.items():
+            infos = [inf for t in tweaks if (inf := bosh.iniInfos.get(t))]
+            if INIList.apply_tweaks(infos, target_ini_file):
+                lastApplied = infos[-1].fn_key, target_ini_file.abs_path.stail
         #--Refresh after all the tweaks are applied
+        if rdata: ui_refresh |= Store.INIS.DO() # trigger refresh UI
         if lastApplied is not None:
+            lastApplied, target_name = lastApplied
             target_updated = bosh.INIInfos.update_targets(new_targets)
             if (ini_uilist := BashFrame.all_uilists[Store.INIS]) is not None:
                 ini_uilist.panel.detailsPanel.set_choice(
-                    target_path.stail, reset_choices=target_updated)
+                    target_name, reset_choices=target_updated)
                 ini_uilist.panel.ShowPanel(focus_list=False,
-                                           detail_item=lastApplied)
+                    refresh_infos=False, detail_item=lastApplied)
             ui_refresh[Store.INIS] = False # None or we refreshed in ShowPanel
         if manuallyApply:
             message = [_('The following INI Tweaks were not automatically '
@@ -1449,7 +1456,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             self.idata.converters_data.addConverter(conv)
         #--Refresh UI
         with balt.Progress(_('Refreshing Converters…')) as progress:
-            self.idata.irefresh(progress, what='C')
+            self.idata.irefresh(what='C', progress=progress)
         #--Generate log
         log = LogFile(io.StringIO())
         log.setHeader(f"== {_('Overview')}\n")

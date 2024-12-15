@@ -36,11 +36,12 @@ from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
 from .files_links import File_Duplicate, File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
-from .. import balt, bass, bolt, bosh, bush, exception, load_order
+from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bass import Store
-from ..bolt import FName, SubProgress, dict_sort, sig_to_str, GPath_no_norm
+from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
+    GPath_no_norm, RefrIn
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
@@ -178,7 +179,7 @@ class Mod_DumpRecordTypeNames(ItemLink):
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
-class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
+class Mod_CreateDummyMasters(OneItemLink):
     """xEdit tool, makes dummy plugins for each missing master, for use if
     looking at a 'Filter' patch."""
     _text = _('Create Dummy Masters…')
@@ -201,37 +202,33 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
               "to continue?") % {'xedit_name': bush.game.Xe.full_name},
             _("To remove these files later, use 'Remove Dummy Masters…'.")])
         if not self._askYes(msg, title=self._text): return
-        to_refresh = []
+        mod_previous = FNDict() # previous master for each master
         # creates esp files - so place them correctly after the last esm
         previous_master = bosh.modInfos.cached_lo_last_esm()
         for master in self._selected_info.masterNames:
             if master in bosh.modInfos:
+                if not bush.game.master_flag.cached_type(bosh.modInfos[master]):
+                    # if previous master is an esp put this one after it
+                    previous_master = master
                 continue
-            # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(self._selected_info.info_dir.join(master))
-            to_refresh.append((master, previous_master))
-            previous_master = master
-            newFile = ModFile(newInfo, self._load_fact()) ###
-            newFile.tes4.author = u'BASHED DUMMY'
+            # Missing master, create a dummy plugin for it --------------------
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
             force_flags = bush.game.plugin_flags.guess_flags(
-                newInfo.fn_key.fn_ext, bush.game)
-            for pl_flag, flag_val in force_flags.items():
-                pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
-            newFile.safeSave()
-        to_select = []
-        for mod, previous in to_refresh:
-            # add it to modInfos or lo_insert_after blows for timestamp games
-            bosh.modInfos.new_info(mod, notify_bain=True, _in_refresh=True)
-            bosh.modInfos.cached_lo_insert_after(previous, mod)
-            to_select.append(mod)
-        bosh.modInfos.cached_lo_save_lo()
-        bosh.modInfos.refresh(refresh_infos=False)
-        self.window.RefreshUI(detail_item=to_select[-1],
+                master.fn_ext, bush.game)
+            bosh.modInfos.create_new_mod(master, author_str='BASHED DUMMY',
+                flags_dict=force_flags,
+                wanted_masters=[], # previous behavior - correct?
+                # pass dir_path explicitly so refresh is skipped
+                dir_path=self._data_store.store_dir)
+            mod_previous[master] = previous_master
+            previous_master = master
+        bosh.modInfos.refresh(RefrIn.from_added(mod_previous),
+                              insert_after=mod_previous)
+        self.window.RefreshUI(detail_item=next(reversed(mod_previous)),
                               refresh_others=Store.SAVES.DO())
-        self.window.SelectItemsNoCallback(to_select)
+        self.window.SelectItemsNoCallback(mod_previous)
 
 #------------------------------------------------------------------------------
 class Mod_OrderByName(EnabledLink):
@@ -318,10 +315,6 @@ class Mod_Redate(File_Redate):
     def _infos_to_redate(self):
         return [self._data_store[to_redate] for to_redate
                 in load_order.get_ordered(self.selected)]
-
-    def _perform_refresh(self):
-        bosh.modInfos.refresh(refresh_infos=False,
-                              unlock_lo=not bush.game.using_txt_file)
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
@@ -1399,7 +1392,7 @@ class Mod_FogFixer(ItemLink):
 #------------------------------------------------------------------------------
 class _CopyToLink(EnabledLink):
     def __init__(self, plugin_ext):
-        super(_CopyToLink, self).__init__(plugin_ext)
+        super().__init__(plugin_ext)
         self._target_ext = plugin_ext
         self._help = _('Creates a copy of the selected plugins with the '
                        'extensions changed to %(new_plugin_ext)s.') % {
@@ -1409,18 +1402,19 @@ class _CopyToLink(EnabledLink):
         return any(p.get_extension() != self._target_ext
                    for p in self.iselected_infos())
 
+    @balt.conversation
     def Execute(self):
-        modInfos, added = bosh.modInfos, []
-        do_save_lo = False
+        modInfos, added = bosh.modInfos, {}
         pflags = bush.game.plugin_flags
         force_flags = pflags.guess_flags(self._target_ext, bush.game)
         force_flags = pflags.check_flag_assignments(force_flags)
+        mod_previous = FNDict()
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
-                newName = FName(curName.fn_body + self._target_ext)
+                newName = FName(f'{curName.fn_body}{self._target_ext}')
                 #--Replace existing file?
-                timeSource = None
+                newTime = None
                 if newName in modInfos:
                     existing = modInfos[newName]
                     # abs_path as existing may be ghosted
@@ -1429,23 +1423,21 @@ class _CopyToLink(EnabledLink):
                                 'existing_plugin': existing.abs_path.stail}):
                         continue
                     existing.makeBackup()
-                    timeSource = newName
-                newTime = modInfos[timeSource].ftime if timeSource else None
+                    newTime = existing.ftime
                 # Copy and set flag - will use ghosted path if needed
                 minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
-                added.append(newName)
-                newInfo = modInfos[newName]
-                if force_flags: newInfo.set_plugin_flags(force_flags)
-                if timeSource is None: # otherwise it has a load order already!
-                    modInfos.cached_lo_insert_after(
-                        modInfos.cached_lo_last_esm(), newName)
-                    do_save_lo = True
+                added[newName] = minfo
+                if newTime is None: # otherwise it has a load order already!
+                    mod_previous[newName] = curName
         #--Repopulate
         if added:
-            if do_save_lo: modInfos.cached_lo_save_lo()
-            modInfos.refresh(refresh_infos=False)
+            rinf = RefrIn.from_tabled_infos(added, exclude=True)
+            rdata = modInfos.refresh(rinf, insert_after=mod_previous)
+            if force_flags:
+                for new in rdata.to_add:
+                    bosh.modInfos[new].set_plugin_flags(force_flags)
             self.window.RefreshUI(refresh_others=Store.SAVES.DO(),
-                                  detail_item=added[-1])
+                                  detail_item=next(reversed(added)))
             self.window.SelectItemsNoCallback(added)
 
 class Mod_CopyToMenu(MenuLink):
@@ -1567,8 +1559,6 @@ class AFlipFlagLink(EnabledLink):
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
             ldiff = bosh.modInfos.refreshLoadOrder()
-            # converted to esps/esls - rescan mergeable
-            bosh.modInfos.rescanMergeable(self.selected)
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
                 altered={p.abs_path for p in self.iselected_infos()})
@@ -2378,10 +2368,9 @@ class Mod_RevertToSnapshot(OneItemLink):
             sel_inf.fs_copy(GPath_no_norm(known_good_copy))
             # keep load order (so mtime)
             self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
-            try:
-                inf = self._data_store.new_info(sel_file, notify_bain=True)
-                inf.copy_persistent_attrs(sel_inf)
-            except exception.FileError:
+            self._data_store.refresh(RefrIn.from_tabled_infos({
+                sel_file: sel_inf}, exclude=True))
+            if not self._data_store.get(sel_file):
                 # Reverting to snapshot failed - may be corrupt
                 bolt.deprint('Failed to revert to snapshot', traceback=True)
                 self.window.panel.ClearDetails()
@@ -2395,8 +2384,8 @@ class Mod_RevertToSnapshot(OneItemLink):
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    inf = self._data_store.new_info(sel_file, notify_bain=True)
-                    inf.copy_persistent_attrs(sel_inf)
+                    self._data_store.refresh(RefrIn.from_tabled_infos({
+                        sel_file: sel_inf}))
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 

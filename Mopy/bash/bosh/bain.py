@@ -39,16 +39,16 @@ from operator import attrgetter, itemgetter
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files, data_tracking_stores, RefrData, Corrupted
+    best_ini_files, data_tracking_stores, RefrData
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
 from ..bass import Store
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
-    SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
+    RefrIn, SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items, \
     DefaultFNDict, copy_or_reflink2, AFileInfo
-from ..exception import ArgumentError, BSAError, CancelError, FileError, \
+from ..exception import ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
 from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
@@ -1184,6 +1184,18 @@ class _InstallerPackage(Installer, AFileInfo):
         if load_cache: # load from disc, useful when adding a new installer
             AFile.__init__(self, self._file_key, progress=progress)
 
+    def copy_to(self, dup_path: Path, *, set_time=None):
+        super().copy_to(dup_path, set_time=set_time)
+        clone = self._store().new_info(FName(dup_path.stail),
+            is_proj=self.is_project, install_order=self.order + 1,
+            do_refresh=False, # we only need to call refresh_n()
+            load_cache=False) # don't load from disc - copy all attributes over
+        atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
+        for att in atts:
+            setattr(clone, att, copy.copy(getattr(self, att)))
+        clone.is_active = False # make sure we mark as inactive
+        self._store().refresh_n() # no need to change installer status here
+
     def _reset_cache(self, stat_tuple=None, *, __skips_start=tuple(
             s.replace(os_sep, '') for s in Installer._silentSkipsStart),
             __os_sep=os_sep, **kwargs):
@@ -1316,23 +1328,17 @@ class _InstallerPackage(Installer, AFileInfo):
         # Update relevant data stores, adding new/modified files
         refresh_ui = defaultdict(bool)
         for store, owned_files in store_to_paths.items():
-            lo_append = []
+            # some of those may just be modified but creating a new info is ok
+            refresh_ui[store.unique_store_key] = bool(store.refresh(
+                refresh_infos=RefrIn.from_tabled_infos(extra_attrs={
+                    k: {'installer': self.fn_key} for k, _dest in
+                    owned_files}), unlock_lo=True))
             for (owned_file, dest) in owned_files:
                 try:
-                    inf = store.new_info(owned_file, owner=self.fn_key,
-                         # we refresh info sets in cached_lo_append_if_missing
-                         _in_refresh=True)
-                    data_sizeCrcDate_update[dest][2] = inf.ftime
-                    lo_append.append(owned_file)
-                except FileError as error: # repeated from refresh
-                    store.corrupted[owned_file] = Corrupted(owned_file,
-                                                            error.message)
-                    store.pop(owned_file, None)
-            if lo_append:
-                refresh_ui[store.unique_store_key] = True
-                if store.unique_store_key is Store.MODS:
-                    store.cached_lo_append_if_missing(lo_append)
-                    store.refreshLoadOrder(unlock_lo=True)
+                    data_sizeCrcDate_update[dest][2] = store[owned_file].ftime
+                except KeyError: # failed to add the file - look in corrupted
+                    data_sizeCrcDate_update[dest][2] = store.corrupted[
+                        owned_file].ftime
         #--Update Installers data
         return data_sizeCrcDate_update, refresh_ui
 
@@ -1679,7 +1685,7 @@ class InstallerProject(_InstallerPackage):
             *(getattr(self, a) for a in self.persistent))
 
     # AFile API - InstallerProject is a folder not a file, special handling
-    def do_update(self, raise_on_error=False, force_update=False, **kwargs):
+    def do_update(self, *, raise_on_error=False, force_update=False, **kwargs):
         # refresh projects once on boot, even if skipRefresh is on
         force_update |= not self.project_refreshed
         if not force_update and (self.skipRefresh or not bass.settings[
@@ -1706,7 +1712,7 @@ class InstallerProject(_InstallerPackage):
     @property
     def _null_stat(self): return bolt.LowerDict(), -1, 0.0
 
-    def _stat_tuple(self):
+    def _stat_tuple(self, cached_stat=None):
         """Return the total project size, the max modification time of the
         files/folders and a dict that maps relative (to the project root) paths
         to size/apath/mtime. The latter should suffice to detect changes but
@@ -1874,13 +1880,12 @@ class InstallersData(DataStore):
         ##: What about projects? Do we have to just return True here?
         return cls.file_pattern.search(fileName)
 
-    def refresh(self, *args, **kwargs): ##: we should not be using this, track
+    def refresh(self, *args, **kwargs):
+        """Only used in delete - align with _AFileInfos one."""
         return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
-            # installers refresh context parameters
-            refresh_info: RefrData | None = None, *,
-            added_archives: _fnames = ()) -> RefrData:
+    def irefresh(self, refresh_info: RefrIn | list | None = None, *,
+        what='DIONSC', progress=None, fullRefresh=False, **kwargs) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
@@ -1903,24 +1908,13 @@ class InstallersData(DataStore):
             changes |= self._refresh_from_data_dir(progress, fullRefresh)
         if 'I' in what:
             progress = progress or bolt.Progress()
-            # if we are passed a refresh_info, update_installers was
-            # already called, and we only need to update for deleted
-            if refresh_info is None:
-                if added_archives: # if added we are passed existing installers
-                    refresh_info = RefrData(to_add=set(added_archives))
-                    # call update_installers to update those
-                    dirs_files = set(added_archives), ()
-                else: # we really need to scan installers
-                    dirs_files = top_level_items(bass.dirs['installers'])
-                if dirs_files:
-                    progress(0, _('Scanning Packages…'))
-                    refresh_info = self.update_installers(*dirs_files,
-                        fullRefresh, progress, refresh_info=refresh_info,
-                    fresh_load=fresh_load) # avoid re-stating freshly unpickled
+            refresh_info = self._list_store_dir(refresh_info, fresh_load,
+                                                fullRefresh, progress)
             for del_item in refresh_info.to_del:
                 self.pop(del_item)
             changes |= bool(refresh_info)
-        if refresh_info is None: refresh_info = RefrData()
+        elif refresh_info is None: # 'I' in what will set it to a RefrData instance
+            refresh_info = RefrData() # None only when called from ShowPanel (...)
         if 'O' in what or changes:
             reordered = self.refreshOrder()
             refresh_info.redraw.update(reordered)
@@ -1951,11 +1945,34 @@ class InstallersData(DataStore):
         if changes: self.hasChanged = True
         return refresh_info
 
-    def refresh_ns(self, *args, **kwargs):
-        self.irefresh(*args, **kwargs, what='NS')
+    def _list_store_dir(self, refresh_info, fresh_load, fullRefresh, progress):
+        """The BAIN version - illustrates the differences between _AFileInfos
+        and InstallersData refresh()."""
+        # if we are passed a RefrIn, we only need to update for deleted
+        if isinstance(refresh_info, RefrIn): ##: use RefrIn all along
+            return RefrData(to_del={i.fn_key for i in refresh_info.del_infos})
+        dirs_files = None
+        if isinstance(refresh_info, list): # we are passed existing installers
+            refresh_info = RefrData(to_add=set(refresh_info))
+            # call update_installers to update those
+            dirs_files = refresh_info.to_add, ()
+        elif refresh_info is None: # we really need to scan installers
+            dirs_files = top_level_items(bass.dirs['installers'])
+        if dirs_files:
+            progress(0, _('Scanning Packages…'))
+            refresh_info = self.update_installers(*dirs_files, fullRefresh,
+                progress, refresh_info=refresh_info,
+                fresh_load=fresh_load) # avoid re-stating freshly unpickled
+        return refresh_info
 
-    def refresh_n(self, *args, **kwargs):
-        self.irefresh(*args, **kwargs, what='N')
+    def refresh_ns(self, progress=None):
+        self.irefresh(what='NS', progress=progress)
+
+    def refresh_n(self):
+        self.irefresh(what='N')
+
+    def refresh_i(self, refresh_info: RefrIn | list):
+        self.irefresh(refresh_info, what='I')
 
     def __load(self, progress):
         progress = progress or bolt.Progress()
@@ -2024,19 +2041,11 @@ class InstallersData(DataStore):
         toDelete = []
         markers = [inst.fn_key for inst in infos if
                    inst.is_marker or toDelete.append(inst)] # or None
-        super()._delete_operation(toDelete, recycle=recycle)
+        super()._delete_operation(toDelete, recycle)
         for m in markers: del self[m]
-
-    def delete_refresh(self, infos, check_existence):
-        del_insts = [inst for inst in infos if not inst.is_marker]
-        markers = len(del_insts) < len(infos)
-        if check_existence:
-            del_insts = {i for i in del_insts if not i.abs_path.exists()}
-        if del_insts: # markers are popped in _delete_operation
-            self.irefresh(what='I', refresh_info=RefrData({
-                i.fn_key for i in del_insts}))
-        elif markers:
-            self.refreshOrder()
+        if len(infos) == len(markers): # only markers - just refresh order
+            self.refreshOrder() # do the refresh here if we only have markers
+        infos[:] = toDelete # eliminate markers from the list, we are done
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
@@ -2046,20 +2055,9 @@ class InstallersData(DataStore):
         # Can't open markers since they're virtual
         return {i: self[i] for i in fn_items if not self[i].is_marker}
 
-    def add_info(self, file_info, destName, **kwargs):
-        clone = self.new_info(destName,
-            is_proj=file_info.is_project, install_order=file_info.order + 1,
-            do_refresh=False, # we only need to call refresh_n()
-            load_cache=False) # don't load from disc - copy all attributes over
-        atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
-        for att in atts:
-            setattr(clone, att, copy.copy(getattr(file_info, att)))
-        clone.is_active = False # make sure we mark as inactive
-        self.refresh_n() # no need to change installer status here
-
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super().move_infos(sources, destinations, window, bash_frame)
-        self.irefresh(what='I', added_archives=moved)
+        self.refresh_i(moved)
         return moved
 
     def reorder_packages(self, partial_order: list[FName]) -> str:
@@ -2171,7 +2169,7 @@ class InstallersData(DataStore):
                 # installer.hasBCF = False
                 installers.remove(installer)
             finally: bcfFile.remove()
-        self.irefresh(what='I', added_archives=dest_archives)
+        self.refresh_i(dest_archives)
         return dest_archives, [x.fn_key for x in installers]
 
     def apply_converter(self, converter, destArchive, progress, msg,
@@ -2180,13 +2178,13 @@ class InstallersData(DataStore):
         try:
             converter.apply(destArchive, crc_installer, progress,
                             embedded=installer.crc if installer else 0)
-            #--Add the new archive to Bash
-            if destArchive not in self:
-                self[destArchive] = InstallerArchive(destArchive)
+            try:
+                iArchive = self[destArchive]
+                reorder = False
+            except KeyError: #--Add the new archive to Bash
+                iArchive = self[destArchive] = InstallerArchive(destArchive)
                 reorder = True
-            else: reorder = False
             #--Apply settings from the BCF to the new InstallerArchive
-            iArchive = self[destArchive]
             converter.applySettings(iArchive)
             if reorder and position >= 0:
                 self.moveArchives([destArchive], position)
@@ -2195,7 +2193,7 @@ class InstallersData(DataStore):
             if dest_archives is not None: # caller must call irefresh on those!
                 dest_archives.append(destArchive)
             else:
-                self.irefresh(what='I', added_archives=[destArchive])
+                self.refresh_i([destArchive])
                 return iArchive
         except StateError as e:
             deprint(msg, traceback=True)
@@ -2571,7 +2569,7 @@ class InstallersData(DataStore):
     def _editTweaks(tweaksCreated):
         """Edit created ini tweaks with settings that differ and/or don't exist
         in the new ini."""
-        removed = set()
+        removed, created = set(), []
         from . import iniInfos
         pseudosections = set(OBSEIniFile.ci_pseudosections.values())
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
@@ -2612,9 +2610,8 @@ class InstallersData(DataStore):
                         'settings from old file.')
                 ini_.write(f'; {msg}\n\n' % {'wb_version': bass.AppVersion})
                 ini_.writelines(lines)
-            # We notify BAIN below, although highly improbable the created ini
-            # is included to a package
-            iniInfos.new_info(tweakPath.stail, notify_bain=True)
+            created.append(FName(tweakPath.stail))
+        iniInfos.refresh(RefrIn.from_added(created))
         tweaksCreated -= removed
 
     def _installer_install(self, installer, destFiles, index, progress):
@@ -2934,7 +2931,7 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_keys in store_del.items():
-                store.delete_refresh(del_keys, check_existence=False)
+                store.refresh(RefrIn(del_infos=del_keys), unlock_lo=True)
                 refresh_ui |= store.unique_store_key.DO()
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:

@@ -21,10 +21,10 @@
 #
 # =============================================================================
 
-from .. import balt, bass, bolt, bosh, exception
+from .. import balt, bass, bolt, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bass import Store
-from ..bolt import GPath_no_norm
+from ..bolt import FNDict, GPath_no_norm, RefrIn
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 from ..wbtemp import TempFile
@@ -109,11 +109,10 @@ class File_Duplicate(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        dests = []
+        mod_previous = FNDict()
         fileInfos = self._data_store
-        pairs = [*self.iselected_pairs()]
-        last = len(pairs) - 1
-        for dex, (to_duplicate, fileInfo) in enumerate(pairs):
+        pairs = dict(self.iselected_pairs())
+        for to_duplicate, fileInfo in pairs.items():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
@@ -133,14 +132,15 @@ class File_Duplicate(ItemLink):
                 if root is None:
                     self._showError(destName)
                     return
-            fileInfo.copy_to(destDir.join(destName), save_lo_cache=dex == last)
-            dests.append(destName)
-        if dests:
-            ##: refresh_infos=True for saves - would love to specify something
-            # like refresh_only=dests - #353
-            fileInfos.refresh()
-            self.window.RefreshUI(redraw=dests, detail_item=dests[-1])
-            self.window.SelectItemsNoCallback(dests)
+            fileInfo.copy_to(destDir.join(destName))
+            mod_previous[destName] = to_duplicate
+        if mod_previous:
+            rinf = RefrIn.from_tabled_infos(
+                {k: pairs[v] for k, v in mod_previous.items()})
+            fileInfos.refresh(rinf, insert_after=mod_previous)
+            self.window.RefreshUI(redraw=mod_previous,
+                detail_item=next(reversed(mod_previous)))
+            self.window.SelectItemsNoCallback(mod_previous)
 
     def _disallow_copy(self, fileInfo):
         """Method for checking if fileInfo may not be copied for some reason.
@@ -204,9 +204,8 @@ class _RevertBackup(OneItemLink):
             # Make a temp copy first in case reverting to backup fails
             info_path = sel_inf.abs_path
             sel_inf.fs_copy(GPath_no_norm(known_good_copy))
-            try:
-                self._selected_info.revert_backup(self.first)
-            except exception.FileError:
+            sel_inf.revert_backup(self.first)
+            if not self._data_store.get(sel_file):
                 # Reverting to backup failed - may be corrupt
                 bolt.deprint('Failed to revert to backup', traceback=True)
                 self.window.panel.ClearDetails()
@@ -220,8 +219,8 @@ class _RevertBackup(OneItemLink):
                                 title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    inf = self._data_store.new_info(sel_file, notify_bain=True)
-                    inf.copy_persistent_attrs(sel_inf)
+                    self._data_store.refresh(RefrIn.from_tabled_infos({
+                        sel_file: sel_inf})) # re-add all attrs
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 
@@ -253,17 +252,14 @@ class File_Redate(ItemLink):
         for to_redate in self._infos_to_redate():
             to_redate.setmtime(user_timestamp)
             user_timestamp += 60.0
-        self._perform_refresh()
+        self._data_store.refresh(refresh_infos=False,
+                                 unlock_lo=not bush.game.using_txt_file)
         self.window.RefreshUI(refresh_others=Store.SAVES.DO())
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):
         """Returns an iterable of the FileInfo instances to redate."""
         return self.iselected_infos()
-
-    def _perform_refresh(self):
-        """Refreshes the data store - """
-        self._data_store.refresh(refresh_infos=False)
 
 #------------------------------------------------------------------------------
 class File_JumpToSource(AppendableLink, OneItemLink):

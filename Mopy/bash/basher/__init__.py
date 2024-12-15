@@ -73,14 +73,13 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
 from ..bass import Store
-from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
+from ..bolt import FName, GPath, RefrIn, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property, attrgetter_cache, top_level_files
 from ..bosh import ModInfo, omods, RefrData
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
-from ..exception import BoltError, CancelError, FileError, SkipError, \
-    UnknownListener
+from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -1367,19 +1366,17 @@ class _EditableMixinOnFileInfos(_EditableMixin):
             self.SetEdited()
 
     @balt.conversation
-    def _refresh_detail_info(self):
-        try: # use self.file_info.fn_key, as name may have been updated
-            # Although we could avoid rereading the header I leave it here as
-            # an extra error check - error handling is WIP
-            inf = self.panel_uilist.data_store.new_info(self.file_info.fn_key,
-                                                        notify_bain=True)
-            inf.copy_persistent_attrs(self.file_info) # yak, will go once new_info is absorbed in refresh
-            return self.file_info.fn_key
-        except FileError as e:
-            deprint(f'Failed to edit details for {self.displayed_item}',
-                    traceback=True)
-            showError(self, _('File corrupted on save!') + f'\n{e.message}')
+    def _refresh_detail_info(self, refresh_info=True, **kwargs):
+        # Although we could avoid rereading the header by passing the info in I
+        # leave it here as an extra error check - error handling is WIP
+        store = self.panel_uilist.data_store
+        store.refresh(refresh_info and RefrIn.from_tabled_infos(
+            {self.file_info.fn_key: self.file_info}, exclude=True), **kwargs)
+        if not store.get(fn := self.file_info.fn_key):
+            showError(self, _('File corrupted on save!') +
+                      f'\n{store.corrupted[fn].error_message}')
             return None
+        return fn
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
@@ -1685,11 +1682,11 @@ class ModDetails(_ModsSavesDetails):
             if msg and not askWarning(
                     self, msg, title=_('Rename %(target_file_name)s') % {
                         'target_file_name': modInfo}): return
+        unlock_lo = changeDate and not bush.game.using_txt_file
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
-            unlock = not bush.game.using_txt_file
-            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
+            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
             self.panel_uilist.RefreshUI( # refresh saves if lo changed
                 refresh_others=Store.SAVES.IF(not bush.game.using_txt_file))
             return
@@ -1708,7 +1705,7 @@ class ModDetails(_ModsSavesDetails):
             settings[u'bash.mods.renames'][oldName] = newName
             changeName = self.panel_uilist.try_rename(modInfo, newName, None)
         #--Change hedr/masters?
-        if changeHedr or changeMasters:
+        if refr_inf := (changeHedr or changeMasters):
             modInfo.header.author = self.authorStr.strip()
             modInfo.header.description = self.descriptionStr.strip()
             old_mi_masters = modInfo.header.masters
@@ -1718,16 +1715,10 @@ class ModDetails(_ModsSavesDetails):
         #--Change date?
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
-        if changeDate or changeHedr or changeMasters:
-            # we reread header to make sure was written correctly
-            detail_item = self._refresh_detail_info()
-        else: detail_item = self.file_info.fn_key
-        #--Done
-        unlock = changeDate and not bush.game.using_txt_file
-        bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
-        should_refresh_saves = detail_item is None or changeName or unlock
+        detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
         self.panel_uilist.RefreshUI(detail_item=detail_item,
-            refresh_others=Store.SAVES.IF(should_refresh_saves))
+            refresh_others=Store.SAVES.IF(
+                detail_item is None or changeName or unlock_lo))
 
     def _set_date(self, modInfo):
         modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
@@ -3281,9 +3272,9 @@ class InstallersPanel(BashTab):
             if what:
                 with prog as progress:
                     try:
-                        refreshui = self.listData.irefresh(progress, what,
-                                                           fullRefresh,
-                                                           refresh_info)
+                        refreshui = self.listData.irefresh(refresh_info,
+                            what=what, fullRefresh=fullRefresh,
+                            progress=progress)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh

@@ -27,7 +27,6 @@ from __future__ import annotations
 import threading
 import time
 from collections import defaultdict
-from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import partial, wraps
 from itertools import islice
@@ -39,7 +38,8 @@ import wx.adv
 from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
 from .bass import Store
-from .bolt import FName, Path, deprint, readme_url, fast_cached_property
+from .bolt import FName, Path, RefrIn, deprint, readme_url, \
+    fast_cached_property
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
@@ -1415,7 +1415,7 @@ class UIList(PanelWin):
 
     def hide(self, items: dict[FName, ...]):
         """Hides the items in the specified iterable."""
-        moved_infos = []
+        moved_infos = set()
         for fnkey, inf in items.items():
             destDir = inf.get_hide_dir()
             if destDir.join(fnkey).exists():
@@ -1426,9 +1426,9 @@ class UIList(PanelWin):
             #--Do it
             with BusyCursor():
                 inf.move_info(destDir)
-                moved_infos.append(inf)
-        #--Refresh stuff
-        self.data_store.delete_refresh(moved_infos, check_existence=True)
+                moved_infos.add(inf)
+        # no need to check existence, we just moved them
+        self.data_store.refresh(RefrIn(del_infos=moved_infos))
 
     @staticmethod
     def _unhide_wildcard(): raise NotImplementedError

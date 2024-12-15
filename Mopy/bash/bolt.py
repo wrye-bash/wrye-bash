@@ -41,6 +41,7 @@ import traceback as _traceback
 import webbrowser
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from itertools import chain
@@ -1658,17 +1659,19 @@ class AFile(object):
     _null_stat = (-1, None)
 
     def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
-                 **kwargs):
+                 cached_stat=None, **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         #Set cache info (ftime, size[, ctime]) and reload if load_cache is True
         try:
-            self._reset_cache(self._stat_tuple(), load_cache=load_cache,
-                              **kwargs)
+            self._reset_cache(self._stat_tuple(cached_stat),
+                              load_cache=load_cache, **kwargs)
         except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
 
-    def _stat_tuple(self): return self.abs_path.size_mtime()
+    def _stat_tuple(self, cached_stat=None):
+        return self.abs_path.size_mtime() if cached_stat is None else (
+            cached_stat.st_size, cached_stat.st_mtime)
 
     @property
     def abs_path(self): return self._file_key
@@ -1676,7 +1679,8 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False, force_update=False, **kwargs):
+    def do_update(self, *, raise_on_error=False, force_update=False,
+                  cached_stat=None, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
@@ -1691,7 +1695,7 @@ class AFile(object):
             - progress: will be useful for installers
         """
         try:
-            stat_tuple = self._stat_tuple()
+            stat_tuple = self._stat_tuple(cached_stat)
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
             self._reset_cache(self._null_stat, load_cache=False, **kwargs)
@@ -1824,13 +1828,12 @@ class ListInfo:
         raise NotImplementedError(f'{cls} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
-    def copy_to(self, dup_path: Path, *, set_time=None, **kwargs):
+    def copy_to(self, dup_path: Path, *, set_time=None):
         """Copies self to dup_path. Will overwrite! Will add the new file to
         the data_store if copied inside the store_dir but the client is
         responsible for calling the final refresh of the data store."""
+        # TODO(ut) : when duplicating pass the info in and load_cache=False
         self.fs_copy(dup_path, set_time=set_time)
-        if dup_path.head == self._store().store_dir:
-            self._store().add_info(self, dup_path.stail, **kwargs)
 
     def fs_copy(self, dup_path, *, set_time=None):
         raise NotImplementedError
@@ -1855,7 +1858,7 @@ class AFileInfo(AFile, ListInfo):
 
     def move_info(self, destDir):
         """Hasty method used in UIList.hide(). Will overwrite! The client is
-        responsible for calling delete_refresh of the data store."""
+        responsible for calling _delete_refresh of the data store."""
         self.abs_path.moveTo(destDir.join(self.fn_key))
 
     def get_rename_paths(self, newName):
@@ -1878,6 +1881,37 @@ class AFileInfo(AFile, ListInfo):
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
         return super(AFile, self).__repr__()
+
+#------------------------------------------------------------------------------
+# show your type off - it's unique, maps existing [new] infos fn_keys to tuples
+# of (info (call its do_update) [None (call init)], kwargs for the method call)
+_RIn = dict[FName, tuple[None | ListInfo, dict]]
+@dataclass(slots=True)
+class RefrIn:
+    """WIP! requesting refresh from the data store."""
+    new_or_present: _RIn = field(default_factory=dict)
+    del_infos: set = field(default_factory=set)
+
+    @classmethod
+    def from_tabled_infos(cls, fn_info_dict=None, *, extra_attrs=None,
+                          exclude: frozenset | True = frozenset()):
+        """Copy persistent attributes from info objects (or dict) - info
+        objects are discarded, so we request refresh for *adding* infos."""
+        try:
+            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
+                    for k, v in fn_info_dict.items()}
+        except AttributeError: # ScreenInfos or fn_info_dict is None
+            rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}
+        for k, v in (extra_attrs or {}).items():
+            try:
+                rinf[k][1]['att_val'].update(v)
+            except KeyError:
+                rinf[k] = None, {'att_val': v}
+        return cls(rinf)
+
+    @classmethod
+    def from_added(cls, added_fns):
+        return cls({k: (None, {}) for k in added_fns})
 
 #------------------------------------------------------------------------------
 class PickleDict(object):
