@@ -171,7 +171,7 @@ class MergePatchesPatcher(ListPatcher):
         _('Please activate the inactive masters to fix this.')])
 
     @classmethod
-    def _validate_mod(cls, p_file, merge_src, raise_on_error):
+    def _validate_mod(cls, p_file, merge_src, raise_on_errors):
         if merge_src not in p_file.bp_mergeable:
             err = f'{cls.__name__}: {merge_src} is not mergeable'
         # Then, perform an error check for missing/inactive masters
@@ -185,7 +185,7 @@ class MergePatchesPatcher(ListPatcher):
                 'merged_plugin': merge_src, 'inactive_masters': ', '.join(mm)}
         else:
             return True
-        if raise_on_error:
+        if raise_on_errors:
             raise BPConfigError(err)
         return False
 

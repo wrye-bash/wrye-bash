@@ -889,11 +889,11 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         self.raceData = defaultdict(dict) #--Race eye meshes, hair, eyes
 
     @classmethod
-    def _validate_mod(cls, p_file, src_fn, raise_on_error):
-        if sup := super()._validate_mod(p_file, src_fn, raise_on_error):
+    def _validate_mod(cls, p_file, src_fn, raise_on_errors):
+        if sup := super()._validate_mod(p_file, src_fn, raise_on_errors):
             if 'R.ChangeSpells' in (bashTags := p_file.all_tags[src_fn]) and \
                     'R.AddSpells' in bashTags:
-                if raise_on_error:
+                if raise_on_errors:
                     raise BPConfigError(f'WARNING mod {src_fn} has both '
                         f'R.AddSpells and R.ChangeSpells tags - only one of '
                         f'those tags should be on a mod at one time')

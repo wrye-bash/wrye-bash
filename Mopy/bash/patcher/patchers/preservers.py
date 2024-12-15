@@ -271,11 +271,11 @@ class ImportActorsFacesPatcher(APreserver):
                     'NpcFacesForceFullImport'}
 
     @classmethod
-    def _validate_mod(cls, p_file, src_fn, raise_on_error, *,
+    def _validate_mod(cls, p_file, src_fn, raise_on_errors, *,
                       __auto_re=re.compile('^TNR .*.esp$', re.I)):
         if __auto_re.match(src_fn) and src_fn in p_file.all_plugins:
             return True
-        return super()._validate_mod(p_file, src_fn, raise_on_error)
+        return super()._validate_mod(p_file, src_fn, raise_on_errors)
 
 #------------------------------------------------------------------------------
 class ImportActorsFactionsPatcher(APreserver):
