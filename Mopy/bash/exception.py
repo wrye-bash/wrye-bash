@@ -60,6 +60,10 @@ class FileError(BoltError):
     def __str__(self):
         return f'{self._in_name}: {self.message}'
 
+class VfsError(FileError):
+    def __str__(self):
+        return f'Read error (VFS file): {super(VfsError, self).__str__()}'
+
 class SaveFileError(FileError):
     """Save File Error: File is corrupted."""
     pass
