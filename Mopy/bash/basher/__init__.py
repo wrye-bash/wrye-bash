@@ -1184,7 +1184,7 @@ class ModList(_ModsUIList):
             ## game to load these files
             #if fileName in self.data_store.bad_names: return
             try:
-                activated = self.data_store.lo_activate(inact, doSave=False)
+                activated = self.data_store.lo_activate(inact)
                 if not activated:
                     # Can't activate that mod, track this
                     illegal_activations.append(inact)

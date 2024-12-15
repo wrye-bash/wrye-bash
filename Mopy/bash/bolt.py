@@ -1663,10 +1663,10 @@ class AFile(object):
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
-    def __init__(self, fullpath, *, raise_on_error=False,
-                 cached_stat=None, **kwargs):
+    def __init__(self, fullpath, *, raise_on_error=False, cached_stat=None,
+                 **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
-        #Set cache info (ftime, size[, ctime]) and reload if load_cache is True
+        # Set cache info (ftime, size[, ctime]) and reload/reset cache
         try:
             self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
@@ -1715,7 +1715,7 @@ class AFile(object):
 
     def _reset_cache(self, stat_tuple, **kwargs):
         """Reset cache flags (fsize, ftime,...) and possibly reload the cache
-         or reset it (in bsa/inis), so it gets reloaded later. Avoid  calling
+         or reset it (in bsa/inis), so it gets reloaded later. Avoid calling
          outside __init__ and do_update.
         :param **kwargs: various
             - load_cache: if True load the cache (header/masters) in ModInfo

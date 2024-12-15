@@ -152,16 +152,16 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
     reordered: set[FName] = field(default_factory=set)
     active_flips: set[FName] = field(default_factory=set)
     act_index_change: set[FName] = field(default_factory=set)
-    act_del: set[FName] = field(default_factory=set)
-    act_new: set[FName] = field(default_factory=set)
+    # used to handle autoghosting
+    new_inact: set[FName] = field(default_factory=set)
+    new_act: set[FName] = field(default_factory=set)
     # externally populate with plugins that need to be redrawn due to load
     # order changes, for instance merged plugins upon deactivating a patch
     affected: set[FName] = field(default_factory=set)
 
     def act_changed(self):
         """Return existing items whose active state or active order changed."""
-        return {*self.active_flips, *self.act_index_change, *self.act_del,
-                *self.act_new}
+        return {*self.active_flips, *self.act_index_change}
 
     def lo_changed(self):
         return self.added or self.missing or self.reordered
@@ -170,9 +170,8 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
         """Return True if only inactive mods' load order changed."""
         return not (self.added or self.missing or self.act_changed())
 
-    def to_rdata(self):
-        return RefrData(self.reordered | self.act_index_change |
-                        self.active_flips | self.affected)
+    def to_rdata(self): # not meant to be used if self.missing/added
+        return RefrData(self.reordered | self.act_changed() | self.affected)
 
     def __str__(self):
         st = []
@@ -223,8 +222,8 @@ class LoadOrder(object):
         lodiff.act_index_change = {k for k, c in diff_count.items() if c == 2}
         act_state_change = {k for k, c in diff_count.items() if c == 1}
         lodiff.active_flips = {k for k in act_state_change if k not in new_del}
-        lodiff.act_del = (act_state_change & self.active) - lodiff.missing
-        lodiff.act_new = act_state_change & other.active
+        lodiff.new_inact = (act_state_change & self.active) - lodiff.missing
+        lodiff.new_act = act_state_change & other.active
         return lodiff
 
     def __eq__(self, other):

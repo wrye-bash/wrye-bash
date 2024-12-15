@@ -2038,10 +2038,9 @@ def _lo_cache(lord_func):
             ldiff.affected |= self._refresh_mod_inis_and_strings()
             ldiff.affected |= self._file_or_active_updates()
             # unghost new active plugins and ghost new inactive (if autoGhost)
-            ghostify = dict.fromkeys(ldiff.act_new, False)
-            if bass.settings['bash.mods.autoGhost']:
-                new_inactive = ldiff.act_del | (
-                        ldiff.added - ldiff.act_new) # new mods, ghost
+            ghostify = dict.fromkeys(ldiff.new_act, False)
+            if bass.settings['bash.mods.autoGhost']: # new mods, ghost
+                new_inactive = ldiff.new_inact | (ldiff.added - ldiff.new_act)
                 ghostify.update({k: True for k in new_inactive if
                     self[k].get_table_prop('allowGhosting', True)})
             ldiff.affected.update(mod for mod, modGhost in ghostify.items()
