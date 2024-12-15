@@ -573,12 +573,12 @@ class ModInfo(FileInfo):
         return ret_masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def do_update(self, *, itsa_ghost, raise_on_error=False, **kwargs):
+    def do_update(self, *, itsa_ghost, **kwargs):
         # only call in refresh and always pass itsa_ghost
         old_ghost = self.is_ghost
         self.is_ghost = itsa_ghost
         # mark updated if ghost state changed but only reread header if needed
-        did_change = super().do_update(raise_on_error=raise_on_error)
+        did_change = super().do_update(**kwargs)
         return did_change or self.is_ghost != old_ghost
 
     @FileInfo.abs_path.getter
@@ -1302,7 +1302,7 @@ class SaveInfo(FileInfo):
             raise SaveFileError(self.fn_key, e.args[0]) from e
         self._reset_masters()
 
-    def do_update(self, *, raise_on_error=False, **kwargs):
+    def do_update(self, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
@@ -1325,8 +1325,7 @@ class SaveInfo(FileInfo):
         if cosaves_changed:
             self._reset_masters()
         # Delegate the call first, but also take the cosaves into account
-        return super().do_update(raise_on_error=raise_on_error) or \
-            cosaves_changed
+        return super().do_update(**kwargs) or cosaves_changed
 
     def write_masters(self, master_map):
         """Rewrites masters of existing save file and cosaves."""
@@ -1623,9 +1622,12 @@ class _AFileInfos(DataStore):
                         rdata.redraw.add(new)
                 else: # new file or updated corrupted, get a new info
                     self[new] = self.factory(self.store_dir.join(new),
-                        load_cache=True, **kws)
+                        load_cache=True, raise_on_error=True, **kws)
                     self.corrupted.pop(new, None)
                     rdata.to_add.add(new)
+            except FileNotFoundError as e:
+                deprint(f'Non existing file passed to refresh: {e}')
+                continue # XXX: hack for #689
             except (FileError, UnicodeError, BoltError,
                     NotImplementedError) as e:
                 # old still corrupted, or new(ly) corrupted or we landed
@@ -3195,8 +3197,8 @@ class BSAInfos(TableFileInfos):
             @classmethod
             def _store(cls): return bsaInfos
 
-            def do_update(self, *, raise_on_error=False, **kwargs):
-                did_change = super().do_update(raise_on_error=raise_on_error)
+            def do_update(self, **kwargs):
+                did_change = super().do_update(**kwargs)
                 self._reset_bsa_mtime()
                 return did_change
 
