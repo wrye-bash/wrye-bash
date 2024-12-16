@@ -1608,7 +1608,8 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False):
+    def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False,
+                **kwargs):
         """Refresh from file directory."""
         rdata = self._rdata_type()
         try:
