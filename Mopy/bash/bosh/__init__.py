@@ -1603,7 +1603,7 @@ class _AFileInfos(DataStore):
         try:
             storedir.makedirs()
         except FileExistsError as e:
-            deprint(f'Got {e} despite passing exist_ok=True', traceback=True)
+            deprint(f'Got {e} despite passing exist_ok=True')
         self._data = FNDict()
         return self._data
 
