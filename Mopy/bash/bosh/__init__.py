@@ -1600,7 +1600,10 @@ class _AFileInfos(DataStore):
         self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         deprint(f'Initializing {self.__class__.__name__}')
         deprint(f' store_dir: {storedir}')
-        storedir.makedirs()
+        try:
+            storedir.makedirs()
+        except FileExistsError as e:
+            deprint(f'Got {e} despite passing exist_ok=True', traceback=True)
         self._data = FNDict()
         return self._data
 
