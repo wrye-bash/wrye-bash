@@ -26,7 +26,7 @@ from os.path import join as _j
 from ..patch_game import GameInfo, PatchGame
 from ..store_mixins import SteamMixin
 from ... import bolt
-from ..._games_lo import TextfileGame
+from ...games_lo import TextfileGame
 from ...bolt import FName
 
 class ASkyrimGameInfo(PatchGame):

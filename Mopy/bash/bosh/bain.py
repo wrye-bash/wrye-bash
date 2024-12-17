@@ -2037,7 +2037,7 @@ class InstallersData(DataStore):
         return rdata_ren
 
     #--Dict Functions ---------------------------------------------------------
-    def _delete_operation(self, infos, *, recycle=True):
+    def _delete_operation(self, infos, recycle):
         toDelete = []
         markers = [inst.fn_key for inst in infos if
                    inst.is_marker or toDelete.append(inst)] # or None
@@ -2930,8 +2930,8 @@ class InstallersData(DataStore):
                     #It's not imperative that files get moved, so ignore errors
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
-            for store, del_keys in store_del.items():
-                store.refresh(RefrIn(del_infos=del_keys), unlock_lo=True)
+            for store, del_infs in store_del.items():
+                store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
                 refresh_ui |= store.unique_store_key.DO()
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:

@@ -27,7 +27,7 @@ from .. import WS_COMMON_FILES, GameInfo, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
-from ..._games_lo import AsteriskGame
+from ...games_lo import AsteriskGame
 from ...bolt import FName
 
 _GOG_IDS = [1998527297]

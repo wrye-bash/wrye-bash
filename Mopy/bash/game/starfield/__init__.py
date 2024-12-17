@@ -26,7 +26,7 @@ from .. import GameInfo, ObjectIndexRange, _SFPluginFlag
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
-from ..._games_lo import AsteriskGame
+from ...games_lo import AsteriskGame
 from ...bolt import FName, fast_cached_property
 from ...plugin_types import AMasterFlag
 

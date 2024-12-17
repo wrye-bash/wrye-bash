@@ -1505,7 +1505,7 @@ class DataStore(DataDict):
         try:
             self._delete_operation(finfos, recycle)
         finally: # markers are popped from finfos - we refreshed in _delete_op
-            if finfos := self.check_exists(finfos):
+            if finfos := self.check_existence(finfos):
                 # ok to suppose the only lo modification is due to deleted
                 # files at this point
                 self.refresh(RefrIn(del_infos=finfos), what='I',
@@ -1516,7 +1516,7 @@ class DataStore(DataDict):
                 *chain.from_iterable(inf.delete_paths() for inf in finfos)]:
             env.shellDelete(abs_del_paths, recycle=recycle)
 
-    def check_exists(self, infos):
+    def check_existence(self, infos):
         """Lift your skirts, we are entering the realm of #241."""
         return {inf for inf in infos if not inf.abs_path.exists()}
 
@@ -1619,7 +1619,8 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False):
+    def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False,
+                **kwargs):
         """Refresh from file directory."""
         rdata = self._rdata_type()
         try:
@@ -1653,7 +1654,7 @@ class _AFileInfos(DataStore):
                     delinfos.add(new)
         rdata.to_del = {d.fn_key for d in delinfos}
         self._delete_refresh(delinfos)
-        if not booting and (alt := (rdata.redraw | rdata.to_add) or delinfos):
+        if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
             self._notify_bain(altered={self[n].abs_path for n in alt},
                               del_set={inf.abs_path for inf in delinfos})
         return rdata
@@ -1922,11 +1923,11 @@ class INIInfos(TableFileInfos):
             for ini_info in self.values(): ini_info.reset_status()
         return rdata
 
-    def check_exists(self, infos):
+    def check_existence(self, infos):
         regular_tweaks = []
         def_tweaks = {inf for inf in infos if inf.fn_key in
                       self._default_tweaks or regular_tweaks.append(inf)}
-        return {*def_tweaks, *super().check_exists(regular_tweaks)}
+        return {*def_tweaks, *super().check_existence(regular_tweaks)}
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Can't remove default tweaks
@@ -2756,7 +2757,7 @@ class ModInfos(TableFileInfos):
             return True
 
     def create_new_mod(self, newName: str | FName,
-            selected: tuple[FName, ...] = (),
+            selected: tuple[FName, ...] = (), *,
             wanted_masters: list[FName] | None = None, dir_path=None,
             author_str='', flags_dict=None) -> ModInfo | None:
         """Create a new plugin.
@@ -2775,8 +2776,7 @@ class ModInfos(TableFileInfos):
             InvalidPluginFlagsError."""
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
-        dir_path = dir_path or self.store_dir
-        newInfo = self.factory(dir_path.join(newName))
+        newInfo = self.factory((dir_path or self.store_dir).join(newName))
         newFile = ModFile(newInfo)
         newFile.tes4.masters = wanted_masters
         if author_str:

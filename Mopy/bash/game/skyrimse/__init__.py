@@ -25,7 +25,7 @@ import importlib
 from .. import WS_COMMON_FILES, ObjectIndexRange
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
-from ..._games_lo import AsteriskGame
+from ...games_lo import AsteriskGame
 from ...bolt import classproperty, FName
 
 _GOG_IDS = [

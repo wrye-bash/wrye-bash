@@ -110,7 +110,7 @@ class ListPatcher(APatcher):
         self.isActive = self._process_sources(p_sources, p_file)
 
     @classmethod
-    def get_sources(cls, p_file, p_sources=None, raise_on_error=False):
+    def get_sources(cls, p_file, p_sources=None, raise_on_errors=False):
         """Get a list of plugin/csv sources for this patcher. If p_sources are
         passed in filter/validate them."""
         if p_sources is None: # getting the sources
@@ -118,12 +118,12 @@ class ListPatcher(APatcher):
             if cls._csv_key:
                 p_sources.extend(sorted(p_file.patches_set))
         return [src_fn for src_fn in p_sources if
-                cls._validate_src(p_file, src_fn, raise_on_error)]
+                cls._validate_src(p_file, src_fn, raise_on_errors)]
 
     @classmethod
-    def _validate_src(cls, p_file, src_fn, raise_on_error):
+    def _validate_src(cls, p_file, src_fn, raise_on_errors):
         try:
-            return cls._validate_mod(p_file, src_fn, raise_on_error)
+            return cls._validate_mod(p_file, src_fn, raise_on_errors)
         except KeyError:
             if src_fn[-4:] == '.csv':
                 if cls._csv_key:
@@ -138,12 +138,12 @@ class ListPatcher(APatcher):
             else:
                 err = f'{cls.__name__}: {src_fn} is not loading before the ' \
                       f'BP or is not a mod'
-        if raise_on_error:
+        if raise_on_errors:
             raise BPConfigError(err)
         return False
 
     @classmethod
-    def _validate_mod(cls, p_file, src_fn, raise_on_error):
+    def _validate_mod(cls, p_file, src_fn, raise_on_errors):
         """Return True if the src_fn plugin should be part of the sources
         for this patcher."""
         # Must have an appropriate tag and no missing masters or a Filter tag
@@ -154,13 +154,13 @@ class ListPatcher(APatcher):
                   f'tags {cls.patcher_tags}'
         else:
             return True
-        if raise_on_error:
+        if raise_on_errors:
             raise BPConfigError(err)
         return False
 
     def _process_sources(self, p_sources, p_file):
         """Validate srcs and update p_file read factories."""
-        self.get_sources(p_file, p_sources, raise_on_error=True)
+        self.get_sources(p_file, p_sources, raise_on_errors=True)
         self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
         self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
         self._update_patcher_factories(p_file)

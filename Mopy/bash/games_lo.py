@@ -673,19 +673,18 @@ class INIGame(LoGame):
     ini_key_actives = None
     ini_key_lo = None
 
-    def __init__(self, mod_infos, plugins_txt_path, game_handle, **kwargs):
+    def __init__(self, mod_infos, game_handle, plugins_txt_path, **kwargs):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
         if self.__class__.ini_key_actives:
-            kwargs['plugins_txt_path'] = self.ini_dir_actives.join(
+            plugins_txt_path = self.ini_dir_actives.join(
                 self.ini_key_actives[0])
             kwargs['plugins_txt_type'] = partial(_mk_ini, self.ini_key_actives)
-        else: kwargs['plugins_txt_path'] = plugins_txt_path
         if self.__class__.ini_key_lo:
             kwargs.update({ # we must come just before TextfileGame in the MRO
                 'loadorder_txt_path': self.ini_dir_lo.join(self.ini_key_lo[0]),
                 'lo_txt_type': partial(_mk_ini, self.ini_key_lo)})
-        super().__init__(mod_infos, game_handle, **kwargs)
+        super().__init__(mod_infos, game_handle, plugins_txt_path, **kwargs)
 
     # INI directories, override if needed
     @property

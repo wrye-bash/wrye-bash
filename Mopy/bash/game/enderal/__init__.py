@@ -22,7 +22,7 @@
 # =============================================================================
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import SteamMixin
-from ..._games_lo import TextfileGame
+from ...games_lo import TextfileGame
 from ...bolt import FName
 
 class AEnderalGameInfo(ASkyrimGameInfo):

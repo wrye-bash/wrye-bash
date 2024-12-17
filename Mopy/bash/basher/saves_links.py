@@ -663,7 +663,7 @@ class Save_Move(ChoiceLink):
             count = self._move_saves(destDir, profile)
         finally:
             if not self.copyMode: # files moved to other profile, refresh
-                if moved := bosh.saveInfos.check_exists(
+                if moved := bosh.saveInfos.check_existence(
                         self.iselected_infos()):
                     bosh.saveInfos.refresh(RefrIn(del_infos=moved))
                 self.window.RefreshUI(to_del=moved)

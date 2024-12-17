@@ -48,7 +48,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from . import bass, bolt, exception
-from ._games_lo import FixInfo, INIGame, LoGame, LoList, LoTuple
+from .games_lo import FixInfo, INIGame, LoGame, LoList, LoTuple
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 
 # LoGame instance providing load order operations API
