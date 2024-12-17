@@ -26,7 +26,7 @@ from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
-from ..._games_lo import INIGame, TimestampGame
+from ...games_lo import INIGame, TimestampGame
 
 _GOG_IDS = [
     1435828767, # Game

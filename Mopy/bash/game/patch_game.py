@@ -25,7 +25,7 @@ import importlib
 
 from . import GameInfo
 from .. import bolt
-from .._games_lo import LoGame, TimestampGame
+from ..games_lo import LoGame, TimestampGame
 from ..bolt import structs_cache
 
 class PatchGame(GameInfo):
