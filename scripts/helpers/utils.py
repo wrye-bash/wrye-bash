@@ -202,7 +202,7 @@ def run_subprocess(command, logger, **kwargs):
     logger.debug(stdout)
     logger.debug('---  COMMAND OUTPUT END  ---')
 
-def get_repo_sig(repo):
+def get_repo_sig(repo) -> pygit2.Signature:
     """Wrapper around pygit2 that shows a helpful error message to the user if
     their credentials have not been configured yet."""
     try:
@@ -322,6 +322,17 @@ def cp(src: str | os.PathLike, dst: str | os.PathLike):
 def mk_logfile(dunder_file: str):
     log_fname = os.path.splitext(os.path.basename(dunder_file))[0] + '.log'
     return LOG_PATH / log_fname
+
+def dependency_missing(script_file: str, dependency_name: str):
+    """Exit the script and show an error message because the specified
+    dependency is required by this script, but is missing.
+
+    :param script_file: Pass __file__ here.
+    :param dependency_name: Pass the name of the dependency you tried to
+        import here."""
+    print(f'Error: {Path(script_file).name} requires {dependency_name} to be '
+          f'installed.', file=sys.stderr)
+    sys.exit(33)
 
 # Copy-pasted from bolt.py
 # We need to split every time we hit a new 'type' of component. So greedily
