@@ -196,7 +196,7 @@ class _EslMixin(PluginFlag):
 _cf = ('=== ' + _('Incorrect %(FLAG)s Flag: Conflicting Flags'), _(
     "The following plugins are %(FLAG)s-flagged, but are also flagged with "
     "other mutually exclusive flags. Remove the conflicting flags using the "
-    "'Remove XXX Flag' menu item(s)."))
+    "'Remove XXX Flag' menu items."))
 
 _EslMixin.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
                         '%(status_num_espm)d, ESL: %(ESL)d)')
