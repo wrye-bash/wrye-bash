@@ -34,7 +34,7 @@ class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
     """GameInfo override for Enderal Special Edition."""
     display_name = 'Enderal Special Edition'
     fsName = u'Enderal Special Edition'
-    game_icon = u'enderalse_%u.png'
+    game_icon = u'enderalse.svg'
     bash_root_prefix = u'EnderalSE'
     bak_game_name = u'Enderal Special Edition'
     my_games_name = u'Enderal Special Edition'

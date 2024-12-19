@@ -23,6 +23,7 @@
 """Collection of data structures the gui package needs from outside. Keep
 those at minimum."""
 import os
+from copy import copy
 from itertools import product
 
 from ..bolt import Path as _Path
@@ -50,38 +51,66 @@ def init_image_resources(images_dir):
     for arr in ['up', 'down']:
         arrows[f'arrow.{arr}.16'] = _icc(f'arrow_{arr}.svg')
     # collect the installer icons
+    box_colors = { # name: (primary, secondary)
+        'blue': (b'#B3D9FF', b'#003D7A'),
+        'green': (b'#C1FFC1', b'#005700'),
+        'grey': (b'#C0C0C0', b'#000000'),
+        'orange': (b'#FFD5AA', b'#663300'),
+        'purple': (b'#FAB0FF', b'#413252'),
+        'red': (b'#FF9494', b'#570000'),
+        'white': (b'#F4F4F4', b'#000000'),
+        'yellow': (b'#FFFFBF', b'#575700'),
+    }
     _installer_icons = dict(arrows)
-    colors = ['green', 'grey', 'orange', 'red', 'white', 'yellow']
     statuses = ['off', 'on']
-    imgkeys = [*product(statuses, colors)]
-    for st, col in imgkeys:
-        img_st = 'inc' if st == 'on' else st
-        _installer_icons[f'{st}.{col}.dir'] = _icc(f'diamond_{col}_{img_st}.png')
-        _installer_icons[f'{st}.{col}'] = _icc(f'checkbox_{col}_{img_st}.png')
-        if col != 'grey':
-            #--On/Off - Archive - Wizard
-            _installer_icons[f'{st}.{col}.wiz'] = _icc(
-                f'checkbox_{col}_{img_st}_wiz.png')
-            #--On/Off - Directory - Wizard
-            if col == 'white' and st == 'on': img_st = 'off'
-            _installer_icons[f'{st}.{col}.dir.wiz'] = _icc(
-                f'diamond_{col}_{img_st}_wiz.png')
+    installer_types = ['', '.dir']
+    overlays = ['', '.wiz']
+    imgkeys = [*product(statuses, installer_types, overlays)]
+    for st, typ, overlay in imgkeys:
+        if typ == '.dir':
+            layers = ['checkbox_diamond.svg']
+        else:
+            layers = ['checkbox_box.svg']
+        if st == 'on':
+            layers.append('checkbox_plus.svg')
+        if overlay == '.wiz':
+            layers.append('checkbox_wand.svg')
+        svg = _icc(layers[0])
+        svg.composite(*layers)
+        for col, (primary, secondary) in box_colors.items():
+            _installer_icons[f'{st}.{col}{typ}{overlay}'] = svg.with_svg_vars(
+                primary_color=primary, secondary_color=secondary)
     _installer_icons['corrupt'] = _icc('red_x.svg')
     _gui_images.update(_installer_icons)
     # collect color checks for the rest of the UILists
     _color_checks = dict(arrows)
-    for st in ['imp', 'inc', 'off', 'on']:
-        for col in ('purple', 'blue', 'green', 'orange', 'yellow', 'red'):
-            inst_key = 'on' if st == 'inc' else ('inc' if st == 'on' else st)
-            _color_checks[f'{st}.{col}'] = _installer_icons.get(
-                f'{inst_key}.{col}') or _icc(f'checkbox_{col}_{st}.png')
+    for st, col in product(['imp', 'inc', 'off', 'on'],
+                           box_colors.keys() - {'white', 'grey'}):
+        inst_key = 'on' if st == 'inc' else ('inc' if st == 'on' else st)
+        if inst_key in _installer_icons:
+            colored_check = _installer_icons[f'{inst_key}.{col}']
+        else:
+            layers = ['checkbox_box.svg']
+            if st == 'imp':
+                layers.append('checkbox_dot.svg')
+            elif st == 'inc':
+                layers.append('checkbox_check.svg')
+            elif st == 'on':
+                layers.append('checkbox_check.svg')
+            svg = _icc(layers[0])
+            svg.composite(*layers)
+            primary, secondary = box_colors[col]
+            colored_check = svg.with_svg_vars(primary_color=primary,
+                                              secondary_color=secondary)
+        _color_checks[f'{st}.{col}'] = colored_check
     _gui_images.update(_color_checks)
     # PNGs --------------------------------------------------------------------
     # Checkboxes
     pixs = (16, 24, 32)
     for st, col, pix in product(['off', 'on'], ('blue', 'green', 'red'), pixs):
-        fname = f'checkbox_{col}_{st}%s.png' % ('' if pix == 16 else f'_{pix}')
-        _gui_images[f'checkbox.{col}.{st}.{pix}'] = _icc(fname, pix)
+        svg = copy(_color_checks[f'{st}.{col}'])
+        svg.set_icon_size(pix)
+        _gui_images[f'checkbox.{col}.{st}.{pix}'] = svg
     # SVGs --------------------------------------------------------------------
     # Modification time button
     _gui_images['calendar.16'] = _icc('calendar.svg')
