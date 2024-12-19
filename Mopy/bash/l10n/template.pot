@@ -15121,6 +15121,11 @@ msgstr ""
 msgid "%(FLAG)s-Capable"
 msgstr ""
 
+#: Mopy/bash/plugin_types.py:180
+#, python-format
+msgid "The following plugins could be %(FLAG)s-flagged."
+msgstr ""
+
 #: Mopy/bash/plugin_types.py:192
 msgid "Merged into Bashed Patch."
 msgstr ""
