@@ -626,7 +626,7 @@ msgstr ""
 msgid "Wrye Bash Warning"
 msgstr ""
 
-#: Mopy/bash/bash.py:775 Mopy/bash/bash.py:866
+#: Mopy/bash/bash.py:775 Mopy/bash/bash.py:865
 msgid "Quit"
 msgstr ""
 
@@ -642,49 +642,49 @@ msgstr ""
 msgid "Select Game"
 msgstr ""
 
-#: Mopy/bash/bash.py:857
+#: Mopy/bash/bash.py:856
 msgid "Search Games"
 msgstr ""
 
-#: Mopy/bash/bash.py:870
+#: Mopy/bash/bash.py:869
 msgid "Launch"
 msgstr ""
 
-#: Mopy/bash/bash.py:879
+#: Mopy/bash/bash.py:878
 msgid "Please choose a game to manage."
 msgstr ""
 
-#: Mopy/bash/bash.py:882
+#: Mopy/bash/bash.py:881
 msgid "Game Details"
 msgstr ""
 
-#: Mopy/bash/bash.py:885
+#: Mopy/bash/bash.py:884
 msgid "Variant:"
 msgstr ""
 
-#: Mopy/bash/bash.py:891
+#: Mopy/bash/bash.py:890
 msgid "Install Path:"
 msgstr ""
 
-#: Mopy/bash/bash.py:941 Mopy/bash/bash.py:955
+#: Mopy/bash/bash.py:940 Mopy/bash/bash.py:954
 msgid "N/A"
 msgstr ""
 
-#: Mopy/bash/bash.py:984
+#: Mopy/bash/bash.py:983
 #, python-format
 msgid "Warning: you appear to be using a non-supported version of wxPython (%(curr_wx_ver)s). This will cause problems! It is highly recommended you use a %(supported_wx_series)s version. Do you still want to run Wrye Bash?"
 msgstr ""
 
-#: Mopy/bash/bash.py:990
+#: Mopy/bash/bash.py:989
 msgid "Unsupported wxPython Version Detected"
 msgstr ""
 
-#: Mopy/bash/bash.py:999
+#: Mopy/bash/bash.py:998
 #, python-format
 msgid "Only Python %(min_py_ver)s and newer is supported (%(curr_py_ver)s detected). If you know what you're doing, install the Python version of Wrye Bash and edit this warning out. Wrye Bash will now exit."
 msgstr ""
 
-#: Mopy/bash/bash.py:1005
+#: Mopy/bash/bash.py:1004
 msgid "Unsupported Python Version Detected"
 msgstr ""
 
