@@ -977,7 +977,7 @@ msgid "Remove all shown tags from the plugin."
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:1798 Mopy/bash/basher/gui_patchers.py:308
-#: Mopy/bash/basher/settings_dialog.py:1086
+#: Mopy/bash/basher/settings_dialog.py:1089
 msgid "Automatic"
 msgstr ""
 
@@ -1188,9 +1188,9 @@ msgid "Refreshing from %(data_folder)s…"
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:2840 Mopy/bash/basher/settings_dialog.py:587
-#: Mopy/bash/basher/settings_dialog.py:1539
-#: Mopy/bash/basher/settings_dialog.py:1563
-#: Mopy/bash/basher/settings_dialog.py:1579
+#: Mopy/bash/basher/settings_dialog.py:1542
+#: Mopy/bash/basher/settings_dialog.py:1566
+#: Mopy/bash/basher/settings_dialog.py:1582
 msgid "General"
 msgstr ""
 
@@ -1329,7 +1329,7 @@ msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have alread
 msgstr ""
 
 #: Mopy/bash/basher/__init__.py:3323 Mopy/bash/basher/__init__.py:3349
-#: Mopy/bash/basher/patcher_dialog.py:336 Mopy/bash/bosh/__init__.py:2948
+#: Mopy/bash/basher/patcher_dialog.py:336 Mopy/bash/bosh/__init__.py:2951
 msgid "Try again?"
 msgstr ""
 
@@ -1626,9 +1626,9 @@ msgid "Doc Browser"
 msgstr ""
 
 #: Mopy/bash/basher/app_buttons.py:611 Mopy/bash/basher/links_init.py:373
-#: Mopy/bash/basher/links_init.py:441 Mopy/bash/basher/links_init.py:685
-#: Mopy/bash/basher/links_init.py:791 Mopy/bash/basher/links_init.py:834
-#: Mopy/bash/basher/links_init.py:885 Mopy/bash/basher/links_init.py:893
+#: Mopy/bash/basher/links_init.py:441 Mopy/bash/basher/links_init.py:693
+#: Mopy/bash/basher/links_init.py:799 Mopy/bash/basher/links_init.py:842
+#: Mopy/bash/basher/links_init.py:893 Mopy/bash/basher/links_init.py:901
 #: Mopy/bash/basher/settings_dialog.py:50
 msgid "Settings"
 msgstr ""
@@ -1693,7 +1693,7 @@ msgstr ""
 msgid "Install this package"
 msgstr ""
 
-#: Mopy/bash/basher/belt.py:373 Mopy/bash/bosh/__init__.py:2826
+#: Mopy/bash/basher/belt.py:373 Mopy/bash/bosh/__init__.py:2829
 msgid "Plugins"
 msgstr ""
 
@@ -2039,7 +2039,7 @@ msgid "Medium Plugin"
 msgstr ""
 
 #: Mopy/bash/basher/constants.py:165
-msgid "This is the text color used for Medium plugins on the Mods Tabb, and in the Masters info on both the Mods Tab and Saves Tab."
+msgid "This is the text color used for Medium plugins on the Mods Tab, and in the Masters info on both the Mods Tab and Saves Tab."
 msgstr ""
 
 #: Mopy/bash/basher/constants.py:169
@@ -2047,7 +2047,7 @@ msgid "Medium Master"
 msgstr ""
 
 #: Mopy/bash/basher/constants.py:169
-msgid "This is the text color used for Medium plugins with a master flag on the Mods Tabb, and in the Masters info on both the Mods Tab and Saves Tab."
+msgid "This is the text color used for Medium plugins with a master flag on the Mods Tab, and in the Masters info on both the Mods Tab and Saves Tab."
 msgstr ""
 
 #: Mopy/bash/basher/constants.py:174
@@ -2148,8 +2148,8 @@ msgstr ""
 
 #: Mopy/bash/basher/constants.py:324 Mopy/bash/basher/dialogs.py:1017
 #: Mopy/bash/basher/links_init.py:341 Mopy/bash/basher/links_init.py:430
-#: Mopy/bash/basher/links_init.py:647 Mopy/bash/basher/links_init.py:775
-#: Mopy/bash/basher/links_init.py:824 Mopy/bash/basher/links_init.py:876
+#: Mopy/bash/basher/links_init.py:651 Mopy/bash/basher/links_init.py:783
+#: Mopy/bash/basher/links_init.py:832 Mopy/bash/basher/links_init.py:884
 msgid "File"
 msgstr ""
 
@@ -3018,7 +3018,7 @@ msgid "This option cannot be selected."
 msgstr ""
 
 #: Mopy/bash/basher/gui_fomod.py:327 Mopy/bash/basher/mod_links.py:435
-#: Mopy/bash/basher/settings_dialog.py:1400 Mopy/bash/bosh/__init__.py:1249
+#: Mopy/bash/basher/settings_dialog.py:1403 Mopy/bash/bosh/__init__.py:1249
 #: Mopy/bash/patcher/base.py:180 Mopy/bash/patcher/patchers/checkers.py:171
 #: Mopy/bash/patcher/patchers/mergers.py:961
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:263
@@ -4888,8 +4888,8 @@ msgid "Global Redirects.."
 msgstr ""
 
 #: Mopy/bash/basher/links_init.py:188 Mopy/bash/basher/links_init.py:406
-#: Mopy/bash/basher/links_init.py:456 Mopy/bash/basher/links_init.py:705
-#: Mopy/bash/basher/links_init.py:802 Mopy/bash/basher/links_init.py:845
+#: Mopy/bash/basher/links_init.py:456 Mopy/bash/basher/links_init.py:713
+#: Mopy/bash/basher/links_init.py:810 Mopy/bash/basher/links_init.py:853
 msgid "Files.."
 msgstr ""
 
@@ -4914,8 +4914,8 @@ msgid "Conflict Settings.."
 msgstr ""
 
 #: Mopy/bash/basher/links_init.py:248 Mopy/bash/basher/links_init.py:417
-#: Mopy/bash/basher/links_init.py:513 Mopy/bash/basher/links_init.py:720
-#: Mopy/bash/basher/links_init.py:811 Mopy/bash/basher/links_init.py:861
+#: Mopy/bash/basher/links_init.py:517 Mopy/bash/basher/links_init.py:728
+#: Mopy/bash/basher/links_init.py:819 Mopy/bash/basher/links_init.py:869
 msgid "File.."
 msgstr ""
 
@@ -4943,99 +4943,99 @@ msgstr ""
 msgid "BAIN Conversions.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:350 Mopy/bash/basher/links_init.py:657
-#: Mopy/bash/basher/links_init.py:781
+#: Mopy/bash/basher/links_init.py:350 Mopy/bash/basher/links_init.py:661
+#: Mopy/bash/basher/links_init.py:789
 msgid "Edit"
 msgstr ""
 
 #: Mopy/bash/basher/links_init.py:364 Mopy/bash/basher/links_init.py:435
-#: Mopy/bash/basher/links_init.py:675 Mopy/bash/basher/links_init.py:787
-#: Mopy/bash/basher/links_init.py:830 Mopy/bash/basher/links_init.py:881
+#: Mopy/bash/basher/links_init.py:683 Mopy/bash/basher/links_init.py:795
+#: Mopy/bash/basher/links_init.py:838 Mopy/bash/basher/links_init.py:889
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:1847
 msgid "View"
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:459 Mopy/bash/basher/links_init.py:649
+#: Mopy/bash/basher/links_init.py:459 Mopy/bash/basher/links_init.py:653
 msgid "Unhides hidden plugins."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:468 Mopy/bash/basher/links_init.py:659
+#: Mopy/bash/basher/links_init.py:468 Mopy/bash/basher/links_init.py:663
 msgid "Load Order.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:480
+#: Mopy/bash/basher/links_init.py:484
 msgid "Plugins.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:492
+#: Mopy/bash/basher/links_init.py:496
 msgid "Bash Tags.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:530 Mopy/bash/basher/links_init.py:746
+#: Mopy/bash/basher/links_init.py:534 Mopy/bash/basher/links_init.py:754
 msgid "Info.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:555
+#: Mopy/bash/basher/links_init.py:559
 msgid "Plugin.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:557
+#: Mopy/bash/basher/links_init.py:561
 msgid "Groups.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:561
+#: Mopy/bash/basher/links_init.py:565
 msgid "Rating.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:572
+#: Mopy/bash/basher/links_init.py:576
 msgid "Cleaning.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:582
+#: Mopy/bash/basher/links_init.py:586
 msgid "Advanced.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:584
+#: Mopy/bash/basher/links_init.py:588
 msgid "Export.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:610
+#: Mopy/bash/basher/links_init.py:614
 msgid "Import.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:707 Mopy/bash/basher/links_init.py:777
+#: Mopy/bash/basher/links_init.py:715 Mopy/bash/basher/links_init.py:785
 msgid "Unhides hidden saves."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:711 Mopy/bash/basher/links_init.py:782
+#: Mopy/bash/basher/links_init.py:719 Mopy/bash/basher/links_init.py:790
 msgid "Profile.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:730
+#: Mopy/bash/basher/links_init.py:738
 msgid "Move To.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:734 Mopy/bash/basher/mod_links.py:1445
+#: Mopy/bash/basher/links_init.py:742 Mopy/bash/basher/mod_links.py:1445
 msgid "Copy To.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:753
+#: Mopy/bash/basher/links_init.py:761
 msgid "Edit.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:766
+#: Mopy/bash/basher/links_init.py:774
 msgid "Repair.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:804 Mopy/bash/basher/links_init.py:826
+#: Mopy/bash/basher/links_init.py:812 Mopy/bash/basher/links_init.py:834
 msgid "Unhides hidden BSAs."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:851 Mopy/bash/basher/links_init.py:887
+#: Mopy/bash/basher/links_init.py:859 Mopy/bash/basher/links_init.py:895
 msgid "JPG Quality.."
 msgstr ""
 
-#: Mopy/bash/basher/links_init.py:868
+#: Mopy/bash/basher/links_init.py:876
 msgid "Convert.."
 msgstr ""
 
@@ -6829,6 +6829,121 @@ msgstr ""
 msgid "Redoes a load order or active plugins change."
 msgstr ""
 
+#: Mopy/bash/basher/mods_links.py:634
+msgid "Export..."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:635
+msgid "Exports the current load order (and active plugins) to a text file."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:640
+msgid "Note that the resulting export is not compatible with OBMM. Its main purpose is to be imported by Wrye Bash again."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:644
+msgid "Export Load Order - OBMM Interoperability Warning"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:647
+msgid "Export Load Order - Destination"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:649 Mopy/bash/basher/mods_links.py:727
+msgid "Exported Load Order"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:654
+#, python-format
+msgid "Successfully exported the current load order to %(target_path)s."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:657
+msgid "Export Load Order - Success"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:664
+#, python-format
+msgid "Load order exported by Wrye Bash v%(wb_ver)s for %(game_name)s"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:680
+msgid "Failed to import the given load order. The file is malformed. The following line is causing a problem:"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:700
+#, python-format
+msgid "Successfully imported a load order from %(source_path)s."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:708
+msgid "Import..."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:709
+msgid "Imports a previously exported load order (and active plugins) from a text file."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:711
+msgid "Import Load Order - Success"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:712
+msgid "Import Load Order - Warning"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:716
+msgid "Note that this command is not compatible with exports made in OBMM. They will not cause an error, but the result will be wrong. Use the dedicated 'Import From OBMM...' command to handle such exports."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:722
+msgid "Import Load Order - OBMM Interoperability Warning"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:725
+msgid "Import Load Order - Source"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:733
+msgid "Import Load Order - Error"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:772
+msgid "Import From OBMM..."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:773
+msgid "Imports active plugins from a text file exported by OBMM."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:774
+msgid "Import From OBMM - Success"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:775 Mopy/bash/basher/mods_links.py:787
+msgid "Import From OBMM - Warning"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:781
+msgid "Note that this command is always going to result in imperfect imports, because OBMM does not export the order of inactive plugins. Wrye Bash will do its best, but you should check the result manually."
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:789
+msgid "Import From OBMM - Source"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:791
+msgid "OBMM Export"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:797
+msgid "Import From OBMM - Error"
+msgstr ""
+
+#: Mopy/bash/basher/mods_links.py:814
+msgid "Could not determine encoding."
+msgstr ""
+
 #: Mopy/bash/basher/patcher_dialog.py:53
 msgid "Export Bashed Patch configuration to:"
 msgstr ""
@@ -7097,11 +7212,11 @@ msgstr ""
 msgid "Flags: %(active_flags)s"
 msgstr ""
 
-#: Mopy/bash/basher/saves_links.py:450 Mopy/bash/game/oblivion/__init__.py:521
+#: Mopy/bash/basher/saves_links.py:450 Mopy/bash/game/oblivion/__init__.py:522
 msgid "Clothing"
 msgstr ""
 
-#: Mopy/bash/basher/saves_links.py:451 Mopy/bash/game/oblivion/__init__.py:519
+#: Mopy/bash/basher/saves_links.py:451 Mopy/bash/game/oblivion/__init__.py:520
 msgid "Armor"
 msgstr ""
 
@@ -7527,7 +7642,7 @@ msgid "Brazilian Portuguese"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:436
-#: Mopy/bash/basher/settings_dialog.py:1089
+#: Mopy/bash/basher/settings_dialog.py:1092
 msgid "Russian"
 msgstr ""
 
@@ -7544,12 +7659,12 @@ msgid "Ukrainian"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:440
-#: Mopy/bash/basher/settings_dialog.py:1087
+#: Mopy/bash/basher/settings_dialog.py:1090
 msgid "Chinese (Simplified)"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:441
-#: Mopy/bash/basher/settings_dialog.py:1088
+#: Mopy/bash/basher/settings_dialog.py:1091
 msgid "Chinese (Traditional)"
 msgstr ""
 
@@ -7801,461 +7916,469 @@ msgid "[Mods] Changing a plugin's version to 0.8"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:906
-msgid "[Mods] Exporting NPC levels to a text file"
+msgid "[Mods] Exporting load order to a text file: OBMM warning"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:908
-msgid "[Mods] Importing groups from a text file"
+msgid "[Mods] Exporting NPC levels to a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:910
-msgid "[Mods] Importing editor IDs from a text file"
+msgid "[Mods] Importing groups from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:912
-msgid "[Mods] Importing ingredients from a text file"
+msgid "[Mods] Importing editor IDs from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:914
-msgid "[Mods] Importing names from a text file"
+msgid "[Mods] Importing ingredients from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:916
-msgid "[Mods] Importing NPC levels from a text file"
+msgid "[Mods] Importing load order from a text file: OBMM warning"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:918
-msgid "[Mods] Importing prices from a text file"
+msgid "[Mods] Importing names from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:920
-msgid "[Mods] Importing relations from a text file"
+msgid "[Mods] Importing NPC levels from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:922
-msgid "[Mods] Importing scripts from a text file"
+msgid "[Mods] Importing prices from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:924
-msgid "[Mods] Importing sigil stones from a text file"
+msgid "[Mods] Importing relations from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:926
-msgid "[Mods] Importing spells from a text file"
+msgid "[Mods] Importing scripts from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:928
-msgid "[Mods] Importing stats from a text file"
+msgid "[Mods] Importing sigil stones from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:930
-msgid "[Mods] Locking or unlocking the load order"
+msgid "[Mods] Importing spells from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:932
-msgid "[Mods] Removing world orphans"
+msgid "[Mods] Importing stats from a text file"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:934
+msgid "[Mods] Locking or unlocking the load order"
+msgstr ""
+
+#: Mopy/bash/basher/settings_dialog.py:936
+msgid "[Mods] Removing world orphans"
+msgstr ""
+
+#: Mopy/bash/basher/settings_dialog.py:938
 #, python-format
 msgid "[Mods] Renaming a plugin to something that %(game_name)s can't load"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:937
+#: Mopy/bash/basher/settings_dialog.py:941
 msgid "[Mods] Reordering plugins by name"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:939
+#: Mopy/bash/basher/settings_dialog.py:943
 msgid "[Mods] Replacing a plugin's FormIDs based on a text file"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:941
+#: Mopy/bash/basher/settings_dialog.py:945
 msgid "[Mods] Resetting groups to default ones"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:943
+#: Mopy/bash/basher/settings_dialog.py:947
 msgid "[Mods] Synchronizing groups to currently active ones"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:945
+#: Mopy/bash/basher/settings_dialog.py:949
 msgid "[Mods] Trying to activate plugins that can't be activated"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:947
+#: Mopy/bash/basher/settings_dialog.py:951
 msgid "[Mods] Trying to deactivate plugins that can't be deactivated"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:949
+#: Mopy/bash/basher/settings_dialog.py:953
 msgid "[Mods] Trying to reorder plugins, but Load Order column not selected"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:952
+#: Mopy/bash/basher/settings_dialog.py:956
 msgid "[Mods] Trying to reorder plugins that can't be reordered"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:954
+#: Mopy/bash/basher/settings_dialog.py:958
 msgid "[Mods] Using Decompile All to undo a 'Recompile All'"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:956
+#: Mopy/bash/basher/settings_dialog.py:960
 msgid "[Saves] Disabling a save"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:958
+#: Mopy/bash/basher/settings_dialog.py:962
 msgid "[Saves] Updating NPC levels in a save based on current plugins"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:960
+#: Mopy/bash/basher/settings_dialog.py:964
 msgid "[Settings] Switching the currently managed game"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:973
+#: Mopy/bash/basher/settings_dialog.py:977
 msgid "Show Internal Keys"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:974
+#: Mopy/bash/basher/settings_dialog.py:978
 msgid "If checked, show the internal key Wrye Bash uses to store these settings as well."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:982
+#: Mopy/bash/basher/settings_dialog.py:985
 msgid "Choose what to do with files that are dropped onto the Installers tab."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:991
+#: Mopy/bash/basher/settings_dialog.py:994
 msgid "Drop Action:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:994
+#: Mopy/bash/basher/settings_dialog.py:997
 msgid "Unchecking an entry below will reenable that prompt and vice versa."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1014
+#: Mopy/bash/basher/settings_dialog.py:1017
 msgid "Activating this setting will discard all changes you have made below. Are you sure you want to proceed?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1017
+#: Mopy/bash/basher/settings_dialog.py:1020
 msgid "Warning: Unapplied Changes"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1090
+#: Mopy/bash/basher/settings_dialog.py:1093
 msgid "Japanese (Shift_JIS)"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1092
+#: Mopy/bash/basher/settings_dialog.py:1095
 msgid "Western European (English, French, German, etc)"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1096
+#: Mopy/bash/basher/settings_dialog.py:1099
 msgid "Both"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1097
+#: Mopy/bash/basher/settings_dialog.py:1100
 msgid "Global Menu Only"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1098
+#: Mopy/bash/basher/settings_dialog.py:1101
 msgid "Column Menu Only"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1109
+#: Mopy/bash/basher/settings_dialog.py:1112
 msgid "Changes which game Wrye Bash is managing."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1113
+#: Mopy/bash/basher/settings_dialog.py:1116
 msgid "Changes the encoding Wrye Bash will use to read and write plugins."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1119
+#: Mopy/bash/basher/settings_dialog.py:1122
 msgid "'requests' not installed, update checking disabled."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1124
+#: Mopy/bash/basher/settings_dialog.py:1127
 msgid "Check on Startup"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1125
+#: Mopy/bash/basher/settings_dialog.py:1128
 msgid "Whether or not Wrye Bash should check to see if a newer version is available when it is launched."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1131
+#: Mopy/bash/basher/settings_dialog.py:1134
 msgid "Do not check for updates again until this many hours have elapsed since the last check. Set to 0 to check on every startup."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1137
+#: Mopy/bash/basher/settings_dialog.py:1140
 msgid "Cooldown (hours):"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1142
+#: Mopy/bash/basher/settings_dialog.py:1145
 msgid "Check for Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1143
+#: Mopy/bash/basher/settings_dialog.py:1146
 msgid "Check for Wrye Bash updates right now."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1149
+#: Mopy/bash/basher/settings_dialog.py:1152
 msgid "Choose whether only the global menu, only the column header menus, or both should be enabled."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1153
+#: Mopy/bash/basher/settings_dialog.py:1156
 msgid "Global or Column Menu:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1159
+#: Mopy/bash/basher/settings_dialog.py:1162
 msgid "Restore Scroll Positions on Start"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1160
+#: Mopy/bash/basher/settings_dialog.py:1163
 msgid "Remember where you left off last time and scroll back down to that plugin/save/etc. on startup. May cause a moderate slowdown in Wrye Bash's boot process if you have a very large number of plugins/saves/etc."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1168
-#: Mopy/bash/basher/settings_dialog.py:1340
+#: Mopy/bash/basher/settings_dialog.py:1171
+#: Mopy/bash/basher/settings_dialog.py:1343
 msgid "Administrator Mode"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1169
+#: Mopy/bash/basher/settings_dialog.py:1172
 msgid "Restart Wrye Bash with administrator privileges."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1180
+#: Mopy/bash/basher/settings_dialog.py:1183
 msgid "Open a file dialog to interactively choose the path at which Wrye Bash will store temporary files."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1186
+#: Mopy/bash/basher/settings_dialog.py:1189
 msgid "Reset the path at which Wrye Bash will store temporary files back to its default value."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1192
+#: Mopy/bash/basher/settings_dialog.py:1195
 msgid "Game"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1194
+#: Mopy/bash/basher/settings_dialog.py:1197
 msgid "Managed Game:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1197
+#: Mopy/bash/basher/settings_dialog.py:1200
 msgid "Plugin Encoding:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1200
+#: Mopy/bash/basher/settings_dialog.py:1203
 msgid "Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1209
-#: Mopy/bash/basher/settings_dialog.py:1327
+#: Mopy/bash/basher/settings_dialog.py:1212
+#: Mopy/bash/basher/settings_dialog.py:1330
 msgid "Temporary Folder"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1215
-#: Mopy/bash/basher/settings_dialog.py:1534
-#: Mopy/bash/basher/settings_dialog.py:1552
-#: Mopy/bash/basher/settings_dialog.py:1574
+#: Mopy/bash/basher/settings_dialog.py:1218
+#: Mopy/bash/basher/settings_dialog.py:1537
+#: Mopy/bash/basher/settings_dialog.py:1555
+#: Mopy/bash/basher/settings_dialog.py:1577
 msgid "Miscellaneous"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1264
+#: Mopy/bash/basher/settings_dialog.py:1267
 #, python-format
 msgid "You are already using the newest version of Wrye Bash, version %(wb_version)s."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1267
+#: Mopy/bash/basher/settings_dialog.py:1270
 msgid "No Newer Version Available"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1269
+#: Mopy/bash/basher/settings_dialog.py:1272
 msgid "Failed to contact GitHub for update checking. Check your Internet connection."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1271
+#: Mopy/bash/basher/settings_dialog.py:1274
 msgid "Failed To Check for Updates"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1279
+#: Mopy/bash/basher/settings_dialog.py:1282
 msgid "Choose Temporary Folder"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1294
+#: Mopy/bash/basher/settings_dialog.py:1297
 #, python-format
 msgid "Switching games this way will simply relaunch this Wrye Bash installation with the %(cli_game_detect)s command line switch."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1298
+#: Mopy/bash/basher/settings_dialog.py:1301
 msgid "That means manually added application launchers in the status bar will not change after switching."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1303
+#: Mopy/bash/basher/settings_dialog.py:1306
 #, python-format
 msgid "Managed Game: %(chosen_game)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1313
+#: Mopy/bash/basher/settings_dialog.py:1316
 #, python-format
 msgid "Plugin Encoding: %(chosen_encoding)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1349
-#: Mopy/bash/basher/settings_dialog.py:1540
-#: Mopy/bash/basher/settings_dialog.py:1565
-#: Mopy/bash/basher/settings_dialog.py:1580
+#: Mopy/bash/basher/settings_dialog.py:1352
+#: Mopy/bash/basher/settings_dialog.py:1543
+#: Mopy/bash/basher/settings_dialog.py:1568
+#: Mopy/bash/basher/settings_dialog.py:1583
 msgid "Trusted Binaries"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1350
+#: Mopy/bash/basher/settings_dialog.py:1353
 msgid "Untrusted Binaries"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1351
+#: Mopy/bash/basher/settings_dialog.py:1354
 msgid "Mark the selected binary as trusted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1352
+#: Mopy/bash/basher/settings_dialog.py:1355
 msgid "Mark the selected binary as untrusted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1354
+#: Mopy/bash/basher/settings_dialog.py:1357
 msgid "Import…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1355
+#: Mopy/bash/basher/settings_dialog.py:1358
 msgid "Import list of allowed/disallowed binaries from a .txt file. This also allows more fine-grained control over trusted binary versions."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1359
+#: Mopy/bash/basher/settings_dialog.py:1362
 msgid "Export…"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1360
+#: Mopy/bash/basher/settings_dialog.py:1363
 msgid "Export list of allowed/disallowed binaries to a .txt file. This also allows more fine-grained control over trusted binary versions."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1384
+#: Mopy/bash/basher/settings_dialog.py:1387
 msgid "Export list of allowed/disallowed plugin DLLs to:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1385
+#: Mopy/bash/basher/settings_dialog.py:1388
 msgid "DLL permissions"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1392
+#: Mopy/bash/basher/settings_dialog.py:1395
 #, python-format
 msgid "Exported by Wrye Bash v%(wb_version)s"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1394
+#: Mopy/bash/basher/settings_dialog.py:1397
 msgid "Binaries whose installation you have allowed"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1395
+#: Mopy/bash/basher/settings_dialog.py:1398
 msgid "Binaries whose installation you have forbidden"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1412
+#: Mopy/bash/basher/settings_dialog.py:1415
 msgid "dll permissions"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1413
+#: Mopy/bash/basher/settings_dialog.py:1416
 msgid "Import list of allowed/disallowed plugin DLLs from:"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1417
+#: Mopy/bash/basher/settings_dialog.py:1420
 msgid "Merge permissions from file with current dll permissions?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1418
+#: Mopy/bash/basher/settings_dialog.py:1421
 msgid "('No' Replaces current permissions instead.)"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1419
+#: Mopy/bash/basher/settings_dialog.py:1422
 msgid "Merge permissions?"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1476
+#: Mopy/bash/basher/settings_dialog.py:1479
 #, python-format
 msgid "Wrye Bash could not load %(import_file)s, because it is not saved in UTF-8 format. Please resave it in UTF-8 format and try again."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1482
+#: Mopy/bash/basher/settings_dialog.py:1485
 #, python-format
 msgid "Wrye Bash could not load %(import_file)s, because there was an error in the format of the file."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1531
-#: Mopy/bash/basher/settings_dialog.py:1544
+#: Mopy/bash/basher/settings_dialog.py:1534
 #: Mopy/bash/basher/settings_dialog.py:1547
-#: Mopy/bash/basher/settings_dialog.py:1549
+#: Mopy/bash/basher/settings_dialog.py:1550
 #: Mopy/bash/basher/settings_dialog.py:1552
-#: Mopy/bash/basher/settings_dialog.py:1554
-#: Mopy/bash/basher/settings_dialog.py:1572
-#: Mopy/bash/basher/settings_dialog.py:1573
-#: Mopy/bash/basher/settings_dialog.py:1574
+#: Mopy/bash/basher/settings_dialog.py:1555
+#: Mopy/bash/basher/settings_dialog.py:1557
 #: Mopy/bash/basher/settings_dialog.py:1575
+#: Mopy/bash/basher/settings_dialog.py:1576
+#: Mopy/bash/basher/settings_dialog.py:1577
+#: Mopy/bash/basher/settings_dialog.py:1578
 msgid "Appearance"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1532
-#: Mopy/bash/basher/settings_dialog.py:1547
-#: Mopy/bash/basher/settings_dialog.py:1572
+#: Mopy/bash/basher/settings_dialog.py:1535
+#: Mopy/bash/basher/settings_dialog.py:1550
+#: Mopy/bash/basher/settings_dialog.py:1575
 msgid "Colors"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1533
-#: Mopy/bash/basher/settings_dialog.py:1549
-#: Mopy/bash/basher/settings_dialog.py:1573
+#: Mopy/bash/basher/settings_dialog.py:1536
+#: Mopy/bash/basher/settings_dialog.py:1552
+#: Mopy/bash/basher/settings_dialog.py:1576
 msgid "Language"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1535
-#: Mopy/bash/basher/settings_dialog.py:1554
-#: Mopy/bash/basher/settings_dialog.py:1575
+#: Mopy/bash/basher/settings_dialog.py:1538
+#: Mopy/bash/basher/settings_dialog.py:1557
+#: Mopy/bash/basher/settings_dialog.py:1578
 msgid "Status Bar"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1537
-#: Mopy/bash/basher/settings_dialog.py:1557
-#: Mopy/bash/basher/settings_dialog.py:1577
+#: Mopy/bash/basher/settings_dialog.py:1540
+#: Mopy/bash/basher/settings_dialog.py:1560
+#: Mopy/bash/basher/settings_dialog.py:1580
 msgid "Backups"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1538
-#: Mopy/bash/basher/settings_dialog.py:1560
-#: Mopy/bash/basher/settings_dialog.py:1578
+#: Mopy/bash/basher/settings_dialog.py:1541
+#: Mopy/bash/basher/settings_dialog.py:1563
+#: Mopy/bash/basher/settings_dialog.py:1581
 msgid "Confirmations"
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1545
+#: Mopy/bash/basher/settings_dialog.py:1548
 msgid "Personalize various aspects of how Wrye Bash looks, including colors and some GUI options."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1548
+#: Mopy/bash/basher/settings_dialog.py:1551
 msgid "Change colors of various GUI components."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1550
+#: Mopy/bash/basher/settings_dialog.py:1553
 msgid "Change the language that Wrye Bash is displayed in and manage localizations."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1553
+#: Mopy/bash/basher/settings_dialog.py:1556
 msgid "Change various miscellaneous appearance settings."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1555
+#: Mopy/bash/basher/settings_dialog.py:1558
 msgid "Change settings related to the status bar at the bottom and manage hidden buttons."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1558
+#: Mopy/bash/basher/settings_dialog.py:1561
 msgid "Create, manage and restore backups of Wrye Bash settings and other data. Click on a backup to manage it."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1561
+#: Mopy/bash/basher/settings_dialog.py:1564
 msgid "Enable or disable popups with a 'Don't show this in the future' option."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1564
+#: Mopy/bash/basher/settings_dialog.py:1567
 msgid "Change various general settings."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1566
+#: Mopy/bash/basher/settings_dialog.py:1569
 msgid "Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted binaries will be skipped by BAIN when installing packages."
 msgstr ""
 
@@ -8386,121 +8509,121 @@ msgstr ""
 msgid "Technically mergeable, but has NoMerge tag."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2680 Mopy/bash/bosh/__init__.py:2733
+#: Mopy/bash/bosh/__init__.py:2682 Mopy/bash/bosh/__init__.py:2736
 msgid "Some plugins could not be found and were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2686
+#: Mopy/bash/bosh/__init__.py:2688
 msgid "Plugin list is full, so some plugins were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2843
+#: Mopy/bash/bosh/__init__.py:2846
 #, python-format
 msgid "Missing Master: %(m_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2844
+#: Mopy/bash/bosh/__init__.py:2847
 #, python-format
 msgid "Delinquent Master: %(d_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2849
+#: Mopy/bash/bosh/__init__.py:2852
 #, python-format
 msgid "MISSING MASTER: %(m_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2850
+#: Mopy/bash/bosh/__init__.py:2853
 #, python-format
 msgid "DELINQUENT MASTER: %(d_master)s"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2855
+#: Mopy/bash/bosh/__init__.py:2858
 #, python-format
 msgid "Missing Masters for %(mm_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2859
+#: Mopy/bash/bosh/__init__.py:2862
 #, python-format
 msgid "Masters for %(m_plugin)s:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2866
+#: Mopy/bash/bosh/__init__.py:2869
 msgid "Active Plugins:"
-msgstr ""
-
-#: Mopy/bash/bosh/__init__.py:2884
-#, python-format
-msgid "[Version %(plugin_ver)s]"
 msgstr ""
 
 #: Mopy/bash/bosh/__init__.py:2887
 #, python-format
+msgid "[Version %(plugin_ver)s]"
+msgstr ""
+
+#: Mopy/bash/bosh/__init__.py:2890
+#, python-format
 msgid "[CRC: %(plugin_crc)s]"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2904
+#: Mopy/bash/bosh/__init__.py:2907
 msgid "Current Bash Tags:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2906
+#: Mopy/bash/bosh/__init__.py:2909
 msgid "Note: Sources are processed from top to bottom, meaning that lower-ranking sources override higher-ranking ones."
-msgstr ""
-
-#: Mopy/bash/bosh/__init__.py:2944
-#, python-format
-msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
-msgstr ""
-
-#: Mopy/bash/bosh/__init__.py:2946
-#, python-format
-msgid "The file is in use by another process such as %(xedit_name)s."
 msgstr ""
 
 #: Mopy/bash/bosh/__init__.py:2947
 #, python-format
+msgid "Wrye Bash encountered an error when renaming %(old)s to %(new)s."
+msgstr ""
+
+#: Mopy/bash/bosh/__init__.py:2949
+#, python-format
+msgid "The file is in use by another process such as %(xedit_name)s."
+msgstr ""
+
+#: Mopy/bash/bosh/__init__.py:2950
+#, python-format
 msgid "Please close the other program that is accessing %(new)s."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2989
+#: Mopy/bash/bosh/__init__.py:2992
 msgid "File in Use"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3021
+#: Mopy/bash/bosh/__init__.py:3024
 msgid "Calculating crc:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3404
+#: Mopy/bash/bosh/__init__.py:3407
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3412 Mopy/bash/bosh/__init__.py:3424
-#: Mopy/bash/bosh/__init__.py:3434
+#: Mopy/bash/bosh/__init__.py:3415 Mopy/bash/bosh/__init__.py:3427
+#: Mopy/bash/bosh/__init__.py:3437
 msgid "Settings Load Error"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3417
+#: Mopy/bash/bosh/__init__.py:3420
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3430
+#: Mopy/bash/bosh/__init__.py:3433
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3445
+#: Mopy/bash/bosh/__init__.py:3448
 msgid "Initializing BSAs"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3447
+#: Mopy/bash/bosh/__init__.py:3450
 msgid "Initializing plugins"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3449
+#: Mopy/bash/bosh/__init__.py:3452
 msgid "Initializing saves"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:3451
+#: Mopy/bash/bosh/__init__.py:3454
 msgid "Initializing INIs"
 msgstr ""
 
@@ -10049,43 +10172,43 @@ msgstr ""
 msgid "This plugin contains records with FormIDs greater than 0xFFFF."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:436
+#: Mopy/bash/game/__init__.py:440
 msgid "Light plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:437
+#: Mopy/bash/game/__init__.py:441
 msgid "Overlay plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:438
+#: Mopy/bash/game/__init__.py:442
 msgid "Blueprint plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:439
+#: Mopy/bash/game/__init__.py:443
 msgid "Master plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:440
+#: Mopy/bash/game/__init__.py:444
 msgid "Light Master plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:441
+#: Mopy/bash/game/__init__.py:445
 msgid "Overlay Master plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:442
+#: Mopy/bash/game/__init__.py:446
 msgid "Blueprint Master plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:443
+#: Mopy/bash/game/__init__.py:447
 msgid "Mid plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:444
+#: Mopy/bash/game/__init__.py:448
 msgid "Mid Master plugin."
 msgstr ""
 
-#: Mopy/bash/game/__init__.py:993
+#: Mopy/bash/game/__init__.py:997
 #, python-format
 msgid "Conflicting flags: %(conf_flags)s"
 msgstr ""
@@ -10242,161 +10365,161 @@ msgstr ""
 msgid "Normanne"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:218
+#: Mopy/bash/game/oblivion/__init__.py:219
 #: Mopy/bash/game/skyrim/__init__.py:222
 msgid "Blade (1 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:219
+#: Mopy/bash/game/oblivion/__init__.py:220
 #: Mopy/bash/game/skyrim/__init__.py:223
 msgid "Blade (2 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:220
+#: Mopy/bash/game/oblivion/__init__.py:221
 #: Mopy/bash/game/skyrim/__init__.py:224
 msgid "Blunt (1 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:221
+#: Mopy/bash/game/oblivion/__init__.py:222
 #: Mopy/bash/game/skyrim/__init__.py:225
 msgid "Blunt (2 Handed)"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:222
+#: Mopy/bash/game/oblivion/__init__.py:223
 #: Mopy/bash/game/skyrim/__init__.py:226
 msgid "Staff"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:223
+#: Mopy/bash/game/oblivion/__init__.py:224
 #: Mopy/bash/game/skyrim/__init__.py:227
 msgid "Bow"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:227
+#: Mopy/bash/game/oblivion/__init__.py:228
 #: Mopy/bash/game/skyrim/__init__.py:231
 msgid "Argonian"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:228
+#: Mopy/bash/game/oblivion/__init__.py:229
 #: Mopy/bash/game/skyrim/__init__.py:232
 msgid "Breton"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:229
+#: Mopy/bash/game/oblivion/__init__.py:230
 #: Mopy/bash/game/skyrim/__init__.py:233
 msgid "Dark Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:230
+#: Mopy/bash/game/oblivion/__init__.py:231
 #: Mopy/bash/game/skyrim/__init__.py:234
 msgid "High Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:231
+#: Mopy/bash/game/oblivion/__init__.py:232
 #: Mopy/bash/game/skyrim/__init__.py:235
 msgid "Imperial"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:232
+#: Mopy/bash/game/oblivion/__init__.py:233
 #: Mopy/bash/game/skyrim/__init__.py:236
 msgid "Khajiit"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:233
+#: Mopy/bash/game/oblivion/__init__.py:234
 #: Mopy/bash/game/skyrim/__init__.py:237
 msgid "Nord"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:234
+#: Mopy/bash/game/oblivion/__init__.py:235
 #: Mopy/bash/game/skyrim/__init__.py:238
 msgid "Orc"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:235
+#: Mopy/bash/game/oblivion/__init__.py:236
 #: Mopy/bash/game/skyrim/__init__.py:239
 msgid "Redguard"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:236
+#: Mopy/bash/game/oblivion/__init__.py:237
 msgid "Vampire"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:237
+#: Mopy/bash/game/oblivion/__init__.py:238
 #: Mopy/bash/game/skyrim/__init__.py:240
 msgid "Wood Elf"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:517
+#: Mopy/bash/game/oblivion/__init__.py:518
 msgid "Faction"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:518
+#: Mopy/bash/game/oblivion/__init__.py:519
 msgid "Apparatus"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:520
+#: Mopy/bash/game/oblivion/__init__.py:521
 msgid "Book"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:522
+#: Mopy/bash/game/oblivion/__init__.py:523
 msgid "Ingredient"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:523
+#: Mopy/bash/game/oblivion/__init__.py:524
 #: Mopy/bash/game/oblivion/records.py:1500
 msgid "Light"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:524
+#: Mopy/bash/game/oblivion/__init__.py:525
 msgid "Misc. Item"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:525
+#: Mopy/bash/game/oblivion/__init__.py:526
 msgid "Weapon"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:526
+#: Mopy/bash/game/oblivion/__init__.py:527
 msgid "NPC"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:527
+#: Mopy/bash/game/oblivion/__init__.py:528
 #: Mopy/bash/patcher/patchers/mergers.py:842
 msgid "Creature"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:528
+#: Mopy/bash/game/oblivion/__init__.py:529
 msgid "Key"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:529
+#: Mopy/bash/game/oblivion/__init__.py:530
 msgid "Potion"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:530
+#: Mopy/bash/game/oblivion/__init__.py:531
 msgid "Cell"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:531
+#: Mopy/bash/game/oblivion/__init__.py:532
 msgid "Object Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:532
+#: Mopy/bash/game/oblivion/__init__.py:533
 msgid "NPC Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:533
+#: Mopy/bash/game/oblivion/__init__.py:534
 msgid "Creature Ref"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:534
+#: Mopy/bash/game/oblivion/__init__.py:535
 msgid "Dialog Entry"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:535 Mopy/bash/parsers.py:709
+#: Mopy/bash/game/oblivion/__init__.py:536 Mopy/bash/parsers.py:709
 msgid "Quest"
 msgstr ""
 
-#: Mopy/bash/game/oblivion/__init__.py:536
+#: Mopy/bash/game/oblivion/__init__.py:537
 msgid "AI Package"
 msgstr ""
 
