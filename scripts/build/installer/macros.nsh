@@ -889,6 +889,11 @@
         ; The .po's for these were only temporarily on dev, then got renamed
         Delete "${Path}\Mopy\bash\l10n\sv.mo"
         Delete "${Path}\Mopy\bash\l10n\tr.mo"
+        ; As of 313, we use SVGs instead of PNGs for the checkbox icons
+        Delete "${Path}\Mopy\bash\images\checkbox_*.png"
+        Delete "${Path}\Mopy\bash\images\diamond_*.png"
+        ; As of 313, we use SVGs instead of PNGs for the game icons
+        Delete "${Path}\Mopy\bash\images\games\*.png"
     !macroend
 
 
