@@ -1651,7 +1651,7 @@ class PreParser(Parser):
                         dotCount += 1
                         if dotCount == 3:
                             dotCount = 0
-                            outLine += '...' ##: Replace with '…'?
+                            outLine += '…'
                         continue
                     else:
                         while dotCount > 0:

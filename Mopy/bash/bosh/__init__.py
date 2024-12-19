@@ -1875,7 +1875,7 @@ class INIInfos(TableFileInfos):
         # Make a copy, we may modify the _target_inis dict
         for ini_name, ini_path in list(_target_inis.items()):
             if ini_name == _('Browse…'): continue
-            # If user started with non-translated, 'Browse...'
+            # If user started with non-translated, 'Browse…'
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
             # objects.  That will take care of it.
@@ -1989,7 +1989,7 @@ class INIInfos(TableFileInfos):
     def __sort_target_inis():
         # Sort non-game INIs alphabetically
         keys = sorted(bass.settings[u'bash.ini.choices'])
-        # Sort game INIs to the top, and 'Browse...' to the bottom
+        # Sort game INIs to the top, and 'Browse…' to the bottom
         game_inis = bush.game.Ini.dropdown_inis
         len_inis = len(game_inis)
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (

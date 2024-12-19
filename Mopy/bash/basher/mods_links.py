@@ -351,7 +351,7 @@ class Mods_ListBashTags(ItemLink):
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
-    """Clean up after using a 'Create Dummy Masters...' command."""
+    """Clean up after using a 'Create Dummy Masters…' command."""
     _text = _('Remove Dummy Masters…')
     _help = _("Clean up after using a 'Create Dummy Masters…' command")
 
@@ -631,7 +631,7 @@ class Mods_LORedo(ItemLink):
 class Mods_LOExport(ItemLink):
     """Export the current load order to a text file (format inspired by the
     Asterisk games' plugins.txt)."""
-    _text = _('Export...')
+    _text = _('Export…')
     _help = _('Exports the current load order (and active plugins) to a text '
               'file.')
 
@@ -705,7 +705,7 @@ class _AImportLOBaseLink(ItemLink):
 class Mods_LOImport(_AImportLOBaseLink):
     """Import a previously exported load order from a text file (format
     inspired by the Asterisk games' plugins.txt)."""
-    _text = _('Import...')
+    _text = _('Import…')
     _help = _('Imports a previously exported load order (and active plugins) '
               'from a text file.')
     _success_title = _('Import Load Order - Success')
@@ -717,7 +717,7 @@ class Mods_LOImport(_AImportLOBaseLink):
                     "Note that this command is not compatible with exports "
                     "made in OBMM. They will not cause an error, but the "
                     "result will be wrong. Use the dedicated 'Import From "
-                    "OBMM...' command to handle such exports."),
+                    "OBMM…' command to handle such exports."),
                     'bash.load_order.use_obmm_import.continue',
                     title=_('Import Load Order - OBMM Interoperability '
                             'Warning')):
@@ -769,7 +769,7 @@ class Mods_LOImport(_AImportLOBaseLink):
 #------------------------------------------------------------------------------
 class Mods_LOImportFromOBMM(AppendableLink, _AImportLOBaseLink):
     """Import active plugins from a text file exported by OBMM."""
-    _text = _('Import From OBMM...')
+    _text = _('Import From OBMM…')
     _help = _('Imports active plugins from a text file exported by OBMM.')
     _success_title = _('Import From OBMM - Success')
     _warning_title = _('Import From OBMM - Warning')

@@ -1970,7 +1970,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         """Called when the user selects a new target INI from the drop down."""
         full_path = self.target_inis[selection]
         if full_path is None:
-            # 'Browse...'
+            # 'Browse…'
             wildcard =  '|'.join([
                 _('Supported files') + ' (*.ini,*.cfg,*.toml)'
                                        '|*.ini;*.cfg;*.toml',
@@ -3255,7 +3255,7 @@ class InstallersPanel(BashTab):
                         deprint(f'Extending projects: {omod_projects}')
                         folders.extend(omod_projects)
                 if not do_refresh:
-                    #with balt.Progress(_('Scanning Packages...')) as progress:
+                    #with balt.Progress(_('Scanning Packages…')) as progress:
                     refresh_info = self.listData.update_installers(folders,
                         files, fullRefresh, progress=bolt.Progress())
                     do_refresh = bool(refresh_info)
