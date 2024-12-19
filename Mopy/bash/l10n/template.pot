@@ -8377,20 +8377,20 @@ msgstr ""
 msgid "Settings missing from target INI:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:1876 Mopy/bash/bosh/__init__.py:1895
-#: Mopy/bash/bosh/__init__.py:1896 Mopy/bash/bosh/__init__.py:1995
+#: Mopy/bash/bosh/__init__.py:1877 Mopy/bash/bosh/__init__.py:1896
+#: Mopy/bash/bosh/__init__.py:1897 Mopy/bash/bosh/__init__.py:1996
 msgid "Browse…"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2310 Mopy/bash/plugin_types.py:189
+#: Mopy/bash/bosh/__init__.py:2311 Mopy/bash/plugin_types.py:189
 msgid "Technically mergeable, but has NoMerge tag."
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2679 Mopy/bash/bosh/__init__.py:2732
+#: Mopy/bash/bosh/__init__.py:2680 Mopy/bash/bosh/__init__.py:2733
 msgid "Some plugins could not be found and were skipped:"
 msgstr ""
 
-#: Mopy/bash/bosh/__init__.py:2685
+#: Mopy/bash/bosh/__init__.py:2686
 msgid "Plugin list is full, so some plugins were skipped:"
 msgstr ""
 
