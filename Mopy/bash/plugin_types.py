@@ -177,7 +177,7 @@ class MergeabilityCheck(Enum):
                     'Patch, but are currently not merged.')
             case _:
                 h, m = ('=== ' + _('%(FLAG)s-Capable') % (n := {'FLAG': self}),
-                    _('The following plugins could be %(FLAG)s-flagged.' % n))
+                    _('The following plugins could be %(FLAG)s-flagged.') % n)
         return [p for p in mod_infos.values() if self in p.merge_types()], h, m
 
     def display_info(self, minf, checkMark):
