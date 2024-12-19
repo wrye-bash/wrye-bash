@@ -33,7 +33,7 @@ import sys
 import time
 from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import wraps
 from itertools import chain
 from typing import final
@@ -50,7 +50,7 @@ from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
-    OrderedLowerDict, attrgetter_cache
+    OrderedLowerDict, attrgetter_cache, RefrData
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
@@ -1539,7 +1539,7 @@ class DataStore(DataDict):
         member_info.abs_path = self.store_dir.join(newName)
         del self[old_key]
         if rdata_ren is None:
-            rdata_ren = RefrData({old_key}, redraw={newName},
+            rdata_ren = RefrData({newName}, to_del={old_key},
                                  renames={old_key: newName}, ren_paths=ren)
         else:
             rdata_ren.redraw.add(member_info.fn_key)
@@ -1579,19 +1579,6 @@ class DataStore(DataDict):
             {d.stail for d in destinations if d.exists()}, ret_type=set)
 
     def save_pickle(self): pass # for Screenshots
-
-@dataclass(slots=True)
-class RefrData:
-    """Encapsulate info the backend needs to pass on to the UI for refresh."""
-    to_del: set[FName] = field(default_factory=set)
-    to_add: set[FName] = field(default_factory=set)
-    redraw: set[FName] = field(default_factory=set)
-    # renames are a dict of old fn keys to new fn keys
-    renames: dict[FName, FName] = field(default_factory=dict)
-    ren_paths: dict[Path, Path] = field(default_factory=dict)
-
-    def __bool__(self):
-        return bool(self.to_add or self.to_del or self.redraw)
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -2149,7 +2136,6 @@ class ModInfos(TableFileInfos):
         else: # we did all the refreshes above in _modinfos_cache_wrapper
             rdata.redraw |= act_ch | ldiff.affected
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
         return rdata
 
     # _AFileInfos overrides that are used in refresh - ghosts ahead

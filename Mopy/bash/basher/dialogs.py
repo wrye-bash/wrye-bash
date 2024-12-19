@@ -29,7 +29,7 @@ from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
 from ..balt import DecoratedTreeDict, colors, Link
 from ..bass import Store
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
-    reverse_dict
+    reverse_dict, RefrData
 from ..bosh import ModInfo, faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
@@ -476,7 +476,7 @@ class CreateNewPlugin(DialogWindow):
             if grp := pw.data_store[windowSelected[0]].get_table_prop('group'):
                 created_plugin.set_table_prop('group', grp)
         pw.ClearSelected(clear_details=True)
-        pw.RefreshUI(redraw=[chosen_name])
+        pw.RefreshUI(RefrData({chosen_name}))
 
 #------------------------------------------------------------------------------
 class ExportScriptsDialog(DialogWindow):

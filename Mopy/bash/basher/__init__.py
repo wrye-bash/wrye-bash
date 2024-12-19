@@ -73,11 +73,11 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
 from ..bass import Store
-from ..bolt import FName, GPath, RefrIn, SubProgress, deprint, dict_sort, \
-    forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
+from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, deprint, \
+    dict_sort, forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property, attrgetter_cache, top_level_files
-from ..bosh import ModInfo, omods, RefrData
+from ..bosh import ModInfo, omods
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -998,8 +998,7 @@ class ModList(_ModsUIList):
         #--Save and Refresh
         try:
             ldiff = bosh.modInfos.cached_lo_save_all()
-            loch = ldiff.reordered | ldiff.act_index_change #no additions/removals
-            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
         except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
             showError(self, f'{e}')
 
@@ -1223,15 +1222,14 @@ class ModList(_ModsUIList):
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            loch = ldiff.active_flips | ldiff.act_index_change
-            self.RefreshUI(redraw=loch, refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
         ldiff = undo_or_redo() # no additions or removals
-        if changed := (ldiff.act_changed() | ldiff.reordered):
-            self.RefreshUI(redraw=changed, refresh_others=Store.SAVES.DO())
+        if changed := ldiff.to_rdata():
+            self.propagate_refresh(Store.SAVES.DO(), rdata=changed)
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -1248,8 +1246,8 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.RefreshUI(redraw=[new_patch_name],
-                           refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(),
+                                   rdata=RefrData({new_patch_name}))
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -1687,8 +1685,8 @@ class ModDetails(_ModsSavesDetails):
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
             bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
-            self.panel_uilist.RefreshUI( # refresh saves if lo changed
-                refresh_others=Store.SAVES.IF(not bush.game.using_txt_file))
+            self.panel_uilist.propagate_refresh( # refresh saves if lo changed
+                Store.SAVES.IF(not bush.game.using_txt_file))
             return
         #--Backup
         modInfo.makeBackup()
@@ -1716,9 +1714,9 @@ class ModDetails(_ModsSavesDetails):
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
         detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
-        self.panel_uilist.RefreshUI(detail_item=detail_item,
-            refresh_others=Store.SAVES.IF(
-                detail_item is None or changeName or unlock_lo))
+        self.panel_uilist.propagate_refresh(Store.SAVES.IF(
+                detail_item is None or changeName or unlock_lo),
+            detail_item=detail_item)
 
     def _set_date(self, modInfo):
         modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
@@ -2111,8 +2109,7 @@ class SaveList(UIList):
             if (rdata := self.try_rename(saveInfo, root, rdata)) is None:
                 break
         if rdata:
-            self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
-                           detail_item=rdata.renames.get(item_edited))
+            self.RefreshUI(rdata, detail_item=rdata.renames.get(item_edited))
             #--Reselect the renamed items
             self.SelectItemsNoCallback(rdata.redraw)
         return EventResult.CANCEL # needed ! clears new name from label on exception
@@ -2159,7 +2156,7 @@ class SaveList(UIList):
         extension = enabled_ext if do_enable else disabled_ext
         if rdata := self.try_rename(sinf, fn_item.fn_body, None,
                                     force_ext=extension):
-            self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del)
+            self.RefreshUI(rdata) # that's what a RefreshUI call should look like
 
     # Save profiles
     def set_local_save(self, new_saves, *, do_swap=None):
@@ -2330,6 +2327,7 @@ class SaveDetails(_ModsSavesDetails):
         saveInfo.makeBackup() ##: why backup when just renaming - #292
         prevMTime = saveInfo.ftime
         #--Change Name?
+        rdata = RefrData()
         if changeName:
             newName = FName(self.fileStr.strip()).fn_body
             # if you were wondering: OnFileEdited checked if file existed,
@@ -2348,12 +2346,11 @@ class SaveDetails(_ModsSavesDetails):
             saveInfo.setmtime(prevMTime)
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
-        kwargs = {'to_del': rdata.to_del if changeName else set()}
         if detail_item is None:
-            kwargs['to_del'] |= {self.file_info.fn_key} # we failed rewriting
+            rdata.to_del |= {self.file_info.fn_key} # we failed rewriting
         else:
-            kwargs[u'redraw'] = [detail_item]
-        self.panel_uilist.RefreshUI(**kwargs, detail_item=detail_item)
+            rdata.redraw.add(detail_item)
+        self.panel_uilist.RefreshUI(rdata, detail_item=detail_item)
 
     def RefreshUIColors(self):
         self._update_masters_warning()
@@ -2500,8 +2497,7 @@ class InstallersList(UIList):
                 pass # ren_keys.update(None)
             #--Refresh UI
             if rdata:
-                self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
-                               refresh_others=refreshes)
+                self.propagate_refresh(refreshes, rdata=rdata)
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
@@ -3067,7 +3063,7 @@ class InstallersDetails(_SashDetailsPanel):
         subScrollPos  = self.gSubList.lb_get_vertical_scroll_pos()
         espmScrollPos = self.gEspmList.lb_get_vertical_scroll_pos()
         subIndices = self.gSubList.lb_get_selections()
-        self.installersPanel.uiList.RefreshUI(redraw=[self.displayed_item])
+        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}))
         for subIndex in subIndices:
             self.gSubList.lb_select_index(subIndex)
         # Reset the scroll bars back to their original position
@@ -3404,7 +3400,7 @@ class ScreensList(UIList):
                 num += 1
                 numStr = str(num).zfill(digits)
             if rdata:
-                self.RefreshUI(redraw=rdata.redraw, to_del=rdata.to_del,
+                self.RefreshUI(rdata,
                                detail_item=rdata.renames.get(item_edited))
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
@@ -3785,12 +3781,16 @@ class BashFrame(WindowFrame):
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
 
-    def distribute_ui_refresh(self, ui_refresh: defaultdict[Store, bool]):
+    def distribute_ui_refresh(self, ui_refresh: dict[Store, bool]):
         """Distribute a RefreshUI to all tabs, based on the specified
         ui_refresh information."""
-        for list_key, candidate_uilist in self.all_uilists.items():
-            if candidate_uilist is not None and ui_refresh[list_key]:
-                candidate_uilist.RefreshUI(focus_list=False)
+        for list_key, do_refr in ui_refresh.items():
+            if do_refr and self.all_uilists[list_key] is not None:
+                if not isinstance(do_refr, dict): # do_refr is True or RefrData
+                    do_refr = {'rdata': do_refr} if isinstance(
+                        do_refr, RefrData) else {}
+                do_refr.setdefault('focus_list', False)
+                self.all_uilists[list_key].RefreshUI(**do_refr)
 
     def distribute_warnings(self, ui_refresh):
         """Issue warnings for all tabs, based on the specified ui_refresh
@@ -3920,10 +3920,10 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        ui_refresh: defaultdict[Store, bool] = defaultdict(bool, {
-            store.unique_store_key: not booting and bool(store.refresh())
-            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)})
-        ui_refresh[Store.SAVES] |= ui_refresh[Store.MODS] # for save masters
+        ui_refresh = {store.unique_store_key: not booting and store.refresh()
+            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)}
+        if ui_refresh[Store.MODS]:
+            ui_refresh[Store.SAVES] = True # for save masters
         #--Repopulate, focus will be set in ShowPanel
         self.distribute_ui_refresh(ui_refresh)
         self.distribute_warnings(ui_refresh)

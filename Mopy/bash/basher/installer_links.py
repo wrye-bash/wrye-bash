@@ -45,7 +45,7 @@ from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
 from .. import archives, balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
-    UIList_Hide
+    UIList_Hide, Installer_Op
 from ..bass import Store
 from ..bolt import FName, LogFile, RefrIn, SubProgress, deprint, round_size
 from ..bosh import InstallerConverter, converters
@@ -132,7 +132,7 @@ class _NoMarkerLink(_InstallerLink):
 #------------------------------------------------------------------------------
 class _Installer_AWizardLink(_NoMarkerLink):
     """Base class for wizard links."""
-    def _perform_install(self, sel_package, ui_refresh):
+    def _perform_install(self, sel_package, ui_refresh_):
         if sel_package.is_active: # If it's currently installed, anneal
             title = _('Annealing…')
             do_it = self.idata.bain_anneal
@@ -140,7 +140,7 @@ class _Installer_AWizardLink(_NoMarkerLink):
             title = _('Installing…')
             do_it = self.idata.bain_install
         with balt.Progress(title) as progress:
-            do_it([sel_package.fn_key], ui_refresh, progress)
+            do_it([sel_package.fn_key], ui_refresh_, progress)
 
 class _Installer_AViewOrEditFile(_SingleInstallable):
     """Base class for View/Edit wizard/FOMOD links."""
@@ -171,57 +171,45 @@ class Installer_EditFomod(_Installer_AFomod, _Installer_AViewOrEditFile):
     @_with_busy_cursor
     def Execute(self): self._selected_info.open_fomod_conf()
 
-class _Installer_ARunFomod(_Installer_AFomod):
+class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
     """Base class for FOMOD links that need to run the FOMOD wizard."""
     _wants_install_checkbox: bool
 
-    @balt.conversation
-    def Execute(self):
-        ui_refresh = defaultdict(bool)
+    def _perform_action(self, ui_refresh_, progress):
         # Use list() since we're going to deselect packages
-        try:
-            for sel_package in list(self.iselected_infos()):
-                try:
-                    with BusyCursor():
-                        # Select the package we want to install - posts events
-                        # to set details and update GUI
-                        self.window.SelectItem(sel_package.fn_key)
-                        if sel_package.is_archive: ##: yak identical code in Installer_Wizard
-                            progress = balt.Progress(_('Extracting images…'),
-                                                     abort=True)
-                        else:
-                            progress = None
-                        try:
-                            fm_wizard = InstallerFomod(self.window,
-                                sel_package, self._wants_install_checkbox,
-                                progress)
-                        except CancelError:
-                            continue
-                        if not fm_wizard.validate_fomod():
-                            # Validation failed and the user chose not to continue
-                            return
-                        fm_wizard.ensureDisplayed()
-                    ret = fm_wizard.run_fomod()
-                    if ret.canceled:
+        for sel_package in list(self.iselected_infos()):
+            try:
+                with BusyCursor():
+                    # Select the package we want to install - posts events
+                    # to set details and update GUI
+                    self.window.SelectItem(sel_package.fn_key)
+                    try:
+                        fm_wizard = InstallerFomod(self.window,
+                            sel_package,self._wants_install_checkbox,
+                            balt.Progress)
+                    except CancelError:
                         continue
-                    # Now we're ready to execute the link's specific action
-                    self._execute_action(sel_package, ret, ui_refresh)
-                except XMLParsingError:
-                    deprint('Invalid FOMOD XML syntax:', traceback=True)
-                    self._showError(
-                        _("The ModuleConfig.xml file that comes with "
-                          "%(package_name)s has invalid syntax. Please report "
-                          "this to the mod author so it can be fixed "
-                          "properly. The BashBugDump.log in Wrye Bash's Mopy "
-                          "folder contains additional details, please include "
-                          "it in your report.") % {
-                            'package_name': sel_package.fn_key
-                        }, title=_('Invalid FOMOD XML Syntax'))
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
-            self.window.issue_warnings(warn_others=ui_refresh)
+                    if not fm_wizard.validate_fomod():
+                        # Validation failed and the user chose not to continue
+                        return
+                    fm_wizard.ensureDisplayed()
+                ret = fm_wizard.run_fomod()
+                if ret.canceled:
+                    continue
+                # Now we're ready to execute the link's specific action
+                self._execute_action(sel_package, ret, ui_refresh_)
+            except XMLParsingError:
+                deprint('Invalid FOMOD XML syntax:', traceback=True)
+                msg = _("The ModuleConfig.xml file that comes with "
+                    "%(package_name)s has invalid syntax. Please report "
+                    "this to the mod author so it can be fixed "
+                    "properly. The BashBugDump.log in Wrye Bash's Mopy "
+                    "folder contains additional details, please include "
+                    "it in your report.")
+                self._showError(msg % {'package_name': sel_package.fn_key},
+                                title=_('Invalid FOMOD XML Syntax'))
 
-    def _execute_action(self, sel_package, ret, ui_refresh):
+    def _execute_action(self, sel_package, ret, ui_refresh_):
         raise NotImplementedError
 
 class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
@@ -230,14 +218,14 @@ class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
     _help = _('Run the FOMOD installer and install the output.')
     _wants_install_checkbox = True
 
-    def _execute_action(self, sel_package, ret, ui_refresh):
+    def _execute_action(self, sel_package, ret, ui_refresh_):
         # Switch the GUI to FOMOD mode and pass selected files to BAIN
         idetails = self.iPanel.detailsPanel
         idetails.set_fomod_mode(fomod_enabled=True)
         sel_package.extras_dict['fomod_dict_v2'] = ret.install_files
         idetails.refreshCurrent(sel_package)
         if ret.should_install:
-            self._perform_install(sel_package, ui_refresh)
+            self._perform_install(sel_package, ui_refresh_)
 
 class Installer_CaptureFomodOutput(_Installer_ARunFomod):
     _text = _dialog_title = _('Capture FOMOD Output…')
@@ -247,7 +235,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
     # would have the same behavior as hitting 'Cancel' for this link
     _wants_install_checkbox = False
 
-    def _execute_action(self, sel_package, ret, ui_refresh):
+    def _execute_action(self, sel_package, ret, ui_refresh_):
         working_on_archive = sel_package.is_archive
         proj_default = (sel_package.abs_path.sbody if working_on_archive
                         else sel_package.fn_key)
@@ -299,7 +287,7 @@ class Installer_EditWizard(_Installer_AViewOrEditFile):
     @_with_busy_cursor
     def Execute(self): self._selected_info.open_wizard()
 
-class Installer_Wizard(_Installer_AWizardLink):
+class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
     """Runs the install wizard to select sub-packages and filter plugins."""
     def __init__(self, *, auto_wizard):
         super(Installer_Wizard, self).__init__()
@@ -313,67 +301,55 @@ class Installer_Wizard(_Installer_AWizardLink):
         return super(Installer_Wizard, self)._enable() and all(
             i.hasWizard for i in self.iselected_infos())
 
-    @balt.conversation
-    def Execute(self):
+    def _perform_action(self, ui_refresh_, progress):
         ##: Investigate why we have so many refreshCurrents in here.
         # Installer_RunFomod has just one!
-        ui_refresh = defaultdict(bool)
         idetails = self.iPanel.detailsPanel
-        try:
-            # Use list() since we're going to deselect packages
-            for sel_package in list(self.iselected_infos()):
-                with BusyCursor():
-                    # Select the package we want to install - posts events to
-                    # set details and update GUI
-                    self.window.SelectItem(sel_package.fn_key)
-                    # Switch away from FOMOD mode, the wizard may need plugin
-                    # data from BAIN
-                    idetails.set_fomod_mode(fomod_enabled=False)
-                    idetails.refreshCurrent(sel_package)
-                    try:
-                        if sel_package.is_archive: ##: yak identical code in Installer_RunFomod
-                            progress = balt.Progress(_('Extracting images…'),
-                                                     abort=True)
-                        else:
-                            progress = None
-                        wizard = InstallerWizard(self.window, sel_package,
-                                                 self._auto, progress)
-                    except CancelError:
-                        return
-                    wizard.ensureDisplayed()
-                ret = wizard.Run()
-                if ret.canceled:
-                    if isinstance(ret.canceled, str):
-                        self._showWarning(ret.canceled)
-                    idetails.refreshCurrent(sel_package)
-                    continue
-                sel_package.resetAllEspmNames()
-                for index in range(len(sel_package.subNames[1:])):
-                    select = (sel_package.subNames[index + 1] in
-                              ret.select_sub_packages)
-                    idetails.gSubList.lb_check_at_index(index, select)
-                    sel_package.subActives[index + 1] = select
+        # Use list() since we're going to deselect packages
+        for sel_package in list(self.iselected_infos()):
+            with BusyCursor():
+                # Select the package we want to install - posts events to
+                # set details and update GUI
+                self.window.SelectItem(sel_package.fn_key)
+                # Switch away from FOMOD mode, the wizard may need plugin
+                # data from BAIN
+                idetails.set_fomod_mode(fomod_enabled=False)
                 idetails.refreshCurrent(sel_package)
-                # Check the plugins that were selected by the wizard
-                espm_fns = list(map(FName,
-                    idetails.gEspmList.lb_get_str_items()))
-                sel_package.espmNots = set()
-                for index, espm in enumerate(idetails.espm_checklist_fns):
-                    do_check = (espm_fns[index] in ret.select_plugins
-                                or bool(sel_package.espmNots.add(espm)))
-                    idetails.gEspmList.lb_check_at_index(index, do_check)
+                try:
+                    wizard = InstallerWizard(self.window, sel_package,
+                                             self._auto, balt.Progress)
+                except CancelError:
+                    return
+                wizard.ensureDisplayed()
+            ret = wizard.Run()
+            if ret.canceled:
+                if isinstance(ret.canceled, str):
+                    self._showWarning(ret.canceled)
                 idetails.refreshCurrent(sel_package)
-                #Rename the plugins that need renaming
-                for oldName, renamed in ret.rename_plugins.items():
-                    sel_package.setEspmName(oldName, renamed)
-                idetails.refreshCurrent(sel_package)
-                #Install if necessary
-                if ret.should_install:
-                    self._perform_install(sel_package, ui_refresh)
-                self._apply_tweaks(sel_package, ret, ui_refresh)
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
-            self.window.issue_warnings(warn_others=ui_refresh)
+                continue
+            sel_package.resetAllEspmNames()
+            for index in range(len(sel_package.subNames[1:])):
+                select = (sel_package.subNames[index + 1] in
+                          ret.select_sub_packages)
+                idetails.gSubList.lb_check_at_index(index, select)
+                sel_package.subActives[index + 1] = select
+            idetails.refreshCurrent(sel_package)
+            # Check the plugins that were selected by the wizard
+            espm_fns = list(map(FName, idetails.gEspmList.lb_get_str_items()))
+            sel_package.espmNots = set()
+            for index, espm in enumerate(idetails.espm_checklist_fns):
+                do_check = (espm_fns[index] in ret.select_plugins
+                            or bool(sel_package.espmNots.add(espm)))
+                idetails.gEspmList.lb_check_at_index(index, do_check)
+            idetails.refreshCurrent(sel_package)
+            #Rename the plugins that need renaming
+            for oldName, renamed in ret.rename_plugins.items():
+                sel_package.setEspmName(oldName, renamed)
+            idetails.refreshCurrent(sel_package)
+            #Install if necessary
+            if ret.should_install:
+                self._perform_install(sel_package, ui_refresh_)
+            self._apply_tweaks(sel_package, ret, ui_refresh_)
 
     def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
@@ -450,25 +426,17 @@ class Installer_OpenReadme(_SingleInstallable):
     def Execute(self): self._selected_info.open_readme()
 
 #------------------------------------------------------------------------------
-class Installer_Anneal(_NoMarkerLink):
+class Installer_Anneal(Installer_Op, _NoMarkerLink):
     """Anneal all packages."""
     _text = _('Anneal')
     _help = _('Install any missing files (for active packages) and update '
               'the contents of the %(data_folder)s folder to account for '
               'install order and configuration changes in the selected '
               'packages.') % {'data_folder': bush.game.mods_dir}
+    _prog_args = _('Annealing…'),
 
-    def Execute(self):
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Annealing…')) as progress:
-                self.idata.bain_anneal(self._installables, ui_refresh,
-                                       progress)
-        except (CancelError,SkipError):
-            pass
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
-            self.window.issue_warnings(warn_others=ui_refresh)
+    def _perform_action(self, ui_refresh_, progress):
+        self.idata.bain_anneal(self._installables, ui_refresh_, progress)
 
 class Installer_Duplicate(_SingleInstallable):
     """Duplicate selected Installer."""
@@ -552,7 +520,7 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
             self.idata.refresh_n()
             self.window.RefreshUI()
 
-class Installer_Install(_NoMarkerLink):
+class Installer_Install(Installer_Op, _NoMarkerLink):
     """Install selected packages."""
     mode_title = {'DEFAULT': _('Install Configured'),
                   'LAST': _('Install Last'),
@@ -564,6 +532,7 @@ class Installer_Install(_NoMarkerLink):
                            'mismatched files.'),
                  'MISSING': _('Install all missing files from the selected '
                               'packages. Never overwrites files.')}
+    _prog_args = _('Installing…'),
 
     def __init__(self,mode=u'DEFAULT'):
         super().__init__()
@@ -573,26 +542,22 @@ class Installer_Install(_NoMarkerLink):
 
     @balt.conversation
     def Execute(self):
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Installing…')) as progress:
-                last = (self.mode == 'LAST')
-                override = (self.mode != 'MISSING')
-                try:
-                    new_tweaks = self.idata.bain_install(self._installables,
-                        ui_refresh, progress, last, override)
-                except (CancelError, SkipError):
-                    return
-                except StateError as e:
-                    self._showError(f'{e}')
-                    return
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+        if (new_tweaks := super().Execute()) is None: return
         # No error occurred and we didn't cancel or skip, but let RefreshUI run
         # first so it can update checkbox colors
         self._warn_nothing_installed()
         self._warn_mismatched_ini_tweaks_created(new_tweaks)
-        self.window.issue_warnings(warn_others=ui_refresh)
+
+    def _perform_action(self, ui_refresh_, progress):
+        last = (self.mode == 'LAST')
+        override = (self.mode != 'MISSING')
+        try:
+            return self.idata.bain_install(self._installables, ui_refresh_,
+                                           progress, last, override)
+        except (CancelError, SkipError):
+            return
+        except StateError as e:
+            self._showError(f'{e}')
 
     def _warn_mismatched_ini_tweaks_created(self, new_tweaks):
         if new_tweaks:
@@ -878,25 +843,16 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
         self._selected_info.skipVoices ^= True
         super(Installer_SkipVoices, self).Execute()
 
-class Installer_Uninstall(_NoMarkerLink):
+class Installer_Uninstall(Installer_Op, _NoMarkerLink):
     """Uninstall selected Installers."""
     _text = _('Uninstall')
     _help = _('Uninstall the selected packages, removing all their matched '
               'files from the %(data_folder)s folder.') % {
         'data_folder': bush.game.mods_dir}
+    _prog_args = _('Uninstalling…'),
 
-    @balt.conversation
-    def Execute(self):
-        """Uninstall selected Installers."""
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Uninstalling…')) as progress:
-                self.idata.bain_uninstall(self._installables, ui_refresh,
-                                          progress)
-        except (CancelError,SkipError): # now where could this be raised from ?
-            pass
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+    def _perform_action(self, ui_refresh_, progress):
+        self.idata.bain_uninstall(self._installables, ui_refresh_, progress)
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""

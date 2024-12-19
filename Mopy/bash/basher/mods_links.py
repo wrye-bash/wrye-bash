@@ -80,7 +80,7 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
 class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
     def _refresh_mods_ui(self):
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
 
     def _select_exact(self, mods):
         lo_warn_msg = bosh.modInfos.lo_activate_exact(mods)
@@ -277,7 +277,7 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
         ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
         # not any of the modding ESMs. Maybe we should enforce that those
         # modding ESMs are never active and drop this refresh_others?
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
@@ -386,7 +386,7 @@ class Mods_AutoGhost(BoolLink):
                 mod) and modInfo.get_table_prop('allowGhosting', True)
             if modInfo.setGhost(modGhost):
                 flipped.append(mod)
-        self.window.RefreshUI(redraw=flipped)
+        self.refresh_sel(flipped)
 
 class Mods_AutoESLFlagBP(BoolLink):
     """Automatically flags built Bashed Patches as ESLs. This is safe, since
@@ -467,7 +467,7 @@ class Mods_CrcRefresh(ItemLink):
                               'cached_crc_val': f'{v[1]:08X}',
                               'real_crc_val': f'{v[0]:08X}'}
                  for k, v in mismatched.items()])
-            self.window.RefreshUI(redraw=mismatched)
+            self.refresh_sel(mismatched)
         else: message += _('No stale cached CRC values detected.')
         self._showWryeLog(message)
 
@@ -539,7 +539,7 @@ class Mods_ImportBashTags(_AMods_BashTags):
                               'bash tags CSV export.'),
                 title=_('Import Bash Tags - Invalid CSV'))
             return
-        self.window.RefreshUI(redraw=self.plugins_imported)
+        self.refresh_sel(self.plugins_imported)
         self._showInfo(_('Imported tags for %(total_imported)d plugins.') % {
             'total_imported': len(self.plugins_imported)},
             title=_('Import Bash Tags - Done'))
@@ -582,7 +582,7 @@ class Mods_ClearManualBashTags(ItemLink):
                 pl_reset.append(pl_name)
                 p.set_auto_tagged(True)
                 p.reloadBashTags()
-        self.window.RefreshUI(redraw=pl_reset)
+        self.refresh_sel(pl_reset)
         self._showInfo(_('Cleared tags from %(total_cleared)d plugins.') % {
             'total_cleared': len(pl_reset)},
             title=_('Clear Manual Bash Tags - Done'))

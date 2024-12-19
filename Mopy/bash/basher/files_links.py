@@ -76,9 +76,9 @@ class Files_Unhide(ItemLink):
             return
         moved = self._data_store.move_infos(srcFiles, destFiles,
             self.window, balt.Link.Frame)
-        if moved:
-            self.window.RefreshUI( # pick one at random to show details for
-                detail_item=next(iter(moved)), refresh_others=Store.SAVES.DO())
+        if moved: # pick one at random to show details for
+            self.window.propagate_refresh(Store.SAVES.DO(),
+                detail_item=next(iter(moved)))
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -138,8 +138,8 @@ class File_Duplicate(ItemLink):
             rinf = RefrIn.from_tabled_infos(
                 {k: pairs[v] for k, v in mod_previous.items()})
             fileInfos.refresh(rinf, insert_after=mod_previous)
-            self.window.RefreshUI(redraw=mod_previous,
-                detail_item=next(reversed(mod_previous)))
+            self.refresh_sel(mod_previous,
+                             detail_item=next(reversed(mod_previous)))
             self.window.SelectItemsNoCallback(mod_previous)
 
     def _disallow_copy(self, fileInfo):
@@ -222,7 +222,7 @@ class _RevertBackup(OneItemLink):
                     self._data_store.refresh(RefrIn.from_tabled_infos({
                         sel_file: sel_inf})) # re-add all attrs
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[sel_file])
+        self.refresh_sel()
 
     def _ask_revert(self):
         msg = _('Revert %(target_file_name)s to backup dated %(backup_date)s?')
@@ -254,7 +254,7 @@ class File_Redate(ItemLink):
             user_timestamp += 60.0
         self._data_store.refresh(refresh_infos=False,
                                  unlock_lo=not bush.game.using_txt_file)
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):

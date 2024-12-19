@@ -49,7 +49,7 @@ from dataclasses import dataclass, field
 
 from . import bass, bolt, exception
 from .games_lo import FixInfo, INIGame, LoGame, LoList, LoTuple
-from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
+from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName, RefrData
 
 # LoGame instance providing load order operations API
 _lo_handler: LoGame | None = None
@@ -165,6 +165,10 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
 
     def lo_changed(self):
         return self.added or self.missing or self.reordered
+
+    def to_rdata(self):
+        return RefrData(self.reordered | self.act_index_change |
+                        self.active_flips)
 
     def __str__(self):
         st = []

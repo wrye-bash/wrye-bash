@@ -31,7 +31,7 @@ from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
     MonitorExternalInstallationEditor, AImportOrderParser
 from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
-    SeparatorLink
+    SeparatorLink, Installer_Op
 from ..gui import copy_text_to_clipboard, askYes
 
 __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
@@ -138,7 +138,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         try:
             self.idata.bain_install([pr_path], ui_refresh, override=False)
         finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.propagate_refresh(ui_refresh)
         # Select new installer
         self.window.SelectLast()
 
@@ -161,41 +161,35 @@ class Installers_ListPackages(Installers_Link):
         self._showLog(package_list, title=_('BAIN Packages'))
 
 #------------------------------------------------------------------------------
-class Installers_AnnealAll(Installers_Link):
+class Installers_AnnealAll(Installer_Op, Installers_Link):
     """Anneal all packages."""
     _text = _('Anneal All')
     _help = _('Install any missing files (for active packages) and update '
               'the contents of the %(data_folder)s folder to account for all '
               'install order and configuration changes.') % {
         'data_folder': bush.game.mods_dir}
+    _prog_args = _('Annealing…'),
 
-    @balt.conversation
-    def Execute(self):
+    def _perform_action(self, ui_refresh_, progress):
         """Anneal all packages."""
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Annealing…')) as progress:
-                self.idata.bain_anneal(None, ui_refresh, progress=progress)
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
-            self.window.issue_warnings(warn_others=ui_refresh)
+        self.idata.bain_anneal(None, ui_refresh_, progress=progress)
 
 #------------------------------------------------------------------------------
-class Installers_UninstallAllPackages(Installers_Link):
+class Installers_UninstallAllPackages(Installer_Op, Installers_Link):
     """Uninstall all packages."""
     _text = _('Uninstall All Packages')
     _help = _('Uninstall all files from all installed packages.')
+    _prog_args = _('Uninstalling…'),
 
     @balt.conversation
     def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_('Really uninstall all packages?')): return
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Uninstalling…')) as progress:
-                self.idata.bain_uninstall_all(ui_refresh, progress=progress)
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+        super().Execute()
+
+    def _perform_action(self, ui_refresh_, progress):
+        """Uninstall all present packages."""
+        self.idata.bain_uninstall(None, ui_refresh_, progress)
 
 #------------------------------------------------------------------------------
 class _AInstallers_Refresh(AppendableLink, Installers_Link):
@@ -231,7 +225,7 @@ class Installers_RefreshData(_AInstallers_Refresh):
               'directories.') % {'data_folder': bush.game.mods_dir}
 
 #------------------------------------------------------------------------------
-class Installers_CleanData(Installers_Link):
+class Installers_CleanData(Installer_Op, Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
     files. For safety just moved to Game Mods/Bash Installers/Bash/Data
     Folder Contents (date/time)."""
@@ -260,17 +254,20 @@ class Installers_CleanData(Installers_Link):
                            '%(data_folder)s folder.') % mdir_fmt,
                 title=_('Clean Data - %(data_folder)s is Clean') % mdir_fmt)
             return
-        ed_ok, ed_unknown = CleanDataEditor.display_dialog(self.window,
+        ed_ok, self.__ed_unknown = CleanDataEditor.display_dialog(self.window,
             unknown_files=all_unknown_files)
-        if not ed_ok or not ed_unknown:
+        if not ed_ok or not self.__ed_unknown:
             return # Aborted by user or nothing left to clean, cancel
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Cleaning %(data_folder)s '
-                                 'contents…') % mdir_fmt, f'\n{" " * 65}'):
-                self.idata.clean_data_dir(ed_unknown, ui_refresh)
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+        super().Execute()
+
+    @property
+    def _prog_args(self):
+        return _('Cleaning %(data_folder)s contents…') % {
+            'data_folder': bush.game.mods_dir}, f'\n{" " * 65}'
+
+    def _perform_action(self, ui_refresh_, progress):
+        """Clean the data directory."""
+        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_, progress)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
