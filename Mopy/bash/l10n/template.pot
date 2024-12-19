@@ -6829,8 +6829,8 @@ msgstr ""
 msgid "Redoes a load order or active plugins change."
 msgstr ""
 
-#: Mopy/bash/basher/mods_links.py:634
-msgid "Export..."
+#: Mopy/bash/basher/mods_links.py:634 Mopy/bash/basher/settings_dialog.py:1362
+msgid "Export…"
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:635
@@ -6876,8 +6876,8 @@ msgstr ""
 msgid "Successfully imported a load order from %(source_path)s."
 msgstr ""
 
-#: Mopy/bash/basher/mods_links.py:708
-msgid "Import..."
+#: Mopy/bash/basher/mods_links.py:708 Mopy/bash/basher/settings_dialog.py:1357
+msgid "Import…"
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:709
@@ -6893,7 +6893,7 @@ msgid "Import Load Order - Warning"
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:716
-msgid "Note that this command is not compatible with exports made in OBMM. They will not cause an error, but the result will be wrong. Use the dedicated 'Import From OBMM...' command to handle such exports."
+msgid "Note that this command is not compatible with exports made in OBMM. They will not cause an error, but the result will be wrong. Use the dedicated 'Import From OBMM…' command to handle such exports."
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:722
@@ -6909,7 +6909,7 @@ msgid "Import Load Order - Error"
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:772
-msgid "Import From OBMM..."
+msgid "Import From OBMM…"
 msgstr ""
 
 #: Mopy/bash/basher/mods_links.py:773
@@ -8236,16 +8236,8 @@ msgstr ""
 msgid "Mark the selected binary as untrusted."
 msgstr ""
 
-#: Mopy/bash/basher/settings_dialog.py:1357
-msgid "Import…"
-msgstr ""
-
 #: Mopy/bash/basher/settings_dialog.py:1358
 msgid "Import list of allowed/disallowed binaries from a .txt file. This also allows more fine-grained control over trusted binary versions."
-msgstr ""
-
-#: Mopy/bash/basher/settings_dialog.py:1362
-msgid "Export…"
 msgstr ""
 
 #: Mopy/bash/basher/settings_dialog.py:1363
