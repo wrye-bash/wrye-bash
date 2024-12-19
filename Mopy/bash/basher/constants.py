@@ -163,12 +163,12 @@ __all_mkeys = { # we could use plugin_type_text for the 'color_description'
         'flag on the Mods Tab.')
     ),
     'mods.text.esi': (_('Medium Plugin'), _mod_save_tabs + _(
-        'This is the text color used for Medium plugins on the Mods Tabb, '
+        'This is the text color used for Medium plugins on the Mods Tab, '
         'and in the Masters info on both the Mods Tab and Saves Tab.')
     ),
     'mods.text.esim': (_('Medium Master'), _mod_save_tabs + _(
         'This is the text color used for Medium plugins with a master '
-        'flag on the Mods Tabb, and in the Masters info on both the Mods '
+        'flag on the Mods Tab, and in the Masters info on both the Mods '
         'Tab and Saves Tab.')
     ),
     'mods.text.noMerge': (_("'NoMerge' Plugin"), _mod_tab + _(
