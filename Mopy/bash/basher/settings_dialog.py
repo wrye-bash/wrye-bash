@@ -449,7 +449,7 @@ class LanguagePage(_AScrollablePage):
         # use the 'de_DENEW' thing anymore, but people may still have those
         # files sitting around in their l10n dirs, so keep filtering them
         all_langs = [f'{b}' for f in bass.dirs['l10n'].ilist()
-                     if f.fn_ext == '.mo'
+                     if f.fn_ext in ('.mo', '.po')
                      and (b := f.fn_body)[-3:].lower() != 'new']
         # Insert English since there's no localization file for that
         if 'en_US' not in all_langs:

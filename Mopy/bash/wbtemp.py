@@ -108,7 +108,7 @@ def _get_global_dir() -> PPath:
         + '\n\n' + '\n'.join(wrap(
             _('If all instances of Wrye Bash are closed and you still see '
               'directories and/or files in here, you can freely delete '
-              'them.'))))
+              'them.'))) + '\n')
         # Unconditionally write out the readme since the language or readme
         # contents may have changed since it was last written - we have no way
         # to tell

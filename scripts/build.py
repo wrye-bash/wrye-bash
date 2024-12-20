@@ -70,6 +70,8 @@ if _NOT_WINDOWS:
 else:
     _EXE_7Z = MOPY_PATH / 'bash' / 'compiled' / '7z.exe'
 
+# These have to be kept in sync with excludes in macros.nsh (search for
+# 'Excludes' in that file)
 _IGNORES_MANUAL = {
     '*.log',
     '*.pyc',
