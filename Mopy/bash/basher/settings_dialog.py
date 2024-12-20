@@ -428,17 +428,18 @@ class _LangDict(dict):
 class LanguagePage(_AScrollablePage):
     """Change the language that the GUI is displayed in."""
     _internal_to_localized = _LangDict({
-        'de_DE': _('German') + ' (Deutsch)',
-        'en_US': _('American English') + ' (American English)',
-        'it_IT': _('Italian') + ' (italiano)',
-        'ja_JP': _('Japanese') + ' (日本語)',
-        'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
-        'ru_RU': _('Russian') + ' (Русский язык)',
-        'sv_SE': _('Swedish') + ' (svenska)',
-        'tr_TR': _('Turkish') + ' (Türkçe)',
-        'uk_UA': _('Ukrainian') + ' (українська мова)',
-        'zh_CN': _('Chinese (Simplified)') + ' (简体中文)',
-        'zh_TW': _('Chinese (Traditional)') + ' (繁体中文)',
+        'de_DE': f"{_('German')} (Deutsch)",
+        'en_US': f"{_('American English')} (American English)",
+        'it_IT': f"{_('Italian')} (italiano)",
+        'ja_JP': f"{_('Japanese')} (日本語)",
+        'pt_BR': f"{_('Brazilian Portuguese')} (português brasileiro)",
+        'ru_RU': f"{_('Russian')} (Русский язык)",
+        'sv_SE': f"{_('Swedish')} (svenska)",
+        'ta':    f"{_('Tamil')} (தமிழ்)",
+        'tr_TR': f"{_('Turkish')} (Türkçe)",
+        'uk_UA': f"{_('Ukrainian')} (українська мова)",
+        'zh_CN': f"{_('Chinese (Simplified)')} (简体中文)",
+        'zh_TW': f"{_('Chinese (Traditional)')} (繁体中文)",
     })
     _localized_to_internal = _LangDict(reverse_dict(_internal_to_localized))
 
@@ -1549,9 +1550,8 @@ _page_descriptions = {
           u'colors and some GUI options.'),
     _(u'Appearance') + u'/' + _(u'Colors'):
         _(u'Change colors of various GUI components.'),
-    _(u'Appearance') + u'/' + _(u'Language'):
-        _(u'Change the language that Wrye Bash is displayed in and manage '
-          u'localizations.'),
+    _('Appearance') + '/' + _('Language'):
+        _('Change the language that Wrye Bash is displayed in.'),
     _('Appearance') + '/' + _('Miscellaneous'):
         _('Change various miscellaneous appearance settings.'),
     _(u'Appearance') + u'/' + _(u'Status Bar'):
