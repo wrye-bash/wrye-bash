@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,6 @@ import io
 import os.path
 import shutil
 import subprocess
-import sys
 from datetime import date
 from functools import partial
 from html import escape as html_escape
@@ -41,8 +40,8 @@ from helpers.html_gen import a, bb_list, closed_issue, h3, markdown_escape, \
 from helpers.utils import CHANGELOGS_PATH, DEFAULT_AUTHORS, \
     DEFAULT_MILESTONE_TITLE, out_path
 
-if sys.version_info[0] < 3:
-    raise RuntimeError('Python 3 is required for running this script')
+# TODO(inf) Update for our modern script infrastructure (utils.run_script and
+#  loggers)
 
 _CHANGELOG_TITLE_SIZE = 5
 _PROMPT = 'PROMPT'

@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -17,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,59 +24,77 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
+from pathlib import Path
 from urllib.request import urlopen
 
 import pygit2
 
 # Reusable path definitions
-SCRIPTS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD_LOGFILE = os.path.join(SCRIPTS_PATH, 'build.log')
-TAGINFO = os.path.join(SCRIPTS_PATH, 'taginfo.txt')
-WBSA_PATH = os.path.join(SCRIPTS_PATH, 'build', 'standalone')
-DIST_PATH = os.path.join(SCRIPTS_PATH, 'dist')
-ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, os.pardir))
-MOPY_PATH = os.path.join(ROOT_PATH, 'Mopy')
-APPS_PATH = os.path.join(MOPY_PATH, 'Apps')
-NSIS_PATH = os.path.join(SCRIPTS_PATH, 'build', 'nsis')
-TESTS_PATH = os.path.join(MOPY_PATH, 'bash', 'tests')
-TAGLISTS_PATH = os.path.join(MOPY_PATH, 'taglists')
-IDEA_PATH = os.path.join(ROOT_PATH, '.idea')
-VSCODE_PATH = os.path.join(ROOT_PATH, '.vscode')
-OUT_PATH = os.path.join(SCRIPTS_PATH, 'out')
-CHANGELOGS_PATH = os.path.join(SCRIPTS_PATH, 'changelogs')
-WB_STATUS_PATH = os.path.abspath(os.path.join(
-    ROOT_PATH, os.pardir, 'wb_status'))
+SCRIPTS_PATH = Path(__file__).absolute().parent.parent
+ROOT_PATH = SCRIPTS_PATH.parent
+WBSA_PATH = SCRIPTS_PATH / 'build' / 'standalone'
+DIST_PATH = SCRIPTS_PATH / 'dist'
+MOPY_PATH = ROOT_PATH / 'Mopy'
+APPS_PATH = MOPY_PATH / 'Apps'
+NSIS_PATH = SCRIPTS_PATH / 'build' / 'nsis'
+LOG_PATH = SCRIPTS_PATH / 'log'
+L10N_PATH = MOPY_PATH / 'bash' / 'l10n'
+TAGLISTS_PATH = MOPY_PATH / 'taglists'
+OUT_PATH = SCRIPTS_PATH / 'out'
+CHANGELOGS_PATH = SCRIPTS_PATH / 'changelogs'
+WB_STATUS_PATH = ROOT_PATH.parent / 'wb_status'
+TAGINFO = SCRIPTS_PATH / 'taginfo.txt'
 
 # Other constants
 DEFAULT_MILESTONE_TITLE = 'Bug fixes and enhancements'
 DEFAULT_AUTHORS = 'Various community members'
 ALL_ISSUES = 'all'
 
+class _StreamRedirector:
+    """Useful for redirecting the vendored _i18n scripts' print statements to a
+    proper logger."""
+    def __init__(self, logger: logging.Logger, level=logging.INFO):
+       self.logger = logger
+       self.level = level
+       self.linebuf = ''
+
+    def write(self, str_buffer: str):
+       for l in str_buffer.rstrip().splitlines():
+          self.logger.log(self.level, l.rstrip())
+
+    def flush(self):
+        pass
+
 # verbosity:
-#  quiet (warnings and above)
-#  regular (info and above)
+#  quiet (WARNING and above)
+#  regular (INFO and above)
 #  verbose (all messages)
-def setup_log(logger, verbosity=logging.INFO, logfile=None):
+def setup_log(logger, args):
     logger.setLevel(logging.DEBUG)
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_formatter = logging.Formatter('%(message)s')
     stdout_handler.setFormatter(stdout_formatter)
-    stdout_handler.setLevel(verbosity)
+    stdout_handler.setLevel(args.verbosity)
     logger.addHandler(stdout_handler)
-    if logfile is not None:
-        file_handler = logging.FileHandler(logfile)
+    if (chosen_logfile := args.logfile) is not None:
+        os.makedirs(os.path.dirname(chosen_logfile), exist_ok=True)
+        file_handler = logging.FileHandler(chosen_logfile)
         file_formatter = logging.Formatter('%(levelname)s: %(message)s')
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
+        sys.stdout = _StreamRedirector(logger)
+        sys.stderr = _StreamRedirector(logger, logging.WARNING)
 
 # sets up common parser options
-def setup_common_parser(parser):
+def setup_common_parser(parser: argparse.ArgumentParser, logfile: Path):
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
         '-v',
@@ -95,7 +112,47 @@ def setup_common_parser(parser):
         dest='verbosity',
         help='Do not print any output to console.',
     )
+    try:
+        nicer_logfile = logfile.relative_to(Path.cwd())
+    except ValueError:
+        nicer_logfile = logfile # can't be made relative
+    parser.add_argument(
+        '-l',
+        '--logfile',
+        default=logfile,
+        help=f'Where to store the log. [default: {nicer_logfile}]',
+    )
     parser.set_defaults(verbosity=logging.INFO)
+
+def run_script(main, script_doc: str, logfile: Path, *, custom_setup=None):
+    """The main entry point for Wrye Bash's modern script API. Sets up an
+    argument parser, logging, etc. and calls the main method.
+
+    :param main: The main method to call.
+    :param script_doc: Set to your script's __doc__.
+    :param logfile: The default path to the script's log file.
+    :param custom_setup: If not None, this will be called with the created
+        ArgumentParser instance as a single parameter. This gives you a chance
+        to add custom arguments."""
+    argparser = argparse.ArgumentParser(description=script_doc,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    setup_common_parser(argparser, logfile)
+    if custom_setup:
+        custom_setup(argparser)
+    parsed_args = argparser.parse_args()
+    rm(parsed_args.logfile)
+    main(parsed_args)
+
+def with_args(args=None, **kwargs):
+    """Hacky way to pass custom arguments to another script. In the future,
+    scripts for which this is needed should be refactored to export an API
+    instead that other scripts can use."""
+    class _CustomArgs:
+        def __getattr__(self, item):
+            if item in kwargs:
+                return kwargs[item]
+            return getattr(args, item)
+    return _CustomArgs()
 
 def convert_bytes(size_bytes):
     if size_bytes == 0:
@@ -136,7 +193,7 @@ def run_subprocess(command, logger, **kwargs):
         universal_newlines=True,
         **kwargs
     )
-    logger.debug(f'Running command: {u" ".join(command)}')
+    logger.debug(f'Running command: {" ".join(map(str, command))}')
     stdout, _stderr = sp.communicate()
     if sp.returncode != 0:
         logger.error(stdout)
@@ -157,7 +214,8 @@ def get_repo_sig(repo):
             'uses.',
             'You can configure them as follows:',
             '   git config --global user.name "Your Name"',
-            '   git config --global user.email "you@example.com"']))
+            '   git config --global user.email "you@example.com"']),
+            file=sys.stderr)
         sys.exit(1)
 
 def commit_changes(*, changed_paths: list[os.PathLike | str], commit_msg: str,
@@ -183,6 +241,89 @@ def out_path(dir_=OUT_PATH, name='out.txt'):
     :param name: a filename"""
     os.makedirs(dir_, exist_ok=True)
     return os.path.join(dir_, name)
+
+def fatal_error(msg: str, *, exit_code: int, log_traceback=False,
+        logger: logging.Logger):
+    """Print an ERROR level message and optionally print the current
+    exception's traceback, then exit with the provided exit code.
+
+    :param logger: The logger to use for printing.
+    :param msg: The message to print.
+    :param exit_code: The exit code to terminate the script with.
+    :param log_traceback: If True, log the current exception's traceback."""
+    logger.error(msg, exc_info=log_traceback)
+    sys.exit(exit_code)
+
+def open_wb_file(*parts, logger: logging.Logger):
+    """Open a Wrye Bash source code file relative to the Mopy folder in
+    read-write mode. Note that the file *must* have UTF-8 encoding!"""
+    try:
+        return open(os.path.join(MOPY_PATH, *parts), 'r+', encoding='utf-8')
+    except FileNotFoundError:
+        fatal_error(f'File {os.path.join(*parts)} not found, this script '
+                    f'probably needs to be updated',
+            exit_code=100, logger=logger)
+
+def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback,
+        logger: logging.Logger, allow_equal_lines=False):
+    """Edit a Wrye Bash source code file relative to the Mopy folder. Look for
+    lines matching trigger_regex and replace them with the result of calling
+    edit_callback (with the resulting re.Match object passed to edit_callback
+    as an argument)."""
+    new_wbpy_lines = []
+    with open_wb_file(*parts, logger=logger) as wbpy:
+        wbpy_lines = wbpy.read().splitlines()
+        for wbpy_line in wbpy_lines:
+            if wbpy_ma := trigger_regex.match(wbpy_line):
+                new_wbpy_lines.append(edit_callback(wbpy_ma))
+            else:
+                new_wbpy_lines.append(wbpy_line)
+        if wbpy_lines == new_wbpy_lines and not allow_equal_lines:
+            fatal_error(f'Nothing edited in file {os.path.join(*parts)}, this '
+                        f'script probably needs to be updated',
+                exit_code=101, logger=logger)
+        wbpy.seek(0, os.SEEK_SET)
+        wbpy.truncate(0)
+        wbpy.write('\n'.join(new_wbpy_lines) + '\n')
+
+def edit_bass_version(new_ver: str, logger: logging.Logger):
+    """Change the AppVersion in bass.py to the specified version."""
+    def edit_bass(bass_ma):
+        return f"AppVersion = '{new_ver}'{bass_ma.group(1)}"
+    edit_wb_file('bash', 'bass.py',
+        trigger_regex=re.compile(r"^AppVersion = '\d+(?:\.\d+)?'(.*)$"),
+        edit_callback=edit_bass, logger=logger,
+        # allow_equal_lines because production versions won't change the file
+        allow_equal_lines=True)
+
+def rm(node: str | os.PathLike):
+    """Removes a file or directory if it exists"""
+    if os.path.isfile(node):
+        os.remove(node)
+    elif os.path.isdir(node):
+        shutil.rmtree(node)
+
+def mv(src: str | os.PathLike, dst: str | os.PathLike):
+    """Moves a file or directory if it exists"""
+    if os.path.exists(src):
+        shutil.move(src, dst)
+
+def cp(src: str | os.PathLike, dst: str | os.PathLike):
+    """Moves a file to a destination, creating the target
+       directory as needed."""
+    if os.path.isdir(src):
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+    else:
+        # file
+        dstdir = os.path.dirname(dst)
+        if not os.path.exists(dstdir):
+            os.makedirs(dstdir)
+        shutil.copy2(src, dst)
+
+def mk_logfile(dunder_file: str):
+    log_fname = os.path.splitext(os.path.basename(dunder_file))[0] + '.log'
+    return LOG_PATH / log_fname
 
 # Copy-pasted from bolt.py
 # We need to split every time we hit a new 'type' of component. So greedily

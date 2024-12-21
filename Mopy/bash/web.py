@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -61,7 +61,7 @@ except ImportError as i_err:
     raise ImportError('requests missing, web API unavailable') from i_err
 
 # Constants -------------------------------------------------------------------
-_USER_AGENT = (f'WryeBash/{bass.AppVersion} ({platform.platform()}; '
+_USER_AGENT = (f'WryeBash/{bass.AppVersion} ({platform.system()}; '
                f'{platform.architecture()[0]}) '
                f'{platform.python_implementation()}/'
                f'{platform.python_version()}')
@@ -77,8 +77,8 @@ class _RestOp(Enum):
 
 # Public API ------------------------------------------------------------------
 class ARestHandler:
-    """An abstract base class for APIs that need to use ."""
-    # The base URL for the REST API you're using. Set in
+    """An abstract base class for web APIs that use REST-like semantics."""
+    # The base URL for the REST API you're using. Set statically in subclasses
     _base_url: str
 
     def __init__(self, extra_headers: dict[str, str] | None = None):

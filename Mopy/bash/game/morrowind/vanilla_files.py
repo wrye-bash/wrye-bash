@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -7221,6 +7221,7 @@ vanilla_files = {f.replace('\\', os.sep) for f in {
     'Splash\\Splash_Siltstriker.tga',
     'Splash\\Splash_Skeleton.tga',
     'Splash\\Splash_SphereCenturion.tga',
+    'Video\\bethesda logo.bik',
     'Video\\bm_bearhunt1.bik',
     'Video\\bm_bearhunt2.bik',
     'Video\\bm_ceremony1.bik',
@@ -7231,6 +7232,12 @@ vanilla_files = {f.replace('\\', os.sep) for f in {
     'Video\\bm_wereend.bik',
     'Video\\bm_werewolf1.bik',
     'Video\\bm_werewolf2.bik',
+    'Video\\mw_cavern.bik',
+    'Video\\mw_credits.bik',
+    'Video\\mw_end.bik',
+    'Video\\mw_intro.bik',
+    'Video\\mw_logo.bik',
+    'Video\\mw_menu.bik',
     #-- French (WS) files
     'Sound\\Vo\\Misc\\alamATT01.mp3',
     'Sound\\Vo\\Misc\\alamATT02.mp3',

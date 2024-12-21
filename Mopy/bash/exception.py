@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -92,9 +92,9 @@ def _join_sigs(debug_str):
 
 class ModReadError(ModError):
     """Mod Error: Attempt to read outside of buffer."""
-    def __init__(self, in_name, debug_str, try_pos, max_pos):
+    def __init__(self, in_name, debug_strs, try_pos, max_pos):
         ## type: (Path, str|bytes, int, int) -> None
-        debug_str = _join_sigs(debug_str)
+        debug_str = _join_sigs(debug_strs)
         if try_pos < 0:
             message = f'{debug_str}: Attempted to read before ({try_pos}) ' \
                       f'beginning of file/buffer.'
@@ -241,16 +241,8 @@ class XMLParsingError(Exception):
 class InvalidPluginFlagsError(Exception):
     """Indicates that an attempt was made to create a plugin with invalid flags
     for the current game."""
-    def __init__(self, esl_flag=False, overlay_flag=False):
-        if esl_flag and overlay_flag:
-            message = 'both ESL and Overlay flags set.'
-        elif esl_flag:
-            message = 'an ESL flag, but the game does not support ESLs.'
-        elif overlay_flag:
-            message = 'an Overlay flag, but the game does not support ' \
-                      'Overlay plugins.'
-        else: raise ValueError("esl_flag and overlay_flag can't be both False")
-        super().__init__(f'Attempted to create a plugin with {message}')
+    def __init__(self, flags):
+        super().__init__(f'Attempted setting conflicting {flags=} to true')
 
 class StateError(BoltError):
     """Error: Object is corrupted."""
@@ -268,9 +260,8 @@ class SkippedMergeablePluginsError(Exception):
 
 class MasterMapError(BoltError):
     """Attempt to map a fid when mapping does not exist."""
-    def __init__(self, modIndex):  # type: (int) -> None
-        super(MasterMapError, self).__init__(
-            f'No valid mapping for mod index 0x{modIndex:02X}')
+    def __init__(self, fid_to_map):
+        super().__init__(f'No valid mapping for form id {fid_to_map!r}')
 
 class SaveHeaderError(Exception): pass
 

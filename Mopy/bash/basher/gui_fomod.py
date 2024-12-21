@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -436,25 +436,25 @@ class PageSelect(PageInstaller):
                              if c.is_checked]
             option_len = len(opts_selected)
             gtype = grp.group_type
+            fmt_args = {'grp_name': grp.group_name,
+                        'actual_num_opts': option_len}
             if gtype is GroupType.SELECT_EXACTLY_ONE and option_len != 1:
-                fm_err = _(u'Group "{}" should have exactly 1 option selected '
-                           u'but has {}.').format(grp.group_name, option_len)
-                self.show_fomod_error(fm_err)
+                fm_err = _("Group '%(grp_name)s' should have exactly one "
+                           "option selected but has %(actual_num_opts)d.")
+                self.show_fomod_error(fm_err % fmt_args)
             elif gtype is GroupType.SELECT_AT_MOST_ONE and option_len > 1:
-                fm_err = _(u'Group "{}" should have at most 1 option selected '
-                           u'but has {}.').format(grp.group_name, option_len)
-                self.show_fomod_error(fm_err)
+                fm_err = _("Group '%(grp_name)s' should have at most one "
+                           "option selected but has %(actual_num_opts)d.")
+                self.show_fomod_error(fm_err % fmt_args)
             elif gtype is GroupType.SELECT_AT_LEAST_ONE and option_len < 1:
-                fm_err = _(u'Group "{}" should have at least 1 option '
-                           u'selected but has {}.').format(grp.group_name,
-                                                           option_len)
-                self.show_fomod_error(fm_err)
+                fm_err = _("Group '%(grp_name)s' should have at least one "
+                           "option selected but has %(actual_num_opts)d.")
+                self.show_fomod_error(fm_err % fmt_args)
             elif (gtype is GroupType.SELECT_ALL
                   and option_len != len(option_chks)):
-                fm_err = _(u'Group "{}" should have all options selected but '
-                           u'has only {}.').format(grp.group_name,
-                                                   option_len)
-                self.show_fomod_error(fm_err)
+                fm_err = _("Group '%(grp_name)s' should have all options "
+                           "selected but has only %(actual_num_opts)d.")
+                self.show_fomod_error(fm_err % fmt_args)
             sel_options.extend(opts_selected)
         return sel_options
 

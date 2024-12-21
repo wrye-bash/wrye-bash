@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,7 +24,8 @@ from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
-from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
+from ..store_mixins import DiscMixin, EGSMixin, GOGMixin, SteamMixin, \
+    WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
 
 _GOG_IDS = [1454315831]
@@ -34,7 +35,7 @@ class AFallout3GameInfo(PatchGame):
     display_name = 'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
-    game_icon = u'fallout3_%u.png'
+    game_icon = u'fallout3.svg'
     bash_root_prefix = u'Fallout3'
     bak_game_name = u'Fallout3'
     template_dir = u'Fallout3'
@@ -122,6 +123,7 @@ class AFallout3GameInfo(PatchGame):
             'facegen',
             'fonts',
             'fose', # 3P: FOSE
+            'lodsettings',
             'menus',
             'uio', # 3P: User Interface Organizer
             'scripts',
@@ -612,9 +614,9 @@ class AFallout3GameInfo(PatchGame):
         b'IPCT': ('ipct_sound_level',),
         b'PROJ': ('sound_level',),
         b'SOUN': ('soundFile', 'minDist', 'maxDist', 'freqAdj', 'flags',
-                  'staticAtten', 'stopTime', 'startTime', 'point0', 'point1',
-                  'point2', 'point3', 'point4', 'reverb', 'priority', 'xLoc',
-                  'yLoc'),
+                  'static_attenuation', 'stopTime', 'startTime', 'point0',
+                  'point1', 'point2', 'point3', 'point4', 'reverb', 'priority',
+                  'xLoc', 'yLoc'),
         b'WEAP': ('sound_level',),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
@@ -967,7 +969,7 @@ class AFallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
     spell_stats_attrs = spell_stats_csv_attrs = (
-        'eid', 'cost', 'level', 'spellType', 'spell_flags')
+        'eid', 'spell_cost', 'spell_level', 'spell_type', 'spell_flags')
 
     #--------------------------------------------------------------------------
     # Tweak Actors
@@ -1055,6 +1057,8 @@ class AFallout3GameInfo(PatchGame):
         'GmstTweak_Combat_MaxAllyHitsOutOfCombat',
         'GmstTweak_Combat_MaxFriendHitsInCombat',
         'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
+        'GmstTweak_Warning_ExteriorDistanceToHostiles',
+        'GmstTweak_Warning_InteriorDistanceToHostiles',
     }
 
     #--------------------------------------------------------------------------
@@ -1256,6 +1260,10 @@ class EGSFallout3GameInfo(EGSMixin, AFallout3GameInfo):
         egs_app_names = ['adeae8bbfc94427db57c7dfecce3f1d4']
         egs_language_dirs = FO3_LANG_DIRS
 
+class DiscFallout3GameInfo(DiscMixin, AFallout3GameInfo):
+    """GameInfo override for the disc version of Fallout 3."""
+    _disc_subkey = 'Fallout3'
+
 class GOGFallout3GameInfo(GOGMixin, AFallout3GameInfo):
     """GameInfo override for the GOG version of Fallout 3."""
     _gog_game_ids = _GOG_IDS
@@ -1278,6 +1286,7 @@ class WSFallout3GameInfo(WindowsStoreMixin, AFallout3GameInfo):
         win_store_name = 'BethesdaSoftworks.Fallout3'
         ws_language_dirs = FO3_LANG_DIRS
 
+# DiscFallout3GameInfo last - see DiscMixin docstring
 GAME_TYPE = {g.unique_display_name: g for g in (
     EGSFallout3GameInfo, GOGFallout3GameInfo, SteamFallout3GameInfo,
-    WSFallout3GameInfo)}
+    WSFallout3GameInfo, DiscFallout3GameInfo)}

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,13 +26,15 @@ from os.path import join as _j
 from ..patch_game import GameInfo, PatchGame
 from ..store_mixins import SteamMixin
 from ... import bolt
+from ...games_lo import TextfileGame
+from ...bolt import FName
 
 class ASkyrimGameInfo(PatchGame):
     """GameInfo override for TES V: Skyrim."""
     display_name = 'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
-    game_icon = u'skyrim_%u.png'
+    game_icon = u'skyrim.svg'
     bash_root_prefix = u'Skyrim'
     bak_game_name = u'Skyrim'
     my_games_name = u'Skyrim'
@@ -87,8 +89,8 @@ class ASkyrimGameInfo(PatchGame):
     class Ini(GameInfo.Ini):
         default_ini_file = u'Skyrim_default.ini'
         dropdown_inis = [u'Skyrim.ini', u'SkyrimPrefs.ini']
-        resource_archives_keys = (u'sResourceArchiveList',
-                                  u'sResourceArchiveList2')
+        start_dex_keys = {GameInfo.Ini.BSA_MIN: (
+            'sResourceArchiveList', 'sResourceArchiveList2')}
 
     class Bsa(GameInfo.Bsa):
         # Skyrim only accepts the base name
@@ -782,13 +784,19 @@ class ASkyrimGameInfo(PatchGame):
         # sound_files does not need to loop here
         b'SNDR': ('sound_files', 'looping_type', 'rumble_send_value',
                   'pct_frequency_shift', 'pct_frequency_variance',
-                  'descriptor_priority', 'db_variance', 'staticAtten'),
-        b'SOPM': ('reverbSendpct', 'outputType', 'ch0_l', 'ch0_r', 'ch0_c',
-                  'ch0_lFE', 'ch0_rL', 'ch0_rR', 'ch0_bL', 'ch0_bR', 'ch1_l',
-                  'ch1_r', 'ch1_c', 'ch1_lFE', 'ch1_rL', 'ch1_rR', 'ch1_bL',
-                  'ch1_bR', 'ch2_l', 'ch2_r', 'ch2_c', 'ch2_lFE', 'ch2_rL',
-                  'ch2_rR', 'ch2_bL', 'ch2_bR', 'minDistance', 'maxDistance',
-                  'curve1', 'curve2', 'curve3', 'curve4', 'curve5'),
+                  'descriptor_priority', 'db_variance', 'static_attenuation'),
+        b'SOPM': ('reverb_send_pct', 'sopm_type',
+                  # Import each channel as a fused attribute
+                  ('ch0_fl', 'ch0_fr', 'ch0_c', 'ch0_lfe', 'ch0_rl', 'ch0_rr',
+                   'ch0_sl', 'ch0_sr'),
+                  ('ch1_fl', 'ch1_fr', 'ch1_c', 'ch1_lfe', 'ch1_rl', 'ch1_rr',
+                   'ch1_sl', 'ch1_sr'),
+                  ('ch2_fl', 'ch2_fr', 'ch2_c', 'ch2_lfe', 'ch2_rl', 'ch2_rr',
+                   'ch2_sl', 'ch2_sr'),
+                  'av_min_distance', 'av_max_distance',
+                  # Import the entire curve as a fused attribute
+                  ('av_curve1', 'av_curve2', 'av_curve3', 'av_curve4',
+                   'av_curve5')),
         b'WEAP': ('detectionSoundLevel',),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
@@ -820,7 +828,7 @@ class ASkyrimGameInfo(PatchGame):
         b'SLGM': ('sound_pickup', 'sound_drop'),
         b'SNCT': ('parent_fid',),
         b'SNDR': ('descriptor_category', 'output_model'),
-        b'SOUN': ('soundDescriptor',),
+        b'SOUN': ('sound_descriptor',),
         b'TACT': ('sound',),
         b'TREE': ('sound',),
         b'WATR': ('sound',),
@@ -881,6 +889,7 @@ class ASkyrimGameInfo(PatchGame):
                   'female_model_1st', 'biped_flags'),
         b'ARMO': ('maleWorld', 'maleIconPath', 'femaleWorld', 'femaleIconPath',
                   'addons', 'biped_flags'),
+        b'AVIF': ('iconPath',),
         b'BOOK': ('iconPath', 'model'),
         b'CLAS': ('iconPath',),
         b'CONT': ('model',),
@@ -1148,15 +1157,17 @@ class ASkyrimGameInfo(PatchGame):
     # Import Spell Stats
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
-    spell_stats_attrs = ('eid', 'cost', 'spellType', 'charge_time',
-                         'cast_type', 'spell_target_type', 'castDuration',
-                         'range', 'dataFlags')
-    spell_stats_fid_attrs = ('halfCostPerk',)
-    # halfCostPerk at the end since it's a FormID, to mirror how APreserver
+    spell_stats_attrs = ('eid', 'spell_cost', 'spell_type',
+                         'spell_charge_time', 'spell_cast_type',
+                         'spell_target_type', 'spell_cast_duration',
+                         'spell_range', 'spell_flags')
+    spell_stats_fid_attrs = ('casting_perk',)
+    # casting_perk at the end since it's a FormID, to mirror how APreserver
     # will join the tuples
-    spell_stats_csv_attrs = ('eid', 'cost', 'spellType', 'charge_time',
-                             'cast_type', 'spell_target_type', 'castDuration',
-                             'range', 'dataFlags', 'halfCostPerk')
+    spell_stats_csv_attrs = ('eid', 'spell_cost', 'spell_type',
+                             'spell_charge_time', 'spell_cast_type',
+                             'spell_target_type', 'spell_cast_duration',
+                             'spell_range', 'spell_flags', 'casting_perk')
     spell_stats_types = {b'SCRL', b'SPEL'}
 
     #--------------------------------------------------------------------------
@@ -1333,6 +1344,9 @@ class ASkyrimGameInfo(PatchGame):
         'GmstTweak_Actor_FasterShouts',
         'GmstTweak_Combat_FasterTwo_HandedWeapons',
         'GmstTweak_Actor_TrainingLimit_Tes5',
+        'GmstTweak_Actor_TrainingCostMultiplier',
+        'GmstTweak_Actor_ExpertCostMultiplier',
+        'GmstTweak_Actor_MasterCostMultiplier',
         'GmstTweak_Player_UnderwaterBreathControl',
         'GmstTweak_Combat_StealthDamageBonus',
         'GmstTweak_Msg_CannotEquipItemFix',
@@ -1364,6 +1378,9 @@ class ASkyrimGameInfo(PatchGame):
         'GmstTweak_Combat_SpeakOnHitThreshold',
         'GmstTweak_Combat_MaxFriendHitsInCombat',
         'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
+        'GmstTweak_Combat_BlockTimeMaximum_Tes5',
+        'GmstTweak_Combat_BlockTimeAverage',
+        'GmstTweak_Combat_BlockTimeMinimum',
     }
 
     #--------------------------------------------------------------------------
@@ -1374,9 +1391,10 @@ class ASkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Enchantment Stats
     #--------------------------------------------------------------------------
-    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
-                        'enchantment_amount', 'enchantment_target_type',
-                        'enchantment_type', 'charge_time')
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags',
+                        'enchantment_cast_type', 'enchantment_amount',
+                        'enchantment_target_type', 'enchantment_type',
+                        'enchantment_charge_time')
     ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------
@@ -1455,6 +1473,11 @@ class ASkyrimGameInfo(PatchGame):
         b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
         b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
     ]
+
+    class LoSkyrim(TextfileGame):
+        force_load_first = tuple(map(FName, ('Update.esm',
+            'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
+    lo_handler = LoSkyrim
 
     @classmethod
     def init(cls, _package_name=None):

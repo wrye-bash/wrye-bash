@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -85,9 +85,9 @@ class MAONPCSkeletonPatcher(_ASkeletonTweak):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton
     for use with MAO."""
     tweak_name = _(u"Mayu's Animation Overhaul Skeleton Tweaker")
-    tweak_tip = _(u'Changes all (modded and vanilla) NPCs to use the MAO '
-                  u'skeletons.  Not compatible with VORB.  Note: ONLY use if '
-                  u'you have MAO installed.')
+    tweak_tip = _('Changes all (modded and vanilla) NPCs to use the MAO '
+                  'skeletons. Not compatible with VORB. Note: ONLY use if '
+                  'you have MAO installed.')
     tweak_key = u'MAO Skeleton'
     tweak_log_header = _(u'MAO Skeleton Setter')
     tweak_order = 11 # Run after the vanilla skeleton tweak for consistency
@@ -108,9 +108,9 @@ class MAONPCSkeletonPatcher(_ASkeletonTweak):
 class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
     """Changes all NPCs to use the diverse skeleton for different look."""
     tweak_name = _(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker")
-    tweak_tip = _(u"Changes all (modded and vanilla) NPCs to use diverse "
-                  u"skeletons for different look.  Not compatible with MAO, "
-                  u"Requires VadersApp's Oblivion Real Bodies.")
+    tweak_tip = _("Changes all (modded and vanilla) NPCs to use diverse "
+                  "skeletons for different look. Not compatible with MAO, "
+                  "Requires VadersApp's Oblivion Real Bodies.")
     tweak_key = u'VORB'
     tweak_log_header = _(u"VadersApp's Oblivion Real Bodies")
     _skeleton_dir = u'Characters\\_male'
@@ -217,8 +217,8 @@ class AsIntendedImpsPatcher(_ACreatureTweak):
     """Set all imps to have the Bethesda imp spells that were never assigned
     (discovered by the UOP team, made into a mod by Tejon)."""
     tweak_name = _(u'As Intended: Imps')
-    tweak_tip = _(u'Set imps to have the unassigned Bethesda Imp Spells as '
-                  u'discovered by the UOP team and made into a mod by Tejon.')
+    tweak_tip = _('Set imps to have the unassigned vanilla imp spells as '
+                  'discovered by the UOP team and made into a mod by Tejon.')
     tweak_key = u'vicious imps!'
     tweak_choices = [(_(u'All imps'), u'all'),
                      (_(u'Only fullsize imps'), u'big'),
@@ -247,8 +247,8 @@ class AsIntendedBoarsPatcher(_ACreatureTweak):
     """Set all boars to have the Bethesda boar spells that were never
     assigned (discovered by the UOP team, made into a mod by Tejon)."""
     tweak_name = _(u'As Intended: Boars')
-    tweak_tip = _(u'Set boars to have the unassigned Bethesda Boar Spells as '
-                  u'discovered by the UOP team and made into a mod by Tejon.')
+    tweak_tip = _('Set boars to have the unassigned vanilla boar spells as '
+                  'discovered by the UOP team and made into a mod by Tejon.')
     tweak_key = u'vicious boars!'
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'Boars Tweaked: %(total_changed)d')

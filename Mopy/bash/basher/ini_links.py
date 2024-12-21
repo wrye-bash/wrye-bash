@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,12 +24,11 @@
 attribute points to IniList singleton."""
 
 from .. import balt, bass, bosh
-from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink, \
-    UIList_OpenItems
+from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink
 from ..gui import copy_text_to_clipboard
 
 __all__ = ['INI_ValidTweaksFirst', 'INI_AllowNewLines', 'INI_ListINIs',
-           'INI_Apply', 'INI_CreateNew', 'INI_ListErrors', 'INI_Open']
+           'INI_Apply', 'INI_CreateNew', 'INI_ListErrors']
 
 class INI_ValidTweaksFirst(BoolLink):
     """Sort valid INI Tweaks to the top."""
@@ -55,7 +54,7 @@ class INI_AllowNewLines(BoolLink):
 #------------------------------------------------------------------------------
 class INI_ListINIs(ItemLink):
     """List errors that make an INI Tweak invalid."""
-    _text = _(u'List Active INI Tweaks...')
+    _text = _('List Active INI Tweaks…')
     _help = _(u'Lists all fully applied tweak files.')
 
     def Execute(self):
@@ -67,7 +66,7 @@ class INI_ListINIs(ItemLink):
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
     """List errors that make an INI Tweak invalid."""
-    _text = _(u'List Errors...')
+    _text = _('List Errors…')
     _help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
@@ -80,12 +79,6 @@ class INI_ListErrors(EnabledLink):
         error_text = '\n'.join(inf.listErrors() for inf in self._erroneous)
         copy_text_to_clipboard(error_text)
         self._showLog(error_text, title=_('INI Tweak Errors'))
-
-#------------------------------------------------------------------------------
-class INI_Open(UIList_OpenItems):
-    """Version of UIList_OpenItems that skips default tweaks."""
-    def _filter_unopenable(self, to_open_items):
-        return self._data_store.filter_essential(to_open_items)
 
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):
@@ -107,14 +100,14 @@ class INI_Apply(EnabledLink):
 
     def Execute(self):
         """Handle applying INI Tweaks."""
-        if self.window.apply_tweaks(self.iselected_infos()):
+        if self.window.apply_tweaks([*self.iselected_infos()]):
             self.window.panel.ShowPanel()
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
-    _text = _('Create Tweak With Current Settings...')
+    _text = _('Create Tweak With Current Settings…')
 
     @property
     def link_help(self):
@@ -132,8 +125,8 @@ class INI_CreateNew(OneItemLink):
     @balt.conversation
     def Execute(self):
         """Handle creating a new INI tweak."""
-        ini_info, ini_key = self._selected_info, self._selected_item
-        fileName = ini_info.unique_key(ini_key.fn_body, add_copy=True)
+        ini_info, fn_ini = self._selected_info, self._selected_item
+        fileName = ini_info.unique_key(fn_ini.fn_body, add_copy=True)
         tweak_path = self._askSave(
             title=self._text,
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
@@ -144,6 +137,5 @@ class INI_CreateNew(OneItemLink):
         if root is None:
             self._showError(fn_tweak) # it's an error message in this case
             return
-        if bosh.iniInfos.copy_tweak_from_target(ini_key, fn_tweak):
-            ##: we need a 'to_add' param in RefreshUI
-            self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)
+        if bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
+            self.refresh_sel({fn_tweak}, detail_item=fn_tweak)

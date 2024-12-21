@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -32,7 +32,8 @@ from ...brec import AMreCell, AMreHeader, MelBase, MelFid, MelGroups, \
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC', b'CHGL'}
+    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'BNAM', b'INTV', b'INCC',
+                          b'CHGL'}
     next_object_default = 0x001
 
     class HeaderFlags(AMreHeader.HeaderFlags):
@@ -40,6 +41,8 @@ class MreTes4(AMreHeader):
         localized: bool = flag(7)
         esl_flag: bool = flag(8)
         overlay_flag: bool = flag(9)
+        mid_flag: bool = flag(10)
+        blueprint_flag: bool = flag(11)
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.96), 'numRecords',
@@ -55,8 +58,9 @@ class MreTes4(AMreHeader):
             MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
                 prelude=MelUInt32(b'TNAM', 'form_type')),
         ),
+        MelBase(b'BNAM', 'unknown_bnam'),
         MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'internal_cell_count'),
+        MelUInt32(b'INCC', 'interior_cell_count'),
         MelBase(b'CHGL', 'unknown_chgl'), # TODO(SF) fill out once decoded
     )
 

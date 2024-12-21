@@ -16,18 +16,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import SteamMixin
+from ...games_lo import TextfileGame
+from ...bolt import FName
 
 class AEnderalGameInfo(ASkyrimGameInfo):
     """GameInfo override for Enderal."""
     display_name = 'Enderal'
     fsName = u'Enderal'
-    game_icon = u'enderal_%u.png'
+    game_icon = u'enderal.svg'
     bash_root_prefix = u'Enderal'
     bak_game_name = u'Enderal'
     my_games_name = u'Enderal'
@@ -117,6 +119,11 @@ class AEnderalGameInfo(ASkyrimGameInfo):
     names_tweaks = ((ASkyrimGameInfo.names_tweaks |
                     {'NamesTweak_RenamePennies'}) -
                     {'NamesTweak_RenameGold'})
+
+    class _LoEnderal(TextfileGame):
+        force_load_first = tuple(
+            map(FName, ('Update.esm', 'Enderal - Forgotten Stories.esm')))
+    lo_handler = _LoEnderal
 
     @classmethod
     def init(cls, _package_name=None):

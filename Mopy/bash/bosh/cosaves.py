@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -147,8 +147,9 @@ class _AHeader(_Dumpable):
         out.write(_cosave_encode(self.savefile_tag))
 
     def dump_to_log(self, log, save_masters_):
-        log.setHeader(_(u'%s Header') % self.savefile_tag)
-        log(u'=' * 40)
+        log.setHeader(_('%(cosave_file_tag)s Header') % {
+            'cosave_file_tag': self.savefile_tag})
+        log('=' * 40)
 
 class _xSEHeader(_AHeader):
     """Header for xSE cosaves."""
@@ -175,30 +176,35 @@ class _xSEHeader(_AHeader):
 
     def dump_to_log(self, log, save_masters_):
         super().dump_to_log(log, save_masters_)
-        log(_(u'  Format version:   0x%08X') % self.format_version)
-        log(_(u'  %s version:      %u.%u') % (self.savefile_tag,
-                                              self.se_version,
-                                              self.se_minor_version))
-        log(_(u'  Game version:     0x%08X') % self.game_version)
+        log('  ' + _('Format version: %(co_format_ver)s') % {
+            'co_format_ver': f'0x{self.format_version:08X}',
+        })
+        log('  ' + _('%(co_file_tag)s version: '
+                     '%(co_main_record_ver)s') % {
+            'co_file_tag': self.savefile_tag,
+            'co_main_record_ver': f'{self.se_version}.{self.se_minor_version}',
+        })
+        log('  ' + _('Game version: %(stored_game_ver)s') % {
+            'stored_game_ver': self.game_version})
 
 class _PluggyHeader(_AHeader):
     """Header for pluggy cosaves. Just checks save file tag and version."""
     savefile_tag = u'PluggySave'
     _max_supported_version = 0x01050001
     _min_supported_version = 0x01040000
-    __slots__ = ()
+    __slots__ = ('_pluggy_format_version',)
 
     def __init__(self, ins, cosave_path):
         super().__init__(ins, cosave_path)
-        version = unpack_int(ins)
-        if version > self._max_supported_version:
+        self._pluggy_format_version = unpack_int(ins)
+        if self._pluggy_format_version > self._max_supported_version:
             raise UnsupportedCosaveError(cosave_path,
-                u'Version of pluggy save file format is too new - only '
-                u'versions <= 1.6.0000 are supported.')
-        elif version < self._min_supported_version:
+                f'Version of pluggy save file format is too new - only '
+                f'versions <= 1.6.0000 are supported.')
+        elif self._pluggy_format_version < self._min_supported_version:
             raise UnsupportedCosaveError(cosave_path,
-                u'Version of pluggy save file format is too old - only '
-                u'versions >= 1.4.0000 are supported.')
+                'Version of pluggy save file format is too old - only '
+                'versions >= 1.4.0000 are supported.')
 
     def write_header(self, out):
         super().write_header(out)
@@ -206,8 +212,8 @@ class _PluggyHeader(_AHeader):
 
     def dump_to_log(self, log, save_masters_):
         super().dump_to_log(log, save_masters_)
-        log(_(u'  Pluggy file format version: 0x%08X') %
-            self._max_supported_version)
+        log('  ' + _('Pluggy file format version: %(co_format_ver)s') % {
+            'co_format_ver': f'0x{self._pluggy_format_version:08X}'})
 
 #------------------------------------------------------------------------------
 # Chunks
@@ -260,8 +266,8 @@ class _xSEChunk(_AChunk):
         return len(self.chunk_data)
 
     def __repr__(self):
-        return u'%s chunk: v%d, %d bytes' % (
-            self.chunk_type, self.chunk_version, self.data_len)
+        return (f'{self.chunk_type} chunk: v{self.chunk_version}, '
+                f'{self.data_len} bytes')
 
 class _xSEModListChunk(_xSEChunk, _Dumpable, _Remappable):
     """An abstract class for chunks that contain a list of mods (e.g. MODS or
@@ -320,8 +326,8 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             elif key_type == 3:
                 self.arvr_key = _unpack_cosave_str16(ins)
             else:
-                raise RuntimeError(u'Unknown or unsupported key type %u.' %
-                                   key_type)
+                raise RuntimeError(f'Unknown or unsupported key type '
+                                   f'{key_type}.')
             self._key_type = key_type
             self.element_type = unpack_byte(ins)
             if self.element_type == 1:
@@ -331,8 +337,8 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             elif self.element_type == 3:
                 self.stored_data = _unpack_cosave_str16(ins)
             else:
-                raise RuntimeError(u'Unknown or unsupported element type %u.' %
-                                   self.element_type)
+                raise RuntimeError(f'Unknown or unsupported element type '
+                                   f'{self.element_type}.')
 
         def write_entry(self, out):
             if self._key_type == 1:
@@ -340,8 +346,8 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             elif self._key_type == 3:
                 _pack_cosave_str16(out, self.arvr_key)
             else:
-                raise RuntimeError(u'Unknown or unsupported key type %u.' %
-                                   self._key_type)
+                raise RuntimeError(f'Unknown or unsupported key type '
+                                   f'{self._key_type}.')
             pack_byte(out, self.element_type)
             if self.element_type == 1:
                 pack_double(out, self.stored_data)
@@ -350,8 +356,8 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             elif self.element_type == 3:
                 _pack_cosave_str16(out, self.stored_data)
             else:
-                raise RuntimeError(u'Unknown or unsupported element type %u.' %
-                                   self.element_type)
+                raise RuntimeError(f'Unknown or unsupported element type '
+                                   f'{self.element_type}.')
 
         def entry_length(self):
             # element_type is B, arvr_key is either d or H + string
@@ -367,27 +373,27 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
 
         def dump_to_log(self, log, save_masters_):
             if self._key_type == 1:
-                key_str = u'%f' % self.arvr_key
+                key_str = f'{self.arvr_key:f}'
             elif self._key_type == 3:
                 key_str = self.arvr_key
             else:
-                key_str = u'BAD'
+                key_str = 'BAD'
             if self.element_type == 1:
-                data_str = u'%f' % self.stored_data
-                type_str = u'NUM'
+                data_str = f'{self.stored_data:f}'
+                type_str = 'NUM'
             elif self.element_type == 2:
-                data_str = u'0x%08X' % self.stored_data
-                type_str = u'REF'
+                data_str = f'0x{self.stored_data:08X}'
+                type_str = 'REF'
             elif self.element_type == 3:
                 data_str = self.stored_data
-                type_str = u'STR'
+                type_str = 'STR'
             elif self.element_type == 4:
-                data_str = u'%u' % self.stored_data
-                type_str = u'ARR'
+                data_str = f'{self.stored_data:d}'
+                type_str = 'ARR'
             else:
-                data_str = u'UNKNOWN'
-                type_str = u'BAD'
-            log(u'    - [%s]:%s = %s' % (key_str, type_str, data_str))
+                data_str = 'UNKNOWN'
+                type_str = 'BAD'
+            log(f'    - [{key_str}]:{type_str} = {data_str}')
 
     def __init__(self, ins, chunk_type):
         super().__init__(ins, chunk_type)
@@ -447,28 +453,32 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
 
     def dump_to_log(self, log, save_masters):
         if self.mod_index == 255:
-            log(_(u'   Mod :  %02X (Save File)') % self.mod_index)
+            log('   ' + _('Plugin: Save File (%(plugin_save_index)s)') % {
+                'plugin_save_index': f'{self.mod_index:02X}'})
         else:
-            log(_(u'   Mod :  %02X (%s)') % (
-                self.mod_index, save_masters[self.mod_index]))
-        log(_(u'   ID  :  %u') % self.array_id)
-        if self.key_type == 1: #Numeric
+            log('   ' + _('Plugin: %(plugin_resolved_name)s '
+                          '(%(plugin_save_index)s)') % {
+                'plugin_resolved_name': save_masters[self.mod_index],
+                'plugin_save_index': f'{self.mod_index:02X}'})
+        log('   ' + _('ID: %(array_id)d') % {'array_id': self.array_id})
+        if self.key_type == 1: # Numeric
             if self.is_packed:
-                log(_(u'   Type:  Array'))
+                log('   ' + _('Type: Array'))
             else:
-                log(_(u'   Type:  Map'))
+                log('   ' + _('Type: Map'))
         elif self.key_type == 3:
-            log(_(u'   Type:  StringMap'))
+            log('   ' + _('Type: StringMap'))
         else:
-            log(_(u'   Type:  Unknown'))
+            log('   ' + _('Type: Unknown'))
         if self.chunk_version >= 1:
-            log(u'   Refs:')
+            log('   ' + _('References:'))
             for refModID in self.references:
                 if refModID == 255:
-                    log(_(u'    - %02X (Save File)') % refModID)
+                    log(f"    - {_('Save File')} ({refModID:02X})")
                 else:
-                    log(f'    - {refModID:02X} ({save_masters[refModID]})')
-        log(_(u'   Size:  %u') % len(self.elements))
+                    log(f'    - {save_masters[refModID]} ({refModID:02X})')
+        log('   ' + _('Size: %(num_elements)d') % {
+            'num_elements': len(self.elements)})
         for element in self.elements:
             element.dump_to_log(log, save_masters)
 
@@ -539,7 +549,8 @@ class _xSEChunkDATA(_xSEModListChunk):
         out.write(self.remaining_data)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u loaded mods:') % len(self.mod_names))
+        log('   ' + _('%(num_loaded_plugins)d loaded plugins:') % {
+            'num_loaded_plugins': len(self.mod_names)})
         super().dump_to_log(log, save_masters_)
 
 class _xSEChunkLIMD(_xSEModListChunk):
@@ -565,7 +576,8 @@ class _xSEChunkLIMD(_xSEModListChunk):
         return 2 + super().chunk_length()
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u loaded light mods:') % len(self.mod_names))
+        log('   ' + _('%(num_loaded_lights)d loaded light plugins:') % {
+            'num_loaded_lights': len(self.mod_names)})
         super().dump_to_log(log, save_masters_)
 
 class _xSEChunkLMOD(_xSEModListChunk):
@@ -589,7 +601,8 @@ class _xSEChunkLMOD(_xSEModListChunk):
         return 1 + super().chunk_length()
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u loaded light mods:') % len(self.mod_names))
+        log('   ' + _('%(num_loaded_lights)d loaded light plugins:') % {
+            'num_loaded_lights': len(self.mod_names)})
         super().dump_to_log(log, save_masters_)
 
 class _xSEChunkMODS(_xSEModListChunk):
@@ -614,7 +627,8 @@ class _xSEChunkMODS(_xSEModListChunk):
         return 1 + super().chunk_length()
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u loaded mods:') % len(self.mod_names))
+        log('   ' + _('%(num_loaded_plugins)d loaded plugins:') % {
+            'num_loaded_plugins': len(self.mod_names)})
         super().dump_to_log(log, save_masters_)
 
 class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
@@ -652,11 +666,10 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
 
         def dump_to_log(self, log, save_masters_):
             if self.mod_index != 0xFE:
-                log(f'    {self.mod_index:02X}       -                    '
-                    f'{self.mod_name}')
+                log(f'    {self.mod_index:02X} | - | {self.mod_name}')
             else:
-                log(f'    {self.mod_index:02X}       {self.light_index:04X}  '
-                    f'           {self.mod_name}')
+                log(f'    {self.mod_index:02X} | {self.light_index:04X} | '
+                    f'{self.mod_name}')
 
         def remap_plugins(self, fnmod_rename):
             self.mod_name = fnmod_rename.get(self.mod_name, self.mod_name)
@@ -677,9 +690,11 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
         return 2 + sum(map(lambda e: e.entry_length(), self.mod_entries))
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   Current load order (%u plugins):') % len(self.mod_entries))
-        log(_(u'    Index  Light Index  Plugin'))
-        log(u'    ' + u'-' * 40)
+        log('   ' +
+            _('Current load order (%(num_loaded_plugins)d plugins):') % {
+                'num_loaded_plugins': len(self.mod_entries)})
+        log(f"    {_('Index')} | {_('Light Index')} | {_('Plugin')}")
+        log(f"    {'-' * 40}")
         for mod_entry in self.mod_entries:
             mod_entry.dump_to_log(log, save_masters_)
 
@@ -709,26 +724,29 @@ class _xSEChunkSTVR(_xSEChunk, _Dumpable):
         return 7 + len(self.string_data)
 
     def dump_to_log(self, log, save_masters):
-        log(_(u'   Mod : %02X (%s)') % (self.mod_index,
-                                        save_masters[self.mod_index]))
-        log(_(u'   ID  : %u') % self.string_id)
-        log(_(u'   Data: %s') % self.string_data)
+        log('   ' + _('Plugin: %(plugin_resolved_name)s '
+                      '(%(plugin_save_index)s)') % {
+            'plugin_resolved_name': save_masters[self.mod_index],
+            'plugin_save_index': f'{self.mod_index:02X}'})
+        log('   ' + _('ID: %(string_id)d') % {'string_id': self.string_id})
+        log('   ' + _('Data: %(string_data)s') % {
+            'string_data': self.string_data})
 
 # Maps all decoded xSE chunk types implemented by xSE itself to the classes
 # that read/write them
 _xse_chunk_dict = {
-    u'ARVR': _xSEChunkARVR,
-    u'LIMD': _xSEChunkLIMD,
-    u'LMOD': _xSEChunkLMOD,
-    u'MODS': _xSEChunkMODS,
-    u'PLGN': _xSEChunkPLGN,
-    u'STVR': _xSEChunkSTVR,
+    'ARVR': _xSEChunkARVR,
+    'LIMD': _xSEChunkLIMD,
+    'LMOD': _xSEChunkLMOD,
+    'MODS': _xSEChunkMODS,
+    'PLGN': _xSEChunkPLGN,
+    'STVR': _xSEChunkSTVR,
 }
 # Maps plugin chunk signatures to dicts that map decoded xSE chunk types
 # implemented by that plugin to the classes that read/write them
 _xse_plugin_chunk_dict = {
     0x534F53: { # SOS
-        u'DATA': _xSEChunkDATA,
+        'DATA': _xSEChunkDATA,
     },
 }
 
@@ -748,16 +766,15 @@ def _get_xse_chunk(parent_sig: int, ins) -> _xSEChunk:
     ch_offset = ins.tell()
     try:
         # Look for a special override for this particular plugin chunk first
-        if parent_sig in _xse_plugin_chunk_dict:
-            pchunk_dict = _xse_plugin_chunk_dict[parent_sig]
-            if ch_type in pchunk_dict:
-                return pchunk_dict[ch_type](ins, ch_type)
+        if pchunk_dict := _xse_plugin_chunk_dict.get(parent_sig):
+            if ch_class := pchunk_dict.get(ch_type):
+                return ch_class(ins, ch_type)
         # Otherwise, fall back to the global xSE dictionary
         ch_class = _xse_chunk_dict.get(ch_type, _xSEChunk)
         return ch_class(ins, ch_type)
     except Exception:
-        deprint(u'Error while reading cosave chunk %s at offset %d' % (
-            ch_type, ch_offset))
+        deprint(f'Error while reading cosave chunk {ch_type} at offset '
+                f'{ch_offset}')
         raise
 
 class _xSEPluginChunk(_AChunk, _Remappable):
@@ -820,8 +837,8 @@ class _xSEPluginChunk(_AChunk, _Remappable):
                     u'I', self.plugin_signature).decode(u'ascii')[::-1]
             except UnicodeDecodeError:
                 decoded_psig = self.plugin_signature # Fall back to int display
-        return u'%s chunk: %d chunks, %d bytes' % (
-            decoded_psig, len(self.chunks), self.orig_size)
+        return (f'{decoded_psig} chunk: {len(self.chunks)} chunks, '
+                f'{self.orig_size} bytes')
 
 #------------------------------------------------------------------------------
 # Pluggy Chunks
@@ -869,8 +886,8 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
                                                 self.plugin_name)
 
         def dump_to_log(self, log, save_masters_):
-            log(u'    %02X    %02X    %s' % (self.pluggy_id, self.game_id,
-                                             self.plugin_name))
+            log(f'    {self.pluggy_id:02X} | {self.game_id:02X} | '
+                f'{self.plugin_name}')
 
     def __init__(self, ins, record_type):
         super().__init__(record_type)
@@ -886,9 +903,10 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
             plugin.write_entry(out)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u loaded mods:') % len(self.plugins))
-        log(_(u'   EID   ID    Name'))
-        log(u'   ' + u'-' * 40)
+        log('   ' + _('%(num_loaded_plugins)d loaded plugins:') % {
+            'num_loaded_plugins': len(self.plugins)})
+        log(f"   {_('Pluggy ID')} | {_('Game ID')} | {_('Name')}")
+        log(f"   {'-' * 40}")
         for plugin in self.plugins:
             plugin.dump_to_log(log, save_masters_)
 
@@ -897,7 +915,7 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
             plugin.remap_plugins(fnmod_rename)
 
     def unique_identifier(self):
-        return _(u'Plugin Block')
+        return _('Plugin Block')
 
 class _PluggyStringBlock(_PluggyBlock):
     """The string records block of a pluggy cosave. Contains string data from
@@ -923,10 +941,16 @@ class _PluggyStringBlock(_PluggyBlock):
             _pack_cosave_str32(out, self.string_data)
 
         def dump_to_log(self, log, save_masters_):
-            log(_(u'    - ID    : %u') % self.string_id)
-            log(_(u'      Owner : %02X') % self.plugin_index)
-            log(_(u'      Flags : %u') % self.string_flags)
-            log(_(u'      Data  : %s') % self.string_data)
+            log('    - ' + _('ID: %(string_id)d') % {
+                'string_id': self.string_id})
+            log('      ' + _('Owner: %(string_owner)s '
+                             '(%(string_owner_index)s)') % {
+                'string_owner': save_masters_[self.plugin_index],
+                'string_owner_index': f'{self.plugin_index:02X}'})
+            log('      ' + _('Flags: %(string_flags)s') % {
+                'string_flags': f'0x{self.string_flags:02X}'})
+            log('      ' + _('Data: %(string_data)s') % {
+                'string_data': self.string_data})
 
     def __init__(self, ins, record_type):
         super().__init__(record_type)
@@ -942,12 +966,13 @@ class _PluggyStringBlock(_PluggyBlock):
             stored_string.write_entry(out)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u stored strings:') % len(self.stored_strings))
+        log('   ' + _('%(num_stored_strings)d stored strings:') % {
+            'num_stored_strings': len(self.stored_strings)})
         for stored_string in self.stored_strings:
             stored_string.dump_to_log(log, save_masters_)
 
     def unique_identifier(self):
-        return _(u'String Block')
+        return _('String Block')
 
 class _PluggyArrayBlock(_PluggyBlock):
     """An array records block of a pluggy cosave. Contains an array from a
@@ -972,8 +997,8 @@ class _PluggyArrayBlock(_PluggyBlock):
             elif self.entry_type == 2:
                 self.entry_data = unpack_float(ins)
             else:
-                raise RuntimeError(u'Unknown or unsupported entry type %u.' %
-                                   self.entry_type)
+                raise RuntimeError(f'Unknown or unsupported entry type '
+                                   f'{self.entry_type}.')
 
         def write_entry(self, out):
             pack_int(out, self.entry_index)
@@ -985,20 +1010,16 @@ class _PluggyArrayBlock(_PluggyBlock):
             elif self.entry_type == 2:
                 pack_float(out, self.entry_data)
             else:
-                raise RuntimeError(u'Unknown or unsupported entry type %u.' %
-                                   self.entry_type)
+                raise RuntimeError(f'Unknown or unsupported entry type '
+                                   f'{self.entry_type}.')
 
         def dump_to_log(self, log, save_masters_):
             if self.entry_type == 0:
-                format_string = u'     %u: %d'
+                log(f'     {self.entry_index}: {self.entry_data:d}')
             elif self.entry_type == 1:
-                format_string = u'     %u: 0x%08X'
+                log(f'     {self.entry_index}: 0x{self.entry_data:08X}')
             elif self.entry_type == 2:
-                format_string = u'     %u: %f'
-            else:
-                raise RuntimeError(u'Unknown or unsupported entry type %u.' %
-                                   self.entry_type)
-            log(format_string % (self.entry_index, self.entry_data))
+                log(f'     {self.entry_index}: {self.entry_data:f}')
 
     def __init__(self, ins, record_type):
         super().__init__(record_type)
@@ -1021,16 +1042,22 @@ class _PluggyArrayBlock(_PluggyBlock):
             array_entry.write_entry(out)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'    Owner    : %02X') % self.plugin_index)
-        log(_(u'    Flags      : %u') % self.array_flags)
-        log(_(u'    Max Size: %u') % self.max_size)
-        log(_(u'    Cur Size : %u') % len(self.array_entries))
-        log(_(u'    Contents:'))
+        log('    ' + _('Owner: %(array_owner)s (%(array_owner_index)s)') % {
+            'array_owner': save_masters_[self.plugin_index],
+            'array_owner_index': f'{self.plugin_index:02X}'})
+        log('      ' + _('Flags: %(array_flags)s') % {
+            'array_flags': f'0x{self.array_flags:02X}'})
+        log('    ' + _('Maximum Size: %(max_array_size)d') % {
+            'max_array_size': self.max_size})
+        log('    ' + _('Current Size: %(curr_array_size)d') % {
+            'curr_array_size': len(self.array_entries)})
+        log('    ' + _('Contents:'))
         for array_entry in self.array_entries:
             array_entry.dump_to_log(log, save_masters_)
 
     def unique_identifier(self):
-        return _(u'Array Block #%u') % self.array_id
+        return _('Array Block No. %(array_id)s') % {
+            'array_id': self.array_id}
 
 class _PluggyNameBlock(_PluggyBlock):
     """A name records block of a pluggy cosave. Contains one or more names that
@@ -1051,10 +1078,12 @@ class _PluggyNameBlock(_PluggyBlock):
             _pack_cosave_str32(out, self.name_data)
 
         def dump_to_log(self, log, save_masters_):
-            log(_(u'    - RefID : 0x%08X') % self.reference_id)
+            log('    - ' + _('Reference ID: %(reference_id)s') % {
+                'reference_id': f'0x{self.reference_id:08X}'})
             printable_name = ''.join([c for c in self.name_data
                                       if c in string.printable])
-            log(_(u'      Name  : %s') % printable_name)
+            log('      ' + _('Name: %(printable_name)s') % {
+                'printable_name': printable_name})
 
     def __init__(self, ins, record_type):
         super().__init__(record_type)
@@ -1070,12 +1099,13 @@ class _PluggyNameBlock(_PluggyBlock):
             stored_name.write_entry(out)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u stored names:') % len(self.stored_names))
+        log('   ' + _('%(num_stored_names)d stored names:') % {
+            'num_stored_names': len(self.stored_names)})
         for stored_name in self.stored_names:
             stored_name.dump_to_log(log, save_masters_)
 
     def unique_identifier(self):
-        return _(u'Name Block')
+        return _('Name Block')
 
 class _PluggyScreenInfoBlock(_PluggyBlock):
     """A screen information record block. This is an optional block and, if
@@ -1094,11 +1124,13 @@ class _PluggyScreenInfoBlock(_PluggyBlock):
         pack_int(out, self.screen_height)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   Width : %u') % self.screen_width)
-        log(_(u'   Height: %u') % self.screen_height)
+        log('   ' + _('Width: %(screen_width)d') % {
+            'screen_width': self.screen_width})
+        log('   ' + _('Height: %(screen_height)d') % {
+            'screen_height': self.screen_height})
 
     def unique_identifier(self):
-        return _(u'ScreenInfo Block')
+        return _('Screen Informations Block')
 
 class _PluggyHudSBlock(_PluggyBlock):
     """A HUD Screen / Image records block. Contains information related to
@@ -1147,20 +1179,34 @@ class _PluggyHudSBlock(_PluggyBlock):
             pack_byte(out, self.auto_scale)
 
         def dump_to_log(self, log, save_masters_):
-            log(_(u'    - HUD ID    : %u') % self.hud_id)
-            log(_(u'      Owner     : %02X') % self.plugin_index)
-            log(_(u'      Flags     : %02X') % self.hud_flags)
-            log(_(u'      Root ID   : %u') % self.root_id)
-            log(_(u'      File      : %s') % self.file_name)
-            log(_(u'      Show Mode : %02X') % self.show_mode)
-            log(_(u'      X Position: %u') % self.pos_x)
-            log(_(u'      Y Position: %u') % self.pos_y)
-            log(_(u'      Depth     : %u') % self.depth)
-            log(_(u'      X Scale   : %u') % self.scale_x)
-            log(_(u'      Y Scale   : %u') % self.scale_y)
-            log(_(u'      Alpha     : %02X') % self.alpha)
-            log(_(u'      Alignment : %02X') % self.alignment)
-            log(_(u'      Auto-Scale: %02X') % self.auto_scale)
+            log('    - ' + _('HUD ID: %(hud_id)d') % {'hud_id': self.hud_id})
+            log('      ' + _('Owner: %(hud_owner)s (%(hud_owner_index)s)') % {
+                'hud_owner': save_masters_[self.plugin_index],
+                'hud_owner_index': f'{self.plugin_index:02X}'})
+            log('      ' + _('Flags: %(hud_flags)s') % {
+                'hud_flags': f'0x{self.hud_flags:02X}'})
+            log('      ' + _('Root ID: %(hud_root_id)d') % {
+                'hud_root_id': self.root_id})
+            log('      ' + _('File: %(hud_file_name)s') % {
+                'hud_file_name': self.file_name})
+            log('      ' + _('Show Mode: %(hud_show_mode)s') % {
+                'hud_show_mode': f'0x{self.show_mode:02X}'})
+            log('      ' + _('X Position: %(hud_pos_x)d') % {
+                'hud_pos_x': self.pos_x})
+            log('      ' + _('Y Position: %(hud_pos_y)d') % {
+                'hud_pos_y': self.pos_y})
+            log('      ' + _('Depth: %(hud_depth)d') % {
+                'hud_depth': self.depth})
+            log('      ' + _('X Scale: %(hud_scale_x)d') % {
+                'hud_scale_x': self.scale_x})
+            log('      ' + _('Y Scale: %(hud_scale_y)d') % {
+                'hud_scale_y': self.scale_y})
+            log('      ' + _('Alpha: %(hud_alpha)s') % {
+                'hud_alpha': f'0x{self.alpha:02X}'})
+            log('      ' + _('Alignment: %(hud_alignment)s') % {
+                'hud_alignment': f'0x{self.alignment:02X}'})
+            log('      ' + _('Auto-Scale: %(hud_auto_scale)s') % {
+                'hud_auto_scale': f'0x{self.auto_scale:02X}'})
 
     def __init__(self, ins, record_type):
         super().__init__(record_type)
@@ -1175,12 +1221,13 @@ class _PluggyHudSBlock(_PluggyBlock):
             hud_entry.write_entry(out)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u HUD Screen entries:') % len(self.hud_entries))
+        log('   ' + _('%(num_hud_screens)d HUD screen entries:') % {
+            'num_hud_screens': len(self.hud_entries)})
         for hud_entry in self.hud_entries:
             hud_entry.dump_to_log(log, save_masters_)
 
     def unique_identifier(self):
-        return _(u'HudS Block')
+        return _('HUD Screen/Image Block')
 
 class _PluggyHudTBlock(_PluggyBlock):
     """A HUD Text records block. Contains information related to custom HUDs
@@ -1251,30 +1298,53 @@ class _PluggyHudTBlock(_PluggyBlock):
             pack_byte(out, self.font_blue)
 
         def dump_to_log(self, log, save_masters_):
-            log(_(u'    - HUD ID    : %u') % self.hud_id)
-            log(_(u'      Owner     : %02X') % self.plugin_index)
-            log(_(u'      Flags     : %02X') % self.hud_flags)
-            log(_(u'      Show Mode : %02X') % self.show_mode)
-            log(_(u'      X Position: %u') % self.pos_x)
-            log(_(u'      Y Position: %u') % self.pos_y)
-            log(_(u'      Depth     : %u') % self.depth)
-            log(_(u'      X Scale   : %u') % self.scale_x)
-            log(_(u'      Y Scale   : %u') % self.scale_y)
-            log(_(u'      Alpha     : %02X') % self.alpha)
-            log(_(u'      Alignment : %02X') % self.alignment)
-            log(_(u'      Auto-Scale: %02X') % self.auto_scale)
-            log(_(u'      HUD Width  : %u') % self.hud_width)
-            log(_(u'      HUD Height : %u') % self.hud_height)
-            log(_(u'      Text Format: %u') % self.text_format)
-            log(_(u'      Font Name  : %s') % self.font_name)
-            log(_(u'      Text Data  : %s') % self.text_data)
-            log(_(u'      Font Width : %u') % self.font_width)
-            log(_(u'      Font Height: %u') % self.font_height)
-            log(_(u'      Boldness   : %u') % self.font_boldness)
-            log(_(u'      Italic     : %u') % self.font_italic)
-            log(_(u'      Font Color : (%u, %u, %u)') % (self.font_red,
-                                                         self.font_green,
-                                                         self.font_blue))
+            log('    - ' + _('HUD ID: %(hud_id)s') % {'hud_id': self.hud_id})
+            log('      ' + _('Owner: %(hud_owner)s (%(hud_owner_index)s)') % {
+                'hud_owner': save_masters_[self.plugin_index],
+                'hud_owner_index': f'{self.plugin_index:02X}'})
+            log('      ' + _('Flags: %(hud_flags)s') % {
+                'hud_flags': f'0x{self.hud_flags:02X}'})
+            log('      ' + _('Show Mode: %(hud_show_mode)s') % {
+                'hud_show_mode': f'0x{self.show_mode:02X}'})
+            log('      ' + _('X Position: %(hud_pos_x)d') % {
+                'hud_pos_x': self.pos_x})
+            log('      ' + _('Y Position: %(hud_pos_y)d') % {
+                'hud_pos_y': self.pos_y})
+            log('      ' + _('Depth: %(hud_depth)d') % {
+                'hud_depth': self.depth})
+            log('      ' + _('X Scale: %(hud_scale_x)d') % {
+                'hud_scale_x': self.scale_x})
+            log('      ' + _('Y Scale: %(hud_scale_y)d') % {
+                'hud_scale_y': self.scale_y})
+            log('      ' + _('Alpha: %(hud_alpha)s') % {
+                'hud_alpha': f'0x{self.alpha:02X}'})
+            log('      ' + _('Alignment: %(hud_alignment)s') % {
+                'hud_alignment': f'0x{self.alignment:02X}'})
+            log('      ' + _('Auto-Scale: %(hud_auto_scale)s') % {
+                'hud_auto_scale': f'0x{self.auto_scale:02X}'})
+            log('      ' + _('HUD Width: %(hud_width)d') % {
+                'hud_width': self.hud_width})
+            log('      ' + _('HUD Height: %(hud_height)d') % {
+                'hud_height': self.hud_height})
+            log('      ' + _('Text Format: %(hud_text_format)d') % {
+                'hud_text_format': self.text_format})
+            log('      ' + _('Font Name: %(hud_font_name)s') % {
+                'hud_font_name': self.font_name})
+            log('      ' + _('Text Data: %(hud_text_data)s') % {
+                'hud_text_data': self.text_data})
+            log('      ' + _('Font Width: %(hud_font_width)d') % {
+                'hud_font_width': self.font_width})
+            log('      ' + _('Font Height: %(hud_font_height)d') % {
+                'hud_font_height': self.font_height})
+            log('      ' + _('Boldness: %(hud_font_boldness)d') % {
+                'hud_font_boldness': self.font_boldness})
+            log('      ' + _('Italic: %(hud_font_italic)d') % {
+                'hud_font_italic': self.font_italic})
+            log('      ' + _('Font Color: (%(hud_font_red)d, '
+                             '%(hud_font_green)d, %(hud_font_blue)d)') % {
+                'hud_font_red': self.font_red,
+                'hud_font_green': self.font_green,
+                'hud_font_blue': self.font_blue})
 
     def __init__(self, ins, record_type):
         super().__init__(record_type)
@@ -1289,12 +1359,13 @@ class _PluggyHudTBlock(_PluggyBlock):
             hud_entry.write_entry(out)
 
     def dump_to_log(self, log, save_masters_):
-        log(_(u'   %u HUD Text entries:') % len(self.hud_entries))
+        log('   ' + _('%(num_hud_texts)d HUD Text entries:') % {
+            'num_hud_texts': len(self.hud_entries)})
         for hud_entry in self.hud_entries:
             hud_entry.dump_to_log(log, save_masters_)
 
     def unique_identifier(self):
-        return _(u'HudT Block')
+        return _('HUD Text Block')
 
 #------------------------------------------------------------------------------
 # Files
@@ -1414,6 +1485,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
 
         :return: True if the master list retrieved by get_master_list will be
             accurate."""
+        raise NotImplementedError
 
     def dump_to_log(self, log, save_masters_):
         # We need the entire cosave to dump
@@ -1435,7 +1507,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
         :param save_path: The path to the save file that a cosave could belong
             to.
         :return: The path at which the cosave could exist."""
-        sa_root, sa_ext = cls.parse_save_path(u'%s' % save_path)
+        sa_root, sa_ext = cls.parse_save_path(f'{save_path}')
         if sa_root and sa_ext:
             final_cs_path = sa_root + cls.cosave_ext
             # Handle backups that end with 'f' - we just need to append that
@@ -1503,18 +1575,19 @@ class xSECosave(ACosave):
         return first_ch.chunk_type == u'PLGN'
 
     def dump_to_log(self, log, save_masters_):
-        super(xSECosave, self).dump_to_log(log, save_masters_)
+        super().dump_to_log(log, save_masters_)
         for plugin_chunk in self.cosave_chunks: # type: _xSEPluginChunk
             plugin_sig = self._get_plugin_signature(plugin_chunk)
-            log.setHeader(_(u'Plugin: %s, Total chunks: %u') % (
-                plugin_sig, len(plugin_chunk.chunks)))
-            log(u'=' * 40)
-            log(_(u'  Type   Version  Size (in bytes)'))
-            log(u'-' * 40)
+            log.setHeader(_('Plugin: %(co_plugin_sig)s, Total chunks: '
+                            '%(num_co_plugin_chunks)d') % {
+                'co_plugin_sig': plugin_sig,
+                'num_co_plugin_chunks': len(plugin_chunk.chunks)})
+            log('=' * 40)
+            log(f"{_('Type')} | {_('Version')} | {_('Size (in bytes)')}")
+            log('-' * 40)
             for chunk in plugin_chunk.chunks: # type: _xSEChunk
-                log(u'  %4s  %-4u        %u' % (chunk.chunk_type,
-                                                chunk.chunk_version,
-                                                chunk.chunk_length()))
+                log(f'{chunk.chunk_type:4s} | {chunk.chunk_version} | '
+                    f'{chunk.chunk_length()}')
                 if isinstance(chunk, _Dumpable):
                     chunk.dump_to_log(log, save_masters_)
 
@@ -1532,12 +1605,12 @@ class xSECosave(ACosave):
         if raw_sig == self._xse_signature:
             readable_sig = self.cosave_header.savefile_tag
         elif raw_sig == self._pluggy_signature:
-            readable_sig = u'Pluggy'
+            readable_sig = 'Pluggy'
         else:
             # Reverse the result since xSE writes signatures backwards
-            readable_sig = u''.join(
+            readable_sig = ''.join(
                 [self._to_unichr(raw_sig, x) for x in [0, 8, 16, 24]])[::-1]
-        return readable_sig + (u' (0x%X)' % raw_sig if with_raw else u'')
+        return readable_sig + (f' (0x{raw_sig:X})' if with_raw else '')
 
     @staticmethod
     def _to_unichr(target_int: int, shift: int):
@@ -1604,8 +1677,8 @@ class PluggyCosave(ACosave):
                 expected_position = unpack_int(ins)
                 if actual_position != expected_position:
                     raise InvalidCosaveError(self.abs_path.tail,
-                        u'End control position was incorrect (expected %u, '
-                        u'but got %u).' % (expected_position, actual_position))
+                        f'End control position was incorrect (expected '
+                        f'{expected_position}, but got {actual_position}).')
                 # Finally, check if the stored CRC matches the actual CRC of
                 # all preceding data.
                 ins.seek(0)
@@ -1614,15 +1687,15 @@ class PluggyCosave(ACosave):
             actual_crc = crc32(checksum_data)
             if actual_crc != expected_crc:
                 raise InvalidCosaveError(self.abs_path.tail,
-                    u'Checksum does not match (expected %X, but got '
-                    u'%X).' % (expected_crc, actual_crc))
+                    f'Checksum does not match (expected {expected_crc:08X}, '
+                    f'but got {actual_crc:08X}).')
             try:
                 ins = io.BytesIO(buffered_data)
                 self._read_cosave_header(ins)
                 self._read_cosave_body(ins, light)
             except struct_error as e:
                 raise CosaveError(self.abs_path.tail,
-                    u'Failed to read cosave: %r' % e)
+                    f'Failed to read cosave: {e!r}')
             self.loading_state = target_state
 
     def _read_cosave_body(self, ins, light=False):
@@ -1644,7 +1717,7 @@ class PluggyCosave(ACosave):
             return self._block_types[record_type]
         except IndexError:
             raise InvalidCosaveError(self.abs_path.tail,
-                u'Unknown pluggy record block type %u.' % record_type)
+                f'Unknown pluggy record block type {record_type}.')
 
     def write_cosave(self, out_path):
         super().write_cosave(out_path)
@@ -1681,7 +1754,7 @@ class PluggyCosave(ACosave):
         super(PluggyCosave, self).dump_to_log(log, save_masters_)
         for pluggy_block in self.cosave_chunks:
             log.setHeader(pluggy_block.unique_identifier())
-            log(u'=' * 40)
+            log('=' * 40)
             pluggy_block.dump_to_log(log, save_masters_)
 
 # Factory

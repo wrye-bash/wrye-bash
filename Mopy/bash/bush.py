@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -34,19 +34,21 @@ from . import game as game_init, bass
 from .bolt import GPath, Path, deprint, dict_sort
 from .env import get_egs_game_paths, get_legacy_ws_game_info, \
     get_legacy_ws_game_paths, get_gog_game_paths, get_ws_game_paths, \
-    get_steam_game_paths, get_file_version, get_game_version_fallback
+    get_steam_game_paths, get_file_version, get_game_version_fallback, \
+    get_disc_game_paths
 from .exception import BoltError
 from .game import GameInfo, patch_game
 
 # Game detection --------------------------------------------------------------
-game: 'patch_game.PatchGame' | None = None
-ws_info = None                      # type: env._LegacyWinAppInfo | None
-foundGames: dict[str, Path] = {}    # dict used by the Settings switch game menu
+game: patch_game.PatchGame | None = None
+ws_info: 'env._LegacyWinAppInfo' | None = None
+foundGames: dict[str, list[Path]] = {} # dict used by the Settings switch game menu
 
 # Module Cache
 _allGames: dict[str, type[GameInfo]] = {}
 _steam_games: dict[str, list[Path]] = {}
 _gog_games: dict[str, list[Path]] = {}
+_disc_games: dict[str, list[Path]] = {}
 _ws_legacy_games: dict[str, list[Path]] = {}
 _ws_games: dict[str, list[Path]] = {}
 _egs_games: dict[str, list[Path]] = {}
@@ -108,6 +110,10 @@ def _supportedGames(skip_ws_games=False):
             gog_paths = get_gog_game_paths(game_type)
             if gog_paths:
                 _gog_games[gt_display_name] = gog_paths
+            disc_paths = get_disc_game_paths(game_type, _steam_games.values(),
+                _gog_games.values())
+            if disc_paths:
+                _disc_games[gt_display_name] = disc_paths
             ws_legacy_paths = get_legacy_ws_game_paths(game_type)
             if ws_legacy_paths:
                 _ws_legacy_games[gt_display_name] = ws_legacy_paths
@@ -150,7 +156,14 @@ def _supportedGames(skip_ws_games=False):
         msg.extend(_print_found_games(_gog_games))
     else:
         msg.append('  No supported games were found via GOG.')
-    msg.append(' 3. Windows Store (Legacy):')
+    msg.append(' 3. Disc Versions (via Windows Registry):')
+    if _disc_games:
+        msg.append('  The following disc versions of supported games were '
+                   'found:')
+        msg.extend(_print_found_games(_disc_games))
+    else:
+        msg.append('  No disc versions of supported games were found.')
+    msg.append(' 4. Windows Store (Legacy):')
     if _ws_legacy_games:
         msg.append('  The following supported games with modding enabled were '
                    'found via the legacy Windows Store:')
@@ -158,7 +171,7 @@ def _supportedGames(skip_ws_games=False):
     else:
         msg.append('  No supported games with modding enabled were found via '
                    'the legacy Windows Store.')
-    msg.append(' 4. Windows Store:')
+    msg.append(' 5. Windows Store:')
     if skip_ws_games:
         msg.append('  Windows Store game detection was disabled via bash.ini.')
     elif _ws_games:
@@ -167,7 +180,7 @@ def _supportedGames(skip_ws_games=False):
         msg.extend(_print_found_games(_ws_games))
     else:
         msg.append('  No supported games were found via the Windows Store.')
-    msg.append(' 5. Epic Games Store:')
+    msg.append(' 6. Epic Games Store:')
     if _egs_games:
         msg.append('  The following supported games were found via the Epic '
                    'Games Store:')
@@ -187,12 +200,13 @@ def _supportedGames(skip_ws_games=False):
             else:
                 all_found_games[found_game] = found_paths
     merge_games(_gog_games)
+    merge_games(_disc_games)
     merge_games(_ws_legacy_games)
     merge_games(_ws_games)
     merge_games(_egs_games)
     return all_found_games
 
-def _detectGames(cli_path: str = '') -> tuple[
+def _detectGames(cli_path_arg: str = '') -> tuple[
         dict[str, list[Path]], str | None, Path | None]:
     """Detect which supported games are installed.
 
@@ -214,34 +228,32 @@ def _detectGames(cli_path: str = '') -> tuple[
     # _supportedGames sets _allGames if not set
     foundGames_ = _supportedGames(skip_new_ws)
     if not _allGames: # if allGames is empty something goes badly wrong
-        raise BoltError(_(u'No game support modules found in Mopy/bash/game.'))
+        raise BoltError('No game support modules found in Mopy/bash/game.')
     # check in order of precedence the -o argument, the ini and our parent dir
     installPaths = {} # key -> (path, found msg, error msg)
     #--First: path specified via the -o command line argument
-    if cli_path != u'':
-        test_path = GPath(cli_path)
-        if not test_path.is_absolute():
-            test_path = Path.getcwd().join(test_path)
-        installPaths[u'cmd'] = (test_path,
-            u'Set game mode to %(gamename)s specified via -o argument: ',
-            u'No known game in the path specified via -o argument: %(path)s')
+    if cli_path_arg:
+        cli_path = GPath(cli_path_arg)
+        if not cli_path.is_absolute():
+            cli_path = Path.getcwd().join(cli_path)
+        installPaths['cmd'] = (cli_path,
+            'Set game mode to %(gamename)s specified via -o argument: ',
+            'No known game in the path specified via -o argument: %(path)s')
     #--Second: check if sOblivionPath is specified in the ini
     if ini_game_path := bass.get_path_from_ini('OblivionPath', 'mopy'):
-        installPaths[u'ini'] = (ini_game_path,
-            u'Set game mode to %(gamename)s based on sOblivionPath setting in '
-            u'bash.ini: ',
-            u'No known game in the path specified in sOblivionPath ini '
-            u'setting: %(path)s')
+        installPaths['ini'] = (ini_game_path,
+            'Set game mode to %(gamename)s based on sOblivionPath setting in '
+            'bash.ini: ',
+            'No known game in the path specified in sOblivionPath ini '
+            'setting: %(path)s')
     #--Third: Detect what game is installed one directory up from Mopy
-    test_path = Path.getcwd()
-    if test_path.cs[-4:] == u'mopy':
-        test_path = GPath(test_path.s[:-5])
-        if not test_path.is_absolute():
-            test_path = Path.getcwd().join(test_path)
-        installPaths[u'upMopy'] = (test_path,
-            u'Set game mode to %(gamename)s found in parent directory of '
-            u'Mopy: ',
-            u'No known game in parent directory of Mopy: %(path)s')
+    one_up_path = GPath(bass.dirs['mopy']).head
+    if not one_up_path.is_absolute():
+        one_up_path = Path.getcwd().join(one_up_path)
+    installPaths['upMopy'] = (one_up_path,
+        'Set game mode to %(gamename)s found in parent directory of '
+        'Mopy: ',
+        'No known game in parent directory of Mopy: %(path)s')
     #--Detect
     deprint('Detecting games via the -o argument, bash.ini and relative path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
@@ -257,31 +269,32 @@ def _detectGames(cli_path: str = '') -> tuple[
     # no game found in installPaths - foundGames are the ones from the registry
     return foundGames_, None, None
 
-def __setGame(gamename, gamePath, msg):
+def __setGame(gamename, gamePath, msg, opts, init_warnigns):
     """Set bush game globals - raise if they are already set."""
     global game
     global ws_info
     if game is not None or ws_info is not None:
         raise BoltError(u'Trying to reset the game')
-    game = _allGames[gamename](gamePath)
+    game = _allGames[gamename](gamePath, opts, init_warnigns)
     ws_info = get_legacy_ws_game_info(game)
     deprint(msg % {u'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
     _allGames.clear()
     game.init()
 
-def detect_and_set_game(cli_game_dir, gname=None, gm_path=None):
+def detect_and_set_game(opts, init_warnigns, gname=None, gm_path=None):
     if gname is None: # detect available games
-        foundGames_, gname, gm_path = _detectGames(cli_game_dir)
+        foundGames_, gname, gm_path = _detectGames(opts.oblivionPath)
         foundGames.update(foundGames_) # set the global name -> game path dict
     # Try the game returned by detectGames() or specified
     if gname is not None and gm_path is not None:
-        __setGame(gname, gm_path, u'Using %(gamename)s game:')
+        __setGame(gname, gm_path, 'Using %(gamename)s game:', opts,
+                  init_warnigns)
         return None
-    elif len(foundGames) == 1 and len(next(iter(foundGames))) == 1:
-        single_game = next(iter(foundGames))
-        __setGame(single_game, next(iter(foundGames[single_game])),
-                  u'Single game found [%(gamename)s]:')
+    elif len(foundGames) == 1 and len(single_game_paths := next(
+            iter(foundGames.values()))) == 1:
+        __setGame(next(iter(foundGames)), single_game_paths[0],
+                  'Single game found [%(gamename)s]:', opts, init_warnigns)
         return None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -89,7 +89,11 @@ def _get_global_dir() -> PPath:
     try:
         configured_dir = configured_dir.resolve(strict=True)
     except FileNotFoundError:
-        os.makedirs(configured_dir, exist_ok=True)
+        try:
+            os.makedirs(configured_dir, exist_ok=True)
+        except FileNotFoundError: # drive does not exist
+            _reset_temp_dir_setting()
+            configured_dir = PPath(raw_configured_path).resolve(strict=True)
     try:
         wbtemp_readme = os.path.join(configured_dir, 'README.md')
         # Keep this construction here, it relies on _(), which won't have been
@@ -104,7 +108,7 @@ def _get_global_dir() -> PPath:
         + '\n\n' + '\n'.join(wrap(
             _('If all instances of Wrye Bash are closed and you still see '
               'directories and/or files in here, you can freely delete '
-              'them.'))))
+              'them.'))) + '\n')
         # Unconditionally write out the readme since the language or readme
         # contents may have changed since it was last written - we have no way
         # to tell

@@ -4,7 +4,7 @@ jobs:
   close:
     runs-on: ubuntu-latest
     steps:
-    - uses: dessant/repo-lockdown@v3
+    - uses: dessant/repo-lockdown@6e7465417db1c79a9c02df1797672f2bca97c926 # v4.0.0
       with:
         github-token: ${{ github.token }}
         pr-comment: >

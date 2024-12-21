@@ -16,20 +16,21 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import MergeabilityCheck, ObjectIndexRange
+from .. import ObjectIndexRange
 from ..fallout4 import AFallout4GameInfo
 from ..store_mixins import SteamMixin
 from ... import bolt
+from ...bolt import FName
 
 class _AFallout4VRGameInfo(AFallout4GameInfo):
     """GameInfo override for Fallout 4 VR."""
     display_name = 'Fallout 4 VR'
     fsName = u'Fallout4VR'
-    game_icon = u'fallout4vr_%u.png'
+    game_icon = u'fallout4vr.svg'
     altName = u'Wrye VRash'
     bash_root_prefix = u'Fallout4VR'
     bak_game_name = u'Fallout4VR'
@@ -45,7 +46,6 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
     loot_game_name = 'Fallout4VR'
 
     espm_extensions = AFallout4GameInfo.espm_extensions - {'.esl'}
-    mergeability_checks = {MergeabilityCheck.MERGE}
 
     class Se(AFallout4GameInfo.Se):
         se_abbrev = u'F4SEVR'
@@ -78,6 +78,13 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
         'fallout4_vr - textures.ba2',
         'fallout4_vr.esm',
     }
+
+    class _LoFallout4VR(AFallout4GameInfo.LoFallout4):
+        force_load_first = (*AFallout4GameInfo.LoFallout4.force_load_first,
+                            FName('Fallout4_VR.esm'))
+        # No ESLs, reset these back to their pre-ESL versions
+        _ccc_filename = ''
+    lo_handler = _LoFallout4VR
 
     @classmethod
     def init(cls, _package_name=None):

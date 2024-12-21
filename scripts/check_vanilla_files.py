@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -35,6 +35,9 @@ game_path_name = r'C:\Program Files\ModifiableWindowsApps\Oblivion GOTY (PC)\Obl
 
 import gettext
 from pprint import pprint
+
+# TODO Update for py3(?, see shebang) and our modern script infrastructure
+#  (utils.run_script and loggers)
 
 # Initialize translations before importing any Bash modules
 gettext.NullTranslations().install()

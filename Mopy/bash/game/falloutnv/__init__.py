@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -35,7 +35,7 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
     display_name = 'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
-    game_icon = u'falloutnv_%u.png'
+    game_icon = u'falloutnv.svg'
     bash_root_prefix = u'FalloutNV'
     bak_game_name = u'FalloutNV'
     my_games_name = u'FalloutNV'
@@ -81,7 +81,12 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         xe_key_prefix = u'fnvView'
 
     class Bain(AFallout3GameInfo.Bain):
-        data_dirs = (AFallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
+        data_dirs = (AFallout3GameInfo.Bain.data_dirs - {'fose'}) | {
+            'baseobjectswapper', # 3P: Base Object Swapper
+            'keywords', # 3P: KEYWORDS
+            'nvse', # 3P: NVSE
+            'racemenupresets', # 3P: Character Preset Menu
+        }
         no_skip = AFallout3GameInfo.Bain.no_skip | {
             'aaid.txt', # 3P: Auto Activate Invisible Doors
             _j('uio', 'supported.txt'), # 3P: UIO - User Interface Organizer
@@ -282,7 +287,7 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         4833: ('GetDistance3D', 2, 0),
         4843: ('PlayerHasKey', 0, 0),
         4897: ('ActorHasEffect', 2, 0),
-        # Added by JIP NVSE Plugin - up to date with v57.21
+        # Added by JIP NVSE Plugin - up to date with v57.30
         5637: ('GetIsPoisoned', 0, 0),
         5708: ('IsEquippedWeaponSilenced', 0, 0),
         5709: ('IsEquippedWeaponScoped', 0, 0),
@@ -317,13 +322,68 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         6368: ('GetGroundMaterial', 0, 0),
         6391: ('EquippedWeaponHasModType', 1, 0),
         6426: ('IsSpellTargetList', 2, 0),
-        # Added by JohnnyGuitar NVSE - up to date with v4.98
+        6462: ('HasKeywordCond', 1, 0),
+        # Added by JohnnyGuitar NVSE - up to date with v5.06b
         8501: ('GetBaseScale', 0, 0),
         8549: ('GetQuestFailed', 2, 0),
         8623: ('GetLocationSpecificLoadScreensOnly', 0, 0),
         8684: ('GetPlayerCamFOV', 1, 0),
+        8692: ('AudioMarkerGetController', 0, 0),
+        8701: ('AudioMarkerGetCurrent', 0, 0),
+        8706: ('GameGetSecondsPassed', 0, 0),
+        # Added by AnhNVSE - up to date with v1.3.1
+        9732: ('GetQuestCompletedAlt', 2, 0),
+        9753: ('GetArmorARAlt', 2, 0),
         # Added by TTW nvse plugin
         10247: ('TTW_GetEquippedWeaponSkill', 0, 0),
+        # Added by SUP NVSE - up to date with v8.55
+        10648: ('IsPlayerOverencumbered', 0, 0),
+        10758: ('SUPGetConditionVarFloat', 1, 0),
+        # Added by ShowOff xNVSE Plugin - up to date with v1.80
+        11414: ('GetPlayerCanPickpocketEquippedItems', 0, 0),
+        11415: ('GetPCHasSleepWaitOverride', 0, 0),
+        11419: ('GetNumActorsInRangeFromRef', 3, 1),
+        11420: ('GetNumCombatActorsFromActor', 3, 1),
+        11421: ('IsWeaponMelee', 2, 0),
+        11422: ('IsEquippedWeaponMelee', 0, 0),
+        11423: ('IsWeaponRanged', 2, 0),
+        11424: ('IsEquippedWeaponRanged', 0, 0),
+        11425: ('GetChallengeProgress', 2, 0),
+        11426: ('ConditionPrint', 0, 0),
+        11428: ('GetNumQueuedCornerMessages', 0, 0),
+        11429: ('GetCreatureTurningSpeed', 2, 0),
+        11431: ('GetCreatureFootWeight', 2, 0),
+        11438: ('IsAnimPlayingExCond', 1, 1),
+        11439: ('GetNumCompassHostiles', 3, 1),
+        11459: ('PlayerHasNightVisionActive', 0, 0),
+        11460: ('PlayerIsDrinkingPlacedWater', 0, 0),
+        11462: ('IsNight', 0, 0),
+        11463: ('IsLimbCrippled', 1, 1),
+        11464: ('GetNumCrippledLimbs', 1, 0),
+        11465: ('GetCrippledLimbsAsBitMask', 1, 0),
+        11466: ('GetNumBrokenEquippedItems', 3, 1),
+        11467: ('GetEquippedItemsAsBitMask', 0, 0),
+        11468: ('GetEquippedWeaponType', 0, 0),
+        11469: ('GetBaseEquippedWeight', 3, 1),
+        11470: ('GetCalculatedEquippedWeight', 3, 1),
+        11471: ('GetCalculatedMaxCarryWeight', 0, 0),
+        11482: ('IsReferenceCloned', 0, 0),
+        11484: ('IsTemporaryReference', 0, 0),
+        11485: ('GetPCHasScriptedFastTravelOverride', 0, 0),
+        11486: ('GetPCCanFastTravel', 0, 0),
+        11487: ('GetWeaponHasFlag', 1, 2),
+        11488: ('GetActorHasBaseFlag', 1, 2),
+        11493: ('GetCalculatedSkillPoints', 1, 0),
+        11496: ('GetCalculatedPerkPoints', 1, 0),
+        11509: ('GetActorValueDamage', 1, 0),
+        11524: ('GetItemCanHaveHealth', 0, 0),
+        11557: ('GetCalculatedItemValue', 1, 2),
+        11580: ('GetIsPlayerOverencumbered', 1, 0),
+        11604: ('GetIsActivationPromptShown', 0, 0),
+        11605: ('GetHitLocationLingering', 0, 0),
+        11611: ('GetVATSTargetable', 0, 0),
+        11615: ('IsPlayerLookingAround', 0, 0),
+        11617: ('IsActorInvisibleToPlayer', 0, 0),
     }
     # Remove functions with different indices in FNV
     del condition_function_data[1082] # IsKeyPressed, 1107 in FNV

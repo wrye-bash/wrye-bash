@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,6 +24,7 @@ from .. import ObjectIndexRange
 from ..enderal import AEnderalGameInfo
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import GOGMixin, SteamMixin
+from ...bolt import FName
 
 _GOG_IDS = [1708684988]
 
@@ -33,7 +34,7 @@ class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
     """GameInfo override for Enderal Special Edition."""
     display_name = 'Enderal Special Edition'
     fsName = u'Enderal Special Edition'
-    game_icon = u'enderalse_%u.png'
+    game_icon = u'enderalse.svg'
     bash_root_prefix = u'EnderalSE'
     bak_game_name = u'Enderal Special Edition'
     my_games_name = u'Enderal Special Edition'
@@ -57,12 +58,6 @@ class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
 
     class Bain(AEnderalGameInfo.Bain, ASkyrimSEGameInfo.Bain):
         skip_bain_refresh = {u'enderalseedit backups', u'enderalseedit cache'}
-
-    ##: Drop once we've implemented support for Backported Extended ESL Support
-    class Esp(ASkyrimSEGameInfo.Esp):
-        object_index_range = ObjectIndexRange.RESERVED
-        object_index_range_expansion_ver = 0.0
-        validHeaderVersions = (0.94, 1.70)
 
     bethDataFiles = {
         'dawnguard.esm',
@@ -107,6 +102,13 @@ class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
     names_tweaks = (ASkyrimSEGameInfo.names_tweaks |
                     {'NamesTweak_RenamePennies'} -
                     {'NamesTweak_RenameGold'})
+
+    class _LoEnderalSE(ASkyrimSEGameInfo.LoSkyrimSE):
+        # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
+        force_load_first = tuple(map(FName, (
+            'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm', 'Update.esm',
+            'Enderal - Forgotten Stories.esm',)))
+    lo_handler = _LoEnderalSE
 
     @classmethod
     def init(cls, _package_name=None):

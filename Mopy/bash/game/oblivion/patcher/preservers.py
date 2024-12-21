@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -36,7 +36,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     patcher_tags = {'Roads'}
     _config_key = u'RoadImporter'
 
-    logMsg = u'\n=== ' + _(u'Worlds Patched')
+    logMsg = '\n=== ' + _('Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD', b'ROAD') ##: do we need cell??
 
     def __init__(self, p_name, p_file, p_sources):
@@ -132,7 +132,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
-        log('* ' + _('Powers Tweaked') + f': {sum(count.values())}')
+        log('* ' + _('Powers Tweaked: %(total_changed)d') % {
+            'total_changed': sum(count.values())})
         for srcMod in load_order.get_ordered(count):
             log(f'  * {srcMod}: {count[srcMod]:d}')
 
@@ -140,7 +141,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         return int(csv_fields[3])
 
     def _add_to_patch(self, rid, record, top_sig):
-        return record.spellType == 2
+        return record.spell_type == 2
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -150,7 +151,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
         id_info = self.id_stored_data[b'FACT']
         for rid, record in self.patchFile.tops[b'SPEL'].id_records.items():
             ##: Skips OBME records - rework to support them
-            if record.obme_record_version is not None or record.spellType != 2:
+            if (record.obme_record_version is not None or
+                    record.spell_type != 2):
                 continue
             #--Skip this one?
             if not (duration := id_info.get(rid)): continue
@@ -161,7 +163,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
                 continue
             #--Okay, do it
             record.full = f'+{record.full}'
-            record.spellType = 3 #--Lesser power
+            record.spell_type = 3 #--Lesser power
             effect = record.getDefault(u'effects')
             effect.effect_sig = b'SEFF'
             effect.duration = duration

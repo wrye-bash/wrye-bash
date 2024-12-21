@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,7 +30,7 @@ from zlib import error as zlib_error
 
 from . import bolt, bush, env
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
-    struct_error, GPath_no_norm, FName
+    struct_error, GPath_no_norm, FName, unpack_int
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
@@ -45,11 +45,13 @@ class MasterMap(object):
     TODO refactor to drop those"""
     def __init__(self, inMasters, outMasters):
         mast_map = {}
+        self._in_masters = {}
         for i, master in enumerate(inMasters):
+            self._in_masters[master] = i
             try:
                 mast_map[i] = outMasters.index(master)
             except ValueError:
-                mast_map[i] = -1
+                pass # this master is not present in outMasters
         self._mast_map = mast_map
         self._out_masters = outMasters
 
@@ -58,19 +60,22 @@ class MasterMap(object):
         possible, then either returns default (if given) or raises
         MasterMapError."""
         if not fid_to_map: return fid_to_map
-        mod_dex_in = (int(fid_to_map >> 24) if isinstance(fid_to_map, int) else
-                      fid_to_map.mod_dex)
-        mod_dex_out = self._mast_map.get(mod_dex_in, -2)
-        if mod_dex_out >= 0:
+        is_int = isinstance(fid_to_map, int)
+        try:
+            try:
+                mod_dex_in = int(fid_to_map >> 24) if is_int else \
+                    fid_to_map.mod_dex
+            except StateError: # fid_to_map comes from FormId.from_tuple
+                mod_dex_in = self._in_masters[fid_to_map.mod_fn] # may raise KE
+            mod_dex_out = self._mast_map[mod_dex_in]
             mapped_object_dex = (
-                fid_to_map & 0xFFFFFF if isinstance(fid_to_map, int) else
-                fid_to_map.object_dex)
+                fid_to_map & 0xFFFFFF if is_int else fid_to_map.object_dex)
             return FormId.from_tuple((self._out_masters[mod_dex_out],
                                       mapped_object_dex))
-        elif dflt_fid != ZERO_FID:
-            return dflt_fid
-        else:
-            raise MasterMapError(mod_dex_in)
+        except KeyError:
+            if dflt_fid != ZERO_FID:
+                return dflt_fid
+        raise MasterMapError(fid_to_map)
 
 class LoadFactory:
     """Encapsulate info on which record type we use to load which record
@@ -221,38 +226,35 @@ class ModFile(object):
     def __load_strs(self, ins, loadStrings, progress):
         # Check if we need to handle strings
         self.strings.clear()
-        if loadStrings and getattr(self.tes4.flags1, 'localized', False):
-            from . import bosh
-            stringsProgress = SubProgress(progress, 0,
-                                          0.1)  # Use 10% of progress bar
-            # for strings
-            lang = bosh.oblivionIni.get_ini_language()
-            stringsPaths = self.fileInfo.getStringsPaths(lang)
-            if stringsPaths: stringsProgress.setFull(len(stringsPaths))
-            for i, path in enumerate(stringsPaths):
-                self.strings.loadFile(path,
-                                      SubProgress(stringsProgress, i, i + 1),
-                                      lang)
-                stringsProgress(i)
-            ins.setStringTable(self.strings)
-            subProgress = SubProgress(progress, 0.1, 1.0)
-        else:
+        if not (loadStrings and getattr(self.tes4.flags1, 'localized', False)):
             ins.setStringTable(None)
-            subProgress = progress
+            return progress
+        stringsProgress = SubProgress( # Use 10% of progress bar for strings
+            progress, 0, 0.1)
+        from . import bosh
+        i_lang = bosh.oblivionIni.get_ini_language(
+            bush.game.Ini.default_game_lang)
+        stringsPaths = self.fileInfo.getStringsPaths(i_lang)
+        if stringsPaths: stringsProgress.setFull(len(stringsPaths))
+        for i, path in enumerate(stringsPaths):
+            self.strings.loadFile(path, SubProgress(stringsProgress, i, i + 1),
+                                  i_lang)
+            stringsProgress(i)
+        ins.setStringTable(self.strings)
+        subProgress = SubProgress(progress, 0.1, 1.0)
         return subProgress
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
         self.fileInfo.makeBackup()
-        filePath = self.fileInfo.getPath()
         with TempFile() as tmp_plugin:
             self.save(tmp_plugin)
             # fileInfo created before the file
-            if self.fileInfo.mtime is not None:
-                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.mtime ##: ugh
+            if self.fileInfo.ftime is not None:
+                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.ftime ##: ugh
             # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
             #  permissions dialog is displayed (should display file in use)
-            env.shellMove({tmp_plugin: filePath})
+            env.shellMove({tmp_plugin: self.fileInfo.abs_path})
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -262,10 +264,10 @@ class ModFile(object):
             raise StateError('Insufficient data to write file.')
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
-        if self.tes4.num_masters > bush.game.Esp.master_limit:
+        mlimit = bush.game.Esp.master_limit
+        if self.tes4.num_masters > mlimit:
             raise ModError(self.fileInfo.fn_key,
-                           f'Attempting to write a file with too many '
-                           f'masters (>{bush.game.Esp.master_limit}).')
+              f'Attempting to write a file with too many masters (>{mlimit}).')
         outPath = outPath or self.fileInfo.abs_path
         with FormIdWriteContext(outPath, self.augmented_masters(),
                                 self.tes4.version) as out:
@@ -301,16 +303,16 @@ class ModFile(object):
     def used_masters_by_top(self) -> dict[bytes, set[FName]]:
         """Get a dict mapping top group signatures to sets that indicate what
         masters those top groups depend on."""
-        ret = {}
+        sig_mas = {}
         for block_sig, block in self.tops.items():
             masters_set = MasterSet([bush.game.master_file])
             block.updateMasters(masters_set.add)
             # The file itself is always implicitly available, so discard it
             masters_set.discard(self.fileInfo.fn_key)
-            ret[block_sig] = set(masters_set) ##: drop once MasterSet is gone
-        return ret
+            sig_mas[block_sig] = set(masters_set) ##: drop once MasterSet is gone
+        return sig_mas
 
-    def count_new_records(self):
+    def count_new_records(self, next_object_start=None):
         """Count the number of new records in this file. self.tes4.masters must
         be set correctly. Also updates self.tes4.nextObject to match."""
         new_rec_count = 0
@@ -318,7 +320,8 @@ class ModFile(object):
         for t_block in self.tops.values():
             new_rec_count += len([r for r in t_block.iter_records()
                                   if r.fid.mod_fn == own_name])
-        self.tes4.nextObject = self.tes4.next_object_default + new_rec_count
+        next_object = next_object_start or self.tes4.next_object_default
+        self.tes4.nextObject = next_object + new_rec_count
         return new_rec_count
 
     def _index_mgefs(self):
@@ -380,52 +383,22 @@ class ModFile(object):
         self.tops[new_rec_sig].setRecord(new_rec, do_copy=False)
         return new_rec
 
+# Typing for ModHeaderReader below
+_ModDataDict = defaultdict[bytes, list[tuple[RecHeader, str]]]
+
 # TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
 class ModHeaderReader(object):
     """Allows very fast reading of a plugin's headers, skipping reading and
     decoding of anything but the headers."""
-    @staticmethod
-    def _scan_fids(mod_info, fid_cond):
-        with ModReader.from_info(mod_info) as ins:
-            try:
-                while not ins.atEnd():
-                    next_header = unpack_header(ins)
-                    # Skip GRUPs themselves, only process their records
-                    if next_header.recType != b'GRUP':
-                        if fid_cond(next_header.fid):
-                            return True
-                        next_header.skip_blob(ins)
-            except (OSError, struct_error) as e:
-                raise ModError(ins.inName, f"Error scanning {mod_info}, file "
-                    f"read pos: {ins.tell():d}\nCaused by: '{e!r}'")
-        return False
 
     @staticmethod
-    def formids_in_esl_range(mod_info):
-        """Checks if all FormIDs in the specified mod are in the ESL range."""
-        num_masters = len(mod_info.masterNames)
-        return not ModHeaderReader._scan_fids(mod_info,
-            lambda header_fid: header_fid.mod_dex >= num_masters and
-                               header_fid.object_dex > 0xFFF)
-
-    @staticmethod
-    def has_new_records(mod_info):
-        """Checks if all the specified mod has any new records."""
-        num_masters = len(mod_info.masterNames)
-        # Check for NULL to skip the main file header (i.e. TES3/TES4)
-        return ModHeaderReader._scan_fids(mod_info,
-            lambda header_fid: not header_fid.is_null() and
-                               header_fid.mod_dex >= num_masters)
-
-    @staticmethod
-    def extract_mod_data(mod_info, progress, *, __unpacker=int_unpacker):
+    def extract_mod_data(mod_info, progress) -> _ModDataDict:
         """Reads the headers and EDIDs of every record in the specified mod,
         returning them as a dict, mapping record signature to a dict mapping
         FormIDs to a list of tuples containing the headers and EDIDs of every
         record with that signature. Note that the flags are not processed
-        either - if you need that, manually call MreRecord.flags1_() on them.
-
-        :rtype: defaultdict[bytes, defaultdict[int, tuple[RecHeader, str]]]"""
+        either - if you need that, manually call MreRecord.flags1_() on
+        them."""
         # This method is *heavily* optimized for performance. Inlines and other
         # ugly code ahead
         progress = progress or bolt.Progress()
@@ -433,17 +406,20 @@ class ModHeaderReader(object):
         # accessing via dot is slow
         wanted_encoding = bolt.pluginEncoding
         avoided_encodings = (u'utf8', u'utf-8')
-        minf_size = mod_info.fsize
+        # PY3.13: Check if removing all the dot 'inlines' in here is faster
+        # now - on py3.12 it is *slower*, even though it really should be
+        # faster!
         plugin_fn = mod_info.fn_key
         sh_unpack = Subrecord.sub_header_unpack
         sh_size = Subrecord.sub_header_size
-        main_progress_msg = _(u'Loading: %s') % plugin_fn
+        main_progress_msg = _('Loading: %(loading_plugin)s') % {
+            'loading_plugin': plugin_fn}
         # Where we'll store all the collected record data
-        group_records = defaultdict(lambda: defaultdict(tuple))
+        group_records: _ModDataDict = defaultdict(list)
         # The current top GRUP label - starts out as TES4/TES3
         tg_label = bush.game.Esp.plugin_header_sig
-        # The dict we'll use to store records from the current top GRUP
-        records = group_records[tg_label]
+        # The list we'll use to store records from the current top GRUP
+        record_list = group_records[tg_label]
         ##: Uncomment these variables and the block below that uses them once
         # all of FO4's record classes have been written
         # The record types that can even contain EDIDs
@@ -454,9 +430,6 @@ class ModHeaderReader(object):
         with mod_info.abs_path.open(u'rb') as ins:
             initial_bytes = ins.read()
         with FastModReader(plugin_fn, initial_bytes) as ins:
-            # PY3.12: Check if removing these is faster now - on py3.11 it is
-            # *slower*, even though it really should be faster!
-            # More local methods to avoid repeated dot access
             ins_tell = ins.tell
             ins_seek = ins.seek
             ins_read = ins.read
@@ -470,28 +443,28 @@ class ModHeaderReader(object):
                     # Nothing special to do for non-top GRUPs
                     if not next_header.is_top_group_header: continue
                     tg_label = next_header.label
-                    progress(ins_tell() / minf_size,
+                    progress(ins_tell() / mod_info.fsize,
                              f'{main_progress_msg}\n{sig_to_str(tg_label)}')
-                    records = group_records[tg_label]
+                    record_list = group_records[tg_label]
                 #     skip_eids = tg_label not in records_with_eids
                 # elif skip_eids:
                 #     # This record type has no EDIDs, skip directly to the next
                 #     # record (can't use skip_blob because that passes
                 #     # debug_strs to seek()...)
-                #     records[next_header.fid] = (next_header, '')
+                #     record_list.append((next_header, ''))
                 #     ins_seek(ins_tell() + next_header.blob_size)
                 else:
                     # This is a regular record, look for the EDID subrecord
-                    eid = u''
+                    eid = ''
                     blob_siz = next_header.blob_size
                     next_record = ins_tell() + blob_siz
                     if next_header.flags1 & 0x00040000: # 'compressed' flag
-                        size_check = __unpacker(ins_read(4))[0]
+                        size_check = unpack_int(ins)
                         try:
                             new_rec_data = zlib_decompress(ins_read(
                                 blob_siz - 4))
                         except zlib_error:
-                            if plugin_fn == u'FalloutNV.esm':
+                            if plugin_fn == 'FalloutNV.esm':
                                 # Yep, FalloutNV.esm has a record with broken
                                 # zlib data. Just skip it.
                                 ins_seek(next_record)
@@ -508,23 +481,22 @@ class ModHeaderReader(object):
                     fmr_read = fmr.read
                     fmr_tell = fmr.tell
                     fmr_size = fmr.size
-                    fmr_unpack = fmr.unpack
                     while fmr_tell() != fmr_size:
                         # Inlined from unpackSubHeader & FastModReader.unpack
                         read_data = fmr_read(sh_size)
                         if len(read_data) != sh_size:
                             raise ModReadError(
-                                plugin_fn, [_rsig, u'SUB_HEAD'],
+                                plugin_fn, [_rsig, 'SUB_HEAD'],
                                 fmr_tell() - len(read_data), fmr_size)
                         mel_sig, mel_size = sh_unpack(read_data)
                         # Extended storage - very rare, so don't optimize
                         # inlines etc. for it
                         if mel_sig == b'XXXX':
                             # Throw away size here (always == 0)
-                            mel_size = fmr_unpack(__unpacker, 4, _rsig,
+                            mel_size = fmr.unpack(int_unpacker, 4, _rsig,
                                                   'XXXX.SIZE')[0]
-                            mel_sig = fmr_unpack(sh_unpack, sh_size,
-                                                 _rsig, 'XXXX.TYPE')[0]
+                            mel_sig = fmr.unpack(sh_unpack, sh_size, _rsig,
+                                                 'XXXX.TYPE')[0]
                         if mel_sig == b'EDID':
                             # No need to worry about newlines, these are Editor
                             # IDs and so won't contain any
@@ -533,7 +505,7 @@ class ModHeaderReader(object):
                             break
                         else:
                             fmr_seek(mel_size, 1)
-                    records[next_header.fid] = (next_header, eid)
+                    record_list.append((next_header, eid))
                     ins_seek(next_record) # we may have break'd at EDID
         del group_records[bush.game.Esp.plugin_header_sig] # skip TES4 record
         return group_records

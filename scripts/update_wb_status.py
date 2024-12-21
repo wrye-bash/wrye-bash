@@ -17,57 +17,59 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Update the latest.json file in the wb_status repository."""
 
-import argparse
 import json
-import os
-import sys
+import logging
+import pprint
 
-from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, commit_changes
+from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, commit_changes, \
+    fatal_error, mk_logfile, run_script, setup_log
 
-def setup_parser(parser):
-    parser.add_argument('new_version', type=int, metavar='ver',
+_LOGGER = logging.getLogger(__name__)
+_LOGFILE = mk_logfile(__file__)
+
+def _setup_new_version(parser):
+    parser.add_argument('new_version', type=str, metavar='ver',
         help='The new version that is to be released.')
 
 def main(args):
-    new_ver = f'{args.new_version}'
-    wanted_path = os.path.join(CHANGELOGS_PATH, f'Changelog - {new_ver}.b64')
+    setup_log(_LOGGER, args)
+    new_ver = args.new_version
+    wanted_path = CHANGELOGS_PATH / f'Changelog - {new_ver}.b64'
+    _LOGGER.debug('Looking for base64-encoded changelog')
     try:
         with open(wanted_path, 'r', encoding='utf-8') as ins:
             changelog_b64 = ins.read()
     except FileNotFoundError:
-        print(f'Could not find generated changelog. Please run '
-              f'generate_changelog.py and ensure it creates a file at '
-              f'{wanted_path}', file=sys.stderr)
-        sys.exit(1)
-    latest_json_path = os.path.join(WB_STATUS_PATH, 'latest.json')
+        fatal_error(f'Could not find generated changelog. Please run '
+                    f'generate_changelog.py and ensure it creates a file at '
+                    f'{wanted_path}', exit_code=1, logger=_LOGGER)
+    latest_json_path = WB_STATUS_PATH / 'latest.json'
+    _LOGGER.debug('Looking for previous JSON data')
     try:
         with open(latest_json_path, 'rb') as ins:
             latest_old = json.load(ins)
     except FileNotFoundError:
-        print('Could not find wb_status repo. Please clone it at the same '
-              'level as the wrye-bash repo.', file=sys.stderr)
-        sys.exit(2)
+        fatal_error(f'Could not find wb_status repo at {WB_STATUS_PATH}. '
+                    f'Please clone it at the same level as the wrye-bash '
+                    f'repo.', exit_code=2, logger=_LOGGER)
     # We have everything we need to construct the new latest.json
     latest_new = {
         'version': new_ver,
         'changes': changelog_b64,
         'downloads': latest_old['downloads'],
     }
+    _LOGGER.debug('Writing JSON output:' + '\n' + pprint.pformat(latest_new))
     with open(latest_json_path, 'w', encoding='utf-8') as out:
         out.write(json.dumps(latest_new, indent=4) + '\n')
     commit_changes(changed_paths=[latest_json_path],
         commit_msg=f'Update to Wrye Bash v{new_ver}', repo_path=WB_STATUS_PATH)
-    print(f'Sucessfully updated wb_status repo for v{new_ver}.')
+    _LOGGER.info(f'Sucessfully updated wb_status repo for v{new_ver}.')
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    setup_parser(argparser)
-    parsed_args = argparser.parse_args()
-    main(parsed_args)
+    run_script(main, __doc__, _LOGFILE, custom_setup=_setup_new_version)

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -416,7 +416,7 @@ class TimePicker(_AComponent):
         """Returns the chosen time as a datetime.time object."""
         return datetime.time(*self._native_widget.GetTime())
 
-    def set_time(self, new_time: datetime.time):
+    def set_sel_time(self, new_time: datetime.time):
         """Sets the currently selected time in this time picker to the
         specified datetime.time object."""
         self._native_widget.SetTime(new_time.hour, new_time.minute,

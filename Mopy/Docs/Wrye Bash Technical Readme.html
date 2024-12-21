@@ -73,6 +73,12 @@
                         <li><a href="#trusted-binaries-structure">Structure</a></li>
                     </ol>
                 </li>
+                <li class="list"><a href="#lo-exports">Load Order Exports</a>
+                    <ol class="items">
+                        <li><a href="#lo-exports-wrye-bash">The Wrye Bash Format</a></li>
+                        <li><a href="#lo-exports-obmm">The OBMM Format</a></li>
+                    </ol>
+                </li>
                 <li class="list"><a href="#csv-formats">CSV Formats</a>
                     <ol class="items">
                         <li><a href="#csv-formats-package-order">Package Order</a></li>
@@ -205,21 +211,39 @@
     <li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
     <li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existence of a file in the Data directory. If the file you are
-    testing for is a plugin, this will also detect ghosted versions of the file.</p>
+<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the
+    existence of one or more files, relative to the Data directory. If the
+    files you are testing for are plugins, this will also detect ghosted
+    versions of them. All specified files must exist for this to return
+    <code>True</code>.</p>
 <code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
 <ul>
-    <li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example
-        using <code>"Oblivion.esm"</code> would test for <code>"[path to game]\Data\Oblivion.esm"</code>. Notes:
-    <ul>
-        <li>When specifying a path below the Data directory, use double slashes to indicate folder separation. For example assuming
-            MenuQue.dll is installed correctly, <code>"obse\\plugins\\MenuQue.dll"</code> will work but
-            <code>"obse\plugins\MenuQue.dll"</code> will fail.
-        <li>You can also look for files above the Data directory using the following syntax: <code>"..\\SoundCommands.log"</code>
-        <li>When testing for multiple files, separate each file with commas. They do not have to all be in the same directory. Example:
-        <code>DataFileExists("Oblivion.esm","..\\SoundCommands.log","obse\\plugins\\MenuQue.dll")</code> will accurately test to see if each
-        of the files exist.
-    </ul>
+    <li><var>file_name</var> - A string or variable holding a string,
+        specifying the path relative to the Data directory to test. For
+        example, using <code>"Oblivion.esm"</code> would test for
+        <code>"[path to game]\Data\Oblivion.esm"</code>. Notes:
+        <ul>
+            <li>When specifying a path below the Data directory, use double
+                backslashes to indicate folder separation. For example assuming
+                MenuQue.dll is installed correctly,
+                <code>"obse\\plugins\\MenuQue.dll"</code> will work, but
+                <code>"obse\plugins\MenuQue.dll"</code> will fail.</li>
+            <li>You can also look for files above the Data directory using the
+                following syntax: <code>"..\\SoundCommands.log"</code></li>
+            <li>When testing for multiple files, separate each file with
+                commas. They do not have to all be in the same directory.
+                Example:
+                <code>DataFileExists("Oblivion.esm","..\\SoundCommands.log",
+                    "obse\\plugins\\MenuQue.dll")</code> will accurately test
+                to see if each of the files exist.</li>
+            <li>Path separators will automatically be converted to the right
+                ones for the current operating system, so you can use either
+                backslashes or forward slashes.</li>
+            <li>This will check case-insensitively, <strong>even on
+                case-sensitive filesystems</strong> (e.g. most Linux
+                filesystems).</li>
+        </ul>
+    </li>
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -1202,6 +1226,151 @@ None</code>
     </li>
 </ul>
 
+<h2 id="lo-exports">Load Order Exports</h2>
+<p>The <q>Load Order..</q> commands
+    <a href="Wrye%20Bash%20Advanced%20Readme.html#mods-lo-export">Export...</a> and
+    <a href="Wrye%20Bash%20Advanced%20Readme.html#mods-lo-import">Import...</a>
+    use a format inspired by the <code>plugins.txt</code> format used in
+    Skyrim&colon; Special Edition (currently pretty much identical, in fact,
+    but fully specified here as an independent format in case Bethesda decides
+    to change it at some point in the future).</p>
+<p>Additionally, there is a similar, but different format used by the
+    <q>Load Order..</q> command
+    <a href="Wrye%20Bash%20Advanced%20Readme.html#mods-lo-import-obmm">Import From OBMM...</a>.
+    This format is originally from OBMM. Wrye Bash does not export it, only
+    import it (for easy importing from OBMM). Both are defined in the following
+    sections.</p>
+
+<h3 id="lo-exports-wrye-bash">The Wrye Bash Format</h3>
+<p>This format uses a UTF-8-encoded file (no BOM). Line terminators may be
+    either CR-LF or LF. There are three kinds of lines:</p>
+<ol>
+    <li>Empty Lines</li>
+    <li>Active Plugins</li>
+    <li>Inactive Plugins</li>
+</ol>
+
+<h4>Empty Lines</h4>
+<p>An <dfn>empty line</dfn> is a line consisting of nothing but whitespace
+    (including the line terminator). They are simply skipped.</p>
+
+<h4>Active Plugins</h4>
+<p>An <dfn>active plugin</dfn> is identified by the line beginning with an
+    asterisk (<code>*, U+002A ASTERISK</code>) and followed by a string of
+    characters representing a plugin name (see below on what constitutes a
+    plugin name). Such a line identifies the position of the plugin in question
+    in the exported load order and also marks it as having been active at the
+    time the export was made. As a result of this representation, plugins that
+    have asterisks in their file names will not be exported. Asterisks are
+    illegal characters on Windows anyways and thus can't actually be handled by
+    the game, so this isn't a problem in practice.</p>
+
+<h4>Inactive Plugins</h4>
+<p><dfn>An inactive plugin</dfn> is a line consisting of a string of characters
+    that represent a plugin name. Unlike an active plugin, there is no asterisk
+    at the beginning of the line. Such a line identifies the position of the
+    plugin in question and also marks it as having been inactive at the time
+    the export was made.</p>
+
+<h4>Plugin Names</h4>
+<p>For the purposes of this format, a <dfn>plugin name</dfn> is defined as any
+    string of Unicode characters that end in a valid plugin file extension.
+    Trailing spaces are fine - they are to be trimmed before checking for the
+    extension. Leading spaces are fine as well, but should not be trimmed (they
+    would be part of the plugin name).</p>
+<p>Currently valid <dfn>plugin file extensions</dfn> are:</p>
+<ul>
+    <li><code>.esl</code></li>
+    <li><code>.esm</code></li>
+    <li><code>.esp</code></li>
+    <li><code>.esu</code></li>
+</ul>
+<p>If a line would otherwise match as an active or inactive plugin, but does
+    not because the resulting plugin name would be invalid, an implementation
+    performing an import must reject the file and show an error message to the
+    user. Ideally, the implementation should highlight the problematic line, so
+    the user is informed and can fix the problem.</p>
+<p><strong>Note:</strong> implementations are free to limit this list of valid
+    extensions to the ones valid for a particular game (e.g. if the load order
+    is to be imported into Oblivion, <code>.esl</code> would not make
+    sense). In that case, an error message has to be shown as well.</p>
+
+<h4>Comments</h4>
+<p>The format also supports <dfn>comments</dfn>. Comments begin with a hash
+    (<code>#, U+0023 NUMBER SIGN)</code> and last until the end of the line
+    (i.e. the next line terminator). They are stripped out before the type of
+    line is identified. So a line that consists of whitespace and a comment
+    will become an empty line (and thus skipped), while a line that starts with
+    some characters followed by a comment will become an active or inactive
+    plugin line.</p>
+<p>Implementations are encouraged to place a comment at the top of an exported
+    file identifying themselves, for the benefit of human readers who will
+    thereby know what tool was used to create the file (and can direct bug
+    reports etc. to the right place).</p>
+
+<h4>Interpretation</h4>
+<p>Here is a simple pseudocode algorithm specifying how to parse and interpret
+    a file in this format:</p>
+<code class="box">$lo := An empty list
+$active := An empty set
+For $line in $file: {
+    $strippedLine := Strip comments out of $line
+    Check if $strippedLine is empty or all whitespace: {
+        If yes, move on to the next line
+        Otherwise, do the following: {
+            $isActive := Does $strippedLine begin with an asterisk?
+            Check if $isActive is true: {
+                If yes, $plugin := Remove the leading asterisk from $strippedLine
+                Otherwise, $plugin := $strippedLine
+            }
+            $trimmedPlugin := Trim trailing spaces from $plugin
+            Check if $trimmedPlugin is a valid plugin name: {
+                If yes, append $trimmedPlugin to the end of $lo
+                Otherwise, reject the whole file and show an error to the user
+            }
+            Check if $isActive is true: {
+                If yes, add $trimmedPlugin to $active
+            }
+        }
+    }
+}</code>
+<p>After running this algorithm, the exported load order is in <code>$lo</code>
+    (with the earliest-loaded plugin at index 0 and the last-loading plugin at
+    the last index) and the exported active plugins are in
+    <code>$active</code>. Implementations performing an export must never
+    export active or inactive plugin lines that do not resolve to valid plugin
+    names.</p>
+
+<h3 id="lo-exports-obmm">The OBMM Format</h3>
+<p>This format is similar to the Wrye Bash format, but much simpler. It only
+    has one type of line: the active plugin line. Accordingly, no asterisks are
+    used for this type of line either.</p>
+<p>As a direct result of this design, this format cannot store information
+    about inactive plugins and hence no import of data in this format can ever
+    be perfect.</p>
+<p>Wrye Bash makes further assumptions about this format: no comments are
+    supported and plugin names still obey the same rules as above. Further,
+    no assumptions about encoding are made. Instead, the encoding is guessed
+    from the content.</p>
+
+<h4>Interpretation</h4>
+<p>Here is a simple pseudocode algorithm specifying how Wrye Bash parses and
+    interprets a file in this format:</p>
+<code class="box">$lo := An empty list
+$data := Read binary data from $file
+Try to decode $data and split it into $lines {
+    If that is not possible, reject the whole file and show an error to the user
+    Otherwise, for $line in $lines: {
+        Check if $line is a valid plugin name: {
+            If yes, append $line to the end of $lo
+            Otherwise, reject the whole file and show an error to the user
+        }
+    }
+}</code>
+<p>After running this algorithm, the exported load order (and, simultaneously,
+    active plugins) are in <code>$lo</code> (with the earliest-loaded plugin at
+    index 0 and the last-loading plugin at the last index).</p>
+
 <h2 id="csv-formats">CSV Formats</h2>
 <p>This section covers CSV-based formats used by Wrye Bash. See
     <a href="https://en.wikipedia.org/wiki/Comma-separated_values">Wikipedia's article on CSV files</a>
@@ -1296,7 +1465,7 @@ None</code>
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v312.1</div>
+    <div id="version">Wrye Bash v313</div>
     <a href="Wrye Bash General Readme.html">General</a>&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;Technical&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

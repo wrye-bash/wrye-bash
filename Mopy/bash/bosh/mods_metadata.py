@@ -16,20 +16,85 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import annotations
+
 import io
 from collections import Counter, defaultdict
 
-from .. import bass, bolt, bush, load_order
+from .. import bass, bolt, bush, load_order, initialization
 from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
 from ..exception import CancelError
+from ..plugin_types import MergeabilityCheck
 from ..mod_files import ModHeaderReader
 from ..wbtemp import TempFile
+
+# Deprecated/Obsolete Bash Tags -----------------------------------------------
+# Tags that have been removed from Wrye Bash and should be dropped from pickle
+# files
+_removed_tags = {'Merge', 'ScriptContents'}
+# Indefinite backwards-compatibility aliases for deprecated tags
+_tag_aliases = {
+    'Actors.Perks.Add': {'NPC.Perks.Add'},
+    'Actors.Perks.Change': {'NPC.Perks.Change'},
+    'Actors.Perks.Remove': {'NPC.Perks.Remove'},
+    'Body-F': {'R.Body-F'},
+    'Body-M': {'R.Body-M'},
+    'Body-Size-F': {'R.Body-Size-F'},
+    'Body-Size-M': {'R.Body-Size-M'},
+    'C.GridFlags': {'C.ForceHideLand'},
+    'Derel': {'Relations.Remove'},
+    'Eyes': {'R.Eyes'},
+    'Eyes-D': {'R.Eyes'},
+    'Eyes-E': {'R.Eyes'},
+    'Eyes-R': {'R.Eyes'},
+    'Factions': {'Actors.Factions'},
+    'Hair': {'R.Hair'},
+    'Invent': {'Invent.Add', 'Invent.Remove'},
+    'InventOnly': {'IIM', 'Invent.Add', 'Invent.Remove'},
+    'Npc.EyesOnly': {'NPC.Eyes'},
+    'Npc.HairOnly': {'NPC.Hair'},
+    'NpcFaces': {'NPC.Eyes', 'NPC.Hair', 'NPC.FaceGen'},
+    'R.Relations': {'R.Relations.Add', 'R.Relations.Change',
+                    'R.Relations.Remove'},
+    'Relations': {'Relations.Add', 'Relations.Change'},
+    'Voice-F': {'R.Voice-F'},
+    'Voice-M': {'R.Voice-M'},
+}
+
+def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
+    """Removes obsolete tags from and resolves any tag aliases in the
+    specified set of tags. See the comments above for more information. If
+    drop_unknown is True, also removes any unknown tags (tags that are not
+    currently used, obsolete or aliases)."""
+    if not tag_set: return tag_set # fast path - nothing to process
+    ret_tags = tag_set.copy()
+    ret_tags -= _removed_tags
+    for old_tag, replacement_tags in _tag_aliases.items():
+        if old_tag in tag_set:
+            ret_tags.discard(old_tag)
+            ret_tags.update(replacement_tags)
+    if drop_unknown:
+        ret_tags &= bush.game.allTags
+    return ret_tags
+
+# Some wrappers to decouple other files from process_tags
+def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
+    """Wrapper around get_tags_from_dir. See that method for docs."""
+    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
+        ci_cached_bt_contents=ci_cached_bt_contents)
+    return process_tags(added_tags), process_tags(deleted_tags)
+
+def read_loot_tags(plugin_name):
+    """Wrapper around get_tags_from_loot. See that method for docs."""
+    added_tags, deleted_tags = initialization.lootDb.get_tags_from_loot(
+        plugin_name)
+    return process_tags(added_tags), process_tags(deleted_tags)
 
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
@@ -85,21 +150,21 @@ def save_tags_to_dir(plugin_name, plugin_tag_diff):
         representing a diff of all bash tags currently applied to the
         plugin in question vs. all bash tags applied to the plugin
         by its description and the LOOT masterlist / userlist.."""
-    tag_files_dir = bass.dirs[u'tag_files']
+    tag_files_dir = bass.dirs['tag_files']
     tag_files_dir.makedirs()
     tag_file = tag_files_dir.join(f'{plugin_name.fn_body}.txt')
     # Calculate the diff and ignore the minus when sorting the result
     tag_diff_add, tag_diff_del = plugin_tag_diff
-    processed_diff = sorted(tag_diff_add | {u'-' + t for t in tag_diff_del},
-                            key=lambda t: t[1:] if t[0] == u'-' else t)
+    processed_diff = sorted(tag_diff_add | {f'-{t}' for t in tag_diff_del},
+                            key=lambda t: t[1:] if t[0] == '-' else t)
     # While all our tags are ASCII, the comment at the top can be localized, so
     # use UTF-8
-    with tag_file.open(u'w', encoding=u'utf-8') as out:
+    with tag_file.open('w', encoding='utf-8') as out:
         # Stick a header in there to indicate that it's machine-generated
         # Also print the version, which could be helpful
-        out.write(u'# %s\n' % (_(u'Generated by Wrye Bash %s')
-                               % bass.AppVersion))
-        out.write(u', '.join(processed_diff) + u'\n')
+        out.write(f"# {_('Generated by Wrye Bash %(wb_version)s')}\n" % {
+            'wb_version': bass.AppVersion})
+        out.write(', '.join(processed_diff) + '\n')
 
 def diff_tags(plugin_new_tags, plugin_old_tags):
     """Returns two sets, the first containing all added tags and the second all
@@ -121,7 +186,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     full_lo = load_order.cached_lo_tuple()
     plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
     all_present_plugins = set(full_lo)
-    all_present_minfs = {x: modInfos[x] for x in full_lo}
+    all_present_minfs = {x: modInfos[x] for x in full_lo} #ascending load order
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
@@ -136,34 +201,16 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for corrupt plugins
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
-    can_merge = modInfos.mergeable_plugins
-    can_esl_flag = modInfos.esl_capable_plugins
-    can_overlay_flag = modInfos.overlay_capable_plugins
-    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
-    # already been merged into a BP
-    for m in list(can_merge):
-        if 'NoMerge' in modInfos[m].getBashTags() or m in modInfos.merged:
-            can_merge.discard(m)
-    # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
     # between ESL and Overlay flags.
-    remove_esl_flag = set()
-    overlays_with_new_recs = set()
-    overlays_with_no_masters = set()
-    conflicting_esl_overlay_flags = set()
-    if bush.game.check_esl:
-        for m, modinf in modInfos.items():
-            if m_is_esl := modinf.is_esl():
-                if not ModHeaderReader.formids_in_esl_range(modinf):
-                    remove_esl_flag.add(m)
-            if modinf.is_overlay():
-                if not modinf.masterNames:
-                    overlays_with_no_masters.add(m)
-                if ModHeaderReader.has_new_records(modinf):
-                    overlays_with_new_recs.add(m)
-                if m_is_esl:
-                    conflicting_esl_overlay_flags.add(m)
+    pflags = bush.game.plugin_flags
+    flag_errors = {k: {h_msg: set() for h_msg in v} for k, v in
+                   pflags.error_msgs.items()}
+    for m, modinf in modInfos.items():
+        for pflag in flag_errors:
+            if pflag.cached_type(modinf):
+                pflag.validate_type(modinf, flag_errors[pflag].values())
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and
     # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
@@ -211,9 +258,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # -------------------------------------------------------------------------
     # Check for plugins with invalid TES4 version.
     valid_vers = bush.game.Esp.validHeaderVersions
-    invalid_tes4_versions = {x: u'%s' % modInfos[x].header.version for x in
-                             all_active_plugins if all(
-            modInfos[x].header.version != v for v in valid_vers)}
+    invalid_tes4_versions = {
+        p: f'{p_ver}' for p in all_active_plugins
+        if (p_ver := modInfos[p].header.version) not in valid_vers}
     # -------------------------------------------------------------------------
     # Check for older form versions, which may point to improperly converted
     # plugins
@@ -261,7 +308,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                 ext_data = ModHeaderReader.extract_mod_data(present_minf,
                                                             mod_progress)
                 all_extracted_data[k] = ext_data
-            # Run over all plugin data once for efficiency, collecing
+            # Run over all plugin data once for efficiency, collecting
             # information such as deleted records and overrides
             scan_progress = SubProgress(progress, 0.7, 0.9)
             scan_progress.setFull(len(all_extracted_data))
@@ -272,7 +319,8 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             game_has_v44 = RecordHeader.plugin_form_version == 44
             for i, (plugin_fn, ext_data) in enumerate(
                     all_extracted_data.items()):
-                scan_progress(i, (_(u'Scanning: %s') % plugin_fn))
+                scan_progress(i, _('Scanning: %(scanning_plugin)s') % {
+                    'scanning_plugin': plugin_fn})
                 # Two situations where we can skip checking deleted records:
                 # 1. The game master can't have deleted records (deleting a
                 #    record from the master file that introduced it just
@@ -306,7 +354,8 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                 p_masters = (*modInfos[plugin_fn].masterNames, plugin_fn)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.items():
-                    for r_fid, (r_header, r_eid) in d.items():
+                    for r_header, r_eid in d:
+                        r_fid = r_header.fid
                         w_rec_type = r_header.recType
                         if (r_fid.object_dex == 0 and
                                 w_rec_type != plgn_header_sig):
@@ -350,9 +399,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             # below is far too hot. Instead, at least make sure the progress
             # bar updates on each collision by bumping the state.
             collision_progress.setFull(len(all_record_versions))
-            prog_msg = f'{_("Looking for collisions...")}\n%s'
+            prog_msg = f'{_("Looking for collisions…")}\n'
             num_collisions = 0
-            collision_progress(num_collisions, prog_msg % game_master_name)
+            collision_progress(num_collisions, prog_msg + game_master_name)
             for r_fid, r_versions in all_record_versions.items():
                 first_eid, first_sig, first_plugin = r_versions[0]
                 duplicates_counter = Counter()
@@ -386,12 +435,12 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                     num_collisions += 1
                     record_type_collisions[r_fid] = (is_injected, orig_plugin,
                                                      r_versions)
-                    collision_progress(num_collisions, prog_msg % first_plugin)
+                    collision_progress(num_collisions, prog_msg + first_plugin)
                 elif probable_collision:
                     num_collisions += 1
                     probable_injected_collisions[r_fid] = (orig_plugin,
                                                            r_versions)
-                    collision_progress(num_collisions, prog_msg % first_plugin)
+                    collision_progress(num_collisions, prog_msg + first_plugin)
         except CancelError:
             scanning_canceled = True
     # -------------------------------------------------------------------------
@@ -413,13 +462,14 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             plugin_is_vanilla = plugin_fn in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = plugin_fn.fn_ext == u'.esu'
+            plugin_is_esu = plugin_fn.fn_ext == '.esu'
             if deleted_refrs and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_refrs)
                 if num_deleted == 1: # I hate natural languages :/
-                    del_msg = _(u'1 deleted reference')
+                    del_msg = _('1 deleted reference')
                 else:
-                    del_msg = _(u'%d deleted references') % num_deleted
+                    del_msg = _('%(num_del_refs)d deleted references') % {
+                        'num_del_refs': num_deleted}
                 cleaning_messages[plugin_fn] = del_msg
     # -------------------------------------------------------------------------
     # Check for deleted navmeshes
@@ -431,13 +481,14 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             plugin_is_vanilla = plugin_fn in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = plugin_fn.fn_ext == u'.esu'
+            plugin_is_esu = plugin_fn.fn_ext == '.esu'
             if deleted_navms and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_navms)
                 if num_deleted == 1:
-                    del_msg = _(u'1 deleted navmesh')
+                    del_msg = _('1 deleted navmesh')
                 else:
-                    del_msg = _(u'%d deleted navmeshes') % num_deleted
+                    del_msg = _('%(num_del_navms)d deleted navmeshes') % {
+                        'num_del_navms': num_deleted}
                 deleted_navmeshes[plugin_fn] = del_msg
     # -------------------------------------------------------------------------
     # Check for deleted base records
@@ -449,13 +500,14 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             plugin_is_vanilla = plugin_fn in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = plugin_fn.fn_ext == u'.esu'
+            plugin_is_esu = plugin_fn.fn_ext == '.esu'
             if deleted_others and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_others)
                 if num_deleted == 1:
-                    del_msg = _(u'1 deleted base record')
+                    del_msg = _('1 deleted base record')
                 else:
-                    del_msg = _(u'%d deleted base records') % num_deleted
+                    del_msg = _('%(num_del_bases)d deleted base records') % {
+                        'num_del_bases': num_deleted}
                 deleted_base_recs[plugin_fn] = del_msg
     # -------------------------------------------------------------------------
     # Check for old (form version < 44) WEAP records, which the game can't load
@@ -466,9 +518,10 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             if weap_recs:
                 num_weaps = len(weap_recs)
                 if num_weaps == 1:
-                    weap_msg = _(u'1 old weapon record')
+                    weap_msg = _('1 old weapon record')
                 else:
-                    weap_msg = _(u'%d old weapon records') % num_weaps
+                    weap_msg = _('%(num_old_weaps)d old weapon records') % {
+                        'num_old_weaps': num_weaps}
                 old_weaps[plugin_fn] = weap_msg
     # -------------------------------------------------------------------------
     # Check for NULL FormIDs, i.e. records beside the main file header that
@@ -491,15 +544,18 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                 num_hitmes = len(found_hitmes)
                 # No point in making these translatable, HITME is a fixed term
                 if num_hitmes == 1:
-                    hitme_msg = u'1 HITME'
+                    hitme_msg = _('1 HITME')
                 else:
-                    hitme_msg = u'%d HITMEs' % num_hitmes
+                    hitme_msg = _('%(num_hitmes)d HITMEs') % {
+                        'num_hitmes': num_hitmes}
                 hitmes[plugin_fn] = hitme_msg
     # -------------------------------------------------------------------------
     # Some helpers for building the log
     p_header_str = sig_to_str(plgn_header_sig)
-    def log_plugins(plugin_list_):
+    def _log_plugins(head_, msg_, plugin_list_):
         """Logs a simple list of plugins."""
+        log.setHeader(head_)
+        log(msg_)
         for p in sorted(plugin_list_):
             log(f'* __{p}__')
     def log_plugin_messages(plugin_dict):
@@ -537,44 +593,31 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         if raw_eid:
             ret_fmt = f'{raw_eid} {ret_fmt}'
         return ret_fmt
-    if bush.game.has_esl:
-        # Need to undo the offset we applied to sort ESLs after regulars
-        sort_offset = load_order.max_espms() - 1
-        def format_fid(whole_lo_fid, fid_orig_plugin):
-            """Format a whole-LO FormID, which can exceed normal FormID limits
-            (e.g. 211000800 is perfectly fine in a load order with ESLs), so
-            that xEdit (and the game) can understand it."""
-            orig_minf = modInfos[fid_orig_plugin]
-            proper_index = orig_minf.real_index()
-            if orig_minf.is_esl():
-                return f'FE{proper_index - sort_offset:03X}' \
-                       f'{whole_lo_fid & 0x00000FFF:03X}'
-            else:
-                return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
-    else:
-        def format_fid(whole_lo_fid: int, _fid_orig_plugin):
-            # For non-ESL games simple hexadecimal formatting will do
-            return f'{whole_lo_fid:08X}'
+    format_fid = pflags.format_fid
     def log_collision(coll_fid, coll_inj, coll_plugin, coll_versions):
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""
         # FormIDs must be in long format at this point
         proper_fid = format_fid(coll_fid, coll_plugin)
         if coll_inj:
-            log(u'* ' + _(u'%s injected into %s, colliding versions:')
-                % (proper_fid, coll_plugin))
+            log('* ' + _('%(injected_formid)s injected into '
+                         '%(injection_target)s, colliding versions:') % {
+                'injected_formid': proper_fid,
+                'injection_target': coll_plugin})
         else:
-            log(u'* ' + _(u'%s from %s, colliding versions:')
-                % (proper_fid, coll_plugin))
+            log('* ' + _('%(overriden_formid)s from %(source_plugin)s, '
+                         'colliding versions:') % {
+                'overriden_formid': proper_fid, 'source_plugin': coll_plugin})
         for ver_eid, ver_sig, ver_orig_plugin in coll_versions:
             fmt_record = format_record(ver_sig, proper_fid, ver_eid)
             # Mark the base record if the record wasn't injected
             if not coll_inj and ver_orig_plugin == coll_plugin:
-                log(u'  * ' + _(u'%s from %s (base record)') % (
-                    fmt_record, ver_orig_plugin))
+                msg = _('%(colliding_formid)s from %(colliding_plugin)s '
+                        '(base record)')
             else:
-                log(u'  * ' + _(u'%s from %s') % (
-                    fmt_record, ver_orig_plugin))
+                msg = _('%(colliding_formid)s from %(colliding_plugin)s')
+            log('  * ' + msg % {'colliding_formid': fmt_record,
+                                'colliding_plugin': ver_orig_plugin})
     # -------------------------------------------------------------------------
     # From here on we have data on all plugin problems, so it's purely a matter
     # of building the log
@@ -587,128 +630,92 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log.setHeader(u'=== ' + _(u'Corrupted'))
         log(_(u'Wrye Bash could not read the follow plugins. They most likely '
               u'have corrupt or otherwise malformed headers.'))
-        log_plugin_messages(all_corrupted) ##: Just log_plugins?
-    if can_esl_flag:
-        log.setHeader('=== ' + _('ESL-Capable'))
-        log(_('The following plugins could be assigned an ESL flag, but do '
-              'not have one right now.'))
-        log_plugins(can_esl_flag)
-    if remove_esl_flag:
-        log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
-        log(_(u'The following plugins have an ESL flag, but do not qualify. '
-              u"Either remove the flag with 'Remove ESL Flag', or "
-              u"change the extension to '.esp' if it is '.esl'."))
-        log_plugins(remove_esl_flag)
-    if can_overlay_flag:
-        log.setHeader('=== ' + _('Overlay-Capable'))
-        log(_('The following plugins could be assigned an Overlay flag, but '
-              'do not have one right now.'))
-        log_plugins(can_overlay_flag)
-    if overlays_with_new_recs:
-        log.setHeader('=== ' + _('Incorrect Overlay Flag: New Records'))
-        log(_("The following plugins have an Overlay flag, but do not "
-              "qualify because they contain new records. These will be "
-              "injected into the first master of the plugins in question, "
-              "which can seriously break basic game data. Either remove the "
-              "flag with 'Remove Overlay Flag', or remove the new records."))
-        log_plugins(overlays_with_new_recs)
-    if overlays_with_no_masters:
-        log.setHeader('=== ' + _('Incorrect Overlay Flag: No Masters'))
-        log(_("The following plugins have an Overlay flag, but do not "
-              "qualify because they do not have any masters. %(game_name)s "
-              "will not treat these as Overlay plugins. Either remove the "
-              "flag with 'Remove Overlay Flag', or use %(xedit_name)s to add "
-              "at least one master to the plugin.") % {
-            'xedit_name': bush.game.Xe.full_name,
-            'game_name': bush.game.display_name})
-        log_plugins(overlays_with_no_masters)
-    if conflicting_esl_overlay_flags:
-        log.setHeader('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'))
-        log(_("The following plugins have an Overlay flag, but do not "
-              "qualify because they also have an ESL flag. These flags are "
-              "mutually exclusive. %(game_name)s will not treat these as "
-              "overlay plugins. Either remove the Overlay flag with "
-              "'Remove Overlay Flag', or remove the ESL flag with 'Remove "
-              "ESL Flag'.") % {
-            'game_name': bush.game.display_name})
-        log_plugins(conflicting_esl_overlay_flags)
-    if can_merge:
-        log.setHeader('=== ' + _('Mergeable'))
-        log(_('The following plugins could be merged into a Bashed Patch, but '
-              'are currently not merged.'))
-        log_plugins(can_merge)
+        log_plugin_messages(all_corrupted) ##: Just _log_plugins?
+    for pflag in pflags:
+        if pflag.merge_check is not None:
+            minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
+            if minfos_cache:
+                _log_plugins(head, msg, minfos_cache)
+        for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
+            if pl_set:
+                _log_plugins(head, msg, pl_set)
+    # -------------------------------------------------------------------------
+    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
+    # already been merged into a BP
+    if (merge := MergeabilityCheck.MERGE) in bush.game.mergeability_checks:
+        minfos_cache, head, msg = merge.cached_types(modInfos)
+        can_merge = {m for inf in minfos_cache if (m := inf.fn_key) not in
+                     modInfos.merged and 'NoMerge' not in inf.getBashTags()}
+        if can_merge:
+            _log_plugins(head, msg, can_merge)
     if should_deactivate:
-        log.setHeader(u'=== ' + _(u'Deactivate-tagged But Active'))
-        log(_(u"The following plugins are tagged with 'Deactivate' and should "
-              u'be deactivated and imported into the Bashed Patch.'))
-        log_plugins(should_deactivate)
+        _log_plugins('=== ' + _(u'Deactivate-tagged But Active'), _(
+            "The following plugins are tagged with 'Deactivate' and should "
+            'be deactivated and imported into the Bashed Patch.'),
+                    should_deactivate)
     if should_activate:
-        log.setHeader(u'=== '+_(u'MustBeActiveIfImported-tagged But Inactive'))
-        log(_(u'The following plugins are tagged with '
-              u"'MustBeActiveIfImported' and should be activated if they are "
-              u'also imported into the Bashed Patch. They are currently '
-              u'imported, but not active.'))
-        log_plugins(should_activate)
+        _log_plugins('=== '+_(u'MustBeActiveIfImported-tagged But Inactive'),
+            _("The following plugins are tagged with 'MustBeActiveIfImported' "
+              "and should be activated if they are also imported into the "
+              'Bashed Patch. They are currently imported, but not active.'),
+                    should_activate)
     if p_missing_masters:
-        log.setHeader('=== ' + _('Missing Masters'))
-        log(_('The following plugins have missing masters and are active. '
-              'This will cause a CTD at the main menu and must be corrected '
-              'by installing the missing plugins or removing the plugins with '
-              'missing masters.'))
-        log_plugins(p_missing_masters)
+        _log_plugins('=== ' + _('Missing Masters'), _(
+            'The following plugins have missing masters and are active. This '
+            'will cause a CTD at the main menu and must be corrected by '
+            'installing the missing plugins or removing the plugins with '
+            'missing masters.'), p_missing_masters)
     if p_delinquent_masters:
-        log.setHeader('=== ' + _('Delinquent Masters'))
-        log(_('The following plugins have delinquent masters, i.e. masters '
-              'that are set to load after their dependent plugins. The game '
-              'will try to force them to load before the dependent plugins, '
-              'which can lead to unpredictable or undefined behavior and '
-              'must be corrected. You should correct the load order.'))
-        log_plugins(p_delinquent_masters)
+        _log_plugins('=== ' + _('Delinquent Masters'), _(
+            'The following plugins have delinquent masters, i.e. masters '
+            'that are set to load after their dependent plugins. The game '
+            'will try to force them to load before the dependent plugins, '
+            'which can lead to unpredictable or undefined behavior and must '
+            'be corrected. You should correct the load order.'),
+                    p_delinquent_masters)
     if p_circular_masters:
-        log.setHeader('=== ' + _('Circular Masters'))
-        log(_("The following plugins have circular masters, i.e. they depend "
-              "on themselves. This can happen either directly (%(example_a)s "
-              "has %(example_a)s as a master) or transitively (%(example_a)s "
-              "has %(example_b)s as a master, which, in turn, has "
-              "%(example_a)s as a master - such a chain may be even longer). "
-              "Resolving this is impossible for the game, which will most "
-              "likely crash when trying to load these plugins. You can try to "
-              "investigate by using the 'Change To...' command to reassign "
-              "the circular master so that the plugin can be opened in "
-              "%(xedit_name)s.") % {
-            'example_a': 'foo.esp',
-            'example_b': 'bar.esp',
-            'xedit_name': bush.game.Xe.full_name,
-        })
-        log_plugins(p_circular_masters)
+        _log_plugins('=== ' + _('Circular Masters'), _(
+            "The following plugins have circular masters, i.e. they depend "
+            "on themselves. This can happen either directly (%(example_a)s "
+            "has %(example_a)s as a master) or transitively (%(example_a)s "
+            "has %(example_b)s as a master, which, in turn, has %("
+            "example_a)s as a master - such a chain may be even longer). "
+            "Resolving this is impossible for the game, which will most "
+            "likely crash when trying to load these plugins. You can try to "
+            "investigate by using the 'Change To…' command to reassign the "
+            "circular master so that the plugin can be opened in "
+            "%(xedit_name)s.") % {'example_a': 'foo.esp',
+                                  'example_b': 'bar.esp',
+                                  'xedit_name': bush.game.Xe.full_name},
+                    p_circular_masters)
     if invalid_tes4_versions:
-        ver_list = u', '.join(
+        ver_list = ', '.join(
             sorted(str(v) for v in bush.game.Esp.validHeaderVersions))
-        log.setHeader(u'=== ' + _(u'Invalid %s versions') % p_header_str)
-        log(_(u"The following plugins have a %s version that isn't "
-              u'recognized as one of the standard versions (%s). This is '
-              u'undefined behavior. It can possibly be corrected by resaving '
-              u'the plugins in the %s.') % (p_header_str, ver_list,
-                                            bush.game.Ck.long_name))
+        log.setHeader('=== ' + _('Invalid %(file_header_label)s versions') % {
+            'file_header_label': p_header_str})
+        log(_("The following plugins have a %(file_header_label)s version "
+              "that isn't recognized as one of the versions created by the "
+              "%(ck_name)s (%(accepted_header_versions)s). This is undefined "
+              "behavior and most likely indicates the plugin was created for "
+              "a different game.") % {'file_header_label': p_header_str,
+                                      'ck_name': bush.game.Ck.long_name,
+                                      'accepted_header_versions': ver_list})
         log_plugin_messages(invalid_tes4_versions)
     if old_fvers:
-        log.setHeader(u'=== ' + _(u'Old Header Form Versions'))
-        log(_(u'The following have a form version on their headers that is '
-              u'older than the minimum version created by the %(ck_name)s. '
-              u'This probably means that the plugin was not properly '
-              u'converted to work with %(game_name)s.') % {
-            u'ck_name': bush.game.Ck.long_name,
-            'game_name': bush.game.display_name,
-        })
-        log_plugins(old_fvers)
+        _log_plugins('=== ' + _('Old Header Form Versions'), _(
+            'The following have a form version on their headers that is '
+            'older than the minimum version created by the %(ck_name)s. This '
+            'probably means that the plugin was not properly converted to '
+            'work with %(game_name)s.') % {'ck_name': bush.game.Ck.long_name,
+                        'game_name': bush.game.display_name, }, old_fvers)
     if cleaning_messages:
-        log.setHeader(u'=== ' + _(u'Cleaning With %s Needed') %
-                      bush.game.Xe.full_name)
-        log(_(u'The following plugins have deleted references or other issues '
-              u'that can and should be fixed with %(xedit_name)s. Visit the '
-              u'%(cleaning_wiki_url)s for more information.') % {
-            u'cleaning_wiki_url': _cleaning_wiki_url,
-            u'xedit_name': bush.game.Xe.full_name})
+        log.setHeader('=== ' + _('Cleaning With %(xedit_name)s Needed') % {
+            'xedit_name': bush.game.Xe.full_name})
+        log(_('The following plugins have deleted references or other issues '
+              'that can and should be fixed with %(xedit_name)s. Visit the '
+              '%(tome_of_xedit)s for more information.') % {
+            'tome_of_xedit': _cleaning_wiki_url,
+            'xedit_name': bush.game.Xe.full_name})
         log_plugin_messages(cleaning_messages)
         if num_dirty_vanilla:
             log('\n' + _("Additionally, %(num_ignored_vanilla)d vanilla "
@@ -783,7 +790,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             for nd_sig, nd_eid in null_data:
                 log(f'  * {format_record(nd_sig, "00000000", nd_eid)}')
     if hitmes:
-        log.setHeader('=== ' + 'HITMEs')
+        # Let people translate 'HITMEs' because acronym plurals may be
+        # different in some languages
+        log.setHeader('=== ' + _('HITMEs'))
         log(_('The following plugins have HITMEs (%(hitme_acronym)s), which '
               'most commonly occur when the %(ck_name)s or an advanced mode '
               'of %(xedit_name)s were used to improperly remove a master. '
@@ -876,7 +885,6 @@ class NvidiaFogFixer(object):
         fixedCells = self.fixedCells
         fixedCells.clear()
         #--File stream
-        minfo_path = self.modInfo.getPath()
         #--Scan/Edit
         with TempFile() as out_path:
             with ModReader.from_info(self.modInfo) as ins:
@@ -911,5 +919,5 @@ class NvidiaFogFixer(object):
                                 subrec.packSub(out, subrec.mel_data)
             if fixedCells:
                 self.modInfo.makeBackup()
-                minfo_path.replace_with_temp(out_path)
+                self.modInfo.abs_path.replace_with_temp(out_path)
                 self.modInfo.setmtime(crc_changed=True) # fog fixes

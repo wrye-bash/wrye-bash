@@ -16,14 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
-
+import copy
 from collections import defaultdict
 from enum import Enum
 from typing import TYPE_CHECKING, NewType
@@ -37,14 +37,24 @@ else:
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = '312.1'  # must represent a valid float
+AppVersion = '313'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
 dirs: dict[str, Path] = {}
-# settings read from the Mopy/bash.ini file in init_default_ini_settings()
+# settings read from the Mopy/bash.ini file in _parse_bash_ini()
 inisettings = {}
+
+# Settings read from the per-user boot-settings.toml file. Used to house things
+# like locale and last chosen game, which we need before we set the game
+boot_settings_defaults = {
+    'Boot': {
+        'locale': None,
+        'last_game': None,
+    },
+}
+boot_settings = copy.deepcopy(boot_settings_defaults)
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !

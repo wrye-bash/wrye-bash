@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -1039,17 +1039,16 @@ class MreSpel(MelRecord):
     """Spell."""
     rec_sig = b'SPEL'
 
-    class _spell_flags(Flags):
-        spell_auto_calc: bool
-        pc_start: bool
+    class _SpellFlags(Flags):
+        auto_cost_calc: bool
+        pc_start_spell: bool
         always_suceeds: bool
 
     melSet = MelSet(
         MelMWId(),
         MelFullTes3(),
-        # Bad names to match other games (tweaks)
-        MelStruct(b'SPDT', [u'3I'], u'spellType', u'cost',
-            (_spell_flags, u'spell_flags')),
+        MelStruct(b'SPDT', ['3I'], 'spell_type', 'spell_cost',
+            (_SpellFlags, 'spell_flags')),
         MelEffectsTes3(),
     )
 

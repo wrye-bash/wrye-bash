@@ -93,6 +93,7 @@
                         <li><a href="#launchers-features">Wrye Bash Feature Launchers</a>
                         <li><a href="#manually-add">Manually adding tools to the Launcher Bar</a>
                     </ol>
+                <li class="list"><a href="#international">Internationalisation</a></li>
                 <li class="list"><a href="#trouble">Troubleshooting</a>
                     <ol class="items">
                         <li><a href="#trouble-dump">Generating A Bug Dump</a>
@@ -354,13 +355,21 @@
 </ul>
 <p>If none of the above points apply to you, or once you have taken the necessary measures for the points that apply, you can uninstall Wrye Bash by either running the uninstaller, if you used the installer to install Wrye Bash, or delete the following files and folders if you installed it manually.
 <ul>
-    <li><code>[Game]\Mopy</code> - If you've edited any localisation files in the <code>l10n</code> folder that you want to keep, back them up.
-    <li><code>[Game]\Data\Bash Patches</code> - If you've exported any CSV files that you want to keep, back them up.
-    <li><code>[Game]\Data\BashTags</code> - If you've manually created any tag files that you want to keep, back them up.</li>
+    <li><code>[Game]\Mopy</code></li>
+    <li><code>[Game]\Data\Bash Patches</code> - If you've exported any CSV
+        files that you want to keep, back them up.</li>
+    <li><code>[Game]\Data\BashTags</code> - If you've manually created any tag
+        files that you want to keep, back them up.</li>
     <li><code>[Game]\Data\Docs</code>
     <li><code>[Game]\Data\INI Tweaks</code>
-    <li><code>Documents\My Games\[Game]</code> - Only delete the <code>BashProfiles.dat</code>, <code>BashProfiles.dat.bak</code>, <code>BashSettings.dat</code>, <code>BashSettings.dat.bak</code>, <code>Messages.dat</code>, <code>Messages.dat.bak</code>, <code>People.dat</code> and <code>People.dat.bak</code> files and the <code>Saves\Bash</code> folder.
-    <li><code>[Game] Mods</code> (in the same folder as [Game] for most games, in <code>Documents\Wrye Bash</code> for Windows Store games) - The <code>Bash Installers</code> folder stores the mods you've installed via BAIN.
+    <li><code>Documents\My Games\[Game]</code> - Only delete the
+        <code>BashProfiles.dat</code>, <code>BashProfiles.dat.bak</code>,
+        <code>BashSettings.dat</code>, <code>BashSettings.dat.bak</code> files
+        and the <code>Saves\Bash</code> folder.</li>
+    <li><code>[Game] Mods</code> (in the same folder as [Game] for most games,
+        in <code>Documents\Wrye Bash</code> for Windows Store games) - The
+        <code>Bash Installers</code> folder stores the mods you've installed
+        via BAIN.</li>
 </ul>
 
 <h2 id="bain">Installing Mods <a class="back2top" href="#contents">Back to top</a></h2>
@@ -485,19 +494,21 @@ be restructured.</p>
         </tr>
         <tr>
             <td>Oblivion</td>
-            <td>_tejon, config, distantlod, enhanced economy, facegen, fonts,
-                knights - revelation music, menus, obse, pluggy, scripts,
-                shaders, streamline, trees</td>
+            <td>_tejon, baseobjectswapper, config, distantlod,
+                enhanced economy, facegen, fonts, knights - revelation music,
+                menus, obse, pluggy, scripts, shaders,
+                spellfactionitemdistributor, streamline, trees</td>
         </tr>
         <tr>
             <td>Fallout 3</td>
-            <td>config, distantlod, facegen, fonts, fose, menus, uio, scripts,
-                shaders, trees</td>
+            <td>config, distantlod, facegen, fonts, fose, lodsettings, menus,
+                uio, scripts, shaders, trees</td>
         </tr>
         <tr>
             <td>Fallout&colon; New Vegas</td>
-            <td>config, distantlod, facegen, fonts, menus, nvse, uio, scripts,
-                shaders, trees</td>
+            <td>baseobjectswapper, config, distantlod, facegen, fonts,
+                keywords, lodsettings, menus, nvse, racemenupresets, uio,
+                scripts, shaders, trees</td>
         </tr>
         <tr>
             <td>Skyrim</td>
@@ -511,8 +522,8 @@ be restructured.</p>
         <tr>
             <td>Fallout 4</td>
             <td>dtf, dyndolod, f4se, folip, interface, lodsettings, materials,
-                mcm, misc, programs, scripts, seq, shadersfx, strings, tools,
-                vis</td>
+                mcm, misc, prkf, programs, scripts, seq, shadersfx, strings,
+                tools, vis, xdi</td>
         </tr>
     </tbody>
 </table>
@@ -825,8 +836,9 @@ from other packages previously overridden by the uninstalled package's
         <tr>
             <td rowspan="3">Packages..</td>
             <td id="bainAnnealAll">Anneal All</td>
-            <td>Install any missing files for active packages and correct
-                all install order errors.</td>
+            <td>Same as <a href="#bainAnneal">Anneal</a>, but runs on all
+                packages. Useful if you moved a lot of packages around or
+                changed some global BAIN settings, e.g. skips.</td>
         </tr>
         <tr>
             <td>Uninstall All Packages</td>
@@ -887,8 +899,10 @@ from other packages previously overridden by the uninstalled package's
         </tr>
         <tr>
             <td colspan="2" id="bainAnneal">Anneal</td>
-            <td>Install missing files and correct install order errors
-                according to the package configuration.</td>
+            <td>Update an installed ("active") package to match changes in its
+                installation configuration or in the order of packages. If you
+                check a subpackage, or change the order of two conflicting
+                packages, for example, you will have to run this command.</td>
         </tr>
         <tr>
             <td colspan="2">Quick Refresh</td>
@@ -2337,6 +2351,18 @@ from other packages previously overridden by the uninstalled package's
 <p>When you next run Wrye Bash the icon will be in the Launcher Bar, and you can Drag and drop the new icon to a desired position
 <p>Be careful not to use up all the available space and prevent tooltip messages appearing next to the Launcher Bar</p>
 
+<h2 id="international">Internationalisation <a class="back2top" href="#contents">Back to top</a></h2>
+<p>Wrye Bash has built-in support for translation into other languages,
+    using text files that tell it which English strings in the source code
+    should be translated, and into what. These text files are found in
+    <code>Mopy/bash/l10n</code> in the repository, but release builds will only
+    have binary translation files there.</p>
+<p>The process for translating Wrye Bash used to be quite complex, but we have
+    switched over to Weblate to make contributing as easy as possible.
+    Please see
+    <a href="https://hosted.weblate.org/engage/wrye-bash/">our Weblate page</a>
+    if you are interested in helping out!</p>
+
 <h2 id="trouble">Troubleshooting <a class="back2top" href="#contents">Back to top</a></h2>
 <h3 id="trouble-dump">Generating A Bug Dump <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash writes debug information and error reports into a BashBugDump.log
@@ -2410,15 +2436,48 @@ from other packages previously overridden by the uninstalled package's
 <p>The easiest method is to just run the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Backup Settings</a> and/or <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Restore Settings</a> commands, which are available in the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings menu</a>. These commands do not backup/restore any mod files or saves, just the Wrye Bash settings/data. When run, the commands ask you for the location you wish to back up to or restore from.
 <p>If you wish to manually back up your settings, the directories Wrye Bash stores files in are below.
 <table>
-    <thead><tr><th>Directory<th>Contents
+    <thead>
+        <tr>
+            <th>Directory</th>
+            <th>Contents</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>[Game]\Mopy                             <td>Main Bash files. If you're working on any localisation files in <code>Mopy\l10n</code> you may want to back them up.
-        <tr><td>[Game]\Data\Bash Patches                    <td>Contains CSV files used by the import/export functions. Back up any CSV files you've exported and want to keep.
-        <tr><td>[Game]\Data\BashTags                    <td>Contains text files with Bash Tag overrides. Only needs backing up if you added any custom files (i.e. ones not installed through BAIN).</td></tr>
-        <tr><td>[Game]\Data\Docs                            <td>Contains mod readmes. Doesn't need backing up.
-        <tr><td>[Game]\Data\INI Tweaks                  <td>Contains ini tweaks. Only needs backing up if you've added custom ini tweaks.
-        <tr><td>Documents\My Games\[Game]                   <td>Contains Wrye Bash settings. It is important to back this up.
-        <tr><td>[Game] Mods (in the same folder as [Game])<td>Contains BAIN packages and other Wrye Bash settings. it is important to back this up.
+        <tr>
+            <td>[Game]\Mopy</td>
+            <td>Main Wrye Bash resources. Back up your bash.ini, if it exists,
+                and your Apps folder, if nonempty.</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\Bash Patches</td>
+            <td>Contains CSV files used by the import/export functions. Back up
+                any CSV files you've exported and want to keep.</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\BashTags</td>
+            <td>Contains text files with Bash Tag overrides. Only needs backing
+                up if you added any custom files (i.e. ones not installed
+                through BAIN).</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\Docs</td>
+            <td>Contains mod readmes. Generally doesn't need backing up.</td>
+        </tr>
+        <tr>
+            <td>[Game]\Data\INI Tweaks</td>
+            <td>Contains INI tweaks. Only needs backing up if you've added
+                custom INI tweaks.</td>
+        </tr>
+        <tr>
+            <td>Documents\My Games\[Game]</td>
+            <td>Contains Wrye Bash settings. It is important to back this
+                up.</td>
+        <tr>
+            <td>[Game] Mods (in the same folder as [Game])</td>
+            <td>Contains BAIN packages and other Wrye Bash settings. It is
+                important to back this up.</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="trouble-report">How To Report Bugs Helpfully <a class="back2top" href="#contents">Back to top</a></h3>
@@ -2490,6 +2549,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
     <li><img class="smallcred" alt="Beermotor's Icon" src="../bash/images/people/brmtavi32.png"><span><a href="https://github.com/BeermotorWB">Beermotor:</a> Installer directory refinement, new settings tweaks</span></li>
     <li><img class="smallcred" alt="Daidalos' Icon" src="../bash/images/people/dlosavi32.png"><span><a href="https://github.com/D4id4los">Daidalos:</a> LOOT API updates, boot process refactoring</span></li>
     <li><img class="smallcred" alt="Diana's Icon" src="../bash/images/people/dianavi32.png"><span><a href="https://github.com/DianaNites">Diana:</a> Refactoring Export/Import links and argument parsing</span></li>
+    <li><img class="smallcred" alt="Ernie's Icon" src="../bash/images/people/erniavi32.png"><span><a href="https://github.com/ernieIzde8ski">Ernie:</a> New Tweaks</span></li>
     <li><img class="smallcred" alt="Ethatron's Icon" src="../bash/images/people/ethaavi32.jpg"><span><a href="https://github.com/Ethatron">Ethatron:</a> CBash updates</span></li>
     <li><img class="smallcred" alt="FelesNoctis' Icon" src="../bash/images/people/flsnavi32.jpg"><span><a href="https://github.com/FelesNoctis">FelesNoctis:</a> Documentation editor for 307+, image updates</span></li>
     <li><img class="smallcred" alt="Fireundubh's Icon" src="../bash/images/people/fireavi32.png"><span><a href="https://github.com/fireundubh">fireundubh:</a> Installer improvements and fixes</span></li>
@@ -2510,7 +2570,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
     <li><img class="smallcred" alt="Ralgor's Icon" src="../bash/images/people/genpavi32.png"><span><a href="https://github.com/Ralgor">Ralgor:</a> Cell support and Import Cells</span></li>
     <li><img class="smallcred" alt="Raziel23x's Icon" src="../bash/images/people/raziavi32.png"><span><a href="https://github.com/Raziel23x">Raziel23x:</a> new tweaks etc.</span></li>
     <li><img class="smallcred" alt="Sharlikran's Icon" src="../bash/images/people/sharavi32.jpg"><span><a href="https://github.com/Sharlikran">Sharlikran:</a> Fallout 3/NV support, initial ESL support, save game/module header restructuring, form version recognition, patcher updates, heavyweight contender of the community</span></li>
-    <li><img class="smallcred" alt="Sibir's Icon" src="../bash/images/people/sibravi32.png"><span><a href="https://github.com/sibir-ine">sibir:</a> Improved and added tweaks and docs, improved patcher coverage</span></li>
+    <li><img class="smallcred" alt="Sibir's Icon" src="../bash/images/people/sibravi32.png"><span><a href="https://github.com/sibir-ine">sibir:</a> Improvements to tweaks and BAIN defaults, taking care of the Discord &amp; issue board</span></li>
     <li><img class="smallcred" alt="Warmfrost85's Icon" src="../bash/images/people/wrmfavi32.jpg"><span><a href="https://github.com/warmfrost85">Warmfrost85:</a> Improvements to Clean Data &amp; Sync From Data</span></li>
     <li><img class="smallcred" alt="Waruddar's Icon" src="../bash/images/people/waruavi32.gif"><span><a href="https://www.nexusmods.com/users/456936">Waruddar:</a> Maintainer from 261-296: CBash, BAIN Conversion Files (BCFs), etc.</span></li>
     <li><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda:</a> Assisted with Fallout 3/New Vegas support, including new patchers and tweaks</span></li>
@@ -2518,12 +2578,145 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 <h3>Additional Credits <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
     <li><strong>Translators</strong>
+        <!-- Both languages and translators here are in alphabetical order. -->
         <ul>
-            <li><img class="smallcred" alt="Flag of China" src="../bash/images/flags/china.svg" role="img"><span>Chinese:</span><img class="smallcred" alt="blueksy404's Icon" src="../bash/images/people/blskavi32.png"><span><a href="https://www.nexusmods.com/users/2541088">bluesky404</a></span></li>
-            <li><img class="smallcred" alt="Flag of Germany" src="../bash/images/flags/germany.svg" role="img"><span>German:</span><img class="smallcred" alt="DWS's Icon" src="../bash/images/bash.svg"><span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span></li>
-            <li><img class="smallcred" alt="Flag of Italy" src="../bash/images/flags/italy.svg" role="img"><span>Italian:</span><img class="smallcred" alt="Abot's Icon" src="../bash/images/people/abotavi32.png"><span><a href="https://www.nexusmods.com/users/38047">Abot</a></span></li>
-            <li><img class="smallcred" alt="Flag of Japan" src="../bash/images/flags/japan.svg" role="img"><span>Japanese:</span><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda</a></span></li>
-            <li><img class="smallcred" alt="Flag of Russia" src="../bash/images/flags/russia.svg" role="img"><span>Russian:</span><img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg"><span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span></li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of China" src="../bash/images/flags/china.svg" role="img">
+                    Chinese:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="blueksy404's Icon" src="../bash/images/people/blskavi32.png">
+                        <span><a href="https://www.nexusmods.com/users/2541088">bluesky404</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Germany" src="../bash/images/flags/germany.svg" role="img">
+                    German:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="DWS's Icon" src="../bash/images/bash.svg">
+                        <span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="Infernio's Icon" src="../bash/images/people/ifniavi48.png" role="img">
+                        <span><a href="https://github.com/Infernio">Infernio</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Italy" src="../bash/images/flags/italy.svg" role="img">
+                    Italian:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="Abot's Icon" src="../bash/images/people/abotavi32.png">
+                        <span><a href="https://www.nexusmods.com/users/38047">Abot</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Japan" src="../bash/images/flags/japan.svg" role="img">
+                    Japanese:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png">
+                        <span><a href="https://github.com/valda">Valda</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Brazil" src="../bash/images/flags/brazil.svg">
+                    Portuguese (Brazil):
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="Hadoki's Icon" src="../bash/images/bash.svg">
+                        <span><a href="https://www.nexusmods.com/users/323588">Hadoki</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="TheBronn's Icon" src="../bash/images/people/thbravi32.png">
+                        <span><a href="https://github.com/TheBronn">TheBronn</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Russia" src="../bash/images/flags/russia.svg" role="img">
+                    Russian:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="cottondisciple's Icon" src="../bash/images/people/ctndavi32.png">
+                        <span><a href="https://github.com/cottondisciple">cottondisciple</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg">
+                        <span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="JonySnowball's Icon" src="../bash/images/people/jnsnavi32.png">
+                        <span><a href="https://github.com/JonySnowball">JonySnowball</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="xsSplater's Icon" src="../bash/images/people/xsspavi32.png">
+                        <span><a href="https://github.com/xsSplater">xsSplater</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Sweden" src="../bash/images/flags/sweden.svg" role="img">
+                    Swedish:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="David Brofalk's Icon" src="../bash/images/bash.svg">
+                        <span>David Brofalk</span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>Tamil:</h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="தமிழ்நேரம's Icon" src="../bash/images/people/taneavi32.png">
+                        <span><a href="https://github.com/TamilNeram">தமிழ் நேரம்</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Turkey" src="../bash/images/flags/turkey.svg" role="img">
+                    Turkish:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/tmfcavi32.png">
+                        <span><a href="https://github.com/TheMalteseFalcone">TheMalteseFalcone</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Ukraine" src="../bash/images/flags/ukraine.svg" role="img">
+                    Ukrainian:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="IllusiveMan196's Icon" src="../bash/images/people/ilsvavi32.png">
+                        <span><a href="https://github.com/IllusiveMan196">IllusiveMan196</a></span>
+                    </li>
+                </ul>
+            </li>
         </ul>
     </li>
     <li><strong>Mod and Save File Gurus</strong>
@@ -2624,6 +2817,12 @@ Respect developer's time - keep discussions there short, sweet and technical. No
                 <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-compass-rd">Compass: Recognition Distance</a> was inspired by
                 <a href="https://www.nexusmods.com/oblivion/mods/4882">KseAli_POI_Visibility</a> by
                 <a href="https://www.nexusmods.com/users/114786">KseAli</a>.</span></li>
+            <li><img class="smallcred" alt="Zzyxzz's Icon" src="../bash/images/people/zzyxavi32.png"><span>
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-settings-combat-btavg">Combat: Block Time (Average)</a>,
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-settings-combat-btmax">Combat: Block Time (Maximum)</a> and
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-settings-combat-btmin">Combat: Block Time (Minimum)</a> were inspired by
+                <a href="https://www.nexusmods.com/skyrimspecialedition/mods/113064">NPC Infinite Block Fix</a> by
+                <a href="https://www.nexusmods.com/users/8515543">Zzyxzz</a>.</span></li>
             <li><img class="smallcred" alt="Demuerte's Icon" src="../bash/images/bash.svg" role="img"><span>
                 <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-magic-cr">Magic: Chameleon Refraction</a> was inspired by
                 <a href="https://www.nexusmods.com/oblivion/mods/2411">Chameleon-NoRefraction</a> by
@@ -2725,7 +2924,6 @@ Respect developer's time - keep discussions there short, sweet and technical. No
     <li>What the Plugin Checker is and how to use it to detect issues with your installed mods and more.
     <li>What Oblivion.esm swapping is, and how it can be used and why.
     <li>What Wrye Bash's keyboard shortcuts are.
-    <li>How to translate Wrye Bash into other languages.
 </ul>
 <p>The Advanced Readme is a more technical document aimed more towards mod authors and advanced users of Wrye Bash than the average user. If you find yourself wanting to know more, or not understanding why something in Wrye Bash behaves the way it does, then the answer you seek may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>.</p>
 
@@ -2733,7 +2931,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v312.1</div>
+    <div id="version">Wrye Bash v313</div>
     General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

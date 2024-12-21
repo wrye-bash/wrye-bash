@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,8 +24,8 @@ from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
-from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
-from ... import bolt
+from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
+from ... import bass, bolt
 
 _GOG_IDS = [
     1458058109, # Game
@@ -37,7 +37,7 @@ class AOblivionGameInfo(PatchGame):
     display_name = 'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
-    game_icon = u'oblivion_%u.png'
+    game_icon = u'oblivion.svg'
     bash_root_prefix = u'Oblivion'
     bak_game_name = u'Oblivion'
     template_dir = u'Oblivion'
@@ -66,6 +66,7 @@ class AOblivionGameInfo(PatchGame):
         _j('textures', 'faces'),
     ]
     check_legacy_paths = True
+    has_obmm = True
 
     @classmethod
     def check_loaded_mod(cls, patch_file, modFile):
@@ -100,7 +101,6 @@ class AOblivionGameInfo(PatchGame):
 
         @classmethod
         def exe_path_sc(cls):
-            from ... import bass
             # OBSE refuses to start when its EXE is launched on a Steam
             # installation
             if 'steam' in bass.dirs['app'].cs:
@@ -150,6 +150,7 @@ class AOblivionGameInfo(PatchGame):
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
             '_tejon', # 3P: tejon's mods
+            'baseobjectswapper', # 3P: Base Object Swapper
             'config', # 3P: mod config files (INIs)
             'distantlod',
             'enhanced economy', # 3P: Enhanced Economy
@@ -161,6 +162,7 @@ class AOblivionGameInfo(PatchGame):
             'pluggy', # 3P: Pluggy
             'scripts',
             'shaders',
+            'spellfactionitemdistributor', # 3P: Spell Faction Item Distributor
             'streamline', # 3P: Streamline
             'trees',
         }
@@ -591,7 +593,7 @@ class AOblivionGameInfo(PatchGame):
         # without any sounds would be valid or not. Leaving as is for now
         b'CREA': ('foot_weight', 'actor_sounds'),
         b'SOUN': ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment',
-                  'staticAtten', 'stopTime', 'startTime'),
+                  'static_attenuation', 'stopTime', 'startTime'),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
     }
@@ -884,7 +886,7 @@ class AOblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
     spell_stats_attrs = spell_stats_csv_attrs = (
-        'eid', 'cost', 'level', 'spellType', 'spell_flags')
+        'eid', 'spell_cost', 'spell_level', 'spell_type', 'spell_flags')
 
     #--------------------------------------------------------------------------
     # Tweak Actors
@@ -1235,6 +1237,10 @@ class AOblivionGameInfo(PatchGame):
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *_brec.RecordType.nested_to_top}
 
+class DiscOblivionGameInfo(DiscMixin, AOblivionGameInfo):
+    """GameInfo override for the disc version of Oblivion."""
+    _disc_subkey = 'Oblivion'
+
 class GOGOblivionGameInfo(GOGMixin, AOblivionGameInfo):
     """GameInfo override for the GOG version of Oblivion."""
     _gog_game_ids = _GOG_IDS
@@ -1263,5 +1269,7 @@ class WSOblivionGameInfo(WindowsStoreMixin, AOblivionGameInfo):
                             'Oblivion GOTY Italian',
                             'Oblivion GOTY Spanish']
 
+# DiscOblivionGameInfo last - see DiscMixin docstring
 GAME_TYPE = {g.unique_display_name: g for g in (
-    GOGOblivionGameInfo, SteamOblivionGameInfo, WSOblivionGameInfo)}
+    GOGOblivionGameInfo, SteamOblivionGameInfo, WSOblivionGameInfo,
+    DiscOblivionGameInfo)}

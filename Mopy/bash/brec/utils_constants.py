@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -87,33 +87,10 @@ class FormId:
             form_id_type = FormId._form_id_classes[(augmented_masters,
                                                     in_overlay_plugin)]
         except KeyError:
-            if in_overlay_plugin:
-                overlay_threshold = len(augmented_masters) - 1
-                class _FormID(FormId):
-                    @fast_cached_property
-                    def long_fid(self, *, __masters=augmented_masters):
-                        try:
-                            if self.mod_dex >= overlay_threshold:
-                                # Overlay plugins can't have new records (or
-                                # HITMEs), those get injected into the first
-                                # master instead
-                                return __masters[0], self.short_fid & 0xFFFFFF
-                            return __masters[self.mod_dex], \
-                                   self.short_fid & 0xFFFFFF
-                        except IndexError:
-                            # Clamp HITMEs to the plugin's own address space
-                            return __masters[-1], self.short_fid & 0xFFFFFF
-            else:
-                class _FormID(FormId):
-                    @fast_cached_property
-                    def long_fid(self, *, __masters=augmented_masters):
-                        try:
-                            return __masters[self.mod_dex], \
-                                   self.short_fid & 0xFFFFFF
-                        except IndexError:
-                            # Clamp HITMEs to the plugin's own address space
-                            return __masters[-1], self.short_fid & 0xFFFFFF
-            form_id_type = FormId._form_id_classes[augmented_masters] = _FormID
+            _FormID = bush.game.get_fid_class(augmented_masters,
+                                              in_overlay_plugin)
+            form_id_type = FormId._form_id_classes[
+                (augmented_masters, in_overlay_plugin)] = _FormID
         return form_id_type
 
     @fast_cached_property
@@ -382,6 +359,13 @@ class AMgefFlagsTes4(AMgefFlags):
         new_bits = mask if new_fpt else 0
         self._field = (self._field & ~mask) | new_bits
 
+class EnableParentFlags(Flags):
+    """Implements the enable parent flags shared by XESP, ACEP and LCEP."""
+    opposite_parent: bool
+    # The pop_in flag doesn't technically exist for all XESP subrecords, but it
+    # will just be ignored for those where it doesn't exist, so no problem.
+    pop_in: bool
+
 class MgefFlags(AMgefFlags):
     """Implements the MGEF data flags used since Skyrim."""
     snap_to_navmesh: bool = flag(3)
@@ -553,6 +537,8 @@ def ambient_lighting_attrs(attr_prefix: str) -> list[str]:
     ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
     return ambient_lighting + [f'{attr_prefix}_ac_scale']
 
+##: Maybe we should find a way to use these in the game/__init__.py files as
+# well to reduce duplication a bit further?
 def color_attrs(color_attr_pfx: str, *,
         rename_alpha: bool = False) -> list[str]:
     """Helper method for generating red/green/blue/alpha color attributes. Note
@@ -567,7 +553,7 @@ def color3_attrs(color_attr_pfx: str) -> list[str]:
     return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue')]
 
 def _gen_3d_attrs(attr_prefix: str) -> list[str]:
-    """Internal helper for position_attrs and rotation_attrs."""
+    """Internal helper for position_attrs et al."""
     return [f'{attr_prefix}_{d}' for d in ('x', 'y', 'z')]
 
 def position_attrs(attr_prefix: str) -> list[str]:
@@ -577,6 +563,10 @@ def position_attrs(attr_prefix: str) -> list[str]:
 def rotation_attrs(attr_prefix: str) -> list[str]:
     """Helper method for generating X/Y/Z rotation attributes."""
     return _gen_3d_attrs(f'{attr_prefix}_rot')
+
+def velocity_attrs(attr_prefix: str) -> list[str]:
+    """Helper method for generating X/Y/Z velocity attributes."""
+    return _gen_3d_attrs(f'{attr_prefix}_vel')
 
 # Distributors ----------------------------------------------------------------
 # Shared distributor for LENS records

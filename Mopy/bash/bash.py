@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module starts the Wrye Bash application in console mode. Basically,
 it runs some initialization functions and then starts the main application
 loop."""
+from __future__ import annotations
 
 import atexit
 import locale
@@ -31,16 +32,33 @@ import platform
 import shutil
 import sys
 import traceback
-from configparser import ConfigParser
 
-from . import bass, bolt, exception, wbtemp, wrye_text
+# These local imports have to be carefully checked to make sure they don't pull
+# in anything unexpected, plus there has to be a good reason for them to be up
+# here instead of locally down below (which is preferred, because it vastly
+# decreases the chance of WB going up in flames without a usable error message
+# in case of e.g. a syntax error). Record your justifications here:
+#  - bass: Needed right below here, we need to set is_standalone
+#  - bolt: Needed by almost every method in here - paths, deprint, etc.
+#  - exception and wbtemp: Needed by bolt, so imported anyways - both were
+#                          designed with this in mind
+from . import bass, bolt, exception, wbtemp
 
-# NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
 # The one and only wx
 _wx = None
+# The boot settings file, tracked as a TomlFile
+_boot_settings = None
+
+##: This should probably sit somewhere else. bass?
+# OS conventions-conformant names for WB's user config subdirectory
+_wb_conf_dir_name = {
+    'Darwin': 'com.wrye-bash',
+    'Linux': 'wrye-bash',
+    'Windows': 'WryeBash',
+}
 
 def _early_setup():
     """Executes (very) early setup by changing working directory and installing
@@ -67,6 +85,55 @@ def _early_setup():
     _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
         buffering=1, encoding='utf-8')
     _install_bugdump()
+
+def _parse_boot_settings(curr_os: str):
+    """Parse the per-user config file boot-settings.toml, which is used to
+    store settings we need before we have a chance to set the game, like locale
+    and last chosen game."""
+    # No way to use env for this, we need this to be done before setting
+    # locale, which needs to be done before we import env
+    if not (wcd_name := _wb_conf_dir_name.get(curr_os)):
+        bolt.deprint(f'Early boot config not supported on {platform.system()} '
+                     f'yet')
+        return
+    if xdg_conf_dir := os.getenv('XDG_CONFIG_HOME'):
+        user_config_dir = bolt.GPath(xdg_conf_dir)
+    else:
+        match curr_os:
+            case 'Windows':
+                # Use AppData\Roaming since, conceptually, we'd want these
+                # settings to be shared for all the user's computers (even if
+                # Roaming isn't being used for that)
+                user_config_dir = bolt.GPath(os.environ['APPDATA'])
+            case 'Linux':
+                user_config_dir = bolt.GPath_no_norm(os.path.expanduser(
+                    '~/.config'))
+            case 'Darwin':
+                user_config_dir = bolt.GPath_no_norm(os.path.expanduser(
+                    '~/Library/Application Support'))
+            case _: return # Impossible, checked above
+    boot_settings_path = user_config_dir.join(wcd_name, 'boot-settings.toml')
+    # We're in no shape to show an error to the user yet, so this import is
+    # dangerous. Guard against it breaking boot, so that we might at least get
+    # to the point where we can show the user a proper error message about this
+    # problem once it reoccurs at the next ini_files import
+    try:
+        from . import ini_files
+    except Exception as e:
+        bolt.deprint(f'ini_files.py failed to import, something is very '
+                     f'broken: {e}', traceback=True)
+        return
+    bs_file = ini_files.TomlFile(boot_settings_path, ini_encoding='utf-8')
+    for bs_section_key, bs_section in bass.boot_settings_defaults.items():
+        # ini file is missing if no boot settings are saved yet - that's fine
+        section = bs_file.get_ci_settings(missing_ok=True).get(
+            bs_section_key, {})
+        bs_dict = bass.boot_settings[bs_section_key]
+        for bs_setting_key, bs_setting_default in bs_section.items():
+            bs_dict[bs_setting_key] = section.get(bs_setting_key,
+                                                  (bs_setting_default,))[0]
+    global _boot_settings
+    _boot_settings = bs_file
 
 def _install_bugdump():
     """Replaces sys.stdout/sys.stderr with tees that copy the output into the
@@ -180,8 +247,8 @@ def _warn_missing_bash_dir():
     on Linux, bash/taglists/* is completely optional and the Python files and
     dirs are gone in standalone builds)."""
     test_files = [bass.dirs['mopy'].join(*x) for x in (
-        ('bash', 'l10n', 'de_DE.po'), ('bash', 'images', 'bash.svg'))]
-    if any(not t.is_file() for t in test_files):
+        ('bash', 'l10n'), ('bash', 'images', 'bash.svg'))]
+    if any(not t.exists() for t in test_files):
         msg = (_('Installation appears incomplete. Please reinstall Wrye Bash '
                  'so that all files are installed.') + '\n\n' +
                _('Correct installation will create a filled %(wb_folder)s '
@@ -206,6 +273,31 @@ def assure_single_instance(instance):
         sys.exit(1)
 
 def exit_cleanup():
+    # The _()s are safe because the exit_cleanup is only registered in _main,
+    # at which point locale has already been set up
+    bs_comments = {
+        'Boot': {
+            'locale': _('The locale to set when launching Wrye Bash.'),
+            'last_game': _("The display name of the last game that was "
+                           "launched through Wrye Bash's 'Select Game' "
+                           "dialog."),
+        },
+    }
+    bs_defaults = bass.boot_settings_defaults
+    # Write out only the boot settings that have been changed from their
+    # defaults - add in comments as well
+    changed_settings = {
+        bs_sect: {bs_key: (bs_val, bs_comments.get(bs_sect, {}).get(bs_key))
+                  for bs_key, bs_val in bass.boot_settings[bs_sect].items()
+                  if bs_val != bs_defaults[bs_sect][bs_key]}
+        for bs_sect in bass.boot_settings if bs_sect in bs_defaults
+    }
+    # Don't create the folder or file if no settings have been changed yet
+    if changed_settings and any(map(bool, changed_settings.values())):
+        _boot_settings.abs_path.head.makedirs()
+        _boot_settings.saveSettings(changed_settings)
+    # Do this after writing out boot-settings.toml, because ini_files uses
+    # wbtemp for the atomic write
     wbtemp.cleanup_temp()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
@@ -257,9 +349,9 @@ def dump_environment(wxver=None):
     except ImportError:
         packaging_ver = 'not found (optional)'
     try:
-        import fitz
-        pymupdf_ver = (f'{fitz.VersionBind}; bundled MuPDF version: '
-                       f'{fitz.VersionFitz}')
+        import pymupdf
+        pymupdf_ver = (f'{pymupdf.pymupdf_version}; bundled MuPDF version: '
+                       f'{pymupdf.mupdf_version}')
     except ImportError:
         pymupdf_ver = 'not found (optional)'
     try:
@@ -355,31 +447,34 @@ def _parse_bash_ini(bash_ini_path):
     for v in ini_set.values():
         bass.inisettings.update(v)
     # if bash.ini exists update those settings from there
-    if bash_ini_path is None or not os.path.exists(bash_ini_path):
+    if (bi_path := bolt.GPath(bash_ini_path)) is None or not bi_path.is_file():
         return
-    bash_ini_parser = ConfigParser()
     # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
     # English INI is ASCII)
-    bash_ini_parser.read(bash_ini_path, encoding='utf-8')
-    for section in bash_ini_parser.sections():
-        section_defaults = ini_set.get(section, {})
+    from . import ini_files
+    bash_ini = ini_files.IniFileInfo(bi_path, ini_encoding='utf-8')
+    for ci_section, section_values in bash_ini.get_ci_settings().items():
         section_defaults = {k.lower(): (k, v) for k, v in
-                            section_defaults.items()}
+                            ini_set.get(str(ci_section), {}).items()}
         # retrieving ini settings is case-insensitive - key: lowercase
-        for ini_key_lower, value in bash_ini_parser.items(section):
-            if not value or value == '.': continue
-            if default := section_defaults.get(ini_key_lower[1:]):
+        for ci_ini_key, value_tup in section_values.items():
+            if not value_tup or not (value := value_tup[0]): continue
+            # [1:] to chop off the leading 's' in e.g. 'sBashModData'
+            ini_dict_key_lo = ci_ini_key[1:].lower()
+            if default := section_defaults.get(ini_dict_key_lo):
                 ini_settings_key, default_value = default
                 if type(default_value) is bool:
-                    value = bash_ini_parser.getboolean(section, ini_key_lower)
+                    # Based on ConfigParser.getboolean's behavior
+                    value = value.lower() in ('1', 'yes', 'true', 'on')
                 else:
                     value = value.strip()
                 bass.inisettings[ini_settings_key] = value
-            elif section == 'Tool Options':
+            elif ci_section == 'Tool Options':
                 ##:(570) provisional - we want to stop specifying tool paths
-                # in the ini but we need some UI for that
-                # stash all settings in here in case they match tool path keys
-                bass.inisettings[ini_key_lower[1:]] = value
+                # in the ini but we need some UI for that.
+                # Stash all settings in here in case they match tool path keys.
+                # Those are queried in lower case
+                bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------
 def main(opts):
@@ -393,21 +488,25 @@ def main(opts):
                           f"the moment. If you know what you're doing, use "
                           f"the --unsupported switch to bypass this raise "
                           f"statement.")
-    # Change working dir and logging
+    # Change working dir and setup logging
     _early_setup()
-    # wx is needed to initialize locale, so that's first
+    # Parsing the boot settings needs logging to be available and, in turn, is
+    # needed for initializing locale
+    _parse_boot_settings(curr_os)
+    # wx is also needed to initialize locale
     wxver = _import_wx()
     try:
-        # Next, initialize locale so that we can show a translated error
-        # message if WB crashes
+        # We're now ready to initialize locale. That way, we can show a
+        # translated error message if WB crashes
         from . import localize
         wx_locale = localize.setup_locale(opts.language, _wx)
         if not bass.is_standalone and (not _rightWxVersion(wxver) or
                                        not _rightPythonVersion()): return
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None: ##: we should do this before localization and wx import
-            print(_(f"Generating HTML file from '%(gen_target)s'") % {
+            print(_("Generating HTML file from '%(gen_target)s'") % {
                 'gen_target': opts.genHtml})
+            from . import wrye_text
             wrye_text.genHtml(opts.genHtml)
             print(_('Done'))
             return
@@ -423,24 +522,41 @@ def main(opts):
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
         _main(opts, wx_locale, wxver)
-    except Exception:
+    except Exception as e:
         caught_exc = traceback.format_exc()
         try:
             # Check if localize succeeded in setting up translations, otherwise
             # monkey patch in a noop underscore
-            # noinspection PyUnboundLocalVariable
-            _(u'')
+            _(_a := '') # Hide this from gettext
         except NameError:
             def _(x): return x
-        msg = u'\n'.join([
-            _(u'Wrye Bash encountered an error.'),
-            _(u'Please post the information below to the official thread at'),
-            _(u'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games'),
-            _(u'or to the Wrye Bash Discord at'),
-            _(u'https://discord.gg/NwWvAFR'),
-            u'', caught_exc,
-        ])
-        _show_boot_popup(msg)
+        # No period at the end of URLs, that could cause copy-paste errors when
+        # people go to copy them
+        if isinstance(e, OSError) and e.errno == 22 and bolt.os_name == 'nt':
+            # On Windows, OSError 22 can occur in any number of random spots
+            # when we go to access data in the Documents folder while OneDrive
+            # is messing with us, so catch it here
+            err_msg = _('Wrye Bash encountered OSError 22. This is often '
+                        'caused by OneDrive backing up the Documents folder. '
+                        'Please follow the directions in the following link '
+                        'under "Change PC folder backup settings", removing '
+                        'your Documents folder from backup: %(ms_docs_url)s')
+            err_msg += '\n\n' + _('Should the error persist, please post your '
+                                  'BashBugDump to the official thread at '
+                                  '%(thread_url)s or to the Wrye Bash Discord '
+                                  'at %(discord_url)s')
+            print(caught_exc) # Print the real error only into the debug dump
+        else:
+            err_msg = _('Wrye Bash encountered an error. Please post the '
+                        'information below as well as your BashBugDump to the '
+                        'official thread at %(thread_url)s or to the Wrye '
+                        'Bash Discord at %(discord_url)s')
+            err_msg += '\n\n' + caught_exc
+        _show_boot_popup(err_msg % {
+            'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
+            'discord_url': 'https://discord.gg/NwWvAFR',
+            'ms_docs_url': 'https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057',
+        })
 
 def _main(opts, wx_locale, wxver):
     """Run the Wrye Bash main loop.
@@ -500,6 +616,10 @@ def _main(opts, wx_locale, wxver):
                 bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
         from . import bosh
         bosh.initBosh(game_ini_path)
+        # hacky should maybe be somewhere else
+        from .loot_conditions import init_loot_cond_functions
+        from . import load_order
+        init_loot_cond_functions(load_order, bosh, bush_game)
         from . import env
         env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher # share this instance with _close_dialog_windows
@@ -516,8 +636,6 @@ def _main(opts, wx_locale, wxver):
     basher.InitImages()
     basher.links_init.InitStatusBar()
     basher.InitLinks()
-    #--Start application
-    bapp = basher.BashApp(bash_app)
     # Set the window title for stdout/stderr messages
     bash_app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
     # Need to reference the locale object somewhere, so let's do it on the App
@@ -527,8 +645,8 @@ def _main(opts, wx_locale, wxver):
         if not opts.noUac and not uacRestart:
             # Show a prompt asking if we should restart in Admin Mode
             message = _(
-                'Wrye Bash needs Administrator Privileges to make changes to '
-                'the %(gameName)s directory.  If you do not start Wrye Bash '
+                'Wrye Bash needs administrator privileges to make changes to '
+                'the %(gameName)s directory. If you do not start Wrye Bash '
                 'with elevated privileges, you will be prompted at each '
                 'operation that requires elevated privileges.') % {
                     'gameName': bush_game.display_name}
@@ -550,27 +668,28 @@ def _main(opts, wx_locale, wxver):
         if not settings_file:
             bkf = barb.BackupSettings.backup_filename(bush_game.bak_game_name)
             settings_file = gui.FileSave.display_dialog(
-                frame, title=_(u'Backup Bash Settings'), defaultDir=base_dir,
-                wildcard=u'*.7z', defaultFile=bkf)
+                frame, title=_('Backup Wrye Bash Settings'),
+                defaultDir=base_dir, wildcard='*.7z', defaultFile=bkf)
         if settings_file:
             with gui.BusyCursor():
-                backup = barb.BackupSettings(
+                bkp_setts = barb.BackupSettings(
                     settings_file, bush_game.bak_game_name,
                     bush_game.my_games_name, bush_game.bash_root_prefix,
                     bush_game.mods_dir)
             try:
                 with gui.BusyCursor():
-                    backup.backup_settings(balt)
+                    bkp_setts.backup_settings(balt)
             except exception.StateError:
-                msg = [_('There was an error while trying to backup the Bash '
-                         'settings!'),
+                msg = [_('There was an error while trying to backup the Wrye '
+                         'Bash settings!'),
                        _('If you continue, your current settings may be '
                          'overwritten.'),
                        _('Do you want to quit Wrye Bash now?')]
                 if gui.askYes(frame, '\n'.join(msg),
                               title=_('Unable to create backup!')):
                     return  # Quit
-    frame = bapp.Init() # Link.Frame is set here !
+    #--Start application
+    frame = basher.Init(bash_app)  # Link.Frame is set here !
     frame.ensureDisplayed()
     frame.bind_refresh()
     # Start the update check in the background and pass control to wx's event
@@ -590,43 +709,43 @@ def _detect_game(opts, backup_bash_ini):
         os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
     bush_game = _import_bush_and_set_game(opts)
-    if not bush_game:
-        return None, None
-    #--Initialize Directories to perform backup/restore operations
-    #--They depend on setting the bash.ini and the game
-    from . import initialization
-    game_ini_path, init_warnings = initialization.init_dirs(
-        opts.personalPath, opts.localAppDataPath, bush_game)
+    return (bush_game, bush_game.game_ini_path) if bush_game else (None, None)
+
+def _import_bush_and_set_game(opts):
+    from . import bush
+    bolt.deprint(u'Searching for game to manage:')
+    # Warnings found during game dirs initialization are added here as strings
+    init_warnings = []
+    game_infos = bush.detect_and_set_game(opts, init_warnings)
+    if game_infos is not None:  # None == success
+        if len(game_infos) == 0:
+            _show_boot_popup(_(
+                'Wrye Bash could not find a game to manage. Make sure to '
+                'launch games you installed through Steam once and enable '
+                'mods on games you installed through the Windows '
+                'Store.') + '\n\n' + _(
+                'You can also use the %(cli_game_detect)s command line '
+                'argument or %(bash_config_file)s to specify the path '
+                'manually.') % {'cli_game_detect': '-o',
+                                'bash_config_file': 'bash.ini'})
+            return None
+        retCode = _select_game_popup(game_infos,
+            last_used_game=bass.boot_settings['Boot']['last_game'])
+        if not retCode:
+            bolt.deprint(u'No games were found or selected. Aborting.')
+            return None
+        # Add the game to the command line, so we use it if we restart. Also,
+        # default to this game the next time we launch the game select popup
+        gname, gm_path = retCode
+        bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
+        bass.boot_settings['Boot']['last_game'] = gname
+        bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
     if init_warnings:
         warning_msg = _('The following (non-critical) warnings were found '
                         'during initialization:')
         warning_msg += '\n\n'
         warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
         _show_boot_popup(warning_msg, is_critical=False)
-    return bush_game, game_ini_path
-
-def _import_bush_and_set_game(opts):
-    from . import bush
-    bolt.deprint(u'Searching for game to manage:')
-    game_infos = bush.detect_and_set_game(opts.oblivionPath)
-    if game_infos is not None:  # None == success
-        if len(game_infos) == 0:
-            _show_boot_popup(_(
-                u'Wrye Bash could not find a game to manage. Make sure to '
-                u'launch games you installed through Steam once and enable '
-                u'mods on games you installed through the Windows '
-                u'Store.') + u'\n\n' + _(
-                u'You can also use the -o command line argument or bash.ini '
-                u'to specify the path manually.'))
-            return None
-        retCode = _select_game_popup(game_infos)
-        if not retCode:
-            bolt.deprint(u'No games were found or selected. Aborting.')
-            return None
-        # Add the game to the command line, so we use it if we restart
-        gname, gm_path = retCode
-        bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
-        bush.detect_and_set_game(opts.oblivionPath, gname, gm_path)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
@@ -709,7 +828,7 @@ class _AppReturnCode(object):
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _select_game_popup(game_infos):
+def _select_game_popup(game_infos, last_used_game: str | None):
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
     from .balt import Resources
@@ -730,8 +849,7 @@ def _select_game_popup(game_infos):
                                   in game_infos.items()}
             self._game_to_info = {g.unique_display_name: g for g in game_infos}
             ij = bass.dirs['images'].join # images not yet initialized
-            ico_paths = {g: ij(os.path.join('games', g.game_icon % 32)) for g
-                         in game_infos}
+            ico_paths = {g: ij('games', g.game_icon) for g in game_infos}
             self._game_to_bitmap = {g.unique_display_name: GuiImage.from_path(
                 p, iconSize=32) for g, p in ico_paths.items()}
             # Construction of the actual GUI begins here
@@ -750,9 +868,12 @@ def _select_game_popup(game_infos):
             self._launch_button = ImageButton(self, launch_img,
                 btn_label=_('Launch'))
             self._launch_button.on_clicked.subscribe(self._handle_launch)
-            # Start out with an empty search and the alphabetically first game
-            # selected
-            self._perform_search(search_str=u'')
+            # Start out with an empty search and the last-used game selected,
+            # if any - otherwise, use the one that comes first alphabetically
+            initial_choice = None
+            if last_used_game and last_used_game in self._sorted_games:
+                initial_choice = last_used_game
+            self._perform_search(search_str='', choice_override=initial_choice)
             VLayout(item_expand=True, border=6, spacing=12, items=[
                 Label(self, _(u'Please choose a game to manage.'),
                       alignment=TextAlignment.CENTER),
@@ -790,8 +911,9 @@ def _select_game_popup(game_infos):
                         return p
                 return None # Should never happen
 
-        def _perform_search(self, search_str):
-            prev_choice = self._game_dropdown.get_value()
+        def _perform_search(self, search_str, *,
+                choice_override: str | None =None):
+            prev_choice = choice_override or self._game_dropdown.get_value()
             search_lower = search_str.strip().lower()
             filtered_games = [g for g in self._sorted_games
                               if search_lower in g.lower()]
@@ -871,13 +993,13 @@ def _rightPythonVersion():
     """Shows an error if the wrong Python version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
     sysVersion = sys.version_info[:3]
-    if sysVersion < (3, 11) or sysVersion >= (4,):
+    if sysVersion < (3, 12) or sysVersion >= (4,):
         from . import gui
         gui.showError(None, _(
             "Only Python %(min_py_ver)s and newer is supported "
             "(%(curr_py_ver)s detected). If you know what you're doing, "
             "install the Python version of Wrye Bash and edit this warning "
-            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.11',
+            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.12',
                                                 'curr_py_ver': sysVersion},
             title=_('Unsupported Python Version Detected'))
         return False

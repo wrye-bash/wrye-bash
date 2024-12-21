@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -39,6 +39,7 @@ from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, \
     c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
+from itertools import chain
 from subprocess import Popen
 from uuid import UUID
 
@@ -187,24 +188,21 @@ _re_env = re.compile(r'%(\w+)%', re.U)
 
 def _subEnv(ma_env):
     env_var = ma_env.group(1).upper()
-    # NOTE: On Python 3, this would be better as a try...except KeyError,
-    # then raise BoltError(...) from None
-    env_val = os.environ.get(env_var, None)
-    if not env_val:
+    try:
+        return os.environ[env_var]
+    except KeyError as e:
         raise BoltError("Can't find user directories in windows registry.\n>> "
-                        'See "If Bash Won\'t Start" in bash docs for help.')
-    return env_val
+                        "See \"If Bash Won't Start\" in bash docs for "
+                        "help.") from e
 
 def _getShellPath(folderKey):
     regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                            r'Software\Microsoft\Windows\CurrentVersion'
-                            r'\Explorer\User Shell Folders')
+      r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders')
     try:
         path = winreg.QueryValueEx(regKey, folderKey)[0]
     except WindowsError:
-        raise BoltError(u"Can't find user directories in windows registry."
-                        u'.\n>> See "If Bash Won\'t Start" in bash docs '
-                        u'for help.')
+        raise BoltError("Can't find user directories in windows registry.\n>> "
+                        'See "If Bash Won\'t Start" in bash docs for help.')
     regKey.Close()
     path = _re_env.sub(_subEnv, path)
     return path
@@ -236,7 +234,7 @@ def _get_default_app_icon(idex, target):
             icon_path = _GPath(filedata)
         else:
             icon_path, idex = filedata.split(',')
-            icon_path = os.path.expandvars(icon_path)
+            icon_path = _GPath(os.path.expandvars(icon_path))
         if not os.path.isabs(icon_path):
             # Get the correct path to the dll
             for dir_ in os.environ[u'PATH'].split(u';'):
@@ -513,10 +511,7 @@ def _find_ws_games() -> dict[str, _Path]:
     installed games in the resulting 'Xbox' game libraries."""
     # First, look for the libraries
     found_libraries = []
-    # Couldn't just return a list of strings of course - thanks pywin32
-    # PY3.12: Use os.listdrives()
-    all_drives = win32api.GetLogicalDriveStrings().rstrip('\x00').split('\x00')
-    for curr_drive in all_drives:
+    for curr_drive in os.listdrives():
         library_path = _parse_gamingroot(curr_drive + '.GamingRoot')
         if library_path is None:
             continue # No .GamingRoot or failed to parse - either way, skip
@@ -545,6 +540,16 @@ def _get_steam_path() -> _Path | None:
     """Retrieve the path used by Steam."""
     return get_registry_path(r'Valve\Steam', 'InstallPath',
         lambda p: p.join('steam.exe').is_file())
+
+def _find_registry_games(submod, reg_keys):
+    """Helper for finding games via registry keys."""
+    if not reg_keys:
+        return [] # Game is not detectable via registry
+    for subkey, entry in reg_keys:
+        reg_path = get_registry_path(subkey, entry, submod.test_game_path)
+        if reg_path:
+            return [reg_path]
+    return []
 
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
@@ -723,7 +728,8 @@ def _get_known_path(known_folder_id, user_handle=_UserHandle.current):
                              byref(pPath)) != S_OK:
         raise RuntimeError(
             f"Failed to retrieve known folder path '{known_folder_id!r}' - "
-            f"this is most likely caused by OneDrive, see General Readme")
+            f"this is most likely caused by OneDrive, see Common Issues "
+            f"section of General Readme")
     path = pPath.value
     _CoTaskMemFree(pPath)
     return path
@@ -1027,14 +1033,17 @@ def get_registry_path(subkey, entry, test_path_callback):
 
 def get_gog_game_paths(submod):
     """Check registry for games with GOG keys."""
-    reg_keys = submod.gog_registry_keys
-    if not reg_keys:
-        return [] # Game is not detectable via registry
-    for subkey, entry in reg_keys:
-        reg_path = get_registry_path(subkey, entry, submod.test_game_path)
-        if reg_path:
-            return [reg_path]
-    return []
+    return _find_registry_games(submod, submod.gog_registry_keys)
+
+def get_disc_game_paths(submod, found_steam_paths, found_gog_paths):
+    """Check registry for the disc versions of older games."""
+    disc_paths = _find_registry_games(submod, submod.disc_registry_keys)
+    # The Steam and GOG versions set the same registry key as the disc version,
+    # so avoid showing it twice
+    steam_paths_set = set(chain.from_iterable(found_steam_paths))
+    gog_paths_set = set(chain.from_iterable(found_gog_paths))
+    return [p for p in disc_paths
+            if p not in steam_paths_set and p not in gog_paths_set]
 
 def get_legacy_ws_game_info(submod):
     """Get all information about a legacy Windows Store application."""
@@ -1055,8 +1064,8 @@ def get_ws_game_paths(submod):
 def get_steam_game_paths(submod):
     """Read Steam config information to determine which Steam games are
     installed and return their install paths."""
-    return [_GPath_no_norm(p) for p in
-            _parse_steam_manifests(submod, _get_steam_path())]
+    return [*map(_GPath_no_norm, _parse_steam_manifests(
+        submod, _get_steam_path()))]
 
 def get_personal_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.Documents)),
@@ -1082,7 +1091,7 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
                     shortcut = sh.CreateShortCut(lnk.s)
                     descr = shortcut.Description
                     if not descr:
-                        descr = ' '.join((_('Launch'), lnk.sbody))
+                        descr = None # means 'use filename'
                     shortcuts[lnk] = (shortcut.TargetPath,
                         # shortcut.WorkingDirectory, shortcut.Arguments,
                         shortcut.IconLocation, descr)
@@ -1223,11 +1232,6 @@ def _real_sys_prefix():
         return sys.base_prefix
     else:
         return sys.prefix
-
-def python_tools_dir():
-    """Returns the absolute path to the Tools directory of the currently used
-    Python installation."""
-    return os.path.join(_real_sys_prefix(), 'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
@@ -1640,6 +1644,7 @@ class TaskDialog(object):
         windll.user32.SendMessageW(self.__handle, _SETPBARPOS,
                                    self._progress_bar[u'pos'], 0)
 # END TASKDIALOG PART =========================================================
+
 class AppLauncher(_AppLauncher):
 
     def launch_app(self, exe_path, exe_args):
@@ -1661,7 +1666,7 @@ class AppLauncher(_AppLauncher):
 class ExeLauncher(AppLauncher):
 
     @set_cwd
-    def launch_app(self, exe_path, exe_args):
+    def launch_app(self, exe_path: _Path, exe_args):
         try:
             self._run_exe(exe_path, exe_args)
         except WindowsError as werr:
@@ -1682,7 +1687,6 @@ def in_mo2_vfs() -> bool:
     """Test if Wrye Bash appears be running with MO2's virtual filesystem
     hooked in."""
     for dll in ('hook.dll', 'usvfs_x64.dll'):
-        dll_handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
-        if dll_handle:
+        if ctypes.windll.kernel32.GetModuleHandleW(dll): # dll handle
             return True
     return False

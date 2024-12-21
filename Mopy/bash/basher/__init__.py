@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,7 +26,7 @@ Bash application is actually launched by the bash module.)
 
 This module is used to help split basher.py to a package without breaking
 the program. basher.py was organized starting with lower level elements,
-working up to higher level elements (up the BashApp). This was followed by
+working up to higher level elements. This was followed by
 definition of menus and buttons classes, dialogs, and finally by several
 initialization functions. Currently the package structure is:
 
@@ -55,8 +55,8 @@ import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
-from functools import partial, cached_property
-from itertools import chain
+from functools import partial
+from itertools import chain, repeat
 
 import wx
 
@@ -73,12 +73,13 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
 from ..bass import Store
-from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
-    forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
-    to_unix_newlines, to_win_newlines, top_level_items, LooseVersion
+from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, deprint, \
+    dict_sort, forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
+    to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
+    fast_cached_property, attrgetter_cache, top_level_files
 from ..bosh import ModInfo, omods
-from ..exception import BoltError, CancelError, FileError, SkipError, \
-    UnknownListener
+from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
+from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -159,7 +160,7 @@ tabInfo = {
     u'Saves': [u'SavePanel', _(u'Saves'), None],
     u'INI Edits': [u'INIPanel', _(u'INI Edits'), None],
     u'Screenshots': [u'ScreensPanel', _(u'Screenshots'), None],
-    # u'BSAs':[u'BSAPanel', _(u'BSAs'), None],
+    # 'BSAs': ['BSAPanel', 'BSAs', None],
 }
 
 #------------------------------------------------------------------------------
@@ -259,7 +260,7 @@ class SashUIListPanel(SashPanel):
         if not self._firstShow and destroy: # if the panel was shown
             super(SashUIListPanel, self).ClosePanel(destroy)
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        self.listData.save()
+        self.listData.save_pickle()
 
 class BashTab(_DetailsViewMixin, SashUIListPanel):
     """Wrye Bash Tab, composed of a UIList and a Details panel."""
@@ -287,7 +288,8 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=lambda a: not self.data_store[a].in_master_block())
+            items.sort(key=lambda a: not bush.game.master_flag.cached_type(
+                self.data_store[a]))
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -337,67 +339,51 @@ class _ModsUIList(UIList):
         checkMark, mouseText = self._set_status_text(item_format, minf,
                                                      item_key)
         item_name = self._item_name(item_key)
-        fileBashTags, mouseText = self._set_color(checkMark, mouseText, minf,
-                                                  item_name, item_format)
+        self._set_color(checkMark, mouseText, minf, item_name, item_format)
         # Text background
         if minf.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
-            mouseText += _('Another plugin has the same timestamp.') + ' '
+            mouseText.append(_('Another plugin has the same timestamp.'))
         elif minf.hasTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
-            mouseText += _('Another plugin has the same timestamp.') + ' '
+            mouseText.append(_('Another plugin has the same timestamp.'))
         if minf.is_ghost:
             item_format.back_key = 'mods.bkgd.ghosted'
-            mouseText += _('Plugin is ghosted.') + ' '
+            mouseText.append(_('Plugin is ghosted.'))
         if msg := minf.has_master_size_mismatch(self._do_size_checks):
             item_format.back_key = 'mods.bkgd.size_mismatch'
-            mouseText += msg + ' '
+            mouseText.append(msg)
         if settings['bash.mods.scanDirty']:
             if msg := minf.getDirtyMessage():
-                mouseText += msg
+                mouseText.append(msg)
                 item_format.underline = True
-        self.mouseTexts[item_key] = mouseText
+        self.mouseTexts[item_key] = ' '.join(mouseText)
 
-    def _set_color(self, checkMark, mouseText, minf, item_name, item_format):
+    @staticmethod
+    def _set_color(checkMark, mouse_text, minf, item_name, item_format):
         #--Font color
-        fileBashTags = minf.getBashTags()
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
         if item_name in bosh.modInfos.bashed_patches:
             item_format.text_key = 'mods.text.bashedPatch'
-            mouseText += _('Bashed Patch.') + ' '
-        if item_name in bosh.modInfos.mergeable_plugins:
-            if 'NoMerge' in fileBashTags:
-                item_format.text_key = 'mods.text.noMerge'
-                mouseText += _('Technically mergeable, but has NoMerge '
-                               'tag.') + ' '
-            else:
-                item_format.text_key = 'mods.text.mergeable'
-                if checkMark == 2: # Merged plugins won't be in master lists
-                    mouseText += _('Merged into Bashed Patch.') + ' '
-                else:
-                    mouseText += _('Can be merged into Bashed Patch.') + ' '
-        if item_name in bosh.modInfos.esl_capable_plugins:
-            item_format.text_key = 'mods.text.mergeable'
-            mouseText += _('Can be ESL-flagged.') + ' '
-        if item_name in bosh.modInfos.overlay_capable_plugins:
-            item_format.text_key = 'mods.text.mergeable'
-            mouseText += _('Can be Overlay-flagged.') + ' '
-        final_text_key = 'mods.text.es'
-        if minf.is_esl():
-            final_text_key += 'l'
-            mouseText += _('Light plugin.') + ' '
-        if minf.is_overlay(): # Overlay plugins won't be in master lists
-            final_text_key += 'o'
-            mouseText += _('Overlay plugin.') + ' '
-        if minf.in_master_block():
-            final_text_key += 'm'
-            mouseText += _('Master plugin.') + ' '
-        # Check if it's special, leave ESPs alone
-        if final_text_key != 'mods.text.es':
-            item_format.text_key = final_text_key
-        if 'Deactivate' in fileBashTags: # was for mods only
+            mouse_text.append(_('Bashed Patch.'))
+        for mchk in bush.game.mergeability_checks:
+            txtkey, mtext = mchk.display_info(minf, checkMark)
+            if txtkey:
+                item_format.text_key = txtkey
+                mouse_text.append(mtext)
+        # ESL, OVERLAY, MID, BLUEPRINT then ESM
+        suffix = ''.join(pflag.ui_letter_key for pflag in chain(
+            *reversed(bush.game.all_flags)) if pflag.cached_type(minf))
+        try:
+            item_format.text_key = bush.game.mod_keys[suffix]
+            mouse_text.append(bush.game.plugin_type_text[suffix])
+        except KeyError:
+            pass
+        if 'Deactivate' in minf.getBashTags(): # was for mods only
             item_format.italics = True
-        return fileBashTags, mouseText
+
+    def _set_status_text(self, item_format, minf, item_key):
+        raise NotImplementedError
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -418,7 +404,7 @@ class MasterList(_ModsUIList):
         u'Current Order': lambda self, a: self._curr_lo_index[
             self.data_store[a].curr_name],
         'Indices': lambda self, a: self._save_lo_real_index[
-            self.data_store[a].curr_name],
+            self.data_store[a].curr_name][0],
         'Current Index': lambda self, a: self._curr_real_index[
             self.data_store[a].curr_name],
     }
@@ -430,12 +416,12 @@ class MasterList(_ModsUIList):
         'File': lambda self, mi: bosh.modInfos.masterWithVersion(
             self._item_name(mi)),
         'Num': lambda self, mi: f'{mi:02X}',
-        'Current Order': lambda self, mi: bosh.modInfos.hexIndexString(
+        'Current Order': lambda self, mi: load_order.cached_active_index_str(
             self._item_name(mi)),
-        'Indices': lambda self, mi: self._save_lo_hex_string[
-            self._item_name(mi)],
-        'Current Index': lambda self, mi: bosh.modInfos.real_index_strings[
-            self._item_name(mi)],
+        'Indices': lambda self, mi: self._save_lo_real_index[
+            self._item_name(mi)][1],
+        'Current Index': lambda self, mi: bosh.modInfos.real_indices[
+            self._item_name(mi)][1],
     }
     banned_columns = {'Indices', 'Current Index'} # These are Saves-specific
 
@@ -456,10 +442,6 @@ class MasterList(_ModsUIList):
         # using self.__class__.keyPrefix for common saves/mods masters settings
         return settings[self.__class__.keyPrefix + u'.cols']
 
-    message = _(u'Edit/update the masters list? Note that the update process '
-                u'may automatically rename some files. Be sure to review the '
-                u'changes before saving.')
-
     def __init__(self, parent, listData=None, keyPrefix=keyPrefix, panel=None,
                  detailsPanel=None):
         #--Data/Items
@@ -468,9 +450,8 @@ class MasterList(_ModsUIList):
         self.fileInfo = None
         self._curr_lo_index = {} # cache, orders missing last alphabetically
         self._curr_real_index = {}
-        # Cache based on SaveHeader.masters_regular and masters_esl
-        self._save_lo_real_index = defaultdict(lambda: sys.maxsize)
-        self._save_lo_hex_string = defaultdict(lambda: '')
+        # Cache based on SaveHeader.masters_regular and scale_masters
+        self._save_lo_real_index = defaultdict(lambda: (sys.maxsize, ''))
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
@@ -483,8 +464,10 @@ class MasterList(_ModsUIList):
     @allowEdit.setter
     def allowEdit(self, val):
         if val and (not self.detailsPanel.allowDetailsEdit or not
-               balt.askContinue(
-                   self, self.message, self.keyPrefix + u'.update.continue',
+            balt.askContinue(self, _(
+                'Edit/update the masters list? Note that the update process '
+                'may automatically rename some files. Be sure to review the '
+                'changes before saving.'), f'{self.keyPrefix}.update.continue',
                    _('Update Masters') + ' - ' + _('BETA'))):
             return
         bass.settings[self._allowEditKey] = val
@@ -520,23 +503,20 @@ class MasterList(_ModsUIList):
         #--Fill data and populate
         self._update_real_indices(fileInfo)
         self.is_inaccurate = fileInfo.has_inaccurate_masters
-        if isinstance(fileInfo, bosh.ModInfo):
-            can_have_sizes = bush.game.Esp.check_master_sizes
-            can_have_esl = False
-        else:
-            can_have_sizes = False
-            can_have_esl = bush.game.has_esl
-        all_esl_masters = (set(fileInfo.header.masters_esl) if can_have_esl
-                           else None)
+        # info attributes?
+        can_have_sizes = isinstance(fileInfo, bosh.ModInfo) and \
+            bush.game.Esp.check_master_sizes
+        pf_mas_set = {pf: set(v) for pf, v in
+                      getattr(fileInfo.header, 'scale_masters', {}).items()}
         all_master_sizes = (fileInfo.header.master_sizes if can_have_sizes
-                            else None)
-        for mi, ma_name in enumerate(fileInfo.masterNames):
-            ma_size = all_master_sizes[mi] if can_have_sizes else 0
-            ma_esl = can_have_esl and ma_name in all_esl_masters
+                            else repeat(0))
+        for mi, (ma_name, ma_size) in enumerate(
+                zip(fileInfo.masterNames, all_master_sizes)):
             self.data_store[mi] = bosh.MasterInfo(parent_minf=fileInfo,
-                master_name=ma_name, master_size=ma_size, was_esl=ma_esl)
+                master_name=ma_name, master_size=ma_size, was_scale={
+                    pf for pf, sc_masters in pf_mas_set.items() if
+                    ma_name in sc_masters})
         self._reList()
-        self.populate_items()
 
     def set_item_format(self, item_key, item_format, target_ini_setts):
         super().set_item_format(item_key, item_format, target_ini_setts)
@@ -546,52 +526,43 @@ class MasterList(_ModsUIList):
                 item_format.bold = True
 
     def _set_status_text(self, item_format, masterInfo, mi):
-        mouseText = ''
+        mouseText = []
         item_name = self._item_name(mi)
         if item_name in bosh.modInfos.activeBad:  # if active, it's in LO
             item_format.back_key = 'mods.bkgd.doubleTime.load'
-            mouseText += _('Plugin name incompatible, will not load.') + ' '
+            mouseText.append(_('Plugin name incompatible, will not load.'))
         if bosh.modInfos.isBadFileName(item_name):  # might not be in LO
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
-            mouseText += _('Plugin name incompatible, cannot be '
-                           'activated.') + ' '
-        status = masterInfo.getStatus()
-        if status < 30:  # 30: does not exist
-            # current load order of master relative to other masters
-            loadOrderIndex = self._curr_lo_index[item_name]
-            ordered = load_order.cached_active_tuple()
-            if mi != loadOrderIndex:  # there are active masters out of order
-                status = 20  # orange
-            elif status > 0:
-                pass  # never happens
-            elif (mi < len(ordered)) and (ordered[mi] == item_name):
-                status = -10  # Blue else 0, Green
+            mouseText.append(_('Plugin name incompatible, cannot be '
+                               'activated.'))
+        status = masterInfo.getStatus(self._curr_lo_index[item_name], mi)
         #--Image
         oninc = load_order.cached_is_active(item_name) or (
             item_name in bosh.modInfos.merged and 2)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
-            mouseText += _('Missing master of %(child_plugin_name)s.') % {
-                'child_plugin_name': on_display} + ' '
+            mouseText.append(_('Missing master of %(child_plugin_name)s.') % {
+                'child_plugin_name': on_display})
         #--HACK - load order status
         elif on_display in bosh.modInfos:
             if status == 20:
-                mouseText += _('Reordered relative to other masters.') + ' '
+                mouseText.append(_('Reordered relative to other masters.'))
             lo_index = load_order.cached_lo_index
             if lo_index(on_display) < lo_index(item_name):
-                mouseText += _('Loads after %(child_plugin_name)s.') % {
-                    'child_plugin_name': on_display} + ' '
+                mouseText.append(_('Loads after %(child_plugin_name)s.') % {
+                    'child_plugin_name': on_display})
                 status = 20 # paint orange
         item_format.icon_key = status, oninc
         return oninc, mouseText
 
     #--Relist
-    def _reList(self):
+    def _reList(self, repopulate=True):
         file_order_names = load_order.get_ordered(
             [v.curr_name for v in self.data_store.values()])
         self._curr_lo_index = {p: i for i, p in enumerate(file_order_names)}
-        r_indices = bosh.modInfos.real_indices
-        self._curr_real_index = {p: r_indices[p] for p in file_order_names}
+        self._curr_real_index = {p: bosh.modInfos.real_indices[p][0] for p in
+                                 file_order_names}
+        if repopulate: self.populate_items()
 
     def _update_real_indices(self, new_file_info):
         """Updates the 'real' indices cache. Does nothing outside of saves."""
@@ -609,8 +580,7 @@ class MasterList(_ModsUIList):
         if edited: self.SetMasterlistEdited(repopulate=True)
 
     def SetMasterlistEdited(self, repopulate=False):
-        self._reList()
-        if repopulate: self.populate_items()
+        self._reList(repopulate)
         self.edited = True
         self.detailsPanel.SetEdited() # inform the details panel
 
@@ -660,24 +630,34 @@ class MasterList(_ModsUIList):
         return [v.curr_name for k, v in dict_sort(self.data_store)]
 
 #------------------------------------------------------------------------------
+def _ask_info(attr_name, func_args=None, wrap=None):
+    """Create a function that takes a UIList and the fn_key to a (present,
+    otherwise a KeyError is raised) list info and gets some info from the
+    info (an attribute or instance method result)."""
+    attget = attrgetter_cache[attr_name]
+    if func_args is None:
+        lm = lambda self, p: attget(self.data_store[p])
+    else:
+        lm = lambda self, p: attget(self.data_store[p])(*func_args)
+    if wrap is not None:
+        return lambda self, p: wrap(lm(self, p))
+    return lm
+
 class INIList(UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _sort_keys = {
-        u'File'     : None,
-        u'Installer': lambda self, a: self.data_store[a].get_table_prop(
-            u'installer', u''),
+        'File'     : None,
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
-    def _sortValidFirst(self, items):
+    def _sortValidFirst(self, items, *, __lm=_ask_info('tweak_status', ())):
         if settings[u'bash.ini.sortValid']:
-            items.sort(key=lambda a: self.data_store[a].tweak_status() < 0)
+            items.sort(key=lambda a: (__lm(self, a) < 0))
     _extra_sortings = [_sortValidFirst]
     #--Labels
-    labels = {
-        'File': lambda self, p: p,
-        'Installer': lambda self, p: self.data_store[p].get_table_prop(
-            'installer', ''),
+    labels = {'File': lambda self, p: p,
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
     _target_ini = True # pass the target_ini settings on PopulateItem
 
@@ -788,26 +768,24 @@ class INIList(UIList):
     # INI-specific methods ----------------------------------------------------
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
-        tweak_infos_list = list(tweak_infos) # may be a generator
         target_ini_file = target_ini or bosh.iniInfos.ini
         if not cls.ask_create_target_ini(target_ini_file):
             return False
         # Default tweaks are tested, so no need to warn about trust and
         # crashes, etc.
-        tweaks_are_trusted = all(t.is_default_tweak for t in tweak_infos_list)
+        tweaks_are_trusted = all(t.is_default_tweak for t in tweak_infos)
         if (not tweaks_are_trusted and
                 not cls._warn_tweak_game_ini(target_ini_file.abs_path.stail)):
             return False
         needsRefresh = False
-        for ini_info in tweak_infos_list:
+        for ini_info in tweak_infos:
             #--No point applying a tweak that's already applied
             if target_ini: # if target was given calculate the status for it
                 stat = ini_info.getStatus(target_ini_file)
                 ini_info.reset_status() # iniInfos.ini may differ from target
             else: stat = ini_info.tweak_status()
             if stat == 20 or not ini_info.is_applicable(stat): continue
-            needsRefresh |= target_ini_file.applyTweakFile(
-                ini_info.read_ini_content())
+            needsRefresh |= target_ini_file.apply_tweak(ini_info)
         return needsRefresh
 
     @staticmethod
@@ -821,13 +799,13 @@ class INIList(UIList):
         # Game ini does not exist - try copying the default game ini
         default_ini = bass.dirs[u'app'].join(bush.game.Ini.default_ini_file)
         if default_ini.exists():
-            msg += _(u'Do you want Bash to create it by copying '
-                     u'%(default_ini)s ?') % {u'default_ini': default_ini}
-            if not askYes(None, msg, _('Missing game Ini')):
+            msg += _('Do you want Wrye Bash to create it by copying '
+                     '%(default_ini)s ?') % {'default_ini': default_ini}
+            if not askYes(None, msg, title=_('Missing Game INI')):
                 return False
         else:
-            msg += _(u'Please create it manually to continue.')
-            showError(None, msg, _('Missing game Ini'))
+            msg += _('Please create it manually to continue.')
+            showError(None, msg, title=_('Missing Game INI'))
             return False
         try:
             default_ini.copyTo(target_ini_file.abs_path)
@@ -872,32 +850,31 @@ class INITweakLineCtrl(INIListCtrl):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
         self.Freeze()
         try:
+            # Clear the list, then populate it with the new lines
+            self.DeleteAllItems()
+            if tweakPath is None:
+                return
             self._RefreshTweakLineCtrl(tweakPath)
         finally:
             self.Thaw()
 
     def _RefreshTweakLineCtrl(self, tweakPath):
-        # Clear the list, then populate it with the new lines
-        self.DeleteAllItems()
-        if tweakPath is None:
-            return
         # TODO(ut) avoid if ini tweak did not change
         self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
         updated_line_nums = set()
-        for i,line in enumerate(self.tweakLines):
+        for i, (line, _sec, _sett, _val, status, lineNo, is_del) in enumerate(
+                self.tweakLines):
             #--Line
-            self.InsertItem(i, line[0])
+            self.InsertItem(i, line)
             #--Line color
-            status, is_deleted = line[4], line[6]
             if status == -10: color = colors[u'tweak.bkgd.invalid']
             elif status == 10: color = colors[u'tweak.bkgd.mismatched']
             elif status == 20: color = colors[u'tweak.bkgd.matched']
-            elif is_deleted: color = colors[u'tweak.bkgd.mismatched']
+            elif is_del: color = colors['tweak.bkgd.mismatched']
             else: color = Color.from_wx(self.GetBackgroundColour())
             color = color.to_rgba_tuple()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
-            lineNo = line[5]
             if lineNo != -1:
                 self.iniContents.SetItemBackgroundColour(lineNo,color)
                 updated_line_nums.add(lineNo)
@@ -923,71 +900,63 @@ class TargetINILineCtrl(INIListCtrl):
 
     def refresh_ini_contents(self):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
+        if bosh.iniInfos.ini.isCorrupted: return
         self.Freeze()
         try:
-            self._RefreshIniContents()
+            # Clear the list, then populate it with the new lines
+            self.DeleteAllItems()
+            main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
+                                 bosh.iniInfos.ini.abs_path.stail)
+            try:
+                sel_ini_lines = bosh.iniInfos.ini.read_ini_content()
+                if main_ini_selected: # If we got here, reading the INI worked
+                    Link.Frame.oblivionIniMissing = False
+                for i, line in enumerate(sel_ini_lines):
+                    self.InsertItem(i, line.rstrip())
+            except OSError:
+                if main_ini_selected:
+                    Link.Frame.oblivionIniMissing = True
+            self.fit_column_to_header(0)
         finally:
             self.Thaw()
 
-    def _RefreshIniContents(self):
-        if bosh.iniInfos.ini.isCorrupted: return
-        # Clear the list, then populate it with the new lines
-        self.DeleteAllItems()
-        main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
-                             bosh.iniInfos.ini.abs_path.stail)
-        try:
-            sel_ini_lines = bosh.iniInfos.ini.read_ini_content()
-            if main_ini_selected: # If we got here, reading the INI worked
-                Link.Frame.oblivionIniMissing = False
-            for i, line in enumerate(sel_ini_lines):
-                self.InsertItem(i, line.rstrip())
-        except OSError:
-            if main_ini_selected:
-                Link.Frame.oblivionIniMissing = True
-        self.fit_column_to_header(0)
-
 #------------------------------------------------------------------------------
+_common_sort_keys = {'File': None,  # just sort by name
+    'Modified': _ask_info('ftime'), 'Size': _ask_info('fsize')}
+_common_labels = {'File': lambda self, p: p,
+    'Modified': _ask_info('ftime', wrap=format_date),
+    'Size': _ask_info('fsize', wrap=round_size)}
+
 class ModList(_ModsUIList):
     #--Class Data
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _sort_keys = {
-        u'File'      : None,
-        u'Author'    : lambda self, a:self.data_store[a].header.author.lower(),
-        u'Rating'    : lambda self, a: self.data_store[a].get_table_prop(
-                            u'rating', u''),
-        u'Group'     : lambda self, a: self.data_store[a].get_table_prop(
-                            u'group', u''),
-        u'Installer' : lambda self, a: self.data_store[a].get_table_prop(
-                            u'installer', u''),
-        u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
-        u'Indices'   : lambda self, a: self.data_store[a].real_index(),
-        u'Modified'  : lambda self, a: self.data_store[a].mtime,
-        u'Size'      : lambda self, a: self.data_store[a].fsize,
-        u'Status'    : lambda self, a: self.data_store[a].getStatus(),
-        u'Mod Status': lambda self, a: self.data_store[a].txt_status(),
-        u'CRC'       : lambda self, a: self.data_store[a].cached_mod_crc(),
+    _sort_keys = {**_common_sort_keys,
+        'Author'    : lambda self, a: _ask_info('header.author',
+                                                wrap=str.lower),
+        'Rating'    : _ask_info('get_table_prop', ('rating', '')),
+        'Group'     : _ask_info('get_table_prop', ('group', '')),
+        'Installer' : _ask_info('get_table_prop', ('installer', '')),
+        'Load Order': lambda self, a: load_order.cached_lo_index(a),
+        'Indices'   : lambda self, a: self.data_store.real_indices[a][0],
+        'Status'    : _ask_info('getStatus', ()),
+        'Mod Status': _ask_info('txt_status', ()),
+        'CRC'       : _ask_info('cached_mod_crc', ()),
     }
     _dndList, _dndColumns = True, [u'Load Order']
     _sunkenBorder = False
     #--Labels
-    labels = {
+    labels = {**_common_labels, # File is overwritten below
         'File': lambda self, p: self.data_store.masterWithVersion(p),
-        'Load Order': lambda self, p: self.data_store.hexIndexString(p),
-        'Indices': lambda self, p: self.data_store[p].real_index_string(),
-        'Rating': lambda self, p: self.data_store[p].get_table_prop('rating',
-                                                                    ''),
-        'Group': lambda self, p: self.data_store[p].get_table_prop('group',
-                                                                   ''),
-        'Installer': lambda self, p: self.data_store[p].get_table_prop(
-            'installer', ''),
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
-        'Size': lambda self, p: round_size(self.data_store[p].fsize),
-        'Author': lambda self, p: self.data_store[p].header.author if
-        self.data_store[p].header else '-',
-        'CRC': lambda self, p: self.data_store[p].crc_string(),
-        'Mod Status': lambda self, p: self.data_store[p].txt_status(),
+        'Load Order': lambda self, p: load_order.cached_active_index_str(p),
+        'Indices': lambda self, p: self.data_store.real_indices[p][1],
+        'Rating': _ask_info('get_table_prop', ('rating', '')),
+        'Group': _ask_info('get_table_prop', ('group', '')),
+        'Installer': _ask_info('get_table_prop', ('installer', '')),
+        'Author': _ask_info('header.author'),
+        'CRC': _ask_info('crc_string', ()),
+        'Mod Status': _ask_info('txt_status', ()),
     }
     _copy_paths = True
 
@@ -1004,23 +973,20 @@ class ModList(_ModsUIList):
 
     def OnDropIndexes(self, indexes, newIndex):
         if self._dropIndexes(indexes, newIndex):
-            # Take all indices into account - we may be moving plugins up, in
-            # which case the smallest index is in indexes, or we may be moving
-            # plugins down, in which case the smallest index is newIndex
-            lowest_index = min(newIndex, min(indexes))
-            self._refreshOnDrop(lowest_index)
+            self._refreshOnDrop()
 
     def dndAllow(self, event):
         msg = u''
         continue_key = u'bash.mods.dnd.column.continue'
-        if not self.sort_column in self._dndColumns:
+        if self.sort_column not in self._dndColumns:
             msg = _(u'Reordering mods is only allowed when they are sorted '
                     u'by Load Order.')
         else:
-            pinned = load_order.filter_pinned(self.GetSelected())
+            pinned = load_order.filter_pinned(self.GetSelected(),
+                                              fixed_order=True)
             if pinned:
                 msg = (_(u"You can't reorder the following mods:") + u'\n' +
-                       u', '.join(str(s) for s in pinned))
+                       ', '.join(pinned))
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key, show_cancel=False)
@@ -1028,15 +994,13 @@ class ModList(_ModsUIList):
         return True
 
     @balt.conversation
-    def _refreshOnDrop(self, first_index):
+    def _refreshOnDrop(self):
         #--Save and Refresh
         try:
-            bosh.modInfos.cached_lo_save_all()
-        except (BoltError, NotImplementedError) as e:
+            ldiff = bosh.modInfos.cached_lo_save_all()
+            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
+        except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
             showError(self, f'{e}')
-        first_impacted = load_order.cached_lo_tuple()[first_index]
-        self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
-                       refresh_others=Store.SAVES.DO())
 
     #--Populate Item
     def _set_status_text(self, item_format, mod_info, mod_name):
@@ -1048,35 +1012,34 @@ class ModList(_ModsUIList):
         status_image_key = 20 if 20 <= status < 30 else status
         item_format.icon_key = status_image_key, checkMark
         #--Default message
-        mouseText = ''
+        mouseText = []
         if mod_name in bosh.modInfos.activeBad:
             item_format.back_key = 'mods.bkgd.doubleTime.load'
-            mouseText += _('Plugin name incompatible, will not load.') + ' '
+            mouseText.append(_('Plugin name incompatible, will not load.'))
         elif mod_name in bosh.modInfos.bad_names:
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
-            mouseText += _('Plugin name incompatible, cannot be '
-                           'activated.') + ' '
+            mouseText.append(_('Plugin name incompatible, cannot be '
+                               'activated.'))
         if miss_str := (mod_name in bosh.modInfos.missing_strings):
-            mouseText += _('Plugin is missing string localization '
-                           'files.') + ' '
+            mouseText.append(_('Plugin is missing string localization files.'))
         if bad_master_names := (mod_info.hasBadMasterNames()):
-            mouseText += _('Has master names that will not load.') + ' '
+            mouseText.append(_('Has master names that will not load.'))
         if miss_str or bad_master_names:
             item_format.back_key = 'mods.bkgd.doubleTime.load' if \
                 load_order.cached_is_active(
                 mod_name) else 'mods.bkgd.doubleTime.exists'
         # Mirror the checkbox color info in the status bar
         if status == 30:
-            mouseText += _('One or more masters are missing.') + ' '
+            mouseText.append(_('One or more masters are missing.'))
         else:
             if status in {20, 21}:
-                mouseText += _('Loads before its masters.') + ' '
+                mouseText.append(_('Loads before its masters.'))
             if status in {10, 21}:
-                mouseText += _('Masters have been re-ordered.') + ' '
+                mouseText.append(_('Masters have been re-ordered.'))
         if checkMark == 1:
-            mouseText += _('Active in load order.') + ' '
+            mouseText.append(_('Active in load order.'))
         elif checkMark == 3:
-            mouseText += _('Imported into Bashed Patch.') + ' '
+            mouseText.append(_('Imported into Bashed Patch.'))
         return checkMark, mouseText
 
     # Events ------------------------------------------------------------------
@@ -1085,8 +1048,8 @@ class ModList(_ModsUIList):
         modInfo = self._get_info_clicked(lb_dex_and_flags)
         if not modInfo: return
         if not Link.Frame.docBrowser:
-            DocBrowser().show_frame()
-        Link.Frame.docBrowser.SetMod(modInfo.fn_key) ##: will GPath it
+            DocBrowser(self.data_store).show_frame()
+        Link.Frame.docBrowser.SetMod(modInfo.fn_key)
         Link.Frame.docBrowser.raise_frame()
 
     def _handle_key_down(self, wrapped_evt):
@@ -1115,9 +1078,6 @@ class ModList(_ModsUIList):
                 chunks[chunk].append(dex)
             moveMod = 1 if kcode in balt.wxArrowDown else -1
             moved = False
-            # Initialize the lowest index to the smallest existing one (we
-            # won't ever beat this one if we are moving indices up)
-            lowest_index = min(indexes)
             for chunk in chunks:
                 if not chunk: continue # nothing to move, skip
                 newIndex = chunk[0] + moveMod
@@ -1125,9 +1085,8 @@ class ModList(_ModsUIList):
                     continue # trying to move last plugin past the list
                 # Check if moving hits a new lowest index (this is the case if
                 # we are moving indices down)
-                lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
-            if moved: self._refreshOnDrop(lowest_index)
+            if moved: self._refreshOnDrop()
         elif wrapped_evt.is_cmd_down and kcode == ord('Z'):
             if wrapped_evt.is_shift_down:
                 # Ctrl+Shift+Z - redo last load order or active plugins change
@@ -1187,31 +1146,6 @@ class ModList(_ModsUIList):
         return bosh.modInfos.plugin_wildcard()
 
     # Helpers -----------------------------------------------------------------
-    @staticmethod
-    def _lo_redraw_targets(impacted_plugins):
-        """Given a set of plugins (as paths) that were impacted by a load order
-        operation, returns a set UIList keys (as paths) for elements that need
-        to be redrawn."""
-        ui_impacted = impacted_plugins.copy()
-        ##: We have to refresh every active plugin that loads higher than
-        # the lowest-loading one that was (un)checked as well since their
-        # load order/index columns will change. A full refresh is complete
-        # overkill for this, but alas... -> #353
-        if len(ui_impacted) == 1:
-            lowest_impacted = next(iter(ui_impacted)) # fast path
-        else:
-            lowest_impacted = min(ui_impacted,
-                                  key=load_order.cached_lo_index_or_max)
-        ui_impacted.update(load_order.cached_higher_loading(lowest_impacted))
-        # If the touched plugins include BPs, we need to refresh their
-        # imported/merged plugins too (checkbox icons). Note that we can do
-        # this after the lowest-loading check above, because the
-        # imported/merged plugins will not affect any other plugins if they
-        # aren't active, and won't need an update if they are active.
-        ui_imported, ui_merged = bosh.modInfos.getSemiActive(
-            ui_impacted, skip_active=True)
-        return ui_impacted | ui_imported | ui_merged
-
     _activated_key = 0
     _deactivated_key = 1
     @balt.conversation
@@ -1281,34 +1215,21 @@ class ModList(_ModsUIList):
         if warn_msg:
             balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
         if touched:
-            bosh.modInfos.cached_lo_save_active()
+            ldiff = bosh.modInfos.cached_lo_save_active()
             # If we have no changes, pass - if we do have changes, only one of
             # these can be truthy at a time
             if ch := changes[self._activated_key]:
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            self.RefreshUI(redraw=self._lo_redraw_targets(touched),
-                           refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
-        # Grab copies of the old LO/actives for find_first_difference
-        prev_lo = load_order.cached_lo_tuple()
-        prev_acti = load_order.cached_active_tuple()
-        if not undo_or_redo():
-            return # Nothing to do
-        curr_lo = load_order.cached_lo_tuple()
-        curr_acti = load_order.cached_active_tuple()
-        low_diff = load_order.find_first_difference(
-            prev_lo, prev_acti, curr_lo, curr_acti)
-        if low_diff is None:
-            return # Load orders were identical
-        # Finally, we pass to _lo_redraw_targets to take all other relevant
-        # details into account
-        self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
-                       refresh_others=Store.SAVES.DO())
+        ldiff = undo_or_redo() # no additions or removals
+        if changed := ldiff.to_rdata():
+            self.propagate_refresh(Store.SAVES.DO(), rdata=changed)
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -1325,8 +1246,8 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.RefreshUI(redraw=[new_patch_name],
-                           refresh_others=Store.SAVES.DO())
+            self.propagate_refresh(Store.SAVES.DO(),
+                                   rdata=RefrData({new_patch_name}))
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -1443,18 +1364,17 @@ class _EditableMixinOnFileInfos(_EditableMixin):
             self.SetEdited()
 
     @balt.conversation
-    def _refresh_detail_info(self):
-        try: # use self.file_info.fn_key, as name may have been updated
-            # Although we could avoid rereading the header I leave it here as
-            # an extra error check - error handling is WIP
-            self.panel_uilist.data_store.new_info(self.file_info.fn_key,
-                                                  notify_bain=True)
-            return self.file_info.fn_key
-        except FileError as e:
-            deprint(f'Failed to edit details for {self.displayed_item}',
-                    traceback=True)
-            showError(self, _('File corrupted on save!') + f'\n{e.message}')
+    def _refresh_detail_info(self, refresh_info=True, **kwargs):
+        # Although we could avoid rereading the header by passing the info in I
+        # leave it here as an extra error check - error handling is WIP
+        store = self.panel_uilist.data_store
+        store.refresh(refresh_info and RefrIn.from_tabled_infos(
+            {self.file_info.fn_key: self.file_info}, exclude=True), **kwargs)
+        if not store.get(fn := self.file_info.fn_key):
+            showError(self, _('File corrupted on save!') +
+                      f'\n{store.corrupted[fn].error_message}')
             return None
+        return fn
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
@@ -1610,7 +1530,7 @@ class ModDetails(_ModsSavesDetails):
             #--Remember values for edit checks
             self.fileStr = modInfo.fn_key
             self.authorStr = modInfo.header.author
-            self.modifiedStr = format_date(modInfo.mtime)
+            self.modifiedStr = format_date(modInfo.ftime)
             self.descriptionStr = modInfo.header.description
             self.versionStr = f'v{modInfo.header.version:0.2f}'
             minf_tags = list(modInfo.getBashTags())
@@ -1734,7 +1654,7 @@ class ModDetails(_ModsSavesDetails):
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
         if not modInfo or (self.fileStr == modInfo.fn_key and
-                           self.modifiedStr == format_date(modInfo.mtime) and
+                           self.modifiedStr == format_date(modInfo.ftime) and
                            self.authorStr == modInfo.header.author and
                            self.descriptionStr == modInfo.header.description):
             self.DoCancel()
@@ -1748,7 +1668,7 @@ class ModDetails(_ModsSavesDetails):
         #--Change Tests
         file_str = FName(self.fileStr.strip())
         changeName = file_str != modInfo.fn_key
-        changeDate = (self.modifiedStr != format_date(modInfo.mtime))
+        changeDate = (self.modifiedStr != format_date(modInfo.ftime))
         changeHedr = (self.authorStr != modInfo.header.author or
                       self.descriptionStr != modInfo.header.description)
         changeMasters = self.uilist.edited
@@ -1760,13 +1680,13 @@ class ModDetails(_ModsSavesDetails):
             if msg and not askWarning(
                     self, msg, title=_('Rename %(target_file_name)s') % {
                         'target_file_name': modInfo}): return
+        unlock_lo = changeDate and not bush.game.using_txt_file
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
-            unlock = not bush.game.using_txt_file
-            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
-            self.panel_uilist.RefreshUI( # refresh saves if lo changed
-                refresh_others=Store.SAVES.IF(not bush.game.using_txt_file))
+            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
+            self.panel_uilist.propagate_refresh( # refresh saves if lo changed
+                Store.SAVES.IF(not bush.game.using_txt_file))
             return
         #--Backup
         modInfo.makeBackup()
@@ -1781,9 +1701,9 @@ class ModDetails(_ModsSavesDetails):
                                         'bash.rename.isBadFileName.continue'):
                     return ##: cancels all other changes - move to validate_filename (without the balt part)
             settings[u'bash.mods.renames'][oldName] = newName
-            changeName = self.panel_uilist.try_rename(modInfo, newName)
+            changeName = self.panel_uilist.try_rename(modInfo, newName, None)
         #--Change hedr/masters?
-        if changeHedr or changeMasters:
+        if refr_inf := (changeHedr or changeMasters):
             modInfo.header.author = self.authorStr.strip()
             modInfo.header.description = self.descriptionStr.strip()
             old_mi_masters = modInfo.header.masters
@@ -1793,16 +1713,10 @@ class ModDetails(_ModsSavesDetails):
         #--Change date?
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
-        if changeDate or changeHedr or changeMasters:
-            # we reread header to make sure was written correctly
-            detail_item = self._refresh_detail_info()
-        else: detail_item = self.file_info.fn_key
-        #--Done
-        unlock = changeDate and not bush.game.using_txt_file
-        bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
-        should_refresh_saves = detail_item is None or changeName or unlock
-        self.panel_uilist.RefreshUI(detail_item=detail_item,
-            refresh_others=Store.SAVES.IF(should_refresh_saves))
+        detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
+        self.panel_uilist.propagate_refresh(Store.SAVES.IF(
+                detail_item is None or changeName or unlock_lo),
+            detail_item=detail_item)
 
     def _set_date(self, modInfo):
         modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
@@ -1894,7 +1808,7 @@ class ModDetails(_ModsSavesDetails):
         tag_plugin_name = mod_info.fn_key
         # We need to grab both the ones from the description and from LOOT,
         # since we need to save a diff in case of Copy to BashTags
-        added_tags, deleted_tags = bosh.read_loot_tags(tag_plugin_name)
+        added_tags, deleted_tags = read_loot_tags(tag_plugin_name)
         # Emulate the effects of applying the LOOT tags
         old_tags = bashTagsDesc.copy()
         old_tags |= added_tags
@@ -1908,7 +1822,7 @@ class ModDetails(_ModsSavesDetails):
                     f'{mod_info.fn_key.fn_body}.txt')}
             def _enable(self):
                 return (not mod_info.is_auto_tagged() and
-                        bosh.read_dir_tags(tag_plugin_name) != dir_diff)
+                        read_dir_tags(tag_plugin_name) != dir_diff)
             def Execute(self):
                 """Copy manually assigned bash tags into the Data/BashTags
                 folder."""
@@ -1968,7 +1882,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.removeButton = Button(right, _(u'Remove'))
         self.removeButton.on_clicked.subscribe(self._OnRemove)
         #--Edit button
-        self.editButton = Button(right, _(u'Edit...'))
+        self.editButton = Button(right, _('Edit…'))
         self.editButton.on_clicked.subscribe(lambda:
                                              self.current_ini_path.start())
         #--Ini file
@@ -2054,7 +1968,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         """Called when the user selects a new target INI from the drop down."""
         full_path = self.target_inis[selection]
         if full_path is None:
-            # 'Browse...'
+            # 'Browse…'
             wildcard =  '|'.join([
                 _('Supported files') + ' (*.ini,*.cfg,*.toml)'
                                        '|*.ini;*.cfg;*.toml',
@@ -2125,11 +2039,11 @@ class INIPanel(BashTab):
         # details panel
         target_ch = self.detailsPanel.check_new_target()
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
-                                        refresh_target=refresh_target)
-        target_ch |= changes and changes[3]
-        super(INIPanel, self).ShowPanel(target_changed=target_ch,
-                                        clean_targets=clean_targets)
-        if changes or target_ch: # we need this to be more granular
+                                        refresh_target=refresh_target) ##: add booting?
+        changes.ini_changed |= target_ch
+        super().ShowPanel(target_changed=changes.ini_changed,
+                          clean_targets=clean_targets)
+        if changes: # we need this to be more granular
             if detail_item is not self._ini_same_item:
                 self.uiList.RefreshUI(focus_list=focus_list,
                                       detail_item=detail_item)
@@ -2152,35 +2066,8 @@ class ModPanel(BashTab):
         super(ModPanel, self).__init__(parent)
 
     def sb_count_str(self):
-        all_mods = load_order.cached_active_tuple()
-        esl_count = 0
-        overlay_count = 0
-        for m in all_mods:
-            if (mi := bosh.modInfos[m]).is_esl():
-                esl_count += 1
-            elif mi.is_overlay():
-                overlay_count += 1
-        regular_count = len(all_mods) - esl_count - overlay_count
-        sb_fmt = '' # Shut up, PyCharm
-        match bush.game.has_esl, bush.game.has_overlay_plugins:
-            case False, False: # No ESLs or overlays
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d')
-            case True, False:  # ESLs, but no overlays
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                           '%(status_num_espm)d, ESL: %(status_num_esl)d)')
-            case False, True:  # Overlays, but no ESLs
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                           '%(status_num_espm)d, Overlay: '
-                           '%(status_num_overlay)d)')
-            case True, True:   # ESLs and overlays
-                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                           '%(status_num_espm)d, ESL: %(status_num_esl)d, '
-                           'Overlay: %(status_num_overlay)d)')
-        return sb_fmt %  {'status_num': len(all_mods),
-                          'total_status_num': len(bosh.modInfos),
-                          'status_num_espm': regular_count,
-                          'status_num_esl': esl_count,
-                          'status_num_overlay': overlay_count}
+        all_mods = [bosh.modInfos[m] for m in load_order.cached_active_tuple()]
+        return bush.game.plugin_flags.plugin_counts(bosh.modInfos, all_mods)
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()
@@ -2193,33 +2080,18 @@ class SaveList(UIList):
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _editLabels = _copy_paths = True
-    _sort_keys = {
-        u'File'    : None, # just sort by name
-        u'Modified': lambda self, a: self.data_store[a].mtime,
-        u'Size'    : lambda self, a: self.data_store[a].fsize,
-        u'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
-        u'Player'  : lambda self, a: self.data_store[a].header.pcName,
-        u'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
-        u'Status'  : lambda self, a: self.data_store[a].getStatus(),
+    _sort_keys = {**_common_sort_keys,
+        'PlayTime': _ask_info('header.gameTicks'),
+        'Player'  : _ask_info('header.pcName'),
+        'Cell'    : _ask_info('header.pcLocation'),
+        'Status'  : _ask_info('getStatus', ()),
     }
-    #--Labels, why checking for header here - is this called on corrupt saves ?
-    @staticmethod
-    def _headInfo(saveInfo, attr):
-        if not saveInfo.header: return u'-'
-        return getattr(saveInfo.header, attr)
-    @staticmethod
-    def _playTime(saveInfo):
-        if not saveInfo.header: return u'-'
-        playMinutes = saveInfo.header.gameTicks // 60000
-        return f'{playMinutes // 60}:{playMinutes % 60:02d}'
-    labels = {
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-        'PlayTime': lambda self, p: self._playTime(self.data_store[p]),
-        'Player': lambda self, p: self._headInfo(self.data_store[p], 'pcName'),
-        'Cell':     lambda self, p: self._headInfo(self.data_store[p],
-                                                   'pcLocation'),
+    #--Labels
+    labels = {**_common_labels,
+        'PlayTime': lambda self, p: f'{(playMinutes := self.data_store[
+            p].header.gameTicks // 60000) // 60}:{playMinutes % 60:02d}',
+        'Player': _ask_info('header.pcName'),
+        'Cell': _ask_info('header.pcLocation'),
     }
 
     @balt.conversation
@@ -2231,24 +2103,21 @@ class SaveList(UIList):
         if not root:
             showError(self, newName)
             return EventResult.CANCEL # validate_filename would Veto
-        item_edited = [self.panel.detailsPanel.displayed_item]
-        to_select = set()
-        to_del = set()
+        item_edited = self.panel.detailsPanel.displayed_item
+        rdata = None
         for saveInfo in self.get_selected_infos_filtered():
-            if not self.try_rename(saveInfo, root, to_select, to_del,
-                                   item_edited): break
-        if to_select:
-            self.RefreshUI(redraw=to_select, to_del=to_del, # to_add
-                           detail_item=item_edited[0])
+            if (rdata := self.try_rename(saveInfo, root, rdata)) is None:
+                break
+        if rdata:
+            self.RefreshUI(rdata, detail_item=rdata.renames.get(item_edited))
             #--Reselect the renamed items
-            self.SelectItemsNoCallback(to_select)
+            self.SelectItemsNoCallback(rdata.redraw)
         return EventResult.CANCEL # needed ! clears new name from label on exception
 
-    def try_rename(self, saveinf, new_root, to_select=None, to_del=None,
-                   item_edited=None, force_ext=''):
+    def try_rename(self, saveinf, new_root, rdata_ren, store_refr=None, *,
+                   force_ext=''):
         newFileName = saveinf.unique_key(new_root, force_ext)
-        return super().try_rename(saveinf, newFileName, to_select, to_del,
-                                  item_edited)
+        return super().try_rename(saveinf, newFileName, rdata_ren)
 
     @staticmethod
     def _unhide_wildcard():
@@ -2285,16 +2154,16 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        if rename_res := self.try_rename(sinf, fn_item.fn_body,
-                                         force_ext=extension):
-            self.RefreshUI(redraw=[rename_res], to_del=[fn_item])
+        if rdata := self.try_rename(sinf, fn_item.fn_body, None,
+                                    force_ext=extension):
+            self.RefreshUI(rdata) # that's what a RefreshUI call should look like
 
     # Save profiles
-    def set_local_save(self, new_saves, refreshSaveInfos):
+    def set_local_save(self, new_saves, *, do_swap=None):
         if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=_(
             u'Setting the save profile is done by editing the game ini.')):
             return
-        self.data_store.setLocalSave(new_saves, refreshSaveInfos)
+        self.data_store.refresh(save_dir=new_saves, do_swap=do_swap)
         balt.Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
@@ -2304,24 +2173,21 @@ class _SaveMasterList(MasterList):
     banned_columns = ()
 
     def _update_real_indices(self, new_file_info):
-        self._save_lo_real_index.clear()
-        self._save_lo_hex_string.clear()
-        # Check if we have to worry about ESL masters
-        if bush.game.has_esl and new_file_info.header.has_esl_masters:
-            save_lo_regular = {m: i for i, m in enumerate(
-                new_file_info.header.masters_regular)}
-            num_regular = len(save_lo_regular)
+        (rdex := self._save_lo_real_index).clear() # it's a defaultdict!
+        try: # Check if we have to worry about scale masters
+            rdex.update({m: (i, f'{i:02X}') for i, m in
+                         enumerate(new_file_info.header.masters_regular)})
+            num_regular = len(rdex)
             # For ESL masters, we have to add an offset to the real index
-            for i, m in enumerate(new_file_info.header.masters_esl):
-                self._save_lo_real_index[m] = num_regular + i
-                self._save_lo_hex_string[m] = f'FE {i:03X}'
-        else:
-            save_lo_regular = {m: i for i, m in enumerate(
-                new_file_info.masterNames)}
-        # For regular masters, simply store the LO index
-        self._save_lo_real_index.update(save_lo_regular)
-        self._save_lo_hex_string.update({m: f'{i:02X}' for m, i
-                                         in save_lo_regular.items()})
+            for pf, li in new_file_info.header.scale_masters.items():
+                i = num_regular
+                for i, m in enumerate(li, num_regular):
+                    rdex[m] = i, pf.index_str(i, num_regular)
+                num_regular = i
+        except AttributeError: # no masters_regular/scale_masters attributes
+            # For regular masters, simply store the LO index
+            rdex.update({m: (i, f'{i:02X}') for i, m in
+                         enumerate(new_file_info.masterNames)})
 
 class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""
@@ -2459,9 +2325,9 @@ class SaveDetails(_ModsSavesDetails):
         changeMasters = self.uilist.edited
         #--Backup
         saveInfo.makeBackup() ##: why backup when just renaming - #292
-        prevMTime = saveInfo.mtime
+        prevMTime = saveInfo.ftime
         #--Change Name?
-        to_del = set()
+        rdata = RefrData()
         if changeName:
             newName = FName(self.fileStr.strip()).fn_body
             # if you were wondering: OnFileEdited checked if file existed,
@@ -2469,7 +2335,7 @@ class SaveDetails(_ModsSavesDetails):
             # don't - filesystem APIs might warn user (with a dialog hopefully)
             # for an overwrite, otherwise we can have a race whatever we try
             # here - an extra check can't harm nor makes a (any) difference
-            self.panel_uilist.try_rename(saveInfo, newName, to_del=to_del)
+            rdata = self.panel_uilist.try_rename(saveInfo, newName, None)
         #--Change masters?
         if changeMasters:
             prev_masters = saveInfo.masterNames
@@ -2480,12 +2346,11 @@ class SaveDetails(_ModsSavesDetails):
             saveInfo.setmtime(prevMTime)
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
-        kwargs = {u'to_del': to_del, u'detail_item': detail_item}
         if detail_item is None:
-            kwargs[u'to_del'] = to_del | {self.file_info.fn_key}
+            rdata.to_del |= {self.file_info.fn_key} # we failed rewriting
         else:
-            kwargs[u'redraw'] = [detail_item]
-        self.panel_uilist.RefreshUI(**kwargs)
+            rdata.redraw.add(detail_item)
+        self.panel_uilist.RefreshUI(rdata, detail_item=detail_item)
 
     def RefreshUIColors(self):
         self._update_masters_warning()
@@ -2511,6 +2376,8 @@ class SavePanel(BashTab):
         super(SavePanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
+_localized_last = f"=={_('Last')}=="
+
 class InstallersList(UIList):
     column_links = Links()
     context_links = Links()
@@ -2518,40 +2385,40 @@ class InstallersList(UIList):
     _sunkenBorder = False
     _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
-    _sort_keys = {
-        u'Package' : None,
-        u'Order'   : lambda self, x: self.data_store[x].order,
-        u'Modified': lambda self, x: self.data_store[x].file_mod_time,
-        u'Size'    : lambda self, x: self.data_store[x].fsize,
-        u'Files'   : lambda self, x: self.data_store[x].num_of_files,
+    _sort_keys = {'Package': None,
+        'Order'   : _ask_info('order'),
+        'Modified': _ask_info('ftime'),
+        'Size'    : _ask_info('fsize'),
+        'Files'   : _ask_info('num_of_files'),
     }
     #--Special sorters
-    def _sortStructure(self, items):
+    def _sortStructure(self, items, *, __lm=_ask_info('bain_type')):
         if settings[u'bash.installers.sortStructure']:
-            items.sort(key=lambda x: self.data_store[x].bain_type)
-    def _sortActive(self, items):
+            items.sort(key=lambda x: __lm(self, x))
+    def _sortActive(self, items, *, __lm=_ask_info('is_active')):
         if settings[u'bash.installers.sortActive']:
-            items.sort(key=lambda x: not self.data_store[x].is_active)
-    def _sortProjects(self, items):
+            items.sort(key=lambda x: not __lm(self, x))
+    def _sortProjects(self, items, *, __lm=_ask_info('is_project')):
         if settings[u'bash.installers.sortProjects']:
-            items.sort(key=lambda x: not self.data_store[x].is_project)
+            items.sort(key=lambda x: not __lm(self, x))
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
     labels = {
-        'Package':  lambda self, p: p,
-        'Order':    lambda self, p: f'{self.data_store[p].order}',
-        'Modified': lambda self, p: format_date(self.data_store[p].file_mod_time),
-        'Size':     lambda self, p: self.data_store[p].size_string(),
+        # Special handling to allow ==Last== to be shown translated to the user
+        'Package': lambda self, p: _localized_last if p == '==Last==' else p,
+        'Order':    _ask_info('order', wrap=str),
+        'Modified': _ask_info('ftime', wrap=format_date),
+        'Size':     _ask_info('size_string', ()),
         'Files':    lambda self, p: self.data_store[p].number_string(
-            self.data_store[p].num_of_files),
+            self.data_store[p].num_of_files),##:_ask_info('num_of_files')(self, p)
     }
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, [u'Order']
     #--GUI
-    _status_color = {-20: u'grey', -10: u'red', 0: u'white', 10: u'orange',
-                     20: u'yellow', 30: u'green'}
+    _status_color = {-20: 'grey', -10: 'red', 0: 'white', 10: 'orange',
+                     20: 'yellow', 30: 'green'}
 
-    @cached_property
+    @fast_cached_property
     def icons(self):
         return ColorChecks(get_installer_color_checks())
 
@@ -2619,35 +2486,27 @@ class InstallersList(UIList):
         if isinstance(root, tuple):
             root = root[0]
         with BusyCursor():
-            refreshes = [(False, False, False)]
-            newselected = []
+            refreshes = defaultdict(bool) # Store refreshes
+            rdata = None
             try:
                 for package in selected:
-                    if fail := not self.try_rename(package, root, refreshes,
-                                                   newselected):
+                    if (rdata := self.try_rename(package, root, rdata,
+                                                 refreshes)) is None:
                         break
-            finally:
-                refreshNeeded = modsRefresh = iniRefresh = False
-                if len(refreshes) > 1:
-                    refreshNeeded, modsRefresh, iniRefresh = [
-                        any(grouped) for grouped in zip(*refreshes)]
+            except TypeError:
+                pass # ren_keys.update(None)
             #--Refresh UI
-            if refreshNeeded or fail: # refresh the UI in case of an exception
-                self.RefreshUI(refresh_others=(Store.MODS.IF(modsRefresh) |
-                                               Store.INIS.IF(iniRefresh)))
+            if rdata:
+                self.propagate_refresh(refreshes, rdata=rdata)
                 #--Reselected the renamed items
-                self.SelectItemsNoCallback(newselected)
+                self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
 
-    def try_rename(self, inst_info, new_root, refreshes, newselected):
+    def try_rename(self, inst_info, new_root, rdata_ren, store_refr=None):
         newFileName = inst_info.unique_key(new_root) # preserve extension for installers
         if newFileName is None: # just changed extension - continue
-            return False, False, False
-        result = self._try_rename(inst_info, newFileName)
-        if result:
-            refreshes.append(result)
-            if result[0]: newselected.append(newFileName)
-            return newFileName # continue
+            return {}, {}
+        return super().try_rename(inst_info, newFileName, rdata_ren, store_refr)
 
     @staticmethod
     def _unhide_wildcard():
@@ -2714,11 +2573,11 @@ class InstallersList(UIList):
             showOk(self, msg, _('OMOD Extraction Canceled'))
         else:
             if failed: showWarning(self, _(
-                'The following OMODs failed to extract.  This could be '
+                'The following OMODs failed to extract. This could be '
                 'a file IO error, or an unsupported OMOD format:') + '\n\n'
                     + '\n'.join(failed), _('OMOD Extraction Complete'))
         finally:
-            progress(len(omodnames), _(u'Refreshing...'))
+            progress(len(omodnames), _('Refreshing…'))
 
     def _askCopyOrMove(self, packages, converters):
         action = settings[u'bash.installers.onDropFiles.action']
@@ -2769,7 +2628,7 @@ class InstallersList(UIList):
                     (p in dirs or p.cext in archives.readExts)}
         if not (omod_paths or converters or packages): return
         if omod_paths:
-            with balt.Progress(_(u'Extracting OMODs...'), abort=True) as prog:
+            with balt.Progress(_('Extracting OMODs…'), abort=True) as prog:
                 self._extractOmods(omod_paths, prog)
         if packages or converters:
             action = self._askCopyOrMove(packages, converters)
@@ -2913,13 +2772,13 @@ class InstallersList(UIList):
             self.data_store.ipackages(toRefresh))
         if not toRefresh: return
         try:
-            with balt.Progress(_('Refreshing Packages...'),
+            with balt.Progress(_('Refreshing Packages…'),
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
                 for index, installer in enumerate(toRefresh):
                     progress(index,
-                             _('Refreshing Packages...') + f'\n{installer}')
+                             _('Refreshing Packages…') + f'\n{installer}')
                     if shallow:
                         op = installer.refreshDataSizeCrc
                     else:
@@ -2929,7 +2788,7 @@ class InstallersList(UIList):
                     dest.update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
-                    progress(0, _('Refreshing from %(data_folder)s...') % {
+                    progress(0, _('Refreshing from %(data_folder)s…') % {
                         'data_folder': bush.game.mods_dir} + f'\n{" " * 60}')
                     self.data_store.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
@@ -2999,7 +2858,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.gSubList.on_box_checked.subscribe(self._check_subitem)
         self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
         # FOMOD/Sub-Packages radio buttons
-        self.fomod_btn = RadioButton(self.sp_panel, _(u'FOMOD'))
+        self.fomod_btn = RadioButton(self.sp_panel, 'FOMOD')
         self.fomod_btn.tooltip = _(u'Disable the regular BAIN sub-packages '
                                    u'and use the results of the last FOMOD '
                                    u'installer run instead.')
@@ -3156,7 +3015,7 @@ class InstallersDetails(_SashDetailsPanel):
             inf_.extend([
                 _('Modified: %(modified_date)s') % {
                     'modified_date': 'N/A' if is_mark else
-                    format_date(installer.file_mod_time)},
+                    format_date(installer.ftime)},
                 _('Data CRC: %(data_crc)s') % {
                     'data_crc': 'N/A' if is_mark else f'{installer.crc:08X}'},
                 _('Files: %(num_files)s') % {
@@ -3175,9 +3034,8 @@ class InstallersDetails(_SashDetailsPanel):
                            '== ' + _('Configured Files'))])
             gPage.text_content = u'\n'.join(inf_)
         elif pageName == u'gMatched':
-            gPage.text_content = _dumpFiles(set(
-                installer.ci_dest_sizeCrc) - installer.missingFiles -
-                                           installer.mismatchedFiles)
+            gPage.text_content = _dumpFiles(installer.ci_dest_sizeCrc.keys() -
+                installer.missingFiles - installer.mismatchedFiles)
         elif pageName == u'gMissing':
             gPage.text_content = _dumpFiles(installer.missingFiles)
         elif pageName == u'gMismatched':
@@ -3205,7 +3063,7 @@ class InstallersDetails(_SashDetailsPanel):
         subScrollPos  = self.gSubList.lb_get_vertical_scroll_pos()
         espmScrollPos = self.gEspmList.lb_get_vertical_scroll_pos()
         subIndices = self.gSubList.lb_get_selections()
-        self.installersPanel.uiList.RefreshUI(redraw=[self.displayed_item])
+        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}))
         for subIndex in subIndices:
             self.gSubList.lb_select_index(subIndex)
         # Reset the scroll bars back to their original position
@@ -3355,14 +3213,14 @@ class InstallersPanel(BashTab):
     def _first_run_set_enabled(self):
         if settings[u'bash.installers.isFirstRun']:
             settings[u'bash.installers.isFirstRun'] = False
-            message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
-                u'If you do, Bash will first need to initialize some data. '
-                u'This can take on the order of five minutes if there are '
-                u'many mods installed.') + u'\n\n\t' + _(
-                u'If not, you can enable it at any time by right-clicking '
-                u"the column header menu and selecting 'Enabled'.")
-            settings['bash.installers.enabled'] = askYes(self, message,
-                                                         _('Installers'))
+            msg = _('Do you want to enable Installers?') + '\n\n\t' + _(
+                'If you do, Wrye Bash will first need to initialize some '
+                'data. This can take on the order of five minutes if there '
+                'are many mods installed.') + '\n\n\t' + _(
+                "If not, you can enable it at any time by right-clicking "
+                "the column header menu and selecting 'Enabled'.")
+            settings['bash.installers.enabled'] = askYes(
+                self, msg, title=_('Enable Installers?'))
 
     @balt.conversation
     def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False,
@@ -3393,35 +3251,31 @@ class InstallersPanel(BashTab):
                         deprint(f'Extending projects: {omod_projects}')
                         folders.extend(omod_projects)
                 if not do_refresh:
-                    #with balt.Progress(_('Scanning Packages...')) as progress:
+                    #with balt.Progress(_('Scanning Packages…')) as progress:
                     refresh_info = self.listData.update_installers(folders,
                         files, fullRefresh, progress=bolt.Progress())
-                    do_refresh = refresh_info.refresh_needed()
-            refreshui = False
-            if do_refresh:
-                with balt.Progress(_('Refreshing Installers...'),
-                                   abort=canCancel) as progress:
+                    do_refresh = bool(refresh_info)
+            refreshui = refresh_info or RefrData()
+            what = prog = None
+            if (tracked := self.listData.refreshTracked()) or do_refresh:
+                what = 'DISC' if scan_data_dir else (
+                    'ISC' if tracked else 'IC')
+                prog = balt.Progress(_('Refreshing Installers…'), abort=canCancel)
+            elif self.frameActivated:
+                what = 'C' # setting progress leads to infinite refresh in MSW!
+                # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
+                prog = bolt.Progress()
+            if what:
+                with prog as progress:
                     try:
-                        what = 'DISC' if scan_data_dir else 'IC'
-                        refreshui |= self.listData.irefresh(progress, what,
-                                                            fullRefresh,
-                                                            refresh_info)
+                        refreshui = self.listData.irefresh(refresh_info,
+                            what=what, fullRefresh=fullRefresh,
+                            progress=progress)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh
                     finally:
                         self._data_dir_scanned = True
-            elif self.frameActivated:
-                try:
-                    # with balt.Progress(
-                    #         _('Refreshing Converters...')) as progress:
-                    refreshui |= self.listData.irefresh(what='C',
-                        fullRefresh=fullRefresh)
-                    self.frameActivated = False
-                except CancelError:
-                    pass # User canceled the refresh
-            do_refresh = self.listData.refreshTracked()
-            refreshui |= do_refresh and self.listData.refreshInstallersStatus()
             if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
@@ -3429,7 +3283,7 @@ class InstallersPanel(BashTab):
 
     def __extractOmods(self, omds):
         omod_projects = []
-        with balt.Progress(_('Extracting OMODs...')) as progress:
+        with balt.Progress(_('Extracting OMODs…')) as progress:
             dirInstallersJoin = bass.dirs[u'installers'].join
             progress.setFull(max(len(omds), 1))
             omodMoves, omodRemoves = set(), set()
@@ -3460,7 +3314,7 @@ class InstallersPanel(BashTab):
                 _del(omodRemoves)
             except (CancelError, SkipError):
                 while askYes(self, _(
-                        'Bash needs Administrator Privileges to delete '
+                        'Wrye Bash needs Administrator Privileges to delete '
                         'OMODs that have already been extracted.') +
                         '\n\n' + _('Try again?'), dialog_title):
                     try:
@@ -3486,8 +3340,8 @@ class InstallersPanel(BashTab):
                 _move_omods(omodMoves)
             except (CancelError, SkipError):
                 while askYes(self, _(
-                        'Bash needs Administrator Privileges to move failed '
-                        'OMODs out of the Bash Installers directory.') +
+                        'Wrye Bash needs Administrator Privileges to move '
+                        'failed OMODs out of the Bash Installers directory.') +
                         '\n\n' + _('Try again?'), dialog_title):
                     try:
                         omodMoves = [x for x in omodMoves if x.exists()]
@@ -3508,16 +3362,9 @@ class ScreensList(UIList):
     global_links = defaultdict(lambda: Links()) # Global menu
     _editLabels = _copy_paths = True
 
-    _sort_keys = {u'File'    : None,
-                  u'Modified': lambda self, a: self.data_store[a].mtime,
-                  u'Size'    : lambda self, a: self.data_store[a].fsize,
-    }
+    _sort_keys = _common_sort_keys
     #--Labels
-    labels ={
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-    }
+    labels = _common_labels
 
     # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
@@ -3542,28 +3389,28 @@ class ScreensList(UIList):
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr.zfill(digits) if numStr else ''
         with BusyCursor():
-            to_select = set()
-            to_del = set()
-            item_edited = [self.panel.detailsPanel.displayed_item]
+            rdata = None
+            item_edited = self.panel.detailsPanel.displayed_item
             for scrinf in selected:
-                if not self.try_rename(scrinf, root + numStr, to_select,
-                                       to_del, item_edited): break
+                try:
+                    if (rdata := self.try_rename(scrinf, root + numStr,
+                                                 rdata)) is None:
+                        break
+                except TypeError: break
                 num += 1
                 numStr = str(num).zfill(digits)
-            if to_select:
-                self.RefreshUI(redraw=to_select, to_del=to_del,
-                               detail_item=item_edited[0])
+            if rdata:
+                self.RefreshUI(rdata,
+                               detail_item=rdata.renames.get(item_edited))
                 #--Reselected the renamed items
-                self.SelectItemsNoCallback(to_select)
+                self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
 
-    def try_rename(self, scrinf, new_root, to_select=None, to_del=None,
-                   item_edited=None):
+    def try_rename(self, scrinf, new_root, rdata_ren, store_refr=None):
         newName = FName(new_root + scrinf.fn_key.fn_ext) # TODO: add ScreenInfo.unique_key()
-        if scrinf.get_store().store_dir.join(newName).exists():
+        if scrinf._store().store_dir.join(newName).exists():
             return None # break
-        return super().try_rename(scrinf, newName, to_select, to_del,
-                                  item_edited)
+        return super().try_rename(scrinf, newName, rdata_ren)
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens
@@ -3621,7 +3468,7 @@ class ScreensPanel(BashTab):
 
     def __init__(self,parent):
         """Initialize."""
-        self.listData = bosh.screen_infos = bosh.ScreenInfos()
+        self.listData = bosh.screen_infos = bosh.ScreenInfos(do_refresh=False)
         super(ScreensPanel, self).__init__(parent)
 
     def ShowPanel(self, **kwargs):
@@ -3635,16 +3482,9 @@ class BSAList(UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _sort_keys = {'File'    : None,
-                  'Modified': lambda self, a: self.data_store[a].mtime,
-                  'Size'    : lambda self, a: self.data_store[a].fsize,
-    }
+    _sort_keys = _common_sort_keys
     #--Labels
-    labels = {
-        'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
-        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
-    }
+    labels = _common_labels
 
 #------------------------------------------------------------------------------
 class BSADetails(_EditableMixinOnFileInfos, SashPanel):
@@ -3703,7 +3543,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def DoSave(self):
         """Event: Clicked Save button."""
         if (newName := FName(self.fileStr.strip())) != self._bsa_info.fn_key:
-            if self.panel_uilist.try_rename(self._bsa_info, newName):
+            if self.panel_uilist.try_rename(self._bsa_info, newName, None):
                 self.panel_uilist.RefreshUI(detail_item=self.file_info.fn_key)
 
 #------------------------------------------------------------------------------
@@ -3790,6 +3630,13 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         # default tabs order and default enabled state, keys as in tabInfo
         tabs_enabled_ordered = dict(e.value for e in Store)
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
+        if not isinstance(newOrder, dict): # convert, on updating to 306 ##: still needed
+            enabled = settings.get('bash.tabs',  # deprecated - never use
+                                   tabs_enabled_ordered)
+            newOrder = {x: enabled[x] for x in newOrder
+            # needed if user updates to 306+ that drops 'bash.tabs', the latter
+            # is unchanged from default and the new version also removes a tab
+            if x in enabled}
         # append any new tabs - appends last
         newTabs = set(tabInfo) - set(newOrder)
         for n in newTabs: newOrder[n] = tabs_enabled_ordered[n]
@@ -3934,12 +3781,16 @@ class BashFrame(WindowFrame):
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
 
-    def distribute_ui_refresh(self, ui_refresh: defaultdict[Store, bool]):
+    def distribute_ui_refresh(self, ui_refresh: dict[Store, bool]):
         """Distribute a RefreshUI to all tabs, based on the specified
         ui_refresh information."""
-        for list_key, candidate_uilist in self.all_uilists.items():
-            if candidate_uilist is not None and ui_refresh[list_key]:
-                candidate_uilist.RefreshUI(focus_list=False)
+        for list_key, do_refr in ui_refresh.items():
+            if do_refr and self.all_uilists[list_key] is not None:
+                if not isinstance(do_refr, dict): # do_refr is True or RefrData
+                    do_refr = {'rdata': do_refr} if isinstance(
+                        do_refr, RefrData) else {}
+                do_refr.setdefault('focus_list', False)
+                self.all_uilists[list_key].RefreshUI(**do_refr)
 
     def distribute_warnings(self, ui_refresh):
         """Issue warnings for all tabs, based on the specified ui_refresh
@@ -3963,9 +3814,9 @@ class BashFrame(WindowFrame):
         if not limit_fixers: return # Problem does not apply to this game
         if not bass.inisettings['WarnTooManyFiles']: return
         for lf in limit_fixers:
-            lf_path = bass.dirs[u'mods'].join(bush.game.Se.plugin_dir,
-                                              u'plugins', lf)
-            if lf_path.is_file():
+            lf_path = env.to_os_path(bass.dirs['mods'].join(
+                bush.game.Se.plugin_dir, 'plugins', lf))
+            if lf_path and lf_path.is_file():
                 return # Limit-fixing xSE plugin installed
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
@@ -4045,8 +3896,7 @@ class BashFrame(WindowFrame):
             title += maProfile
         else:
             title += _('Default')
-        if bosh.modInfos.voCurrent:
-            title += f' [{bosh.modInfos.voCurrent}]'
+        if curr_ver := bosh.modInfos.voCurrent: title += f' [{curr_ver}]'
         self._native_widget.SetTitle(title)
 
     def set_status_info(self, infoTxt, field=1, show_panel=False):
@@ -4065,19 +3915,15 @@ class BashFrame(WindowFrame):
         #--Config helpers
         initialization.lootDb.refreshBashTags()
         #--Check bsas, needed to detect string files in modInfos refresh...
-        bosh.oblivionIni.get_ini_language(cached=False) # reread ini language
+        bosh.oblivionIni.get_ini_language(bush.game.Ini.default_game_lang,
+            cached=False) # Reread INI language
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        def try_refresh(store):
-            refresh_result = store.refresh()
-            if isinstance(refresh_result, tuple):
-                return any(refresh_result)
-            return bool(refresh_result) # May be an int etc.
-        ui_refresh: defaultdict[Store, bool] = defaultdict(bool, {
-            store.unique_store_key: not booting and try_refresh(store)
-            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)})
-        ui_refresh[Store.SAVES] |= ui_refresh[Store.MODS] # for save masters
+        ui_refresh = {store.unique_store_key: not booting and store.refresh()
+            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)}
+        if ui_refresh[Store.MODS]:
+            ui_refresh[Store.SAVES] = True # for save masters
         #--Repopulate, focus will be set in ShowPanel
         self.distribute_ui_refresh(ui_refresh)
         self.distribute_warnings(ui_refresh)
@@ -4099,36 +3945,27 @@ class BashFrame(WindowFrame):
     def _warn_reset_load_order(self):
         if load_order.warn_locked and not bass.inisettings[
                 'SkipResetTimeNotifications']:
-            showWarning(self, _('Load order has changed outside of Bash and '
-                'has been reverted to the one saved in Bash. You can hit '
-                'Ctrl + Z while the mods list has focus to undo this.'),
-                _('Lock Load Order'))
+            showWarning(self, _(
+                'Load order has changed outside of Wrye Bash and has been '
+                'reverted to the one saved in Wrye Bash. You can hit Ctrl + Z '
+                'while the mods list has focus to undo this.'),
+                title=_('Lock Load Order'))
             load_order.warn_locked = False
 
     def warn_load_order(self):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         lo_warnings = []
         if bosh.modInfos.warn_missing_lo_act:
-            bosh.modInfos.warn_missing_lo_act.clear()
-            lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
+            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
                 _('The following plugins could not be found in the '
                   '%(data_folder)s folder or are corrupt and have thus been '
                   'removed from the load order.') % {
                     'data_folder': bush.game.mods_dir,
                 }, bosh.modInfos.warn_missing_lo_act))
+            bosh.modInfos.warn_missing_lo_act.clear()
         if bosh.modInfos.selectedExtra:
-            if bush.game.has_esl:
-                warn_msg = _('The following plugins have been deactivated '
-                             'because only %(max_regular_plugins)d regular '
-                             'plugins and %(max_esl_plugins)d ESL-flagged '
-                             'plugins may be active at the same time.')
-            else:
-                warn_msg = _('The following plugins have been deactivated '
-                             'because only %(max_regular_plugins)d plugins '
-                             'may be active at the same time.')
-            lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
-                warn_msg % {'max_regular_plugins': load_order.max_espms(),
-                            'max_esl_plugins': load_order.max_esls()},
+            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
+                bush.game.plugin_flags.deactivate_msg(),
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can
@@ -4143,11 +3980,11 @@ class BashFrame(WindowFrame):
         #     bosh.modInfos.activeBad = set()
         if lo_warnings:
             LoadOrderSanitizedDialog(self,
-                highlight_changes=lo_warnings).show_modeless()
+                highlight_items=lo_warnings).show_modeless()
 
     def warn_corrupted(self, warn_mods=False, warn_saves=False,
                        warn_strings=False, warn_bsas=False):
-        _mk_warning = MultiWarningDialog.make_change_entry # to wrap better
+        _mk_warning = MultiWarningDialog.make_highlight_entry # to wrap better
         multi_warnings = []
         corruptMods = set(bosh.modInfos.corrupted)
         key_mods, key_bsas = Store.MODS, Store.BSAS
@@ -4204,13 +4041,13 @@ class BashFrame(WindowFrame):
             multi_warnings.append(_mk_warning(
                 _('The following BA2s have filenames whose hashes collide, '
                   'which will cause one or more of them to fail to work '
-                  'correctly. This should be corrected by the mod author(s) '
+                  'correctly. This should be corrected by the mod authors '
                   'by renaming the files to avoid the collision.'),
                 ba2_colls - self.known_ba2_collisions, key_bsas))
             self.known_ba2_collisions |= ba2_colls
         if multi_warnings:
             MultiWarningDialog(self,
-                highlight_changes=multi_warnings).show_modeless()
+                highlight_items=multi_warnings).show_modeless()
 
     _ini_missing = _('%(game_ini_file)s does not exist yet. %(game_name)s '
                      'will create this file on first run. INI tweaks will not '
@@ -4269,22 +4106,25 @@ class BashFrame(WindowFrame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = set(bosh.modInfos)
-        modNames.update(bosh.modInfos.table)
+        modNames = {*bosh.modInfos.corrupted}
+        modNames.update(bosh.modInfos)
         renames = bass.settings[u'bash.mods.renames']
         # Make a copy, we may alter it in the loop
         for old_mname, new_mname in list(renames.items()):
             if new_mname not in modNames:
                 del renames[old_mname]
-        #--Clean backup
-        for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = {p.fn_body for p in fileInfos}
-            backupDir = fileInfos.bash_dir.join(u'Backups')
-            if not backupDir.is_dir(): continue
-            for back_fname in backupDir.ilist():
-                back_path = backupDir.join(back_fname)
-                if back_fname.fn_body not in goodRoots and back_path.is_file():
-                    back_path.remove()
+        # Clean backup directories of old .es*/.es*f files
+        for tc_store in (bosh.modInfos, bosh.saveInfos):
+            existing_roots = {p.fn_body for p in tc_store}
+            to_clean_dir = tc_store.bash_dir.join('Backups')
+            for bk_fn in top_level_files(to_clean_dir):
+                if (not tc_store.rightFileType(bk_fn) and
+                        not tc_store.rightFileType(bk_fn.removesuffix('f'))):
+                    # This file was almost certainly not created by us, better
+                    # leave it untouched
+                    continue
+                if bk_fn.fn_body not in existing_roots:
+                    to_clean_dir.join(bk_fn).remove()
 
     # Global Menu API
     def set_global_menu(self, new_global_menu):
@@ -4319,85 +4159,46 @@ class BashFrame(WindowFrame):
                 newer_version.wb_version > LooseVersion(bass.AppVersion)):
             UpdateNotification.display_dialog(self, newer_version)
 
-#------------------------------------------------------------------------------
-class BashApp(object):
-    """Wrapper around a wx Application."""
-    __slots__ = ('bash_app',)
-
-    def __init__(self, bash_app):
-        self.bash_app = bash_app
-
-    def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
-        """Initialize the application data and create the BashFrame."""
-        #--OnStartup SplashScreen and/or Progress
-        #   Progress gets hidden behind splash by default, since it's not very informative anyway
-        splash_screen = None
-        with balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
-                           elapsed=False) as progress:
-            # Is splash enabled in ini ?
-            if bass.inisettings['EnableSplashScreen']:
-                if (splash := GPath(os.path.join(get_image_dir(),
-                                                 'wryesplash.png'))).is_file():
-                    splash_screen = CenteredSplash(splash.s)
-            #--Init Data
-            progress(0.2, _(u'Initializing Data'))
-            self.InitData(progress)
-            progress(0.7, _(u'Initializing Version'))
-            self.InitVersion()
-            #--MWFrame
-            progress(0.8, _(u'Initializing Windows'))
-            frame = BashFrame() # Link.Frame global set here
-            progress(1.0, _(u'Done'))
-        if splash_screen:
-            splash_screen.stop_splash()
-        self.bash_app.SetTopWindow(frame._native_widget)
-        frame.show_frame()
-        frame.RefreshData(booting=True)
-        frame.is_maximized = settings[u'bash.frameMax']
-        # Moved notebook.Bind() callback here as OnShowPage() is explicitly
-        # called in RefreshData
-        frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
-                            frame.notebook.OnShowPage)
-        return frame
-
-    @staticmethod
-    def InitData(progress):
-        """Initialize all data. Called by Init()."""
-        progress(0.2, _(u'Initializing BSAs'))
-        #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
-        bosh.bsaInfos = bosh.BSAInfos()
-        bosh.bsaInfos.refresh(booting=True)
-        progress(0.3, _(u'Initializing plugins'))
-        bosh.modInfos = bosh.ModInfos()
-        bosh.modInfos.refresh(booting=True)
-        progress(0.5, _(u'Initializing saves'))
-        bosh.saveInfos = bosh.SaveInfos()
-        bosh.saveInfos.refresh(booting=True)
-        progress(0.6, _(u'Initializing INIs'))
-        bosh.iniInfos = bosh.INIInfos()
-        bosh.iniInfos.refresh(refresh_target=False)
-        # screens/installers data are refreshed upon showing the panel
-        #--Patch check
-        if bush.game.Esp.canBash:
-            if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
-                progress(0.68, _(u'Generating Blank Bashed Patch'))
-                try:
-                    bosh.modInfos.generateNextBashedPatch(selected_mods=())
-                except: # YAK but this may blow and has blown on whatever coding error, crashing Bash on boot
-                    deprint(u'Failed to create new bashed patch', traceback=True)
-
-    @staticmethod
-    def InitVersion():
-        """Perform any version to version conversion. Called by Init()."""
-        #--Current Version
-        if settings[u'bash.version'] != bass.AppVersion:
-            settings[u'bash.version'] = bass.AppVersion
-            # rescan mergeability on version upgrade to detect new mergeable
-            deprint(u'Version changed, rescanning mergeability')
-            bosh.modInfos.rescanMergeable(bosh.modInfos)
-            deprint(u'Done rescanning mergeability')
-
 # Initialization --------------------------------------------------------------
+def Init(bash_app):
+    """Initialize the application data and create the BashFrame."""
+    #--OnStartup SplashScreen and/or Progress
+    # Progress gets hidden behind splash by default
+    splash = GPath(os.path.join(get_image_dir(), 'wryesplash.png'))
+    show_splash = bass.inisettings['EnableSplashScreen'] and splash.is_file()
+    with CenteredSplash(splash.s, show_splash), balt.Progress(
+            'Wrye Bash', _('Initializing') + ' ' * 10, elapsed=False) as prog:
+        #--Init Data
+        mod_infs = bosh.init_stores(prog)
+        #--Patch check
+        if bush.game.Esp.canBash and not mod_infs.bashed_patches and \
+                bass.inisettings['EnsurePatchExists']:
+            prog(0.68, _('Generating Blank Bashed Patch'))
+            try: # this may blow and has blown on random coding errors ...
+                mod_infs.generateNextBashedPatch(selected_mods=())
+            except: # ... crashing Bash on boot, hence the catch-all here
+                 deprint('Failed to create new bashed patch', traceback=True)
+        prog(0.7, _('Initializing Version'))
+        if settings['bash.version'] != bass.AppVersion:
+            settings['bash.version'] = bass.AppVersion
+            # rescan mergeability on version upgrade to detect new mergeable
+            deprint('Version changed, rescanning mergeability')
+            mod_infs.rescanMergeable(mod_infs)
+            deprint('Done rescanning mergeability')
+        #--MWFrame
+        prog(0.8, _('Initializing Windows'))
+        frame = BashFrame() # Link.Frame global set here
+        prog(1.0, _('Done'))
+    bash_app.SetTopWindow(frame._native_widget)
+    frame.show_frame()
+    frame.RefreshData(booting=True)
+    frame.is_maximized = settings['bash.frameMax']
+    # Moved notebook.Bind() callback here as OnShowPage() is explicitly
+    # called in RefreshData
+    frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
+                        frame.notebook.OnShowPage)
+    return frame
+
 def InitSettings(): # this must run first !
     """Initializes settings dictionary for bosh and basher."""
     bosh.initSettings(askYes)

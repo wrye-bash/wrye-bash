@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -34,6 +34,7 @@ from .. import bolt # for type hints
 from .. import bush # for game etc
 from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url, FName
 from ..exception import BoltError, CancelError, ModError
+from ..plugin_types import MergeabilityCheck
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile
 
@@ -77,45 +78,48 @@ class PatchFile(ModFile):
                         'imp_plugin': mod, 'num_recs': skipcount})
         if self.needs_filter_mods:
             log.setHeader('===' + _('Plugins Needing Filter Tag'))
-            log(_('The following plugins are missing masters and have tags '
-                  'that indicate that you want to import data from them into '
-                  'the Bashed Patch. However, since they have missing masters '
-                  'and do not have a Filter tag they have been skipped. '
-                  'Consider adding a Filter tag to them or installing the '
-                  'required masters. See the '
-                  '[[%(filtering_section)s|Filtering]] section of the readme '
-                  'for more information.') % {
-                'filtering_section': _link('patch-filter')})
+            log(_("The following plugins are missing masters and have tags "
+                  "that indicate that you want to import data from them into "
+                  "the Bashed Patch. However, since they have missing masters "
+                  "and do not have a Filter tag they have been skipped. "
+                  "Consider adding a Filter tag to them or installing the "
+                  "required masters. See the '%(filtering_link)s' section of "
+                  "the readme for more information.") % {
+                'filtering_link': f"[[{_link('patch-filter')}"
+                                  f"|{_('Filtering')}]]"})
             for mod in self.needs_filter_mods: log(f'* {mod}')
         if self.loadErrorMods:
             log.setHeader('=== ' + _('Load Error Plugins'))
             log(_('The following plugins had load errors and were skipped '
                   'while building the patch. Most likely this problem is due '
                   'to a badly formatted plugin. For more info, generate a '
-                  '[[%(url_bbd)s|BashBugDump]].') % {
-                'url_bbd': 'https://github.com/wrye-bash/wrye-bash/wiki/'
-                           '%5Bgithub%5D-Reporting-a-bug#the-bashbugdumplog'})
+                  '%(bashbugdump_link)s.') % {
+                'bashbugdump_link': f"[[https://github.com/wrye-bash"
+                                    f"/wrye-bash/wiki/%5Bgithub%5D-Reporting-a"
+                                    f"-bug#the-bashbugdumplog|BashBugDump]]"})
             for (mod, e) in self.loadErrorMods: log(f'* {mod}: {e}')
         if self.worldOrphanMods:
             log.setHeader('=== ' + _('World Orphans'))
             log(_("The following plugins had orphaned world groups, which "
                   "were skipped. This is not a major problem, but you might "
-                  "want to use Wrye Bash's "
-                  "[[%(url_rwo)s|Remove World Orphans]] command to repair "
+                  "want to use Wrye Bash's '%(link_rwo)s' command to repair "
                   "the plugins.") % {
-                'url_rwo': _link('modsRemoveWorldOrphans')})
+                'link_rwo': f"[[{_link('modsRemoveWorldOrphans')}"
+                            f"|{_('Remove World Orphans')}]]"})
             for mod in self.worldOrphanMods: log(f'* {mod}')
         if self.compiledAllMods:
             log.setHeader('=== ' + _('Compiled All'))
             log(_("The following plugins have an empty compiled version of "
                   "genericLoreScript. This is usually a sign that the plugin "
-                  "author did a __compile all__ while editing scripts. This "
-                  "may interfere with the behavior of other plugins that "
+                  "author did a %(compile_all)s while editing scripts. "
+                  "This may interfere with the behavior of other plugins that "
                   "intentionally modify scripts from %(game_name)s (e.g. Cobl "
                   "and Unofficial Oblivion Patch). You can use Wrye Bash's "
-                  "[[%(url_decomp)s|Decompile All]] command to repair the "
-                  "plugins.") % {'game_name': bush.game.master_file,
-                                 'url_decomp': _link('modsDecompileAll')})
+                  "'%(link_decomp_all)s' command to repair the plugins.") % {
+                'compile_all': f'__{_("Compile All")}__',
+                'game_name': bush.game.master_file,
+                'link_decomp_all': f"[[{_link('modsDecompileAll')}"
+                                   f"|{_('Decompile All')}]]"})
             for mod in self.compiledAllMods: log(f'* {mod}')
         log.setHeader('=== ' + _('Active Plugins'), True)
         for mname, modinfo in self.merged_or_loaded_ord.items():
@@ -125,7 +129,7 @@ class PatchFile(ModFile):
             except KeyError:
                 message = '* ++ '
             if version:
-                message += _('%(msg_plugin)s  [Version %(plugin_ver)s]') % {
+                message += _('%(msg_plugin)s [Version %(plugin_ver)s]') % {
                     'msg_plugin': mname, 'plugin_ver': version}
             else:
                 message += mname
@@ -151,9 +155,15 @@ class PatchFile(ModFile):
     #--Instance
     def __init__(self, modInfo, pfile_minfos):
         """Initialization."""
-        ModFile.__init__(self,modInfo,None)
+        super().__init__(modInfo, None)
         self.tes4.author = 'BASHED PATCH'
         self.tes4.masters = [bush.game.master_file]
+        # Start records at 0x800 to avoid problems where people use older
+        # versions of games that don't support the expanded ESL range. BPs
+        # generally end up with very few new records, so we're very
+        # unlikely to end up exceeding the 2048 barrier where the BP would
+        # take a full slot again, even with this.
+        self.tes4.nextObject = 0x800
         self.keepIds = set()
         # Aliases from one mod name to another. Used by text file patchers.
         self.pfile_aliases = {}
@@ -215,7 +225,8 @@ class PatchFile(ModFile):
         # Set of all Bash Tags that don't trigger an import from some patcher
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
-        mi_mergeable = pfile_minfos.mergeable_plugins
+        mi_mergeable = [modinfo.fn_key for modinfo in
+                        MergeabilityCheck.MERGE.cached_types(pfile_minfos)[0]]
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
             bashTags = self.all_tags[modName]
@@ -336,7 +347,7 @@ class PatchFile(ModFile):
             iiMode = modName in self.ii_mode
             try:
                 scan_factory = (self.readFactory, self.mergeFactory)[is_merged]
-                progress(index, f'{modName}\n' + _('Loading...'))
+                progress(index, f'{modName}\n' + _('Loading…'))
                 modFile = ModFile(modInfo, scan_factory)
                 modFile.load_plugin(SubProgress(progress, index, index + 0.5))
             except ModError as e:
@@ -349,13 +360,13 @@ class PatchFile(ModFile):
                 pstate = index+0.5
                 if is_merged:
                     # If the plugin is to be merged, merge it
-                    progress(pstate, f'{modName}\n' + _('Merging...'))
+                    progress(pstate, f'{modName}\n' + _('Merging…'))
                     self.mergeModFile(modFile,
                         # loaded_mods = None -> signal we won't "filter"
                         load_set if is_filter else None, iiMode)
                 elif modName in self.load_dict:
                     # Else, if the plugin is active, update records from it
-                    progress(pstate, f'{modName}\n' + _('Scanning...'))
+                    progress(pstate, f'{modName}\n' + _('Scanning…'))
                     self.update_patch_records_from_mod(modFile)
                 elif is_filter:
                     # Else, if the plugin is a Filter plugin, filter it but
@@ -430,13 +441,13 @@ class PatchFile(ModFile):
                 len(self._patcher_instances))
             for i, patcher in enumerate(sorted(self._patcher_instances,
                     key=attrgetter('patcher_order'))):
-                subProgress(i, _('Completing') + f'\n{patcher.getName()}...')
+                subProgress(i, _('Completing') + f'\n{patcher.getName()}…')
                 patcher.buildPatch(log, SubProgress(subProgress, i))
         # Trim records to only keep ones we actually changed
-        progress(0.9, _('Completing') + '\n' + _('Trimming records...'))
+        progress(0.9, _('Completing') + '\n' + _('Trimming records…'))
         for block in self.tops.values():
             block.keepRecords(self.keepIds)
-        progress(0.95, _('Completing') + '\n' + _('Converting FormIDs...'))
+        progress(0.95, _('Completing') + '\n' + _('Converting FormIDs…'))
 
     def set_attributes(self, *, was_split=False, split_part=0):
         """Create the description, set appropriate flags, etc."""
@@ -446,14 +457,13 @@ class PatchFile(ModFile):
         self.tes4.description = (_('Updated: %(update_time)s') % {
             'update_time': format_date(time.time())} + '\n\n' + _(
             'Records Changed: %(num_recs)d') % {'num_recs': num_records})
-        ##: Consider flagging as Overlay instead if that flag is supported by
-        # the game and no new records have been included?
         # Flag as ESL if the game supports them, the option is enabled and the
-        # BP has <= 0xFFF new records
-        num_new_recs = self.count_new_records()
+        # BP has <= 2048 new records
+        num_new_recs = self.count_new_records(next_object_start=0x800)
         if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
-            num_new_recs <= 0xFFF):
-            self.tes4.flags1.esl_flag = True
+            num_new_recs <= 2048):
+            bush.game.plugin_flags.ESL.set_mod_flag(self.tes4.flags1, True,
+                                                    bush.game)
             msg = '\n\n' + _('This patch has been automatically ESL-flagged '
                              'to save a load order slot.')
             self.tes4.description += msg
@@ -482,9 +492,9 @@ class PatchFile(ModFile):
                              f'{bp_part_counter}.esp')
             bp_part_counter += 1
             if not (new_part := self.p_file_minfos.get(new_part_name)):
-                self.p_file_minfos.create_new_mod(new_part_name,
-                    selected=[latest_sel], is_bashed_patch=True)
-                new_part = self.p_file_minfos.new_info(new_part_name)
+                new_part = self.p_file_minfos.create_new_mod(new_part_name,
+                    selected=[latest_sel.fileInfo.fn_key],
+                    author_str='BASHED PATCH')
             return self.__class__(new_part, self.p_file_minfos)
         # Find the top groups with the highest number
         master_dict = self.used_masters_by_top()

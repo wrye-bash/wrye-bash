@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -42,7 +42,7 @@ def parse():
         'set in both cmd line takes precedence.')
     # oblivionPath #
     h = ("Specifies the game directory (the one containing the game's exe). "
-         'Use this argument if Bash is located outside of the game '
+         'Use this argument if Wrye Bash is located outside of the game '
          'directory, and automatic detection failed to find it.')
     arg(pathGroup, '-o', '--oblivionPath', dest='oblivionPath')
 
@@ -71,15 +71,15 @@ def parse():
         'These arguments allow you to do backup and restore settings '
         'operations.')
     # backup #
-    h = ('Backup all Bash settings to an archive file before the app '
+    h = ('Backup all Wrye Bash settings to an archive file before the app '
          'launches. You have to specify the filepath with the -f/--filename '
-         'option. If also -r is specified Bash will not start.')
+         'option. If also -r is specified Wrye Bash will not start.')
     arg(backupGroup, '-b', '--backup', dest='backup', action='store_true',
         dflt=False)
     # restore #
-    h = ('Restore all Bash settings from an archive file before the app '
+    h = ('Restore all Wrye Bash settings from an archive file before the app '
          'launches. You have to specify the filepath with the -f/--filename '
-         'option. If also -b is specified Bash will not start.')
+         'option. If also -b is specified Wrye Bash will not start.')
     arg(backupGroup, '-r', '--restore', dest='restore', action='store_true',
         dflt=False)
     # filename #
@@ -89,8 +89,8 @@ def parse():
          u"exists.")
     arg(backupGroup, '-f', '--filename', dest='filename')
     # quietquit #
-    h = ('Close Bash after creating or restoring backup and do not display '
-         'any prompts or message dialogs.')
+    h = ('Close Wrye Bash after creating or restoring backup and do not '
+         'display any prompts or message dialogs.')
     arg(backupGroup, '-q', '--quiet-quit', dest='quietquit',
         action='store_true', dflt=False)
 

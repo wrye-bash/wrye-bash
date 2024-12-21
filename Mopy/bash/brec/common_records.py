@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,12 +30,12 @@ from operator import attrgetter
 from . import utils_constants
 from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
     MelUnion
-from .basic_elements import MelBase, MelFid, MelFids, MelFixedString, \
+from .basic_elements import MelBase, MelFid, MelSimpleGroups, MelFixedString, \
     MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, \
-    MelStruct, MelUInt8Flags, MelUInt32, MelUInt32Flags, MelUnicode, \
-    unpackSubHeader
+    MelStruct, MelUInt8Bool, MelUInt32, MelUInt32Flags, MelUnicode, \
+    unpackSubHeader, MelUInt32Bool
 from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
-    MelDebrData, MelDescription, MelEdid, MelFull, MelIcon, MelImpactDataset, \
+    MelDebrData, MelDescription, MelEdid, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId, gen_coed_key
@@ -104,8 +104,16 @@ class AMreCell(MelRecord):
         return {*cls.ref_types, *cls.interior_temp_extra}
 
 #------------------------------------------------------------------------------
+class AMreEyes(MelRecord):
+    """Base class for EYES records."""
+    rec_sig = b'EYES'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2) # since Skyrim
+
+#------------------------------------------------------------------------------
 class AMreFlst(MelRecord):
-    """Base class for FormID List."""
+    """Base class for FLST records."""
     rec_sig = b'FLST'
     __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
                  're_records')
@@ -162,7 +170,7 @@ class AMreFlst(MelRecord):
 
 #------------------------------------------------------------------------------
 class AMreGlob(MelRecord):
-    """Base class for globals."""
+    """Base class for GLOB records."""
     rec_sig = b'GLOB'
 
     melSet = MelSet(
@@ -269,8 +277,7 @@ class AMreHeader(MelRecord):
         # Load each subrecord
         ins_at_end = ins.atEnd
         masters_loaded = False
-        in_overlay_plugin = (bush.game.has_overlay_plugins and
-                             self.flags1.overlay_flag)
+        in_overlay_plugin = getattr(self.flags1, 'overlay_flag', False)
         while not ins_at_end(endPos, self._rec_sig):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
                                                  file_offset=file_offset)
@@ -679,12 +686,10 @@ class MreDlvw(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid(b'QNAM', 'dlvw_quest'),
-        MelFids('dlvw_branches', MelFid(b'BNAM')),
-        MelGroups('unknown_tnam',
-            MelBase(b'TNAM', 'unknown1'),
-        ),
-        MelBase(b'ENAM', 'unknown_enam'),
-        MelBase(b'DNAM', 'unknown_dnam'),
+        MelSimpleGroups('dlvw_branches', MelFid(b'BNAM')),
+        MelSimpleGroups('dlvw_topics', MelFid(b'TNAM')),
+        MelUInt32(b'ENAM', 'view_category'),
+        MelUInt8Bool(b'DNAM', 'show_all_text'),
     )
 
 #------------------------------------------------------------------------------
@@ -704,26 +709,6 @@ class MreDual(MelRecord):
             (FID, 'dual_explosion'), (FID, 'effect_shader'),
             (FID, 'dual_hit_effect_art'), (FID, 'dual_impact_dataset'),
             (_inherit_scale_flags, 'inherit_scale_flags')),
-    )
-
-#------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        not_playable: bool = flag(2) # since FO3
-
-    class _eyes_flags(Flags):
-        playable: bool
-        not_male: bool # since FO3
-        not_female: bool # since FO3
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcon(),
-        MelUInt8Flags(b'DATA', 'flags', _eyes_flags),
     )
 
 #------------------------------------------------------------------------------
@@ -758,12 +743,12 @@ class MreGmst(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUnion({
-            u'b': MelUInt32(b'DATA', u'value'), # actually a bool
-            u'f': MelFloat(b'DATA', u'value'),
-            u's': MelLString(b'DATA', u'value'),
+            'b': MelUInt32Bool(b'DATA', 'value'),
+            'f': MelFloat(b'DATA', 'value'),
+            's': MelLString(b'DATA', 'value'),
         }, decider=AttrValDecider(
-            u'eid', transformer=lambda e: e[0] if e else u'i'),
-            fallback=MelSInt32(b'DATA', u'value')
+            'eid', transformer=lambda e: e[0] if e else 'i'),
+            fallback=MelSInt32(b'DATA', 'value')
         ),
     )
 

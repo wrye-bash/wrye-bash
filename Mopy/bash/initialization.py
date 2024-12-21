@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -35,6 +35,7 @@ from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_personal_path, shellMakeDirs, is_case_sensitive, \
     get_case_sensitivity_advice
 from .exception import BoltError
+##: This pulls in bush long before _import_bush_and_set_game!
 from .loot_parser import LOOTParser
 
 mopy_dirs_initialized = bash_dirs_initialized = False
@@ -104,7 +105,7 @@ def _get_ini_path(ini_key, dir_key, *args):
         src = 'Relative Path'
     return idata_path, src
 
-def init_dirs(personal, localAppData, game_info):
+def init_dirs(game_info, opts, init_warnings):
     """Initialize bass.dirs dictionary. We need the bash.ini and the game
     being set, so this is called upon setting the game. Global structures
     that need info on Bash / Game dirs should be initialized here and set
@@ -112,8 +113,7 @@ def init_dirs(personal, localAppData, game_info):
     settings fails."""
     if not mopy_dirs_initialized:
         raise BoltError(u'init_dirs: Mopy dirs uninitialized')
-    # Any warnings found during this stage can be added here as strings
-    init_warnings = []
+    personal, localAppData = opts.personalPath, opts.localAppDataPath
     #--Oblivion (Application) Directories
     dirs[u'app'] = game_info.gamePath
     dirs[u'defaultPatches'] = (
@@ -274,7 +274,7 @@ def init_dirs(personal, localAppData, game_info):
     lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     global bash_dirs_initialized
     bash_dirs_initialized = True
-    return game_ini_path, init_warnings
+    return game_ini_path
 
 def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
                   oblivionModsSrc):

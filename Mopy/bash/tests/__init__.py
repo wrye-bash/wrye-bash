@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -128,6 +128,7 @@ class _BaseApp(_wx.App):
         rv = _wx.PyApp.MainLoop(self)
         if restore_stdio: self.RestoreStdio()
         return rv
+
     def InitLocale(self):
         if sys.platform.startswith('win') and sys.version_info > (3,8):
             locale.setlocale(locale.LC_CTYPE, 'C')

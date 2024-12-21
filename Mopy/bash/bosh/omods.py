@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -138,7 +138,7 @@ class OmodFile(object):
             stage_dir = GPath_no_norm(stage_base_dir).join(outDir.stail)
             try:
                 stail_fmt = f'{self.omod_path.stail}\n'
-                progress(0, f"{stail_fmt}{_('Extracting...')}")
+                progress(0, f"{stail_fmt}{_('Extracting…')}")
                 if self._is_fomod:
                     self._extract_fomod(extract_dir, stage_dir)
                 else:
@@ -170,7 +170,8 @@ class OmodFile(object):
                 maExtracting = reExtracting.match(line)
                 if maExtracting:
                     name_ = maExtracting.group(1).strip().strip(u'\r')
-                    subprogress(float(current) / total, omod_tail + u'\n' + _(u'Extracting...') + u'\n' + name_)
+                    subprogress(float(current) / total,
+                        omod_tail + '\n' + _('Extracting…') + '\n' + name_)
                     current += sizes_[name_]
         # Get compression type
         progress(0.4, omod_tail + u'\n' + _(u'Reading config'))
@@ -227,8 +228,8 @@ class OmodFile(object):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
         # Extracted data stream is saved as a file named 'a'
-        base_msg = (self.omod_path.stail + u'\n' +
-                    _(u'Unpacking %s') % dataPath.stail)
+        msg = _('Unpacking %(omod_data)s') % {'omod_data': dataPath.stail}
+        base_msg = f'{self.omod_path.stail}\n{msg}'
         progress(0, base_msg)
         cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s,
                f'-o{outPath}']
@@ -261,8 +262,8 @@ class OmodFile(object):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
         totalSize = sum(sizes_)
-        base_msg = (self.omod_path.stail + u'\n' +
-                    _(u'Unpacking %s') % dataPath.stail)
+        msg = _('Unpacking %(omod_data)s') % {'omod_data': dataPath.stail}
+        base_msg = f'{self.omod_path.stail}\n{msg}'
         # Extract data stream to an uncompressed stream
         dpath_size = dataPath.psize
         out = io.BytesIO()

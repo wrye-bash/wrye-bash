@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -43,7 +43,7 @@ try:
 except ImportError as e:
     deprint(f'requests not installed, update checking functionality will not '
             f'be available (error: {e})')
-    ARestHandler = None
+    ARestHandler = object
     can_check_updates = False
 
 # This won't work if packaging isn't installed - in that case, we simply have
@@ -128,10 +128,11 @@ class _GitHub(ARestHandler):
     core_used: int | None
 
     def __init__(self):
-        super().__init__(extra_headers={
-            'accept': 'application/vnd.github+json',
-            'x-github-api-version': _GITHUB_API_VERSION,
-        })
+        if can_check_updates:
+            super().__init__(extra_headers={
+                'accept': 'application/vnd.github+json',
+                'x-github-api-version': _GITHUB_API_VERSION,
+            })
         # Rate limiting information - set to None (= unknown) by default
         self.core_limit = None
         self.core_remaining = None

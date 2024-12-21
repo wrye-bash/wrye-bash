@@ -16,16 +16,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import re
 from os.path import join as _j
 
-from .. import WS_COMMON_FILES, GameInfo, MergeabilityCheck, ObjectIndexRange
+from .. import WS_COMMON_FILES, GameInfo, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
+from ...games_lo import AsteriskGame
+from ...bolt import FName
 
 _GOG_IDS = [1998527297]
 
@@ -34,7 +37,7 @@ class AFallout4GameInfo(PatchGame):
     display_name = 'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
-    game_icon = u'fallout4_%u.png'
+    game_icon = u'fallout4.svg'
     bash_root_prefix = u'Fallout4'
     bak_game_name = u'Fallout4'
     my_games_name = u'Fallout4'
@@ -58,7 +61,6 @@ class AFallout4GameInfo(PatchGame):
 
     espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    mergeability_checks = {MergeabilityCheck.ESL_CHECK}
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('meshes', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
@@ -88,18 +90,18 @@ class AFallout4GameInfo(PatchGame):
         default_ini_file = u'Fallout4_default.ini'
         default_game_lang = 'en'
         dropdown_inis = [u'Fallout4.ini', u'Fallout4Prefs.ini']
-        resource_archives_keys = (
-            u'sResourceIndexFileList', u'sResourceStartUpArchiveList',
-            u'sResourceArchiveList', u'sResourceArchiveList2',
-            u'sResourceArchiveListBeta'
-        )
+        start_dex_keys = {GameInfo.Ini.BSA_MIN: (
+            'sResourceIndexFileList', 'sResourceStartUpArchiveList',
+            'sResourceArchiveList', 'sResourceArchiveList2',
+            'sResourceArchiveListBeta')
+        }
 
     class Ess(GameInfo.Ess):
         ext = u'.fos'
 
     class Bsa(GameInfo.Bsa):
-        bsa_extension = u'.ba2'
-        valid_versions = {0x01}
+        bsa_extension = '.ba2'
+        valid_versions = {0x01, 0x07, 0x08}
 
     class Psc(GameInfo.Psc):
         source_extensions = {u'.psc'}
@@ -119,6 +121,7 @@ class AFallout4GameInfo(PatchGame):
             'materials',
             'mcm', # 3P: FO4 MCM
             'misc',
+            'prkf', # 3P: LevelUpMenuEx
             'programs',
             'scripts',
             'seq',
@@ -126,11 +129,18 @@ class AFallout4GameInfo(PatchGame):
             'strings',
             'tools', # 3P: BodySlide
             'vis',
+            'xdi', # 3P: Extended Dialogue Interface
         }
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
             _j('interface', 'translations'): {'.txt'},
         }
+        no_skip_regexes = (
+            # 3P: xSE PluginPreloader F4
+            # f4se\plugins\<F4SE plugin name>_preload.txt
+            re.compile(bolt.os_sep_re.join([
+                'f4se', 'plugins', r'.+_preload\.txt'])),
+        )
         skip_bain_refresh = {u'fo4edit backups', u'fo4edit cache'}
 
     class Esp(GameInfo.Esp):
@@ -195,6 +205,23 @@ class AFallout4GameInfo(PatchGame):
         'dlcrobot - voices_ja.ba2',
         'dlcrobot.cdx',
         'dlcrobot.esm',
+        'dlcultrahighresolution - textures01.ba2',
+        'dlcultrahighresolution - textures02.ba2',
+        'dlcultrahighresolution - textures03.ba2',
+        'dlcultrahighresolution - textures04.ba2',
+        'dlcultrahighresolution - textures05.ba2',
+        'dlcultrahighresolution - textures06.ba2',
+        'dlcultrahighresolution - textures07.ba2',
+        'dlcultrahighresolution - textures08.ba2',
+        'dlcultrahighresolution - textures09.ba2',
+        'dlcultrahighresolution - textures10.ba2',
+        'dlcultrahighresolution - textures11.ba2',
+        'dlcultrahighresolution - textures12.ba2',
+        'dlcultrahighresolution - textures13.ba2',
+        'dlcultrahighresolution - textures14.ba2',
+        'dlcultrahighresolution - textures15.ba2',
+        'dlcultrahighresolution - textures16.ba2',
+        'dlcultrahighresolution.esm',
         'dlcworkshop01 - geometry.csg',
         'dlcworkshop01 - main.ba2',
         'dlcworkshop01 - textures.ba2',
@@ -814,9 +841,10 @@ class AFallout4GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Enchantment Stats
     #--------------------------------------------------------------------------
-    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
-                        'enchantment_amount', 'enchantment_target_type',
-                        'enchantment_type', 'charge_time')
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags',
+                        'enchantment_cast_type', 'enchantment_amount',
+                        'enchantment_target_type', 'enchantment_type',
+                        'enchantment_charge_time')
     ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------
@@ -830,7 +858,7 @@ class AFallout4GameInfo(PatchGame):
     keywords_types = {
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
         b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MGEF',
-        b'MISC', b'MSTT', b'NPC_',
+        b'MISC', b'MSTT', b'NPC_', b'SPEL',
     }
 
     #--------------------------------------------------------------------------
@@ -841,7 +869,7 @@ class AFallout4GameInfo(PatchGame):
         b'CLFM', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FACT', b'FLOR',
         b'FLST', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'KYWD', b'LIGH',
         b'MESG', b'MGEF', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'OMOD', b'PERK',
-        b'PROJ', b'SCOL', b'SNCT',
+        b'PROJ', b'SCOL', b'SNCT', b'SPEL', b'STAT',
     }
 
     #--------------------------------------------------------------------------
@@ -852,6 +880,7 @@ class AFallout4GameInfo(PatchGame):
         b'BOOK', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FLOR', b'FURN',
         b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
         b'LVSP', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'PKIN', b'PROJ', b'SCOL',
+        b'SOUN', b'SPEL', b'STAT',
     }
 
     #--------------------------------------------------------------------------
@@ -907,8 +936,11 @@ class AFallout4GameInfo(PatchGame):
         'GmstTweak_Player_MaxDraggableWeight',
         'GmstTweak_Player_SprintingCost',
         'GmstTweak_Visuals_TerminalDisplayRate',
-        'GmstTweak_Warning_ExteriorDistanceToHostiles',
-        'GmstTweak_Warning_InteriorDistanceToHostiles',
+        'GmstTweak_Warning_ExteriorDistanceToHostiles_Fo4',
+        'GmstTweak_Warning_InteriorDistanceToHostiles_Fo4',
+        'GmstTweak_Combat_BlockTimeMaximum',
+        'GmstTweak_Combat_BlockTimeAverage',
+        'GmstTweak_Combat_BlockTimeMinimum',
     }
 
     top_groups = [
@@ -932,6 +964,177 @@ class AFallout4GameInfo(PatchGame):
     ]
     complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'}
 
+    class LoFallout4(AsteriskGame):
+        force_load_first = tuple(map(FName, (
+            'DLCRobot.esm', 'DLCworkshop01.esm', 'DLCCoast.esm',
+            'DLCWorkshop02.esm', 'DLCWorkshop03.esm', 'DLCNukaWorld.esm',
+            'DLCUltraHighResolution.esm')))
+        _ccc_filename = 'Fallout4.ccc'
+        _ccc_fallback = tuple(map(FName, ( # Up to date as of 2024/04/30
+            'ccBGSFO4001-PipBoy(Black).esl',
+            'ccBGSFO4002-PipBoy(Blue).esl',
+            'ccBGSFO4003-PipBoy(Camo01).esl',
+            'ccBGSFO4004-PipBoy(Camo02).esl',
+            'ccBGSFO4006-PipBoy(Chrome).esl',
+            'ccBGSFO4012-PipBoy(Red).esl',
+            'ccBGSFO4014-PipBoy(White).esl',
+            'ccBGSFO4005-BlueCamo.esl',
+            'ccBGSFO4016-Prey.esl',
+            'ccBGSFO4018-GaussRiflePrototype.esl',
+            'ccBGSFO4019-ChineseStealthArmor.esl',
+            'ccBGSFO4020-PowerArmorSkin(Black).esl',
+            'ccBGSFO4022-PowerArmorSkin(Camo01).esl',
+            'ccBGSFO4023-PowerArmorSkin(Camo02).esl',
+            'ccBGSFO4025-PowerArmorSkin(Chrome).esl',
+            'ccBGSFO4033-PowerArmorSkinWhite.esl',
+            'ccBGSFO4024-PACamo03.esl',
+            'ccBGSFO4038-HorseArmor.esl',
+            'ccBGSFO4041-DoomMarineArmor.esl',
+            'ccBGSFO4042-BFG.esl',
+            'ccBGSFO4044-HellfirePowerArmor.esl',
+            'ccFSVFO4001-ModularMilitaryBackpack.esl',
+            'ccFSVFO4002-MidCenturyModern.esl',
+            'ccFRSFO4001-HandmadeShotgun.esl',
+            'ccEEJFO4001-DecorationPack.esl',
+            'ccRZRFO4001-TunnelSnakes.esm',
+            'ccBGSFO4045-AdvArcCab.esl',
+            'ccFSVFO4003-Slocum.esl',
+            'ccGCAFO4001-FactionWS01Army.esl',
+            'ccGCAFO4002-FactionWS02ACat.esl',
+            'ccGCAFO4003-FactionWS03BOS.esl',
+            'ccGCAFO4004-FactionWS04Gun.esl',
+            'ccGCAFO4005-FactionWS05HRPink.esl',
+            'ccGCAFO4006-FactionWS06HRShark.esl',
+            'ccGCAFO4007-FactionWS07HRFlames.esl',
+            'ccGCAFO4008-FactionWS08Inst.esl',
+            'ccGCAFO4009-FactionWS09MM.esl',
+            'ccGCAFO4010-FactionWS10RR.esl',
+            'ccGCAFO4011-FactionWS11VT.esl',
+            'ccGCAFO4012-FactionAS01ACat.esl',
+            'ccGCAFO4013-FactionAS02BoS.esl',
+            'ccGCAFO4014-FactionAS03Gun.esl',
+            'ccGCAFO4015-FactionAS04HRPink.esl',
+            'ccGCAFO4016-FactionAS05HRShark.esl',
+            'ccGCAFO4017-FactionAS06Inst.esl',
+            'ccGCAFO4018-FactionAS07MM.esl',
+            'ccGCAFO4019-FactionAS08Nuk.esl',
+            'ccGCAFO4020-FactionAS09RR.esl',
+            'ccGCAFO4021-FactionAS10HRFlames.esl',
+            'ccGCAFO4022-FactionAS11VT.esl',
+            'ccGCAFO4023-FactionAS12Army.esl',
+            'ccAWNFO4001-BrandedAttire.esl',
+            'ccSWKFO4001-AstronautPowerArmor.esm',
+            'ccSWKFO4002-PipNuka.esl',
+            'ccSWKFO4003-PipQuan.esl',
+            'ccBGSFO4050-DgBColl.esl',
+            'ccBGSFO4051-DgBox.esl',
+            'ccBGSFO4052-DgDal.esl',
+            'ccBGSFO4053-DgGoldR.esl',
+            'ccBGSFO4054-DgGreatD.esl',
+            'ccBGSFO4055-DgHusk.esl',
+            'ccBGSFO4056-DgLabB.esl',
+            'ccBGSFO4057-DgLabY.esl',
+            'ccBGSFO4058-DGLabC.esl',
+            'ccBGSFO4059-DgPit.esl',
+            'ccBGSFO4060-DgRot.esl',
+            'ccBGSFO4061-DgShiInu.esl',
+            'ccBGSFO4036-TrnsDg.esl',
+            'ccRZRFO4004-PipInst.esl',
+            'ccBGSFO4062-PipPat.esl',
+            'ccRZRFO4003-PipOver.esl',
+            'ccFRSFO4002-AntimaterielRifle.esl',
+            'ccEEJFO4002-Nuka.esl',
+            'ccYGPFO4001-PipCruiser.esl',
+            'ccBGSFO4072-PipGrog.esl',
+            'ccBGSFO4073-PipMMan.esl',
+            'ccBGSFO4074-PipInspect.esl',
+            'ccBGSFO4075-PipShroud.esl',
+            'ccBGSFO4076-PipMystery.esl',
+            'ccBGSFO4071-PipArc.esl',
+            'ccBGSFO4079-PipVim.esl',
+            'ccBGSFO4078-PipReily.esl',
+            'ccBGSFO4077-PipRocket.esl',
+            'ccBGSFO4070-PipAbra.esl',
+            'ccBGSFO4008-PipGrn.esl',
+            'ccBGSFO4015-PipYell.esl',
+            'ccBGSFO4009-PipOran.esl',
+            'ccBGSFO4011-PipPurp.esl',
+            'ccBGSFO4021-PowerArmorSkinBlue.esl',
+            'ccBGSFO4027-PowerArmorSkinGreen.esl',
+            'ccBGSFO4034-PowerArmorSkinYellow.esl',
+            'ccBGSFO4028-PowerArmorSkinOrange.esl',
+            'ccBGSFO4031-PowerArmorSkinRed.esl',
+            'ccBGSFO4030-PowerArmorSkinPurple.esl',
+            'ccBGSFO4032-PowerArmorSkinTan.esl',
+            'ccBGSFO4029-PowerArmorSkinPink.esl',
+            'ccGRCFO4001-PipGreyTort.esl',
+            'ccGRCFO4002-PipGreenVim.esl',
+            'ccBGSFO4013-PipTan.esl',
+            'ccBGSFO4010-PipPnk.esl',
+            'ccSBJFO4001-SolarFlare.esl',
+            'ccZSEF04001-BHouse.esm',
+            'ccTOSFO4001-NeoSky.esm',
+            'ccKGJFO4001-bastion.esl',
+            'ccBGSFO4063-PAPat.esl',
+            'ccQDRFO4001_PowerArmorAI.esl',
+            'ccBGSFO4048-Dovah.esl',
+            'ccBGSFO4101-AS_Shi.esl',
+            'ccBGSFO4114-WS_Shi.esl',
+            'ccBGSFO4115-X02.esl',
+            'ccRZRFO4002-Disintegrate.esl',
+            'ccBGSFO4116-HeavyFlamer.esl',
+            'ccBGSFO4091-AS_Bats.esl',
+            'ccBGSFO4092-AS_CamoBlue.esl',
+            'ccBGSFO4093-AS_CamoGreen.esl',
+            'ccBGSFO4094-AS_CamoTan.esl',
+            'ccBGSFO4097-AS_Jack-oLantern.esl',
+            'ccBGSFO4104-WS_Bats.esl',
+            'ccBGSFO4105-WS_CamoBlue.esl',
+            'ccBGSFO4106-WS_CamoGreen.esl',
+            'ccBGSFO4107-WS_CamoTan.esl',
+            'ccBGSFO4111-WS_Jack-oLantern.esl',
+            'ccBGSFO4118-WS_TunnelSnakes.esl',
+            'ccBGSFO4113-WS_ReillysRangers.esl',
+            'ccBGSFO4112-WS_Pickman.esl',
+            'ccBGSFO4110-WS_Enclave.esl',
+            'ccBGSFO4108-WS_ChildrenOfAtom.esl',
+            'ccBGSFO4103-AS_TunnelSnakes.esl',
+            'ccBGSFO4099-AS_ReillysRangers.esl',
+            'ccBGSFO4098-AS_Pickman.esl',
+            'ccBGSFO4096-AS_Enclave.esl',
+            'ccBGSFO4095-AS_ChildrenOfAtom.esl',
+            'ccBGSFO4090-PipTribal.esl',
+            'ccBGSFO4089-PipSynthwave.esl',
+            'ccBGSFO4087-PipHaida.esl',
+            'ccBGSFO4085-PipHawaii.esl',
+            'ccBGSFO4084-PipRetro.esl',
+            'ccBGSFO4083-PipArtDeco.esl',
+            'ccBGSFO4082-PipPRC.esl',
+            'ccBGSFO4081-PipPhenolResin.esl',
+            'ccBGSFO4080-PipPop.esl',
+            'ccBGSFO4035-Pint.esl',
+            'ccBGSFO4086-PipAdventure.esl',
+            'ccJVDFO4001-Holiday.esl',
+            'ccBGSFO4047-QThund.esl',
+            'ccFRSFO4003-CR75L.esl',
+            'ccZSEFO4002-SManor.esm',
+            'ccACXFO4001-VSuit.esl',
+            'ccBGSFO4040-VRWorkshop01.esl',
+            'ccFSVFO4005-VRDesertIsland.esl',
+            'ccFSVFO4006-VRWasteland.esl',
+            'ccFSVFO4007-Halloween.esl',
+            'ccSBJFO4002_ManwellRifle.esl',
+            'ccTOSFO4002_NeonFlats.esm',
+            'ccBGSFO4117-CapMerc.esl',
+            'ccFSVFO4004-VRWorkshopGNRPlaza.esl',
+            'ccBGSFO4046-TesCan.esl',
+            'ccGCAFO4025-PAGunMM.esl',
+            'ccCRSFO4001-PipCoA.esl',
+            'ccSBJFO4003-Grenade.esl',
+            'ccOTMFO4001-Remnants.esl',
+        )))
+    lo_handler = LoFallout4
+
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
@@ -949,8 +1152,7 @@ class AFallout4GameInfo(PatchGame):
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
             b'CELL', b'NAVI', b'NOCM', b'QUST', b'SCEN',
             b'RACE', # later :(
-            b'SNDR',
-            b'SOPM', b'SOUN', b'SPEL', b'SPGD', b'STAG', b'STAT', b'TACT',
+            b'TACT',
             b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
             b'WRLD', b'WTHR', b'ZOOM'}
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs

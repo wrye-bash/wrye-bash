@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -84,10 +84,8 @@ class Subrecord(object):
         try:
             self._dump_bytes(out, binary_data, len(binary_data))
         except Exception:
-            bolt.deprint(
-                f'{self!r}: Failed packing: '
-                f'{getattr(self, "mel_sig", "<no mel_sig>")!r}, '
-                f'{binary_data!r}')
+            bolt.deprint(f'{self!r}: Failed packing: '
+              f'{getattr(self, "mel_sig", "<no mel_sig>")!r}, {binary_data!r}')
             raise
 
     def _dump_bytes(self, out, binary_data, lenData):
@@ -250,9 +248,8 @@ class MelBaseR(MelBase):
     """A required subrecord whose contents are unknown/unused/unimportant.
     Often used for markers, which the game engine uses when parsing to keep
     track of where it is."""
-
-    def setDefault(self, record):
-        setattr(record, self.attr, b'')
+    def __init__(self, mel_sig: bytes, attr: str, *, set_default=b''):
+        super().__init__(mel_sig, attr, set_default=set_default)
 
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
@@ -428,9 +425,9 @@ class MelGroup(MelSequential):
 class MelGroups(MelGroup):
     """Represents an array of group record."""
 
-    def __init__(self,attr,*elements):
+    def __init__(self, attr: str, *elements):
         """Initialize. Must have at least one element."""
-        super(MelGroups, self).__init__(attr, *elements)
+        super().__init__(attr, *elements)
         self._init_sigs = self.elements[0].signatures
 
     def setDefault(self,record):
@@ -530,45 +527,43 @@ class MelUnorderedGroups(MelGroups):
             *debug_strs)
 
 #------------------------------------------------------------------------------
-##: Turn into MelSimpleGroups, same way we do MelSimpleArray
-class MelFids(MelGroups):
-    """A lighter version of MelGroups, holding an array of separate form id
-    subrecords."""
-
-    def __init__(self, attr, *elements):
-        if not len(elements) == 1 or not isinstance(elements[0], MelFid):
-            raise SyntaxError(
-                f'{type(self)} requires a single initializer of type MelFid, '
-                f'passed: {elements}')
-        super().__init__(attr, *elements)
-
-    def hasFids(self,formElements):
-        formElements.add(self)
+class MelSimpleGroups(MelGroups):
+    """A MelGroups of simple elements (currently MelNum) - override loading and
+    dumping of the groups to avoid creating MelObjects."""
+    def __init__(self, groups_attr, element: MelNum):
+        if not isinstance(element, MelNum):
+            raise SyntaxError(f'MelSimpleGroups only accepts MelNum, passed: '
+                              f'{element!r}')
+        self.mel_sig = element.mel_sig
+        self._element = element
+        super().__init__(groups_attr, element)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        """Override MelGroups.load_mel to not create the MelObjects."""
-        getattr(record, self.attr).append(
-            self.elements[0].load_bytes(ins, size_, *debug_strs))
-
-    def dumpData(self, record, out, __packer=structs_cache[u'I'].pack):
-        fid_mel = self.elements[0]
-        for fid in getattr(record, self.attr):
-            fid_mel.packSub(out, fid_mel.packer(fid))
+        getattr(record, self.attr).append(self._element.load_bytes(
+            ins, size_, *debug_strs))
 
     def mapFids(self, record, function, save_fids=False):
-        fids = getattr(record, self.attr)
-        for index,fid in enumerate(fids):
-            result = function(fid)
-            if save_fids: fids[index] = result
+        if self.form_elements:
+            groups_val = getattr(record, self.attr)
+            mapped = [function(group_entry) for group_entry in groups_val]
+            if save_fids:
+                setattr(record, self.attr, mapped)
+
+    def dumpData(self, record, out):
+        pack_el = self._element.packer
+        for target in getattr(record, self.attr):
+            self.packSub(out, pack_el(target))
 
 #------------------------------------------------------------------------------
 class MelString(MelBase):
     """Represents a mod record string element."""
     encoding: str | None = None # None -> default to bolt.pluginEncoding
 
-    def __init__(self, mel_sig, attr, maxSize: int | None = None, *,
-                 minSize: int | None = None, set_default=None):
-        super(MelString, self).__init__(mel_sig, attr, set_default=set_default)
+    ##: minSize seems unused
+    def __init__(self, mel_sig: bytes, attr: str, *,
+            maxSize: int | None = None, minSize: int | None = None,
+            set_default=None):
+        super().__init__(mel_sig, attr, set_default=set_default)
         self.maxSize = maxSize
         self.minSize = minSize
 
@@ -576,29 +571,26 @@ class MelString(MelBase):
         return ins.readString(size_, *debug_strs)
 
     def packSub(self, out: BinaryIO, string_val: str):
-        """Writes out a string subrecord, properly encoding it beforehand and
-        respecting max_size, min_size and preferred_encoding if they are
-        set."""
+        """Write out a string subrecord, properly encoding it beforehand and
+        respecting maxSize, minSize and encoding if they are set."""
         byte_string = bolt.encode_complex_string(string_val, self.maxSize,
             self.minSize, self.encoding)
-        # len of data will be recalculated in MelString._dump_bytes
-        super(MelString, self).packSub(out, byte_string)
+        # Null terminator is accounted for in _dump_bytes
+        super().packSub(out, byte_string)
 
     def _dump_bytes(self, out, byte_string, lenData):
-        """Write a properly encoded string with a null terminator."""
-        super(MelString, self)._dump_bytes(out, byte_string,
-            lenData + 1) # add the len of null terminator
-        out.write(null1) # then write it out
+        # Add the null terminator to the encoded string
+        super()._dump_bytes(out, byte_string + null1, lenData + 1)
 
 #------------------------------------------------------------------------------
 class MelUnicode(MelString):
     """Like MelString, but instead of using bolt.pluginEncoding to read the
        string, it tries the encoding specified in the constructor instead"""
 
-    def __init__(self, mel_sig, attr, maxSize=None, *, encoding=None,
-                 set_default=None):
-        super(MelUnicode, self).__init__(mel_sig, attr, maxSize,
-                                         set_default=set_default)
+    def __init__(self, mel_sig: bytes, attr: str, maxSize=None, *,
+            encoding=None, set_default=None):
+        super().__init__(mel_sig, attr, maxSize=maxSize,
+            set_default=set_default)
         self.encoding = encoding # None == automatic detection
 
     def load_bytes(self, ins, size_, *debug_strs):
@@ -833,9 +825,8 @@ class _MelFlags(MelNum):
     """Integer flag field."""
     __slots__ = (u'_flag_type', u'_flag_default')
 
-    def __init__(self, mel_sig, attr, flags_type, is_required=False):
-        super().__init__(mel_sig, attr,
-            set_default=None if not is_required else flags_type(0))
+    def __init__(self, mel_sig, attr, flags_type, *, set_default=None):
+        super().__init__(mel_sig, attr, set_default=set_default)
         self._flag_type = flags_type
         self._flag_default = self._flag_type(self.set_default or 0)
 
@@ -852,6 +843,25 @@ class _MelFlags(MelNum):
 class MelUInt8Flags(MelUInt8, _MelFlags): pass
 class MelUInt16Flags(MelUInt16, _MelFlags): pass
 class MelUInt32Flags(MelUInt32, _MelFlags): pass
+
+class _MelBool(MelNum):
+    """Boolean field."""
+    __slots__ = ()
+
+    def __init__(self, mel_sig, attr, *, set_default=None):
+        super().__init__(mel_sig, attr, set_default=set_default)
+
+    def load_bytes(self, ins, size_, *debug_strs):
+        # Treat 0 as false, every other value as true...
+        return super().load_bytes(ins, size_, *debug_strs) != 0
+
+    def packer(self, bool_val: bool):
+        # ...but only put out 0 and 1
+        return super(_MelBool, self.__class__).packer(1 if bool_val else 0)
+
+class MelUInt8Bool(MelUInt8, _MelBool): pass
+class MelUInt16Bool(MelUInt16, _MelBool): pass
+class MelUInt32Bool(MelUInt32, _MelBool): pass
 
 #------------------------------------------------------------------------------
 class MelXXXX(MelUInt32):
@@ -881,10 +891,5 @@ class MelFid(MelUInt32):
         formElements.add(self)
 
     def mapFids(self, record, function, save_fids=False):
-        attr = self.attr
-        try:
-            fid = getattr(record, attr)
-        except AttributeError:
-            fid = None
-        result = function(fid)
-        if save_fids: setattr(record, attr, result)
+        result = function(getattr(record, self.attr, None))
+        if save_fids: setattr(record, self.attr, result)

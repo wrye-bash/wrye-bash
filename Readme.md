@@ -5,6 +5,7 @@ Wrye Bash
 
 [![Wrye Bash CI](https://github.com/wrye-bash/wrye-bash/workflows/Wrye%20Bash%20CI/badge.svg)](https://github.com/wrye-bash/wrye-bash/actions?query=workflow%3A%22Wrye+Bash+CI%22)
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.md)
+[![Translation status](https://hosted.weblate.org/widget/wrye-bash/wrye-bash/svg-badge.svg)](https://hosted.weblate.org/engage/wrye-bash/)
 
 ### About
 
@@ -36,8 +37,12 @@ tested on (previous versions or latest versions may or may not work):
 
 ### Download
 
+#### Windows
 * [GitHub][3]
 * [NexusMods][2]
+
+#### Linux
+* [AUR][22]
 
 Docs are included in the download, but we are also setting them up online
  [here][4].
@@ -53,7 +58,7 @@ To run Wrye Bash from the latest `dev` code (download from [here][7])
 you need:
 
 * A game to manage from the supported games.
-* [Python 3.11 64-bit][16] (latest 3.11 is recommended)
+* [Python 3.12 64-bit][16] (latest 3.12 is recommended)
 
 **NB**: the 64-bit version is **required**. 32-bit operating systems are no
 longer supported.
@@ -101,6 +106,8 @@ bugfixes and enhancements. Feedback appreciated!
 Please see our [dedicated Contributing.md][15] document for information on how
 to contribute.
 
+Translations for Wrye Bash are [done through Weblate][20]. Please ask on our [Discord][11] if you have questions regarding weblate and translations.
+
 #### Main Branches
 
 - [`dev`][17]: The main development branch - approved commits end up here.
@@ -130,3 +137,6 @@ to contribute.
   [17]: https://github.com/wrye-bash/wrye-bash/tree/dev
   [18]: https://github.com/wrye-bash/wrye-bash/tree/master
   [19]: https://github.com/wrye-bash/wrye-bash/tree/nightly
+  [20]: https://hosted.weblate.org/engage/wrye-bash/
+  [21]: https://github.com/wrye-bash/wrye-bash/issues/500
+  [22]: https://aur.archlinux.org/packages/wrye-bash

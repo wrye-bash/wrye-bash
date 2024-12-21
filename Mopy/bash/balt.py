@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,9 +27,8 @@ from __future__ import annotations
 import threading
 import time
 from collections import defaultdict
-from collections.abc import Iterable
 from dataclasses import dataclass
-from functools import partial, wraps, cached_property
+from functools import partial, wraps
 from itertools import islice
 from typing import final
 
@@ -39,7 +38,8 @@ import wx.adv
 from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
 from .bass import Store
-from .bolt import FName, Path, deprint, readme_url
+from .bolt import FName, Path, RefrIn, deprint, readme_url, \
+    fast_cached_property, RefrData
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
@@ -492,7 +492,7 @@ class Progress(bolt.Progress):
         if len(message) > 50:
             first = message[:24]
             second = message[-26:]
-            return first + u'...' + second
+            return f'{first}…{second}'
         return message
 
     def Destroy(self):
@@ -523,6 +523,7 @@ def conversation(func):
 #------------------------------------------------------------------------------
 @dataclass(slots=True)
 class _ListItemFormat:
+    _parent_uil: UIList
     icon_key: tuple[str | None, ...] = (None,)
     bold: bool = False
     italics: bool = False
@@ -530,32 +531,13 @@ class _ListItemFormat:
     _text_key: str = 'default.text'
     _back_key: str = 'default.bkgd'
 
-    _back_key_priority = {k: j for j, k in enumerate([
-        # Plugins -------------------------------------------------------------
-        'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
-        'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
-        # INIs ----------------------------------------------------------------
-        'ini.bkgd.invalid',
-        # Installers ----------------------------------------------------------
-        'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
-        'installers.bkgd.dirty'])}
-    _text_key_priority = {k: j for j, k in enumerate([
-        # Plugins -------------------------------------------------------------
-        'default.text',
-        *(f'mods.text.es{suff}' for suff in ('l', 'o', 'm', 'lm', 'om')),
-        'mods.text.mergeable', 'mods.text.noMerge', 'mods.text.bashedPatch',
-        # Installers ----------------------------------------------------------
-        'installers.text.invalid', 'installers.text.marker',
-        'installers.text.complex',
-    ])}
-
-    def to_tree_node_format(self, parent_uil: UIList):
+    def to_tree_node_format(self):
         """Convert this list item format to an equivalent tree node format,
         relative to the specified parent UIList."""
         return TreeNodeFormat(
-            icon_idx=parent_uil.icons.img_dex(*self.icon_key),
-            back_color=parent_uil.lookup_back_key(self.back_key),
-            text_color=parent_uil.lookup_text_key(self.text_key),
+            icon_idx=self._parent_uil.icons.img_dex(*self.icon_key),
+            back_color=self._parent_uil.lookup_back_key(self.back_key),
+            text_color=self._parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
 
     @property
@@ -565,7 +547,7 @@ class _ListItemFormat:
     @back_key.setter
     def back_key(self, val: str):
         self._back_key = max(val, self._back_key,
-                             key=self._back_key_priority.__getitem__)
+            key=self._parent_uil.back_key_priority.__getitem__)
 
     @property
     def text_key(self) -> str:
@@ -574,7 +556,7 @@ class _ListItemFormat:
     @text_key.setter
     def text_key(self, val: str):
         self._text_key = max(val, self._text_key,
-                             key=self._text_key_priority.__getitem__)
+            key=self._parent_uil.text_key_priority.__getitem__)
 
 DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
     list[tuple[FName, TreeNodeFormat | None]]]]
@@ -673,7 +655,7 @@ class UIList(PanelWin):
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
-    @cached_property
+    @fast_cached_property
     def icons(self):
         return ColorChecks(get_color_checks())
 
@@ -794,66 +776,56 @@ class UIList(PanelWin):
             self.SortItems()
             self.autosizeColumns()
 
-    __all = ()
     _same_item = object()
     @final
-    def RefreshUI(self, *, redraw=__all, to_del=__all,
-            detail_item=_same_item, focus_list=True,
-            refresh_others: defaultdict[str, bool] | None = None):
+    def RefreshUI(self, rdata=None, *, detail_item=_same_item,
+                  focus_list=True):
         """Populate specified files or ALL files, sort, set status bar count,
         etc. See parameter docs below.
 
-        :param redraw: If specified, refresh only these UIList items.
-        :param to_del: If specified, delete only these UIList items. If both
-            this and redraw are kept at the default, entirely repopulate this
-            UIList.
-        :param focus_list: If True, focus this UIList.
-        :param refresh_others: A dict mapping unique data store keys (see
-            bass.Store) to booleans that indicate whether or not to refresh
-            that tab. If None, no other tab will be refreshed."""
-        if redraw is to_del is self.__all:
+        :param rdata: If passed, refresh/add the UIList items specified in
+            rdata.redraw and delete the items in rdata.to_del. Else,
+            entirely repopulate this UIList.
+        :param focus_list: If True, focus this UIList."""
+        if rdata is None:
             self.populate_items()
-        else:  #--Iterable
+            updated = ()
+        else: # a RefrData instance
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
             with self.pause_drawing():
-                for d in to_del:
+                for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in redraw:
+                for upd in (updated := rdata.redraw | rdata.to_add):
                     self.PopulateItem(item=upd)
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
-        self._refresh_details(redraw, detail_item)
+        self._refresh_details(updated, detail_item)
         if Link.Frame.notebook.currentPage is self.panel:
             # we need to check if our Panel is currently shown because we may
             # call Refresh UI of other tabs too - this results for instance in
             # mods count flickering when deleting a save in saves tab
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
-        if refresh_others:
-            if refresh_others[self.data_store_key]:
-                deprint(f"A tab's {self.data_store_key=} got passed to "
-                        f"refresh_others")
-                del refresh_others[self.data_store_key]
-            Link.Frame.distribute_ui_refresh(refresh_others)
 
-    def issue_warnings(self,
-            warn_others: defaultdict[str, bool] | None = None):
-        """Show warnings for this tab and any others that are specified."""
-        final_warn_dict = defaultdict(bool, {self.data_store_key: True})
-        if warn_others:
-            final_warn_dict |= warn_others
-        Link.Frame.distribute_warnings(final_warn_dict)
+    def propagate_refresh(self, refresh_others: defaultdict[str, bool | dict],
+                          **kwargs):
+        """Refresh this UIList and propagate the refresh to other tabs.
+        :param refresh_others: A dict mapping unique data store keys (see
+            bass.Store) to RefreshUI kwargs."""
+        kwargs.setdefault('focus_list', True)
+        refresh_others[self.data_store_key] = kwargs
+        Link.Frame.distribute_ui_refresh(refresh_others)
 
-    def _refresh_details(self, redraw, detail_item):
+    def _refresh_details(self, to_redraw, detail_item):
         if detail_item is None:
             self.panel.ClearDetails()
         elif detail_item is not self._same_item:
             self.SelectAndShowItem(detail_item)
         else: # if it was a single item, refresh details for it
-            if len(redraw) == 1:
-                self.SelectAndShowItem(next(iter(redraw)))
+            if len(to_redraw) == 1:
+                self.SelectAndShowItem(next(iter(to_redraw)))
             else:
                 self.panel.SetDetails()
 
@@ -861,6 +833,29 @@ class UIList(PanelWin):
         self.__gList.set_focus()
 
     #--Decorating -------------------------------------------------------------
+    @fast_cached_property
+    def back_key_priority(self):
+        return {k: j for j, k in enumerate([
+            # Plugins ---------------------------------------------------------
+            'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
+            'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
+            # INIs ------------------------------------------------------------
+            'ini.bkgd.invalid',
+            # Installers ------------------------------------------------------
+            'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
+            'installers.bkgd.dirty'])}
+
+    @fast_cached_property
+    def text_key_priority(self):
+        from . import bush
+        return {k: j for j, k in enumerate([
+            # Plugins ---------------------------------------------------------
+            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
+            # Installers ------------------------------------------------------
+            'installers.text.invalid', 'installers.text.marker',
+            'installers.text.complex',
+        ])}
+
     def set_item_format(self, item, item_format, target_ini_setts):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
@@ -870,7 +865,7 @@ class UIList(PanelWin):
 
     def __setUI(self, fileName, target_ini_setts, gItem):
         """Set font, status icon, background text etc."""
-        df = _ListItemFormat()
+        df = _ListItemFormat(self)
         self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
         icon_index = self.icons.img_dex(*df.icon_key)
         if icon_index is not None:
@@ -901,14 +896,14 @@ class UIList(PanelWin):
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
         def _decorate(i):
-            lif = _ListItemFormat()
+            lif = _ListItemFormat(self)
             # Only run set_item_format when the item is actually present,
             # otherwise just use the default settings (we do still have to use
             # those since the default text/background colors may have been
             # changed from the OS default)
             if i in self.data_store:
                 self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
-            return lif.to_tree_node_format(self)
+            return lif.to_tree_node_format()
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
 
@@ -1044,23 +1039,20 @@ class UIList(PanelWin):
         """Check if the renaming operation is allowed and return the item type
         of the selected labels to be renamed as well as an error to show the
         user."""
-        sel_original = self.GetSelected()
-        sel_filtered = list(self.data_store.filter_essential(sel_original))
+        if not (sel_original := self.GetSelected()):
+            # I don't see how this would be possible, but just in case...
+            return None, _('No items selected for renaming.')
+        sel_filtered = self.data_store.filter_essential(sel_original)
         if not sel_filtered:
             # None of the selected items may be renamed, so this whole renaming
             # attempt is a nonstarter
             return None, _('The selected items cannot be renamed.')
-        if (sel_original and sel_filtered and
-                sel_filtered[0] != sel_original[0]):
+        if next(iter(sel_filtered)) != sel_original[0]:
             # The currently selected/detail item cannot be renamed, so we can't
             # edit labels, which means we have to abort the renaming attempt
             return None, _('Renaming %(first_item)s is not allowed.') % {
                 'first_item': sel_original[0]}
-        to_rename = [self.data_store[i] for i in sel_filtered]
-        if to_rename:
-            return type(to_rename[0]), ''
-        # I don't see how this would be possible, but just in case...
-        return None, _('No items selected for renaming.')
+        return type(next(iter(sel_filtered.values()))), ''
 
     def could_rename(self):
         """Returns True if the currently selected item(s) would allow
@@ -1100,30 +1092,23 @@ class UIList(PanelWin):
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH
 
-    def try_rename(self, info, newName, to_select=None, to_del=None,
-                   item_edited=None): # Mods/BSAs
-        oldName = self._try_rename(info, newName)
-        if oldName:
-            if to_select is not None: to_select.add(newName)
-            if to_del is not None: to_del.add(oldName)
-            if item_edited and oldName == item_edited[0]:
-                item_edited[0] = newName
-            return newName # continue
-
     # Renaming - note the @conversation, this needs to be atomic with respect
-    # to refreshes and ideally atomic short
+    # to refreshes and ideally atomic short - store_refr is Installers only
     @conversation
-    def _try_rename(self, info, newFileName):
+    def try_rename(self, info, newName, rdata_ren, store_refr=None):
+        """Mods/BSAs - Inis won't be added and Screens/Installers/Saves
+        override - reduce this."""
         try:
-            return self.data_store.rename_operation(info, newFileName)
+            return self.data_store.rename_operation(info, newName, rdata_ren,
+                store_refr=store_refr) # a RefrData instance
         except (CancelError, OSError):
-            deprint(f'Renaming {info} to {newFileName} failed', traceback=True)
+            deprint(f'Renaming {info} to {newName} failed', traceback=True)
             # When using moveTo I would get "WindowsError:[Error 32]The process
             # cannot access ..." -  the code below was reverting the changes.
             # With shellMove I mostly get CancelError so below not needed -
             # except if a save is locked and user presses Skip - so cosaves are
             # renamed! Error handling is still a WIP
-            for old, new in info.get_rename_paths(newFileName):
+            for old, new in info.get_rename_paths(newName):
                 if old == new: continue
                 if (nex := new.exists()) and not (oex := old.exists()):
                     # some cosave move failed, restore files
@@ -1164,8 +1149,8 @@ class UIList(PanelWin):
 
     def get_selected_infos_filtered(self, selected=None):
         """Version of GetSelectedInfos that filters out essential infos."""
-        return [self.data_store[i] for i in self.data_store.filter_essential(
-            selected or self.GetSelected())]
+        return [*self.data_store.filter_essential(
+            selected or self.GetSelected()).values()]
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self._get_uil_index(item)
@@ -1203,12 +1188,16 @@ class UIList(PanelWin):
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
-        selected = self.GetSelectedInfos(selected)
-        num = len(selected)
+        sel_openable = self.data_store.filter_unopenable(
+            selected or self.GetSelected())
+        if not sel_openable:
+            showWarning(self, _('The selected items cannot be opened.'))
+            return
+        num = len(sel_openable)
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {u'num': num},
             u'bash.maxItemsOpen.continue'): return
-        for sel_inf in selected:
+        for sel_inf in sel_openable.values():
             try:
                 sel_inf.abs_path.start()
             except OSError:
@@ -1403,22 +1392,22 @@ class UIList(PanelWin):
             self.data_store.delete(dd_items, recycle=dd_recycle)
         except (PermissionError, CancelError, SkipError): pass
         # Also cleans _gList internal dicts
-        self.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.propagate_refresh(Store.SAVES.DO())
 
     def open_data_store(self):
         try:
-            self.data_store.store_dir.start()
+            (sd := self.data_store.store_dir).start()
             return
         except OSError:
-            deprint(f'Creating {self.data_store.store_dir}')
-            self.data_store.store_dir.makedirs()
-        self.data_store.store_dir.start()
+            deprint(f'Creating {sd}')
+            sd.makedirs()
+        sd.start()
 
-    def hide(self, items: Iterable[FName]):
+    def hide(self, items: dict[FName, ...]):
         """Hides the items in the specified iterable."""
-        hidden_ = []
-        for fnkey in items:
-            destDir = self.data_store[fnkey].get_hide_dir()
+        moved_infos = set()
+        for fnkey, inf in items.items():
+            destDir = inf.get_hide_dir()
             if destDir.join(fnkey).exists():
                 message = (_('A file named %(target_file_name)s already '
                              'exists in the hidden files directory. Overwrite '
@@ -1426,15 +1415,15 @@ class UIList(PanelWin):
                 if not askYes(self, message, _('Hide Files')): continue
             #--Do it
             with BusyCursor():
-                self.data_store.move_info(fnkey, destDir)
-                hidden_.append(fnkey)
-        #--Refresh stuff
-        self.data_store.delete_refresh(hidden_, None, check_existence=True)
+                inf.move_info(destDir)
+                moved_infos.add(inf)
+        # no need to check existence, we just moved them
+        self.data_store.refresh(RefrIn(del_infos=moved_infos))
 
     @staticmethod
     def _unhide_wildcard(): raise NotImplementedError
     def unhide(self):
-        srcDir = self.data_store.hidden_dir
+        srcDir = self.data_store.hide_dir
         # Otherwise the unhide command will open some random directory
         srcDir.makedirs()
         wildcard = self._unhide_wildcard()
@@ -1465,8 +1454,7 @@ class UIList(PanelWin):
         if (not Link.Frame.iPanel or
                 not _settings['bash.installers.enabled']):
             return None # Installers disabled or not initialized
-        pkg_column = self.data_store.table.getColumn('installer')
-        return FName(pkg_column.get(uil_item))
+        return FName(self.data_store[uil_item].get_table_prop('installer'))
 
     # Global Menu -------------------------------------------------------------
     def _populate_category(self, cat_label, target_category):
@@ -1564,6 +1552,11 @@ class Link(object):
     def _first_selected(self):
         """Return the first selected info."""
         return next(self.iselected_infos())
+
+    def refresh_sel(self, to_refr=None, **kwargs):
+        """Refresh selected items (or items in to_refr) in the UIList."""
+        to_refr = self.selected if to_refr is None else to_refr
+        self.window.RefreshUI(RefrData(set(to_refr)), **kwargs)
 
     # Wrappers around balt dialogs - used to single out non trivial uses of
     # self->window
@@ -1867,7 +1860,6 @@ class OneItemLink(EnabledLink):
 
     To be used in Link subclasses where self.selected is a list instance.
     """
-    ##: maybe edit _help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
 
     @property
@@ -1911,7 +1903,7 @@ class UIList_Delete(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one deletable file is selected
-        return bool(list(self._filter_undeletable(self.selected)))
+        return bool(self._filter_undeletable(self.selected))
 
     @property
     def link_help(self):
@@ -1934,7 +1926,7 @@ class UIList_Delete(EnabledLink):
 
 class UIList_Rename(EnabledLink):
     """Rename selected UIList item(s)."""
-    _text = _('Rename...')
+    _text = _('Rename…')
     _keyboard_hint = 'F2'
 
     @property
@@ -1958,17 +1950,12 @@ class UIList_Rename(EnabledLink):
 
 class UIList_OpenItems(EnabledLink):
     """Open specified file(s)."""
-    _text = _('Open...')
+    _text = _('Open…')
     _keyboard_hint = 'Enter'
-
-    def _filter_unopenable(self, to_open_items):
-        """Filters out unopenable items from the specified iterable. Default
-        behavior is to not filter out anything."""
-        return to_open_items
 
     @property
     def link_help(self):
-        sel_filtered = list(self._filter_unopenable(self.selected))
+        sel_filtered = list(self._data_store.filter_unopenable(self.selected))
         if sel_filtered == self.selected:
             if len(sel_filtered) == 1:
                 return _("Open '%(item_to_open)s' with the system's default "
@@ -1984,16 +1971,15 @@ class UIList_OpenItems(EnabledLink):
                      "default program.")
 
     def _enable(self):
-        # Enable if we have at least one openable file
-        return bool(list(self._filter_unopenable(self.selected)))
+        return bool(self._data_store.filter_unopenable(self.selected))
 
     def Execute(self):
-        self.window.OpenSelected(
-            selected=self._filter_unopenable(self.selected))
+        # OpenSelected will do the filtering, no need for us to do it too
+        self.window.OpenSelected(self.selected)
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
-    _text = _(u'Open Folder...')
+    _text = _('Open Folder…')
     _keyboard_hint = 'Ctrl+O'
 
     @property
@@ -2005,7 +1991,7 @@ class UIList_OpenStore(ItemLink):
 
 class UIList_Hide(EnabledLink):
     """Hide the file (move it to the data store's Hidden directory)."""
-    _text = _('Hide...')
+    _text = _('Hide…')
 
     def _filter_unhideable(self, to_hide_items):
         """Filters out unhideable items from the specified iterable."""
@@ -2013,7 +1999,7 @@ class UIList_Hide(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one hideable file is selected
-        return bool(list(self._filter_unhideable(self.selected)))
+        return bool(self._filter_unhideable(self.selected))
 
     @property
     def link_help(self):
@@ -2036,10 +2022,30 @@ class UIList_Hide(EnabledLink):
         if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
-                          {'hdir': self._data_store.hidden_dir})
+                          {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
-        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+        self.window.propagate_refresh(Store.SAVES.DO())
+
+class Installer_Op(ItemLink):
+    """Common refresh logic for BAIN operations."""
+    _prog_args = ()
+
+    @conversation
+    def Execute(self):
+        ui_refresh = defaultdict(bool)
+        try:
+            with (Progress(*self._prog_args) if self._prog_args else
+                  bolt.Progress() as progress):
+                return self._perform_action(ui_refresh, progress)
+        except (CancelError, SkipError):
+            return None
+        finally:
+            self.window.propagate_refresh(ui_refresh)
+            Link.Frame.distribute_warnings(ui_refresh)
+
+    def _perform_action(self, ui_refresh_, progress):
+        raise NotImplementedError
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2059,14 +2065,15 @@ def ask_uac_restart(message, mopy):
         readme = readme_url(mopy) + '#trouble-permissions'
         btns = [(BTN_YES, f'+{admin}'), (BTN_NO, _('Run normally'))]
         switches = [_('Use one of the following command line switches:'), '',
-                    _('--no-uac: always run normally'),
-                    _('--uac: always run with Admin Privileges'), '',
-                    _('See the <A href="%(readmePath)s">readme</A> '
-                      'for more information.') % {'readmePath': readme}]
+                    _('%(cli_no_uac)s: always run normally'),
+                    _('%(cli_uac)s: always run with Admin Privileges'), '',
+                    _('See the %(readme)s for more information.')]
         ex = [_('How to avoid this message in the future'),
-              _('Less information'), '\n'.join(switches)]
-    return askYes(None, message, _('UAC Protection'), vista_buttons=btns,
-                  expander=ex)
+              _('Less information'), '\n'.join(switches) % {
+                'cli_no_uac': '--no-uac', 'cli_uac': '--uac',
+                'readme': f'<A href="{readme}">readme</A>'}]
+    return askYes(None, message, title=_('UAC Protection'),
+        vista_buttons=btns, expander=ex)
 
 class INIListCtrl(wx.ListCtrl):
 

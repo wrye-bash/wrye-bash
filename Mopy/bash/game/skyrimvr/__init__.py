@@ -16,20 +16,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim VR."""
-from .. import MergeabilityCheck, ObjectIndexRange
+from .. import ObjectIndexRange
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
+from ... import bass
+from ...bolt import FName
 
 class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     display_name = 'Skyrim VR'
     fsName = u'Skyrim VR'
     altName = u'Wrye VRash'
-    game_icon = u'skyrimvr_%u.png'
+    game_icon = u'skyrimvr.svg'
     bash_root_prefix = u'Skyrim VR' # backwards compat :(
     bak_game_name = u'Skyrim VR'
     my_games_name = u'Skyrim VR'
@@ -43,7 +45,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     loot_game_name = 'Skyrim VR'
 
     espm_extensions = ASkyrimSEGameInfo.espm_extensions - {'.esl'}
-    mergeability_checks = {MergeabilityCheck.MERGE}
 
     class Se(ASkyrimSEGameInfo.Se):
         se_abbrev = u'SKSEVR'
@@ -54,8 +55,12 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     class Ini(ASkyrimSEGameInfo.Ini):
         default_ini_file = u'Skyrim.ini' # yes, that's the default one
         dropdown_inis = [u'SkyrimVR.ini', u'SkyrimPrefs.ini']
-        resource_override_key = u'sVrResourceArchiveList'
-        resource_override_defaults = [u'Skyrim_VR - Main.bsa']
+        start_dex_keys = {**ASkyrimSEGameInfo.Ini.start_dex_keys,
+            # SkyrimVR has INI settings that override all other BSAs, make sure
+            # they come last
+            ASkyrimSEGameInfo.Ini.BSA_MAX: ('sVrResourceArchiveList',)}
+        # fallback BSA if the sVrResourceArchiveList key does not load any BSAs
+        engine_overrides = ['Skyrim_VR - Main.bsa']
 
     class Xe(ASkyrimSEGameInfo.Xe):
         full_name = u'TES5VREdit'
@@ -65,8 +70,9 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
         skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
     class Esp(ASkyrimSEGameInfo.Esp):
+        # All these will be restored again if the appropriate SKSE plugin is
+        # installed, see init() below
         master_limit = 255
-        ##: Drop once we've implemented support for Skyrim VR ESL Support
         object_index_range = ObjectIndexRange.RESERVED
         object_index_range_expansion_ver = 0.0
         validHeaderVersions = (0.94, 1.70)
@@ -76,9 +82,28 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
         'skyrim_vr - main.bsa',
     }
 
+    class _LoSkyrimVR(ASkyrimSEGameInfo.LoSkyrimSE):
+        force_load_first = (*ASkyrimSEGameInfo.LoSkyrimSE.force_load_first,
+                            FName('SkyrimVR.esm'))
+    lo_handler = _LoSkyrimVR
+
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
+
+    def _init_plugin_types(self, pflags=None):
+        from ... import env
+        cls = self.__class__
+        esl_plugin_path = env.to_os_path(bass.dirs['mods'].join(
+                cls.Se.plugin_dir, 'plugins', 'skyrimvresl.dll'))
+        if esl_plugin_path and esl_plugin_path.is_file():
+            # ESL-support plugin installed, enable ESL support in WB
+            cls.espm_extensions |= {'.esl'}
+            cls.Esp.master_limit = 253
+            cls.Esp.object_index_range = ObjectIndexRange.RESERVED
+            cls.Esp.object_index_range_expansion_ver = 0.0
+            cls.Esp.validHeaderVersions = (0.94, 1.70, 1.71)
+        super()._init_plugin_types(pflags)
 
 class SteamSkyrimVRGameInfo(SteamMixin, _ASkyrimVRGameInfo):
     """GameInfo override for the Steam version of Skyrim VR."""

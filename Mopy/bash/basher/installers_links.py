@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -31,7 +31,7 @@ from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
     MonitorExternalInstallationEditor, AImportOrderParser
 from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
-    SeparatorLink
+    SeparatorLink, Installer_Op
 from ..gui import copy_text_to_clipboard, askYes
 
 __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
@@ -59,7 +59,7 @@ __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
 #------------------------------------------------------------------------------
 class Installers_AddMarker(ItemLink):
     """Add an installer marker."""
-    _text = _(u'New Marker...')
+    _text = _('New Marker…')
     _help = _(u'Adds a Marker, a special type of package useful for '
               u'separating and labelling your packages.')
     _keyboard_hint = 'Ctrl+Shift+N'
@@ -71,7 +71,7 @@ class Installers_AddMarker(ItemLink):
 #------------------------------------------------------------------------------
 class Installers_MonitorExternalInstallation(Installers_Link):
     """Monitors Data folder for external installation."""
-    _text = _dialog_title = _('Monitor External Installation...')
+    _text = _dialog_title = _('Monitor External Installation…')
     _help = _('Monitors the %(data_folder)s folder to capture changes made '
               'manually or via 3rd party tools.') % {
         'data_folder': bush.game.mods_dir}
@@ -80,7 +80,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
     def Execute(self):
         msg = _('Wrye Bash will monitor your data folder for changes when '
                 'installing a mod via an external application or manual '
-                'install.  This will require two refreshes of the '
+                'install. This will require two refreshes of the '
                 '%(data_folder)s folder and may take some time. Continue?') % {
             'data_folder': bush.game.mods_dir}
         if not self._askYes(msg, _('External Installation')):
@@ -90,21 +90,13 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         # Backup CRC data
         scd_before_install = self.idata.data_sizeCrcDate.copy()
         # Install and wait
-        self._showOk(_(u'You may now install your mod.  When installation is '
-                       u'complete, press Ok.'), _(u'External Installation'))
+        self._showOk(_('You may now install your mod. When installation is '
+                       'complete, press OK.'), _('External Installation'))
         # Refresh Data
         ui_refresh = defaultdict(bool)
-        with load_order.Unlock(): ##: single use outside refreshLoadOrder
-            for store in bosh.data_tracking_stores():
-                refresh_result = store.refresh()
-                ##: This is really ugly - refresh() should pick one type and
-                # return that consistently, not sometimes tuple[set, set, set]
-                # and sometimes bool - plus this is *duplicated in RefreshData
-                # now*!
-                if isinstance(refresh_result, tuple):
-                    refresh_result = any(refresh_result)
-                # May be an int etc.
-                ui_refresh[store.unique_store_key] = bool(refresh_result)
+        for store in bosh.data_tracking_stores():
+            ui_refresh[store.unique_store_key] = bool(
+                store.refresh(unlock_lo=True))
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
@@ -140,22 +132,22 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             return
         pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
-        with balt.Progress(_('Creating Project...')) as prog: # will order last
+        with balt.Progress(_('Creating Project…')) as prog: # will order last
             self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
         # createFromData placed the new project last in install order - install
         try:
             self.idata.bain_install([pr_path], ui_refresh, override=False)
         finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.propagate_refresh(ui_refresh)
         # Select new installer
         self.window.SelectLast()
 
 #------------------------------------------------------------------------------
 class Installers_ListPackages(Installers_Link):
     """Copies list of packages to clipboard."""
-    _text = _(u'List Packages...')
-    _help = _('Displays a list of all packages.  Also copies that list to the '
-              'clipboard.  Useful for posting your package order on forums.')
+    _text = _('List Packages…')
+    _help = _('Displays a list of all packages. Also copies that list to the '
+              'clipboard. Useful for posting your package order on forums.')
 
     @balt.conversation
     def Execute(self):
@@ -169,41 +161,35 @@ class Installers_ListPackages(Installers_Link):
         self._showLog(package_list, title=_('BAIN Packages'))
 
 #------------------------------------------------------------------------------
-class Installers_AnnealAll(Installers_Link):
+class Installers_AnnealAll(Installer_Op, Installers_Link):
     """Anneal all packages."""
     _text = _('Anneal All')
     _help = _('Install any missing files (for active packages) and update '
               'the contents of the %(data_folder)s folder to account for all '
               'install order and configuration changes.') % {
         'data_folder': bush.game.mods_dir}
+    _prog_args = _('Annealing…'),
 
-    @balt.conversation
-    def Execute(self):
+    def _perform_action(self, ui_refresh_, progress):
         """Anneal all packages."""
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Annealing...')) as progress:
-                self.idata.bain_anneal(None, ui_refresh, progress=progress)
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
-            self.window.issue_warnings(warn_others=ui_refresh)
+        self.idata.bain_anneal(None, ui_refresh_, progress=progress)
 
 #------------------------------------------------------------------------------
-class Installers_UninstallAllPackages(Installers_Link):
+class Installers_UninstallAllPackages(Installer_Op, Installers_Link):
     """Uninstall all packages."""
     _text = _('Uninstall All Packages')
     _help = _('Uninstall all files from all installed packages.')
+    _prog_args = _('Uninstalling…'),
 
     @balt.conversation
     def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_('Really uninstall all packages?')): return
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Uninstalling...')) as progress:
-                self.idata.bain_uninstall_all(ui_refresh, progress=progress)
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+        super().Execute()
+
+    def _perform_action(self, ui_refresh_, progress):
+        """Uninstall all present packages."""
+        self.idata.bain_uninstall(None, ui_refresh_, progress)
 
 #------------------------------------------------------------------------------
 class _AInstallers_Refresh(AppendableLink, Installers_Link):
@@ -239,11 +225,11 @@ class Installers_RefreshData(_AInstallers_Refresh):
               'directories.') % {'data_folder': bush.game.mods_dir}
 
 #------------------------------------------------------------------------------
-class Installers_CleanData(Installers_Link):
+class Installers_CleanData(Installer_Op, Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
     files. For safety just moved to Game Mods/Bash Installers/Bash/Data
     Folder Contents (date/time)."""
-    _text = _('Clean Data...')
+    _text = _('Clean Data…')
     _help = _('Move all files that are not linked to an active installer '
               'out of the %(data_folder)s folder.') % {
         'data_folder': bush.game.mods_dir}
@@ -268,22 +254,25 @@ class Installers_CleanData(Installers_Link):
                            '%(data_folder)s folder.') % mdir_fmt,
                 title=_('Clean Data - %(data_folder)s is Clean') % mdir_fmt)
             return
-        ed_ok, ed_unknown = CleanDataEditor.display_dialog(self.window,
+        ed_ok, self.__ed_unknown = CleanDataEditor.display_dialog(self.window,
             unknown_files=all_unknown_files)
-        if not ed_ok or not ed_unknown:
+        if not ed_ok or not self.__ed_unknown:
             return # Aborted by user or nothing left to clean, cancel
-        ui_refresh = defaultdict(bool)
-        try:
-            with balt.Progress(_('Cleaning %(data_folder)s '
-                                 'contents...') % mdir_fmt, f'\n{" " * 65}'):
-                self.idata.clean_data_dir(ed_unknown, ui_refresh)
-        finally:
-            self.window.RefreshUI(refresh_others=ui_refresh)
+        super().Execute()
+
+    @property
+    def _prog_args(self):
+        return _('Cleaning %(data_folder)s contents…') % {
+            'data_folder': bush.game.mods_dir}, f'\n{" " * 65}'
+
+    def _perform_action(self, ui_refresh_, progress):
+        """Clean the data directory."""
+        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_, progress)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
     """Open the New Project Dialog"""
-    _text = _(u'New Project...')
+    _text = _('New Project…')
     _help = _(u'Create a new project.')
     _keyboard_hint = 'Ctrl+N'
 
@@ -294,7 +283,7 @@ class Installers_CreateNewProject(ItemLink):
 #------------------------------------------------------------------------------
 class Installers_ExportOrder(Installers_Link, AImportOrderParser):
     """Export order and installation status for all packages."""
-    _text = _('Export Order...')
+    _text = _('Export Order…')
     _help = _('Export the order and installation status of all packages.')
 
     def Execute(self):
@@ -303,7 +292,7 @@ class Installers_ExportOrder(Installers_Link, AImportOrderParser):
             'packages and whether or not they have been installed. It does '
             'not export, for example, which sub-packages you enabled. If you '
             'care about preserving such information, you may want to make a '
-            'backup instead (see Settings > Global Settings... > Backups).'),
+            'backup instead (see Settings > Global Settings… > Backups).'),
             'bash.installers.export_order.continue',
                 title=_('Export Order - Note')): return
         exp_path = self._askSave(title=_('Export Order - Choose Destination'),
@@ -313,7 +302,7 @@ class Installers_ExportOrder(Installers_Link, AImportOrderParser):
         self.packages_exported = 0
         self.write_text_file(exp_path)
         self._showInfo(_('Exported order and installation status for '
-                         '%(exp_num)d package(s) to %(exp_path)s.') % {
+                         '%(exp_num)d packages to %(exp_path)s.') % {
             'exp_num': self.packages_exported, 'exp_path': exp_path},
             title=_('Export Order - Done'))
 
@@ -332,7 +321,7 @@ class Installers_ExportOrder(Installers_Link, AImportOrderParser):
 class Installers_ImportOrder(Installers_Link):
     """Import order and installation status for a subset of all packages from a
     previous export."""
-    _text = _('Import Order...')
+    _text = _('Import Order…')
     _help = _('Import the order and installation status of packages from a '
               'previous export.')
 
@@ -386,9 +375,9 @@ class Installers_AutoRefreshProjects(BoolLink):
 class Installers_IgnoreFomod(BoolLink):
     _text = _(u'Ignore FOMODs')
     _bl_key = u'bash.installers.ignore_fomods'
-    _help = _('Ignores FOMODs when using the "Install..." option. If this is '
+    _help = _('Ignores FOMODs when using the "Install…" option. If this is '
               'checked, FOMODs will only be used when you specifically run '
-              'them via "Run FOMOD...".')
+              'them via "Run FOMOD…".')
 
 #------------------------------------------------------------------------------
 class Installers_ValidateFomod(BoolLink):
@@ -406,7 +395,7 @@ class Installers_ApplyEmbeddedBCFs(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        with balt.Progress(_('Auto-Applying Embedded BCFs...')) as progress:
+        with balt.Progress(_('Auto-Applying Embedded BCFs…')) as progress:
             destinations, converted = self._data_store.applyEmbeddedBCFs(
                 progress=progress)
             if not destinations: return
@@ -445,15 +434,17 @@ class Installers_Enabled(BoolLink, Installers_Link):
     _text, _bl_key, _help = _(u'Enabled'), u'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     _dialog_title = _(u'Enable Installers')
-    message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
-        u'If you do, Bash will first need to initialize some data. This can '
-        u'take on the order of five minutes if there are many mods installed.')
+    _msg_inst_enabled = _(
+        'Do you want to enable Installers?') + '\n\n\t' + _(
+        'If you do, Wrye Bash will first need to initialize some data. This '
+        'can take on the order of five minutes if there are many mods '
+        'installed.')
 
     @balt.conversation
     def Execute(self):
         """Enable/Disable the installers tab."""
         enabled = bass.settings[self._bl_key]
-        if not enabled and not self._askYes(self.message,
+        if not enabled and not self._askYes(self._msg_inst_enabled,
                                             title=self._dialog_title): return
         enabled = bass.settings[self._bl_key] = not enabled
         if enabled:
@@ -483,7 +474,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
 
     def Execute(self):
         super(Installers_BsaRedirection, self).Execute()
-        if bass.settings[self._bl_key]:
+        if should_redirect := bass.settings[self._bl_key]:
             # Delete ArchiveInvalidation.txt, if it exists
             bosh.bsaInfos.remove_invalidation_file()
             ##: Hack, this should not use display_name
@@ -495,9 +486,9 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                 bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
                                                      names_only=False)
                 with balt.Progress(
-                        _('Enabling BSA Redirection...')) as progress:
+                        _('Enabling BSA Redirection…')) as progress:
                     bsaFile.undo_alterations(progress)
-        bosh.oblivionIni.setBsaRedirection(bass.settings[self._bl_key])
+        bosh.bsaInfos.set_bsa_redirection(do_redirect=should_redirect)
 
 #------------------------------------------------------------------------------
 class Installers_ShowInactiveConflicts(_Installers_BoolLink_Refresh):

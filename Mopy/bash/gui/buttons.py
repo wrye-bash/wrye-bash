@@ -16,12 +16,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module defines buttons, offering several predefined templates (e.g. OK
-buttons, Cancel buttons, Save As... buttons, etc.)."""
+buttons, Cancel buttons, Save As… buttons, etc.)."""
 from __future__ import annotations
 
 __author__ = u'nycz, Infernio'
@@ -127,7 +127,7 @@ class SaveAsButton(Button):
     """A button with the label 'Save As'. Behaves like the 'Save' button above,
     but shows some type of prompt first, asking the user where to save."""
     _id = _wx.ID_SAVEAS
-    _default_label = _(u'Save As...')
+    _default_label = _('Save As…')
 
 class RevertButton(Button):
     """A button with the label 'Revert'. Resets pending changes back to the

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,7 @@ from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
 from ..balt import DecoratedTreeDict, colors, Link
 from ..bass import Store
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
-    reverse_dict
+    reverse_dict, RefrData
 from ..bosh import ModInfo, faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
@@ -60,8 +60,7 @@ class ImportFaceDialog(DialogWindow):
             self.fdata = faces
         self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI
-        super(ImportFaceDialog, self).__init__(parent, title=title,
-                                               sizes_dict=bass.settings)
+        super().__init__(parent, title=title, sizes_dict=bass.settings)
         #--List Box
         self.listBox = ListBox(self, choices=self.list_items,
                                onSelect=self.EvtListBox)
@@ -130,7 +129,7 @@ class ImportFaceDialog(DialogWindow):
         pc_flags.pcf_race = self.raceCheck.is_checked
         pc_flags.pcf_gender = self.genderCheck.is_checked
         pc_flags.pcf_stats = self.statsCheck.is_checked
-        pc_flags.pcf_iclass = self.classCheck.is_checked
+        pc_flags.pcf_class = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
@@ -281,7 +280,7 @@ class CreateNewProject(DialogWindow):
         if sel_installers:
             new_installer_order = sel_installers[-1].order + 1
         ##: This is mostly copy-pasted from InstallerArchive_Unpack
-        with balt.Progress(_('Creating Project...')) as prog:
+        with balt.Progress(_('Creating Project…')) as prog:
             self._parent.data_store.new_info(fn_result_proj, progress=prog,
                 install_order=new_installer_order)
         self._parent.RefreshUI(detail_item=fn_result_proj)
@@ -310,28 +309,12 @@ class CreateNewPlugin(DialogWindow):
         # want)
         self._plugin_name.set_focus()
         self._plugin_name.select_all_text()
-        self._esm_flag = CheckBox(self, _(u'ESM Flag'),
-            chkbx_tooltip=_(u'Whether or not the the resulting plugin will be '
-                            u'a master, i.e. have the ESM flag.'))
-        # Completely hide the ESL checkbox for non-ESL games, but check it by
-        # default for ESL games, since one of the most common use cases for
-        # this command on those games is to create BSA-loading dummies. But for
-        # Overlay games, we want to disable it by default again since the ESL
-        # flag disables the Overlay flag and both flags are very valid use
-        # cases for this command.
-        self._esl_flag = CheckBox(self, _(u'ESL Flag'),
-            chkbx_tooltip=_(u'Whether or not the resulting plugin will be '
-                            u'light, i.e have the ESL flag.'),
-            checked=bush.game.has_esl and not bush.game.has_overlay_plugins)
-        self._esl_flag.visible = bush.game.has_esl
-        # Hide the Overlay checkbox for non-Overlay games
-        self._overlay_flag = CheckBox(self, _('Overlay Flag'),
-            chkbx_tooltip=_('Whether or not the resulting plugin will only be '
-                            'able to contain overrides (but not take up a '
-                            'load order slot), i.e. have the Overlay flag.'))
-        self._overlay_flag.visible = bush.game.has_overlay_plugins
-        for flag_chkbx in (self._esm_flag, self._esl_flag, self._overlay_flag):
-            flag_chkbx.on_checked.subscribe(self._handle_flag_checked)
+        # flag checkboxes - TODO: use a radio button for incompatible flags
+        self._flags_chkboxes = {}
+        for en in bush.game.all_flags:
+            for member, kwargs in en.checkboxes().items():
+                self._flags_chkboxes[member] = chkbx = CheckBox(self, **kwargs)
+                chkbx.on_checked.subscribe(self._handle_flag_checked)
         self._master_search = SearchBar(self, hint=_('Search Masters'))
         self._master_search.on_text_changed.subscribe(self._handle_search)
         self._masters_box = CheckListBox(self)
@@ -357,16 +340,14 @@ class CreateNewPlugin(DialogWindow):
         self._too_many_masters.set_foreground_color(colors[u'default.warn'])
         self._too_many_masters.visible = False
         self._check_flag_states()
+        it = iter(self._flags_chkboxes.values())
         VLayout(border=6, spacing=6, item_expand=True, items=[
             HLayout(spacing=4, items=[
                 (self._plugin_name, LayoutOptions(weight=1)),
                 self._plugin_ext,
             ]),
             VBoxedLayout(self, title=_('Flags'), items=[
-                self._esm_flag,
-                HLayout(spacing=4, items=[
-                    self._esl_flag, self._overlay_flag,
-                ]),
+                next(it), HLayout(spacing=4, items=[*it] or [None]),
             ]),
             (HBoxedLayout(self, title=_(u'Masters'), spacing=4,
                 item_expand=True, items=[
@@ -414,30 +395,23 @@ class CreateNewPlugin(DialogWindow):
         should also be disabled. And ensure that the file extension forces the
         right flags."""
         curr_p_ext = self._plugin_ext.get_value()
-        p_is_esl = curr_p_ext == '.esl'
-        p_is_master = p_is_esl or curr_p_ext == '.esm'
-        # For .esm and .esl files, force-check the ESM flag
-        if p_is_master:
-            self._esm_flag.is_checked = True
-        self._esm_flag.enabled = not p_is_master
-        # For .esl files, force-check the ESL flag
-        if p_is_esl:
-            self._esl_flag.is_checked = True
-        self._esl_flag.enabled = not p_is_esl
-        # Ensure that the ESL and Overlay flags are mutually exclusive
-        if self._esl_flag.is_checked:
-            self._overlay_flag.is_checked = False
-            self._overlay_flag.enabled = False
-        else:
-            # If no masters are selected, the Overlay flag isn't valid
-            if not self._chosen_masters:
-                self._overlay_flag.is_checked = False
-                self._overlay_flag.enabled = False
-            else:
-                self._overlay_flag.enabled = True
-                if self._overlay_flag.is_checked:
-                    self._esl_flag.is_checked = False
-                    self._esl_flag.enabled = False
+        # For .esl files force-check the ESM/ESL flags, for .esm the ESM flag
+        # and force disable the OVERLAY flag if no masters are present
+        pflags = bush.game.plugin_flags
+        force_flags = pflags.guess_flags(curr_p_ext, bush.game,
+                                         self._chosen_masters)
+        for pflag, chkbox in self._flags_chkboxes.items():
+            chkbox.is_checked = force_flags.get(pflag, chkbox.is_checked)
+            chkbox.enabled = pflag not in force_flags
+        checks = {pflag: chkbox.is_checked for pflag, chkbox in
+                  self._flags_chkboxes.items()}
+        checks = pflags.check_flag_assignments(
+            checks, raise_on_invalid=False)
+        for pflag, is_checked in checks.items():
+            self._flags_chkboxes[pflag].is_checked = is_checked
+            if pflag not in bush.game.master_flags:
+                # disable setting mutually exclusive flags
+                self._flags_chkboxes[pflag].enabled = is_checked
 
     def _handle_plugin_ext(self, _new_p_ext):
         """Internal callback to handle a change in extension."""
@@ -485,16 +459,13 @@ class CreateNewPlugin(DialogWindow):
             self._plugin_name.select_all_text()
             return EventResult.FINISH # leave the dialog open
         chosen_name = ModInfo.unique_name(newName)
-        windowSelected = pw.GetSelected()
-        pw.data_store.create_new_mod(chosen_name, windowSelected,
-            with_esm_flag=self._esm_flag.is_checked,
-            with_esl_flag=self._esl_flag.is_checked,
-            with_overlay_flag=self._overlay_flag.is_checked,
+        created_plugin = pw.data_store.create_new_mod(chosen_name,
+            windowSelected := pw.GetSelected(), flags_dict={k: v for k, v in
+                self._flags_chkboxes.items() if v.is_checked},
             wanted_masters=[*map(FName, self._chosen_masters)])
         # Check if we made a plugin with circular masters - we need the ModInfo
         # object itself to check this. A bit ugly from a UX perspective, but OK
         # because it's a  rare scenario anyways
-        created_plugin = pw.data_store[chosen_name]
         if created_plugin.has_circular_masters():
             showError(self, _('Creating a plugin named %(chosen_plugin_name)s '
                               'with the chosen masters will cause it to '
@@ -502,10 +473,10 @@ class CreateNewPlugin(DialogWindow):
                               'itself.') % {'chosen_plugin_name': chosen_name})
             return EventResult.FINISH # leave the dialog open
         if windowSelected:  # assign it the group of the first selected mod
-            mod_group = pw.data_store.table.getColumn(u'group')
-            mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')
+            if grp := pw.data_store[windowSelected[0]].get_table_prop('group'):
+                created_plugin.set_table_prop('group', grp)
         pw.ClearSelected(clear_details=True)
-        pw.RefreshUI(redraw=[chosen_name])
+        pw.RefreshUI(RefrData({chosen_name}))
 
 #------------------------------------------------------------------------------
 class ExportScriptsDialog(DialogWindow):
@@ -660,7 +631,7 @@ class MonitorExternalInstallationEditor(_ABainMLE):
             mlel_desc=_("These files were deleted. BAIN does not have the "
                         "capability to remove files when installing, so these "
                         "deletions cannot be packaged into a BAIN project. "
-                        "You may want to use 'Sync From Data...' to remove "
+                        "You may want to use 'Sync From Data…' to remove "
                         "them from their origin packages."),
             mlel_items=list(map(str, deleted_files)))
         mei_desc = _('The following changes were detected in the '
@@ -849,15 +820,15 @@ class UpdateNotification(DialogWindow):
 
 #------------------------------------------------------------------------------
 @dataclass(slots=True, kw_only=True)
-class _ChangeData:
-    """Records a change to some items in a UIList."""
-    # An optional description for this change
-    change_desc: str | None
-    # The ImageList used by the parent UIList that hosts the items that this
-    # change happened to
+class _HighlightData:
+    """Represents a highlighting of some items in a UIList."""
+    # An optional description for this highlighting
+    highlight_desc: str | None
+    # The ImageList used by the parent UIList that hosts the items that are
+    # being highlighted
     uil_image_list: ImageList
-    # A decorated tree dict storing the items that the change happened to
-    changed_items: DecoratedTreeDict
+    # A decorated tree dict storing the items that are being highlighted
+    highlighted_items: DecoratedTreeDict
     # The internal key for the parent tab in tabInfo. E.g. 'Mods'
     parent_tab_key: str
 
@@ -880,30 +851,29 @@ def _mk_node_class(node_tab_key: str):
             return EventResult.FINISH # Don't collapse/expand nodes
     return _TabTreeNode
 
-class _AChangeHighlightDialog(MaybeModalDialogWindow):
-    """Base class for dialogs that highlights certain changes having been
-    made to UIList items."""
+class _AItemHighlightDialog(MaybeModalDialogWindow):
+    """Base class for dialogs that highlights certain UIList items."""
     _def_size = (350, 400)
     _min_size = (250, 300)
 
-    def __init__(self, parent, *, highlight_changes: list[_ChangeData],
+    def __init__(self, parent, *, highlight_items: list[_HighlightData],
             add_cancel_btn=False):
         super().__init__(parent, stay_over_parent=True,
             sizes_dict=bass.settings, icon_bundle=balt.Resources.bashBlue)
         ch_layout = VLayout(border=4, spacing=6, item_expand=True)
         labels_to_wrap = []
-        for change_data in highlight_changes:
-            # First add the description for the change, if any
-            if change_data.change_desc:
-                desc_label = WrappingLabel(self, change_data.change_desc)
+        for highlight_data in highlight_items:
+            # First add the description for the highlighting, if any
+            if highlight_data.highlight_desc:
+                desc_label = WrappingLabel(self, highlight_data.highlight_desc)
                 ch_layout.add(desc_label)
                 labels_to_wrap.append(desc_label)
-            node_type = _mk_node_class(change_data.parent_tab_key)
-            # Then create the actual tree listing the changes, which will take
-            # up most of the space
-            new_tree = Tree(self, change_data.uil_image_list)
+            node_type = _mk_node_class(highlight_data.parent_tab_key)
+            # Then create the actual tree listing the highlightings, which will
+            # take up most of the space
+            new_tree = Tree(self, highlight_data.uil_image_list)
             temp_root = new_tree.root_node
-            affected_items = change_data.changed_items
+            affected_items = highlight_data.highlighted_items
             for hp, (hp_tf, hp_children) in affected_items.items():
                 hp_node = temp_root.append_child(hp,
                     child_node_type=node_type)
@@ -929,29 +899,29 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
         self.update_layout()
 
     @classmethod
-    def make_change_entry(cls, warn_change_desc: str,
-            warning_items: Iterable[FName] | dict[FName, list[FName]],
+    def make_highlight_entry(cls, highlight_desc: str,
+            highlighted_items: Iterable[FName] | dict[FName, list[FName]],
             data_key=Store.MODS):
-        """Create a _ChangeData object for multi-warning dialogs."""
+        """Create a _HighlightData object for highlighting dialogs."""
         target_uil = Link.Frame.all_uilists[data_key]
         if target_uil is not None:
-            tree_dict = warning_items if isinstance(warning_items, dict) else {
-                i: [] for i in sorted(warning_items)}
+            tree_dict = highlighted_items if isinstance(highlighted_items,
+                dict) else {i: [] for i in sorted(highlighted_items)}
             warning_dec_items = target_uil.decorate_tree_dict(tree_dict)
             uil_images = target_uil.icons
         else:
             # Tab is not enabled, no way to decorate with it
-            warning_dec_items = {
-                i: (None, []) for i in sorted(warning_items)}
+            warning_dec_items = {i: (None, []) for i in
+                sorted(highlighted_items)}
             uil_images = None
-        return _ChangeData(uil_image_list=uil_images,
-            change_desc=warn_change_desc, changed_items=warning_dec_items,
+        return _HighlightData(uil_image_list=uil_images,
+            highlight_desc=highlight_desc, highlighted_items=warning_dec_items,
             parent_tab_key=data_key.value[0])
 
 # Note: we sometimes use 'unnecessary' subclasses here for the separate
 # bass.settings['bash.window.sizes'] key provided by the unique class name
 #------------------------------------------------------------------------------
-class _ALORippleHighlightDialog(_AChangeHighlightDialog):
+class _ALORippleHighlightDialog(_AItemHighlightDialog):
     """Base class for dialogs highlighting when a load order change had a
     'ripple' effect, e.g. deactivating a certain master caused its dependents
     to be deactivated too."""
@@ -962,7 +932,7 @@ class _ALORippleHighlightDialog(_AChangeHighlightDialog):
         # Only count the additional masters/dependents
         total_affected = sum(map(len, changes_dict.values()))
         change_desc = self._change_desc % {'num_affected': total_affected}
-        super().__init__(parent, highlight_changes=[self.make_change_entry(
+        super().__init__(parent, highlight_items=[self.make_highlight_entry(
             change_desc, changes_dict)])
 
 class MastersAffectedDialog(_ALORippleHighlightDialog):
@@ -971,7 +941,7 @@ class MastersAffectedDialog(_ALORippleHighlightDialog):
     title = _('Masters Affected')
     _change_desc = _('Wrye Bash automatically activates the masters of '
                      'activated plugins. Activating the following plugins '
-                     'thus caused %(num_affected)d master(s) to be activated '
+                     'thus caused %(num_affected)d masters to be activated '
                      'as well.')
 
 class DependentsAffectedDialog(_ALORippleHighlightDialog):
@@ -981,24 +951,29 @@ class DependentsAffectedDialog(_ALORippleHighlightDialog):
     _change_desc = _('Wrye Bash automatically deactivates the dependent '
                      'plugins of deactivated plugins. Deactivating the '
                      'following plugins thus caused %(num_affected)d '
-                     'dependent(s) to be deactivated as well.')
+                     'dependents to be deactivated as well.')
 
 #------------------------------------------------------------------------------
-class LoadOrderSanitizedDialog(_AChangeHighlightDialog):
+class LoadOrderSanitizedDialog(_AItemHighlightDialog):
     """Dialog shown when certain load order problems have been fixed."""
     title = _('Warning: Load Order Sanitized')
 
 #------------------------------------------------------------------------------
-class MultiWarningDialog(_AChangeHighlightDialog):
+class MultiWarningDialog(_AItemHighlightDialog):
     """Dialog shown when Wrye Bash detected certain problems with a user's
     setup."""
     title = _('Warnings')
 
 #------------------------------------------------------------------------------
-class MasterErrorsDialog(_AChangeHighlightDialog):
+class MasterErrorsDialog(_AItemHighlightDialog):
     """Dialog shown when Wrye Bash detected master errors before building a
     BP."""
     title = _('Master Errors')
+
+#------------------------------------------------------------------------------
+class ListDependentDialog(_AItemHighlightDialog):
+    """Dialog shown when the List Depedent command is executed."""
+    title = _('Dependent Plugins')
 
 #------------------------------------------------------------------------------
 class AImportOrderParser(CsvParser):
@@ -1030,8 +1005,9 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
             choices=sorted(self._key_to_import.values()),
             dd_tooltip=_('Select what will be imported.'))
         self._import_what.on_combo_select.subscribe(self._save_import_what)
-        self._create_markers = CheckBox(self, checked=bass.settings[
-            'bash.installers.import_order.create_markers'],
+        self._create_markers = CheckBox(self,
+            cb_label=_('Create Missing Markers'), checked=bass.settings[
+                'bash.installers.import_order.create_markers'],
             chkbx_tooltip=_("If checked, markers (i.e. entries beginning and "
                             "ending with '==') that don't exist will be "
                             "created upon import."))
@@ -1051,7 +1027,6 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
                          LayoutOptions(expand=True, weight=1)),
                     ]),
                     HLayout(spacing=4, items=[
-                        Label(self, _('Create Missing Markers')),
                         self._create_markers,
                     ]),
             ]),
@@ -1098,7 +1073,7 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
             balt.showError(self, reorder_err, title=_('Import Order - Error'))
         else:
             balt.showInfo(self, _('Imported order and installation status for '
-                                  '%(total_imported)d package(s).') % {
+                                  '%(total_imported)d packages.') % {
                 'total_imported': len(self._partial_package_order)},
                 title=_('Import Order - Done'))
 
@@ -1112,16 +1087,15 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
         bain_idata = self._bain_parent.data_store
         pkg_fname = bolt.FName(pkg_fstr)
         pkg_present = pkg_fname in bain_idata
-        pkg_is_marker = pkg_fstr.startswith('==') and pkg_fstr.endswith('==')
-        if (self._create_markers.is_checked and pkg_is_marker and
-                not pkg_present):
-            bain_idata.new_info(pkg_fname, is_mark=True)
-            pkg_present = True
-        if pkg_present:
+        if pkg_fstr.startswith('==') and pkg_fstr.endswith('=='): # marker
+            if self._create_markers.is_checked and not pkg_present:
+                bain_idata.new_info(pkg_fname, is_mark=True)
+        elif pkg_present:
             # If we import something other than purely order (and this isn't a
             # marker, which can't be enabled anyways)
-            order_only = self._key_to_import['imp_order']
-            if (not pkg_is_marker and
-                    self._import_what.get_value() != order_only):
+            if self._import_what.get_value() != self._key_to_import[
+                    'imp_order']:
                 bain_idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
-            self._partial_package_order.append(pkg_fname)
+        else: # Skip non-marker packages that aren't present
+            return
+        self._partial_package_order.append(pkg_fname)

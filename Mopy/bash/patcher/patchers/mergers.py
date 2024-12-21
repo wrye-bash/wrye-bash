@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -154,11 +154,11 @@ class _AMerger(ImportPatcher):
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
                 master_keys = {en_key(x) for x in masterEntries}
-                mod_keys = {en_key(x) for x in entries}
-                remove_keys = master_keys - mod_keys if can_remove else set()
+                modkeys = {en_key(x) for x in entries}
+                remove_keys = master_keys - modkeys if can_remove else set()
                 # Note that we need to calculate these whether or not we're
                 # Add-tagged, because Change needs them as well.
-                addItems = mod_keys - master_keys
+                addItems = modkeys - master_keys
                 addEntries = [x for x in entries if en_key(x) in addItems]
                 # Changed entries are those entries that haven't been newly
                 # added but also differ from the master entries
@@ -245,13 +245,11 @@ class _AMerger(ImportPatcher):
         self.id_deltas.clear()
         self._patchLog(log,mod_count)
 
-    def _plog(self, log, mod_count): self._plog1(log, mod_count)
-
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
 class ImportActorsPerksPatcher(_AMerger):
-    logMsg = '\n=== ' + _('Perk Lists Changed') + ': %d'
+    logMsg = '\n=== ' + _('Perk Lists Changed')
     _add_tag = 'NPC.Perks.Add'
     _change_tag = 'NPC.Perks.Change'
     _remove_tag = 'NPC.Perks.Remove'
@@ -263,10 +261,10 @@ class ImportActorsPerksPatcher(_AMerger):
 
 #------------------------------------------------------------------------------
 class ImportInventoryPatcher(_AMerger):
-    logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
-    _add_tag = u'Invent.Add'
-    _change_tag = u'Invent.Change'
-    _remove_tag = u'Invent.Remove'
+    logMsg = '\n=== ' + _('Inventories Changed')
+    _add_tag = 'Invent.Add'
+    _change_tag = 'Invent.Change'
+    _remove_tag = 'Invent.Remove'
     _wanted_subrecord = {x: 'items' for x in bush.game.inventory_types}
     iiMode = True
     patcher_tags = {'Invent.Add', 'Invent.Change', 'Invent.Remove'}
@@ -276,19 +274,19 @@ class ImportInventoryPatcher(_AMerger):
 
 #------------------------------------------------------------------------------
 class ImportOutfitsPatcher(_AMerger):
-    logMsg = u'\n=== ' + _(u'Outfits Changed') + u': %d'
-    _add_tag = u'Outfits.Add'
-    _remove_tag = u'Outfits.Remove'
-    _wanted_subrecord = {b'OTFT': u'items'}
+    logMsg = '\n=== ' + _('Outfits Changed')
+    _add_tag = 'Outfits.Add'
+    _remove_tag = 'Outfits.Remove'
+    _wanted_subrecord = {b'OTFT': 'items'}
     patcher_tags = {'Outfits.Add', 'Outfits.Remove'}
 
 #------------------------------------------------------------------------------
 class ImportRacesRelationsPatcher(_AMerger):
-    logMsg = u'\n=== ' + _(u'Race Relations Changed') + u': %d'
-    _add_tag = u'R.Relations.Add'
-    _change_tag = u'R.Relations.Change'
-    _remove_tag = u'R.Relations.Remove'
-    _wanted_subrecord = {b'RACE': u'relations'}
+    logMsg = '\n=== ' + _('Race Relations Changed')
+    _add_tag = 'R.Relations.Add'
+    _change_tag = 'R.Relations.Change'
+    _remove_tag = 'R.Relations.Remove'
+    _wanted_subrecord = {b'RACE': 'relations'}
     patcher_tags = {'R.Relations.Add', 'R.Relations.Change',
                     'R.Relations.Remove'}
 
@@ -297,11 +295,11 @@ class ImportRacesRelationsPatcher(_AMerger):
 
 #------------------------------------------------------------------------------
 class ImportRelationsPatcher(_AMerger):
-    logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
-    _add_tag = u'Relations.Add'
-    _change_tag = u'Relations.Change'
-    _remove_tag = u'Relations.Remove'
-    _wanted_subrecord = {b'FACT': u'relations'}
+    logMsg = '\n=== ' + _('Modified Factions')
+    _add_tag = 'Relations.Add'
+    _change_tag = 'Relations.Change'
+    _remove_tag = 'Relations.Remove'
+    _wanted_subrecord = {b'FACT': 'relations'}
     patcher_tags = {'Relations.Add', 'Relations.Change', 'Relations.Remove'}
     # _csv_key = 'Relations' # TODO restore csv support
 
@@ -312,7 +310,7 @@ class ImportRelationsPatcher(_AMerger):
 # Patchers to absorb ----------------------------------------------------------
 #------------------------------------------------------------------------------
 class ImportActorsAIPackagesPatcher(ImportPatcher):
-    logMsg = u'\n=== ' + _(u'AI Package Lists Changed') + u': %d'
+    logMsg = '\n=== ' + _('AI Package Lists Changed')
     _read_sigs = bush.game.actor_types
     patcher_tags = {'Actors.AIPackages', 'Actors.AIPackagesForceAdd'}
 
@@ -436,11 +434,9 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
-    def _plog(self, log, mod_count): self._plog1(log, mod_count)
-
 #------------------------------------------------------------------------------
 class ImportActorsSpellsPatcher(ImportPatcher):
-    logMsg = u'\n=== ' + _(u'Spell Lists Changed') + u': %d'
+    logMsg = '\n=== ' + _('Spell Lists Changed')
     _actor_sigs = bush.game.actor_types
     _spel_sigs = bush.game.spell_types
     if bush.game.Esp.sort_lvsp_after_spel:
@@ -605,8 +601,6 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         self._id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
-    def _plog(self, log, mod_count): self._plog1(log, mod_count)
-
 #------------------------------------------------------------------------------
 class _AListsMerger(ListPatcher):
     """Merges lists of objects, e.g. leveled lists or FormID lists."""
@@ -614,11 +608,10 @@ class _AListsMerger(ListPatcher):
     patcher_order = 45
     iiMode = True
     # De/Re Tags - None means the patcher does not have such a tag
-    _de_tag = None
-    _re_tag = None
-    # Maps record type (bytes) to translated label (unicode)
-    _sig_to_label = {}
-    _de_re_header = None
+    _de_tag: str | None = None
+    _re_tag: str | None = None
+    _sig_to_label: dict[bytes, str]
+    _de_re_header: str
 
     def _overhaul_compat(self, mods):
         OOOMods = {*map(FName, (f"Oscuro's_Oblivion_Overhaul.{x}" for x in
@@ -762,7 +755,8 @@ class _AListsMerger(ListPatcher):
         sig_label = {k: v for k, v in self._sig_to_label.items() if
                      k in self._read_sigs}
         for list_type_sig, list_label in sig_label.items():
-            log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
+            log.setHeader('=== ' + _('Merged %(ll_label)s Lists') % {
+                'll_label': list_label})
             stored_lists = self.type_list[list_type_sig]
             for stored_list in sorted(stored_lists.values(),
                                       key=lambda l: l.eid or ''):
@@ -820,13 +814,14 @@ class _AListsMerger(ListPatcher):
                     if old_entries != stored_list.entries:
                         cleaned_lists.add(stored_list.eid)
                         keep(sub_super, stored_list)
-            log.setHeader('=== ' + _('Empty %s Sublists') % (
-                list_label := sig_label[list_type_sig]))
+            log.setHeader('=== ' + _('Empty %(ll_label)s Sublists') % {
+                'll_label': sig_label[list_type_sig]})
             for list_eid in sorted(removed_empty_sublists, key=str.lower):
-                log(u'* ' + list_eid)
-            log.setHeader('=== ' + _('Empty %s Sublists Removed') % list_label)
+                log('* ' + list_eid)
+            log.setHeader('=== ' + _('Empty %(ll_label)s Sublists Removed') % {
+                'll_label': sig_label[list_type_sig]})
             for list_eid in sorted(cleaned_lists, key=str.lower):
-                log(u'* ' + list_eid)
+                log('* ' + list_eid)
 
     # Methods for patchers to override
     def _check_list(self, record, log):
@@ -841,15 +836,15 @@ class _AListsMerger(ListPatcher):
 class LeveledListsPatcher(_AListsMerger):
     """Merges leveled lists."""
     _read_sigs = bush.game.leveled_list_types # bush.game must be set!
-    _de_tag = u'Delev'
-    _re_tag = u'Relev'
+    _de_tag = 'Delev'
+    _re_tag = 'Relev'
     _sig_to_label = {
-        b'LVLC': _(u'Creature'),
-        b'LVLN': _(u'Actor'),
-        b'LVLI': _(u'Item'),
-        b'LVSP': _(u'Spell'),
+        b'LVLC': _('Creature'),
+        b'LVLN': _('Actor'),
+        b'LVLI': _('Item'),
+        b'LVSP': _('Spell'),
     }
-    _de_re_header = _(u'Delevelers/Relevelers')
+    _de_re_header = _('Delevelers/Relevelers')
     patcher_tags = {_de_tag, _re_tag}
 
     def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
@@ -863,9 +858,9 @@ class LeveledListsPatcher(_AListsMerger):
         # pre-Skyrim games have no size limit since they have no counter
         max_lvl_size = bush.game.Esp.max_lvl_list_size
         if max_lvl_size and len(record.entries) == max_lvl_size:
-            log(u'  * __%s__' % _(u'Warning: Now has %u entries, may '
-                                  u'have been truncated - check and '
-                                  u'fix manually!') % max_lvl_size)
+            trunc_warn_msg = _("Warning: Now has %(max_ll_size)d entries, may "
+                               "have been truncated - check and fix manually!")
+            log(f'  * __{trunc_warn_msg}__' % {'max_ll_size': max_lvl_size})
 
     def _get_entries(self, target_list):
         return [list_entry.listId for list_entry in target_list.entries]
@@ -875,9 +870,9 @@ class FormIDListsPatcher(_AListsMerger):
     """Merges FormID lists."""
     patcher_order = 46
     _read_sigs = (b'FLST',)
-    _de_tag = u'Deflst'
-    _sig_to_label = {b'FLST': _(u'FormID')}
-    _de_re_header = _(u'Deflsters')
+    _de_tag = 'Deflst'
+    _sig_to_label = {b'FLST': 'FormID'}
+    _de_re_header = _('Deflsters')
     patcher_tags = {_de_tag}
 
     def _get_entries(self, target_list):
@@ -894,11 +889,11 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         self.raceData = defaultdict(dict) #--Race eye meshes, hair, eyes
 
     @classmethod
-    def _validate_mod(cls, p_file, src_fn, raise_on_error):
-        if sup := super()._validate_mod(p_file, src_fn, raise_on_error):
+    def _validate_mod(cls, p_file, src_fn, raise_on_errors):
+        if sup := super()._validate_mod(p_file, src_fn, raise_on_errors):
             if 'R.ChangeSpells' in (bashTags := p_file.all_tags[src_fn]) and \
                     'R.AddSpells' in bashTags:
-                if raise_on_error:
+                if raise_on_errors:
                     raise BPConfigError(f'WARNING mod {src_fn} has both '
                         f'R.AddSpells and R.ChangeSpells tags - only one of '
                         f'those tags should be on a mod at one time')

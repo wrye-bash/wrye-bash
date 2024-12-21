@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,7 +30,7 @@ from datetime import timedelta
 from .dialogs import DeleteBPPartsEditor
 from .. import balt, bass, bolt, bosh, bush, env, wrye_text
 from ..balt import Resources
-from ..bolt import GPath_no_norm, SubProgress
+from ..bolt import GPath_no_norm, RefrIn, SubProgress
 from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
     SkipError
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
@@ -72,7 +72,7 @@ class PatchDialog(DialogWindow):
         self.parent = parent
         self.bashed_patch = bashed_patch
         self.patchInfo = bashed_patch.fileInfo
-        title = _('Update ') + f'{self.patchInfo}'
+        title = _('Update %(bp_name)s') % {'bp_name': f'{self.patchInfo}'}
         super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
             sizes_dict=bass.settings)
         #--Data
@@ -170,12 +170,11 @@ class PatchDialog(DialogWindow):
         progress = None
         try:
             patch_name = self.patchInfo.fn_key
-            patch_size = self.patchInfo.fsize
             progress = balt.Progress(patch_name, abort=True)
             timer1 = time.time_ns()
             #--Save configs
             config = self.__config()
-            self.patchInfo.set_table_prop(u'bash.patch.configs', config)
+            self.patchInfo.set_table_prop('bash.patch.configs', config)
             #--Do it
             log = bolt.LogFile(io.StringIO())
             patchFile = self.bashed_patch
@@ -189,8 +188,9 @@ class PatchDialog(DialogWindow):
             # Convert masters to short fids
             master_dict = patchFile.used_masters_by_top()
             all_bp_masters = set()
+            mlimit = bush.game.Esp.master_limit
             for t_sig, t_masters in master_dict.items():
-                if len(t_masters) > bush.game.Esp.master_limit:
+                if len(t_masters) > mlimit:
                     showError(self, _(
                         'Congratulations on managing to get a single top '
                         'group to >%(max_num_masters)d masters (you got '
@@ -200,13 +200,13 @@ class PatchDialog(DialogWindow):
                         'would manage this. This error is fatal by the way, '
                         'Wrye Bash currently does not support splitting the '
                         'Bashed Patch within a top group.') % {
-                        'max_num_masters': bush.game.Esp.master_limit,
+                        'max_num_masters': mlimit,
                         'curr_num_masters': len(t_masters),
                         'top_group_sig': bolt.sig_to_str(t_sig)},
                         title=_('Achievement Unlocked: Modaholic!'))
                     return # Abort, we can't fix this right now
                 all_bp_masters |= t_masters
-            if len(all_bp_masters) <= bush.game.Esp.master_limit:
+            if len(all_bp_masters) <= mlimit:
                 # Everything is OK, just need to set masters and attributes
                 patchFile.set_attributes()
                 bp_files_to_save = [patchFile]
@@ -223,13 +223,6 @@ class PatchDialog(DialogWindow):
                     return # Abort, we can't fix this right now
                 for i, bp_file in enumerate(bp_files_to_save):
                     bp_file.set_attributes(was_split=True, split_part=i)
-                    # No need to link the parent to itself, of course
-                    if i > 0:
-                        # Store a raw string here so we avoid the
-                        # FName.__reduce__ stuff - this is a new format, so no
-                        # backwards compat concerns
-                        bp_file.fileInfo.set_table_prop('bp_split_parent',
-                            str(patch_name))
             parts_to_del = patchFile.find_unneded_parts(bp_files_to_save)
             if parts_to_del:
                 ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
@@ -237,7 +230,7 @@ class PatchDialog(DialogWindow):
                 if ed_ok and ed_parts:
                     patchFile.p_file_minfos.delete(ed_parts)
             #--Save
-            progress.setCancel(False, f'{patch_name}\n' + _(u'Saving...'))
+            progress.setCancel(False, f"{patch_name}\n{_('Saving…')}")
             progress(0.9)
             for bp_file in bp_files_to_save:
                 self._save_pbash(bp_file, patch_name)
@@ -282,25 +275,24 @@ class PatchDialog(DialogWindow):
                     readme = bass.dirs['saveBase'].join(readme.stail)
             readme_html = readme.root + u'.html'
             shown_log = readme_html if balt.web_viewer_available() else readme
-            for bp_file in bp_files_to_save:
-                bp_file.fileInfo.set_table_prop('doc', readme_html)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
             balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,
                           asDialog=True)
-            for bp_file in bp_files_to_save:
-                bp_fname = bp_file.fileInfo.fn_key
-                # We have to parse the new infos first, since the masters may
-                # differ. Most people probably don't keep BAIN packages of BPs,
-                # but *I* do, so...
-                info = bosh.modInfos.new_info(bp_fname, notify_bain=True)
-                if bp_fname == patch_name and info.fsize == patch_size:
-                    # Needed if size remains the same - mtime is set in
-                    # ModFile.safeSave which can't use setmtime(crc_changed),
-                    # as no info is there. In this case _reset_cache >
-                    # calculate_crc() would not detect the crc change. That's a
-                    # general problem with crc cache - API limits
-                    info.calculate_crc(recalculate=True)
-                self._bps.append(bp_fname)
+            # We have to parse the new infos first, since the masters may
+            # differ. Most people probably don't keep BAIN packages of BPs,
+            # but *I* do, so...
+            it = (bp_file.fileInfo.fn_key for bp_file in bp_files_to_save)
+            attrs = {patch_name: {'doc': readme_html}, **{bp: {'doc':readme_html,
+                # Store a raw string here to avoid the FName.__reduce__
+                # stuff - new setting, so no backwards compat concerns
+                # No need to link the parent to itself, of course
+               'bp_split_parent': str(patch_name)} for bp in it}}
+            # add the config on master patch so it is read afterwards
+            rinf = RefrIn.from_tabled_infos({patch_name: self.patchInfo},
+                                            exclude=True, extra_attrs=attrs)
+            self._bps.extend(attrs)
+            # We have to parse the new infos first since the masters may differ
+            bosh.modInfos.refresh(rinf)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
@@ -330,16 +322,21 @@ class PatchDialog(DialogWindow):
                 return
             except (CancelError, SkipError, PermissionError):
                 ##: Ugly warts below (see also FIXME above)
-                m = _('Bash encountered an error when saving %(patch_name)s.')
-                m += '\n\n' + _('Either Bash needs Administrator Privileges '
-                    'to save the file, or the file is in use by another '
-                    'process such as %(xedit_name)s.')
-                m += '\n' + _('Please close any program that is accessing '
-                    '%(patch_name)s, and provide Administrator Privileges if '
-                    'prompted to do so.') + '\n\n' + _('Try again?')
-                m %= {'patch_name': patch_name,
-                      'xedit_name': bush.game.Xe.full_name}
-                if askYes(self, m, _('Bashed Patch - Save Error')):
+                m = [_('Wrye Bash encountered an error when saving '
+                       '%(patch_name)s.'),
+                     '', '',
+                     _('Either Wrye Bash needs Administrator Privileges to '
+                       'save the file, or the file is in use by another '
+                       'process such as %(xedit_name)s.'),
+                     '',
+                     _('Please close any program that is accessing '
+                       '%(patch_name)s, and provide Administrator Privileges '
+                       'if prompted to do so.'),
+                     '', '',
+                     _('Try again?')]
+                msg = '\n'.join(m) % {'patch_name': patch_name,
+                                      'xedit_name': bush.game.Xe.full_name}
+                if askYes(self, msg, _('Bashed Patch - Save Error')):
                     continue
                 raise # will raise the SkipError which is correctly processed
 

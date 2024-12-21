@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,7 @@ _GOG_IDS = [1497007810]
 class _ANehrimGameInfo(AOblivionGameInfo):
     """GameInfo override for Nehrim: At Fate's Edge."""
     display_name = 'Nehrim'
-    game_icon = u'nehrim_%u.png'
+    game_icon = u'nehrim.svg'
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
     game_detect_includes = {'NehrimLauncher.exe'}

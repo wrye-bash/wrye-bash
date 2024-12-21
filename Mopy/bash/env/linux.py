@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -109,7 +109,7 @@ def _get_xdg_path(xdg_var: str) -> _Path | None:
     set, fall back to the corresponding legacy path. If that *also* doesn't
     exist, return None - user clearly has a weird, nonstandard Linux system and
     will have to use CLI or bash.ini to set the path."""
-    if xdg_val := os.environ.get(xdg_var):
+    if xdg_val := os.getenv(xdg_var):
         return _GPath(xdg_val)
     home_path = os.path.expanduser('~')
     # For this mapping, see:
@@ -144,7 +144,7 @@ def _get_steam_path() -> _Path | None:
 
 # API - Functions =============================================================
 ##: Several of these should probably raise instead
-def drive_exists(dir_path):
+def drive_exists(dir_path: _Path):
     """Check if a drive exists by trying to create a dir."""
     try:
         dir_path.makedirs() # exist_ok=True - will create the directories!
@@ -165,6 +165,11 @@ def get_gog_game_paths(_submod):
     # Lutris?)
     return []
 
+def get_disc_game_paths(_submod, _found_steam_paths, _found_gog_paths):
+    # We can't detect this on Linux because there's no registry to pull from,
+    # users will just have to tell us via -o/bash.ini
+    return []
+
 def get_legacy_ws_game_info(_submod):
     return _LegacyWinAppInfo() # no Windows Store on Linux
 
@@ -172,8 +177,8 @@ def get_ws_game_paths(_submod):
     return [] # no Windows Store on Linux
 
 def get_steam_game_paths(submod):
-    return [_GPath_no_norm(p) for p in
-            _parse_steam_manifests(submod, _get_steam_path())]
+    return [*map(_GPath_no_norm, _parse_steam_manifests(
+        submod, _get_steam_path()))]
 
 def get_personal_path(submod):
     if sys.platform == 'darwin':
@@ -191,7 +196,7 @@ def get_personal_path(submod):
 
 def get_local_app_data_path(submod):
     if sys.platform == 'darwin':
-        return _GPath(f'{os.path.expanduser("~")}/.local/share'), _(
+        return _GPath(os.path.expanduser("~/.local/share")), _(
             'Fallback to ~/.local/share)')
     if submod.St.steam_ids:
         # Let it blow if this is None - don't create random folders on Linux
@@ -227,8 +232,8 @@ def is_uac():
 def getJava():
     # Prefer the version indicated by JAVA_HOME
     try:
-        java_home = _GPath(os.environ[u'JAVA_HOME'])
-        java_bin_path = java_home.join(u'bin', u'java')
+        java_home = _GPath(os.environ['JAVA_HOME'])
+        java_bin_path = java_home.join('bin', 'java')
         if java_bin_path.is_file(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
@@ -266,22 +271,7 @@ def fixup_taskbar_icon():
     pass # Windows only
 
 def mark_high_dpi_aware():
-    pass ##: Equivalent on Linux? Not needed?
-
-def python_tools_dir():
-    # This is much more complicated on Linux than on Windows, since sys.prefix
-    # only points to /usr here, so is useless
-    for path_entry in sys.path:
-        tools_path = os.path.join(path_entry, u'Tools')
-        # Actually check for the files we really want
-        try_paths = [os.path.join(tools_path, u'i18n', x)
-                     for x in (u'msgfmt.py', u'pygettext.py')]
-        if all(os.path.isfile(p) for p in try_paths):
-            return tools_path
-    # Fall back on /usr/lib/python*.* - this should never happen
-    _deprint(u'Failed to find Python Tools dir on sys.path')
-    return f'/usr/lib/python{sys.version_info.major:d}.' \
-           f'{sys.version_info.minor:d}'
+    pass # Windows only
 
 def convert_separators(p):
     return p.replace(u'\\', u'/')

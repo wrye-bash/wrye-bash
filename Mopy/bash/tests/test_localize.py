@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -40,7 +40,6 @@ class TestLocalize:
         with capsys.disabled():
             print(f'\n\n******* Testing {loc=} *******')
             print(f'getlocale: {locale.getlocale()}')
-            print(f'getdefaultlocale: {locale.getdefaultlocale()}')
             wx_locale = setup_locale(loc, _wx)
             # getlocale = locale.getlocale()
             # print(getlocale)

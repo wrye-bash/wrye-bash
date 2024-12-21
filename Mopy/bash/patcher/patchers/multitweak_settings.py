@@ -16,12 +16,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module contains oblivion multitweak item patcher classes that belong
-to the Settings Multitweaker - as well as the tweaker itself."""
+"""This module contains tweak classes that belong to Tweak Settings and so
+alter GMST and GLOB records - as well as the tweaker itself."""
 from __future__ import annotations
 
 from .base import CustomChoiceTweak, MultiTweaker, MultiTweakItem
@@ -50,8 +50,9 @@ class _AGlobalsTweak(_ASettingsTweak, CustomChoiceTweak):
         record.global_value = self.chosen_value
 
     def tweak_log(self, log, count):
-        log(u'* ' + _(u'%s set to: %4.2f') % (
-            self.tweak_name, self.chosen_value))
+        log('* ' + _('%(global_tweak_name)s set to %(global_tweak_value)s') % {
+            'global_tweak_name': self.tweak_name,
+            'global_tweak_value': f'{self.chosen_value:4.2f}'})
 
 #------------------------------------------------------------------------------
 class GlobalsTweak_Timescale(_AGlobalsTweak):
@@ -129,6 +130,36 @@ class _AGmstTweak(_ASettingsTweak):
     tweak_read_classes = b'GMST',
     _eid_was_itpo: dict[str, bool]
 
+    def __init__(self, bashed_patch):
+        super().__init__(bashed_patch)
+        eid_to_type = {}
+        # Validate the data types of each choice's values
+        for target_eid in self.chosen_eids:
+            match target_eid[0]:
+                case 'b':
+                    wanted_type = bool
+                case 'f':
+                    wanted_type = float
+                case 'i':
+                    wanted_type = int
+                case 's':
+                    wanted_type = str
+                case _:
+                    raise NotImplementedError(
+                        f'_AGmstTweak cannot handle GMSTs starting with '
+                        f'"{target_eid[0]}" right now')
+            eid_to_type[target_eid] = wanted_type
+        for possible_choice in self.tweak_choices:
+            choice_label, *choice_values = possible_choice
+            for i, (curr_eid, wanted_type) in enumerate(eid_to_type.items()):
+                actual_value = choice_values[i]
+                if not isinstance(actual_value, wanted_type):
+                    self._raise_tweak_syntax_error(
+                        f'Illegal tweak_choices: value "{actual_value}" from '
+                        f'choice "{choice_label}" should have type '
+                        f'{wanted_type.__name__}, since the GMST ID is '
+                        f'{curr_eid} (starts with "{curr_eid[0]}")')
+
     @property
     def chosen_eids(self):
         return ((self.tweak_key,), self.tweak_key)[isinstance(self.tweak_key,
@@ -167,11 +198,14 @@ class _AGmstTweak(_ASettingsTweak):
                 if not isinstance(target_value, str) and target_value < 0:
                     return _("Oblivion GMST values can't be negative")
         for target_eid, target_value in zip(self.chosen_eids, chosen_values):
-            if target_eid.startswith(u'f') and not isinstance(
-                    target_value, float):
-                    return _("The value chosen for GMST '%s' must be a float, "
-                             "but is currently of type %s (%s).") % (
-                        target_eid, type(target_value).__name__, target_value)
+            if (target_eid.startswith('f') and
+                    not isinstance(target_value, float)):
+                msg = _("The value chosen for GMST '%(gmst_eid)s' must be a "
+                        "float, but is currently of type %(actual_type)s "
+                        "(%(actual_value)s).")
+                return msg % {'gmst_eid': target_eid,
+                              'actual_type': type(target_value).__name__,
+                              'actual_value': target_value}
         return super().validate_values(chosen_values)
 
     def wants_record(self, record):
@@ -196,15 +230,15 @@ class _AGmstTweak(_ASettingsTweak):
             chosen_label = self.choiceLabels[self.chosen]
             if chosen_label == self.custom_choice:
                 if isinstance(self.chosen_values[0], str):
-                    log(u'* %s: %s %s' % (self.tweak_name, chosen_label,
-                                          self.chosen_values[0]))
+                    log(f'* {self.tweak_name}: {chosen_label} '
+                        f'{self.chosen_values[0]}')
                 else:
-                    log(u'* %s: %s %4.2f' % (self.tweak_name, chosen_label,
-                                             self.chosen_values[0]))
+                    log(f'* {self.tweak_name}: {chosen_label} '
+                        f'{self.chosen_values[0]:4.2f}')
             else:
-                log(u'* %s: %s' % (self.tweak_name, chosen_label))
+                log(f'* {self.tweak_name}: {chosen_label}')
         else:
-            log(u'* ' + self.tweak_name)
+            log(f'* {self.tweak_name}')
 
     def finish_tweaking(self, patch_file):
         # Create new records for any remaining EDIDs
@@ -228,7 +262,7 @@ class _AMsgTweak(_AGmstCCTweak):
     """Base class for GMST tweaks in the Msg: category."""
     tweak_choices = [(_(u'None'),           u' '),
                      (u'.',                 u'.'),
-                     (_(u'Hmm...'), _(u'Hmm...'))]
+                     (_('Hmm…'),       _('Hmm…'))]
     default_choice = _(u'None')
 
 class _AAllowTweak(_AGmstTweak):
@@ -359,8 +393,8 @@ class GmstTweak_Camera_ChaseTightness(_AGmstCCTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_Camera_ChaseDistance(_AGmstCCTweak):
     tweak_name = _(u'Camera: Chase Distance')
-    tweak_tip = _(u'Distance camera can be moved away from PC using mouse '
-                  u'wheel.')
+    tweak_tip = _('How far camera the can be moved away from the player '
+                  'using the mouse wheel.')
     tweak_key = (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond',
                  u'fVanityModeWheelMult')
     tweak_choices = [(u'x1.5', 900.0, 450.0, 0.15),
@@ -479,7 +513,7 @@ class GmstTweak_Player_HorseTurningSpeed(_AGmstTweak):
 
 #------------------------------------------------------------------------------
 class GmstTweak_Camera_PCDeathTime(_AGmstCCTweak):
-    tweak_name = _(u'Camera: PC Death Time')
+    tweak_name = _('Camera: Player Death Time')
     tweak_tip = _(u"Time after player's death before the last save is "
                   u"loaded/the reload menu appears.")
     tweak_key = (u'fPlayerDeathReloadTime',)
@@ -953,35 +987,44 @@ class GmstTweak_Combat_MaximumArmorRating_Tes5(
 
 #------------------------------------------------------------------------------
 class GmstTweak_Warning_InteriorDistanceToHostiles(_AGmstCCUnitsTweak):
-    tweak_name = _(u'Warning: Interior Distance To Hostiles')
-    tweak_tip = _(u'The minimum distance hostile actors have to be to be '
-                  u'allowed to sleep, travel etc, when inside interiors.')
-    tweak_key = (u'fHostileActorInteriorDistance',)
-    tweak_choices = [(u'10',     10.0),
-                     (u'100',   100.0),
-                     (u'500',   500.0),
-                     (u'1000', 1000.0),
-                     (u'2000', 2000.0),
-                     (u'3000', 3000.0),
-                     (u'4000', 4000.0)]
-    default_choice = u'2000'
+    tweak_name = _('Warning: Interior Distance To Hostiles')
+    tweak_tip = _('The minimum distance hostile actors have to be to be '
+                  'allowed to sleep, travel etc, when inside interiors.')
+    tweak_key = ('fHostileActorInteriorDistance',)
+    tweak_choices = [('10',     10.0),
+                     ('100',   100.0),
+                     ('500',   500.0),
+                     ('1000', 1000.0),
+                     ('2000', 2000.0),
+                     ('3000', 3000.0),
+                     ('4000', 4000.0)]
+    default_choice = '2000'
+
+class GmstTweak_Warning_InteriorDistanceToHostiles_Fo4(
+    GmstTweak_Warning_InteriorDistanceToHostiles):
+    default_choice = '1000'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Warning_ExteriorDistanceToHostiles(_AGmstCCUnitsTweak):
-    tweak_name = _(u'Warning: Exterior Distance To Hostiles')
-    tweak_tip = _(u'The minimum distance hostile actors have to be to be '
-                  u'allowed to sleep, travel etc, when outside.')
-    tweak_key = (u'fHostileActorExteriorDistance',)
-    tweak_choices = [(u'10',     10.0),
-                     (u'100',   100.0),
-                     (u'500',   500.0),
-                     (u'1000', 1000.0),
-                     (u'2000', 2000.0),
-                     (u'3000', 3000.0),
-                     (u'4000', 4000.0),
-                     (u'5000', 5000.0),
-                     (u'6000', 6000.0)]
-    default_choice = u'3000'
+    tweak_name = _('Warning: Exterior Distance To Hostiles')
+    tweak_tip = _('The minimum distance hostile actors have to be to be '
+                  'allowed to sleep, travel etc, when outside.')
+    tweak_key = ('fHostileActorExteriorDistance',)
+    tweak_choices = [('10',     10.0),
+                     ('100',   100.0),
+                     ('500',   500.0),
+                     ('1000', 1000.0),
+                     ('1500', 1500.0),
+                     ('2000', 2000.0),
+                     ('3000', 3000.0),
+                     ('4000', 4000.0),
+                     ('5000', 5000.0),
+                     ('6000', 6000.0)]
+    default_choice = '3000'
+
+class GmstTweak_Warning_ExteriorDistanceToHostiles_Fo4(
+    GmstTweak_Warning_ExteriorDistanceToHostiles):
+    default_choice = '1500'
 
 #------------------------------------------------------------------------------
 class GmstTweak_UOPVampireAgingAndFaceFix(_AGmstTweak):
@@ -1919,6 +1962,85 @@ class GmstTweak_LevelUp_SkillCount(_AGmstCCTweak):
                      (u'10', 10),
                      (u'20', 20)]
     default_choice = u'10'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_TrainingCostMultiplier(_AGmstCCTweak):
+    tweak_name = _('Actor: Training Cost Multiplier')
+    tweak_tip = _('The multiplier by which to increase training costs.')
+    tweak_key = ('fTrainingMultCost',)
+    tweak_choices = [('x1',   1.0),
+                     ('x5',   5.0),
+                     ('x10', 10.0),
+                     ('x20', 20.0)]
+    default_choice = 'x10'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_ExpertCostMultiplier(_AGmstCCTweak):
+    tweak_name = _('Actor: Expert Training Cost Multiplier')
+    tweak_tip = _('The multiplier by which to increase Expert level training '
+                  'costs.')
+    tweak_key = ('iTrainingExpertCost',)
+    tweak_choices = [('x1', 1),
+                     ('x2', 2),
+                     ('x3', 3),
+                     ('x5', 5)]
+    default_choice = 'x3'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Actor_MasterCostMultiplier(_AGmstCCTweak):
+    tweak_name = _('Actor: Master Training Cost Multiplier')
+    tweak_tip = _('The multiplier by which to increase Master level training '
+                  'costs.')
+    tweak_key = ('iTrainingMasterCost',)
+    tweak_choices = [('x1',   1),
+                     ('x3',   5),
+                     ('x5',   5),
+                     ('x10', 10)]
+    default_choice = 'x5'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeAverage(_AGmstCCTweak):
+    tweak_name = _('Combat: Block Time (Average)')
+    tweak_tip = _('The average time for which NPCs will keep their shield '
+                  'raised or block with their weapon during combat.')
+    tweak_key = ('fCombatBlockTimeMid',)
+    tweak_choices = [(_('2.5 Seconds'), 2.5),
+                     (_('4 Seconds'),   4.0),
+                     (_('8 Seconds'),   8.0),
+                     (_('12 Seconds'), 12.0),
+                     (_('16 Seconds'), 16.0)]
+    default_choice = _('8 Seconds')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeMaximum(_AGmstCCSecondsTweak):
+    tweak_name = _('Combat: Block Time (Maximum)')
+    tweak_tip = _('The maximum time for which NPCs will keep their shield '
+                  'raised or block with their weapon during combat.')
+    tweak_key = ('fCombatBlockTimeMax',)
+    tweak_choices = [(_('5 Seconds'),      5.0),
+                     (_('10 Seconds'),    10.0),
+                     (_('16 Seconds'),    16.0),
+                     (_('1 Minute'),      60.0),
+                     (_('Unlimited'),  10000.0)]
+    default_choice = _('16 Seconds')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeMaximum_Tes5(
+    GmstTweak_Combat_BlockTimeMaximum):
+    default_choice = _('Unlimited') # Nice one, Bethesda
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCTweak):
+    tweak_name = _('Combat: Block Time (Minimum)')
+    tweak_tip = _('The minimum time for which NPCs will keep their shield '
+                  'raised or block with their weapon during combat.')
+    tweak_key = ('fCombatBlockTimeMin',)
+    tweak_choices = [(_('1.5 Seconds'), 1.5),
+                     (_('2 Seconds'),   2.0),
+                     (_('4 Seconds'),   4.0),
+                     (_('8 Seconds'),   8.0),
+                     (_('12 Seconds'), 12.0)]
+    default_choice = _('4 Seconds')
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -31,7 +31,7 @@ from .. import bass, bolt, bosh, bush, load_order
 from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, text_wrap
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
     ListBox, Links, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, \
@@ -118,9 +118,8 @@ class _PatcherPanel(object):
 
         Called in basher.patcher_dialog.PatchDialog#__init__, before the
         dialog is shown, to update the patch options based on the previous
-        config for this patch stored in modInfos.table[patch][
-        'bash.patch.configs']. If no config is saved then the class
-        default_XXX values are used for the relevant attributes."""
+        config for this patch loaded via get_table_prop('bash.patch.configs').
+        Fallback to default_XXX class vars for missing config entries."""
         # Remember whether we were present in the config for bolding later
         self._was_present = self.__class__._config_key in configs
         config = (configs[self.__class__._config_key]
@@ -146,9 +145,9 @@ class _PatcherPanel(object):
         if ckey not in config or not (conf := config[ckey]).get('isEnabled'):
             return
         humanName = self.__class__.patcher_name
-        log.setHeader(u'== ' + humanName)
-        clip.write(u'\n')
-        clip.write(u'== ' + humanName + u'\n')
+        log.setHeader(f'== {humanName}')
+        clip.write('\n')
+        clip.write(f'== {humanName}\n')
         self._log_config(conf, config, clip, log)
 
     def _log_config(self, conf, config, clip, log):
@@ -432,20 +431,8 @@ class _ListPatcherPanel(_PatcherPanel):
             self._update_manual_buttons()
 
     def OnAdd(self):
-        """Add button clicked."""
-        srcDir = bosh.modInfos.store_dir
-        wildcard = bosh.modInfos.plugin_wildcard()
-        #--File dialog
-        title = _('Get ') + self._list_label
-        srcPaths = FileOpenMultiple.display_dialog(self.gConfigPanel, title,
-                                                   srcDir, u'', wildcard)
-        if not srcPaths: return
-        #--Get new items
-        for srcPath in srcPaths:
-            folder, fname = srcPath.headTail
-            if folder == srcDir and (fn := FName(fname.s)) not in \
-                    self.configItems: self.configItems.append(fn)
-        self._sort_and_update_items(self.configItems)
+        """Add button clicked - _ListsMergerPanel only."""
+        raise NotImplementedError
 
     def OnRemove(self):
         """Remove button clicked."""
@@ -718,7 +705,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             def _check(self): return self.index == tweak.chosen
             def Execute(self): _self.tweak_choice(self.index, tweakIndex)
         class _ValueLinkCustom(_ValueLink):
-            def Execute(self): _self.tweak_custom_choice(self.index,tweakIndex)
+            def Execute(self):
+                _self.tweak_custom_choice(self.index, tweakIndex)
         for index, itm_txt in enumerate(choiceLabels):
             if itm_txt == '----':
                 links.append_link(SeparatorLink())
@@ -739,13 +727,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         # wx.EVT_CHECKLISTBOX is NOT fired so this line is needed (?)
         self.TweakOnListCheck()
 
-    _msg = _(u'Enter the desired custom tweak value.') + u'\n' + _(
-        u'Due to an inability to get decimal numbers from the wxPython '
-        u'prompt please enter an extra zero after your choice if it is not '
-        u'meant to be a decimal.') + u'\n' + _(
-        u'If you are trying to enter a decimal multiply it by 10, '
-        u'for example for 0.3 enter 3 instead.')
-
     def tweak_custom_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
         tweak = self._curr_tweaks[tweakIndex]
@@ -759,18 +740,22 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 ##: Mirrors chosen_eids, but all this is hacky - we should
                 # enforce that keys for settings tweaks *must* be tuples and
                 # then get rid of this
-                key_display = u'\n\n' + tweak.tweak_key[i] if isinstance(
+                key_display = tweak.tweak_key[i] if isinstance(
                     tweak.tweak_key, tuple) else tweak.tweak_key
+                default_tweak_fmt = ' ' + _('(Default: %(default_tweak_val)s)')
             else:
-                key_display = u''
+                key_display = ''
+                default_tweak_fmt = _('Default: %(default_tweak_val)s')
+            default_tweak_fmt %= {'default_tweak_val': v}
             if isinstance(v, float):
-                msg = (_('Enter the desired custom tweak value.') + '\n\n' + _(
-                    'Note: A floating point number is expected here.'))
-                msg = f'{msg}{key_display}'
+                msg = (f'{_('Enter the desired custom tweak value.')}\n\n'
+                       f'{_('Note: A floating point number is expected '
+                            'here.')}\n\n{key_display}{default_tweak_fmt}')
                 while new is None: # keep going until user entered valid float
                     new = askText(self.gConfigPanel, msg,
-                           title=tweak.tweak_name + _(' - Custom Tweak Value'),
-                           default_txt=str(tweak.choiceValues[index][i]))
+                        title=_('%(tweak_title)s - Custom Tweak Value') % {
+                            'tweak_title': tweak.tweak_name},
+                        default_txt=str(tweak.choiceValues[index][i]))
                     if new is None: #user hit cancel
                         return
                     try:
@@ -778,25 +763,33 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                         new = None # Reset, we may have a multi-key tweak
                         break
                     except ValueError:
-                        ermsg = _("'%s' is not a valid floating point number."
-                                  ) % new
-                        showError(self.gConfigPanel, ermsg,
-                                  title=tweak.tweak_name + _(' - Error'))
+                        msg = _("'%(invalid_float)s' is not a valid floating "
+                                "point number.") % {'invalid_float': new}
+                        showError(self.gConfigPanel, msg,
+                                  title=_('%(tweak_title)s - Error') % {
+                                      'tweak_title': tweak.tweak_name})
                         new = None # invalid float, try again
             elif isinstance(v, int):
-                msg = _('Enter the desired custom tweak value.') + key_display
+                msg = (f"{_('Enter the desired custom tweak value.')}\n\n"
+                       f"{key_display}{default_tweak_fmt}")
                 new = askNumber(self.gConfigPanel, msg, prompt=_('Value'),
-                    title=tweak.tweak_name + _(' - Custom Tweak Value'),
+                    title=_('%(tweak_title)s - Custom Tweak Value') % {
+                        'tweak_title': tweak.tweak_name},
                     initial_num=tweak.choiceValues[index][i], min_num=-10000,
                     max_num=10000)
                 if new is None: #user hit cancel
                     return
                 values.append(new)
             elif isinstance(v, str):
-                msg = _(u'Enter the desired custom tweak text.') + key_display
+                msg = (f"{_('Enter the desired custom tweak text.')}\n\n"
+                       f"{key_display}{default_tweak_fmt}")
+                # Don't strip - at least for Tweak Names, custom choices with
+                # trailing whitespace are necessary (e.g. consider a custom
+                # choice '%s* ', which renames 'Fireball' to 'D* Fireball')
                 new = askText(self.gConfigPanel, msg,
-                    title=tweak.tweak_name + _(' - Custom Tweak Text'),
-                    default_txt=tweak.choiceValues[index][i], strip=False) ##: strip ?
+                    title=_('%(tweak_title)s - Custom Tweak Text') % {
+                        'tweak_title': tweak.tweak_name},
+                    default_txt=tweak.choiceValues[index][i], strip=False)
                 if new is None: #user hit cancel
                     return
                 values.append(new)
@@ -815,7 +808,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             # The tweak doesn't like the values the user chose, let them know
             error_header = tweak.validation_error_header(values) + '\n\n'
             showError(self.gConfigPanel, error_header + validation_error,
-                      title=_('%s - Error') % tweak.tweak_name)
+                title=_('%(tweak_title)s - Error') % {
+                    'tweak_title': tweak.tweak_name})
 
     def mass_select(self, select=True):
         """'Select All' or 'Deselect All' button was pressed, update all
@@ -884,12 +878,9 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         return config
 
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
-    listLabel = _('Override Delev/Relev Tags')
-
+    _add_dialog_title: str
     #--Config Phase -----------------------------------------------------------
     forceAuto = False
-    forceItemCheck = True #--Force configChecked to True for all items
-    choiceMenu = (u'Auto', u'----', u'Delev', u'Relev')
     # CONFIG DEFAULTS
     default_isEnabled = True
     selectCommands = False
@@ -930,6 +921,20 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         for mod in self._bp.all_plugins:
             self._get_set_choice(mod)
         return super()._get_auto_items()
+
+    def OnAdd(self):
+        srcDir = bosh.modInfos.store_dir
+        wildcard = bosh.modInfos.plugin_wildcard()
+        #--File dialog
+        srcPaths = FileOpenMultiple.display_dialog(self.gConfigPanel,
+            self._add_dialog_title, srcDir, '', wildcard)
+        if not srcPaths: return
+        #--Get new items
+        for srcPath in srcPaths:
+            folder, fname = srcPath.headTail
+            if folder == srcDir and (fn := FName(fname.s)) not in \
+                    self.configItems: self.configItems.append(fn)
+        self._sort_and_update_items(self.configItems)
 
     def ShowChoiceMenu(self, itemIndex):
         """Displays a popup choice menu if applicable.
@@ -1280,28 +1285,32 @@ class _AListsMerger(_ListsMergerPanel):
                                  defaultdict(tuple, self.configChoices))
 
 class LeveledLists(_AListsMerger):
-    patcher_name = _(u'Leveled Lists')
-    patcher_desc = u'\n\n'.join([
+    patcher_name = _('Leveled Lists')
+    patcher_desc = '\n\n'.join([
         _('Merges changes to leveled lists from all active and/or merged '
           'plugins.'),
-        _(u'Advanced users may override Relev/Delev tags for any mod (active '
-          u'or inactive) using the list below.')])
-    _config_key = u'ListsMerger'
+        _('Advanced users may override Relev/Delev tags for any mod (active '
+          'or inactive) using the list below.')])
+    _config_key = 'ListsMerger'
     patcher_type = mergers.LeveledListsPatcher
+    listLabel = _('Override Delev/Relev Tags')
+    _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
+    forceItemCheck = True #--Force configChecked to True for all items
+    choiceMenu = ('Auto', '----', 'Delev', 'Relev')
     show_empty_sublist_checkbox = True
 
 class FormIDLists(_AListsMerger):
-    patcher_name = _(u'FormID Lists')
-    patcher_desc = u'\n\n'.join([
+    patcher_name = _('FormID Lists')
+    patcher_desc = '\n\n'.join([
         _('Merges changes to FormID lists from all active and/or merged '
           'plugins.'),
-        _(u'Advanced users may override Deflst tags for any mod (active or '
-          u'inactive) using the list below.')])
-    _config_key = u'FidListsMerger'
+        _('Advanced users may override Deflst tags for any mod (active or '
+          'inactive) using the list below.')])
+    _config_key = 'FidListsMerger'
     patcher_type = mergers.FormIDListsPatcher
-    listLabel = _('Override Deflst Tags')
-    forceItemCheck = False #--Force configChecked to True for all items
-    choiceMenu = (u'Auto', u'----', u'Deflst')
+    listLabel = _('Override Deflst Tag')
+    _add_dialog_title = _('Add Deflst Tag to Plugin')
+    choiceMenu = ('Auto', '----', 'Deflst')
     # CONFIG DEFAULTS
     default_isEnabled = False
 

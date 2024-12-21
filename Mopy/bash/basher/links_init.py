@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,9 +25,10 @@ attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 import os
 import shlex
+from itertools import chain
 
-from . import BSAList, INIList, InstallersList, \
-    InstallersPanel, MasterList, ModList, SaveList, ScreensList
+from . import BSAList, INIList, InstallersList, InstallersPanel, MasterList, \
+    ModList, SaveList, ScreensList
 # modules below define the __all__ directive
 from .app_buttons import *
 from .bsa_links import *
@@ -48,7 +49,6 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
 from ..bolt import os_name
 from ..env import init_app_links
-from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
 from ..gui import GuiImage, get_image
 
@@ -70,13 +70,13 @@ def InitStatusBar():
     all_links = [
         obse_button,
         AutoQuitButton('AutoQuit'),
-        GameButton(_png_list(f'games/{bush.game.game_icon}'))
+        GameButton(_svg_list(f'games/{bush.game.game_icon}'))
     ]
     all_xes = dict.fromkeys( # keep order to not reorder much
         game_class.Xe.full_name for game_class in PatchGame.supported_games())
     xe_images = _png_list('tools/tes4edit%s.png')
     def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
-        app_launcher, tooltip_str, path_kwargs, *cli_args = app_path_data
+        app_launcher, app_name, path_kwargs, *cli_args = app_path_data
         uid = kwargs.setdefault('uid', app_key)
         if app_key in {'Steam', 'LOOT'}:
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
@@ -90,11 +90,10 @@ def InitStatusBar():
         if cli_args: # for tools defined in constants.py and TES4View/Trans
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
-            list_img, tooltip_str, **kwargs)
+            list_img, app_name, **kwargs)
     all_links.append(_tool_args(None, (bush.game.Ck.exe,
-            _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name},
-            {'root_dirs': 'app'}), clazz=TESCSButton, uid='TESCS',
-            display_launcher=bool(bush.game.Ck.ck_abbrev)))
+            bush.game.Ck.long_name, {'root_dirs': 'app'}), clazz=TESCSButton,
+        uid='TESCS', display_launcher=bool(bush.game.Ck.ck_abbrev)))
     # Launchers of tools ------------------------------------------------------
     all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
                      in oblivion_tools.items())
@@ -105,24 +104,24 @@ def InitStatusBar():
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
     # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
-        args = f'{xe_name}.exe', _('Launch %s') % xe_name, {'root_dirs': 'app'}
+        args = (f'{xe_name}.exe', xe_name, {'root_dirs': 'app'})
         all_links.append(_tool_args(f'{xe_name}Path', args, uid=xe_name,
             display_launcher=bush.game.Xe.full_name == xe_name,
             cli_args=(f'-{xe_name[:-4]}', '-edit'), clazz=AppXEdit))
         if xe_name == 'TES4Edit':
             # set the paths for TES4Trans/TES4View, supposing they are in the
             # same folder with TES4Edit - these are not specified in the ini
-            tes4_edit_dir = all_links[-1].exePath.head
-            args = 'TES4View.exe', _('Launch TES4View'), {
+            tes4_edit_dir = all_links[-1].app_path.head
+            args = 'TES4View.exe', 'TES4View', {
                 'root_dirs': tes4_edit_dir}, '-TES4', '-view'
             all_links.append(_tool_args('TES4ViewPath', args, uid='TES4View',
                 display_launcher=_is_oblivion, clazz=AppXEdit))
-            args = 'TES4Trans.exe', _('Launch TES4Trans'), {
+            args = 'TES4Trans.exe', 'TES4Trans', {
                 'root_dirs': tes4_edit_dir}, '-TES4', '-translate'
             all_links.append(_tool_args('TES4TransPath', args, uid='TES4Trans',
                 display_launcher=_is_oblivion, clazz=AppXEdit))
     all_links.append(  #Tes4LODGen
-        _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', _('Launch Tes4LODGen'),
+        _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', 'Tes4LODGen',
             {'root_dirs': 'app'}), clazz=AppXEdit, uid='TES4LODGen',
             display_launcher=_is_oblivion, cli_args=('-TES4', '-lodgen')))
     all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
@@ -140,7 +139,7 @@ def InitStatusBar():
         'ShowAudioToolLaunchers']) for at in audio_tools.items())
     all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
     #--Custom Apps
-    for pth, img_path, shortcut_descr in init_app_links(
+    for pth, img_path, shortcut_desc in init_app_links(
             bass.dirs['mopy'].join('Apps')):
         if img_path is None:
             imgs = badIcons # use the 'x' icon
@@ -149,7 +148,7 @@ def InitStatusBar():
                     zip((16, 24, 32), img_path)]
         #target.stail would keep the id on renaming the .lnk but this is unique
         app_key = pth.stail.lower()
-        all_links.append(LnkButton(pth, imgs, shortcut_descr, app_key,
+        all_links.append(LnkButton(pth, imgs, shortcut_desc, app_key,
                                    canHide=False))
     #--Final couple
     all_links.append(DocBrowserButton('DocBrowser'))
@@ -247,7 +246,7 @@ def InitInstallerLinks():
     #--Item links
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append_link(Installer_Open())
+        file_menu.links.append_link(UIList_OpenItems())
         file_menu.links.append_link(UIList_Rename())
         file_menu.links.append_link(Installer_Duplicate())
         file_menu.links.append_link(Installer_Hide())
@@ -263,8 +262,7 @@ def InitInstallerLinks():
     InstallersList.context_links.append_link(SeparatorLink())
     InstallersList.context_links.append_link(Installer_OpenReadme())
     InstallersList.context_links.append_link(Installer_Anneal())
-    InstallersList.context_links.append_link(
-        Installer_Refresh(calculate_projects_crc=False))
+    InstallersList.context_links.append_link(Installer_QuickRefresh())
     InstallersList.context_links.append_link(Installer_Move())
     InstallersList.context_links.append_link(Installer_SyncFromData())
     InstallersList.context_links.append_link(SeparatorLink())
@@ -417,7 +415,7 @@ def InitINILinks():
     #--Item menu
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append_link(INI_Open())
+        file_menu.links.append_link(UIList_OpenItems())
         file_menu.links.append_link(File_Duplicate())
         file_menu.links.append_link(UIList_Delete())
         INIList.context_links.append_link(file_menu)
@@ -473,6 +471,10 @@ def InitModLinks():
         lo_menu.links.append_link(SeparatorLink())
         lo_menu.links.append_link(Mods_LockActivePlugins())
         lo_menu.links.append_link(SeparatorLink())
+        lo_menu.links.append_link(Mods_LOExport())
+        lo_menu.links.append_link(Mods_LOImport())
+        lo_menu.links.append_link(Mods_LOImportFromOBMM())
+        lo_menu.links.append_link(SeparatorLink())
         lo_menu.links.append_link(Mods_OpenLOFileMenu())
         ModList.column_links.append_link(lo_menu)
         ModList.column_links.append_link(SeparatorLink())
@@ -521,8 +523,8 @@ def InitModLinks():
         file_menu.links.append_link(File_Backup())
         file_menu.links.append_link(File_RevertToBackup())
         file_menu.links.append_link(SeparatorLink())
-        file_menu.links.append_link(File_Snapshot())
-        file_menu.links.append_link(File_RevertToSnapshot())
+        file_menu.links.append_link(Mod_Snapshot())
+        file_menu.links.append_link(Mod_RevertToSnapshot())
         ModList.context_links.append_link(file_menu)
     ModList.context_links.append_link(SeparatorLink())
     ModList.context_links.append_link(Mod_Move())
@@ -548,11 +550,8 @@ def InitModLinks():
         ModList.context_links.append_link(Mod_CheckQualifications())
         ModList.context_links.append_link(Mod_RebuildPatch())
         ModList.context_links.append_link(SeparatorLink())
-        ModList.context_links.append_link(Mod_FlipEsm())
-        if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipEsl())
-        if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append_link(Mod_FlipOverlay())
+        for pflag in chain(*reversed(bush.game.all_flags)):
+            ModList.context_links.append_link(AFlipFlagLink(pflag))
         ModList.context_links.append_link(Mod_FlipMasters())
         ModList.context_links.append_link(Mod_CreateDummyMasters())
     ModList.context_links.append_link(SeparatorLink())
@@ -664,6 +663,10 @@ def InitModLinks():
     lo_submenu = MenuLink(_('Load Order..'))
     lo_submenu.links.append_link(Mods_LOUndo())
     lo_submenu.links.append_link(Mods_LORedo())
+    lo_submenu.links.append_link(SeparatorLink())
+    lo_submenu.links.append_link(Mods_LOExport())
+    lo_submenu.links.append_link(Mods_LOImport())
+    lo_submenu.links.append_link(Mods_LOImportFromOBMM())
     lo_submenu.links.append_link(SeparatorLink())
     lo_submenu.links.append_link(Mods_OpenLOFileMenu())
     edit_menu.append_link(lo_submenu)
@@ -852,8 +855,8 @@ def InitScreenLinks():
         ScreensList.column_links.append_link(files_menu)
     ScreensList.column_links.append_link(SeparatorLink())
     ScreensList.column_links.append_link(Screens_NextScreenShot())
-    if True: #--JPEG Quality
-        qualityMenu = MenuLink(_('JPEG Quality..'))
+    if True: #--JPG Quality
+        qualityMenu = MenuLink(_('JPG Quality..'))
         for i in range(100, 80, -5):
             qualityMenu.links.append_link(Screens_JpgQuality(i))
         qualityMenu.links.append_link(Screens_JpgQualityCustom())
@@ -889,10 +892,10 @@ def InitScreenLinks():
     # Settings Menu
     settings_menu = ScreensList.global_links[_('Settings')]
     settings_menu.append_link(Screens_NextScreenShot())
-    jpeg_quality_menu = MenuLink(_('JPEG Quality..'))
+    jpg_quality_menu = MenuLink(_('JPG Quality..'))
     for i in range(100, 80, -5):
-        jpeg_quality_menu.links.append_link(Screens_JpgQuality(i))
-    jpeg_quality_menu.links.append_link(Screens_JpgQualityCustom())
+        jpg_quality_menu.links.append_link(Screens_JpgQuality(i))
+    jpg_quality_menu.links.append_link(Screens_JpgQualityCustom())
     settings_menu.append_link(qualityMenu)
     settings_menu.append_link(SeparatorLink())
     ScreensList.global_links[_('Settings')].append_link(Misc_SettingsDialog())

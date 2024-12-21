@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,32 +24,30 @@
 """This module contains some constants ripped out of basher.py"""
 from .. import bush
 from ..bolt import GPath
-from ..game import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck
 from ..gui import DEFAULT_POSITION
+
+# some repetitive strings
+_mod_tab = _('Tabs: Mods') + '\n\n'
+_mod_save_tabs = _('Tabs: Mods, Saves') + '\n\n'
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
     'default.text': (_('Default Text'),
         _('This is the text color used for list items when no other is '
-          'specified.  For example, an ESP that is not mergeable or ghosted, '
+          'specified. For example, an ESP that is not mergeable or ghosted, '
           'and has no other problems.'),
     ),
     'default.bkgd': (_('Default Background'),
         _('This is the text background color used for list items when no '
-          'other is specified.  For example, an ESM that is not ghosted.'),
+          'other is specified. For example, an ESM that is not ghosted.'),
     ),
     'default.warn': (_('Default Warning'),
         _('This is the color used for text that is communicating some sort '
           'of warning or error.'),
     ),
-    'mods.text.esm': (_('ESM'),
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESMs on the Mods Tab, and in the '
-          'Masters info on both the Mods Tab and Saves Tab.'),
-    ),
-    'mods.bkgd.ghosted': (_('Ghosted Plugin'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a ghosted plugin.'),
+    'mods.bkgd.ghosted': (_('Ghosted Plugin'), _mod_tab + _(
+        'This is the background color used for a ghosted plugin.')
     ),
     'ini.bkgd.invalid': (_('Invalid INI Tweak'),
         _('Tabs: INI Edits') + '\n\n' +
@@ -86,21 +84,21 @@ colorInfo = {
     'installers.bkgd.skipped': (_('Skipped Files'),
         _('Tabs: Installers') + '\n\n' +
         _('This is the background color used for a package with files that '
-          'will not be installed by BAIN.  This means some files are selected'
-          ' to be installed, but due to your current Skip settings (for '
+          'will not be installed by BAIN. This means some files are selected '
+          'to be installed, but due to your current Skip settings (for '
           'example, Skip DistantLOD), will not be installed.'),
     ),
     'installers.bkgd.outOfOrder': (_('Installer Out of Order'),
         _('Tabs: Installers') + '\n\n' +
         _('This is the background color used for an installer with files '
           'installed, that should be overridden by a package with a higher '
-          'install order.  It can be repaired with an Anneal or Anneal All.'),
+          'install order. It can be repaired with an Anneal or Anneal All.'),
     ),
     'installers.bkgd.dirty': (_('Dirty Installer'),
         _('Tabs: Installers') + '\n\n' +
         _('This is the background color used for an installer that is '
-          'configured in a "dirty" manner.  This means changes have been made'
-          ' to its configuration, and an Anneal or Install needs to be '
+          'configured in a "dirty" manner. This means changes have been made '
+          'to its configuration, and an Anneal or Install needs to be '
           'performed to make the install match what is configured.'),
     ),
     'screens.bkgd.image': (_('Screenshot Background'),
@@ -112,86 +110,100 @@ colorInfo = {
 # Only show color options when the game actually supports them
 # Do masters have working DATA subrecords? ------------------------------------
 if bush.game.Esp.check_master_sizes:
-    colorInfo['mods.bkgd.size_mismatch'] = (_('Size Mismatch'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for plugin masters that have a '
-          'stored size not matching the one of the plugin on disk, and for '
-          'plugins that have at least one such master.'),
+    colorInfo['mods.bkgd.size_mismatch'] = (_('Size Mismatch'), _mod_tab + _(
+        'This is the background color used for plugin masters that have a '
+        'stored size not matching the one of the plugin on disk, and for '
+        'plugins that have at least one such master.')
     )
 
 # Does the LO use timestamps? -------------------------------------------------
 ##: Is this condition OK? We can't really call load_order to check...
 if not bush.game.using_txt_file:
     colorInfo['mods.bkgd.doubleTime.exists'] = (_('Inactive Time Conflict'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a plugin with an inactive '
-          'time conflict.  This means that two or more plugins have the same '
-          'timestamp, but only one (or none) of them is active.'),
+        _mod_tab + _('This is the background color used for a plugin with an '
+            'inactive time conflict. This means that two or more plugins have '
+            ' the same timestamp, but only one (or none) of them is active.')
     )
     colorInfo['mods.bkgd.doubleTime.load'] = (_('Active Time Conflict'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a plugin with an active '
-          'time conflict.  This means that two or more plugins with the same '
-          'timestamp are active.'),
+        _mod_tab + _('This is the background color used for a plugin with an '
+            'active time conflict. This means that two or more plugins with '
+            'the same timestamp are active.')
     )
 
-# Can we create a BP? ---------------------------------------------------------
-if bush.game.Esp.canBash:
-    colorInfo['mods.text.bashedPatch'] = (_('Bashed Patch'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Bashed Patches.'),
-    )
-
-# Are ESLs supported? ---------------------------------------------------------
-if bush.game.has_esl:
-    colorInfo['mods.text.esl'] = (_('ESL'),
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs on the Mods Tab, and in the '
-          'Masters info on both the Mods Tab and Saves Tab.'),
-    )
-    colorInfo['mods.text.eslm'] = (_('ESLM'),
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs with a master flag on the '
-          'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
-          'Tab.'),
-    )
-
-# Are Overlay plugins supported? ----------------------------------------------
-if bush.game.has_overlay_plugins:
-    colorInfo['mods.text.eso'] = (_('Overlay Plugin'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Overlay plugins on the Mods Tab.'),
-    )
-    colorInfo['mods.text.esom'] = (_('Overlay Master'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Overlay plugins with a master flag '
-          'on the Mods Tab.'),
-    )
+# Asemble all possible keys for the mod list UI text color --------------------
+__all_mkeys = { # we could use plugin_type_text for the 'color_description'
+    'mods.text.bashedPatch': ('Bashed Patch', _mod_tab + _(
+        'This is the text color used for Bashed Patches.')),
+    'mods.text.esm': ('ESM', _mod_save_tabs + _(
+        'This is the text color used for ESMs on the Mods Tab, and in the '
+        'Masters info on both the Mods Tab and Saves Tab.')),
+    'mods.text.esl': ('ESL', _mod_save_tabs + _(
+        'This is the text color used for ESLs on the Mods Tab, and in the '
+        'Masters info on both the Mods Tab and Saves Tab.')
+    ),
+    'mods.text.eslm': ('ESLM', _mod_save_tabs + _(
+        'This is the text color used for ESLs with a master flag on the '
+        'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
+        'Tab.')
+    ),
+    'mods.text.eso': (_('Overlay Plugin'), _mod_tab + _(
+        'This is the text color used for Overlay plugins on the Mods '
+        'Tab.')
+    ),
+    'mods.text.esom': (_('Overlay Master'), _mod_tab + _(
+        'This is the text color used for Overlay plugins with a master '
+        'flag on the Mods Tab.')
+    ),
+    'mods.text.esb': (_('Blueprint Plugin'), _mod_tab + _(
+        'This is the text color used for Blueprint plugins on the Mods '
+        'Tab.')
+    ),
+    'mods.text.esbm': (_('Blueprint Master'), _mod_tab + _(
+        'This is the text color used for Blueprint plugins with a master '
+        'flag on the Mods Tab.')
+    ),
+    'mods.text.esi': (_('Medium Plugin'), _mod_save_tabs + _(
+        'This is the text color used for Medium plugins on the Mods Tab, '
+        'and in the Masters info on both the Mods Tab and Saves Tab.')
+    ),
+    'mods.text.esim': (_('Medium Master'), _mod_save_tabs + _(
+        'This is the text color used for Medium plugins with a master '
+        'flag on the Mods Tab, and in the Masters info on both the Mods '
+        'Tab and Saves Tab.')
+    ),
+    'mods.text.noMerge': (_("'NoMerge' Plugin"), _mod_tab + _(
+        'This is the text color used for a mergeable plugin that is '
+        "tagged 'NoMerge'.")),
+    'mods.text.flags_conflict': (_('Conflicting Plugin Flags'), _mod_save_tabs
+        + _('This is the text color used for a plugin that has conflicting '
+            'flags set.')),
+}
 
 # What do we check w.r.t. mergeability? ---------------------------------------
-if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
-            mc_title = _('Mergeable, ESL-Capable or Overlay-Capable Plugin')
+__m_checks = bush.game.mergeability_checks
+if MergeabilityCheck.MID_CHECK in __m_checks:
+    if MergeabilityCheck.ESL_CHECK in __m_checks:
+        if MergeabilityCheck.MERGE in __m_checks:
+            mc_title = _('Mergeable, ESL-Capable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch, ESL-flagged or '
-                        'Overlay-flagged.')
+                        'MID-flagged.')
         else: # -> no mergeables
-            mc_title = _('ESL-Capable or Overlay-Capable Plugin')
+            mc_title = _('ESL-Capable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be ESL-flagged or Overlay-flagged.')
+                        'be ESL-flagged or MID-flagged.')
     else: # -> no ESLs
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
-            mc_title = _('Mergeable or Overlay-Capable Plugin')
+        if MergeabilityCheck.MERGE in __m_checks:
+            mc_title = _('Mergeable or MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be merged into the Bashed Patch or Overlay-flagged.')
+                        'be merged into the Bashed Patch or MID-flagged.')
         else: # -> no ESLs or mergeables
-            mc_title = _('Overlay-Capable Plugin')
+            mc_title = _('MID-Capable Plugin')
             mc_desc = _('This is the text color used for plugins that could '
-                        'be Overlay-flagged.')
+                        'be MID-flagged.')
 else: # -> no overlays
-    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+    if MergeabilityCheck.ESL_CHECK in __m_checks:
+        if MergeabilityCheck.MERGE in __m_checks:
             mc_title = _('Mergeable or ESL-Capable')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch or ESL-flagged.')
@@ -200,25 +212,17 @@ else: # -> no overlays
             mc_desc = _('This is the text color used for plugins that could '
                         'be ESL-flagged.')
     else: # -> no ESLs
-        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+        if MergeabilityCheck.MERGE in __m_checks:
             mc_title = _('Mergeable')
             mc_desc = _('This is the text color used for plugins that could '
                         'be merged into the Bashed Patch.')
         else:
-            mc_title = mc_desc = None
-if mc_title is not None and mc_desc is not None:
-    colorInfo['mods.text.mergeable'] = (mc_title,
-        _('Tabs: Mods') + '\n\n' +
-        mc_desc,
-    )
+            mc_title, mc_desc = None, ''
+__all_mkeys['mods.text.mergeable'] = mc_title, _mod_tab + mc_desc
 
-# Does NoMerge exist? ---------------------------------------------------------
-if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
-    colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for a mergeable plugin that is '
-          "tagged 'NoMerge'."),
-    )
+# Add all the keys for this game to the color info dict
+for k in dict.fromkeys(bush.game.mod_keys.values()):
+    colorInfo[k] = __all_mkeys[k]
 
 #--Load config/defaults
 settingDefaults = { # keep current naming format till refactored
@@ -248,16 +252,21 @@ settingDefaults = { # keep current naming format till refactored
         'default.warn':                 (255, 0,   0),
         #--Mods Tab
         'mods.text.esm':                (0,   0,   255), # 'BLUE'
-        'mods.text.mergeable':          (0,   153, 0),
-        'mods.text.noMerge':            (150, 130, 0),
+        'mods.text.mergeable':          (0,   153,   0),
+        'mods.text.noMerge':            (150, 130,   0),
         'mods.bkgd.doubleTime.exists':  (255, 220, 220),
         'mods.bkgd.doubleTime.load':    (255, 149, 149),
         'mods.bkgd.ghosted':            (232, 232, 232),
         'mods.bkgd.size_mismatch':      (255, 238, 217),
         'mods.text.esl':                (226, 54,  197),
         'mods.text.eslm':               (123, 29,  223),
-        'mods.text.eso':                (235, 119, 44),
-        'mods.text.esom':               (234, 49, 9),
+        'mods.text.eso':                (235, 119,  44),
+        'mods.text.esom':               (234, 49,    9),
+        'mods.text.esi':                (188, 133, 250),
+        'mods.text.esim':               (255, 128, 128),
+        'mods.text.esb':                (0,   128, 192),
+        'mods.text.esbm':               (0,   128, 255),
+        'mods.text.flags_conflict':     (255,   0,   0),
         'mods.text.bashedPatch':        (30,  157, 251),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (223, 223, 223),
@@ -492,8 +501,8 @@ settingDefaults = { # keep current naming format till refactored
     f'{bush.game.Xe.xe_key_prefix}.skip_bsas': False,
 }
 
-# Enable Index columns by default for ESL and Overlay games
-if bush.game.has_esl or bush.game.has_overlay_plugins:
+# Enable Index columns by default for ESL and newer games
+if any(bush.game.plugin_flags):
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')
     settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 
@@ -502,187 +511,187 @@ if bush.game.has_esl or bush.game.has_overlay_plugins:
 # tool_key.lower() and ends in '.svg' (or '[16|24|32].png')
 
 oblivion_tools = {
-    'OBMM': ('OblivionModManager.exe', _('Launch OBMM'), {
+    'OBMM': ('OblivionModManager.exe', 'OBMM', {
         'root_dirs': 'app'}),
-    'ISOBL': ('ISOBL.exe', _("Launch InsanitySorrow's Oblivion Launcher"), {
+    'ISOBL': ('ISOBL.exe', "InsanitySorrow's Oblivion Launcher", {
         'root_dirs': 'app'}),
-    'ISRMG': ('Insanitys ReadMe Generator.exe', _("Launch InsanitySorrow's Readme Generator"), {
+    'ISRMG': ('Insanitys ReadMe Generator.exe', "InsanitySorrow's Readme Generator", {
         'root_dirs': 'app'}),
-    'ISRNG': ('Random Name Generator.exe', _("Launch InsanitySorrow's Random Name Generator"), {
+    'ISRNG': ('Random Name Generator.exe', "InsanitySorrow's Random Name Generator", {
         'root_dirs': 'app'}),
-    'ISRNPCG': ('Random NPC.exe', _("Launch InsanitySorrow's Random NPC Generator"), {
+    'ISRNPCG': ('Random NPC.exe', "InsanitySorrow's Random NPC Generator", {
         'root_dirs': 'app'}),
-    'OBFEL': ('OblivionFaceExchangeLite.exe', _('Oblivion Face Exchange Lite'), {
+    'OBFEL': ('OblivionFaceExchangeLite.exe', 'Oblivion Face Exchange Lite', {
         'subfolders': 'Oblivion Face Exchange Lite'}),
-    'OBMLG': ('Oblivion Mod List Generator.exe', _('Oblivion Mod List Generator'), {
+    'OBMLG': ('Oblivion Mod List Generator.exe', 'Oblivion Mod List Generator', {
         'root_dirs': 'app', 'subfolders': ('Modding Tools', 'Oblivion Mod List Generator')}),
-    'BSACMD': ('bsacmd.exe', _('Launch BSA Commander'), {
+    'BSACMD': ('bsacmd.exe', 'BSA Commander', {
         'subfolders': 'BSACommander'}),
-    'Tabula': ('Tabula.exe', _('Launch Tabula'), {
+    'Tabula': ('Tabula.exe', 'Tabula', {
         'root_dirs': 'app', 'subfolders': ('Modding Tools', 'Tabula')}),
-    'Tes4FilesPath': ('TES4Files.exe', _('Launch TES4Files'), {
-        'root_dirs': 'app', 'subfolders': 'Tools'})
+    'Tes4FilesPath': ('TES4Files.exe', 'TES4Files', {
+        'root_dirs': 'app', 'subfolders': 'Tools'}),
 }
 
 oblivion_java_tools = {
-    'Tes4GeckoPath': ('Tes4Gecko.jar', _('Launch Tes4Gecko'), {
+    'Tes4GeckoPath': ('Tes4Gecko.jar', 'Tes4Gecko', {
         'root_dirs': 'app'}),
-    'OblivionBookCreatorPath': ('OblivionBookCreator.jar', _(
-        'Launch Oblivion Book Creator'), {'root_dirs': 'mods'})
+    'OblivionBookCreatorPath': ('OblivionBookCreator.jar', 'Oblivion Book Creator', {
+        'root_dirs': 'mods'}),
 }
 
 skyrim_tools = {
-    'Tes5GeckoPath': ('TESVGecko.exe', _('Launch TesVGecko'), {
-        'subfolders': ('Dark Creations', 'TESVGecko')})
+    'Tes5GeckoPath': ('TESVGecko.exe', 'TesVGecko', {
+        'subfolders': ('Dark Creations', 'TESVGecko')}),
 }
 
 modeling_tools_buttons = {
-    'AutoCad': ('acad.exe', _('Launch AutoCad'), {
+    'AutoCad': ('acad.exe', 'AutoCad', {
         'subfolders': 'Autodesk Architectural Desktop 3'}),
-    'BlenderPath': ('blender.exe', _('Launch Blender'), {
+    'BlenderPath': ('blender.exe', 'Blender', {
         'subfolders': ('Blender Foundation', 'Blender')}),
-    'Dogwaffle': ('dogwaffle.exe', _('Launch Dogwaffle'), {
+    'Dogwaffle': ('dogwaffle.exe', 'Dogwaffle', {
         'subfolders': 'project dogwaffle'}),
-    'GmaxPath': ('gmax.exe', _('Launch Gmax'), {
+    'GmaxPath': ('gmax.exe', 'Gmax', {
         'root_dirs': [GPath(r'C:\GMAX')]}),
-    'MayaPath': (None, _('Launch Maya'), {}),
-    'MaxPath': ('3dsmax.exe', _('Launch 3dsMax'), {
+    'MayaPath': (None, 'Maya', {}),
+    'MaxPath': ('3dsmax.exe', '3dsMax', {
         'subfolders': ('Autodesk', '3ds Max 2010')}),
-    'Milkshape3D': ('ms3d.exe', _('Launch Milkshape 3D'), {
+    'Milkshape3D': ('ms3d.exe', 'Milkshape 3D', {
         'subfolders': 'MilkShape 3D 1.8.4'}),
-    'Mudbox': ('mudbox.exe', _('Launch Mudbox'), {
+    'Mudbox': ('mudbox.exe', 'Mudbox', {
         'subfolders': ('Autodesk', 'Mudbox2011')}),
-    'Sculptris': ('Sculptris.exe', _('Launch Sculptris'), {
+    'Sculptris': ('Sculptris.exe', 'Sculptris', {
         'subfolders': 'sculptris'}),
-    'SpeedTree': (None, _('Launch SpeedTree'), {}),
-    'Treed': ('tree[d].exe', _(r'Launch Tree\[d\]'), {
+    'SpeedTree': (None, 'SpeedTree', {}),
+    'Treed': ('tree[d].exe', 'Tree[d]', {
         'subfolders': ('gile[s]', 'plugins', 'tree[d]')}),
-    'Wings3D': ('Wings3D.exe', _('Launch Wings 3D'), {
+    'Wings3D': ('Wings3D.exe', 'Wings 3D', {
         'subfolders': 'wings3d_1.2'}),
-    'SoftimageModTool': ('XSI.bat', _('Launch Softimage Mod Tool'), {
+    'SoftimageModTool': ('XSI.bat', 'Softimage Mod Tool', {
             'root_dirs': [GPath(r'C:\Softimage')],
             'subfolders': ('Softimage_Mod_Tool_7.5', 'Application', 'bin')
         }, '-mod')
 }
 
 texture_tool_buttons = {
-    'AniFX': ('AniFX.exe', _('Launch AniFX'), {
+    'AniFX': ('AniFX.exe', 'AniFX', {
         'subfolders': 'AniFX 1.0'}),
-    'ArtOfIllusion': ('Art of Illusion.exe', _('Launch Art Of Illusion'), {
+    'ArtOfIllusion': ('Art of Illusion.exe', 'Art Of Illusion', {
         'subfolders': 'ArtOfIllusion'}),
-    'Artweaver': ('Artweaver.exe', _('Launch Artweaver'), {
+    'Artweaver': ('Artweaver.exe', 'Artweaver', {
         'subfolders': 'Artweaver 1.0'}),
-    'CrazyBump': ('CrazyBump.exe', _('Launch CrazyBump'), {
+    'CrazyBump': ('CrazyBump.exe', 'CrazyBump', {
         'subfolders': 'Crazybump'}),
-    'DDSConverter': ('DDS Converter 2.exe', _('Launch DDSConverter'), {
+    'DDSConverter': ('DDS Converter 2.exe', 'DDSConverter', {
         'subfolders': 'DDS Converter 2'}),
-    'DeepPaint': ('DeepPaint.exe', _('Launch DeepPaint'), {
+    'DeepPaint': ('DeepPaint.exe', 'DeepPaint', {
         'subfolders': ('Right Hemisphere', 'Deep Paint')}),
-    'FastStone': ('FSViewer.exe', _('Launch FastStone Image Viewer'), {
+    'FastStone': ('FSViewer.exe', 'FastStone Image Viewer', {
         'subfolders': 'FastStone Image Viewer'}),
-    'Genetica': ('Genetica.exe', _('Launch Genetica'), {
+    'Genetica': ('Genetica.exe', 'Genetica', {
         'subfolders': ('Spiral Graphics', 'Genetica 3.5')}),
-    'GeneticaViewer': ('Genetica Viewer 3.exe', _('Launch Genetica Viewer'), {
+    'GeneticaViewer': ('Genetica Viewer 3.exe', 'Genetica Viewer', {
         'subfolders': ('Spiral Graphics', 'Genetica Viewer 3')}),
-    'GIMP': ('gimp-2.6.exe', _('Launch GIMP'), {
+    'GIMP': ('gimp-2.6.exe', 'GIMP', {
         'subfolders': ('GIMP-2.0', 'bin')}),
-    'IcoFX': ('IcoFX.exe', _('Launch IcoFX'), {
+    'IcoFX': ('IcoFX.exe', 'IcoFX', {
         'subfolders': 'IcoFX 1.6'}),
-    'Inkscape': ('inkscape.exe', _('Launch Inkscape'), {
+    'Inkscape': ('inkscape.exe', 'Inkscape', {
         'subfolders': [('Inkscape', 'bin'), ('Inkscape',)]}),
-    'IrfanView': ('i_view32.exe', _('Launch IrfanView'), {
+    'IrfanView': ('i_view32.exe', 'IrfanView', {
         'subfolders': 'IrfanView'}),
-    'Krita': ('krita.exe', _('Launch Krita'), {
+    'Krita': ('krita.exe', 'Krita', {
         'subfolders': ('Krita (x86)', 'bin')}),
-    'MaPZone': ('MaPZone2.exe', _('Launch MaPZone'), {
+    'MaPZone': ('MaPZone2.exe', 'MaPZone', {
         'subfolders': ('Allegorithmic', 'MaPZone 2.6')}),
-    'MyPaint': ('mypaint.exe', _('Launch MyPaint'), {
+    'MyPaint': ('mypaint.exe', 'MyPaint', {
         'subfolders': 'MyPaint'}),
-    'NVIDIAMelody': ('Melody.exe', _('Launch Nvidia Melody'), {
+    'NVIDIAMelody': ('Melody.exe', 'Nvidia Melody', {
         'subfolders': ('NVIDIA Corporation', 'Melody')}),
-    'PaintNET': ('PaintDotNet.exe', _('Launch Paint.NET'), {
+    'PaintNET': ('PaintDotNet.exe', 'Paint.NET', {
         'subfolders': 'Paint.NET'}),
     'PaintShopPhotoPro': ('Corel Paint Shop Pro Photo.exe',
-                          _('Launch PaintShop Photo Pro'), {
+                          'PaintShop Photo Pro', {
         'subfolders': (
             'Corel', 'Corel PaintShop Photo Pro', 'X3', 'PSPClassic')
     }),
-    'PhotoshopPath': ('Photoshop.exe', _('Launch Photoshop'), {
+    'PhotoshopPath': ('Photoshop.exe', 'Photoshop', {
         'subfolders': [('Adobe', 'Adobe Photoshop CS6 (64 Bit)'),
                        ('Adobe', 'Adobe Photoshop CS3')]
     }),
-    'PhotoScape': ('PhotoScape.exe', _('Launch PhotoScape'), {
+    'PhotoScape': ('PhotoScape.exe', 'PhotoScape', {
         'subfolders': 'PhotoScape'}),
-    'PhotoSEAM': ('PhotoSEAM.exe', _('Launch PhotoSEAM'), {
+    'PhotoSEAM': ('PhotoSEAM.exe', 'PhotoSEAM', {
         'subfolders': 'PhotoSEAM'}),
-    'Photobie': ('Photobie.exe', _('Launch Photobie'), {
+    'Photobie': ('Photobie.exe', 'Photobie', {
         'subfolders': 'Photobie'}),
-    'PhotoFiltre': ('PhotoFiltre.exe', _('Launch PhotoFiltre'), {
+    'PhotoFiltre': ('PhotoFiltre.exe', 'PhotoFiltre', {
         'subfolders': 'PhotoFiltre'}),
-    'PixelStudio': ('Pixel.exe', _('Launch Pixel Studio Pro'), {
+    'PixelStudio': ('Pixel.exe', 'Pixel Studio Pro', {
         'subfolders': 'Pixel'}),
-    'Pixia': ('pixia.exe', _('Launch Pixia'), {
+    'Pixia': ('pixia.exe', 'Pixia', {
         'subfolders': 'Pixia'}),
-    'TextureMaker': ('texturemaker.exe', _('Launch TextureMaker'), {
+    'TextureMaker': ('texturemaker.exe', 'TextureMaker', {
         'subfolders': 'Texture Maker'}),
-    'TwistedBrush': ('tbrush_open_studio.exe', _('Launch TwistedBrush'), {
+    'TwistedBrush': ('tbrush_open_studio.exe', 'TwistedBrush', {
         'subfolders': ('Pixarra', 'TwistedBrush Open Studio')}),
-    'WTV': ('WTV.exe', _('Launch Windows Texture Viewer'), {
+    'WTV': ('WTV.exe', 'Windows Texture Viewer', {
         'subfolders': 'WindowsTextureViewer'}),
-    'xNormal': ('xNormal.exe', _('Launch xNormal'), {
+    'xNormal': ('xNormal.exe', 'xNormal', {
         'subfolders': ('Santiago Orgaz', 'xNormal', '3.17.3', 'x86')}),
-    'XnView': ('xnview.exe', _('Launch XnView'), {
+    'XnView': ('xnview.exe', 'XnView', {
         'subfolders': 'XnView'})
 }
 
-nifskope = ('NifskopePath', ('Nifskope.exe', _('Launch Nifskope'), {
+nifskope = ('NifskopePath', ('Nifskope.exe', 'Nifskope', {
     'subfolders': ('NifTools', 'NifSkope')}))
 
 audio_tools = {
-    'Audacity': ('Audacity.exe', _('Launch Audacity'), {
+    'Audacity': ('Audacity.exe', 'Audacity', {
         'subfolders': 'Audacity'}),
     'ABCAmberAudioConverter': ('abcaudio.exe',
-        _('Launch ABC Amber Audio Converter'), {
+        'ABC Amber Audio Converter', {
         'subfolders': 'ABC Amber Audio Converter'}),
-    'Switch': ('switch.exe', _('Launch Switch'), {
+    'Switch': ('switch.exe', 'Switch', {
         'subfolders': ('NCH Swift Sound', 'Switch')})
 }
 
 misc_tools = {
-    'Fraps': ('Fraps.exe', _('Launch Fraps'), {
+    'Fraps': ('Fraps.exe', 'Fraps', {
         'root_dirs': [GPath(r'C:\Fraps')]}),
     'MAP': ('Mapa v 3.52.exe',
-            _('Interactive Map of Cyrodiil and Shivering Isles'), {
+            'Interactive Map of Cyrodiil and Shivering Isles', {
                 'root_dirs': 'app', 'subfolders': ('Modding Tools',
                     'Interactive Map of Cyrodiil and Shivering Isles 3.52')}),
-    'LogitechKeyboard': ('LGDCore.exe', _('Launch LogitechKeyboard'), {
+    'LogitechKeyboard': ('LGDCore.exe', 'LogitechKeyboard', {
         'subfolders': ('Logitech', 'GamePanel Software', 'G-series Software')}
                          ),
-    'MediaMonkey': ('MediaMonkey.exe', _('Launch MediaMonkey'), {
+    'MediaMonkey': ('MediaMonkey.exe', 'MediaMonkey', {
         'subfolders': 'MediaMonkey'}),
-    'NPP': ('notepad++.exe', _('Launch Notepad++'), {
+    'NPP': ('notepad++.exe', 'Notepad++', {
         'subfolders': ('Notepad++',)}),
-    'Steam': ('steam.exe', _('Launch Steam'), {
+    'Steam': ('steam.exe', 'Steam', {
         'subfolders': 'Steam'}),
-    'EVGAPrecision': ('EVGAPrecision.exe', _('Launch EVGA Precision'), {
+    'EVGAPrecision': ('EVGAPrecision.exe', 'EVGA Precision', {
         'subfolders': 'EVGA Precision'}),
-    'WinMerge': ('WinMergeU.exe', _('Launch WinMerge'), {
+    'WinMerge': ('WinMergeU.exe', 'WinMerge', {
         'subfolders': 'WinMerge'}),
-    'FreeMind': ('Freemind.exe', _('Launch FreeMind'), {
+    'FreeMind': ('Freemind.exe', 'FreeMind', {
         'subfolders': 'FreeMind'}),
-    'Freeplane': ('freeplane.exe', _('Launch Freeplane'), {
+    'Freeplane': ('freeplane.exe', 'Freeplane', {
         'subfolders': 'Freeplane'}),
-    'FileZilla': ('filezilla.exe', _('Launch FileZilla'), {
+    'FileZilla': ('filezilla.exe', 'FileZilla', {
         'subfolders': 'FileZilla FTP Client'}),
-    'EggTranslator': ('EggTranslator.exe', _('Launch Egg Translator'), {
+    'EggTranslator': ('EggTranslator.exe', 'Egg Translator', {
         'subfolders': 'Egg Translator'}),
-    'RADVideo': ('radvideo.exe', _('Launch RAD Video Tools'), {
+    'RADVideo': ('radvideo.exe', 'RAD Video Tools', {
         'subfolders': 'RADVideo'}),
-    'WinSnap': ('WinSnap.exe', _('Launch WinSnap'), {
+    'WinSnap': ('WinSnap.exe', 'WinSnap', {
         'subfolders': 'WinSnap'})
 }
 
 loot_bosh = {
-    'LOOT': ('LOOT.exe', _('Launch LOOT'), {'subfolders': 'LOOT'}),
-    'BOSS': ('BOSS.exe', _('Launch BOSS'), {'subfolders': 'BOSS'})
+    'LOOT': ('LOOT.exe', 'LOOT', {'subfolders': 'LOOT'}),
+    'BOSS': ('BOSS.exe', 'BOSS', {'subfolders': 'BOSS'})
 }

@@ -17,102 +17,75 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Bump the various version numbers in Wrye Bash."""
-import argparse
+import logging
 import os
 import re
 import sys
 
 import pyfiglet
-from helpers.utils import MOPY_PATH, commit_changes
+from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, \
+    open_wb_file, edit_bass_version, mk_logfile, run_script, setup_log
 
-sys.path.insert(0, MOPY_PATH)
+_LOGGER = logging.getLogger(__name__)
+_LOGFILE = mk_logfile(__file__)
+
+sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
-def setup_parser(parser):
+def _setup_new_version(parser):
     parser.add_argument('new_version', type=str, nargs='?', metavar='ver',
-        default=str(int(bass.AppVersion) + 1),
+        default=str(int(float(bass.AppVersion)) + 1),
         help='The version to bump to. Defaults to the current version plus '
              'one.')
 
-def open_wb_file(*parts):
-    """Open a Wrye Bash source code file relative to the Mopy folder in
-    read-write mode."""
-    try:
-        return open(os.path.join(MOPY_PATH, *parts), 'r+', encoding='utf-8')
-    except FileNotFoundError:
-        print(f'File {os.path.join(*parts)} not found, bump_ver.py probably '
-              f'needs to be updated', file=sys.stderr)
-        sys.exit(1)
-
-def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback):
-    """Edit a Wrye Bash source code file relative to the Mopy folder. Look for
-    lines matching trigger_regex and replace them with the result of calling
-    edit_callback (with the resulting re.Match object passed to edit_callback
-    as an argument)."""
-    new_wbpy_lines = []
-    with open_wb_file(*parts) as wbpy:
-        wbpy_lines = wbpy.read().splitlines()
-        for wbpy_line in wbpy_lines:
-            if wbpy_ma := trigger_regex.match(wbpy_line):
-                new_wbpy_lines.append(edit_callback(wbpy_ma))
-            else:
-                new_wbpy_lines.append(wbpy_line)
-        if wbpy_lines == new_wbpy_lines:
-            print(f'Nothing edited in file {os.path.join(*parts)}, '
-                  f'bump_ver.py probably needs to be updated', file=sys.stderr)
-            sys.exit(1)
-        wbpy.seek(0, os.SEEK_SET)
-        wbpy.truncate(0)
-        wbpy.write('\n'.join(new_wbpy_lines) + '\n')
-
 def main(args):
+    setup_log(_LOGGER, args)
     new_ver = args.new_version
+    _LOGGER.info(f'Bumping Wrye Bash version to {new_ver}')
     files_bumped = []
     # bash/bass.py: Bump the AppVersion definition
-    def edit_bass(bass_ma):
-        return f"AppVersion = '{new_ver}'{bass_ma.group(1)}"
-    edit_wb_file('bash', 'bass.py',
-        trigger_regex=re.compile(r"^AppVersion = '\d+'(.+)$"),
-        edit_callback=edit_bass)
-    files_bumped.append(os.path.join(MOPY_PATH, 'bash', 'bass.py'))
+    _LOGGER.info('Editing version in bass.py')
+    edit_bass_version(new_ver, _LOGGER)
+    files_bumped.append(MOPY_PATH / 'bash' / 'bass.py')
     # Docs/*.html: Bump the version footers
     def edit_readme(readme_ma):
         return (f'{readme_ma.group(1)}<div id="version">Wrye Bash '
                 f'v{new_ver}</div>')
+    _LOGGER.info('Editing version in readmes')
     for readme_name in ('Wrye Bash Advanced Readme.html',
                         'Wrye Bash General Readme.html',
                         'Wrye Bash Technical Readme.html',
                         'Wrye Bash Version History.html'):
+        _LOGGER.debug(f'Editing version in readmes: {readme_name}')
         edit_wb_file('Docs', readme_name,
             trigger_regex=re.compile(r'^(\s+)<div id=\"version\">Wrye Bash '
-                                     r'v\d+</div>'),
-            edit_callback=edit_readme)
-        files_bumped.append(os.path.join(MOPY_PATH, 'Docs', readme_name))
+                                     r'v\d+(?:\.\d+)?</div>'),
+            edit_callback=edit_readme, logger=_LOGGER)
+        files_bumped.append(MOPY_PATH / 'Docs' / readme_name)
     # bash_default.ini and bash_default_russian.ini: Use pyfiglet to generate a
     # new header
     fmt_header = [f';#  {l}' for l in pyfiglet.figlet_format(
         f'Bash.ini {new_ver}', font='big').rstrip().splitlines()]
+    _LOGGER.info('Editing version in default INIs')
     for b_ini_name in ('bash_default.ini',
                        'bash_default_Russian.ini'):
-        with open_wb_file(b_ini_name) as bd_ini:
+        _LOGGER.debug(f'Editing version in default INIs: {b_ini_name}')
+        with open_wb_file(b_ini_name, logger=_LOGGER) as bd_ini:
             # Skip the first 6 lines (the header)
             ini_rest = bd_ini.read().splitlines()[6:]
             bd_ini.seek(0, os.SEEK_SET)
             bd_ini.truncate(0)
             bd_ini.write('\n'.join(fmt_header + ini_rest) + '\n')
-        files_bumped.append(os.path.join(MOPY_PATH, b_ini_name))
+        files_bumped.append(MOPY_PATH / b_ini_name)
+    _LOGGER.debug('Writing commit with changed files')
     commit_changes(changed_paths=files_bumped,
         commit_msg=f'Bump Wrye Bash version to {new_ver}')
-    print(f'Version successfully bumped to {new_ver}.')
+    _LOGGER.info(f'Version successfully bumped to {new_ver}')
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    setup_parser(argparser)
-    parsed_args = argparser.parse_args()
-    main(parsed_args)
+    run_script(main, __doc__, _LOGFILE, custom_setup=_setup_new_version)

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,34 +30,37 @@ import os
 import pickle
 import re
 import sys
+import time
 from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable, Callable
+from dataclasses import dataclass
 from functools import wraps
 from itertools import chain
+from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
-from ._mergeability import is_esl_capable, isPBashMergeable, is_overlay_capable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
-from .mods_metadata import get_tags_from_dir
+from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
+    read_loot_tags
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
-from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
-    decoder, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
-    OrderedLowerDict
-from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
-    RemapWriteContext
-from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
-    FailedIniInferError, FileError, ModError, PluginsFullError, \
-    SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
-    StateError, InvalidPluginFlagsError
-from ..game import MergeabilityCheck
+from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
+    ListInfo, Path, RefrIn, deprint, dict_sort, forward_compat_path_to_fn, \
+    forward_compat_path_to_fn_list, os_name, struct_error, \
+    OrderedLowerDict, attrgetter_cache, RefrData
+from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
+    RecordHeader, RemapWriteContext, unpack_header
+from ..exception import BoltError, BSAError, CancelError, \
+    FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
+    SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
+from ..load_order import LordDiff
 from ..mod_files import ModFile, ModHeaderReader
+from ..plugin_types import MergeabilityCheck, PluginFlag
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -73,9 +76,11 @@ iniInfos: INIInfos | None = None
 bsaInfos: BSAInfos | None = None
 screen_infos: ScreenInfos | None = None
 
-def data_tracking_stores() -> Iterable[FileInfos]:
+def data_tracking_stores() -> Iterable['_AFileInfos']:
     """Return an iterable containing all data stores that keep track of the
-    Data folder and which files in it are owned by which BAIN package."""
+    Data folder and so will get refresh calls from BAIN when files get
+    installed/changed/uninstalled. If they set _AFileInfos.tracks_ownership to
+    True, they will also get ownership updates."""
     return tuple(s for s in (modInfos, iniInfos, bsaInfos, screen_infos) if
                  s is not None)
 
@@ -94,8 +99,8 @@ reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
 del __exts
 # Image extensions for BAIN and for the Screnshots tab
 _common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
-bain_image_exts = _common_image_exts | {'.webp'}
-ss_image_exts = _common_image_exts | {'.tga'}
+bain_image_exts = {*_common_image_exts, '.webp'}
+ss_image_exts = {*_common_image_exts, '.tga'}
 
 #--Typing
 _CosaveDict = dict[type[cosaves.ACosave], cosaves.ACosave]
@@ -103,17 +108,28 @@ _CosaveDict = dict[type[cosaves.ACosave], cosaves.ACosave]
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+def _mod_info_delegate(fn):
+    """Decorator for MasterInfo methods that delegate to self.mod_info methods
+    if the latter is not None."""
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        if self.mod_info is not None:
+            return getattr(self.mod_info, fn.__name__)(*args, **kwargs)
+        return fn(self, *args, **kwargs)
+    return wrapper
+
 class MasterInfo:
     """Slight abstraction over ModInfo that allows us to represent masters that
-    are missing an active mod counterpart."""
+    are missing a present mod counterpart."""
     __slots__ = ('is_ghost', 'curr_name', 'mod_info', 'old_name',
-                 'stored_size', '_was_esl', 'parent_mod_info')
+                 'stored_size', '_was_scale', 'parent_mod_info')
 
-    def __init__(self, *, parent_minf, master_name, master_size, was_esl):
+    def __init__(self, *, parent_minf, master_name: FName, master_size,
+                 was_scale):
         self.parent_mod_info = parent_minf
         self.stored_size = master_size
-        self._was_esl = was_esl
-        self.old_name = FName(master_name)
+        self._was_scale = was_scale
+        self.old_name = master_name
         self.mod_info = self.rename_if_present(master_name)
         if self.mod_info is None:
             self.curr_name = FName(master_name)
@@ -137,106 +153,138 @@ class MasterInfo:
         self.is_ghost = False
         self.mod_info = None
 
-    def has_esm_flag(self):
-        if self.mod_info:
-            return self.mod_info.has_esm_flag()
-        else:
-            return self.get_extension() in (u'.esm', u'.esl')
-
-    def in_master_block(self):
-        if self.mod_info:
-            return self.mod_info.in_master_block()
-        else:
-            return self.get_extension() in (u'.esm', u'.esl')
-
-    def is_esl(self):
-        """Delegate to self.modInfo.is_esl if exists, else rely on _was_esl."""
-        if self.mod_info:
-            return self.mod_info.is_esl()
-        else:
-            return self._was_esl
-
-    def is_overlay(self):
-        """Delegate to self.modInfo.is_overlay if exists - we should deprint,
-        overlay plugins won't be in master lists."""
-        if self.mod_info:
-            return self.mod_info.is_overlay()
-        else:
-            return False
-
     def has_master_size_mismatch(self, do_test): # used in set_item_format
         return _('Stored size does not match the one on disk.') if do_test \
           and modInfos.size_mismatch(self.curr_name, self.stored_size) else ''
 
+    def flag_fallback(self, pflag):
+        """For esm missing masters check extension - for scale flags rely on
+        cached info."""
+        if pflag is bush.game.master_flag:
+            return pflag in bush.game.plugin_flags.guess_flags(
+                self.get_extension(), bush.game)
+        return pflag in self._was_scale # should we use ext heuristics for esl?
+
+    @_mod_info_delegate
     def getDirtyMessage(self, scan_beth=False):
         """Returns a dirty message from LOOT."""
-        return self.mod_info.getDirtyMessage(scan_beth) if self.mod_info else ''
+        return ''
 
+    @_mod_info_delegate
     def hasTimeConflict(self):
-        """True if has an mtime conflict with another mod."""
-        return bool(self.mod_info) and self.mod_info.hasTimeConflict()
+        """True if it has a mtime conflict with another mod."""
+        return False
 
+    @_mod_info_delegate
     def hasActiveTimeConflict(self):
-        """True if has an active mtime conflict with another mod."""
-        return bool(self.mod_info) and self.mod_info.hasActiveTimeConflict()
+        """True if it has an active mtime conflict with another mod."""
+        return False
 
+    @_mod_info_delegate
     def getBashTags(self):
         """Retrieve bash tags for master info if it's present in Data."""
-        return self.mod_info.getBashTags() if self.mod_info else set()
+        return set()
 
-    def getStatus(self):
-        return 30 if not self.mod_info else 0
+    @_mod_info_delegate
+    def merge_types(self):
+        """Ask the mod info or shrug."""
+        return set()
+
+    def getStatus(self, loadOrderIndex, mi):
+        if self.mod_info:
+            ordered = load_order.cached_active_tuple()
+            # current load order of master relative to other masters
+            if mi != loadOrderIndex:  # there are active masters out of order
+                return 20  # orange
+            elif (mi < len(ordered)) and (ordered[mi] == self.curr_name):
+                return -10  # Blue else 0, Green
+            return 0
+        return 30 # 30: does not exist
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
 
 #------------------------------------------------------------------------------
-class FileInfo(AFile, ListInfo):
+class _TabledInfo:
+    """Stores some of its attributes in a pickled dict. Most of the (hacky)
+    internals are for translating the legacy dict keys to proper attr names."""
+    _key_to_attr = {}
+
+    def __init__(self, *args, att_val=None, **kwargs):
+        for k, v in (att_val or {}).items(): # set table props used in refresh
+            try: ##: nightly regression storing 'installer' as FName - drop!
+                if k == 'installer': v = str(v)
+                elif k == 'doc': # needed for updates from old settings
+                    v = GPath(v)
+                elif k == 'mergeInfo':
+                    # Clean up cached mergeability info - can get out of sync
+                    # if we add or remove a mergeability type from a game
+                    try:
+                        cached_size, canMerge = v
+                        canMerge = {mc: v for m, v in canMerge.items() if (
+                            (mc := MergeabilityCheck(m))) in
+                                    bush.game.mergeability_checks}
+                        v = cached_size, canMerge
+                    except (TypeError, ValueError, AttributeError):
+                        # Convert older settings (had a bool in canMerge)
+                        v = -1, {}
+                self.set_table_prop(k, v)
+            except KeyError:  # 'mtime' - we don't need another mtime cache
+                self.fn_key = FName(GPath(args[0]).stail) # for repr below
+                deprint(f'Failed to set {k=} to {v=} for {self=}')
+        super().__init__(*args, **kwargs)
+
+    def get_table_prop(self, prop_key, default=None):
+        """Get Info attribute for given prop_key."""
+        return getattr(self, self.__class__._key_to_attr[prop_key], default)
+
+    def set_table_prop(self, prop_key, val):
+        if val is None:
+            try:
+                delattr(self, self.__class__._key_to_attr[prop_key])
+            except AttributeError: return
+        else: setattr(self, self.__class__._key_to_attr[prop_key], val)
+
+    def get_persistent_attrs(self, exclude):
+        return {pickle_key: val for pickle_key in self.__class__._key_to_attr
+                if pickle_key not in exclude and (
+                    val := self.get_table_prop(pickle_key)) is not None}
+
+class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
-    def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
+    def _stat_tuple(self, cached_stat=None):
+        return self.abs_path.size_mtime_ctime() if cached_stat is None else (
+            cached_stat.st_size, cached_stat.st_mtime, cached_stat.st_ctime)
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
-        ##: We GPath this three times - not slow, but very inelegant
-        g_path = GPath(fullpath)
-        ListInfo.__init__(self, g_path.stail) # ghost must be lopped off
+    def __init__(self, fullpath, load_cache=False, **kwargs):
         self.header = None
         self.masterNames: tuple[FName, ...] = ()
-        self.masterOrder: tuple[FName, ...] = ()
         self.madeBackup = False
         # True if the masters for this file are not reliable
         self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {}
-        super(FileInfo, self).__init__(g_path, load_cache)
+        super().__init__(fullpath, load_cache, **kwargs)
 
     def _reset_masters(self):
         #--Master Names/Order
         self.masterNames = tuple(self._get_masters())
-        self.masterOrder = tuple() #--Reset to empty for now
 
     def _file_changed(self, stat_tuple):
-        return (self.fsize, self.file_mod_time, self.ctime) != stat_tuple
+        return (self.fsize, self.ftime, self.ctime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, **kwargs):
-        self.fsize, self.file_mod_time, self.ctime = stat_tuple
+        self.fsize, self.ftime, self.ctime = stat_tuple
         if kwargs['load_cache']: self.readHeader()
 
-    def _mark_unchanged(self):
-        self._reset_cache(self._stat_tuple(), load_cache=False)
-
-    ##: DEPRECATED-------------------------------------------------------------
-    def getPath(self): return self.abs_path
-    @property
-    def mtime(self): return self.file_mod_time
-    #--------------------------------------------------------------------------
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
-        set_time = set_time or self.mtime
-        self.abs_path.mtime = set_time
-        self.file_mod_time = set_time
-        return set_time
+        """Sets ftime. Defaults to current value (i.e. reset)."""
+        set_to = set_time or self.ftime
+        self.abs_path.mtime = set_to
+        self.ftime = set_to
+        return set_to
 
     def readHeader(self):
         """Read header from file and set self.header attribute."""
@@ -281,34 +329,31 @@ class FileInfo(AFile, ListInfo):
 
     # Backup stuff - beta, see #292 -------------------------------------------
     def get_hide_dir(self):
-        return self.get_store().hidden_dir
+        return self._store().hide_dir
 
     def makeBackup(self, forceBackup=False):
         """Creates backup(s) of file."""
         #--Skip backup?
-        if self not in self.get_store().values(): return
+        if self not in self._store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.get_store().copy_info(self.fn_key, self.backup_dir)
+        self.fs_copy(self.backup_restore_paths(False)[0][0])
         #--First backup
-        firstBackup = self.backup_dir.join(self.fn_key) + 'f'
+        firstBackup = self.backup_restore_paths(True)[0][0]
         if not firstBackup.exists():
-            self.get_store().copy_info(self.fn_key, self.backup_dir,
-                firstBackup.tail)
+            self.fs_copy(firstBackup)
         self.madeBackup = True
 
-    def backup_restore_paths(self, first=False, fname=None):
+    def backup_restore_paths(self, first, fname=None) -> list[tuple[Path, Path]]:
         """Return a list of tuples, mapping backup paths to their restore
         destinations. If fname is not given returns the (first) backup
         filename corresponding to self.abs_path, else the backup filename
-        for fname mapped to its restore location in data_store.store_dir
-        :rtype: list[tuple]
-        """
-        restore_path = (fname and self.get_store().store_dir.join(
-            fname)) or self.getPath()
+        for fname mapped to its restore location in data_store.store_dir."""
+        restore_path = (fname and self._store().store_dir.join(
+            fname)) or self.abs_path
         fname = fname or self.fn_key
-        return [(self.backup_dir.join(fname) + (u'f' if first else u''),
-                 restore_path)]
+        return [(self._store().bash_dir.join('Backups').join(
+            fname + 'f' * first), restore_path)]
 
     def all_backup_paths(self, fname=None):
         """Return the list of all possible paths a backup operation may create.
@@ -318,7 +363,7 @@ class FileInfo(AFile, ListInfo):
         return [backPath for first in (True, False) for backPath, __path in
                 self.backup_restore_paths(first, fname)]
 
-    def revert_backup(self, first=False): # single call site - good
+    def revert_backup(self, first): # single call site - good
         backup_paths = self.backup_restore_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists():
@@ -327,85 +372,61 @@ class FileInfo(AFile, ListInfo):
                 backup_paths.remove(tup)
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
-        self.setmtime(self.file_mod_time, crc_changed=True)
-        ##: _in_refresh=True is not entirely correct here but can't be made
-        # entirely correct by leaving _in_refresh to False either as we
-        # don't back up the config so we can't really detect changes in
-        # imported/merged - a (another) backup edge case - as backup is
-        # half-baked anyway let's agree for now that BPs remain BPs with the
-        # same config as before - if not, manually run a mergeability scan
-        # after updating the config (in case the restored file is a BP)
-        self.get_store().new_info(self.fn_key, notify_bain=True,
-            _in_refresh=True)
+        self.setmtime(self.ftime)
+        # in case the restored file is a BP: refresh below will try to
+        # refresh info sets, but we don't back up the config so we can't
+        # really detect changes in imported/merged - a (another) backup edge
+        # case - as backup is half-baked anyway let's agree for now that BPs
+        # remain BPs with the same config as before - if not, manually run a
+        # mergeability scan after updating the config
+        self._store().refresh(RefrIn.from_tabled_infos(
+            {self.fn_key: self}, exclude=True))
 
-    def getNextSnapshot(self):
-        """Returns parameters for next snapshot."""
-        destDir = self.snapshot_dir
-        destDir.makedirs()
-        root, ext = self.fn_key.fn_body, self.fn_key.fn_ext
-        separator = u'-'
-        snapLast = [u'00']
-        #--Look for old snapshots.
-        reSnap = re.compile(f'^{root}[ -]([0-9.]*[0-9]+){ext}$')
-        for fileName in destDir.ilist():
-            maSnap = reSnap.match(fileName)
-            if not maSnap: continue
-            snapNew = maSnap.group(1).split(u'.')
-            #--Compare shared version numbers
-            sharedNums = min(len(snapNew),len(snapLast))
-            for index in range(sharedNums):
-                (numNew,numLast) = (int(snapNew[index]),int(snapLast[index]))
-                if numNew > numLast:
-                    snapLast = snapNew
-                    continue
-            #--Compare length of numbers
-            if len(snapNew) > len(snapLast):
-                snapLast = snapNew
-                continue
-        #--New
-        snapLast[-1] = (u'%0'+str(len(snapLast[-1]))+u'd') % (int(snapLast[-1])+1,)
-        destName = root+separator+(u'.'.join(snapLast))+ext
-        return destDir, destName, f'{root}*{ext}'
-
-    @property
-    def backup_dir(self):
-        return self.get_store().bash_dir.join(u'Backups')
-
-    @property
-    def snapshot_dir(self):
-        return self.get_store().bash_dir.join(u'Snapshots')
+    def delete_paths(self): # will include cosave ones
+        return *super().delete_paths(), *self.all_backup_paths()
 
     def get_rename_paths(self, newName):
-        old_new_paths = super(FileInfo, self).get_rename_paths(newName)
+        old_new_paths = super().get_rename_paths(newName)
         # all_backup_paths will return the backup paths for this file and its
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
-        for b_path, new_b_path in zip(self.all_backup_paths(),
-                                       self.all_backup_paths(newName)):
-            old_new_paths.append((b_path, new_b_path))
+        old_new_paths.extend(
+            zip(self.all_backup_paths(), self.all_backup_paths(newName)))
         return old_new_paths
 
 #------------------------------------------------------------------------------
-reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
-
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
-    # Cached, since we need them so often
-    _has_esm_flag = _is_esl = _is_overlay = False
+    # Cached, since we need them so often - set by PluginFlag
+    _is_master = _is_esl = _is_overlay = _is_blueprint = _is_mid = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
+    _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
+        'autoBashTags': 'mod_auto_bash_tags',
+        'bash.patch.configs': 'mod_bp_config', 'bashTags': 'mod_bash_tags',
+        'bp_split_parent': 'mod_bp_split_parent', 'crc': 'mod_crc',
+        'crc_mtime': 'mod_crc_mtime', 'crc_size': 'mod_crc_size',
+        'doc': 'mod_doc', 'docEdit': 'mod_editing_doc', 'group': 'mod_group',
+        'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
+        'mergeInfo': 'mod_merge_info', 'rating': 'mod_rating'}
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
-        if itsa_ghost is None and (fullpath.cs[-6:] == u'.ghost'):
-            fullpath = fullpath.s[:-6]
-            self.is_ghost = True
-        else:  # new_info() path
-            self._refresh_ghost_state(regular_path=fullpath,
-                                      itsa_ghost=itsa_ghost)
-        super(ModInfo, self).__init__(fullpath, load_cache)
+    def __init__(self, fullpath, load_cache=False, itsa_ghost=None, **kwargs):
+        # list of string bsas sorted by search order for localized plugins -
+        # None otherwise
+        self.str_bsas_sorted = None
+        if itsa_ghost is not None:  # refresh() path when coming from _list_dir
+            self.is_ghost = itsa_ghost
+        else:
+            if fullpath.cs[-6:] == '.ghost':
+                fullpath = fullpath.root
+                self.is_ghost = True
+            else:
+                self.is_ghost = not fullpath.is_file() and os.path.isfile(
+                    f'{fullpath}.ghost')
+        super().__init__(fullpath, load_cache, **kwargs)
 
     def get_hide_dir(self):
-        dest_dir = self.get_store().hidden_dir
+        dest_dir = self._store().hide_dir
         #--Use author subdirectory instead?
         mod_author = self.header.author
         if mod_author:
@@ -420,136 +441,80 @@ class ModInfo(FileInfo):
                 return groupDir
         return dest_dir
 
-    def _reset_cache(self, stat_tuple, **kwargs):
-        super()._reset_cache(stat_tuple, **kwargs)
-        # check if we have a cached crc for this file, use fresh mtime and size
-        if kwargs['load_cache']:
-            self.calculate_crc() # for added and hopefully updated
-            if bush.game.has_esl:
-                self._recalc_esl()
-            if bush.game.has_overlay_plugins:
-                self._recalc_overlay()
-            self._recalc_esm()
+    def get_persistent_attrs(self, exclude):
+        if exclude is True:
+            exclude = frozenset([ #'allowGhosting', 'bash.patch.configs',
+                'bp_split_parent', # 'doc', 'docEdit', 'group', 'installer',
+                # 'rating', 'autoBashTags', 'bashTags', ##: reset bashTags on reverting?
+                # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
+                'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
+        return super().get_persistent_attrs(exclude)
 
     @classmethod
-    def get_store(cls): return modInfos
+    def _store(cls): return modInfos
 
     def get_extension(self):
         """Returns the file extension of this mod."""
         return self.fn_key.fn_ext
 
-    # ESM flag ----------------------------------------------------------------
-    def has_esm_flag(self):
-        """Check if the mod info is a master file based on ESM flag alone -
-        header must be set. You generally want in_master_block() instead."""
-        return self._has_esm_flag
+    def set_plugin_flags(self, flags_dict: dict[PluginFlag, bool | None],
+                         save_flags=True):
+        """Set plugin flags. If a flag is None, we initialize the ModInfo
+        flag attribute. Do not pass invalid flag values combinations."""
+        for pl_flag, flag_val in flags_dict.items():
+            pl_flag.set_mod_flag(self, flag_val, bush.game)
+            if flag_val is not None and pl_flag is bush.game.master_flag:
+                self._update_onam() # recalculate ONAM info if necessary
+        if save_flags: self.writeHeader(rescan_merge=True)
 
-    def set_esm_flag(self, new_esm_flag: bool):
-        """Changes this file's ESM flag to the specified value. Recalculates
-        ONAM info if necessary."""
-        self.header.flags1.esm_flag = new_esm_flag
-        self._recalc_esm()
-        self.update_onam()
-        self.writeHeader()
+    def _scan_fids(self, fid_cond):
+        with ModReader.from_info(self) as ins:
+            try:
+                while not ins.atEnd():
+                    next_header = unpack_header(ins)
+                    # Skip GRUPs themselves, only process their records
+                    if next_header.recType != b'GRUP':
+                        if fid_cond(next_header.fid):
+                            return True
+                        next_header.skip_blob(ins)
+            except (OSError, struct_error) as e:
+                raise ModError(ins.inName, f"Error scanning {self}, file read "
+                    f"pos: {ins.tell():d}\nCaused by: '{e!r}'")
+        return False
 
-    def in_master_block(self, __master_exts=frozenset(('.esm', '.esl'))):
-        """Return true for files that load in the masters' block."""
-        ##: we should cache this and calculate in reset_cache and co
-        mod_ext = self.get_extension()
-        if bush.game.Esp.extension_forces_flags:
-            # For games since FO4/SSE, .esm and .esl files set the master flag
-            # in memory even if not set on the file on disk. For .esp files we
-            # must check for the flag explicitly.
-            return mod_ext in __master_exts or self.has_esm_flag()
-        elif bush.game.fsName == 'Morrowind':
-            ##: This is wrong, but works for now. We need game-specific
-            # record headers to parse the ESM flag for MW correctly - #480!
-            return mod_ext == '.esm'
-        else:
-            return self.has_esm_flag()
+    def formids_out_of_range(self, pf_name: str):
+        """Check if the plugin contains any FormIDs out of the range of
+        the named scale flag."""
+        num_masters = len(self.masterNames)
+        mask = bush.game.plugin_flags[pf_name].fid_mask
+        return self._scan_fids(lambda header_fid: header_fid.mod_dex >=
+            num_masters and header_fid.object_dex > mask)
 
-    def _recalc_esm(self):
-        """Forcibly recalculates the cached ESM status."""
-        self._has_esm_flag = self.header.flags1.esm_flag
+    def has_new_records(self):
+        """Checks we have any new records."""
+        num_masters = len(self.masterNames)
+        # Check for NULL to skip the main file header (i.e. TES3/TES4)
+        return self._scan_fids(lambda header_fid: header_fid.mod_dex >=
+            num_masters and not header_fid.is_null())
 
-    def isInvertedMod(self):
-        """Extension indicates esp/esm, but byte setting indicates opposite."""
-        mod_ext = self.get_extension()
-        if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
-            raise ArgumentError(
-                f'isInvertedMod: {mod_ext} - only esm/esp allowed')
-        return (self.header and
-                mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
-
-    # ESL flag ----------------------------------------------------------------
-    def has_esl_flag(self):
-        """Check if the mod info is an ESL based on ESL flag alone - header
-        must be set. You generally want is_esl() instead."""
-        return self.header.flags1.esl_flag
-
-    def set_esl_flag(self, new_esl_flag: bool):
-        """Change this file's ESL flag to the specified value. Disables the
-        Overlay flag if the ESL flag is set and the game supports the Overlay
-        flag."""
-        if bush.game.has_esl:
-            self.header.flags1.esl_flag = new_esl_flag
-            if new_esl_flag and bush.game.has_overlay_plugins:
-                # Can't have both, so unset the Overlay flag
-                self.header.flags1.overlay_flag = False
-                self._recalc_overlay()
-            self._recalc_esl()
-            self.writeHeader()
-
-    def is_esl(self):
-        """Check if this is a light plugin - .esl files are automatically
-        set the light flag, for espms check the flag."""
-        return self._is_esl
-
-    def _recalc_esl(self):
-        """Forcibly recalculates the cached ESL status."""
-        self._is_esl = self.has_esl_flag() or self.get_extension() == u'.esl'
-
-    # Overlay flag ------------------------------------------------------------
-    def has_overlay_flag(self):
-        """Check if the mod info is an Overlay plugin based on Overlay flag
-        alone - header must be set. You generally want is_overlay() instead."""
-        return self.header.flags1.overlay_flag
-
-    def set_overlay_flag(self, new_overlay_flag: bool):
-        """Change this file's Overlay flag to the specified value. Disables the
-        ESL flag if the Overlay flag is set and the game supports the ESL
-        flag."""
-        if bush.game.has_overlay_plugins:
-            self.header.flags1.overlay_flag = new_overlay_flag
-            if new_overlay_flag and bush.game.has_esl:
-                # Can't have both, so unset the ESL flag
-                self.header.flags1.esl_flag = False
-                self._recalc_esl()
-            self._recalc_overlay()
-            self.writeHeader()
-
-    def is_overlay(self):
-        """Check if this is an overlay plugin."""
-        return self._is_overlay
-
-    def _recalc_overlay(self):
-        """Forcibly recalculate the cached overlay status."""
-        self._is_overlay = self.has_overlay_flag()
+    def merge_types(self):
+        """Get all merge types for this mod info."""
+        return {m for m, m_mergeable in self.get_table_prop('mergeInfo', (
+            None, {}))[1].items() if m_mergeable}
 
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
         cached_crc = self.get_table_prop(u'crc')
-        if not recalculate:
-            recalculate = cached_crc is None \
-                    or self.file_mod_time != self.get_table_prop('crc_mtime') \
-                          or self.fsize != self.get_table_prop(u'crc_size')
+        recalculate = recalculate or cached_crc is None or \
+            self.ftime != self.get_table_prop('crc_mtime') or \
+            self.fsize != self.get_table_prop(u'crc_size')
         path_crc = cached_crc
         if recalculate:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
                 self.set_table_prop(u'crc', path_crc)
                 self.set_table_prop(u'ignoreDirty', False)
-            self.set_table_prop('crc_mtime', self.file_mod_time)
+            self.set_table_prop('crc_mtime', self.ftime)
             self.set_table_prop(u'crc_size', self.fsize)
         return path_crc, cached_crc
 
@@ -562,23 +527,12 @@ class ModInfo(FileInfo):
         except TypeError: # None, should not happen so let it show
             return u'UNKNOWN!'
 
-    def real_index(self):
-        """Returns the 'real index' for this plugin, which is the one the game
-        will assign it. ESLs will land in the 0xFE spot, while inactive plugins
-        and overlay plugins don't get any - so we sort them last."""
-        return modInfos.real_indices[self.fn_key]
-
-    def real_index_string(self):
-        """Returns a string-based version of real_index for displaying in the
-        Indices column."""
-        return modInfos.real_index_strings[self.fn_key]
-
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
-        """Set mtime and if crc_changed is True recalculate the crc."""
-        set_time = super().setmtime(set_time)
+        """Set ftime and if crc_changed is True recalculate the crc."""
+        set_to = super().setmtime(set_time)
         # Prevent re-calculating the File CRC
         if not crc_changed:
-            self.set_table_prop(u'crc_mtime', set_time)
+            self.set_table_prop('crc_mtime', set_to)
         else:
             self.calculate_crc(recalculate=True)
 
@@ -619,20 +573,12 @@ class ModInfo(FileInfo):
         return ret_masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
-        """Refreshes the is_ghost state by checking existence on disk."""
-        if itsa_ghost is not None:
-            self.is_ghost = itsa_ghost
-            return
-        if regular_path is None: regular_path = self._file_key
-        self.is_ghost = not regular_path.is_file() and os.path.isfile(
-            f'{regular_path}.ghost')
-
-    def do_update(self, raise_on_error=False, itsa_ghost=None, **kwargs):
+    def do_update(self, *, itsa_ghost, raise_on_error=False, **kwargs):
+        # only call in refresh and always pass itsa_ghost
         old_ghost = self.is_ghost
-        self._refresh_ghost_state(itsa_ghost=itsa_ghost)
+        self.is_ghost = itsa_ghost
         # mark updated if ghost state changed but only reread header if needed
-        did_change = super(ModInfo, self).do_update(raise_on_error)
+        did_change = super().do_update(raise_on_error=raise_on_error)
         return did_change or self.is_ghost != old_ghost
 
     @FileInfo.abs_path.getter
@@ -644,8 +590,8 @@ class ModInfo(FileInfo):
     def setGhost(self, ghostify):
         """Set file to/from ghost mode. Return True if ghost status changed."""
         # Current status is already what we want it to be
-        if (ghostify == self.is_ghost or # Don't allow ghosting the master ESM
-            self.fn_key == bush.game.master_file):
+        if ghostify == self.is_ghost or ( # Don't allow ghosting the master ESM
+            ghostify and self.fn_key == bush.game.master_file):
             return False
         # Current status != what we want, so change it
         ghost = (normal := self._file_key) + '.ghost' # Path.__add__ !
@@ -660,17 +606,59 @@ class ModInfo(FileInfo):
             return False
         self.is_ghost = ghostify
         # reset cache info as un/ghosting should not make do_update return True
-        self._mark_unchanged()
+        self._reset_cache((self.fsize, self.ftime, self.ctime),
+                          load_cache=False)
         # This is necessary if BAIN externally tracked the (un)ghosted file
-        self.get_store()._notify_bain(renamed={ghost_source: ghost_target})
+        self._store()._notify_bain(renamed={ghost_source: ghost_target})
         return True
 
     #--Bash Tags --------------------------------------------------------------
+    def tagsies(self, tagList): ##: join the strings once here
+        mname = self.fn_key
+        # Tracks if this plugin has at least one bash tags source - which may
+        # still result in no tags at the end, e.g. if source A adds a tag and
+        # source B removes it
+        has_tags_source = False
+        def _tags(tags_msg, tags_iter, tagsList):
+            tags_result = ', '.join(tags_iter) if tags_iter else _('No tags')
+            return f'{tagsList}  * {tags_msg} {tags_result}\n'
+        tags_desc = self.getBashTagsDesc()
+        has_tags_source |= bool(tags_desc)
+        if tags_desc:
+            tagList = _tags(_('From Plugin Description:'),
+                sorted(tags_desc), tagList)
+        loot_added, loot_removed = read_loot_tags(mname)
+        has_tags_source |= bool(loot_added | loot_removed)
+        if loot_added:
+            tagList = _tags(_('From LOOT Masterlist and/or Userlist:'),
+                            sorted(loot_added), tagList)
+        if loot_removed:
+            tagList = _tags(_('Removed by LOOT Masterlist and/or '
+                              'Userlist:'), sorted(loot_removed), tagList)
+        dir_added, dir_removed = read_dir_tags(mname)
+        has_tags_source |= bool(dir_added | dir_removed)
+        tags_file_fmt = {'tags_file': f"'{bush.game.mods_dir}/BashTags"
+                                      f"/{mname.fn_body}.txt'"}
+        if dir_added:
+            tagList = _tags(_('Added by %(tags_file)s:') % tags_file_fmt,
+                sorted(dir_added), tagList)
+        if dir_removed:
+            tagList = _tags(_('Removed by %(tags_file)s:') % tags_file_fmt,
+                sorted(dir_removed), tagList)
+        sorted_tags = sorted(self.getBashTags())
+        if not self.is_auto_tagged() and sorted_tags:
+            has_tags_source = True
+            tagList = _tags(_('From Manual (overrides all other sources):'),
+                sorted_tags, tagList)
+        return (_tags(_('Result:'), sorted_tags, tagList)
+                if has_tags_source else tagList + f"    {_('No tags')}\n")
+
     def setBashTags(self,keys):
         """Sets bash keys as specified."""
         self.set_table_prop(u'bashTags', keys)
 
-    def setBashTagsDesc(self,keys):
+    def setBashTagsDesc(self, keys, *, __re_bash_tags=re.compile(
+            '{{ *BASH *:[^}]*}}\\s*\\n?', re.I)):
         """Sets bash keys as specified."""
         keys = set(keys) #--Make sure it's a set.
         if keys == self.getBashTagsDesc(): return
@@ -679,8 +667,8 @@ class ModInfo(FileInfo):
         else:
             strKeys = u''
         desc_ = self.header.description
-        if reBashTags.search(desc_):
-            desc_ = reBashTags.sub(strKeys,desc_)
+        if __re_bash_tags.search(desc_):
+            desc_ = __re_bash_tags.sub(strKeys, desc_)
         else:
             desc_ = desc_ + u'\n' + strKeys
         if len(desc_) > 511: return False
@@ -749,8 +737,13 @@ class ModInfo(FileInfo):
             if self.header.header.form_version != RecordHeader.plugin_form_version:
                 modInfos.older_form_versions.add(self.fn_key)
         self._reset_masters()
+        # check if we have a cached crc for this file, use fresh mtime and size
+        self.calculate_crc() # for added and hopefully updated
+        flags_dict = dict.fromkeys(chain(*bush.game.all_flags)) # values = None
+        self.set_plugin_flags(flags_dict, save_flags=False) # set _is_esl etc
 
-    def writeHeader(self, old_masters: list[FName] | None = None):
+    def writeHeader(self, old_masters: list[FName] | None = None, *,
+                    rescan_merge=False):
         """Write Header. Actually have to rewrite entire file."""
         with TempFile() as tmp_plugin:
             with FormIdReadContext.from_info(self) as ins:
@@ -777,8 +770,10 @@ class ModInfo(FileInfo):
         self.setmtime(crc_changed=True)
         #--Merge info
         merge_size, canMerge = self.get_table_prop('mergeInfo', (None, {}))
-        if merge_size is not None:
+        if not rescan_merge and merge_size is not None:
             self.set_table_prop('mergeInfo', (self.abs_path.psize, canMerge))
+        else:
+            modInfos.rescanMergeable([self.fn_key], sort_descending_lo=False)
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -806,11 +801,11 @@ class ModInfo(FileInfo):
         else: return _('Inactive')
 
     def hasTimeConflict(self):
-        """True if there is another mod with the same mtime."""
+        """True if there is another mod with the same ftime."""
         return load_order.has_load_order_conflict(self.fn_key)
 
     def hasActiveTimeConflict(self):
-        """True if has an active mtime conflict with another mod."""
+        """True if it has an active mtime conflict with another mod."""
         return load_order.has_load_order_conflict_active(self.fn_key)
 
     def hasBadMasterNames(self): # used in status calculation
@@ -821,41 +816,26 @@ class ModInfo(FileInfo):
         except UnicodeEncodeError:
             return True
 
-    def mod_bsas(self, bsa_infos=None):
-        """Returns a list of all BSAs that the game will attach to this plugin.
-        bsa_infos is optional and will default to bosh.bsaInfos."""
-        if bush.game.fsName == u'Morrowind':
-            # Morrowind does not load attached BSAs at all - they all have to
-            # be registered via the INI
-            return []
-        bsa_pattern = (re.escape(self.fn_key.fn_body) +
-                       bush.game.Bsa.attachment_regex +
-                       u'\\' + bush.game.Bsa.bsa_extension)
-        is_attached = re.compile(bsa_pattern, re.I | re.U).match
-        # bsaInfos must be updated and contain all existing bsas
-        if bsa_infos is None: bsa_infos = bsaInfos
-        return [binf for k, binf in bsa_infos.items() if is_attached(k)]
-
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
-        return bool(self.mod_bsas())
+        # bsaInfos must be updated and contain all existing bsas
+        return bool(bush.game.Bsa.attached_bsas(bsaInfos, self.fn_key))
 
     def get_ini_name(self):
         """Returns the name of the INI matching this plugin, if it were to
         exist."""
         return self.fn_key.fn_body + '.ini'
 
-    def _string_files_paths(self, lang):
-        # type: (str) -> Iterable[str]
-        str_f_body = self.fn_key.fn_body
-        str_f_ext = self.get_extension()
+    def _string_files_paths(self, lang: str) -> Iterable[str]:
+        fmt_dict = {'body': self.fn_key.fn_body, 'ext': self.get_extension(),
+                    'language': lang}
         for str_format in bush.game.Esp.stringsFiles:
-            yield os.path.join(u'Strings', str_format % {
-                u'body': str_f_body, u'ext': str_f_ext, u'language': lang})
+            yield os.path.join('Strings', str_format % fmt_dict)
 
-    def getStringsPaths(self, lang=u'English'):
+    def getStringsPaths(self, lang):
         """If Strings Files are available as loose files, just point to
-        those, otherwise extract needed files from BSA if needed."""
+        those, otherwise extract needed files from BSA. Only use for localized
+        plugins."""
         baseDirJoin = self.info_dir.join
         extract = set()
         paths = set()
@@ -868,10 +848,14 @@ class ModInfo(FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            ##: Pass cached_ini_info here for performance?
-            potential_bsas = self._find_string_bsas()
-            bsa_assets = OrderedDict()
-            for bsa_info in potential_bsas:
+            bsa_assets = {}
+            # calculate (once per refresh cycle) and return the bsa_lo
+            bsa_lo = self._store().get_bsa_lo()[0]
+            # reorder bsa list as ordered by bsa_lo - what happens to patch
+            # and interface here depends on what's their order in the ini
+            str_bsas = sorted(self.str_bsas_sorted, key=bsa_lo.__getitem__,
+                              reverse=True) # sort higher loading bsas first
+            for bsa_info in str_bsas: # None for non-localized mods
                 try:
                     found_assets = bsa_info.has_assets(extract)
                 except BSAError:
@@ -886,11 +870,11 @@ class ModInfo(FileInfo):
                 msg = [f'This plugin is localized, but the following strings '
                        f'files seem to be missing:']
                 msg.extend(f' - {e}' for e in extract)
-                if potential_bsas:
+                if str_bsas:
                     msg.append('The following BSAs were scanned (based on '
                                'name and INI settings), but none of them '
                                'contain the missing files:')
-                    msg.extend(f' - {bsa_inf}' for bsa_inf in potential_bsas)
+                    msg.extend(f' - {binf}' for binf in str_bsas)
                 else:
                     msg.append('No BSAs were found that could contain the '
                         'missing strings - this is bad, validate your game '
@@ -901,68 +885,33 @@ class ModInfo(FileInfo):
                 try:
                     bsa_inf.extract_assets(assets, out_path.s)
                 except BSAError as e:
-                    raise ModError(self.fn_key,
-                      f"Could not extract Strings File from '{bsa_inf}': {e}")
+                    m = f"Could not extract Strings File from '{bsa_inf}': {e}"
+                    raise ModError(self.fn_key, m) from e
                 paths.update(map(out_path.join, assets))
         return paths
 
-    # Heuristics for _find_string_bsas. Patch before interface because the
-    # patch BSA (which only exists in SSE) will always load after the interface
-    # BSA and hence should win all conflicts (including strings).
-    _bsa_heuristics = list(enumerate((u'main', u'patch', u'interface')))
-    def _find_string_bsas(self, cached_ini_info=(None, None, None)):
-        """Return a list of BSAs to get strings files from. Note that this is
-        *only* meant for strings files. It sorts the list in such a way as to
-        prioritize files that are likely to contain the strings, instead of
-        returning the true BSA order.
-
-        :param cached_ini_info: Passed to get_bsa_lo, see there for docs."""
-        ret_bsas = list(reversed(
-            modInfos.get_bsa_lo(cached_ini_info=cached_ini_info,
-                                for_plugins=[self.fn_key])[0]))
-        # First heuristic sorting pass: sort 'main', 'patch' and 'interface' to
-        # the front. This avoids parsing expensive BSAs at startup for the game
-        # master (e.g. Skyrim.esm -> Skyrim - Textures0.bsa).
-        heuristics = self._bsa_heuristics
-        last_index = len(heuristics) # last place to sort unwanted BSAs
-        def _bsa_heuristic(binf):
-            b_lower = binf.fn_key.fn_body.lower()
-            for i, h in heuristics:
-                if h in b_lower:
-                    return i
-            return last_index
-        ret_bsas.sort(key=_bsa_heuristic)
-        # Second heuristic sorting pass: sort BSAs that begin with the body of
-        # this plugin before others. This avoids parsing vanilla BSAs for third
-        # party plugins, while being a noop for vanilla plugins (stable sort).
-        plugin_prefix = self.fn_key.fn_body.lower()
-        ret_bsas.sort(key=lambda b: not b.fn_key.lower().startswith(plugin_prefix))
-        return ret_bsas
-
-    def isMissingStrings(self, cached_ini_info=(None, None, None),
-            ci_cached_strings_paths=None):
+    def isMissingStrings(self, available_bsas, bsa_lo_inis,
+                         ci_cached_strings_paths, i_lang):
         """True if the mod says it has .STRINGS files, but the files are
-        missing.
+        missing. Sets the str_bsas_sorted attribute to the list of BSAs that
+        may contain the strings files for this plugin. We assume some games
+        will load strings from 'A - B.bsa' for both 'A.esp' and 'A - B.esp'.
 
-        :param cached_ini_info: Passed to get_bsa_lo, see there for docs.
-        :param ci_cached_strings_paths: An optional set of lower-case versions
-            of the paths to all strings files. They must match the format
-            returned by _string_files_paths (i.e. starting with 'strings/'. If
-            specified, no stat calls will occur to determine if loose strings
-            files exist."""
+        :param available_bsas: all bsas apart from ini-loaded ones
+        :param bsa_lo_inis: bsas that are loaded by inis
+        :param ci_cached_strings_paths: Set of lower-case versions of the paths
+            to all strings files. They must match the format returned by
+            _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
-        lang = oblivionIni.get_ini_language()
-        bsa_infos = self._find_string_bsas(cached_ini_info)
-        info_dir_join = self.info_dir.join
-        for assetPath in self._string_files_paths(lang):
+        # put plugin loaded bsas first - for master esm these should be empty
+        self.str_bsas_sorted = *bush.game.Bsa.attached_bsas(available_bsas,
+            self.fn_key), *bsa_lo_inis # pl_bsas order is undefined
+        for assetPath in self._string_files_paths(i_lang):
             # Check loose files first
-            if ci_cached_strings_paths is not None:
-                if assetPath.lower() in ci_cached_strings_paths:
-                    continue
-            elif info_dir_join(assetPath).is_file():
+            if assetPath.lower() in ci_cached_strings_paths:
                 continue
             # Check in BSA's next
-            for bsa_info in bsa_infos:
+            for bsa_info in self.str_bsas_sorted:
                 try:
                     if bsa_info.has_assets((assetPath,)):
                         break # found
@@ -1003,12 +952,12 @@ class ModInfo(FileInfo):
                 return _('Has size-mismatched masters.')
         return ''
 
-    def update_onam(self):
+    def _update_onam(self):
         """Checks if this plugin needs ONAM data and either adds or removes it
         based on that."""
         # Skip for games that don't need the ONAM generation
         if bush.game.Esp.generate_temp_child_onam:
-            if self.in_master_block():
+            if bush.game.master_flag.cached_type(self):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)
@@ -1042,22 +991,35 @@ class ModInfo(FileInfo):
         return self.fn_key in bush.game.modding_esm_size or \
                self.fn_key == 'Oblivion.esm'
 
-    def get_rename_paths(self, newName):
-        old_new_paths = super(ModInfo, self).get_rename_paths(newName)
+    def delete_paths(self):
+        sup = super().delete_paths()
         if self.is_ghost:
-            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
+            return sup
+        # Add ghosts - the file may exist in both states (bug, or user mistake)
+        # in this case the file is marked as normal but let's delete the ghost
+        return *sup, self.abs_path + '.ghost' # Path.__add__!
+
+    def fs_copy(self, dup_path, *, set_time=None):
+        destDir, destName = dup_path.head, dup_path.stail
+        if destDir == (st := self._store()).store_dir and destName in st:
+            dup_path = st[destName].abs_path # used the (possibly) ghosted path
+        super().fs_copy(dup_path, set_time=set_time)
+
+    def get_rename_paths(self, newName):
+        old_new_paths = super().get_rename_paths(newName)
+        if self.is_ghost: # add ghost extension to dest path - Path.__add__!
+            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
         return old_new_paths
 
     def _masters_order_status(self, status):
-        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        loads_before_its_masters = self.masterOrder and \
-                                   load_order.cached_lo_index(
-            self.masterOrder[-1]) > load_order.cached_lo_index(self.fn_key)
-        if self.masterOrder != self.masterNames and loads_before_its_masters:
+        mo = tuple(load_order.get_ordered(self.masterNames)) # masterOrder
+        loads_before_its_masters = mo and load_order.cached_lo_index(
+            mo[-1]) > load_order.cached_lo_index(self.fn_key)
+        if mo != self.masterNames and loads_before_its_masters:
             return 21
         elif loads_before_its_masters:
             return 20
-        elif self.masterOrder != self.masterNames:
+        elif mo != self.masterNames:
             return 10
         else:
             return status
@@ -1073,67 +1035,34 @@ class ModInfo(FileInfo):
             'assoc_bsa_name': assoc_bsa,
             'pnd_example': os.path.join('Sound', 'Voice', self.fn_key)}
 
-# Deprecated/Obsolete Bash Tags -----------------------------------------------
-# Tags that have been removed from Wrye Bash and should be dropped from pickle
-# files
-removed_tags = {u'Merge', u'ScriptContents'}
-# Indefinite backwards-compatibility aliases for deprecated tags
-tag_aliases = {
-    'Actors.Perks.Add': {'NPC.Perks.Add'},
-    'Actors.Perks.Change': {'NPC.Perks.Change'},
-    'Actors.Perks.Remove': {'NPC.Perks.Remove'},
-    'Body-F': {'R.Body-F'},
-    'Body-M': {'R.Body-M'},
-    'Body-Size-F': {'R.Body-Size-F'},
-    'Body-Size-M': {'R.Body-Size-M'},
-    'C.GridFlags': {'C.ForceHideLand'},
-    'Derel': {'Relations.Remove'},
-    'Eyes': {'R.Eyes'},
-    'Eyes-D': {'R.Eyes'},
-    'Eyes-E': {'R.Eyes'},
-    'Eyes-R': {'R.Eyes'},
-    'Factions': {'Actors.Factions'},
-    'Hair': {'R.Hair'},
-    'Invent': {'Invent.Add', 'Invent.Remove'},
-    'InventOnly': {'IIM', 'Invent.Add', 'Invent.Remove'},
-    'Npc.EyesOnly': {'NPC.Eyes'},
-    'Npc.HairOnly': {'NPC.Hair'},
-    'NpcFaces': {'NPC.Eyes', 'NPC.Hair', 'NPC.FaceGen'},
-    'R.Relations': {'R.Relations.Add', 'R.Relations.Change',
-                    'R.Relations.Remove'},
-    'Relations': {'Relations.Add', 'Relations.Change'},
-    'Voice-F': {'R.Voice-F'},
-    'Voice-M': {'R.Voice-M'},
-}
-
-def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
-    """Removes obsolete tags from and resolves any tag aliases in the
-    specified set of tags. See the comments above for more information. If
-    drop_unknown is True, also removes any unknown tags (tags that are not
-    currently used, obsolete or aliases)."""
-    if not tag_set: return tag_set # fast path - nothing to process
-    ret_tags = tag_set.copy()
-    ret_tags -= removed_tags
-    for old_tag, replacement_tags in tag_aliases.items():
-        if old_tag in tag_set:
-            ret_tags.discard(old_tag)
-            ret_tags.update(replacement_tags)
-    if drop_unknown:
-        ret_tags &= bush.game.allTags
-    return ret_tags
-
-# Some wrappers to decouple other files from process_tags
-def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
-    """Wrapper around get_tags_from_dir. See that method for docs."""
-    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
-        ci_cached_bt_contents=ci_cached_bt_contents)
-    return process_tags(added_tags), process_tags(deleted_tags)
-
-def read_loot_tags(plugin_name):
-    """Wrapper around get_tags_from_loot. See that method for docs."""
-    added_tags, deleted_tags = initialization.lootDb.get_tags_from_loot(
-        plugin_name)
-    return process_tags(added_tags), process_tags(deleted_tags)
+    def getNextSnapshot(self):
+        """Returns parameters for next snapshot."""
+        snapshot_dir = self._store().bash_dir.join('Snapshots')
+        snapshot_dir.makedirs()
+        root, ext = self.fn_key.fn_body, self.fn_key.fn_ext
+        separator = '-'
+        snapLast = ['00']
+        #--Look for old snapshots.
+        reSnap = re.compile(f'^{root}[ -]([0-9.]*[0-9]+){ext}$')
+        for fileName in snapshot_dir.ilist():
+            maSnap = reSnap.match(fileName)
+            if not maSnap: continue
+            snapNew = maSnap.group(1).split(u'.')
+            #--Compare shared version numbers
+            sharedNums = min(len(snapNew),len(snapLast))
+            for index in range(sharedNums):
+                (numNew,numLast) = (int(snapNew[index]),int(snapLast[index]))
+                if numNew > numLast:
+                    snapLast = snapNew
+                    continue
+            #--Compare length of numbers
+            if len(snapNew) > len(snapLast):
+                snapLast = snapNew
+                continue
+        #--New
+        snapLast[-1] = f'%0{len(snapLast[-1])}d' % (int(snapLast[-1]) + 1)
+        destName = root+separator+('.'.join(snapLast))+ext
+        return snapshot_dir, destName, f'{root}*{ext}'
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):
@@ -1150,7 +1079,7 @@ def BestIniFile(abs_ini_path):
     if game_ini:
         return game_ini
     inferred_ini_type, detected_encoding = get_ini_type_and_encoding(
-        abs_ini_path)
+        abs_ini_path, consider_obse_inis=bush.game.Ini.has_obse_inis)
     return inferred_ini_type(abs_ini_path, detected_encoding)
 
 def best_ini_files(abs_ini_paths):
@@ -1170,7 +1099,8 @@ def best_ini_files(abs_ini_paths):
             found_types.add(IniFileInfo)
             continue
         try:
-            detected_type, detected_enc = get_ini_type_and_encoding(aip)
+            detected_type, detected_enc = get_ini_type_and_encoding(aip,
+                consider_obse_inis=bush.game.Ini.has_obse_inis)
         except FailedIniInferError:
             # Come back to this later using the found types
             ambigous_paths.add(aip)
@@ -1184,17 +1114,19 @@ def best_ini_files(abs_ini_paths):
         single_found_type = next(iter(found_types))
     for aip in ambigous_paths:
         detected_type, detected_enc = get_ini_type_and_encoding(aip,
-            fallback_type=single_found_type)
+            fallback_type=single_found_type,
+            consider_obse_inis=bush.game.Ini.has_obse_inis)
         ret[aip] = detected_type(aip, detected_enc)
     return ret
 
-class AINIInfo(AIniInfo):
+class AINIInfo(_TabledInfo, AIniInfo):
     """Ini info, adding cached status and functionality to the ini files."""
     _status = None
     is_default_tweak = False
+    _key_to_attr = {'installer': 'ini_owner_inst'}
 
     @classmethod
-    def get_store(cls): return iniInfos
+    def _store(cls): return iniInfos
 
     def tweak_status(self, target_ini_settings=None):
         if self._status is None:
@@ -1326,30 +1258,31 @@ class SaveInfo(FileInfo):
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _valid_exts_re = r'(\.(?:' + '|'.join(
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
+    _key_to_attr = {'info': 'save_notes'}
     _co_saves: _CosaveDict
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+    def __init__(self, fullpath, load_cache=False, **kwargs):
         # Dict of cosaves that may come with this save file. Need to get this
         # first, since readHeader calls _get_masters, which relies on the
         # cosave for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
-        super(SaveInfo, self).__init__(fullpath, load_cache)
+        super().__init__(fullpath, load_cache, **kwargs)
 
     @classmethod
-    def get_store(cls): return saveInfos
+    def _store(cls): return saveInfos
 
     def _masters_order_status(self, status):
-        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        if self.masterOrder != self.masterNames:
+        mo = tuple(load_order.get_ordered(self.masterNames))
+        if mo != self.masterNames:
             return 20 # Reordered masters are far more important in saves
         elif status > 0:
             # Missing or reordered masters -> orange or red
             return status
         active_tuple = load_order.cached_active_tuple()
-        if self.masterOrder == active_tuple:
+        if mo == active_tuple:
             # Exact match with LO -> purple
             return -20
-        if self.masterOrder == active_tuple[:len(self.masterOrder)]:
+        if mo == active_tuple[:len(mo)]:
             # Matches LO except for new plugins at the end -> blue
             return -10
         else:
@@ -1369,7 +1302,7 @@ class SaveInfo(FileInfo):
             raise SaveFileError(self.fn_key, e.args[0]) from e
         self._reset_masters()
 
-    def do_update(self, raise_on_error=False, **kwargs):
+    def do_update(self, *, raise_on_error=False, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
@@ -1392,8 +1325,8 @@ class SaveInfo(FileInfo):
         if cosaves_changed:
             self._reset_masters()
         # Delegate the call first, but also take the cosaves into account
-        return super(SaveInfo, self).do_update(raise_on_error) or \
-               cosaves_changed
+        return super().do_update(raise_on_error=raise_on_error) or \
+            cosaves_changed
 
     def write_masters(self, master_map):
         """Rewrites masters of existing save file and cosaves."""
@@ -1420,12 +1353,12 @@ class SaveInfo(FileInfo):
             inst = instances.get(co_typ, None)
             if inst and inst.abs_path.exists():
                 co_ui_strings[j] = self._cosave_ui_string[co_typ][
-                    abs(inst.abs_path.mtime - self.mtime) < 10]
+                    abs(inst.abs_path.mtime - self.ftime) < 10]
         return u'\n'.join(co_ui_strings)
 
-    def backup_restore_paths(self, first=False, fname=None):
+    def backup_restore_paths(self, first, fname=None):
         """Return as parent and in addition back up paths for the cosaves."""
-        back_to_dest = super(SaveInfo, self).backup_restore_paths(first, fname)
+        back_to_dest = super().backup_restore_paths(first, fname)
         # see if we have cosave backups - we must delete cosaves when restoring
         # if the backup does not have a cosave
         for co_type in self.cosave_types:
@@ -1470,15 +1403,16 @@ class SaveInfo(FileInfo):
         list. For esl games this order might not reflect the actual order the
         masters are mapped to form ids, hence we try to return the correct
         order if a suitable to this end cosave is present."""
-        if bush.game.has_esl:
+        try:
             xse_cosave = self.get_xse_cosave()
-            if xse_cosave is not None: # the cached cosave should be valid
-                # Make sure the cosave's masters are actually useful
-                if xse_cosave.has_accurate_master_list():
-                    return [*map(FName, xse_cosave.get_master_list())]
+            # Make sure the cosave's masters are actually useful
+            if xse_cosave.has_accurate_master_list():
+                return [*map(FName, xse_cosave.get_master_list())]
+        except (AttributeError, NotImplementedError):
+            pass
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
-        return self.header.masters
+        return [*map(FName, self.header.masters)]
 
     def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
         return False # Saves can't have circular masters
@@ -1487,39 +1421,55 @@ class SaveInfo(FileInfo):
         super(SaveInfo, self)._reset_masters()
         # If this save has ESL masters, and no cosave or a cosave from an
         # older version, then the masters are unreliable and we need to warn
-        if bush.game.has_esl and self.header.has_esl_masters:
-            xse_cosave = self.get_xse_cosave()
-            self.has_inaccurate_masters = xse_cosave is None or \
-                not xse_cosave.has_accurate_master_list()
+        try:
+            self.has_inaccurate_masters = any(self.header.scale_masters.values(
+                )) and ((xse_cosave := self.get_xse_cosave()) is None or not
+            xse_cosave.has_accurate_master_list())
+        except (AttributeError, NotImplementedError):
+            self.has_inaccurate_masters = False
+
+    def delete_paths(self, *, __abs=attrgetter_cache['abs_path']):
+        # now add backups and cosaves backups
+        return *super().delete_paths(), *map(__abs, self._co_saves.values())
+
+    def move_info(self, destDir):
+        """Moves member file to destDir. Will overwrite!"""
+        super().move_info(destDir)
+        SaveInfos.co_copy_or_move(self._co_saves, destDir.join(self.fn_key),
+                                  move_cosave=True)
+
+    def fs_copy(self, dup_path, *, set_time=None):
+        """Copies savefile and associated cosaves file(s)."""
+        super().fs_copy(dup_path, set_time=set_time)
+        SaveInfos.co_copy_or_move(self._co_saves, dup_path)
 
     def get_rename_paths(self, newName):
-        old_new_paths = super(SaveInfo, self).get_rename_paths(newName)
+        old_new_paths = super().get_rename_paths(newName)
         # super call added the backup paths but not the actual rename cosave
         # paths inside the store_dir - add those only if they exist
         old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
-        for co_type, co_file in self._co_saves.items():
-            old_new_paths.append((co_file.abs_path,
-                                  co_type.get_cosave_path(new)))
+        old_new_paths.extend((co_file.abs_path, co_type.get_cosave_path(new))
+                             for co_type, co_file in self._co_saves.items())
         return old_new_paths
 
 #------------------------------------------------------------------------------
-class ScreenInfo(FileInfo):
+class ScreenInfo(AFileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
     _valid_exts_re = r'(\.(?:' + '|'.join(
         ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+    def __init__(self, fullpath, load_cache=False, **kwargs):
+        super().__init__(fullpath, load_cache, **kwargs)
         self.cached_bitmap = None
-        super(ScreenInfo, self).__init__(fullpath, load_cache)
 
     def _reset_cache(self, stat_tuple, **kwargs):
         self.cached_bitmap = None # Lazily reloaded
         super()._reset_cache(stat_tuple, **kwargs)
 
     @classmethod
-    def get_store(cls): return screen_infos
+    def _store(cls): return screen_infos
 
     def validate_name(self, name_str, check_store=True):
         file_root, num_str = super().validate_name(name_str, check_store)
@@ -1528,7 +1478,8 @@ class ScreenInfo(FileInfo):
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
-    store_dir = empty_path # where the data sit, static except for SaveInfos
+    store_dir: Path # where the data sit, static except for Save/ScreenInfos
+    _dir_key: str # key in dirs dict for the store_dir
     # Each subclass must define this. Used when information related to the
     # store is passed between the GUI and the backend
     unique_store_key: Store
@@ -1536,35 +1487,41 @@ class DataStore(DataDict):
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
 
+    def set_store_dir(self):
+        self.store_dir = sd = dirs[self._dir_key]
+        return sd
+
+    # Store operations --------------------------------------------------------
+    def refresh(self, refresh_infos: RefrIn | list[FName] | bool = True,
+                **kwargs): raise NotImplementedError
+
+    @final
     def delete(self, delete_keys, *, recycle=True):
         """Deletes member file(s)."""
-        full_delete_paths, delete_info = self.files_to_delete(delete_keys)
+        # factory is _AFileInfos only, but installers don't have corrupted so
+        # let it blow if we are called with non-existing keys(join(None), boom)
+        finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
+                  self.filter_essential(delete_keys).items()]
         try:
-            self._delete_operation(full_delete_paths, delete_info,
-                recycle=recycle)
-        finally:
-            self.delete_refresh(full_delete_paths, delete_info,
-                check_existence=True)
+            self._delete_operation(finfos, recycle)
+        finally: # markers are popped from finfos - we refreshed in _delete_op
+            if finfos := self.check_existence(finfos):
+                # ok to suppose the only lo modification is due to deleted
+                # files at this point
+                self.refresh(RefrIn(del_infos=finfos), what='I',
+                             unlock_lo=True)
 
-    def files_to_delete(self, filenames, **kwargs):
-        raise NotImplementedError
+    def _delete_operation(self, finfos: list, recycle):
+        if abs_del_paths := [
+                *chain.from_iterable(inf.delete_paths() for inf in finfos)]:
+            env.shellDelete(abs_del_paths, recycle=recycle)
 
-    def _delete_operation(self, paths, delete_info, *, recycle=True):
-        env.shellDelete(paths, recycle=recycle)
+    def check_existence(self, infos):
+        """Lift your skirts, we are entering the realm of #241."""
+        return {inf for inf in infos if not inf.abs_path.exists()}
 
-    def filter_essential(self, fn_items: Iterable[FName]):
-        """Filters essential files out of the specified filenames. Useful to
-        determine whether or not a file will cause instability when
-        deleted/hidden."""
-        return fn_items
-
-    def delete_refresh(self, del_paths, deleted2, check_existence):
-        raise NotImplementedError
-
-    def refresh(self): raise NotImplementedError
-    def save(self): pass # for Screenshots
-
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, rdata_ren,
+                         store_refr=None):
         rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
@@ -1572,29 +1529,48 @@ class DataStore(DataDict):
             # saves) shellMove will offer to skip and raise SkipError
             if tup[0] == tup[1] or not tup[0].exists():
                 rename_paths.remove(tup)
-        env.shellMove(dict(rename_paths))
+        env.shellMove(ren := dict(rename_paths))
+        # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
         old_key = member_info.fn_key
         ##: Make sure we pass FName in, then drop this FName call
         member_info.fn_key = FName(newName)
-        #--FileInfos
+        #--FileInfo
         self[newName] = member_info
+        member_info.abs_path = self.store_dir.join(newName)
         del self[old_key]
-        return old_key
+        if rdata_ren is None:
+            rdata_ren = RefrData({newName}, to_del={old_key},
+                                 renames={old_key: newName}, ren_paths=ren)
+        else:
+            rdata_ren.redraw.add(member_info.fn_key)
+            rdata_ren.to_del.add(old_key)
+            rdata_ren.renames[old_key] = newName
+            rdata_ren.ren_paths.update(ren)
+        return rdata_ren
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        """Filters essential files out of the specified filenames. Returns the
+        remaining ones as a dict, mapping file names to file infos. Useful to
+        determine whether a file will cause instability when deleted/hidden."""
+        return {k: self.get(k) for k in fn_items}
+
+    def filter_unopenable(self, fn_items: Iterable[FName]):
+        """Filter unopenable files out of the specified filenames. Returns the
+        remaining ones as a dict, mapping file names to file infos."""
+        return {k: self[k] for k in fn_items}
 
     @property
-    def bash_dir(self):
-        """Return the folder where Bash persists its data - create it on init!
-        :rtype: bolt.Path"""
+    def bash_dir(self) -> Path:
+        """Return the folder where Bash persists its data.Create it on init!"""
         raise NotImplementedError
 
     @property
-    def hidden_dir(self):
-        """Return the folder where Bash should move the file info to hide it
-        :rtype: bolt.Path"""
+    def hide_dir(self) -> Path:
+        """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        # hasty hack for Files_Unhide, must absorb move_info
+        """Hasty hack for Files_Unhide - only use on files, not folders!"""
         try:
             env.shellMove(dict(zip(sources, destinations)), parent=window)
         except (CancelError, SkipError):
@@ -1602,53 +1578,120 @@ class DataStore(DataDict):
         return forward_compat_path_to_fn_list(
             {d.stail for d in destinations if d.exists()}, ret_type=set)
 
-class TableFileInfos(DataStore):
+    def save_pickle(self): pass # for Screenshots
+
+class _AFileInfos(DataStore):
+    """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
+    _rdata_type = RefrData
     factory: type[AFile]
+    # Whether these file infos track ownership in a table
+    tracks_ownership = False
+    _boot_refresh_args = {'booting': True}
 
-    def _initDB(self, dir_):
-        self.store_dir = dir_ #--Path
+    def __init__(self, factory=None, *, do_refresh=True):
+        """Init with specified directory and specified factory type."""
+        super().__init__(self._init_store(self.set_store_dir()))
+        self.factory = factory or self.__class__.factory
+        if do_refresh: self.refresh(**self._boot_refresh_args)
+
+    def _init_store(self, storedir):
+        """Set up the self's _data/corrupted and return the former."""
+        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         deprint(f'Initializing {self.__class__.__name__}')
-        deprint(f' store_dir: {self.store_dir}')
-        deprint(f' bash_dir: {self.bash_dir}')
-        self.store_dir.makedirs()
-        self.bash_dir.makedirs() # self.store_dir may need be set
-        # the type of the table keys is always bolt.FName
-        self.table = bolt.DataTable(
-            bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
-        ##: fix nightly regression storing 'installer' property as FName
-        inst_column = self.table.getColumn('installer')
-        for fn_key, val in inst_column.items():
-            if type(val) is not str:
-                deprint(f'stored installer for {fn_key} is {val!r}')
-                inst_column[fn_key] = str(val)
+        deprint(f' store_dir: {storedir}')
+        storedir.makedirs()
         self._data = FNDict()
         return self._data
 
-    def __init__(self, dir_, factory):
-        """Init with specified directory and specified factory type."""
-        super().__init__(self._initDB(dir_))
-        self.factory = factory
+    #--Refresh
+    def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False,
+                **kwargs):
+        """Refresh from file directory."""
+        rdata = self._rdata_type()
+        try:
+            new_or_present, delinfos = (refresh_infos.new_or_present,
+                                        refresh_infos.del_infos)
+        except AttributeError:
+            new_or_present, delinfos = self._list_store_dir() \
+                if refresh_infos else ({}, set())
+        for new, (oldInfo, kws) in new_or_present.items():
+            try:
+                if oldInfo is not None:
+                    # reread the header if any file attributes changed
+                    if oldInfo.do_update(**kws):
+                        rdata.redraw.add(new)
+                else: # new file or updated corrupted, get a new info
+                    self[new] = self.factory(self.store_dir.join(new),
+                        load_cache=True, **kws)
+                    self.corrupted.pop(new, None)
+                    rdata.to_add.add(new)
+            except (FileError, UnicodeError, BoltError,
+                    NotImplementedError) as e:
+                # old still corrupted, or new(ly) corrupted or we landed
+                # here cause cor_path was un/ghosted but file remained
+                # corrupted so in any case re-add to corrupted
+                cor_path = self.store_dir.join(new)
+                er = e.message if hasattr(e, 'message') else f'{e}'
+                self.corrupted[new] = cor = _Corrupted(cor_path, er, **kws)
+                deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
+                        traceback=True)
+                if new := self.pop(new, None): # effectively deleted
+                    delinfos.add(new)
+        rdata.to_del = {d.fn_key for d in delinfos}
+        self._delete_refresh(delinfos)
+        if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
+            self._notify_bain(altered={self[n].abs_path for n in alt},
+                              del_set={inf.abs_path for inf in delinfos})
+        return rdata
 
-    def new_info(self, fileName, *, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
-        """Create, add to self and return a new info using self.factory.
-        It will try to read the file to cache its header etc, so use on
-        existing files. WIP, in particular _in_refresh must go, but that
-        needs rewriting corrupted handling."""
-        info = self[fileName] = self.factory(self.store_dir.join(fileName),
-            load_cache=True, itsa_ghost=itsa_ghost)
-        if owner is not None:
-            info.set_table_prop('installer', f'{owner}')
-        if notify_bain:
-            self._notify_bain(altered={info.abs_path})
-        return info
-
-    def _list_store_dir(self): # performance intensive
+    def _list_store_dir(self):
         file_matches_store = self.rightFileType
-        return FNDict((x, False) for x in top_level_files(self.store_dir) if
-                      file_matches_store(x))
+        inodes = FNDict()
+        with os.scandir(self.store_dir) as it: # performance intensive
+            for x in it:
+                try:
+                    if x.is_file() and file_matches_store(n := x.name):
+                        inodes[n] = {'cached_stat': x.stat()}
+                except OSError: # this should not happen - investigating
+                    deprint(f'Failed to stat {x.name} in {self.store_dir}',
+                            traceback=True)
+        return self._diff_dir(inodes)
+
+    def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
+        dict[FName, tuple[AFile | None, dict]], set[ListInfo]]:
+        """Return a dict of fn keys (see overrides) of files present in data
+        dir and a set of deleted keys."""
+        # for modInfos '.ghost' must have been lopped off from inode keys
+        delinfos = {inf for inf in [*self.values(), *self.corrupted.values()]
+                     if inf.fn_key not in inodes}
+        new_or_present = {}
+        for k, kws in inodes.items():
+            # corrupted that has been updated on disk - if cor.abs_path
+            # changed ghost state (effectively deleted) do_update returns True
+            # ghost state can only change manually for corrupted - don't!
+            if (cor := self.corrupted.get(k)) and cor.do_update():
+                new_or_present[k] = (None, kws)
+            elif not cor: # for default tweaks with a corrupted copy
+                new_or_present[k] = (self.get(k), kws)
+        return new_or_present, delinfos
+
+    def _delete_refresh(self, infos):
+        """Only called from refresh - should be inlined but for ModInfos.
+        :param infos: the infos corresponding to deleted items."""
+        del_keys = [inf.fn_key for inf in infos]
+        for del_fn in del_keys:
+            self.pop(del_fn, None)
+            self.corrupted.pop(del_fn, None)
+        return del_keys
+
+    def _notify_bain(self, del_set: set[Path] = frozenset(),
+        altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
+        """Note that all of these parameters need to be absolute paths!"""
+        if self._bain_notify:
+            InstallersData.notify_external(del_set=del_set, altered=altered,
+                                           renamed=renamed)
 
     #--Right File Type?
     @classmethod
@@ -1668,186 +1711,51 @@ class TableFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-    #--Delete
-    def files_to_delete(self, fileNames, **kwargs):
-        abs_delete_paths = []
-        #--Cache table updates
-        tableUpdate = {}
-        #--Go through each file
-        for fileName in self.filter_essential(fileNames):
-            try:
-                fileInfo = self[fileName]
-            except KeyError: # corrupted
-                fileInfo = self.factory(self.store_dir.join(fileName))
-            #--File
-            filePath = fileInfo.abs_path
-            abs_delete_paths.append(filePath)
-            self._additional_deletes(fileInfo, abs_delete_paths)
-            #--Table
-            tableUpdate[filePath] = fileName
-        #--Now do actual deletions
-        abs_delete_paths = {x for x in abs_delete_paths if x.exists()}
-        return abs_delete_paths, tableUpdate
-
-    def _update_deleted_paths(self, deleted_keys, paths_to_keys,
-                              check_existence):
-        """Must be called BEFORE we remove the keys from self."""
-        if paths_to_keys is None: # we passed the keys in, get the paths
-            paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
-        if check_existence:
-            for filePath in list(paths_to_keys):
-                if filePath.exists():
-                    del paths_to_keys[filePath] # item was not deleted
-        self._notify_bain(del_set=paths_to_keys)
-        return list(paths_to_keys.values())
-
-    def _notify_bain(self, del_set: set[Path] = frozenset(),
-        altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
-        """Note that all of these parameters need to be absolute paths!"""
-        if self._bain_notify:
-            InstallersData.notify_external(del_set=del_set, altered=altered,
-                                           renamed=renamed)
-
-    def _additional_deletes(self, fileInfo, toDelete): pass
-
-    def save(self):
-        # items deleted outside Bash
-        for del_key in set(self.table) - set(self):
-            del self.table[del_key]
-        self.table.save()
-
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, rdata_ren,
+                         store_refr=None):
         # Override to allow us to notify BAIN if necessary
-        ##: This is *very* inelegant/inefficient, we calculate these paths
-        # twice (once here and once in super)
-        self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
-        return super(TableFileInfos, self).rename_operation(member_info, newName)
+        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
+        self._notify_bain(renamed=rdata_ren.ren_paths)
+        return rdata_ren
 
-    #--Copy
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies member file to destDir. Will overwrite! Will update
-        internal self.data for the file if copied inside self.info_dir but the
-        client is responsible for calling the final refresh of the data store.
-        See usages.
+class TableFileInfos(_AFileInfos):
+    tracks_ownership = True
+    _table_loaded = False
 
-        :param save_lo_cache: ModInfos only save the mod infos load order cache
-        :param set_mtime: if None self[fileName].mtime is copied to destination
-        """
-        destDir.makedirs()
-        if not destName: destName = fileName
-        src_info = self[fileName]
-        if destDir == self.store_dir and destName in self:
-            destPath = self[destName].abs_path
-        else:
-            destPath = destDir.join(destName)
-        self._do_copy(src_info, destPath)
-        if destDir == self.store_dir:
-            # TODO(ut) : pass the info in and load_cache=False
-            self.new_info(destName, notify_bain=True)
-            self.table.copyRow(fileName, destName)
-            if set_mtime is not None:
-                self[destName].setmtime(set_mtime) # correctly update table
-        return set_mtime
+    def _init_from_table(self):
+        """Load pickled data for mods, saves, inis and bsas."""
+        deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
+        self.bash_dir.makedirs()
+        return bolt.DataTable(self.bash_dir.join('Table.dat'),
+                              load_pickle=True).pickled_data
 
-    def _do_copy(self, cp_file_info, cp_dest_path):
-        """Performs the actual copy operation, copying the file represented by
-        the specified FileInfo to the specified destination path."""
-        # Will set the destination's mtime to the source's mtime
-        cp_file_info.abs_path.copyTo(cp_dest_path)
+    def refresh(self, refresh_infos=True, **kwargs):
+        if not self._table_loaded:
+            self._table_loaded = True
+            new_or_present, delinfos = self._list_store_dir()
+            table = self._init_from_table()
+            for fn, (_inf, kws) in new_or_present.items():
+                if props := table.get(fn):
+                    kws['att_val'] = props
+            refresh_infos = RefrIn(new_or_present, delinfos)
+        return super().refresh(refresh_infos, **kwargs)
 
-class FileInfos(TableFileInfos):
-    """Common superclass for mod, saves and bsa infos."""
+    def save_pickle(self):
+        pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
+        for k, v in self.items():
+            if pickle_dict := v.get_persistent_attrs(frozenset()):
+                pd.pickled_data[k] = pickle_dict
+        pd.save()
 
-    def _initDB(self, dir_):
-        self.corrupted = FNDict() #--errorMessage = corrupted[fileName]
-        return super()._initDB(dir_)
+class _Corrupted(AFile):
+    """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
-    #--Refresh File
-    def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
-        try:
-            fileInfo = super(FileInfos, self).new_info(fileName, owner=owner,
-                notify_bain=notify_bain, itsa_ghost=itsa_ghost)
-            self.corrupted.pop(fileName, None)
-            return fileInfo
-        except FileError as error:
-            if not _in_refresh: # if refresh just raise so we print the error
-                self.corrupted[fileName] = error.message
-                self.pop(fileName, None)
-            raise
-
-    #--Refresh
-    def refresh(self, refresh_infos=True, booting=False):
-        """Refresh from file directory."""
-        oldNames = set(self) | set(self.corrupted)
-        _added = set()
-        _updated = set()
-        newNames = self._list_store_dir()
-        for new, itsa_ghost in newNames.items(): #--Might have '.ghost' lopped off
-            oldInfo = self.get(new) # None if new was in corrupted or new one
-            try:
-                if oldInfo is not None:
-                    if oldInfo.do_update(itsa_ghost=itsa_ghost): # will reread the header
-                        _updated.add(new)
-                else: # added or known corrupted, get a new info
-                    self.new_info(new, _in_refresh=True,
-                        notify_bain=not booting, itsa_ghost=itsa_ghost)
-                    _added.add(new)
-            except FileError as e: # old still corrupted, or new(ly) corrupted
-                if not new in self.corrupted \
-                        or self.corrupted[new] != e.message:
-                    deprint(f'Failed to load {new}: {e.message}',
-                        traceback=True)
-                    self.corrupted[new] = e.message
-                self.pop(new, None)
-        _deleted_ = oldNames - set(newNames)
-        self.delete_refresh(_deleted_, None, check_existence=False,
-                            _in_refresh=True)
-        if _updated:
-            self._notify_bain(altered={self[n].abs_path for n in _updated})
-        change = bool(_added) or bool(_updated) or bool(_deleted_)
-        if not change: return change
-        return _added, _updated, _deleted_
-
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
-        """Special case for the saves, inis, mods and bsas.
-        :param deleted_keys: must be the data store keys and not full paths
-        :param paths_to_keys: a dict mapping full paths to the keys
-        """
-        #--Table
-        deleted_keys = self._update_deleted_paths(deleted_keys, paths_to_keys,
-                                                  check_existence)
-        for del_fn in deleted_keys:
-            self.pop(del_fn, None)
-            self.corrupted.pop(del_fn, None)
-            self.table.pop(del_fn, None)
-        return deleted_keys
-
-    def _additional_deletes(self, fileInfo, toDelete):
-        #--Backups
-        toDelete.extend(fileInfo.all_backup_paths()) # will include cosave ones
-
-    #--Rename
-    def rename_operation(self, member_info, newName):
-        """Renames member file from oldName to newName."""
-        #--Update references
-        #--File system
-        old_key = super(FileInfos, self).rename_operation(member_info, newName)
-        #--FileInfo
-        member_info.abs_path = self.store_dir.join(newName)
-        self.table.moveRow(old_key, newName)
-        # self[newName]._mark_unchanged() # not needed with shellMove !
-        return old_key
-
-    #--Move
-    def move_info(self, fileName, destDir):
-        """Moves member file to destDir. Will overwrite! The client is
-        responsible for calling delete_refresh of the data store."""
-        srcPath = self[fileName].getPath()
-        destPath = destDir.join(fileName)
-        srcPath.moveTo(destPath)
+    def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
+        self.fn_key = FName(fullpath.stail)
+        if itsa_ghost:
+            fullpath = fullpath + '.ghost' # Path.__add__ !
+        super().__init__(fullpath, **kwargs)
+        self.error_message = error_message
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFileInfo, AINIInfo):
@@ -1897,30 +1805,44 @@ class DefaultIniInfo(AINIInfo):
     def info_dir(self):
         return dirs['ini_tweaks']
 
+    def copy_to(self, cp_dest_path, **kwargs):
+        # Default tweak, so the file doesn't actually exist
+        self._store().copy_to_new_tweak(self, FName(cp_dest_path.stail))
+
 # noinspection PyUnusedLocal
 def ini_info_factory(fullpath, **kwargs) -> INIInfo:
     """INIInfos factory
 
     :param fullpath: Full path to the INI file to wrap
-    :param load_cache: Dummy param used in INIInfos.new_info factory call
-    :param itsa_ghost: Cached ghost status information, ignored for INIs"""
-    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath)
+    :param kwargs: Cached ghost status information, ignored for INIs"""
+    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
+        consider_obse_inis=bush.game.Ini.has_obse_inis)
     ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
                      else INIInfo)
     return ini_info_type(fullpath, detected_encoding)
+
+@dataclass(slots=True)
+class _RDIni(RefrData):
+    ini_changed: bool = False
+
+    def __bool__(self): # _RDIni is needed below
+        return super(_RDIni, self).__bool__() or self.ini_changed
 
 class INIInfos(TableFileInfos):
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
     unique_store_key = Store.INIS
+    _rdata_type = _RDIni
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
+    _dir_key = 'ini_tweaks'
+    _boot_refresh_args = {'booting': True, 'refresh_target': False}
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
                                       bush.game.default_tweaks.items())
-        super().__init__(dirs['ini_tweaks'], ini_info_factory)
+        super().__init__(ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -1939,8 +1861,8 @@ class INIInfos(TableFileInfos):
             choice, previous_ini = -1, None
         # Make a copy, we may modify the _target_inis dict
         for ini_name, ini_path in list(_target_inis.items()):
-            if ini_name == _(u'Browse...'): continue
-            # If user started with non-translated, 'Browse...'
+            if ini_name == _('Browse…'): continue
+            # If user started with non-translated, 'Browse…'
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
             # objects.  That will take care of it.
@@ -1958,8 +1880,8 @@ class INIInfos(TableFileInfos):
         for iFile in gameInis: # add the game inis even if missing
             if iFile.fn_key not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
-        if _(u'Browse...') not in _target_inis:
-            _target_inis[_(u'Browse...')] = None
+        if _('Browse…') not in _target_inis:
+            _target_inis[_('Browse…')] = None
         self.__sort_target_inis()
         if previous_ini:
             choice = list(bass.settings[u'bash.ini.choices']).index(
@@ -1967,6 +1889,54 @@ class INIInfos(TableFileInfos):
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings[u'bash.ini.choice']]
+
+    def refresh(self, refresh_infos=True, *, booting=False,
+                refresh_target=True, **kwargs):
+        rdata = super().refresh(refresh_infos, booting=booting)
+        # re-add default tweaks (booting / restoring a default over copy,
+        # delete should take care of this but needs to update redraw...)
+        for k, default_info in ((k1, v) for k1, v in
+                self._default_tweaks.items() if k1 not in self):
+            self[k] = default_info  # type: DefaultIniInfo
+            if k in rdata.to_del:  # we restore default over copy
+                rdata.redraw.add(k)
+                default_info.reset_status()
+            else: # booting
+                rdata.to_add.add(k)
+        rdata.ini_changed = refresh_target and (
+                    self.ini.updated or self.ini.do_update())
+        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
+            self.ini.updated = False
+            for ini_info in self.values(): ini_info.reset_status()
+        return rdata
+
+    def check_existence(self, infos):
+        regular_tweaks = []
+        def_tweaks = {inf for inf in infos if inf.fn_key in
+                      self._default_tweaks or regular_tweaks.append(inf)}
+        return {*def_tweaks, *super().check_existence(regular_tweaks)}
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        # Can't remove default tweaks
+        return {k: v for k in fn_items if # return None for corrupted
+                not (v := self.get(k)) or not v.is_default_tweak}
+
+    def filter_unopenable(self, fn_items: Iterable[FName]):
+        # Can't open default tweaks, they are entirely virtual
+        return self.filter_essential(fn_items)
+
+    @property
+    def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
+
+    # _AFileInfos overrides ---------------------------------------------------
+    def _diff_dir(self, inodes):
+        old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
+                         *self.corrupted.values()}
+        new_or_present, delinfos = super()._diff_dir(inodes)
+        # if iinf is a default tweak a file has replaced it - set it to None
+        new_or_present = {k: (inf and (None if inf.is_default_tweak else inf),
+            kws) for k, (inf, kws) in new_or_present.items()}
+        return new_or_present, delinfos & old_ini_infos # drop default tweaks
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         parts = os.path.split(os.fspath(data_path))
@@ -1977,9 +1947,11 @@ class INIInfos(TableFileInfos):
             return super().data_path_to_info(parts[1], would_be)
         return None
 
+    # Target INI handling -----------------------------------------------------
     @property
     def ini(self):
         return self._ini
+
     @ini.setter
     def ini(self, ini_path):
         """:type ini_path: bolt.Path"""
@@ -2004,103 +1976,30 @@ class INIInfos(TableFileInfos):
     def __sort_target_inis():
         # Sort non-game INIs alphabetically
         keys = sorted(bass.settings[u'bash.ini.choices'])
-        # Sort game INIs to the top, and 'Browse...' to the bottom
+        # Sort game INIs to the top, and 'Browse…' to the bottom
         game_inis = bush.game.Ini.dropdown_inis
         len_inis = len(game_inis)
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
-                      len_inis + 1 if a == _(u'Browse...') else len_inis))
+                      len_inis + 1 if a == _('Browse…') else len_inis))
         bass.settings[u'bash.ini.choices'] = OrderedDict(
             # convert stray Path instances back to unicode
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
 
-    def _refresh_ini_tweaks(self):
-        """Refresh from file directory."""
-        oldNames = {n for n, v in self.items() if not v.is_default_tweak}
-        _added = set()
-        _updated = set()
-        newNames = self._list_store_dir()
-        for new_tweak in newNames:
-            oldInfo = self.get(new_tweak) # None if new_tweak was added
-            if oldInfo is not None and not oldInfo.is_default_tweak:
-                if oldInfo.do_update(): _updated.add(new_tweak)
-            else: # added
-                tweak_path = self.store_dir.join(new_tweak)
-                try:
-                    oldInfo = self.factory(tweak_path)
-                except UnicodeDecodeError:
-                    deprint(f'Failed to read {tweak_path}', traceback=True)
-                    continue
-                except (BoltError, NotImplementedError) as e:
-                    deprint(e.message)
-                    continue
-                _added.add(new_tweak)
-            self[new_tweak] = oldInfo
-        _deleted_ = oldNames - set(newNames)
-        self.delete_refresh(_deleted_, None, check_existence=False,
-                            _in_refresh=True)
-        # re-add default tweaks
-        for k in list(self):
-            if k not in newNames: del self[k]
-        for k, default_info in self._missing_default_inis():
-            self[k] = default_info # type: DefaultIniInfo
-            if k in _deleted_: # we restore default over copy
-                _updated.add(k)
-                default_info.reset_status()
-        if _updated:
-            self._notify_bain(altered={self[n].abs_path for n in _updated})
-        return _added, _deleted_, _updated
-
-    def _missing_default_inis(self):
-        return ((k, v) for k, v in self._default_tweaks.items() if
-                k not in self)
-
-    def refresh(self, refresh_infos=True, refresh_target=True):
-        _added = _deleted_ = _updated = set()
-        if refresh_infos:
-            _added, _deleted_, _updated = self._refresh_ini_tweaks()
-        change = refresh_target and (self.ini.updated or self.ini.do_update())
-        if change: # reset the status of all infos and let RefreshUI set it
-            self.ini.updated = False
-            for ini_info in self.values(): ini_info.reset_status()
-        change = bool(_added) or bool(_updated) or bool(_deleted_) or change
-        if not change: return change
-        return _added, _updated, _deleted_, change
-
-    @property
-    def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
-
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
-        deleted_keys = self._update_deleted_paths(deleted_keys, paths_to_keys,
-                                                  check_existence)
-        if not deleted_keys: return deleted_keys
-        for del_fn in deleted_keys:
-            self.pop(del_fn, None)
-            self.table.delRow(del_fn)
-        if not _in_refresh: # re-add default tweaks
-            for k, default_info in self._missing_default_inis():
-                self[k] = default_info  # type: DefaultIniInfo
-                default_info.reset_status()
-        return deleted_keys
-
-    def filter_essential(self, fn_items: Iterable[FName]):
-        # Can't remove default tweaks
-        return (i for i in fn_items if not self[i].is_default_tweak)
-
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
 
-    def _copy_to_new_tweak(self, info, fn_new_tweak: FName):
+    def copy_to_new_tweak(self, info, fn_new_tweak: FName):
         """Duplicate tweak into fn_new_teak."""
         with open(self.store_dir.join(fn_new_tweak), 'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
-        return self.new_info(fn_new_tweak, notify_bain=True)
+        self.refresh(RefrIn.from_added([fn_new_tweak]))
+        return self[fn_new_tweak]
 
     def copy_tweak_from_target(self, tweak, fn_new_tweak: FName):
         """Duplicate tweak into fn_new_teak, but with the settings that are
         currently written in the target INI."""
         if not fn_new_tweak: return False
-        dup_info = self._copy_to_new_tweak(self[tweak], fn_new_tweak)
+        dup_info = self.copy_to_new_tweak(self[tweak], fn_new_tweak)
         # Now edit it with the values from the target INI
         new_tweak_settings = bolt.LowerDict(dup_info.get_ci_settings())
         target_settings = self.ini.get_ci_settings()
@@ -2116,97 +2015,65 @@ class INIInfos(TableFileInfos):
         dup_info.saveSettings(new_tweak_settings)
         return True
 
-    # FileInfos stuff ---------------------------------------------------------
-    def _do_copy(self, cp_file_info, cp_dest_path):
-        if cp_file_info.is_default_tweak:
-            # Default tweak, so the file doesn't actually exist
-            self._copy_to_new_tweak(cp_file_info, FName(cp_dest_path.stail))
-        else:
-            super()._do_copy(cp_file_info, cp_dest_path)
-
 #-- ModInfos ------------------------------------------------------------------
 def _lo_cache(lord_func):
     """Decorator to make sure I sync modInfos cache with load_order cache
     whenever I change (or attempt to change) the latter, and that I do
     refresh modInfos."""
     @wraps(lord_func)
-    def _modinfos_cache_wrapper(self, *args, **kwargs):
+    def _modinfos_cache_wrapper(self: ModInfos, *args, **kwargs) -> LordDiff:
         """Sync the ModInfos load order and active caches and refresh for
-        load order or active changes.
-
-        :type self: ModInfos
-        :return: 1 if only load order changed, 2 if only active changed,
-        3 if both changed else 0
-        """
+        load order or active changes."""
         try:
-            old_lo, old_active = load_order.cached_lo_tuple(), \
-                                 load_order.cached_active_tuple()
-            cached_lord = lord_func(self, *args, **kwargs)
-            lo, active = cached_lord.loadOrder, cached_lord.activeOrdered
-            lo_changed = lo != old_lo
-            active_changed = active != old_active
-            active_set = set(active)
-            old_active_set = set(old_active)
-            active_set_changed = active_changed and (
-                    active_set != old_active_set)
-            if active_changed:
-                self._refresh_mod_inis() # before _refreshMissingStrings !
-                self._refresh_active_no_cp1252()
-                self._update_info_sets()
-                self._refreshMissingStrings()
-            #if lo changed (including additions/removals) let refresh handle it
-            if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
-                self.autoGhost(force=False)
-            # Always recalculate the real indices - any LO change requires us
-            # to do this. We could technically be smarter, but this takes <1ms
-            # even with hundreds of plugins
-            self._recalc_real_indices()
-            # Same reasoning goes for dependents as well
-            self._recalc_dependents()
-            new_active = active_set - old_active_set
-            for neu in new_active: # new active mods, unghost
-                self[neu].setGhost(False)
-            return (lo_changed and 1) + (active_changed and 2)
+            ldiff: LordDiff = lord_func(self, *args, **kwargs)
+            if not (ldiff.act_changed() or ldiff.added or ldiff.missing):
+                return ldiff
+            # Update all data structures that may be affected by LO change
+            ldiff.affected |= self._refresh_mod_inis_and_strings()
+            ldiff.affected |= self._file_or_active_updates()
+            # unghost new active plugins and ghost new inactive (if autoGhost)
+            ghostify = dict.fromkeys(ldiff.act_new, False)
+            if bass.settings['bash.mods.autoGhost']:
+                new_inactive = (ldiff.act_del - ldiff.missing) | (
+                        ldiff.added - ldiff.act_new) # new mods, ghost
+                ghostify.update({k: True for k in new_inactive if
+                    self[k].get_table_prop('allowGhosting', True)})
+            ldiff.affected.update(mod for mod, modGhost in ghostify.items()
+                                  if self[mod].setGhost(modGhost))
+            return ldiff
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
             self._active_wip = list(load_order.cached_active_tuple())
     return _modinfos_cache_wrapper
 
-def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
-    """Helper method for get_bsa_lo and friends. Retrieves BSA paths from an
-    INI file."""
-    r_bsas = (x.strip() for x in
-              bsa_ini.getSetting(u'Archive', bsa_key, u'').split(u','))
-    return (available_bsas[b] for b in r_bsas if b in available_bsas)
-
 #------------------------------------------------------------------------------
-class ModInfos(FileInfos):
+class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     unique_store_key = Store.MODS
+    _dir_key = 'mods'
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
-        FileInfos.__init__(self, dirs['mods'], ModInfo)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
-        # RefrData.redraw/added so we need to calculate these in refresh.
+        # RefrData.redraw/to_add so we need to calculate these in refresh.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        if dirs[u'mods'].join(bush.game.master_file).is_file():
-            self._master_esm = bush.game.master_file
-        else:
+        masterpath = dirs['mods'].join(bush.game.master_file)
+        if (master_missing := not masterpath.is_file()) and (
+                ghost := masterpath + '.ghost').is_file():  # Path.__add__ !
+            ghost.moveTo(masterpath)
+            deprint(f'Unghosted master file - was: {ghost}')
+        elif master_missing:
             raise FileError(bush.game.master_file,
                             u'File is required, but could not be found')
+        self._master_esm = bush.game.master_file
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
-        self.real_indices = defaultdict(lambda: sys.maxsize)
-        self.real_index_strings = defaultdict(lambda: '')
+        # values are tuples of int and str for displaying in the Indices column
+        self.real_indices = defaultdict(lambda: (sys.maxsize, ''))
         # Maps each plugin to a set of all plugins that have it as a master
         self.dependents = defaultdict(set)
-        # Map each mergeability type to a set of plugins that can be handled
-        # via that type
-        self._mergeable_by_type = {m: set() for m in MergeabilityCheck}
-        self._mergeable_parser = bolt.gen_enum_parser(MergeabilityCheck)
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
@@ -2220,17 +2087,94 @@ class ModInfos(FileInfos):
         self.merged, self.imported, self.bashed_patches = set(), set(), set()
         #--Oblivion version
         self.voCurrent = None
-        self.voAvailable = set()
+        self._voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
         # used in RefreshData
         self.warn_missing_lo_act = set()
-        self.selectedExtra = []
-        load_order.initialize_load_order_handle(self, bush.game.fsName)
+        self.selectedExtra = set()
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
+        load_order.initialize_load_order_handle(self, bush.game)
+        # cache the bsa_lo for the current load order - expensive to calculate
+        self.__bsa_lo = self.__bsa_cause = self.__available_bsas = None
+        global modInfos
+        modInfos = self ##: hack needed in ModInfo.readHeader
+        super().__init__(ModInfo)
 
-    def _update_info_sets(self):
+    # Refresh - not quite surprisingly this is super complex - therefore define
+    # refresh satellite methods before even defining the DataStore overrides
+    def refresh(self, refresh_infos=True, *, booting=False, unlock_lo=False,
+                insert_after: FNDict[FName, FName] | None = None, **kwargs):
+        """Update file data for additions, removals and date changes.
+        See usages for how to use the refresh_infos and unlock_lo params.
+        NB: if an operation *we* performed changed the load order we do not
+        want lock load order to revert our own operation. So either call
+        some of the set_load_order methods, or pass unlock_lo=True
+        (refreshLoadOrder only *gets* load order)."""
+        # Scan the data dir, getting info on added, deleted and modified files
+        rdata = super().refresh(refresh_infos, booting=booting)
+        mods_changes = bool(rdata)
+        self._refresh_bash_tags()
+        if insert_after:
+            for k, v in insert_after.items():
+                self._cached_lo_insert_after(v, k)
+            ldiff = self._cached_lo_save_lo()
+        else: # if refresh_infos is False but mods are added force refresh
+            ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
+                unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+        rdata.redraw |= ldiff.reordered
+        # if active did not change, we must perform the refreshes below
+        if not ((act_ch := ldiff.act_changed()) or ldiff.added or
+                ldiff.missing):
+            # in case ini files were deleted or modified or maybe string files
+            # were deleted... we need a load order below: in skyrim we read
+            # inis in active order - we then need to redraw what changed status
+            rdata.redraw |= self._refresh_mod_inis_and_strings()
+            if mods_changes:
+                rdata.redraw |= self._file_or_active_updates()
+        else: # we did all the refreshes above in _modinfos_cache_wrapper
+            rdata.redraw |= act_ch | ldiff.affected
+        self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
+        return rdata
+
+    # _AFileInfos overrides that are used in refresh - ghosts ahead
+    def _delete_refresh(self, infos):
+        del_keys = super()._delete_refresh(infos)
+        # we need to call deactivate to deactivate dependents - refresh handles
+        # saving the load order - can't do in delete_op (due to check_exists)
+        self.lo_deactivate(*del_keys) # no-op if empty
+        return del_keys
+
+    def _diff_dir(self, inodes):
+        """ModInfos.rightFileType matches ghosts - filter those out from keys
+        and pass the ghost state info to refresh."""
+        ghosts = set()
+        for ghost in [x for x in inodes if x.fn_ext == '.ghost']:
+            if (normal := ghost.fn_body) in inodes: # they exist in both states
+                ##: we need to propagate this warning once refresh dust settles
+                deprint(f'File {normal} and its ghost exist. The ghost '
+                        f'will be ignored but this may lead to undefined '
+                        f'behavior - please remove one or the other')
+            else:
+                inodes[normal] = inodes[ghost]
+                ghosts.add(normal)
+            del inodes[ghost]
+        return super()._diff_dir(FNDict(
+            (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
+            inodes.items()))
+
+    def _file_or_active_updates(self):
+        """If any plugins have been added, updated or deleted, or the active
+        order/status changed we need to recalculate cached data structures.
+        We could be more granular but the performance is elsewhere plus the
+        complexity might not worth it."""
+        self.__recalc_dependents()
+        return {*self.__refresh_active_no_cp1252(), *self.__update_info_sets(),
+                *self.__recalc_real_indices(), *self.__refresh_mergeable()}
+
+    # Use once dunders in _file_or_active_updates - maybe loop once?
+    def __update_info_sets(self):
         """Refresh bashed_patches/imported/merged - active state changes and/or
         removal/addition of plugins should trigger a refresh."""
         bps, self.bashed_patches = self.bashed_patches, {
@@ -2242,24 +2186,267 @@ class ModInfos(FileInfos):
         return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
                 *(imprtd ^ self.imported)}
 
-    ##: Do we need fast_cached_property here?
-    @property
-    def mergeable_plugins(self) -> set[FName]:
-        """All plugins that can be merged into the Bashed Patch (they may
-        already *be* merged - see ModInfos.merged)."""
-        return self._mergeable_by_type[MergeabilityCheck.MERGE]
+    def __recalc_real_indices(self):
+        """Recalculate the real indices cache, which is the index the game will
+        assign to plugins. ESLs will land in the 0xFE spot, while inactive
+        plugins don't get any - so we sort them last. Return a set of mods
+        whose real index changed."""
+        # Note that inactive plugins are handled by our defaultdict factory
+        old = self.real_indices
+        self.real_indices = bush.game.plugin_flags.get_indexes(
+            ((p, self[p]) for p in load_order.cached_active_tuple()))
+        return {k for k, v in old.items() ^ self.real_indices.items()}
+
+    def __recalc_dependents(self):
+        """Recalculates the dependents cache. See ModInfo.get_dependents for
+        more information."""
+        cached_dependents = self.dependents
+        cached_dependents.clear()
+        for p, p_info in self.items():
+            for p_master in p_info.masterNames:
+                cached_dependents[p_master].add(p)
+
+    def __refresh_active_no_cp1252(self):
+        """Refresh which filenames cannot be saved to plugins.txt - active
+        state changes and/or removal/addition of plugins should trigger a
+        refresh. It seems that Skyrim and Oblivion read plugins.txt as a
+        cp1252 encoded file, and any filename that doesn't decode to cp1252
+        will be skipped."""
+        old_bad, self.bad_names = self.bad_names, set()
+        old_ab, self.activeBad = self.activeBad, set()
+        for fileName in self:
+            if self.isBadFileName(fileName):
+                if load_order.cached_is_active(fileName):
+                    ##: For now, we'll leave them active, until we finish
+                    # testing what the game will support
+                    #self.lo_deactivate(fileName)
+                    self.activeBad.add(fileName)
+                else:
+                    self.bad_names.add(fileName)
+        return (self.activeBad ^ old_ab) | (self.bad_names ^ old_bad)
+
+    def __refresh_mergeable(self):
+        """Refreshes set of mergeable mods."""
+        #--Mods that need to be rescanned
+        rescan_mods = []
+        full_checks = bush.game.mergeability_checks
+        quick_checks = {mc: pflag.cached_type for pflag in
+            bush.game.plugin_flags if (mc := pflag.merge_check) in full_checks}
+        all_checks = len(full_checks)
+        changed = set()
+        # We need to scan dependent mods first to account for mergeability of
+        # their masters
+        for fn_mod, modInfo in dict_sort(self, reverse=True,
+                                         key_f=load_order.cached_lo_index):
+            cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
+                                                           (None, {}))
+            # Quickly check if some mergeability types are impossible for this
+            # plugin (because it already has the target type)
+            new_checks = {m: False for m, m_check in quick_checks.items() if
+                          m_check(modInfo)}
+            # If ve already covered all required checks with the quick checks
+            # above (e.g. an ESL-flagged plugin in a game with only ESL
+            # support -> not ESL-flaggable), or the cached size matches what we
+            # have on disk, and we have data for all required mergeability
+            # checks, we can cache the info
+            if len(new_checks) == all_checks or (len(canMerge) == all_checks
+                    and cached_size == modInfo.fsize):
+                if canMerge != (canMerge := canMerge | new_checks):
+                    changed.add(fn_mod)
+                modInfo.set_table_prop('mergeInfo', (modInfo.fsize, canMerge))
+            else:
+                # We have to rescan mergeability - either the plugin's size
+                # changed or there is at least one required mergeability check
+                # we have not yet run for this plugin
+                rescan_mods.append(fn_mod)
+        if rescan_mods:
+            self.rescanMergeable(rescan_mods, sort_descending_lo=False) ##: maybe re-add progress?
+        return {*changed, *rescan_mods}
+
+    def rescanMergeable(self, names, progress=bolt.Progress(),
+                        return_results=False, sort_descending_lo=True):
+        """Rescan specified mods. Return value is only meaningful when
+        return_results is set to True."""
+        merge = MergeabilityCheck.MERGE
+        full_checks = bush.game.mergeability_checks
+        all_reasons = defaultdict(list) if return_results else dict.fromkeys(
+            full_checks)
+        if sort_descending_lo: # sort in inverted load order for _dependent
+            names = sorted(names, key=load_order.cached_lo_index, reverse=True)
+        with progress:
+            progress.setFull(max(len(names),1))
+            result = {}
+            for i, fileName in enumerate(names):
+                progress(i, fileName)
+                fileInfo = self[fileName]
+                check_results = {}
+                for merg_type, merg_check in full_checks.items():
+                    try:
+                        check_results[merg_type] = merg_check(fileInfo, self,
+                            all_reasons[merg_type], bush.game)
+                    except Exception:  # as e
+                        # deprint(f'Error scanning mod {fileName} ({e})')
+                        # # Assume it's not mergeable
+                        # check_results[merg_type] = False
+                        raise
+                # Special handling for MERGE: NoMerge-tagged plugins
+                if return_results:
+                    if check_results.get(merge) and \
+                            'NoMerge' in fileInfo.getBashTags():
+                        all_reasons[merge].append(
+                            _('Technically mergeable, but has NoMerge tag.'))
+                    result[fileName] = all_reasons
+                    all_reasons = defaultdict(list)
+                fileInfo.set_table_prop('mergeInfo',
+                                        (fileInfo.fsize, check_results))
+            return result
+
+    def _refresh_mod_inis_and_strings(self):
+        """Refresh ini and str files from Data directory. Those need to be
+        refreshed if active mods change or mods are added/removed - but also
+        in a plain tab out/in Bash, as those are regular files. We should
+        centralize data dir scanning. String files depend on inis."""
+        ##: depends on bsaInfos thus a bsaInfos.refresh should trigger
+        # a modInfos.refresh - see comments in get_bsa_lo
+        data_folder_path = bass.dirs['mods']
+        self.plugin_inis = self.__load_plugin_inis(data_folder_path)
+        # We'll be removing BSAs from here once we've given them a position
+        self.__available_bsas = av_bsas = FNDict(bsaInfos.items())
+        # Determine BSA LO from INIs once, this gets expensive very quickly
+        ##: What about SkyrimCustom.ini etc?
+        self.__bsa_lo, self.__bsa_cause = bush.game.Ini.get_bsas_from_inis(
+            av_bsas, *self.plugin_inis.values(), oblivionIni)
+        if not bush.game.Esp.stringsFiles:
+            return set()
+        # refresh which mods are supposed to have strings files, but are
+        # missing them (=CTD). For Skyrim you need to have a valid load order
+        oldBad = self.missing_strings
+        # Determine the present strings files once to avoid stat'ing
+        # non-existent strings files hundreds of times
+        try:
+            strings_files = os.listdir(data_folder_path.join('strings'))
+            ci_cached_strings_paths = {f'strings{os.path.sep}{s.lower()}'
+                                       for s in strings_files}
+        except FileNotFoundError:
+            # No loose strings folder -> all strings are in BSAs
+            ci_cached_strings_paths = set()
+        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
+        # sort the ini-loaded bsas in an optimal way for detecting strings
+        hi_to_lo = sorted(self.__bsa_lo, key=lambda bi:
+            bush.game.Bsa.heuristic_sort_key(bi, self.__bsa_lo))
+        self.missing_strings = {k for k, v in self.items() if
+            v.isMissingStrings(av_bsas, hi_to_lo, ci_cached_strings_paths,
+                               i_lang)}
+        self.new_missing_strings = self.missing_strings - oldBad
+        return self.missing_strings ^ oldBad
+
+    def __load_plugin_inis(self, data_folder_path):
+        if not bush.game.Ini.supports_mod_inis:
+            return self.plugin_inis # empty FNDict
+        # First, check the Data folder for INIs present in it. Order does not
+        # matter, we will only use this to look up existence
+        lower_data_cont = (f.lower() for f in os.listdir(data_folder_path))
+        present_inis = {i for i in lower_data_cont if i.endswith('.ini')}
+        # Determine which INIs are active based on LO. Order now matters
+        possible_inis = [self[m].get_ini_name() for m in
+                         load_order.cached_active_tuple()]
+        active_inis = [i for i in possible_inis if i.lower() in present_inis]
+        # Add new or modified INIs to the cache and copy the final order
+        inis_active = []
+        # check present inis for updates
+        prev_inis = {k.abs_path: k for k in self.plugin_inis.values()}
+        for acti_ini_name in active_inis:
+            # Need to restore the full path here since we'll stat that path
+            # when resetting the cache during __init__
+            acti_ini_path = data_folder_path.join(acti_ini_name)
+            acti_ini = prev_inis.get(acti_ini_path)
+            if acti_ini is None or acti_ini.do_update():
+                acti_ini = IniFileInfo(acti_ini_path, 'cp1252')
+            inis_active.append(acti_ini)
+        # values in active order, later loading inis override previous settings
+        return FNDict((k.abs_path.stail, k) for k in reversed(inis_active))
+
+    def _refresh_bash_tags(self):
+        """Reloads bash tags for all mods set to receive automatic bash
+        tags."""
+        try:
+            bt_contents = {t.lower() for t
+                           in os.listdir(bass.dirs['tag_files'])}
+        except FileNotFoundError:
+            bt_contents = set() # No BashTags folder -> no BashTags files
+        for modinf in self.values(): # type: ModInfo
+            autoTag = modinf.is_auto_tagged(default_auto=None)
+            if autoTag is None:
+                if modinf.get_table_prop('bashTags') is None:
+                    # A new mod, set auto tags to True (default)
+                    modinf.set_auto_tagged(True)
+                    autoTag = True
+                else:
+                    # An old mod that had manual bash tags added
+                    modinf.set_auto_tagged(False) # disable auto tags
+            if autoTag:
+                modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
+
+    def getSemiActive(self, patches, skip_active=False):
+        """Return (merged,imported) mods made semi-active by Bashed Patch.
+
+        If no bashed patches are present in 'patches' then return empty sets.
+        Else for each bashed patch use its config (if present) to find mods
+        it merges or imports.
+
+        :param patches: A set of mods to look for bashed patches in.
+        :param skip_active: If True, only return inactive merged/imported
+            plugins."""
+        merged_,imported_ = set(),set()
+        for patch in patches & self.bashed_patches: # this must be up to date!
+            patchConfigs = self[patch].get_table_prop('bash.patch.configs')
+            if not patchConfigs: continue
+            if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
+                    u'isEnabled'):
+                config_checked = merger_conf[u'configChecks']
+                for modName, is_merged in forward_compat_path_to_fn(
+                        config_checked).items():
+                    if is_merged and modName in self:
+                        if skip_active and load_order.cached_is_active(
+                                modName): continue
+                        merged_.add(modName)
+            for imp_name in forward_compat_path_to_fn_list(
+                    patchConfigs.get('ImportedMods', [])):
+                if imp_name in self:
+                    if skip_active and load_order.cached_is_active(
+                            imp_name): continue
+                    imported_.add(imp_name)
+        return merged_,imported_
+
+    # Rest of DataStore overrides ---------------------------------------------
+    def rename_operation(self, member_info, newName, rdata_ren,
+                         store_refr=None):
+        """Renames member file from oldName to newName."""
+        isSelected = load_order.cached_is_active(member_info.fn_key)
+        if isSelected:
+            self.lo_deactivate(member_info.fn_key)
+        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
+        # rename in load order caches
+        self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
+                          FName(newName), isSelected)
+        # Update linked BP parts if the parent BP got renamed
+        for mod_inf in self.values():
+            if mod_inf.get_table_prop('bp_split_parent') == old_key:
+                mod_inf.set_table_prop('bp_split_parent', str(newName))
+        return rdata_ren
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        # Removing the game master breaks everything, for obvious reasons
+        return {k: self.get(k) for k in fn_items if k != self._master_esm}
+
+    def move_infos(self, sources, destinations, window, bash_frame):
+        moved = super().move_infos(sources, destinations, window, bash_frame)
+        self.refresh(RefrIn.from_added(moved))
+        bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
+        return moved
 
     @property
-    def esl_capable_plugins(self) -> set[FName]:
-        """All plugins that could receive an ESL flag, but don't have one
-        yet."""
-        return self._mergeable_by_type[MergeabilityCheck.ESL_CHECK]
-
-    @property
-    def overlay_capable_plugins(self) -> set[FName]:
-        """All plugins that could receive al Overlay flag, but don't have one
-        yet."""
-        return self._mergeable_by_type[MergeabilityCheck.OVERLAY_CHECK]
+    def bash_dir(self): return dirs[u'modsBash']
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -2277,11 +2464,11 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        return load_order.save_lo(None, load_order.cached_lord.lorder(
+        return load_order.save_lo(None, load_order.get_ordered(
             self._active_wip if active is None else active))
 
     @_lo_cache
-    def cached_lo_save_lo(self):
+    def _cached_lo_save_lo(self):
         """Save load order when active did not change."""
         return load_order.save_lo(self._lo_wip)
 
@@ -2301,28 +2488,30 @@ class ModInfos(FileInfos):
     def redo_load_order(self): return load_order.redo_load_order()
 
     #--Load Order utility methods - be sure cache is valid when using them
-    def cached_lo_insert_after(self, previous, new_mod):
-        previous_index = self._lo_wip.index(previous)
+    def _cached_lo_insert_after(self, previous, new_mod):
+        new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
+        if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
+        dex = self._lo_wip.index(previous)
         if not bush.game.using_txt_file:
-            # set the mtime to avoid reordering all subsequent mods
-            try:
-                next_mod = self._lo_wip[previous_index + 1]
-            except IndexError: # last mod
-                next_mod = None
-            end_time = self[next_mod].mtime if next_mod else None
-            start_time  = self[previous].mtime
-            if end_time is not None and \
-                    end_time <= start_time: # can happen on esm/esp boundary
-                start_time = end_time - 60.0
-            set_time = load_order.get_free_time(start_time, end_time=end_time)
-            self[new_mod].setmtime(set_time)
-        self._lo_wip[previous_index + 1:previous_index + 1] = [
-            self[new_mod].fn_key] ##: new_mod is not always an FName
+            t_prev = self[previous].ftime
+            if self._lo_wip[-1] == previous:  # place it after the last mod
+                new_time = t_prev + 60
+            else:
+                # try to put it right before the next mod to avoid resetting
+                # ftimes of all subsequent mods - note (t_prev >= t_next)
+                # might be True at the esm boundary, we could be smarter here
+                t_next = self[self._lo_wip[dex + 1]].ftime
+                t_prev += 1  # add one second
+                new_time = t_prev if t_prev < t_next else None
+            if new_time is not None:
+                self[new_mod].setmtime(new_time)
+        self._lo_wip[dex + 1:dex + 1] = [new_mod]
 
     def cached_lo_last_esm(self):
         last_esm = self._master_esm
         for mod in self._lo_wip[1:]:
-            if not self[mod].in_master_block(): return last_esm
+            if not bush.game.master_flag.cached_type(self[mod]):
+                return last_esm
             last_esm = mod
         return last_esm
 
@@ -2341,396 +2530,295 @@ class ModInfos(FileInfos):
             self._lo_wip.append(mod)
         self._lo_wip[first_dex:first_dex] = modlist
 
-    def cached_lo_append_if_missing(self, mods):
-        lo_wip_set = set(self._lo_wip)
-        new = [x for x in mods if x not in lo_wip_set]
-        if not new: return
-        esms = [x for x in new if self[x].in_master_block()]
-        if esms:
-            last = self.cached_lo_last_esm()
-            for esm in esms:
-                self.cached_lo_insert_after(last, esm)
-                last = esm
-            esms_set = set(esms)
-            new = [x for x in new if x not in esms_set]
-        self._lo_wip.extend(new)
-        self.cached_lo_save_lo()
+    #--Active mods management -------------------------------------------------
+    def lo_activate(self, fileName, _modSet=None, _children=None,
+                    _activated=None, doSave=False):
+        """Mutate _active_wip cache then save if doSave is True."""
+        if _activated is None: _activated = set()
+        # Skip .esu files, those can't be activated
+        ##: This .esu handling needs to be centralized - sprinkled all over
+        # actives related lo_* methods
+        if fileName.fn_ext == u'.esu': return []
+        try:
+            msg = load_order.check_active_limit([*self._active_wip, fileName],
+                                                as_type=str)
+            if msg:
+                msg = f'{fileName}: Trying to activate more than {msg}'
+                raise PluginsFullError(msg)
+            if _children:
+                if fileName in _children:
+                    raise BoltError(f'Circular Masters: '
+                                    f'{" >> ".join((*_children, fileName))}')
+                _children.append(fileName)
+            else:
+                _children = [fileName]
+            #--Select masters
+            if _modSet is None: _modSet = set(self)
+            #--Check for bad masternames:
+            #  Disabled for now
+            ##if self[fileName].hasBadMasterNames():
+            ##    return
+            # Speed up lookups, since they occur for the plugin and all masters
+            acti_set = set(self._active_wip)
+            for master in self[fileName].masterNames:
+                # Check that the master is on disk and not already activated
+                if master in _modSet and master not in acti_set:
+                    self.lo_activate(master, _modSet, _children, _activated)
+            #--Select in plugins
+            if fileName not in acti_set:
+                self._active_wip.append(fileName)
+                _activated.add(fileName)
+            return load_order.get_ordered(_activated)
+        finally:
+            if doSave: self.cached_lo_save_active()
+
+    def lo_deactivate(self, *filenames, doSave=False):
+        """Remove mods and their children from _active_wip, can only raise if
+        doSave=True."""
+        filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
+        old = set_awip = set(self._active_wip)
+        diff = set_awip - filenames
+        if len(diff) == len(set_awip): return set()
+        #--Unselect self
+        set_awip = diff
+        #--Unselect children
+        children = set()
+        cached_dependents = self.dependents
+        for fileName in filenames:
+            children |= cached_dependents[fileName]
+        while children:
+            child = children.pop()
+            if child not in set_awip: continue # already inactive, skip checks
+            set_awip.remove(child)
+            children |= cached_dependents[child]
+        # Commit the changes made above
+        self._active_wip = [x for x in self._active_wip if x in set_awip]
+        #--Save
+        if doSave: self.cached_lo_save_active()
+        return old - set_awip # return deselected
+
+    def lo_activate_all(self, activate_mergeable=True):
+        """Activates all non-mergeable plugins (except ones tagged Deactivate),
+        then all mergeable plugins (again, except ones tagged Deactivate).
+        Raises a PluginsFullError if too many non-mergeable plugins are present
+        and a SkippedMergeablePluginsError if too many mergeable plugins are
+        present."""
+        wip_actives = set(load_order.cached_active_tuple())
+        def _add_to_actives(p):
+            """Helper for activating a plugin, if necessary."""
+            if p not in wip_actives:
+                self.lo_activate(p)
+                wip_actives.add(p)
+        def _activatable(p):
+            """Helper for checking if a plugin should be activated."""
+            return (p.fn_ext != '.esu' and
+                    'Deactivate' not in modInfos[p].getBashTags())
+        mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
+        try:
+            s_plugins = load_order.get_ordered(filter(_activatable, self))
+            try:
+                # First, activate non-mergeable plugins not tagged Deactivate
+                for p in s_plugins:
+                    if modInfos[p] not in mergeable: _add_to_actives(p)
+            except PluginsFullError:
+                raise
+            if mergeable and activate_mergeable:
+                try:
+                    # Then activate as many of the mergeable plugins as we can
+                    for p in s_plugins:
+                        if modInfos[p] in mergeable: _add_to_actives(p)
+                except PluginsFullError as e:
+                    raise SkippedMergeablePluginsError() from e
+        except (BoltError, NotImplementedError):
+            wip_actives.clear() # Don't save, something went wrong
+            raise
+        finally:
+            if wip_actives: self.cached_lo_save_active(active=wip_actives)
+
+    def lo_activate_exact(self, partial_actives: Iterable[FName],
+            save_actives=True):
+        """Activate exactly the specified iterable of plugin names (plus
+        required masters and plugins that can't be deactivated). May contain
+        missing plugins. Returns a warning message or an empty string."""
+        partial_set = set(partial_actives)
+        present_plugins = set(self)
+        missing_plugins = partial_set - present_plugins
+        wip_actives = partial_set - missing_plugins
+        def _add_masters(target_plugin):
+            """Recursively adds the target and its masters (and their masters,
+            and so on)."""
+            wip_actives.add(target_plugin)
+            for tp_master in self[target_plugin].masterNames:
+                if tp_master in self:
+                    _add_masters(tp_master)
+        # Expand the WIP actives to include all masters and required plugins
+        for present_plugin in list(wip_actives):
+            if present_plugin.fn_ext != '.esu':
+                _add_masters(present_plugin)
+        wip_actives.update(load_order.filter_pinned(present_plugins))
+        # Sort the result and check if we would hit an actives limit
+        ordered_wip = load_order.get_ordered(wip_actives)
+        trimmed_plugins = load_order.check_active_limit(ordered_wip)
+        # Trim off any excess plugins and commit
+        self._active_wip = [p for p in ordered_wip if p not in trimmed_plugins]
+        if save_actives:
+            self.cached_lo_save_active()
+        message = ''
+        if missing_plugins:
+            message += _('Some plugins could not be found and were '
+                         'skipped:') + '\n* '
+            message += '\n* '.join(load_order.get_ordered(missing_plugins))
+        if trimmed_plugins:
+            if missing_plugins:
+                message += '\n'
+            message += _('Plugin list is full, so some plugins were '
+                         'skipped:') + '\n* '
+            message += '\n* '.join(load_order.get_ordered(trimmed_plugins))
+        return message
+
+    def lo_reorder(self, partial_order: list[FName], save_lo=True):
+        """Changes the load order to match the specified potentially invalid
+        'partial' load order as much as possible. To that end, it filters out
+        plugins that don't exist in the Data folder and tries to insert plugins
+        that are present in the Data folder but not in the partial order before
+        the same plugin that they are placed before in the current load
+        order. Returns a warning message or an empty string."""
+        present_plugins = set(self)
+        partial_plugins = set(partial_order)
+        # Plugins in the partial order that are missing from the Data folder
+        excess_plugins = partial_plugins - present_plugins
+        filtered_order = [p for p in partial_order if p not in excess_plugins]
+        remaining_plugins = present_plugins - set(filtered_order)
+        current_order = self._lo_wip
+        collected_plugins = []
+        left_off = 0
+        while remaining_plugins:
+            for i, curr_plugin in enumerate(current_order[left_off:]):
+                # Look for continuous segments that are missing from the
+                # filtered partial load order
+                if curr_plugin in remaining_plugins:
+                    collected_plugins.append(curr_plugin)
+                    remaining_plugins.remove(curr_plugin)
+                elif collected_plugins:
+                    # We've hit a plugin that's common between current and
+                    # filtered orders after a continuous segment, look up the
+                    # shared plugin and insert the plugins in the same order
+                    # they have in the current order into the filtered order
+                    index_in_filtered = filtered_order.index(curr_plugin)
+                    for coll_plugin in reversed(collected_plugins):
+                        filtered_order.insert(index_in_filtered, coll_plugin)
+                    left_off += i + 1
+                    collected_plugins = []
+                    break # Restart the for loop
+            else:
+                # Exited the loop without breaking -> some extra plugins should
+                # be appended at the end
+                filtered_order.extend(collected_plugins)
+        self._lo_wip = filtered_order
+        if save_lo:
+            self._cached_lo_save_lo()
+        message = u''
+        if excess_plugins:
+            message += _(u'Some plugins could not be found and were '
+                         u'skipped:') + u'\n* '
+            message += u'\n* '.join(excess_plugins)
+        return message
+
+    def _lo_move_mod(self, old_name, new_name, do_activate, deactivate=False):
+        """Move new_name to the place of old_name and handle active state."""
+        oldIndex = self._lo_wip.index(old_name)
+        self._lo_wip[oldIndex] = new_name
+        self._active_wip = [x for x in self._active_wip if x != old_name]
+        if do_activate:
+            self.lo_activate(new_name)
+        elif deactivate:
+            self.lo_deactivate(new_name)
+        self.cached_lo_save_all()
+
+    #--Helpers ----------------------------------------------------------------
+    @staticmethod
+    def isBadFileName(modName):
+        """True if the name cannot be encoded to the proper format for plugins.txt"""
+        try:
+            modName.encode('cp1252')
+            return False
+        except UnicodeEncodeError:
+            return True
+
+    def create_new_mod(self, newName: str | FName,
+            selected: tuple[FName, ...] = (), *,
+            wanted_masters: list[FName] | None = None, dir_path=None,
+            author_str='', flags_dict=None) -> ModInfo | None:
+        """Create a new plugin.
+
+        :param newName: The name the created plugin will have.
+        :param selected: The currently selected after which the plugin will be
+            created in the load order. If empty, the new plugin will be placed
+            last in the load order. Only relevant if dir_path is unset or
+            matches the Data folder.
+        :param wanted_masters: The masters the created plugin will have.
+        :param dir_path: The directory in which the plugin will be created. If
+            None, defaults to the Data folder and a refresh will be triggered.
+        :param author_str: set author - marks the created plugin as a Bashed
+            Patch or a Dummy master
+        :param flags_dict: set plugin flags - incompatible flags will raise an
+            InvalidPluginFlagsError."""
+        if wanted_masters is None:
+            wanted_masters = [self._master_esm]
+        newInfo = self.factory((dir_path or self.store_dir).join(newName))
+        newFile = ModFile(newInfo)
+        newFile.tes4.masters = wanted_masters
+        if author_str:
+            newFile.tes4.author = author_str
+        flags_dict = bush.game.plugin_flags.check_flag_assignments(
+            flags_dict or {})
+        for pl_flag, flag_val in flags_dict.items():
+            pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
+        newFile.safeSave()
+        if dir_path is None:
+            last_selected = (load_order.get_ordered(selected) if selected
+                             else self._lo_wip)[-1]
+            new = FNDict([(newName, last_selected)])
+            rdata = self.refresh(RefrIn.from_added(new), insert_after=new)
+            # if we failed to add this will raise KeyError we 'd want to
+            # return the message from corrupted
+            return self[rdata.to_add.pop()]
+
+    def generateNextBashedPatch(self, selected_mods):
+        """Attempt to create a new bashed patch, numbered from 0 to 9.  If
+        a lowered number bashed patch exists, will create the next in the
+        sequence."""
+        for num in range(10):
+            modName = f'Bashed Patch, {num}.esp'
+            if modName not in self:
+                self.create_new_mod(modName, selected=selected_mods,
+                    wanted_masters=[], author_str='BASHED PATCH')
+                return FName(modName)
+        return None
+
+    def get_bsa_lo(self):
+        """Get the load order of all active BSAs. Used from bain, so we
+        calculate it JIT using the cached result of get_bsas_from_inis.
+        Therefore, self.__bsa_lo is initially populated by bsas loaded from
+        the inis, having ±sys.maxsize load order."""
+        ##:(233) we do this once till next refresh - not entirely correct,
+        # as deletions/installs of BSAs from inside Bash (BAIN or future
+        # bsa tab) should rerun _refresh_mod_inis_and_strings/notify modInfos
+        if self.__available_bsas is not None:
+            bush.game.Bsa.update_bsa_lo(load_order.cached_active_tuple(),
+                self.__available_bsas, self.__bsa_lo, self.__bsa_cause)
+            # we are called in a loop, cache on first iteration
+            self.__available_bsas = None
+        return self.__bsa_lo, self.__bsa_cause
 
     @staticmethod
-    def hexIndexString(mod):
-        return '' if not load_order.cached_is_active(mod) else \
-            f'{load_order.cached_active_index(mod):02X}'
+    def plugin_wildcard(file_str=_('Plugins')):
+        joinstar = ';*'.join(bush.game.espm_extensions)
+        return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
 
-    def masterWithVersion(self, master_name):
-        if master_name == 'Oblivion.esm' and self.voCurrent:
-            master_name += f' [{self.voCurrent}]'
-        return master_name
-
-    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
-        # Calculating indexes through order.index() cause we may be called in
-        # a row before saving the modified load order
-        order = self._lo_wip
-        newPos = order.index(dropItem)
-        if newPos <= 0: return False
-        start = order.index(firstItem)
-        stop = order.index(lastItem) + 1  # excluded
-        # Can't move the game's master file anywhere else but position 0
-        if self._master_esm in order[start:stop]: return False
-        # List of names to move removed and then reinserted at new position
-        toMove = order[start:stop]
-        del order[start:stop]
-        order[newPos:newPos] = toMove
-        return True
-
-    @property
-    def bash_dir(self): return dirs[u'modsBash']
-
-    #--Refresh-----------------------------------------------------------------
-    def _list_store_dir(self):
-        """Return a dict specifying if the key is in a ghosted state."""
-        fname_to_ghost = super(ModInfos, self)._list_store_dir()
-        for mname in list(fname_to_ghost): # initially ghost bits are all False
-            if mname.fn_ext == '.ghost':
-                del fname_to_ghost[mname] # remove the ghost
-                if (unghosted := mname[:-6]) in fname_to_ghost:
-                    deprint(f'Both {unghosted} and its ghost exist. The ghost '
-                            f'will be ignored but this may lead to undefined '
-                            f'behavior - please remove one or the other')
-                else:
-                    fname_to_ghost[unghosted] = True # a real ghost
-        return fname_to_ghost
-
-    def refresh(self, refresh_infos=True, booting=False, unlock_lo=False):
-        """Update file data for additions, removals and date changes.
-        See usages for how to use the refresh_infos and unlock_lo params.
-        NB: if an operation *we* performed changed the load order we do not
-        want lock load order to revert our own operation. So either call
-        some of the set_load_order methods, or pass unlock_lo=True (refresh
-        only *gets* load order)."""
-        change = deleted = False
-        # Scan the data dir, getting info on added, deleted and modified files
-        if refresh_infos:
-            change = FileInfos.refresh(self, booting=booting)
-            if change:
-                _added, _updated, deleted = change
-            change = bool(change)
-        self._refresh_bash_tags()
-        # If refresh_infos is False and mods are added _do_ manually refresh
-        lo_changed = self.refreshLoadOrder(forceRefresh=change or unlock_lo,
-            forceActive=deleted, unlock_lo=unlock_lo)
-        self._refresh_bash_tags()
-        # if active did not change, we must perform the refreshes below
-        if lo_changed < 2: # in case ini files were deleted or modified
-            self._refresh_mod_inis()
-        if lo_changed < 2 and change:
-            # If any plugins have been added, updated or deleted, we need
-            # to recalculate dependents
-            self._recalc_dependents()
-            self._refresh_active_no_cp1252()
-            self._update_info_sets()
-        elif lo_changed < 2: # maybe string files were deleted...
-            #we need a load order below: in skyrim we read inis in active order
-            change |= self._refreshMissingStrings()
-        self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        scanList = self._refreshMergeable()
-        return bool(change) or bool(scanList) or lo_changed
-
-    def _refresh_mod_inis(self):
-        if not bush.game.Ini.supports_mod_inis: return
-        data_folder_path = bass.dirs['mods']
-        # First, check the Data folder for INIs present in it. Order does not
-        # matter, we will only use this to look up existence
-        lower_data_cont = (f.lower() for f in os.listdir(data_folder_path))
-        present_inis = {i for i in lower_data_cont if i.endswith('.ini')}
-        # Determine which INIs are active based on LO. Order now matters
-        possible_inis = [self[m].get_ini_name() for m in
-                         load_order.cached_active_tuple()]
-        active_inis = [i for i in possible_inis if i.lower() in present_inis]
-        # Add new or modified INIs to the cache and copy the final order
-        inis_active = []
-        # check present inis for updates
-        prev_inis = {k.abs_path: k for k in [*self.plugin_inis.values()][:-1]}
-        for acti_ini_name in active_inis:
-            # Need to restore the full path here since we'll stat that path
-            # when resetting the cache during __init__
-            acti_ini_path = data_folder_path.join(acti_ini_name)
-            acti_ini = prev_inis.get(acti_ini_path)
-            if acti_ini is None or acti_ini.do_update():
-                acti_ini = IniFileInfo(acti_ini_path, 'cp1252')
-            inis_active.append(acti_ini)
-        # values in active order, later loading inis override previous settings
-        ##: What about SkyrimCustom.ini etc?
-        self.plugin_inis = FNDict((k.abs_path.stail, k) for k in
-                                  (*reversed(inis_active), oblivionIni))
-
-    def _refresh_active_no_cp1252(self):
-        """Refresh which filenames cannot be saved to plugins.txt - active
-        state changes and/or removal/addition of plugins should trigger a
-        refresh. It seems that Skyrim and Oblivion read plugins.txt as a
-        cp1252 encoded file, and any filename that doesn't decode to cp1252
-        will be skipped."""
-        bad = self.bad_names = set()
-        activeBad = self.activeBad = set()
-        for fileName in self:
-            if self.isBadFileName(fileName):
-                if load_order.cached_is_active(fileName):
-                    ##: For now, we'll leave them active, until we finish
-                    # testing what the game will support
-                    #self.lo_deactivate(fileName)
-                    activeBad.add(fileName)
-                else:
-                    bad.add(fileName)
-        return bool(activeBad)
-
-    def _refreshMissingStrings(self):
-        """Refreshes which mods are supposed to have strings files, but are
-        missing them (=CTD). For Skyrim you need to have a valid load order."""
-        oldBad = self.missing_strings
-        # Determine BSA LO from INIs once, this gets expensive very quickly
-        cached_ini_info = self.get_bsas_from_inis()
-        # Determine the present strings files once to avoid stat'ing
-        # non-existent strings files hundreds of times
-        try:
-            strings_files = os.listdir(bass.dirs['mods'].join('strings'))
-            strings_prefix = f'strings{os.path.sep}'
-            ci_cached_strings_paths = {strings_prefix + s.lower()
-                                       for s in strings_files}
-        except FileNotFoundError:
-            # No loose strings folder -> all strings are in BSAs
-            ci_cached_strings_paths = set()
-        self.missing_strings = {
-            k for k, v in self.items() if v.isMissingStrings(
-                cached_ini_info=cached_ini_info,
-                ci_cached_strings_paths=ci_cached_strings_paths)}
-        self.new_missing_strings = self.missing_strings - oldBad
-        return bool(self.new_missing_strings)
-
-    def autoGhost(self,force=False):
-        """Automatically turn inactive files to ghosts.
-
-        Should be called when deactivating mods - will have an effect if
-        bash.mods.autoGhost is true, or if force parameter is true (in which
-        case, if autoGhost is False, it will actually unghost all ghosted
-        mods). If both the mod and its ghost exist, the mod is not active and
-        this method runs while autoGhost is on, the normal version will be
-        moved to the ghost.
-        :param force: set to True only in Mods_AutoGhost, so if fired when
-        toggling bash.mods.autoGhost to False we forcibly unghost all mods
-        """
-        flipped = []
-        toGhost = bass.settings[u'bash.mods.autoGhost']
-        if force or toGhost:
-            allowGhosting = self.table.getColumn(u'allowGhosting')
-            for mod, modInfo in self.items():
-                modGhost = toGhost and not load_order.cached_is_active(mod) \
-                           and allowGhosting.get(mod, True)
-                if modInfo.setGhost(modGhost):
-                    flipped.append(mod)
-        return flipped
-
-    def _refreshMergeable(self):
-        """Refreshes set of mergeable mods."""
-        # All plugins that could be merged, ESL-flagged or Overlay-flagged
-        oldMergeable = {*chain.from_iterable(self._mergeable_by_type.values())}
-        #--Mods that need to be rescanned
-        rescan_mods = set()
-        for m in self._mergeable_by_type.values():
-            m.clear()
-        #--Add known/unchanged and esms - we need to scan dependent mods
-        # first to account for mergeability of their masters
-        merg_checks = bush.game.mergeability_checks
-        # We store ints in the settings files, so use those for comparing
-        merg_checks_ints = {c.value for c in merg_checks}
-        quick_checks = {
-            MergeabilityCheck.ESL_CHECK: ModInfo.is_esl,
-            MergeabilityCheck.OVERLAY_CHECK: ModInfo.is_overlay,
-        }
-        # No need to do quick checks that aren't actually required for this
-        # game
-        quick_checks = {k: v for k, v in quick_checks.items()
-                        if k in merg_checks}
-        name_mergeInfo = self.table.getColumn('mergeInfo')
-        for fn_mod, modInfo in dict_sort(self, reverse=True,
-                                         key_f=load_order.cached_lo_index):
-            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, {}))
-            if not isinstance(canMerge, dict):
-                canMerge = {} # Convert older settings (had a bool here)
-            # Quickly check if some mergeability types are impossible for this
-            # plugin (because it already has the target type)
-            covered_checks = set()
-            for m, m_check in quick_checks.items():
-                if m_check(modInfo):
-                    canMerge[m.value] = False
-                    covered_checks.add(m)
-            # Clean up cached mergeability info - this can get out of sync if
-            # we add or remove a mergeability type from a game or change a
-            # mergeability type's int key in the enum
-            for m in list(canMerge):
-                if m not in merg_checks_ints:
-                    del canMerge[m]
-            name_mergeInfo[fn_mod] = (cached_size, canMerge)
-            if not (merg_checks - covered_checks):
-                # We've already covered all required checks with those checks
-                # above (e.g. an ESL-flagged plugin in a game with only ESL
-                # support -> not ESL-flaggable), so move on
-                continue
-            elif (cached_size == modInfo.fsize and
-                  set(canMerge) == merg_checks_ints):
-                # The cached size matches what we have on disk and we have data
-                # for all required mergeability checks, so use the cached info
-                for m, m_merg in canMerge.items():
-                    merg_set = self._mergeable_by_type[
-                        self._mergeable_parser[m]]
-                    if m_merg:
-                        merg_set.add(fn_mod)
-                    else:
-                        merg_set.discard(fn_mod)
-            else:
-                # We have to rescan mergeability - either the plugin's size
-                # changed or there is at least one required mergeability check
-                # we have not yet run for this plugin
-                rescan_mods.add(fn_mod)
-        if rescan_mods:
-            self.rescanMergeable(rescan_mods) ##: maybe re-add progress?
-        difMergeable = (oldMergeable ^ {*chain.from_iterable(
-            self._mergeable_by_type.values())}) & set(self)
-        return rescan_mods | difMergeable
-
-    def rescanMergeable(self, names, progress=bolt.Progress(),
-                        return_results=False):
-        """Rescan specified mods. Return value is only meaningful when
-        return_results is set to True."""
-        all_known_checks = {
-            MergeabilityCheck.MERGE: isPBashMergeable,
-            MergeabilityCheck.ESL_CHECK: is_esl_capable,
-            MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
-        }
-        # The checks that are actually required for this game
-        required_checks = {m: c for m, c in all_known_checks.items()
-                           if m in bush.game.mergeability_checks}
-        mod_mergeInfo = self.table.getColumn('mergeInfo')
-        with progress:
-            progress.setFull(max(len(names),1))
-            result, tagged_no_merge = {}, set()
-            for i, fileName in enumerate(names):
-                all_reasons = (None if not return_results else
-                               {m: [] for m in bush.game.mergeability_checks})
-                progress(i, fileName)
-                fileInfo = self[fileName]
-                cs_name = fileName.lower()
-                check_results = {}
-                for merg_type, merg_check in required_checks.items():
-                    reasons = (None if not return_results else
-                               all_reasons[merg_type])
-                    if cs_name in bush.game.bethDataFiles:
-                        # Fail all mergeability checks for vanilla plugins
-                        if return_results:
-                            reasons.append(_('Is Vanilla Plugin.'))
-                        check_results[merg_type] = False
-                    else:
-                        try:
-                            check_results[merg_type] = merg_check(
-                                fileInfo, self, reasons)
-                        except Exception: # as e
-                            # deprint(f'Error scanning mod {fileName} ({e})')
-                            # # Assume it's not mergeable
-                            # check_results[merg_type] = False
-                            raise
-                # Special handling for MERGE: NoMerge-tagged plugins
-                if (fileName in self.mergeable_plugins and
-                        'NoMerge' in fileInfo.getBashTags()):
-                    tagged_no_merge.add(fileName)
-                    if return_results:
-                        all_reasons[MergeabilityCheck.MERGE].append(_(
-                            'Technically mergeable, but has NoMerge tag.'))
-                result[fileName] = all_reasons is not None and {
-                    m: (check_results[m], r) for m, r in all_reasons.items()}
-                for m, m_mergeable in check_results.items():
-                    merg_set = self._mergeable_by_type[m]
-                    if m_mergeable:
-                        merg_set.add(fileName)
-                    else:
-                        merg_set.discard(fileName)
-                # Only store the enum values (i.e. the ints) in our settings
-                # files, we are moving away from pickling non-std classes
-                mod_mergeInfo[fileName] = (fileInfo.fsize, {
-                    k.value: v for k, v in check_results.items()})
-            return result, tagged_no_merge
-
-    def _refresh_bash_tags(self):
-        """Reloads bash tags for all mods set to receive automatic bash
-        tags."""
-        try:
-            bt_contents = {t.lower() for t
-                           in os.listdir(bass.dirs['tag_files'])}
-        except FileNotFoundError:
-            bt_contents = set() # No BashTags folder -> no BashTags files
-        for modinf in self.values(): # type: ModInfo
-            autoTag = modinf.is_auto_tagged(default_auto=None)
-            if autoTag is None and modinf.get_table_prop(u'bashTags') is None:
-                # A new mod, set auto tags to True (default)
-                modinf.set_auto_tagged(True)
-                autoTag = True
-            elif autoTag is None:
-                # An old mod that had manual bash tags added, disable auto tags
-                modinf.set_auto_tagged(False)
-            if autoTag:
-                modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
-
-    def refresh_crcs(self, mods=None, progress=None):
-        pairs = {}
-        with (progress := progress or bolt.Progress()):
-            mods = (self if mods is None else mods)
-            if mods: progress.setFull(len(mods))
-            for dex, mod_key in enumerate(mods):
-                progress(dex, _('Calculating crc:') + f'\n{mod_key}')
-                inf = self[mod_key]
-                pairs[mod_key] = inf.calculate_crc(recalculate=True)
-        return pairs
-
-    #--Refresh File
-    def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
-        try:
-            return super().new_info(fileName, _in_refresh, owner, notify_bain,
-                                    itsa_ghost)
-        finally:
-            # we should refresh info sets if we manage to add the info, but
-            # also if we fail, which might mean that some info got corrupted
-            if not _in_refresh:
-                self._update_info_sets() # we may need to use the return value
-
-    #--Mod selection ----------------------------------------------------------
-    def getSemiActive(self, patches, skip_active=False):
-        """Return (merged,imported) mods made semi-active by Bashed Patch.
-
-        If no bashed patches are present in 'patches' then return empty sets.
-        Else for each bashed patch use its config (if present) to find mods
-        it merges or imports.
-
-        :param patches: A set of mods to look for bashed patches in.
-        :param skip_active: If True, only return inactive merged/imported
-            plugins."""
-        merged_,imported_ = set(),set()
-        for patch in patches & self.bashed_patches: # this must be up to date!
-            patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
-            if not patchConfigs: continue
-            if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
-                    u'isEnabled'):
-                config_checked = merger_conf[u'configChecks']
-                for modName, is_merged in forward_compat_path_to_fn(
-                        config_checked).items():
-                    if is_merged and modName in self:
-                        if skip_active and load_order.cached_is_active(
-                                modName): continue
-                        merged_.add(modName)
-            for imp_name in forward_compat_path_to_fn_list(
-                    patchConfigs.get('ImportedMods', [])):
-                if imp_name in self:
-                    if skip_active and load_order.cached_is_active(
-                            imp_name): continue
-                    imported_.add(imp_name)
-        return merged_,imported_
+    def getVersion(self, fileName):
+        """Check we have a fileInfo for fileName and call get_version on it."""
+        return self[fileName].get_version() if fileName in self else ''
 
     def getModList(self, showCRC=False, showVersion=True, fileInfo=None,
                    wtxt=False, log_problems=True):
@@ -2798,47 +2886,6 @@ class ModInfos(FileInfos):
         if not wtxt: log(u'[/spoiler]')
         return log.out.getvalue()
 
-    @staticmethod
-    def _tagsies(modInfo, tagList):
-        mname = modInfo.fn_key
-        # Tracks if this plugin has at least one bash tags source - which may
-        # still result in no tags at the end, e.g. if source A adds a tag and
-        # source B removes it
-        has_tags_source = False
-        def _tags(tags_msg, tags_iter, tagsList):
-            tags_result = ', '.join(tags_iter) if tags_iter else _('No tags')
-            return f'{tagsList}  * {tags_msg} {tags_result}\n'
-        tags_desc = modInfo.getBashTagsDesc()
-        has_tags_source |= bool(tags_desc)
-        if tags_desc:
-            tagList = _tags(_('From Plugin Description:'),
-                sorted(tags_desc), tagList)
-        loot_added, loot_removed = read_loot_tags(mname)
-        has_tags_source |= bool(loot_added | loot_removed)
-        if loot_added:
-            tagList = _tags(_('From LOOT Masterlist and/or Userlist:'),
-                            sorted(loot_added), tagList)
-        if loot_removed:
-            tagList = _tags(_('Removed by LOOT Masterlist and/or '
-                              'Userlist:'), sorted(loot_removed), tagList)
-        dir_added, dir_removed = read_dir_tags(mname)
-        has_tags_source |= bool(dir_added | dir_removed)
-        tags_file_fmt = {'tags_file': f"'{bush.game.mods_dir}/BashTags"
-                                      f"/{mname.fn_body}.txt'"}
-        if dir_added:
-            tagList = _tags(_('Added by %(tags_file)s:') % tags_file_fmt,
-                sorted(dir_added), tagList)
-        if dir_removed:
-            tagList = _tags(_('Removed by %(tags_file)s:') % tags_file_fmt,
-                sorted(dir_removed), tagList)
-        sorted_tags = sorted(modInfo.getBashTags())
-        if not modInfo.is_auto_tagged() and sorted_tags:
-            has_tags_source = True
-            tagList = _tags(_('From Manual (overrides all other sources):'),
-                sorted_tags, tagList)
-        return (_tags(_('Result:'), sorted_tags, tagList)
-                if has_tags_source else tagList + f"    {_('No tags')}\n")
-
     def getTagList(self, mod_list=None):
         """Return the list as wtxt of current bash tags (but don't say which
         ones are applied via a patch) - either for all mods in the data folder
@@ -2857,619 +2904,158 @@ class ModInfos(FileInfos):
                     mod_list.append(modInfo)
         for modInfo in mod_list:
             tagList += f'\n* {modInfo}\n'
-            tagList = self._tagsies(modInfo, tagList)
+            tagList = modInfo.tagsies(tagList)
         tagList += u'[/spoiler]'
         return tagList
 
-    #--Active mods management -------------------------------------------------
-    def lo_activate(self, fileName, _modSet=None, _children=None,
-                    _activated=None, doSave=False):
-        """Mutate _active_wip cache then save if doSave is True."""
-        if _activated is None: _activated = set()
-        # Skip .esu files, those can't be activated
-        ##: This .esu handling needs to be centralized - sprinkled all over
-        # actives related lo_* methods
-        if fileName.fn_ext == u'.esu': return []
-        try:
-            espms_extra, esls_extra = load_order.check_active_limit(
-                [*self._active_wip , fileName])
-            if espms_extra or esls_extra:
-                msg = f'{fileName}: Trying to activate more than '
-                if espms_extra:
-                    msg += f'{load_order.max_espms():d} regular plugins'
-                if esls_extra:
-                    if espms_extra:
-                        msg += ' and '
-                    msg += f'{load_order.max_esls():d} light plugins'
-                raise PluginsFullError(msg)
-            if _children:
-                if fileName in _children:
-                    raise BoltError(f'Circular Masters: '
-                                    f'{" >> ".join((*_children, fileName))}')
-                _children.append(fileName)
-            else:
-                _children = [fileName]
-            #--Select masters
-            if _modSet is None: _modSet = set(self)
-            #--Check for bad masternames:
-            #  Disabled for now
-            ##if self[fileName].hasBadMasterNames():
-            ##    return
-            # Speed up lookups, since they occur for the plugin and all masters
-            acti_set = set(self._active_wip)
-            for master in self[fileName].masterNames:
-                # Check that the master is on disk and not already activated
-                if master in _modSet and master not in acti_set:
-                    self.lo_activate(master, _modSet, _children, _activated)
-            #--Select in plugins
-            if fileName not in acti_set:
-                self._active_wip.append(fileName)
-                _activated.add(fileName)
-            return load_order.get_ordered(_activated or [])
-        finally:
-            if doSave: self.cached_lo_save_active()
+    def masterWithVersion(self, master_name):
+        if master_name == 'Oblivion.esm' and (curr_ver := self.voCurrent):
+            master_name += f' [{curr_ver}]'
+        return master_name
 
-    def lo_deactivate(self, fileName, doSave=False):
-        """Remove mods and their children from _active_wip, can only raise if
-        doSave=True."""
-        if not isinstance(fileName, (set, list)): fileName = {fileName}
-        notDeactivatable = load_order.force_active_if_present()
-        fileNames = {x for x in fileName if x not in notDeactivatable}
-        old = set_awip = set(self._active_wip)
-        diff = set_awip - fileNames
-        if len(diff) == len(set_awip): return set()
-        #--Unselect self
-        set_awip = diff
-        #--Unselect children
-        children = set()
-        cached_dependents = self.dependents
-        for fileName in fileNames:
-            children |= cached_dependents[fileName]
-        while children:
-            child = children.pop()
-            if child not in set_awip: continue # already inactive, skip checks
-            set_awip.remove(child)
-            children |= cached_dependents[child]
-        # Commit the changes made above
-        self._active_wip = [x for x in self._active_wip if x in set_awip]
-        #--Save
-        if doSave: self.cached_lo_save_active()
-        return old - set_awip # return deselected
-
-    def lo_activate_all(self, activate_mergeable=True):
-        """Activates all non-mergeable plugins (except ones tagged Deactivate),
-        then all mergeable plugins (again, except ones tagged Deactivate).
-        Raises a PluginsFullError if too many non-mergeable plugins are present
-        and a SkippedMergeablePluginsError if too many mergeable plugins are
-        present."""
-        wip_actives = set(load_order.cached_active_tuple())
-        def _add_to_actives(p):
-            """Helper for activating a plugin, if necessary."""
-            if p not in wip_actives:
-                self.lo_activate(p)
-                wip_actives.add(p)
-        def _activatable(p):
-            """Helper for checking if a plugin should be activated."""
-            return (p.fn_ext != '.esu' and
-                    'Deactivate' not in modInfos[p].getBashTags())
-        try:
-            s_plugins = load_order.get_ordered(filter(_activatable, self))
-            try:
-                # First, activate non-mergeable plugins not tagged Deactivate
-                for p in s_plugins:
-                    if p not in self.mergeable_plugins: _add_to_actives(p)
-            except PluginsFullError:
-                raise
-            if activate_mergeable:
-                try:
-                    # Then activate as many of the mergeable plugins as we can
-                    for p in s_plugins:
-                        if p in self.mergeable_plugins: _add_to_actives(p)
-                except PluginsFullError as e:
-                    raise SkippedMergeablePluginsError() from e
-        except (BoltError, NotImplementedError):
-            wip_actives.clear() # Don't save, something went wrong
-            raise
-        finally:
-            if wip_actives: self.cached_lo_save_active(active=wip_actives)
-
-    def lo_activate_exact(self, partial_actives: Iterable[FName]):
-        """Activate exactly the specified iterable of plugin names (plus
-        required masters and plugins that can't be deactivated). May contain
-        missing plugins. Returns a warning message or an empty string."""
-        partial_set = set(partial_actives)
-        present_plugins = set(self)
-        missing_plugins = partial_set - present_plugins
-        wip_actives = partial_set - missing_plugins
-        def _add_masters(target_plugin):
-            """Recursively adds the target and its masters (and their masters,
-            and so on)."""
-            wip_actives.add(target_plugin)
-            for tp_master in self[target_plugin].masterNames:
-                if tp_master in self:
-                    _add_masters(tp_master)
-        # Expand the WIP actives to include all masters and required plugins
-        for present_plugin in list(wip_actives):
-            if present_plugin.fn_ext != '.esu':
-                _add_masters(present_plugin)
-        wip_actives |= (load_order.force_active_if_present() &
-                        present_plugins)
-        # Sort the result and check if we would hit an actives limit
-        ordered_wip = load_order.get_ordered(wip_actives)
-        trim_regular, trim_esl = load_order.check_active_limit(ordered_wip)
-        trimmed_plugins = trim_regular | trim_esl
-        # Trim off any excess plugins and commit
-        self._active_wip = [p for p in ordered_wip if p not in trimmed_plugins]
-        self.cached_lo_save_active()
-        message = ''
-        if missing_plugins:
-            message += _('Some plugins could not be found and were '
-                         'skipped:') + '\n* '
-            message += '\n* '.join(load_order.get_ordered(missing_plugins))
-        if trimmed_plugins:
-            if missing_plugins:
-                message += '\n'
-            message += _('Plugin list is full, so some plugins were '
-                         'skipped:') + '\n* '
-            message += '\n* '.join(load_order.get_ordered(trimmed_plugins))
-        return message
-
-    def lo_reorder(self, partial_order: list[FName]):
-        """Changes the load order to match the specified potentially invalid
-        'partial' load order as much as possible. To that end, it filters out
-        plugins that don't exist in the Data folder and tries to insert plugins
-        that are present in the Data folder but not in the partial order before
-        the same plugin that they are placed before in the current load
-        order. Returns a warning message or an empty string."""
-        present_plugins = set(self)
-        partial_plugins = set(partial_order)
-        # Plugins in the partial order that are missing from the Data folder
-        excess_plugins = partial_plugins - present_plugins
-        filtered_order = [p for p in partial_order if p not in excess_plugins]
-        remaining_plugins = present_plugins - set(filtered_order)
-        current_order = self._lo_wip
-        collected_plugins = []
-        left_off = 0
-        while remaining_plugins:
-            for i, curr_plugin in enumerate(current_order[left_off:]):
-                # Look for continuous segments that are missing from the
-                # filtered partial load order
-                if curr_plugin in remaining_plugins:
-                    collected_plugins.append(curr_plugin)
-                    remaining_plugins.remove(curr_plugin)
-                elif collected_plugins:
-                    # We've hit a plugin that's common between current and
-                    # filtered orders after a continuous segment, look up the
-                    # shared plugin and insert the plugins in the same order
-                    # they have in the current order into the filtered order
-                    index_in_filtered = filtered_order.index(curr_plugin)
-                    for coll_plugin in reversed(collected_plugins):
-                        filtered_order.insert(index_in_filtered, coll_plugin)
-                    left_off += i + 1
-                    collected_plugins = []
-                    break # Restart the for loop
-            else:
-                # Exited the loop without breaking -> some extra plugins should
-                # be appended at the end
-                filtered_order.extend(collected_plugins)
-        self._lo_wip = filtered_order
-        self.cached_lo_save_lo()
-        message = u''
-        if excess_plugins:
-            message += _(u'Some plugins could not be found and were '
-                         u'skipped:') + u'\n* '
-            message += u'\n* '.join(excess_plugins)
-        return message
-
-    #--Helpers ----------------------------------------------------------------
-    @staticmethod
-    def isBadFileName(modName):
-        """True if the name cannot be encoded to the proper format for plugins.txt"""
-        try:
-            modName.encode('cp1252')
-            return False
-        except UnicodeEncodeError:
-            return True
-
-    ##: This honestly does way too much. Look at the jumble of parameters and
-    # the giant docstring for evidence
-    def create_new_mod(self, newName: str | FName,
-            selected: tuple[FName, ...] = (),
-            wanted_masters: list[FName] | None = None, dir_path=empty_path,
-            is_bashed_patch=False, with_esm_flag=False, with_esl_flag=False,
-            with_overlay_flag=False):
-        """Create a new plugin.
-
-        :param newName: The name the created plugin will have.
-        :param selected: The currently selected after which the plugin will be
-            created in the load order. If empty, the new plugin will be placed
-            last in the load order. Only relevant if dir_path is unset or
-            matches the Data folder.
-        :param wanted_masters: The masters the created plugin will have.
-        :param dir_path: The directory in which the plugin will be created. If
-            empty, defaults to the Data folder.
-        :param is_bashed_patch: If True, mark the created plugin as a Bashed
-            Patch.
-        :param with_esm_flag: If True, set the created plugin's ESM flag.
-        :param with_esl_flag: If True, set the created plugin's ESL flag. Only
-            set this to True if the game actually supports ESLs, otherwise an
-            InvalidPluginFlagsError will be raised. Mutually exclusive with
-            with_overlay_flag, setting both to True raises an
-            InvalidPluginFlagsError as well.
-        :param with_overlay_flag: If True, set the created plugin's Overlay
-            flag. Only set this to True if the game actually supports overlay
-            plugins, otherwise an InvalidPluginFlagsError will be raised.
-            Mutually exclusive with with_esl_flag, setting both to True raises
-            an InvalidPluginFlagsError as well."""
-        if with_esl_flag and with_overlay_flag:
-            raise InvalidPluginFlagsError(esl_flag=True, overlay_flag=True)
-        if wanted_masters is None:
-            wanted_masters = [self._master_esm]
-        dir_path = dir_path or self.store_dir
-        newInfo = self.factory(dir_path.join(newName))
-        newFile = ModFile(newInfo)
-        newFile.tes4.masters = wanted_masters
-        if is_bashed_patch:
-            newFile.tes4.author = u'BASHED PATCH'
-        if with_esm_flag:
-            newFile.tes4.flags1.esm_flag = True
-        if with_esl_flag:
-            if not bush.game.has_esl:
-                raise InvalidPluginFlagsError(esl_flag=True)
-            newFile.tes4.flags1.esl_flag = True
-        elif with_overlay_flag:
-            if not bush.game.has_overlay_plugins:
-                raise InvalidPluginFlagsError(overlay_flag=True)
-            newFile.tes4.flags1.overlay_flag = True
-        newFile.safeSave()
-        if dir_path == self.store_dir:
-            self.new_info(newName, notify_bain=True)  # notify just in case...
-            last_selected = load_order.get_ordered(selected)[
-                -1] if selected else self._lo_wip[-1]
-            self.cached_lo_insert_after(last_selected, newName)
-            self.cached_lo_save_lo()
-            self.refresh(refresh_infos=False)
-
-    def generateNextBashedPatch(self, selected_mods):
-        """Attempt to create a new bashed patch, numbered from 0 to 9.  If
-        a lowered number bashed patch exists, will create the next in the
-        sequence."""
-        for num in range(10):
-            modName = f'Bashed Patch, {num}.esp'
-            if modName not in self:
-                self.create_new_mod(modName, selected=selected_mods,
-                                    wanted_masters=[], is_bashed_patch=True)
-                return FName(modName)
-        return None
-
-    def get_bsas_from_inis(self):
-        """Retrieves BSA load order from INI files. This is separate so that we
-        can cache it during early boot for massive speedups. The real solution
-        to this is a full BSA LO cache though - see #233 as well."""
-        # We'll be removing BSAs from here once we've given them a position
-        available_bsas = FNDict(bsaInfos.items())
-        bsa_lo = OrderedDict() # Final load order, -1 means it came from an INI
-        bsa_cause = {} # Reason each BSA was loaded
-        # BSAs from INI files load first
-        ini_idx = -sys.maxsize - 1 # Make sure they come first
-        ini_files_cached = self.plugin_inis.values()
-        for ini_k in bush.game.Ini.resource_archives_keys:
-            for ini_f in ini_files_cached:
-                if ini_f.has_setting(u'Archive', ini_k):
-                    for binf in _bsas_from_ini(ini_f, ini_k, available_bsas):
-                        bsa_lo[binf] = ini_idx
-                        bsa_cause[binf] = f'{ini_f.abs_path.stail} ({ini_k})'
-                        ini_idx += 1
-                        del available_bsas[binf.fn_key]
-                    break # The first INI with the key wins ##: Test this
-        # Some games have INI settings that override all other BSAs
-        ini_idx = sys.maxsize # Make sure they come last
-        res_ov_key = bush.game.Ini.resource_override_key
-        if res_ov_key:
-            # Start out with the defaults set by the engine
-            res_ov_bsas = [available_bsas[b] for b in
-                           bush.game.Ini.resource_override_defaults]
-            res_ov_cause = f'{bush.game.Ini.dropdown_inis[0]} ({res_ov_key})'
-            # Then look if any INIs overwrite them
-            for ini_f in ini_files_cached:
-                if ini_f.has_setting(u'Archive', res_ov_key):
-                    res_ov_bsas = _bsas_from_ini(
-                        ini_f, res_ov_key, available_bsas)
-                    res_ov_cause = f'{ini_f.abs_path.stail} ({res_ov_key})'
-                    break # The first INI with the key wins ##: Test this
-            for binf in res_ov_bsas:
-                bsa_lo[binf] = ini_idx
-                bsa_cause[binf] = res_ov_cause
-                ini_idx -= 1
-                del available_bsas[binf.fn_key]
-        return available_bsas, bsa_lo, bsa_cause
-
-    # TODO(inf): Morrowind does not have attached BSAs, there is instead a
-    #  'second load order' of BSAs in the INI
-    ##: This will need caching in the future - invalidation will be *hard*.
-    # Prerequisite for a fully functional BSA tab though (see #233), especially
-    # for Morrowind
-    def get_bsa_lo(self, for_plugins=None, cached_ini_info=(None, None, None)):
-        """Returns the full BSA load order for this game, mapping each BSA to
-        the position of its activator mods. Also returns a dict mapping each
-        BSA to a string describing the reason it was loaded. If a mod activates
-        more than one bsa, their relative order is undefined.
-
-        :param for_plugins: If not None, only returns plugin-name-specific BSAs
-            for those plugins. Otherwise, returns it for all plugins.
-        :param cached_ini_info: Can contain the result of calling
-            get_bsas_from_inis, in which case calling that (fairly expensive)
-            method will be skipped."""
-        fetch_ini_info = any(c is None for c in cached_ini_info)
-        if fetch_ini_info:
-            # At least one part of the cached INI info we were passed in is
-            # None, which means we need to fetch the info from disk
-            available_bsas, bsa_lo, bsa_cause = self.get_bsas_from_inis()
-        else:
-            # We can use the cached INI info
-            available_bsas, bsa_lo, bsa_cause = cached_ini_info
-        # BSAs loaded based on plugin name load in the middle of the pack
-        if for_plugins is None: for_plugins = list(self)
-        for i, p in enumerate(for_plugins):
-            for binf in self[p].mod_bsas(available_bsas):
-                bsa_lo[binf] = i
-                bsa_cause[binf] = p
-                del available_bsas[binf.fn_key]
-        return bsa_lo, bsa_cause
-
-    def get_active_bsas(self):
-        """Returns the load order of all active BSAs. See get_bsa_lo for more
-        information."""
-        return self.get_bsa_lo(for_plugins=load_order.cached_active_tuple())
-
-    @staticmethod
-    def plugin_wildcard(file_str=_(u'Mod Files')):
-        joinstar = ';*'.join(bush.game.espm_extensions)
-        return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
-
-    #--Mod move/delete/rename -------------------------------------------------
-    def _lo_caches_remove_mods(self, to_remove):
-        """Remove the specified mods from _lo_wip and _active_wip caches."""
-        # Use set to speed up lookups and note that these are strings (at least
-        # when they come from delete_refresh, check others?)
-        to_remove = {FName(x) for x in to_remove}
-        # Remove mods from cache
-        self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
-        self._active_wip  = [x for x in self._active_wip if x not in to_remove]
-
-    def rename_operation(self, member_info, newName):
-        """Renames member file from oldName to newName."""
-        isSelected = load_order.cached_is_active(member_info.fn_key)
-        if isSelected:
-            self.lo_deactivate(member_info.fn_key)
-        old_key = super(ModInfos, self).rename_operation(member_info, newName)
-        # rename in load order caches
-        oldIndex = self._lo_wip.index(old_key)
-        self._lo_caches_remove_mods([old_key])
-        self._lo_wip.insert(oldIndex, newName)
-        if isSelected: self.lo_activate(newName)
-        # Save to disc (load order and plugins.txt)
-        self.cached_lo_save_all()
-        # Update linked BP parts if the parent BP got renamed
-        for bp_part in self.table.getColumn('bp_split_parent'):
-            table_entry = self.table[bp_part]
-            if table_entry['bp_split_parent'] == old_key:
-                table_entry['bp_split_parent'] = newName
-        return old_key
-
-    #--Delete
-    def files_to_delete(self, filenames, **kwargs):
-        filenames = set(self.filter_essential(filenames))
-        self.lo_deactivate(filenames) ##: do this *after* deletion?
-        return super(ModInfos, self).files_to_delete(filenames)
-
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
-        # adapted from refresh() (avoid refreshing from the data directory)
-        deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
-                                              check_existence)
-        if not deleted_keys: return
-        # temporarily track deleted mods so BAIN can update its UI
-        if _in_refresh: return
-        self._lo_caches_remove_mods(deleted_keys)
-        self.cached_lo_save_all()
-        self._refresh_active_no_cp1252()
-        self._update_info_sets()
-        self._refreshMissingStrings()
-        self._refreshMergeable()
-        self._recalc_dependents()
-
-    def _additional_deletes(self, fileInfo, toDelete):
-        super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
-        # Add ghosts - the file may exist in both states (bug, or user mistake)
-        # if both versions exist file should be marked as normal
-        if not fileInfo.is_ghost: # add ghost if not added
-            ghost_version = self.store_dir.join(f'{fileInfo.fn_key}.ghost')
-            if ghost_version.exists(): toDelete.append(ghost_version)
-
-    def filter_essential(self, fn_items: Iterable[FName]):
-        # Removing the game master breaks everything, for obvious reasons
-        return (i for i in fn_items if i != self._master_esm)
-
-    def move_info(self, fileName, destDir):
-        """Moves member file to destDir."""
-        self.lo_deactivate(fileName)
-        FileInfos.move_info(self, fileName, destDir)
-
-    def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super(ModInfos, self).move_infos(sources, destinations, window,
-                                                 bash_frame)
-        self.refresh() # yak, it should have an "added" parameter
-        bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
-        return moved
-
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies modfile and optionally inserts into load order cache."""
-        super(ModInfos, self).copy_info(fileName, destDir, destName, set_mtime)
-        if self.store_dir == destDir:
-            self.cached_lo_insert_after(fileName, destName)
-        if save_lo_cache: self.cached_lo_save_lo()
-
-    #--Mod info/modify --------------------------------------------------------
-    def getVersion(self, fileName):
-        """Check we have a fileInfo for fileName and call get_version on it."""
-        return self[fileName].get_version() if fileName in self else ''
+    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
+        # Calculating indexes through order.index() cause we may be called in
+        # a row before saving the modified load order
+        order = self._lo_wip
+        newPos = order.index(dropItem)
+        if newPos <= 0: return False
+        start = order.index(firstItem)
+        stop = order.index(lastItem) + 1  # excluded
+        # Can't move the game's master file anywhere else but position 0
+        if self._master_esm in order[start:stop]: return False
+        # List of names to move removed and then reinserted at new position
+        toMove = order[start:stop]
+        del order[start:stop]
+        order[newPos:newPos] = toMove
+        return True
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def _retry(self, old, new, ask_yes):  ##: we should check *before* writing the patch
-        msg = _('Bash encountered an error when renaming %(old)s to %(new)s.')
-        msg += '\n\n' + _('The file is in use by another process such as '
-                          '%(xedit_name)s.') + '\n'
-        msg += _('Please close the other program that is accessing %(new)s.')
-        msg += '\n\n' + _('Try again?')
-        msg %= {'xedit_name': bush.game.Xe.full_name, 'old': old, 'new': new}
-        return ask_yes(self, msg, _('File in use'))
-
-    def setOblivionVersion(self, newVersion, ask_yes):
-        """Swaps Oblivion.esm to specified version."""
-        baseName = self._master_esm # Oblivion.esm, say it's currently SI one
-        # if new version is '1.1' then newName is FName(Oblivion_1.1.esm)
-        newName = FName(f'{(fnb := baseName.fn_body)}_{newVersion}.esm')
-        newSize = bush.game.modding_esm_size[newName]
-        oldSize = self[baseName].fsize
-        if newSize == oldSize: return
-        current_version = bush.game.size_esm_version[oldSize]
-        try: # for instance: Oblivion_SI.esm, we rename Oblivion.esm to this
-            oldName = FName(f'{fnb}_{current_version}.esm')
-        except KeyError:
-            raise StateError("Can't match current main ESM to known version.")
-        if self.store_dir.join(oldName).exists():
-            raise StateError(f"Can't swap: {oldName} already exists.")
-        if newName not in self:
-            raise StateError(f"Can't swap: {newName} doesn't exist.")
-        newInfo = self[newName]
+    _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
+                    '%(new)s.'), '', '',
+        _('The file is in use by another process such as %(xedit_name)s.'), '',
+        _('Please close the other program that is accessing %(new)s.'), '', '',
+        _('Try again?')]
+    def try_set_version(self, set_version, *, do_swap=None):
+        """Set Oblivion version to specified one - dry run if do_swap is None,
+        else do_swap must be an askYes callback. Our caches must be fresh from
+        refresh to detect versions properly."""
+        curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
+        if set_version is None or curr_ver is None:
+            # for do_swap False set_version != None => curr_ver == None
+            return curr_ver # return curr_ver as a convenience for saveInfos
+        master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
+        # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
+        move_to = FName(f'{(fnb := master_esm.fn_body)}_{curr_ver}.esm')
+        if set_version != curr_ver and set_version in self._voAvailable and \
+                not (move_to in self or move_to in self.corrupted):
+            if not do_swap: return True # we can swap
+        else: return False
+        # Swap Oblivion.esm to specified version - do_swap is askYes callback
+        # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
+        copy_from = FName(f'{fnb}_{set_version}.esm')
+        swapped_inf = self[copy_from]
+        swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
-        baseInfo = self[self._master_esm]
-        master_time = baseInfo.mtime
-        new_info_time = newInfo.mtime
-        is_master_active = load_order.cached_is_active(self._master_esm)
-        is_new_info_active = load_order.cached_is_active(newName)
+        baseInfo = self[master_esm]
+        master_time = baseInfo.ftime
+        new_info_time = swapped_inf.ftime
+        is_new_info_active = load_order.cached_is_active(copy_from)
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
-        while True:
-            try:
-                file_info_rename_op(baseInfo, oldName)
-                break
-            except PermissionError: ##: can only occur if SHFileOperation
-                # isn't called, yak - file operation API badly needed
-                if self._retry(baseInfo.getPath(),
-                        self.store_dir.join(oldName), ask_yes):
-                    continue
-                raise
-            except CancelError:
-                return
-        while True:
-            try:
-                file_info_rename_op(newInfo, self._master_esm)
-                break
-            except PermissionError:
-                if self._retry(newInfo.getPath(), baseInfo.getPath(), ask_yes):
-                    continue
-                #Undo any changes
-                file_info_rename_op(oldName, self._master_esm)
-                raise
-            except CancelError:
-                #Undo any changes
-                file_info_rename_op(oldName, self._master_esm)
-                return
+        rename_args = (baseInfo, move_to), (swapped_inf, master_esm)
+        deltd = swapped_inf.abs_path # will be (effectively) deleted
+        for do_undo, inf_fname in enumerate(rename_args):
+            while True:
+                try:
+                    file_info_rename_op(*inf_fname)
+                    break
+                except PermissionError: ##: can only occur if SHFileOperation
+                    # isn't called - file operation API badly needed (#241)
+                    old = inf_fname[0].abs_path
+                    new = inf_fname[0].get_rename_paths(inf_fname[1])[0][1]
+                    msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
+                        'xedit_name': bush.game.Xe.full_name, }
+                    if do_swap(msg, title=_('File in Use')):
+                        continue
+                    if do_undo: file_info_rename_op(self[move_to], master_esm)
+                    raise
+                except CancelError:
+                    if do_undo: file_info_rename_op(self[move_to], master_esm)
+                    return
+        master_inf = self[master_esm]
         # set mtimes to previous respective values
-        self[self._master_esm].setmtime(master_time)
-        self[oldName].setmtime(new_info_time)
-        oldIndex = self._lo_wip.index(newName)
-        self._lo_caches_remove_mods([newName])
-        self._lo_wip.insert(oldIndex, oldName)
-        def _activate(active, mod):
-            if active:
-                self[mod].setGhost(False) # needed if autoGhost is False
-                self.lo_activate(mod)
-            else: self.lo_deactivate(mod)
-        _activate(is_new_info_active, oldName)
-        _activate(is_master_active, self._master_esm)
-        # Save to disc (load order and plugins.txt)
-        self.cached_lo_save_all() # sets ghost as needed iff autoGhost is True
-        self.voCurrent = newVersion
-        self.voAvailable.add(current_version)
-        self.voAvailable.remove(newVersion)
-
-    def swapPluginsAndMasterVersion(self, arcSaves, newSaves, ask_yes):
-        """Save current plugins into arcSaves directory, load plugins from
-        newSaves directory and set oblivion version."""
-        arcPath, newPath = map(dirs[u'saveBase'].join, (arcSaves, newSaves))
-        if load_order.swap(arcPath, newPath):
-            self.refreshLoadOrder(unlock_lo=True)
-        # Swap Oblivion version to memorized version
-        voNew = saveInfos.get_profile_attr(newSaves, u'vOblivion', None)
-        if voNew is None:
-            saveInfos.set_profile_attr(newSaves, u'vOblivion', self.voCurrent)
-            voNew = self.voCurrent
-        if voNew in self.voAvailable: self.setOblivionVersion(voNew, ask_yes)
+        master_inf.setmtime(master_time)
+        if swapping_a_ghost: # we need to unghost the master esm
+            master_inf.setGhost(False)
+        self[move_to].setmtime(new_info_time)
+        self._lo_move_mod(copy_from, move_to, is_new_info_active,
+                          not is_new_info_active) # always deactivate?
+        # make sure to notify BAIN rename_operation passes only renames param
+        self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
+        self.voCurrent = set_version
+        self._voAvailable.add(curr_ver)
+        self._voAvailable.remove(set_version)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size
         does not match the specified value (in bytes)."""
         return plugin_name in self and plugin_size != self[plugin_name].fsize
 
-    def _recalc_real_indices(self):
-        """Recalculates the real indices cache. See ModInfo.real_index for more
-        info on these."""
-        # Note that inactive plugins/ones with missing LO are handled by our
-        # defaultdict factory
-        regular_index = 0
-        esl_index = 0
-        esl_offset = load_order.max_espms() - 1
-        self.real_indices.clear()
-        self.real_index_strings.clear()
-        for p in load_order.cached_active_tuple():
-            if (pi := self[p]).is_esl():
-                # sort ESLs after all regular plugins
-                self.real_indices[p] = esl_offset + esl_index
-                self.real_index_strings[p] = f'FE {esl_index:03X}'
-                esl_index += 1
-            elif not pi.is_overlay():
-                # Skip overlay plugins as they get no active index at runtime
-                self.real_indices[p] = regular_index
-                self.real_index_strings[p] = f'{regular_index:02X}'
-                regular_index += 1
-
-    def _recalc_dependents(self):
-        """Recalculates the dependents cache. See ModInfo.get_dependents for
-        more information."""
-        cached_dependents = self.dependents
-        cached_dependents.clear()
-        for p, p_info in self.items():
-            for p_master in p_info.masterNames:
-                cached_dependents[p_master].add(p)
+    def refresh_crcs(self, mods=None, progress=None):
+        pairs = {}
+        with (progress := progress or bolt.Progress()):
+            mods = (self if mods is None else mods)
+            if mods: progress.setFull(len(mods))
+            for dex, mod_key in enumerate(mods):
+                progress(dex, _('Calculating crc:') + f'\n{mod_key}')
+                inf = self[mod_key]
+                pairs[mod_key] = inf.calculate_crc(recalculate=True)
+        return pairs
 
 #------------------------------------------------------------------------------
-class SaveInfos(FileInfos):
+class SaveInfos(TableFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
-    _bain_notify = False
+    _bain_notify = tracks_ownership = False
     # Enabled and disabled saves, no .bak files ##: needed?
-    file_pattern = re.compile('(%s)(f?)$' % '|'.join(r'\.%s' % s for s in
-        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I | re.U)
+    file_pattern = re.compile('(%s)(f?)$' % '|'.join(fr'\.{s}' for s in
+        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
     unique_store_key = Store.SAVES
 
-    def _setLocalSaveFromIni(self):
-        """Read the current save profile from the oblivion.ini file and set
-        local save attribute to that value."""
-        # saveInfos singleton is constructed in InitData after bosh.oblivionIni
-        self.localSave = oblivionIni.getSetting(
-            *bush.game.Ini.save_profiles_key,
-            default=bush.game.Ini.save_prefix)
-        if self.localSave.endswith(u'\\'): self.localSave = self.localSave[:-1]
-        # Hopefully will solve issues with unicode usernames # TODO(ut) test
-        self.localSave = decoder(self.localSave) # encoding = u'cp1252' ?
+    def set_store_dir(self, save_dir=None, do_swap=None):
+        """If save_dir is None, read the current save profile from
+        oblivion.ini file, else update the ini with save_dir."""
+        # saveInfos singleton is constructed in InitData after oblivionIni
+        prev = getattr(self, 'localSave', None)
+        if save_dir is None:
+            save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
+                default=bush.game.Ini.save_prefix).rstrip('\\')
+        else: # set SLocalSavePath in Oblivion.ini - the latter must exist
+            # not sure if appending the slash is needed for the game to parse
+            # the setting correctly, kept previous behavior
+            oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
+                                    value=f'{save_dir}\\')
+        self.localSave = save_dir
+        if (boot := prev is None) or prev != save_dir:
+            old = not boot and self.store_dir
+            if not boot:
+                self.save_pickle() # save current data before setting store_dir
+                self._table_loaded = False
+            self.store_dir = sd = dirs['saveBase'].join(env.convert_separators(
+                save_dir)) # localSave always has backslashes
+            if do_swap:
+                # save current plugins into old directory, load plugins from sd
+                if load_order.swap(old, sd):
+                    modInfos.refreshLoadOrder(unlock_lo=True)
+                # Swap Oblivion version to memorized version
+                voNew = self.get_profile_attr(save_dir, 'vOblivion', None)
+                if curr := modInfos.try_set_version(voNew, do_swap=do_swap):
+                    self.set_profile_attr(save_dir, 'vOblivion', curr)
+            if not boot: # else in __init__,  calling _init_store right after
+                self._init_store(sd)
+        return self.store_dir
 
     def __init__(self):
-        self.localSave = bush.game.Ini.save_prefix
-        self._setLocalSaveFromIni()
-        super().__init__(dirs['saveBase'].join(self.localSave), SaveInfo)
+        super().__init__(SaveInfo)
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
@@ -3537,37 +3123,23 @@ class SaveInfos(FileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos=True, booting=False):
-        if not booting: self._refreshLocalSave() # otherwise we just did this
-        return refresh_infos and FileInfos.refresh(self, booting=booting)
+    def refresh(self, refresh_infos=True, *, booting=False, save_dir=None,
+                do_swap=None, **kwargs):
+        if not booting: # else we just called __init__
+            self.set_store_dir(save_dir, do_swap)
+        return super().refresh(refresh_infos, booting=booting, **kwargs)
 
-    def rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName, rdata_ren,
+                         store_refr=None):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        old_key = super(SaveInfos, self).rename_operation(member_info, newName)
+        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
-        return old_key
+        return rdata_ren
 
-    def _additional_deletes(self, fileInfo, toDelete):
-        # type: (SaveInfo, list) -> None
-        toDelete.extend(x.abs_path for x in fileInfo._co_saves.values())
-        # now add backups and cosaves backups
-        super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
-
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies savefile and associated cosaves file(s)."""
-        super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
-        self._co_copy_or_move(self[fileName].abs_path,
-            destDir.join(destName or fileName))
-
-    def _co_copy_or_move(self, src_path: Path, dest_path: Path,
-            move_cosave=False):
-        try:
-            co_instances = self[src_path.stail]._co_saves
-        except KeyError: # src_path is outside self.store_dir
-            co_instances = SaveInfo.get_cosaves_for_path(src_path)
+    @staticmethod
+    def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
         for co_type, co_file in co_instances.items():
             newPath = co_type.get_cosave_path(dest_path)
             if newPath.exists(): newPath.remove() ##: dont like it, investigate
@@ -3577,50 +3149,19 @@ class SaveInfos(FileInfos):
                 path_func(newPath)
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        # operations should be atomic - we should construct a list of filenames
-        # to unhide and pass that in
+        # we should use fs_copy in base method so cosaves are copied - we
+        # need to create infos for the hidden files using _store.factory
         moved = super().move_infos(sources, destinations, window, bash_frame)
         for s, d in zip(sources, destinations):
             if FName(d.stail) in moved:
-                self._co_copy_or_move(s, d, move_cosave=True)
-                break
-        for m in moved:
-            try:
-                self.new_info(m, notify_bain=True) ##: why True??
-            except FileError:
-                pass # will warn below
+                co_instances = SaveInfo.get_cosaves_for_path(s)
+                self.co_copy_or_move(co_instances, d, move_cosave=True)
+        self.refresh(RefrIn.from_added(moved))
         bash_frame.warn_corrupted(warn_saves=True)
         return moved
 
-    def move_info(self, fileName, destDir):
-        """Moves member file to destDir. Will overwrite!"""
-        FileInfos.move_info(self, fileName, destDir)
-        self._co_copy_or_move(self[fileName].abs_path, destDir.join(fileName),
-            move_cosave=True)
-
-    #--Local Saves ------------------------------------------------------------
-    def _refreshLocalSave(self):
-        """Refreshes self.localSave."""
-        #--self.localSave is NOT a Path object.
-        localSave = self.localSave
-        self._setLocalSaveFromIni()
-        if localSave == self.localSave: return # no change
-        self.table.save()
-        self._initDB(dirs[u'saveBase'].join(self.localSave))
-
-    def setLocalSave(self, localSave: str, refreshSaveInfos=True):
-        """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
-        self.table.save()
-        self.localSave = localSave
-        ##: not sure if appending the slash is needed for the game to parse
-        # the setting correctly, kept previous behavior
-        oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
-                                value=localSave + u'\\')
-        self._initDB(dirs[u'saveBase'].join(self.localSave))
-        if refreshSaveInfos: self.refresh()
-
 #------------------------------------------------------------------------------
-class BSAInfos(FileInfos):
+class BSAInfos(TableFileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
     # BSAs that have versions other than the one expected for the current game
     mismatched_versions = set()
@@ -3628,6 +3169,7 @@ class BSAInfos(FileInfos):
     _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
     unique_store_key = Store.BSAS
+    _dir_key = 'mods'
 
     def __init__(self):
         ##: Hack, this should not use display_name
@@ -3636,25 +3178,25 @@ class BSAInfos(FileInfos):
             bush.game.Bsa.redate_dict[inisettings[
                 u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'
         self.__class__.file_pattern = re.compile(
-            re.escape(bush.game.Bsa.bsa_extension) + u'$', re.I | re.U)
+            f'{re.escape(bush.game.Bsa.bsa_extension)}$', re.I)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
-
         class BSAInfo(FileInfo, _bsa_type):
             _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
-            def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+            def __init__(self, fullpath, load_cache=False, **kwargs):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
-                    super(BSAInfo, self).__init__(fullpath, load_cache=False)
+                    super().__init__(fullpath, load_cache=False, **kwargs)
                 except BSAError as e:
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
                 self._reset_bsa_mtime()
+            _key_to_attr = {'info': 'bsa_notes', 'installer': 'bsa_owner_inst'}
 
             @classmethod
-            def get_store(cls): return bsaInfos
+            def _store(cls): return bsaInfos
 
-            def do_update(self, raise_on_error=False, **kwargs):
-                did_change = super(BSAInfo, self).do_update(raise_on_error)
+            def do_update(self, *, raise_on_error=False, **kwargs):
+                did_change = super().do_update(raise_on_error=raise_on_error)
                 self._reset_bsa_mtime()
                 return did_change
 
@@ -3665,43 +3207,77 @@ class BSAInfos(FileInfos):
                 if bush.game.Bsa.allow_reset_timestamps and inisettings[
                     u'ResetBSATimestamps']:
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
-                    if self.file_mod_time != default_mtime:
+                    if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
+        super().__init__(BSAInfo)
 
-        super().__init__(dirs['mods'], BSAInfo)
-
-    def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
-        new_bsa = super(BSAInfos, self).new_info(fileName, _in_refresh, owner,
-                                                 notify_bain, itsa_ghost)
-        new_bsa_name = new_bsa.fn_key
-        # Check if the BSA has a mismatched version - if so, schedule a warning
-        if bush.game.Bsa.valid_versions: # If empty, skip checks for this game
-            if new_bsa.inspect_version() not in bush.game.Bsa.valid_versions:
-                self.mismatched_versions.add(new_bsa_name)
-        # For BA2s, check for hash collisions
-        if new_bsa_name.fn_ext == u'.ba2':
-            ba2_entry = self._ba2_hashes[new_bsa.ba2_hash()]
-            # Drop the previous collision if it's present, then check if we
-            # have a new one
-            self.ba2_collisions.discard(u' & '.join(sorted(ba2_entry)))
-            ba2_entry.add(new_bsa_name)
-            if len(ba2_entry) >= 2:
-                self.ba2_collisions.add(u' & '.join(sorted(ba2_entry)))
-        return new_bsa
+    def refresh(self, *args, **kwargs):
+        rdata = super().refresh(*args, **kwargs)
+        for new_bsa_name in rdata.to_add:
+            binf = self[new_bsa_name]
+            # If the BSA has a mismatched version, schedule a warning
+            if bush.game.Bsa.valid_versions: # else skip checks for this game
+                if binf.inspect_version() not in bush.game.Bsa.valid_versions:
+                    self.mismatched_versions.add(new_bsa_name)
+            # For BA2s, check for hash collisions
+            if new_bsa_name.fn_ext == '.ba2':
+                ba2_entry = self._ba2_hashes[binf.ba2_hash()]
+                # Drop the previous collision if it's present, then check if we
+                # have a new one
+                self.ba2_collisions.discard(' & '.join(sorted(ba2_entry)))
+                ba2_entry.add(new_bsa_name)
+                if len(ba2_entry) >= 2:
+                    self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
+        return rdata
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')
+
+    # BSA Redirection ---------------------------------------------------------
+    _aii_name = 'ArchiveInvalidationInvalidated!.bsa'
+    _bsa_redirectors = {_aii_name.lower(), '..\\obmm\\bsaredirection.bsa'}
 
     @staticmethod
     def remove_invalidation_file():
         """Removes ArchiveInvalidation.txt, if it exists in the game folder.
         This is used when disabling other solutions to the Archive Invalidation
         problem prior to enabling WB's BSA Redirection."""
-        dirs[u'app'].join(u'ArchiveInvalidation.txt').remove()
+        dirs['app'].join('ArchiveInvalidation.txt').remove()
+
+    def set_bsa_redirection(self, *, do_redirect: bool):
+        """Activate or deactivate BSA redirection - game ini must exist!"""
+        if oblivionIni.isCorrupted: return
+        br_section, br_key = bush.game.Ini.bsa_redirection_key
+        if not br_section or not br_key: return
+        aii_bsa = self.get(self._aii_name)
+        aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
+        if aii_bsa and aii_bsa.ftime > aiBsaMTime:
+            aii_bsa.setmtime(aiBsaMTime)
+        # check if BSA redirection is active
+        sArchives = oblivionIni.getSetting(br_section, br_key, '')
+        is_bsa_redirection_active = any(x for x in sArchives.split(',')
+            if x.strip().lower() in self._bsa_redirectors)
+        if do_redirect == is_bsa_redirection_active:
+            return
+        if do_redirect and not aii_bsa:
+            source = dirs['templates'].join(
+                bush.game.template_dir, self._aii_name)
+            source.mtime = aiBsaMTime
+            try:
+                env.shellCopy({source: self.store_dir.join(self._aii_name)},
+                    allow_undo=True, auto_rename=True)
+            except (PermissionError, CancelError, SkipError):
+                return
+        # Strip any existing redirectors out, then add our own
+        bsa_archs = [x_s for x in sArchives.split(',') if
+                     (x_s := x.strip()).lower() not in self._bsa_redirectors]
+        if do_redirect:
+            bsa_archs.insert(0, self._aii_name)
+        sArchives = ', '.join(bsa_archs)
+        oblivionIni.saveSetting('Archive', 'sArchiveList', sArchives)
 
 #------------------------------------------------------------------------------
-class ScreenInfos(FileInfos):
+class ScreenInfos(_AFileInfos):
     """Collection of screenshots. This is the backend of the Screenshots
     tab."""
     # Files that go in the main game folder (aka default screenshots folder)
@@ -3711,31 +3287,28 @@ class ScreenInfos(FileInfos):
         'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
         'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
     unique_store_key = Store.SCREENSHOTS
+    file_pattern = re.compile(
+        r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
+    factory = ScreenInfo
 
-    def __init__(self):
-        self._orig_store_dir: bolt.Path = dirs[u'app']
-        self.__class__.file_pattern = re.compile(
-            r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$',
-            re.I | re.U)
-        self._set_store_dir()
-        super().__init__(self.store_dir, ScreenInfo)
-
-    def _set_store_dir(self):
+    def set_store_dir(self):
         # Check if we need to adjust the screenshot dir
         ss_base = GPath(oblivionIni.getSetting(
             u'Display', u'SScreenShotBaseName', u'ScreenShot'))
-        new_store_dir = self._orig_store_dir.join(ss_base.shead)
-        if self.store_dir != new_store_dir:
+        new_store_dir = dirs['app'].join(ss_base.shead)
+        if (prev := getattr(self, 'store_dir', None)) != new_store_dir:
             self.store_dir = new_store_dir
-        # Also check if we're now relative to the Data folder and hence need to
-        # pay attention to BAIN
-        self._rel_to_data = self.store_dir.cs.startswith(bass.dirs['mods'].cs)
-        self._bain_notify = self._rel_to_data
-        if self._rel_to_data:
-            self._ci_curr_data_prefix = os.path.split(os.path.relpath(
-                self.store_dir, bass.dirs['mods']).lower())
-        else:
-            self._ci_curr_data_prefix = []
+            if prev is not None: # else we are in __init__
+                self._init_store(new_store_dir)
+            # Also check if we're now in the Data folder and hence need to
+            # pay attention to BAIN
+            if in_data := self.store_dir.cs.startswith(bass.dirs['mods'].cs):
+                self._ci_curr_data_prefix = os.path.split(os.path.relpath(
+                    new_store_dir, bass.dirs['mods']).lower())
+            else:
+                self._ci_curr_data_prefix = []
+            self._bain_notify = in_data
+        return new_store_dir
 
     @classmethod
     def rightFileType(cls, fileName: bolt.FName):
@@ -3745,7 +3318,7 @@ class ScreenInfos(FileInfos):
         return super().rightFileType(fileName)
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
-        if not self._rel_to_data:
+        if not self._bain_notify:
             # Current store_dir is not relative to Data folder, so we do not
             # need to pay attention to BAIN
             return None
@@ -3756,12 +3329,9 @@ class ScreenInfos(FileInfos):
             return None
         return super().data_path_to_info(filename, would_be)
 
-    def refresh(self, refresh_infos=True, booting=False):
-        self._set_store_dir()
-        return super().refresh(refresh_infos, booting)
-
-    @property
-    def bash_dir(self): return dirs[u'modsBash'].join(u'Screenshot Data')
+    def refresh(self, refresh_infos=True, *, booting=False, **kwargs):
+        self.set_store_dir()
+        return super().refresh(refresh_infos, booting=booting)
 
 #------------------------------------------------------------------------------
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter
@@ -3790,9 +3360,8 @@ def initBosh(game_ini_path):
     deprint(f'Looking for main game INI at {game_ini_path}')
     global oblivionIni, gameInis
     oblivionIni = GameIni(game_ini_path, 'cp1252')
-    gameInis = [oblivionIni]
-    gameInis.extend(IniFileInfo(dirs[u'saveBase'].join(x), 'cp1252') for x in
-                    bush.game.Ini.dropdown_inis[1:])
+    gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
+                               for x in bush.game.Ini.dropdown_inis[1:])]
     load_order.initialize_load_order_files()
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
@@ -3856,3 +3425,18 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else:
                 raise
+
+def init_stores(progress):
+    """Initialize the data stores. Bsas first - used in warnTooManyModsBsas
+    and modInfos strings detection. Screens/installers data are refreshed
+    upon showing the panel - we should probably do the same for saves."""
+    global bsaInfos, saveInfos, iniInfos
+    progress(0.2, _('Initializing BSAs'))
+    bsaInfos = BSAInfos()
+    progress(0.3, _('Initializing plugins'))
+    ModInfos() # modInfos global is set in __init__
+    progress(0.5, _('Initializing saves'))
+    saveInfos = SaveInfos()
+    progress(0.6, _('Initializing INIs'))
+    iniInfos = INIInfos()
+    return modInfos

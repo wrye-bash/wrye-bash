@@ -3,28 +3,23 @@ chardet==5.2.0
 ifileoperation==1.2.6; sys_platform == 'win32'
 lz4==4.3.3
 pywin32==306; sys_platform == 'win32'
-PyYAML==6.0.1
+PyYAML==6.0.2
 vdf==3.4
-wxPython==4.2.1
+wxPython==4.2.2
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
-lxml==5.0.0
+lxml==5.3.0
 # For parsing download conditions when checking for updates
-packaging==23.2
+packaging==24.1
 # For PDF support in the doc browser
-PyMuPDF==1.23.8
+PyMuPDF==1.24.10
 # For reflink copies (does not support Windows/ReFS yet)
 reflink==0.2.2; sys_platform != 'win32'
 # For various Internet-based functionality
-requests[use_chardet_on_py3]==2.31.0
+requests[use_chardet_on_py3]==2.32.3
 # For sending files to the recycle bin on non-Windows platforms
-send2trash==1.8.2; sys_platform != 'win32'
+send2trash==1.8.3; sys_platform != 'win32'
 # For Nexus Mods integration
-websocket-client==1.7.0
+websocket-client==1.8.0
 # Compile/Build-time ----------------------------------------------------------
-isort==5.13.2
-pyfiglet==1.0.2
-pygit2==1.13.3
-PyGithub==2.1.1
-pyinstaller==6.3.0
-pytest==7.4.4
+-r requirements-scripts.txt

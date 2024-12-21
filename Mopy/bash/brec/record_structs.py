@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -55,7 +55,6 @@ attr_csv_struct = {
     'calc_min_level': [int_or_zero, _('CalcMin')],
     'clipRounds': [int_or_zero, _('Clip Rounds')],
     'clipsize': [int_or_zero, _('Clip Size')],
-    'cost': [int_or_zero, _('Cost')],
     'criticalDamage': [int_or_zero, _('Critical Damage')],
     'criticalEffect': [int_or_zero, _('Critical Effect')],
     'criticalMultiplier': [float_or_none, _('Critical Multiplier')],
@@ -74,7 +73,6 @@ attr_csv_struct = {
     'impulseDist': [float_or_none, _('Impulse Distance')],
     'jamTime': [float_or_none, _('Jam Time')],
     'killImpulse': [float_or_none, _('Kill Impulse')],
-    'level': [str_or_none, _('Level Type')],
     'level_offset': [int_or_zero, _('Offset')],
     'limbDmgMult': [float_or_none, _('Limb Damage Multiplier')],
     'maxRange': [float_or_none, _('Maximum Range')],
@@ -107,18 +105,20 @@ attr_csv_struct = {
     'sightUsage': [float_or_none, _('Sight Usage')],
     'skillReq': [int_or_zero, _('Skill Requirement')],
     'speed': [float_or_none, _('Speed')],
+    'spell_cost': [int_or_zero, _('Cost')],
     'spell_flags': [int_or_zero, _('Spell Flags')],
-    'spell_flags.disallowAbsorbReflect': [_str_to_bool,
-                                          _('Disallow Absorb and Reflect')],
+    'spell_flags.no_absorb_reflect': [_str_to_bool,
+                                      _('Disallow Absorb and Reflect')],
     'spell_flags.ignoreLOS': [_str_to_bool, _('Area Effect Ignores LOS')],
-    'spell_flags.immuneToSilence': [_str_to_bool, _('Immune To Silence')],
-    'spell_flags.noAutoCalc': [_str_to_bool, _('Manual Cost')],
-    'spell_flags.scriptEffectAlwaysApplies': [_str_to_bool,
-                                              _('Script Always Applies')],
-    'spell_flags.startSpell': [_str_to_bool, _('Start Spell')],
-    'spell_flags.touchExplodesWOTarget': [_str_to_bool,
-                                          _('Touch Explodes Without Target')],
-    'spellType': [str_or_none, _('Spell Type')],
+    'spell_flags.immune_to_silence': [_str_to_bool, _('Immune To Silence')],
+    'spell_flags.manual_cost_calc': [_str_to_bool, _('Manual Cost')],
+    'spell_flags.pc_start_spell': [_str_to_bool, _('Start Spell')],
+    'spell_flags.script_effect_always_applies': [_str_to_bool,
+                                                 _('Script Always Applies')],
+    'spell_flags.touch_spell_explodes_without_target': [
+        _str_to_bool, _('Touch Explodes Without Target')],
+    'spell_level': [str_or_none, _('Level Type')],
+    'spell_type': [str_or_none, _('Spell Type')],
     'spread': [float_or_none, _('Spread')],
     'stagger': [float_or_none, _('Stagger')],
     'strength': [int_or_zero, _('Strength')],
@@ -152,13 +152,13 @@ class MelSet(object):
         self.defaulters = {}
         self.loaders = {}
         self.formElements = set()
-        self._sort_elements = []
+        self.sort_elements = []
         for element in self.elements:
             element.getDefaulters(self.defaulters,'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
             if element.needs_sorting():
-                self._sort_elements.append(element)
+                self.sort_elements.append(element)
         for sig_candidate in self.loaders:
             if not isinstance(sig_candidate, bytes) or len(sig_candidate) != 4:
                 raise SyntaxError(f"Invalid signature '{sig_candidate!r}': "
@@ -221,11 +221,6 @@ class MelSet(object):
         """Maps fids of subelements."""
         for element in self.formElements:
             element.mapFids(record, mapper, save_fids)
-
-    def sort_subrecords(self, record):
-        """Sorts all subrecords of the specified record that need sorting."""
-        for element in self._sort_elements:
-            element.sort_subrecord(record)
 
     def with_distributor(self, distributor_config: dict) -> Self:
         """Adds a distributor to this MelSet. See _MelDistributor for more
@@ -593,7 +588,8 @@ class MelRecord(MreRecord):
 
     def _sort_subrecords(self):
         """Sorts all subrecords of this record that need sorting."""
-        self.__class__.melSet.sort_subrecords(self)
+        for element in self.__class__.melSet.sort_elements:
+            element.sort_subrecord(self)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""

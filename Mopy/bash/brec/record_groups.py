@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -1182,7 +1182,7 @@ class WorldChildren(CellChildren):
         """Updates the persistent CELL block to use a copy of the specified
         CELL or creates a new persistent CELL block if one does not already
         exist in this world."""
-        if cell_rec.flags.isInterior:
+        if cell_rec.flags1.persistent:
             cell_copy = cell_rec.getTypeCopy()
             if self._stray_recs[b'CELL']:
                 self._stray_recs[b'CELL'].master_record = cell_copy

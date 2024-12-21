@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -55,5 +55,5 @@ class MreTes4(AMreHeader):
                 prelude=MelUInt32(b'TNAM', 'form_type')),
         ),
         MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'internal_cell_count'),
+        MelUInt32(b'INCC', 'interior_cell_count'),
     )

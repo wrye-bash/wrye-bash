@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -32,16 +32,16 @@ from ....brec import FormId, RecordType, null4, null3, null2
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
-    (1, 0xCED, _('Alchemical Ingredients I')),
-    (2, 0xCEC, _('Alchemical Ingredients II')),
-    (3, 0xCEB, _('Alchemical Ingredients III')),
-    (4, 0xCE7, _('Alchemical Ingredients IV')),
+    (1, 0xCED, _("Salan's Catalog of Alchemical Ingredients I")),
+    (2, 0xCEC, _("Salan's Catalog of Alchemical Ingredients II")),
+    (3, 0xCEB, _("Salan's Catalog of Alchemical Ingredients III")),
+    (4, 0xCE7, _("Salan's Catalog of Alchemical Ingredients IV")),
 )
 _effect_alchem = (
-    (1, 0xCEA, _('Alchemical Effects I')),
-    (2, 0xCE9, _('Alchemical Effects II')),
-    (3, 0xCE8, _('Alchemical Effects III')),
-    (4, 0xCE6, _('Alchemical Effects IV')),
+    (1, 0xCEA, _("Salan's Catalog of Alchemical Effects I")),
+    (2, 0xCE9, _("Salan's Catalog of Alchemical Effects II")),
+    (3, 0xCE8, _("Salan's Catalog of Alchemical Effects III")),
+    (4, 0xCE6, _("Salan's Catalog of Alchemical Effects IV")),
 )
 _book_fids = {FormId.from_tuple((cobl_main, book_data[1]))
               for book_data in chain(_ingred_alchem, _effect_alchem)}
@@ -106,7 +106,7 @@ class CoblCatalogsPatcher(ExSpecial):
                 return None # This shouldn't happen, but just in case...
             book = patch_books.id_records[book_fid]
             book.book_text = '<div align="left"><font face=3 color=4444>'
-            book.book_text += (_("Salan's Catalog of %s") + '\r\n\r\n') % full
+            book.book_text += full + '\r\n\r\n'
             if keep(book_fid, book):
                 return book
         #--Ingredients Catalog
@@ -152,8 +152,10 @@ class CoblCatalogsPatcher(ExSpecial):
             book.book_text = re.sub('\r\n', '<br>\r\n', book.book_text)
         #--Log
         log.setHeader(u'= ' + self._patcher_name)
-        log('* ' + _('Ingredients Cataloged') + f': {len(id_ingred)}')
-        log('* ' + _('Effects Cataloged') + f': {len(effect_ingred)}')
+        log('* ' + _('Ingredients Cataloged: %(total_changed)d') % {
+            'total_changed': len(id_ingred)})
+        log('* ' + _('Effects Cataloged: %(total_changed)d') % {
+            'total_changed': len(effect_ingred)})
 
 #------------------------------------------------------------------------------
 _ob_path = bush.game.master_file
@@ -221,4 +223,5 @@ class SEWorldTestsPatcher(ExSpecial):
                 if keep(rid, record):
                     patched.append(record.eid)
         log.setHeader(f'= {self._patcher_name}')
-        log('===' + _('Quests Patched') + f': {len(patched)}')
+        log('===' + _('Quests Patched: %(total_changed)d') % {
+            'total_changed': len(patched)})

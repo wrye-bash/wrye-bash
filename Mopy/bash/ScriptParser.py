@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -98,14 +98,31 @@ def validNumber(string):
 # Define Some Constants ---------------------------
 
 # Some error string
-def err_too_few_args(obj_type, obj_name, got, expected):
-    error(f"Too few arguments to {obj_type} '{obj_name}':  got {got}, "
-          f"expected {expected}.")
-def err_too_many_args(obj_type, obj_name, got, expected):
-    error(f"Too many arguments to {obj_type} '{obj_name}':  got {got}, "
-          f"expected {expected}.")
-def err_cant_set(obj_type, obj_name, type_enum):
-    error(f"Cannot set {obj_type} '{obj_name}': type is '{Types[type_enum]}'.")
+def _err_too_few_args(obj_type, obj_name, got, expected):
+    error(_("Too few arguments to %(obj_type)s '%(obj_name)s': got %(got)s, "
+            "expected %(expected)s.") % {'obj_type': obj_type,
+                                         'obj_name': obj_name, 'got': got,
+                                         'expected': expected})
+
+def _err_too_many_args(obj_type, obj_name, got, expected):
+    error(_("Too many arguments to %(obj_type)s '%(obj_name)s': got %(got)s, "
+            "expected %(expected)s.") % {'obj_type': obj_type,
+                                         'obj_name': obj_name, 'got': got,
+                                         'expected': expected})
+
+def _err_cant_set(obj_type, obj_name, type_enum):
+    error(_("Cannot set %(obj_type)s '%(obj_name)s': type is "
+            "'%(conflicting_type)s'.") % {
+        'obj_type': obj_type, 'obj_name': obj_name,
+        'conflicting_type': Types[type_enum]})
+
+def _err_unexpected(unexp_keyword):
+    error(_("Unexpected '%(unexpected_keyword)s'.") % {
+        'unexpected_keyword': unexp_keyword})
+
+def _err_only_strings(function_name):
+    error(_("Function '%(string_only_function)s' only operates on string "
+            "types.") % {'string_only_function': function_name})
 
 class KEY(object):
     # Constants for keyword args
@@ -192,7 +209,7 @@ class FlowControl(object):
 #--------------------------------------------------
 ##: Refactor to use exception.ParserError instead?
 class ParserError(SyntaxError): pass
-gParser: 'Parser' = None
+gParser: Parser | None = None
 def error(msg):
     if gParser:
         raise ParserError(
@@ -261,20 +278,20 @@ class Parser(object):
             numArgs = len(args)
             if self.maxArgs != KEY.NO_MAX and numArgs > self.maxArgs:
                 if self.minArgs == self.maxArgs:
-                    err_too_many_args(self.Type, self.callable_name, numArgs,
-                                      self.minArgs)
+                    _err_too_many_args(self.Type, self.callable_name, numArgs,
+                                       self.minArgs)
                 else:
-                    err_too_many_args(self.Type, self.callable_name, numArgs,
+                    _err_too_many_args(self.Type, self.callable_name, numArgs,
                         f'min: {self.minArgs}, max: {self.maxArgs}')
             if numArgs < self.minArgs:
                 args = self.Type, self.callable_name, numArgs
                 if self.maxArgs == KEY.NO_MAX:
-                    err_too_few_args(*args, f'min: {self.minArgs}')
+                    _err_too_few_args(*args, f'>= {self.minArgs}')
                 elif self.minArgs == self.maxArgs:
-                    err_too_few_args(*args, self.minArgs)
+                    _err_too_few_args(*args, self.minArgs)
                 else:
-                    err_too_few_args(*args, f'min: {self.minArgs}, '
-                                            f'max: {self.maxArgs}')
+                    _err_too_few_args(*args,
+                        f'>= {self.minArgs} && <= {self.maxArgs}')
             return self.function(*args)
 
     class Operator(Callable):
@@ -498,29 +515,29 @@ class Parser(object):
     def SetOperator(self, op_name, *args, **kwdargs):
         type_ = self.getType(op_name)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
-            err_cant_set(u'operator', op_name,  type_)
+            _err_cant_set(u'operator', op_name,  type_)
         self.operators[op_name] = Parser.Operator(op_name, *args, **kwdargs)
         for i in op_name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, keywrd_name, *args, **kwdargs):
         type_ = self.getType(keywrd_name)
         if type_ not in [NAME,KEYWORD]:
-            err_cant_set(u'keyword', keywrd_name,  type_)
+            _err_cant_set(u'keyword', keywrd_name,  type_)
         self.keywords[keywrd_name] = Parser.Keyword(keywrd_name, *args, **kwdargs)
     def SetFunction(self, fun_name, *args, **kwdargs):
         type_ = self.getType(fun_name)
         if type_ not in [NAME,FUNCTION]:
-            err_cant_set(u'function', fun_name,  type_)
+            _err_cant_set(u'function', fun_name,  type_)
         self.functions[fun_name] = Parser.Function(fun_name, *args, **kwdargs)
     def SetConstant(self, const_name, value):
         type_ = self.getType(const_name)
         if type_ not in [NAME,CONSTANT]:
-            err_cant_set(u'constant', const_name,  type_)
+            _err_cant_set(u'constant', const_name,  type_)
         self.constants[const_name] = value
     def SetVariable(self, var_name, value):
         type_ = self.getType(var_name)
         if type_ not in [NAME, VARIABLE]:
-            err_cant_set(u'variable', var_name,  type_)
+            _err_cant_set(u'variable', var_name,  type_)
         self.variables[var_name] = value
 
     # Flow control stack
@@ -576,7 +593,7 @@ class Parser(object):
         tokens = tokens or self.tokens
         parenDepth = 0
         bracketDepth = 0
-        ret = [[]]
+        result = [[]]
         for tok in tokens:
             if tok.type == OPEN_PARENS:
                 parenDepth += 1
@@ -591,10 +608,10 @@ class Parser(object):
                 if bracketDepth < 0:
                     error(_(u'Mismatched brackets.'))
             if tok.type == COMMA and parenDepth == 0 and bracketDepth == 0:
-                    ret.append([])
+                    result.append([])
             else:
-                ret[-1].append(tok)
-        return ret
+                result[-1].append(tok)
+        return result
 
     def StripOuterParens(self, tokens=None):
         tokens = tokens or self.tokens
@@ -646,7 +663,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_PARENS:
                     rpn.append(stack.pop())
                 if len(stack) == 0:
-                    error(_(u"Misplaced ',' or missing parenthesis."))
+                    error(_("Misplaced ',' or missing parenthesis."))
                 if len(stack) > 1 and stack[-2].type == FUNCTION:
                     stack[-2].numArgs += stack[-1].numArgs
                     stack[-1].numArgs = 0
@@ -655,7 +672,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
                     temp_tokens.append(stack.pop())
                 if len(stack) <= 1:
-                    error(_(u"Misplaced ':' or missing bracket."))
+                    error(_("Misplaced ':' or missing bracket."))
                 stack[-2].numArgs += stack[-1].numArgs
                 if len(temp_tokens) == 0 and stack[-1].numArgs == 0:
                     rpn.append(Parser.Token(Parser._marker,Type=UNKNOWN,parser=self))
@@ -668,13 +685,18 @@ class Parser(object):
             elif i.type == OPERATOR:
                 # Dot operator
                 if i.text == self.dotOperator:
-                    if idex+1 >= len(tokens):
-                        error(_(u'Dot operator: no function to call.'))
-                    if tokens[idex+1].type != FUNCTION:
-                        error(_(u"Dot operator: cannot access non-function '%s'.") % tokens[idex+1].text)
-                    if not tokens[idex+1].tkn.dotFunction:
-                        error(_(u"Dot operator: cannot access function '%s'.") % tokens[idex+1].text)
-                    tokens[idex+1].numArgs += 1
+                    if idex + 1 >= len(tokens):
+                        error(_('Dot operator: no function to call.'))
+                    next_token = tokens[idex + 1]
+                    if next_token.type != FUNCTION:
+                        error(_("Dot operator: cannot access non-function "
+                                "'%(other_token)s'.") % {
+                            'other_token': next_token.text})
+                    if not next_token.tkn.dotFunction:
+                        error(_("Dot operator: cannot access function "
+                                "'%(non_dot_function)s'.") % {
+                            'non_dot_function': next_token.text})
+                    next_token.numArgs += 1
                 # Other operators
                 else:
                     while len(stack) > 0 and stack[-1].type == OPERATOR:
@@ -684,21 +706,21 @@ class Parser(object):
                             rpn.append(stack.pop())
                         else:
                             break
-                    if i.text == u'-':
+                    if i.text == '-':
                         # Special unary minus type
                         if idex == 0 or tokens[idex-1].type in [OPEN_BRACKET,OPEN_PARENS,COMMA,COLON,OPERATOR,KEYWORD]:
-                            rpnAppend(Parser.Token(u'0',parser=self))
+                            rpnAppend(Parser.Token('0', parser=self))
                     stack.append(i)
             elif i.type == OPEN_PARENS:
                 stack.append(i)
             elif i.type == OPEN_BRACKET:
-                stack.append(Parser.Token(u']index[', parser=self))
+                stack.append(Parser.Token(']index[', parser=self))
                 stack.append(i)
             elif i.type == CLOSE_PARENS:
                 while len(stack) > 0 and stack[-1].type != OPEN_PARENS:
                     rpn.append(stack.pop())
                 if len(stack) == 0:
-                    error(_(u'Unmatched parenthesis.'))
+                    error(_('Unmatched parenthesis.'))
                 numArgs = stack[-1].numArgs
                 stack.pop()
                 if len(stack) > 0 and stack[-1].type == FUNCTION:
@@ -709,7 +731,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
                     temp_tokens.append(stack.pop())
                 if len(stack) == 0:
-                    error(_(u'Unmatched brackets.'))
+                    error(_('Unmatched brackets.'))
                 numArgs = stack[-1].numArgs
                 stack.pop()
                 if len(temp_tokens) == 0 and numArgs == 0 and stack[-1].numArgs != 0:
@@ -718,14 +740,17 @@ class Parser(object):
                 rpn.extend(temp_tokens)
                 stack[-1].numArgs += numArgs + 1
                 if stack[-1].numArgs == 1:
-                    error(_(u'Index out of bounds.'))
+                    error(_('Index out of bounds.'))
                 rpn.append(stack.pop())
             else:
-                error(_(u"Unrecognized token: '%s', type: %s") % (i.text, Types[i.type]))
+                error(_("Unrecognized token: '%(unknown_token_text)s', type: "
+                        "%(unknown_token_type)s") % {
+                    'unknown_token_text': i.text,
+                    'unknown_token_type': Types[i.type]})
         while len(stack) > 0:
             i = stack.pop()
             if i.type in [OPEN_PARENS,CLOSE_PARENS]:
-                error(_(u'Unmatched parenthesis.'))
+                error(_('Unmatched parenthesis.'))
             rpn.append(i)
         self.rpn = rpn
         return rpn
@@ -737,28 +762,30 @@ class Parser(object):
         for i in rpn:
             if i.type == OPERATOR:
                 if len(stack) < (tkn_min_args := i.tkn.minArgs):
-                    err_too_few_args('operator',i.text,len(stack),tkn_min_args)
+                    _err_too_few_args('operator', i.text, len(stack),
+                        tkn_min_args)
                 args = []
                 while len(args) < tkn_min_args:
                     args.append(stack.pop())
                 args.reverse()
-                ret = i(*args)
-                if isinstance(ret, list):
-                    stack.extend([Parser.Token(x) for x in ret])
+                res = i(*args)
+                if isinstance(res, list):
+                    stack.extend([Parser.Token(x) for x in res])
                 else:
-                    stack.append(Parser.Token(ret))
+                    stack.append(Parser.Token(res))
             elif i.type == FUNCTION:
                 if len(stack) < i.numArgs:
-                    err_too_few_args('function', i.text, len(stack), i.numArgs)
+                    _err_too_few_args('function', i.text, len(stack),
+                        i.numArgs)
                 args = []
                 while len(args) < i.numArgs:
                     args.append(stack.pop())
                 args.reverse()
-                ret = i(*args)
-                if isinstance(ret, list):
-                    stack.extend([Parser.Token(x) for x in ret])
+                res = i(*args)
+                if isinstance(res, list):
+                    stack.extend([Parser.Token(x) for x in res])
                 else:
-                    stack.append(Parser.Token(ret))
+                    stack.append(Parser.Token(res))
             else:
                 stack.append(i)
         if len(stack) == 1:
@@ -820,21 +847,21 @@ class Parser(object):
     def _stateSpace(self, c):
         self._emit()
         if c in whitespace: return self._stateSpace
-        if c == u"'": return self._stateSQuote
-        if c == u'"': return self._stateDQuote
-        if c == u'\\': return self._stateEscape
+        if c == "'": return self._stateSQuote
+        if c == '"': return self._stateDQuote
+        if c == '\\': return self._stateEscape
         if c == self.comment: return self._stateComment
         self._grow(c)
         if c in name_start: return self._stateName
         if c in self.opChars: return self._stateOperator
         if c in digits: return self._stateNumber
-        if c == u'.': return self._stateDecimal
-        if c == u'(': return self._stateSpace
-        if c == u'[': return self._stateSpace
-        if c == u')': return self._stateEndBracket
-        if c == u']': return self._stateEndBracket
-        if c == u',': return self._stateSpace
-        error(_(u"Invalid character: '%s'") % c)
+        if c == '.': return self._stateDecimal
+        if c == '(': return self._stateSpace
+        if c == '[': return self._stateSpace
+        if c == ')': return self._stateEndBracket
+        if c == ']': return self._stateEndBracket
+        if c == ',': return self._stateSpace
+        error(_("Invalid character: '%(invalid_char)s'") % {'invalid_char': c})
 
     def _stateSQuote(self, c):
         if c == u'\\': return self._stateSQuoteEscape
@@ -878,9 +905,10 @@ class Parser(object):
         if c in name_chars:
             self._grow(c)
             return self._stateName
-        if c in [u"'",u'"']:
-            error(_(u'Unexpected quotation %s following name token.') % c)
-        if c == u':' and self.word.endswith(u'in'):
+        if c in ("'", '"'):
+            error(_('Unexpected quotation mark (%(wrong_mark)s) following '
+                    'name token.') % {'wrong_mark': c})
+        if c == ':' and self.word.endswith('in'):
             self._grow(c)
             return self._stateOperator
         return self._stateSpace(c)
@@ -895,26 +923,28 @@ class Parser(object):
         if c in digits:
             self._grow(c)
             return self._stateNumber
-        if c == u'.':
+        if c == '.':
             self._grow(c)
             return self._stateDecimal
-        if c in [u'"',u"'"]:
-            error(_(u'Unexpected quotation %s following number token.') % c)
+        if c in ('"', "'"):
+            error(_('Unexpected quotation mark (%(wrong_mark)s) following '
+                    'number token.') % {'wrong_mark': c})
         return self._stateSpace(c)
+
     def _stateDecimal(self, c):
         if c in digits:
             self._grow(c)
             return self._stateDecimal
-        if c in [u'"',u"'",u'.']:
-            error(_(u'Unexpected %s following decimal token.') % c)
+        if c in ('"', "'", '.'):
+            error(_('Unexpected symbol (%(wrong_symbol)s) following decimal '
+                    'token.') % {'wrong_symbol': c})
         return self._stateSpace(c)
 
     def _stateEndBracket(self, c):
-        if c in [u'"',u"'"]:
-            error(_(u'Unexpected quotation %s following parenthesis.') % c)
+        if c in ('"', "'"):
+            error(_('Unexpected quotation mark (%(wrong_mark)s) following '
+                    'parenthesis.') % {'wrong_mark': c})
         return self._stateSpace(c)
-
-UNEXPECTED = _("Unexpected '%s'.")
 
 class PreParser(Parser):
     def __init__(self):
@@ -1054,9 +1084,10 @@ class PreParser(Parser):
 
     # Assignment operators
     def Ass(self, l, r):
-        if l.type not in [VARIABLE,NAME]:
-            error(_('Cannot assign a value to %s, type is %s.') % (
-                l.text, Types[l.type]))
+        if l.type not in (VARIABLE, NAME):
+            error(_('Cannot assign a value to %(lhs_name)s, type is '
+                    '%(lhs_type)s.') % {'lhs_name': l.text,
+                                        'lhs_type': Types[l.type]})
         self.variables[l.text] = r.tkn
         return r.tkn
 
@@ -1132,14 +1163,16 @@ class PreParser(Parser):
 
     # Pre-increment/decrement
     def opInc(self, l):
-        if l.type not in [VARIABLE,NAME]:
-            error(_('Cannot increment %s, type is %s.') % (l.text, Types[l.type]))
+        if l.type not in (VARIABLE, NAME):
+            error(_('Cannot increment %(lhs_name)s, type is %(lhs_type)s.') % {
+                'lhs_name': l.text, 'lhs_type': Types[l.type]})
         new_val = l.tkn + 1
         self.variables[l.text] = new_val
         return new_val
     def opDec(self, l):
-        if l.type not in [VARIABLE,NAME]:
-            error(_('Cannot decrement %s, type is %s.') % (l.text, Types[l.type]))
+        if l.type not in (VARIABLE, NAME):
+            error(_('Cannot decrement %(lhs_name)s, type is %(lhs_type)s.') % {
+                'lhs_name': l.text, 'lhs_type': Types[l.type]})
         new_val = l.tkn - 1
         self.variables[l.text] = new_val
         return new_val
@@ -1156,11 +1189,35 @@ class PreParser(Parser):
         self._handleINIEdit(ini_name, section, setting, value, comment, False)
 
     def fnDisableINILine(self, ini_name, section, setting):
-        self._handleINIEdit(ini_name, section, setting, '', '', True)
+        self._handleINIEdit(ini_name, section, setting, 'DELETED', '', True)
 
     def _handleINIEdit(self, ini_name, section, setting, value, comment,
                        disable):
-        raise NotImplementedError # needs ini_files.OBSEIniFile
+        """
+        Common implementation for the EditINI and DisableINILine wizard
+        functions.
+
+        :param ini_name: The name of the INI file to edit. If it's not one of
+            the game's default INIs (e.g. Skyrim.ini), it's treated as relative
+            to the Data folder.
+        :param section: The section of the INI file to edit.
+        :param setting: The name of the setting to edit.
+        :param value: The value to assign. If disabling a line, this must be
+            'DELETED'.
+        :param comment: The comment to place with the edit. Pass an empty
+            string if no comment should be placed.
+        :param disable: Whether this edit should disable the setting in
+            question.
+        """
+        section = section.strip()
+        setting = setting.strip()
+        comment = comment.strip()
+        iedits = self.iniedits[ini_name]
+        try:
+            ci_section = iedits[section]
+        except KeyError:
+            ci_section = iedits[section] = bolt.LowerDict()
+        ci_section[setting] = (value, comment, disable)
 
     def fnExec(self, strLines):
         lines = strLines.split('\n')
@@ -1170,14 +1227,14 @@ class PreParser(Parser):
         # ... which doesn't really cause harm, but is pretty strange and
         # inconsistent
         if any([l.strip().startswith('EndExec(') for l in lines]):
-            error(UNEXPECTED % 'EndExec')
+            _err_unexpected('EndExec')
         lines.append(f'EndExec({len(lines) + 1:d})')
         self.lines[self.cLine:self.cLine] = lines
         self.ExecCount += 1
 
     def fnEndExec(self, numLines):
         if self.ExecCount == 0:
-            error(UNEXPECTED % 'EndExec')
+            _err_unexpected('EndExec')
         del self.lines[self.cLine-numLines:self.cLine]
         self.cLine -= numLines
         self.ExecCount -= 1
@@ -1204,28 +1261,28 @@ class PreParser(Parser):
 
     def fnEndsWith(self, String, *args):
         if not isinstance(String, str):
-            error(_("Function 'endswith' only operates on string types."))
+            _err_only_strings('endswith')
         return String.endswith(args)
 
     def fnStartsWith(self, String, *args):
         if not isinstance(String, str):
-            error(_("Function 'startswith' only operates on string types."))
+            _err_only_strings('startswith')
         return String.startswith(args)
 
     def fnLower(self, String):
         if not isinstance(String, str):
-            error(_("Function 'lower' only operates on string types."))
+            _err_only_strings('lower')
         return String.lower()
 
     def fnFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, str):
-            error(_("Function 'find' only operates on string types."))
+            _err_only_strings('find')
         if end < 0: end += len(String) + 1
         return String.find(sub, start, end)
 
     def fnRFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, str):
-            error(_("Function 'rfind' only operates on string types."))
+            _err_only_strings('rfind')
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
 
@@ -1247,7 +1304,7 @@ class PreParser(Parser):
 
     def kwdElif(self, bActive):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            error(UNEXPECTED % 'Elif')
+            _err_unexpected('Elif')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
         else:
@@ -1256,7 +1313,7 @@ class PreParser(Parser):
 
     def kwdElse(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            error(UNEXPECTED % 'Else')
+            _err_unexpected('Else')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
             self.PeekFlow().hitElse = True
@@ -1266,7 +1323,7 @@ class PreParser(Parser):
 
     def kwdEndIf(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If':
-            error(UNEXPECTED % 'EndIf')
+            _err_unexpected('EndIf')
         self.PopFlow()
 
     def kwdWhile(self, bActive):
@@ -1289,7 +1346,7 @@ class PreParser(Parser):
             index -= 1
         if index < 0:
             # No while statement was found
-            error(UNEXPECTED % 'Continue')
+            _err_unexpected('Continue')
         #Discard any flow control statments that happened after
         #the While/For, since we're resetting either back to the
         #the While/For', or the EndWhile/EndFor
@@ -1324,7 +1381,7 @@ class PreParser(Parser):
 
     def kwdEndWhile(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'While':
-            error(UNEXPECTED % 'EndWhile')
+            _err_unexpected('EndWhile')
         #Re-evaluate the while loop's expression, if needed
         flow = self.PopFlow()
         if flow.active:
@@ -1332,7 +1389,7 @@ class PreParser(Parser):
 
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
-            error(UNEXPECTED % 'EndFor')
+            _err_unexpected('EndFor')
         #Increment the variable, then test to see if we should end or keep going
         flow = self.PeekFlow()
         if flow.active:
@@ -1367,14 +1424,14 @@ class PreParser(Parser):
 
     def kwdCase(self, value):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            error(UNEXPECTED % 'Case')
+            _err_unexpected('Case')
         if value in self.PeekFlow().values or str(value) in self.PeekFlow().values:
             self.PeekFlow().hitCase = True
             self.PeekFlow().active = True
 
     def kwdDefault(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            error(UNEXPECTED % 'Default')
+            _err_unexpected('Default')
         if self.PeekFlow().hitCase:
             return
         self.PeekFlow().active = True
@@ -1393,7 +1450,7 @@ class PreParser(Parser):
                 index -= 1
             if index < 0:
                 # No while or for statements found
-                error(UNEXPECTED % 'Break')
+                _err_unexpected('Break')
             self.PeekFlow(index).active = False
 
             # We're going to jump to the EndWhile/EndFor, so discard
@@ -1404,7 +1461,7 @@ class PreParser(Parser):
 
     def kwdEndSelect(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            error(UNEXPECTED % 'EndSelect')
+            _err_unexpected('EndSelect')
         self.PopFlow()
 
     # Package selection functions
@@ -1421,12 +1478,7 @@ class PreParser(Parser):
     def kwdDeSelectAll(self): self._SelectAll(False)
 
     def _SelectAll(self, bSelect):
-       raise NotImplementedError # needs self.sublist/_plugin_enabled
-
-    @staticmethod
-    def _set_all_values(di, common_value):
-        for k in di:
-            di[k] = common_value
+       raise NotImplementedError # needs self.sublist/plugin_enabled
 
     def kwd_select_plugin(self, plugin_name):
         self._select_plugin(True, plugin_name)
@@ -1435,21 +1487,24 @@ class PreParser(Parser):
         self._select_plugin(False, plugin_name)
 
     def _select_plugin(self, should_activate, plugin_name):
-        raise NotImplementedError # needs self._plugin_enabled
+        raise NotImplementedError # needs self.plugin_enabled
 
     def kwd_select_all_plugins(self): self._select_all_plugins(True)
     def kwd_de_select_all_plugins(self): self._select_all_plugins(False)
 
     def _select_all_plugins(self, should_activate):
-        raise NotImplementedError # needs self._plugin_enabled
+        raise NotImplementedError # needs self.plugin_enabled
 
     def kwd_rename_plugin(self, plugin_name, new_plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)
         if plugin_name:
             # Keep same extension
             if plugin_name.fn_ext != new_plugin_name[-4:]:
-                raise ParserError(_('Cannot rename %s to %s: the extensions '
-                    'must match.') % (plugin_name, new_plugin_name))
+                raise ParserError(
+                    _('Cannot rename %(old_plugin_name)s to '
+                      '%(new_plugin_name)s: the extensions must match.') % {
+                        'old_plugin_name': plugin_name,
+                        'new_plugin_name': new_plugin_name})
             self.plugin_renames[plugin_name] = FName(new_plugin_name)
 
     def kwd_reset_plugin_name(self, plugin_name):
@@ -1458,7 +1513,7 @@ class PreParser(Parser):
             del self.plugin_renames[plugin_name]
 
     def _resolve_plugin_rename(self, plugin_name: str) -> FName | None:
-        raise NotImplementedError # needs self._plugin_enabled
+        raise NotImplementedError # needs self.plugin_enabled
 
     def kwd_reset_all_plugin_names(self):
         self.plugin_renames.clear()
@@ -1480,10 +1535,10 @@ class PreParser(Parser):
                               for x in wiz_script.readlines()]
             return None
         except UnicodeError:
-            return _('Could not read the wizard file.  Please ensure it is '
+            return _('Could not read the wizard file. Please ensure it is '
                      'encoded in UTF-8 format.')
         except OSError:
-            return _('Could not open wizard file')
+            return _('Could not open the wizard file.')
 
     def _reset_vars(self):
         self.variables.clear()
@@ -1596,7 +1651,7 @@ class PreParser(Parser):
                         dotCount += 1
                         if dotCount == 3:
                             dotCount = 0
-                            outLine += '...'
+                            outLine += '…'
                         continue
                     else:
                         while dotCount > 0:

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -224,6 +224,7 @@ _rt_names = {
     b'SOUN': 'Sound Marker',
     b'SPEL': 'Spell',
     b'SPGD': 'Shader Particle Geometry',
+    b'STAG': 'Animation Sound Tag Set',
     b'STAT': 'Static',
     b'TACT': 'Talking Activator',
     b'TERM': 'Terminal',

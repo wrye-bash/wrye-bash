@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,17 +14,19 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Encapsulate wx images."""
 from __future__ import annotations
 
+import io
 import os
+import xml.etree.ElementTree as ET
+from copy import copy
 
 import wx as _wx
 import wx.svg as _svg
@@ -32,7 +34,9 @@ import wx.svg as _svg
 from ._gui_globals import get_image, get_image_dir
 from .base_components import Lazy, scaled
 from ..bolt import deprint, Path
-from ..exception import ArgumentError
+from ..exception import ArgumentError, GuiError
+
+ET.register_namespace('', 'http://www.w3.org/2000/svg')
 
 class GuiImage(Lazy):
     """Wrapper around various native image classes."""
@@ -60,6 +64,12 @@ class GuiImage(Lazy):
         self._img_type = imageType
         self._quality = quality
 
+    def set_icon_size(self, icon_size: int) -> None:
+        if self._is_created():
+            raise GuiError(f'Cannot change icon size for {self._img_path} '
+                           'after native widget initialization.')
+        self.iconSize = icon_size
+
     def allow_create(self):
         return os.path.exists(self._img_path.split(';')[0])
 
@@ -67,7 +77,7 @@ class GuiImage(Lazy):
         return self._native_widget.GetWidth(), self._native_widget.GetHeight()
 
     @classmethod
-    def from_path(cls, img_path: str| Path, imageType=None, iconSize=-1,
+    def from_path(cls, img_path: str | Path, imageType=None, iconSize=-1,
                   quality=None):
         """Static factory - creates an Image component from an image file."""
         _root, extension = os.path.splitext(img_path := f'{img_path}')
@@ -94,14 +104,21 @@ class _SvgFromPath(GuiImage):
     """Wrap an svg."""
     _native_widget: _wx.BitmapBundle.FromBitmaps
 
+    def __init__(self, *args, **kwargs):
+        self._svg_data = None
+        self._cached_svg_vars = {}
+        super().__init__(*args, **kwargs)
+
     @property
     def _native_widget(self):
         if not self._is_created():
-            with open(self._img_path, 'rb') as ins:
-                svg_data = ins.read()
-            if b'var(--invert)' in svg_data:
-                svg_data = svg_data.replace(b'var(--invert)',
-                    b'#FFF' if self._should_invert_svg() else b'#000')
+            if (svg_data := self._svg_data) is None:
+                with open(self._img_path, 'rb') as ins:
+                    svg_data = ins.read()
+            for var_name, var_value in self._svg_vars().items():
+                var_bytes = b'var(--' + var_name + b')'
+                if var_bytes in svg_data:
+                    svg_data = svg_data.replace(var_bytes, var_value)
             svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
             # Use a bitmap bundle so we get an actual high-res asset at high
             # DPIs, rather than wx deciding to scale up the low-res asset
@@ -109,11 +126,44 @@ class _SvgFromPath(GuiImage):
                            for s in (self.iconSize, scaled(self.iconSize))]
             self._cached_args = (wanted_svgs,)
         return super()._native_widget
+    
+    def composite(self, base_svg, *layer_svgs: str | Path):
+        """Create a composite SVG image, by combining elements from the given
+        layers, with the first layer being the lowest layer.
+        """
+        svg_paths = [p if os.path.isabs(p) else os.path.join(
+            get_image_dir(), p) for p in (base_svg, *layer_svgs)]
+        for (ldex, layer) in enumerate(map(ET.parse, svg_paths)):
+            layer_svg_root = layer.getroot()
+            if layer_svg_root is None:
+                raise ValueError(f'Invalid SVG {layer=!r} loaded from '
+                                 f'{svg_paths[ldex]}')
+            if not ldex:
+                base_layer, base_svg_root = layer, layer_svg_root
+                continue
+            base_svg_root.extend(layer_svg_root.findall('.*'))
+        with io.BytesIO() as out:
+            base_layer.write(out)
+            self._svg_data = out.getvalue()
 
-    @staticmethod
-    def _should_invert_svg():
+    def with_svg_vars(self, **svg_vars):
+        """Create a copy of this image with the specified svg variables."""
+        svg_vars = {
+            name.encode('utf8'): value
+            for name, value in svg_vars.items()
+        }
+        new_instance = copy(self)
+        new_instance._cached_svg_vars = svg_vars
+        return new_instance
+    
+    def _svg_vars(self):
         from .. import bass
-        return bass.settings['bash.use_reverse_icons']
+        if bass.settings:
+            return {
+                b'invert': b'#FFF' if bass.settings['bash.use_reverse_icons'] else b'#000'
+            } | self._cached_svg_vars
+        else:
+            return self._cached_svg_vars
 
 class IcoFromPng(GuiImage):
     """Create a wx.Icon from a GuiImage instance - no new uses please!"""
@@ -189,7 +239,7 @@ class ImgFromPath(GuiImage):
             if self.get_img_size() != (wanted_size, wanted_size):
                 native.Rescale(wanted_size, wanted_size,
                     _wx.IMAGE_QUALITY_HIGH)
-        if self._quality is not None: # This only has an effect on jpegs
+        if self._quality is not None: # This only has an effect on jpgs
             native.SetOption(_wx.IMAGE_OPTION_QUALITY, self._quality)
         return native
 

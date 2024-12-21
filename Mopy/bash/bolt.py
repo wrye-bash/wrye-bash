@@ -16,12 +16,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 from __future__ import annotations
 
+import builtins
 import collections
 import copy
 import datetime
@@ -40,12 +41,13 @@ import traceback as _traceback
 import webbrowser
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import ClassVar, Self, TypeVar, get_type_hints, overload
+from typing import ClassVar, Self, TypeVar, get_type_hints, overload, Iterator
 from zlib import crc32
 
 try:
@@ -235,6 +237,18 @@ def encode_complex_string(string_val: str, max_size: int | None = None,
         bytes_val += b'\x00' * num_nulls
     return bytes_val
 
+def failsafe_underscore(s: str):
+    """A version of _() that doesn't fail when gettext has not been set up yet.
+    Use as "from bolt import failsafe_underscore as _".
+
+    Used by e.g. ini_files, which has to be used very early during boot for
+    correct case sensitivity handling in INIs, so the gettext translation
+    function may not be set up yet."""
+    try:
+        return builtins._(s)
+    except AttributeError:
+        return s # We're being invoked very early in boot
+
 class Tee:
     """Similar to the Unix utility tee, this class redirects writes etc. to two
     separate IO streams. The name comes from T-splitters (often called tees),
@@ -381,10 +395,28 @@ def reverse_dict_multi(source_dict: dict[K, V]) -> dict[V, set[K]]:
     """Create a dict that represents the reverse/inverse mapping of the
     specified dict, with support for duplicate values in the source dict. See
     also reverse_dict for simple 1-to-1 mappings."""
-    ret = {}
+    di = {}
     for k, v in source_dict.items():
-        ret.setdefault(v, set()).add(k)
-    return ret
+        di.setdefault(v, set()).add(k)
+    return di
+
+def flatten_multikey_dict(multikey_dict: dict[K | tuple[K, ...], V]) \
+        -> dict[K, V]:
+    """Create a flattened version of the specified multikey dict. A multikey
+    dict is one where keys may be of type K or of type tuple[K, ...], where
+    each tuple key is called a multikey - any key in this tuple can be used for
+    accessing the associated value. Before such a dict can be used for regular
+    lookups, however, it first needs to be fed into this method."""
+    flattened_dict = {}
+    for mk_index, mk_values in multikey_dict.items():
+        if not isinstance(mk_index, tuple):
+            mk_index = (mk_index,)
+        for split_index in mk_index:
+            if split_index in flattened_dict:
+                raise SyntaxError(f"Invalid multikey dict: Duplicate key "
+                                  f"'{split_index!r}'")
+            flattened_dict[split_index] = mk_values
+    return flattened_dict
 
 def gen_enum_parser(enum_type: type[Enum]):
     """Create a dict that maps the values of the specified enum to the matching
@@ -394,23 +426,21 @@ def gen_enum_parser(enum_type: type[Enum]):
 
 _not_cached = object()
 
-# PY3.12: Benchmark to see if we can now replace this with cached_property
+# Still 2x faster on 3.12 - PY3.13: retest?
 class fast_cached_property:
-    """Similar to functools.cached_property, but ~2x faster because it does not
-    feature locking and lacks that decorator's runtime error checking."""
+    """Similar to functools.cached_property, but ~2x faster because it lacks
+    that decorator's runtime error checking."""
     def __init__(self, wrapped_func):
         self._wrapped_func = wrapped_func
         self._wrapped_attr = None # set later
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner_, name):
         self._wrapped_attr = name
 
-    def __get__(self, instance, owner=None):
-        # Do *not* change this to EAFP without benchmarking. Even on 3.11, with
-        # zero-cost-try, a try here will make the BP slower.
-        wrapped_val = instance.__dict__.get(self._wrapped_attr, _not_cached)
-        if wrapped_val is _not_cached:
-            # This whole branch is only done once, so can afford to be slower
+    def __get__(self, instance, owner_=None):
+        try:
+            wrapped_val = instance.__dict__[self._wrapped_attr]
+        except KeyError:
             wrapped_val = self._wrapped_func(instance)
             instance.__dict__[self._wrapped_attr] = wrapped_val
         return wrapped_val
@@ -421,8 +451,8 @@ class classproperty:
     def __init__(self, fget):
         self.fget = fget
 
-    def __get__(self, obj, owner):
-        return self.fget(owner)
+    def __get__(self, obj, owner_):
+        return self.fget(owner_)
 
 # JSON parsing ----------------------------------------------------------------
 class JsonParsable:
@@ -714,7 +744,7 @@ class FNDict(dict):
         return f'{type(self).__name__}({super().__repr__()})'
 
     def __reduce__(self): #[backwards compat]we 'd rather not save custom types
-        return dict, (dict(self),)
+        return dict, (dict(self),) # you need the dict here - recursion!
 
 # Forward compat functions - as we only want to pickle std types those stay
 def forward_compat_path_to_fn(di, value_type=lambda x: x):
@@ -1059,8 +1089,8 @@ class Path(os.PathLike):
     def _getmtime(self):
         """Return mtime for path."""
         return os.path.getmtime(self._s)
-    def _setmtime(self, mtime):
-        os.utime(self._s, (self.atime, mtime))
+    def _setmtime(self, new_time):
+        os.utime(self._s, (self.atime, new_time))
     mtime = property(_getmtime, _setmtime, doc='Time file was last modified.')
 
     def size_mtime(self):
@@ -1095,7 +1125,7 @@ class Path(os.PathLike):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
-    def ilist(self):
+    def ilist(self) -> Iterator[FName] | list[FName]:
         """For directory: Return list of files - bit weird this returns
         FName but let's say Path and FName are friend classes."""
         try:
@@ -1207,23 +1237,17 @@ class Path(os.PathLike):
                 os.startfile(self._s)
             else: ##: TTT linux - WIP move this switch to env launch_file
                 subprocess.call(['xdg-open', f'{self._s}'])
-    def copyTo(self,destName):
-        """Copy self to destName, make dirs if necessary and preserve mtime."""
-        destName = GPath(destName)
-        if self.is_dir():
-            ##: Does not preserve mtimes - is that a problem?
-            shutil.copytree(self._s, destName._s,
-                copy_function=copy_or_reflink2)
-            return
+    def copyTo(self, dest_path, set_time=None):
+        """Copy self to dest_path make dirs if necessary and preserve ftime."""
+        dest_path = GPath(dest_path)
         try:
-            copy_or_reflink(self._s, destName._s)
-            destName.mtime = self.mtime
+            copy_or_reflink(self._s, dest_path._s)
+            dest_path.mtime = set_time or self.mtime
         except FileNotFoundError:
-            if not (dest_par := destName.shead) or os.path.exists(dest_par):
+            if not (dest_par := dest_path.shead) or os.path.exists(dest_par):
                 raise
             os.makedirs(dest_par)
-            copy_or_reflink(self._s, destName._s)
-            destName.mtime = self.mtime
+            self.copyTo(dest_path, set_time)
     def moveTo(self, destName, *, check_exist=True):
         if check_exist and not self.exists():
             raise exception.StateError(f'{self._s} cannot be moved because it '
@@ -1442,15 +1466,14 @@ class Flags:
                     current_index += 1
                     continue
                 # Error checks
-                if isinstance(override, int):
-                    if override < 0:
-                        raise ValueError(
-                            f'{cls.__name__} flag field index must be a '
-                            f'positive integer or None, got {override}')
-                    current_index = override
-                else:
+                if not isinstance(override, int):
                     raise TypeError(f'{cls.__name__} flag field index must '
                                     f'be an integer or None, got {override!r}')
+                if override < 0:
+                    raise ValueError(
+                        f'{cls.__name__} flag field index must be a '
+                        f'positive integer or None, got {override}')
+                current_index = override
             names_dict[attr] = current_index
             current_index += 1
         cls._names = names_dict
@@ -1492,11 +1515,11 @@ class Flags:
         return self._field
 
     #--As list
-    def __getitem__(self, index):
+    def __getitem__(self, index): # internal use only - remove!
         """Get value by index. E.g., flags[3]"""
         return bool((self._field >> index) & 1)
 
-    def __setitem__(self,index,value):
+    def __setitem__(self,index,value): # internal use only - remove!
         """Set value by index. E.g., flags[3] = True"""
         value = ((value or 0) and 1) << index
         mask = 1 << index
@@ -1558,14 +1581,13 @@ class Flags:
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [flname for flname in self.__class__._names if
-                     getattr(self, flname)]
-        return tuple(trueNames)
+        return tuple(flname for flname in self.__class__._names if
+                     getattr(self, flname))
 
     def __repr__(self):
         """Shows all set flags."""
-        all_flags = u', '.join(self.getTrueAttrs()) if self._field else u'None'
-        return f'0x{self.hex()} ({all_flags})'
+        allflags = ', '.join(self.getTrueAttrs()) if self._field else 'None'
+        return f'0x{self.hex()} ({allflags})'
 
 class TrimmedFlags(Flags):
     """Flags subtype that will discard unnamed flags on __init__ and dump."""
@@ -1636,18 +1658,20 @@ class AFile(object):
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
-    def _stat_tuple(self): return self.abs_path.size_mtime()
-
     def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
-                 **kwargs):
+                 cached_stat=None, **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
-        #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
+        #Set cache info (ftime, size[, ctime]) and reload if load_cache is True
         try:
-            self._reset_cache(self._stat_tuple(), load_cache=load_cache,
-                              **kwargs)
+            self._reset_cache(self._stat_tuple(cached_stat),
+                              load_cache=load_cache, **kwargs)
         except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
+
+    def _stat_tuple(self, cached_stat=None):
+        return self.abs_path.size_mtime() if cached_stat is None else (
+            cached_stat.st_size, cached_stat.st_mtime)
 
     @property
     def abs_path(self): return self._file_key
@@ -1655,7 +1679,8 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False, force_update=False, **kwargs):
+    def do_update(self, *, raise_on_error=False, force_update=False,
+                  cached_stat=None, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
@@ -1670,7 +1695,7 @@ class AFile(object):
             - progress: will be useful for installers
         """
         try:
-            stat_tuple = self._stat_tuple()
+            stat_tuple = self._stat_tuple(cached_stat)
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
             self._reset_cache(self._null_stat, load_cache=False, **kwargs)
@@ -1681,28 +1706,30 @@ class AFile(object):
             return True
         return False
 
-    def needs_update(self):
-        """Returns True if this file changed. Throws an OSError if it is
-        deleted. Avoid all but simple uses - use do_update instead."""
-        return self._file_changed(self._stat_tuple())
-
     def _file_changed(self, stat_tuple):
-        return (self.fsize, self.file_mod_time) != stat_tuple
+        return (self.fsize, self.ftime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, **kwargs):
-        """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
+        """Reset cache flags (fsize, ftime,...) and possibly reload the cache.
         :param **kwargs: various
             - load_cache: if True either load the cache (header in Mod and
             SaveInfo) or reset it, so it gets reloaded later
         """
-        self.fsize, self.file_mod_time = stat_tuple
+        self.fsize, self.ftime = stat_tuple
 
-    def __repr__(self): return f'{self.__class__.__name__}<' \
-                               f'{self.abs_path.stail}>'
+    def fs_copy(self, dup_path: Path, *, set_time=None):
+        """Duplicate file to dup_path. If set_time is None, we set the mtime
+        of the duplicate path to ftime. This should really be a
+        _mark_not_changed internal API (what about ctime?)."""
+        self.abs_path.copyTo(dup_path, set_time=set_time or self.ftime)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}<{self.abs_path.stail}>'
 
 #------------------------------------------------------------------------------
 class ListInfo:
-    """Info object displayed in Wrye Bash list."""
+    """Info object displayed in Wrye Bash list - comes last in MI (*above*
+    Afile)."""
     __slots__ = ('fn_key', )
     _valid_exts_re = ''
     _is_filename = True
@@ -1738,6 +1765,17 @@ class ListInfo:
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None
 
+    def validate_name(self, name_str, check_store=True):
+        # disallow extension change but not if no-extension info type
+        check_ext = name_str and self.__class__._valid_exts_re
+        if check_ext and not name_str.lower().endswith(
+                self.fn_key.fn_ext.lower()):
+            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
+                    '%(expected_ext)s).') % {
+                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
+            return msg, None
+        return self.__class__.validate_filename_str(name_str)
+
     @classmethod
     def _name_re(cls, allowed_exts):
         exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
@@ -1752,7 +1790,7 @@ class ListInfo:
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
-    def _new_name(base_name, count):
+    def _new_name(base_name, count): # only use in unique_name - count is > 0 !
         r, e = os.path.splitext(base_name)
         return f'{r} ({count}){e}'
 
@@ -1760,12 +1798,21 @@ class ListInfo:
     def unique_name(cls, name_str, check_exists=False):
         base_name = name_str
         unique_counter = 0
-        store = cls.get_store()
+        store = cls._store()
         while (store.store_dir.join(name_str).exists() if check_exists else
-                name_str in store): # must wrap a FNDict
+               name_str in store): # must wrap a FNDict
             unique_counter += 1
             name_str = cls._new_name(base_name, unique_counter)
         return FName(name_str)
+
+    def unique_key(self, new_root, ext='', add_copy=False):
+        """Generate a unique name based on fn_key. When copying or renaming."""
+        if self.__class__._valid_exts_re and not ext:
+            ext = self.fn_key.fn_ext
+        new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
+        if new_name == self.fn_key: # new and old names are ci-same
+            return None
+        return self.unique_name(new_name)
 
     # Gui renaming stuff ------------------------------------------------------
     @classmethod
@@ -1777,54 +1824,94 @@ class ListInfo:
         return 0, len(text_str) # if selection not at start reset
 
     @classmethod
-    def get_store(cls):
-        raise NotImplementedError(f'{type(cls)} does not provide a data store')
+    def _store(cls):
+        raise NotImplementedError(f'{cls} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
+    def copy_to(self, dup_path: Path, *, set_time=None):
+        """Copies self to dup_path. Will overwrite! Will add the new file to
+        the data_store if copied inside the store_dir but the client is
+        responsible for calling the final refresh of the data store."""
+        # TODO(ut) : when duplicating pass the info in and load_cache=False
+        self.fs_copy(dup_path, set_time=set_time)
+
+    def fs_copy(self, dup_path, *, set_time=None):
+        raise NotImplementedError
+
+    def __str__(self):
+        """Alias for self.fn_key."""
+        return self.fn_key
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}<{self.fn_key}>'
+
+#------------------------------------------------------------------------------
+class AFileInfo(AFile, ListInfo):
+    """List Info representing a file."""
+    def __init__(self, fullpath, load_cache=False, **kwargs):
+        ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
+        super().__init__(fullpath, load_cache, **kwargs)
+
+    def delete_paths(self):
+        """Paths to delete when this item is deleted - abs_path comes first!"""
+        return self.abs_path,
+
+    def move_info(self, destDir):
+        """Hasty method used in UIList.hide(). Will overwrite! The client is
+        responsible for calling _delete_refresh of the data store."""
+        self.abs_path.moveTo(destDir.join(self.fn_key))
+
     def get_rename_paths(self, newName):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
-        return [(self.abs_path, self.get_store().store_dir.join(newName))]
-
-    def unique_key(self, new_root, ext=u'', add_copy=False):
-        if self.__class__._valid_exts_re and not ext:
-            ext = self.fn_key.fn_ext
-        new_name = FName(new_root + (_(' Copy') if add_copy else '') + ext)
-        if new_name == self.fn_key: # new and old names are ci-same
-            return None
-        return self.unique_name(new_name)
-
-    def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
-        return self.get_store().table.getItem(self.fn_key, prop, default)
-
-    def set_table_prop(self, prop, val):
-        return self.get_store().table.setItem(self.fn_key, prop, val)
+        return [(self.abs_path, self._store().store_dir.join(newName))]
 
     def validate_name(self, name_str, check_store=True):
-        # disallow extension change but not if no-extension info type
-        check_ext = name_str and self.__class__._valid_exts_re
-        if check_ext and not name_str.lower().endswith(
-                self.fn_key.fn_ext.lower()):
-            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
-                    '%(expected_ext)s).') % {
-                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return msg, None
+        super_validate = super().validate_name(name_str,
+            check_store=check_store)
         #--Else file exists?
         if check_store and self.info_dir.join(name_str).exists():
             return _('File %(bad_name_str)s already exists.') % {
                 'bad_name_str': name_str}, None
-        return self.__class__.validate_filename_str(name_str)
+        return super_validate
 
     @property
     def info_dir(self):
         return self.abs_path.head
 
-    def __str__(self):
-        """Alias for self.ci_key."""
-        return self.fn_key
+    def __repr__(self): # bypass AFInfo - abs path is not always set
+        return super(AFile, self).__repr__()
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}<{self.fn_key}>'
+#------------------------------------------------------------------------------
+# show your type off - it's unique, maps existing [new] infos fn_keys to tuples
+# of (info (call its do_update) [None (call init)], kwargs for the method call)
+_RIn = dict[FName, tuple[None | ListInfo, dict]]
+@dataclass(slots=True)
+class RefrIn:
+    """WIP! requesting refresh from the data store."""
+    new_or_present: _RIn = field(default_factory=dict)
+    del_infos: set = field(default_factory=set)
+
+    @classmethod
+    def from_tabled_infos(cls, fn_info_dict=None, *, extra_attrs=None,
+                          exclude: frozenset | True = frozenset()):
+        """Copy persistent attributes from info objects (or dict) - info
+        objects are discarded, so we request refresh for *adding* infos."""
+        try:
+            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
+                    for k, v in fn_info_dict.items()}
+        except AttributeError: # ScreenInfos or fn_info_dict is None
+            rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}
+        for k, v in (extra_attrs or {}).items():
+            try:
+                rinf[k][1]['att_val'].update(v)
+            except KeyError:
+                rinf[k] = None, {'att_val': v}
+        return cls(rinf)
+
+    @classmethod
+    def from_added(cls, added_fns):
+        return cls({k: (None, {}) for k in added_fns})
 
 #------------------------------------------------------------------------------
 class PickleDict(object):
@@ -1833,14 +1920,14 @@ class PickleDict(object):
     def __init__(self, pkl_path, readOnly=False, load_pickle=False):
         """Initialize."""
         self._pkl_path = pkl_path
-        self.backup = pkl_path.backup
+        self._backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
         self.pickled_data = {}
         if load_pickle: self.load()
 
     def exists(self):
-        return self._pkl_path.exists() or self.backup.exists()
+        return self._pkl_path.exists() or self._backup.exists()
 
     class Mold(Exception):
         def __init__(self, moldedFile):
@@ -1870,7 +1957,7 @@ class PickleDict(object):
         def _perform_load():
             self.vdata.update(pickle.load(ins, encoding='bytes'))
             self.pickled_data.update(pickle.load(ins, encoding='bytes'))
-        for path in (self._pkl_path, self.backup):
+        for path in (self._pkl_path, self._backup):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
@@ -1900,9 +1987,9 @@ class PickleDict(object):
                 if resave:
                     # Make a permanent backup copy of the VDATA2 version before
                     # saving over it
-                    path.copyTo(path.root + u'-vdata2.dat.bak')
+                    path.copyTo(path.root + '-vdata2.dat.bak') # Path.__add__!
                     self.save()
-                return 1 + (path == self.backup)
+                return 1 + (path == self._backup)
             except (OSError, EOFError, ValueError,
                     pickle.UnpicklingError): #PY3:FileNotFound
                 pass
@@ -1925,7 +2012,7 @@ class PickleDict(object):
                 for pkl in ('VDATA3', self.vdata, self.pickled_data):
                     pickle.dump(pkl, out, -1)
             try:
-                self._pkl_path.copyTo(self._pkl_path.backup)
+                self._pkl_path.copyTo(self._backup)
             except FileNotFoundError:
                 pass # No settings file to back up yet, this is fine
             self._pkl_path.replace_with_temp(temp_pkl)
@@ -2065,138 +2152,20 @@ def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
     return b''.join(wip_string)
 
 #------------------------------------------------------------------------------
-class DataTableColumn(object):
-    """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self, table: DataTable, column: str):
-        self._table = table
-        self.column = column
-    #--Dictionary Emulation
-    def __iter__(self):
-        """Dictionary emulation."""
-        column = self.column
-        return (key for key, col_dict in self._table.items() if
-                column in col_dict)
-    def values(self):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        column = self.column
-        return (tableData[k][column] for k in self)
-    def items(self):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        column = self.column
-        return ((k, tableData[k][column]) for k in self)
-    def clear(self):
-        """Dictionary emulation."""
-        self._table.delColumn(self.column)
-    def get(self,key,default=None):
-        """Dictionary emulation."""
-        return self._table.getItem(key, self.column, default)
-    #--Overloaded
-    def __contains__(self,key):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        return key in tableData and self.column in tableData[key]
-    def __getitem__(self,key):
-        """Dictionary emulation."""
-        return self._table._data[key][self.column]
-    def __setitem__(self,key,value):
-        """Dictionary emulation. Marks key as changed."""
-        self._table.setItem(key, self.column, value)
-    def __delitem__(self,key):
-        """Dictionary emulation. Marks key as deleted."""
-        self._table.delItem(key, self.column)
-
-#------------------------------------------------------------------------------
-class DataTable(DataDict):
+class DataTable(PickleDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
-    currently used by TableFileInfos to represent properties associated with
+    currently used by TableFileInfos to pickle properties associated with
     mod/save/bsa/ini files, where each file is a row, and each property (e.g.
     modified date or 'mtime') is a column.
 
-    The "table" is actually a dictionary of dictionaries. E.g.
-        propValue = table['fileName']['propName']
+    self.pickled_data is actually a dictionary of dictionaries. E.g.
+        propValue = self.pickled_data['fileName']['propName']
     Rows are the first index ('fileName') and columns are the second index
     ('propName')."""
 
-    def __init__(self, dictFile: PickleDict):
-        """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile
-        dictFile.load()
-        self.vdata = dictFile.vdata
-        self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
-            self.dictFile.pickled_data)
-        super().__init__(_data)
-        self.hasChanged = False ##: move to PickleDict
-
-    def save(self):
-        """Saves to pickle file."""
-        dictFile = self.dictFile
-        if self.hasChanged and not dictFile.readOnly:
-            dictFile.pickled_data = self._data # note we reassign pickled_data
-            self.hasChanged = not dictFile.save()
-
-    def getItem(self,row,column,default=None):
-        """Get item from row, column. Return default if row,column doesn't exist."""
-        if row in self._data and column in self._data[row]:
-            return self._data[row][column]
-        else:
-            return default
-
-    def getColumn(self,column):
-        """Returns a data accessor for column."""
-        return DataTableColumn(self, column)
-
-    def setItem(self,row,column,value):
-        """Set value for row, column."""
-        if row not in self._data:
-            self._data[row] = {}
-        self._data[row][column] = value
-        self.hasChanged = True
-
-    def delItem(self,row,column):
-        """Deletes item in row, column."""
-        if row in self._data and column in self._data[row]:
-            del self._data[row][column]
-            self.hasChanged = True
-
-    def delRow(self,row):
-        """Deletes row."""
-        if row in self._data:
-            del self._data[row]
-            self.hasChanged = True
-
-    ##: DataTableColumn.clear is the only usage, and that seems unused too
-    def delColumn(self,column):
-        """Deletes column of data."""
-        for rowData in self._data.values():
-            if column in rowData:
-                del rowData[column]
-                self.hasChanged = True
-
-    def moveRow(self,oldRow,newRow):
-        """Renames a row of data."""
-        if oldRow in self._data:
-            self._data[newRow] = self._data[oldRow]
-            del self._data[oldRow]
-            self.hasChanged = True
-
-    def copyRow(self,oldRow,newRow):
-        """Copies a row of data."""
-        if oldRow in self._data:
-            self._data[newRow] = self._data[oldRow].copy()
-            self.hasChanged = True
-
-    #--Dictionary emulation
-    def __setitem__(self,key,value):
-        self._data[key] = value
-        self.hasChanged = True
-    def __delitem__(self,key):
-        del self._data[key]
-        self.hasChanged = True
-    def pop(self,key,default=None):
-        self.hasChanged = True
-        return self._data.pop(key, default)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pickled_data = forward_compat_path_to_fn(self.pickled_data)
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2806,3 +2775,16 @@ else:
         https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
         information."""
         shutil.copy2(a, b)
+
+@dataclass(slots=True)
+class RefrData:
+    """Encapsulate info the backend needs to pass on to the UI for refresh."""
+    redraw: set[FName] = field(default_factory=set)
+    to_del: set[FName] = field(default_factory=set, kw_only=True)
+    to_add: set[FName] = field(default_factory=set, kw_only=True)
+    # renames are a dict of old fn keys to new fn keys
+    renames: dict[FName, FName] = field(default_factory=dict)
+    ren_paths: dict[Path, Path] = field(default_factory=dict)
+
+    def __bool__(self):
+        return bool(self.to_add or self.to_del or self.redraw)

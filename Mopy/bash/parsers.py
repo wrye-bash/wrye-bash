@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -986,7 +986,9 @@ class ScriptText(_TextParser):
             if skipcomments:
                 scpt_lines =  self._filter_comments(scpt_lines)
                 if not scpt_lines: continue
-            progress((0.5 + (0.5 / y) * z), _(u'Exporting script %s.') % eid)
+            progress((0.5 + (0.5 / y) * z),
+                _('Exporting script %(script_fname)s.') % {
+                         'script_fname': eid})
             if x == 0 or skip != eid[:x].lower():
                 fileName = eid
                 if r and deprefix == fileName[:r].lower():
@@ -1030,7 +1032,9 @@ class ScriptText(_TextParser):
             present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(present_recs)
             for z, (rfid, record) in enumerate(present_recs):
-                progress((0.5 / y) * z, _('Reading scripts in %s.') % modInfo)
+                progress((0.5 / y) * z,
+                    _('Reading scripts in %(source_plugin)s.') % {
+                        'source_plugin': modInfo})
                 eid_data[record.eid] = record.script_source.splitlines(), rfid
 
     _changed_type = list
@@ -1074,9 +1078,12 @@ class ScriptText(_TextParser):
             y = len(files)
             for z, f in enumerate(files):
                 if f.cext != inisettings['ScriptFileExt']:
-                    progress(((1 / y) * z), _(u'Skipping file %s.') % f)
+                    progress(((1 / y) * z),
+                        _('Skipping file %(script_fname)s.') % {
+                            'script_fname': f})
                     continue
-                progress(((1 / y) * z), _(u'Reading file %s.') % f)
+                progress(((1 / y) * z), _('Reading file %(script_fname)s.') % {
+                    'script_fname': f})
                 self._read_script(root_dir.join(f))
         return bool(self.eid_data)
 
@@ -1206,11 +1213,12 @@ class SigilStoneDetails(_UsesEffectsMixin):
 class SpellRecords(_UsesEffectsMixin):
     """Statistics for spells, with functions for importing/exporting from/to
     mod/text file."""
-    _extra_attrs = tuple(f'spell_flags.{x}' for x in
-                         ['noAutoCalc', 'startSpell', 'immuneToSilence',
-                          'ignoreLOS', 'scriptEffectAlwaysApplies',
-                          'disallowAbsorbReflect', 'touchExplodesWOTarget'])
-    _csv_attrs = ('eid', 'cost', 'level', 'spellType', 'spell_flags')
+    _extra_attrs = tuple(f'spell_flags.{x}' for x in (
+        'manual_cost_calc', 'pc_start_spell', 'immune_to_silence', 'ignoreLOS',
+        'script_effect_always_applies', 'no_absorb_reflect',
+        'touch_spell_explodes_without_target'))
+    _csv_attrs = ('eid', 'spell_cost', 'spell_level', 'spell_type',
+                  'spell_flags')
     _parser_sigs = [b'SPEL']
     _attr_dex = None
 
@@ -1231,11 +1239,12 @@ class SpellRecords(_UsesEffectsMixin):
         """Imports stats from specified text file."""
         if fields[0].lower() != u'spel': return
         mid = self._coerce_fid(fields[1], fields[2])
-        if int_or_none(fields[4]) is None:  # Index 4 was FULL now cost
-            attr_dex = {u'eid': 3, u'cost': 5, u'level': 6, u'spellType': 7}
+        if int_or_none(fields[4]) is None: # Index 4 was FULL, now spell_cost
+            attr_dex = {'eid': 3, 'spell_cost': 5, 'spell_level': 6,
+                        'spell_type': 7}
         else: # FULL was dropped and flags added
-            attr_dex = {u'eid': 3, u'cost': 4, u'level': 5, u'spellType': 6,
-                        u'spell_flags': 7}
+            attr_dex = {'eid': 3, 'spell_cost': 4, 'spell_level': 5,
+                        'spell_type': 6, 'spell_flags': 7}
         self.fid_stats[mid] = super(_UsesEffectsMixin, self)._update_from_csv(
             b'SPEL', fields, index_dict=attr_dex)
         if self._attr_dex:  # and not len(fields) < 7: IndexError

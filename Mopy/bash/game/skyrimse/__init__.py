@@ -16,16 +16,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 import importlib
 
-from .. import WS_COMMON_FILES, MergeabilityCheck, ObjectIndexRange
+from .. import WS_COMMON_FILES, ObjectIndexRange
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
-from ...bolt import classproperty
+from ...games_lo import AsteriskGame
+from ...bolt import classproperty, FName
 
 _GOG_IDS = [
     1801825368, # Game
@@ -37,7 +38,7 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
     """GameInfo override for TES V: Skyrim Special Edition."""
     display_name = 'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
-    game_icon = u'skyrimse_%u.png'
+    game_icon = u'skyrimse.svg'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     bak_game_name = u'Skyrim Special Edition'
     my_games_name = u'Skyrim Special Edition'
@@ -65,7 +66,6 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
 
     espm_extensions = {*ASkyrimGameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    mergeability_checks = {MergeabilityCheck.ESL_CHECK}
 
     class Se(ASkyrimGameInfo.Se):
         se_abbrev = u'SKSE64'
@@ -83,6 +83,10 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         # Skyrim SE accepts the base name and ' - Textures'
         attachment_regex = r'(?: \- Textures)?'
         valid_versions = {0x69}
+        # patch BSA (which only exists in SSE) will always load after the
+        # interface BSA and hence should win all conflicts when fetching
+        # strings
+        _str_heuristics = tuple(enumerate(('main', 'patch', 'interface')))
 
     class Xe(ASkyrimGameInfo.Xe):
         full_name = u'SSEEdit'
@@ -132,6 +136,9 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         'skyrim - voices_ja0.bsa',
         'skyrim - voices_pl0.bsa',
         'skyrim - voices_ru0.bsa',
+        '_resourcepack.bsa',
+        '_resourcepack.esl',
+        'marketplacetextures.bsa',
         'ccafdsse001-dwesanctuary.bsa',
         'ccafdsse001-dwesanctuary.esm',
         'ccasvsse001-almsivi.bsa',
@@ -321,6 +328,88 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS',
     ]
 
+    class LoSkyrimSE(AsteriskGame):
+        force_load_first = ASkyrimGameInfo.LoSkyrim.force_load_first
+        _ccc_filename = 'Skyrim.ccc'
+        _ccc_fallback = tuple(map(FName, ( # Up to date as of 2024/04/30
+            'ccASVSSE001-ALMSIVI.esm',
+            'ccBGSSSE001-Fish.esm',
+            'ccBGSSSE002-ExoticArrows.esl',
+            'ccBGSSSE003-Zombies.esl',
+            'ccBGSSSE004-RuinsEdge.esl',
+            'ccBGSSSE005-Goldbrand.esl',
+            'ccBGSSSE006-StendarsHammer.esl',
+            'ccBGSSSE007-Chrysamere.esl',
+            'ccBGSSSE010-PetDwarvenArmoredMudcrab.esl',
+            'ccBGSSSE011-HrsArmrElvn.esl',
+            'ccBGSSSE012-HrsArmrStl.esl',
+            'ccBGSSSE014-SpellPack01.esl',
+            'ccBGSSSE019-StaffofSheogorath.esl',
+            'ccBGSSSE020-GrayCowl.esl',
+            'ccBGSSSE021-LordsMail.esl',
+            'ccMTYSSE001-KnightsoftheNine.esl',
+            'ccQDRSSE001-SurvivalMode.esl',
+            'ccTWBSSE001-PuzzleDungeon.esm',
+            'ccEEJSSE001-Hstead.esm',
+            'ccQDRSSE002-Firewood.esl',
+            'ccBGSSSE018-Shadowrend.esl',
+            'ccBGSSSE035-PetNHound.esl',
+            'ccFSVSSE001-Backpacks.esl',
+            'ccEEJSSE002-Tower.esl',
+            'ccEDHSSE001-NorJewel.esl',
+            'ccVSVSSE002-Pets.esl',
+            'ccBGSSSE037-Curios.esl',
+            'ccBGSSSE034-MntUni.esl',
+            'ccBGSSSE045-Hasedoki.esl',
+            'ccBGSSSE008-Wraithguard.esl',
+            'ccBGSSSE036-PetBWolf.esl',
+            'ccFFBSSE001-ImperialDragon.esl',
+            'ccMTYSSE002-VE.esl',
+            'ccBGSSSE043-CrossElv.esl',
+            'ccVSVSSE001-Winter.esl',
+            'ccEEJSSE003-Hollow.esl',
+            'ccBGSSSE016-Umbra.esm',
+            'ccBGSSSE031-AdvCyrus.esm',
+            'ccBGSSSE038-BowofShadows.esl',
+            'ccBGSSSE040-AdvObGobs.esl',
+            'ccBGSSSE050-BA_Daedric.esl',
+            'ccBGSSSE052-BA_Iron.esl',
+            'ccBGSSSE054-BA_Orcish.esl',
+            'ccBGSSSE058-BA_Steel.esl',
+            'ccBGSSSE059-BA_Dragonplate.esl',
+            'ccBGSSSE061-BA_Dwarven.esl',
+            'ccPEWSSE002-ArmsOfChaos.esl',
+            'ccBGSSSE041-NetchLeather.esl',
+            'ccEDHSSE002-SplKntSet.esl',
+            'ccBGSSSE064-BA_Elven.esl',
+            'ccBGSSSE063-BA_Ebony.esl',
+            'ccBGSSSE062-BA_DwarvenMail.esl',
+            'ccBGSSSE060-BA_Dragonscale.esl',
+            'ccBGSSSE056-BA_Silver.esl',
+            'ccBGSSSE055-BA_OrcishScaled.esl',
+            'ccBGSSSE053-BA_Leather.esl',
+            'ccBGSSSE051-BA_DaedricMail.esl',
+            'ccBGSSSE057-BA_Stalhrim.esl',
+            'ccBGSSSE066-Staves.esl',
+            'ccBGSSSE067-DaedInv.esm',
+            'ccBGSSSE068-Bloodfall.esl',
+            'ccBGSSSE069-Contest.esl',
+            'ccVSVSSE003-NecroArts.esl',
+            'ccVSVSSE004-BeAFarmer.esl',
+            'ccBGSSSE025-AdvDSGS.esm',
+            'ccFFBSSE002-CrossbowPack.esl',
+            'ccBGSSSE013-Dawnfang.esl',
+            'ccRMSSSE001-NecroHouse.esl',
+            'ccEDHSSE003-Redguard.esl',
+            'ccEEJSSE004-Hall.esl',
+            'ccEEJSSE005-Cave.esm',
+            'ccKRTSSE001_Altar.esl',
+            'ccCBHSSE001-Gaunt.esl',
+            'ccAFDSSE001-DweSanctuary.esm',
+            '_ResourcePack.esl',
+        )))
+    lo_handler = LoSkyrimSE
+
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
@@ -334,7 +423,6 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
 
 class EGSSkyrimSEGameInfo(EGSMixin, ASkyrimSEGameInfo):
     """GameInfo override for the Epic Games Store version of Skyrim SE."""
-    unique_display_name = f'{ASkyrimSEGameInfo.display_name} (EGS)'
     my_games_name = 'Skyrim Special Edition EPIC'
     appdata_name = 'Skyrim Special Edition EPIC'
 

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -34,9 +34,10 @@ from itertools import chain
 from typing import Any, BinaryIO
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
-    MelSequential, MelStruct
+    MelSequential, MelStruct, MelGroups
 from .. import bush
-from ..bolt import attrgetter_cache, deprint, structs_cache
+from ..bolt import attrgetter_cache, deprint, structs_cache, \
+    flatten_multikey_dict
 from ..exception import ArgumentError, ModSizeError
 
 #------------------------------------------------------------------------------
@@ -350,8 +351,8 @@ class MelArray(MelBase):
             raise SyntaxError(u'MelArray preludes must have a static size')
 
     def getSlotsUsed(self):
-        slots_ret = self._prelude.getSlotsUsed() if self._prelude else ()
-        return super(MelArray, self).getSlotsUsed() + slots_ret
+        sup = super().getSlotsUsed()
+        return (*sup, *self._prelude.getSlotsUsed()) if self._prelude else sup
 
     def hasFids(self, formElements):
         temp_elements_prelude = set()
@@ -387,9 +388,9 @@ class MelArray(MelBase):
             self._prelude.load_mel(record, ins, sub_type, self._prelude_size,
                                    *debug_strs)
             size_ -= self._prelude_size
-        self._load_array(record, ins, sub_type, size_, debug_strs)
+        self._load_array(record, ins, sub_type, size_, *debug_strs)
 
-    def _load_array(self, record, ins, sub_type, size_, debug_strs):
+    def _load_array(self, record, ins, sub_type, size_, *debug_strs):
         append_entry = getattr(record, self.attr).append
         entry_slots = self.array_element_attrs
         entry_size = self._element_size
@@ -406,14 +407,11 @@ class MelArray(MelBase):
         if not array_val: return None # don't dump out empty arrays
         if self._prelude:
             sub_data = self._prelude.pack_subrecord_data(record)
-            if sub_data is None:
-                deprint(f'{record}: prelude={self._prelude} '
-                        f'for attr={self.attr} returned None packed data')
-                sub_data = b''
-        else:
-            sub_data = b''
-        sub_data += self._pack_array_data(array_val)
-        return sub_data
+            if sub_data is not None:
+                return sub_data + self._pack_array_data(array_val)
+            deprint(f'{record}: prelude={self._prelude} '
+                    f'for attr={self.attr} returned None packed data')
+        return self._pack_array_data(array_val)
 
     def _pack_array_data(self, array_val):
         return b''.join(
@@ -423,7 +421,7 @@ class MelArray(MelBase):
 #------------------------------------------------------------------------------
 class MelSimpleArray(MelArray):
     """A MelArray of simple elements (currently MelNum) - override loading and
-    dumping of the array to avoid creating mel objects."""
+    dumping of the array to avoid creating MelObjects."""
     _element: MelNum
 
     def __init__(self, array_attr, element: MelNum, prelude=None):
@@ -763,7 +761,7 @@ class MelUnion(MelBase):
     in the element_mapping dict passed in. For example, consider this MelUnion,
     which showcases most features:
         MelUnion({
-            'b': MelUInt32(b'DATA', 'value'), # actually a bool
+            'b': MelUInt32Bool(b'DATA', 'value')
             'f': MelFloat(b'DATA', 'value'),
             's': MelLString(b'DATA', 'value'),
         }, decider=AttrValDecider(
@@ -794,7 +792,7 @@ class MelUnion(MelBase):
     # unique attributes on the records
     _union_index = 0
 
-    def __init__(self, element_mapping: dict[object, MelBase],
+    def __init__(self, element_mapping: dict[Any, MelBase],
                  decider: ADecider = SignatureDecider(),
                  fallback: MelBase | None = None):
         """Creates a new MelUnion with the specified element mapping and
@@ -810,17 +808,7 @@ class MelUnion(MelBase):
         if not isinstance(decider, ADecider):
             raise ArgumentError('decider must be an ADecider')
         self.decider = decider
-        # Preprocess the element mapping to split tuples
-        processed_mapping = {}
-        for decider_val, element in element_mapping.items():
-            if not isinstance(decider_val, tuple):
-                decider_val = (decider_val,)
-            for split_val in decider_val:
-                if split_val in processed_mapping:
-                    raise SyntaxError(f"Invalid union mapping: Duplicate key "
-                                      f"'{repr(split_val)}'")
-                processed_mapping[split_val] = element
-        self.element_mapping = processed_mapping
+        self.element_mapping = flatten_multikey_dict(element_mapping)
         self.fid_elements = set()
         self._sort_elements = set()
         # Create a unique attribute name to dynamically cache decider result
@@ -1029,21 +1017,21 @@ class MelCounter(_MelWrapper):
     Additionally, dumping is skipped if the counter is falsy after updating.
 
     See also MelPartialCounter, which targets mixed structs."""
-    def __init__(self, counter_mel, /, *, counts):
+    def __init__(self, counter_mel: MelBase, /, *, counts: str,
+            is_required=False):
         """Creates a new MelCounter.
 
         :param counter_mel: The element that stores the counter's value.
-        :type counter_mel: _MelField
-        :param counts: The attribute name that this counter counts.
-        :type counts: str"""
+        :param counts: The attribute name that this counter counts."""
         super(MelCounter, self).__init__(counter_mel)
-        self.counted_attr = counts
+        self._counted_attr = counts
+        self._is_required = is_required
 
     def dumpData(self, record, out):
         # Count the counted type first, then check if we should even dump
-        val_len = len(getattr(record, self.counted_attr, []))
+        val_len = len(getattr(record, self._counted_attr, []))
         setattr(record, self._wrapped_mel.attr, val_len)
-        if val_len:
+        if val_len or self._is_required:
             super().dumpData(record, out)
 
 # NoDD for _MelObts and MelOmodData
@@ -1157,3 +1145,35 @@ class MelSorted(_MelWrapper):
         to_sort_val = getattr(record, self._wrapped_mel.attr)
         if to_sort_val:
             to_sort_val.sort(key=self._attr_key_func)
+
+#------------------------------------------------------------------------------
+class MelDependentSequential(MelSequential):
+    """A MelSequential where some elements will only be dumped if other
+    elements are present. Especially useful for elements that are required iff
+    another element is present. See also MelDependentGroups."""
+    def __init__(self, *elements,
+            dependencies: dict[int | tuple[int, ...], list[str]]):
+        """Create a new MelDependentSequential with the specified parameters.
+
+        :param dependencies: A dict (or multikey dict) mapping element indices
+            to a list of attributes that must be truthy, most notably not None,
+            in order for the element at that index to be dumped out."""
+        super().__init__(*elements)
+        self._group_dependencies = flatten_multikey_dict(dependencies)
+
+    def dumpData(self, record, out):
+        for i, element in enumerate(self.elements):
+            dependent_attrs = self._group_dependencies.get(i)
+            if (dependent_attrs is None or
+                    all(getattr(record, a) for a in dependent_attrs)):
+                element.dumpData(record, out)
+
+#------------------------------------------------------------------------------
+class MelDependentGroups(MelDependentSequential, MelGroups):
+    """A MelGroups version of MelDependentSequential, see there for docs."""
+    def __init__(self, attr: str, *elements,
+            dependencies: dict[int, list[str]]):
+        # Skip MelDependentSequential's initializer, we need MelGroups' for the
+        # attribute name
+        super(MelDependentSequential, self).__init__(attr, *elements)
+        self._group_dependencies = dependencies

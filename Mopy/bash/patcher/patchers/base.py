@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -163,29 +163,29 @@ class MergePatchesPatcher(ListPatcher):
     patcher_order = 10
     _missing_master_error = '\n\n'.join([_(
         '%(merged_plugin)s is supposed to be merged into the Bashed Patch, '
-        'but some of its masters %(missing_master)s are missing.'),
-        _('Please install the missing master(s) to fix this.')])
+        'but some of its masters (%(missing_masters)s) are missing.'),
+        _('Please install the missing masters to fix this.')])
     _inactive_master_error = '\n\n'.join([_(
         '%(merged_plugin)s is supposed to be merged into the Bashed Patch, '
-        'but some of its masters %(inactive_master)s are inactive.'),
-        _('Please activate the inactive master(s) to fix this.')])
+        'but some of its masters (%(inactive_masters)s) are inactive.'),
+        _('Please activate the inactive masters to fix this.')])
 
     @classmethod
-    def _validate_mod(cls, p_file, merge_src, raise_on_error):
+    def _validate_mod(cls, p_file, merge_src, raise_on_errors):
         if merge_src not in p_file.bp_mergeable:
-            err = err = f'{cls.__name__}: {merge_src} is not mergeable'
+            err = f'{cls.__name__}: {merge_src} is not mergeable'
         # Then, perform an error check for missing/inactive masters
         elif ((mm := p_file.active_mm.get(merge_src)) # should not happen
                 or (mm := p_file.inactive_mm.get(merge_src))):
-            err = cls._missing_master_error % {'merged_plugin': merge_src,
-                                               'missing_master': mm}
+            err = cls._missing_master_error % {
+                'merged_plugin': merge_src, 'missing_masters': ', '.join(mm)}
         elif mm := p_file.inactive_inm.get(merge_src):
             # It's present but inactive - that won't work for merging
-            err = cls._inactive_master_error % {'merged_plugin': merge_src,
-                                                'inactive_master': mm}
+            err = cls._inactive_master_error % {
+                'merged_plugin': merge_src, 'inactive_masters': ', '.join(mm)}
         else:
             return True
-        if raise_on_error:
+        if raise_on_errors:
             raise BPConfigError(err)
         return False
 

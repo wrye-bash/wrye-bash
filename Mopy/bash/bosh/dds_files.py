@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -420,12 +420,12 @@ def _compute_block(block_size):
 _compute_block_8 = _compute_block(8)
 _compute_block_16 = _compute_block(16)
 
-def _compute_complex(to_multiply, extra_height_func=None, to_add=1,
+def _compute_complex(to_multiply, extra_height_func=None, add_width=1,
                      to_shift=1):
     """Returns a function that computes row/slice pitch for various formats,
     with several parameters to tune for the variations."""
     def _compute_shift_dyn(_bpp, width, height):
-        pitch = ((width + to_add) >> to_shift) * to_multiply
+        pitch = ((width + add_width) >> to_shift) * to_multiply
         extra_height = extra_height_func(height) if extra_height_func else 0
         return pitch, pitch * (height + extra_height)
     return _compute_shift_dyn

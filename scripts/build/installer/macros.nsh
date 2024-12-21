@@ -11,17 +11,24 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
-                        /x "basher" \
-                        /x "bosh" \
-                        /x "brec" \
-                        /x "env" \
-                        /x "game" \
-                        /x "gui" \
-                        /x "patcher" \
-                        /x "redist" \
-                        /x "tests" \
-                        "${WB_CLEAN_MOPY}\*.*"
+        ; Excludes have to be kept in sync with _IGNORES_STANDALONE from
+        ; build.py (i.e. also include the ones in _IGNORES_MANUAL)
+        File /r \
+            /x "*.bat" \
+            /x "*.log" \
+            /x "*.py*" \
+            /x "bash.ini" \
+            /x "Wrye Bash.exe" \
+            /x "basher" \
+            /x "bosh" \
+            /x "brec" \
+            /x "env" \
+            /x "game" \
+            /x "gui" \
+            /x "patcher" \
+            /x "redist" \
+            /x "tests" \
+            "${WB_CLEAN_MOPY}\*.*"
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
         ; Install the standalone only files
         SetOutPath "${GameDir}\Mopy"
@@ -795,7 +802,7 @@
         ; As of 311, Auto-Quit uses a checkmark instead of an X
         Delete "${Path}\Mopy\bash\images\checkbox_red_x_24.png"
         Delete "${Path}\Mopy\bash\images\checkbox_red_x_32.png"
-        ; as of 312 tool images were renamed to match their ini key
+        ; As of 312, tool images were renamed to match their ini key
         Delete "${Path}\Mopy\bash\images\tools\nifskope16.png"
         Delete "${Path}\Mopy\bash\images\tools\nifskope24.png"
         Delete "${Path}\Mopy\bash\images\tools\nifskope32.png"
@@ -874,8 +881,19 @@
         Delete "${Path}\Mopy\bash\images\tools\tes4files16.png"
         Delete "${Path}\Mopy\bash\images\tools\tes4files24.png"
         Delete "${Path}\Mopy\bash\images\tools\tes4files32.png"
-        ; as of 312 belt is moved in basher
-        Delete "${Path}\Mopy\bash\belt.p*"
+        ; As of 313, translations are done via weblate
+        Delete "${Path}\Mopy\bash\images\readme\settings-language-configure-editor.png"
+        ; As of 313, we only ship the .mo files
+        Delete "${Path}\Mopy\bash\l10n\*.po"
+        Delete "${Path}\Mopy\bash\l10n\template.pot"
+        ; The .po's for these were only temporarily on dev, then got renamed
+        Delete "${Path}\Mopy\bash\l10n\sv.mo"
+        Delete "${Path}\Mopy\bash\l10n\tr.mo"
+        ; As of 313, we use SVGs instead of PNGs for the checkbox icons
+        Delete "${Path}\Mopy\bash\images\checkbox_*.png"
+        Delete "${Path}\Mopy\bash\images\diamond_*.png"
+        ; As of 313, we use SVGs instead of PNGs for the game icons
+        Delete "${Path}\Mopy\bash\images\games\*.png"
     !macroend
 
 

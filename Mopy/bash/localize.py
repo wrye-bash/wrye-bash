@@ -16,24 +16,21 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Houses methods related to localization, including early setup code for
-detecting and setting locale as well as code for creating Wrye Bash translation
-files."""
+detecting and setting locale."""
 
-__author__ = u'Infernio'
+__author__ = 'Infernio'
 
 import gettext
 import locale
 import os
-import pkgutil
-import re
-import subprocess
 import sys
 import time
+import warnings
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
@@ -47,6 +44,8 @@ def set_c_locale():
 
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
+_WEBLATE_URL = 'https://hosted.weblate.org/engage/wrye-bash/'
+
 def setup_locale(cli_lang, _wx):
     """Set up wx Locale and Wrye Bash translations. If cli_lang is given,
     will validate it is a supported wx language code, otherwise will fallback
@@ -63,30 +62,49 @@ def setup_locale(cli_lang, _wx):
     :param cli_lang: The language the user specified on the command line, or
         None.
     :return: The wx.Locale object we ended up using."""
+    target_lang = cli_lang or bass.boot_settings['Boot']['locale']
     # Set the wx language - otherwise we will crash when loading any images
-    cli_target = cli_lang and _wx.Locale.FindLanguageInfo(cli_lang)
-    if cli_target:
+    chosen_wx_lang = target_lang and _wx.Locale.FindLanguageInfo(target_lang)
+    if chosen_wx_lang:
         # The user specified a language that wx recognizes
-        target_name = cli_target.CanonicalName
+        target_name = chosen_wx_lang.CanonicalName
     else:
         # Fall back on the default language
-        language_code, enc = locale.getdefaultlocale()
-        bolt.deprint(f'{cli_lang=} - {cli_target=} - falling back to '
-                     f'({language_code}, {enc}) from getdefaultlocale')
+        try:
+            with warnings.catch_warnings():
+                # Work around https://github.com/python/cpython/issues/82986
+                warnings.simplefilter('ignore', category=DeprecationWarning)
+                language_code, enc = locale.getdefaultlocale()
+        except AttributeError:
+            bolt.deprint('getdefaultlocale no longer exists, this will '
+                         'probably break on Windows now')
+            language_code, enc = locale.getlocale()
+        bolt.deprint(f'{cli_lang=} - {target_lang=} - falling back to '
+                     f'({language_code}, {enc}) from default locale')
         lang_info = _wx.Locale.FindLanguageInfo(language_code)
         target_name = lang_info and lang_info.CanonicalName
         bolt.deprint(f'wx gave back {target_name}')
     # We now have a language that wx supports, but we don't know if WB supports
     # it - so check that next
     trans_path = __get_translations_dir()
+    def _advertise_weblate(base_msg: str):
+        """Small helper for advertising our weblate to users who may end up
+        reading the log."""
+        bolt.deprint('\n'.join([
+            base_msg,
+            '',
+            'Want to help translate Wrye Bash into your language? '
+            'Visit our Weblate page!',
+            '', f'  {_WEBLATE_URL}', '',
+        ]))
     # English is the default, so it doesn't have a translation file
     # For all other languages, check if we have a translation
-    po = mo = None
+    mo = None
     if not target_name or target_name.startswith('en_'): # en_ gives en_GB on my system
         target_name = 'en_US'
     else:
-        supported_l10ns = [f[:-3] for f in os.listdir(trans_path) if
-                           f[-3:] == '.po']
+        supported_l10ns = {f[:-3] for f in os.listdir(trans_path) if
+                           f[-3:] in ('.mo', '.po')}
         # Check if we support this exact language or any similar
         # languages (i.e. same prefix)
         wanted_prefix = target_name.split('_', 1)[0]
@@ -100,57 +118,57 @@ def setup_locale(cli_lang, _wx):
                 if target_name == f:
                     bolt.deprint(f"Found translation file for language "
                                  f"'{target_name}'")
-                else:  # Note we pick the first similar we run across
-                    bolt.deprint(f"No translation file for language "
-                                 f"'{target_name}', using similar language "
-                                 f"with translation file '{f}' instead")
+                else:  # Note we pick the first(!) similar we run across
+                    _advertise_weblate(f"No translation file for language "
+                                       f"'{target_name}', using similar "
+                                       f"language with translation file '{f}' "
+                                       f"instead")
                     target_name = f
-                po, mo = (os.path.join(trans_path, target_name + ext) for ext
-                          in (u'.po', u'.mo'))
+                mo = os.path.join(trans_path, target_name + '.mo')
                 break
         else:
-            if not matches: # TODO: is this any use? we set C locale anyway
-                bolt.deprint(f"Wrye Bash does not support the language "
-                             f"family '{wanted_prefix}', will however "
-                             f"try to set locale to '{target_name}'")
-            else: # TODO: needs more tweaking - probably we should unify with above
-                # If that didn't work, all we can do is complain
-                # about it and fall back to English
-                bolt.deprint(f"wxPython does not support the language family '"
-                             f"{wanted_prefix}', will fall back to "
-                             f"'{target_name := 'en_US'}'")
+            # We don't have a translation file for this any language in this
+            # family, fall back to English (and ask the user to contribute :))
+            target_name = 'en_US'
+            _advertise_weblate(f"wxPython does not support the language "
+                               f"family '{wanted_prefix}', will fall back "
+                               f"to '{target_name}'")
     lang_info = _wx.Locale.FindLanguageInfo(target_name)
     target_language = lang_info.Language
     target_locale = _wx.Locale(target_language)
     bolt.deprint(f"Set wxPython locale to '{target_name}'")
     # Next, set the Wrye Bash locale based on the one we grabbed from wx
-    if po is mo is None:
-        # We're using English or don't have a translation file - either way,
-        # prepare the English translation
-        trans = gettext.NullTranslations()
+    if mo is None:
+        trans = gettext.NullTranslations() # We're using English
     else:
+        po = mo[:-2] + 'po'
         try:
-            # We have a translation file, check if it has to be compiled
-            if not os.path.isfile(mo) or (os.path.getmtime(po) >
-                                          os.path.getmtime(mo)):
-                # Try compiling - have to do it differently if we're a
-                # standalone build
-                args = [u'm', u'-o', mo, po]
-                if bass.is_standalone:
-                    # Delayed import, since it's only present on standalone
-                    import msgfmt
-                    old_argv = sys.argv[:]
-                    sys.argv = args
-                    msgfmt.main()
-                    sys.argv = old_argv
+            if os.path.isfile(mo):
+                if os.path.isfile(po) and (os.path.getmtime(mo) <
+                                           os.path.getmtime(po)):
+                    # .mo file older than .po file (dev env only)
+                    bolt.deprint('\n'.join([
+                        f'.mo file possibly outdated ({mo}). If you manually '
+                        f'edited the .po file, run scripts/compile_l10n.py',
+                        'Using possibly outdated .mo file regardless',
+                        '',
+                        'Note: if you are trying to translate Wrye Bash, '
+                        'please do so via our weblate page!',
+                        '', f'  {_WEBLATE_URL}', '',
+                    ]))
+                with open(mo, 'rb') as trans_file:
+                    trans = gettext.GNUTranslations(trans_file)
+            else:
+                if os.path.isfile(po):
+                    # .mo file missing, .po file exists (dev env only)
+                    bolt.deprint(f'Missing .mo file ({mo}), but .po file '
+                                 f'exists. Run scripts/compile_l10n.py')
                 else:
-                    # msgfmt is only in Tools, so call it explicitly
-                    from .env import python_tools_dir
-                    m = os.path.join(python_tools_dir(), u'i18n', u'msgfmt.py')
-                    subprocess.call([sys.executable, m, u'-o', mo, po])
-            # We've successfully compiled the translation, read it into memory
-            with open(mo, u'rb') as trans_file:
-                trans = gettext.GNUTranslations(trans_file)
+                    # .mo file missing, no .po file (production only)
+                    bolt.deprint(f'Missing .mo file ({mo}) - this should '
+                                 f'really not happen, please report this!')
+                bolt.deprint('Falling back to English (en_US)')
+                trans = gettext.NullTranslations()
         except (UnicodeError, OSError):
             bolt.deprint('Error loading translation file:', traceback=True)
             trans = gettext.NullTranslations()
@@ -170,146 +188,6 @@ def __get_translations_dir():
         # startup and adding a real headless mode to WB (see #568, #554 and #600)
         trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
     return trans_path
-
-#------------------------------------------------------------------------------
-# Internationalization
-def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
-    """Internal helper function. Returns a list of all Bash files as relative
-    paths to the Mopy directory.
-
-    :param bash_path: The relative path from Mopy.
-    :param cur_dir: The directory to look for modules in. Defaults to cwd.
-    :param _files: Internal parameter used to collect file recursively."""
-    if bash_path is None: bash_path = u''
-    if cur_dir is None: cur_dir = os.getcwd()
-    if _files is None: _files = []
-    _files.extend([os.path.join(bash_path, m) for m in os.listdir(cur_dir)
-                   if m.lower().endswith((u'.py', u'.pyw'))]) ##: glob?
-    # Find packages - returned format is (module_loader, name, is_pkg)
-    for module_loader, pkg_name, is_pkg in pkgutil.iter_modules([cur_dir]):
-        if not is_pkg: # Skip it if it's not a package
-            continue
-        # Recurse into the package we just found
-        _find_all_bash_modules(
-            os.path.join(bash_path, pkg_name) if bash_path else u'bash',
-            os.path.join(cur_dir, pkg_name), _files)
-    return _files
-
-def dump_translator(out_path, lang):
-    """Dumps all translatable strings in python source files to a new text
-    file. As this requires the source files, it will not work in standalone
-    mode, unless the source files are also installed.
-
-    :param out_path: The directory containing localization files - typically
-        bass.dirs[u'l10n'].
-    :param lang: The language to dump a text file for.
-    :return: The path to the file that the dump was written to."""
-    new_po = os.path.join(out_path, f'{lang}NEW.po')
-    tmp_po = os.path.join(out_path, f'{lang}NEW.tmp')
-    old_po = os.path.join(out_path, f'{lang}.po')
-    gt_args = [u'p', u'-a', u'-o', new_po]
-    gt_args.extend(_find_all_bash_modules())
-    # Need to do this differently on standalone
-    if bass.is_standalone:
-        # Delayed import, since it's only present on standalone
-        import pygettext
-        old_argv = sys.argv[:]
-        sys.argv = gt_args
-        pygettext.main()
-        sys.argv = old_argv
-    else:
-        # pygettext is only in Tools, so call it explicitly
-        gt_args[0] = sys.executable
-        from .env import python_tools_dir
-        gt_args.insert(1, os.path.join(python_tools_dir(), u'i18n',
-                                       u'pygettext.py'))
-        subprocess.call(gt_args, shell=True)
-    # Fill in any already translated stuff...?
-    try:
-        re_msg_ids_start = re.compile(b'#:')
-        re_encoding = re.compile(
-            br'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$', re.I)
-        re_non_escaped_quote = re.compile(r'([^\\])"')
-        def sub_quote(regex_match):
-            return regex_match.group(1) + r'\"'
-        target_enc = None
-        # Do all this in binary mode and carefully handle encodings
-        with open(tmp_po, u'wb') as out:
-            # Copy old translation file header, and get encoding for strings
-            with open(old_po, u'rb') as ins:
-                for old_line in ins:
-                    if not target_enc:
-                        # Chop off the terminating newline
-                        encoding_match = re_encoding.match(
-                            old_line.rstrip(b'\r\n'))
-                        if encoding_match:
-                            # Encoding names are all ASCII, so this is safe
-                            target_enc = str(encoding_match.group(1), 'ascii')
-                    if re_msg_ids_start.match(old_line):
-                        break # Break once we hit the first translatable string
-                    out.write(old_line)
-            # Read through the new translation file, fill in any already
-            # translated strings
-            with open(new_po, u'rb') as ins:
-                skipped_header = False
-                for new_line in ins:
-                    # First, skip the header - we already copied it above
-                    if not skipped_header:
-                        msg_ids_match = re_msg_ids_start.match(new_line)
-                        if msg_ids_match:
-                            skipped_header = True
-                            out.write(new_line)
-                        continue
-                    elif new_line.startswith(b'msgid "'):
-                        # Decode the line and retrieve only the msgid contents
-                        stripped_line = str(new_line, target_enc)
-                        stripped_line = stripped_line.strip(u'\r\n')[7:-1]
-                        # Replace escape sequences - Quote, Tab, Backslash
-                        stripped_line = stripped_line.replace(u'\\"', u'"')
-                        stripped_line = stripped_line.replace(u'\\t', u'\t')
-                        stripped_line = stripped_line.replace(u'\\\\', u'\\')
-                        # Try translating, check if that changes the string
-                        ##: This is a neat, pragmatic implementation - but of
-                        # course limits us to only ever dumping translations
-                        # for the current language
-                        translated_line: str = _(stripped_line)
-                        # We're going to need the msgid either way
-                        out.write(new_line)
-                        if translated_line != stripped_line:
-                            # This has a translation, so write that one out
-                            out.write(b'msgstr "')
-                            # Escape any characters used in escape sequences
-                            # and encode the resulting 'final' translation
-                            final_ln = translated_line.replace(u'\\', u'\\\\')
-                            final_ln = final_ln.replace(u'\t', u'\\t')
-                            final_ln = re_non_escaped_quote.sub(
-                                sub_quote, final_ln)
-                            final_ln = final_ln.encode(target_enc)
-                            out.write(final_ln)
-                            out.write(b'"\r\n')
-                        else:
-                            # Not translated, write out an empty msgstr
-                            out.write(b'msgstr ""\r\n')
-                    elif new_line.startswith(b'msgstr "'):
-                        # Skip all msgstr lines from new_po (handled above)
-                        continue
-                    else:
-                        out.write(new_line)
-    except (OSError, UnicodeError):
-        bolt.deprint(u'Error while dumping translation file:', traceback=True)
-        try: os.remove(tmp_po)
-        except OSError: pass
-    else:
-        # Replace the empty translation file generated by pygettext with the
-        # temp one we just created
-        try:
-            os.remove(new_po)
-            os.rename(tmp_po, new_po)
-        except OSError:
-            if os.path.exists(new_po):
-                try: os.remove(tmp_po)
-                except OSError: pass
-    return new_po
 
 #------------------------------------------------------------------------------
 # Formatting

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -43,7 +43,7 @@ from functools import partial
 from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 from typing import TypeVar, Any
 
-from .. import bolt, bass
+from .. import bolt, bass # bass for _AppLauncher.find_launcher
 from ..bolt import deprint, undefinedPath
 from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
@@ -72,7 +72,7 @@ def _find_legendary_games():
     found_lgd_games = {}
     # Look at the XDG location first (Linux only, won't be defined on all Linux
     # systems and obviously not on Windows)
-    user_config_path = os.environ.get('XDG_CONFIG_HOME')
+    user_config_path = os.getenv('XDG_CONFIG_HOME')
     if not user_config_path:
         # Use the fallback location (which exists on Windows as well, and so is
         # the only location used there)
@@ -473,7 +473,7 @@ def is_case_sensitive(test_path):
 def set_cwd(func):
     """Function decorator to switch current working dir."""
     @functools.wraps(func)
-    def _switch_dir(self, exe_path, *args):
+    def _switch_dir(self, exe_path: _Path, *args):
         cwd = os.getcwd()
         os.chdir(exe_path.head.s)
         try:
@@ -483,19 +483,27 @@ def set_cwd(func):
     return _switch_dir
 
 class _AppLauncher:
-    """Info on launching an App - currently windows only."""
-    exePath: _Path # the path to the app launcher (currently exe)
+    """Info on launching an App - currently windows/linux only."""
+    # the initial path to the app launcher (checked for existence on
+    # initialization)
+    _app_path: _Path
     _exe_args: tuple # cli for the application
-    display_launcher: bool # whether to display the launcher
+    _display_launcher: bool # whether to display the launcher
 
-    def __init__(self, exePath: _Path, cli_args=(), display_launcher=True,
-                 *args):
+    def __init__(self, launcher_path: _Path, cli_args=(),
+                 display_launcher=True, *args):
         super().__init__(*args)
-        self.exePath = exePath
+        self._app_path = launcher_path
         self._display_launcher = display_launcher
         self._exe_args = cli_args
 
-    def allow_create(self): # if self.exePath does not exist this must be False
+    @property
+    def app_path(self):
+        """The path to the app to launch which is not always the _app_path
+        (see GameButton/TESCSButton/AppBOSS overrides and avoid adding any)."""
+        return self._app_path
+
+    def allow_create(self): #if self._app_path doesn't exist this must be False
         return self._display_launcher
 
     @classmethod

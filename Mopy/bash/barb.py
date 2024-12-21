@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,8 +28,8 @@ Re: bass.AppVersion, bass.settings[u'bash.version']
 
 The latter is read from the settings - so on upgrading Bash it's the version of
 the previous Bash install, whereupon is based the backup-on-upgrade routine.
-Later on, in basher.BashApp#InitVersion, bass.settings[u'bash.version'] is
-set to bass.AppVersion. We save both in the settings we backup:
+Later on, in basher.Init, bass.settings['bash.version'] is set to
+bass.AppVersion. We save both in the settings we backup:
 - bass.settings[u'bash.version'] is saved first and corresponds to the version
 the settings were created with
 - bass.AppVersion, saved second, is the version of Bash currently executing
@@ -119,11 +119,11 @@ class BackupSettings(object):
         # backup save profile settings
         rel_save_dir = GPath(u'My Games').join(mg_name)
         save_dirs = ['', *initialization.getLocalSaveDirs()]
-        for save_dir in save_dirs:
+        for savedir in save_dirs:
             for txt in (['plugins.txt'], ['loadorder.txt'],
                         ['Bash', 'Table.dat']):
-                tpath = rel_save_dir.join('Saves', save_dir, *txt)
-                fpath = dirs[u'saveBase'].join('Saves', save_dir, *txt)
+                tpath = rel_save_dir.join('Saves', savedir, *txt)
+                fpath = dirs[u'saveBase'].join('Saves', savedir, *txt)
                 if fpath.exists(): self.files[tpath] = fpath
             # for 'Table.dat' check also the bak file
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
@@ -140,8 +140,8 @@ class BackupSettings(object):
                 'prev_bash_ver': previous_bash_version},
             _('Current Version: %(curr_bash_ver)s') % {
                 'curr_bash_ver': AppVersion},
-            _('Do you want to create a backup of your Bash settings before '
-              'they are overwritten?')]), title=_('Create Backup?'))
+            _('Do you want to create a backup of your Wrye Bash settings '
+              'before they are overwritten?')]), title=_('Create Backup?'))
 
     @staticmethod
     def backup_filename(bak_name):
@@ -318,8 +318,9 @@ class RestoreSettings(object):
             self._get_settings_versions()
         if settings_saved_with != bass.settings['bash.version']:
             return '\n'.join(
-                [_('The version of Bash used to create the selected backup '
-                   'file does not match the current Bash version!'),
+                [_('The version of Wrye Bash used to create the selected '
+                   'backup file does not match the current Wrye Bash '
+                   'version!'),
                  _('Backup %(saved_backup_ver)s does not match '
                    '%(wb_ver)s.') % {
                      'saved_backup_ver': f'v{settings_saved_with}',

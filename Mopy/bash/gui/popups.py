@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -400,7 +400,7 @@ class DateAndTimeDialog(DialogWindow):
         # Pausing picker subscription here is not currently necessary, but may
         # become necessary in the future, so stay sharp
         self._date_picker.set_date(new_datetime.date())
-        self._time_picker.set_time(new_datetime.time())
+        self._time_picker.set_sel_time(new_datetime.time())
 
     def show_modal(self) -> datetime.datetime | bool:
         """Return the final chosen date and time as a datetime.datetime

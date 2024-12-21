@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -495,8 +495,8 @@ class ABsa(AFile):
     _folder_type = BSAFolder
     bsa_folders: defaultdict[str, _folder_type]
 
-    def __init__(self, fullpath, load_cache=False, names_only=True):
-        super().__init__(fullpath)
+    def __init__(self, fullpath, load_cache=False, names_only=True, **kwargs):
+        super().__init__(fullpath, load_cache=False, **kwargs)
         self.bsa_name = self.abs_path.stail
         self.bsa_header = typing.get_type_hints(self.__class__)['bsa_header']()
         self.bsa_folders = defaultdict(self._folder_type) # keep folder order
@@ -561,7 +561,8 @@ class ABsa(AFile):
         with open(self.abs_path, u'rb') as bsa_file:
             for i, (folder, file_records) in enumerate(folder_to_assets.items()):
                 if progress:
-                    progress(i, f'Extracting {self.bsa_name}...\n{folder}')
+                    progress(i, f"{_('Extracting %(target_bsa)s…')}"
+                                f"\n{folder}" % {'target_bsa': self.bsa_name})
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
                 target_dir = os.path.join(dest_folder, *folder.split(path_sep))
@@ -798,7 +799,8 @@ class BA2(ABsa):
             for i, (folder, file_records) in enumerate(
                     folder_to_assets.items()):
                 if progress:
-                    progress(i, f'Extracting {self.bsa_name}...\n{folder}')
+                    progress(i, f"{_('Extracting %(target_bsa)s…')}"
+                                f"\n{folder}" % {'target_bsa': self.bsa_name})
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
                 target_dir = os.path.join(dest_folder, *folder.split(path_sep))
@@ -942,8 +944,9 @@ class MorrowindBsa(ABsa):
                 if progress:
                     # No folder records, simulate them to avoid updating the
                     # progress bar too frequently
-                    progress(i, f'Extracting {self.bsa_name}...\n'
-                                f'{os.path.dirname(rec_name)}')
+                    progress(i, f"{_('Extracting %(target_bsa)s…')}"
+                                f"\n{os.path.dirname(rec_name)}" % {
+                        'target_bsa': self.bsa_name})
                 # There is no compression for Morrowind BSAs, but all offsets
                 # are relative to the final_offset we read earlier
                 bsa_file.seek(self.final_offset + file_record.relative_offset)
@@ -1014,8 +1017,8 @@ class OblivionBsa(BSA):
                             structs_cache[_HashedRecord.formats[0][0]].pack(
                                 rebuilt_hash))
                         reset_count += 1
-                progress(progress.state + 1, 'Rebuilding Hashes...\n' +
-                         folder_name)
+                progress(progress.state + 1, f"{_('Rebuilding Hashes…')}"
+                                             f"\n{folder_name}")
         return reset_count
 
 class SkyrimSeBsa(BSA):
