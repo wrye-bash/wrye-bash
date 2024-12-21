@@ -265,7 +265,7 @@ def open_wb_file(*parts, logger: logging.Logger):
             exit_code=100, logger=logger)
 
 def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback,
-        logger: logging.Logger):
+        logger: logging.Logger, allow_equal_lines=False):
     """Edit a Wrye Bash source code file relative to the Mopy folder. Look for
     lines matching trigger_regex and replace them with the result of calling
     edit_callback (with the resulting re.Match object passed to edit_callback
@@ -278,7 +278,7 @@ def edit_wb_file(*parts, trigger_regex: re.Pattern, edit_callback,
                 new_wbpy_lines.append(edit_callback(wbpy_ma))
             else:
                 new_wbpy_lines.append(wbpy_line)
-        if wbpy_lines == new_wbpy_lines:
+        if wbpy_lines == new_wbpy_lines and not allow_equal_lines:
             fatal_error(f'Nothing edited in file {os.path.join(*parts)}, this '
                         f'script probably needs to be updated',
                 exit_code=101, logger=logger)
@@ -292,7 +292,9 @@ def edit_bass_version(new_ver: str, logger: logging.Logger):
         return f"AppVersion = '{new_ver}'{bass_ma.group(1)}"
     edit_wb_file('bash', 'bass.py',
         trigger_regex=re.compile(r"^AppVersion = '\d+(?:\.\d+)?'(.*)$"),
-        edit_callback=edit_bass, logger=logger)
+        edit_callback=edit_bass, logger=logger,
+        # allow_equal_lines because production versions won't change the file
+        allow_equal_lines=True)
 
 def rm(node: str | os.PathLike):
     """Removes a file or directory if it exists"""
