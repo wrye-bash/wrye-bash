@@ -635,7 +635,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         if pflag.merge_check is not None:
             minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
             if minfos_cache:
-                _log_plugins(head, msg, minfos_cache)
+                _log_plugins(head, msg, [minf.fn_key for minf in minfos_cache])
         for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
             if pl_set:
                 _log_plugins(head, msg, pl_set)
