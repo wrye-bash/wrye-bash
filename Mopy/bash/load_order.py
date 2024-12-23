@@ -159,7 +159,7 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
     affected: set[FName] = field(default_factory=set)
 
     def act_changed(self):
-        """Return items whose active state or active order changed."""
+        """Return existing items whose active state or active order changed."""
         return {*self.active_flips, *self.act_index_change, *self.act_del,
                 *self.act_new}
 
@@ -172,7 +172,7 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
 
     def to_rdata(self):
         return RefrData(self.reordered | self.act_index_change |
-                        self.active_flips)
+                        self.active_flips | self.affected)
 
     def __str__(self):
         st = []
@@ -223,7 +223,7 @@ class LoadOrder(object):
         lodiff.act_index_change = {k for k, c in diff_count.items() if c == 2}
         act_state_change = {k for k, c in diff_count.items() if c == 1}
         lodiff.active_flips = {k for k in act_state_change if k not in new_del}
-        lodiff.act_del = act_state_change & self.active
+        lodiff.act_del = (act_state_change & self.active) - lodiff.missing
         lodiff.act_new = act_state_change & other.active
         return lodiff
 

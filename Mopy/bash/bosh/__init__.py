@@ -2040,7 +2040,7 @@ def _lo_cache(lord_func):
             # unghost new active plugins and ghost new inactive (if autoGhost)
             ghostify = dict.fromkeys(ldiff.act_new, False)
             if bass.settings['bash.mods.autoGhost']:
-                new_inactive = (ldiff.act_del - ldiff.missing) | (
+                new_inactive = ldiff.act_del | (
                         ldiff.added - ldiff.act_new) # new mods, ghost
                 ghostify.update({k: True for k in new_inactive if
                     self[k].get_table_prop('allowGhosting', True)})
@@ -2188,8 +2188,8 @@ class ModInfos(TableFileInfos):
         active_patches = {bp for bp in self.bashed_patches if
                load_order.cached_is_active(bp)}
         self.merged, self.imported = self.getSemiActive(active_patches)
-        return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
-                *(imprtd ^ self.imported)}
+        return {p for p in chain(bps ^ self.bashed_patches, mrgd ^ self.merged,
+                imprtd ^ self.imported) if p in self}
 
     def __recalc_real_indices(self):
         """Recalculate the real indices cache, which is the index the game will
@@ -2200,7 +2200,8 @@ class ModInfos(TableFileInfos):
         old = self.real_indices
         self.real_indices = bush.game.plugin_flags.get_indexes(
             ((p, self[p]) for p in load_order.cached_active_tuple()))
-        return {k for k, v in old.items() ^ self.real_indices.items()}
+        return {k for k, v in old.items() ^ self.real_indices.items()
+                if k in self}
 
     def __recalc_dependents(self):
         """Recalculates the dependents cache. See ModInfo.get_dependents for
@@ -2343,7 +2344,7 @@ class ModInfos(TableFileInfos):
             v.isMissingStrings(av_bsas, hi_to_lo, ci_cached_strings_paths,
                                i_lang)}
         self.new_missing_strings = self.missing_strings - oldBad
-        return self.missing_strings ^ oldBad
+        return {m for m in self.missing_strings ^ oldBad if m in self}
 
     def __load_plugin_inis(self, data_folder_path):
         if not bush.game.Ini.supports_mod_inis:
