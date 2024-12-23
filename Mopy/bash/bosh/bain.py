@@ -2953,10 +2953,10 @@ class InstallersData(DataStore):
 
         :param src_installer: The installer to find conflicts for.
         :param active_bsas: The dict of currently active BSAs. Can be retrieved
-            via bosh.modInfos.get_active_bsas(). Only needed if BSA conflicts
+            via bosh.modInfos.get_bsa_lo(). Only needed if BSA conflicts
             are enabled (i.e. include_bsas is True).
         :param bsa_cause: The dict of reasons BSAs were loaded. Retrieve
-            alongside active_bsas from bosh.modInfos.get_active_bsas(). Only
+            alongside active_bsas from bosh.modInfos.get_bsa_lo(). Only
             needed if BSA conflicts are enabled.
         :param list_overrides: Whether to list overrides (True) or underrides
             (False).
@@ -3054,7 +3054,7 @@ class InstallersData(DataStore):
 
         :param src_installer: The installer from which to retrieve BSA assets.
         :param active_bsas: The set of active BSAs. Generally retrieved via
-                            bosh.modInfos.get_active_bsas().
+                            bosh.modInfos.get_bsa_lo().
         :return: An OrderedDict containing a mapping from asset to BSA and the
                  relevant assets from the installer's BSAs in a set."""
         asset_to_bsa, src_assets = collections.OrderedDict(), set()

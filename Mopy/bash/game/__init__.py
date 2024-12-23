@@ -662,29 +662,37 @@ class GameInfo(object):
             ±sys.maxsize. These BSAs are removed from av_bsas dict."""
             bsa_lo = {}
             bsa_cause = {}  # Reason each BSA was loaded
+            def _update_lo():
+                nonlocal ini_idx
+                if binf := av_bsas.pop(b, None):
+                    bsa_lo[binf] = ini_idx
+                    bsa_cause[binf] = cause
+                    ini_idx -= ini_diff
+                    return True
+                if requested := [bin for bin in bsa_lo if bin.fn_key == b]:
+                    m = f'was already loaded via {bsa_cause[requested[0]]}'
+                else:
+                    m = f'was not found'
+                bolt.deprint(f'{b} requested in {cause} {m}')
+                return False
             for group_dex, (ini_idx, keys) in enumerate(
                     cls.start_dex_keys.items()):
-                bsas_cause = []
+                # note the last entries load higher if ini_idx < 0 else lower
+                # (games with BSA_MAX keys if len(start_dex_keys)>1)
+                ini_diff = -1 if ini_idx < 0 else 1
+                bsas_loaded = False # only for SkyrimVR - has a BSA.MAX ini_idx
                 for ini_k in keys:
                     for ini_f in ini_files_cached: # higher loading first
                         if bsas := ini_f.getSetting('Archive', ini_k, ''):
-                            bsas = (x.strip() for x in bsas.split(','))
-                            bsas_cause.append(([av_bsas[b] for b in bsas
-                                                if b in av_bsas],
-                                f'{ini_f.abs_path.stail} ({ini_k})'))
+                            cause = f'{ini_f.abs_path.stail} ({ini_k})'
+                            for b in (x.strip() for x in bsas.split(',')):
+                                bsas_loaded |= _update_lo()
                             break # The first INI with the key wins ##: Test this
-                if not bsas_cause and group_dex == 1:
-                    # fallback to the defaults set by the engine - must exist!
-                    bsas_cause = [([av_bsas[b] for b in cls.engine_overrides],
-                                   f'{cls.dropdown_inis[0]} ({keys[0]})')]
-                for res_ov_bsas, res_ov_cause in bsas_cause:
-                    for binf in res_ov_bsas:
-                        bsa_lo[binf] = ini_idx
-                        bsa_cause[binf] = res_ov_cause
-                        # note the last entries load higher if ini_idx < 0 else
-                        # lower (games with BSA_MAX keys if len(res_ov_bsas)>1)
-                        ini_idx -= -1 if ini_idx < 0 else 1
-                        del av_bsas[binf.fn_key]
+                if group_dex == 1 and not bsas_loaded:
+                    # fallback to the defaults set by the engine, SkyrimVR only
+                    cause = f'{cls.dropdown_inis[0]} ({keys[0]})'
+                    for b in cls.engine_overrides:
+                        _update_lo()
             return bsa_lo, bsa_cause
 
     class Ess(object):
