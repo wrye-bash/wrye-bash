@@ -676,10 +676,10 @@ tab. The directories skipped are:
         it may only be possible to do so via running an executable. In this
         situation, Wrye Bash can capture the installer's output, which you can
         then manage like any other package via BAIN.</li>
-    <li><strong>Other Mod Managers</strong> - While Wrye Bash supports the
-        FOMOD XML format since 307, there are still some badly packaged mods it
-        cannot handle. In such situations, you may have to use other mod
-        managers to install them.</li>
+    <li><strong>Other Mod Managers</strong> - While Wrye Bash supports all
+        FOMODs properly since 312, there are other mod formats like OMODs (used
+        in Oblivion) that Wrye Bash only has limited support for. You may wish
+        to capture the output of OBMM or similar tools in that case.</li>
 </ul>
 
 <h4>How to use the "Monitor External Installation" feature</h4>
@@ -718,9 +718,7 @@ tab. The directories skipped are:
     </li>
     <li>If you use Mod Organiser (or any mod manager that utilises a virtual installation of files instead of actually installing them into
         Data\), then Monitor External Installation can only be used if Wrye Bash is launched by the other Mod manager so that it will feed
-        Wrye Bash the files it needs from the virtual folder. See <a
-                href="https://github.com/wrye-bash/wrye-bash/wiki/Wrye-Bash-and-Mod-Organizer" target="_blank">this wiki article</a> for
-        more information on integrating Wrye Bash with Mod Organizer.
+        Wrye Bash the files it needs from the virtual folder.
     </li>
     <li>When installing mods via Nexus Mod Manager, it is recommended that you start monitoring, install the mod via NMM, then before
         closing NMM, complete the monitoring session. Create the BAIN package, then switch back to NMM and uninstall the mod. You can then
