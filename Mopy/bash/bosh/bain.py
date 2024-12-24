@@ -1178,10 +1178,10 @@ class Installer(ListInfo):
 class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
-    def __init__(self, fn_key, *, progress=None, load_cache=False):
+    def __init__(self, fn_key, *, progress=None, fs_load=False):
         super().__init__(fn_key) # will call Installer -> ListInfo __init__
         self._file_key = bass.dirs['installers'].join(self.fn_key)
-        if load_cache: # load from disc, useful when adding a new installer
+        if fs_load: # load from disc, useful when adding a new installer
             AFile.__init__(self, self._file_key, progress=progress)
 
     def copy_to(self, dup_path: Path, *, set_time=None):
@@ -1189,7 +1189,7 @@ class _InstallerPackage(Installer, AFileInfo):
         clone = self._store().new_info(FName(dup_path.stail),
             is_proj=self.is_project, install_order=self.order + 1,
             do_refresh=False, # we only need to call refresh_n()
-            load_cache=False) # don't load from disc - copy all attributes over
+            fs_load=False) # don't load from disc - copy all attributes over
         atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
         for att in atts:
             setattr(clone, att, copy.copy(getattr(self, att)))
@@ -1726,8 +1726,8 @@ class InstallerProject(_InstallerPackage):
         return size_apath_date, sum(
             v[0] for v in size_apath_date.values()), max_node_mtime
 
-    def _fs_refresh(self, progress, stat_tuple,
-                    recalculate_project_crc=False, **kwargs):
+    def _fs_refresh(self, progress, stat_tuple, *,
+                    recalculate_project_crc=False):
         """Refresh src_sizeCrcDate, fileSizeCrcs, fsize, ftime,
         crc from project directory, set project_refreshed to True."""
         #--Scan for changed files
@@ -1848,16 +1848,16 @@ class InstallersData(DataStore):
     def hide_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
-            install_order=None, do_refresh=True, _index=None, load_cache=True):
+            install_order=None, do_refresh=True, _index=None, fs_load=True):
         """Create, add to self and return a new _InstallerPackage.
         :param fileName: the filename of the package to create
-        :param is_proj: create a project if True otherwise an archive
+        :param is_proj: if True create a project, otherwise an archive
         :param is_mark: used to add a marker, progress arguments are ignored
         :param progress: to pass to _InstallerPackage._reset_cache
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
         :param _index: if given create a subprogress
-        :param load_cache: if True load call _reset_cache in __init__
+        :param fs_load: if True call AFile.__init__ -> _reset_cache()
         """
         if not is_mark:
             progress = progress if _index is None else SubProgress(
@@ -1867,7 +1867,7 @@ class InstallersData(DataStore):
             if install_order is None:
                 install_order = self[self.lastKey].order
         info = self[fileName] = self._inst_types[is_proj](
-            fileName, progress=progress, load_cache=load_cache)
+            fileName, progress=progress, fs_load=fs_load)
         if install_order is not None:
             self.moveArchives([fileName], install_order)
         if progress and not is_mark: progress(1.0, _('Done'))

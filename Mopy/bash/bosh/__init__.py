@@ -258,7 +258,7 @@ class FileInfo(_TabledInfo, AFileInfo):
         return self.abs_path.size_mtime_ctime() if cached_stat is None else (
             cached_stat.st_size, cached_stat.st_mtime, cached_stat.st_ctime)
 
-    def __init__(self, fullpath, load_cache=False, **kwargs):
+    def __init__(self, fullpath, **kwargs):
         self.header = None
         self.masterNames: tuple[FName, ...] = ()
         self.madeBackup = False
@@ -266,7 +266,7 @@ class FileInfo(_TabledInfo, AFileInfo):
         self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {}
-        super().__init__(fullpath, load_cache, **kwargs)
+        super().__init__(fullpath, **kwargs)
 
     def _reset_masters(self):
         #--Master Names/Order
@@ -275,9 +275,9 @@ class FileInfo(_TabledInfo, AFileInfo):
     def _file_changed(self, stat_tuple):
         return (self.fsize, self.ftime, self.ctime) != stat_tuple
 
-    def _reset_cache(self, stat_tuple, **kwargs):
+    def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
         self.fsize, self.ftime, self.ctime = stat_tuple
-        if kwargs['load_cache']: self.readHeader()
+        if load_cache: self.readHeader()
 
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Sets ftime. Defaults to current value (i.e. reset)."""
@@ -410,7 +410,7 @@ class ModInfo(FileInfo):
         'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
         'mergeInfo': 'mod_merge_info', 'rating': 'mod_rating'}
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None, **kwargs):
+    def __init__(self, fullpath, itsa_ghost=None, **kwargs):
         # list of string bsas sorted by search order for localized plugins -
         # None otherwise
         self.str_bsas_sorted = None
@@ -423,7 +423,7 @@ class ModInfo(FileInfo):
             else:
                 self.is_ghost = not fullpath.is_file() and os.path.isfile(
                     f'{fullpath}.ghost')
-        super().__init__(fullpath, load_cache, **kwargs)
+        super().__init__(fullpath, **kwargs)
 
     def get_hide_dir(self):
         dest_dir = self._store().hide_dir
@@ -606,8 +606,7 @@ class ModInfo(FileInfo):
             return False
         self.is_ghost = ghostify
         # reset cache info as un/ghosting should not make do_update return True
-        self._reset_cache((self.fsize, self.ftime, self.ctime),
-                          load_cache=False)
+        self._reset_cache((self.fsize, self.ftime, self.ctime))
         # This is necessary if BAIN externally tracked the (un)ghosted file
         self._store()._notify_bain(renamed={ghost_source: ghost_target})
         return True
@@ -1261,12 +1260,12 @@ class SaveInfo(FileInfo):
     _key_to_attr = {'info': 'save_notes'}
     _co_saves: _CosaveDict
 
-    def __init__(self, fullpath, load_cache=False, **kwargs):
+    def __init__(self, fullpath, **kwargs):
         # Dict of cosaves that may come with this save file. Need to get this
         # first, since readHeader calls _get_masters, which relies on the
         # cosave for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
-        super().__init__(fullpath, load_cache, **kwargs)
+        super().__init__(fullpath, **kwargs)
 
     @classmethod
     def _store(cls): return saveInfos
@@ -1460,8 +1459,8 @@ class ScreenInfo(AFileInfo):
         ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
 
-    def __init__(self, fullpath, load_cache=False, **kwargs):
-        super().__init__(fullpath, load_cache, **kwargs)
+    def __init__(self, fullpath, **kwargs):
+        super().__init__(fullpath, **kwargs)
         self.cached_bitmap = None
 
     def _reset_cache(self, stat_tuple, **kwargs):
@@ -1762,9 +1761,9 @@ class INIInfo(IniFileInfo, AINIInfo):
     _valid_exts_re = r'(\.(?:' + '|'.join(
         x[1:] for x in supported_ini_exts) + '))'
 
-    def _reset_cache(self, stat_tuple, **kwargs):
+    def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
-        if kwargs['load_cache']: self._status = None ##: is the if check needed here?
+        if load_cache: self._status = None ##: is the if check needed here?
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
@@ -3182,10 +3181,9 @@ class BSAInfos(TableFileInfos):
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
         class BSAInfo(FileInfo, _bsa_type):
             _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
-            def __init__(self, fullpath, load_cache=False, **kwargs):
-                try:  # Never load_cache for memory reasons - let it be
-                    # loaded as needed
-                    super().__init__(fullpath, load_cache=False, **kwargs)
+            def __init__(self, fullpath, **kwargs):
+                try:  # load_cache just resets the cache - see self.readHeader
+                    super().__init__(fullpath, **kwargs)
                 except BSAError as e:
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
