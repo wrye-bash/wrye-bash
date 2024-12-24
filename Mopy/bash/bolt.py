@@ -2307,12 +2307,12 @@ class Log(object):
 
     def __init__(self):
         """Initialize."""
-        self.header = None
+        self.log_header = None
         self.prevHeader = None
 
     def setHeader(self,header,writeNow=False,doFooter=True):
         """Sets the header."""
-        self.header = header
+        self.log_header = header
         if self.prevHeader:
             self.prevHeader += u'x'
         self.doFooter = doFooter
@@ -2320,12 +2320,12 @@ class Log(object):
 
     def __call__(self,message=None,appendNewline=True):
         """Callable. Writes message, and if necessary, header and footer."""
-        if self.header != self.prevHeader:
+        if self.log_header != self.prevHeader:
             if self.prevHeader and self.doFooter:
                 self.writeFooter()
-            if self.header:
-                self.writeLogHeader(self.header)
-            self.prevHeader = self.header
+            if self.log_header:
+                self.writeLogHeader(self.log_header)
+            self.prevHeader = self.log_header
         if message: self.writeMessage(message,appendNewline)
 
     #--Abstract/null writing functions...

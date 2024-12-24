@@ -288,7 +288,7 @@ class FileInfo(_TabledInfo, AFileInfo):
 
     def readHeader(self):
         """Read header from file and set self.header attribute."""
-        pass
+        raise NotImplementedError
 
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
