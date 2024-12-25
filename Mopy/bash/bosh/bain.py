@@ -1178,7 +1178,7 @@ class Installer(ListInfo):
 class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
-    def __init__(self, fn_key, progress=None, load_cache=False):
+    def __init__(self, fn_key, *, progress=None, load_cache=False):
         super().__init__(fn_key) # will call Installer -> ListInfo __init__
         self._file_key = bass.dirs['installers'].join(self.fn_key)
         if load_cache: # load from disc, useful when adding a new installer
@@ -1862,12 +1862,12 @@ class InstallersData(DataStore):
         if not is_mark:
             progress = progress if _index is None else SubProgress(
                 progress, _index, _index + 1)
-            info = self[fileName] = self._inst_types[is_proj](
-                fileName, progress=progress, load_cache=load_cache)
         else:
-            info = self[fileName] = self._inst_types[2](fileName)
+            is_proj = 2
             if install_order is None:
                 install_order = self[self.lastKey].order
+        info = self[fileName] = self._inst_types[is_proj](
+            fileName, progress=progress, load_cache=load_cache)
         if install_order is not None:
             self.moveArchives([fileName], install_order)
         if progress and not is_mark: progress(1.0, _('Done'))

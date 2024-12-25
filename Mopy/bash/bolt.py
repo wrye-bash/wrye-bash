@@ -1240,6 +1240,11 @@ class Path(os.PathLike):
     def copyTo(self, dest_path, set_time=None):
         """Copy self to dest_path make dirs if necessary and preserve ftime."""
         dest_path = GPath(dest_path)
+        if self.is_dir():
+            ##: Does not preserve mtimes - is that a problem?
+            shutil.copytree(self._s, dest_path._s,
+                copy_function=copy_or_reflink2)
+            return
         try:
             copy_or_reflink(self._s, dest_path._s)
             dest_path.mtime = set_time or self.mtime

@@ -3010,18 +3010,18 @@ class InstallersDetails(_SashDetailsPanel):
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
-            is_mark = installer.is_marker
+            ismark = installer.is_marker
             numstr = partial(installer.number_string, marker_string='N/A')
             inf_.extend([
                 _('Modified: %(modified_date)s') % {
-                    'modified_date': 'N/A' if is_mark else
+                    'modified_date': 'N/A' if ismark else
                     format_date(installer.ftime)},
                 _('Data CRC: %(data_crc)s') % {
-                    'data_crc': 'N/A' if is_mark else f'{installer.crc:08X}'},
+                    'data_crc': 'N/A' if ismark else f'{installer.crc:08X}'},
                 _('Files: %(num_files)s') % {
                     'num_files': f'{numstr(installer.num_of_files)}'},
                 _('Configured: %(files_and_size)s') % {
-                    'files_and_size': 'N/A' if is_mark else
+                    'files_and_size': 'N/A' if ismark else
                     f'{nConfigured:d} ({round_size(installer.unSize)})'},
                 '  ' + _('Matched: %(num_files)s') % {
                     'num_files': numstr(nConfigured - nMissing - nMismatched)},

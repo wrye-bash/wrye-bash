@@ -44,8 +44,8 @@ def get_meta_value(base_file_path, meta_key):
     """Returns the value corresponding to the given meta key from the meta file
     for the specified file. Gives helpful error messages if the file is
     missing, malformed, is missing the specified key, etc."""
-    base_file_path = u'%s' % base_file_path # To support bolt.Path as well
-    meta_file = base_file_path + u'.meta'
+    base_file_path = f'{base_file_path}' # To support bolt.Path as well
+    meta_file = f'{base_file_path}.meta'
     try:
         parsed_meta = _meta_cache[base_file_path]
     except KeyError:
@@ -53,16 +53,15 @@ def get_meta_value(base_file_path, meta_key):
             with open(meta_file, 'rb') as ins:
                 parsed_meta = _meta_cache[base_file_path] = tomllib.load(ins)
         except FileNotFoundError:
-            raise FailedTest(u'%s is missing a .meta file.' % base_file_path)
+            raise FailedTest(f'{base_file_path} is missing a .meta file.')
         except tomllib.TOMLDecodeError:
             traceback.print_exc()
-            raise FailedTest(u'%s has malformed TOML syntax. Check the log '
-                             u'for a traceback pointing to the '
-                             u'problem.' % meta_file)
+            raise FailedTest(f'{meta_file} has malformed TOML syntax. Check '
+                f'the log for a traceback pointing to the problem.')
     try:
         return parsed_meta[meta_key]
     except KeyError:
-        raise FailedTest(u"%s is missing the key '%s'" % (meta_file, meta_key))
+        raise FailedTest(f"{meta_file} is missing the key '{meta_key}'")
 
 def iter_games(resource_subfolder):
     """Yields all games for which resources from the specified subfolder are
