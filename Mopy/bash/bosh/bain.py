@@ -2881,17 +2881,19 @@ class InstallersData(DataStore):
         finally:
             self.refresh_ns()
 
-    def bain_anneal(self, anPackages, refresh_ui_, progress=None):
+    def bain_anneal(self, annealed_package_fnames: Iterable[FName] | None,
+            refresh_ui_, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = self.filterInstallables(self) if anPackages is None else {
-            self[package] for package in anPackages}
-        #--Get remove/refresh files from anPackages
+        if annealed_package_fnames is None:
+            annealed_package_fnames = self.filterInstallables(self)
+        annealed_packages = [self[p] for p in annealed_package_fnames]
+        #--Get remove/refresh files from annealed packages
         removes = set()
-        for installer in anPackages:
+        for installer in annealed_packages:
             removes |= installer.underrides
             if installer.is_active:
                 removes |= installer.missingFiles # re-added in __restore

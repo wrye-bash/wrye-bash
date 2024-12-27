@@ -209,7 +209,7 @@ class PluginFlag(Enum):
     """Enum for plugin flags and plugin types - they're friends with ModInfo
     to the point the latter lets it modify its private attributes. This
     intimate class relationship drastically simplifies client code."""
-    _ignore_ = ('count_str', )
+    _ignore_ = ('count_str', 'error_msgs', 'max_plugins')
     count_str = ''
 
     def __init__(self, flag_attr, mod_info_attr, ui_letter_key,
@@ -326,6 +326,7 @@ class PluginFlag(Enum):
 # easiest way to define enum class variables
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 PluginFlag.max_plugins = 255
+PluginFlag.error_msgs = {}
 
 class AMasterFlag(PluginFlag):
     """Master flags - affect load order - mutually compatible and compatible
