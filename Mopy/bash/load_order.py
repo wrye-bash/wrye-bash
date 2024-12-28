@@ -166,6 +166,10 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
     def lo_changed(self):
         return self.added or self.missing or self.reordered
 
+    def inact_changes_only(self):
+        """Return True if only inactive mods' load order changed."""
+        return not (self.added or self.missing or self.act_changed())
+
     def to_rdata(self):
         return RefrData(self.reordered | self.act_index_change |
                         self.active_flips)

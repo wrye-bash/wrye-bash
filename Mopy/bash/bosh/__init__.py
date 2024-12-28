@@ -48,7 +48,7 @@ from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
-    ListInfo, Path, RefrIn, deprint, dict_sort, forward_compat_path_to_fn, \
+    ListInfo, Path, RefrIn, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
     OrderedLowerDict, attrgetter_cache, RefrData
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
@@ -2032,7 +2032,7 @@ def _lo_cache(lord_func):
         load order or active changes."""
         try:
             ldiff: LordDiff = lord_func(self, *args, **kwargs)
-            if not (ldiff.act_changed() or ldiff.added or ldiff.missing):
+            if ldiff.inact_changes_only():
                 return ldiff
             # Update all data structures that may be affected by LO change
             ldiff.affected |= self._refresh_mod_inis_and_strings()
@@ -2129,10 +2129,9 @@ class ModInfos(TableFileInfos):
         else: # if refresh_infos is False but mods are added force refresh
             ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
                 unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
-        rdata.redraw |= ldiff.reordered
+        rdata.redraw |= ldiff.reordered # any reordered mods must be redrawn
         # if active did not change, we must perform the refreshes below
-        if not ((act_ch := ldiff.act_changed()) or ldiff.added or
-                ldiff.missing):
+        if ldiff.inact_changes_only():
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
@@ -2140,7 +2139,7 @@ class ModInfos(TableFileInfos):
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
         else: # we did all the refreshes above in _modinfos_cache_wrapper
-            rdata.redraw |= act_ch | ldiff.affected
+            rdata.redraw |= ldiff.act_changed() | ldiff.affected
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         return rdata
 
@@ -2393,35 +2392,27 @@ class ModInfos(TableFileInfos):
             if autoTag:
                 modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
-    def getSemiActive(self, patches, skip_active=False):
+    def getSemiActive(self, patches):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
         If no bashed patches are present in 'patches' then return empty sets.
         Else for each bashed patch use its config (if present) to find mods
         it merges or imports.
 
-        :param patches: A set of mods to look for bashed patches in.
-        :param skip_active: If True, only return inactive merged/imported
-            plugins."""
+        :param patches: A set of mods to look for bashed patches in."""
         merged_,imported_ = set(),set()
         for patch in patches & self.bashed_patches: # this must be up to date!
             patchConfigs = self[patch].get_table_prop('bash.patch.configs')
             if not patchConfigs: continue
+            mod_sets = [(imported_, patchConfigs.get('ImportedMods', []))]
             if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
                     u'isEnabled'):
-                config_checked = merger_conf[u'configChecks']
-                for modName, is_merged in forward_compat_path_to_fn(
-                        config_checked).items():
-                    if is_merged and modName in self:
-                        if skip_active and load_order.cached_is_active(
-                                modName): continue
-                        merged_.add(modName)
-            for imp_name in forward_compat_path_to_fn_list(
-                    patchConfigs.get('ImportedMods', [])):
-                if imp_name in self:
-                    if skip_active and load_order.cached_is_active(
-                            imp_name): continue
-                    imported_.add(imp_name)
+                config_checked = (modName for modName, is_merged in
+                    merger_conf['configChecks'].items() if is_merged)
+                mod_sets.append((merged_, config_checked))
+            for mod_set, bp_mods in mod_sets:
+                mod_set.update(fn for fn in forward_compat_path_to_fn_list(
+                    bp_mods) if fn in self)
         return merged_,imported_
 
     # Rest of DataStore overrides ---------------------------------------------
