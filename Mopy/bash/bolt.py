@@ -1713,11 +1713,13 @@ class AFile(object):
     def _file_changed(self, stat_tuple):
         return (self.fsize, self.ftime) != stat_tuple
 
-    def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
-        """Reset cache flags (fsize, ftime,...) and possibly reload the cache.
+    def _reset_cache(self, stat_tuple, **kwargs):
+        """Reset cache flags (fsize, ftime,...) and possibly reload the cache
+         or reset it (in bsa/inis), so it gets reloaded later. Avoid  calling
+         outside __init__ and do_update.
         :param **kwargs: various
-            - load_cache: if True either load the cache (header in Mod and
-            SaveInfo) or reset it, so it gets reloaded later
+            - load_cache: if True load the cache (header/masters) in ModInfo
+            and SaveInfo)
         """
         self.fsize, self.ftime = stat_tuple
 

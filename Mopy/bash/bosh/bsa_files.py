@@ -490,7 +490,6 @@ class Ba2Folder(object):
 # Files -----------------------------------------------------------------------
 class ABsa(AFile):
     bsa_header: BsaHeader
-    _assets: frozenset[str] = None
     _compression_type: _BsaCompressionType = _Bsa_zlib
     _folder_type = BSAFolder
     bsa_folders: defaultdict[str, _folder_type]
@@ -636,13 +635,12 @@ class ABsa(AFile):
     def assets(self) -> frozenset[str]:
         """Set of full paths in the bsa in lowercase and using the OS path
         separator."""
-        wanted_assets = self._assets # must be set in self.readHeader
-        if wanted_assets is None:
+        if self._assets is None: # must be set in self._reset_cache
             self.__load(names_only=True)
-            self._assets = wanted_assets = frozenset(
+            self._assets = frozenset(
                 convert_separators(f.lower()) for f in self._filenames)
             del self._filenames[:]
-        return wanted_assets
+        return self._assets
 
 class BSA(ABsa):
     """Bsa file. Notes:
