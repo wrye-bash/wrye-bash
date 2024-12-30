@@ -1154,11 +1154,8 @@ class AINIInfo(_TabledInfo, AIniInfo):
         infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.get_ci_settings()
-        def _status(s):
-            self._status = s
-            return s
         if self._incompatible(target_ini) or not tweak_settings:
-            return _status(-20)
+            return self.reset_status(-20)
         found_match = False
         mismatch = 0
         ini_settings = target_ini_settings if target_ini_settings is not None \
@@ -1167,12 +1164,12 @@ class AINIInfo(_TabledInfo, AIniInfo):
             self.get_table_prop(u'installer'))
         for section_key in tweak_settings:
             if section_key not in ini_settings:
-                return _status(-10)
+                return self.reset_status(-10)
             target_section = ini_settings[section_key]
             tweak_section = tweak_settings[section_key]
             for item in tweak_section:
                 if item not in target_section:
-                    return _status(-10)
+                    return self.reset_status(-10)
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another ini
@@ -1193,15 +1190,17 @@ class AINIInfo(_TabledInfo, AIniInfo):
                 else:
                     found_match = True
         if not found_match:
-            return _status(0)
+            return self.reset_status(0)
         elif not mismatch:
-            return _status(20)
+            return self.reset_status(20)
         elif mismatch == 1:
-            return _status(15)
+            return self.reset_status(15)
         elif mismatch == 2:
-            return _status(10)
+            return self.reset_status(10)
 
-    def reset_status(self): self._status = None
+    def reset_status(self, s=None):
+        self._status = s
+        return s
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
@@ -1763,7 +1762,7 @@ class INIInfo(IniFileInfo, AINIInfo):
 
     def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
-        if load_cache: self._status = None ##: is the if check needed here?
+        if load_cache: self.reset_status() ##: is the if check needed here?
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
