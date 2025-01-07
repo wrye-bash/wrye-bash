@@ -336,10 +336,7 @@ class _ModsUIList(UIList):
 
     def set_item_format(self, item_key, item_format, target_ini_setts):
         minf = self.data_store[item_key]
-        checkMark, mouseText = self._set_status_text(item_format, minf,
-                                                     item_key)
-        item_name = self._item_name(item_key)
-        self._set_color(checkMark, mouseText, minf, item_name, item_format)
+        mouseText = self._set_status_text(item_format, minf, item_key)
         # Text background
         if minf.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
@@ -359,31 +356,34 @@ class _ModsUIList(UIList):
                 item_format.underline = True
         self.mouseTexts[item_key] = ' '.join(mouseText)
 
-    @staticmethod
-    def _set_color(checkMark, mouse_text, minf, item_name, item_format):
+    def _set_status_text(self, item_format, minf, item_key, _status=None,
+                         _mouse_text=None):
+        checkMark = (load_order.cached_is_active(item_key)  # 1
+                     or (item_key in bosh.modInfos.merged and 2) or (
+                             item_key in bosh.modInfos.imported and 3))  # or 0
+        #--Image
+        item_format.icon_key = _status, checkMark
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
-        if item_name in bosh.modInfos.bashed_patches:
+        if item_key in bosh.modInfos.bashed_patches:
             item_format.text_key = 'mods.text.bashedPatch'
-            mouse_text.append(_('Bashed Patch.'))
+            _mouse_text.append(_('Bashed Patch.'))
         for mchk in bush.game.mergeability_checks:
             txtkey, mtext = mchk.display_info(minf, checkMark)
             if txtkey:
                 item_format.text_key = txtkey
-                mouse_text.append(mtext)
+                _mouse_text.append(mtext)
         # ESL, OVERLAY, MID, BLUEPRINT then ESM
         suffix = ''.join(pflag.ui_letter_key for pflag in chain(
             *reversed(bush.game.all_flags)) if pflag.cached_type(minf))
         try:
             item_format.text_key = bush.game.mod_keys[suffix]
-            mouse_text.append(bush.game.plugin_type_text[suffix])
+            _mouse_text.append(bush.game.plugin_type_text[suffix])
         except KeyError:
             pass
         if 'Deactivate' in minf.getBashTags(): # was for mods only
             item_format.italics = True
-
-    def _set_status_text(self, item_format, minf, item_key):
-        raise NotImplementedError
+        return checkMark
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -525,7 +525,8 @@ class MasterList(_ModsUIList):
             if minf.old_name in settings['bash.mods.renames']:
                 item_format.bold = True
 
-    def _set_status_text(self, item_format, masterInfo, mi):
+    def _set_status_text(self, item_format, masterInfo, mi, _status=None,
+                         _mouse_text=None):
         mouseText = []
         item_name = self._item_name(mi)
         if item_name in bosh.modInfos.activeBad:  # if active, it's in LO
@@ -536,9 +537,6 @@ class MasterList(_ModsUIList):
             mouseText.append(_('Plugin name incompatible, cannot be '
                                'activated.'))
         status = masterInfo.getStatus(self._curr_lo_index[item_name], mi)
-        #--Image
-        oninc = load_order.cached_is_active(item_name) or (
-            item_name in bosh.modInfos.merged and 2)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
             mouseText.append(_('Missing master of %(child_plugin_name)s.') % {
@@ -552,8 +550,9 @@ class MasterList(_ModsUIList):
                 mouseText.append(_('Loads after %(child_plugin_name)s.') % {
                     'child_plugin_name': on_display})
                 status = 20 # paint orange
-        item_format.icon_key = status, oninc
-        return oninc, mouseText
+        super()._set_status_text(item_format, masterInfo, item_name, status,
+                                 mouseText)
+        return mouseText
 
     #--Relist
     def _reList(self, repopulate=True):
@@ -1003,14 +1002,10 @@ class ModList(_ModsUIList):
             showError(self, f'{e}')
 
     #--Populate Item
-    def _set_status_text(self, item_format, mod_info, mod_name):
+    def _set_status_text(self, item_format, mod_info, mod_name, _status=None,
+                         _mouse_text=None):
         #--Image
         status = mod_info.getStatus()
-        checkMark = (load_order.cached_is_active(mod_name)  # 1
-                     or (mod_name in bosh.modInfos.merged and 2) or (
-                            mod_name in bosh.modInfos.imported and 3))  # or 0
-        status_image_key = 20 if 20 <= status < 30 else status
-        item_format.icon_key = status_image_key, checkMark
         #--Default message
         mouseText = []
         if mod_name in bosh.modInfos.activeBad:
@@ -1036,11 +1031,13 @@ class ModList(_ModsUIList):
                 mouseText.append(_('Loads before its masters.'))
             if status in {10, 21}:
                 mouseText.append(_('Masters have been re-ordered.'))
+        checkMark = super()._set_status_text(item_format, mod_info,
+            mod_name, 20 if 20 <= status < 30 else status, mouseText)
         if checkMark == 1:
             mouseText.append(_('Active in load order.'))
         elif checkMark == 3:
             mouseText.append(_('Imported into Bashed Patch.'))
-        return checkMark, mouseText
+        return mouseText
 
     # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
