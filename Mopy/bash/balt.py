@@ -788,7 +788,11 @@ class UIList(PanelWin):
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
                 for upd in rdata.redraw | rdata.to_add:
-                    self.PopulateItem(item=upd)
+                    try:
+                        self.PopulateItem(item=upd)
+                    except KeyError:
+                        deprint(f'UIList.RefreshUI: {upd} not in data store: '
+                            f'{[*map(str, rdata.redraw)]}, {rdata.to_add=}')
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
