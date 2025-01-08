@@ -2174,67 +2174,20 @@ class ModInfos(TableFileInfos):
         order/status changed we need to recalculate cached data structures.
         We could be more granular but the performance is elsewhere plus the
         complexity might not worth it."""
-        self.__recalc_dependents()
-        return {*self.__refresh_active_no_cp1252(), *self.__update_info_sets(),
-                *self.__recalc_real_indices(), *self.__refresh_mergeable()}
-
-    # Use once dunders in _file_or_active_updates - maybe loop once?
-    def __update_info_sets(self):
-        """Refresh bashed_patches/imported/merged - active state changes and/or
-        removal/addition of plugins should trigger a refresh."""
-        bps, self.bashed_patches = self.bashed_patches, {
-            mname for mname, modinf in self.items() if modinf.isBP()}
-        mrgd, imprtd = self.merged, self.imported
-        active_patches = {bp for bp in self.bashed_patches if
-               load_order.cached_is_active(bp)}
-        self.merged, self.imported = self.getSemiActive(active_patches)
-        return {p for p in chain(bps ^ self.bashed_patches, mrgd ^ self.merged,
-                imprtd ^ self.imported) if p in self}
-
-    def __recalc_real_indices(self):
-        """Recalculate the real indices cache, which is the index the game will
-        assign to plugins. ESLs will land in the 0xFE spot, while inactive
-        plugins don't get any - so we sort them last. Return a set of mods
-        whose real index changed."""
-        # Note that inactive plugins are handled by our defaultdict factory
-        old = self.real_indices
-        self.real_indices = bush.game.plugin_flags.get_indexes(
-            ((p, self[p]) for p in load_order.cached_active_tuple()))
-        return {k for k, v in old.items() ^ self.real_indices.items()
-                if k in self}
-
-    def __recalc_dependents(self):
-        """Recalculates the dependents cache. See ModInfo.get_dependents for
-        more information."""
+        # Recalculate the dependents cache. See ModInfo.get_dependents
         cached_dependents = self.dependents
         cached_dependents.clear()
-        for p, p_info in self.items():
-            for p_master in p_info.masterNames:
-                cached_dependents[p_master].add(p)
-
-    def __refresh_active_no_cp1252(self):
-        """Refresh which filenames cannot be saved to plugins.txt - active
-        state changes and/or removal/addition of plugins should trigger a
-        refresh. It seems that Skyrim and Oblivion read plugins.txt as a
-        cp1252 encoded file, and any filename that doesn't decode to cp1252
-        will be skipped."""
+        # Refresh which filenames cannot be saved to plugins.txt. It seems
+        # that Skyrim and Oblivion read plugins.txt as a cp1252 encoded file,
+        # and any filename that doesn't decode to cp1252 will be skipped
         old_bad, self.bad_names = self.bad_names, set()
         old_ab, self.activeBad = self.activeBad, set()
-        for fileName in self:
-            if self.isBadFileName(fileName):
-                if load_order.cached_is_active(fileName):
-                    ##: For now, we'll leave them active, until we finish
-                    # testing what the game will support
-                    #self.lo_deactivate(fileName)
-                    self.activeBad.add(fileName)
-                else:
-                    self.bad_names.add(fileName)
-        return (self.activeBad ^ old_ab) | (self.bad_names ^ old_bad)
-
-    def __refresh_mergeable(self):
-        """Refreshes set of mergeable mods."""
-        #--Mods that need to be rescanned
-        rescan_mods = []
+        # Refresh bashed_patches/imported/merged - active state changes and/or
+        # removal/addition of plugins should trigger a refresh
+        bps, self.bashed_patches = self.bashed_patches, set()
+        active_patches = set()
+        # Refresh set of mergeable mods
+        rescan_mods = [] # Mods that need to be rescanned for mergeability
         full_checks = bush.game.mergeability_checks
         quick_checks = {mc: pflag.cached_type for pflag in
             bush.game.plugin_flags if (mc := pflag.merge_check) in full_checks}
@@ -2244,6 +2197,20 @@ class ModInfos(TableFileInfos):
         # their masters
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
+            for p_master in modInfo.masterNames:
+                cached_dependents[p_master].add(fn_mod)
+            isact = load_order.cached_is_active(fn_mod)
+            if modInfo.isBP():
+                self.bashed_patches.add(fn_mod)
+                if isact: active_patches.add(fn_mod)
+            if self.isBadFileName(fn_mod):
+                if isact:
+                    ##: For now, we'll leave them active, until we finish
+                    # testing what the game will support
+                    #self.lo_deactivate(fn_mod)
+                    self.activeBad.add(fn_mod)
+                else:
+                    self.bad_names.add(fn_mod)
             cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
                                                            (None, {}))
             # Quickly check if some mergeability types are impossible for this
@@ -2265,9 +2232,22 @@ class ModInfos(TableFileInfos):
                 # changed or there is at least one required mergeability check
                 # we have not yet run for this plugin
                 rescan_mods.append(fn_mod)
-        if rescan_mods:
-            self.rescanMergeable(rescan_mods, sort_descending_lo=False) ##: maybe re-add progress?
-        return {*changed, *rescan_mods}
+        if rescan_mods: ##: maybe re-add progress?
+            self.rescanMergeable(rescan_mods, sort_descending_lo=False)
+        # Recalculate the real indices cache, which is the index the game will
+        # assign to plugins. ESLs will land in the 0xFE spot, while inactive
+        # plugins don't get any - so we sort them last. Note that inactive
+        # plugins are handled by our defaultdict factory
+        old_dexs = self.real_indices
+        self.real_indices = bush.game.plugin_flags.get_indexes(
+            ((p, self[p]) for p in load_order.cached_active_tuple()))
+        mrgd, imprtd = self.merged, self.imported
+        self.merged, self.imported = self.getSemiActive(active_patches)
+        return {plug for plug in chain(
+            (k for k, v in self.real_indices.items() ^ old_dexs.items()),
+            changed, rescan_mods, self.bashed_patches ^ bps,
+            self.merged ^ mrgd, self.imported ^ imprtd,
+            self.activeBad ^ old_ab, self.bad_names ^ old_bad) if plug in self}
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
                         return_results=False, sort_descending_lo=True):
