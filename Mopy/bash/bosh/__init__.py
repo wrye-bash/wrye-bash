@@ -582,12 +582,12 @@ class ModInfo(_WithMastersInfo):
         return ret_masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def do_update(self, *, itsa_ghost, raise_on_error=False, **kwargs):
+    def do_update(self, *, itsa_ghost, **kwargs):
         # only call in refresh and always pass itsa_ghost
         old_ghost = self.is_ghost
         self.is_ghost = itsa_ghost
         # mark updated if ghost state changed but only reread header if needed
-        did_change = super().do_update(raise_on_error=raise_on_error)
+        did_change = super().do_update(**kwargs)
         return did_change or self.is_ghost != old_ghost
 
     @FileInfo.abs_path.getter
@@ -1309,7 +1309,7 @@ class SaveInfo(_WithMastersInfo):
             raise SaveFileError(self.fn_key, e.args[0]) from e
         super().readHeader()
 
-    def do_update(self, *, raise_on_error=False, **kwargs):
+    def do_update(self, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
@@ -1332,8 +1332,7 @@ class SaveInfo(_WithMastersInfo):
         if cosaves_changed:
             self._reset_masters()
         # Delegate the call first, but also take the cosaves into account
-        return super().do_update(raise_on_error=raise_on_error) or \
-            cosaves_changed
+        return super().do_update(**kwargs) or cosaves_changed
 
     def write_masters(self, master_map):
         """Rewrites masters of existing save file and cosaves."""
@@ -3028,6 +3027,18 @@ class SaveInfos(TableFileInfos):
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
     unique_store_key = Store.SAVES
 
+    def __init__(self):
+        SaveInfo.cosave_types = cosaves.get_cosave_types(
+            bush.game.fsName, self._parse_save_path,
+            bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
+        super().__init__(SaveInfo)
+        # Save Profiles database
+        self.profiles = bolt.PickleDict(
+            dirs['saveBase'].join('BashProfiles.dat'), load_pickle=True)
+        # save profiles used to have a trailing slash, remove it if present
+        for row in [r for r in self.profiles.pickled_data if r.endswith('\\')]:
+            self.rename_profile(row, row[:-1])
+
     def set_store_dir(self, save_dir=None, do_swap=None):
         """If save_dir is None, read the current save profile from
         oblivion.ini file, else update the ini with save_dir."""
@@ -3060,18 +3071,6 @@ class SaveInfos(TableFileInfos):
             if not boot: # else in __init__,  calling _init_store right after
                 self._init_store(sd)
         return self.store_dir
-
-    def __init__(self):
-        super().__init__(SaveInfo)
-        # Save Profiles database
-        self.profiles = bolt.PickleDict(
-            dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
-        # save profiles used to have a trailing slash, remove it if present
-        for row in [r for r in self.profiles.pickled_data if r.endswith('\\')]:
-            self.rename_profile(row, row[:-1])
-        SaveInfo.cosave_types = cosaves.get_cosave_types(
-            bush.game.fsName, self._parse_save_path,
-            bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
 
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
@@ -3201,8 +3200,8 @@ class BSAInfos(TableFileInfos):
             @classmethod
             def _store(cls): return bsaInfos
 
-            def do_update(self, *, raise_on_error=False, **kwargs):
-                did_change = super().do_update(raise_on_error=raise_on_error)
+            def do_update(self, **kwargs):
+                did_change = super().do_update(**kwargs)
                 self._reset_bsa_mtime()
                 return did_change
 
