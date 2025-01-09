@@ -490,19 +490,18 @@ class Ba2Folder(object):
 # Files -----------------------------------------------------------------------
 class ABsa(AFile):
     bsa_header: BsaHeader
-    _assets: frozenset[str] = None
     _compression_type: _BsaCompressionType = _Bsa_zlib
     _folder_type = BSAFolder
     bsa_folders: defaultdict[str, _folder_type]
 
-    def __init__(self, fullpath, load_cache=False, names_only=True, **kwargs):
-        super().__init__(fullpath, load_cache=False, **kwargs)
+    def __init__(self, fullpath, load_bsa=False, names_only=True, **kwargs):
+        super().__init__(fullpath, **kwargs)
         self.bsa_name = self.abs_path.stail
         self.bsa_header = typing.get_type_hints(self.__class__)['bsa_header']()
         self.bsa_folders = defaultdict(self._folder_type) # keep folder order
         self._filenames = []
         self.total_names_length = 0 # reported wrongly at times - calculate it
-        if load_cache: self.__load(names_only)
+        if load_bsa: self.__load(names_only)
 
     def inspect_version(self):
         """Returns the version of this BSA."""
@@ -636,13 +635,12 @@ class ABsa(AFile):
     def assets(self) -> frozenset[str]:
         """Set of full paths in the bsa in lowercase and using the OS path
         separator."""
-        wanted_assets = self._assets
-        if wanted_assets is None:
+        if self._assets is None: # must be set in self._reset_cache
             self.__load(names_only=True)
-            self._assets = wanted_assets = frozenset(
+            self._assets = frozenset(
                 convert_separators(f.lower()) for f in self._filenames)
             del self._filenames[:]
-        return wanted_assets
+        return self._assets
 
 class BSA(ABsa):
     """Bsa file. Notes:
@@ -996,7 +994,7 @@ class OblivionBsa(BSA):
         have done to this BSA by recalculating all mismatched hashes.
 
         NOTE: In order for this method to do anything, the BSA must be fully
-        loaded - that means you must either pass load_cache=True and
+        loaded - that means you must either pass load_bsa=True and
         names_only=False to the constructor, or call _load_bsa() (NOT
         _load_bsa_light() !) before calling this method.
 

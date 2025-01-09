@@ -254,30 +254,19 @@ class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
+    def __init__(self, fullpath, **kwargs):
+        self.madeBackup = False
+        super().__init__(fullpath, **kwargs)
+
     def _stat_tuple(self, cached_stat=None):
         return self.abs_path.size_mtime_ctime() if cached_stat is None else (
             cached_stat.st_size, cached_stat.st_mtime, cached_stat.st_ctime)
-
-    def __init__(self, fullpath, load_cache=False, **kwargs):
-        self.header = None
-        self.masterNames: tuple[FName, ...] = ()
-        self.madeBackup = False
-        # True if the masters for this file are not reliable
-        self.has_inaccurate_masters = False
-        #--Ancillary storage
-        self.extras = {}
-        super().__init__(fullpath, load_cache, **kwargs)
-
-    def _reset_masters(self):
-        #--Master Names/Order
-        self.masterNames = tuple(self._get_masters())
 
     def _file_changed(self, stat_tuple):
         return (self.fsize, self.ftime, self.ctime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, **kwargs):
         self.fsize, self.ftime, self.ctime = stat_tuple
-        if kwargs['load_cache']: self.readHeader()
 
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Sets ftime. Defaults to current value (i.e. reset)."""
@@ -285,47 +274,6 @@ class FileInfo(_TabledInfo, AFileInfo):
         self.abs_path.mtime = set_to
         self.ftime = set_to
         return set_to
-
-    def readHeader(self):
-        """Read header from file and set self.header attribute."""
-        pass
-
-    def getStatus(self):
-        """Returns status of this file -- which depends on status of masters.
-        0:  Good
-        10: Out of order master(s)
-        20: Loads before its master(s)
-        21: 10 + 20
-        30: Missing master(s)."""
-        #--Worst status from masters
-        status = 30 if any( # if self.masterNames is empty returns False
-            (m not in modInfos) for m in self.masterNames) else 0
-        #--Missing files?
-        if status == 30:
-            return status
-        #--Misordered?
-        return self._masters_order_status(status)
-
-    def _masters_order_status(self, status):
-        return status
-
-    def _get_masters(self):
-        """Return the masters of this file as a list, if this file has
-        'masters'. This is cached in the mastersNames attribute, as decoding
-        and G-pathing are expensive.
-
-        :return: A list of the masters of this file, as paths."""
-        raise NotImplementedError
-
-    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
-        """Check if this file has circular masters, i.e. if it depends on
-        itself (either directly or transitively). If it doesn't have masters,
-        raise a NotImplementedError.
-
-        :param fake_masters: If not None, use this instead of self.masterNames
-            for determining which masters to recurse into. Useful for checking
-            if altering a master list would cause it to become circular."""
-        raise NotImplementedError
 
     # Backup stuff - beta, see #292 -------------------------------------------
     def get_hide_dir(self):
@@ -394,8 +342,69 @@ class FileInfo(_TabledInfo, AFileInfo):
             zip(self.all_backup_paths(), self.all_backup_paths(newName)))
         return old_new_paths
 
+class _WithMastersInfo(FileInfo):
+    """A FileInfo that has masters."""
+
+    def __init__(self, fullpath, **kwargs):
+        self.header = None
+        self.masterNames: tuple[FName, ...] = ()
+        # True if the masters for this file are not reliable
+        self.has_inaccurate_masters = False
+        #--Ancillary storage
+        self.extras = {} # ModInfo only - don't use!
+        super().__init__(fullpath, **kwargs)
+
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
+        if kwargs.get('load_cache'): self.readHeader()
+
+    def readHeader(self):
+        """Read header from file and set self.header attribute."""
+        self._reset_masters()
+
+    def _reset_masters(self):
+        #--Master Names/Order
+        self.masterNames = tuple(self._get_masters())
+
+    def _masters_order_status(self, status):
+        raise NotImplementedError
+
+    def _get_masters(self):
+        """Return the masters of this file as a list, if this file has
+        'masters'. This is cached in the mastersNames attribute, as decoding
+        and G-pathing are expensive.
+
+        :return: A list of the masters of this file, as paths."""
+        raise NotImplementedError
+
+    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
+        """Check if this file has circular masters, i.e. if it depends on
+        itself (either directly or transitively). If it doesn't have masters,
+        raise a NotImplementedError.
+
+        :param fake_masters: If not None, use this instead of self.masterNames
+            for determining which masters to recurse into. Useful for checking
+            if altering a master list would cause it to become circular."""
+        raise NotImplementedError
+
+    def getStatus(self):
+        """Returns status of this file -- which depends on status of masters.
+        0:  Good
+        10: Out of order master(s)
+        20: Loads before its master(s)
+        21: 10 + 20
+        30: Missing master(s)."""
+        #--Worst status from masters
+        status = 30 if any( # if self.masterNames is empty returns False
+            (m not in modInfos) for m in self.masterNames) else 0
+        #--Missing files?
+        if status == 30:
+            return status
+        #--Misordered?
+        return self._masters_order_status(status)
+
 #------------------------------------------------------------------------------
-class ModInfo(FileInfo):
+class ModInfo(_WithMastersInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     # Cached, since we need them so often - set by PluginFlag
     _is_master = _is_esl = _is_overlay = _is_blueprint = _is_mid = False
@@ -410,7 +419,7 @@ class ModInfo(FileInfo):
         'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
         'mergeInfo': 'mod_merge_info', 'rating': 'mod_rating'}
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None, **kwargs):
+    def __init__(self, fullpath, itsa_ghost=None, **kwargs):
         # list of string bsas sorted by search order for localized plugins -
         # None otherwise
         self.str_bsas_sorted = None
@@ -423,7 +432,7 @@ class ModInfo(FileInfo):
             else:
                 self.is_ghost = not fullpath.is_file() and os.path.isfile(
                     f'{fullpath}.ghost')
-        super().__init__(fullpath, load_cache, **kwargs)
+        super().__init__(fullpath, **kwargs)
 
     def get_hide_dir(self):
         dest_dir = self._store().hide_dir
@@ -573,12 +582,12 @@ class ModInfo(FileInfo):
         return ret_masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def do_update(self, *, itsa_ghost, raise_on_error=False, **kwargs):
+    def do_update(self, *, itsa_ghost, **kwargs):
         # only call in refresh and always pass itsa_ghost
         old_ghost = self.is_ghost
         self.is_ghost = itsa_ghost
         # mark updated if ghost state changed but only reread header if needed
-        did_change = super().do_update(raise_on_error=raise_on_error)
+        did_change = super().do_update(**kwargs)
         return did_change or self.is_ghost != old_ghost
 
     @FileInfo.abs_path.getter
@@ -606,8 +615,7 @@ class ModInfo(FileInfo):
             return False
         self.is_ghost = ghostify
         # reset cache info as un/ghosting should not make do_update return True
-        self._reset_cache((self.fsize, self.ftime, self.ctime),
-                          load_cache=False)
+        self._reset_cache((self.fsize, self.ftime, self.ctime))
         # This is necessary if BAIN externally tracked the (un)ghosted file
         self._store()._notify_bain(renamed={ghost_source: ghost_target})
         return True
@@ -736,7 +744,7 @@ class ModInfo(FileInfo):
         if bush.game.Esp.warn_older_form_versions:
             if self.header.header.form_version != RecordHeader.plugin_form_version:
                 modInfos.older_form_versions.add(self.fn_key)
-        self._reset_masters()
+        super().readHeader() # reset masters
         # check if we have a cached crc for this file, use fresh mtime and size
         self.calculate_crc() # for added and hopefully updated
         flags_dict = dict.fromkeys(chain(*bush.game.all_flags)) # values = None
@@ -1155,11 +1163,8 @@ class AINIInfo(_TabledInfo, AIniInfo):
         infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.get_ci_settings()
-        def _status(s):
-            self._status = s
-            return s
         if self._incompatible(target_ini) or not tweak_settings:
-            return _status(-20)
+            return self.reset_status(-20)
         found_match = False
         mismatch = 0
         ini_settings = target_ini_settings if target_ini_settings is not None \
@@ -1168,12 +1173,12 @@ class AINIInfo(_TabledInfo, AIniInfo):
             self.get_table_prop(u'installer'))
         for section_key in tweak_settings:
             if section_key not in ini_settings:
-                return _status(-10)
+                return self.reset_status(-10)
             target_section = ini_settings[section_key]
             tweak_section = tweak_settings[section_key]
             for item in tweak_section:
                 if item not in target_section:
-                    return _status(-10)
+                    return self.reset_status(-10)
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another ini
@@ -1194,15 +1199,17 @@ class AINIInfo(_TabledInfo, AIniInfo):
                 else:
                     found_match = True
         if not found_match:
-            return _status(0)
+            return self.reset_status(0)
         elif not mismatch:
-            return _status(20)
+            return self.reset_status(20)
         elif mismatch == 1:
-            return _status(15)
+            return self.reset_status(15)
         elif mismatch == 2:
-            return _status(10)
+            return self.reset_status(10)
 
-    def reset_status(self): self._status = None
+    def reset_status(self, s=None):
+        self._status = s
+        return s
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
@@ -1253,7 +1260,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
         return log.out.getvalue()
 
 #------------------------------------------------------------------------------
-class SaveInfo(FileInfo):
+class SaveInfo(_WithMastersInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _valid_exts_re = r'(\.(?:' + '|'.join(
@@ -1261,12 +1268,12 @@ class SaveInfo(FileInfo):
     _key_to_attr = {'info': 'save_notes'}
     _co_saves: _CosaveDict
 
-    def __init__(self, fullpath, load_cache=False, **kwargs):
+    def __init__(self, fullpath, **kwargs):
         # Dict of cosaves that may come with this save file. Need to get this
         # first, since readHeader calls _get_masters, which relies on the
         # cosave for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
-        super().__init__(fullpath, load_cache, **kwargs)
+        super().__init__(fullpath, **kwargs)
 
     @classmethod
     def _store(cls): return saveInfos
@@ -1300,9 +1307,9 @@ class SaveInfo(FileInfo):
             self.header = get_save_header_type(bush.game.fsName)(self)
         except SaveHeaderError as e:
             raise SaveFileError(self.fn_key, e.args[0]) from e
-        self._reset_masters()
+        super().readHeader()
 
-    def do_update(self, *, raise_on_error=False, **kwargs):
+    def do_update(self, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
@@ -1325,8 +1332,7 @@ class SaveInfo(FileInfo):
         if cosaves_changed:
             self._reset_masters()
         # Delegate the call first, but also take the cosaves into account
-        return super().do_update(raise_on_error=raise_on_error) or \
-            cosaves_changed
+        return super().do_update(**kwargs) or cosaves_changed
 
     def write_masters(self, master_map):
         """Rewrites masters of existing save file and cosaves."""
@@ -1460,8 +1466,8 @@ class ScreenInfo(AFileInfo):
         ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
 
-    def __init__(self, fullpath, load_cache=False, **kwargs):
-        super().__init__(fullpath, load_cache, **kwargs)
+    def __init__(self, fullpath, **kwargs):
+        super().__init__(fullpath, **kwargs)
         self.cached_bitmap = None
 
     def _reset_cache(self, stat_tuple, **kwargs):
@@ -1764,7 +1770,7 @@ class INIInfo(IniFileInfo, AINIInfo):
 
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
-        if kwargs['load_cache']: self._status = None ##: is the if check needed here?
+        self.reset_status()
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
@@ -3021,6 +3027,18 @@ class SaveInfos(TableFileInfos):
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
     unique_store_key = Store.SAVES
 
+    def __init__(self):
+        SaveInfo.cosave_types = cosaves.get_cosave_types(
+            bush.game.fsName, self._parse_save_path,
+            bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
+        super().__init__(SaveInfo)
+        # Save Profiles database
+        self.profiles = bolt.PickleDict(
+            dirs['saveBase'].join('BashProfiles.dat'), load_pickle=True)
+        # save profiles used to have a trailing slash, remove it if present
+        for row in [r for r in self.profiles.pickled_data if r.endswith('\\')]:
+            self.rename_profile(row, row[:-1])
+
     def set_store_dir(self, save_dir=None, do_swap=None):
         """If save_dir is None, read the current save profile from
         oblivion.ini file, else update the ini with save_dir."""
@@ -3053,18 +3071,6 @@ class SaveInfos(TableFileInfos):
             if not boot: # else in __init__,  calling _init_store right after
                 self._init_store(sd)
         return self.store_dir
-
-    def __init__(self):
-        super().__init__(SaveInfo)
-        # Save Profiles database
-        self.profiles = bolt.PickleDict(
-            dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
-        # save profiles used to have a trailing slash, remove it if present
-        for row in [r for r in self.profiles.pickled_data if r.endswith('\\')]:
-            self.rename_profile(row, row[:-1])
-        SaveInfo.cosave_types = cosaves.get_cosave_types(
-            bush.game.fsName, self._parse_save_path,
-            bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
 
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
@@ -3182,10 +3188,9 @@ class BSAInfos(TableFileInfos):
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
         class BSAInfo(FileInfo, _bsa_type):
             _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
-            def __init__(self, fullpath, load_cache=False, **kwargs):
-                try:  # Never load_cache for memory reasons - let it be
-                    # loaded as needed
-                    super().__init__(fullpath, load_cache=False, **kwargs)
+            def __init__(self, fullpath, **kwargs):
+                try:
+                    super().__init__(fullpath, **kwargs)
                 except BSAError as e:
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
@@ -3195,13 +3200,14 @@ class BSAInfos(TableFileInfos):
             @classmethod
             def _store(cls): return bsaInfos
 
-            def do_update(self, *, raise_on_error=False, **kwargs):
-                did_change = super().do_update(raise_on_error=raise_on_error)
+            def do_update(self, **kwargs):
+                did_change = super().do_update(**kwargs)
                 self._reset_bsa_mtime()
                 return did_change
 
-            def readHeader(self):  # just reset the cache
-                self._assets = self.__class__._assets
+            def _reset_cache(self, *args, **kwargs):
+                super()._reset_cache(*args, **kwargs)
+                self._assets = None
 
             def _reset_bsa_mtime(self):
                 if bush.game.Bsa.allow_reset_timestamps and inisettings[

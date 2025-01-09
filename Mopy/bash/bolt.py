@@ -1663,16 +1663,15 @@ class AFile(object):
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
-    def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
+    def __init__(self, fullpath, *, raise_on_error=False,
                  cached_stat=None, **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         #Set cache info (ftime, size[, ctime]) and reload if load_cache is True
         try:
-            self._reset_cache(self._stat_tuple(cached_stat),
-                              load_cache=load_cache, **kwargs)
+            self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
             if raise_on_error: raise
-            self._reset_cache(self._null_stat, load_cache=False)
+            self._reset_cache(self._null_stat)
 
     def _stat_tuple(self, cached_stat=None):
         return self.abs_path.size_mtime() if cached_stat is None else (
@@ -1703,7 +1702,7 @@ class AFile(object):
             stat_tuple = self._stat_tuple(cached_stat)
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
-            self._reset_cache(self._null_stat, load_cache=False, **kwargs)
+            self._reset_cache(self._null_stat, **kwargs)
             if raise_on_error: raise
             return file_was_stated # file previously existed, we need to update
         if force_update or self._file_changed(stat_tuple):
@@ -1715,10 +1714,12 @@ class AFile(object):
         return (self.fsize, self.ftime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, **kwargs):
-        """Reset cache flags (fsize, ftime,...) and possibly reload the cache.
+        """Reset cache flags (fsize, ftime,...) and possibly reload the cache
+         or reset it (in bsa/inis), so it gets reloaded later. Avoid  calling
+         outside __init__ and do_update.
         :param **kwargs: various
-            - load_cache: if True either load the cache (header in Mod and
-            SaveInfo) or reset it, so it gets reloaded later
+            - load_cache: if True load the cache (header/masters) in ModInfo
+            and SaveInfo)
         """
         self.fsize, self.ftime = stat_tuple
 
@@ -1853,9 +1854,9 @@ class ListInfo:
 #------------------------------------------------------------------------------
 class AFileInfo(AFile, ListInfo):
     """List Info representing a file."""
-    def __init__(self, fullpath, load_cache=False, **kwargs):
+    def __init__(self, fullpath, **kwargs):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
-        super().__init__(fullpath, load_cache, **kwargs)
+        super().__init__(fullpath, **kwargs)
 
     def delete_paths(self):
         """Paths to delete when this item is deleted - abs_path comes first!"""
@@ -2307,12 +2308,12 @@ class Log(object):
 
     def __init__(self):
         """Initialize."""
-        self.header = None
+        self.log_header = None
         self.prevHeader = None
 
     def setHeader(self,header,writeNow=False,doFooter=True):
         """Sets the header."""
-        self.header = header
+        self.log_header = header
         if self.prevHeader:
             self.prevHeader += u'x'
         self.doFooter = doFooter
@@ -2320,12 +2321,12 @@ class Log(object):
 
     def __call__(self,message=None,appendNewline=True):
         """Callable. Writes message, and if necessary, header and footer."""
-        if self.header != self.prevHeader:
+        if self.log_header != self.prevHeader:
             if self.prevHeader and self.doFooter:
                 self.writeFooter()
-            if self.header:
-                self.writeLogHeader(self.header)
-            self.prevHeader = self.header
+            if self.log_header:
+                self.writeLogHeader(self.log_header)
+            self.prevHeader = self.log_header
         if message: self.writeMessage(message,appendNewline)
 
     #--Abstract/null writing functions...

@@ -428,9 +428,9 @@ class _AEslSaveHeader(SaveFileHeader):
         'plugin_info_size': (00, unpack_int)} # size of the master table
     _masters_offset = 4
 
-    def _scale_blocks(self) -> tuple[PluginFlag, ...]:
-        """Return True if this save file has an ESL block."""
-        return ()
+    def _scale_flags(self) -> list[PluginFlag]:
+        """Return a list of supported plugin flag master blocks."""
+        return []
 
     @property
     def masters(self):
@@ -451,7 +451,7 @@ class _AEslSaveHeader(SaveFileHeader):
             *map(self._unpack_master, repeat(ins, num_regular_masters))]
         # SSE / FO4 save format with esl block
         self.scale_masters = {}
-        for pf in self._scale_blocks():
+        for pf in self._scale_flags():
             num_masts = self._scale_unpackers[pf.name](ins)
             self.scale_masters[pf] = [
                 *map(self._unpack_master, repeat(ins, num_masts))]
@@ -489,7 +489,7 @@ class _AEslSaveHeader(SaveFileHeader):
             _skip_str16(ins)
         # SSE/FO4 format has separate ESL block
         scale_masters = []
-        for pf in self._scale_blocks():
+        for pf in self._scale_flags():
             ins.seek(2, 1) # skip ESL count
             masts = self.scale_masters.get(pf, ())
             scale_masters.append(masts)
@@ -503,7 +503,7 @@ class _AEslSaveHeader(SaveFileHeader):
             _write_s16_list(out, masts)
 
     def _master_block_size(self):
-        return (2 * len(self._scale_blocks()) + 1) + sum(
+        return (2 * len(self._scale_flags()) + 1) + sum(
             len(x) + 2 for x in self.masters)
 
 class SkyrimSaveHeader(_AEslSaveHeader):
@@ -539,7 +539,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
 
     def __is_sse(self): return self.version == 12
 
-    def _scale_blocks(self):
+    def _scale_flags(self):
         return plugin_types.scale_flags if self.__is_sse() and \
             self._formVersion >= 78 else []
 
@@ -613,7 +613,7 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     }
     _compress_type = _SaveCompressionType.NONE
 
-    def _scale_blocks(self):
+    def _scale_flags(self):
         return plugin_types.scale_flags if self.version == 15 and \
             self._formVersion >= 68 else []
 
@@ -737,7 +737,7 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
             self._master_info_block_size[mas] += 1
         return mas
 
-    def _scale_blocks(self):
+    def _scale_flags(self):
         # ESL: some sources say if form version >= 82, MO2 says always
         return plugin_types.scale_flags if self._formVersion >= 122 else [
             next(iter(plugin_types.scale_flags))]
