@@ -1136,7 +1136,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
     @classmethod
     def _store(cls): return iniInfos
 
-    def tweak_status(self, target_ini_settings=None):
+    def info_status(self, target_ini_settings=None):
         if self._status is None:
             self.getStatus(target_ini_settings=target_ini_settings)
         return self._status
@@ -1147,7 +1147,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
         return not isinstance(other, OBSEIniFile)
 
     def is_applicable(self, stat=None):
-        stat = stat or self.tweak_status()
+        stat = stat or self.info_status()
         return stat != -20 and (
             bass.settings[u'bash.ini.allowNewLines'] or stat != -10)
 

@@ -356,16 +356,16 @@ class _ModsUIList(UIList):
                 item_format.underline = True
         self.mouseTexts[item_key] = ' '.join(mouseText)
 
-    def _set_status_text(self, item_format, minf, item_key, _status=None,
+    def _set_status_text(self, item_format, minf, item_name, _status=None,
                          _mouse_text=None):
-        checkMark = (load_order.cached_is_active(item_key)  # 1
-                     or (item_key in bosh.modInfos.merged and 2) or (
-                             item_key in bosh.modInfos.imported and 3))  # or 0
+        checkMark = (load_order.cached_is_active(item_name) # 1
+                     or (item_name in bosh.modInfos.merged and 2) or (
+                             item_name in bosh.modInfos.imported and 3)) # or 0
         #--Image
         item_format.icon_key = _status, checkMark
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
-        if item_key in bosh.modInfos.bashed_patches:
+        if item_name in bosh.modInfos.bashed_patches:
             item_format.text_key = 'mods.text.bashedPatch'
             _mouse_text.append(_('Bashed Patch.'))
         for mchk in bush.game.mergeability_checks:
@@ -650,7 +650,7 @@ class INIList(UIList):
         'File'     : None,
         'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
-    def _sortValidFirst(self, items, *, __lm=_ask_info('tweak_status', ())):
+    def _sortValidFirst(self, items, *, __lm=_ask_info('info_status', ())):
         if settings[u'bash.ini.sortValid']:
             items.sort(key=lambda a: (__lm(self, a) < 0))
     _extra_sortings = [_sortValidFirst]
@@ -672,7 +672,7 @@ class INIList(UIList):
         not_applied = 0
         invalid = 0
         for ini_info in self.data_store.values():
-            status = ini_info.tweak_status()
+            status = ini_info.info_status()
             if status == -10: invalid += 1
             elif status == 0: not_applied += 1
             elif status == 10: mismatch += 1
@@ -684,14 +684,14 @@ class INIList(UIList):
         tweaklist = _('Active INI Tweaks:') + '\n'
         tweaklist += u'[spoiler]\n'
         for tweak, info in dict_sort(self.data_store):
-            if not info.tweak_status() == 20: continue
+            if not info.info_status() == 20: continue
             tweaklist+= f'{tweak}\n'
         tweaklist += u'[/spoiler]\n'
         return tweaklist
 
     def set_item_format(self, ini_name, item_format, target_ini_setts):
         iniInfo = self.data_store[ini_name]
-        status = iniInfo.tweak_status(target_ini_setts)
+        status = iniInfo.info_status(target_ini_setts)
         #--Image
         checkMark = 0
         icon_ = 0    # Ok tweak, not applied
@@ -782,7 +782,7 @@ class INIList(UIList):
             if target_ini: # if target was given calculate the status for it
                 stat = ini_info.getStatus(target_ini_file)
                 ini_info.reset_status() # iniInfos.ini may differ from target
-            else: stat = ini_info.tweak_status()
+            else: stat = ini_info.info_status()
             if stat == 20 or not ini_info.is_applicable(stat): continue
             needsRefresh |= target_ini_file.apply_tweak(ini_info)
         return needsRefresh

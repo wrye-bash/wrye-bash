@@ -1830,8 +1830,11 @@ class ListInfo:
         return 0, len(text_str) # if selection not at start reset
 
     @classmethod
-    def _store(cls):
+    def _store(cls): # use sparingly
         raise NotImplementedError(f'{cls} does not provide a data store')
+
+    def info_status(self):
+        raise NotImplementedError # screens, bsas
 
     # Instance methods --------------------------------------------------------
     def copy_to(self, dup_path: Path, *, set_time=None):
@@ -1842,7 +1845,7 @@ class ListInfo:
         self.fs_copy(dup_path, set_time=set_time)
 
     def fs_copy(self, dup_path, *, set_time=None):
-        raise NotImplementedError
+        raise NotImplementedError # not all ListInfos are AFiles
 
     def __str__(self):
         """Alias for self.fn_key."""
