@@ -524,7 +524,7 @@ def conversation(func):
 @dataclass(slots=True)
 class _ListItemFormat:
     _parent_uil: UIList
-    icon_key: tuple[str | None, ...] = (None,)
+    icon_dex: int | None = None
     bold: bool = False
     italics: bool = False
     underline: bool = False
@@ -534,8 +534,7 @@ class _ListItemFormat:
     def to_tree_node_format(self):
         """Convert this list item format to an equivalent tree node format,
         relative to the specified parent UIList."""
-        return TreeNodeFormat(
-            icon_idx=self._parent_uil.icons.img_dex(*self.icon_key),
+        return TreeNodeFormat(icon_idx=self.icon_dex,
             back_color=self._parent_uil.lookup_back_key(self.back_key),
             text_color=self._parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
@@ -859,16 +858,27 @@ class UIList(PanelWin):
     def set_item_format(self, item, item_format, target_ini_setts):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
-        data_store is a FileInfo subclass) for calling getStatus (or
-        info_status in Inis) to update respective info's status."""
-        pass # screens, bsas
+        data_store is a FileInfo subclass) for calling info_status to update
+        respective info's status."""
+        try:
+            inf = self.data_store[item]
+            icon_key = self._set_icon_text(inf, item_format, item,
+                target_ini_settings=target_ini_setts)
+            item_format.icon_dex = self.icons.img_dex(*icon_key)
+        except NotImplementedError:
+            return # screens, bsas
+        return inf # used in overrides
+
+    def _set_icon_text(self, inf, item_format, item_key, **kwargs):
+        """Base method just returns the status - always override to return the
+        icon key tuple - populate mouse text, item_format attrs, etc."""
+        return inf.info_status(**kwargs)
 
     def __setUI(self, fileName, target_ini_setts, gItem):
         """Set font, status icon, background text etc."""
         df = _ListItemFormat(self)
-        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
-        icon_index = self.icons.img_dex(*df.icon_key)
-        if icon_index is not None:
+        self.set_item_format(fileName, df, target_ini_setts)
+        if (icon_index := df.icon_dex) is not None:
             gItem.SetImage(icon_index)
         gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
         gItem.SetBackgroundColour(
@@ -892,7 +902,7 @@ class UIList(PanelWin):
             return self._defaultTextBackground
 
     def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]],
-            target_ini_setts=None) -> DecoratedTreeDict:
+                           target_ini_setts=None) -> DecoratedTreeDict:
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
         def _decorate(i):
@@ -902,7 +912,7 @@ class UIList(PanelWin):
             # those since the default text/background colors may have been
             # changed from the OS default)
             if i in self.data_store:
-                self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
+                self.set_item_format(i, lif, target_ini_setts)
             return lif.to_tree_node_format()
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
@@ -965,7 +975,7 @@ class UIList(PanelWin):
                 self.ClearSelected(clear_details=True)
             else: # select all
                 with self.__gList.on_item_selected.pause_subscription(
-                    self._handle_select):
+                        self._handle_select):
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
@@ -1162,7 +1172,7 @@ class UIList(PanelWin):
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
         with self.__gList.on_item_selected.pause_subscription(
-            self._handle_select):
+                self._handle_select):
             for item in items: self.SelectItem(item)
 
     def ClearSelected(self, clear_details=False):

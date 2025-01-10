@@ -191,7 +191,7 @@ class Mod_CreateDummyMasters(OneItemLink):
     }
 
     def _enable(self): # enable if there are missing masters
-        return super()._enable() and self._selected_info.getStatus() == 30
+        return super()._enable() and self._selected_info.info_status() == 30
 
     def Execute(self):
         """Create Dummy Masters"""

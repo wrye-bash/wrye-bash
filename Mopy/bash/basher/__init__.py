@@ -335,9 +335,8 @@ class _ModsUIList(UIList):
         return x
 
     def set_item_format(self, item_key, item_format, target_ini_setts):
-        minf = self.data_store[item_key]
-        mouseText = self._set_status_text(item_format, minf, item_key)
-        # Text background
+        self.mouseTexts[item_key] = mouseText = []
+        minf = super().set_item_format(item_key, item_format, target_ini_setts)
         if minf.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
             mouseText.append(_('Another plugin has the same timestamp.'))
@@ -355,14 +354,14 @@ class _ModsUIList(UIList):
                 mouseText.append(msg)
                 item_format.underline = True
         self.mouseTexts[item_key] = ' '.join(mouseText)
+        return minf
 
-    def _set_status_text(self, item_format, minf, item_name, _status=None,
-                         _mouse_text=None):
+    def _set_icon_text(self, minf, item_format, item_name, *, _mouse_text,
+                       **kwargs): # we get item_name not item_key so we need _mouse_text
         checkMark = (load_order.cached_is_active(item_name) # 1
                      or (item_name in bosh.modInfos.merged and 2) or (
                              item_name in bosh.modInfos.imported and 3)) # or 0
-        #--Image
-        item_format.icon_key = _status, checkMark
+        status = super()._set_icon_text(minf, item_format, item_name, **kwargs)
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
         if item_name in bosh.modInfos.bashed_patches:
@@ -383,7 +382,7 @@ class _ModsUIList(UIList):
             pass
         if 'Deactivate' in minf.getBashTags(): # was for mods only
             item_format.italics = True
-        return checkMark
+        return status, checkMark
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -519,15 +518,13 @@ class MasterList(_ModsUIList):
         self._reList()
 
     def set_item_format(self, item_key, item_format, target_ini_setts):
-        super().set_item_format(item_key, item_format, target_ini_setts)
-        minf = self.data_store[item_key]
+        minf = super().set_item_format(item_key, item_format, target_ini_setts)
         if self.allowEdit:
             if minf.old_name in settings['bash.mods.renames']:
                 item_format.bold = True
 
-    def _set_status_text(self, item_format, masterInfo, mi, _status=None,
-                         _mouse_text=None):
-        mouseText = []
+    def _set_icon_text(self, masterInfo, item_format, mi, **kwargs):
+        mouseText = self.mouseTexts[mi]
         item_name = self._item_name(mi)
         if item_name in bosh.modInfos.activeBad:  # if active, it's in LO
             item_format.back_key = 'mods.bkgd.doubleTime.load'
@@ -536,7 +533,9 @@ class MasterList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText.append(_('Plugin name incompatible, cannot be '
                                'activated.'))
-        status = masterInfo.getStatus(self._curr_lo_index[item_name], mi)
+        status, checkMark = super()._set_icon_text(masterInfo, item_format,
+            item_name, loadOrderIndex=self._curr_lo_index[item_name],
+            mi=mi, _mouse_text=mouseText)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
             mouseText.append(_('Missing master of %(child_plugin_name)s.') % {
@@ -550,9 +549,7 @@ class MasterList(_ModsUIList):
                 mouseText.append(_('Loads after %(child_plugin_name)s.') % {
                     'child_plugin_name': on_display})
                 status = 20 # paint orange
-        super()._set_status_text(item_format, masterInfo, item_name, status,
-                                 mouseText)
-        return mouseText
+        return status, checkMark
 
     #--Relist
     def _reList(self, repopulate=True):
@@ -689,9 +686,8 @@ class INIList(UIList):
         tweaklist += u'[/spoiler]\n'
         return tweaklist
 
-    def set_item_format(self, ini_name, item_format, target_ini_setts):
-        iniInfo = self.data_store[ini_name]
-        status = iniInfo.info_status(target_ini_setts)
+    def _set_icon_text(self, iniInfo, item_format, ini_name, **kwargs):
+        status = super()._set_icon_text(iniInfo, item_format, ini_name, **kwargs)
         #--Image
         checkMark = 0
         icon_ = 0    # Ok tweak, not applied
@@ -725,10 +721,10 @@ class INIList(UIList):
                          if mousetext else def_tweak_text)
             item_format.italics = True
         self.mouseTexts[ini_name] = mousetext
-        item_format.icon_key = icon_, checkMark
         #--Font/BG Color
         if status < 0:
             item_format.back_key = 'ini.bkgd.invalid'
+        return icon_, checkMark
 
     # Events ------------------------------------------------------------------
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
@@ -939,7 +935,7 @@ class ModList(_ModsUIList):
         'Installer' : _ask_info('get_table_prop', ('installer', '')),
         'Load Order': lambda self, a: load_order.cached_lo_index(a),
         'Indices'   : lambda self, a: self.data_store.real_indices[a][0],
-        'Status'    : _ask_info('getStatus', ()),
+        'Status'    : _ask_info('info_status', ()),
         'Mod Status': _ask_info('txt_status', ()),
         'CRC'       : _ask_info('cached_mod_crc', ()),
     }
@@ -1002,12 +998,9 @@ class ModList(_ModsUIList):
             showError(self, f'{e}')
 
     #--Populate Item
-    def _set_status_text(self, item_format, mod_info, mod_name, _status=None,
-                         _mouse_text=None):
-        #--Image
-        status = mod_info.getStatus()
+    def _set_icon_text(self, mod_info, item_format, mod_name, **kwargs):
         #--Default message
-        mouseText = []
+        mouseText = self.mouseTexts[mod_name]
         if mod_name in bosh.modInfos.activeBad:
             item_format.back_key = 'mods.bkgd.doubleTime.load'
             mouseText.append(_('Plugin name incompatible, will not load.'))
@@ -1023,6 +1016,8 @@ class ModList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.doubleTime.load' if \
                 load_order.cached_is_active(
                 mod_name) else 'mods.bkgd.doubleTime.exists'
+        status, checkMark = super()._set_icon_text(mod_info, item_format,
+            mod_name, _mouse_text=mouseText, **kwargs)
         # Mirror the checkbox color info in the status bar
         if status == 30:
             mouseText.append(_('One or more masters are missing.'))
@@ -1031,13 +1026,11 @@ class ModList(_ModsUIList):
                 mouseText.append(_('Loads before its masters.'))
             if status in {10, 21}:
                 mouseText.append(_('Masters have been re-ordered.'))
-        checkMark = super()._set_status_text(item_format, mod_info,
-            mod_name, 20 if 20 <= status < 30 else status, mouseText)
         if checkMark == 1:
             mouseText.append(_('Active in load order.'))
         elif checkMark == 3:
             mouseText.append(_('Imported into Bashed Patch.'))
-        return mouseText
+        return status, checkMark
 
     # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
@@ -2081,7 +2074,7 @@ class SaveList(UIList):
         'PlayTime': _ask_info('header.gameTicks'),
         'Player'  : _ask_info('header.pcName'),
         'Cell'    : _ask_info('header.pcLocation'),
-        'Status'  : _ask_info('getStatus', ()),
+        'Status'  : _ask_info('info_status', ()),
     }
     #--Labels
     labels = {**_common_labels,
@@ -2123,11 +2116,9 @@ class SaveList(UIList):
             'Save files') + f' ({starred})|{starred}'
 
     #--Populate Item
-    def set_item_format(self, fileName, item_format, target_ini_setts):
-        save_info = self.data_store[fileName]
-        #--Image
-        status = save_info.getStatus()
-        item_format.icon_key = status, save_info.is_save_enabled()
+    def _set_icon_text(self, inf, *args, **kwargs):
+        status = super()._set_icon_text(inf, *args, **kwargs)
+        return status, inf.is_save_enabled()
 
     # Events ------------------------------------------------------------------
     @balt.conversation
@@ -2420,8 +2411,7 @@ class InstallersList(UIList):
         return ColorChecks(get_installer_color_checks())
 
     #--Item Info
-    def set_item_format(self, item, item_format, target_ini_setts):
-        inst = self.data_store[item] # type: bosh.bain.Installer
+    def _set_icon_text(self, inst, item_format, item_key, **kwargs):
         #--Text
         item_format.text_key = ('default.text' if inst.has_recognized_structure
                                 else 'installers.text.invalid')
@@ -2449,11 +2439,11 @@ class InstallersList(UIList):
             if inst.is_project: iconkey += '.dir'
             if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:
                 iconkey += '.wiz'
-        item_format.icon_key = iconkey, # the image keys are passed as a tuple
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
         #--TODO: add more mouse tips
-        self.mouseTexts[item] = mouse_text
+        self.mouseTexts[item_key] = mouse_text
+        return iconkey, # the image keys are passed as a tuple
 
     def _check_rename_requirements(self):
         rename_type, rename_err = super()._check_rename_requirements()

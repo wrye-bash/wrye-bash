@@ -1833,7 +1833,7 @@ class ListInfo:
     def _store(cls): # use sparingly
         raise NotImplementedError(f'{cls} does not provide a data store')
 
-    def info_status(self):
+    def info_status(self, **kwargs):
         raise NotImplementedError # screens, bsas
 
     # Instance methods --------------------------------------------------------

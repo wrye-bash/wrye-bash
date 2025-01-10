@@ -190,7 +190,7 @@ class MasterInfo:
         """Ask the mod info or shrug."""
         return set()
 
-    def getStatus(self, loadOrderIndex, mi):
+    def info_status(self, *, loadOrderIndex, mi):
         if self.mod_info:
             ordered = load_order.cached_active_tuple()
             # current load order of master relative to other masters
@@ -387,7 +387,7 @@ class _WithMastersInfo(FileInfo):
             if altering a master list would cause it to become circular."""
         raise NotImplementedError
 
-    def getStatus(self):
+    def info_status(self, **kwargs):
         """Returns status of this file -- which depends on status of masters.
         0:  Good
         10: Out of order master(s)
@@ -1136,7 +1136,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
     @classmethod
     def _store(cls): return iniInfos
 
-    def info_status(self, target_ini_settings=None):
+    def info_status(self, *, target_ini_settings=None, **kwargs):
         if self._status is None:
             self.getStatus(target_ini_settings=target_ini_settings)
         return self._status
