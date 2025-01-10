@@ -206,6 +206,17 @@ class Installer(ListInfo):
         return super(Installer, cls).validate_filename_str(name_str,
             frozenset()) # block extension check
 
+    def info_status(self, *, idata):
+        #--Icon
+        if self.is_corrupt_package:
+            iconkey = 'corrupt'
+        else:
+            iconkey = 'on' if self.is_active else 'off'
+            iconkey += f'.{idata.status_color[self.status]}'
+            if bass.settings['bash.installers.wizardOverlay'] and self.hasWizard:
+                iconkey += '.wiz'
+        return iconkey
+
     @classmethod
     def _store(cls): return cls.instData
 
@@ -1156,6 +1167,25 @@ class Installer(ListInfo):
         self.status, self.underrides = status, underrides
         return changed
 
+    def format_item(self, idata, item_format): ##: add more mouse texts
+        #--Text
+        item_format.text_key = ('default.text' if self.has_recognized_structure
+                                else 'installers.text.invalid')
+        if self.is_complex_package and len(self.subNames) != 2:
+            # 2 subNames would be a Complex/Simple package
+            item_format.text_key = 'installers.text.complex'
+        #--Background
+        if self.skipDirFiles:
+            item_format.back_key = 'installers.bkgd.skipped'
+        mouse_text = ''
+        if self.dirty_sizeCrc:
+            item_format.back_key = 'installers.bkgd.dirty'
+            mouse_text = _('Needs Annealing due to a change in configuration.')
+        elif self.underrides:
+            item_format.back_key = 'installers.bkgd.outOfOrder'
+            mouse_text = _('Needs Annealing due to a change in Install Order.')
+        idata.mouseTexts[self.fn_key] = mouse_text
+
     #--Utility methods --------------------------------------------------------
     def packToArchive(self, project, fn_archive, isSolid, blockSize,
                       progress=None, release=False):
@@ -1458,6 +1488,11 @@ class InstallerMarker(Installer):
     def log_package(self, log, showInactive):
         log(f'{f"{self.order:03d}"} - {self.fn_key}')
 
+    def format_item(self, idata, item_format):
+        item_format.text_key = 'installers.text.marker'
+        idata.mouseTexts[self.fn_key] = _('Marker Package. Use for grouping '
+                                          'installers together')
+
 #------------------------------------------------------------------------------
 class InstallerArchive(_InstallerPackage):
     """Represents an archive installer entry."""
@@ -1678,6 +1713,9 @@ class InstallerProject(_InstallerPackage):
     @staticmethod
     def _new_name(base_name, count):
         return f'{base_name} ({count})'
+
+    def info_status(self, *, idata):
+        return f'{super().info_status(idata=idata)}.dir'
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject

@@ -2403,8 +2403,8 @@ class InstallersList(UIList):
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, [u'Order']
     #--GUI
-    _status_color = {-20: 'grey', -10: 'red', 0: 'white', 10: 'orange',
-                     20: 'yellow', 30: 'green'}
+    status_color = {-20: 'grey', -10: 'red', 0: 'white', 10: 'orange',
+                    20: 'yellow', 30: 'green'}
 
     @fast_cached_property
     def icons(self):
@@ -2412,38 +2412,9 @@ class InstallersList(UIList):
 
     #--Item Info
     def _set_icon_text(self, inst, item_format, item_key, **kwargs):
-        #--Text
-        item_format.text_key = ('default.text' if inst.has_recognized_structure
-                                else 'installers.text.invalid')
-        if inst.is_marker:
-            item_format.text_key = 'installers.text.marker'
-        elif inst.is_complex_package and len(inst.subNames) != 2:
-            # 2 subNames would be a Complex/Simple package
-            item_format.text_key = 'installers.text.complex'
-        #--Background
-        if inst.skipDirFiles:
-            item_format.back_key = 'installers.bkgd.skipped'
-        mouse_text = u''
-        if inst.dirty_sizeCrc:
-            item_format.back_key = 'installers.bkgd.dirty'
-            mouse_text += _(u'Needs Annealing due to a change in configuration.')
-        elif inst.underrides:
-            item_format.back_key = 'installers.bkgd.outOfOrder'
-            mouse_text += _(u'Needs Annealing due to a change in Install Order.')
-        #--Icon
-        if inst.is_corrupt_package:
-            iconkey = 'corrupt'
-        else:
-            iconkey = 'on' if inst.is_active else 'off'
-            iconkey += f'.{self._status_color[inst.status]}'
-            if inst.is_project: iconkey += '.dir'
-            if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:
-                iconkey += '.wiz'
-        #if textKey == 'installers.text.invalid': # I need a 'text.markers'
-        #    text += _(u'Marker Package. Use for grouping installers together')
-        #--TODO: add more mouse tips
-        self.mouseTexts[item_key] = mouse_text
-        return iconkey, # the image keys are passed as a tuple
+        inst.format_item(self, item_format)
+        # the image keys are passed as a tuple
+        return super()._set_icon_text(inst, item_format, item_key, idata=self),
 
     def _check_rename_requirements(self):
         rename_type, rename_err = super()._check_rename_requirements()

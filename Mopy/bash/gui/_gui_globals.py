@@ -75,7 +75,7 @@ def init_image_resources(images_dir):
         svg = _icc(layers[0])
         svg.composite(*layers)
         for col, (primary, secondary) in box_colors.items():
-            _installer_icons[f'{st}.{col}{typ}{overlay}'] = svg.with_svg_vars(
+            _installer_icons[f'{st}.{col}{overlay}{typ}'] = svg.with_svg_vars(
                 primary_color=primary, secondary_color=secondary)
     _installer_icons['corrupt'] = _icc('red_x.svg')
     _gui_images.update(_installer_icons)
