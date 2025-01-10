@@ -2051,6 +2051,19 @@ def _lo_cache(lord_func):
             self._active_wip = list(load_order.cached_active_tuple())
     return _modinfos_cache_wrapper
 
+def _lo_op(lop_func):
+    """Decorator centralizing saving active state changes."""
+    @wraps(lop_func)
+    def _lo_activation_wrapper(self: ModInfos, *args, **kwargs):
+        """Update _active_wip cache and possibly save changes."""
+        out_var = set()
+        try:
+            lop_func(self, *args, out_var=out_var, **kwargs)
+            return out_var
+        finally:
+            if kwargs.get('doSave', False): self.cached_lo_save_active()
+    return _lo_activation_wrapper
+
 #------------------------------------------------------------------------------
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
@@ -2509,48 +2522,44 @@ class ModInfos(TableFileInfos):
         self._lo_wip[first_dex:first_dex] = modlist
 
     #--Active mods management -------------------------------------------------
-    def lo_activate(self, fileName, _modSet=None, _children=None,
-                    _activated=None, doSave=False):
+    @_lo_op
+    def lo_activate(self, fileName, *, out_var: set | None = None, doSave=False):
         """Mutate _active_wip cache then save if doSave is True."""
-        if _activated is None: _activated = set()
+        self._do_activate(fileName, set(self), [], out_var)
+
+    def _do_activate(self, fileName, _modSet, _children, _activated):
         # Skip .esu files, those can't be activated
         ##: This .esu handling needs to be centralized - sprinkled all over
         # actives related lo_* methods
         if fileName.fn_ext == u'.esu': return []
-        try:
-            msg = load_order.check_active_limit([*self._active_wip, fileName],
-                                                as_type=str)
-            if msg:
-                msg = f'{fileName}: Trying to activate more than {msg}'
-                raise PluginsFullError(msg)
-            if _children:
-                if fileName in _children:
-                    raise BoltError(f'Circular Masters: '
-                                    f'{" >> ".join((*_children, fileName))}')
-                _children.append(fileName)
-            else:
-                _children = [fileName]
-            #--Select masters
-            if _modSet is None: _modSet = set(self)
-            #--Check for bad masternames:
-            #  Disabled for now
-            ##if self[fileName].hasBadMasterNames():
-            ##    return
-            # Speed up lookups, since they occur for the plugin and all masters
-            acti_set = set(self._active_wip)
-            for master in self[fileName].masterNames:
-                # Check that the master is on disk and not already activated
-                if master in _modSet and master not in acti_set:
-                    self.lo_activate(master, _modSet, _children, _activated)
-            #--Select in plugins
-            if fileName not in acti_set:
-                self._active_wip.append(fileName)
-                _activated.add(fileName)
-            return load_order.get_ordered(_activated)
-        finally:
-            if doSave: self.cached_lo_save_active()
+        msg = load_order.check_active_limit([*self._active_wip, fileName],
+                                            as_type=str)
+        if msg:
+            msg = f'{fileName}: Trying to activate more than {msg}'
+            raise PluginsFullError(msg)
+        if _children:
+            if fileName in _children:
+                raise BoltError(f'Circular Masters: '
+                                f'{" >> ".join((*_children, fileName))}')
+        _children = [fileName]
+        #--Check for bad masternames:
+        #  Disabled for now
+        ##if self[fileName].hasBadMasterNames():
+        ##    return
+        #--Select masters
+        # Speed up lookups, since they occur for the plugin and all masters
+        acti_set = set(self._active_wip)
+        for master in self[fileName].masterNames:
+            # Check that the master is on disk and not already activated
+            if master in _modSet and master not in acti_set:
+                self._do_activate(master, _modSet, _children, _activated)
+        #--Select in plugins
+        if fileName not in acti_set:
+            self._active_wip.append(fileName)
+            _activated.add(fileName)
 
-    def lo_deactivate(self, *filenames, doSave=False):
+    @_lo_op
+    def lo_deactivate(self, *filenames, out_var=None, doSave=False):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
@@ -2571,9 +2580,7 @@ class ModInfos(TableFileInfos):
             children |= cached_dependents[child]
         # Commit the changes made above
         self._active_wip = [x for x in self._active_wip if x in set_awip]
-        #--Save
-        if doSave: self.cached_lo_save_active()
-        return old - set_awip # return deselected
+        out_var.update(old - set_awip) # return deselected
 
     def lo_activate_all(self, activate_mergeable=True):
         """Activates all non-mergeable plugins (except ones tagged Deactivate),

@@ -1173,10 +1173,10 @@ class ModList(_ModsUIList):
                     # Can't activate that mod, track this
                     illegal_activations.append(inact)
                     continue
-                touched |= set(activated)
-                if len(activated) > (inact in activated): # activated masters
-                    activated = [x for x in activated if x != inact]
-                    changes[self._activated_key][inact] = activated
+                touched |= activated
+                activated.discard(inact)
+                if activated: # activated masters
+                    changes[self._activated_key][inact] = _ord(activated)
             except (BoltError, PluginsFullError) as e:
                 showError(self, f'{e}')
                 break
