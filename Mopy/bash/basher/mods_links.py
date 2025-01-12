@@ -96,7 +96,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
     def Execute(self):
         """Select all mods."""
         try:
-            bosh.modInfos.lo_activate_all(
+            bosh.modInfos.lo_activate_all(doSave=True,
                 activate_mergeable=self._activate_mergeable)
         except exception.PluginsFullError:
             self._showError(_('Plugin list is full, so some plugins '

@@ -2054,15 +2054,15 @@ def _lo_cache(lord_func):
 def _lo_op(lop_func):
     """Decorator centralizing saving active state changes."""
     @wraps(lop_func)
-    def _lo_activation_wrapper(self: ModInfos, *args, **kwargs):
+    def _lo_activate_wrapper(self: ModInfos, *args, doSave=False, **kwargs):
         """Update _active_wip cache and possibly save changes."""
         out_var = set()
         try:
             lop_func(self, *args, out_var=out_var, **kwargs)
             return out_var
         finally:
-            if kwargs.get('doSave', False): self.cached_lo_save_active()
-    return _lo_activation_wrapper
+            if doSave and out_var: self.cached_lo_save_active()
+    return _lo_activate_wrapper
 
 #------------------------------------------------------------------------------
 class ModInfos(TableFileInfos):
@@ -2450,13 +2450,13 @@ class ModInfos(TableFileInfos):
                                          cached_active=not forceActive)
 
     @_lo_cache
-    def cached_lo_save_active(self, active=None):
+    def cached_lo_save_active(self):
         """Write data to Plugins.txt file.
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
         return load_order.save_lo(None, load_order.get_ordered(
-            self._active_wip if active is None else active))
+            self._active_wip))
 
     @_lo_cache
     def _cached_lo_save_lo(self):
@@ -2523,7 +2523,7 @@ class ModInfos(TableFileInfos):
 
     #--Active mods management -------------------------------------------------
     @_lo_op
-    def lo_activate(self, fileName, *, out_var: set | None = None, doSave=False):
+    def lo_activate(self, fileName, *, out_var: set | None = None):
         """Mutate _active_wip cache then save if doSave is True."""
         self._do_activate(fileName, set(self), [], out_var)
 
@@ -2559,7 +2559,7 @@ class ModInfos(TableFileInfos):
             _activated.add(fileName)
 
     @_lo_op
-    def lo_deactivate(self, *filenames, out_var=None, doSave=False):
+    def lo_deactivate(self, *filenames, out_var=None):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
@@ -2582,7 +2582,9 @@ class ModInfos(TableFileInfos):
         self._active_wip = [x for x in self._active_wip if x in set_awip]
         out_var.update(old - set_awip) # return deselected
 
-    def lo_activate_all(self, activate_mergeable=True):
+    @_lo_op
+    def lo_activate_all(self, *, activate_mergeable=True,
+                        out_var: set | None = None):
         """Activates all non-mergeable plugins (except ones tagged Deactivate),
         then all mergeable plugins (again, except ones tagged Deactivate).
         Raises a PluginsFullError if too many non-mergeable plugins are present
@@ -2603,21 +2605,19 @@ class ModInfos(TableFileInfos):
         if mergeable and activate_mergeable:
             to_act.extend(p for p, v in s_plugins.items() if v in mergeable)
         if not to_act: return
-        wip_actives = act_set
+        out_var.update(act_set)
         try:
             try:
                 for j, p in enumerate(to_act):
-                    if p not in wip_actives:
-                        wip_actives.update(self.lo_activate(p))
+                    if p not in out_var:
+                        out_var.update(self.lo_activate(p))
             except PluginsFullError as e:
                 if j >= first_mergeable:
                     raise SkippedMergeablePluginsError from e
                 raise
         except (BoltError, NotImplementedError):
-            wip_actives.clear() # Don't save, something went wrong
+            out_var.clear() # Don't save, something went wrong
             raise
-        finally:
-            if wip_actives: self.cached_lo_save_active(active=wip_actives)
 
     def lo_activate_exact(self, partial_actives: Iterable[FName],
             save_actives=True):
