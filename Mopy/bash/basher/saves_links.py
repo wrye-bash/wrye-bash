@@ -249,7 +249,8 @@ class Save_ActivateMasters(_Save_ChangeLO):
               u'this save.')
 
     def _lo_operation(self):
-        return bosh.modInfos.lo_activate_exact(self._selected_info.masterNames)
+        return bosh.modInfos.lo_activate_exact(self._selected_info.masterNames,
+                                               doSave=True)
 
 #------------------------------------------------------------------------------
 class Save_ReorderMasters(_Save_ChangeLO):

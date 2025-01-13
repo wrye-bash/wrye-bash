@@ -2056,10 +2056,9 @@ def _lo_op(lop_func):
     @wraps(lop_func)
     def _lo_activate_wrapper(self: ModInfos, *args, doSave=False, **kwargs):
         """Update _active_wip cache and possibly save changes."""
-        out_var = set()
+        out_var = kwargs.setdefault('out_var', set())
         try:
-            lop_func(self, *args, out_var=out_var, **kwargs)
-            return out_var
+            return lop_func(self, *args, **kwargs)
         finally:
             if doSave and out_var: self.cached_lo_save_active()
     return _lo_activate_wrapper
@@ -2610,7 +2609,7 @@ class ModInfos(TableFileInfos):
             try:
                 for j, p in enumerate(to_act):
                     if p not in out_var:
-                        out_var.update(self.lo_activate(p))
+                        self.lo_activate(p, out_var=out_var)
             except PluginsFullError as e:
                 if j >= first_mergeable:
                     raise SkippedMergeablePluginsError from e
@@ -2619,8 +2618,9 @@ class ModInfos(TableFileInfos):
             out_var.clear() # Don't save, something went wrong
             raise
 
-    def lo_activate_exact(self, partial_actives: Iterable[FName],
-            save_actives=True):
+    @_lo_op
+    def lo_activate_exact(self, partial_actives: Iterable[FName], *,
+                          out_var: set | None = None):
         """Activate exactly the specified iterable of plugin names (plus
         required masters and plugins that can't be deactivated). May contain
         missing plugins. Returns a warning message or an empty string."""
@@ -2644,9 +2644,10 @@ class ModInfos(TableFileInfos):
         ordered_wip = load_order.get_ordered(wip_actives)
         trimmed_plugins = load_order.check_active_limit(ordered_wip)
         # Trim off any excess plugins and commit
-        self._active_wip = [p for p in ordered_wip if p not in trimmed_plugins]
-        if save_actives:
-            self.cached_lo_save_active()
+        to_act = [p for p in ordered_wip if p not in trimmed_plugins]
+        if self._active_wip != to_act:
+            out_var.update(set(self._active_wip) ^ set(to_act))
+            self._active_wip = to_act
         message = ''
         if missing_plugins:
             message += _('Some plugins could not be found and were '

@@ -1149,7 +1149,8 @@ class ModList(_ModsUIList):
         _ord = load_order.get_ordered
         for act in active:
             if act not in touched: # else we already deactivated it
-                deactivated = self.data_store.lo_deactivate(act)
+                deactivated = set()
+                self.data_store.lo_deactivate(act, out_var=deactivated)
                 if not deactivated:
                     # Can't deactivate that mod, track this
                     illegal_deactivations.append(act)
@@ -1168,7 +1169,8 @@ class ModList(_ModsUIList):
             ## game to load these files
             #if fileName in self.data_store.bad_names: return
             try:
-                activated = self.data_store.lo_activate(inact)
+                activated = set()
+                self.data_store.lo_activate(inact, out_var=activated)
                 if not activated:
                     # Can't activate that mod, track this
                     illegal_activations.append(inact)

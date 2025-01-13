@@ -995,7 +995,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                         bass.inisettings['PromptActivateBashedPatch'] and
                         self._askYes(message, fn_mod)):
                     try:
-                        act = bosh.modInfos.lo_activate(fn_mod, doSave=is_bp)
+                        bosh.modInfos.lo_activate(fn_mod, doSave=is_bp,
+                                                  out_var=(act := set()))
                         if is_bp and act != {fn_mod}:
                             msg = _('Masters Activated: %(num_activated)d') % {
                                 'num_activated': len(act - {fn_mod})}

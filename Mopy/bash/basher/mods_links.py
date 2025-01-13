@@ -83,7 +83,7 @@ class _AMods_ActivePlugins(ItemLink):
         self.window.propagate_refresh(Store.SAVES.DO())
 
     def _select_exact(self, mods):
-        lo_warn_msg = bosh.modInfos.lo_activate_exact(mods)
+        lo_warn_msg = bosh.modInfos.lo_activate_exact(mods, doSave=True)
         self._refresh_mods_ui()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, title=self._text)
@@ -690,8 +690,7 @@ class _AImportLOBaseLink(ItemLink):
         msg_lo = bosh.modInfos.lo_reorder(imp_lo, save_lo=False)
         if msg_lo:
             self._showWarning(msg_lo, title=self._warning_title)
-        msg_acti = bosh.modInfos.lo_activate_exact(imp_acti,
-            save_actives=False)
+        msg_acti = bosh.modInfos.lo_activate_exact(imp_acti)
         # Don't show the exact same message twice
         if msg_acti and msg_lo != msg_acti:
             self._showWarning(msg_acti, title=self._warning_title)
