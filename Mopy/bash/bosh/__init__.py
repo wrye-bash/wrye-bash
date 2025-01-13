@@ -48,7 +48,7 @@ from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
-    ListInfo, Path, RefrIn, deprint, dict_sort, forward_compat_path_to_fn, \
+    ListInfo, Path, RefrIn, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
     OrderedLowerDict, attrgetter_cache, RefrData
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
@@ -190,7 +190,7 @@ class MasterInfo:
         """Ask the mod info or shrug."""
         return set()
 
-    def getStatus(self, loadOrderIndex, mi):
+    def info_status(self, *, loadOrderIndex, mi):
         if self.mod_info:
             ordered = load_order.cached_active_tuple()
             # current load order of master relative to other masters
@@ -387,7 +387,7 @@ class _WithMastersInfo(FileInfo):
             if altering a master list would cause it to become circular."""
         raise NotImplementedError
 
-    def getStatus(self):
+    def info_status(self, **kwargs):
         """Returns status of this file -- which depends on status of masters.
         0:  Good
         10: Out of order master(s)
@@ -1136,7 +1136,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
     @classmethod
     def _store(cls): return iniInfos
 
-    def tweak_status(self, target_ini_settings=None):
+    def info_status(self, *, target_ini_settings=None, **kwargs):
         if self._status is None:
             self.getStatus(target_ini_settings=target_ini_settings)
         return self._status
@@ -1147,7 +1147,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
         return not isinstance(other, OBSEIniFile)
 
     def is_applicable(self, stat=None):
-        stat = stat or self.tweak_status()
+        stat = stat or self.info_status()
         return stat != -20 and (
             bass.settings[u'bash.ini.allowNewLines'] or stat != -10)
 
@@ -2032,16 +2032,15 @@ def _lo_cache(lord_func):
         load order or active changes."""
         try:
             ldiff: LordDiff = lord_func(self, *args, **kwargs)
-            if not (ldiff.act_changed() or ldiff.added or ldiff.missing):
+            if ldiff.inact_changes_only():
                 return ldiff
             # Update all data structures that may be affected by LO change
             ldiff.affected |= self._refresh_mod_inis_and_strings()
             ldiff.affected |= self._file_or_active_updates()
             # unghost new active plugins and ghost new inactive (if autoGhost)
-            ghostify = dict.fromkeys(ldiff.act_new, False)
-            if bass.settings['bash.mods.autoGhost']:
-                new_inactive = (ldiff.act_del - ldiff.missing) | (
-                        ldiff.added - ldiff.act_new) # new mods, ghost
+            ghostify = dict.fromkeys(ldiff.new_act, False)
+            if bass.settings['bash.mods.autoGhost']: # new mods, ghost
+                new_inactive = ldiff.new_inact | (ldiff.added - ldiff.new_act)
                 ghostify.update({k: True for k in new_inactive if
                     self[k].get_table_prop('allowGhosting', True)})
             ldiff.affected.update(mod for mod, modGhost in ghostify.items()
@@ -2129,10 +2128,9 @@ class ModInfos(TableFileInfos):
         else: # if refresh_infos is False but mods are added force refresh
             ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
                 unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
-        rdata.redraw |= ldiff.reordered
+        rdata.redraw |= ldiff.reordered # any reordered mods must be redrawn
         # if active did not change, we must perform the refreshes below
-        if not ((act_ch := ldiff.act_changed()) or ldiff.added or
-                ldiff.missing):
+        if ldiff.inact_changes_only():
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
@@ -2140,7 +2138,7 @@ class ModInfos(TableFileInfos):
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
         else: # we did all the refreshes above in _modinfos_cache_wrapper
-            rdata.redraw |= act_ch | ldiff.affected
+            rdata.redraw |= ldiff.act_changed() | ldiff.affected
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         return rdata
 
@@ -2175,66 +2173,20 @@ class ModInfos(TableFileInfos):
         order/status changed we need to recalculate cached data structures.
         We could be more granular but the performance is elsewhere plus the
         complexity might not worth it."""
-        self.__recalc_dependents()
-        return {*self.__refresh_active_no_cp1252(), *self.__update_info_sets(),
-                *self.__recalc_real_indices(), *self.__refresh_mergeable()}
-
-    # Use once dunders in _file_or_active_updates - maybe loop once?
-    def __update_info_sets(self):
-        """Refresh bashed_patches/imported/merged - active state changes and/or
-        removal/addition of plugins should trigger a refresh."""
-        bps, self.bashed_patches = self.bashed_patches, {
-            mname for mname, modinf in self.items() if modinf.isBP()}
-        mrgd, imprtd = self.merged, self.imported
-        active_patches = {bp for bp in self.bashed_patches if
-               load_order.cached_is_active(bp)}
-        self.merged, self.imported = self.getSemiActive(active_patches)
-        return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
-                *(imprtd ^ self.imported)}
-
-    def __recalc_real_indices(self):
-        """Recalculate the real indices cache, which is the index the game will
-        assign to plugins. ESLs will land in the 0xFE spot, while inactive
-        plugins don't get any - so we sort them last. Return a set of mods
-        whose real index changed."""
-        # Note that inactive plugins are handled by our defaultdict factory
-        old = self.real_indices
-        self.real_indices = bush.game.plugin_flags.get_indexes(
-            ((p, self[p]) for p in load_order.cached_active_tuple()))
-        return {k for k, v in old.items() ^ self.real_indices.items()}
-
-    def __recalc_dependents(self):
-        """Recalculates the dependents cache. See ModInfo.get_dependents for
-        more information."""
+        # Recalculate the dependents cache. See ModInfo.get_dependents
         cached_dependents = self.dependents
         cached_dependents.clear()
-        for p, p_info in self.items():
-            for p_master in p_info.masterNames:
-                cached_dependents[p_master].add(p)
-
-    def __refresh_active_no_cp1252(self):
-        """Refresh which filenames cannot be saved to plugins.txt - active
-        state changes and/or removal/addition of plugins should trigger a
-        refresh. It seems that Skyrim and Oblivion read plugins.txt as a
-        cp1252 encoded file, and any filename that doesn't decode to cp1252
-        will be skipped."""
+        # Refresh which filenames cannot be saved to plugins.txt. It seems
+        # that Skyrim and Oblivion read plugins.txt as a cp1252 encoded file,
+        # and any filename that doesn't decode to cp1252 will be skipped
         old_bad, self.bad_names = self.bad_names, set()
         old_ab, self.activeBad = self.activeBad, set()
-        for fileName in self:
-            if self.isBadFileName(fileName):
-                if load_order.cached_is_active(fileName):
-                    ##: For now, we'll leave them active, until we finish
-                    # testing what the game will support
-                    #self.lo_deactivate(fileName)
-                    self.activeBad.add(fileName)
-                else:
-                    self.bad_names.add(fileName)
-        return (self.activeBad ^ old_ab) | (self.bad_names ^ old_bad)
-
-    def __refresh_mergeable(self):
-        """Refreshes set of mergeable mods."""
-        #--Mods that need to be rescanned
-        rescan_mods = []
+        # Refresh bashed_patches/imported/merged - active state changes and/or
+        # removal/addition of plugins should trigger a refresh
+        bps, self.bashed_patches = self.bashed_patches, set()
+        active_patches = set()
+        # Refresh set of mergeable mods
+        rescan_mods = [] # Mods that need to be rescanned for mergeability
         full_checks = bush.game.mergeability_checks
         quick_checks = {mc: pflag.cached_type for pflag in
             bush.game.plugin_flags if (mc := pflag.merge_check) in full_checks}
@@ -2244,6 +2196,20 @@ class ModInfos(TableFileInfos):
         # their masters
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
+            for p_master in modInfo.masterNames:
+                cached_dependents[p_master].add(fn_mod)
+            isact = load_order.cached_is_active(fn_mod)
+            if modInfo.isBP():
+                self.bashed_patches.add(fn_mod)
+                if isact: active_patches.add(fn_mod)
+            if self.isBadFileName(fn_mod):
+                if isact:
+                    ##: For now, we'll leave them active, until we finish
+                    # testing what the game will support
+                    #self.lo_deactivate(fn_mod)
+                    self.activeBad.add(fn_mod)
+                else:
+                    self.bad_names.add(fn_mod)
             cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
                                                            (None, {}))
             # Quickly check if some mergeability types are impossible for this
@@ -2265,9 +2231,22 @@ class ModInfos(TableFileInfos):
                 # changed or there is at least one required mergeability check
                 # we have not yet run for this plugin
                 rescan_mods.append(fn_mod)
-        if rescan_mods:
-            self.rescanMergeable(rescan_mods, sort_descending_lo=False) ##: maybe re-add progress?
-        return {*changed, *rescan_mods}
+        if rescan_mods: ##: maybe re-add progress?
+            self.rescanMergeable(rescan_mods, sort_descending_lo=False)
+        # Recalculate the real indices cache, which is the index the game will
+        # assign to plugins. ESLs will land in the 0xFE spot, while inactive
+        # plugins don't get any - so we sort them last. Note that inactive
+        # plugins are handled by our defaultdict factory
+        old_dexs = self.real_indices
+        self.real_indices = bush.game.plugin_flags.get_indexes(
+            ((p, self[p]) for p in load_order.cached_active_tuple()))
+        mrgd, imprtd = self.merged, self.imported
+        self.merged, self.imported = self.getSemiActive(active_patches)
+        return {plug for plug in chain(
+            (k for k, v in self.real_indices.items() ^ old_dexs.items()),
+            changed, rescan_mods, self.bashed_patches ^ bps,
+            self.merged ^ mrgd, self.imported ^ imprtd,
+            self.activeBad ^ old_ab, self.bad_names ^ old_bad) if plug in self}
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
                         return_results=False, sort_descending_lo=True):
@@ -2344,7 +2323,7 @@ class ModInfos(TableFileInfos):
             v.isMissingStrings(av_bsas, hi_to_lo, ci_cached_strings_paths,
                                i_lang)}
         self.new_missing_strings = self.missing_strings - oldBad
-        return self.missing_strings ^ oldBad
+        return {m for m in self.missing_strings ^ oldBad if m in self}
 
     def __load_plugin_inis(self, data_folder_path):
         if not bush.game.Ini.supports_mod_inis:
@@ -2393,35 +2372,27 @@ class ModInfos(TableFileInfos):
             if autoTag:
                 modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
-    def getSemiActive(self, patches, skip_active=False):
+    def getSemiActive(self, patches):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
         If no bashed patches are present in 'patches' then return empty sets.
         Else for each bashed patch use its config (if present) to find mods
         it merges or imports.
 
-        :param patches: A set of mods to look for bashed patches in.
-        :param skip_active: If True, only return inactive merged/imported
-            plugins."""
+        :param patches: A set of mods to look for bashed patches in."""
         merged_,imported_ = set(),set()
         for patch in patches & self.bashed_patches: # this must be up to date!
             patchConfigs = self[patch].get_table_prop('bash.patch.configs')
             if not patchConfigs: continue
+            mod_sets = [(imported_, patchConfigs.get('ImportedMods', []))]
             if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
                     u'isEnabled'):
-                config_checked = merger_conf[u'configChecks']
-                for modName, is_merged in forward_compat_path_to_fn(
-                        config_checked).items():
-                    if is_merged and modName in self:
-                        if skip_active and load_order.cached_is_active(
-                                modName): continue
-                        merged_.add(modName)
-            for imp_name in forward_compat_path_to_fn_list(
-                    patchConfigs.get('ImportedMods', [])):
-                if imp_name in self:
-                    if skip_active and load_order.cached_is_active(
-                            imp_name): continue
-                    imported_.add(imp_name)
+                config_checked = (modName for modName, is_merged in
+                    merger_conf['configChecks'].items() if is_merged)
+                mod_sets.append((merged_, config_checked))
+            for mod_set, bp_mods in mod_sets:
+                mod_set.update(fn for fn in forward_compat_path_to_fn_list(
+                    bp_mods) if fn in self)
         return merged_,imported_
 
     # Rest of DataStore overrides ---------------------------------------------
