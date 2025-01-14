@@ -688,18 +688,15 @@ class _AImportLOBaseLink(ItemLink):
 
     def _apply_lo(self, import_path, imp_lo, imp_acti):
         msg_lo = bosh.modInfos.lo_reorder(imp_lo, save_lo=False)
-        if msg_lo:
-            self._showWarning(msg_lo, title=self._warning_title)
         msg_acti = bosh.modInfos.lo_activate_exact(imp_acti)
         # Don't show the exact same message twice
-        if msg_acti and msg_lo != msg_acti:
-            self._showWarning(msg_acti, title=self._warning_title)
+        for msg in dict.fromkeys([msg_lo, msg_acti]):
+            if msg: self._showWarning(msg, title=self._warning_title)
         bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI()
+        self.window.propagate_refresh(Store.SAVES.DO())
         self._showInfo(_('Successfully imported a load order from '
-                         '%(source_path)s.') % {
-            'source_path': import_path,
-        }, title=self._success_title)
+                         '%(source_path)s.') % {'source_path': import_path},
+                       title=self._success_title)
 
 class Mods_LOImport(_AImportLOBaseLink):
     """Import a previously exported load order from a text file (format
