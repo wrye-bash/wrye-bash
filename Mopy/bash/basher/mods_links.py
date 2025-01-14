@@ -81,7 +81,7 @@ class _AMods_ActivePlugins(ItemLink):
 
     def _select_exact(self, mods):
         lo_warn_msg = bosh.modInfos.lo_activate_exact(mods, doSave=True)
-        self.window.propagate_refresh()
+        self.window.propagate_refresh(True)
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, title=self._text)
 
@@ -108,7 +108,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
         except (exception.BoltError, NotImplementedError) as e:
             deprint('Error while activating plugins', traceback=True)
             self._showError(f'{e}')
-        self.window.propagate_refresh()
+        self.window.propagate_refresh(True)
 
 class _Mods_ActivateNonMergeable(AppendableLink, _Mods_ActivateAll):
     _text = _('Activate Non-Mergeable')
@@ -272,9 +272,8 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
         # we will repeat the checks here - should not be needed but won't harm
         bosh.modInfos.try_set_version(self._version_key, do_swap=self._askYes)
         # We refresh saves although should only ever depend on Oblivion.esm,
-        # not any of the modding ESMs. Maybe we should enforce that those
-        # modding ESMs are never active and drop this refresh_others?
-        self.window.propagate_refresh()
+        # not any of the modding ESMs
+        self.window.propagate_refresh(True)
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
@@ -689,8 +688,8 @@ class _AImportLOBaseLink(ItemLink):
         # Don't show the exact same message twice
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)
-        bosh.modInfos.cached_lo_save_all()
-        self.window.propagate_refresh()
+        ldiff = bosh.modInfos.cached_lo_save_all()
+        self.window.propagate_refresh(ldiff.to_rdata())
         self._showInfo(_('Successfully imported a load order from '
                          '%(source_path)s.') % {'source_path': import_path},
                        title=self._success_title)

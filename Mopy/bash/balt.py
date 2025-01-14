@@ -801,20 +801,28 @@ class UIList(PanelWin):
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
 
-    def propagate_refresh(self,
+    def propagate_refresh(self, rdata,
             refresh_others: defaultdict[str, bool | dict] = None, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
         :param refresh_others: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
-        kwargs.setdefault('focus_list', True)
         refresh_others = {} if refresh_others is None else refresh_others
-        refresh_others[self.data_store.unique_store_key] = kwargs
+        if rdata:
+            kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
+            kwargs.setdefault('focus_list', True)
+            refresh_others[self.data_store.unique_store_key] = kwargs
         # whenever a RefreshUI is requested for ModList we should also refresh
         # SaveList
         ##:353 we need to be more granular here which needs caching info_status
         if Store.MODS in refresh_others:
             refresh_others.update(Store.SAVES.DO())
-        Link.Frame.distribute_ui_refresh(refresh_others)
+        for list_key, do_refr in refresh_others.items():
+            if do_refr and Link.Frame.all_uilists[list_key] is not None:
+                if not isinstance(do_refr, dict): # do_refr is True or RefrData
+                    do_refr = {'rdata': do_refr} if isinstance(do_refr,
+                        RefrData) else {}
+                do_refr.setdefault('focus_list', False)
+                Link.Frame.all_uilists[list_key].RefreshUI(**do_refr)
 
     def _refresh_details(self, to_redraw, detail_item):
         if detail_item is None:
@@ -1401,7 +1409,7 @@ class UIList(PanelWin):
             self.data_store.delete(dd_items, recycle=dd_recycle)
         except (PermissionError, CancelError, SkipError): pass
         # Also cleans _gList internal dicts
-        self.propagate_refresh()
+        self.propagate_refresh(True)
 
     def open_data_store(self):
         try:
@@ -1562,7 +1570,7 @@ class Link(object):
         """Return the first selected info."""
         return next(self.iselected_infos())
 
-    def refresh_sel(self, to_refr=None, **kwargs):
+    def refresh_sel(self, to_refr=None, **kwargs): # note we do not propagate
         """Refresh selected items (or items in to_refr) in the UIList."""
         to_refr = self.selected if to_refr is None else to_refr
         self.window.RefreshUI(RefrData(set(to_refr)), **kwargs)
@@ -2034,7 +2042,7 @@ class UIList_Hide(EnabledLink):
                           {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
-        self.window.propagate_refresh()
+        self.window.propagate_refresh(True)
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""
@@ -2050,7 +2058,7 @@ class Installer_Op(ItemLink):
         except (CancelError, SkipError):
             return None
         finally:
-            self.window.propagate_refresh(ui_refresh)
+            self.window.propagate_refresh(True, ui_refresh)
             Link.Frame.distribute_warnings(ui_refresh)
 
     def _perform_action(self, ui_refresh_, progress):

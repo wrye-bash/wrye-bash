@@ -972,7 +972,7 @@ class ModList(_ModsUIList):
             #--Save and Refresh
             try:
                 ldiff = bosh.modInfos.cached_lo_save_all()
-                self.propagate_refresh(rdata=ldiff.to_rdata())
+                self.propagate_refresh(ldiff.to_rdata())
             except (BoltError, NotImplementedError) as e:  ##: why NotImplementedError?
                 showError(self, f'{e}')
 
@@ -1205,14 +1205,14 @@ class ModList(_ModsUIList):
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            self.propagate_refresh(rdata=ldiff.to_rdata())
+            self.propagate_refresh(ldiff.to_rdata())
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
         ldiff = undo_or_redo() # no additions or removals
         if changed := ldiff.to_rdata():
-            self.propagate_refresh(rdata=changed)
+            self.propagate_refresh(changed)
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -1229,7 +1229,7 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.propagate_refresh(rdata=RefrData({new_patch_name}))
+            self.propagate_refresh(RefrData({new_patch_name}))
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -1664,7 +1664,7 @@ class ModDetails(_ModsSavesDetails):
             self._set_date(modInfo)
             bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
             self.panel_uilist.propagate_refresh( # refresh saves if lo changed
-                Store.SAVES.IF(not bush.game.using_txt_file))
+                True, Store.SAVES.IF(not bush.game.using_txt_file))
             return
         #--Backup
         modInfo.makeBackup()
@@ -1692,7 +1692,7 @@ class ModDetails(_ModsSavesDetails):
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
         detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
-        self.panel_uilist.propagate_refresh(Store.SAVES.IF(
+        self.panel_uilist.propagate_refresh(True, Store.SAVES.IF(
                 detail_item is None or changeName or unlock_lo),
             detail_item=detail_item)
 
@@ -2442,7 +2442,7 @@ class InstallersList(UIList):
                 pass # ren_keys.update(None)
             #--Refresh UI
             if rdata:
-                self.propagate_refresh(ui_refreshes, rdata=rdata)
+                self.propagate_refresh(rdata, ui_refreshes)
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
@@ -3726,29 +3726,18 @@ class BashFrame(WindowFrame):
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
 
-    def distribute_ui_refresh(self, ui_refresh: dict[Store, bool]):
-        """Distribute a RefreshUI to all tabs, based on the specified
-        ui_refresh information."""
-        for list_key, do_refr in ui_refresh.items():
-            if do_refr and self.all_uilists[list_key] is not None:
-                if not isinstance(do_refr, dict): # do_refr is True or RefrData
-                    do_refr = {'rdata': do_refr} if isinstance(
-                        do_refr, RefrData) else {}
-                do_refr.setdefault('focus_list', False)
-                self.all_uilists[list_key].RefreshUI(**do_refr)
-
-    def distribute_warnings(self, ui_refresh):
+    def distribute_warnings(self, ui_refresh, booting=False):
         """Issue warnings for all tabs, based on the specified ui_refresh
         information."""
         # Issue warnings for the various tabs based on what was refreshed
         ##: This could do with a better design
-        mods_were_refreshed = ui_refresh[Store.MODS]
-        bsas_were_refreshed = ui_refresh[Store.BSAS]
+        mods_were_refreshed = ui_refresh.get(Store.MODS, booting)
+        bsas_were_refreshed = ui_refresh.get(Store.BSAS, booting)
         self.warn_corrupted(
             warn_mods=mods_were_refreshed,
             warn_strings=mods_were_refreshed or bsas_were_refreshed,
             warn_bsas=bsas_were_refreshed,
-            warn_saves=ui_refresh[Store.SAVES],
+            warn_saves=ui_refresh.get(Store.SAVES, booting)
         )
         if mods_were_refreshed:
             self.warn_load_order()
@@ -3865,23 +3854,21 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        ui_refresh = {store.unique_store_key: not booting and store.refresh()
-            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)}
-        if ui_refresh[Store.MODS]: ##:353 see comments in propagate_refresh
-            ui_refresh[Store.SAVES] = True # for save masters
-        #--Repopulate, focus will be set in ShowPanel
-        self.distribute_ui_refresh(ui_refresh)
-        self.distribute_warnings(ui_refresh)
+        ui_refresh = {store.unique_store_key: rdata for store in (
+            bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
+             rdata := not booting and store.refresh())}
+        if ui_refresh:
+            #--Repopulate, focus will be set in ShowPanel
+            self.all_uilists[Store.MODS].propagate_refresh(
+                ui_refresh.get(Store.MODS), ui_refresh, focus_list=False)
+        self.distribute_warnings(ui_refresh, booting)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
                                             clean_targets=not booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
-        self.warn_load_order()
         self._warn_reset_load_order()
-        self.warn_corrupted(warn_mods=True, warn_saves=True, warn_strings=True,
-                            warn_bsas=True)
         self.warn_game_ini()
         #--Done (end recursion blocker)
         self.inRefreshData = False
