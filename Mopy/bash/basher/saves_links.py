@@ -234,8 +234,9 @@ class Saves_Profiles(ChoiceLink):
 class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
-        lo_warn_msg = self._lo_operation()
-        self.window.propagate_refresh(True, Store.MODS.DO(), focus_list=False)
+        lo_warn_msg, lordata = self._lo_operation()
+        refresh_others = {Store.MODS: lordata}
+        self.window.propagate_refresh(True, refresh_others, focus_list=False)
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)

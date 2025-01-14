@@ -1093,8 +1093,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             return False # Aborted by user or nothing left enabled
         self._reactivate_mods = ed_nomerge
         with BusyCursor():
-            bosh.modInfos.lo_deactivate(*to_deselect, doSave=True)
-            self.window.propagate_refresh(True)
+            lordata = bosh.modInfos.lo_deactivate(*to_deselect, doSave=True)
+            self.window.propagate_refresh(lordata)
         return True
 
 #------------------------------------------------------------------------------

@@ -816,7 +816,7 @@ class UIList(PanelWin):
         # SaveList
         ##:353 we need to be more granular here which needs caching info_status
         if refr_saves and Store.MODS in ui_refreshes:
-            ui_refreshes.update(Store.SAVES.DO())
+            ui_refreshes[Store.SAVES] = True
         for list_key, do_refr in ui_refreshes.items():
             if do_refr and Link.Frame.all_uilists[list_key] is not None:
                 if not isinstance(do_refr, dict): # do_refr is True or RefrData

@@ -2057,10 +2057,15 @@ def _lo_op(lop_func):
     def _lo_activate_wrapper(self: ModInfos, *args, doSave=False, **kwargs):
         """Update _active_wip cache and possibly save changes."""
         out_var = kwargs.setdefault('out_var', set())
+        lo_msg = None
         try:
-            return lop_func(self, *args, **kwargs)
+            lo_msg = lop_func(self, *args, **kwargs)
         finally:
-            if doSave and out_var: self.cached_lo_save_active()
+            if doSave and out_var:
+                lordata = self.cached_lo_save_active().to_rdata()
+            elif doSave: lordata = RefrData()
+            else: return lo_msg
+            return lordata if lo_msg is None else (lo_msg, lordata)
     return _lo_activate_wrapper
 
 #------------------------------------------------------------------------------
@@ -2699,13 +2704,14 @@ class ModInfos(TableFileInfos):
                 # be appended at the end
                 filtered_order.extend(collected_plugins)
         self._lo_wip = filtered_order
-        if save_lo:
-            self._cached_lo_save_lo()
         message = u''
         if excess_plugins:
-            message += _(u'Some plugins could not be found and were '
-                         u'skipped:') + u'\n* '
-            message += u'\n* '.join(excess_plugins)
+            message += (_('Some plugins could not be found and were skipped:')
+                        + '\n* ' + '\n* '.join(excess_plugins))
+        if save_lo:
+            ldiff = self._cached_lo_save_lo()
+            lordata = ldiff.to_rdata()
+            return message, lordata
         return message
 
     def _lo_move_mod(self, old_name, new_name, do_activate, deactivate=False):

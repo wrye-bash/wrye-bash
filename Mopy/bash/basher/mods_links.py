@@ -80,10 +80,10 @@ class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
 
     def _select_exact(self, mods):
-        lo_warn_msg = bosh.modInfos.lo_activate_exact(mods, doSave=True)
-        self.window.propagate_refresh(True)
-        if lo_warn_msg:
-            self._showWarning(lo_warn_msg, title=self._text)
+        lo_msg, lordata = bosh.modInfos.lo_activate_exact(mods, doSave=True)
+        self.window.propagate_refresh(lordata)
+        if lo_msg:
+            self._showWarning(lo_msg, title=self._text)
 
 class _Mods_ActivateAll(_AMods_ActivePlugins):
     _text = _('Activate All')
