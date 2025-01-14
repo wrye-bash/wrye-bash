@@ -2698,7 +2698,8 @@ class InstallersData(DataStore):
                 if inst.is_active: mask |= set(inst.ci_dest_sizeCrc)
             if tweaksCreated:
                 self._editTweaks(tweaksCreated)
-                refresh_ui |= Store.INIS.IF(tweaksCreated)
+                if tweaksCreated:
+                    refresh_ui[Store.INIS] = True
             return tweaksCreated
         finally:
             self.refresh_ns()

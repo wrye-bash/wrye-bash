@@ -39,7 +39,6 @@ from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
-from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
     GPath_no_norm, RefrIn
 from ..brec import RecordType
@@ -1010,7 +1009,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                         break # don't keep trying
             if resave:
                 bosh.modInfos.cached_lo_save_active()
-            self.window.propagate_refresh(True, Store.SAVES.IF(count))
+            self.window.propagate_refresh(True, refr_saves=count)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?

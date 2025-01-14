@@ -1664,7 +1664,7 @@ class ModDetails(_ModsSavesDetails):
             self._set_date(modInfo)
             bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
             self.panel_uilist.propagate_refresh( # refresh saves if lo changed
-                True, Store.SAVES.IF(not bush.game.using_txt_file))
+                True, refr_saves=not bush.game.using_txt_file)
             return
         #--Backup
         modInfo.makeBackup()
@@ -1692,7 +1692,7 @@ class ModDetails(_ModsSavesDetails):
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
         detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
-        self.panel_uilist.propagate_refresh(True, Store.SAVES.IF(
+        self.panel_uilist.propagate_refresh(True, refr_saves=(
                 detail_item is None or changeName or unlock_lo),
             detail_item=detail_item)
 

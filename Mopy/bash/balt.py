@@ -801,22 +801,23 @@ class UIList(PanelWin):
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
 
-    def propagate_refresh(self, rdata,
-            refresh_others: defaultdict[str, bool | dict] = None, **kwargs):
+    _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
+    def propagate_refresh(self, rdata, ui_refreshes: _ui_in = None, *,
+                          refr_saves=True, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
-        :param refresh_others: A dict mapping unique data store keys (see
+        :param ui_refreshes: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
-        refresh_others = {} if refresh_others is None else refresh_others
+        ui_refreshes = {} if ui_refreshes is None else ui_refreshes
         if rdata:
             kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
             kwargs.setdefault('focus_list', True)
-            refresh_others[self.data_store.unique_store_key] = kwargs
+            ui_refreshes[self.data_store.unique_store_key] = kwargs
         # whenever a RefreshUI is requested for ModList we should also refresh
         # SaveList
         ##:353 we need to be more granular here which needs caching info_status
-        if Store.MODS in refresh_others:
-            refresh_others.update(Store.SAVES.DO())
-        for list_key, do_refr in refresh_others.items():
+        if refr_saves and Store.MODS in ui_refreshes:
+            ui_refreshes.update(Store.SAVES.DO())
+        for list_key, do_refr in ui_refreshes.items():
             if do_refr and Link.Frame.all_uilists[list_key] is not None:
                 if not isinstance(do_refr, dict): # do_refr is True or RefrData
                     do_refr = {'rdata': do_refr} if isinstance(do_refr,
