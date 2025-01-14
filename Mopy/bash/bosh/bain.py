@@ -2966,8 +2966,8 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_infs in store_del.items():
-                store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
-                refresh_ui |= store.unique_store_key.DO()
+                rd = store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
+                refresh_ui[store.unique_store_key] = {'rdata': rd}
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:
                     emptyDir.removedirs()

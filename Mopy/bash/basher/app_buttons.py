@@ -387,8 +387,8 @@ class _AAppLOManager(_ExeButton):
             bosh.modInfos.refresh(refresh_infos=not bush.game.using_txt_file,
                                   unlock_lo=True)
             # Refresh UI, so WB is made aware of the changes to load order
-            Link.Frame.distribute_ui_refresh(
-                ui_refresh=Store.MODS.DO() | Store.SAVES.DO())
+            Link.Frame.all_uilists[Store.MODS].propagate_refresh(
+                focus_list=False)
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):

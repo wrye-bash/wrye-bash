@@ -227,8 +227,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             previous_master = master
         mods_ds.refresh(RefrIn.from_added(mod_previous),
                         insert_after=mod_previous)
-        self.window.propagate_refresh(Store.SAVES.DO(), detail_item=next(
-            reversed(mod_previous)))
+        self.window.propagate_refresh(detail_item=next(reversed(mod_previous)))
         self.window.SelectItemsNoCallback(mod_previous)
 
 #------------------------------------------------------------------------------
@@ -263,7 +262,7 @@ class Mod_OrderByName(EnabledLink):
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         bosh.modInfos.cached_lo_save_all()
-        self.window.propagate_refresh(Store.SAVES.DO())
+        self.window.propagate_refresh()
 
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
@@ -306,7 +305,7 @@ class Mod_Move(EnabledLink):
                                           self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         ldiff = bosh.modInfos.cached_lo_save_all()
-        self.window.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata(),
+        self.window.propagate_refresh(rdata=ldiff.to_rdata(),
                                       detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
@@ -1095,7 +1094,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         self._reactivate_mods = ed_nomerge
         with BusyCursor():
             bosh.modInfos.lo_deactivate(*to_deselect, doSave=True)
-            self.window.propagate_refresh(Store.SAVES.DO())
+            self.window.propagate_refresh()
         return True
 
 #------------------------------------------------------------------------------
@@ -1431,8 +1430,7 @@ class _CopyToLink(EnabledLink):
             if force_flags:
                 for new in rdata.to_add:
                     bosh.modInfos[new].set_plugin_flags(force_flags)
-            self.window.propagate_refresh(Store.SAVES.DO(),
-                                  detail_item=next(reversed(added)))
+            self.window.propagate_refresh(detail_item=next(reversed(added)))
             self.window.SelectItemsNoCallback(added)
 
 class Mod_CopyToMenu(MenuLink):
@@ -1561,7 +1559,7 @@ class AFlipFlagLink(EnabledLink):
             # plugin that was affected to update the Indices column
             rdata = ldiff.to_rdata()
             rdata.redraw.update(self.selected)
-            self.window.propagate_refresh(Store.SAVES.DO(), rdata=rdata)
+            self.window.propagate_refresh(rdata=rdata)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, AFlipFlagLink):

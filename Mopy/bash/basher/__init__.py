@@ -972,7 +972,7 @@ class ModList(_ModsUIList):
             #--Save and Refresh
             try:
                 ldiff = bosh.modInfos.cached_lo_save_all()
-                self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
+                self.propagate_refresh(rdata=ldiff.to_rdata())
             except (BoltError, NotImplementedError) as e:  ##: why NotImplementedError?
                 showError(self, f'{e}')
 
@@ -1205,14 +1205,14 @@ class ModList(_ModsUIList):
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
+            self.propagate_refresh(rdata=ldiff.to_rdata())
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
         """Helper for load order undo/redo operations. Handles UI refreshes."""
         ldiff = undo_or_redo() # no additions or removals
         if changed := ldiff.to_rdata():
-            self.propagate_refresh(Store.SAVES.DO(), rdata=changed)
+            self.propagate_refresh(rdata=changed)
 
     def lo_undo(self):
         """Undoes a load order change."""
@@ -1229,8 +1229,7 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.propagate_refresh(Store.SAVES.DO(),
-                                   rdata=RefrData({new_patch_name}))
+            self.propagate_refresh(rdata=RefrData({new_patch_name}))
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -3868,7 +3867,7 @@ class BashFrame(WindowFrame):
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
         ui_refresh = {store.unique_store_key: not booting and store.refresh()
             for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)}
-        if ui_refresh[Store.MODS]:
+        if ui_refresh[Store.MODS]: ##:353 see comments in propagate_refresh
             ui_refresh[Store.SAVES] = True # for save masters
         #--Repopulate, focus will be set in ShowPanel
         self.distribute_ui_refresh(ui_refresh)

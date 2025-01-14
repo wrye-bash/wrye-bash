@@ -28,7 +28,6 @@ from .. import bush # for _Mods_ActivePluginsData, Mods_ActivePlugins
 from .. import balt, bass, bosh, exception, load_order
 from ..balt import AppendableLink, BoolLink, CheckLink, EnabledLink, \
     ItemLink, Link, MenuLink, MultiLink, SeparatorLink
-from ..bass import Store
 from ..bolt import FName, decoder, deprint, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
     get_shift_down, showError
@@ -79,12 +78,10 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
 # Basic Active Plugins links - mass activate/deactivate
 class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
-    def _refresh_mods_ui(self):
-        self.window.propagate_refresh(Store.SAVES.DO())
 
     def _select_exact(self, mods):
         lo_warn_msg = bosh.modInfos.lo_activate_exact(mods, doSave=True)
-        self._refresh_mods_ui()
+        self.window.propagate_refresh()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, title=self._text)
 
@@ -111,7 +108,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
         except (exception.BoltError, NotImplementedError) as e:
             deprint('Error while activating plugins', traceback=True)
             self._showError(f'{e}')
-        self._refresh_mods_ui()
+        self.window.propagate_refresh()
 
 class _Mods_ActivateNonMergeable(AppendableLink, _Mods_ActivateAll):
     _text = _('Activate Non-Mergeable')
@@ -274,10 +271,10 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def Execute(self):
         # we will repeat the checks here - should not be needed but won't harm
         bosh.modInfos.try_set_version(self._version_key, do_swap=self._askYes)
-        ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
+        # We refresh saves although should only ever depend on Oblivion.esm,
         # not any of the modding ESMs. Maybe we should enforce that those
         # modding ESMs are never active and drop this refresh_others?
-        self.window.propagate_refresh(Store.SAVES.DO())
+        self.window.propagate_refresh()
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
@@ -693,7 +690,7 @@ class _AImportLOBaseLink(ItemLink):
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)
         bosh.modInfos.cached_lo_save_all()
-        self.window.propagate_refresh(Store.SAVES.DO())
+        self.window.propagate_refresh()
         self._showInfo(_('Successfully imported a load order from '
                          '%(source_path)s.') % {'source_path': import_path},
                        title=self._success_title)
