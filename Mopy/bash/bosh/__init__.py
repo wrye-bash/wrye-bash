@@ -2581,32 +2581,31 @@ class ModInfos(TableFileInfos):
         Raises a PluginsFullError if too many non-mergeable plugins are present
         and a SkippedMergeablePluginsError if too many mergeable plugins are
         present."""
-        wip_actives = set(load_order.cached_active_tuple())
-        def _add_to_actives(p):
-            """Helper for activating a plugin, if necessary."""
-            if p not in wip_actives:
-                self.lo_activate(p)
-                wip_actives.add(p)
+        act_set = set(load_order.cached_active_tuple())
         def _activatable(p):
             """Helper for checking if a plugin should be activated."""
-            return (p.fn_ext != '.esu' and
-                    'Deactivate' not in modInfos[p].getBashTags())
+            return (p.fn_ext != '.esu' and p not in act_set
+                    and 'Deactivate' not in modInfos[p].getBashTags())
         mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
+        s_plugins = {p: self[p] for p in
+                     load_order.get_ordered(filter(_activatable, self))}
+        # First, activate non-mergeable plugins not tagged Deactivate
+        to_act = [p for p, v in s_plugins.items() if v not in mergeable]
+        first_mergeable = len(to_act)
+        # Then activate as many of the mergeable plugins as we can
+        if mergeable and activate_mergeable:
+            to_act.extend(p for p, v in s_plugins.items() if v in mergeable)
+        if not to_act: return
+        wip_actives = act_set
         try:
-            s_plugins = load_order.get_ordered(filter(_activatable, self))
             try:
-                # First, activate non-mergeable plugins not tagged Deactivate
-                for p in s_plugins:
-                    if modInfos[p] not in mergeable: _add_to_actives(p)
-            except PluginsFullError:
+                for j, p in enumerate(to_act):
+                    if p not in wip_actives:
+                        wip_actives.update(self.lo_activate(p))
+            except PluginsFullError as e:
+                if j >= first_mergeable:
+                    raise SkippedMergeablePluginsError from e
                 raise
-            if mergeable and activate_mergeable:
-                try:
-                    # Then activate as many of the mergeable plugins as we can
-                    for p in s_plugins:
-                        if modInfos[p] in mergeable: _add_to_actives(p)
-                except PluginsFullError as e:
-                    raise SkippedMergeablePluginsError() from e
         except (BoltError, NotImplementedError):
             wip_actives.clear() # Don't save, something went wrong
             raise

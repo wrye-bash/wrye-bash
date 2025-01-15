@@ -79,7 +79,8 @@ from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, deprint, \
     fast_cached_property, attrgetter_cache, top_level_files
 from ..bosh import ModInfo, omods
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
-from ..exception import BoltError, CancelError, SkipError, UnknownListener
+from ..exception import BoltError, CancelError, SkipError, UnknownListener, \
+    PluginsFullError
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -1145,22 +1146,18 @@ class ModList(_ModsUIList):
         # Deactivate ?
         # Track illegal deactivations for the return value
         illegal_deactivations = []
+        _ord = load_order.get_ordered
         for act in active:
-            if act in touched: continue # already deactivated
-            try:
+            if act not in touched: # else we already deactivated it
                 deactivated = self.data_store.lo_deactivate(act)
                 if not deactivated:
                     # Can't deactivate that mod, track this
                     illegal_deactivations.append(act)
                     continue
                 touched |= deactivated
-                if len(deactivated) > (act in deactivated):
-                    # deactivated dependents
-                    deactivated = [x for x in deactivated if x != act]
-                    changes[self._deactivated_key][act] = \
-                        load_order.get_ordered(deactivated)
-            except (BoltError, NotImplementedError) as e:
-                showError(self, f'{e}')
+                deactivated.discard(act)
+                if deactivated: # deactivated dependents
+                    changes[self._deactivated_key][act] = _ord(deactivated)
         # Activate ?
         # Track illegal activations for the return value
         illegal_activations = []
@@ -1180,7 +1177,7 @@ class ModList(_ModsUIList):
                 if len(activated) > (inact in activated): # activated masters
                     activated = [x for x in activated if x != inact]
                     changes[self._activated_key][inact] = activated
-            except (BoltError, NotImplementedError) as e:
+            except (BoltError, PluginsFullError) as e:
                 showError(self, f'{e}')
                 break
         # Show warnings to the user if they attempted to deactivate mods that

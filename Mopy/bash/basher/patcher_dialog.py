@@ -31,8 +31,7 @@ from .dialogs import DeleteBPPartsEditor
 from .. import balt, bass, bolt, bosh, bush, env, wrye_text
 from ..balt import Resources
 from ..bolt import GPath_no_norm, RefrIn, SubProgress
-from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
-    SkipError
+from ..exception import BoltError, BPConfigError, CancelError, SkipError
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     DialogWindow, EventResult, FileOpen, HLayout, HorizontalLine, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
@@ -298,7 +297,7 @@ class PatchDialog(DialogWindow):
         except BPConfigError as e: # User configured BP incorrectly
             self._error(_(u'The configuration of the Bashed Patch is '
                           u'incorrect.') + f'\n\n{e}')
-        except (BoltError, FileEditError, NotImplementedError) as e:
+        except (BoltError, NotImplementedError) as e:
             # Nonfatal error
             self._error(f'{e}')
         except Exception as e: # Fatal error
