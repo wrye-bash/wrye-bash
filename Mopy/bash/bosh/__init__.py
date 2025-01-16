@@ -2027,13 +2027,15 @@ def _lo_cache(lord_func):
     whenever I change (or attempt to change) the latter, and that I do
     refresh modInfos."""
     @wraps(lord_func)
-    def _modinfos_cache_wrapper(self: ModInfos, *args, **kwargs) -> LordDiff:
+    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None,
+                                **kwargs) -> RefrData:
         """Sync the ModInfos load order and active caches and refresh for
         load order or active changes."""
         try:
-            ldiff: LordDiff = lord_func(self, *args, **kwargs)
+            ldiff = LordDiff() if ldiff is None else ldiff
+            ldiff |= lord_func(self, *args, **kwargs)
             if ldiff.inact_changes_only():
-                return ldiff
+                return ldiff.to_rdata()
             # Update all data structures that may be affected by LO change
             ldiff.affected |= self._refresh_mod_inis_and_strings()
             ldiff.affected |= self._file_or_active_updates()
@@ -2045,7 +2047,7 @@ def _lo_cache(lord_func):
                     self[k].get_table_prop('allowGhosting', True)})
             ldiff.affected.update(mod for mod, modGhost in ghostify.items()
                                   if self[mod].setGhost(modGhost))
-            return ldiff
+            return ldiff.to_rdata()
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
             self._active_wip = list(load_order.cached_active_tuple())
@@ -2054,10 +2056,11 @@ def _lo_cache(lord_func):
 def _lo_op(lop_func):
     """Decorator centralizing saving active state/load order changes."""
     @wraps(lop_func)
-    def _lo_activate_wrapper(self: ModInfos, *args, doSave=False,
+    def _lo_activate_wrapper(self: ModInfos, *args, doSave=False, ldiff=None,
                              save_wip_lo=False, **kwargs):
         """Update _active_wip/_lo_wip cache and possibly save changes."""
         out_diff = kwargs.setdefault('out_diff', LordDiff())
+        ldiff = LordDiff() if ldiff is None else ldiff
         save = sum((doSave, save_wip_lo))
         if save > 1:
             raise ValueError('Only one of doSave and save_wip_lo can be True')
@@ -2066,11 +2069,11 @@ def _lo_op(lop_func):
             lo_msg = lop_func(self, *args, **kwargs)
         finally:
             if doSave and out_diff:
-                out_diff = self.cached_lo_save_active().to_rdata()
+                out_diff = self.cached_lo_save_active(ldiff=ldiff)
             elif save_wip_lo and out_diff:
-                out_diff = self._cached_lo_save_lo().to_rdata()
+                out_diff = self._cached_lo_save_lo(ldiff=ldiff)
             elif save:
-                out_diff = out_diff.to_rdata()
+                out_diff = out_diff.to_rdata() # should be empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
     return _lo_activate_wrapper
 
@@ -2144,14 +2147,16 @@ class ModInfos(TableFileInfos):
         rdata = super().refresh(refresh_infos, booting=booting)
         mods_changes = bool(rdata)
         self._refresh_bash_tags()
+        ldiff = LordDiff()
         if insert_after:
             for k, v in insert_after.items():
                 self._cached_lo_insert_after(v, k)
-            ldiff = self._cached_lo_save_lo()
+            lordata = self._cached_lo_save_lo(ldiff=ldiff)
         else: # if refresh_infos is False but mods are added force refresh
-            ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
-                unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
-        rdata.redraw |= ldiff.reordered # any reordered mods must be redrawn
+            lordata = self.refreshLoadOrder(ldiff=ldiff,
+                forceRefresh=mods_changes or unlock_lo,
+                forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+        rdata |= lordata
         # if active did not change, we must perform the refreshes below
         if ldiff.inact_changes_only():
             # in case ini files were deleted or modified or maybe string files
@@ -2160,8 +2165,6 @@ class ModInfos(TableFileInfos):
             rdata.redraw |= self._refresh_mod_inis_and_strings()
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
-        else: # we did all the refreshes above in _modinfos_cache_wrapper
-            rdata.redraw |= ldiff.act_changed() | ldiff.affected
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         return rdata
 
@@ -2483,10 +2486,8 @@ class ModInfos(TableFileInfos):
         return load_order.save_lo(self._lo_wip, acti=self._active_wip)
 
     @_lo_cache
-    def undo_load_order(self): return load_order.undo_load_order()
-
-    @_lo_cache
-    def redo_load_order(self): return load_order.redo_load_order()
+    def undo_redo_load_order(self, redo):
+        return load_order.undo_redo_load_order(redo)
 
     #--Load Order utility methods - be sure cache is valid when using them
     def _cached_lo_insert_after(self, previous, new_mod):

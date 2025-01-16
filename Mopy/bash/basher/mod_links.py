@@ -259,8 +259,8 @@ class Mod_OrderByName(EnabledLink):
         self.selected.sort(key=lambda m: ( # sort masters first
             *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
-        ldiff = bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
-        self.window.propagate_refresh(ldiff.to_rdata())
+        lordata = bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
+        self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
@@ -299,10 +299,9 @@ class Mod_Move(EnabledLink):
         active_plugins = load_order.cached_active_tuple()
         # Clamp between 0 and max plugin index
         target_index = max(0, min(target_index, len(active_plugins) - 1))
-        ldiff = bosh.modInfos.cached_lo_insert_at(active_plugins[target_index],
-                                                  self.selected)
-        self.window.propagate_refresh(ldiff.to_rdata(),
-                                      detail_item=self.selected[0])
+        lordata = bosh.modInfos.cached_lo_insert_at(
+            active_plugins[target_index], self.selected)
+        self.window.propagate_refresh(lordata, detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
 class Mod_Redate(File_Redate):
@@ -1001,8 +1000,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                         self._showError(msg)
                         break # don't keep trying
             if act_save:
-                ldiff = bosh.modInfos.cached_lo_save_active()
-                bp_rdata.redraw |= ldiff.to_rdata().redraw
+                bp_rdata |= bosh.modInfos.cached_lo_save_active()
             if bp_masters:
                 msg = _('Masters Activated: %(num_activated)d') % {
                     'num_activated': len(bp_masters)}
@@ -1551,15 +1549,14 @@ class AFlipFlagLink(EnabledLink):
                 minfo.set_plugin_flags(set_flags)
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
-            ldiff = bosh.modInfos.refreshLoadOrder()
+            lordata = bosh.modInfos.refreshLoadOrder()
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
                 altered={p.abs_path for p in self.iselected_infos()})
             # We need to RefreshUI all higher-loading plugins than the lowest
             # plugin that was affected to update the Indices column
-            rdata = ldiff.to_rdata()
-            rdata.redraw.update(self.selected)
-            self.window.propagate_refresh(rdata)
+            lordata.redraw.update(self.selected)
+            self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, AFlipFlagLink):

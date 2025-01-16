@@ -406,9 +406,8 @@ def get_active_mods_lists():
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
 
-def undo_load_order(): return _restore_lo(-1)
-
-def redo_load_order(): return _restore_lo(1)
+def undo_redo_load_order(redo):
+    return _restore_lo(1 if redo else -1)
 
 def _restore_lo(index_move):
     index = _current_list_index + index_move

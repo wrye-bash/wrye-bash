@@ -293,7 +293,7 @@ class PatchDialog(DialogWindow):
             self._bps.extend(attrs)
             # We have to parse the new infos first since the masters may differ
             # note this won't activate the new masters, the caller has to do it
-            self._bp_rdata.redraw |= patchFile.p_file_minfos.refresh(rinf).redraw
+            self._bp_rdata |= patchFile.p_file_minfos.refresh(rinf)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly

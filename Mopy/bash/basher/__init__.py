@@ -971,8 +971,8 @@ class ModList(_ModsUIList):
         if moved:
             #--Save and Refresh
             try:
-                ldiff = bosh.modInfos.cached_lo_save_all()
-                self.propagate_refresh(ldiff.to_rdata())
+                lordata = bosh.modInfos.cached_lo_save_all()
+                self.propagate_refresh(lordata)
             except (BoltError, NotImplementedError) as e:  ##: why NotImplementedError?
                 showError(self, f'{e}')
 
@@ -1072,16 +1072,14 @@ class ModList(_ModsUIList):
                 newIndex := (first := c[0]) + moveMod) >= 0 and (
                     (last := c[-1]) + moveMod) < self.item_count]
             self._drop_dexes(chunks)
-        elif wrapped_evt.is_cmd_down and kcode == ord('Z'):
-            if wrapped_evt.is_shift_down:
-                # Ctrl+Shift+Z - redo last load order or active plugins change
-                self.lo_redo()
-            else:
-                # Ctrl+Z - undo last load order or active plugins change
-                self.lo_undo()
-        elif wrapped_evt.is_cmd_down and kcode == ord('Y'):
-            # Ctrl+Y - redo last load order or active plugins change
-            self.lo_redo()
+        elif wrapped_evt.is_cmd_down:
+            # Ctrl+Y/Ctrl+Shift+Z redo last load order or active plugins change
+            # Ctrl+Z - undo last load order or active plugins change
+            redo = wrapped_evt.is_shift_down if kcode == ord('Z') else \
+                (kcode == ord('Y') or None)
+            if redo is not None:
+                lordata = self.data_store.undo_redo_load_order(redo)
+                self.propagate_refresh(lordata) # no additions or removals
         else:
             return super()._handle_key_down(wrapped_evt)
         # Otherwise we'd jump to a random plugin that starts with the key code
@@ -1196,29 +1194,14 @@ class ModList(_ModsUIList):
         if warn_msg:
             balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
         if touched:
-            ldiff = bosh.modInfos.cached_lo_save_active()
+            lordata = bosh.modInfos.cached_lo_save_active()
             # If we have no changes, pass - if we do have changes, only one of
             # these can be truthy at a time
             if ch := changes[self._activated_key]:
                 MastersAffectedDialog(self, ch).show_modeless()
             elif ch := changes[self._deactivated_key]:
                 DependentsAffectedDialog(self, ch).show_modeless()
-            self.propagate_refresh(ldiff.to_rdata())
-
-    # Undo/Redo ---------------------------------------------------------------
-    def _undo_redo_op(self, undo_or_redo):
-        """Helper for load order undo/redo operations. Handles UI refreshes."""
-        ldiff = undo_or_redo() # no additions or removals
-        if changed := ldiff.to_rdata():
-            self.propagate_refresh(changed)
-
-    def lo_undo(self):
-        """Undoes a load order change."""
-        self._undo_redo_op(self.data_store.undo_load_order)
-
-    def lo_redo(self):
-        """Redoes a load order change."""
-        self._undo_redo_op(self.data_store.redo_load_order)
+            self.propagate_refresh(lordata)
 
     # Other -------------------------------------------------------------------
     def new_bashed_patch(self):

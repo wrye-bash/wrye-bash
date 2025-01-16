@@ -689,8 +689,8 @@ class _AImportLOBaseLink(ItemLink):
         # Don't show the exact same message twice
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)
-        ldiff = bosh.modInfos.cached_lo_save_all()
-        self.window.propagate_refresh(ldiff.to_rdata())
+        lordata = bosh.modInfos.cached_lo_save_all()
+        self.window.propagate_refresh(lordata)
         self._showInfo(_('Successfully imported a load order from '
                          '%(source_path)s.') % {'source_path': import_path},
                        title=self._success_title)
