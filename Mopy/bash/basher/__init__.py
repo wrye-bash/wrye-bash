@@ -971,7 +971,7 @@ class ModList(_ModsUIList):
         if moved:
             #--Save and Refresh
             try:
-                lordata = bosh.modInfos.cached_lo_save_all()
+                lordata = bosh.modInfos.wip_lo_save_all()
                 self.propagate_refresh(lordata)
             except (BoltError, NotImplementedError) as e:  ##: why NotImplementedError?
                 showError(self, f'{e}')
@@ -1078,7 +1078,7 @@ class ModList(_ModsUIList):
             redo = wrapped_evt.is_shift_down if kcode == ord('Z') else \
                 (kcode == ord('Y') or None)
             if redo is not None:
-                lordata = self.data_store.undo_redo_load_order(redo)
+                lordata = self.data_store.wip_lo_undo_redo_load_order(redo)
                 self.propagate_refresh(lordata) # no additions or removals
         else:
             return super()._handle_key_down(wrapped_evt)
@@ -1194,7 +1194,7 @@ class ModList(_ModsUIList):
         if warn_msg:
             balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
         if touched:
-            lordata = bosh.modInfos.cached_lo_save_active()
+            lordata = bosh.modInfos.wip_lo_save_active()
             # If we have no changes, pass - if we do have changes, only one of
             # these can be truthy at a time
             if ch := changes[self._activated_key]:

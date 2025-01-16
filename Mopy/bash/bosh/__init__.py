@@ -2056,22 +2056,24 @@ def _lo_cache(lord_func):
 def _lo_op(lop_func):
     """Decorator centralizing saving active state/load order changes."""
     @wraps(lop_func)
-    def _lo_activate_wrapper(self: ModInfos, *args, doSave=False, ldiff=None,
-                             save_wip_lo=False, **kwargs):
+    def _lo_activate_wrapper(self: ModInfos, *args, ldiff=None, save_all=False,
+                             save_wip_lo=False, save_act=False, **kwargs):
         """Update _active_wip/_lo_wip cache and possibly save changes."""
         out_diff = kwargs.setdefault('out_diff', LordDiff())
         ldiff = LordDiff() if ldiff is None else ldiff
-        save = sum((doSave, save_wip_lo))
+        save = sum((save_act, save_wip_lo, save_all))
         if save > 1:
-            raise ValueError('Only one of doSave and save_wip_lo can be True')
+            raise ValueError(f'{save_act=}/{save_wip_lo=}/{save_all=}')
         lo_msg = None
         try:
             lo_msg = lop_func(self, *args, **kwargs)
         finally:
-            if doSave and out_diff:
-                out_diff = self.cached_lo_save_active(ldiff=ldiff)
+            if save_act and out_diff:
+                out_diff = self.wip_lo_save_active(ldiff=ldiff)
             elif save_wip_lo and out_diff:
-                out_diff = self._cached_lo_save_lo(ldiff=ldiff)
+                out_diff = self._wip_lo_save_lo(ldiff=ldiff)
+            elif save_all and out_diff:
+                out_diff = self.wip_lo_save_all(ldiff=ldiff)
             elif save:
                 out_diff = out_diff.to_rdata() # should be empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
@@ -2150,8 +2152,8 @@ class ModInfos(TableFileInfos):
         ldiff = LordDiff()
         if insert_after:
             for k, v in insert_after.items():
-                self._cached_lo_insert_after(v, k)
-            lordata = self._cached_lo_save_lo(ldiff=ldiff)
+                self._wip_lo_insert_after(v, k)
+            lordata = self._wip_lo_save_lo(ldiff=ldiff)
         else: # if refresh_infos is False but mods are added force refresh
             lordata = self.refreshLoadOrder(ldiff=ldiff,
                 forceRefresh=mods_changes or unlock_lo,
@@ -2463,7 +2465,7 @@ class ModInfos(TableFileInfos):
                                          cached_active=not forceActive)
 
     @_lo_cache
-    def cached_lo_save_active(self):
+    def wip_lo_save_active(self):
         """Write data to Plugins.txt file.
 
         Always call AFTER setting the load order - make sure we unghost
@@ -2472,12 +2474,12 @@ class ModInfos(TableFileInfos):
             self._active_wip))
 
     @_lo_cache
-    def _cached_lo_save_lo(self):
+    def _wip_lo_save_lo(self):
         """Save load order when active did not change."""
         return load_order.save_lo(self._lo_wip)
 
     @_lo_cache
-    def cached_lo_save_all(self):
+    def wip_lo_save_all(self):
         """Save load order and plugins.txt"""
         active_wip_set = set(self._active_wip)
         dex = {x: i for i, x in enumerate(self._lo_wip) if
@@ -2486,11 +2488,11 @@ class ModInfos(TableFileInfos):
         return load_order.save_lo(self._lo_wip, acti=self._active_wip)
 
     @_lo_cache
-    def undo_redo_load_order(self, redo):
+    def wip_lo_undo_redo_load_order(self, redo):
         return load_order.undo_redo_load_order(redo)
 
     #--Load Order utility methods - be sure cache is valid when using them
-    def _cached_lo_insert_after(self, previous, new_mod):
+    def _wip_lo_insert_after(self, previous, new_mod):
         new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
         if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
         dex = self._lo_wip.index(previous)
@@ -2532,12 +2534,12 @@ class ModInfos(TableFileInfos):
             self._lo_wip.append(mod)
         self._lo_wip[first_dex:first_dex] = modlist
         # Reorder the actives too to avoid bogus LO warnings
-        return self.cached_lo_save_all()
+        return self.wip_lo_save_all()
 
     #--Active mods management -------------------------------------------------
     @_lo_op
     def lo_activate(self, fileName, *, out_diff):
-        """Mutate _active_wip cache then save if doSave is True."""
+        """Mutate _active_wip cache."""
         self._do_activate(fileName, set(self), [], out_diff)
 
     def _do_activate(self, fileName, _modSet, _children, out_diff):
@@ -2573,8 +2575,7 @@ class ModInfos(TableFileInfos):
 
     @_lo_op
     def lo_deactivate(self, *filenames, out_diff):
-        """Remove mods and their children from _active_wip, can only raise if
-        doSave=True."""
+        """Remove mods and their children from _active_wip."""
         filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
         old = set(self._active_wip)
         diff = old - filenames
@@ -2725,7 +2726,7 @@ class ModInfos(TableFileInfos):
             self.lo_activate(new_name)
         elif deactivate:
             self.lo_deactivate(new_name)
-        self.cached_lo_save_all()
+        self.wip_lo_save_all()
 
     def _diff_los(self, *, new_lo=None, new_act=None):
         new_lord = LoadOrder(self._lo_wip if new_lo is None else new_lo,

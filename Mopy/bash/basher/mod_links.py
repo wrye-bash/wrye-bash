@@ -1000,7 +1000,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                         self._showError(msg)
                         break # don't keep trying
             if act_save:
-                bp_rdata |= bosh.modInfos.cached_lo_save_active()
+                bp_rdata |= bosh.modInfos.wip_lo_save_active()
             if bp_masters:
                 msg = _('Masters Activated: %(num_activated)d') % {
                     'num_activated': len(bp_masters)}
@@ -1090,7 +1090,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             return False # Aborted by user or nothing left enabled
         self._reactivate_mods = ed_nomerge
         with BusyCursor():
-            lordata = bosh.modInfos.lo_deactivate(*to_deselect, doSave=True)
+            lordata = bosh.modInfos.lo_deactivate(*to_deselect, save_act=True)
             self.window.propagate_refresh(lordata)
         return True
 

@@ -80,7 +80,7 @@ class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
 
     def _select_exact(self, mods):
-        lo_msg, lordata = bosh.modInfos.lo_activate_exact(mods, doSave=True)
+        lo_msg, lordata = bosh.modInfos.lo_activate_exact(mods, save_act=True)
         self.window.propagate_refresh(lordata)
         if lo_msg:
             self._showWarning(lo_msg, title=self._text)
@@ -94,7 +94,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
         """Activate all mods."""
         lordata = True # on exception refresh all mods
         try:
-            lordata = bosh.modInfos.lo_activate_all(doSave=True,
+            lordata = bosh.modInfos.lo_activate_all(save_act=True,
                 activate_mergeable=self._activate_mergeable)
         except exception.PluginsFullError:
             self._showError(_('Plugin list is full, so some plugins '
@@ -684,12 +684,14 @@ class _AImportLOBaseLink(ItemLink):
     _warning_title: str
 
     def _apply_lo(self, import_path, imp_lo, imp_acti):
-        msg_lo, ldiff_ = bosh.modInfos.lo_reorder(imp_lo)
-        msg_acti, ldiff_ = bosh.modInfos.lo_activate_exact(imp_acti)
+        msg_lo, ldiff = bosh.modInfos.lo_reorder(imp_lo)
+        # out_diff controls saving, so pass ldiff in to make sure we save if
+        # lo_reorder made changes, even if lo_activate_exact was no op
+        msg_acti, lordata = bosh.modInfos.lo_activate_exact(imp_acti,
+            out_diff=ldiff, save_all=True)
         # Don't show the exact same message twice
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)
-        lordata = bosh.modInfos.cached_lo_save_all()
         self.window.propagate_refresh(lordata)
         self._showInfo(_('Successfully imported a load order from '
                          '%(source_path)s.') % {'source_path': import_path},
