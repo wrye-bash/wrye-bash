@@ -58,7 +58,7 @@ from ..exception import BoltError, BSAError, CancelError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
-from ..load_order import LordDiff
+from ..load_order import LordDiff, LoadOrder
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag
 from ..wbtemp import TempFile
@@ -2052,20 +2052,26 @@ def _lo_cache(lord_func):
     return _modinfos_cache_wrapper
 
 def _lo_op(lop_func):
-    """Decorator centralizing saving active state changes."""
+    """Decorator centralizing saving active state/load order changes."""
     @wraps(lop_func)
-    def _lo_activate_wrapper(self: ModInfos, *args, doSave=False, **kwargs):
-        """Update _active_wip cache and possibly save changes."""
-        out_var = kwargs.setdefault('out_var', set())
+    def _lo_activate_wrapper(self: ModInfos, *args, doSave=False,
+                             save_wip_lo=False, **kwargs):
+        """Update _active_wip/_lo_wip cache and possibly save changes."""
+        out_diff = kwargs.setdefault('out_diff', LordDiff())
+        save = sum((doSave, save_wip_lo))
+        if save > 1:
+            raise ValueError('Only one of doSave and save_wip_lo can be True')
         lo_msg = None
         try:
             lo_msg = lop_func(self, *args, **kwargs)
         finally:
-            if doSave and out_var:
-                lordata = self.cached_lo_save_active().to_rdata()
-            elif doSave: lordata = RefrData()
-            else: return lo_msg
-            return lordata if lo_msg is None else (lo_msg, lordata)
+            if doSave and out_diff:
+                out_diff = self.cached_lo_save_active().to_rdata()
+            elif save_wip_lo and out_diff:
+                out_diff = self._cached_lo_save_lo().to_rdata()
+            elif save:
+                out_diff = out_diff.to_rdata()
+            return out_diff if lo_msg is None else (lo_msg, out_diff)
     return _lo_activate_wrapper
 
 #------------------------------------------------------------------------------
@@ -2524,14 +2530,16 @@ class ModInfos(TableFileInfos):
             if mod in mod_set: continue
             self._lo_wip.append(mod)
         self._lo_wip[first_dex:first_dex] = modlist
+        # Reorder the actives too to avoid bogus LO warnings
+        return self.cached_lo_save_all()
 
     #--Active mods management -------------------------------------------------
     @_lo_op
-    def lo_activate(self, fileName, *, out_var: set | None = None):
+    def lo_activate(self, fileName, *, out_diff):
         """Mutate _active_wip cache then save if doSave is True."""
-        self._do_activate(fileName, set(self), [], out_var)
+        self._do_activate(fileName, set(self), [], out_diff)
 
-    def _do_activate(self, fileName, _modSet, _children, _activated):
+    def _do_activate(self, fileName, _modSet, _children, out_diff):
         # Skip .esu files, those can't be activated
         ##: This .esu handling needs to be centralized - sprinkled all over
         # actives related lo_* methods
@@ -2548,22 +2556,21 @@ class ModInfos(TableFileInfos):
         _children = [fileName]
         #--Check for bad masternames:
         #  Disabled for now
-        ##if self[fileName].hasBadMasterNames():
-        ##    return
+        ##if self[fileName].hasBadMasterNames(): return
         #--Select masters
         # Speed up lookups, since they occur for the plugin and all masters
         acti_set = set(self._active_wip)
         for master in self[fileName].masterNames:
             # Check that the master is on disk and not already activated
             if master in _modSet and master not in acti_set:
-                self._do_activate(master, _modSet, _children, _activated)
+                self._do_activate(master, _modSet, _children, out_diff)
         #--Select in plugins
         if fileName not in acti_set:
             self._active_wip.append(fileName)
-            _activated.add(fileName)
+            out_diff.new_act.add(fileName) # manipulate out_diff attrs directly
 
     @_lo_op
-    def lo_deactivate(self, *filenames, out_var=None):
+    def lo_deactivate(self, *filenames, out_diff):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
@@ -2584,11 +2591,10 @@ class ModInfos(TableFileInfos):
             children |= cached_dependents[child]
         # Commit the changes made above
         self._active_wip = [x for x in self._active_wip if x in set_awip]
-        out_var.update(old - set_awip) # return deselected
+        out_diff.new_inact.update(old - set_awip) # manipulate out_diff attrs
 
     @_lo_op
-    def lo_activate_all(self, *, activate_mergeable=True,
-                        out_var: set | None = None):
+    def lo_activate_all(self, *, activate_mergeable=True, out_diff):
         """Activates all non-mergeable plugins (except ones tagged Deactivate),
         then all mergeable plugins (again, except ones tagged Deactivate).
         Raises a PluginsFullError if too many non-mergeable plugins are present
@@ -2609,23 +2615,21 @@ class ModInfos(TableFileInfos):
         if mergeable and activate_mergeable:
             to_act.extend(p for p, v in s_plugins.items() if v in mergeable)
         if not to_act: return
-        out_var.update(act_set)
         try:
             try:
                 for j, p in enumerate(to_act):
-                    if p not in out_var:
-                        self.lo_activate(p, out_var=out_var)
+                    if p not in out_diff.new_act: # else a delinquent master(?)
+                        self.lo_activate(p, out_diff=out_diff)
             except PluginsFullError as e:
                 if j >= first_mergeable:
                     raise SkippedMergeablePluginsError from e
                 raise
         except (BoltError, NotImplementedError):
-            out_var.clear() # Don't save, something went wrong
+            out_diff.new_act.clear() # Don't save, something went wrong
             raise
 
     @_lo_op
-    def lo_activate_exact(self, partial_actives: Iterable[FName], *,
-                          out_var: set | None = None):
+    def lo_activate_exact(self, partial_actives: Iterable[FName], *, out_diff):
         """Activate exactly the specified iterable of plugin names (plus
         required masters and plugins that can't be deactivated). May contain
         missing plugins. Returns a warning message or an empty string."""
@@ -2650,9 +2654,8 @@ class ModInfos(TableFileInfos):
         trimmed_plugins = load_order.check_active_limit(ordered_wip)
         # Trim off any excess plugins and commit
         to_act = [p for p in ordered_wip if p not in trimmed_plugins]
-        if self._active_wip != to_act:
-            out_var.update(set(self._active_wip) ^ set(to_act))
-            self._active_wip = to_act
+        out_diff |= self._diff_los(new_act=to_act)
+        self._active_wip = to_act
         message = ''
         if missing_plugins:
             message += _('Some plugins could not be found and were '
@@ -2666,7 +2669,8 @@ class ModInfos(TableFileInfos):
             message += '\n* '.join(load_order.get_ordered(trimmed_plugins))
         return message
 
-    def lo_reorder(self, partial_order: list[FName], save_lo=True):
+    @_lo_op
+    def lo_reorder(self, partial_order: list[FName], *, out_diff):
         """Changes the load order to match the specified potentially invalid
         'partial' load order as much as possible. To that end, it filters out
         plugins that don't exist in the Data folder and tries to insert plugins
@@ -2703,16 +2707,12 @@ class ModInfos(TableFileInfos):
                 # Exited the loop without breaking -> some extra plugins should
                 # be appended at the end
                 filtered_order.extend(collected_plugins)
+        out_diff |= self._diff_los(new_lo=filtered_order)
         self._lo_wip = filtered_order
-        message = u''
         if excess_plugins:
-            message += (_('Some plugins could not be found and were skipped:')
-                        + '\n* ' + '\n* '.join(excess_plugins))
-        if save_lo:
-            ldiff = self._cached_lo_save_lo()
-            lordata = ldiff.to_rdata()
-            return message, lordata
-        return message
+            return (_('Some plugins could not be found and were skipped:') +
+                    '\n* ' + '\n* '.join(excess_plugins))
+        return ''
 
     def _lo_move_mod(self, old_name, new_name, do_activate, deactivate=False):
         """Move new_name to the place of old_name and handle active state."""
@@ -2724,6 +2724,11 @@ class ModInfos(TableFileInfos):
         elif deactivate:
             self.lo_deactivate(new_name)
         self.cached_lo_save_all()
+
+    def _diff_los(self, *, new_lo=None, new_act=None):
+        new_lord = LoadOrder(self._lo_wip if new_lo is None else new_lo,
+                             self._active_wip if new_act is None else new_act)
+        return LoadOrder(self._lo_wip, self._active_wip).lo_diff(new_lord)
 
     #--Helpers ----------------------------------------------------------------
     @staticmethod

@@ -152,7 +152,7 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
     reordered: set[FName] = field(default_factory=set)
     active_flips: set[FName] = field(default_factory=set)
     act_index_change: set[FName] = field(default_factory=set)
-    # used to handle autoghosting
+    # used to handle autoghosting and record diffs of modInfos _lo/_active_wip
     new_inact: set[FName] = field(default_factory=set)
     new_act: set[FName] = field(default_factory=set)
     # externally populate with plugins that need to be redrawn due to load
@@ -172,6 +172,14 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
 
     def to_rdata(self): # not meant to be used if self.missing/added
         return RefrData(self.reordered | self.act_changed() | self.affected)
+
+    def __ior__(self, other):
+        for att in self.__slots__:
+            getattr(self, att).update(getattr(other, att))
+        return self
+
+    def __bool__(self): # ONLY use in _lo_op
+        return any(getattr(self, att) for att in self.__slots__)
 
     def __str__(self):
         st = []

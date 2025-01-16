@@ -40,11 +40,12 @@ from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
-    GPath_no_norm, RefrIn
+    GPath_no_norm, RefrIn, RefrData
 from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
+from ..load_order import LordDiff
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
@@ -259,9 +260,7 @@ class Mod_OrderByName(EnabledLink):
         self.selected.sort(key=lambda m: ( # sort masters first
             *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
-        bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
-        # Reorder the actives too to avoid bogus LO warnings
-        ldiff = bosh.modInfos.cached_lo_save_all()
+        ldiff = bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         self.window.propagate_refresh(ldiff.to_rdata())
 
 #------------------------------------------------------------------------------
@@ -301,10 +300,8 @@ class Mod_Move(EnabledLink):
         active_plugins = load_order.cached_active_tuple()
         # Clamp between 0 and max plugin index
         target_index = max(0, min(target_index, len(active_plugins) - 1))
-        bosh.modInfos.cached_lo_insert_at(active_plugins[target_index],
-                                          self.selected)
-        # Reorder the actives too to avoid bogus LO warnings
-        ldiff = bosh.modInfos.cached_lo_save_all()
+        ldiff = bosh.modInfos.cached_lo_insert_at(active_plugins[target_index],
+                                                  self.selected)
         self.window.propagate_refresh(ldiff.to_rdata(),
                                       detail_item=self.selected[0])
 
@@ -985,31 +982,35 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         except CancelError:
             return # prevent settings save
         finally:
-            count, resave = 0, False
+            resave = False
             to_act = dict.fromkeys(self._bps, True)
             to_act.update(dict.fromkeys(self._reactivate_mods, False))
+            rdata = RefrData()
             for fn_mod, is_bp in to_act.items():
                 message = _('Activate %(bp_name)s?') % {'bp_name': fn_mod}
                 if not is_bp or load_order.cached_is_active(fn_mod) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
                         self._askYes(message, fn_mod)):
                     try:
-                        bosh.modInfos.lo_activate(fn_mod, doSave=is_bp,
-                                                  out_var=(act := set()))
-                        if is_bp and act != {fn_mod}:
-                            msg = _('Masters Activated: %(num_activated)d') % {
-                                'num_activated': len(act - {fn_mod})}
-                            Link.Frame.set_status_info(msg)
-                        count += len(act)
-                        resave |= not is_bp and bool(act)
+                        act = bosh.modInfos.lo_activate(fn_mod, doSave=is_bp,
+                            out_diff=(lord_diff := LordDiff()))
+                        if is_bp:
+                            rdata.redraw |= act.redraw
+                            if newact := lord_diff.new_act - {fn_mod}:
+                                msg = _('Masters Activated: %(num_activated)d'
+                                    ) % {'num_activated': len(newact)}
+                                Link.Frame.set_status_info(msg)
+                        else:
+                            resave |= bool(lord_diff.new_act)
                     except PluginsFullError:
                         msg = _('Unable to activate plugin %(bp_name)s because'
                             ' the load order is full.') % {'bp_name': fn_mod}
                         self._showError(msg)
                         break # don't keep trying
             if resave:
-                bosh.modInfos.cached_lo_save_active()
-            self.window.propagate_refresh(True, refr_saves=count)
+                ldiff = bosh.modInfos.cached_lo_save_active()
+                rdata.redraw |= ldiff.to_rdata().redraw
+            self.window.propagate_refresh(True, refr_saves=rdata)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?

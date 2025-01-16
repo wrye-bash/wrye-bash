@@ -262,7 +262,8 @@ class Save_ReorderMasters(_Save_ChangeLO):
               u'order of plugins in this save.')
 
     def _lo_operation(self):
-        return bosh.modInfos.lo_reorder(self._selected_info.masterNames)
+        return bosh.modInfos.lo_reorder(self._selected_info.masterNames,
+                                        save_wip_lo=True)
 
 #------------------------------------------------------------------------------
 class Save_ImportFace(OneItemLink):

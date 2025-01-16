@@ -91,9 +91,10 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
     _activate_mergeable = True
 
     def Execute(self):
-        """Select all mods."""
+        """Activate all mods."""
+        lordata = True # on exception refresh all mods
         try:
-            bosh.modInfos.lo_activate_all(doSave=True,
+            lordata = bosh.modInfos.lo_activate_all(doSave=True,
                 activate_mergeable=self._activate_mergeable)
         except exception.PluginsFullError:
             self._showError(_('Plugin list is full, so some plugins '
@@ -108,7 +109,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
         except (exception.BoltError, NotImplementedError) as e:
             deprint('Error while activating plugins', traceback=True)
             self._showError(f'{e}')
-        self.window.propagate_refresh(True)
+        self.window.propagate_refresh(lordata)
 
 class _Mods_ActivateNonMergeable(AppendableLink, _Mods_ActivateAll):
     _text = _('Activate Non-Mergeable')
@@ -683,8 +684,8 @@ class _AImportLOBaseLink(ItemLink):
     _warning_title: str
 
     def _apply_lo(self, import_path, imp_lo, imp_acti):
-        msg_lo = bosh.modInfos.lo_reorder(imp_lo, save_lo=False)
-        msg_acti = bosh.modInfos.lo_activate_exact(imp_acti)
+        msg_lo, ldiff_ = bosh.modInfos.lo_reorder(imp_lo)
+        msg_acti, ldiff_ = bosh.modInfos.lo_activate_exact(imp_acti)
         # Don't show the exact same message twice
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)
