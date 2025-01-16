@@ -2151,9 +2151,8 @@ class ModInfos(TableFileInfos):
         self._refresh_bash_tags()
         ldiff = LordDiff()
         if insert_after:
-            for k, v in insert_after.items():
-                self._wip_lo_insert_after(v, k)
-            lordata = self._wip_lo_save_lo(ldiff=ldiff)
+            lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
+                                            ldiff=ldiff)
         else: # if refresh_infos is False but mods are added force refresh
             lordata = self.refreshLoadOrder(ldiff=ldiff,
                 forceRefresh=mods_changes or unlock_lo,
@@ -2434,7 +2433,7 @@ class ModInfos(TableFileInfos):
         rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
         # rename in load order caches
         self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
-                          FName(newName), isSelected)
+                          FName(newName), isSelected, save_all=True)
         # Update linked BP parts if the parent BP got renamed
         for mod_inf in self.values():
             if mod_inf.get_table_prop('bp_split_parent') == old_key:
@@ -2492,25 +2491,6 @@ class ModInfos(TableFileInfos):
         return load_order.undo_redo_load_order(redo)
 
     #--Load Order utility methods - be sure cache is valid when using them
-    def _wip_lo_insert_after(self, previous, new_mod):
-        new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
-        if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
-        dex = self._lo_wip.index(previous)
-        if not bush.game.using_txt_file:
-            t_prev = self[previous].ftime
-            if self._lo_wip[-1] == previous:  # place it after the last mod
-                new_time = t_prev + 60
-            else:
-                # try to put it right before the next mod to avoid resetting
-                # ftimes of all subsequent mods - note (t_prev >= t_next)
-                # might be True at the esm boundary, we could be smarter here
-                t_next = self[self._lo_wip[dex + 1]].ftime
-                t_prev += 1  # add one second
-                new_time = t_prev if t_prev < t_next else None
-            if new_time is not None:
-                self[new_mod].setmtime(new_time)
-        self._lo_wip[dex + 1:dex + 1] = [new_mod]
-
     def cached_lo_last_esm(self):
         last_esm = self._master_esm
         for mod in self._lo_wip[1:]:
@@ -2519,24 +2499,7 @@ class ModInfos(TableFileInfos):
             last_esm = mod
         return last_esm
 
-    def cached_lo_insert_at(self, first, modlist):
-        # hasty method for Mod_OrderByName
-        mod_set = set(modlist)
-        first_dex = self._lo_wip.index(first)
-        # Begin by splitting out the remainder
-        rest = self._lo_wip[first_dex:]
-        del self._lo_wip[first_dex:]
-        # Clean out any duplicates left behind, in case we're moving forwards
-        self._lo_wip[:] = [x for x in self._lo_wip if x not in mod_set]
-        # Append the remainder, then insert the requested plugins
-        for mod in rest:
-            if mod in mod_set: continue
-            self._lo_wip.append(mod)
-        self._lo_wip[first_dex:first_dex] = modlist
-        # Reorder the actives too to avoid bogus LO warnings
-        return self.wip_lo_save_all()
-
-    #--Active mods management -------------------------------------------------
+    #--Lo/active wip caches management ----------------------------------------
     @_lo_op
     def lo_activate(self, fileName, *, out_diff):
         """Mutate _active_wip cache."""
@@ -2717,7 +2680,9 @@ class ModInfos(TableFileInfos):
                     '\n* ' + '\n* '.join(excess_plugins))
         return ''
 
-    def _lo_move_mod(self, old_name, new_name, do_activate, deactivate=False):
+    @_lo_op
+    def _lo_move_mod(self, old_name, new_name, do_activate, *,
+                     deactivate=False, out_diff):
         """Move new_name to the place of old_name and handle active state."""
         oldIndex = self._lo_wip.index(old_name)
         self._lo_wip[oldIndex] = new_name
@@ -2726,7 +2691,45 @@ class ModInfos(TableFileInfos):
             self.lo_activate(new_name)
         elif deactivate:
             self.lo_deactivate(new_name)
-        self.wip_lo_save_all()
+        out_diff.added, out_diff.missing = {new_name}, {old_name} # inform diff
+
+    @_lo_op
+    def lo_insert_at(self, first, modlist, *, out_diff):
+        """Call with save_all True (not just save_wip_lo) to avoid bogus LO
+        warnings on games that reorder active plugins to match load order."""
+        mod_set = set(modlist)
+        # Clean out any duplicates left behind, in case we're moving forwards
+        # Insert the requested plugins then append the remainder
+        lwip = []
+        for mod in self._lo_wip:
+            if mod == first: lwip.extend(modlist)
+            if mod not in mod_set: lwip.append(mod)
+        out_diff |= self._diff_los(new_lo=lwip)
+        self._lo_wip = lwip
+
+    @_lo_op
+    def _lo_insert_after(self, insert_after, *, out_diff): #only use in refresh
+        lwip = self._lo_wip.copy()
+        for new_mod, previous in insert_after.items():
+            new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
+            if new_mod in lwip: lwip.remove(new_mod)  # ...
+            dex = lwip.index(previous)
+            if not bush.game.using_txt_file:
+                t_prev = self[previous].ftime
+                if lwip[-1] == previous:  # place it after the last mod
+                    new_time = t_prev + 60
+                else:
+                    # try to put it right before the next mod to avoid resetting
+                    # ftimes of all subsequent mods - note (t_prev >= t_next)
+                    # might be True at the esm boundary, we could be smarter here
+                    t_next = self[lwip[dex + 1]].ftime
+                    t_prev += 1  # add one second
+                    new_time = t_prev if t_prev < t_next else None
+                if new_time is not None:
+                    self[new_mod].setmtime(new_time)
+            lwip[dex + 1:dex + 1] = [new_mod]
+        out_diff |= self._diff_los(new_lo=lwip)
+        self._lo_wip = lwip
 
     def _diff_los(self, *, new_lo=None, new_act=None):
         new_lord = LoadOrder(self._lo_wip if new_lo is None else new_lo,
@@ -2987,7 +2990,7 @@ class ModInfos(TableFileInfos):
             master_inf.setGhost(False)
         self[move_to].setmtime(new_info_time)
         self._lo_move_mod(copy_from, move_to, is_new_info_active,
-                          not is_new_info_active) # always deactivate?
+            deactivate=not is_new_info_active, save_all=True) # always deactivate?
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = set_version

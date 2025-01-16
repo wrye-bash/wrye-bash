@@ -259,7 +259,8 @@ class Mod_OrderByName(EnabledLink):
         self.selected.sort(key=lambda m: ( # sort masters first
             *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
-        lordata = bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
+        lordata = bosh.modInfos.lo_insert_at(lowest, self.selected,
+                                             save_all=True)
         self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
@@ -299,8 +300,8 @@ class Mod_Move(EnabledLink):
         active_plugins = load_order.cached_active_tuple()
         # Clamp between 0 and max plugin index
         target_index = max(0, min(target_index, len(active_plugins) - 1))
-        lordata = bosh.modInfos.cached_lo_insert_at(
-            active_plugins[target_index], self.selected)
+        lordata = bosh.modInfos.lo_insert_at(active_plugins[target_index],
+            self.selected, save_all=True)
         self.window.propagate_refresh(lordata, detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
