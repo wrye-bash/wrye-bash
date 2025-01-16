@@ -2544,11 +2544,14 @@ class ModInfos(TableFileInfos):
         ##: This .esu handling needs to be centralized - sprinkled all over
         # actives related lo_* methods
         if fileName.fn_ext == u'.esu': return []
-        msg = load_order.check_active_limit([*self._active_wip, fileName],
+        # Speed up lookups, since they occur for the plugin and all masters
+        acti_set = set(self._active_wip)
+        if fileName not in acti_set: # else we are called to activate masters
+            msg = load_order.check_active_limit([*self._active_wip, fileName],
                                             as_type=str)
-        if msg:
-            msg = f'{fileName}: Trying to activate more than {msg}'
-            raise PluginsFullError(msg)
+            if msg:
+                msg = f'{fileName}: Trying to activate more than {msg}'
+                raise PluginsFullError(msg)
         if _children:
             if fileName in _children:
                 raise BoltError(f'Circular Masters: '
@@ -2558,8 +2561,6 @@ class ModInfos(TableFileInfos):
         #  Disabled for now
         ##if self[fileName].hasBadMasterNames(): return
         #--Select masters
-        # Speed up lookups, since they occur for the plugin and all masters
-        acti_set = set(self._active_wip)
         for master in self[fileName].masterNames:
             # Check that the master is on disk and not already activated
             if master in _modSet and master not in acti_set:

@@ -66,7 +66,8 @@ class PatchDialog(DialogWindow):
     _min_size = (400, 300)
 
     def __init__(self, parent, bashed_patch: PatchFile, bashed_patches_out,
-                 patchConfigs):
+                 patchConfigs, bp_rdata):
+        self._bp_rdata = bp_rdata
         self._bps = bashed_patches_out
         self.parent = parent
         self.bashed_patch = bashed_patch
@@ -291,7 +292,8 @@ class PatchDialog(DialogWindow):
                                             exclude=True, extra_attrs=attrs)
             self._bps.extend(attrs)
             # We have to parse the new infos first since the masters may differ
-            bosh.modInfos.refresh(rinf)
+            # note this won't activate the new masters, the caller has to do it
+            self._bp_rdata.redraw |= patchFile.p_file_minfos.refresh(rinf).redraw
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly

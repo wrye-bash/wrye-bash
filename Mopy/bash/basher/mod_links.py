@@ -45,7 +45,6 @@ from ..brec import RecordType
 from ..exception import BoltError, CancelError, PluginsFullError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
-from ..load_order import LordDiff
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
@@ -975,47 +974,46 @@ class Mod_RebuildPatch(_Mod_BP_Link):
     @balt.conversation
     def Execute(self):
         """Handle activation event."""
-        self._reactivate_mods, self._bps = set(), []
+        self._reactivate_mods, self._bps, bp_rdata = set(), [], RefrData()
         try:
-            if not self._execute_bp(self._find_parent_bp(), bosh.modInfos):
+            if not self._execute_bp(bosh.modInfos, bp_rdata):
                 return # prevent settings save
         except CancelError:
             return # prevent settings save
         finally:
-            resave = False
+            act_save = False
             to_act = dict.fromkeys(self._bps, True)
             to_act.update(dict.fromkeys(self._reactivate_mods, False))
-            rdata = RefrData()
+            bp_masters = set()
             for fn_mod, is_bp in to_act.items():
-                message = _('Activate %(bp_name)s?') % {'bp_name': fn_mod}
                 if not is_bp or load_order.cached_is_active(fn_mod) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
-                        self._askYes(message, fn_mod)):
+                        self._askYes(_('Activate %(bp_name)s?') % {
+                            'bp_name': fn_mod}, fn_mod)):
                     try:
-                        act = bosh.modInfos.lo_activate(fn_mod, doSave=is_bp,
-                            out_diff=(lord_diff := LordDiff()))
+                        act = bosh.modInfos.lo_activate(fn_mod).new_act
                         if is_bp:
-                            rdata.redraw |= act.redraw
-                            if newact := lord_diff.new_act - {fn_mod}:
-                                msg = _('Masters Activated: %(num_activated)d'
-                                    ) % {'num_activated': len(newact)}
-                                Link.Frame.set_status_info(msg)
-                        else:
-                            resave |= bool(lord_diff.new_act)
+                            bp_masters.update(act - {fn_mod})
+                        act_save |= bool(act)
                     except PluginsFullError:
                         msg = _('Unable to activate plugin %(bp_name)s because'
                             ' the load order is full.') % {'bp_name': fn_mod}
                         self._showError(msg)
                         break # don't keep trying
-            if resave:
+            if act_save:
                 ldiff = bosh.modInfos.cached_lo_save_active()
-                rdata.redraw |= ldiff.to_rdata().redraw
-            self.window.propagate_refresh(True, refr_saves=rdata)
+                bp_rdata.redraw |= ldiff.to_rdata().redraw
+            if bp_masters:
+                msg = _('Masters Activated: %(num_activated)d') % {
+                    'num_activated': len(bp_masters)}
+                Link.Frame.set_status_info(msg)
+            self.window.propagate_refresh(bp_rdata, refr_saves=act_save)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
 
-    def _execute_bp(self, patch_info, mod_infos):
+    def _execute_bp(self, mod_infos, bp_rdata):
+        patch_info = self._find_parent_bp()
         if patch_info is None:
             self._error_no_parent_bp()
             return False
@@ -1064,7 +1062,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             return False
         # No errors, proceed with building the BP
         PatchDialog.display_dialog(self.window, bashed_patch,
-                                   self._bps, bp_config)
+                                   self._bps, bp_config, bp_rdata)
         return True
 
     def _ask_deactivate_mergeable(self, bashed_patch):
