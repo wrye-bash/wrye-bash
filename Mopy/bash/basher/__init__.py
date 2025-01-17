@@ -173,10 +173,12 @@ class _DetailsViewMixin(NotebookPanel):
     Mix it in to SashUIListPanel so UILists can call SetDetails and
     ClearDetails on their panels."""
     detailsPanel = None
-    def _setDetails(self, fileName):
+
+    def ClearDetails(self):
+        self.detailsPanel.SetFile(fileName=None)
+
+    def SetDetails(self, fileName=_same_file):
         self.detailsPanel.SetFile(fileName=fileName)
-    def ClearDetails(self): self._setDetails(None)
-    def SetDetails(self, fileName=_same_file): self._setDetails(fileName)
 
     def RefreshUIColors(self):
         super(_DetailsViewMixin, self).RefreshUIColors()
@@ -928,8 +930,7 @@ class ModList(_ModsUIList):
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _sort_keys = {**_common_sort_keys,
-        'Author'    : lambda self, a: _ask_info('header.author',
-                                                wrap=str.lower),
+        'Author'    : _ask_info('header.author', wrap=str.lower),
         'Rating'    : _ask_info('get_table_prop', ('rating', '')),
         'Group'     : _ask_info('get_table_prop', ('group', '')),
         'Installer' : _ask_info('get_table_prop', ('installer', '')),
@@ -956,19 +957,26 @@ class ModList(_ModsUIList):
     _copy_paths = True
 
     #-- Drag and Drop-----------------------------------------------------
-    def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
-        """Drop contiguous indexes on newIndex and return True if LO changed"""
-        if newIndex < 0:
-            return False # from _handle_key_down() & moving master esm up
-        count = self.item_count
-        dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
-        firstItem = self.GetItem(indexes[0])
-        lastItem = self.GetItem(indexes[-1])
-        return bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
+    @balt.conversation
+    def _drop_dexes(self, chunks):
+        """Drop contiguous indexes on newIndex and save if LO changed."""
+        moved = False
+        for first, last, newIndex in chunks:
+            count = self.item_count
+            dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
+            firstItem = self.GetItem(first)
+            lastItem = self.GetItem(last)
+            moved |= bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
+        if moved:
+            #--Save and Refresh
+            try:
+                ldiff = bosh.modInfos.cached_lo_save_all()
+                self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
+            except (BoltError, NotImplementedError) as e:  ##: why NotImplementedError?
+                showError(self, f'{e}')
 
     def OnDropIndexes(self, indexes, newIndex):
-        if self._dropIndexes(indexes, newIndex):
-            self._refreshOnDrop()
+        self._drop_dexes([(indexes[0], indexes[-1], newIndex)])
 
     def dndAllow(self, event):
         msg = u''
@@ -987,15 +995,6 @@ class ModList(_ModsUIList):
             balt.askContinue(self, msg, continue_key, show_cancel=False)
             return super(ModList, self).dndAllow(event) # disallow
         return True
-
-    @balt.conversation
-    def _refreshOnDrop(self):
-        #--Save and Refresh
-        try:
-            ldiff = bosh.modInfos.cached_lo_save_all()
-            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
-        except (BoltError, NotImplementedError) as e: ##: why NotImplementedError?
-            showError(self, f'{e}')
 
     #--Populate Item
     def _set_icon_text(self, mod_info, item_format, mod_name, **kwargs):
@@ -1067,16 +1066,11 @@ class ModList(_ModsUIList):
                 previous = dex
                 chunks[chunk].append(dex)
             moveMod = 1 if kcode in balt.wxArrowDown else -1
-            moved = False
-            for chunk in chunks:
-                if not chunk: continue # nothing to move, skip
-                newIndex = chunk[0] + moveMod
-                if chunk[-1] + moveMod == self.item_count:
-                    continue # trying to move last plugin past the list
-                # Check if moving hits a new lowest index (this is the case if
-                # we are moving indices down)
-                moved |= self._dropIndexes(chunk, newIndex)
-            if moved: self._refreshOnDrop()
+            # filter moving master esm down or moving last plugin past the list
+            chunks = [(first, last, newIndex) for c in chunks if c and (
+                newIndex := (first := c[0]) + moveMod) >= 0 and (
+                    (last := c[-1]) + moveMod) < self.item_count]
+            self._drop_dexes(chunks)
         elif wrapped_evt.is_cmd_down and kcode == ord('Z'):
             if wrapped_evt.is_shift_down:
                 # Ctrl+Shift+Z - redo last load order or active plugins change
@@ -1263,14 +1257,10 @@ class _DetailsMixin(object):
         """Set file to be viewed. Leave fileName empty to reset.
         :type fileName: str | FName | None"""
         #--Reset?
-        if fileName is _same_file:
-            if self.displayed_item not in self.file_infos:
-                fileName = None
-            else:
-                fileName = self.displayed_item
-        elif not fileName or (fileName not in self.file_infos):
+        fileName = self.displayed_item if fileName is _same_file else fileName
+        if not fileName or (fileName not in self.file_infos):
             fileName = None
-        if not fileName: self._resetDetails()
+            self._resetDetails()
         return fileName
 
 class _EditableMixin(_DetailsMixin):
@@ -1718,8 +1708,7 @@ class ModDetails(_ModsSavesDetails):
     def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
         """Show bash tag selection menu."""
         if not self.modInfo: return
-        def _refresh_only_details():
-            self.SetFile()
+        _mod_details = self
         mod_info = self.modInfo # type: bosh.ModInfo
         app_tags = mod_info.getBashTags()
         class BashTagsPopup(MultiChoicePopup):
@@ -1733,7 +1722,7 @@ class ModDetails(_ModsSavesDetails):
                 else:
                     curr_app_tags -= changed_tags
                 mod_info.setBashTags(curr_app_tags)
-                _refresh_only_details()
+                _mod_details.SetFile() # refresh only details
             def on_item_checked(self, choice_name, choice_checked):
                 self._update_tags({choice_name}, choice_checked)
             def on_mass_select(self, curr_choices, choices_checked):
@@ -2444,18 +2433,18 @@ class InstallersList(UIList):
         if isinstance(root, tuple):
             root = root[0]
         with BusyCursor():
-            refreshes = defaultdict(bool) # Store refreshes
+            ui_refreshes = defaultdict(bool) # Store refreshes
             rdata = None
             try:
                 for package in selected:
                     if (rdata := self.try_rename(package, root, rdata,
-                                                 refreshes)) is None:
+                                                 ui_refreshes)) is None:
                         break
             except TypeError:
                 pass # ren_keys.update(None)
             #--Refresh UI
             if rdata:
-                self.propagate_refresh(refreshes, rdata=rdata)
+                self.propagate_refresh(ui_refreshes, rdata=rdata)
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
@@ -2463,7 +2452,7 @@ class InstallersList(UIList):
     def try_rename(self, inst_info, new_root, rdata_ren, store_refr=None):
         newFileName = inst_info.unique_key(new_root) # preserve extension for installers
         if newFileName is None: # just changed extension - continue
-            return {}, {}
+            return rdata_ren
         return super().try_rename(inst_info, newFileName, rdata_ren, store_refr)
 
     @staticmethod
@@ -3777,8 +3766,8 @@ class BashFrame(WindowFrame):
             if lf_path and lf_path.is_file():
                 return # Limit-fixing xSE plugin installed
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
-        if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
-                settings[u'bash.mods.autoGhost']:
+        infos_num = len(bosh.bsaInfos) + len(bosh.modInfos)
+        if infos_num >= 325 and not settings['bash.mods.autoGhost']:
             message = _(
                 'It appears that you have more than 325 plugins and BSAs '
                 'in your %(data_folder)s folder and auto-ghosting is '
@@ -3787,7 +3776,7 @@ class BashFrame(WindowFrame):
                 'consider enabling auto-ghosting.') % {
                 'data_folder': bush.game.mods_dir,
                 'game_name': bush.game.display_name}
-            if len(bosh.bsaInfos) + len(bosh.modInfos) >= 400:
+            if infos_num >= 400:
                 message = _(
                     'It appears that you have more than 400 plugins and BSAs '
                     'in your %(data_folder)s folder and auto-ghosting is '

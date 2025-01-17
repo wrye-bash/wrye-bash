@@ -207,8 +207,7 @@ class Master_ChangeTo(_Master_EditList):
             newName = newName.root
         if (new_fname := FName(newName.s)) == master_name:
             return
-        curr_master_names = {m.curr_name for m in
-                             self.window.data_store.values()}
+        curr_master_names = {m.curr_name for m in self._data_store.values()}
         parent_mi = masterInfo.parent_mod_info
         # If the user is trying to fix a plugin with circular masters, allow
         # any kind of reassignment - otherwise, run some sanity checks

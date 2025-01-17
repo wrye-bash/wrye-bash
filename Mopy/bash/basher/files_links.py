@@ -128,6 +128,7 @@ class File_Duplicate(ItemLink):
                 destDir, destName = destPath.head, bolt.FName(destPath.stail)
                 destName, root = fileInfo.validate_name(destName,
                     # check if exists if we duplicate into the store dir
+                    # then we just need to check if destName is in the store
                     check_store=destDir == fileInfo.info_dir)
                 if root is None:
                     self._showError(destName)

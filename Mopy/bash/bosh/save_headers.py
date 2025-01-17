@@ -230,17 +230,20 @@ class SaveFileHeader(object):
         '_mastersStart': (00, lambda ins: ins.tell()),
     }
 
-    def __init__(self, save_inf, load_image=False):
+    def __init__(self, save_inf, *, load_image=False, ins=None):
         self._save_info = save_inf
         self.ssData = None # lazily loaded at runtime
-        self.read_save_header(load_image)
+        self.read_save_header(load_image, ins)
 
     @final
-    def read_save_header(self, load_image=False):
+    def read_save_header(self, load_image=False, ins=None):
         """Fully reads this save header, optionally loading the image as
         well."""
         try:
-            with self._save_info.abs_path.open('rb') as ins:
+            if ins is None:
+                with self._save_info.abs_path.open('rb') as ins:
+                    self.load_header(ins, load_image)
+            else:
                 self.load_header(ins, load_image)
         #--Errors
         except (OSError, struct_error) as e:
@@ -259,7 +262,7 @@ class SaveFileHeader(object):
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
         self._load_from_unpackers(ins, self.__class__._unpackers)
-        self.load_image_data(ins, load_image)
+        self._load_image_data(ins, load_image)
         self._load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
@@ -272,7 +275,7 @@ class SaveFileHeader(object):
     def dump_header(self, out):
         raise NotImplementedError
 
-    def load_image_data(self, ins, load_image=False):
+    def _load_image_data(self, ins, load_image=False):
         bpp = (4 if self.has_alpha else 3)
         image_size = bpp * self.ssWidth * self.ssHeight
         if load_image:
@@ -547,7 +550,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
     def has_alpha(self):
         return self.__is_sse()
 
-    def load_image_data(self, ins, load_image=False):
+    def _load_image_data(self, ins, load_image=False):
         if self.__is_sse():
             self._compress_type = _SaveCompressionType(unpack_short(ins))
         # -4 for the header size itself (uint32)
@@ -555,7 +558,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
         if actual != self.header_size:
             raise SaveHeaderError(f'New Save game header size ({actual}) not '
                                   f'as expected ({self.header_size}).')
-        super().load_image_data(ins, load_image)
+        super()._load_image_data(ins, load_image)
 
     def _load_masters(self, ins):
         if self.__compressed():
@@ -621,14 +624,14 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     def has_alpha(self):
         return True
 
-    def load_image_data(self, ins, load_image=False):
+    def _load_image_data(self, ins, load_image=False):
         # -4 for the header size itself (uint32)
         actual = ins.tell() - len(self.__class__.save_magic) - 4
         if actual != self.header_size:
             raise SaveHeaderError(f'New Save game header size ({actual}) not '
                                   f'as expected ({self.header_size}).')
         # Call the SaveFileHeader version, skip Skyrim
-        super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
+        super(SkyrimSaveHeader, self)._load_image_data(ins, load_image)
 
     def calc_time(self):
         self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
@@ -716,9 +719,9 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     }
     _masters_offset = 2
 
-    def __init__(self, save_inf, load_image=False):
+    def __init__(self, save_inf, **kwargs):
         self._master_info_block_size = {}
-        super().__init__(save_inf, load_image)
+        super().__init__(save_inf, **kwargs)
 
     def _unpack_master(self, ins):
         mas = unpack_str16(ins)
@@ -742,7 +745,7 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         return plugin_types.scale_flags if self._formVersion >= 122 else [
             next(iter(plugin_types.scale_flags))]
 
-    def load_image_data(self, ins, load_image=False): # just do the check
+    def _load_image_data(self, ins, load_image=False): # just do the check
         # -4 for the header size itself (uint32)
         actual = ins.tell() - len(self.__class__.save_magic) - 4
         if actual != self.header_size:

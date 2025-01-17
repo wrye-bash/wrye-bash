@@ -657,7 +657,8 @@ class GameInfo(object):
         supports_mod_inis = True
 
         @classmethod
-        def get_bsas_from_inis(cls, av_bsas, *ini_files_cached):
+        def get_bsas_from_inis(cls, av_bsas, *ini_files_cached,
+                               __known_missing=set()):
             """Get the load order of INI-loaded BSAs - in the vicinity of
             ±sys.maxsize. These BSAs are removed from av_bsas dict."""
             bsa_lo = {}
@@ -673,7 +674,9 @@ class GameInfo(object):
                     m = f'was already loaded via {bsa_cause[requested[0]]}'
                 else:
                     m = f'was not found'
-                bolt.deprint(f'{b} requested in {cause} {m}')
+                if (b, cause, m) not in __known_missing:
+                    __known_missing.add((b, cause, m))
+                    bolt.deprint(f'{b} requested in {cause} {m}')
                 return False
             for group_dex, (ini_idx, keys) in enumerate(
                     cls.start_dex_keys.items()):

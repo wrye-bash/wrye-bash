@@ -279,7 +279,7 @@ class SaveFile(object):
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.fsize)
             #--Header
-            progress(0,_(u'Reading Header.'))
+            progress(0, _('Reading Header.'))
             self.header = OblivionSaveHeader(self.fileInfo.abs_path,
                                              load_image=True, ins=ins)
             self._masters = self.header.masters

@@ -247,8 +247,7 @@ class _TabledInfo:
 
     def get_persistent_attrs(self, exclude):
         return {pickle_key: val for pickle_key in self.__class__._key_to_attr
-                if pickle_key not in exclude and (
-                    val := self.get_table_prop(pickle_key)) is not None}
+                if  (val := self.get_table_prop(pickle_key)) is not None}
 
 class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
@@ -1479,7 +1478,8 @@ class ScreenInfo(AFileInfo):
 
     def validate_name(self, name_str, check_store=True):
         file_root, num_str = super().validate_name(name_str, check_store)
-        return FName(file_root + num_str + self.fn_key.fn_ext), ''
+        return (file_root, num_str) if num_str is None else (
+            FName(file_root + num_str + self.fn_key.fn_ext), '')
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -1646,7 +1646,7 @@ class _AFileInfos(DataStore):
                 if new := self.pop(new, None): # effectively deleted
                     delinfos.add(new)
         rdata.to_del = {d.fn_key for d in delinfos}
-        self._delete_refresh(delinfos)
+        if delinfos: self._delete_refresh(delinfos)
         if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
             self._notify_bain(altered={self[n].abs_path for n in alt},
                               del_set={inf.abs_path for inf in delinfos})
@@ -2242,11 +2242,12 @@ class ModInfos(TableFileInfos):
             ((p, self[p]) for p in load_order.cached_active_tuple()))
         mrgd, imprtd = self.merged, self.imported
         self.merged, self.imported = self.getSemiActive(active_patches)
-        return {plug for plug in chain(
-            (k for k, v in self.real_indices.items() ^ old_dexs.items()),
-            changed, rescan_mods, self.bashed_patches ^ bps,
-            self.merged ^ mrgd, self.imported ^ imprtd,
-            self.activeBad ^ old_ab, self.bad_names ^ old_bad) if plug in self}
+        dex_xor = (k for k, v in self.real_indices.items() ^ old_dexs.items()
+            if v[0] != sys.maxsize) # added from defaultdict for inactive mods
+        return {plug for plug in chain(dex_xor, changed, rescan_mods,
+            self.bashed_patches ^ bps, self.merged ^ mrgd,
+            self.imported ^ imprtd, self.activeBad ^ old_ab,
+            self.bad_names ^ old_bad) if plug in self}
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
                         return_results=False, sort_descending_lo=True):
@@ -2553,9 +2554,9 @@ class ModInfos(TableFileInfos):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
-        old = set_awip = set(self._active_wip)
-        diff = set_awip - filenames
-        if len(diff) == len(set_awip): return set()
+        old = set(self._active_wip)
+        diff = old - filenames
+        if len(diff) == len(old): return
         #--Unselect self
         set_awip = diff
         #--Unselect children
@@ -2666,11 +2667,10 @@ class ModInfos(TableFileInfos):
         excess_plugins = partial_plugins - present_plugins
         filtered_order = [p for p in partial_order if p not in excess_plugins]
         remaining_plugins = present_plugins - set(filtered_order)
-        current_order = self._lo_wip
         collected_plugins = []
         left_off = 0
         while remaining_plugins:
-            for i, curr_plugin in enumerate(current_order[left_off:]):
+            for i, curr_plugin in enumerate(self._lo_wip[left_off:]):
                 # Look for continuous segments that are missing from the
                 # filtered partial load order
                 if curr_plugin in remaining_plugins:
@@ -2895,7 +2895,7 @@ class ModInfos(TableFileInfos):
         # a row before saving the modified load order
         order = self._lo_wip
         newPos = order.index(dropItem)
-        if newPos <= 0: return False
+        if newPos <= 0: return False # disallow taking position 0 (master esm)
         start = order.index(firstItem)
         stop = order.index(lastItem) + 1  # excluded
         # Can't move the game's master file anywhere else but position 0

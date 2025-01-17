@@ -29,7 +29,7 @@ from itertools import chain
 from . import Installers_Link
 from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
     MonitorExternalInstallationEditor, AImportOrderParser
-from .. import balt, bass, bosh, bush, load_order
+from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink, Installer_Op
 from ..gui import copy_text_to_clipboard, askYes

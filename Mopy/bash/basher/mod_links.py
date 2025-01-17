@@ -203,11 +203,12 @@ class Mod_CreateDummyMasters(OneItemLink):
             _("To remove these files later, use 'Remove Dummy Masters…'.")])
         if not self._askYes(msg, title=self._text): return
         mod_previous = FNDict() # previous master for each master
+        mods_ds = self._data_store
         # creates esp files - so place them correctly after the last esm
-        previous_master = bosh.modInfos.cached_lo_last_esm()
+        previous_master = mods_ds.cached_lo_last_esm()
         for master in self._selected_info.masterNames:
-            if master in bosh.modInfos:
-                if not bush.game.master_flag.cached_type(bosh.modInfos[master]):
+            if master in mods_ds:
+                if not bush.game.master_flag.cached_type(mods_ds[master]):
                     # if previous master is an esp put this one after it
                     previous_master = master
                 continue
@@ -217,15 +218,15 @@ class Mod_CreateDummyMasters(OneItemLink):
             # Skyrim LE - but these are also just dummy masters.
             force_flags = bush.game.plugin_flags.guess_flags(
                 master.fn_ext, bush.game)
-            bosh.modInfos.create_new_mod(master, author_str='BASHED DUMMY',
+            mods_ds.create_new_mod(master, author_str='BASHED DUMMY',
                 flags_dict=force_flags,
                 wanted_masters=[], # previous behavior - correct?
                 # pass dir_path explicitly so refresh is skipped
-                dir_path=self._data_store.store_dir)
+                dir_path=mods_ds.store_dir)
             mod_previous[master] = previous_master
             previous_master = master
-        bosh.modInfos.refresh(RefrIn.from_added(mod_previous),
-                              insert_after=mod_previous)
+        mods_ds.refresh(RefrIn.from_added(mod_previous),
+                        insert_after=mod_previous)
         self.window.propagate_refresh(Store.SAVES.DO(), detail_item=next(
             reversed(mod_previous)))
         self.window.SelectItemsNoCallback(mod_previous)
@@ -651,7 +652,7 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser(self.window.data_store).show_frame()
+            DocBrowser(self._data_store).show_frame()
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 
@@ -1721,7 +1722,7 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
             f'{self.selected[0].fn_body}{self.__class__.csvFile}')
         if not textPath: return
         #--Export
-        lo_plugins_set = set(self.window.data_store)
+        lo_plugins_set = set(self._data_store)
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
             readProgress = SubProgress(progress, 0.1, 0.8)

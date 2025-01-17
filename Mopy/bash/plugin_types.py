@@ -350,7 +350,7 @@ class AMasterFlag(PluginFlag):
             # For games since FO4/SSE, .esm and .esl files set the master flag
             # in memory even if not set on the file on disk. For .esp files we
             # must check for the flag explicitly.
-            return self in self.guess_flags(mext, game_handle)
+            return self in game_handle.plugin_flags.guess_flags(mext, game_handle)
 
     @classmethod
     def checkboxes(cls):

@@ -1765,7 +1765,7 @@ class InstallerProject(_InstallerPackage):
             v[0] for v in size_apath_date.values()), max_node_mtime
 
     def _fs_refresh(self, progress, stat_tuple, *,
-                    recalculate_project_crc=False):
+                    recalculate_project_crc=False, **kwargs):
         """Refresh src_sizeCrcDate, fileSizeCrcs, fsize, ftime,
         crc from project directory, set project_refreshed to True."""
         #--Scan for changed files

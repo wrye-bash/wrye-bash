@@ -1776,10 +1776,9 @@ class ListInfo:
         check_ext = name_str and self.__class__._valid_exts_re
         if check_ext and not name_str.lower().endswith(
                 self.fn_key.fn_ext.lower()):
-            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
-                    '%(expected_ext)s).') % {
-                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return msg, None
+            fm = {'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
+            return _('%(bad_name_str)s: Incorrect file extension (must be '
+                     '%(expected_ext)s).') % fm, None
         return self.__class__.validate_filename_str(name_str)
 
     @classmethod
@@ -1879,7 +1878,7 @@ class AFileInfo(AFile, ListInfo):
         super_validate = super().validate_name(name_str,
             check_store=check_store)
         #--Else file exists?
-        if check_store and self.info_dir.join(name_str).exists():
+        if check_store and name_str in self._store(): # use modInfos for ghosts
             return _('File %(bad_name_str)s already exists.') % {
                 'bad_name_str': name_str}, None
         return super_validate
