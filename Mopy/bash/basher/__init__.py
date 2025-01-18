@@ -961,23 +961,16 @@ class ModList(_ModsUIList):
     @balt.conversation
     def _drop_dexes(self, chunks):
         """Drop contiguous indexes on newIndex and save if LO changed."""
-        moved = False
-        for first, last, newIndex in chunks:
-            count = self.item_count
-            dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
-            firstItem = self.GetItem(first)
-            lastItem = self.GetItem(last)
-            moved |= bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
-        if moved:
-            #--Save and Refresh
-            try:
-                lordata = bosh.modInfos.wip_lo_save_all()
-                self.propagate_refresh(lordata)
-            except (BoltError, NotImplementedError) as e:  ##: why NotImplementedError?
-                showError(self, f'{e}')
+        max_dex = self.item_count - 1
+        for c in chunks:
+            c[2] = min(c[2], max_dex)
+        items = (map(self.GetItem, c) for c in chunks)
+        #--Save and Refresh
+        lordata = bosh.modInfos.lo_drop_items(items, save_wip_lo=True)
+        self.propagate_refresh(lordata)
 
     def OnDropIndexes(self, indexes, newIndex):
-        self._drop_dexes([(indexes[0], indexes[-1], newIndex)])
+        self._drop_dexes([[indexes[0], indexes[-1], newIndex]])
 
     def dndAllow(self, event):
         msg = u''
@@ -1056,7 +1049,9 @@ class ModList(_ModsUIList):
             self._toggle_active_state(*toggle_target)
         elif wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
-            if not self.dndAllow(event=None): return
+            if not self.dndAllow(event=None):
+                # Veto the event so Up/Down arrows do not move the selection
+                return EventResult.CANCEL
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self._get_selected()
             previous = -1
@@ -1068,7 +1063,7 @@ class ModList(_ModsUIList):
                 chunks[chunk].append(dex)
             moveMod = 1 if kcode in balt.wxArrowDown else -1
             # filter moving master esm down or moving last plugin past the list
-            chunks = [(first, last, newIndex) for c in chunks if c and (
+            chunks = [[first, last, newIndex] for c in chunks if c and (
                 newIndex := (first := c[0]) + moveMod) >= 0 and (
                     (last := c[-1]) + moveMod) < self.item_count]
             self._drop_dexes(chunks)

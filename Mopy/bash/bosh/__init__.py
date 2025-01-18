@@ -2073,7 +2073,7 @@ def _lo_op(lop_func):
             elif save_wip_lo and out_diff:
                 out_diff = self._wip_lo_save_lo(ldiff=ldiff)
             elif save_all and out_diff:
-                out_diff = self.wip_lo_save_all(ldiff=ldiff)
+                out_diff = self._wip_lo_save_all(ldiff=ldiff)
             elif save:
                 out_diff = out_diff.to_rdata() # should be empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
@@ -2478,7 +2478,7 @@ class ModInfos(TableFileInfos):
         return load_order.save_lo(self._lo_wip)
 
     @_lo_cache
-    def wip_lo_save_all(self):
+    def _wip_lo_save_all(self):
         """Save load order and plugins.txt"""
         active_wip_set = set(self._active_wip)
         dex = {x: i for i, x in enumerate(self._lo_wip) if
@@ -2731,6 +2731,23 @@ class ModInfos(TableFileInfos):
         out_diff |= self._diff_los(new_lo=lwip)
         self._lo_wip = lwip
 
+    @_lo_op
+    def lo_drop_items(self, items, *, out_diff):
+        lwip = self._lo_wip.copy()
+        for firstItem, lastItem, dropItem in items:
+            newPos = lwip.index(dropItem)
+            if newPos <= 0: continue # disallow taking position 0 (master esm)
+            start = lwip.index(firstItem)
+            stop = lwip.index(lastItem) + 1 # excluded
+            # Can't move the game's master file anywhere else but position 0
+            if self._master_esm in lwip[start:stop]: continue
+            # List of names to move removed and then reinserted at new position
+            toMove = lwip[start:stop]
+            del lwip[start:stop]
+            lwip[newPos:newPos] = toMove
+        out_diff |= self._diff_los(new_lo=lwip)
+        self._lo_wip = lwip
+
     def _diff_los(self, *, new_lo=None, new_act=None):
         new_lord = LoadOrder(self._lo_wip if new_lo is None else new_lo,
                              self._active_wip if new_act is None else new_act)
@@ -2913,22 +2930,6 @@ class ModInfos(TableFileInfos):
         if master_name == 'Oblivion.esm' and (curr_ver := self.voCurrent):
             master_name += f' [{curr_ver}]'
         return master_name
-
-    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
-        # Calculating indexes through order.index() cause we may be called in
-        # a row before saving the modified load order
-        order = self._lo_wip
-        newPos = order.index(dropItem)
-        if newPos <= 0: return False # disallow taking position 0 (master esm)
-        start = order.index(firstItem)
-        stop = order.index(lastItem) + 1  # excluded
-        # Can't move the game's master file anywhere else but position 0
-        if self._master_esm in order[start:stop]: return False
-        # List of names to move removed and then reinserted at new position
-        toMove = order[start:stop]
-        del order[start:stop]
-        order[newPos:newPos] = toMove
-        return True
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
