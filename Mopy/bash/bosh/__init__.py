@@ -2560,6 +2560,35 @@ class ModInfos(TableFileInfos):
         out_diff.new_inact.update(old - set_awip) # manipulate out_diff attrs
 
     @_lo_op
+    def lo_toggle_active(self, mods, *, do_activate=True, out_diff):
+        impacted_mods = {}
+        _lo_meth, attr = (self.lo_activate, 'new_act') if do_activate \
+            else (self.lo_deactivate, 'new_inact')
+        modified_attr = attrgetter_cache[attr]
+        # Track illegal activations/deactivations for the return value
+        illegal, act_error = [], None
+        for fn_mod in mods:
+            if fn_mod in modified_attr(out_diff):
+                continue # already activated or deactivated
+            ## For now, allow selecting unicode named files, for testing
+            ## I'll leave the warning in place, but maybe we can get the
+            ## game to load these files
+            #if fileName in self.bad_names: return
+            try:
+                changes_diff = _lo_meth(fn_mod)
+            except (BoltError, PluginsFullError) as e: # only for lo_activate
+                act_error = e
+                break
+            if not changes_diff: # Can't de/activate that mod, track this
+                illegal.append(fn_mod)
+                continue
+            out_diff |= changes_diff
+            (impacted := modified_attr(changes_diff)).discard(fn_mod)
+            if impacted: # deactivated dependents or activated masters
+                impacted_mods[fn_mod] = load_order.get_ordered(impacted)
+        return impacted_mods, illegal, act_error
+
+    @_lo_op
     def lo_activate_all(self, *, activate_mergeable=True, out_diff):
         """Activates all non-mergeable plugins (except ones tagged Deactivate),
         then all mergeable plugins (again, except ones tagged Deactivate).

@@ -79,8 +79,7 @@ from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, deprint, \
     fast_cached_property, attrgetter_cache, top_level_files
 from ..bosh import ModInfo, omods
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
-from ..exception import BoltError, CancelError, SkipError, UnknownListener, \
-    PluginsFullError
+from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -1124,81 +1123,36 @@ class ModList(_ModsUIList):
         return bosh.modInfos.plugin_wildcard()
 
     # Helpers -----------------------------------------------------------------
-    _activated_key = 0
-    _deactivated_key = 1
     @balt.conversation
     def _toggle_active_state(self, *mods):
         """Toggle active state of mods given - all mods must be either
         active or inactive."""
+        if not mods: return # just in case
         active = [mod for mod in mods if load_order.cached_is_active(mod)]
-        assert not active or len(active) == len(mods) # empty or all
-        inactive = (not active and mods) or []
-        changes: defaultdict[int, dict] = defaultdict(dict)
-        # Track which plugins we activated or deactivated
-        touched = set()
-        # Deactivate ?
-        # Track illegal deactivations for the return value
-        illegal_deactivations = []
-        _ord = load_order.get_ordered
-        for act in active:
-            if act not in touched: # else we already deactivated it
-                deactivated = self.data_store.lo_deactivate(act).new_inact
-                if not deactivated:
-                    # Can't deactivate that mod, track this
-                    illegal_deactivations.append(act)
-                    continue
-                touched |= deactivated
-                deactivated.discard(act)
-                if deactivated: # deactivated dependents
-                    changes[self._deactivated_key][act] = _ord(deactivated)
-        # Activate ?
-        # Track illegal activations for the return value
-        illegal_activations = []
-        for inact in inactive:
-            if inact in touched: continue # already activated
-            ## For now, allow selecting unicode named files, for testing
-            ## I'll leave the warning in place, but maybe we can get the
-            ## game to load these files
-            #if fileName in self.data_store.bad_names: return
-            try:
-                activated = self.data_store.lo_activate(inact).new_act
-                if not activated:
-                    # Can't activate that mod, track this
-                    illegal_activations.append(inact)
-                    continue
-                touched |= activated
-                activated.discard(inact)
-                if activated: # activated masters
-                    changes[self._activated_key][inact] = _ord(activated)
-            except (BoltError, PluginsFullError) as e:
-                showError(self, f'{e}')
-                break
+        activate = not active
+        assert activate or len(active) == len(mods) # empty or all
+        (changes, illegal, act_error), lordata = \
+            self.data_store.lo_toggle_active(mods, do_activate=activate,
+                                             save_act=True)
+        if act_error:
+            showError(self, act_error)
         # Show warnings to the user if they attempted to deactivate mods that
-        # can't be deactivated (e.g. vanilla masters on newer games) and/or
-        # attempted to activate mods that can't be activated (e.g. .esu
-        # plugins).
-        warn_msg = warn_cont_key = ''
-        if illegal_deactivations:
-            warn_msg = (_("You can't deactivate the following mods:") +
-                        f"\n{', '.join(illegal_deactivations)}")
-            warn_cont_key = 'bash.mods.dnd.illegal_deactivation.continue'
-        if illegal_activations:
-            warn_msg = (_("You can't activate the following mods:") +
-                        f"\n{', '.join(illegal_activations)}")
-            warn_cont_key = 'bash.mods.dnd.illegal_activation.continue'
-        if warn_msg:
+        # can't be deactivated (e.g. vanilla masters) and/or attempted to
+        # activate mods that can't be activated (e.g. .esu plugins).
+        if illegal:
+            if activate:
+                warn_msg = _("You can't activate the following mods:")
+                warn_cont_key = 'bash.mods.dnd.illegal_activation.continue'
+            else:
+                warn_msg = _("You can't deactivate the following mods:")
+                warn_cont_key = 'bash.mods.dnd.illegal_deactivation.continue'
+            warn_msg += '\n' + '\n'.join(illegal)
             balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
-        if touched:
-            lordata = bosh.modInfos.wip_lo_save_active()
-            # If we have no changes, pass - if we do have changes, only one of
-            # these can be truthy at a time
-            if ch := changes[self._activated_key]:
-                MastersAffectedDialog(self, ch).show_modeless()
-            elif ch := changes[self._deactivated_key]:
-                DependentsAffectedDialog(self, ch).show_modeless()
-            self.propagate_refresh(lordata)
+        if changes:
+            (MastersAffectedDialog if activate else DependentsAffectedDialog)(
+                self, changes).show_modeless()
+        self.propagate_refresh(lordata)
 
-    # Other -------------------------------------------------------------------
     def new_bashed_patch(self):
         """Create a new Bashed Patch and refresh the GUI for it."""
         new_patch_name = bosh.modInfos.generateNextBashedPatch(
