@@ -2056,9 +2056,13 @@ def _lo_cache(lord_func):
 def _lo_op(lop_func):
     """Decorator centralizing saving active state/load order changes."""
     @wraps(lop_func)
-    def _lo_activate_wrapper(self: ModInfos, *args, ldiff=None, save_all=False,
-                             save_wip_lo=False, save_act=False, **kwargs):
-        """Update _active_wip/_lo_wip cache and possibly save changes."""
+    def _lo_wip_wrapper(self: ModInfos, *args, ldiff=None, save_all=False,
+                        save_wip_lo=False, save_act=False, **kwargs):
+        """Update _active_wip/_lo_wip cache and possibly save changes.
+        :param save_all: save load order and plugins.txt
+        :param save_wip_lo: save load order when active did not change
+        :param save_act: save plugins.txt - always call with a valid load order
+        """
         out_diff = kwargs.setdefault('out_diff', LordDiff())
         ldiff = LordDiff() if ldiff is None else ldiff
         save = sum((save_act, save_wip_lo, save_all))
@@ -2068,16 +2072,12 @@ def _lo_op(lop_func):
         try:
             lo_msg = lop_func(self, *args, **kwargs)
         finally:
-            if save_act and out_diff:
-                out_diff = self.wip_lo_save_active(ldiff=ldiff)
-            elif save_wip_lo and out_diff:
-                out_diff = self._wip_lo_save_lo(ldiff=ldiff)
-            elif save_all and out_diff:
-                out_diff = self._wip_lo_save_all(ldiff=ldiff)
-            elif save:
-                out_diff = out_diff.to_rdata() # should be empty
+            if save:
+                out_diff = self._wip_lo_save(save_wip_lo or save_all,
+                    save_act or save_all, ldiff=ldiff) if out_diff else \
+                        out_diff.to_rdata() # should be empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
-    return _lo_activate_wrapper
+    return _lo_wip_wrapper
 
 #------------------------------------------------------------------------------
 class ModInfos(TableFileInfos):
@@ -2464,27 +2464,18 @@ class ModInfos(TableFileInfos):
                                          cached_active=not forceActive)
 
     @_lo_cache
-    def wip_lo_save_active(self):
-        """Write data to Plugins.txt file.
-
-        Always call AFTER setting the load order - make sure we unghost
-        ourselves so ctime of the unghosted mods is not set."""
-        return load_order.save_lo(None, load_order.get_ordered(
-            self._active_wip))
-
-    @_lo_cache
-    def _wip_lo_save_lo(self):
-        """Save load order when active did not change."""
-        return load_order.save_lo(self._lo_wip)
-
-    @_lo_cache
-    def _wip_lo_save_all(self):
+    def _wip_lo_save(self, update_lo, update_act):
         """Save load order and plugins.txt"""
-        active_wip_set = set(self._active_wip)
-        dex = {x: i for i, x in enumerate(self._lo_wip) if
-               x in active_wip_set}
-        self._active_wip.sort(key=dex.__getitem__) # order in their load order
-        return load_order.save_lo(self._lo_wip, acti=self._active_wip)
+        lo = act_key = None # if these remain both None, save_lo will raise
+        if update_lo:
+            lo = self._lo_wip
+            if update_act: # order active wip in the new load order
+                act_key = {x: i for i, x in enumerate(lo)}.__getitem__
+        elif update_act:
+            act_key = load_order.cached_lo_index
+        if update_act:
+            self._active_wip.sort(key=act_key)
+        return load_order.save_lo(lo, self._active_wip if update_act else None)
 
     @_lo_cache
     def wip_lo_undo_redo_load_order(self, redo):
@@ -2501,15 +2492,16 @@ class ModInfos(TableFileInfos):
 
     #--Lo/active wip caches management ----------------------------------------
     @_lo_op
-    def lo_activate(self, fileName, *, out_diff):
-        """Mutate _active_wip cache."""
+    def _lo_activate(self, fileName, *, out_diff):
+        """Never passed save_***=True - kept it a _lo_op for creating the
+        LordDiff() in one place."""
         self._do_activate(fileName, set(self), [], out_diff)
 
     def _do_activate(self, fileName, _modSet, _children, out_diff):
         # Skip .esu files, those can't be activated
         ##: This .esu handling needs to be centralized - sprinkled all over
         # actives related lo_* methods
-        if fileName.fn_ext == u'.esu': return []
+        if fileName.fn_ext == '.esu': return
         # Speed up lookups, since they occur for the plugin and all masters
         acti_set = set(self._active_wip)
         if fileName not in acti_set: # else we are called to activate masters
@@ -2562,7 +2554,7 @@ class ModInfos(TableFileInfos):
     @_lo_op
     def lo_toggle_active(self, mods, *, do_activate=True, out_diff):
         impacted_mods = {}
-        _lo_meth, attr = (self.lo_activate, 'new_act') if do_activate \
+        _lo_meth, attr = (self._lo_activate, 'new_act') if do_activate \
             else (self.lo_deactivate, 'new_inact')
         modified_attr = attrgetter_cache[attr]
         # Track illegal activations/deactivations for the return value
@@ -2576,7 +2568,7 @@ class ModInfos(TableFileInfos):
             #if fileName in self.bad_names: return
             try:
                 changes_diff = _lo_meth(fn_mod)
-            except (BoltError, PluginsFullError) as e: # only for lo_activate
+            except (BoltError, PluginsFullError) as e: # only for _lo_activate
                 act_error = e
                 break
             if not changes_diff: # Can't de/activate that mod, track this
@@ -2614,12 +2606,12 @@ class ModInfos(TableFileInfos):
             try:
                 for j, p in enumerate(to_act):
                     if p not in out_diff.new_act: # else a delinquent master(?)
-                        self.lo_activate(p, out_diff=out_diff)
+                        self._lo_activate(p, out_diff=out_diff)
             except PluginsFullError as e:
                 if j >= first_mergeable:
                     raise SkippedMergeablePluginsError from e
                 raise
-        except (BoltError, NotImplementedError):
+        except BoltError:
             out_diff.new_act.clear() # Don't save, something went wrong
             raise
 
@@ -2717,9 +2709,10 @@ class ModInfos(TableFileInfos):
         self._lo_wip[oldIndex] = new_name
         self._active_wip = [x for x in self._active_wip if x != old_name]
         if do_activate:
-            self.lo_activate(new_name)
+            self._lo_activate(new_name)
         elif deactivate:
             self.lo_deactivate(new_name)
+        # only the truth value of out_diff matters
         out_diff.added, out_diff.missing = {new_name}, {old_name} # inform diff
 
     @_lo_op

@@ -42,7 +42,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
     GPath_no_norm, RefrIn, RefrData
 from ..brec import RecordType
-from ..exception import BoltError, CancelError, PluginsFullError
+from ..exception import BoltError, CancelError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
 from ..localize import format_date
@@ -981,32 +981,26 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         except CancelError:
             return # prevent settings save
         finally:
-            act_save = False
-            to_act = dict.fromkeys(self._bps, True)
-            to_act.update(dict.fromkeys(self._reactivate_mods, False))
-            bp_masters = set()
-            for fn_mod, is_bp in to_act.items():
-                if not is_bp or load_order.cached_is_active(fn_mod) or (
-                        bass.inisettings['PromptActivateBashedPatch'] and
+            to_act = []
+            if self._bps:
+                is_act = load_order.cached_is_active(parent_bp := self._bps[0])
+                if is_act or ( # parent was activated, activate all parts or...
+                    bass.inisettings['PromptActivateBashedPatch'] and
                         self._askYes(_('Activate %(bp_name)s?') % {
-                            'bp_name': fn_mod}, fn_mod)):
-                    try:
-                        act = bosh.modInfos.lo_activate(fn_mod).new_act
-                        if is_bp:
-                            bp_masters.update(act - {fn_mod})
-                        act_save |= bool(act)
-                    except PluginsFullError:
-                        msg = _('Unable to activate plugin %(bp_name)s because'
-                            ' the load order is full.') % {'bp_name': fn_mod}
-                        self._showError(msg)
-                        break # don't keep trying
-            if act_save:
-                bp_rdata |= bosh.modInfos.wip_lo_save_active()
-            if bp_masters:
+                            'bp_name': parent_bp}, parent_bp)):
+                    to_act = self._bps
+            _act = bosh.modInfos.lo_toggle_active
+            (bp_mas, _illegal, bp_error), ldiff_out = _act(to_act)
+            (_react_mas, _illegal, act_error), lordiff = _act(
+                self._reactivate_mods, out_diff=ldiff_out, save_act=True)
+            if pl_full_er := bp_error or act_error: ##: might be a BoltError
+                msg = _('Unable to activate plugin') + f':\n{pl_full_er}'
+                self._showError(msg)
+            if bp_masters := [*chain(*bp_mas.values())]:
                 msg = _('Masters Activated: %(num_activated)d') % {
                     'num_activated': len(bp_masters)}
                 Link.Frame.set_status_info(msg)
-            self.window.propagate_refresh(bp_rdata, refr_saves=act_save)
+            self.window.propagate_refresh(bp_rdata, refr_saves=lordiff)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
