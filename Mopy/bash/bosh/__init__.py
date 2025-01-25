@@ -2161,6 +2161,8 @@ class ModInfos(TableFileInfos):
             lordata = self.refreshLoadOrder(ldiff=ldiff,
                 forceRefresh=mods_changes or unlock_lo,
                 forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+            if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
+                self.warn_missing_lo_act.update(ldiff.missing)
         rdata |= lordata
         # if active did not change, we must perform the refreshes below
         if ldiff.inact_changes_only():
