@@ -73,8 +73,7 @@ class Files_Unhide(ItemLink):
         #--Now move everything at once
         if not srcFiles:
             return
-        moved = self._data_store.move_infos(srcFiles, destFiles,
-            self.window, balt.Link.Frame)
+        moved = self._data_store.move_infos(srcFiles, destFiles, self.window)
         if moved: # pick one at random to show details for
             self.window.propagate_refresh(True, detail_item=next(iter(moved)))
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)

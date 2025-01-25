@@ -2094,8 +2094,8 @@ class InstallersData(DataStore):
         return {i: p for i in fn_items if
                 isinstance(p := self[i], _InstallerPackage)}
 
-    def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super().move_infos(sources, destinations, window, bash_frame)
+    def move_infos(self, sources, destinations, window):
+        moved = super().move_infos(sources, destinations, window)
         self.refresh_i(moved)
         return moved
 

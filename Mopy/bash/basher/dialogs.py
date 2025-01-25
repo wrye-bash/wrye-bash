@@ -856,7 +856,7 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
     _def_size = (350, 400)
     _min_size = (250, 300)
 
-    def __init__(self, parent, *, highlight_items: list[_HighlightData],
+    def __init__(self, parent, *, highlight_items: Iterable[_HighlightData],
             add_cancel_btn=False):
         super().__init__(parent, stay_over_parent=True,
             sizes_dict=bass.settings, icon_bundle=balt.Resources.bashBlue)

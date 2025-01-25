@@ -201,7 +201,6 @@ class Saves_Profiles(ChoiceLink):
                 self.window.propagate_refresh(True, Store.MODS.DO(),
                                               detail_item=None)
                 self.window.panel.ShowPanel()
-                Link.Frame.warn_corrupted(warn_saves=True)
 
     choiceLinkType = _ProfileLink
 

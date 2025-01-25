@@ -803,7 +803,7 @@ class UIList(PanelWin):
 
     _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
     def propagate_refresh(self, rdata, ui_refreshes: _ui_in = None, *,
-                          refr_saves=True, **kwargs):
+                          refr_saves=True, booting=False, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
         :param ui_refreshes: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
@@ -812,18 +812,13 @@ class UIList(PanelWin):
             kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
             kwargs.setdefault('focus_list', True)
             ui_refreshes[self.data_store.unique_store_key] = kwargs
-        # whenever a RefreshUI is requested for ModList we should also refresh
-        # SaveList
-        ##:353 we need to be more granular here which needs caching info_status
+        # if a RefreshUI is requested for ModList we should also refresh Saves
+        # TODO(353): we need to be more granular here which needs caching
+        #  info_status - we need similar logic in _refresh_mod_inis_and_strings
+        #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
         if refr_saves and Store.MODS in ui_refreshes:
             ui_refreshes[Store.SAVES] = True
-        for list_key, do_refr in ui_refreshes.items():
-            if do_refr and Link.Frame.all_uilists[list_key] is not None:
-                if not isinstance(do_refr, dict): # do_refr is True or RefrData
-                    do_refr = {'rdata': do_refr} if isinstance(do_refr,
-                        RefrData) else {}
-                do_refr.setdefault('focus_list', False)
-                Link.Frame.all_uilists[list_key].RefreshUI(**do_refr)
+        Link.Frame.refresh_and_warn(ui_refreshes, booting)
 
     def _refresh_details(self, to_redraw, detail_item):
         if detail_item is None:
@@ -2060,7 +2055,6 @@ class Installer_Op(ItemLink):
             return None
         finally:
             self.window.propagate_refresh(True, ui_refresh)
-            Link.Frame.distribute_warnings(ui_refresh)
 
     def _perform_action(self, ui_refresh_, progress):
         raise NotImplementedError

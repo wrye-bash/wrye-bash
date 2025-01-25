@@ -1575,7 +1575,7 @@ class DataStore(DataDict):
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 
-    def move_infos(self, sources, destinations, window, bash_frame):
+    def move_infos(self, sources, destinations, window):
         """Hasty hack for Files_Unhide - only use on files, not folders!"""
         try:
             env.shellMove(dict(zip(sources, destinations)), parent=window)
@@ -1585,6 +1585,10 @@ class DataStore(DataDict):
             {d.stail for d in destinations if d.exists()}, ret_type=set)
 
     def save_pickle(self): pass # for Screenshots
+
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        """Append the arguments for the warning message to the multi_warnings
+        and lo_warnings lists, checking the caches currently in Link.Frame."""
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -2444,14 +2448,65 @@ class ModInfos(TableFileInfos):
         # Removing the game master breaks everything, for obvious reasons
         return {k: self.get(k) for k in fn_items if k != self._master_esm}
 
-    def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super().move_infos(sources, destinations, window, bash_frame)
+    def move_infos(self, sources, destinations, window):
+        moved = super().move_infos(sources, destinations, window)
         self.refresh(RefrIn.from_added(moved))
-        bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
     @property
     def bash_dir(self): return dirs[u'modsBash']
+
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        corruptMods = set(self.corrupted)
+        if new_cor := corruptMods - link_frame.knownCorrupted:
+            multi_warnings.append(
+                (_('The following plugins could not be read. This most likely '
+                   'means that they are corrupt.'), new_cor, store_key))
+            link_frame.knownCorrupted |= corruptMods
+        valid_vers = bush.game.Esp.validHeaderVersions
+        invalidVersions = {ck for ck, x in self.items() if
+                           all(x.header.version != v for v in valid_vers)}
+        if new_inv := invalidVersions - link_frame.known_invalid_versions:
+            multi_warnings.append(
+                (_('The following plugins have header versions that are not '
+                   'valid for this game. This may mean that they are '
+                   'actually intended to be used for a different game.'),
+                 new_inv, store_key))
+            link_frame.known_invalid_versions |= invalidVersions
+        old_fvers = self.older_form_versions
+        if new_old_fvers := old_fvers - link_frame.known_older_form_versions:
+            multi_warnings.append(
+                (_('The following plugins use an older Form Version for their '
+                   'main header. This most likely means that they were not '
+                   'ported properly (if at all).'), new_old_fvers, store_key))
+            link_frame.known_older_form_versions |= old_fvers
+        if self.new_missing_strings:
+            multi_warnings.append(
+                (_('The following plugins are marked as localized, but are '
+                   'missing strings localization files in the language your '
+                   'game is set to. This will cause CTDs if they are '
+                   'activated.'), self.new_missing_strings, store_key))
+            self.new_missing_strings = set()
+        if self.warn_missing_lo_act:
+            lo_warnings.append((_('The following plugins could not be found '
+                    'in the %(data_folder)s folder or are corrupt and have '
+                    'thus been removed from the load order.') % {
+                                    'data_folder': bush.game.mods_dir, },
+                                self.warn_missing_lo_act))
+            self.warn_missing_lo_act = set()
+        if self.selectedExtra:
+            lo_warnings.append(
+                (bush.game.plugin_flags.deactivate_msg(), self.selectedExtra))
+            self.selectedExtra = set()
+        ##: Disable this message for now, until we're done testing if we can
+        # get the game to load these files
+        # if self.activeBad:
+        #     lo_warnings.append(mk_warning(
+        #         _('The following plugins have been deactivated because they '
+        #           'have filenames that cannot be encoded in Windows-1252 and '
+        #           'thus cannot be loaded by %(game_name)s.') % {
+        #             'game_name': bush.game.display_name, }, self.activeBad))
+        #     self.activeBad = set()
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -3090,6 +3145,15 @@ class SaveInfos(TableFileInfos):
                 self._init_store(sd)
         return self.store_dir
 
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        corruptSaves = set(self.corrupted)
+        if not corruptSaves <= link_frame.knownCorrupted:
+            multi_warnings.append(
+                (_('The following save files could not be read. This most '
+                   'likely means that they are corrupt.'),
+                 corruptSaves - link_frame.knownCorrupted, store_key))
+            link_frame.knownCorrupted |= corruptSaves
+
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
                                                                 default_val)
@@ -3172,16 +3236,15 @@ class SaveInfos(TableFileInfos):
                 path_func = co_apath.moveTo if move_cosave else co_apath.copyTo
                 path_func(newPath)
 
-    def move_infos(self, sources, destinations, window, bash_frame):
+    def move_infos(self, sources, destinations, window):
         # we should use fs_copy in base method so cosaves are copied - we
         # need to create infos for the hidden files using _store.factory
-        moved = super().move_infos(sources, destinations, window, bash_frame)
+        moved = super().move_infos(sources, destinations, window)
         for s, d in zip(sources, destinations):
             if FName(d.stail) in moved:
                 co_instances = SaveInfo.get_cosaves_for_path(s)
                 self.co_copy_or_move(co_instances, d, move_cosave=True)
         self.refresh(RefrIn.from_added(moved))
-        bash_frame.warn_corrupted(warn_saves=True)
         return moved
 
 #------------------------------------------------------------------------------
@@ -3253,6 +3316,28 @@ class BSAInfos(TableFileInfos):
                 if len(ba2_entry) >= 2:
                     self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
         return rdata
+
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        bsa_mvers = self.mismatched_versions
+        if not bsa_mvers <= link_frame.known_mismatched_version_bsas:
+            multi_warnings.append(
+                (_('The following BSAs have a version different from the one '
+                   '%(game_name)s expects. This can lead to CTDs, please '
+                   'extract and repack them using the %(ck_name)s-provided '
+                   'tool.') % {'game_name': bush.game.display_name,
+                               'ck_name': bush.game.Ck.long_name},
+                 bsa_mvers - link_frame.known_mismatched_version_bsas,
+                 store_key))
+            link_frame.known_mismatched_version_bsas |= bsa_mvers
+        ba2_colls = self.ba2_collisions
+        if not ba2_colls <= link_frame.known_ba2_collisions:
+            multi_warnings.append(
+                (_('The following BA2s have filenames whose hashes collide, '
+                   'which will cause one or more of them to fail to work '
+                   'correctly. This should be corrected by the mod authors '
+                   'by renaming the files to avoid the collision.'),
+                 ba2_colls - link_frame.known_ba2_collisions, store_key))
+            link_frame.known_ba2_collisions |= ba2_colls
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')

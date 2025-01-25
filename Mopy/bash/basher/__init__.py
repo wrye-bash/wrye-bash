@@ -56,7 +56,7 @@ import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
 from functools import partial
-from itertools import chain, repeat
+from itertools import chain, repeat, starmap
 
 import wx
 
@@ -3656,22 +3656,6 @@ class BashFrame(WindowFrame):
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
 
-    def distribute_warnings(self, ui_refresh, booting=False):
-        """Issue warnings for all tabs, based on the specified ui_refresh
-        information."""
-        # Issue warnings for the various tabs based on what was refreshed
-        ##: This could do with a better design
-        mods_were_refreshed = ui_refresh.get(Store.MODS, booting)
-        bsas_were_refreshed = ui_refresh.get(Store.BSAS, booting)
-        self.warn_corrupted(
-            warn_mods=mods_were_refreshed,
-            warn_strings=mods_were_refreshed or bsas_were_refreshed,
-            warn_bsas=bsas_were_refreshed,
-            warn_saves=ui_refresh.get(Store.SAVES, booting)
-        )
-        if mods_were_refreshed:
-            self.warn_load_order()
-
     @balt.conversation
     def warnTooManyModsBsas(self):
         limit_fixers = bush.game.Se.limit_fixer_plugins
@@ -3787,11 +3771,9 @@ class BashFrame(WindowFrame):
         ui_refresh = {store.unique_store_key: rdata for store in (
             bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
              rdata := not booting and store.refresh())}
-        if ui_refresh:
-            #--Repopulate, focus will be set in ShowPanel
-            self.all_uilists[Store.MODS].propagate_refresh(
-                ui_refresh.get(Store.MODS), ui_refresh, focus_list=False)
-        self.distribute_warnings(ui_refresh, booting)
+        #--Repopulate, focus will be set in ShowPanel
+        self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
+            Store.MODS), ui_refresh, focus_list=False, booting=booting)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
@@ -3814,102 +3796,29 @@ class BashFrame(WindowFrame):
                 title=_('Lock Load Order'))
             load_order.warn_locked = False
 
-    def warn_load_order(self):
-        """Warn if plugins.txt has bad or missing files, or is overloaded."""
-        lo_warnings = []
-        if bosh.modInfos.warn_missing_lo_act:
-            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                _('The following plugins could not be found in the '
-                  '%(data_folder)s folder or are corrupt and have thus been '
-                  'removed from the load order.') % {
-                    'data_folder': bush.game.mods_dir,
-                }, bosh.modInfos.warn_missing_lo_act))
-            bosh.modInfos.warn_missing_lo_act.clear()
-        if bosh.modInfos.selectedExtra:
-            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                bush.game.plugin_flags.deactivate_msg(),
-                bosh.modInfos.selectedExtra))
-            bosh.modInfos.selectedExtra = set()
-        ##: Disable this message for now, until we're done testing if we can
-        # get the game to load these files
-        # if bosh.modInfos.activeBad:
-        #     lo_warnings.append(mk_warning(
-        #         _('The following plugins have been deactivated because they '
-        #           'have filenames that cannot be encoded in Windows-1252 and '
-        #           'thus cannot be loaded by %(game_name)s.') % {
-        #             'game_name': bush.game.display_name,
-        #         }, bosh.modInfos.activeBad))
-        #     bosh.modInfos.activeBad = set()
-        if lo_warnings:
-            LoadOrderSanitizedDialog(self,
-                highlight_items=lo_warnings).show_modeless()
-
-    def warn_corrupted(self, warn_mods=False, warn_saves=False,
-                       warn_strings=False, warn_bsas=False):
-        _mk_warning = MultiWarningDialog.make_highlight_entry # to wrap better
-        multi_warnings = []
-        corruptMods = set(bosh.modInfos.corrupted)
-        key_mods, key_bsas = Store.MODS, Store.BSAS
-        if warn_mods and not corruptMods <= self.knownCorrupted:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins could not be read. This most likely '
-                  'means that they are corrupt.'),
-                corruptMods - self.knownCorrupted, key_mods))
-            self.knownCorrupted |= corruptMods
-        corruptSaves = set(bosh.saveInfos.corrupted)
-        if warn_saves and not corruptSaves <= self.knownCorrupted:
-            multi_warnings.append(_mk_warning(
-                _('The following save files could not be read. This most '
-                  'likely means that they are corrupt.'),
-                corruptSaves - self.knownCorrupted, Store.SAVES))
-            self.knownCorrupted |= corruptSaves
-        valid_vers = bush.game.Esp.validHeaderVersions
-        invalidVersions = {ck for ck, x in bosh.modInfos.items() if
-                           all(x.header.version != v for v in valid_vers)}
-        if warn_mods and not invalidVersions <= self.known_invalid_versions:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins have header versions that are not '
-                  'valid for this game. This may mean that they are '
-                  'actually intended to be used for a different game.'),
-                invalidVersions - self.known_invalid_versions, key_mods))
-            self.known_invalid_versions |= invalidVersions
-        old_fvers = bosh.modInfos.older_form_versions
-        if warn_mods and not old_fvers <= self.known_older_form_versions:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins use an older Form Version for their '
-                  'main header. This most likely means that they were not '
-                  'ported properly (if at all).'),
-                old_fvers - self.known_older_form_versions, key_mods))
-            self.known_older_form_versions |= old_fvers
-        if warn_strings and bosh.modInfos.new_missing_strings:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins are marked as localized, but are '
-                  'missing strings localization files in the language your '
-                  'game is set to. This will cause CTDs if they are '
-                  'activated.'), bosh.modInfos.new_missing_strings, key_mods))
-            bosh.modInfos.new_missing_strings.clear()
-        bsa_mvers = bosh.bsaInfos.mismatched_versions
-        if warn_bsas and not bsa_mvers <= self.known_mismatched_version_bsas:
-            multi_warnings.append(_mk_warning(
-                _('The following BSAs have a version different from the one '
-                  '%(game_name)s expects. This can lead to CTDs, please '
-                  'extract and repack them using the %(ck_name)s-provided '
-                  'tool.') % {'game_name': bush.game.display_name,
-                              'ck_name': bush.game.Ck.long_name},
-                bsa_mvers - self.known_mismatched_version_bsas, key_bsas))
-            self.known_mismatched_version_bsas |= bsa_mvers
-        ba2_colls = bosh.bsaInfos.ba2_collisions
-        if warn_bsas and not ba2_colls <= self.known_ba2_collisions:
-            multi_warnings.append(_mk_warning(
-                _('The following BA2s have filenames whose hashes collide, '
-                  'which will cause one or more of them to fail to work '
-                  'correctly. This should be corrected by the mod authors '
-                  'by renaming the files to avoid the collision.'),
-                ba2_colls - self.known_ba2_collisions, key_bsas))
-            self.known_ba2_collisions |= ba2_colls
-        if multi_warnings:
-            MultiWarningDialog(self,
-                highlight_items=multi_warnings).show_modeless()
+    def refresh_and_warn(self, ui_refresh, booting):
+        # ONLY use in propagate_refresh
+        for list_key, do_refr in ui_refresh.items():
+            if do_refr and (uil := self.all_uilists[list_key]) is not None:
+                if not isinstance(do_refr, dict): # True or RefrData
+                    do_refr = {'rdata': do_refr} if isinstance(do_refr,
+                        RefrData) else {}
+                do_refr.setdefault('focus_list', False)
+                uil.RefreshUI(**do_refr)
+        stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
+                  Store.SAVES: bosh.saveInfos} # this belongs to stores
+        if booting: # trigger warnings on boot, ui_refresh is empty then
+            ui_refresh = dict.fromkeys(stores, True)
+        multi_warns, lo_warns = [], []
+        for list_key, do_refr in ui_refresh.items():
+            if do_refr and (ds := stores.get(list_key)):
+                ds.warning_args(multi_warns, lo_warns, self, list_key)
+        if multi_warns:
+            mk = (mwd := MultiWarningDialog).make_highlight_entry
+            mwd(self, highlight_items=starmap(mk, multi_warns)).show_modeless()
+        if lo_warns:
+            mk = (losd := LoadOrderSanitizedDialog).make_highlight_entry
+            losd(self, highlight_items=starmap(mk, lo_warns)).show_modeless()
 
     _ini_missing = _('%(game_ini_file)s does not exist yet. %(game_name)s '
                      'will create this file on first run. INI tweaks will not '
