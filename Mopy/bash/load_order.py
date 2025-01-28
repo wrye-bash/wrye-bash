@@ -288,6 +288,15 @@ def cached_active_index_str(mod):
 def cached_lower_loading(mod):
     return _cached_lord.loadOrder[:_cached_lord.mod_lo_index[mod]]
 
+def cached_lo_last_esm(mod_infos, game_handle):
+    it = iter(_cached_lord.loadOrder)
+    last_esm = next(it) # the game master - always an esm
+    for mod in it:
+        if not game_handle.master_flag.cached_type(mod_infos[mod]):
+            return last_esm
+        last_esm = mod
+    return last_esm
+
 def get_ordered(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
     """Return a list containing mod_paths' elements sorted into load order.
 

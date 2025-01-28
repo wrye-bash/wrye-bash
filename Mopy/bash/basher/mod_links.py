@@ -194,20 +194,21 @@ class Mod_CreateDummyMasters(OneItemLink):
 
     def Execute(self):
         """Create Dummy Masters"""
+        bgame = bush.game
         msg = '\n\n'.join([
             _("This is an advanced feature, originally intended for viewing "
               "and editing 'Filter' patches in %(xedit_name)s. It will create "
               "empty plugins for each missing master. Are you sure you want "
-              "to continue?") % {'xedit_name': bush.game.Xe.full_name},
+              "to continue?") % {'xedit_name': bgame.Xe.full_name},
             _("To remove these files later, use 'Remove Dummy Masters…'.")])
         if not self._askYes(msg, title=self._text): return
         mod_previous = FNDict() # previous master for each master
         mods_ds = self._data_store
         # creates esp files - so place them correctly after the last esm
-        previous_master = mods_ds.cached_lo_last_esm()
+        previous_master = load_order.cached_lo_last_esm(mods_ds, bgame)
         for master in self._selected_info.masterNames:
             if master in mods_ds:
-                if not bush.game.master_flag.cached_type(mods_ds[master]):
+                if not bgame.master_flag.cached_type(mods_ds[master]):
                     # if previous master is an esp put this one after it
                     previous_master = master
                 continue
@@ -215,8 +216,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
-            force_flags = bush.game.plugin_flags.guess_flags(
-                master.fn_ext, bush.game)
+            force_flags = bgame.plugin_flags.guess_flags(master.fn_ext, bgame)
             mods_ds.create_new_mod(master, author_str='BASHED DUMMY',
                 flags_dict=force_flags,
                 wanted_masters=[], # previous behavior - correct?

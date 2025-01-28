@@ -2538,15 +2538,6 @@ class ModInfos(TableFileInfos):
     def wip_lo_undo_redo_load_order(self, redo):
         return load_order.undo_redo_load_order(redo)
 
-    #--Load Order utility methods - be sure cache is valid when using them
-    def cached_lo_last_esm(self):
-        last_esm = self._master_esm
-        for mod in self._lo_wip[1:]:
-            if not bush.game.master_flag.cached_type(self[mod]):
-                return last_esm
-            last_esm = mod
-        return last_esm
-
     #--Lo/active wip caches management ----------------------------------------
     @_lo_op
     def _lo_activate(self, fileName, *, out_diff):
