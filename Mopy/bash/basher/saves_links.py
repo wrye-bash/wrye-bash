@@ -409,9 +409,7 @@ class Save_Renumber(EnabledLink):
                                                     rdata)) is None:
                     break
                 nfn_number += 1
-        if rdata:
-            self.window.RefreshUI(rdata)
-            self.window.SelectItemsNoCallback(rdata.redraw)
+        self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):

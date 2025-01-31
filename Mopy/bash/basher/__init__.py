@@ -2015,10 +2015,7 @@ class SaveList(UIList):
         for saveInfo in self.get_selected_infos_filtered():
             if (rdata := self.try_rename(saveInfo, root, rdata)) is None:
                 break
-        if rdata:
-            self.RefreshUI(rdata, detail_item=rdata.renames.get(item_edited))
-            #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.redraw)
+        self.refresh_renames(item_edited, rdata)
         return EventResult.CANCEL # needed ! clears new name from label on exception
 
     def try_rename(self, saveinf, new_root, rdata_ren, store_refr=None, *,
@@ -2352,6 +2349,7 @@ class InstallersList(UIList):
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
         # all selected have common type! enforced in OnBeginEditLabel
+        item_edited = self.panel.detailsPanel.displayed_item
         newName, root = selected[0].validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
         if root is None:
@@ -2371,10 +2369,7 @@ class InstallersList(UIList):
             except TypeError:
                 pass # ren_keys.update(None)
             #--Refresh UI
-            if rdata:
-                self.propagate_refresh(rdata, ui_refreshes)
-                #--Reselected the renamed items
-                self.SelectItemsNoCallback(rdata.redraw)
+            self.refresh_renames(item_edited, rdata, ui_refreshes)
             return EventResult.CANCEL
 
     def try_rename(self, inst_info, new_root, rdata_ren, store_refr=None):
@@ -3274,11 +3269,7 @@ class ScreensList(UIList):
                 except TypeError: break
                 num += 1
                 numStr = str(num).zfill(digits)
-            if rdata:
-                self.RefreshUI(rdata,
-                               detail_item=rdata.renames.get(item_edited))
-                #--Reselected the renamed items
-                self.SelectItemsNoCallback(rdata.redraw)
+            self.refresh_renames(item_edited, rdata)
             return EventResult.CANCEL
 
     def try_rename(self, scrinf, new_root, rdata_ren, store_refr=None):

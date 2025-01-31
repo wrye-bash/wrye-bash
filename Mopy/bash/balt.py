@@ -1087,6 +1087,17 @@ class UIList(PanelWin):
         # should only be subscribed if _editLabels==True and overridden
         raise NotImplementedError
 
+    def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
+        if rdata:
+            args_dict = {'detail_item': rdata.renames.get(item_edited,
+                item_edited)} # in case the displayed item was *not* renamed
+            if ui_refreshes is not None:
+                self.propagate_refresh(rdata, ui_refreshes, **args_dict)
+            else:
+                self.RefreshUI(rdata, **args_dict)
+            #--Reselect the renamed items
+            self.SelectItemsNoCallback(rdata.redraw)
+
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
         if is_f2_down:
