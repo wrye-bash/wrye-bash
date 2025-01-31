@@ -1159,7 +1159,8 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.propagate_refresh(RefrData({new_patch_name}))
+            self.propagate_refresh(RefrData({new_patch_name}),
+                                   detail_item=new_patch_name)
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -2343,7 +2344,7 @@ class InstallersList(UIList):
     @balt.conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Renamed some installers"""
-        if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
+        if is_edit_cancelled: return EventResult.FINISH
         selected = self.get_selected_infos_filtered()
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
@@ -2933,7 +2934,8 @@ class InstallersDetails(_SashDetailsPanel):
         subScrollPos  = self.gSubList.lb_get_vertical_scroll_pos()
         espmScrollPos = self.gEspmList.lb_get_vertical_scroll_pos()
         subIndices = self.gSubList.lb_get_selections()
-        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}))
+        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}),
+                                              detail_item=self.displayed_item)
         for subIndex in subIndices:
             self.gSubList.lb_select_index(subIndex)
         # Reset the scroll bars back to their original position

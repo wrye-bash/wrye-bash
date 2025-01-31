@@ -781,19 +781,24 @@ class UIList(PanelWin):
         :param focus_list: If True, focus this UIList."""
         if rdata is None:
             self.populate_items()
-            updated = ()
         else: # a RefrData instance
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in (updated := rdata.redraw | rdata.to_add):
+                for upd in rdata.redraw | rdata.to_add:
                     self.PopulateItem(item=upd)
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
-        self._refresh_details(updated, detail_item)
+        # refresh details
+        if detail_item is None:
+            self.panel.ClearDetails()
+        elif detail_item is self._same_item:
+            self.panel.SetDetails()
+        else:
+            self.SelectAndShowItem(detail_item)
         if Link.Frame.notebook.currentPage is self.panel:
             # we need to check if our Panel is currently shown because we may
             # call Refresh UI of other tabs too - this results for instance in
@@ -819,17 +824,6 @@ class UIList(PanelWin):
         if refr_saves and Store.MODS in ui_refreshes:
             ui_refreshes[Store.SAVES] = True
         Link.Frame.refresh_and_warn(ui_refreshes, booting)
-
-    def _refresh_details(self, to_redraw, detail_item):
-        if detail_item is None:
-            self.panel.ClearDetails()
-        elif detail_item is not self._same_item:
-            self.SelectAndShowItem(detail_item)
-        else: # if it was a single item, refresh details for it
-            if len(to_redraw) == 1:
-                self.SelectAndShowItem(next(iter(to_redraw)))
-            else:
-                self.panel.SetDetails()
 
     def Focus(self):
         self.__gList.set_focus()
