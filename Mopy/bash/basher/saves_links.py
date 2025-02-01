@@ -399,15 +399,15 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'), title=_('Renumber Saves'), initial_num=1,
             min_num=1, max_num=10000)
         if nfn_number is None: return
-        rdata = None
+        rdata = RefrData()
         for s_groups, sinf in self._matches:
             # We have to pass the root, so strip off the extension
             ofn_root = FName(s_groups[2]).fn_body
             nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
             if nfn_save != sinf.fn_key.fn_body:
-                if (rdata := self.window.try_rename(sinf, nfn_save,
-                                                    rdata)) is None:
+                if (rd := self.window.try_rename(sinf, nfn_save)) is None:
                     break
+                rdata |= rd
                 nfn_number += 1
         self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
 

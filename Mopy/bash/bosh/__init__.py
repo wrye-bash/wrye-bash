@@ -1526,8 +1526,7 @@ class DataStore(DataDict):
         """Lift your skirts, we are entering the realm of #241."""
         return {inf for inf in infos if not inf.abs_path.exists()}
 
-    def rename_operation(self, member_info, newName, rdata_ren,
-                         store_refr=None):
+    def rename_operation(self, member_info, newName, store_refr=None):
         rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
@@ -1544,15 +1543,8 @@ class DataStore(DataDict):
         self[newName] = member_info
         member_info.abs_path = self.store_dir.join(newName)
         del self[old_key]
-        if rdata_ren is None:
-            rdata_ren = RefrData({newName}, to_del={old_key},
-                                 renames={old_key: newName}, ren_paths=ren)
-        else:
-            rdata_ren.redraw.add(member_info.fn_key)
-            rdata_ren.to_del.add(old_key)
-            rdata_ren.renames[old_key] = newName
-            rdata_ren.ren_paths.update(ren)
-        return rdata_ren
+        return RefrData({newName}, to_del={old_key},
+                        renames={old_key: newName}, ren_paths=ren)
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1721,10 +1713,9 @@ class _AFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-    def rename_operation(self, member_info, newName, rdata_ren,
-                         store_refr=None):
+    def rename_operation(self, member_info, newName, store_refr=None):
         # Override to allow us to notify BAIN if necessary
-        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
+        rdata_ren = super().rename_operation(member_info, newName)
         self._notify_bain(renamed=rdata_ren.ren_paths)
         return rdata_ren
 
@@ -2430,13 +2421,12 @@ class ModInfos(TableFileInfos):
         return merged_,imported_
 
     # Rest of DataStore overrides ---------------------------------------------
-    def rename_operation(self, member_info, newName, rdata_ren,
-                         store_refr=None):
+    def rename_operation(self, member_info, newName, store_refr=None):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(member_info.fn_key)
         if isSelected:
             self.lo_deactivate(member_info.fn_key)
-        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
+        rdata_ren = super().rename_operation(member_info, newName)
         # rename in load order caches
         self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
                           FName(newName), isSelected, save_all=True)
@@ -3210,11 +3200,10 @@ class SaveInfos(TableFileInfos):
             self.set_store_dir(save_dir, do_swap)
         return super().refresh(refresh_infos, booting=booting, **kwargs)
 
-    def rename_operation(self, member_info, newName, rdata_ren,
-                         store_refr=None):
+    def rename_operation(self, member_info, newName, store_refr=None):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
+        rdata_ren = super().rename_operation(member_info, newName)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
         return rdata_ren

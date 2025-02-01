@@ -1610,7 +1610,7 @@ class ModDetails(_ModsSavesDetails):
                                         'bash.rename.isBadFileName.continue'):
                     return ##: cancels all other changes - move to validate_filename (without the balt part)
             settings[u'bash.mods.renames'][oldName] = newName
-            changeName = self.panel_uilist.try_rename(modInfo, newName, None)
+            changeName = self.panel_uilist.try_rename(modInfo, FName(newName))
         #--Change hedr/masters?
         if refr_inf := (changeHedr or changeMasters):
             modInfo.header.author = self.authorStr.strip()
@@ -2012,17 +2012,17 @@ class SaveList(UIList):
             showError(self, newName)
             return EventResult.CANCEL # validate_filename would Veto
         item_edited = self.panel.detailsPanel.displayed_item
-        rdata = None
+        rdata = RefrData()
         for saveInfo in self.get_selected_infos_filtered():
-            if (rdata := self.try_rename(saveInfo, root, rdata)) is None:
+            if (rd := self.try_rename(saveInfo, root)) is None:
                 break
+            rdata |= rd
         self.refresh_renames(item_edited, rdata)
         return EventResult.CANCEL # needed ! clears new name from label on exception
 
-    def try_rename(self, saveinf, new_root, rdata_ren, store_refr=None, *,
-                   force_ext=''):
+    def try_rename(self, saveinf, new_root, store_refr=None, *, force_ext=''):
         newFileName = saveinf.unique_key(new_root, force_ext)
-        return super().try_rename(saveinf, newFileName, rdata_ren)
+        return super().try_rename(saveinf, newFileName)
 
     @staticmethod
     def _unhide_wildcard():
@@ -2057,9 +2057,9 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        if rdata := self.try_rename(sinf, fn_item.fn_body, None,
+        if rdata := self.try_rename(sinf, fn_item.fn_body,
                                     force_ext=extension):
-            self.RefreshUI(rdata) # that's what a RefreshUI call should look like
+            self.RefreshUI(rdata)
 
     # Save profiles
     def set_local_save(self, new_saves, *, do_swap=None):
@@ -2238,7 +2238,7 @@ class SaveDetails(_ModsSavesDetails):
             # don't - filesystem APIs might warn user (with a dialog hopefully)
             # for an overwrite, otherwise we can have a race whatever we try
             # here - an extra check can't harm nor makes a (any) difference
-            rdata = self.panel_uilist.try_rename(saveInfo, newName, None)
+            rdata = self.panel_uilist.try_rename(saveInfo, newName)
         #--Change masters?
         if changeMasters:
             prev_masters = saveInfo.masterNames
@@ -2361,23 +2361,23 @@ class InstallersList(UIList):
             root = root[0]
         with BusyCursor():
             ui_refreshes = defaultdict(bool) # Store refreshes
-            rdata = None
+            rdata = RefrData()
             try:
                 for package in selected:
-                    if (rdata := self.try_rename(package, root, rdata,
-                                                 ui_refreshes)) is None:
+                    if (rd := self.try_rename(package, root, ui_refreshes)) is None:
                         break
+                    rdata |= rd
             except TypeError:
                 pass # ren_keys.update(None)
             #--Refresh UI
             self.refresh_renames(item_edited, rdata, ui_refreshes)
             return EventResult.CANCEL
 
-    def try_rename(self, inst_info, new_root, rdata_ren, store_refr=None):
+    def try_rename(self, inst_info, new_root, store_refr=None):
         newFileName = inst_info.unique_key(new_root) # preserve extension for installers
         if newFileName is None: # just changed extension - continue
-            return rdata_ren
-        return super().try_rename(inst_info, newFileName, rdata_ren, store_refr)
+            return RefrData()
+        return super().try_rename(inst_info, newFileName, store_refr)
 
     @staticmethod
     def _unhide_wildcard():
@@ -3261,24 +3261,24 @@ class ScreensList(UIList):
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr.zfill(digits) if numStr else ''
         with BusyCursor():
-            rdata = None
+            rdata = RefrData()
             item_edited = self.panel.detailsPanel.displayed_item
             for scrinf in selected:
                 try:
-                    if (rdata := self.try_rename(scrinf, root + numStr,
-                                                 rdata)) is None:
+                    if (rd := self.try_rename(scrinf, root + numStr)) is None:
                         break
+                    rdata |= rd
                 except TypeError: break
                 num += 1
                 numStr = str(num).zfill(digits)
             self.refresh_renames(item_edited, rdata)
             return EventResult.CANCEL
 
-    def try_rename(self, scrinf, new_root, rdata_ren, store_refr=None):
+    def try_rename(self, scrinf, new_root, store_refr=None):
         newName = FName(new_root + scrinf.fn_key.fn_ext) # TODO: add ScreenInfo.unique_key()
         if scrinf._store().store_dir.join(newName).exists():
             return None # break
-        return super().try_rename(scrinf, newName, rdata_ren)
+        return super().try_rename(scrinf, newName)
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens
@@ -3411,7 +3411,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def DoSave(self):
         """Event: Clicked Save button."""
         if (newName := FName(self.fileStr.strip())) != self._bsa_info.fn_key:
-            if self.panel_uilist.try_rename(self._bsa_info, newName, None):
+            if self.panel_uilist.try_rename(self._bsa_info, newName):
                 self.panel_uilist.RefreshUI(detail_item=self.file_info.fn_key)
 
 #------------------------------------------------------------------------------
