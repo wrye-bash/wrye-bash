@@ -1110,12 +1110,15 @@ class UIList(PanelWin):
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH
 
-    # Renaming - note the @conversation, this needs to be atomic with respect
-    # to refreshes and ideally atomic short - store_refr is Installers only
+    @final
     @conversation
-    def try_rename(self, info, newName, store_refr=None):
-        """Mods/BSAs - Inis won't be added and Screens/Installers/Saves
-        override - reduce this."""
+    def try_rename(self, info, new_root, store_refr=None, *, force_ext=False):
+        """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
+         this needs to be atomic with respect to refreshes and ideally
+         atomic short - store_refr is Installers only. Inis won't be added."""
+        newName = info.unique_key(new_root, force_ext)
+        if newName is None: # new and old names are ci-same
+            return RefrData()
         try:
             return self.data_store.rename_operation(info, newName,
                 store_refr=store_refr) # a RefrData instance

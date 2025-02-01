@@ -405,9 +405,10 @@ class Save_Renumber(EnabledLink):
             ofn_root = FName(s_groups[2]).fn_body
             nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
             if nfn_save != sinf.fn_key.fn_body:
-                if (rd := self.window.try_rename(sinf, nfn_save)) is None:
+                try:
+                    rdata |= self.window.try_rename(sinf, nfn_save)
+                except TypeError:
                     break
-                rdata |= rd
                 nfn_number += 1
         self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
 
