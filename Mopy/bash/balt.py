@@ -1077,9 +1077,31 @@ class UIList(PanelWin):
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
 
+    @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        # should only be subscribed if _editLabels==True and overridden
-        raise NotImplementedError
+        """Should only be subscribed if _editLabels==True."""
+        if is_edit_cancelled: return EventResult.FINISH
+        selected = self.get_selected_infos_filtered()
+        if not selected:
+            # Sometimes seems to happen on wxGTK, simply abort
+            return EventResult.CANCEL
+        newName, root, *args = self._rename_args(evt_label, selected)
+        if root is None:
+            showError(self, newName)
+            return EventResult.CANCEL # validate_filename would Veto
+        item_edited = self.panel.detailsPanel.displayed_item
+        with BusyCursor():
+            rdata = RefrData()
+            for sel_inf in selected:
+                try:
+                    rdata |= self.try_rename(sel_inf, root, *args)
+                except TypeError: # try_rename returned None
+                    break
+            self.refresh_renames(item_edited, rdata, *args)
+        return EventResult.CANCEL # needed! clears new name from label on exception
+
+    def _rename_args(self, evt_label, selected):
+        return selected[0].validate_filename_str(evt_label)
 
     def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
         if rdata:

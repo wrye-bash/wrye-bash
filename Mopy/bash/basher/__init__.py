@@ -2015,25 +2015,6 @@ class SaveList(UIList):
         'Cell': _ask_info('header.pcLocation'),
     }
 
-    @balt.conversation
-    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Savegame renamed."""
-        if is_edit_cancelled: return EventResult.FINISH # todo CANCEL?
-        newName, root = \
-            self.panel.detailsPanel.file_info.validate_filename_str(evt_label)
-        if not root:
-            showError(self, newName)
-            return EventResult.CANCEL # validate_filename would Veto
-        item_edited = self.panel.detailsPanel.displayed_item
-        rdata = RefrData()
-        for saveInfo in self.get_selected_infos_filtered():
-            try:
-                rdata |= self.try_rename(saveInfo, root)
-            except TypeError: # try_rename returned None
-                break
-        self.refresh_renames(item_edited, rdata)
-        return EventResult.CANCEL # needed ! clears new name from label on exception
-
     @staticmethod
     def _unhide_wildcard():
         starred = f'*{bush.game.Ess.ext};*.bak'
@@ -2341,35 +2322,15 @@ class InstallersList(UIList):
                 return None, _("Wrye Bash can't rename mixed package types.")
         return rename_type, rename_err
 
-    @balt.conversation
-    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Renamed some installers"""
-        if is_edit_cancelled: return EventResult.FINISH
-        selected = self.get_selected_infos_filtered()
-        if not selected:
-            # Sometimes seems to happen on wxGTK, simply abort
-            return EventResult.CANCEL
+    def _rename_args(self, evt_label, selected):
         # all selected have common type! enforced in OnBeginEditLabel
-        item_edited = self.panel.detailsPanel.displayed_item
         newName, root = selected[0].validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
-        if root is None:
-            showError(self, newName)
-            return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
         if isinstance(root, tuple):
             root = root[0]
-        with BusyCursor():
-            ui_refreshes = defaultdict(bool) # Store refreshes
-            rdata = RefrData()
-            for package in selected:
-                try:
-                    rdata |= self.try_rename(package, root, ui_refreshes)
-                except TypeError:
-                    break
-            #--Refresh UI
-            self.refresh_renames(item_edited, rdata, ui_refreshes)
-            return EventResult.CANCEL
+        ui_refreshes = defaultdict(bool) # Store refreshes
+        return newName, root, ui_refreshes
 
     @staticmethod
     def _unhide_wildcard():
@@ -3242,27 +3203,33 @@ class ScreensList(UIList):
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Rename selected screenshots."""
         if is_edit_cancelled: return EventResult.CANCEL
-        root, numStr = self.panel.detailsPanel.file_info.validate_filename_str(
-            evt_label)
+        selected = self.get_selected_infos_filtered()
+        if not selected:
+            # Sometimes seems to happen on wxGTK, simply abort
+            return EventResult.CANCEL
+        root, numStr, num, digits = self._rename_args(evt_label, selected)
         if numStr is None: # note we allow for number only names
             showError(self, root)
             return EventResult.CANCEL
-        selected = self.get_selected_infos_filtered()
-        #--Rename each screenshot, keeping the old extension
-        num = int(numStr or 0)
-        digits = len(f'{(num + len(selected) - 1)}')
-        numStr = numStr.zfill(digits) if numStr else ''
+        item_edited = self.panel.detailsPanel.displayed_item
         with BusyCursor():
             rdata = RefrData()
-            item_edited = self.panel.detailsPanel.displayed_item
-            for scrinf in selected:
+            for sel_inf in selected:
                 try:
-                    rdata |= self.try_rename(scrinf, root + numStr)
+                    rdata |= self.try_rename(sel_inf, root + numStr)
                     numStr = numStr and str(num := num + 1).zfill(digits)
-                except TypeError:
+                except TypeError: # try_rename returned None
                     break
             self.refresh_renames(item_edited, rdata)
             return EventResult.CANCEL
+
+    def _rename_args(self, evt_label, selected):
+        root, numStr = selected[0].validate_filename_str(evt_label)
+        #--Rename each screenshot, keeping the old extension
+        num = int(numStr or 0)
+        digits = len(f'{(num + len(selected) - 1)}')
+        numStr = numStr and numStr.zfill(digits)
+        return root, numStr, num, digits
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens
