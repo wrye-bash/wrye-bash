@@ -28,7 +28,6 @@ from .. import bush # for _Mods_ActivePluginsData, Mods_ActivePlugins
 from .. import balt, bass, bosh, exception, load_order
 from ..balt import AppendableLink, BoolLink, CheckLink, EnabledLink, \
     ItemLink, Link, MenuLink, MultiLink, SeparatorLink
-from ..bass import Store
 from ..bolt import FName, decoder, deprint, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
     get_shift_down, showError
@@ -79,14 +78,12 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
 # Basic Active Plugins links - mass activate/deactivate
 class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
-    def _refresh_mods_ui(self):
-        self.window.propagate_refresh(Store.SAVES.DO())
 
     def _select_exact(self, mods):
-        lo_warn_msg = bosh.modInfos.lo_activate_exact(mods)
-        self._refresh_mods_ui()
-        if lo_warn_msg:
-            self._showWarning(lo_warn_msg, title=self._text)
+        lo_msg, lordata = bosh.modInfos.lo_activate_exact(mods, save_act=True)
+        self.window.propagate_refresh(lordata)
+        if lo_msg:
+            self._showWarning(lo_msg, title=self._text)
 
 class _Mods_ActivateAll(_AMods_ActivePlugins):
     _text = _('Activate All')
@@ -94,9 +91,10 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
     _activate_mergeable = True
 
     def Execute(self):
-        """Select all mods."""
+        """Activate all mods."""
+        lordata = True # on exception refresh all mods
         try:
-            bosh.modInfos.lo_activate_all(
+            lordata = bosh.modInfos.lo_activate_all(save_act=True,
                 activate_mergeable=self._activate_mergeable)
         except exception.PluginsFullError:
             self._showError(_('Plugin list is full, so some plugins '
@@ -111,7 +109,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
         except (exception.BoltError, NotImplementedError) as e:
             deprint('Error while activating plugins', traceback=True)
             self._showError(f'{e}')
-        self._refresh_mods_ui()
+        self.window.propagate_refresh(lordata)
 
 class _Mods_ActivateNonMergeable(AppendableLink, _Mods_ActivateAll):
     _text = _('Activate Non-Mergeable')
@@ -274,10 +272,9 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def Execute(self):
         # we will repeat the checks here - should not be needed but won't harm
         bosh.modInfos.try_set_version(self._version_key, do_swap=self._askYes)
-        ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
-        # not any of the modding ESMs. Maybe we should enforce that those
-        # modding ESMs are never active and drop this refresh_others?
-        self.window.propagate_refresh(Store.SAVES.DO())
+        # We refresh saves although should only ever depend on Oblivion.esm,
+        # not any of the modding ESMs
+        self.window.propagate_refresh(True)
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
@@ -687,20 +684,18 @@ class _AImportLOBaseLink(ItemLink):
     _warning_title: str
 
     def _apply_lo(self, import_path, imp_lo, imp_acti):
-        msg_lo = bosh.modInfos.lo_reorder(imp_lo, save_lo=False)
-        if msg_lo:
-            self._showWarning(msg_lo, title=self._warning_title)
-        msg_acti = bosh.modInfos.lo_activate_exact(imp_acti,
-            save_actives=False)
+        msg_lo, ldiff = bosh.modInfos.lo_reorder(imp_lo)
+        # out_diff controls saving, so pass ldiff in to make sure we save if
+        # lo_reorder made changes, even if lo_activate_exact was no op
+        msg_acti, lordata = bosh.modInfos.lo_activate_exact(imp_acti,
+            out_diff=ldiff, save_all=True)
         # Don't show the exact same message twice
-        if msg_acti and msg_lo != msg_acti:
-            self._showWarning(msg_acti, title=self._warning_title)
-        bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI()
+        for msg in dict.fromkeys([msg_lo, msg_acti]):
+            if msg: self._showWarning(msg, title=self._warning_title)
+        self.window.propagate_refresh(lordata)
         self._showInfo(_('Successfully imported a load order from '
-                         '%(source_path)s.') % {
-            'source_path': import_path,
-        }, title=self._success_title)
+                         '%(source_path)s.') % {'source_path': import_path},
+                       title=self._success_title)
 
 class Mods_LOImport(_AImportLOBaseLink):
     """Import a previously exported load order from a text file (format

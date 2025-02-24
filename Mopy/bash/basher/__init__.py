@@ -56,7 +56,7 @@ import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
 from functools import partial
-from itertools import chain, repeat
+from itertools import chain, repeat, starmap
 
 import wx
 
@@ -960,23 +960,16 @@ class ModList(_ModsUIList):
     @balt.conversation
     def _drop_dexes(self, chunks):
         """Drop contiguous indexes on newIndex and save if LO changed."""
-        moved = False
-        for first, last, newIndex in chunks:
-            count = self.item_count
-            dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
-            firstItem = self.GetItem(first)
-            lastItem = self.GetItem(last)
-            moved |= bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
-        if moved:
-            #--Save and Refresh
-            try:
-                ldiff = bosh.modInfos.cached_lo_save_all()
-                self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
-            except (BoltError, NotImplementedError) as e:  ##: why NotImplementedError?
-                showError(self, f'{e}')
+        max_dex = self.item_count - 1
+        for c in chunks:
+            c[2] = min(c[2], max_dex)
+        items = (map(self.GetItem, c) for c in chunks)
+        #--Save and Refresh
+        lordata = bosh.modInfos.lo_drop_items(items, save_wip_lo=True)
+        self.propagate_refresh(lordata)
 
     def OnDropIndexes(self, indexes, newIndex):
-        self._drop_dexes([(indexes[0], indexes[-1], newIndex)])
+        self._drop_dexes([[indexes[0], indexes[-1], newIndex]])
 
     def dndAllow(self, event):
         msg = u''
@@ -1055,7 +1048,9 @@ class ModList(_ModsUIList):
             self._toggle_active_state(*toggle_target)
         elif wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
-            if not self.dndAllow(event=None): return
+            if not self.dndAllow(event=None):
+                # Veto the event so Up/Down arrows do not move the selection
+                return EventResult.CANCEL
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self._get_selected()
             previous = -1
@@ -1067,20 +1062,18 @@ class ModList(_ModsUIList):
                 chunks[chunk].append(dex)
             moveMod = 1 if kcode in balt.wxArrowDown else -1
             # filter moving master esm down or moving last plugin past the list
-            chunks = [(first, last, newIndex) for c in chunks if c and (
+            chunks = [[first, last, newIndex] for c in chunks if c and (
                 newIndex := (first := c[0]) + moveMod) >= 0 and (
                     (last := c[-1]) + moveMod) < self.item_count]
             self._drop_dexes(chunks)
-        elif wrapped_evt.is_cmd_down and kcode == ord('Z'):
-            if wrapped_evt.is_shift_down:
-                # Ctrl+Shift+Z - redo last load order or active plugins change
-                self.lo_redo()
-            else:
-                # Ctrl+Z - undo last load order or active plugins change
-                self.lo_undo()
-        elif wrapped_evt.is_cmd_down and kcode == ord('Y'):
-            # Ctrl+Y - redo last load order or active plugins change
-            self.lo_redo()
+        elif wrapped_evt.is_cmd_down:
+            # Ctrl+Y/Ctrl+Shift+Z redo last load order or active plugins change
+            # Ctrl+Z - undo last load order or active plugins change
+            redo = wrapped_evt.is_shift_down if kcode == ord('Z') else \
+                (kcode == ord('Y') or None)
+            if redo is not None:
+                lordata = self.data_store.wip_lo_undo_redo_load_order(redo)
+                self.propagate_refresh(lordata) # no additions or removals
         else:
             return super()._handle_key_down(wrapped_evt)
         # Otherwise we'd jump to a random plugin that starts with the key code
@@ -1130,108 +1123,43 @@ class ModList(_ModsUIList):
         return bosh.modInfos.plugin_wildcard()
 
     # Helpers -----------------------------------------------------------------
-    _activated_key = 0
-    _deactivated_key = 1
     @balt.conversation
     def _toggle_active_state(self, *mods):
         """Toggle active state of mods given - all mods must be either
         active or inactive."""
+        if not mods: return # just in case
         active = [mod for mod in mods if load_order.cached_is_active(mod)]
-        assert not active or len(active) == len(mods) # empty or all
-        inactive = (not active and mods) or []
-        changes: defaultdict[int, dict] = defaultdict(dict)
-        # Track which plugins we activated or deactivated
-        touched = set()
-        # Deactivate ?
-        # Track illegal deactivations for the return value
-        illegal_deactivations = []
-        for act in active:
-            if act in touched: continue # already deactivated
-            try:
-                deactivated = self.data_store.lo_deactivate(act)
-                if not deactivated:
-                    # Can't deactivate that mod, track this
-                    illegal_deactivations.append(act)
-                    continue
-                touched |= deactivated
-                if len(deactivated) > (act in deactivated):
-                    # deactivated dependents
-                    deactivated = [x for x in deactivated if x != act]
-                    changes[self._deactivated_key][act] = \
-                        load_order.get_ordered(deactivated)
-            except (BoltError, NotImplementedError) as e:
-                showError(self, f'{e}')
-        # Activate ?
-        # Track illegal activations for the return value
-        illegal_activations = []
-        for inact in inactive:
-            if inact in touched: continue # already activated
-            ## For now, allow selecting unicode named files, for testing
-            ## I'll leave the warning in place, but maybe we can get the
-            ## game to load these files
-            #if fileName in self.data_store.bad_names: return
-            try:
-                activated = self.data_store.lo_activate(inact)
-                if not activated:
-                    # Can't activate that mod, track this
-                    illegal_activations.append(inact)
-                    continue
-                touched |= set(activated)
-                if len(activated) > (inact in activated): # activated masters
-                    activated = [x for x in activated if x != inact]
-                    changes[self._activated_key][inact] = activated
-            except (BoltError, NotImplementedError) as e:
-                showError(self, f'{e}')
-                break
+        activate = not active
+        assert activate or len(active) == len(mods) # empty or all
+        (changes, illegal, act_error), lordata = \
+            self.data_store.lo_toggle_active(mods, do_activate=activate,
+                                             save_act=True)
+        if act_error:
+            showError(self, act_error)
         # Show warnings to the user if they attempted to deactivate mods that
-        # can't be deactivated (e.g. vanilla masters on newer games) and/or
-        # attempted to activate mods that can't be activated (e.g. .esu
-        # plugins).
-        warn_msg = warn_cont_key = ''
-        if illegal_deactivations:
-            warn_msg = (_("You can't deactivate the following mods:") +
-                        f"\n{', '.join(illegal_deactivations)}")
-            warn_cont_key = 'bash.mods.dnd.illegal_deactivation.continue'
-        if illegal_activations:
-            warn_msg = (_("You can't activate the following mods:") +
-                        f"\n{', '.join(illegal_activations)}")
-            warn_cont_key = 'bash.mods.dnd.illegal_activation.continue'
-        if warn_msg:
+        # can't be deactivated (e.g. vanilla masters) and/or attempted to
+        # activate mods that can't be activated (e.g. .esu plugins).
+        if illegal:
+            if activate:
+                warn_msg = _("You can't activate the following mods:")
+                warn_cont_key = 'bash.mods.dnd.illegal_activation.continue'
+            else:
+                warn_msg = _("You can't deactivate the following mods:")
+                warn_cont_key = 'bash.mods.dnd.illegal_deactivation.continue'
+            warn_msg += '\n' + '\n'.join(illegal)
             balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
-        if touched:
-            ldiff = bosh.modInfos.cached_lo_save_active()
-            # If we have no changes, pass - if we do have changes, only one of
-            # these can be truthy at a time
-            if ch := changes[self._activated_key]:
-                MastersAffectedDialog(self, ch).show_modeless()
-            elif ch := changes[self._deactivated_key]:
-                DependentsAffectedDialog(self, ch).show_modeless()
-            self.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata())
+        if changes:
+            (MastersAffectedDialog if activate else DependentsAffectedDialog)(
+                self, changes).show_modeless()
+        self.propagate_refresh(lordata)
 
-    # Undo/Redo ---------------------------------------------------------------
-    def _undo_redo_op(self, undo_or_redo):
-        """Helper for load order undo/redo operations. Handles UI refreshes."""
-        ldiff = undo_or_redo() # no additions or removals
-        if changed := ldiff.to_rdata():
-            self.propagate_refresh(Store.SAVES.DO(), rdata=changed)
-
-    def lo_undo(self):
-        """Undoes a load order change."""
-        self._undo_redo_op(self.data_store.undo_load_order)
-
-    def lo_redo(self):
-        """Redoes a load order change."""
-        self._undo_redo_op(self.data_store.redo_load_order)
-
-    # Other -------------------------------------------------------------------
     def new_bashed_patch(self):
         """Create a new Bashed Patch and refresh the GUI for it."""
         new_patch_name = bosh.modInfos.generateNextBashedPatch(
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.propagate_refresh(Store.SAVES.DO(),
-                                   rdata=RefrData({new_patch_name}))
+            self.propagate_refresh(RefrData({new_patch_name}))
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -1666,7 +1594,7 @@ class ModDetails(_ModsSavesDetails):
             self._set_date(modInfo)
             bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
             self.panel_uilist.propagate_refresh( # refresh saves if lo changed
-                Store.SAVES.IF(not bush.game.using_txt_file))
+                True, refr_saves=not bush.game.using_txt_file)
             return
         #--Backup
         modInfo.makeBackup()
@@ -1694,7 +1622,7 @@ class ModDetails(_ModsSavesDetails):
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
         detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
-        self.panel_uilist.propagate_refresh(Store.SAVES.IF(
+        self.panel_uilist.propagate_refresh(True, refr_saves=(
                 detail_item is None or changeName or unlock_lo),
             detail_item=detail_item)
 
@@ -2444,7 +2372,7 @@ class InstallersList(UIList):
                 pass # ren_keys.update(None)
             #--Refresh UI
             if rdata:
-                self.propagate_refresh(ui_refreshes, rdata=rdata)
+                self.propagate_refresh(rdata, ui_refreshes)
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(rdata.redraw)
             return EventResult.CANCEL
@@ -3728,33 +3656,6 @@ class BashFrame(WindowFrame):
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
 
-    def distribute_ui_refresh(self, ui_refresh: dict[Store, bool]):
-        """Distribute a RefreshUI to all tabs, based on the specified
-        ui_refresh information."""
-        for list_key, do_refr in ui_refresh.items():
-            if do_refr and self.all_uilists[list_key] is not None:
-                if not isinstance(do_refr, dict): # do_refr is True or RefrData
-                    do_refr = {'rdata': do_refr} if isinstance(
-                        do_refr, RefrData) else {}
-                do_refr.setdefault('focus_list', False)
-                self.all_uilists[list_key].RefreshUI(**do_refr)
-
-    def distribute_warnings(self, ui_refresh):
-        """Issue warnings for all tabs, based on the specified ui_refresh
-        information."""
-        # Issue warnings for the various tabs based on what was refreshed
-        ##: This could do with a better design
-        mods_were_refreshed = ui_refresh[Store.MODS]
-        bsas_were_refreshed = ui_refresh[Store.BSAS]
-        self.warn_corrupted(
-            warn_mods=mods_were_refreshed,
-            warn_strings=mods_were_refreshed or bsas_were_refreshed,
-            warn_bsas=bsas_were_refreshed,
-            warn_saves=ui_refresh[Store.SAVES],
-        )
-        if mods_were_refreshed:
-            self.warn_load_order()
-
     @balt.conversation
     def warnTooManyModsBsas(self):
         limit_fixers = bush.game.Se.limit_fixer_plugins
@@ -3867,23 +3768,19 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        ui_refresh = {store.unique_store_key: not booting and store.refresh()
-            for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)}
-        if ui_refresh[Store.MODS]:
-            ui_refresh[Store.SAVES] = True # for save masters
+        ui_refresh = {store.unique_store_key: rdata for store in (
+            bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
+             rdata := not booting and store.refresh())}
         #--Repopulate, focus will be set in ShowPanel
-        self.distribute_ui_refresh(ui_refresh)
-        self.distribute_warnings(ui_refresh)
+        self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
+            Store.MODS), ui_refresh, focus_list=False, booting=booting)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
                                             clean_targets=not booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
-        self.warn_load_order()
         self._warn_reset_load_order()
-        self.warn_corrupted(warn_mods=True, warn_saves=True, warn_strings=True,
-                            warn_bsas=True)
         self.warn_game_ini()
         #--Done (end recursion blocker)
         self.inRefreshData = False
@@ -3899,102 +3796,29 @@ class BashFrame(WindowFrame):
                 title=_('Lock Load Order'))
             load_order.warn_locked = False
 
-    def warn_load_order(self):
-        """Warn if plugins.txt has bad or missing files, or is overloaded."""
-        lo_warnings = []
-        if bosh.modInfos.warn_missing_lo_act:
-            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                _('The following plugins could not be found in the '
-                  '%(data_folder)s folder or are corrupt and have thus been '
-                  'removed from the load order.') % {
-                    'data_folder': bush.game.mods_dir,
-                }, bosh.modInfos.warn_missing_lo_act))
-            bosh.modInfos.warn_missing_lo_act.clear()
-        if bosh.modInfos.selectedExtra:
-            lo_warnings.append(LoadOrderSanitizedDialog.make_highlight_entry(
-                bush.game.plugin_flags.deactivate_msg(),
-                bosh.modInfos.selectedExtra))
-            bosh.modInfos.selectedExtra = set()
-        ##: Disable this message for now, until we're done testing if we can
-        # get the game to load these files
-        # if bosh.modInfos.activeBad:
-        #     lo_warnings.append(mk_warning(
-        #         _('The following plugins have been deactivated because they '
-        #           'have filenames that cannot be encoded in Windows-1252 and '
-        #           'thus cannot be loaded by %(game_name)s.') % {
-        #             'game_name': bush.game.display_name,
-        #         }, bosh.modInfos.activeBad))
-        #     bosh.modInfos.activeBad = set()
-        if lo_warnings:
-            LoadOrderSanitizedDialog(self,
-                highlight_items=lo_warnings).show_modeless()
-
-    def warn_corrupted(self, warn_mods=False, warn_saves=False,
-                       warn_strings=False, warn_bsas=False):
-        _mk_warning = MultiWarningDialog.make_highlight_entry # to wrap better
-        multi_warnings = []
-        corruptMods = set(bosh.modInfos.corrupted)
-        key_mods, key_bsas = Store.MODS, Store.BSAS
-        if warn_mods and not corruptMods <= self.knownCorrupted:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins could not be read. This most likely '
-                  'means that they are corrupt.'),
-                corruptMods - self.knownCorrupted, key_mods))
-            self.knownCorrupted |= corruptMods
-        corruptSaves = set(bosh.saveInfos.corrupted)
-        if warn_saves and not corruptSaves <= self.knownCorrupted:
-            multi_warnings.append(_mk_warning(
-                _('The following save files could not be read. This most '
-                  'likely means that they are corrupt.'),
-                corruptSaves - self.knownCorrupted, Store.SAVES))
-            self.knownCorrupted |= corruptSaves
-        valid_vers = bush.game.Esp.validHeaderVersions
-        invalidVersions = {ck for ck, x in bosh.modInfos.items() if
-                           all(x.header.version != v for v in valid_vers)}
-        if warn_mods and not invalidVersions <= self.known_invalid_versions:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins have header versions that are not '
-                  'valid for this game. This may mean that they are '
-                  'actually intended to be used for a different game.'),
-                invalidVersions - self.known_invalid_versions, key_mods))
-            self.known_invalid_versions |= invalidVersions
-        old_fvers = bosh.modInfos.older_form_versions
-        if warn_mods and not old_fvers <= self.known_older_form_versions:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins use an older Form Version for their '
-                  'main header. This most likely means that they were not '
-                  'ported properly (if at all).'),
-                old_fvers - self.known_older_form_versions, key_mods))
-            self.known_older_form_versions |= old_fvers
-        if warn_strings and bosh.modInfos.new_missing_strings:
-            multi_warnings.append(_mk_warning(
-                _('The following plugins are marked as localized, but are '
-                  'missing strings localization files in the language your '
-                  'game is set to. This will cause CTDs if they are '
-                  'activated.'), bosh.modInfos.new_missing_strings, key_mods))
-            bosh.modInfos.new_missing_strings.clear()
-        bsa_mvers = bosh.bsaInfos.mismatched_versions
-        if warn_bsas and not bsa_mvers <= self.known_mismatched_version_bsas:
-            multi_warnings.append(_mk_warning(
-                _('The following BSAs have a version different from the one '
-                  '%(game_name)s expects. This can lead to CTDs, please '
-                  'extract and repack them using the %(ck_name)s-provided '
-                  'tool.') % {'game_name': bush.game.display_name,
-                              'ck_name': bush.game.Ck.long_name},
-                bsa_mvers - self.known_mismatched_version_bsas, key_bsas))
-            self.known_mismatched_version_bsas |= bsa_mvers
-        ba2_colls = bosh.bsaInfos.ba2_collisions
-        if warn_bsas and not ba2_colls <= self.known_ba2_collisions:
-            multi_warnings.append(_mk_warning(
-                _('The following BA2s have filenames whose hashes collide, '
-                  'which will cause one or more of them to fail to work '
-                  'correctly. This should be corrected by the mod authors '
-                  'by renaming the files to avoid the collision.'),
-                ba2_colls - self.known_ba2_collisions, key_bsas))
-            self.known_ba2_collisions |= ba2_colls
-        if multi_warnings:
-            MultiWarningDialog(self,
-                highlight_items=multi_warnings).show_modeless()
+    def refresh_and_warn(self, ui_refresh, booting):
+        # ONLY use in propagate_refresh
+        for list_key, do_refr in ui_refresh.items():
+            if do_refr and (uil := self.all_uilists[list_key]) is not None:
+                if not isinstance(do_refr, dict): # True or RefrData
+                    do_refr = {'rdata': do_refr} if isinstance(do_refr,
+                        RefrData) else {}
+                do_refr.setdefault('focus_list', False)
+                uil.RefreshUI(**do_refr)
+        stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
+                  Store.SAVES: bosh.saveInfos} # this belongs to stores
+        if booting: # trigger warnings on boot, ui_refresh is empty then
+            ui_refresh = dict.fromkeys(stores, True)
+        multi_warns, lo_warns = [], []
+        for list_key, do_refr in ui_refresh.items():
+            if do_refr and (ds := stores.get(list_key)):
+                ds.warning_args(multi_warns, lo_warns, self, list_key)
+        if multi_warns:
+            mk = (mwd := MultiWarningDialog).make_highlight_entry
+            mwd(self, highlight_items=starmap(mk, multi_warns)).show_modeless()
+        if lo_warns:
+            mk = (losd := LoadOrderSanitizedDialog).make_highlight_entry
+            losd(self, highlight_items=starmap(mk, lo_warns)).show_modeless()
 
     _ini_missing = _('%(game_ini_file)s does not exist yet. %(game_name)s '
                      'will create this file on first run. INI tweaks will not '

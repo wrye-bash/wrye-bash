@@ -58,7 +58,7 @@ from ..exception import BoltError, BSAError, CancelError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
-from ..load_order import LordDiff
+from ..load_order import LordDiff, LoadOrder
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag
 from ..wbtemp import TempFile
@@ -1575,7 +1575,7 @@ class DataStore(DataDict):
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 
-    def move_infos(self, sources, destinations, window, bash_frame):
+    def move_infos(self, sources, destinations, window):
         """Hasty hack for Files_Unhide - only use on files, not folders!"""
         try:
             env.shellMove(dict(zip(sources, destinations)), parent=window)
@@ -1585,6 +1585,10 @@ class DataStore(DataDict):
             {d.stail for d in destinations if d.exists()}, ret_type=set)
 
     def save_pickle(self): pass # for Screenshots
+
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        """Append the arguments for the warning message to the multi_warnings
+        and lo_warnings lists, checking the caches currently in Link.Frame."""
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -2027,13 +2031,15 @@ def _lo_cache(lord_func):
     whenever I change (or attempt to change) the latter, and that I do
     refresh modInfos."""
     @wraps(lord_func)
-    def _modinfos_cache_wrapper(self: ModInfos, *args, **kwargs) -> LordDiff:
+    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None,
+                                **kwargs) -> RefrData:
         """Sync the ModInfos load order and active caches and refresh for
         load order or active changes."""
         try:
-            ldiff: LordDiff = lord_func(self, *args, **kwargs)
+            ldiff = LordDiff() if ldiff is None else ldiff
+            ldiff |= lord_func(self, *args, **kwargs)
             if ldiff.inact_changes_only():
-                return ldiff
+                return ldiff.to_rdata()
             # Update all data structures that may be affected by LO change
             ldiff.affected |= self._refresh_mod_inis_and_strings()
             ldiff.affected |= self._file_or_active_updates()
@@ -2045,11 +2051,37 @@ def _lo_cache(lord_func):
                     self[k].get_table_prop('allowGhosting', True)})
             ldiff.affected.update(mod for mod, modGhost in ghostify.items()
                                   if self[mod].setGhost(modGhost))
-            return ldiff
+            return ldiff.to_rdata()
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
             self._active_wip = list(load_order.cached_active_tuple())
     return _modinfos_cache_wrapper
+
+def _lo_op(lop_func):
+    """Decorator centralizing saving active state/load order changes."""
+    @wraps(lop_func)
+    def _lo_wip_wrapper(self: ModInfos, *args, ldiff=None, save_all=False,
+                        save_wip_lo=False, save_act=False, **kwargs):
+        """Update _active_wip/_lo_wip cache and possibly save changes.
+        :param save_all: save load order and plugins.txt
+        :param save_wip_lo: save load order when active did not change
+        :param save_act: save plugins.txt - always call with a valid load order
+        """
+        out_diff = kwargs.setdefault('out_diff', LordDiff())
+        ldiff = LordDiff() if ldiff is None else ldiff
+        save = sum((save_act, save_wip_lo, save_all))
+        if save > 1:
+            raise ValueError(f'{save_act=}/{save_wip_lo=}/{save_all=}')
+        lo_msg = None
+        try:
+            lo_msg = lop_func(self, *args, **kwargs)
+        finally:
+            if save:
+                out_diff = self._wip_lo_save(save_wip_lo or save_all,
+                    save_act or save_all, ldiff=ldiff) if out_diff else \
+                        out_diff.to_rdata() # should be empty
+            return out_diff if lo_msg is None else (lo_msg, out_diff)
+    return _lo_wip_wrapper
 
 #------------------------------------------------------------------------------
 class ModInfos(TableFileInfos):
@@ -2121,14 +2153,17 @@ class ModInfos(TableFileInfos):
         rdata = super().refresh(refresh_infos, booting=booting)
         mods_changes = bool(rdata)
         self._refresh_bash_tags()
+        ldiff = LordDiff()
         if insert_after:
-            for k, v in insert_after.items():
-                self._cached_lo_insert_after(v, k)
-            ldiff = self._cached_lo_save_lo()
+            lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
+                                            ldiff=ldiff)
         else: # if refresh_infos is False but mods are added force refresh
-            ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
-                unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
-        rdata.redraw |= ldiff.reordered # any reordered mods must be redrawn
+            lordata = self.refreshLoadOrder(ldiff=ldiff,
+                forceRefresh=mods_changes or unlock_lo,
+                forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+            if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
+                self.warn_missing_lo_act.update(ldiff.missing)
+        rdata |= lordata
         # if active did not change, we must perform the refreshes below
         if ldiff.inact_changes_only():
             # in case ini files were deleted or modified or maybe string files
@@ -2137,8 +2172,6 @@ class ModInfos(TableFileInfos):
             rdata.redraw |= self._refresh_mod_inis_and_strings()
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
-        else: # we did all the refreshes above in _modinfos_cache_wrapper
-            rdata.redraw |= ldiff.act_changed() | ldiff.affected
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         return rdata
 
@@ -2406,7 +2439,7 @@ class ModInfos(TableFileInfos):
         rdata_ren = super().rename_operation(member_info, newName, rdata_ren)
         # rename in load order caches
         self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
-                          FName(newName), isSelected)
+                          FName(newName), isSelected, save_all=True)
         # Update linked BP parts if the parent BP got renamed
         for mod_inf in self.values():
             if mod_inf.get_table_prop('bp_split_parent') == old_key:
@@ -2417,14 +2450,65 @@ class ModInfos(TableFileInfos):
         # Removing the game master breaks everything, for obvious reasons
         return {k: self.get(k) for k in fn_items if k != self._master_esm}
 
-    def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super().move_infos(sources, destinations, window, bash_frame)
+    def move_infos(self, sources, destinations, window):
+        moved = super().move_infos(sources, destinations, window)
         self.refresh(RefrIn.from_added(moved))
-        bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
     @property
     def bash_dir(self): return dirs[u'modsBash']
+
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        corruptMods = set(self.corrupted)
+        if new_cor := corruptMods - link_frame.knownCorrupted:
+            multi_warnings.append(
+                (_('The following plugins could not be read. This most likely '
+                   'means that they are corrupt.'), new_cor, store_key))
+            link_frame.knownCorrupted |= corruptMods
+        valid_vers = bush.game.Esp.validHeaderVersions
+        invalidVersions = {ck for ck, x in self.items() if
+                           all(x.header.version != v for v in valid_vers)}
+        if new_inv := invalidVersions - link_frame.known_invalid_versions:
+            multi_warnings.append(
+                (_('The following plugins have header versions that are not '
+                   'valid for this game. This may mean that they are '
+                   'actually intended to be used for a different game.'),
+                 new_inv, store_key))
+            link_frame.known_invalid_versions |= invalidVersions
+        old_fvers = self.older_form_versions
+        if new_old_fvers := old_fvers - link_frame.known_older_form_versions:
+            multi_warnings.append(
+                (_('The following plugins use an older Form Version for their '
+                   'main header. This most likely means that they were not '
+                   'ported properly (if at all).'), new_old_fvers, store_key))
+            link_frame.known_older_form_versions |= old_fvers
+        if self.new_missing_strings:
+            multi_warnings.append(
+                (_('The following plugins are marked as localized, but are '
+                   'missing strings localization files in the language your '
+                   'game is set to. This will cause CTDs if they are '
+                   'activated.'), self.new_missing_strings, store_key))
+            self.new_missing_strings = set()
+        if self.warn_missing_lo_act:
+            lo_warnings.append((_('The following plugins could not be found '
+                    'in the %(data_folder)s folder or are corrupt and have '
+                    'thus been removed from the load order.') % {
+                                    'data_folder': bush.game.mods_dir, },
+                                self.warn_missing_lo_act))
+            self.warn_missing_lo_act = set()
+        if self.selectedExtra:
+            lo_warnings.append(
+                (bush.game.plugin_flags.deactivate_msg(), self.selectedExtra))
+            self.selectedExtra = set()
+        ##: Disable this message for now, until we're done testing if we can
+        # get the game to load these files
+        # if self.activeBad:
+        #     lo_warnings.append(mk_warning(
+        #         _('The following plugins have been deactivated because they '
+        #           'have filenames that cannot be encoded in Windows-1252 and '
+        #           'thus cannot be loaded by %(game_name)s.') % {
+        #             'game_name': bush.game.display_name, }, self.activeBad))
+        #     self.activeBad = set()
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -2437,122 +2521,64 @@ class ModInfos(TableFileInfos):
                                          cached_active=not forceActive)
 
     @_lo_cache
-    def cached_lo_save_active(self, active=None):
-        """Write data to Plugins.txt file.
-
-        Always call AFTER setting the load order - make sure we unghost
-        ourselves so ctime of the unghosted mods is not set."""
-        return load_order.save_lo(None, load_order.get_ordered(
-            self._active_wip if active is None else active))
-
-    @_lo_cache
-    def _cached_lo_save_lo(self):
-        """Save load order when active did not change."""
-        return load_order.save_lo(self._lo_wip)
-
-    @_lo_cache
-    def cached_lo_save_all(self):
+    def _wip_lo_save(self, update_lo, update_act):
         """Save load order and plugins.txt"""
-        active_wip_set = set(self._active_wip)
-        dex = {x: i for i, x in enumerate(self._lo_wip) if
-               x in active_wip_set}
-        self._active_wip.sort(key=dex.__getitem__) # order in their load order
-        return load_order.save_lo(self._lo_wip, acti=self._active_wip)
+        lo = act_key = None # if these remain both None, save_lo will raise
+        if update_lo:
+            lo = self._lo_wip
+            if update_act: # order active wip in the new load order
+                act_key = {x: i for i, x in enumerate(lo)}.__getitem__
+        elif update_act:
+            act_key = load_order.cached_lo_index
+        if update_act:
+            self._active_wip.sort(key=act_key)
+        return load_order.save_lo(lo, self._active_wip if update_act else None)
 
     @_lo_cache
-    def undo_load_order(self): return load_order.undo_load_order()
+    def wip_lo_undo_redo_load_order(self, redo):
+        return load_order.undo_redo_load_order(redo)
 
-    @_lo_cache
-    def redo_load_order(self): return load_order.redo_load_order()
+    #--Lo/active wip caches management ----------------------------------------
+    @_lo_op
+    def _lo_activate(self, fileName, *, out_diff):
+        """Never passed save_***=True - kept it a _lo_op for creating the
+        LordDiff() in one place."""
+        self._do_activate(fileName, set(self), [], out_diff)
 
-    #--Load Order utility methods - be sure cache is valid when using them
-    def _cached_lo_insert_after(self, previous, new_mod):
-        new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
-        if new_mod in self._lo_wip: self._lo_wip.remove(new_mod)  # ...
-        dex = self._lo_wip.index(previous)
-        if not bush.game.using_txt_file:
-            t_prev = self[previous].ftime
-            if self._lo_wip[-1] == previous:  # place it after the last mod
-                new_time = t_prev + 60
-            else:
-                # try to put it right before the next mod to avoid resetting
-                # ftimes of all subsequent mods - note (t_prev >= t_next)
-                # might be True at the esm boundary, we could be smarter here
-                t_next = self[self._lo_wip[dex + 1]].ftime
-                t_prev += 1  # add one second
-                new_time = t_prev if t_prev < t_next else None
-            if new_time is not None:
-                self[new_mod].setmtime(new_time)
-        self._lo_wip[dex + 1:dex + 1] = [new_mod]
-
-    def cached_lo_last_esm(self):
-        last_esm = self._master_esm
-        for mod in self._lo_wip[1:]:
-            if not bush.game.master_flag.cached_type(self[mod]):
-                return last_esm
-            last_esm = mod
-        return last_esm
-
-    def cached_lo_insert_at(self, first, modlist):
-        # hasty method for Mod_OrderByName
-        mod_set = set(modlist)
-        first_dex = self._lo_wip.index(first)
-        # Begin by splitting out the remainder
-        rest = self._lo_wip[first_dex:]
-        del self._lo_wip[first_dex:]
-        # Clean out any duplicates left behind, in case we're moving forwards
-        self._lo_wip[:] = [x for x in self._lo_wip if x not in mod_set]
-        # Append the remainder, then insert the requested plugins
-        for mod in rest:
-            if mod in mod_set: continue
-            self._lo_wip.append(mod)
-        self._lo_wip[first_dex:first_dex] = modlist
-
-    #--Active mods management -------------------------------------------------
-    def lo_activate(self, fileName, _modSet=None, _children=None,
-                    _activated=None, doSave=False):
-        """Mutate _active_wip cache then save if doSave is True."""
-        if _activated is None: _activated = set()
+    def _do_activate(self, fileName, _modSet, _children, out_diff):
         # Skip .esu files, those can't be activated
         ##: This .esu handling needs to be centralized - sprinkled all over
         # actives related lo_* methods
-        if fileName.fn_ext == u'.esu': return []
-        try:
+        if fileName.fn_ext == '.esu': return
+        # Speed up lookups, since they occur for the plugin and all masters
+        acti_set = set(self._active_wip)
+        if fileName not in acti_set: # else we are called to activate masters
             msg = load_order.check_active_limit([*self._active_wip, fileName],
-                                                as_type=str)
+                                            as_type=str)
             if msg:
                 msg = f'{fileName}: Trying to activate more than {msg}'
                 raise PluginsFullError(msg)
-            if _children:
-                if fileName in _children:
-                    raise BoltError(f'Circular Masters: '
-                                    f'{" >> ".join((*_children, fileName))}')
-                _children.append(fileName)
-            else:
-                _children = [fileName]
-            #--Select masters
-            if _modSet is None: _modSet = set(self)
-            #--Check for bad masternames:
-            #  Disabled for now
-            ##if self[fileName].hasBadMasterNames():
-            ##    return
-            # Speed up lookups, since they occur for the plugin and all masters
-            acti_set = set(self._active_wip)
-            for master in self[fileName].masterNames:
-                # Check that the master is on disk and not already activated
-                if master in _modSet and master not in acti_set:
-                    self.lo_activate(master, _modSet, _children, _activated)
-            #--Select in plugins
-            if fileName not in acti_set:
-                self._active_wip.append(fileName)
-                _activated.add(fileName)
-            return load_order.get_ordered(_activated)
-        finally:
-            if doSave: self.cached_lo_save_active()
+        if _children:
+            if fileName in _children:
+                raise BoltError(f'Circular Masters: '
+                                f'{" >> ".join((*_children, fileName))}')
+        _children = [fileName]
+        #--Check for bad masternames:
+        #  Disabled for now
+        ##if self[fileName].hasBadMasterNames(): return
+        #--Select masters
+        for master in self[fileName].masterNames:
+            # Check that the master is on disk and not already activated
+            if master in _modSet and master not in acti_set:
+                self._do_activate(master, _modSet, _children, out_diff)
+        #--Select in plugins
+        if fileName not in acti_set:
+            self._active_wip.append(fileName)
+            out_diff.new_act.add(fileName) # manipulate out_diff attrs directly
 
-    def lo_deactivate(self, *filenames, doSave=False):
-        """Remove mods and their children from _active_wip, can only raise if
-        doSave=True."""
+    @_lo_op
+    def lo_deactivate(self, *filenames, out_diff):
+        """Remove mods and their children from _active_wip."""
         filenames = {*load_order.filter_pinned(filenames, filter_mods=True)}
         old = set(self._active_wip)
         diff = old - filenames
@@ -2571,50 +2597,74 @@ class ModInfos(TableFileInfos):
             children |= cached_dependents[child]
         # Commit the changes made above
         self._active_wip = [x for x in self._active_wip if x in set_awip]
-        #--Save
-        if doSave: self.cached_lo_save_active()
-        return old - set_awip # return deselected
+        out_diff.new_inact.update(old - set_awip) # manipulate out_diff attrs
 
-    def lo_activate_all(self, activate_mergeable=True):
+    @_lo_op
+    def lo_toggle_active(self, mods, *, do_activate=True, out_diff):
+        impacted_mods = {}
+        _lo_meth, attr = (self._lo_activate, 'new_act') if do_activate \
+            else (self.lo_deactivate, 'new_inact')
+        modified_attr = attrgetter_cache[attr]
+        # Track illegal activations/deactivations for the return value
+        illegal, act_error = [], None
+        for fn_mod in mods:
+            if fn_mod in modified_attr(out_diff):
+                continue # already activated or deactivated
+            ## For now, allow selecting unicode named files, for testing
+            ## I'll leave the warning in place, but maybe we can get the
+            ## game to load these files
+            #if fileName in self.bad_names: return
+            try:
+                changes_diff = _lo_meth(fn_mod)
+            except (BoltError, PluginsFullError) as e: # only for _lo_activate
+                act_error = e
+                break
+            if not changes_diff: # Can't de/activate that mod, track this
+                illegal.append(fn_mod)
+                continue
+            out_diff |= changes_diff
+            (impacted := modified_attr(changes_diff)).discard(fn_mod)
+            if impacted: # deactivated dependents or activated masters
+                impacted_mods[fn_mod] = load_order.get_ordered(impacted)
+        return impacted_mods, illegal, act_error
+
+    @_lo_op
+    def lo_activate_all(self, *, activate_mergeable=True, out_diff):
         """Activates all non-mergeable plugins (except ones tagged Deactivate),
         then all mergeable plugins (again, except ones tagged Deactivate).
         Raises a PluginsFullError if too many non-mergeable plugins are present
         and a SkippedMergeablePluginsError if too many mergeable plugins are
         present."""
-        wip_actives = set(load_order.cached_active_tuple())
-        def _add_to_actives(p):
-            """Helper for activating a plugin, if necessary."""
-            if p not in wip_actives:
-                self.lo_activate(p)
-                wip_actives.add(p)
+        act_set = set(load_order.cached_active_tuple())
         def _activatable(p):
             """Helper for checking if a plugin should be activated."""
-            return (p.fn_ext != '.esu' and
-                    'Deactivate' not in modInfos[p].getBashTags())
+            return (p.fn_ext != '.esu' and p not in act_set
+                    and 'Deactivate' not in modInfos[p].getBashTags())
         mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
+        s_plugins = {p: self[p] for p in
+                     load_order.get_ordered(filter(_activatable, self))}
+        # First, activate non-mergeable plugins not tagged Deactivate
+        to_act = [p for p, v in s_plugins.items() if v not in mergeable]
+        first_mergeable = len(to_act)
+        # Then activate as many of the mergeable plugins as we can
+        if mergeable and activate_mergeable:
+            to_act.extend(p for p, v in s_plugins.items() if v in mergeable)
+        if not to_act: return
         try:
-            s_plugins = load_order.get_ordered(filter(_activatable, self))
             try:
-                # First, activate non-mergeable plugins not tagged Deactivate
-                for p in s_plugins:
-                    if modInfos[p] not in mergeable: _add_to_actives(p)
-            except PluginsFullError:
+                for j, p in enumerate(to_act):
+                    if p not in out_diff.new_act: # else a delinquent master(?)
+                        self._lo_activate(p, out_diff=out_diff)
+            except PluginsFullError as e:
+                if j >= first_mergeable:
+                    raise SkippedMergeablePluginsError from e
                 raise
-            if mergeable and activate_mergeable:
-                try:
-                    # Then activate as many of the mergeable plugins as we can
-                    for p in s_plugins:
-                        if modInfos[p] in mergeable: _add_to_actives(p)
-                except PluginsFullError as e:
-                    raise SkippedMergeablePluginsError() from e
-        except (BoltError, NotImplementedError):
-            wip_actives.clear() # Don't save, something went wrong
+        except BoltError:
+            out_diff.new_act.clear() # Don't save, something went wrong
             raise
-        finally:
-            if wip_actives: self.cached_lo_save_active(active=wip_actives)
 
-    def lo_activate_exact(self, partial_actives: Iterable[FName],
-            save_actives=True):
+    @_lo_op
+    def lo_activate_exact(self, partial_actives: Iterable[FName], *, out_diff):
         """Activate exactly the specified iterable of plugin names (plus
         required masters and plugins that can't be deactivated). May contain
         missing plugins. Returns a warning message or an empty string."""
@@ -2638,9 +2688,9 @@ class ModInfos(TableFileInfos):
         ordered_wip = load_order.get_ordered(wip_actives)
         trimmed_plugins = load_order.check_active_limit(ordered_wip)
         # Trim off any excess plugins and commit
-        self._active_wip = [p for p in ordered_wip if p not in trimmed_plugins]
-        if save_actives:
-            self.cached_lo_save_active()
+        to_act = [p for p in ordered_wip if p not in trimmed_plugins]
+        out_diff |= self._diff_los(new_act=to_act)
+        self._active_wip = to_act
         message = ''
         if missing_plugins:
             message += _('Some plugins could not be found and were '
@@ -2654,7 +2704,8 @@ class ModInfos(TableFileInfos):
             message += '\n* '.join(load_order.get_ordered(trimmed_plugins))
         return message
 
-    def lo_reorder(self, partial_order: list[FName], save_lo=True):
+    @_lo_op
+    def lo_reorder(self, partial_order: list[FName], *, out_diff):
         """Changes the load order to match the specified potentially invalid
         'partial' load order as much as possible. To that end, it filters out
         plugins that don't exist in the Data folder and tries to insert plugins
@@ -2691,26 +2742,86 @@ class ModInfos(TableFileInfos):
                 # Exited the loop without breaking -> some extra plugins should
                 # be appended at the end
                 filtered_order.extend(collected_plugins)
+        out_diff |= self._diff_los(new_lo=filtered_order)
         self._lo_wip = filtered_order
-        if save_lo:
-            self._cached_lo_save_lo()
-        message = u''
         if excess_plugins:
-            message += _(u'Some plugins could not be found and were '
-                         u'skipped:') + u'\n* '
-            message += u'\n* '.join(excess_plugins)
-        return message
+            return (_('Some plugins could not be found and were skipped:') +
+                    '\n* ' + '\n* '.join(excess_plugins))
+        return ''
 
-    def _lo_move_mod(self, old_name, new_name, do_activate, deactivate=False):
+    @_lo_op
+    def _lo_move_mod(self, old_name, new_name, do_activate, *,
+                     deactivate=False, out_diff):
         """Move new_name to the place of old_name and handle active state."""
         oldIndex = self._lo_wip.index(old_name)
         self._lo_wip[oldIndex] = new_name
         self._active_wip = [x for x in self._active_wip if x != old_name]
         if do_activate:
-            self.lo_activate(new_name)
+            self._lo_activate(new_name)
         elif deactivate:
             self.lo_deactivate(new_name)
-        self.cached_lo_save_all()
+        # only the truth value of out_diff matters
+        out_diff.added, out_diff.missing = {new_name}, {old_name} # inform diff
+
+    @_lo_op
+    def lo_insert_at(self, first, modlist, *, out_diff):
+        """Call with save_all True (not just save_wip_lo) to avoid bogus LO
+        warnings on games that reorder active plugins to match load order."""
+        mod_set = set(modlist)
+        # Clean out any duplicates left behind, in case we're moving forwards
+        # Insert the requested plugins then append the remainder
+        lwip = []
+        for mod in self._lo_wip:
+            if mod == first: lwip.extend(modlist)
+            if mod not in mod_set: lwip.append(mod)
+        out_diff |= self._diff_los(new_lo=lwip)
+        self._lo_wip = lwip
+
+    @_lo_op
+    def _lo_insert_after(self, insert_after, *, out_diff): #only use in refresh
+        lwip = self._lo_wip.copy()
+        for new_mod, previous in insert_after.items():
+            new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
+            if new_mod in lwip: lwip.remove(new_mod)  # ...
+            dex = lwip.index(previous)
+            if not bush.game.using_txt_file:
+                t_prev = self[previous].ftime
+                if lwip[-1] == previous:  # place it after the last mod
+                    new_time = t_prev + 60
+                else:
+                    # try to put it right before the next mod to avoid resetting
+                    # ftimes of all subsequent mods - note (t_prev >= t_next)
+                    # might be True at the esm boundary, we could be smarter here
+                    t_next = self[lwip[dex + 1]].ftime
+                    t_prev += 1  # add one second
+                    new_time = t_prev if t_prev < t_next else None
+                if new_time is not None:
+                    self[new_mod].setmtime(new_time)
+            lwip[dex + 1:dex + 1] = [new_mod]
+        out_diff |= self._diff_los(new_lo=lwip)
+        self._lo_wip = lwip
+
+    @_lo_op
+    def lo_drop_items(self, items, *, out_diff):
+        lwip = self._lo_wip.copy()
+        for firstItem, lastItem, dropItem in items:
+            newPos = lwip.index(dropItem)
+            if newPos <= 0: continue # disallow taking position 0 (master esm)
+            start = lwip.index(firstItem)
+            stop = lwip.index(lastItem) + 1 # excluded
+            # Can't move the game's master file anywhere else but position 0
+            if self._master_esm in lwip[start:stop]: continue
+            # List of names to move removed and then reinserted at new position
+            toMove = lwip[start:stop]
+            del lwip[start:stop]
+            lwip[newPos:newPos] = toMove
+        out_diff |= self._diff_los(new_lo=lwip)
+        self._lo_wip = lwip
+
+    def _diff_los(self, *, new_lo=None, new_act=None):
+        new_lord = LoadOrder(self._lo_wip if new_lo is None else new_lo,
+                             self._active_wip if new_act is None else new_act)
+        return LoadOrder(self._lo_wip, self._active_wip).lo_diff(new_lord)
 
     #--Helpers ----------------------------------------------------------------
     @staticmethod
@@ -2890,22 +3001,6 @@ class ModInfos(TableFileInfos):
             master_name += f' [{curr_ver}]'
         return master_name
 
-    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
-        # Calculating indexes through order.index() cause we may be called in
-        # a row before saving the modified load order
-        order = self._lo_wip
-        newPos = order.index(dropItem)
-        if newPos <= 0: return False # disallow taking position 0 (master esm)
-        start = order.index(firstItem)
-        stop = order.index(lastItem) + 1  # excluded
-        # Can't move the game's master file anywhere else but position 0
-        if self._master_esm in order[start:stop]: return False
-        # List of names to move removed and then reinserted at new position
-        toMove = order[start:stop]
-        del order[start:stop]
-        order[newPos:newPos] = toMove
-        return True
-
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
                     '%(new)s.'), '', '',
@@ -2966,7 +3061,7 @@ class ModInfos(TableFileInfos):
             master_inf.setGhost(False)
         self[move_to].setmtime(new_info_time)
         self._lo_move_mod(copy_from, move_to, is_new_info_active,
-                          not is_new_info_active) # always deactivate?
+            deactivate=not is_new_info_active, save_all=True) # always deactivate?
         # make sure to notify BAIN rename_operation passes only renames param
         self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = set_version
@@ -3042,6 +3137,15 @@ class SaveInfos(TableFileInfos):
             if not boot: # else in __init__,  calling _init_store right after
                 self._init_store(sd)
         return self.store_dir
+
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        corruptSaves = set(self.corrupted)
+        if not corruptSaves <= link_frame.knownCorrupted:
+            multi_warnings.append(
+                (_('The following save files could not be read. This most '
+                   'likely means that they are corrupt.'),
+                 corruptSaves - link_frame.knownCorrupted, store_key))
+            link_frame.knownCorrupted |= corruptSaves
 
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
@@ -3125,16 +3229,15 @@ class SaveInfos(TableFileInfos):
                 path_func = co_apath.moveTo if move_cosave else co_apath.copyTo
                 path_func(newPath)
 
-    def move_infos(self, sources, destinations, window, bash_frame):
+    def move_infos(self, sources, destinations, window):
         # we should use fs_copy in base method so cosaves are copied - we
         # need to create infos for the hidden files using _store.factory
-        moved = super().move_infos(sources, destinations, window, bash_frame)
+        moved = super().move_infos(sources, destinations, window)
         for s, d in zip(sources, destinations):
             if FName(d.stail) in moved:
                 co_instances = SaveInfo.get_cosaves_for_path(s)
                 self.co_copy_or_move(co_instances, d, move_cosave=True)
         self.refresh(RefrIn.from_added(moved))
-        bash_frame.warn_corrupted(warn_saves=True)
         return moved
 
 #------------------------------------------------------------------------------
@@ -3206,6 +3309,28 @@ class BSAInfos(TableFileInfos):
                 if len(ba2_entry) >= 2:
                     self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
         return rdata
+
+    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+        bsa_mvers = self.mismatched_versions
+        if not bsa_mvers <= link_frame.known_mismatched_version_bsas:
+            multi_warnings.append(
+                (_('The following BSAs have a version different from the one '
+                   '%(game_name)s expects. This can lead to CTDs, please '
+                   'extract and repack them using the %(ck_name)s-provided '
+                   'tool.') % {'game_name': bush.game.display_name,
+                               'ck_name': bush.game.Ck.long_name},
+                 bsa_mvers - link_frame.known_mismatched_version_bsas,
+                 store_key))
+            link_frame.known_mismatched_version_bsas |= bsa_mvers
+        ba2_colls = self.ba2_collisions
+        if not ba2_colls <= link_frame.known_ba2_collisions:
+            multi_warnings.append(
+                (_('The following BA2s have filenames whose hashes collide, '
+                   'which will cause one or more of them to fail to work '
+                   'correctly. This should be corrected by the mod authors '
+                   'by renaming the files to avoid the collision.'),
+                 ba2_colls - link_frame.known_ba2_collisions, store_key))
+            link_frame.known_ba2_collisions |= ba2_colls
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')

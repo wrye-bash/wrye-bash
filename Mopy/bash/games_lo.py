@@ -187,9 +187,6 @@ class FixInfo(object):
     def lo_deprint(self):
         self._warn_lo()
         self._warn_active()
-        if rem := (self.lo_removed | self.act_removed):
-            from .bosh import modInfos
-            modInfos.warn_missing_lo_act = rem
 
     def _warn_lo(self):
         if not self.lo_changed(): return

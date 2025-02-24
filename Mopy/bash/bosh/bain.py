@@ -2094,8 +2094,8 @@ class InstallersData(DataStore):
         return {i: p for i in fn_items if
                 isinstance(p := self[i], _InstallerPackage)}
 
-    def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super().move_infos(sources, destinations, window, bash_frame)
+    def move_infos(self, sources, destinations, window):
+        moved = super().move_infos(sources, destinations, window)
         self.refresh_i(moved)
         return moved
 
@@ -2698,7 +2698,8 @@ class InstallersData(DataStore):
                 if inst.is_active: mask |= set(inst.ci_dest_sizeCrc)
             if tweaksCreated:
                 self._editTweaks(tweaksCreated)
-                refresh_ui |= Store.INIS.IF(tweaksCreated)
+                if tweaksCreated:
+                    refresh_ui[Store.INIS] = True
             return tweaksCreated
         finally:
             self.refresh_ns()
@@ -2966,8 +2967,8 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_infs in store_del.items():
-                store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
-                refresh_ui |= store.unique_store_key.DO()
+                rd = store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
+                refresh_ui[store.unique_store_key] = {'rdata': rd}
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:
                     emptyDir.removedirs()

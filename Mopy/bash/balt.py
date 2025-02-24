@@ -690,13 +690,6 @@ class UIList(PanelWin):
     @sort_column.setter
     def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
 
-    @property
-    def data_store_key(self) -> str:
-        """The unique string key that establishes a correspondence between this
-        UIList and its data store. Used when information is passed along
-        between the backend and the GUI (e.g. for refreshing)."""
-        return self.data_store.unique_store_key
-
     def _handle_select(self, item_key):
         self._select(item_key)
     def _select(self, item): self.panel.SetDetails(item)
@@ -808,14 +801,24 @@ class UIList(PanelWin):
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
 
-    def propagate_refresh(self, refresh_others: defaultdict[str, bool | dict],
-                          **kwargs):
+    _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
+    def propagate_refresh(self, rdata, ui_refreshes: _ui_in = None, *,
+                          refr_saves=True, booting=False, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
-        :param refresh_others: A dict mapping unique data store keys (see
+        :param ui_refreshes: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
-        kwargs.setdefault('focus_list', True)
-        refresh_others[self.data_store_key] = kwargs
-        Link.Frame.distribute_ui_refresh(refresh_others)
+        ui_refreshes = {} if ui_refreshes is None else ui_refreshes
+        if rdata:
+            kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
+            kwargs.setdefault('focus_list', True)
+            ui_refreshes[self.data_store.unique_store_key] = kwargs
+        # if a RefreshUI is requested for ModList we should also refresh Saves
+        # TODO(353): we need to be more granular here which needs caching
+        #  info_status - we need similar logic in _refresh_mod_inis_and_strings
+        #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
+        if refr_saves and Store.MODS in ui_refreshes:
+            ui_refreshes[Store.SAVES] = True
+        Link.Frame.refresh_and_warn(ui_refreshes, booting)
 
     def _refresh_details(self, to_redraw, detail_item):
         if detail_item is None:
@@ -1402,7 +1405,7 @@ class UIList(PanelWin):
             self.data_store.delete(dd_items, recycle=dd_recycle)
         except (PermissionError, CancelError, SkipError): pass
         # Also cleans _gList internal dicts
-        self.propagate_refresh(Store.SAVES.DO())
+        self.propagate_refresh(True)
 
     def open_data_store(self):
         try:
@@ -1563,7 +1566,7 @@ class Link(object):
         """Return the first selected info."""
         return next(self.iselected_infos())
 
-    def refresh_sel(self, to_refr=None, **kwargs):
+    def refresh_sel(self, to_refr=None, **kwargs): # note we do not propagate
         """Refresh selected items (or items in to_refr) in the UIList."""
         to_refr = self.selected if to_refr is None else to_refr
         self.window.RefreshUI(RefrData(set(to_refr)), **kwargs)
@@ -2035,7 +2038,7 @@ class UIList_Hide(EnabledLink):
                           {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
-        self.window.propagate_refresh(Store.SAVES.DO())
+        self.window.propagate_refresh(True)
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""
@@ -2051,8 +2054,7 @@ class Installer_Op(ItemLink):
         except (CancelError, SkipError):
             return None
         finally:
-            self.window.propagate_refresh(ui_refresh)
-            Link.Frame.distribute_warnings(ui_refresh)
+            self.window.propagate_refresh(True, ui_refresh)
 
     def _perform_action(self, ui_refresh_, progress):
         raise NotImplementedError

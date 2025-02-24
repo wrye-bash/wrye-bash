@@ -152,7 +152,7 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
     reordered: set[FName] = field(default_factory=set)
     active_flips: set[FName] = field(default_factory=set)
     act_index_change: set[FName] = field(default_factory=set)
-    # used to handle autoghosting
+    # used to handle autoghosting and record diffs of modInfos _lo/_active_wip
     new_inact: set[FName] = field(default_factory=set)
     new_act: set[FName] = field(default_factory=set)
     # externally populate with plugins that need to be redrawn due to load
@@ -172,6 +172,14 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
 
     def to_rdata(self): # not meant to be used if self.missing/added
         return RefrData(self.reordered | self.act_changed() | self.affected)
+
+    def __ior__(self, other):
+        for att in self.__slots__:
+            getattr(self, att).update(getattr(other, att))
+        return self
+
+    def __bool__(self): # ONLY use in _lo_op
+        return any(getattr(self, att) for att in self.__slots__)
 
     def __str__(self):
         st = []
@@ -279,6 +287,15 @@ def cached_active_index_str(mod):
 
 def cached_lower_loading(mod):
     return _cached_lord.loadOrder[:_cached_lord.mod_lo_index[mod]]
+
+def cached_lo_last_esm(mod_infos, game_handle):
+    it = iter(_cached_lord.loadOrder)
+    last_esm = next(it) # the game master - always an esm
+    for mod in it:
+        if not game_handle.master_flag.cached_type(mod_infos[mod]):
+            return last_esm
+        last_esm = mod
+    return last_esm
 
 def get_ordered(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
     """Return a list containing mod_paths' elements sorted into load order.
@@ -398,9 +415,8 @@ def get_active_mods_lists():
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
 
-def undo_load_order(): return _restore_lo(-1)
-
-def redo_load_order(): return _restore_lo(1)
+def undo_redo_load_order(redo):
+    return _restore_lo(1 if redo else -1)
 
 def _restore_lo(index_move):
     index = _current_list_index + index_move

@@ -31,8 +31,7 @@ from .dialogs import DeleteBPPartsEditor
 from .. import balt, bass, bolt, bosh, bush, env, wrye_text
 from ..balt import Resources
 from ..bolt import GPath_no_norm, RefrIn, SubProgress
-from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
-    SkipError
+from ..exception import BoltError, BPConfigError, CancelError, SkipError
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     DialogWindow, EventResult, FileOpen, HLayout, HorizontalLine, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
@@ -67,7 +66,8 @@ class PatchDialog(DialogWindow):
     _min_size = (400, 300)
 
     def __init__(self, parent, bashed_patch: PatchFile, bashed_patches_out,
-                 patchConfigs):
+                 patchConfigs, bp_rdata):
+        self._bp_rdata = bp_rdata
         self._bps = bashed_patches_out
         self.parent = parent
         self.bashed_patch = bashed_patch
@@ -292,13 +292,14 @@ class PatchDialog(DialogWindow):
                                             exclude=True, extra_attrs=attrs)
             self._bps.extend(attrs)
             # We have to parse the new infos first since the masters may differ
-            bosh.modInfos.refresh(rinf)
+            # note this won't activate the new masters, the caller has to do it
+            self._bp_rdata |= patchFile.p_file_minfos.refresh(rinf)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
             self._error(_(u'The configuration of the Bashed Patch is '
                           u'incorrect.') + f'\n\n{e}')
-        except (BoltError, FileEditError, NotImplementedError) as e:
+        except (BoltError, NotImplementedError) as e:
             # Nonfatal error
             self._error(f'{e}')
         except Exception as e: # Fatal error

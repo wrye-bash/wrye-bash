@@ -23,7 +23,6 @@
 
 from .. import balt, bass, bolt, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bass import Store
 from ..bolt import FNDict, GPath_no_norm, RefrIn
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
@@ -74,11 +73,9 @@ class Files_Unhide(ItemLink):
         #--Now move everything at once
         if not srcFiles:
             return
-        moved = self._data_store.move_infos(srcFiles, destFiles,
-            self.window, balt.Link.Frame)
+        moved = self._data_store.move_infos(srcFiles, destFiles, self.window)
         if moved: # pick one at random to show details for
-            self.window.propagate_refresh(Store.SAVES.DO(),
-                detail_item=next(iter(moved)))
+            self.window.propagate_refresh(True, detail_item=next(iter(moved)))
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -255,7 +252,7 @@ class File_Redate(ItemLink):
             user_timestamp += 60.0
         self._data_store.refresh(refresh_infos=False,
                                  unlock_lo=not bush.game.using_txt_file)
-        self.window.propagate_refresh(Store.SAVES.DO())
+        self.window.propagate_refresh(True)
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):
