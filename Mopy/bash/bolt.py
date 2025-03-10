@@ -1814,9 +1814,12 @@ class ListInfo:
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
         new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
-        if new_name == self.fn_key: # new and old names are ci-same
+        if self.named_as(new_name): # new and old names are ci-same
             return None
         return self.unique_name(new_name)
+
+    def named_as(self, text_cnt: str): # check if names are ci-same
+        return text_cnt == self.fn_key
 
     # Gui renaming stuff ------------------------------------------------------
     @classmethod

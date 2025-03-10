@@ -1451,11 +1451,8 @@ class InstallerMarker(Installer):
     def _new_name(base_name, count):
         return f'=={base_name.strip("=")}{f" ({count})"}=='
 
-    def unique_key(self, new_root, ext=u'', add_copy=False):
-        new_name = new_root + (f" {_('Copy')}" if add_copy else '')
-        if f'{new_name}' == f'{self.fn_key}': # allow change of case
-            return None
-        return self.unique_name(new_name)
+    def named_as(self, new_name):
+        return f'{new_name}' == f'{self.fn_key}' # allow change of case
 
     @classmethod
     def rename_area_idxs(cls, text_str, start=0, stop=None):

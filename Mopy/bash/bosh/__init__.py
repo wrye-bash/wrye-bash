@@ -1537,8 +1537,7 @@ class DataStore(DataDict):
         env.shellMove(ren := dict(rename_paths))
         # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
         old_key = member_info.fn_key
-        ##: Make sure we pass FName in, then drop this FName call
-        member_info.fn_key = FName(newName)
+        member_info.fn_key = newName = FName(newName)
         #--FileInfo
         self[newName] = member_info
         member_info.abs_path = self.store_dir.join(newName)

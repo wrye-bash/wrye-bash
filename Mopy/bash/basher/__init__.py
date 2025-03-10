@@ -1254,17 +1254,22 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         """Event: Finished editing file name."""
         if not self.file_info: return
         #--Changed?
-        fileStr = self._fname_ctrl.text_content
-        if fileStr == self.fileStr: return
+        text_cnt = self._fname_ctrl.text_content
+        if self.file_info.named_as(text_cnt):
+            self._fname_ctrl.text_content = self.fileStr = text_cnt
+            self.testChanges()
+            return
         #--Validate the filename
-        name_path, root = self.file_info.validate_name(fileStr)
+        name_path, root = self.file_info.validate_name(text_cnt)
         if root is None:
             showError(self, name_path) # it's an error message in this case
             self._fname_ctrl.text_content = self.fileStr
         #--Okay?
         else:
-            self.fileStr = fileStr
+            self.fileStr = text_cnt
             self.SetEdited()
+
+    def testChanges(self): raise NotImplementedError
 
     def OnFileEdit(self, new_text):
         """Event: Editing filename."""
@@ -1339,8 +1344,6 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     def ShowPanel(self, **kwargs):
         super(_ModsSavesDetails, self).ShowPanel(**kwargs)
         self.uilist.autosizeColumns()
-
-    def testChanges(self): raise NotImplementedError
 
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
@@ -1444,7 +1447,7 @@ class ModDetails(_ModsSavesDetails):
         if fileName:
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = modInfo.fn_key
+            self.fileStr = str(modInfo.fn_key)
             self.authorStr = modInfo.header.author
             self.modifiedStr = format_date(modInfo.ftime)
             self.descriptionStr = modInfo.header.description
@@ -1569,7 +1572,7 @@ class ModDetails(_ModsSavesDetails):
 
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
-        if not modInfo or (self.fileStr == modInfo.fn_key and
+        if not modInfo or (modInfo.named_as(self.fileStr) and
                            self.modifiedStr == format_date(modInfo.ftime) and
                            self.authorStr == modInfo.header.author and
                            self.descriptionStr == modInfo.header.description):
@@ -1615,25 +1618,23 @@ class ModDetails(_ModsSavesDetails):
             detail_item=detail_item)
 
     def _rename_detail_item(self):
-        file_str = FName(self.fileStr.strip())
-        if file_str == self.file_info.fn_key:
-            return RefrData()
-        #--Warn on rename if file has BSA and/or dialog
-        msg = self.file_info.ask_resources_ok(
-            bsa_and_blocking_msg=self._bsa_and_blocking_msg,
-            bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
-        if msg and not askWarning(self, msg, title=_('Rename %('
-                'target_file_name)s') % {'target_file_name': self.file_info}):
-            return
-        #--Change Name?
-        oldName, newName = self.file_info.fn_key, file_str
-        #--Bad name?
-        if bosh.modInfos.isBadFileName(str(newName)):
-            msg = self.__bad_name_msg % {'bad_file_name': newName,
-                                         'game_name': bush.game.display_name}
-            if not balt.askContinue(self, msg,
-                                    'bash.rename.isBadFileName.continue'):
+        file_str = self.fileStr.strip()
+        if not self.file_info.named_as(file_str):
+            #--Warn on rename if file has BSA and/or dialog
+            msg = self.file_info.ask_resources_ok(
+                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
+                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
+            if msg and not askWarning(self, msg, title=_('Rename %('
+                 'target_file_name)s') % {'target_file_name': self.file_info}):
                 return
+            #--Change Name?
+            #--Bad name?
+            if bosh.modInfos.isBadFileName(file_str):
+                msg = self.__bad_name_msg % {'bad_file_name': file_str,
+                    'game_name': bush.game.display_name}
+                if not balt.askContinue(self, msg,
+                                        'bash.rename.isBadFileName.continue'):
+                    return
         ren_data = super()._rename_detail_item()
         if ren_data: ##: bash.mods.renames needs a spec
             settings['bash.mods.renames'].update(ren_data.renames)
@@ -2163,7 +2164,7 @@ class SaveDetails(_ModsSavesDetails):
         if fileName:
             saveInfo = self.saveInfo = bosh.saveInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = saveInfo.fn_key
+            self.fileStr = str(saveInfo.fn_key)
             self.playerNameStr = saveInfo.header.pcName
             self.curCellStr = saveInfo.header.pcLocation
             self.gameDays = saveInfo.header.gameDays
@@ -2224,8 +2225,7 @@ class SaveDetails(_ModsSavesDetails):
             self.saveInfo.set_table_prop(u'info', new_text)
 
     def testChanges(self): # used by the master list when editing is disabled
-        saveInfo = self.saveInfo
-        if not saveInfo or self.fileStr == saveInfo.fn_key:
+        if not self.saveInfo or self.saveInfo.named_as(self.fileStr):
             self.DoCancel()
 
     @balt.conversation
@@ -3376,7 +3376,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         if fileName:
             self._bsa_info = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = self._bsa_info.fn_key
+            self.fileStr = str(self._bsa_info.fn_key)
             self.gInfo.text_content = self._bsa_info.get_table_prop('info',
                 _('Notes:') + ' ')
         else:
