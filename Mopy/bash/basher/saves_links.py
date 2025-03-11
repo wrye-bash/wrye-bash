@@ -922,8 +922,8 @@ class Save_UpdateNPCLevels(EnabledLink):
             for index,modName in enumerate(ordered):
                 subProgress(index, _('Scanning %(scanning_plugin)s') % {
                     'scanning_plugin': modName})
-                modInfo = bosh.modInfos[modName]
-                modFile = ModFile(modInfo, lf)
+                mod_inf = bosh.modInfos[modName]
+                modFile = ModFile(mod_inf, lf)
                 try:
                     modFile.load_plugin()
                 except ModError as x:

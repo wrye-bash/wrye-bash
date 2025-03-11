@@ -114,13 +114,13 @@ class _TextParser(object):
 
     # Write plugin ------------------------------------------------------------
     _changed_type = dict # used in writeToMod to report changed records
-    def writeToMod(self,modInfo):
+    def writeToMod(self, mod_inf):
         """Hasty writeToMod implementation - export id_stored_data to specified
         mod.
 
-        :param modInfo: The ModInfo instance to write to.
+        :param mod_inf: The ModInfo instance to write to.
         :return: info on number of changed records, usually per record type."""
-        modFile = self._load_plugin(modInfo, keepAll=True,
+        modFile = self._load_plugin(mod_inf, keepAll=True,
                                     target_types=self.id_stored_data)
         changed_stats = self._changed_type()
         # Check which record types makes any sense to patch
@@ -251,9 +251,9 @@ class _HandleAliases(CsvParser):
     def _key2(self, csv_fields):
         return self._coerce_fid(*self._key2_getter(csv_fields))
 
-    def readFromMod(self, modInfo):
+    def readFromMod(self, mod_inf):
         """Hasty readFromMod implementation."""
-        modFile = self._load_plugin(modInfo)
+        modFile = self._load_plugin(mod_inf)
         for top_grup_sig, typeBlock in modFile.iter_tops(self._parser_sigs):
             id_data = self.id_stored_data[top_grup_sig]
             for rfid, record in typeBlock.iter_present_records():
@@ -545,12 +545,12 @@ class ActorLevels(_HandleAliases):
         self.gotLevels = set()
         self._skip_mods = {'none', bush.game.master_file.lower()}
 
-    def readFromMod(self,modInfo):
+    def readFromMod(self, mod_inf):
         """Imports actor level data from the specified mod and its masters."""
         from . import bosh
         mod_id_levels, gotLevels = self.id_stored_data, self.gotLevels
         load_f = self._load_factory(keepAll=False)
-        for modName in (*modInfo.masterNames, modInfo.fn_key):
+        for modName in (*mod_inf.masterNames, mod_inf.fn_key):
             if modName in gotLevels: continue
             modFile = self._load_plugin(bosh.modInfos[modName],
                                         load_fact=load_f)
@@ -564,15 +564,15 @@ class ActorLevels(_HandleAliases):
                 mod_id_levels[modName][rfid] = dict(items)
             gotLevels.add(modName)
 
-    def writeToMod(self, modInfo):
+    def writeToMod(self, mod_inf):
         """Exports actor levels to specified mod."""
-        id_levels = self.id_stored_data.get(modInfo.fn_key,
-            self.id_stored_data.get('Unknown', None))
+        id_levels = self.id_stored_data.get(mod_inf.fn_key,
+                                            self.id_stored_data.get('Unknown', None))
         if id_levels:
             # pretend we are a normal parser
             real = self.id_stored_data
             self.id_stored_data = {b'NPC_': id_levels}
-            changed_stats = super().writeToMod(modInfo)
+            changed_stats = super().writeToMod(mod_inf)
             self.id_stored_data = real
             return changed_stats
         return 0
@@ -808,9 +808,9 @@ class FidReplacer(_HandleAliases):
         self.old_eid[oldId] = oldEid
         self.new_eid[newId] = newEid
 
-    def updateMod(self,modInfo,changeBase=False):
+    def updateMod(self, mod_inf, changeBase=False):
         """Updates specified mod file."""
-        modFile = self._load_plugin(modInfo, keepAll=True)
+        modFile = self._load_plugin(mod_inf, keepAll=True)
         # Create filtered versions of our mappings
         masters_list = set(modFile.augmented_masters())
         filt_fids = {oldId for oldId in self.old_eid if
@@ -1024,24 +1024,24 @@ class ScriptText(_TextParser):
         scpt_lines, _longid, _eid = self._writing_state
         out.write('\n'.join(scpt_lines) + '\n')
 
-    def readFromMod(self, modInfo):
+    def readFromMod(self, mod_inf):
         """Reads scripts from specified mod."""
         eid_data = self.eid_data
-        modFile = self._load_plugin(modInfo)
+        modFile = self._load_plugin(mod_inf)
         with Progress(_('Export Scripts')) as progress:
             present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(present_recs)
             for z, (rfid, record) in enumerate(present_recs):
                 progress((0.5 / y) * z,
-                    _('Reading scripts in %(source_plugin)s.') % {
-                        'source_plugin': modInfo})
+                         _('Reading scripts in %(source_plugin)s.') % {
+                        'source_plugin': mod_inf})
                 eid_data[record.eid] = record.script_source.splitlines(), rfid
 
     _changed_type = list
-    def writeToMod(self, modInfo, makeNew=False):
+    def writeToMod(self, mod_inf, makeNew=False):
         """Writes scripts to specified mod."""
         self.makeNew = makeNew
-        changed_stats = super(ScriptText, self).writeToMod(modInfo)
+        changed_stats = super(ScriptText, self).writeToMod(mod_inf)
         return ([], []) if changed_stats is None else changed_stats
 
     def _check_write_record(self, rfid, record, eid_data, changed_stats):

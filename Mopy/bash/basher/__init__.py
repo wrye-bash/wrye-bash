@@ -1182,9 +1182,8 @@ class _DetailsMixin(object):
     def _resetDetails(self): raise NotImplementedError
 
     # Details panel API
-    def SetFile(self, fileName=_same_file):
-        """Set file to be viewed. Leave fileName empty to reset.
-        :type fileName: str | FName | None"""
+    def SetFile(self, fileName: str | FName | None = _same_file):
+        """Set file to be viewed. Leave fileName empty to reset."""
         #--Reset?
         fileName = self.displayed_item if fileName is _same_file else fileName
         if not fileName or (fileName not in self.file_infos):
@@ -1445,14 +1444,14 @@ class ModDetails(_ModsSavesDetails):
     def SetFile(self, fileName=_same_file):
         fileName = super(ModDetails, self).SetFile(fileName)
         if fileName:
-            modInfo = self.modInfo = bosh.modInfos[fileName]
+            mod_inf = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = str(modInfo.fn_key)
-            self.authorStr = modInfo.header.author
-            self.modifiedStr = format_date(modInfo.ftime)
-            self.descriptionStr = modInfo.header.description
-            self.versionStr = f'v{modInfo.header.version:0.2f}'
-            minf_tags = list(modInfo.getBashTags())
+            self.fileStr = str(mod_inf.fn_key)
+            self.authorStr = mod_inf.header.author
+            self.modifiedStr = format_date(mod_inf.ftime)
+            self.descriptionStr = mod_inf.header.description
+            self.versionStr = f'v{mod_inf.header.version:0.2f}'
+            minf_tags = list(mod_inf.getBashTags())
         else:
             minf_tags = []
         #--Set fields
@@ -1571,11 +1570,11 @@ class ModDetails(_ModsSavesDetails):
         'renamed.')
 
     def testChanges(self): # used by the master list when editing is disabled
-        modInfo = self.modInfo
-        if not modInfo or (modInfo.named_as(self.fileStr) and
-                           self.modifiedStr == format_date(modInfo.ftime) and
-                           self.authorStr == modInfo.header.author and
-                           self.descriptionStr == modInfo.header.description):
+        mod_inf = self.modInfo
+        if not mod_inf or (mod_inf.named_as(self.fileStr) and
+                           self.modifiedStr == format_date(mod_inf.ftime) and
+                           self.authorStr == mod_inf.header.author and
+                           self.descriptionStr == mod_inf.header.description):
             self.DoCancel()
 
     __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
@@ -1583,18 +1582,18 @@ class ModDetails(_ModsSavesDetails):
         'plugin because of this. Do you want to rename the plugin anyway?')
     @balt.conversation
     def DoSave(self):
-        modInfo = self.modInfo
+        mod_inf = self.modInfo
         #--Change Tests
         if (changeName := self._rename_detail_item()) is None:
             return
-        changeDate = (self.modifiedStr != format_date(modInfo.ftime))
-        changeHedr = (self.authorStr != modInfo.header.author or
-                      self.descriptionStr != modInfo.header.description)
+        changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
+        changeHedr = (self.authorStr != mod_inf.header.author or
+                      self.descriptionStr != mod_inf.header.description)
         changeMasters = self.uilist.edited
         unlock_lo = changeDate and not bush.game.using_txt_file
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
-            self._set_date(modInfo)
+            self._set_date(mod_inf)
             bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
             self.panel_uilist.propagate_refresh( # refresh saves if lo changed
                 True, refr_saves=not bush.game.using_txt_file)
@@ -1602,16 +1601,16 @@ class ModDetails(_ModsSavesDetails):
         #--Change hedr/masters?
         if refr_inf := (changeHedr or changeMasters):
             #--Backup
-            modInfo.makeBackup()
-            modInfo.header.author = self.authorStr.strip()
-            modInfo.header.description = self.descriptionStr.strip()
-            old_mi_masters = modInfo.header.masters
-            modInfo.header.masters = self.uilist.GetNewMasters()
-            modInfo.header.setChanged()
-            modInfo.writeHeader(old_mi_masters)
+            mod_inf.makeBackup()
+            mod_inf.header.author = self.authorStr.strip()
+            mod_inf.header.description = self.descriptionStr.strip()
+            old_mi_masters = mod_inf.header.masters
+            mod_inf.header.masters = self.uilist.GetNewMasters()
+            mod_inf.header.setChanged()
+            mod_inf.writeHeader(old_mi_masters)
         #--Change date?
         if changeDate:
-            self._set_date(modInfo) # crc recalculated in writeHeader if needed
+            self._set_date(mod_inf) # crc recalculated in writeHeader if needed
         detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
         self.panel_uilist.propagate_refresh(True, refr_saves=(
                 detail_item is None or changeName or unlock_lo),
@@ -1640,8 +1639,8 @@ class ModDetails(_ModsSavesDetails):
             settings['bash.mods.renames'].update(ren_data.renames)
         return ren_data
 
-    def _set_date(self, modInfo):
-        modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
+    def _set_date(self, mod_inf):
+        mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
 
     #--Bash Tags
     ##: Once we're on wx4.1.1, we can use OnDimiss to fully refreshUI the

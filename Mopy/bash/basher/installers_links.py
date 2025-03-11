@@ -267,7 +267,7 @@ class Installers_CleanData(Installer_Op, Installers_Link):
 
     def _perform_action(self, ui_refresh_, progress):
         """Clean the data directory."""
-        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_, progress)
+        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):

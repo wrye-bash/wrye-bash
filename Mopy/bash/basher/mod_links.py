@@ -1253,7 +1253,7 @@ class Mod_ScanDirty(ItemLink):
         # Change a FID to something more useful for displaying
         def _log_fids(del_title, del_fids):
             nonlocal full_dirty_msg
-            mod_masters = modInfo.masterNames
+            mod_masters = mod_inf.masterNames
             len_mas = len(mod_masters)
             full_dirty_msg += '\n'.join([f'  * {del_title}: {len(del_fids)}',
                 *(f"    * "
@@ -1264,14 +1264,14 @@ class Mod_ScanDirty(ItemLink):
         dirty_plugins = []
         clean_plugins = []
         skipped_plugins = []
-        for i, (plugin_fn, modInfo) in enumerate(all_present_minfs.items()):
+        for i, (plugin_fn, mod_inf) in enumerate(all_present_minfs.items()):
             del_navms = all_deleted_navms[plugin_fn]
             del_refs = all_deleted_refs[plugin_fn]
             del_others = all_deleted_others[plugin_fn]
             if plugin_fn == game_master_name or plugin_fn.fn_ext == '.esu':
-                skipped_plugins.append(f'* __{modInfo}__')
+                skipped_plugins.append(f'* __{mod_inf}__')
             elif del_navms or del_refs or del_others:
-                full_dirty_msg = f'* __{modInfo}__:\n'
+                full_dirty_msg = f'* __{mod_inf}__:\n'
                 if del_navms:
                     _log_fids(_('Deleted Navmeshes'), del_navms)
                 if del_refs:
@@ -1280,7 +1280,7 @@ class Mod_ScanDirty(ItemLink):
                     _log_fids(_('Deleted Base Records'), del_others)
                 dirty_plugins.append(full_dirty_msg)
             else:
-                clean_plugins.append(f'* __{modInfo}__')
+                clean_plugins.append(f'* __{mod_inf}__')
         if dirty_plugins:
             log(_('Detected %(num_dirty_plugins)d plugins with deleted '
                   'records:') % {'num_dirty_plugins': len(dirty_plugins)})

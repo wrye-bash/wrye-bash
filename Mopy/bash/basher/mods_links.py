@@ -378,10 +378,10 @@ class Mods_AutoGhost(BoolLink):
         super(Mods_AutoGhost, self).Execute()
         flipped = []
         toGhost = bass.settings['bash.mods.autoGhost']
-        for mod, modInfo in bosh.modInfos.items():
+        for mod, mod_inf in bosh.modInfos.items():
             modGhost = toGhost and not load_order.cached_is_active(
-                mod) and modInfo.get_table_prop('allowGhosting', True)
-            if modInfo.setGhost(modGhost):
+                mod) and mod_inf.get_table_prop('allowGhosting', True)
+            if mod_inf.setGhost(modGhost):
                 flipped.append(mod)
         self.refresh_sel(flipped)
 
