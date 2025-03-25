@@ -781,19 +781,24 @@ class UIList(PanelWin):
         :param focus_list: If True, focus this UIList."""
         if rdata is None:
             self.populate_items()
-            updated = ()
         else: # a RefrData instance
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in (updated := rdata.redraw | rdata.to_add):
+                for upd in rdata.redraw | rdata.to_add:
                     self.PopulateItem(item=upd)
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
-        self._refresh_details(updated, detail_item)
+        # refresh details
+        if detail_item is None:
+            self.panel.ClearDetails()
+        elif detail_item is self._same_item:
+            self.panel.SetDetails()
+        else:
+            self.SelectAndShowItem(detail_item)
         if Link.Frame.notebook.currentPage is self.panel:
             # we need to check if our Panel is currently shown because we may
             # call Refresh UI of other tabs too - this results for instance in
@@ -819,17 +824,6 @@ class UIList(PanelWin):
         if refr_saves and Store.MODS in ui_refreshes:
             ui_refreshes[Store.SAVES] = True
         Link.Frame.refresh_and_warn(ui_refreshes, booting)
-
-    def _refresh_details(self, to_redraw, detail_item):
-        if detail_item is None:
-            self.panel.ClearDetails()
-        elif detail_item is not self._same_item:
-            self.SelectAndShowItem(detail_item)
-        else: # if it was a single item, refresh details for it
-            if len(to_redraw) == 1:
-                self.SelectAndShowItem(next(iter(to_redraw)))
-            else:
-                self.panel.SetDetails()
 
     def Focus(self):
         self.__gList.set_focus()
@@ -1083,9 +1077,42 @@ class UIList(PanelWin):
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
 
+    @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        # should only be subscribed if _editLabels==True and overridden
-        raise NotImplementedError
+        """Should only be subscribed if _editLabels==True."""
+        if is_edit_cancelled: return EventResult.FINISH
+        selected = self.get_selected_infos_filtered()
+        if not selected:
+            # Sometimes seems to happen on wxGTK, simply abort
+            return EventResult.CANCEL
+        newName, root, *args = self._rename_args(evt_label, selected)
+        if root is None:
+            showError(self, newName)
+            return EventResult.CANCEL # validate_filename would Veto
+        item_edited = self.panel.detailsPanel.displayed_item
+        with BusyCursor():
+            rdata = RefrData()
+            for sel_inf in selected:
+                try:
+                    rdata |= self.try_rename(sel_inf, root, *args)
+                except TypeError: # try_rename returned None
+                    break
+            self.refresh_renames(item_edited, rdata, *args)
+        return EventResult.CANCEL # needed! clears new name from label on exception
+
+    def _rename_args(self, evt_label, selected):
+        return selected[0].validate_filename_str(evt_label)
+
+    def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
+        if rdata:
+            args_dict = {'detail_item': rdata.renames.get(item_edited,
+                item_edited)} # in case the displayed item was *not* renamed
+            if ui_refreshes is not None:
+                self.propagate_refresh(rdata, ui_refreshes, **args_dict)
+            else:
+                self.RefreshUI(rdata, **args_dict)
+            #--Reselect the renamed items
+            self.SelectItemsNoCallback(rdata.redraw)
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1105,14 +1132,17 @@ class UIList(PanelWin):
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH
 
-    # Renaming - note the @conversation, this needs to be atomic with respect
-    # to refreshes and ideally atomic short - store_refr is Installers only
+    @final
     @conversation
-    def try_rename(self, info, newName, rdata_ren, store_refr=None):
-        """Mods/BSAs - Inis won't be added and Screens/Installers/Saves
-        override - reduce this."""
+    def try_rename(self, info, new_root, store_refr=None, *, force_ext=False):
+        """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
+         this needs to be atomic with respect to refreshes and ideally
+         atomic short - store_refr is Installers only. Inis won't be added."""
+        newName = info.unique_key(new_root, force_ext)
+        if newName is None: # new and old names are ci-same
+            return RefrData()
         try:
-            return self.data_store.rename_operation(info, newName, rdata_ren,
+            return self.data_store.rename_operation(info, newName,
                 store_refr=store_refr) # a RefrData instance
         except (CancelError, OSError):
             deprint(f'Renaming {info} to {newName} failed', traceback=True)

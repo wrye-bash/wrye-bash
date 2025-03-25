@@ -1764,7 +1764,7 @@ class ListInfo:
             ma_groups = maPattern.groups(default=u'')
             root = ma_groups[0]
             num_str = ma_groups[1] if cls._has_digits else None
-            if not (root or num_str):
+            if not (root or num_str): # allow number only names for screenshots
                 pass # will return the error message at the end
             elif cls._has_digits: return FName(root), num_str
             else: return FName(name_str), root
@@ -1800,14 +1800,13 @@ class ListInfo:
         return f'{r} ({count}){e}'
 
     @classmethod
-    def unique_name(cls, name_str, check_exists=False):
+    def unique_name(cls, name_str, check_exists=False, *, __unique_counter=0):
         base_name = name_str
-        unique_counter = 0
         store = cls._store()
         while (store.store_dir.join(name_str).exists() if check_exists else
                name_str in store): # must wrap a FNDict
-            unique_counter += 1
-            name_str = cls._new_name(base_name, unique_counter)
+            __unique_counter += 1
+            name_str = cls._new_name(base_name, __unique_counter)
         return FName(name_str)
 
     def unique_key(self, new_root, ext='', add_copy=False):
@@ -1815,9 +1814,12 @@ class ListInfo:
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
         new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
-        if new_name == self.fn_key: # new and old names are ci-same
+        if self.named_as(new_name): # new and old names are ci-same
             return None
         return self.unique_name(new_name)
+
+    def named_as(self, text_cnt: str): # check if names are ci-same
+        return text_cnt == self.fn_key
 
     # Gui renaming stuff ------------------------------------------------------
     @classmethod

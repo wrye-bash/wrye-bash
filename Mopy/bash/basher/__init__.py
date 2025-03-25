@@ -1159,7 +1159,8 @@ class ModList(_ModsUIList):
             self.GetSelected())
         if new_patch_name is not None:
             self.ClearSelected(clear_details=True)
-            self.propagate_refresh(RefrData({new_patch_name}))
+            self.propagate_refresh(RefrData({new_patch_name}),
+                                   detail_item=new_patch_name)
         else:
             showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
                                 'Patches already exist!'))
@@ -1253,17 +1254,22 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         """Event: Finished editing file name."""
         if not self.file_info: return
         #--Changed?
-        fileStr = self._fname_ctrl.text_content
-        if fileStr == self.fileStr: return
+        text_cnt = self._fname_ctrl.text_content
+        if self.file_info.named_as(text_cnt):
+            self._fname_ctrl.text_content = self.fileStr = text_cnt
+            self.testChanges()
+            return
         #--Validate the filename
-        name_path, root = self.file_info.validate_name(fileStr)
+        name_path, root = self.file_info.validate_name(text_cnt)
         if root is None:
             showError(self, name_path) # it's an error message in this case
             self._fname_ctrl.text_content = self.fileStr
         #--Okay?
         else:
-            self.fileStr = fileStr
+            self.fileStr = text_cnt
             self.SetEdited()
+
+    def testChanges(self): raise NotImplementedError
 
     def OnFileEdit(self, new_text):
         """Event: Editing filename."""
@@ -1283,6 +1289,13 @@ class _EditableMixinOnFileInfos(_EditableMixin):
                       f'\n{store.corrupted[fn].error_message}')
             return None
         return fn
+
+    def _rename_detail_item(self):
+        newName = FName(self.fileStr.strip())
+        # OnFileEdited checked if filename existed in validate_name
+        #  but this happened before and since maybe modinfos are
+        #  updated, we need to check again todo: possibly cancel?
+        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
@@ -1331,8 +1344,6 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     def ShowPanel(self, **kwargs):
         super(_ModsSavesDetails, self).ShowPanel(**kwargs)
         self.uilist.autosizeColumns()
-
-    def testChanges(self): raise NotImplementedError
 
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
@@ -1436,7 +1447,7 @@ class ModDetails(_ModsSavesDetails):
         if fileName:
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = modInfo.fn_key
+            self.fileStr = str(modInfo.fn_key)
             self.authorStr = modInfo.header.author
             self.modifiedStr = format_date(modInfo.ftime)
             self.descriptionStr = modInfo.header.description
@@ -1561,7 +1572,7 @@ class ModDetails(_ModsSavesDetails):
 
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
-        if not modInfo or (self.fileStr == modInfo.fn_key and
+        if not modInfo or (modInfo.named_as(self.fileStr) and
                            self.modifiedStr == format_date(modInfo.ftime) and
                            self.authorStr == modInfo.header.author and
                            self.descriptionStr == modInfo.header.description):
@@ -1574,20 +1585,12 @@ class ModDetails(_ModsSavesDetails):
     def DoSave(self):
         modInfo = self.modInfo
         #--Change Tests
-        file_str = FName(self.fileStr.strip())
-        changeName = file_str != modInfo.fn_key
+        if (changeName := self._rename_detail_item()) is None:
+            return
         changeDate = (self.modifiedStr != format_date(modInfo.ftime))
         changeHedr = (self.authorStr != modInfo.header.author or
                       self.descriptionStr != modInfo.header.description)
         changeMasters = self.uilist.edited
-        #--Warn on rename if file has BSA and/or dialog
-        if changeName:
-            msg = modInfo.ask_resources_ok(
-                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
-                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
-            if msg and not askWarning(
-                    self, msg, title=_('Rename %(target_file_name)s') % {
-                        'target_file_name': modInfo}): return
         unlock_lo = changeDate and not bush.game.using_txt_file
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
@@ -1596,22 +1599,10 @@ class ModDetails(_ModsSavesDetails):
             self.panel_uilist.propagate_refresh( # refresh saves if lo changed
                 True, refr_saves=not bush.game.using_txt_file)
             return
-        #--Backup
-        modInfo.makeBackup()
-        #--Change Name?
-        if changeName:
-            oldName,newName = modInfo.fn_key, file_str
-            #--Bad name?
-            if bosh.modInfos.isBadFileName(str(newName)):
-                msg = self.__bad_name_msg % {'bad_file_name': newName,
-                    'game_name': bush.game.display_name}
-                if not balt.askContinue(self, msg,
-                                        'bash.rename.isBadFileName.continue'):
-                    return ##: cancels all other changes - move to validate_filename (without the balt part)
-            settings[u'bash.mods.renames'][oldName] = newName
-            changeName = self.panel_uilist.try_rename(modInfo, newName, None)
         #--Change hedr/masters?
         if refr_inf := (changeHedr or changeMasters):
+            #--Backup
+            modInfo.makeBackup()
             modInfo.header.author = self.authorStr.strip()
             modInfo.header.description = self.descriptionStr.strip()
             old_mi_masters = modInfo.header.masters
@@ -1625,6 +1616,29 @@ class ModDetails(_ModsSavesDetails):
         self.panel_uilist.propagate_refresh(True, refr_saves=(
                 detail_item is None or changeName or unlock_lo),
             detail_item=detail_item)
+
+    def _rename_detail_item(self):
+        file_str = self.fileStr.strip()
+        if not self.file_info.named_as(file_str):
+            #--Warn on rename if file has BSA and/or dialog
+            msg = self.file_info.ask_resources_ok(
+                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
+                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
+            if msg and not askWarning(self, msg, title=_('Rename %('
+                 'target_file_name)s') % {'target_file_name': self.file_info}):
+                return
+            #--Change Name?
+            #--Bad name?
+            if bosh.modInfos.isBadFileName(file_str):
+                msg = self.__bad_name_msg % {'bad_file_name': file_str,
+                    'game_name': bush.game.display_name}
+                if not balt.askContinue(self, msg,
+                                        'bash.rename.isBadFileName.continue'):
+                    return
+        ren_data = super()._rename_detail_item()
+        if ren_data: ##: bash.mods.renames needs a spec
+            settings['bash.mods.renames'].update(ren_data.renames)
+        return ren_data
 
     def _set_date(self, modInfo):
         modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
@@ -2001,31 +2015,6 @@ class SaveList(UIList):
         'Cell': _ask_info('header.pcLocation'),
     }
 
-    @balt.conversation
-    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Savegame renamed."""
-        if is_edit_cancelled: return EventResult.FINISH # todo CANCEL?
-        newName, root = \
-            self.panel.detailsPanel.file_info.validate_filename_str(evt_label)
-        if not root:
-            showError(self, newName)
-            return EventResult.CANCEL # validate_filename would Veto
-        item_edited = self.panel.detailsPanel.displayed_item
-        rdata = None
-        for saveInfo in self.get_selected_infos_filtered():
-            if (rdata := self.try_rename(saveInfo, root, rdata)) is None:
-                break
-        if rdata:
-            self.RefreshUI(rdata, detail_item=rdata.renames.get(item_edited))
-            #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.redraw)
-        return EventResult.CANCEL # needed ! clears new name from label on exception
-
-    def try_rename(self, saveinf, new_root, rdata_ren, store_refr=None, *,
-                   force_ext=''):
-        newFileName = saveinf.unique_key(new_root, force_ext)
-        return super().try_rename(saveinf, newFileName, rdata_ren)
-
     @staticmethod
     def _unhide_wildcard():
         starred = f'*{bush.game.Ess.ext};*.bak'
@@ -2059,9 +2048,9 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        if rdata := self.try_rename(sinf, fn_item.fn_body, None,
+        if rdata := self.try_rename(sinf, fn_item.fn_body,
                                     force_ext=extension):
-            self.RefreshUI(rdata) # that's what a RefreshUI call should look like
+            self.RefreshUI(rdata)
 
     # Save profiles
     def set_local_save(self, new_saves, *, do_swap=None):
@@ -2156,7 +2145,7 @@ class SaveDetails(_ModsSavesDetails):
         if fileName:
             saveInfo = self.saveInfo = bosh.saveInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = saveInfo.fn_key
+            self.fileStr = str(saveInfo.fn_key)
             self.playerNameStr = saveInfo.header.pcName
             self.curCellStr = saveInfo.header.pcLocation
             self.gameDays = saveInfo.header.gameDays
@@ -2217,8 +2206,7 @@ class SaveDetails(_ModsSavesDetails):
             self.saveInfo.set_table_prop(u'info', new_text)
 
     def testChanges(self): # used by the master list when editing is disabled
-        saveInfo = self.saveInfo
-        if not saveInfo or self.fileStr == saveInfo.fn_key:
+        if not self.saveInfo or self.saveInfo.named_as(self.fileStr):
             self.DoCancel()
 
     @balt.conversation
@@ -2226,21 +2214,12 @@ class SaveDetails(_ModsSavesDetails):
         """Event: Clicked Save button."""
         saveInfo = self.saveInfo
         #--Change Tests
-        changeName = (self.fileStr != saveInfo.fn_key)
         changeMasters = self.uilist.edited
         #--Backup
         saveInfo.makeBackup() ##: why backup when just renaming - #292
         prevMTime = saveInfo.ftime
         #--Change Name?
-        rdata = RefrData()
-        if changeName:
-            newName = FName(self.fileStr.strip()).fn_body
-            # if you were wondering: OnFileEdited checked if file existed,
-            # and yes we recheck below in unique_key, in Mod/BsaDetails we
-            # don't - filesystem APIs might warn user (with a dialog hopefully)
-            # for an overwrite, otherwise we can have a race whatever we try
-            # here - an extra check can't harm nor makes a (any) difference
-            rdata = self.panel_uilist.try_rename(saveInfo, newName, None)
+        rdata = self._rename_detail_item()
         #--Change masters?
         if changeMasters:
             prev_masters = saveInfo.masterNames
@@ -2343,45 +2322,15 @@ class InstallersList(UIList):
                 return None, _("Wrye Bash can't rename mixed package types.")
         return rename_type, rename_err
 
-    @balt.conversation
-    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Renamed some installers"""
-        if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
-        selected = self.get_selected_infos_filtered()
-        if not selected:
-            # Sometimes seems to happen on wxGTK, simply abort
-            return EventResult.CANCEL
+    def _rename_args(self, evt_label, selected):
         # all selected have common type! enforced in OnBeginEditLabel
         newName, root = selected[0].validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
-        if root is None:
-            showError(self, newName)
-            return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
         if isinstance(root, tuple):
             root = root[0]
-        with BusyCursor():
-            ui_refreshes = defaultdict(bool) # Store refreshes
-            rdata = None
-            try:
-                for package in selected:
-                    if (rdata := self.try_rename(package, root, rdata,
-                                                 ui_refreshes)) is None:
-                        break
-            except TypeError:
-                pass # ren_keys.update(None)
-            #--Refresh UI
-            if rdata:
-                self.propagate_refresh(rdata, ui_refreshes)
-                #--Reselected the renamed items
-                self.SelectItemsNoCallback(rdata.redraw)
-            return EventResult.CANCEL
-
-    def try_rename(self, inst_info, new_root, rdata_ren, store_refr=None):
-        newFileName = inst_info.unique_key(new_root) # preserve extension for installers
-        if newFileName is None: # just changed extension - continue
-            return rdata_ren
-        return super().try_rename(inst_info, newFileName, rdata_ren, store_refr)
+        ui_refreshes = defaultdict(bool) # Store refreshes
+        return newName, root, ui_refreshes
 
     @staticmethod
     def _unhide_wildcard():
@@ -2938,7 +2887,8 @@ class InstallersDetails(_SashDetailsPanel):
         subScrollPos  = self.gSubList.lb_get_vertical_scroll_pos()
         espmScrollPos = self.gEspmList.lb_get_vertical_scroll_pos()
         subIndices = self.gSubList.lb_get_selections()
-        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}))
+        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}),
+                                              detail_item=self.displayed_item)
         for subIndex in subIndices:
             self.gSubList.lb_select_index(subIndex)
         # Reset the scroll bars back to their original position
@@ -3253,39 +3203,33 @@ class ScreensList(UIList):
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Rename selected screenshots."""
         if is_edit_cancelled: return EventResult.CANCEL
-        root, numStr = self.panel.detailsPanel.file_info.validate_filename_str(
-            evt_label)
-        if numStr is None: # allow for number only names
+        selected = self.get_selected_infos_filtered()
+        if not selected:
+            # Sometimes seems to happen on wxGTK, simply abort
+            return EventResult.CANCEL
+        root, numStr, num, digits = self._rename_args(evt_label, selected)
+        if numStr is None: # note we allow for number only names
             showError(self, root)
             return EventResult.CANCEL
-        selected = self.get_selected_infos_filtered()
+        item_edited = self.panel.detailsPanel.displayed_item
+        with BusyCursor():
+            rdata = RefrData()
+            for sel_inf in selected:
+                try:
+                    rdata |= self.try_rename(sel_inf, root + numStr)
+                    numStr = numStr and str(num := num + 1).zfill(digits)
+                except TypeError: # try_rename returned None
+                    break
+            self.refresh_renames(item_edited, rdata)
+            return EventResult.CANCEL
+
+    def _rename_args(self, evt_label, selected):
+        root, numStr = selected[0].validate_filename_str(evt_label)
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or 0)
         digits = len(f'{(num + len(selected) - 1)}')
-        numStr = numStr.zfill(digits) if numStr else ''
-        with BusyCursor():
-            rdata = None
-            item_edited = self.panel.detailsPanel.displayed_item
-            for scrinf in selected:
-                try:
-                    if (rdata := self.try_rename(scrinf, root + numStr,
-                                                 rdata)) is None:
-                        break
-                except TypeError: break
-                num += 1
-                numStr = str(num).zfill(digits)
-            if rdata:
-                self.RefreshUI(rdata,
-                               detail_item=rdata.renames.get(item_edited))
-                #--Reselected the renamed items
-                self.SelectItemsNoCallback(rdata.redraw)
-            return EventResult.CANCEL
-
-    def try_rename(self, scrinf, new_root, rdata_ren, store_refr=None):
-        newName = FName(new_root + scrinf.fn_key.fn_ext) # TODO: add ScreenInfo.unique_key()
-        if scrinf._store().store_dir.join(newName).exists():
-            return None # break
-        return super().try_rename(scrinf, newName, rdata_ren)
+        numStr = numStr and numStr.zfill(digits)
+        return root, numStr, num, digits
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens
@@ -3399,7 +3343,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         if fileName:
             self._bsa_info = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = self._bsa_info.fn_key
+            self.fileStr = str(self._bsa_info.fn_key)
             self.gInfo.text_content = self._bsa_info.get_table_prop('info',
                 _('Notes:') + ' ')
         else:
@@ -3417,9 +3361,8 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     @balt.conversation
     def DoSave(self):
         """Event: Clicked Save button."""
-        if (newName := FName(self.fileStr.strip())) != self._bsa_info.fn_key:
-            if self.panel_uilist.try_rename(self._bsa_info, newName, None):
-                self.panel_uilist.RefreshUI(detail_item=self.file_info.fn_key)
+        if self._rename_detail_item():
+            self.panel_uilist.RefreshUI(detail_item=self.file_info.fn_key)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):

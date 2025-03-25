@@ -476,7 +476,7 @@ class CreateNewPlugin(DialogWindow):
             if grp := pw.data_store[windowSelected[0]].get_table_prop('group'):
                 created_plugin.set_table_prop('group', grp)
         pw.ClearSelected(clear_details=True)
-        pw.RefreshUI(RefrData({chosen_name}))
+        pw.RefreshUI(RefrData({chosen_name}), detail_item=chosen_name)
 
 #------------------------------------------------------------------------------
 class ExportScriptsDialog(DialogWindow):

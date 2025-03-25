@@ -1451,11 +1451,8 @@ class InstallerMarker(Installer):
     def _new_name(base_name, count):
         return f'=={base_name.strip("=")}{f" ({count})"}=='
 
-    def unique_key(self, new_root, ext=u'', add_copy=False):
-        new_name = new_root + (f" {_('Copy')}" if add_copy else '')
-        if f'{new_name}' == f'{self.fn_key}': # allow change of case
-            return None
-        return self.unique_name(new_name)
+    def named_as(self, new_name):
+        return f'{new_name}' == f'{self.fn_key}' # allow change of case
 
     @classmethod
     def rename_area_idxs(cls, text_str, start=0, stop=None):
@@ -2044,8 +2041,7 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, member_info, name_new, rdata_ren,
-                         store_refr=None):
+    def rename_operation(self, member_info, name_new, store_refr=None):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
@@ -2053,15 +2049,8 @@ class InstallersData(DataStore):
             del self[old := member_info.fn_key]
             new = member_info.fn_key = FName(name_new) ##: make sure newName is fn
             self[new] = member_info
-            if rdata_ren is None:
-                rdata_ren = RefrData({new}, to_del={old}, renames={old: new})
-            else:
-                rdata_ren.to_del.add(old)
-                rdata_ren.redraw.add(new)
-                rdata_ren.renames[old] = new
-            return rdata_ren
-        rdata_ren = super().rename_operation(member_info, name_new, rdata_ren,
-                                             store_refr)
+            return RefrData({new}, to_del={old}, renames={old: new})
+        rdata_ren = super().rename_operation(member_info, name_new, store_refr)
         # Update the ownership information for relevant data stores
         old_key = next(iter(rdata_ren.renames))
         for store in data_tracking_stores():
