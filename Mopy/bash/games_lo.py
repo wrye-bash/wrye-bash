@@ -187,9 +187,6 @@ class FixInfo(object):
     def lo_deprint(self):
         self._warn_lo()
         self._warn_active()
-        if rem := (self.lo_removed | self.act_removed):
-            from .bosh import modInfos
-            modInfos.warn_missing_lo_act = rem
 
     def _warn_lo(self):
         if not self.lo_changed(): return
@@ -199,7 +196,8 @@ class FixInfo(object):
             msg.append('reordered:')
             msg.append(_pl(self.lo_reordered[0], 'from: '))
             msg.append(_pl(self.lo_reordered[1], 'to  : '))
-        bolt.deprint(f'Fixed Load Order: {"\n".join(msg)}')
+        fixed_lo_msg = '\n'.join(msg)
+        bolt.deprint(f'Fixed Load Order: {fixed_lo_msg}')
 
     def _warn_active(self):
         if not self.act_header: return

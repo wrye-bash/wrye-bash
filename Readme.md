@@ -1,11 +1,10 @@
-<img align="left" src="Mopy/bash/images/bash.svg" width="120" alt="">
-
-Wrye Bash
-=========
-
-[![Wrye Bash CI](https://github.com/wrye-bash/wrye-bash/workflows/Wrye%20Bash%20CI/badge.svg)](https://github.com/wrye-bash/wrye-bash/actions?query=workflow%3A%22Wrye+Bash+CI%22)
-[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.md)
-[![Translation status](https://hosted.weblate.org/widget/wrye-bash/wrye-bash/svg-badge.svg)](https://hosted.weblate.org/engage/wrye-bash/)
+<div align="center">
+ <img src="Mopy/bash/images/bash.svg" width="200" alt="">
+ <h1>Wrye Bash</h1>
+ <a href="https://github.com/wrye-bash/wrye-bash/actions?query=workflow%3A%22Wrye+Bash+CI%22"><img src="https://github.com/wrye-bash/wrye-bash/workflows/Wrye%20Bash%20CI/badge.svg" alt="CI Status" /></a>
+ <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="License" /></a>
+ <a href="https://hosted.weblate.org/engage/wrye-bash/"><img src="https://hosted.weblate.org/widget/wrye-bash/wrye-bash/svg-badge.svg" alt="Translation Status" /></a>
+</div>
 
 ### About
 
@@ -58,7 +57,7 @@ To run Wrye Bash from the latest `dev` code (download from [here][7])
 you need:
 
 * A game to manage from the supported games.
-* [Python 3.12 64-bit][16] (latest 3.12 is recommended)
+* [Python 3.11 64-bit][16] (latest 3.11 is recommended)
 
 **NB**: the 64-bit version is **required**. 32-bit operating systems are no
 longer supported.

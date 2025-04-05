@@ -230,17 +230,20 @@ class SaveFileHeader(object):
         '_mastersStart': (00, lambda ins: ins.tell()),
     }
 
-    def __init__(self, save_inf, load_image=False):
+    def __init__(self, save_inf, *, load_image=False, ins=None):
         self._save_info = save_inf
         self.ssData = None # lazily loaded at runtime
-        self.read_save_header(load_image)
+        self.read_save_header(load_image, ins)
 
     @final
-    def read_save_header(self, load_image=False):
+    def read_save_header(self, load_image=False, ins=None):
         """Fully reads this save header, optionally loading the image as
         well."""
         try:
-            with self._save_info.abs_path.open('rb') as ins:
+            if ins is None:
+                with self._save_info.abs_path.open('rb') as ins:
+                    self.load_header(ins, load_image)
+            else:
                 self.load_header(ins, load_image)
         #--Errors
         except (OSError, struct_error) as e:
@@ -259,7 +262,7 @@ class SaveFileHeader(object):
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
         self._load_from_unpackers(ins, self.__class__._unpackers)
-        self.load_image_data(ins, load_image)
+        self._load_image_data(ins, load_image)
         self._load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
@@ -272,7 +275,7 @@ class SaveFileHeader(object):
     def dump_header(self, out):
         raise NotImplementedError
 
-    def load_image_data(self, ins, load_image=False):
+    def _load_image_data(self, ins, load_image=False):
         bpp = (4 if self.has_alpha else 3)
         image_size = bpp * self.ssWidth * self.ssHeight
         if load_image:
@@ -428,9 +431,9 @@ class _AEslSaveHeader(SaveFileHeader):
         'plugin_info_size': (00, unpack_int)} # size of the master table
     _masters_offset = 4
 
-    def _scale_blocks(self) -> tuple[PluginFlag, ...]:
-        """Return True if this save file has an ESL block."""
-        return ()
+    def _scale_flags(self) -> list[PluginFlag]:
+        """Return a list of supported plugin flag master blocks."""
+        return []
 
     @property
     def masters(self):
@@ -451,7 +454,7 @@ class _AEslSaveHeader(SaveFileHeader):
             *map(self._unpack_master, repeat(ins, num_regular_masters))]
         # SSE / FO4 save format with esl block
         self.scale_masters = {}
-        for pf in self._scale_blocks():
+        for pf in self._scale_flags():
             num_masts = self._scale_unpackers[pf.name](ins)
             self.scale_masters[pf] = [
                 *map(self._unpack_master, repeat(ins, num_masts))]
@@ -489,7 +492,7 @@ class _AEslSaveHeader(SaveFileHeader):
             _skip_str16(ins)
         # SSE/FO4 format has separate ESL block
         scale_masters = []
-        for pf in self._scale_blocks():
+        for pf in self._scale_flags():
             ins.seek(2, 1) # skip ESL count
             masts = self.scale_masters.get(pf, ())
             scale_masters.append(masts)
@@ -503,7 +506,7 @@ class _AEslSaveHeader(SaveFileHeader):
             _write_s16_list(out, masts)
 
     def _master_block_size(self):
-        return (2 * len(self._scale_blocks()) + 1) + sum(
+        return (2 * len(self._scale_flags()) + 1) + sum(
             len(x) + 2 for x in self.masters)
 
 class SkyrimSaveHeader(_AEslSaveHeader):
@@ -539,7 +542,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
 
     def __is_sse(self): return self.version == 12
 
-    def _scale_blocks(self):
+    def _scale_flags(self):
         return plugin_types.scale_flags if self.__is_sse() and \
             self._formVersion >= 78 else []
 
@@ -547,7 +550,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
     def has_alpha(self):
         return self.__is_sse()
 
-    def load_image_data(self, ins, load_image=False):
+    def _load_image_data(self, ins, load_image=False):
         if self.__is_sse():
             self._compress_type = _SaveCompressionType(unpack_short(ins))
         # -4 for the header size itself (uint32)
@@ -555,7 +558,7 @@ class SkyrimSaveHeader(_AEslSaveHeader):
         if actual != self.header_size:
             raise SaveHeaderError(f'New Save game header size ({actual}) not '
                                   f'as expected ({self.header_size}).')
-        super().load_image_data(ins, load_image)
+        super()._load_image_data(ins, load_image)
 
     def _load_masters(self, ins):
         if self.__compressed():
@@ -613,7 +616,7 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     }
     _compress_type = _SaveCompressionType.NONE
 
-    def _scale_blocks(self):
+    def _scale_flags(self):
         return plugin_types.scale_flags if self.version == 15 and \
             self._formVersion >= 68 else []
 
@@ -621,14 +624,14 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     def has_alpha(self):
         return True
 
-    def load_image_data(self, ins, load_image=False):
+    def _load_image_data(self, ins, load_image=False):
         # -4 for the header size itself (uint32)
         actual = ins.tell() - len(self.__class__.save_magic) - 4
         if actual != self.header_size:
             raise SaveHeaderError(f'New Save game header size ({actual}) not '
                                   f'as expected ({self.header_size}).')
         # Call the SaveFileHeader version, skip Skyrim
-        super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
+        super(SkyrimSaveHeader, self)._load_image_data(ins, load_image)
 
     def calc_time(self):
         self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
@@ -716,9 +719,9 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
     }
     _masters_offset = 2
 
-    def __init__(self, save_inf, load_image=False):
+    def __init__(self, save_inf, **kwargs):
         self._master_info_block_size = {}
-        super().__init__(save_inf, load_image)
+        super().__init__(save_inf, **kwargs)
 
     def _unpack_master(self, ins):
         mas = unpack_str16(ins)
@@ -737,12 +740,12 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
             self._master_info_block_size[mas] += 1
         return mas
 
-    def _scale_blocks(self):
+    def _scale_flags(self):
         # ESL: some sources say if form version >= 82, MO2 says always
         return plugin_types.scale_flags if self._formVersion >= 122 else [
             next(iter(plugin_types.scale_flags))]
 
-    def load_image_data(self, ins, load_image=False): # just do the check
+    def _load_image_data(self, ins, load_image=False): # just do the check
         # -4 for the header size itself (uint32)
         actual = ins.tell() - len(self.__class__.save_magic) - 4
         if actual != self.header_size:

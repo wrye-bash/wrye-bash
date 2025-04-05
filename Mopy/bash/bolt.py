@@ -1240,6 +1240,11 @@ class Path(os.PathLike):
     def copyTo(self, dest_path, set_time=None):
         """Copy self to dest_path make dirs if necessary and preserve ftime."""
         dest_path = GPath(dest_path)
+        if self.is_dir():
+            ##: Does not preserve mtimes - is that a problem?
+            shutil.copytree(self._s, dest_path._s,
+                copy_function=copy_or_reflink2)
+            return
         try:
             copy_or_reflink(self._s, dest_path._s)
             dest_path.mtime = set_time or self.mtime
@@ -1658,16 +1663,15 @@ class AFile(object):
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
-    def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
-                 cached_stat=None, **kwargs):
+    def __init__(self, fullpath, *, raise_on_error=False, cached_stat=None,
+                 **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
-        #Set cache info (ftime, size[, ctime]) and reload if load_cache is True
+        # Set cache info (ftime, size[, ctime]) and reload/reset cache
         try:
-            self._reset_cache(self._stat_tuple(cached_stat),
-                              load_cache=load_cache, **kwargs)
+            self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
             if raise_on_error: raise
-            self._reset_cache(self._null_stat, load_cache=False)
+            self._reset_cache(self._null_stat)
 
     def _stat_tuple(self, cached_stat=None):
         return self.abs_path.size_mtime() if cached_stat is None else (
@@ -1698,7 +1702,7 @@ class AFile(object):
             stat_tuple = self._stat_tuple(cached_stat)
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
-            self._reset_cache(self._null_stat, load_cache=False, **kwargs)
+            self._reset_cache(self._null_stat, **kwargs)
             if raise_on_error: raise
             return file_was_stated # file previously existed, we need to update
         if force_update or self._file_changed(stat_tuple):
@@ -1710,10 +1714,12 @@ class AFile(object):
         return (self.fsize, self.ftime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, **kwargs):
-        """Reset cache flags (fsize, ftime,...) and possibly reload the cache.
+        """Reset cache flags (fsize, ftime,...) and possibly reload the cache
+         or reset it (in bsa/inis), so it gets reloaded later. Avoid calling
+         outside __init__ and do_update.
         :param **kwargs: various
-            - load_cache: if True either load the cache (header in Mod and
-            SaveInfo) or reset it, so it gets reloaded later
+            - load_cache: if True load the cache (header/masters) in ModInfo
+            and SaveInfo)
         """
         self.fsize, self.ftime = stat_tuple
 
@@ -1758,7 +1764,7 @@ class ListInfo:
             ma_groups = maPattern.groups(default=u'')
             root = ma_groups[0]
             num_str = ma_groups[1] if cls._has_digits else None
-            if not (root or num_str):
+            if not (root or num_str): # allow number only names for screenshots
                 pass # will return the error message at the end
             elif cls._has_digits: return FName(root), num_str
             else: return FName(name_str), root
@@ -1770,10 +1776,9 @@ class ListInfo:
         check_ext = name_str and self.__class__._valid_exts_re
         if check_ext and not name_str.lower().endswith(
                 self.fn_key.fn_ext.lower()):
-            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
-                    '%(expected_ext)s).') % {
-                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return msg, None
+            fm = {'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
+            return _('%(bad_name_str)s: Incorrect file extension (must be '
+                     '%(expected_ext)s).') % fm, None
         return self.__class__.validate_filename_str(name_str)
 
     @classmethod
@@ -1795,14 +1800,13 @@ class ListInfo:
         return f'{r} ({count}){e}'
 
     @classmethod
-    def unique_name(cls, name_str, check_exists=False):
+    def unique_name(cls, name_str, check_exists=False, *, __unique_counter=0):
         base_name = name_str
-        unique_counter = 0
         store = cls._store()
         while (store.store_dir.join(name_str).exists() if check_exists else
                name_str in store): # must wrap a FNDict
-            unique_counter += 1
-            name_str = cls._new_name(base_name, unique_counter)
+            __unique_counter += 1
+            name_str = cls._new_name(base_name, __unique_counter)
         return FName(name_str)
 
     def unique_key(self, new_root, ext='', add_copy=False):
@@ -1810,9 +1814,12 @@ class ListInfo:
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
         new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
-        if new_name == self.fn_key: # new and old names are ci-same
+        if self.named_as(new_name): # new and old names are ci-same
             return None
         return self.unique_name(new_name)
+
+    def named_as(self, text_cnt: str): # check if names are ci-same
+        return text_cnt == self.fn_key
 
     # Gui renaming stuff ------------------------------------------------------
     @classmethod
@@ -1824,8 +1831,11 @@ class ListInfo:
         return 0, len(text_str) # if selection not at start reset
 
     @classmethod
-    def _store(cls):
+    def _store(cls): # use sparingly
         raise NotImplementedError(f'{cls} does not provide a data store')
+
+    def info_status(self, **kwargs):
+        raise NotImplementedError # screens, bsas
 
     # Instance methods --------------------------------------------------------
     def copy_to(self, dup_path: Path, *, set_time=None):
@@ -1836,7 +1846,7 @@ class ListInfo:
         self.fs_copy(dup_path, set_time=set_time)
 
     def fs_copy(self, dup_path, *, set_time=None):
-        raise NotImplementedError
+        raise NotImplementedError # not all ListInfos are AFiles
 
     def __str__(self):
         """Alias for self.fn_key."""
@@ -1848,9 +1858,9 @@ class ListInfo:
 #------------------------------------------------------------------------------
 class AFileInfo(AFile, ListInfo):
     """List Info representing a file."""
-    def __init__(self, fullpath, load_cache=False, **kwargs):
+    def __init__(self, fullpath, **kwargs):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
-        super().__init__(fullpath, load_cache, **kwargs)
+        super().__init__(fullpath, **kwargs)
 
     def delete_paths(self):
         """Paths to delete when this item is deleted - abs_path comes first!"""
@@ -1870,7 +1880,7 @@ class AFileInfo(AFile, ListInfo):
         super_validate = super().validate_name(name_str,
             check_store=check_store)
         #--Else file exists?
-        if check_store and self.info_dir.join(name_str).exists():
+        if check_store and name_str in self._store(): # use modInfos for ghosts
             return _('File %(bad_name_str)s already exists.') % {
                 'bad_name_str': name_str}, None
         return super_validate
@@ -1912,6 +1922,25 @@ class RefrIn:
     @classmethod
     def from_added(cls, added_fns):
         return cls({k: (None, {}) for k in added_fns})
+
+#------------------------------------------------------------------------------
+@dataclass(slots=True)
+class RefrData:
+    """Encapsulate info the backend needs to pass on to the UI for refresh."""
+    redraw: set[FName] = field(default_factory=set)
+    to_del: set[FName] = field(default_factory=set, kw_only=True)
+    to_add: set[FName] = field(default_factory=set, kw_only=True)
+    # renames are a dict of old fn keys to new fn keys
+    renames: dict[FName, FName] = field(default_factory=dict)
+    ren_paths: dict[Path, Path] = field(default_factory=dict)
+
+    def __bool__(self):
+        return bool(self.to_add or self.to_del or self.redraw)
+
+    def __ior__(self, other):
+        for att in self.__slots__:
+            getattr(self, att).update(getattr(other, att)) # sets and dicts
+        return self
 
 #------------------------------------------------------------------------------
 class PickleDict(object):
@@ -2302,12 +2331,12 @@ class Log(object):
 
     def __init__(self):
         """Initialize."""
-        self.header = None
+        self.log_header = None
         self.prevHeader = None
 
     def setHeader(self,header,writeNow=False,doFooter=True):
         """Sets the header."""
-        self.header = header
+        self.log_header = header
         if self.prevHeader:
             self.prevHeader += u'x'
         self.doFooter = doFooter
@@ -2315,12 +2344,12 @@ class Log(object):
 
     def __call__(self,message=None,appendNewline=True):
         """Callable. Writes message, and if necessary, header and footer."""
-        if self.header != self.prevHeader:
+        if self.log_header != self.prevHeader:
             if self.prevHeader and self.doFooter:
                 self.writeFooter()
-            if self.header:
-                self.writeLogHeader(self.header)
-            self.prevHeader = self.header
+            if self.log_header:
+                self.writeLogHeader(self.log_header)
+            self.prevHeader = self.log_header
         if message: self.writeMessage(message,appendNewline)
 
     #--Abstract/null writing functions...
@@ -2775,16 +2804,3 @@ else:
         https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
         information."""
         shutil.copy2(a, b)
-
-@dataclass(slots=True)
-class RefrData:
-    """Encapsulate info the backend needs to pass on to the UI for refresh."""
-    redraw: set[FName] = field(default_factory=set)
-    to_del: set[FName] = field(default_factory=set, kw_only=True)
-    to_add: set[FName] = field(default_factory=set, kw_only=True)
-    # renames are a dict of old fn keys to new fn keys
-    renames: dict[FName, FName] = field(default_factory=dict)
-    ren_paths: dict[Path, Path] = field(default_factory=dict)
-
-    def __bool__(self):
-        return bool(self.to_add or self.to_del or self.redraw)

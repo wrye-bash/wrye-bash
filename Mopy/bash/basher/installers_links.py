@@ -29,7 +29,7 @@ from itertools import chain
 from . import Installers_Link
 from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
     MonitorExternalInstallationEditor, AImportOrderParser
-from .. import balt, bass, bosh, bush, load_order
+from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink, Installer_Op
 from ..gui import copy_text_to_clipboard, askYes
@@ -138,7 +138,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         try:
             self.idata.bain_install([pr_path], ui_refresh, override=False)
         finally:
-            self.window.propagate_refresh(ui_refresh)
+            self.window.propagate_refresh(True, ui_refresh)
         # Select new installer
         self.window.SelectLast()
 
@@ -267,7 +267,7 @@ class Installers_CleanData(Installer_Op, Installers_Link):
 
     def _perform_action(self, ui_refresh_, progress):
         """Clean the data directory."""
-        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_, progress)
+        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
@@ -483,7 +483,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                 # and reset the mtimes of vanilla BSAs ##: port to FO3/FNV?
                 bsaPath = bosh.modInfos.store_dir.join(
                         bass.inisettings['OblivionTexturesBSAName'])
-                bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
+                bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_bsa=True,
                                                      names_only=False)
                 with balt.Progress(
                         _('Enabling BSA Redirection…')) as progress:

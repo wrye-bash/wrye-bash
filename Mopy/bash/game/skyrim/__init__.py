@@ -129,6 +129,7 @@ class ASkyrimGameInfo(PatchGame):
             'grass',
             'interface',
             'kreate', # 3P: KreatE
+            'lightplacer', # 3P: LightPlacer
             'lodsettings',
             'mapmarkers', # 3P: Common Marker Addon Project
             'mapweathers', # 3P: Unique Map Weather
@@ -137,6 +138,9 @@ class ASkyrimGameInfo(PatchGame):
             'nemesis_engine', # 3P: Nemesis Unlimited Behavior Engine
             'netscriptframework', # 3P: .NET Script Framework
             'osa', # 3P: OSA Animation Framework
+            'pbrmaterialobjects', # 3P: ParallaxGen
+            'pbrnifpatcher', # 3P: ParallaxGen
+            'pbrtexturesets', # 3P: ParallaxGen
             'platform', # 3P: Skyrim Platform
             'scripts',
             'seasons', # 3P: Seasons of Skyrim SKSE

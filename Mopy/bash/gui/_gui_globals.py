@@ -63,14 +63,11 @@ def init_image_resources(images_dir):
     }
     _installer_icons = dict(arrows)
     statuses = ['off', 'on']
-    installer_types = ['', '.dir']
+    installer_types = {'': 'checkbox_box.svg', '.dir': 'checkbox_diamond.svg'}
     overlays = ['', '.wiz']
     imgkeys = [*product(statuses, installer_types, overlays)]
     for st, typ, overlay in imgkeys:
-        if typ == '.dir':
-            layers = ['checkbox_diamond.svg']
-        else:
-            layers = ['checkbox_box.svg']
+        layers = [installer_types[typ]]
         if st == 'on':
             layers.append('checkbox_plus.svg')
         if overlay == '.wiz':
@@ -78,7 +75,7 @@ def init_image_resources(images_dir):
         svg = _icc(layers[0])
         svg.composite(*layers)
         for col, (primary, secondary) in box_colors.items():
-            _installer_icons[f'{st}.{col}{typ}{overlay}'] = svg.with_svg_vars(
+            _installer_icons[f'{st}.{col}{overlay}{typ}'] = svg.with_svg_vars(
                 primary_color=primary, secondary_color=secondary)
     _installer_icons['corrupt'] = _icc('red_x.svg')
     _gui_images.update(_installer_icons)
@@ -87,14 +84,12 @@ def init_image_resources(images_dir):
     for st, col in product(['imp', 'inc', 'off', 'on'],
                            box_colors.keys() - {'white', 'grey'}):
         inst_key = 'on' if st == 'inc' else ('inc' if st == 'on' else st)
-        if inst_key in _installer_icons:
-            colored_check = _installer_icons[f'{inst_key}.{col}']
-        else:
+        if not (colored_check := _installer_icons.get(f'{inst_key}.{col}')):
             layers = ['checkbox_box.svg']
             if st == 'imp':
                 layers.append('checkbox_dot.svg')
             elif st == 'inc':
-                layers.append('checkbox_check.svg')
+                layers.append('checkbox_plus.svg')
             elif st == 'on':
                 layers.append('checkbox_check.svg')
             svg = _icc(layers[0])

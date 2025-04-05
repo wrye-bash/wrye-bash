@@ -524,7 +524,7 @@ def conversation(func):
 @dataclass(slots=True)
 class _ListItemFormat:
     _parent_uil: UIList
-    icon_key: tuple[str | None, ...] = (None,)
+    icon_dex: int | None = None
     bold: bool = False
     italics: bool = False
     underline: bool = False
@@ -534,8 +534,7 @@ class _ListItemFormat:
     def to_tree_node_format(self):
         """Convert this list item format to an equivalent tree node format,
         relative to the specified parent UIList."""
-        return TreeNodeFormat(
-            icon_idx=self._parent_uil.icons.img_dex(*self.icon_key),
+        return TreeNodeFormat(icon_idx=self.icon_dex,
             back_color=self._parent_uil.lookup_back_key(self.back_key),
             text_color=self._parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
@@ -691,13 +690,6 @@ class UIList(PanelWin):
     @sort_column.setter
     def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
 
-    @property
-    def data_store_key(self) -> str:
-        """The unique string key that establishes a correspondence between this
-        UIList and its data store. Used when information is passed along
-        between the backend and the GUI (e.g. for refreshing)."""
-        return self.data_store.unique_store_key
-
     def _handle_select(self, item_key):
         self._select(item_key)
     def _select(self, item): self.panel.SetDetails(item)
@@ -789,19 +781,24 @@ class UIList(PanelWin):
         :param focus_list: If True, focus this UIList."""
         if rdata is None:
             self.populate_items()
-            updated = ()
         else: # a RefrData instance
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in (updated := rdata.redraw | rdata.to_add):
+                for upd in rdata.redraw | rdata.to_add:
                     self.PopulateItem(item=upd)
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
-        self._refresh_details(updated, detail_item)
+        # refresh details
+        if detail_item is None:
+            self.panel.ClearDetails()
+        elif detail_item is self._same_item:
+            self.panel.SetDetails()
+        else:
+            self.SelectAndShowItem(detail_item)
         if Link.Frame.notebook.currentPage is self.panel:
             # we need to check if our Panel is currently shown because we may
             # call Refresh UI of other tabs too - this results for instance in
@@ -809,25 +806,24 @@ class UIList(PanelWin):
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
 
-    def propagate_refresh(self, refresh_others: defaultdict[str, bool | dict],
-                          **kwargs):
+    _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
+    def propagate_refresh(self, rdata, ui_refreshes: _ui_in = None, *,
+                          refr_saves=True, booting=False, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
-        :param refresh_others: A dict mapping unique data store keys (see
+        :param ui_refreshes: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
-        kwargs.setdefault('focus_list', True)
-        refresh_others[self.data_store_key] = kwargs
-        Link.Frame.distribute_ui_refresh(refresh_others)
-
-    def _refresh_details(self, to_redraw, detail_item):
-        if detail_item is None:
-            self.panel.ClearDetails()
-        elif detail_item is not self._same_item:
-            self.SelectAndShowItem(detail_item)
-        else: # if it was a single item, refresh details for it
-            if len(to_redraw) == 1:
-                self.SelectAndShowItem(next(iter(to_redraw)))
-            else:
-                self.panel.SetDetails()
+        ui_refreshes = {} if ui_refreshes is None else ui_refreshes
+        if rdata:
+            kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
+            kwargs.setdefault('focus_list', True)
+            ui_refreshes[self.data_store.unique_store_key] = kwargs
+        # if a RefreshUI is requested for ModList we should also refresh Saves
+        # TODO(353): we need to be more granular here which needs caching
+        #  info_status - we need similar logic in _refresh_mod_inis_and_strings
+        #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
+        if refr_saves and Store.MODS in ui_refreshes:
+            ui_refreshes[Store.SAVES] = True
+        Link.Frame.refresh_and_warn(ui_refreshes, booting)
 
     def Focus(self):
         self.__gList.set_focus()
@@ -859,16 +855,27 @@ class UIList(PanelWin):
     def set_item_format(self, item, item_format, target_ini_setts):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
-        data_store is a FileInfo subclass) for calling getStatus (or
-        tweak_status in Inis) to update respective info's status."""
-        pass # screens, bsas
+        data_store is a FileInfo subclass) for calling info_status to update
+        respective info's status."""
+        try:
+            inf = self.data_store[item]
+            icon_key = self._set_icon_text(inf, item_format, item,
+                target_ini_settings=target_ini_setts)
+            item_format.icon_dex = self.icons.img_dex(*icon_key)
+        except NotImplementedError:
+            return # screens, bsas
+        return inf # used in overrides
+
+    def _set_icon_text(self, inf, item_format, item_key, **kwargs):
+        """Base method just returns the status - always override to return the
+        icon key tuple - populate mouse text, item_format attrs, etc."""
+        return inf.info_status(**kwargs)
 
     def __setUI(self, fileName, target_ini_setts, gItem):
         """Set font, status icon, background text etc."""
         df = _ListItemFormat(self)
-        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
-        icon_index = self.icons.img_dex(*df.icon_key)
-        if icon_index is not None:
+        self.set_item_format(fileName, df, target_ini_setts)
+        if (icon_index := df.icon_dex) is not None:
             gItem.SetImage(icon_index)
         gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
         gItem.SetBackgroundColour(
@@ -892,7 +899,7 @@ class UIList(PanelWin):
             return self._defaultTextBackground
 
     def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]],
-            target_ini_setts=None) -> DecoratedTreeDict:
+                           target_ini_setts=None) -> DecoratedTreeDict:
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
         def _decorate(i):
@@ -902,7 +909,7 @@ class UIList(PanelWin):
             # those since the default text/background colors may have been
             # changed from the OS default)
             if i in self.data_store:
-                self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
+                self.set_item_format(i, lif, target_ini_setts)
             return lif.to_tree_node_format()
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
@@ -965,7 +972,7 @@ class UIList(PanelWin):
                 self.ClearSelected(clear_details=True)
             else: # select all
                 with self.__gList.on_item_selected.pause_subscription(
-                    self._handle_select):
+                        self._handle_select):
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
@@ -1070,9 +1077,42 @@ class UIList(PanelWin):
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
 
+    @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        # should only be subscribed if _editLabels==True and overridden
-        raise NotImplementedError
+        """Should only be subscribed if _editLabels==True."""
+        if is_edit_cancelled: return EventResult.FINISH
+        selected = self.get_selected_infos_filtered()
+        if not selected:
+            # Sometimes seems to happen on wxGTK, simply abort
+            return EventResult.CANCEL
+        newName, root, *args = self._rename_args(evt_label, selected)
+        if root is None:
+            showError(self, newName)
+            return EventResult.CANCEL # validate_filename would Veto
+        item_edited = self.panel.detailsPanel.displayed_item
+        with BusyCursor():
+            rdata = RefrData()
+            for sel_inf in selected:
+                try:
+                    rdata |= self.try_rename(sel_inf, root, *args)
+                except TypeError: # try_rename returned None
+                    break
+            self.refresh_renames(item_edited, rdata, *args)
+        return EventResult.CANCEL # needed! clears new name from label on exception
+
+    def _rename_args(self, evt_label, selected):
+        return selected[0].validate_filename_str(evt_label)
+
+    def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
+        if rdata:
+            args_dict = {'detail_item': rdata.renames.get(item_edited,
+                item_edited)} # in case the displayed item was *not* renamed
+            if ui_refreshes is not None:
+                self.propagate_refresh(rdata, ui_refreshes, **args_dict)
+            else:
+                self.RefreshUI(rdata, **args_dict)
+            #--Reselect the renamed items
+            self.SelectItemsNoCallback(rdata.redraw)
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1092,14 +1132,17 @@ class UIList(PanelWin):
             uilist_ctrl.ec_set_selection(*selection_span)
             return EventResult.FINISH
 
-    # Renaming - note the @conversation, this needs to be atomic with respect
-    # to refreshes and ideally atomic short - store_refr is Installers only
+    @final
     @conversation
-    def try_rename(self, info, newName, rdata_ren, store_refr=None):
-        """Mods/BSAs - Inis won't be added and Screens/Installers/Saves
-        override - reduce this."""
+    def try_rename(self, info, new_root, store_refr=None, *, force_ext=False):
+        """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
+         this needs to be atomic with respect to refreshes and ideally
+         atomic short - store_refr is Installers only. Inis won't be added."""
+        newName = info.unique_key(new_root, force_ext)
+        if newName is None: # new and old names are ci-same
+            return RefrData()
         try:
-            return self.data_store.rename_operation(info, newName, rdata_ren,
+            return self.data_store.rename_operation(info, newName,
                 store_refr=store_refr) # a RefrData instance
         except (CancelError, OSError):
             deprint(f'Renaming {info} to {newName} failed', traceback=True)
@@ -1162,7 +1205,7 @@ class UIList(PanelWin):
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
         with self.__gList.on_item_selected.pause_subscription(
-            self._handle_select):
+                self._handle_select):
             for item in items: self.SelectItem(item)
 
     def ClearSelected(self, clear_details=False):
@@ -1392,7 +1435,7 @@ class UIList(PanelWin):
             self.data_store.delete(dd_items, recycle=dd_recycle)
         except (PermissionError, CancelError, SkipError): pass
         # Also cleans _gList internal dicts
-        self.propagate_refresh(Store.SAVES.DO())
+        self.propagate_refresh(True)
 
     def open_data_store(self):
         try:
@@ -1553,7 +1596,7 @@ class Link(object):
         """Return the first selected info."""
         return next(self.iselected_infos())
 
-    def refresh_sel(self, to_refr=None, **kwargs):
+    def refresh_sel(self, to_refr=None, **kwargs): # note we do not propagate
         """Refresh selected items (or items in to_refr) in the UIList."""
         to_refr = self.selected if to_refr is None else to_refr
         self.window.RefreshUI(RefrData(set(to_refr)), **kwargs)
@@ -2025,7 +2068,7 @@ class UIList_Hide(EnabledLink):
                           {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
-        self.window.propagate_refresh(Store.SAVES.DO())
+        self.window.propagate_refresh(True)
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""
@@ -2041,8 +2084,7 @@ class Installer_Op(ItemLink):
         except (CancelError, SkipError):
             return None
         finally:
-            self.window.propagate_refresh(ui_refresh)
-            Link.Frame.distribute_warnings(ui_refresh)
+            self.window.propagate_refresh(True, ui_refresh)
 
     def _perform_action(self, ui_refresh_, progress):
         raise NotImplementedError

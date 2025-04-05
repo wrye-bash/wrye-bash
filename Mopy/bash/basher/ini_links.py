@@ -71,7 +71,7 @@ class INI_ListErrors(EnabledLink):
 
     def _enable(self):
         self._erroneous = [inf for inf in self.iselected_infos()
-                           if inf.tweak_status() < 0]
+                           if inf.info_status() < 0]
         return bool(self._erroneous)
 
     def Execute(self):
@@ -120,7 +120,7 @@ class INI_CreateNew(OneItemLink):
         }
 
     def _enable(self):
-        return super()._enable() and self._selected_info.tweak_status() >= 0
+        return super()._enable() and self._selected_info.info_status() >= 0
 
     @balt.conversation
     def Execute(self):

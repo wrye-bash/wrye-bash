@@ -37,7 +37,7 @@ else:
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = '313'  # must represent a valid float
+AppVersion = '314'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
 
 #--Global dictionaries - do _not_ reassign !
@@ -92,14 +92,9 @@ class Store(Enum):
     INIS = ('INI Edits', True)
     SCREENSHOTS = ('Screenshots', True)
 
-    def IF(self, is_changed):
-        """Decide IF a refresh of the respective UIList is needed -
-        bool(is_changed) is used to decide."""
-        return defaultdict(bool, {self: bool(is_changed)})
-
     def DO(self):
         """Unconditionally refresh the respective UIList."""
-        return self.IF(True)
+        return defaultdict(bool, {self: True})
 
     def __repr__(self):
         return self.name

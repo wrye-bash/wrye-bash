@@ -182,8 +182,8 @@
 <h3 id="install-components">Python Components <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.</p>
 <p class="emphasis">Note that the 64-bit versions are <em>required</em> - we no longer support 32-bit operating systems.</p>
-<p><a href="https://www.python.org">Python 3.12</a>: Versions prior to this one or newer than this one may work with Wrye Bash,
-    but have not been tested. Updating to the latest 3.12 release is recommended for bug and security fixes.</p>
+<p><a href="https://www.python.org">Python 3.11</a>: Versions prior to this one or newer than this one may work with Wrye Bash,
+    but have not been tested. Updating to the latest 3.11 release is recommended for bug and security fixes.</p>
 <p>Installation is easiest by just using pip, which comes with Python (see above). Simply run <code>path/to/python.exe -m pip install -r requirements.txt</code>
     (obviously replacing <code>path/to/python.exe</code> with the actual path to your python.exe).</p>
 <p>If you want to do it manually, the rest of this section will list out each
@@ -676,10 +676,10 @@ tab. The directories skipped are:
         it may only be possible to do so via running an executable. In this
         situation, Wrye Bash can capture the installer's output, which you can
         then manage like any other package via BAIN.</li>
-    <li><strong>Other Mod Managers</strong> - While Wrye Bash supports the
-        FOMOD XML format since 307, there are still some badly packaged mods it
-        cannot handle. In such situations, you may have to use other mod
-        managers to install them.</li>
+    <li><strong>Other Mod Managers</strong> - While Wrye Bash supports all
+        FOMODs properly since 312, there are other mod formats like OMODs (used
+        in Oblivion) that Wrye Bash only has limited support for. You may wish
+        to capture the output of OBMM or similar tools in that case.</li>
 </ul>
 
 <h4>How to use the "Monitor External Installation" feature</h4>
@@ -718,9 +718,7 @@ tab. The directories skipped are:
     </li>
     <li>If you use Mod Organiser (or any mod manager that utilises a virtual installation of files instead of actually installing them into
         Data\), then Monitor External Installation can only be used if Wrye Bash is launched by the other Mod manager so that it will feed
-        Wrye Bash the files it needs from the virtual folder. See <a
-                href="https://github.com/wrye-bash/wrye-bash/wiki/Wrye-Bash-and-Mod-Organizer" target="_blank">this wiki article</a> for
-        more information on integrating Wrye Bash with Mod Organizer.
+        Wrye Bash the files it needs from the virtual folder.
     </li>
     <li>When installing mods via Nexus Mod Manager, it is recommended that you start monitoring, install the mod via NMM, then before
         closing NMM, complete the monitoring session. Create the BAIN package, then switch back to NMM and uninstall the mod. You can then
@@ -2262,12 +2260,12 @@ tab. The directories skipped are:
                 first activate as many non-mergeable plugins, according to
                 load order, as possible. If that would result in &gt;255
                 active plugins (&gt;254 non-ESLs for games with ESL
-                support) or &gt;4096 active ESLs, an error is shown. For
-                games without ESL support, if there is still space for
-                active plugins afterwards, it will next activate as many
-                mergeable plugins, according to load order, as possible. If
-                that would result in &gt;255 active plugins, an info popup
-                is shown.</td>
+                support) or &gt;4096 active ESLs, an error is shown, but as many
+                plugins as possible are activated (see <a href="#mods-undo">Undo</a>).
+                It will next activate as many mergeable plugins, according to load order,
+                as possible. If that would result in too many active plugins, an info
+                popup is shown.
+            </td>
         </tr>
         <tr>
             <td>Activate Non-Mergeable</td>
@@ -12837,7 +12835,7 @@ iScreenShotIndex=0</code></td>
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v313</div>
+    <div id="version">Wrye Bash v314</div>
     <a href="Wrye Bash General Readme.html">General</a>&#160;&#x2726;&#160;Advanced&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

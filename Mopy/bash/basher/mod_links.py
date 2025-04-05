@@ -39,11 +39,10 @@ from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
-from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
-    GPath_no_norm, RefrIn
+    GPath_no_norm, RefrIn, RefrData
 from ..brec import RecordType
-from ..exception import BoltError, CancelError, PluginsFullError
+from ..exception import BoltError, CancelError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
 from ..localize import format_date
@@ -191,23 +190,25 @@ class Mod_CreateDummyMasters(OneItemLink):
     }
 
     def _enable(self): # enable if there are missing masters
-        return super()._enable() and self._selected_info.getStatus() == 30
+        return super()._enable() and self._selected_info.info_status() == 30
 
     def Execute(self):
         """Create Dummy Masters"""
+        bgame = bush.game
         msg = '\n\n'.join([
             _("This is an advanced feature, originally intended for viewing "
               "and editing 'Filter' patches in %(xedit_name)s. It will create "
               "empty plugins for each missing master. Are you sure you want "
-              "to continue?") % {'xedit_name': bush.game.Xe.full_name},
+              "to continue?") % {'xedit_name': bgame.Xe.full_name},
             _("To remove these files later, use 'Remove Dummy Masters…'.")])
         if not self._askYes(msg, title=self._text): return
         mod_previous = FNDict() # previous master for each master
+        mods_ds = self._data_store
         # creates esp files - so place them correctly after the last esm
-        previous_master = bosh.modInfos.cached_lo_last_esm()
+        previous_master = load_order.cached_lo_last_esm(mods_ds, bgame)
         for master in self._selected_info.masterNames:
-            if master in bosh.modInfos:
-                if not bush.game.master_flag.cached_type(bosh.modInfos[master]):
+            if master in mods_ds:
+                if not bgame.master_flag.cached_type(mods_ds[master]):
                     # if previous master is an esp put this one after it
                     previous_master = master
                 continue
@@ -215,19 +216,18 @@ class Mod_CreateDummyMasters(OneItemLink):
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
-            force_flags = bush.game.plugin_flags.guess_flags(
-                master.fn_ext, bush.game)
-            bosh.modInfos.create_new_mod(master, author_str='BASHED DUMMY',
+            force_flags = bgame.plugin_flags.guess_flags(master.fn_ext, bgame)
+            mods_ds.create_new_mod(master, author_str='BASHED DUMMY',
                 flags_dict=force_flags,
                 wanted_masters=[], # previous behavior - correct?
                 # pass dir_path explicitly so refresh is skipped
-                dir_path=self._data_store.store_dir)
+                dir_path=mods_ds.store_dir)
             mod_previous[master] = previous_master
             previous_master = master
-        bosh.modInfos.refresh(RefrIn.from_added(mod_previous),
-                              insert_after=mod_previous)
-        self.window.propagate_refresh(Store.SAVES.DO(), detail_item=next(
-            reversed(mod_previous)))
+        rdata= mods_ds.refresh(RefrIn.from_added(mod_previous),
+                               insert_after=mod_previous)
+        self.window.propagate_refresh(rdata,
+                                      detail_item=next(reversed(mod_previous)))
         self.window.SelectItemsNoCallback(mod_previous)
 
 #------------------------------------------------------------------------------
@@ -259,10 +259,9 @@ class Mod_OrderByName(EnabledLink):
         self.selected.sort(key=lambda m: ( # sort masters first
             *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
         lowest = load_order.get_ordered(self.selected)[0]
-        bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
-        # Reorder the actives too to avoid bogus LO warnings
-        bosh.modInfos.cached_lo_save_all()
-        self.window.propagate_refresh(Store.SAVES.DO())
+        lordata = bosh.modInfos.lo_insert_at(lowest, self.selected,
+                                             save_all=True)
+        self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
@@ -301,12 +300,9 @@ class Mod_Move(EnabledLink):
         active_plugins = load_order.cached_active_tuple()
         # Clamp between 0 and max plugin index
         target_index = max(0, min(target_index, len(active_plugins) - 1))
-        bosh.modInfos.cached_lo_insert_at(active_plugins[target_index],
-                                          self.selected)
-        # Reorder the actives too to avoid bogus LO warnings
-        ldiff = bosh.modInfos.cached_lo_save_all()
-        self.window.propagate_refresh(Store.SAVES.DO(), rdata=ldiff.to_rdata(),
-                                      detail_item=self.selected[0])
+        lordata = bosh.modInfos.lo_insert_at(active_plugins[target_index],
+            self.selected, save_all=True)
+        self.window.propagate_refresh(lordata, detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
 class Mod_Redate(File_Redate):
@@ -651,7 +647,7 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser(self.window.data_store).show_frame()
+            DocBrowser(self._data_store).show_frame()
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 
@@ -978,42 +974,39 @@ class Mod_RebuildPatch(_Mod_BP_Link):
     @balt.conversation
     def Execute(self):
         """Handle activation event."""
-        self._reactivate_mods, self._bps = set(), []
+        self._reactivate_mods, self._bps, bp_rdata = set(), [], RefrData()
         try:
-            if not self._execute_bp(self._find_parent_bp(), bosh.modInfos):
+            if not self._execute_bp(bosh.modInfos, bp_rdata):
                 return # prevent settings save
         except CancelError:
             return # prevent settings save
         finally:
-            count, resave = 0, False
-            to_act = dict.fromkeys(self._bps, True)
-            to_act.update(dict.fromkeys(self._reactivate_mods, False))
-            for fn_mod, is_bp in to_act.items():
-                message = _('Activate %(bp_name)s?') % {'bp_name': fn_mod}
-                if not is_bp or load_order.cached_is_active(fn_mod) or (
-                        bass.inisettings['PromptActivateBashedPatch'] and
-                        self._askYes(message, fn_mod)):
-                    try:
-                        act = bosh.modInfos.lo_activate(fn_mod, doSave=is_bp)
-                        if is_bp and act != [fn_mod]:
-                            msg = _('Masters Activated: %(num_activated)d') % {
-                                'num_activated': len({*act} - {fn_mod})}
-                            Link.Frame.set_status_info(msg)
-                        count += len(act)
-                        resave |= not is_bp and bool(act)
-                    except PluginsFullError:
-                        msg = _('Unable to activate plugin %(bp_name)s because'
-                            ' the load order is full.') % {'bp_name': fn_mod}
-                        self._showError(msg)
-                        break # don't keep trying
-            if resave:
-                bosh.modInfos.cached_lo_save_active()
-            self.window.propagate_refresh(Store.SAVES.IF(count))
+            to_act = []
+            if self._bps:
+                is_act = load_order.cached_is_active(parent_bp := self._bps[0])
+                if is_act or ( # parent was activated, activate all parts or...
+                    bass.inisettings['PromptActivateBashedPatch'] and
+                        self._askYes(_('Activate %(bp_name)s?') % {
+                            'bp_name': parent_bp}, parent_bp)):
+                    to_act = self._bps
+            _act = bosh.modInfos.lo_toggle_active
+            (bp_mas, _illegal, bp_error), ldiff_out = _act(to_act)
+            (_react_mas, _illegal, act_error), lordiff = _act(
+                self._reactivate_mods, out_diff=ldiff_out, save_act=True)
+            if pl_full_er := bp_error or act_error: ##: might be a BoltError
+                msg = _('Unable to activate plugin') + f':\n{pl_full_er}'
+                self._showError(msg)
+            if bp_masters := [*chain(*bp_mas.values())]:
+                msg = _('Masters Activated: %(num_activated)d') % {
+                    'num_activated': len(bp_masters)}
+                Link.Frame.set_status_info(msg)
+            self.window.propagate_refresh(bp_rdata, refr_saves=lordiff)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
 
-    def _execute_bp(self, patch_info, mod_infos):
+    def _execute_bp(self, mod_infos, bp_rdata):
+        patch_info = self._find_parent_bp()
         if patch_info is None:
             self._error_no_parent_bp()
             return False
@@ -1062,7 +1055,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             return False
         # No errors, proceed with building the BP
         PatchDialog.display_dialog(self.window, bashed_patch,
-                                   self._bps, bp_config)
+                                   self._bps, bp_config, bp_rdata)
         return True
 
     def _ask_deactivate_mergeable(self, bashed_patch):
@@ -1092,8 +1085,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             return False # Aborted by user or nothing left enabled
         self._reactivate_mods = ed_nomerge
         with BusyCursor():
-            bosh.modInfos.lo_deactivate(*to_deselect, doSave=True)
-            self.window.propagate_refresh(Store.SAVES.DO())
+            lordata = bosh.modInfos.lo_deactivate(*to_deselect, save_act=True)
+            self.window.propagate_refresh(lordata)
         return True
 
 #------------------------------------------------------------------------------
@@ -1260,7 +1253,7 @@ class Mod_ScanDirty(ItemLink):
         # Change a FID to something more useful for displaying
         def _log_fids(del_title, del_fids):
             nonlocal full_dirty_msg
-            mod_masters = modInfo.masterNames
+            mod_masters = mod_inf.masterNames
             len_mas = len(mod_masters)
             full_dirty_msg += '\n'.join([f'  * {del_title}: {len(del_fids)}',
                 *(f"    * "
@@ -1271,14 +1264,14 @@ class Mod_ScanDirty(ItemLink):
         dirty_plugins = []
         clean_plugins = []
         skipped_plugins = []
-        for i, (plugin_fn, modInfo) in enumerate(all_present_minfs.items()):
+        for i, (plugin_fn, mod_inf) in enumerate(all_present_minfs.items()):
             del_navms = all_deleted_navms[plugin_fn]
             del_refs = all_deleted_refs[plugin_fn]
             del_others = all_deleted_others[plugin_fn]
             if plugin_fn == game_master_name or plugin_fn.fn_ext == '.esu':
-                skipped_plugins.append(f'* __{modInfo}__')
+                skipped_plugins.append(f'* __{mod_inf}__')
             elif del_navms or del_refs or del_others:
-                full_dirty_msg = f'* __{modInfo}__:\n'
+                full_dirty_msg = f'* __{mod_inf}__:\n'
                 if del_navms:
                     _log_fids(_('Deleted Navmeshes'), del_navms)
                 if del_refs:
@@ -1287,7 +1280,7 @@ class Mod_ScanDirty(ItemLink):
                     _log_fids(_('Deleted Base Records'), del_others)
                 dirty_plugins.append(full_dirty_msg)
             else:
-                clean_plugins.append(f'* __{modInfo}__')
+                clean_plugins.append(f'* __{mod_inf}__')
         if dirty_plugins:
             log(_('Detected %(num_dirty_plugins)d plugins with deleted '
                   'records:') % {'num_dirty_plugins': len(dirty_plugins)})
@@ -1429,8 +1422,8 @@ class _CopyToLink(EnabledLink):
             if force_flags:
                 for new in rdata.to_add:
                     bosh.modInfos[new].set_plugin_flags(force_flags)
-            self.window.propagate_refresh(Store.SAVES.DO(),
-                                  detail_item=next(reversed(added)))
+            self.window.propagate_refresh(True,
+                                          detail_item=next(reversed(added)))
             self.window.SelectItemsNoCallback(added)
 
 class Mod_CopyToMenu(MenuLink):
@@ -1551,15 +1544,14 @@ class AFlipFlagLink(EnabledLink):
                 minfo.set_plugin_flags(set_flags)
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
-            ldiff = bosh.modInfos.refreshLoadOrder()
+            lordata = bosh.modInfos.refreshLoadOrder()
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
                 altered={p.abs_path for p in self.iselected_infos()})
             # We need to RefreshUI all higher-loading plugins than the lowest
             # plugin that was affected to update the Indices column
-            rdata = ldiff.to_rdata()
-            rdata.redraw.update(self.selected)
-            self.window.propagate_refresh(Store.SAVES.DO(), rdata=rdata)
+            lordata.redraw.update(self.selected)
+            self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
@@ -1721,7 +1713,7 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
             f'{self.selected[0].fn_body}{self.__class__.csvFile}')
         if not textPath: return
         #--Export
-        lo_plugins_set = set(self.window.data_store)
+        lo_plugins_set = set(self._data_store)
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
             readProgress = SubProgress(progress, 0.1, 0.8)

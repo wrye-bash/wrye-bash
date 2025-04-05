@@ -124,27 +124,82 @@
     <li>And many, many more
 </ul>
 <p>It currently supports the following games:</p>
-<ul>
-    <li>Enderal&colon; Forgotten Stories (Steam version)</li>
-    <li>Enderal&colon; Forgotten Stories&colon; Special Edition (GOG and Steam
-        versions)</li>
-    <li>Fallout 3 (Epic Games Store, GOG, Steam and Windows Store
-        versions)</li>
-    <li>Fallout 4 (GOG, Steam and Windows Store versions)</li>
-    <li>Fallout 4 VR (Steam version)</li>
-    <li>Fallout&colon; New Vegas (Epic Games Store, GOG, Steam and Windows
-        Store versions)</li>
-    <li>Morrowind (very early support; GOG, Steam and Windows Store
-        versions)</li>
-    <li>Nehrim&colon; At Fate's Edge (GOG and Steam versions)</li>
-    <li>Oblivion (GOG, Steam and Windows Store versions)</li>
-    <li>Skyrim (Steam version)</li>
-    <li>Skyrim&colon; Special Edition (Epic Games Store, GOG, Steam and Windows
-        Store versions)</li>
-    <li>Skyrim VR (Steam version)</li>
-    <li>Starfield (WIP due to modding support not being enabled yet; Steam and
-        Windows Store versions)</li>
-</ul>
+<table>
+    <thead>
+        <tr>
+            <th>Supported Game</th>
+            <th>Supported Versions</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Enderal&colon; Forgotten Stories</td>
+            <td>Steam</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Enderal&colon; Forgotten Stories&colon; Special Edition</td>
+            <td>GOG, Steam</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Fallout 3</td>
+            <td>Disc/Retail, Epic Games Store, GOG, Steam, Windows Store</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Fallout 4</td>
+            <td>GOG, Steam, Windows Store</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Fallout 4 VR</td>
+            <td>Steam</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Fallout&colon; New Vegas</td>
+            <td>Epic Games Store, GOG, Steam, Windows Store</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Morrowind</td>
+            <td>Disc/Retail, GOG, Steam, Windows Store</td>
+            <td>Very early support</td>
+        </tr>
+        <tr>
+            <td>Nehrim&colon; At Fate's Edge</td>
+            <td>GOG, Steam</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Oblivion</td>
+            <td>Disc/Retail, GOG, Steam, Windows Store</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Skyrim</td>
+            <td>Steam</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Skyrim&colon; Special Edition</td>
+            <td>Epic Games Store, GOG, Steam, Windows Store</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Skyrim VR</td>
+            <td>Steam</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Starfield</td>
+            <td>Steam, Windows Store</td>
+            <td>WIP, only partially supported</td>
+        </tr>
+    </tbody>
+</table>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
 
@@ -514,8 +569,9 @@ be restructured.</p>
             <td>Skyrim</td>
             <td>asi, autobody, calientetools, dialogueviews,
                 dragonbornvoiceover, dyndolod, flm, grass, interface, kreate,
-                lodsettings, mapmarkers, mapweathers, mcm, mlq, nemesis_engine,
-                netscriptframework, osa, platform, scripts, seasons, seq,
+                lightplacer, lodsettings, mapmarkers, mapweathers, mcm, mlq,
+                nemesis_engine, netscriptframework, osa, pbrmaterialobjects,
+                pbrnifpatcher, pbrtexturesets, platform, scripts, seasons, seq,
                 shaders, shadersfx, skse, skyproc patchers, slanims, strings,
                 tools</td>
         </tr>
@@ -781,13 +837,51 @@ from other packages previously overridden by the uninstalled package's
     </tbody>
 </table>
 <table>
-    <thead><tr><th>Text Formatting<th>Meaning
+    <thead>
+        <tr>
+            <th>Text Formatting</th>
+            <th>Meaning</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td class="bain-symbols-blutxt">Navy Blue<td>The package contains sub-packages.
-        <tr><td class="bain-symbols-grytxt">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
-        <tr><td class="bain-symbols-orgbg">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-        <tr><td class="bain-symbols-ylwbg">Yellow Background<td>The package has "underrides" i.e. some of its installed files <em>should</em> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complicated structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package has extra directories by selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories"></a> in the right-click menu.
+        <tr>
+            <td class="bain-symbols-blutxt">Navy Blue</td>
+            <td>The package contains sub-packages.</td>
+        </tr>
+        <tr>
+            <td class="bain-symbols-grytxt">Grey</td>
+            <td>BAIN does not recognise the structure of this package and so
+                cannot install it.</td>
+        </tr>
+        <tr>
+            <td class="bain-symbols-orgbg">Orange Background</td>
+            <td>The install is dirty. This will occur for packages for which
+                the configuration has been altered (either by altering active
+                sub-packages and esmps, or by altering the package itself).
+                This can be repaired by running
+                <a href="#bainAnneal">Anneal</a> or
+                <a href="#bainAnnealAll">Anneal All</a>.</td>
+        </tr>
+        <tr>
+            <td class="bain-symbols-ylwbg">Yellow Background</td>
+            <td>The package has "underrides" i.e. some of its installed files
+                <em>should</em> be overridden by higher order packages, but
+                aren't. This may happen after reordering mods that have already
+                been installed. It can be repaired by running
+                <a href="#bainAnneal">Anneal</a> or
+                <a href="#bainAnnealAll">Anneal All</a>.</td>
+        </tr>
+        <tr>
+            <td class="bain-symbols-grybg">Grey Background</td>
+            <td>Some files present in the package will <strong>not</strong> be
+                installed. This can be due to having a complicated structure
+                only partially handled by BAIN, or having file types that BAIN
+                skips. This can sometimes be fixed by telling BAIN that the
+                package has extra directories by selecting
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories">Has Extra Directories</a>
+                in the right-click menu.</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="bain-commands">Useful Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
@@ -2635,7 +2729,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
             <li>
                 <h4>
                     <img class="smallcred" alt="Flag of Brazil" src="../bash/images/flags/brazil.svg">
-                    Portuguese (Brazil):
+                    Brazilian Portuguese:
                 </h4>
                 <ul>
                     <li>
@@ -2645,6 +2739,10 @@ Respect developer's time - keep discussions there short, sweet and technical. No
                     <li>
                         <img class="smallcred" alt="TheBronn's Icon" src="../bash/images/people/thbravi32.png">
                         <span><a href="https://github.com/TheBronn">TheBronn</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="Thiago Ramos's Icon" src="../bash/images/people/thraavi32.png">
+                        <span><a href="https://github.com/thiagojramos">Thiago Ramos</a></span>
                     </li>
                 </ul>
             </li>
@@ -2931,7 +3029,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v313</div>
+    <div id="version">Wrye Bash v314</div>
     General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

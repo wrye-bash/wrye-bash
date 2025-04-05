@@ -205,12 +205,12 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
     # between ESL and Overlay flags.
     pflags = bush.game.plugin_flags
-    flag_errors = {k: {h_msg: set() for h_msg in v} for k, v in
-                   pflags.error_msgs.items()}
-    for m, modinf in modInfos.items():
-        for pflag in flag_errors:
-            if pflag.cached_type(modinf):
-                pflag.validate_type(modinf, flag_errors[pflag].values())
+    if flag_errors := {k: {h_msg: set() for h_msg in v} for k, v in
+                       pflags.error_msgs.items()}:
+        for m, modinf in modInfos.items():
+            for pflag in flag_errors:
+                if pflag.cached_type(modinf):
+                    pflag.validate_type(modinf, flag_errors[pflag].values())
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and
     # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
@@ -598,7 +598,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""
         # FormIDs must be in long format at this point
-        proper_fid = format_fid(coll_fid, coll_plugin)
+        proper_fid = format_fid(coll_fid, coll_plugin, modInfos)
         if coll_inj:
             log('* ' + _('%(injected_formid)s injected into '
                          '%(injection_target)s, colliding versions:') % {
@@ -635,7 +635,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         if pflag.merge_check is not None:
             minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
             if minfos_cache:
-                _log_plugins(head, msg, minfos_cache)
+                _log_plugins(head, msg, [minf.fn_key for minf in minfos_cache])
         for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
             if pl_set:
                 _log_plugins(head, msg, pl_set)
@@ -820,7 +820,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             for orig_plugin, dupe_count in duplicates_counter.items():
                 log('* ' + _('%(full_fid)s in %(orig_plugin)s: '
                              'occurs %(num_duplicates)d times') % {
-                    'full_fid': format_fid(orig_fid, orig_plugin),
+                    'full_fid': format_fid(orig_fid, orig_plugin, modInfos),
                     'orig_plugin': orig_plugin,
                     'num_duplicates': dupe_count,
                 })

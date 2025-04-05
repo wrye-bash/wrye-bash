@@ -206,6 +206,17 @@ class Installer(ListInfo):
         return super(Installer, cls).validate_filename_str(name_str,
             frozenset()) # block extension check
 
+    def info_status(self, *, idata):
+        #--Icon
+        if self.is_corrupt_package:
+            iconkey = 'corrupt'
+        else:
+            iconkey = 'on' if self.is_active else 'off'
+            iconkey += f'.{idata.status_color[self.status]}'
+            if bass.settings['bash.installers.wizardOverlay'] and self.hasWizard:
+                iconkey += '.wiz'
+        return iconkey
+
     @classmethod
     def _store(cls): return cls.instData
 
@@ -1156,6 +1167,25 @@ class Installer(ListInfo):
         self.status, self.underrides = status, underrides
         return changed
 
+    def format_item(self, idata, item_format): ##: add more mouse texts
+        #--Text
+        item_format.text_key = ('default.text' if self.has_recognized_structure
+                                else 'installers.text.invalid')
+        if self.is_complex_package and len(self.subNames) != 2:
+            # 2 subNames would be a Complex/Simple package
+            item_format.text_key = 'installers.text.complex'
+        #--Background
+        if self.skipDirFiles:
+            item_format.back_key = 'installers.bkgd.skipped'
+        mouse_text = ''
+        if self.dirty_sizeCrc:
+            item_format.back_key = 'installers.bkgd.dirty'
+            mouse_text = _('Needs Annealing due to a change in configuration.')
+        elif self.underrides:
+            item_format.back_key = 'installers.bkgd.outOfOrder'
+            mouse_text = _('Needs Annealing due to a change in Install Order.')
+        idata.mouseTexts[self.fn_key] = mouse_text
+
     #--Utility methods --------------------------------------------------------
     def packToArchive(self, project, fn_archive, isSolid, blockSize,
                       progress=None, release=False):
@@ -1178,10 +1208,10 @@ class Installer(ListInfo):
 class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
-    def __init__(self, fn_key, progress=None, load_cache=False):
+    def __init__(self, fn_key, *, progress=None, fs_load=False):
         super().__init__(fn_key) # will call Installer -> ListInfo __init__
         self._file_key = bass.dirs['installers'].join(self.fn_key)
-        if load_cache: # load from disc, useful when adding a new installer
+        if fs_load: # load from disc, useful when adding a new installer
             AFile.__init__(self, self._file_key, progress=progress)
 
     def copy_to(self, dup_path: Path, *, set_time=None):
@@ -1189,7 +1219,7 @@ class _InstallerPackage(Installer, AFileInfo):
         clone = self._store().new_info(FName(dup_path.stail),
             is_proj=self.is_project, install_order=self.order + 1,
             do_refresh=False, # we only need to call refresh_n()
-            load_cache=False) # don't load from disc - copy all attributes over
+            fs_load=False) # don't load from disc - copy all attributes over
         atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
         for att in atts:
             setattr(clone, att, copy.copy(getattr(self, att)))
@@ -1421,11 +1451,8 @@ class InstallerMarker(Installer):
     def _new_name(base_name, count):
         return f'=={base_name.strip("=")}{f" ({count})"}=='
 
-    def unique_key(self, new_root, ext=u'', add_copy=False):
-        new_name = new_root + (f" {_('Copy')}" if add_copy else '')
-        if f'{new_name}' == f'{self.fn_key}': # allow change of case
-            return None
-        return self.unique_name(new_name)
+    def named_as(self, new_name):
+        return f'{new_name}' == f'{self.fn_key}' # allow change of case
 
     @classmethod
     def rename_area_idxs(cls, text_str, start=0, stop=None):
@@ -1457,6 +1484,11 @@ class InstallerMarker(Installer):
 
     def log_package(self, log, showInactive):
         log(f'{f"{self.order:03d}"} - {self.fn_key}')
+
+    def format_item(self, idata, item_format):
+        item_format.text_key = 'installers.text.marker'
+        idata.mouseTexts[self.fn_key] = _('Marker Package. Use for grouping '
+                                          'installers together')
 
 #------------------------------------------------------------------------------
 class InstallerArchive(_InstallerPackage):
@@ -1679,20 +1711,23 @@ class InstallerProject(_InstallerPackage):
     def _new_name(base_name, count):
         return f'{base_name} ({count})'
 
+    def info_status(self, *, idata):
+        return f'{super().info_status(idata=idata)}.dir'
+
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
         return boshInstallerProject, (self.fn_key,), ('%s' % self.fn_key,
             *(getattr(self, a) for a in self.persistent))
 
     # AFile API - InstallerProject is a folder not a file, special handling
-    def do_update(self, *, raise_on_error=False, force_update=False, **kwargs):
+    def do_update(self, *, force_update=False, **kwargs):
         # refresh projects once on boot, even if skipRefresh is on
         force_update |= not self.project_refreshed
         if not force_update and (self.skipRefresh or not bass.settings[
                 'bash.installers.autoRefreshProjects']):
             return False
-        return super().do_update(raise_on_error=True, # don't call on deleted!
-                                 force_update=force_update, **kwargs)
+        kwargs['raise_on_error'] = True # don't call on deleted!
+        return super().do_update(force_update=force_update, **kwargs)
 
     def fs_copy(self, dest_path, **kwargs):
         # does not preserve mtimes so next do_update will return True?
@@ -1726,7 +1761,7 @@ class InstallerProject(_InstallerPackage):
         return size_apath_date, sum(
             v[0] for v in size_apath_date.values()), max_node_mtime
 
-    def _fs_refresh(self, progress, stat_tuple,
+    def _fs_refresh(self, progress, stat_tuple, *,
                     recalculate_project_crc=False, **kwargs):
         """Refresh src_sizeCrcDate, fileSizeCrcs, fsize, ftime,
         crc from project directory, set project_refreshed to True."""
@@ -1848,26 +1883,26 @@ class InstallersData(DataStore):
     def hide_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
-            install_order=None, do_refresh=True, _index=None, load_cache=True):
+            install_order=None, do_refresh=True, _index=None, fs_load=True):
         """Create, add to self and return a new _InstallerPackage.
         :param fileName: the filename of the package to create
-        :param is_proj: create a project if True otherwise an archive
+        :param is_proj: if True create a project, otherwise an archive
         :param is_mark: used to add a marker, progress arguments are ignored
         :param progress: to pass to _InstallerPackage._reset_cache
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
         :param _index: if given create a subprogress
-        :param load_cache: if True load call _reset_cache in __init__
+        :param fs_load: if True call AFile.__init__ -> _reset_cache()
         """
         if not is_mark:
             progress = progress if _index is None else SubProgress(
                 progress, _index, _index + 1)
-            info = self[fileName] = self._inst_types[is_proj](
-                fileName, progress=progress, load_cache=load_cache)
         else:
-            info = self[fileName] = self._inst_types[2](fileName)
+            is_proj = 2
             if install_order is None:
                 install_order = self[self.lastKey].order
+        info = self[fileName] = self._inst_types[is_proj](
+            fileName, progress=progress, fs_load=fs_load)
         if install_order is not None:
             self.moveArchives([fileName], install_order)
         if progress and not is_mark: progress(1.0, _('Done'))
@@ -2006,8 +2041,7 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, member_info, name_new, rdata_ren,
-                         store_refr=None):
+    def rename_operation(self, member_info, name_new, store_refr=None):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
@@ -2015,15 +2049,8 @@ class InstallersData(DataStore):
             del self[old := member_info.fn_key]
             new = member_info.fn_key = FName(name_new) ##: make sure newName is fn
             self[new] = member_info
-            if rdata_ren is None:
-                rdata_ren = RefrData({new}, to_del={old}, renames={old: new})
-            else:
-                rdata_ren.to_del.add(old)
-                rdata_ren.redraw.add(new)
-                rdata_ren.renames[old] = new
-            return rdata_ren
-        rdata_ren = super().rename_operation(member_info, name_new, rdata_ren,
-                                             store_refr)
+            return RefrData({new}, to_del={old}, renames={old: new})
+        rdata_ren = super().rename_operation(member_info, name_new, store_refr)
         # Update the ownership information for relevant data stores
         old_key = next(iter(rdata_ren.renames))
         for store in data_tracking_stores():
@@ -2056,8 +2083,8 @@ class InstallersData(DataStore):
         return {i: p for i in fn_items if
                 isinstance(p := self[i], _InstallerPackage)}
 
-    def move_infos(self, sources, destinations, window, bash_frame):
-        moved = super().move_infos(sources, destinations, window, bash_frame)
+    def move_infos(self, sources, destinations, window):
+        moved = super().move_infos(sources, destinations, window)
         self.refresh_i(moved)
         return moved
 
@@ -2660,7 +2687,8 @@ class InstallersData(DataStore):
                 if inst.is_active: mask |= set(inst.ci_dest_sizeCrc)
             if tweaksCreated:
                 self._editTweaks(tweaksCreated)
-                refresh_ui |= Store.INIS.IF(tweaksCreated)
+                if tweaksCreated:
+                    refresh_ui[Store.INIS] = True
             return tweaksCreated
         finally:
             self.refresh_ns()
@@ -2843,17 +2871,19 @@ class InstallersData(DataStore):
         finally:
             self.refresh_ns()
 
-    def bain_anneal(self, anPackages, refresh_ui_, progress=None):
+    def bain_anneal(self, annealed_package_fnames: Iterable[FName] | None,
+            refresh_ui_, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = self.filterInstallables(self) if anPackages is None else {
-            self[package] for package in anPackages}
-        #--Get remove/refresh files from anPackages
+        if annealed_package_fnames is None:
+            annealed_package_fnames = self.filterInstallables(self)
+        annealed_packages = [self[p] for p in annealed_package_fnames]
+        #--Get remove/refresh files from annealed packages
         removes = set()
-        for installer in anPackages:
+        for installer in annealed_packages:
             removes |= installer.underrides
             if installer.is_active:
                 removes |= installer.missingFiles # re-added in __restore
@@ -2926,8 +2956,8 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_infs in store_del.items():
-                store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
-                refresh_ui |= store.unique_store_key.DO()
+                rd = store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
+                refresh_ui[store.unique_store_key] = {'rdata': rd}
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:
                     emptyDir.removedirs()
@@ -2953,10 +2983,10 @@ class InstallersData(DataStore):
 
         :param src_installer: The installer to find conflicts for.
         :param active_bsas: The dict of currently active BSAs. Can be retrieved
-            via bosh.modInfos.get_active_bsas(). Only needed if BSA conflicts
+            via bosh.modInfos.get_bsa_lo(). Only needed if BSA conflicts
             are enabled (i.e. include_bsas is True).
         :param bsa_cause: The dict of reasons BSAs were loaded. Retrieve
-            alongside active_bsas from bosh.modInfos.get_active_bsas(). Only
+            alongside active_bsas from bosh.modInfos.get_bsa_lo(). Only
             needed if BSA conflicts are enabled.
         :param list_overrides: Whether to list overrides (True) or underrides
             (False).
@@ -3054,7 +3084,7 @@ class InstallersData(DataStore):
 
         :param src_installer: The installer from which to retrieve BSA assets.
         :param active_bsas: The set of active BSAs. Generally retrieved via
-                            bosh.modInfos.get_active_bsas().
+                            bosh.modInfos.get_bsa_lo().
         :return: An OrderedDict containing a mapping from asset to BSA and the
                  relevant assets from the installer's BSAs in a set."""
         asset_to_bsa, src_assets = collections.OrderedDict(), set()

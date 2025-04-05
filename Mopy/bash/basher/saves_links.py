@@ -198,9 +198,9 @@ class Saves_Profiles(ChoiceLink):
             with BusyCursor():
                 self.window.set_local_save(new_dir, do_swap=self._askYes)
                 self.window.DeleteAll() # let call below repopulate
-                self.window.propagate_refresh(Store.MODS.DO(),detail_item=None)
+                self.window.propagate_refresh(True, Store.MODS.DO(),
+                                              detail_item=None)
                 self.window.panel.ShowPanel()
-                Link.Frame.warn_corrupted(warn_saves=True)
 
     choiceLinkType = _ProfileLink
 
@@ -233,8 +233,9 @@ class Saves_Profiles(ChoiceLink):
 class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
-        lo_warn_msg = self._lo_operation()
-        self.window.propagate_refresh(Store.MODS.DO(), focus_list=False)
+        lo_warn_msg, lordata = self._lo_operation()
+        refresh_others = {Store.MODS: lordata}
+        self.window.propagate_refresh(True, refresh_others, focus_list=False)
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)
@@ -249,7 +250,8 @@ class Save_ActivateMasters(_Save_ChangeLO):
               u'this save.')
 
     def _lo_operation(self):
-        return bosh.modInfos.lo_activate_exact(self._selected_info.masterNames)
+        return bosh.modInfos.lo_activate_exact(self._selected_info.masterNames,
+                                               save_act=True)
 
 #------------------------------------------------------------------------------
 class Save_ReorderMasters(_Save_ChangeLO):
@@ -259,7 +261,8 @@ class Save_ReorderMasters(_Save_ChangeLO):
               u'order of plugins in this save.')
 
     def _lo_operation(self):
-        return bosh.modInfos.lo_reorder(self._selected_info.masterNames)
+        return bosh.modInfos.lo_reorder(self._selected_info.masterNames,
+                                        save_wip_lo=True)
 
 #------------------------------------------------------------------------------
 class Save_ImportFace(OneItemLink):
@@ -396,19 +399,18 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'), title=_('Renumber Saves'), initial_num=1,
             min_num=1, max_num=10000)
         if nfn_number is None: return
-        rdata = None
+        rdata = RefrData()
         for s_groups, sinf in self._matches:
             # We have to pass the root, so strip off the extension
             ofn_root = FName(s_groups[2]).fn_body
             nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
             if nfn_save != sinf.fn_key.fn_body:
-                if (rdata := self.window.try_rename(sinf, nfn_save,
-                                                    rdata)) is None:
+                try:
+                    rdata |= self.window.try_rename(sinf, nfn_save)
+                except TypeError:
                     break
                 nfn_number += 1
-        if rdata:
-            self.window.RefreshUI(rdata)
-            self.window.SelectItemsNoCallback(rdata.redraw)
+        self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
@@ -920,8 +922,8 @@ class Save_UpdateNPCLevels(EnabledLink):
             for index,modName in enumerate(ordered):
                 subProgress(index, _('Scanning %(scanning_plugin)s') % {
                     'scanning_plugin': modName})
-                modInfo = bosh.modInfos[modName]
-                modFile = ModFile(modInfo, lf)
+                mod_inf = bosh.modInfos[modName]
+                modFile = ModFile(mod_inf, lf)
                 try:
                     modFile.load_plugin()
                 except ModError as x:

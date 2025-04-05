@@ -64,14 +64,6 @@ class SaveFileError(FileError):
     """Save File Error: File is corrupted."""
     pass
 
-class FileEditError(BoltError): ##: never raised?
-    """Unable to edit a file"""
-    def __init__(self, file_path, message=None):
-        ## type: (Path, str) -> None
-        message = message or f'Unable to edit file {file_path}.'
-        super(FileEditError, self).__init__(message)
-        self.filePath = file_path
-
 class FailedIniInferError(FileError):
     """Failed to infer INI type."""
     def __init__(self, in_name):
@@ -249,10 +241,8 @@ class StateError(BoltError):
     def __init__(self, message=u'Object is in a bad state.'):
         super(StateError, self).__init__(message)
 
-class PluginsFullError(BoltError):
+class PluginsFullError(Exception):
     """Usage Error: Attempt to add a mod to plugins when plugins is full."""
-    def __init__(self, message=u'Load list is full.'):
-        super(PluginsFullError, self).__init__(message)
 
 class SkippedMergeablePluginsError(Exception):
     """Indicates that one or more mergeable plugins had to be skipped during a

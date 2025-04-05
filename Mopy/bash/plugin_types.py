@@ -50,24 +50,24 @@ def is_vanilla(mod_info, reasons, game_handle):
         return True if reasons is None else not reasons.append(_(
             'Is Vanilla Plugin')) # return True - block rest of checks
 
-def _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
-    if is_vanilla(modInfo, reasons, game_handle):
+def _pbash_mergeable_no_load(mod_inf, minfos, reasons, game_handle):
+    if is_vanilla(mod_inf, reasons, game_handle):
         return False # don't do further checks even in verbose mode
     _exit = __exit if reasons is None else reasons.append # append returns None
-    if game_handle.master_flag.has_flagged(modInfo) and _exit(_(
+    if game_handle.master_flag.has_flagged(mod_inf) and _exit(_(
             'This plugin has the ESM flag.')):
         return False
     #--Bashed Patch
-    if modInfo.isBP() and _exit(_('This plugin is a Bashed Patch.')):
+    if mod_inf.isBP() and _exit(_('This plugin is a Bashed Patch.')):
         return False
     # Plugin INIs would get deactivated if the plugin got merged
-    if ((plugin_ini_name := modInfo.get_ini_name()) in minfos.plugin_inis and
+    if ((plugin_ini_name := mod_inf.get_ini_name()) in minfos.plugin_inis and
             _exit(_('This plugin has an associated INI file '
                     '(%(plugin_ini_name)s).') % {
                 'plugin_ini_name': plugin_ini_name})):
         return False
     #--Bsa / blocking resources?
-    hasBsa, has_blocking_resources = modInfo.hasResources()
+    hasBsa, has_blocking_resources = mod_inf.hasResources()
     if hasBsa and _exit(_('This plugin has an associated %(bsa_ext)s file.'
                           ) % {'bsa_ext': game_handle.Bsa.bsa_extension}):
         return False
@@ -75,14 +75,14 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
         dir_list = '\n  - '.join(f'{pnd}{os.sep}%(blocking_plugin_name)s'
             for pnd in game_handle.plugin_name_specific_dirs if pnd)
         if _exit((_('Has plugin-specific directory - one of the following:') +
-              f'\n  - {dir_list}') % {'blocking_plugin_name': modInfo.fn_key}):
+              f'\n  - {dir_list}') % {'blocking_plugin_name': mod_inf.fn_key}):
             return False
     #--Missing Strings Files?
-    if modInfo.fn_key in minfos.missing_strings:
+    if mod_inf.fn_key in minfos.missing_strings:
         if reasons is None: return False
         from . import oblivionIni
         i_lang = oblivionIni.get_ini_language(game_handle.Ini.default_game_lang)
-        strings_example = (f'{os.path.join("Strings", modInfo.fn_key.fn_body)}'
+        strings_example = (f'{os.path.join("Strings", mod_inf.fn_key.fn_body)}'
                            f'_{i_lang}.STRINGS')
         reasons.append(_('Missing string translation files '
                          '(%(strings_example)s, etc).') % {
@@ -90,10 +90,10 @@ def _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
     # if not verbose we already returned False, else we continue anyway
     return True
 
-def isPBashMergeable(modInfo, minfos, reasons, game_handle):
+def isPBashMergeable(mod_inf, minfos, reasons, game_handle):
     """Return True or error message indicating whether specified mod is
     mergeable."""
-    if not _pbash_mergeable_no_load(modInfo, minfos, reasons, game_handle):
+    if not _pbash_mergeable_no_load(mod_inf, minfos, reasons, game_handle):
         return False  # non verbose mode or vanilla plugin
     _exit = __exit if reasons is None else reasons.append # append returns None
     if not game_handle.Esp.canBash and _exit(
@@ -104,7 +104,7 @@ def isPBashMergeable(modInfo, minfos, reasons, game_handle):
     # unpack the header which is enough for record.flags1|fid checks
     from .mod_files import LoadFactory, ModFile # don't import brec in boot
     merge_types_fact = LoadFactory(False, generic=game_handle.mergeable_sigs)
-    modFile = ModFile(modInfo, merge_types_fact)
+    modFile = ModFile(mod_inf, merge_types_fact)
     try:
         modFile.load_plugin(loadStrings=False, catch_errors=False)
     except ModError as error:
@@ -120,7 +120,7 @@ def isPBashMergeable(modInfo, minfos, reasons, game_handle):
         return False
     #--New record
     newblocks = []
-    self_name = modInfo.fn_key
+    self_name = mod_inf.fn_key
     for top_sig, block in modFile.tops.items():
         for candidate_rec in block.iter_records(): # skip deleted/ignored
             if candidate_rec.group_key().mod_fn == self_name:
@@ -209,7 +209,7 @@ class PluginFlag(Enum):
     """Enum for plugin flags and plugin types - they're friends with ModInfo
     to the point the latter lets it modify its private attributes. This
     intimate class relationship drastically simplifies client code."""
-    _ignore_ = ('count_str', )
+    _ignore_ = ('count_str', 'error_msgs', 'max_plugins')
     count_str = ''
 
     def __init__(self, flag_attr, mod_info_attr, ui_letter_key,
@@ -326,6 +326,7 @@ class PluginFlag(Enum):
 # easiest way to define enum class variables
 PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 PluginFlag.max_plugins = 255
+PluginFlag.error_msgs = {}
 
 class AMasterFlag(PluginFlag):
     """Master flags - affect load order - mutually compatible and compatible
@@ -349,7 +350,7 @@ class AMasterFlag(PluginFlag):
             # For games since FO4/SSE, .esm and .esl files set the master flag
             # in memory even if not set on the file on disk. For .esp files we
             # must check for the flag explicitly.
-            return self in self.guess_flags(mext, game_handle)
+            return self in game_handle.plugin_flags.guess_flags(mext, game_handle)
 
     @classmethod
     def checkboxes(cls):
