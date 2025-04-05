@@ -1,9 +1,9 @@
 # This file contains only the development/compile-time dependencies.
 # Used by the CI when it wants to install depedencies for scripts without
 # pulling in the tons of extra stuff from requirements.txt.
-isort==5.13.2
+isort==6.0.1
 pyfiglet==1.0.2
-pygit2==1.16.0
-PyGithub==2.5.0
-pyinstaller==6.11.1
-pytest==8.3.4
+pygit2==1.18.0
+PyGithub==2.6.1
+pyinstaller==6.13.0
+pytest==8.3.5
