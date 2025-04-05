@@ -37,7 +37,7 @@ else:
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = '314'  # must represent a valid float
+AppVersion = '315'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
 
 #--Global dictionaries - do _not_ reassign !
