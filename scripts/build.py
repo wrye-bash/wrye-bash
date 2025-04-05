@@ -64,7 +64,7 @@ _LOGFILE = mk_logfile(__file__)
 # distributable right now
 _NOT_WINDOWS = os.name != 'nt'
 
-_NSIS_VERSION = '3.10'
+_NSIS_VERSION = '3.11'
 if _NOT_WINDOWS:
     _EXE_7Z = '7z'
 else:
