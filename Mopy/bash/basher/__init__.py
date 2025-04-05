@@ -1994,6 +1994,12 @@ class ModPanel(BashTab):
         super(ModPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
+def _format_playtime():
+    def _fmt(self, p):
+        play_minutes = self.data_store[p].header.gameTicks // 60000
+        return f'{play_minutes // 60}:{play_minutes % 60:02d}'
+    return _fmt
+
 class SaveList(UIList):
     #--Class Data
     column_links = Links() #--Column menu
@@ -2008,8 +2014,7 @@ class SaveList(UIList):
     }
     #--Labels
     labels = {**_common_labels,
-        'PlayTime': lambda self, p: f'{(playMinutes := self.data_store[
-            p].header.gameTicks // 60000) // 60}:{playMinutes % 60:02d}',
+        'PlayTime': _format_playtime(),
         'Player': _ask_info('header.pcName'),
         'Cell': _ask_info('header.pcLocation'),
     }

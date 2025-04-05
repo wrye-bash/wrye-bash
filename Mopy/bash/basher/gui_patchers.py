@@ -748,9 +748,11 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 default_tweak_fmt = _('Default: %(default_tweak_val)s')
             default_tweak_fmt %= {'default_tweak_val': v}
             if isinstance(v, float):
-                msg = (f'{_('Enter the desired custom tweak value.')}\n\n'
-                       f'{_('Note: A floating point number is expected '
-                            'here.')}\n\n{key_display}{default_tweak_fmt}')
+                msg = (
+                    f'{_("Enter the desired custom tweak value.")}\n\n'
+                    f'{_("Note: A floating point number is expected here.")}'
+                    f'\n\n{key_display}{default_tweak_fmt}'
+                )
                 while new is None: # keep going until user entered valid float
                     new = askText(self.gConfigPanel, msg,
                         title=_('%(tweak_title)s - Custom Tweak Value') % {
