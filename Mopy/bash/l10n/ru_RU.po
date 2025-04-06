@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wrye Bash v313\n"
 "POT-Creation-Date: 2024-01-07 22:03+0100\n"
-"PO-Revision-Date: 2025-04-05 08:35+0000\n"
-"Last-Translator: Infernio <infernio@icloud.com>\n"
+"PO-Revision-Date: 2025-04-06 22:02+0000\n"
+"Last-Translator: xsSplater <xssplater@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/wrye-bash/wrye-bash/ru/>\n"
 "Language: ru_RU\n"
 "MIME-Version: 1.0\n"
@@ -5554,7 +5554,7 @@ msgstr "Активировать %(bp_name)s?"
 
 #: Mopy/bash/basher/mod_links.py:997
 msgid "Unable to activate plugin"
-msgstr ""
+msgstr "Невозможно активировать плагин"
 
 #: Mopy/bash/basher/mod_links.py:1000
 #, python-format
@@ -6824,16 +6824,16 @@ msgstr "Экспорт порядка загрузки - Успешно"
 #: Mopy/bash/basher/mods_links.py:661
 #, python-format
 msgid "Load order exported by Wrye Bash v%(wb_ver)s for %(game_name)s"
-msgstr ""
+msgstr "Порядок загрузки, экспортированный Wrye Bash v%(wb_ver)s для %(game_name)s"
 
 #: Mopy/bash/basher/mods_links.py:677
 msgid "Failed to import the given load order. The file is malformed. The following line is causing a problem:"
-msgstr ""
+msgstr "Не удалось импортировать указанный порядок загрузки. Файл имеет неправильный формат. Следующая строка вызывает проблему:"
 
 #: Mopy/bash/basher/mods_links.py:696
 #, python-format
 msgid "Successfully imported a load order from %(source_path)s."
-msgstr ""
+msgstr "Успешно импортирован порядок загрузки из %(source_path)s."
 
 #: Mopy/bash/basher/mods_links.py:703 Mopy/bash/basher/settings_dialog.py:1358
 msgid "Import…"
@@ -6841,67 +6841,67 @@ msgstr "Импорт…"
 
 #: Mopy/bash/basher/mods_links.py:704
 msgid "Imports a previously exported load order (and active plugins) from a text file."
-msgstr ""
+msgstr "Импортирует ранее экспортированный порядок загрузки (и активные плагины) из текстового файла."
 
 #: Mopy/bash/basher/mods_links.py:706
 msgid "Import Load Order - Success"
-msgstr ""
+msgstr "Импорт порядка загрузки - Успешно"
 
 #: Mopy/bash/basher/mods_links.py:707
 msgid "Import Load Order - Warning"
-msgstr ""
+msgstr "Импорт порядка загрузки - Предупреждение"
 
 #: Mopy/bash/basher/mods_links.py:711
 msgid "Note that this command is not compatible with exports made in OBMM. They will not cause an error, but the result will be wrong. Use the dedicated 'Import From OBMM…' command to handle such exports."
-msgstr ""
+msgstr "Обратите внимание, что эта команда несовместима с экспортированием, выполненным в OBMM. Это не вызовет ошибку, но результат будет неправильным. Используйте в таком случае для обработки специальную команду 'Импорт из OBMM…'."
 
 #: Mopy/bash/basher/mods_links.py:717
 msgid "Import Load Order - OBMM Interoperability Warning"
-msgstr ""
+msgstr "Импорт порядка загрузки — предупреждение о совместимости с OBMM"
 
 #: Mopy/bash/basher/mods_links.py:720
 msgid "Import Load Order - Source"
-msgstr ""
+msgstr "Импорт порядка загрузки - Источник"
 
 #: Mopy/bash/basher/mods_links.py:728
 msgid "Import Load Order - Error"
-msgstr ""
+msgstr "Импорт порядка загрузки - Ошибка"
 
 #: Mopy/bash/basher/mods_links.py:767
 msgid "Import From OBMM…"
-msgstr ""
+msgstr "Импортирует из OBMM…"
 
 #: Mopy/bash/basher/mods_links.py:768
 msgid "Imports active plugins from a text file exported by OBMM."
-msgstr ""
+msgstr "Импортирует активные плагины из текстового файла, экспортированного OBMM."
 
 #: Mopy/bash/basher/mods_links.py:769
 msgid "Import From OBMM - Success"
-msgstr ""
+msgstr "Импорт из OBMM - Успешно"
 
 #: Mopy/bash/basher/mods_links.py:770 Mopy/bash/basher/mods_links.py:782
 msgid "Import From OBMM - Warning"
-msgstr ""
+msgstr "Импорт из OBMM - Предупреждение"
 
 #: Mopy/bash/basher/mods_links.py:776
 msgid "Note that this command is always going to result in imperfect imports, because OBMM does not export the order of inactive plugins. Wrye Bash will do its best, but you should check the result manually."
-msgstr ""
+msgstr "Обратите внимание, что эта команда всегда будет приводить к несовершенному импорту, поскольку OBMM не экспортирует порядок неактивных плагинов. Wrye Bash сделает все возможное, но вам следует проверить результат вручную."
 
 #: Mopy/bash/basher/mods_links.py:784
 msgid "Import From OBMM - Source"
-msgstr ""
+msgstr "Импорт из OBMM - Источник"
 
 #: Mopy/bash/basher/mods_links.py:786
 msgid "OBMM Export"
-msgstr ""
+msgstr "OBMM экспорт"
 
 #: Mopy/bash/basher/mods_links.py:792
 msgid "Import From OBMM - Error"
-msgstr ""
+msgstr "Импорт из OBMM - Ошибка"
 
 #: Mopy/bash/basher/mods_links.py:809
 msgid "Could not determine encoding."
-msgstr ""
+msgstr "Не удалось определить кодировку."
 
 #: Mopy/bash/basher/patcher_dialog.py:52
 msgid "Export Bashed Patch configuration to:"
@@ -7611,7 +7611,7 @@ msgstr "Шведский"
 
 #: Mopy/bash/basher/settings_dialog.py:438
 msgid "Tamil"
-msgstr ""
+msgstr "Тамильский"
 
 #: Mopy/bash/basher/settings_dialog.py:439
 msgid "Turkish"
@@ -7880,7 +7880,7 @@ msgstr "[Моды] Изменение версии плагина на 0.8"
 
 #: Mopy/bash/basher/settings_dialog.py:907
 msgid "[Mods] Exporting load order to a text file: OBMM warning"
-msgstr ""
+msgstr "[Моды] Экспорт порядка загрузки в текстовый файл: предупреждение OBMM"
 
 #: Mopy/bash/basher/settings_dialog.py:909
 msgid "[Mods] Exporting NPC levels to a text file"
@@ -7900,7 +7900,7 @@ msgstr "[Моды] Импорт ингредиентов из текстовог
 
 #: Mopy/bash/basher/settings_dialog.py:917
 msgid "[Mods] Importing load order from a text file: OBMM warning"
-msgstr ""
+msgstr "[Моды] Импорт порядка загрузки из текстового файла: предупреждение OBMM"
 
 #: Mopy/bash/basher/settings_dialog.py:919
 msgid "[Mods] Importing names from a text file"
@@ -8310,10 +8310,8 @@ msgid "Change colors of various GUI components."
 msgstr "Измените цвета различных компонентов графического интерфейса."
 
 #: Mopy/bash/basher/settings_dialog.py:1554
-#, fuzzy
-#| msgid "Changes the language that Wrye Bash will be displayed in."
 msgid "Change the language that Wrye Bash is displayed in."
-msgstr "Изменяет язык, на котором будет отображаться Wrye Bash."
+msgstr "Измените язык, на котором показывается Wrye Bash."
 
 #: Mopy/bash/basher/settings_dialog.py:1556
 msgid "Change various miscellaneous appearance settings."
@@ -8840,7 +8838,7 @@ msgstr "Структура: Н/Д"
 
 #: Mopy/bash/bosh/bain.py:1490
 msgid "Marker Package. Use for grouping installers together"
-msgstr ""
+msgstr "Пакет маркеров. Используется для группировки установщиков"
 
 #: Mopy/bash/bosh/bain.py:1496
 msgid "Archive"
@@ -15131,7 +15129,7 @@ msgstr "С поддержкой %(FLAG)s"
 #: Mopy/bash/plugin_types.py:180
 #, python-format
 msgid "The following plugins could be %(FLAG)s-flagged."
-msgstr ""
+msgstr "Следующие плагины могут быть помечены флагом %(FLAG)s."
 
 #: Mopy/bash/plugin_types.py:192
 msgid "Merged into Bashed Patch."
