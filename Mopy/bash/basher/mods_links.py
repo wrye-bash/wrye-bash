@@ -612,7 +612,7 @@ class Mods_LOUndo(ItemLink):
     _keyboard_hint = 'Ctrl+Z'
 
     def Execute(self):
-        self.window.lo_undo()
+        self.window.data_store.wip_lo_undo_redo_load_order(False)
 
 #------------------------------------------------------------------------------
 class Mods_LORedo(ItemLink):
@@ -622,7 +622,7 @@ class Mods_LORedo(ItemLink):
     _keyboard_hint = 'Ctrl+Y'
 
     def Execute(self):
-        self.window.lo_redo()
+        self.window.data_store.wip_lo_undo_redo_load_order(True)
 
 #------------------------------------------------------------------------------
 class Mods_LOExport(ItemLink):

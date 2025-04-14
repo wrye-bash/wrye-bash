@@ -1134,11 +1134,11 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, info, new_root, store_refr=None, *, force_ext=False):
+    def try_rename(self, info, new_root, store_refr=None, *, forced_ext=''):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
-         this needs to be atomic with respect to refreshes and ideally
-         atomic short - store_refr is Installers only. Inis won't be added."""
-        newName = info.unique_key(new_root, force_ext)
+        this needs to be atomic with respect to refreshes and ideally atomic
+        short - store_refr is Installers only. Inis won't be added."""
+        newName = info.unique_key(new_root, forced_ext)
         if newName is None: # new and old names are ci-same
             return RefrData()
         try:

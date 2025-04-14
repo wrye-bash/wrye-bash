@@ -327,10 +327,10 @@ class PageFinish(PageInstaller):
         PageInstaller.__init__(self, parent)
         subs = sorted(wrye_parser.sublist)
         #--make the list that will be displayed
-        renames = wrye_parser.plugin_renames
-        displayed_plugins = [f'{x} -> {renames[x]}' if x in renames else x for
-                             x in wrye_parser.plugin_enabled]
-        self._wiz_parent.ret.rename_plugins = renames
+        pl_renames = wrye_parser.plugin_renames
+        displayed_plugins = [f'{x} -> {pl_renames[x]}' if x in pl_renames
+                             else x for x in wrye_parser.plugin_enabled]
+        self._wiz_parent.ret.rename_plugins = pl_renames
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _('The installer script has finished, and '
                                   'will apply the following settings:'))
