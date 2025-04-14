@@ -2053,7 +2053,7 @@ class SaveList(UIList):
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
         if rdata := self.try_rename(sinf, fn_item.fn_body,
-                                    force_ext=extension):
+                                    forced_ext=extension):
             self.RefreshUI(rdata)
 
     # Save profiles
@@ -2333,8 +2333,8 @@ class InstallersList(UIList):
         #--Rename each installer, keeping the old extension (for archives)
         if isinstance(root, tuple):
             root = root[0]
-        ui_refreshes = defaultdict(bool) # Store refreshes
-        return newName, root, ui_refreshes
+        store_refr = defaultdict(bool) # Store refreshes
+        return newName, root, store_refr
 
     @staticmethod
     def _unhide_wildcard():
@@ -3743,22 +3743,22 @@ class BashFrame(WindowFrame):
                 title=_('Lock Load Order'))
             load_order.warn_locked = False
 
-    def refresh_and_warn(self, ui_refresh, booting):
+    def refresh_and_warn(self, ui_refreshes, booting):
         # ONLY use in propagate_refresh
-        for list_key, do_refr in ui_refresh.items():
-            if do_refr and (uil := self.all_uilists[list_key]) is not None:
-                if not isinstance(do_refr, dict): # True or RefrData
-                    do_refr = {'rdata': do_refr} if isinstance(do_refr,
+        for list_key, ref_args in ui_refreshes.items():
+            if ref_args and (uil := self.all_uilists[list_key]) is not None:
+                if not isinstance(ref_args, dict): # True or RefrData
+                    ref_args = {'rdata': ref_args} if isinstance(ref_args,
                         RefrData) else {}
-                do_refr.setdefault('focus_list', False)
-                uil.RefreshUI(**do_refr)
+                ref_args.setdefault('focus_list', False)
+                uil.RefreshUI(**ref_args)
         stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
                   Store.SAVES: bosh.saveInfos} # this belongs to stores
         if booting: # trigger warnings on boot, ui_refresh is empty then
-            ui_refresh = dict.fromkeys(stores, True)
+            ui_refreshes = dict.fromkeys(stores, True)
         multi_warns, lo_warns = [], []
-        for list_key, do_refr in ui_refresh.items():
-            if do_refr and (ds := stores.get(list_key)):
+        for list_key, ref_args in ui_refreshes.items():
+            if ref_args and (ds := stores.get(list_key)):
                 ds.warning_args(multi_warns, lo_warns, self, list_key)
         if multi_warns:
             mk = (mwd := MultiWarningDialog).make_highlight_entry
@@ -3826,11 +3826,11 @@ class BashFrame(WindowFrame):
         #--Clean rename dictionary.
         modNames = {*bosh.modInfos.corrupted}
         modNames.update(bosh.modInfos)
-        renames = bass.settings[u'bash.mods.renames']
+        bash_mod_renames = bass.settings['bash.mods.renames']
         # Make a copy, we may alter it in the loop
-        for old_mname, new_mname in list(renames.items()):
+        for old_mname, new_mname in list(bash_mod_renames.items()):
             if new_mname not in modNames:
-                del renames[old_mname]
+                del bash_mod_renames[old_mname]
         # Clean backup directories of old .es*/.es*f files
         for tc_store in (bosh.modInfos, bosh.saveInfos):
             existing_roots = {p.fn_body for p in tc_store}
