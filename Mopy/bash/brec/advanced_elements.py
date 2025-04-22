@@ -504,7 +504,7 @@ class MelTruncatedStruct(MelStruct):
         return super(MelTruncatedStruct, self).static_size
 
 #------------------------------------------------------------------------------
-class MelLists(MelStruct):
+class AMelLists(MelStruct):
     """Convenience subclass to collect unpacked attributes to lists.
     'actions' is discarded"""
     # map attribute names to slices/indexes of the tuple of unpacked elements
@@ -514,12 +514,12 @@ class MelLists(MelStruct):
         if len(struct_formats) != len(elements):
             raise SyntaxError(f'MelLists: struct_formats ({struct_formats}) '
                               f'do not match elements ({elements})')
-        super(MelLists, self).__init__(mel_sig, struct_formats, *elements)
+        super().__init__(mel_sig, struct_formats, *elements)
 
     @staticmethod
     def _expand_formats(elements, expanded_fmts):
         # This is fine because we enforce the precondition
-        # len(struct_formats) == len(elements) in MelLists.__init__
+        # len(struct_formats) == len(elements) in AMelLists.__init__
         return [int(f[:-1] or 1) if f[-1] == 's' else 0 for f in expanded_fmts]
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -1093,8 +1093,9 @@ class MelSorted(_MelWrapper):
     """Wraps a MelBase-derived element with a list as its single attribute and
     sorts that list right after loading and right before dumping."""
 
-    def __init__(self, sorted_mel: MelBase, sort_by_attrs=(),
-                 sort_special: callable = None):
+    def __init__(self, sorted_mel: MelBase,
+            sort_by_attrs: tuple[str, ...] | str = (),
+            sort_special: callable = None):
         """Creates a new MelSorted instance with the specified parameters.
 
         :param sorted_mel: The element that needs sorting.

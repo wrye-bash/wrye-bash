@@ -192,6 +192,7 @@ class AMreHeader(MelRecord):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         esm_flag: bool = flag(0)
+        optimized: bool = flag(4)
 
     class MelMasterNames(MelBase):
         """Handles both MAST and DATA, but turns them into two separate lists.

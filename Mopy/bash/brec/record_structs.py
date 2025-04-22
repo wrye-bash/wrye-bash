@@ -63,7 +63,7 @@ attr_csv_struct = {
     'dt': [float_or_none, _('Damage Threshold')],
     'duration': [int_or_zero, _('Duration')],
     'eid': [str_or_none, _('Editor Id')],
-    'enchantPoints': [int_or_zero, _('Enchantment Points')],
+    'enchantment_charge': [int_or_zero, _('Enchantment Points')],
     'fireRate': [float_or_none, _('Fire Rate')],
     'flags': [int_or_zero, _('Flags')],
     'full': [str_or_none, _('Name')],
@@ -138,7 +138,7 @@ for _k, _v in attr_csv_struct.items():
     else: # also covers floats which should be wrapped in Rounder (see __str__)
         _v.append(lambda x: '"%s"' % x)
 del _k, _v
-attr_csv_struct[u'enchantPoints'][2] = lambda x: ( # can be None
+attr_csv_struct['enchantment_charge'][2] = lambda x: ( # can be None
     '"None"' if x is None else f'"{x:d}"')
 
 #------------------------------------------------------------------------------

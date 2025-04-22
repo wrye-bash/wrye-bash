@@ -83,7 +83,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
     MelSndrOutputModel, MelSndrLnam, MelSndrBnam, MelSopmData, MelSopmType, \
     MelSopmOutputValues, MelSounSdsc, MelSpit, AMreEyes, MelEyesFlags, \
-    MelUInt32Bool
+    MelUInt32Bool, MelEnchantmentCharge
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -667,7 +667,7 @@ class MreArmo(AMreWithKeywords):
         MelBounds(),
         MelFull(),
         MelEnchantment(),
-        MelSInt16(b'EAMT', 'enchantment_amount'),
+        MelEnchantmentCharge(),
         MelModel(b'MOD2', 'maleWorld'),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
         MelModel(b'MOD4', 'femaleWorld'),
@@ -799,8 +799,8 @@ class MreBptd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        ##: This sort_by_attrs might need a sort_special to handle part_node
-        # being None, keep an eye out for TypeError tracebacks
+        ##: This sort_by_attrs might need to be a sort_special to handle
+        # part_node being None, keep an eye out for TypeError tracebacks
         MelSorted(MelUnorderedGroups('body_part_list',
             MelLString(b'BPTN', 'part_name'),
             MelString(b'PNAM', 'pose_matching'),
@@ -1308,7 +1308,7 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    class _expl_flags(Flags):
+    class _ExplFlags(Flags):
         always_uses_world_orientation: bool = flag(1)
         knock_down_always: bool = flag(2)
         knock_down_by_formula: bool = flag(3)
@@ -1324,13 +1324,14 @@ class MreExpl(MelRecord):
         MelFull(),
         MelModel(),
         MelEnchantment(),
+        MelEnchantmentCharge(),
         MelImageSpaceMod(),
         MelTruncatedStruct(b'DATA', ['6I', '5f', '2I'], (FID, 'expl_light'),
             (FID, 'expl_sound1'), (FID, 'expl_sound2'),
             (FID, 'expl_impact_dataset'), (FID, 'placed_object'),
             (FID, 'spawn_projectile'), 'expl_force', 'expl_damage',
             'expl_radius', 'is_radius', 'vertical_offset_mult',
-            (_expl_flags, 'expl_flags'), 'expl_sound_level',
+            (_ExplFlags, 'expl_flags'), 'expl_sound_level',
             old_versions={'6I5fI', '6I5f', '6I4f'}),
     )
 
@@ -1554,7 +1555,7 @@ class MreInfo(MelRecord):
     class HeaderFlags(MelRecord.HeaderFlags):
         actor_changed: bool = flag(13)
 
-    class _info_response_flags(Flags):
+    class _InfoFlags(Flags):
         goodbye: bool
         random: bool
         say_once: bool
@@ -1574,8 +1575,9 @@ class MreInfo(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelBase(b'DATA', 'unknown_data'),
-        MelStruct(b'ENAM', ['2H'], (_info_response_flags, 'response_flags'),
+        MelStruct(b'DATA', ['2H', 'f'], 'quest_dialogue_tab',
+            (_InfoFlags, 'response_flags'), 'reset_days'),
+        MelStruct(b'ENAM', ['2H'], (_InfoFlags, 'response_flags2'),
             'reset_hours'),
         MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
@@ -1918,14 +1920,14 @@ class MreMato(MelRecord):
                 'material_uv_scale', 'projection_vector_x',
                 'projection_vector_y', 'projection_vector_z',
                 'normal_dampener', *color3_attrs('single_pass_color'),
-                'is_single_pass', old_versions={'7f'}),
+                'is_single_pass', old_versions={'8f', '7f'}, is_required=True),
             se_version=MelTruncatedStruct(b'DATA', ['11f', 'I', 'B', '3s'],
                 'falloff_scale', 'falloff_bias', 'noise_uv_scale',
                 'material_uv_scale', 'projection_vector_x',
                 'projection_vector_y', 'projection_vector_z',
                 'normal_dampener', *color3_attrs('single_pass_color'),
                 'is_single_pass', 'is_considered_snow', 'unused1',
-                old_versions={'7f', '11fI'}),
+                old_versions={'11fI', '8f', '7f'}, is_required=True),
         ),
     )
 
@@ -2030,6 +2032,7 @@ class MreMstt(MelRecord):
     rec_sig = b'MSTT'
 
     class HeaderFlags(MelRecord.HeaderFlags):
+        never_fades: bool = flag(2)
         must_update_anims: bool = flag(8)
         hidden_from_local_map: bool = flag(9)
         has_distant_lod: bool = flag(15)
@@ -2202,7 +2205,7 @@ class MreNpc_(AMreActor, AMreWithKeywords):
             'fm_jaw_wide', 'fm_jaw_forward', 'fm_cheeks_up', 'fm_cheeks_back',
             'fm_eyes_up', 'fm_eyes_out', 'fm_brows_up', 'fm_brows_out',
             'fm_brows_forward', 'fm_lips_up', 'fm_lips_out', 'fm_chin_wide',
-            'fm_chin_down', 'fm_chin_underbite', 'fm_eyes_back', 'fm_unknown'),
+            'fm_chin_down', 'fm_chin_underbite', 'fm_eyes_back', 'fm_vampire'),
         MelStruct(b'NAMA', ['I', 'i', '2I'], 'face_part_nose',
             'face_part_unknown', 'face_part_eyes', 'face_part_mouth'),
         MelSorted(MelGroups('face_tint_layers',
@@ -2405,10 +2408,10 @@ class MreQust(MelRecord):
     rec_sig = b'QUST'
 
     class _questFlags(Flags):
-        startGameEnabled: bool = flag(0)
+        start_game_enabled: bool = flag(0)
         completed: bool = flag(1)
         add_idle_topic_to_hello: bool = flag(2)
-        allowRepeatedStages: bool = flag(3)
+        allow_repeated_stages: bool = flag(3)
         starts_enabled: bool = flag(4)
         displayed_in_hud: bool = flag(5)
         failed: bool = flag(6)
@@ -2428,15 +2431,12 @@ class MreQust(MelRecord):
         startDownStage: bool = flag(2)
         keepInstanceDataFromHereOn: bool = flag(3)
 
-    class stageEntryFlags(Flags):
-        complete: bool
-        fail: bool
+    class _StageEntryFlags(Flags):
+        complete_quest: bool
+        fail_quest: bool
 
     class objectiveFlags(Flags):
         oredWithPrevious: bool
-
-    class targetFlags(Flags):
-        ignoresLocks: bool
 
     class aliasFlags(Flags):
         reservesLocationReference: bool = flag(0)
@@ -2474,7 +2474,7 @@ class MreQust(MelRecord):
             MelStruct(b'INDX', ['H', '2B'], 'index', (_stageFlags, 'flags'),
                       'unknown'),
             MelGroups('log_entries',
-                MelUInt8Flags(b'QSDT', u'stageFlags', stageEntryFlags),
+                MelUInt8Flags(b'QSDT', 'stage_entry_flags', _StageEntryFlags),
                 MelConditionList(),
                 MelLString(b'CNAM', 'log_entry_text'),
                 MelFid(b'NAM0', 'nextQuest'),
@@ -2486,7 +2486,8 @@ class MreQust(MelRecord):
             MelUInt32Flags(b'FNAM', u'flags', objectiveFlags),
             MelLString(b'NNAM', 'display_text'),
             MelGroups('targets',
-                MelStruct(b'QSTA', [u'i', u'B', u'3s'],'alias',(targetFlags,'flags'),'unused1'),
+                MelStruct(b'QSTA', ['i', 'B', '3s'], 'alias',
+                    'compass_marker_ignores_locks', 'unused1'),
                 MelConditionList(),
             ),
         ),
@@ -2537,8 +2538,8 @@ class MreQust(MelRecord):
         ),
         MelLString(b'NNAM','description'),
         MelGroups('targets',
-            MelStruct(b'QSTA', [u'I', u'B', u'3s'], (FID, 'target'), (targetFlags, 'flags'),
-                      'unknown1'),
+            MelStruct(b'QSTA', [u'I', u'B', u'3s'], (FID, 'target'),
+                'compass_marker_ignores_locks', 'unknown1'),
             MelConditionList(),
         ),
     ).with_distributor({
@@ -3195,6 +3196,7 @@ class MreShou(MelRecord):
         MelEdid(),
         MelFull(),
         MelMdob(),
+        MelEquipmentType(),
         MelDescription(),
         MelGroups('wordsOfPower',
             MelStruct(b'SNAM', [u'2I', u'f'], (FID, u'word'), (FID, u'spell'),
@@ -3617,7 +3619,7 @@ class MreWeap(AMreWithKeywords):
         MelModel(),
         MelIcons(),
         MelEnchantment(),
-        MelUInt16(b'EAMT', 'enchantPoints'),
+        MelEnchantmentCharge(),
         MelDestructible(),
         MelEquipmentType(),
         MelBids(),
@@ -3625,30 +3627,30 @@ class MreWeap(AMreWithKeywords):
         MelSoundPickupDrop(),
         MelKeywords(),
         MelDescription(),
-        MelModel(b'MOD3', 'model2'),
-        MelBase(b'NNAM','unused1'),
+        MelModel(b'MOD3', 'scopeModel'),
+        MelFid(b'EFSD', 'scopeEffect'),
+        MelBase(b'NNAM', 'unused1'),
         MelImpactDataset(b'INAM'),
-        MelFid(b'WNAM','firstPersonModelObject',),
+        MelFid(b'WNAM',' firstPersonModelObject',),
         MelSound(),
-        MelFid(b'XNAM','attackSound2D',),
-        MelFid(b'NAM7','attackLoopSound',),
-        MelFid(b'TNAM','attackFailSound',),
-        MelFid(b'UNAM','idleSound',),
-        MelFid(b'NAM9','equipSound',),
-        MelFid(b'NAM8','unequipSound',),
-        MelStruct(b'DATA', [u'I', u'f', u'H'],'value','weight','damage',),
+        MelFid(b'XNAM', 'attackSound2D',),
+        MelFid(b'NAM7', 'attackLoopSound',),
+        MelFid(b'TNAM', 'attackFailSound',),
+        MelFid(b'UNAM', 'idleSound',),
+        MelFid(b'NAM9', 'equipSound',),
+        MelFid(b'NAM8', 'unequipSound',),
+        MelStruct(b'DATA', ['I', 'f', 'H'], 'value', 'weight', 'damage',),
         MelStruct(b'DNAM', ['B', '3s', '2f', 'H', '2s', 'f', '4s', '4B', '2f',
-                            '2I', '5f', '12s', 'i', '8s', 'i', '4s', 'f'],
-                  'animationType', 'dnamUnk1', 'speed', 'reach',
-                  (WeapFlags1, u'dnamFlags1'), u'dnamUnk2',
-                  u'sightFOV', u'dnamUnk3', u'baseVATSToHitChance',
-                  u'attackAnimation', u'numProjectiles',
-                  u'embeddedWeaponAVunused', u'minRange', u'maxRange',
-                  u'onHit', (WeapFlags2, u'dnamFlags2'),
-                  u'animationAttackMultiplier', u'dnamUnk4',
-                  u'rumbleLeftMotorStrength', u'rumbleRightMotorStrength',
-                  u'rumbleDuration', u'dnamUnk5', u'skill',
-                  u'dnamUnk6', u'resist', u'dnamUnk7', u'stagger'),
+                            '2I', '7f', '4s', 'i', '8s', 'i', '4s', 'f'],
+            'animationType', 'dnamUnk1', 'speed', 'reach',
+            (WeapFlags1, 'dnamFlags1'), 'dnamUnk2', 'sightFOV', 'dnamUnk3',
+            'baseVATSToHitChance', 'attackAnimation', 'numProjectiles',
+            'embeddedWeaponAVunused', 'minRange', 'maxRange', 'onHit',
+            (WeapFlags2, 'dnamFlags2'), 'animationAttackMultiplier',
+            'fireRate', 'rumbleLeftMotorStrength', 'rumbleRightMotorStrength',
+            'rumbleDuration', 'overrideDamageToWeaponMult',
+            'attackShotsPerSec', 'dnamUnk4', 'skill', 'dnamUnk5', 'resist',
+            'dnamUnk6', 'stagger'),
         if_sse(
             le_version=MelStruct(b'CRDT', ['H', '2s', 'f', 'B', '3s', 'I'],
                 'criticalDamage', 'crdtUnk1', 'criticalMultiplier',

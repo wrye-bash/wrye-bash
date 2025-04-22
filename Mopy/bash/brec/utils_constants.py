@@ -30,7 +30,7 @@ from itertools import chain
 
 from .. import bolt, bush
 from ..bolt import Flags, attrgetter_cache, cstrip, decoder, flag, \
-    structs_cache, FName, fast_cached_property
+    structs_cache, FName, fast_cached_property, TrimmedFlags
 from ..exception import StateError
 
 # no local imports, imported everywhere in brec
@@ -326,14 +326,14 @@ class AutoFixedString(FixedString):
     _str_encoding = None
 
 # Common flags ----------------------------------------------------------------
-class AMgefFlags(Flags):
-    """Base class for MGEF data flags shared by all games."""
+class _AMgefFlags(Flags):
+    """Base class for MGEF data flags shared by all games except Morrowind."""
     hostile: bool = flag(0)
     recover: bool = flag(1)
     detrimental: bool = flag(2)
     no_hit_effect: bool = flag(27)
 
-class AMgefFlagsTes4(AMgefFlags):
+class AMgefFlagsTes4(_AMgefFlags):
     """Base class for MGEF data flags from Oblivion to FO3."""
     mgef_self: bool = flag(4)
     mgef_touch: bool = flag(5)
@@ -366,7 +366,7 @@ class EnableParentFlags(Flags):
     # will just be ignored for those where it doesn't exist, so no problem.
     pop_in: bool
 
-class MgefFlags(AMgefFlags):
+class MgefFlags(_AMgefFlags):
     """Implements the MGEF data flags used since Skyrim."""
     snap_to_navmesh: bool = flag(3)
     no_hit_event: bool = flag(4)
@@ -383,7 +383,28 @@ class MgefFlags(AMgefFlags):
     painless: bool = flag(26)
     no_death_dispel: bool = flag(28)
 
-class PackGeneralFlags(Flags):
+class MgefFlagsTes3(Flags):
+    """Implements the MGEF data flags used in Morrowind."""
+    target_skill: bool = flag(0)
+    target_attribute: bool = flag(1)
+    no_duration: bool = flag(2)
+    no_magnitude: bool = flag(3)
+    mgef_harmful: bool = flag(4)
+    continous_vfx: bool = flag(5)
+    mgef_self: bool = flag(6)
+    mgef_touch: bool = flag(7)
+    mgef_target: bool = flag(8)
+    spellmaking: bool = flag(9)
+    enchanting: bool = flag(10)
+    mgef_negative: bool = flag(11)
+    applied_once: bool = flag(12)
+    mgef_stealth: bool = flag(13)
+    non_recastable: bool = flag(14)
+    illegal_daedra: bool = flag(15)
+    non_reflectable: bool = flag(16)
+    caster_linked: bool = flag(17)
+
+class PackGeneralFlags(TrimmedFlags):
     """Implements the new version of the general PACK/PKDT flags (Skyrim and
     newer)."""
     offers_services: bool = flag(0)
@@ -402,7 +423,7 @@ class PackGeneralFlags(Flags):
     no_combat_alert: bool = flag(27)
     wear_sleep_outfit: bool = flag(29)
 
-class PackGeneralOldFlags(Flags):
+class PackGeneralOldFlags(TrimmedFlags):
     """Implements the old version of the general PACK/PKDT flags (FNV and
     older)."""
     offers_services: bool = flag(0)

@@ -39,7 +39,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelIcon, MelIcons, MelIcons2, MelIdleAnimationCountOld, MelMesgButtons, \
     MelIdleAnimations, MelIdleRelatedAnims, MelIdleTimerSetting, \
     MelImageSpaceMod, MelImpactDataset, MelInfoResponsesFo3, \
-    MelIpctSounds, MelIpctTextureSets, MelLandShared, MelLighFade, MelLists, \
+    MelIpctSounds, MelIpctTextureSets, MelLandShared, MelLighFade, AMelLists, \
     MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrLocations, MelNoteType, \
     MelLtexGrasses, MelLtexSnam, MelMapMarker, MelMODS, MelNodeIndex, \
     MelNull, MelObject, MelOwnership, MelPartialCounter, MelMesgSharedFo3, \
@@ -63,7 +63,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
     MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane, \
-    MelSimpleGroups, AMreEyes, MelEyesFlags
+    MelSimpleGroups, AMreEyes, MelEyesFlags, AMgefFlagsTes4
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -93,19 +93,19 @@ class MelRecord(_AMelRecord):
 #------------------------------------------------------------------------------
 # Common Flags
 class ServiceFlags(Flags):
-    weapons: bool = flag(0)
-    armor: bool = flag(1)
-    clothing: bool = flag(2)
-    books: bool = flag(3)
-    foods: bool = flag(4)
-    chems: bool = flag(5)
-    stimpacks: bool = flag(6)
-    lights: bool = flag(7)
-    miscItems: bool = flag(10)
-    potions: bool = flag(13)
-    training: bool = flag(14)
-    recharge: bool = flag(16)
-    repair: bool = flag(17)
+    service_weapons: bool = flag(0)
+    service_armor: bool = flag(1)
+    service_clothing: bool = flag(2)
+    service_books: bool = flag(3)
+    service_foods: bool = flag(4)
+    service_chems: bool = flag(5)
+    service_stimpacks: bool = flag(6)
+    service_lights: bool = flag(7)
+    service_misc_items: bool = flag(10)
+    service_potions: bool = flag(13)
+    service_training: bool = flag(14)
+    service_recharge: bool = flag(16)
+    service_repair: bool = flag(17)
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -752,7 +752,9 @@ class MreBptd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelUnorderedGroups('body_part_list',
+        ##: This sort_by_attrs might need to be a sort_special to handle
+        # part_node being None, keep an eye out for TypeError tracebacks
+        MelSorted(MelUnorderedGroups('body_part_list',
             MelString(b'BPTN', 'part_name'),
             MelString(b'BPNN', 'part_node'),
             MelString(b'BPNT', 'vats_target'),
@@ -779,7 +781,7 @@ class MreBptd(MelRecord):
             MelString(b'NAM1', 'limb_replacement_model'),
             MelString(b'NAM4', 'gore_effects_target_bone'),
             MelBase(b'NAM5', 'texture_hashes'),
-        ),
+        ), sort_by_attrs='part_node'),
         MelFid(b'RAGA', 'ragdoll'),
     )
 
@@ -1261,7 +1263,7 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    class _expl_flags(Flags):
+    class _ExplFlags(TrimmedFlags):
         always_uses_world_orientation: bool = flag(1)
         knock_down_always: bool = flag(2)
         knock_down_by_formula: bool = flag(3)
@@ -1278,7 +1280,7 @@ class MreExpl(MelRecord):
         MelImageSpaceMod(),
         MelStruct(b'DATA', ['3f', '3I', 'f', '2I', '3f', 'I'], 'expl_force',
             'expl_damage', 'expl_radius', (FID, 'expl_light'),
-            (FID, 'expl_sound1'), (_expl_flags, 'expl_flags'), 'is_radius',
+            (FID, 'expl_sound1'), (_ExplFlags, 'expl_flags'), 'is_radius',
             (FID, 'expl_impact_dataset'), (FID, 'expl_sound2'),
             'radiation_level', 'radiation_time', 'radiation_radius',
             'expl_sound_level'),
@@ -1791,11 +1793,12 @@ class MreMgef(MelRecord):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
-    class _flags(Flags):
+    class _MgefFlags(AMgefFlagsTes4):
         gory_visuals: bool = flag(12)
         display_name_only: bool = flag(13)
         radio_broadcast: bool = flag(15)
         painless: bool = flag(24)
+        no_death_dispel: bool = flag(28)
 
     melSet = MelSet(
         MelEdid(),
@@ -1805,7 +1808,7 @@ class MreMgef(MelRecord):
         MelModel(),
         MelMgefData(MelStruct(b'DATA',
             ['I', 'f', 'I', '2i', 'H', '2s', 'I', 'f', '6I', '2f', 'I', 'i'],
-            (_flags, 'flags'), 'base_cost', (FID, 'associated_item'), 'school',
+            (_MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'), 'school',
             'resist_value', 'counter_effect_count', 'unused1', (FID, 'light'),
             'projectileSpeed', (FID, 'effectShader'), (FID, 'enchantEffect'),
             (FID, 'castingSound'), (FID, 'boltSound'), (FID, 'hitSound'),
@@ -1947,7 +1950,7 @@ class MreNote(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class _MelNpcData(MelLists):
+class _MelNpcData(AMelLists):
     """Convert npc stats into health, attributes."""
     _attr_indexes = {'health': 0, 'attributes': slice(1, None)}
 
@@ -1983,7 +1986,7 @@ class MreNpc_(_AMreActorFo3):
         crea_not_pushable: bool = flag(27)
         crea_no_rotating_head_track: bool = flag(30)
 
-    class MelNpcDnam(MelLists):
+    class MelNpcDnam(AMelLists):
         """Convert npc stats into skills."""
         _attr_indexes = {'skillValues': slice(14),
                          'skillOffsets': slice(14, None)}
@@ -2412,16 +2415,15 @@ class MreQust(MelRecord):
     """Quest."""
     rec_sig = b'QUST'
 
-    class _questFlags(Flags):
-        startGameEnabled: bool
-        repeatedTopics: bool = flag(2)
-        repeatedStages: bool
+    class _QuestFlags(Flags):
+        start_game_enabled: bool = flag(0)
+        allow_repeated_conversation_topics: bool = flag(2)
+        allow_repeated_stages: bool = flag(3)
+        default_script_processing_delay: bool = flag(4)
 
-    class stageFlags(Flags):
-        complete: bool
-
-    class targetFlags(Flags):
-        ignoresLocks: bool
+    class _StageEntryFlags(Flags):
+        complete_quest: bool
+        fail_quest: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -2429,13 +2431,13 @@ class MreQust(MelRecord):
         MelFull(),
         MelIcon(),
         MelTruncatedStruct(b'DATA', ['2B', '2s', 'f'],
-            (_questFlags, 'questFlags'), 'priority', 'unused2', 'questDelay',
+            (_QuestFlags, 'questFlags'), 'priority', 'unused2', 'questDelay',
             old_versions={'2B', '2B2s'}),
         MelConditionsFo3(),
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
-                MelUInt8Flags(b'QSDT', u'flags', stageFlags),
+                MelUInt8Flags(b'QSDT', 'stage_entry_flags', _StageEntryFlags),
                 MelConditionsFo3(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
@@ -2446,7 +2448,9 @@ class MreQust(MelRecord):
             MelSInt32(b'QOBJ', 'index'),
             MelString(b'NNAM', 'display_text'),
             MelGroups('targets',
-                MelStruct(b'QSTA', [u'I', u'B', u'3s'],(FID,'package_target_value'),(targetFlags,'flags'),'unused1'),
+                MelStruct(b'QSTA', ['I', 'B', '3s'],
+                    (FID, 'package_target_value'),
+                    'compass_marker_ignores_locks', 'unused1'),
                 MelConditionsFo3(),
             ),
         ),
@@ -3137,7 +3141,7 @@ class MreWeap(MelRecord):
         MelSoundPickupDrop(),
         MelModel(b'MOD2', 'shellCasingModel'),
         MelModel(b'MOD3', 'scopeModel', with_facegen_flags=False),
-        MelFid(b'EFSD','scopeEffect'),
+        MelFid(b'EFSD', 'scopeEffect'),
         MelModel(b'MOD4', 'worldModel'),
         fnv_only(MelGroup('modelWithMods',
             MelString(b'MWD1', 'mod1Path'),

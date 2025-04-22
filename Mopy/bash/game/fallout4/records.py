@@ -429,7 +429,6 @@ class MreTes4(AMreHeader):
     next_object_default = 0x001
 
     class HeaderFlags(AMreHeader.HeaderFlags):
-        optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(9)
 
@@ -854,8 +853,8 @@ class MreBptd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        ##: This sort_by_attrs might need a sort_special to handle part_node
-        # being None, keep an eye out for TypeError tracebacks
+        ##: This sort_by_attrs might need to be a sort_special to handle
+        # part_node being None, keep an eye out for TypeError tracebacks
         MelSorted(MelUnorderedGroups('body_part_list',
             MelLString(b'BPTN', 'part_name'),
             MelString(b'BPNN', 'part_node'),
@@ -1397,7 +1396,7 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    class _expl_flags(Flags):
+    class _ExplFlags(Flags):
         always_uses_world_orientation: bool = flag(1)
         knock_down_always: bool = flag(2)
         knock_down_by_formula: bool = flag(3)
@@ -1431,7 +1430,7 @@ class MreExpl(MelRecord):
             (FID, 'expl_impact_dataset'), (FID, 'placed_object'),
             (FID, 'spawn_object'), 'expl_force', 'expl_damage', 'inner_radius',
             'outer_radius', 'is_radius', 'vertical_offset_mult',
-            (_expl_flags, 'expl_flags'), 'expl_sound_level',
+            (_ExplFlags, 'expl_flags'), 'expl_sound_level',
             'placed_object_autofade_delay', 'expl_stagger', 'expl_spawn_x',
             'expl_spawn_y', 'expl_spawn_z', 'expl_spawn_spread_degrees',
             'expl_spawn_count', old_versions={'6I6f2IfI', '6I5f2IfI',
@@ -1616,7 +1615,7 @@ class MreFurn(AMreWithItems, AMreWithKeywords, _AMreWithProperties):
         MelConditions(),
         MelItems(),
         MelUInt32Flags(b'MNAM', 'active_markers_flags', _active_markers_flags),
-        MelTruncatedStruct(b'WBDT', ['B', 'b'], 'bench_type', 'uses_skill',
+        MelTruncatedStruct(b'WBDT', ['B', 's'], 'bench_type', 'unused1',
             old_versions={'B'}),
         MelFid(b'NAM1', 'associated_form'),
         MelFurnMarkerData(),
@@ -2248,7 +2247,7 @@ class MreMato(MelRecord):
             'projection_vector_x', 'projection_vector_y',
             'projection_vector_z', 'normal_dampener',
             *color3_attrs('single_pass_color'), 'is_single_pass',
-            old_versions={'8f', '7f'}),
+            old_versions={'11f', '8f', '7f'}, is_required=True),
     )
 
 #------------------------------------------------------------------------------

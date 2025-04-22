@@ -36,7 +36,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelEnableParent, MelEnchantment, MelFactions, MelFactRanks, MelFid, \
     MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, MelSimpleGroups, \
     MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
-    MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
+    MelLandShared, MelLighFade, AMelLists, MelLLChanceNone, MelLLFlags, \
     MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
     MelObme, MelOwnership, MelMgefEsceTes4, MelMgefData, MelRace, \
     MelRaceData, MelRaceParts, MelRaceVoices, MelRandomTeleports, \
@@ -52,7 +52,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, MelRegnEntryGrasses, \
-    MelRegnEntryMapName, AMreEyes, MelEyesFlags
+    MelRegnEntryMapName, AMreEyes, MelEyesFlags, MelEnchantmentCharge
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -77,20 +77,20 @@ class MelModel(MelGroup):
 #------------------------------------------------------------------------------
 # Common Flags
 class ServiceFlags(Flags):
-    weapons: bool = flag(0)
-    armor: bool = flag(1)
-    clothing: bool = flag(2)
-    books: bool = flag(3)
-    ingredients: bool = flag(4)
-    lights: bool = flag(7)
-    apparatus: bool = flag(8)
-    miscItems: bool = flag(10)
-    spells: bool = flag(11)
-    magicItems: bool = flag(12)
-    potions: bool = flag(13)
-    training: bool = flag(14)
-    recharge: bool = flag(16)
-    repair: bool = flag(17)
+    service_weapons: bool = flag(0)
+    service_armor: bool = flag(1)
+    service_clothing: bool = flag(2)
+    service_books: bool = flag(3)
+    service_ingredients: bool = flag(4)
+    service_lights: bool = flag(7)
+    service_apparatus: bool = flag(8)
+    service_misc_items: bool = flag(10)
+    service_spells: bool = flag(11)
+    service_magic_items: bool = flag(12)
+    service_potions: bool = flag(13)
+    service_training: bool = flag(14)
+    service_recharge: bool = flag(16)
+    service_repair: bool = flag(17)
 
 #------------------------------------------------------------------------------
 # A distributor config for use with MelEffectsTes4, since MelEffectsTes4 also
@@ -608,7 +608,7 @@ class MreAmmo(_ObIcon):
         MelModel(),
         MelIcon(),
         MelEnchantment(b'ENAM'),
-        MelUInt16(b'ANAM', 'enchantPoints'),
+        MelEnchantmentCharge(b'ANAM'),
         MelStruct(b'DATA', ['f', 'B', '3s', 'I', 'f', 'H'], 'speed',
                   (_AmmoFlags, 'flags'), 'unused1', 'value', 'weight',
                   'damage'),
@@ -711,7 +711,7 @@ class MreArmo(_ObPlayable):
         MelFull(),
         MelScript(),
         MelEnchantment(b'ENAM'),
-        MelUInt16(b'ANAM', 'enchantPoints'),
+        MelEnchantmentCharge(b'ANAM'),
         MelUInt32Flags(b'BMDT', 'biped_flags', _ArmoBipedFlags),
         MelModel(b'MODL', 'maleBody'),
         MelModel(b'MOD2', 'maleWorld'),
@@ -753,7 +753,7 @@ class MreBook(_RandIco):
         MelBookText(),
         MelScript(),
         MelEnchantment(b'ENAM'),
-        MelUInt16(b'ANAM', 'enchantPoints'),
+        MelEnchantmentCharge(b'ANAM'),
         MelStruct(b'DATA', ['B', 'b', 'I', 'f'], (_BookFlags, 'flags'),
                   'teaches', 'value', 'weight'),
     )
@@ -864,7 +864,7 @@ class MreClot(_ObPlayable):
         MelFull(),
         MelScript(),
         MelEnchantment(b'ENAM'),
-        MelUInt16(b'ANAM', 'enchantPoints'),
+        MelEnchantmentCharge(b'ANAM'),
         MelUInt32Flags(b'BMDT', 'biped_flags', _ClotBipedFlags),
         MelModel(b'MODL', 'maleBody'),
         MelModel(b'MOD2', 'maleWorld'),
@@ -1718,7 +1718,7 @@ class MreNpc_(AMreActor):
         no_persuasion: bool = flag(15)
         can_corpse_check: bool = flag(20)
 
-    class MelNpcData(MelLists):
+    class MelNpcData(AMelLists):
         """Convert npc stats into skills, health, attributes."""
         # 21 skills and 7 attributes
         _attr_indexes = {'skills': slice(21), 'health': 21, 'unused2': 22,
@@ -1825,7 +1825,7 @@ class MrePgrd(MelRecord):
     melSet = MelSet(
         MelUInt16(b'DATA', 'point_count'),
         MelBase(b'PGRP', 'point_array'),
-        MelBase(b'PGAG', 'unknown1'),
+        MelBase(b'PGAG', 'auto_generated_point_sets'),
         MelBase(b'PGRR', 'point_to_point_connections'), # sorted
         MelBase(b'PGRI', 'inter_cell_connections'), # sorted
         MelSorted(MelGroups('point_to_reference_mappings',
@@ -1844,15 +1844,12 @@ class MreQust(_ObIcon):
     stages: list
 
     class _QustFlags(Flags):
-        startGameEnabled: bool
-        repeatedTopics: bool = flag(2)
-        repeatedStages: bool
+        start_game_enabled: bool = flag(0)
+        allow_repeated_conversation_topics: bool = flag(2)
+        allow_repeated_stages: bool = flag(3)
 
-    class _StageFlags(Flags):
-        complete: bool
-
-    class _TargetFlags(Flags):
-        ignoresLocks: bool
+    class _StageEntryFlags(Flags):
+        complete_quest: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -1864,7 +1861,7 @@ class MreQust(_ObIcon):
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
-                MelUInt8Flags(b'QSDT', 'flags', _StageFlags),
+                MelUInt8Flags(b'QSDT', 'stage_entry_flags', _StageEntryFlags),
                 MelConditionsTes4(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
@@ -1872,7 +1869,7 @@ class MreQust(_ObIcon):
         ), sort_by_attrs='stage'),
         MelGroups('targets',
             MelStruct(b'QSTA', ['I', 'B', '3s'], (FID, 'package_target_value'),
-                (_TargetFlags, 'flags'), 'unused1'),
+                'compass_marker_ignores_locks', 'unused1'),
             MelConditionsTes4(),
         ),
     ).with_distributor({
@@ -2233,6 +2230,10 @@ class MreStat(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
+        MelArray('distant_model_texture_list',
+            MelStruct(b'DMTL', ['3Q'], 'file_hash_pc', 'file_hash_console',
+                'folder_hash'),
+        ),
     )
 
 #------------------------------------------------------------------------------
@@ -2309,7 +2310,7 @@ class MreWeap(_ObIcon):
         MelIcon(),
         MelScript(),
         MelEnchantment(b'ENAM'),
-        MelUInt16(b'ANAM', 'enchantPoints'),
+        MelEnchantmentCharge(b'ANAM'),
         MelStruct(b'DATA', ['I', '2f', '3I', 'f', 'H'], 'weaponType', 'speed',
                   'reach', (_WeapFlags, 'flags'), 'value', 'health', 'weight',
                   'damage'),
