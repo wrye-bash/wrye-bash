@@ -483,10 +483,11 @@ class AOblivionGameInfo(PatchGame):
         362:  ('GetPlayerHasLastRiddenHorse', 0, 0),
         365:  ('GetPlayerInSEWorld', 0, 0),
         # Extended by (x)OBSE
-        1107: ('IsAmmo', 1, 0),
+        1107: ('IsAmmo', 2, 0),
         1122: ('HasSpell', 2, 0),
         1124: ('IsClassSkill', 1, 2),
-        1884: ('GetPCTrainingSessionsUsed', 2, 0),
+        1254: ('GetActorLightAmount', 0, 0),
+        1884: ('GetPCTrainingSessionsUsed', 0, 0),
         2213: ('GetPackageOffersServices', 2, 0),
         2214: ('GetPackageMustReachLocation', 2, 0),
         2215: ('GetPackageMustComplete', 2, 0),
@@ -509,7 +510,9 @@ class AOblivionGameInfo(PatchGame):
         2232: ('GetPackageUseHorse', 2, 0),
         2233: ('GetPackageNoIdleAnims', 2, 0),
         2571: ('GetBaseAV3', 1, 0),
+        2572: ('GetBaseAV3C', 1, 0),
         2573: ('IsNaked', 1, 0),
+        2577: ('IsMajorRef', 1, 0),
         2578: ('IsDiseased', 0, 0),
     }
 
@@ -565,11 +568,11 @@ class AOblivionGameInfo(PatchGame):
     stats_csv_attrs = {
         b'ALCH': ('eid', 'weight', 'value'),
         b'AMMO': ('eid', 'weight', 'value', 'damage', 'speed',
-                  'enchantPoints'),
+                  'enchantment_charge'),
         b'APPA': ('eid', 'weight', 'value', 'quality'),
         b'ARMO': ('eid', 'weight', 'value', 'health', 'strength'),
-        b'BOOK': ('eid', 'weight', 'value', 'enchantPoints'),
-        b'CLOT': ('eid', 'weight', 'value', 'enchantPoints'),
+        b'BOOK': ('eid', 'weight', 'value', 'enchantment_charge'),
+        b'CLOT': ('eid', 'weight', 'value', 'enchantment_charge'),
         b'EYES': ('eid', 'flags'),
         b'HAIR': ('eid', 'flags'),
         b'INGR': ('eid', 'weight', 'value'),
@@ -579,7 +582,7 @@ class AOblivionGameInfo(PatchGame):
         b'SGST': ('eid', 'weight', 'value', 'uses'),
         b'SLGM': ('eid', 'weight', 'value'),
         b'WEAP': ('eid', 'weight', 'value', 'health', 'damage', 'speed',
-                  'reach', 'enchantPoints'),
+                  'reach', 'enchantment_charge'),
     }
     stats_attrs = {r: tuple(x for x in a if x != 'eid')
                    for r, a in stats_csv_attrs.items()}

@@ -36,7 +36,6 @@ class MreTes4(AMreHeader):
     next_object_default = 0x800
 
     class HeaderFlags(AMreHeader.HeaderFlags):
-        optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(9)
 

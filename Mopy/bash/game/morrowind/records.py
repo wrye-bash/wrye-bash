@@ -23,16 +23,38 @@
 """This module contains the Morrowind record classes. Also contains records
 and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
-
 from ...bolt import Flags, flag
 from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
-    FixedString, MelArray, MelBase, MelBookText, MelColor, MelColorO, \
+    FixedString, MelArray, MelBase, MelBookText, MelColorO, \
     MelCounter, MelDescription, MelEffectsTes3, MelFixedString, MelFloat, \
-    MelGroup, MelGroups, MelIcons, MelLists, MelLLChanceNoneTes3, \
+    MelGroup, MelGroups, MelIcons, AMelLists, MelLLChanceNoneTes3, \
     MelLLFlagsTes3, MelNull, MelRecord, MelRef3D, MelRefScale, MelSequential, \
     MelSet, MelSInt32, MelString, MelStrings, MelStruct, MelTruncatedStruct, \
     MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, SaveDecider, \
-    SizeDecider, color_attrs, color3_attrs, position_attrs, rotation_attrs
+    SizeDecider, color_attrs, color3_attrs, position_attrs, rotation_attrs, \
+    MelReadOnly, MgefFlagsTes3
+
+#------------------------------------------------------------------------------
+# Common Flags
+class ServiceFlags(Flags):
+    service_weapon: bool
+    service_armor: bool
+    service_clothing: bool
+    service_books: bool
+    service_ingredient: bool
+    service_picks: bool
+    service_probes: bool
+    service_lights: bool
+    service_apparatus: bool
+    service_repair_items: bool
+    service_misc: bool
+    service_spells: bool
+    service_magic_items: bool
+    service_potions: bool
+    service_training: bool
+    service_spellmaking: bool
+    service_enchanting: bool
+    service_repair: bool
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -49,82 +71,72 @@ class MelMWId(MelString): # needed everywhere, so put it early
         super().__init__(b'NAME', 'mw_id')
 
 #------------------------------------------------------------------------------
-class MelAidt(MelStruct):
-    """Handles the CREA/NPC_ subrecord AIDT (AI Data)."""
-    class _ServiceFlags(Flags):
-        ai_weapon: bool
-        ai_armor: bool
-        ai_clothing: bool
-        ai_books: bool
-        ai_ingredient: bool
-        ai_picks: bool
-        ai_probes: bool
-        ai_lights: bool
-        ai_apparatus: bool
-        ai_repair_items: bool
-        ai_misc: bool
-        ai_spells: bool
-        ai_magic_items: bool
-        ai_potions: bool
-        ai_training: bool
-        ai_spellmaking: bool
-        ai_enchanting: bool
-        ai_repair: bool
-
+class MelDeleted(MelUInt32):
+    """The presence of this subrecord means that the record in question is
+    being deleted by the current plugin."""
     def __init__(self):
-        super().__init__(b'AIDT', ['B', 's', '3B', '3s', 'I'], 'ai_hello',
-            'ai_unknown1', 'ai_fight', 'ai_flee', 'ai_alarm', 'ai_unknown2',
-            (self._ServiceFlags, 'ai_service_flags'))
+        super().__init__(b'DELE', 'marked_deleted')
 
 #------------------------------------------------------------------------------
-class _MelAIAccompanyPackage(MelStruct):
-    """Deduplicated from AI_E and AI_F (see below)."""
-    def __init__(self, ai_package_sig):
-        super().__init__(ai_package_sig,
-            ['3f', 'H', '32s', 'B', 's'], 'dest_x', 'dest_y', 'dest_z',
-            'package_duration', (FixedString(32), 'package_id'),
-            'unknown_marker', 'unused1')
+class MelAidt(MelStruct):
+    """Handles the CREA/NPC_ subrecord AIDT (AI Data)."""
 
+    def __init__(self):
+        super().__init__(b'AIDT', ['H', '3B', '3s', 'I'], 'ai_hello',
+            'ai_fight', 'ai_flee', 'ai_alarm', 'ai_unused1',
+            (ServiceFlags, 'ai_service_flags'))
+
+#------------------------------------------------------------------------------
 class MelAIPackagesTes3(MelGroups):
     """Handles the AI_* and CNDT subrecords, which have the additional
     complication that they may occur in any order."""
     def __init__(self):
         super().__init__('ai_packages',
             MelUnion({
+                # AI_A: AI Activate
                 b'AI_A': MelStruct(b'AI_A', ['32s', 'B'],
-                    (FixedString(32), 'package_name'), 'unknown_marker'),
-                b'AI_E': _MelAIAccompanyPackage(b'AI_E'),
-                b'AI_F': _MelAIAccompanyPackage(b'AI_F'),
-                b'AI_T': MelStruct(b'AI_T', ['3f', 'B', '3s'], 'dest_x',
-                    'dest_y', 'dest_z', 'unknown_marker', 'unused1'),
-                b'AI_W': MelStruct(b'AI_W', ['2H', '10B'], 'wanter_distance',
-                    'wanter_duration', 'time_of_day', 'idle_1', 'idle_2',
-                    'idle_3', 'idle_4', 'idle_5', 'idle_6', 'idle_7',
-                    'idle_8', 'unknown_marker'),
+                    (FixedString(32), 'package_name'), 'ai_reset'),
+                # AI_E: AI Escort
+                b'AI_E': MelStruct(b'AI_E', ['3f', 'H', '32s', 'B', 's'],
+                    *position_attrs('dest'), 'package_duration',
+                    (FixedString(32), 'package_id'), 'ai_reset', 'unused1'),
+                # AI_F: AI Follow
+                b'AI_F': MelStruct(b'AI_F', ['3f', 'H', '32s', 'B', 's'],
+                    *position_attrs('dest'), 'package_duration',
+                    (FixedString(32), 'package_id'), 'ai_reset', 'unused1'),
+                # AI_T: AI Travel
+                b'AI_T': MelStruct(b'AI_T', ['3f', 'B', '3s'],
+                    *position_attrs('dest'), 'ai_reset', 'unused1'),
+                # AI_W: AI Wander
+                b'AI_W': MelStruct(b'AI_W', ['2H', '10B'], 'wander_distance',
+                    'wander_duration', 'time_of_day', 'idle_chance_1',
+                    'idle_chance_2', 'idle_chance_3', 'idle_chance_4',
+                    'idle_chance_5', 'idle_chance_6', 'idle_chance_7',
+                    'idle_chance_8', 'idle_chance_9'),
             }),
             # Only present for AI_E and AI_F, but won't be dumped unless
             # already present, so that's fine
-            MelString(b'CNDT', 'cell_name'),
+            MelString(b'CNDT', 'target_cell_name'),
         )
 
 #------------------------------------------------------------------------------
-class MelArmorData(MelGroups):
+class MelBipedObjects(MelGroups):
     """Handles the INDX, BNAM and CNAM subrecords shared by ARMO and CLOT."""
     def __init__(self):
-        super(MelArmorData, self).__init__(u'armor_data',
-            MelUInt8(b'INDX', u'biped_object'),
-            MelString(b'BNAM', u'armor_name_male'),
-            MelString(b'CNAM', u'armor_name_female'),
+        super().__init__('biped_objects',
+            MelUInt8(b'INDX', 'body_part_index'),
+            MelString(b'BNAM', 'armor_name_male'),
+            MelString(b'CNAM', 'armor_name_female'),
         )
 
 #------------------------------------------------------------------------------
-class MelDestinations(MelGroups):
+class MelTravelServices(MelGroups):
     """Handles the common DODT/DNAM subrecords."""
     def __init__(self):
-        super().__init__('cell_travel_destinations',
+        super().__init__('travel_services',
             MelStruct(b'DODT', ['6f'], *position_attrs('destination'),
                 *rotation_attrs('destination')),
-            MelString(b'DNAM', 'destination_cell_name'),
+            MelFixedString(b'DNAM', 'destination_cell_name', 64),
         )
 
 #------------------------------------------------------------------------------
@@ -149,8 +161,9 @@ class MelIconTes3(MelIcons):
 class MelItems(MelGroups):
     """Wraps MelGroups for the common task of defining a list of items."""
     def __init__(self):
-        super(MelItems, self).__init__(u'items',
-            MelStruct(b'NPCO', [u'I', u'32s'], u'count', (FixedString(32), u'item')),
+        super().__init__('items',
+            MelStruct(b'NPCO', ['i', '32s'], 'count',
+                (FixedString(32), 'item')),
         )
 
 #------------------------------------------------------------------------------
@@ -171,26 +184,26 @@ class MelReference(MelSequential):
     """Defines a single 'reference', which is Morrowind's version of REFRs in
     later games."""
     def __init__(self):
-        super(MelReference, self).__init__(
-            MelUInt32(b'FRMR', u'object_index'),
+        super().__init__(
+            MelUInt32(b'FRMR', 'object_index'),
             MelMWId(),
-            MelBase(b'UNAM', u'ref_blocked_marker'),
+            MelBase(b'UNAM', 'ref_blocked_marker'),
             MelRefScale(),
-            MelString(b'ANAM', u'ref_owner'),
-            MelString(b'BNAM', u'global_variable'),
-            MelString(b'CNAM', u'ref_faction'),
-            MelSInt32(b'INDX', u'ref_faction_rank'),
-            MelString(b'XSOL', u'ref_soul'),
-            MelFloat(b'XCHG', u'enchantment_charge'),
+            MelString(b'ANAM', 'ref_owner'),
+            MelString(b'BNAM', 'global_variable'),
+            MelString(b'CNAM', 'ref_faction'),
+            MelSInt32(b'INDX', 'ref_faction_rank'),
+            MelString(b'XSOL', 'ref_soul'),
+            MelFloat(b'XCHG', 'enchantment_charge'),
             ##: INTV should have a decider - uint32 or float, depending on
             # object type
-            MelBase(b'INTV', u'remaining_usage'),
-            MelUInt32(b'NAM9', u'gold_value'),
-            MelDestinations(),
-            MelUInt32(b'FLTV', u'lock_level'),
-            MelString(b'KNAM', u'key_name'),
-            MelString(b'TNAM', u'trap_name'),
-            MelBase(b'ZNAM', u'ref_disabled_marker'),
+            MelBase(b'INTV', 'remaining_usage'),
+            MelUInt32(b'NAM9', 'gold_value'),
+            MelTravelServices(),
+            MelUInt32(b'FLTV', 'lock_level'),
+            MelString(b'KNAM', 'key_name'),
+            MelString(b'TNAM', 'trap_name'),
+            MelBase(b'ZNAM', 'ref_disabled_marker'),
             MelRef3D(),
         )
 
@@ -199,7 +212,7 @@ class MelSavesOnly(MelSequential):
     """Record element that only loads contents if the input file is a save
     file."""
     def __init__(self, *elements):
-        super(MelSavesOnly, self).__init__(*(MelUnion({
+        super().__init__(*(MelUnion({
             True: element,
             False: MelNull(next(iter(element.signatures))),
         }, decider=SaveDecider()) for element in elements))
@@ -208,7 +221,7 @@ class MelSavesOnly(MelSequential):
 class MelScriptId(MelString):
     """Handles the common SCRI subrecord."""
     def __init__(self):
-        super(MelScriptId, self).__init__(b'SCRI', u'script_id'),
+        super().__init__(b'SCRI', 'script_id'),
 
 #------------------------------------------------------------------------------
 class MelSpellsTes3(MelGroups):
@@ -231,14 +244,14 @@ class MreTes3(AMreHeader):
         AMreHeader.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
-            MelStruct(b'GMDT', [u'6f', u'64s', u'f', u'32s'], u'pc_curr_health',
-                u'pc_max_health', u'unknown1', u'unknown2', u'unknown3',
-                u'unknown4', (FixedString(64), u'curr_cell'),
-                u'unknown5', (AutoFixedString(32), u'pc_name')),
-            MelBase(b'SCRD', u'unknown_scrd'), # likely screenshot-related
-            MelArray(u'screenshot_data',
+            MelStruct(b'GMDT', ['6f', '64s', 'f', '32s'], 'pc_curr_health',
+                'pc_max_health', 'unknown1', 'unknown2', 'unknown3',
+                'unknown4', (FixedString(64), 'curr_cell'),
+                'unknown5', (AutoFixedString(32), 'pc_name')),
+            MelBase(b'SCRD', 'unknown_scrd'), # likely screenshot-related
+            MelArray('screenshot_data',
                 # Yes, the correct order is bgra
-                MelStruct(b'SCRS', [u'4B'], u'blue', u'green', u'red', u'alpha'),
+                MelStruct(b'SCRS', ['4B'], 'blue', 'green', 'red', 'alpha'),
             ),
         ),
     )
@@ -252,6 +265,7 @@ class MreActi(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
         MelScriptId(),
@@ -264,12 +278,13 @@ class MreAlch(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
-        MelString(b'TEXT', u'inventory_icon'),
+        MelString(b'TEXT', 'inventory_icon'),
         MelScriptId(),
         MelFullTes3(),
-        MelStruct(b'ALDT', [u'f', u'2I'], u'potion_weight', u'potion_value',
-            u'potion_auto_calc'),
+        MelStruct(b'ALDT', ['f', '2I'], 'potion_weight', 'potion_value',
+            'potion_auto_calc'),
         MelEffectsTes3(),
     )
 
@@ -280,11 +295,12 @@ class MreAppa(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
         MelScriptId(),
-        MelStruct(b'AADT', [u'I', u'2f', u'I'], u'appa_type', u'appa_quality',
-            u'appa_weight', u'appa_value'),
+        MelStruct(b'AADT', ['I', '2f', 'I'], 'appa_type', 'appa_quality',
+            'appa_weight', 'appa_value'),
         MelIconTes3(),
     )
 
@@ -295,13 +311,14 @@ class MreArmo(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
         MelScriptId(),
-        MelStruct(b'AODT', [u'I', u'f', u'4I'], u'armo_type', u'armo_weight',
-            u'armo_value', u'armo_health', u'enchant_points', u'armor_rating'),
+        MelStruct(b'AODT', ['I', 'f', '4I'], 'armo_type', 'armo_weight',
+            'armo_value', 'armo_health', 'enchanting_charge', 'armor_rating'),
         MelIconTes3(),
-        MelArmorData(),
+        MelBipedObjects(),
         MelEnchantmentTes3(),
     )
 
@@ -310,16 +327,17 @@ class MreBody(MelRecord):
     """Body Parts."""
     rec_sig = b'BODY'
 
-    class _part_flags(Flags):
+    class _PartFlags(Flags):
         part_female: bool
         part_playable: bool
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
-        MelString(b'FNAM', u'race_name'),
-        MelStruct(b'BYDT', [u'4B'], u'part_index', u'part_vampire',
-            (_part_flags, u'part_flags'), u'part_type'),
+        MelString(b'FNAM', 'skin_race_name'),
+        MelStruct(b'BYDT', ['4B'], 'part_index', 'skin_type',
+            (_PartFlags, 'part_flags'), 'part_type'),
     )
 
 #------------------------------------------------------------------------------
@@ -327,15 +345,13 @@ class MreBook(MelRecord):
     """Book."""
     rec_sig = b'BOOK'
 
-    class _scroll_flags(Flags):
-        is_scroll: bool
-
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'BKDT', [u'f', u'2I', u'i', u'I'], u'book_weight', u'book_value',
-            (_scroll_flags, u'scroll_flags'), u'skill_id', u'enchant_points'),
+        MelStruct(b'BKDT', ['f', 'i', 'I', '2i'], 'book_weight', 'book_value',
+            'is_scroll', 'taught_skill_id', 'enchanting_charge'),
         MelScriptId(),
         MelIconTes3(),
         MelBookText(b'TEXT'),
@@ -348,11 +364,12 @@ class MreBsgn(MelRecord):
     rec_sig = b'BSGN'
 
     melSet = MelSet(
+        MelDeleted(),
         MelMWId(),
         MelFullTes3(),
-        MelSpellsTes3(),
-        MelString(b'TNAM', u'texture_filename'),
+        MelString(b'TNAM', 'constellation_image'),
         MelDescription(),
+        MelSpellsTes3(),
     )
 
 #------------------------------------------------------------------------------
@@ -360,25 +377,29 @@ class MreCell(AMreCell):
     """Cell."""
     # TODO ref_types and co?
 
-    class _cell_flags(Flags):
+    class _CellFlags(Flags):
         is_interior_cell: bool = flag(0)
         has_water: bool = flag(1)
         illegal_to_sleep_here: bool = flag(2)
+        has_map_color: bool = flag(6)
         behave_like_exterior: bool = flag(7)
 
     melSet = MelSet(
         MelMWId(),
-        MelStruct(b'DATA', [u'3I'], (_cell_flags, u'cell_flags'), u'cell_x',
-            u'cell_y'),
-        MelString(b'RGNN', u'region_name'),
+        MelDeleted(),
+        MelStruct(b'DATA', ['I', '2i'], (_CellFlags, 'cell_flags'), 'cell_x',
+            'cell_y'),
+        # Old version of WHGT, read but write only WHGT
+        MelReadOnly(MelUInt32(b'INTV', 'water_height')),
+        MelString(b'RGNN', 'region_name'),
         MelColorO(b'NAM5'),
-        MelFloat(b'WHGT', u'water_height'),
+        MelFloat(b'WHGT', 'water_height'),
         MelStruct(b'AMBI', ['12B', 'f'], *color_attrs('ambi_ambient'),
             *color_attrs('ambi_sunlight'), *color_attrs('ambi_fog'),
             'fog_density'),
-        MelGroups(u'moved_references',
-            MelUInt32(b'MVRF', u'reference_id'),
-            MelString(b'CNAM', u'new_interior_cell'),
+        MelGroups('moved_references',
+            MelUInt32(b'MVRF', 'reference_id'),
+            MelString(b'CNAM', 'new_interior_cell'),
             ##: Double-check the signeds - UESP does not list them either way
             MelStruct(b'CNDT', ['2i'], 'new_exterior_cell_x',
                       'new_exterior_cell_y'),
@@ -387,12 +408,12 @@ class MreCell(AMreCell):
         ##: Move this into a dedicated Mob* class instead - difficult to
         # manipulate otherwise, tons of duplicate signatures and a distributor
         # is impossible due to the lack of static separators in the record.
-        MelGroups(u'persistent_children',
+        MelGroups('persistent_children',
             MelReference(),
         ),
-        MelCounter(MelUInt32(b'NAM0', u'temporary_children_counter'),
-            counts=u'temporary_children'),
-        MelGroups(u'temporary_children',
+        MelCounter(MelUInt32(b'NAM0', 'temporary_children_counter'),
+            counts='temporary_children'),
+        MelGroups('temporary_children',
             MelReference(),
         ),
     )
@@ -402,38 +423,14 @@ class MreClas(MelRecord):
     """Class."""
     rec_sig = b'CLAS'
 
-    class _class_flags(Flags):
-        class_playable: bool
-
-    class _ac_flags(Flags):
-        ac_weapon: bool
-        ac_armor: bool
-        ac_clothing: bool
-        ac_books: bool
-        ac_ingredients: bool
-        ac_picks: bool
-        ac_probes: bool
-        ac_lights: bool
-        ac_apparatus: bool
-        ac_repair_items: bool
-        ac_misc: bool
-        ac_spells: bool
-        ac_magic_items: bool
-        ac_potions: bool
-        ac_training: bool
-        ac_spellmaking: bool
-        ac_enchanting: bool
-        ac_repair: bool
-
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelFullTes3(),
-        ##: UESP says 'alternating minor/major' skills - not sure what exactly
-        # it means, check with real data
-        MelStruct(b'CLDT', [u'15I'], u'primary1', u'primary2',
-            u'specialization', u'minor1', u'major1', u'minor2', u'major2',
-            u'minor3', u'major3', u'minor4', u'major4', u'minor5', u'major5',
-            (_class_flags, u'class_flags'), (_ac_flags, u'auto_calc_flags')),
+        MelStruct(b'CLDT', ['2i', 'I', '10i', '2I'], 'primary1', 'primary2',
+            'specialization', 'minor1', 'major1', 'minor2', 'major2',
+            'minor3', 'major3', 'minor4', 'major4', 'minor5', 'major5',
+            'class_playable', (ServiceFlags, 'class_service_flags')),
         MelDescription(),
     )
 
@@ -444,13 +441,14 @@ class MreClot(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'CTDT', [u'I', u'f', u'2H'], u'clot_type', u'clot_weight',
-            u'clot_value', u'enchant_points'),
+        MelStruct(b'CTDT', ['I', 'f', '2H'], 'clot_type', 'clot_weight',
+            'clot_value', 'enchanting_charge'),
         MelScriptId(),
         MelIconTes3(),
-        MelArmorData(),
+        MelBipedObjects(),
         MelEnchantmentTes3(),
     )
 
@@ -459,19 +457,20 @@ class MreCont(MelRecord):
     """Container."""
     rec_sig = b'CONT'
 
-    class _cont_flags(Flags):
-        cont_organic: bool
-        cont_respawns: bool
-        default_unknown: bool   # always set
+    class _ContFlags(Flags):
+        cont_organic: bool = flag(0)
+        cont_respawns: bool = flag(1)
+        can_hold_items: bool = flag(3)
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelFloat(b'CNDT', u'cont_weight'),
-        MelUInt32Flags(b'FLAG', u'cont_flags', _cont_flags),
-        MelItems(),
+        MelFloat(b'CNDT', 'cont_weight'),
+        MelUInt32Flags(b'FLAG', 'cont_flags', _ContFlags),
         MelScriptId(),
+        MelItems(),
     )
 
 #------------------------------------------------------------------------------
@@ -481,37 +480,39 @@ class MreCrea(MelRecord):
 
     # Default is 0x48 (crea_walks | crea_none)
     class _CreaFlags(Flags):
-        crea_biped: bool
-        crea_respawn: bool
-        weapon_and_shield: bool
-        crea_none: bool
-        crea_swims: bool
-        crea_flies: bool
-        crea_walks: bool
-        crea_essential: bool
+        crea_biped: bool = flag(0)
+        crea_respawn: bool = flag(1)
+        weapon_and_shield: bool = flag(2)
+        crea_can_hold_items: bool = flag(3)
+        crea_swims: bool = flag(4)
+        crea_flies: bool = flag(5)
+        crea_walks: bool = flag(6)
+        crea_essential: bool = flag(7)
+        skeleton_blood: bool = flag(10)
+        metal_blood: bool = flag(11)
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
-        MelString(b'CNAM', u'sound_gen_creature'),
+        MelString(b'CNAM', 'sound_gen_creature'),
         MelFullTes3(),
         MelScriptId(),
-        MelStruct(b'NPDT', [u'24I'], u'crea_type', u'crea_level',
-            u'crea_strength', u'crea_intelligence', u'crea_willpower',
-            u'crea_agility', u'crea_speed', u'crea_endurance',
-            u'crea_personality', u'crea_luck', u'crea_health',
-            u'crea_spell_points', u'crea_fatigue', u'crea_soul',
-            u'crea_combat', u'crea_magic', u'crea_stealth',
-            u'crea_attack_min_1', u'crea_attack_max_1', u'crea_attack_min_2',
-            u'crea_attack_max_2', u'crea_attack_min_3', u'crea_attack_max_3',
-            u'crea_gold'),
-        MelStruct(b'FLAG', ['B', '3s'], ('crea_flags', _CreaFlags),
-            'blood_type'),
+        MelStruct(b'NPDT', ['I', '12i', 'I', '9i', 'I'], 'crea_type',
+            'crea_level', 'crea_attr_strength', 'crea_attr_intelligence',
+            'crea_attr_willpower', 'crea_attr_agility', 'crea_attr_speed',
+            'crea_attr_endurance', 'crea_attr_personality', 'crea_attr_luck',
+            'crea_health', 'crea_magicka', 'crea_fatigue', 'crea_soul',
+            'crea_skill_combat', 'crea_skill_magic', 'crea_skill_stealth',
+            'crea_attack_1_min', 'crea_attack_1_max', 'crea_attack_2_min',
+            'crea_attack_2_max', 'crea_attack_3_min', 'crea_attack_3_max',
+            'crea_barter_gold'),
+        MelUInt32Flags(b'FLAG', 'crea_flags', _CreaFlags),
         MelRefScale(),
         MelItems(),
         MelSpellsTes3(),
         MelAidt(),
-        MelDestinations(),
+        MelTravelServices(),
         MelAIPackagesTes3(),
     )
 
@@ -522,7 +523,8 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelUInt8(b'DATA', u'dialogue_type'),
+        MelStruct(b'DATA', ['B', '3s'], 'dialogue_type', 'unused1'),
+        MelDeleted(),
     )
 
 #------------------------------------------------------------------------------
@@ -532,11 +534,12 @@ class MreDoor(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
         MelScriptId(),
-        MelString(b'SNAM', u'sound_open'),
-        MelString(b'ANAM', u'sound_close'),
+        MelString(b'SNAM', 'sound_open'),
+        MelString(b'ANAM', 'sound_close'),
     )
 
 #------------------------------------------------------------------------------
@@ -546,8 +549,9 @@ class MreEnch(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelStruct(b'ENDT', [u'4I'], u'ench_type', u'ench_cost', u'ench_charge',
-            u'ench_auto_calc'),
+        MelDeleted(),
+        MelStruct(b'ENDT', ['4I'], 'ench_type', 'ench_cost', 'ench_charge',
+            'ench_auto_calc'),
         MelEffectsTes3(),
     )
 
@@ -558,38 +562,51 @@ class MreFact(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelFullTes3(),
-        MelGroups(u'ranks', # always 10
-            MelString(b'RNAM', u'rank_name'),
+        MelGroups('ranks', # always 10
+            MelFixedString(b'RNAM', 'rank_name', 32),
         ),
-        ##: Double-check that these are all unsigned (especially
-        # rank_*_reaction), xEdit makes most of them signed (and puts them in
-        # an enum, which makes no sense). Also, why couldn't Bethesda put these
-        # into the ranks list up above?
-        MelStruct(b'FADT', [u'52I', u'7i', u'I'], u'faction_attribute_1',
-            u'faction_attribute_2', u'rank_1_attribute_1',
-            u'rank_1_attribute_2', u'rank_1_skill_1', u'rank_1_skill_2',
-            u'rank_1_reaction', u'rank_2_attribute_1', u'rank_2_attribute_2',
-            u'rank_2_skill_1', u'rank_2_skill_2', u'rank_2_reaction',
-            u'rank_3_attribute_1', u'rank_3_attribute_2', u'rank_3_skill_1',
-            u'rank_3_skill_2', u'rank_3_reaction', u'rank_4_attribute_1',
-            u'rank_4_attribute_2', u'rank_4_skill_1', u'rank_4_skill_2',
-            u'rank_4_reaction', u'rank_5_attribute_1', u'rank_5_attribute_2',
-            u'rank_5_skill_1', u'rank_5_skill_2', u'rank_5_reaction',
-            u'rank_6_attribute_1', u'rank_6_attribute_2', u'rank_6_skill_1',
-            u'rank_6_skill_2', u'rank_6_reaction', u'rank_7_attribute_1',
-            u'rank_7_attribute_2', u'rank_7_skill_1', u'rank_7_skill_2',
-            u'rank_7_reaction', u'rank_8_attribute_1', u'rank_8_attribute_2',
-            u'rank_8_skill_1', u'rank_8_skill_2', u'rank_8_reaction',
-            u'rank_9_attribute_1', u'rank_9_attribute_2', u'rank_9_skill_1',
-            u'rank_9_skill_2', u'rank_9_reaction', u'rank_10_attribute_1',
-            u'rank_10_attribute_2', u'rank_10_skill_1', u'rank_10_skill_2',
-            u'rank_10_reaction', u'skill_1', u'skill_2', u'skill_3',
-            u'skill_4', u'skill_5', u'skill_6', u'skill_7',
-            u'hidden_from_pc'),
-        MelGroups(u'relations', # bad names to match other games
-            MelString(b'ANAM', u'faction'),
-            MelSInt32(b'INTV', u'mod'),
+        MelStruct(b'FADT', ['2i', '50I', '7i', 'I'], 'faction_attribute_1',
+            'faction_attribute_2',
+            # Rank 1 ----------------------------------------------------------
+            'rank_1_attribute_1', 'rank_1_attribute_2', 'rank_1_skill_primary',
+            'rank_1_skill_secondary', 'rank_1_reputation',
+            # Rank 2 ----------------------------------------------------------
+            'rank_2_attribute_1', 'rank_2_attribute_2', 'rank_2_skill_primary',
+            'rank_2_skill_secondary', 'rank_2_reputation',
+            # Rank 3 ----------------------------------------------------------
+            'rank_3_attribute_1', 'rank_3_attribute_2', 'rank_3_skill_primary',
+            'rank_3_skill_secondary', 'rank_3_reputation',
+            # Rank 4 ----------------------------------------------------------
+            'rank_4_attribute_1', 'rank_4_attribute_2', 'rank_4_skill_primary',
+            'rank_4_skill_secondary', 'rank_4_reputation',
+            # Rank 5 ----------------------------------------------------------
+            'rank_5_attribute_1', 'rank_5_attribute_2', 'rank_5_skill_primary',
+            'rank_5_skill_secondary', 'rank_5_reputation',
+            # Rank 6 ----------------------------------------------------------
+            'rank_6_attribute_1', 'rank_6_attribute_2', 'rank_6_skill_primary',
+            'rank_6_skill_secondary', 'rank_6_reputation',
+            # Rank 7 ----------------------------------------------------------
+            'rank_7_attribute_1', 'rank_7_attribute_2', 'rank_7_skill_primary',
+            'rank_7_skill_secondary', 'rank_7_reputation',
+            # Rank 8 ----------------------------------------------------------
+            'rank_8_attribute_1', 'rank_8_attribute_2', 'rank_8_skill_primary',
+            'rank_8_skill_secondary', 'rank_8_reputation',
+            # Rank 9 ----------------------------------------------------------
+            'rank_9_attribute_1', 'rank_9_attribute_2', 'rank_9_skill_primary',
+            'rank_9_skill_secondary', 'rank_9_reputation',
+            # Rank 10 ---------------------------------------------------------
+            'rank_10_attribute_1', 'rank_10_attribute_2',
+            'rank_10_skill_primary', 'rank_10_skill_secondary',
+            'rank_10_reputation',
+            # Favored Skills --------------------------------------------------
+            'favored_skill_1', 'favored_skill_2', 'favored_skill_3',
+            'favored_skill_4', 'favored_skill_5', 'favored_skill_6',
+            'favored_skill_7', 'hidden_from_pc'),
+        MelGroups('relations', # bad names to match other games
+            MelString(b'ANAM', 'faction'),
+            MelSInt32(b'INTV', 'mod'),
         ),
     )
 
@@ -600,34 +617,35 @@ class MreGlob(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelFixedString(b'FNAM', 'global_format', 1),
-        MelFloat(b'FLTV', u'global_value'),
+        MelFloat(b'FLTV', 'global_value'),
     )
 
 #------------------------------------------------------------------------------
-class MelGmstUnion(MelUnion):
+class _MelGmstUnion(MelUnion):
     """Some GMSTs do not have one of the value subrecords - fall back to
     using the first letter of the NAME subrecord in those cases."""
     _fmt_mapping = {
-        u'f': b'FLTV',
-        u'i': b'INTV',
-        u's': b'STRV',
+        'f': b'FLTV',
+        'i': b'INTV',
+        's': b'STRV',
     }
 
     def _get_element_from_record(self, record):
         if not hasattr(record, self.decider_result_attr):
-            format_char = record.mw_id[0] if record.mw_id else u'i'
+            format_char = record.mw_id[0] if record.mw_id else 'i'
             return self._get_element(self._fmt_mapping[format_char])
-        return super(MelGmstUnion, self)._get_element_from_record(record)
+        return super()._get_element_from_record(record)
 
 class MreGmst(MelRecord):
     """Game Setting."""
     melSet = MelSet(
         MelMWId(),
-        MelGmstUnion({
-            b'FLTV': MelFloat(b'FLTV', u'value'),
-            b'INTV': MelSInt32(b'INTV', u'value'),
-            b'STRV': MelString(b'STRV', u'value'),
+        _MelGmstUnion({
+            b'FLTV': MelFloat(b'FLTV', 'value'),
+            b'INTV': MelSInt32(b'INTV', 'value'),
+            b'STRV': MelString(b'STRV', 'value'),
         }),
     )
 
@@ -637,29 +655,32 @@ class MreInfo(MelRecord):
     rec_sig = b'INFO'
 
     melSet = MelSet(
-        MelString(b'INAM', u'info_name_string'),
-        MelString(b'PNAM', u'prev_info'),
-        MelString(b'NNAM', u'next_info'),
-        MelStruct(b'DATA', [u'B', u'3s', u'I', u'B', u'b', u'B', u's'], u'dialogue_type', u'unused1',
-            u'disposition', u'dialogue_rank', u'speaker_gender', u'pc_rank',
-            u'unused2'),
-        MelString(b'ONAM', u'actor_name'),
-        MelString(b'RNAM', u'race_name'),
-        MelString(b'CNAM', u'class_name'),
-        MelString(b'FNAM', u'faction_name'),
-        MelString(b'ANAM', u'cell_name'),
-        MelString(b'DNAM', u'pc_faction_name'),
-        MelString(b'SNAM', u'sound_name'),
+        MelString(b'INAM', 'reponse_id'),
+        MelString(b'PNAM', 'prev_info'),
+        MelString(b'NNAM', 'next_info'),
+        MelStruct(b'DATA', ['B', '3s', 'I', '2b', 'B', 's'],
+            'dialogue_type', 'unused1', 'disposition', 'dialogue_rank',
+            'speaker_gender', 'player_faction_rank', 'unused2'),
+        MelString(b'ONAM', 'speaker_name'),
+        MelString(b'RNAM', 'speaker_race_name'),
+        MelString(b'CNAM', 'speaker_class_name'),
+        MelString(b'FNAM', 'speaker_faction_name'),
+        MelString(b'ANAM', 'speaker_cell_name'),
+        MelString(b'DNAM', 'player_faction_name'),
+        MelString(b'SNAM', 'sound_name'),
         MelMWId(),
-        MelGroups(u'conditions',
-            MelString(b'SCVR', u'condition_string'),
-            MelUInt32(b'INTV', u'comparison_int'),
-            MelFloat(b'FLTV', u'comparison_float'),
+        MelDeleted(),
+        MelUInt8(b'QSTN', 'quest_name'),
+        MelUInt8(b'QSTF', 'quest_finished'),
+        MelUInt8(b'QSTR', 'quest_restart'),
+        MelGroups('conditions',
+            MelString(b'SCVR', 'condition_string'),
+            MelUnion({
+                b'INTV': MelSInt32(b'INTV', 'comparison_value'),
+                b'FLTV': MelFloat(b'FLTV', 'comparison_value'),
+            }),
         ),
-        MelString(b'BNAM', u'result_text'),
-        MelUInt8(b'QSTN', u'quest_name'),
-        MelUInt8(b'QSTF', u'quest_finished'),
-        MelUInt8(b'QSTR', u'quest_restart'),
+        MelString(b'BNAM', 'result_text'),
     )
 
 #------------------------------------------------------------------------------
@@ -669,13 +690,14 @@ class MreIngr(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'IRDT', [u'f', u'I', u'12i'], u'ingr_weight', u'ingr_value',
-            u'effect_index_1', u'effect_index_2', u'effect_index_3',
-            u'effect_index_4', u'skill_id_1', u'skill_id_2', u'skill_id_3',
-            u'skill_id_4', u'attribute_id_1', u'attribute_id_2',
-            u'attribute_id_3', u'attribute_id_4'),
+        MelStruct(b'IRDT', ['f', '13i'], 'ingr_weight', 'ingr_value',
+            'effect_index_1', 'effect_index_2', 'effect_index_3',
+            'effect_index_4', 'skill_id_1', 'skill_id_2', 'skill_id_3',
+            'skill_id_4', 'attribute_id_1', 'attribute_id_2',
+            'attribute_id_3', 'attribute_id_4'),
         MelScriptId(),
         MelIconTes3(),
     )
@@ -685,21 +707,23 @@ class MreLand(MelRecord):
     """Landscape."""
     rec_sig = b'LAND'
 
-    class _data_type_flags(Flags): ##: Shouldn't we set/use these?
-        include_vnml_vhgt_wnam: bool
-        include_vclr: bool
-        include_vtex: bool
+    class _DataTypeFlags(Flags): ##: Shouldn't we set/use these?
+        has_vertex_normals_or_height_map: bool
+        has_vertex_colors: bool
+        has_landscape_textures: bool
+        user_created_or_edited: bool
 
-    ##: No MelMWId, will that be a problem?
+    # No MelMWId, the land_x and land_y will have to substitute once we get
+    # around to further MW support
     melSet = MelSet(
-        MelStruct(b'INTV', [u'2I'], u'land_x', u'land_y'),
-        MelUInt32Flags(b'DATA', u'dt_flags', _data_type_flags),
+        MelStruct(b'INTV', ['2I'], 'land_x', 'land_y'),
+        MelUInt32Flags(b'DATA', 'dt_flags', _DataTypeFlags),
         # These are all very large and too complex to manipulate -> MelBase
-        MelBase(b'VNML', u'vertex_normals'),
-        MelBase(b'VHGT', u'vertex_height_map'),
-        MelBase(b'WNAM', u'world_map_heights'),
-        MelBase(b'VCLR', u'vertex_colors'),
-        MelBase(b'VTEX', u'vertex_textures'),
+        MelBase(b'VNML', 'vertex_normals'),
+        MelBase(b'VHGT', 'vertex_height_map'),
+        MelBase(b'WNAM', 'world_map_painting'),
+        MelBase(b'VCLR', 'vertex_colors'),
+        MelBase(b'VTEX', 'vertex_textures'),
     )
 
 #------------------------------------------------------------------------------
@@ -711,6 +735,7 @@ class MreLevc(AMreLeveledList):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelLLFlagsTes3(),
         MelLLChanceNoneTes3(),
         MelLLItemsTes3(item_sig=b'CNAM'),
@@ -725,6 +750,7 @@ class MreLevi(AMreLeveledList):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelLLFlagsTes3(),
         MelLLChanceNoneTes3(),
         MelLLItemsTes3(item_sig=b'INAM'),
@@ -748,10 +774,11 @@ class MreLigh(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
         MelIconTes3(),
-        MelStruct(b'LHDT', ['f', 'I', 'i', 'I', '4B', 'I'], 'weight', 'value',
+        MelStruct(b'LHDT', ['f', '2i', 'f', '4B', 'I'], 'weight', 'value',
             'duration', 'light_radius', *color_attrs('light_color'),
             (_light_flags, 'light_flags')),
         MelString(b'SNAM', 'sound_name'),
@@ -765,10 +792,11 @@ class MreLock(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'LKDT', [u'f', u'I', u'f', u'I'], u'lock_weight', u'lock_value',
-            u'lock_quality', u'lock_uses'),
+        MelStruct(b'LKDT', ['f', 'i', 'f', 'i'], 'lock_weight', 'lock_value',
+            'lock_quality', 'lock_uses'),
         MelScriptId(),
         MelIconTes3(),
     )
@@ -779,6 +807,7 @@ class MreLtex(MelRecord):
     rec_sig = b'LTEX'
 
     melSet = MelSet(
+        MelDeleted(),
         MelMWId(),
         MelUInt32(b'INTV', 'ltex_index'),
         MelString(b'DATA', 'ltex_texture_name'),
@@ -789,31 +818,26 @@ class MreMgef(MelRecord):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
-    class _mgef_flags(Flags):
-        spellmaking: bool = flag(9)
-        enchanting: bool = flag(10)
-        negative: bool = flag(11)
-
-    ##: No MelMWId, will that be a problem?
+    # No MelMWId - the identifier here will have to be the INDX instead
     ##: This will be a pain. They're hardcoded like in Oblivion, but use an int
     # index instead of a fourcc (i.e. the EDID in Oblivion).
     # Bad names to match other games (MGEF is scary since it's littered
     # implicity all over our codebase still)
     melSet = MelSet(
-        MelUInt32(b'INDX', u'mgef_index'),
+        MelUInt32(b'INDX', 'mgef_index'),
         MelStruct(b'MEDT', ['I', 'f', '4I', '3f'], 'school', 'base_cost',
-            (_mgef_flags, 'flags'), *color3_attrs('mgef_color'), 'speed_x',
-            'size_x', 'size_cap'),
+            (MgefFlagsTes3, 'flags'), *color3_attrs('mgef_color'),
+            'mgef_size_mult', 'mgef_speed_mult', 'mgef_size_cap'),
         MelIconTes3(),
-        MelString(b'PTEX', u'particle_texture'),
-        MelString(b'BSND', u'boltSound'),
-        MelString(b'CSND', u'castingSound'),
-        MelString(b'HSND', u'hitSound'),
-        MelString(b'ASND', u'areaSound'),
-        MelString(b'CVFX', u'casting_visual'),
-        MelString(b'BVFX', u'bolt_visual'),
-        MelString(b'HVFX', u'hit_visual'),
-        MelString(b'AVFX', u'are_visual'),
+        MelString(b'PTEX', 'particle_texture'),
+        MelString(b'BSND', 'boltSound'),
+        MelString(b'CSND', 'castingSound'),
+        MelString(b'HSND', 'hitSound'),
+        MelString(b'ASND', 'areaSound'),
+        MelString(b'CVFX', 'casting_visual'),
+        MelString(b'BVFX', 'bolt_visual'),
+        MelString(b'HVFX', 'hit_visual'),
+        MelString(b'AVFX', 'are_visual'),
         MelDescription(),
     )
 
@@ -824,10 +848,11 @@ class MreMisc(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'MCDT', [u'f', u'I', u'4s'], u'misc_weight', u'misc_value',
-            u'unknown1'),
+        MelStruct(b'MCDT', ['f', 'i', 'I'], 'misc_weight', 'misc_value',
+            'misc_is_key'),
         MelScriptId(),
         MelIconTes3(),
     )
@@ -838,19 +863,22 @@ class MreNpc_(MelRecord):
     rec_sig = b'NPC_'
 
     class NpcFlags(Flags):
-        npc_female: bool
-        npc_essential: bool
-        npc_respawn: bool
-        default_unknown: bool # always set
-        npc_auto_calc: bool
+        npc_female: bool = flag(0)
+        npc_essential: bool = flag(1)
+        npc_respawn: bool = flag(2)
+        npc_can_hold_items: bool = flag(3)
+        npc_auto_calc: bool = flag(4)
+        skeleton_blood: bool = flag(10)
+        metal_blood: bool = flag(11)
 
-    class MelNpcData(MelLists):
+    class MelNpcData(AMelLists):
         """Converts attributes and skills into lists."""
         _attr_indexes = {
             'npc_level': 0, 'attributes': slice(1, 9), 'skills': slice(9, 36),
-            'unknown2': 36, 'npc_health': 38, 'npc_spell_points': 39,
+            'unused2': 36, 'npc_health': 38, 'npc_magicka': 39,
             'npc_fatigue': 40, 'npc_disposition': 41, 'npc_reputation': 42,
-            'npc_rank': 43, 'unknown3': 44, 'npc_gold': 45}
+            'npc_rank': 43, 'unused3': 44, 'npc_gold': 45,
+        }
 
     class NpcDataDecider(SizeDecider):
         """At load time we can decide based on the subrecord size, but at dump
@@ -862,30 +890,30 @@ class MreNpc_(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
         MelString(b'RNAM', 'race'),
         MelString(b'CNAM', 'npc_class'),
-        MelString(b'ANAM', u'faction_name'),
-        MelString(b'BNAM', u'head_model'),
-        MelString(b'KNAM', u'hair_model'),
+        MelString(b'ANAM', 'faction_name'),
+        MelString(b'BNAM', 'head_body_part'),
+        MelString(b'KNAM', 'hair_body_part'),
         MelScriptId(),
         MelUnion({
-            12: MelStruct(b'NPDT', [u'H', u'3B', u'3s', u'I'], u'npc_level', u'npc_disposition',
-                u'npc_reputation', u'npc_rank', u'unknown1',
-                u'npc_gold'),
-            52: MelNpcData(b'NPDT', [u'H', u'8B', u'27B', u's', u'H', u'H', u'H', u'B', u'B', u'B', u's', u'I'], u'npc_level',
-                (u'attributes', [0] * 8), (u'skills', [0] * 27),
-                u'unknown2', u'npc_health', u'npc_spell_points',
-                u'npc_fatigue', u'npc_disposition', u'npc_reputation',
-                u'npc_rank', u'unknown3', u'npc_gold'),
+            12: MelStruct(b'NPDT', ['H', '3B', '3s', 'I'], 'npc_level',
+                'npc_disposition', 'npc_reputation', 'npc_rank', 'unused1',
+                'npc_gold'),
+            52: MelNpcData(b'NPDT', ['H', '8B', '27B', 's', '3H', '3B', 's', 'I'],
+                'npc_level', ('attributes', [0] * 8), ('skills', [0] * 27),
+                'unused2', 'npc_health', 'npc_magicka', 'npc_fatigue',
+                'npc_disposition', 'npc_reputation', 'npc_rank', 'unused3',
+                'npc_gold'),
         }, decider=NpcDataDecider()),
-        MelStruct(b'FLAG', ['B', '3s'], ('npc_flags', NpcFlags),
-            'blood_type'),
+        MelUInt32Flags(b'FLAG', 'npc_flags', NpcFlags),
         MelItems(),
         MelSpellsTes3(),
         MelAidt(),
-        MelDestinations(),
+        MelTravelServices(),
         MelAIPackagesTes3(),
     )
 
@@ -894,28 +922,31 @@ class MrePgrd(MelRecord):
     """Path Grid."""
     rec_sig = b'PGRD'
 
+    # This MelMWId is ignored, the pgrd_x and pgrd_y will have to substitute
+    # once we get around to further MW support
     melSet = MelSet(
-        MelStruct(b'DATA', [u'2I', u'2s', u'H'], u'pgrd_x', u'pgrd_y',
-            u'unknown1', u'point_count'),
+        MelStruct(b'DATA', ['2i', '2H'], 'pgrd_x', 'pgrd_y',
+            'pgrd_granularity', 'point_count'),
         MelMWId(),
         # Could be loaded via MelArray, but are very big and not very useful
-        MelBase(b'PGRP', u'point_array'),
-        MelBase(b'PGRC', u'point_edges'),
+        MelBase(b'PGRP', 'point_array'),
+        MelBase(b'PGRC', 'point_edges'),
     )
 
 #------------------------------------------------------------------------------
 class MreProb(MelRecord):
-    """Probe Item."""
+    """Probe."""
     rec_sig = b'PROB'
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'PBDT', [u'f', u'I', u'f', u'I'], u'probe_weight', u'probe_value',
-            u'probe_quality', u'probe_uses'),
-        MelIconTes3(),
+        MelStruct(b'PBDT', ['f', 'i', 'f', 'i'], 'probe_weight', 'probe_value',
+            'probe_quality', 'probe_uses'),
         MelScriptId(),
+        MelIconTes3(),
     )
 
 #------------------------------------------------------------------------------
@@ -923,24 +954,35 @@ class MreRace(MelRecord):
     """Race."""
     rec_sig = b'RACE'
 
-    class _race_flags(Flags):
+    class _RaceFlags(Flags):
         playable: bool
         beast_race: bool
 
+    class _MelRaceRadt(AMelLists):
+        _attr_indexes = {
+            'skills': slice(14), 'maleStrength': 15, 'femaleStrength': 16,
+            'maleIntelligence': 17, 'femaleIntelligence': 18,
+            'maleWillpower': 19, 'femaleWillpower': 20, 'maleAgility': 21,
+            'femaleAgility': 22, 'maleSpeed': 23, 'femaleSpeed': 24,
+            'maleEndurance': 25, 'femaleEndurance': 26, 'malePersonality': 27,
+            'femalePersonality': 28, 'maleLuck': 29, 'femaleLuck': 30,
+            'maleHeight': 31, 'femaleHeight': 32, 'maleWeight': 33,
+            'femaleWeight': 34,
+        }
+
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelFullTes3(),
-        # Bad names to match other games (race patcher)
-        MelStruct(b'RADT', [u'14i', u'16I', u'4f', u'I'], u'skill1', u'skill1Boost', u'skill2',
-            u'skill2Boost', u'skill3', u'skill3Boost', u'skill4',
-            u'skill4Boost', u'skill5', u'skill5Boost', u'skill6',
-            u'skill6Boost', u'skill7', u'skill7Boost', u'maleStrength',
-            u'femaleStrength', u'maleIntelligence', u'femaleIntelligence',
-            u'maleWillpower', u'femaleWillpower', u'maleAgility',
-            u'femaleAgility', u'maleSpeed', u'femaleSpeed', u'maleEndurance',
-            u'femaleEndurance', u'malePersonality', u'femalePersonality',
-            u'maleLuck', u'femaleLuck', u'maleHeight', u'femaleHeight',
-            u'maleWeight', u'femaleWeight', (_race_flags, u'race_flags')),
+        # Bad names to match other games (race patchers)
+        _MelRaceRadt(b'RADT', ['14i', '16i', '4f', 'I'], ('skills', [0] * 14),
+            'maleStrength', 'femaleStrength', 'maleIntelligence',
+            'femaleIntelligence', 'maleWillpower', 'femaleWillpower',
+            'maleAgility', 'femaleAgility', 'maleSpeed', 'femaleSpeed',
+            'maleEndurance', 'femaleEndurance', 'malePersonality',
+            'femalePersonality', 'maleLuck', 'femaleLuck', 'maleHeight',
+            'femaleHeight', 'maleWeight', 'femaleWeight',
+            (_RaceFlags, 'race_flags')),
         MelSpellsTes3(),
         MelDescription(),
     )
@@ -951,17 +993,18 @@ class MreRegn(MelRecord):
     rec_sig = b'REGN'
 
     melSet = MelSet(
+        MelDeleted(),
         MelMWId(),
         MelFullTes3(),
-        MelTruncatedStruct(b'WEAT', [u'10B'], u'chance_clear', u'chance_cloudy',
-            u'chance_foggy', u'chance_overcast', u'chance_rain',
-            u'chance_thunder', u'chance_ash', u'chance_blight',
-            u'chance_snow', u'chance_blizzard', old_versions={u'8B'}),
-        MelString(b'BNAM', u'sleep_creature'),
-        MelColor(),
-        MelGroups(u'sound_chances',
-            MelStruct(b'SNAM', [u'32s', u'B'], (FixedString(32), u'sound_name'),
-                u'sound_chance'),
+        MelTruncatedStruct(b'WEAT', ['10B'], 'chance_clear', 'chance_cloudy',
+            'chance_foggy', 'chance_overcast', 'chance_rain',
+            'chance_thunder', 'chance_ash', 'chance_blight',
+            'chance_snow', 'chance_blizzard', old_versions={'8B'}),
+        MelString(b'BNAM', 'sleep_creature'),
+        MelColorO(),
+        MelGroups('sound_chances',
+            MelStruct(b'SNAM', ['32s', 'b'], (FixedString(32), 'sound_name'),
+                'sound_chance'),
         ),
     )
 
@@ -972,12 +1015,13 @@ class MreRepa(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'RIDT', [u'f', u'2I', u'f'], u'repa_weight', u'repa_value',
-            u'repa_uses', u'repa_quality'),
-        MelIconTes3(),
+        MelStruct(b'RIDT', ['f', '2i', 'f'], 'repa_weight', 'repa_value',
+            'repa_uses', 'repa_quality'),
         MelScriptId(),
+        MelIconTes3(),
     )
 
 #------------------------------------------------------------------------------
@@ -986,13 +1030,15 @@ class MreScpt(MelRecord):
     rec_sig = b'SCPT'
 
     melSet = MelSet(
-        # Yes, the usual NAME sits in this subrecord instead
-        MelStruct(b'SCHD', [u'32s', u'5I'], (FixedString(32), u'mw_id'),
-            u'num_shorts', u'num_longs', u'num_floats', u'script_data_size',
-            u'local_var_size'),
-        MelStrings(b'SCVR', u'script_variables'),
-        MelBase(b'SCDT', u'compiled_script'),
-        MelString(b'SCTX', u'script_source'),
+        # Yes, the usual NAME sits in this subrecord instead. Additionally, the
+        # CS lets you save it with up to 36 characters, at which point it
+        # clobbers num_shorts...
+        MelStruct(b'SCHD', ['32s', '5I'], (FixedString(32), 'mw_id'),
+            'num_shorts', 'num_longs', 'num_floats', 'script_data_size',
+            'local_var_size'),
+        MelStrings(b'SCVR', 'script_variables'),
+        MelBase(b'SCDT', 'compiled_script'),
+        MelString(b'SCTX', 'script_source'),
     )
 
 #------------------------------------------------------------------------------
@@ -1000,12 +1046,13 @@ class MreSkil(MelRecord):
     """Skill."""
     rec_sig = b'SKIL'
 
-    ##: No MelMWId, will that be a problem?
+    # No MelMWId, this will have to use skill_id instead. Similar situation to
+    # MGEF above
     melSet = MelSet(
-        MelUInt32(b'INDX', u'skill_index'),
-        MelStruct(b'SKDT', [u'2I', u'4f'], u'skill_attribute',
-            u'skill_specialization', u'use_value_1', u'use_value_2',
-            u'use_value_3', u'use_value_4'),
+        MelUInt32(b'INDX', 'skill_id'),
+        MelStruct(b'SKDT', ['2I', '4f'], 'skill_attribute',
+            'skill_type', 'skill_action_1', 'skill_action_2',
+            'skill_action_3', 'skill_action_4'),
         MelDescription(),
     )
 
@@ -1016,10 +1063,10 @@ class MreSndg(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelUInt32(b'DATA', u'sdng_type'),
-        MelString(b'CNAM', u'creature_name'),
-        ##: Investigate what this is and if we should use it instead of NAME
-        MelString(b'SNAM', u'sound_id'),
+        MelUInt32(b'DATA', 'sdng_type'),
+        MelString(b'CNAM', 'creature_name'),
+        MelString(b'SNAM', 'sound_name'),
+        MelDeleted(),
     )
 
 #------------------------------------------------------------------------------
@@ -1029,9 +1076,9 @@ class MreSoun(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelString(b'FNAM', u'sound_filename'),
-        MelStruct(b'DATA', [u'3B'], u'atten_volume', u'min_range',
-            u'max_range'),
+        MelDeleted(),
+        MelString(b'FNAM', 'sound_filename'),
+        MelStruct(b'DATA', ['3B'], 'soun_volume', 'min_range', 'max_range'),
     )
 
 #------------------------------------------------------------------------------
@@ -1046,8 +1093,9 @@ class MreSpel(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelFullTes3(),
-        MelStruct(b'SPDT', ['3I'], 'spell_type', 'spell_cost',
+        MelStruct(b'SPDT', ['I', 'i', 'I'], 'spell_type', 'spell_cost',
             (_SpellFlags, 'spell_flags')),
         MelEffectsTes3(),
     )
@@ -1058,7 +1106,8 @@ class MreSscr(MelRecord):
     rec_sig = b'SSCR'
 
     melSet = MelSet(
-        MelString(b'DATA', u'unknown_digits'), # series of ASCII digits
+        MelDeleted(),
+        MelString(b'DATA', 'numerical_id'),
         MelMWId(),
     )
 
@@ -1069,6 +1118,7 @@ class MreStat(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
     )
 
@@ -1077,20 +1127,22 @@ class MreWeap(MelRecord):
     """Weapon."""
     rec_sig = b'WEAP'
 
-    class _weapon_flags(Flags):
-        ignore_normal_weapon_resistance: bool
+    class _WeaponFlags(Flags):
         is_silver: bool
+        ignore_normal_weapon_resistance: bool
 
     melSet = MelSet(
         MelMWId(),
+        MelDeleted(),
         MelModel(),
         MelFullTes3(),
-        MelStruct(b'WPDT', [u'f', u'I', u'2H', u'2f', u'H', u'6B', u'I'], u'weapon_weight', u'weapon_value',
-            u'weapon_type', u'weapon_health', u'weapon_speed', u'weapon_reach',
-            u'enchant_points', u'chop_minimum', u'chop_maximum',
-            u'slash_minimum', u'slash_maximum', u'thrust_minimum',
-            u'thrust_maximum', (_weapon_flags, u'weapon_flags')),
+        MelStruct(b'WPDT', ['f', 'i', '2H', '2f', 'H', '6B', 'I'],
+            'weapon_weight', 'weapon_value', 'weapon_type', 'weapon_health',
+            'weapon_speed', 'weapon_reach', 'enchanting_charge',
+            'chop_minimum', 'chop_maximum', 'slash_minimum', 'slash_maximum',
+            'thrust_minimum', 'thrust_maximum',
+            (_WeaponFlags, 'weapon_flags')),
+        MelScriptId(),
         MelIconTes3(),
         MelEnchantmentTes3(),
-        MelScriptId(),
     )

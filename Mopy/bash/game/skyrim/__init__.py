@@ -762,13 +762,13 @@ class ASkyrimGameInfo(PatchGame):
         # criticalEffect at the end since it's a FormID, to mirror how
         # APreserver will join the tuples
         b'WEAP': ('eid', 'weight', 'value', 'damage', 'speed', 'reach',
-                  'enchantPoints', 'stagger', 'criticalDamage',
+                  'enchantment_charge', 'stagger', 'criticalDamage',
                   'criticalMultiplier', 'criticalEffect'),
     }
     stats_attrs = {r: tuple(x for x in a if x != 'eid')
                    for r, a in stats_csv_attrs.items()} | {
         b'WEAP': ('weight', 'value', 'damage', 'speed', 'reach',
-                  'enchantPoints', 'stagger', 'criticalDamage',
+                  'enchantment_charge', 'stagger', 'criticalDamage',
                   'criticalMultiplier'),
     }
     stats_fid_attrs = {
@@ -983,7 +983,7 @@ class ASkyrimGameInfo(PatchGame):
                   'decal_depth', 'decal_shininess', 'decal_parallax_scale',
                   'decal_parallax_passes', 'decal_flags', 'decal_color_red',
                   'decal_color_green', 'decal_color_blue', 'txst_flags'),
-        b'WEAP': ('model', 'model2', 'iconPath'),
+        b'WEAP': ('model', 'scopeModel', 'iconPath'),
         b'WTHR': ('wthrAmbientColors',),
     }
     graphicsFidTypes = {
@@ -1000,9 +1000,9 @@ class ASkyrimGameInfo(PatchGame):
                   'proj_decal_data'),
         b'SCRL': ('menu_display_object',),
         b'SPEL': ('menu_display_object',),
-        b'WEAP': ('firstPersonModelObject',),
+        b'WEAP': ('scopeEffect', 'firstPersonModelObject'),
     }
-    graphicsModelAttrs = {'model', 'model2', 'male_model', 'female_model',
+    graphicsModelAttrs = {'model', 'scopeModel', 'male_model', 'female_model',
                           'male_model_1st', 'female_model_1st', 'maleWorld',
                           'femaleWorld'}
 
