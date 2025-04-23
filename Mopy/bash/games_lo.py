@@ -807,6 +807,9 @@ class _TextFileLo(LoGame):
         return [*super().get_lo_files(), self.get_lo_file().abs_path]
 
 class TextfileGame(_TextFileLo):
+    # If True, the game master (e.g. Skyrim.esm) must never be written to
+    # plugins.txt
+    _remove_game_master_from_plugins_txt = True
 
     def __init__(self, mod_infos, game_handle, plugins_txt_path,
                  loadorder_txt_path: Path, *, lo_txt_type=LoFile, **kwargs):
@@ -902,10 +905,14 @@ class TextfileGame(_TextFileLo):
         remove it and rewrite the plugins.txt."""
         act = super()._fetch_active_plugins()
         if self._game_handle.master_file in act:
-            bolt.deprint(f'Removing {self._game_handle.master_file} from '
-                         f'{self._plugins_txt.abs_path}')
-            self._backup_active_plugins() # we removed master esm back up first
-            act = self._persist_active_plugins(act, act)
+            if self._remove_game_master_from_plugins_txt:
+                bolt.deprint(f'Removing {self._game_handle.master_file} from '
+                             f'{self._plugins_txt.abs_path}')
+                self._backup_active_plugins()
+                act = self._persist_active_plugins(act, act)
+            else:
+                # Game master already in active and should not be removed
+                return act
         # Prepend the game master - should be present and is always active
         return [self._game_handle.master_file, *act]
 
@@ -914,7 +921,11 @@ class TextfileGame(_TextFileLo):
         self._loadorder_txt.do_update()
 
     def _persist_active_plugins(self, active, lord):
-        active_filtered = [x for x in active if x != self._game_handle.master_file]
+        active_filtered = (
+            [x for x in active if x != self._game_handle.master_file]
+            if self._remove_game_master_from_plugins_txt
+            else active
+        )
         super()._persist_active_plugins(active_filtered, active_filtered)
         return active_filtered
 

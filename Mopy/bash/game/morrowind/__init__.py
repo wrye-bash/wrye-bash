@@ -22,6 +22,7 @@
 # =============================================================================
 import struct as _struct
 
+from ... import bass
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
@@ -42,7 +43,6 @@ class _AMorrowindGameInfo(PatchGame):
     game_icon = u'morrowind.svg'
     bash_root_prefix = u'Morrowind'
     bak_game_name = u'Morrowind'
-    uses_personal_folders = False
     appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
     game_detect_includes = {'Morrowind.exe'}
@@ -50,7 +50,8 @@ class _AMorrowindGameInfo(PatchGame):
                             WS_COMMON_FILES)
     version_detect_file = u'Morrowind.exe'
     master_file = bolt.FName(u'Morrowind.esm')
-    mods_dir = u'Data Files'
+    mods_dir_name = 'Data Files'
+    mods_dir_path = ['Data Files']
     taglist_dir = u'Morrowind'
     loot_dir = u'Morrowind'
     loot_game_name = 'Morrowind'
@@ -62,6 +63,11 @@ class _AMorrowindGameInfo(PatchGame):
     plugin_name_specific_dirs = [] # Morrowind seems to have no such dirs
 
     allTags = set() # no BP functionality yet
+
+    @staticmethod
+    def get_lo_dir(bass_dirs):
+        # LO file is Morrowind.ini, which is in the game folder
+        return bass_dirs['app']
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
@@ -96,6 +102,11 @@ class _AMorrowindGameInfo(PatchGame):
                 bolt.deprint(f'some BSAs in {mor_ini} are not present: '
                              f'{bsas.keys() - bsalo.values()}')
             return bsalo, dict.fromkeys(bsalo, mor_ini.fn_key)
+
+    class Ess(GameInfo.Ess):
+        @classmethod
+        def base_saves_path(cls, personal: bolt.Path, my_games_name: str):
+            return bass.dirs['app']
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True

@@ -352,13 +352,15 @@ class DocBrowser(WindowFrame):
                 # came from the Data folder, we may be able to find it
                 doc_parents = doc_path.head
                 wip_doc = doc_path.stail
-                data_lower = bush.game.mods_dir.lower()
-                while doc_parents:
-                    wip_doc = os.path.join(doc_parents.sbody, wip_doc)
-                    dp_head = doc_parents.head
-                    if dp_head.stail.lower() == data_lower:
-                        break
-                    doc_parents = dp_head
+                data_lower = os.path.join(*bush.game.mods_dir_path).lower()
+                if data_lower in doc_path.cs:
+                    data_rightmost = bush.game.mods_dir_path[-1].lower()
+                    while doc_parents:
+                        wip_doc = os.path.join(doc_parents.sbody, wip_doc)
+                        dp_head = doc_parents.head
+                        if dp_head.stail.lower() == data_rightmost:
+                            break
+                        doc_parents = dp_head
                 else:
                     # Could not find a parent Data folder, this may have been
                     # some random doc path outside the Data folder. Best we can

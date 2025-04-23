@@ -32,6 +32,7 @@ __author__ = u'Utumno'
 import copy
 import io
 import os
+import re
 import sys
 import zlib
 from enum import Enum
@@ -70,6 +71,9 @@ def _pack_str8_1(out, val): # TODO: val = val.reencode(...)
     val = encode(val)
     pack_bzstr8(out, val)
     return len(val) + 2
+
+def _calc_game_ticks(days: int, hours: int, minutes: int) -> int:
+    return (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60) * 1000
 
 # Compression types for saves -------------------------------------------------
 class _SaveCompressionType(Enum):
@@ -206,8 +210,7 @@ def calc_time_fo4(gameDate: bytes) -> (float, int):
     days, hours, minutes = [parse_int(x) for x in
                             gameDate.split(b'.')[:3]]
     gameDays = float(days) + float(hours) / 24 + float(minutes) / (24 * 60)
-    # Assuming still 1000 ticks per second
-    gameTicks = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60) * 1000
+    gameTicks = _calc_game_ticks(days, hours, minutes)
     return gameDays, gameTicks
 
 # Save Headers ----------------------------------------------------------------
@@ -261,6 +264,10 @@ class SaveFileHeader(object):
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
+        self._load_header_data(ins, load_image=load_image)
+
+    def _load_header_data(self, ins, load_image=False):
+        """Loads data past the save magic."""
         self._load_from_unpackers(ins, self.__class__._unpackers)
         self._load_image_data(ins, load_image)
         self._load_masters(ins)
@@ -873,6 +880,47 @@ class MorrowindSaveHeader(SaveFileHeader):
             self.ssData = out.getvalue()
         self.ssHeight = self.ssWidth = 128 # fixed size for Morrowind
 
+class OblivionReSaveHeader(SaveFileHeader):
+    save_magic = b'GVAS'
+    _save_name_regex = re.compile(
+        r'Save \d+, Playing Time (\d+\.\d+\.\d+) - (.+?) - (\w+), Level (\d+)',
+        re.I)
+
+    def __init__(self, save_inf, *, load_image=False, ins=None):
+        super().__init__(save_inf, load_image=load_image, ins=ins)
+        self._parse_save_name(save_inf.fn_key)
+
+    def _load_header_data(self, ins, load_image=False):
+        # TODO(OblivionRE) The save format itself seems entirely different,
+        #  we may never be able to parse it :(
+        # We set defaults here, _parse_save_name will set some of these for
+        # non-autosaves based on the save's filename
+        self.pcName = ''
+        self.pcLevel = 0
+        self.pcLocation = ''
+        self.game_date = '00.00.00'
+        self.masters = []
+        self.pc_curr_health = 0
+        self.pc_max_health = 0
+
+    def _parse_save_name(self, save_fname: FName):
+        save_ma = self._save_name_regex.match(save_fname)
+        if save_ma:
+            self.game_date = save_ma.group(1)
+            self.pcName = save_ma.group(2)
+            self.pcLocation = save_ma.group(3)
+            self.pcLevel = int(save_ma.group(4))
+        self.calc_time()
+
+    def calc_time(self):
+        time_parts = self.game_date.split('.')
+        if len(time_parts) != 3:
+            raise SaveHeaderError(f'Failed to parse play time '
+                                  f'{self.game_date}')
+        days, hours, minutes = map(int, time_parts)
+        self.gameDays = days
+        self.gameTicks = _calc_game_ticks(days, hours, minutes)
+
 # Factory
 def get_save_header_type(game_fsName) -> type[SaveFileHeader]:
     match game_fsName:
@@ -891,6 +939,8 @@ def get_save_header_type(game_fsName) -> type[SaveFileHeader]:
             return OblivionSaveHeader
         case 'Starfield':
             return StarfieldSaveHeader
+        case 'OblivionRE':
+            return OblivionReSaveHeader
         case _:
             raise RuntimeError(f'Save header decoding is not supported for '
                                f'{game_fsName} yet')

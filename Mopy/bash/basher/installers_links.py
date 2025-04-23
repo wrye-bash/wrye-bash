@@ -73,7 +73,7 @@ class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
     _text = _dialog_title = _('Monitor External Installation…')
     _help = _('Monitors the %(data_folder)s folder to capture changes made '
               'manually or via 3rd party tools.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
 
     @balt.conversation
     def Execute(self):
@@ -81,7 +81,7 @@ class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
                 'installing a mod via an external application or manual '
                 'install. This will require two refreshes of the '
                 '%(data_folder)s folder and may take some time. Continue?') % {
-            'data_folder': bush.game.mods_dir}
+            'data_folder': bush.game.mods_dir_name}
         if not self._askYes(msg, _('External Installation')):
             return
         # Refresh Data
@@ -107,7 +107,7 @@ class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
         touchedFiles -= changedFiles
         if not (newFiles or changedFiles or touchedFiles or delFiles):
             self._showOk(_('No changes were detected in the %(data_folder)s '
-                           'folder.') % {'data_folder': bush.game.mods_dir},
+                           'folder.') % {'data_folder': bush.game.mods_dir_name},
                 title=_('Monitor External Installation - No Changes'))
             return
         # Show results, select which files to include
@@ -164,7 +164,7 @@ class Installers_AnnealAll(Installer_Op, Installers_Link):
     _help = _('Install any missing files (for active packages) and update '
               'the contents of the %(data_folder)s folder to account for all '
               'install order and configuration changes.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
     _prog_args = _('Annealing…'),
 
     def _perform_action(self, **kwargs):
@@ -219,7 +219,7 @@ class Installers_FullRefresh(_AInstallers_Refresh):
 class Installers_RefreshData(_AInstallers_Refresh):
     _text = _('Refresh Data')
     _help = _('Rescan the %(data_folder)s folder and all project '
-              'directories.') % {'data_folder': bush.game.mods_dir}
+              'directories.') % {'data_folder': bush.game.mods_dir_name}
 
 #------------------------------------------------------------------------------
 class Installers_CleanData(Installer_Op, Installers_Link):
@@ -229,14 +229,14 @@ class Installers_CleanData(Installer_Op, Installers_Link):
     _text = _('Clean Data…')
     _help = _('Move all files that are not linked to an active installer '
               'out of the %(data_folder)s folder.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
     _full_msg = (_('Clean %(data_folder)s folder?') % {
-        'data_folder': bush.game.mods_dir} + f' {_help}\n\n' + _(
+        'data_folder': bush.game.mods_dir_name} + f' {_help}\n\n' + _(
         "This includes files that were installed manually or by another "
         "program. Files will be moved to the '%(dfc_path)s' folder instead "
         "of being deleted so you can retrieve them later if necessary.") % {
         'dfc_path': bass.dirs['bainData'].join(
-            f'{bush.game.mods_dir} Folder Contents <date>')} + '\n\n' + _(
+            f'{bush.game.mods_dir_name} Folder Contents <date>')} + '\n\n' + _(
         'Note that you will first be shown a list of files that this '
         'operation would remove and will have a chance to change the '
         'selection.'))
@@ -244,7 +244,7 @@ class Installers_CleanData(Installer_Op, Installers_Link):
     @balt.conversation
     def Execute(self):
         if not self._askYes(self._full_msg): return
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         all_unknown_files = sorted(self.idata.get_clean_data_dir_list())
         if not all_unknown_files:
             self._showOk(_('There are no untracked files in the '
@@ -260,7 +260,7 @@ class Installers_CleanData(Installer_Op, Installers_Link):
     @property
     def _prog_args(self):
         return _('Cleaning %(data_folder)s contents…') % {
-            'data_folder': bush.game.mods_dir}, f'\n{" " * 65}'
+            'data_folder': bush.game.mods_dir_name}, f'\n{" " * 65}'
 
     def _perform_action(self, **kwargs):
         """Clean the data directory."""
@@ -524,7 +524,7 @@ class Installers_RemoveEmptyDirs(BoolLink):
     _text = _('Remove Empty Directories')
     _help = _('Toggles whether or not Wrye Bash will remove empty directories '
               'when scanning the %(data_folder)s folder.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
     _bl_key = 'bash.installers.removeEmptyDirs'
 
 #------------------------------------------------------------------------------

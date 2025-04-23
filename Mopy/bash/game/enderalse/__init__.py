@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import ObjectIndexRange
 from ..enderal import AEnderalGameInfo
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import GOGMixin, SteamMixin

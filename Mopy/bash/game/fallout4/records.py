@@ -1878,6 +1878,7 @@ class MreIngr(AMreWithKeywords):
         MelEdid(),
         MelVmad(),
         MelBounds(),
+        MelPreviewTransform(),
         MelFull(),
         MelKeywords(),
         MelModel(),
@@ -2137,8 +2138,8 @@ class MreLigh(AMreWithKeywords, _AMreWithProperties):
             }),
         MelLighFade(),
         MelString(b'NAM0', 'light_gobo'),
-        MelLighLensFlare(),
         MelSound(),
+        MelLighLensFlare(),
         MelGodRays(),
     )
 

@@ -1043,7 +1043,7 @@ def get_bsa_type(game_fsName) -> type[ABsa]:
             return StarfieldBA2
         case 'Morrowind':
             return MorrowindBsa
-        case 'Oblivion':
+        case 'Oblivion' | 'OblivionRE':
             return OblivionBsa
         case _:
             raise RuntimeError(f'BSAs are not supported for {game_fsName} yet')

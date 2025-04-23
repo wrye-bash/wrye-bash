@@ -344,16 +344,18 @@ class GameInfo(object):
     # default Bashed Patch resource files (e.g. CSV files) are stored. If
     # empty, indicates that WB does not come with any such files for this game
     bash_patches_dir = u''
-    # True if the game uses the 'My Documents' folder, False to just use the
-    # game path
-    uses_personal_folders = True
     # Name of the folder in My Documents\My Games that holds this game's data
     # (saves, INIs, etc.)
     my_games_name = u''
-    # Name of the game's AppData folder, relative to %LocalAppData%
-    appdata_name = u''
+    # Name of the game's AppData folder, relative to %LocalAppData%. If empty,
+    # indicates that this game has no AppData folder
+    appdata_name = ''
+    # The path segments (relative to the game folder) leading to the directory
+    # where the launch_exe sits (and thus where tools like the script extender
+    # have to be placed)
+    executable_dir = []
     # The exe to use when launching the game (without xSE present)
-    launch_exe = u'' ## Example: u'TESV.exe'
+    launch_exe = '' ## Example: 'TESV.exe'
     # Path to one or more files to look for to see if this is the right game
     # when joined with the game's root path (i.e. the one above the Data
     # folder). The combination of these files must be unique among all games.
@@ -368,15 +370,19 @@ class GameInfo(object):
     # these are GOG, Steam and Windows Store).
     game_detect_excludes = set()
     # Path to a file to pass to env.get_file_version to determine the game's
-    # version. Usually the same as launch_exe, but some games need different
-    # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
-    # and therefore needs a different file here).
-    version_detect_file = u''
+    # version. Usually the same as launch_exe (and will be looked for in the
+    # same directory), but some games need different ones here (e.g. Enderal,
+    # which has Skyrim's version in the launch_exe, and therefore needs a
+    # different file here).
+    version_detect_file = ''
     # The main plugin Wrye Bash should look for
     master_file: bolt.FName = bolt.FName('')
-    # The directory in which mods and other data files reside. This is relative
-    # to the game directory.
-    mods_dir = u'Data'
+    # The name of the directory in which mods and other data files reside. This
+    # will be shown to the user and should be the simple name of the directory
+    mods_dir_name = 'Data'
+    # The path to the directory in which mods and other data files reside,
+    # relative to the game directory. Given as path components.
+    mods_dir_path = ['Data']
     # The name of the directory containing the taglist for this game, relative
     # to 'Mopy/taglists'
     taglist_dir = u''
@@ -487,6 +493,13 @@ class GameInfo(object):
                     return __masters[-1], self.short_fid & 0xFFFFFF
         return _FormID
 
+    @staticmethod
+    def get_lo_dir(bass_dirs):
+        """Determine the directory where plugins.txt etc. are stored. Called
+        in the middle of bass.dirs initialization, hence the need for the
+        bass_dirs parameter."""
+        return bass_dirs['userApp']
+
     class St:
         """Information about this game on Steam."""
         # The app IDs on Steam. An empty list indicates the game is not
@@ -570,7 +583,7 @@ class GameInfo(object):
 
         @classmethod
         def exe_path_sc(cls):
-            exe_xse = bass.dirs['app'].join(cls.exe)
+            exe_xse = bass.dirs['exe'].join(cls.exe)
             return exe_xse if exe_xse.is_file() else None
 
     class Sd(object):
@@ -631,10 +644,15 @@ class GameInfo(object):
         # first one *must* be the main INI!
         #  Example: [u'Oblivion.ini']
         dropdown_inis = []
+        # Whether the INIs sit in My Documents (=> True) or above the Data
+        # folder (=> False)
+        game_inis_in_my_documents = True
         # Whether or not this game supports the OBSE INI format
         has_obse_inis = False
         # INI setting used to setup Save Profiles
         #  (section, key)
+        # If empty, indicates that this game does not have such an INI key and
+        # thus does not support profiles
         save_profiles_key = (u'General', u'SLocalSavePath')
         # Base dir for the save_profiles_key setting above
         save_prefix = u'Saves'
@@ -713,6 +731,17 @@ class GameInfo(object):
         ext = u'.ess'
         # Whether or not this game has screenshots in its savegames
         has_screenshots = True
+        # Filenames of files that have the save extension, but aren't actually
+        # saves and should thus be skipped
+        save_skips = set()
+        # The name of the folder inside the saveBase directory (see
+        # base_saves_path below) where save games are stored
+        saves_dir = 'Saves'
+
+        @classmethod
+        def base_saves_path(cls, personal: bolt.Path, my_games_name: str):
+            """Determines the saveBase directory for this game."""
+            return personal.join('My Games', my_games_name)
 
     class Bsa(object):
         """Information about the BSAs (Bethesda Archives) used by this game."""

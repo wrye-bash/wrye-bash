@@ -661,16 +661,17 @@ class _MelEffectsScit(MelTruncatedStruct):
                 unpacked_val = (0,) # Discard bogus MS40TestSpell fid
         return super()._pre_process_unpacked(unpacked_val)
 
-class _MelMgefCode(MelStruct):
+class _MelMgefCode(MelTruncatedStruct):
     """Handles the nonsense that is MGEF codes in Oblivion. This is necessary
     because we use the code, which is actually a FourCC and so really should be
     treated as 4 bytes, as a string all over the codebase. On top of that, OBME
     means that this stupid thing can be a FormID too, depending on its value as
     an integer."""
     def __init__(self, mel_sig: bytes, struct_formats: list[str], *elements,
-            mgef_code_attr: str, emulated_attr: str | None = None):
-        """"""
-        super().__init__(mel_sig, struct_formats, *elements)
+            mgef_code_attr: str, emulated_attr: str | None = None,
+            old_versions: set[str] | None = None):
+        super().__init__(mel_sig, struct_formats, *elements,
+            old_versions=old_versions or set())
         self._mgef_code_attr = mgef_code_attr
         self._mgef_int_attr = f'_{mgef_code_attr}_as_int'
         self._emulated_attr = emulated_attr
@@ -898,6 +899,14 @@ class MelMgefEdidTes4(_MelMgefCode):
         # Always 4 bytes for the magic effect code plus a null terminator
         super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
             mgef_code_attr='mgef_edid', emulated_attr='eid')
+
+class MelMgefEdidTes4Re(_MelMgefCode):
+    """Handles EDID for Oblivion Remastered's MGEF. Same as Oblivion, but the
+    null terminator is sometimes absent (e.g. in UORP)."""
+    def __init__(self):
+        super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
+            mgef_code_attr='mgef_edid', emulated_attr='eid',
+            old_versions={'4s'})
 
 # API - FO3 and FNV -----------------------------------------------------------
 class MelEffectsFo3(MelGroups):

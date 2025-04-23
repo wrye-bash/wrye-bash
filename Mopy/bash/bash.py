@@ -600,7 +600,8 @@ def _main(opts, wx_locale, wxver):
             try:
                 restore_.restore_settings(
                     bush_game.bak_game_name, bush_game.my_games_name,
-                    bush_game.bash_root_prefix, bush_game.mods_dir)
+                    bush_game.bash_root_prefix, bush_game.mods_dir_name,
+                    bush_game.Ess.saves_dir)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
             except (exception.BoltError, OSError, shutil.Error,
@@ -619,7 +620,7 @@ def _main(opts, wx_locale, wxver):
         from . import load_order
         init_loot_cond_functions(load_order, bosh, bush_game)
         from . import env
-        env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
+        env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
         global basher # share this instance with _close_dialog_windows
         from . import basher
     except (exception.BoltError, ImportError, OSError, NotImplementedError):
@@ -673,7 +674,7 @@ def _main(opts, wx_locale, wxver):
                 bkp_setts = barb.BackupSettings(
                     settings_file, bush_game.bak_game_name,
                     bush_game.my_games_name, bush_game.bash_root_prefix,
-                    bush_game.mods_dir)
+                    bush_game.mods_dir_name, bush_game.Ess.saves_dir)
             try:
                 with gui.BusyCursor():
                     bkp_setts.backup_settings(balt)

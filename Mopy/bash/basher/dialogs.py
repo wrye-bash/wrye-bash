@@ -569,7 +569,7 @@ class SyncFromDataEditor(_ABainMLE):
             mlel_items=list(map(str, pkg_mismatched)))
         sync_desc = _('Update %(target_package)s according to '
                       '%(data_folder)s folder?') % {
-            'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
+            'target_package': pkg_name, 'data_folder': bush.game.mods_dir_name}
         sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
         super().__init__(parent, data_desc=sync_desc,
             list_data=[del_data, upd_data], ok_label=_('Update'))
@@ -581,7 +581,7 @@ class CleanDataEditor(_ABainMLE):
     _def_size = (450, 500)
 
     def __init__(self, parent, *, unknown_files: list[CIstr]):
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         to_move_data = MLEList(
             mlel_title=_('Files To Move (%(to_move_count)d):') % {
                 'to_move_count': len(unknown_files)},
@@ -601,7 +601,7 @@ class MonitorExternalInstallationEditor(_ABainMLE):
     def __init__(self, parent, *, new_files: list[CIstr],
             changed_files: list[CIstr], touched_files: list[CIstr],
             deleted_files: list[CIstr]):
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         newf_data = MLEList(
             mlel_title=_('New Files (%(new_file_cnt)d):') % {
                 'new_file_cnt': len(new_files)},

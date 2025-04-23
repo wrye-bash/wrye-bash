@@ -63,7 +63,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
         """Initialize."""
-        self.baseSaves = bass.dirs[u'saveBase'].join(u'Saves')
+        self.baseSaves = bass.dirs['saveBase'].join(bush.game.Ess.saves_dir)
         #--GUI
         super().__init__(parent)
         self._parent_list = parent
@@ -77,7 +77,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def getItemList(self):
         """Returns load list keys in alpha order."""
         #--Get list of directories in Hidden, but do not include default.
-        return initialization.getLocalSaveDirs()
+        return initialization.getLocalSaveDirs(bush.game.Ess.saves_dir)
 
     #--Info box
     def getInfo(self,item):
@@ -158,9 +158,12 @@ class Saves_ProfilesData(balt.ListEditorData):
             if not askYes(self.parent, message, _('Delete Profile')):
                 return False
         #--Remove directory
-        if GPath(bush.game.my_games_name).join(u'Saves').s not in profileDir.s:
+        saves_folder = bush.game.Ess.saves_dir
+        my_games_saves = GPath(bush.game.my_games_name).join(saves_folder)
+        if my_games_saves.s not in profileDir.s:
             raise BoltError(f'Sanity check failed: No '
-                f'"{bush.game.my_games_name}\\Saves" in {profileDir}.')
+                            f'"{bush.game.my_games_name}\\{saves_folder}" in '
+                            f'{profileDir}.')
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.rename_profile(profileSaves, None)
         return True
@@ -174,7 +177,8 @@ class Saves_Profiles(ChoiceLink):
     _my_games = GPath(_my_games)
 
     @property
-    def _choices(self): return initialization.getLocalSaveDirs()
+    def _choices(self):
+        return initialization.getLocalSaveDirs(bush.game.Ess.saves_dir)
 
     class _ProfileLink(CheckLink, EnabledLink):
         @property
@@ -324,10 +328,13 @@ class Save_RenamePlayer(ItemLink):
         self.refresh_sel()
 
 #------------------------------------------------------------------------------
-class Save_ExportScreenshot(OneItemLink):
+class Save_ExportScreenshot(AppendableLink, OneItemLink):
     """Exports the saved screenshot from a save game."""
     _text = _('Export Screenshot…')
     _help = _(u'Export the saved screenshot from a save game')
+
+    def _append(self, window):
+        return bush.game.Ess.has_screenshots
 
     def Execute(self):
         imagePath = FileSave.display_dialog(Link.Frame,
@@ -628,18 +635,19 @@ class Save_Move(ChoiceLink):
                           _('Copy the selected saves to %(save_profile)s.'))
 
     @property
-    def _choices(self): return initialization.getLocalSaveDirs()
+    def _choices(self):
+        return initialization.getLocalSaveDirs(bush.game.Ess.saves_dir)
 
     def _initData(self, window, selection):
         super(Save_Move, self)._initData(window, selection)
-        saves_dir = bosh.saveInfos.localSave
+        sav_dir = bosh.saveInfos.localSave
         _self = self
         class _Default(EnabledLink):
             _text = _('Default')
             _help = _self._help_str % {
                 'save_profile': bush.game.Ini.save_prefix}
             def _enable(self):
-                return saves_dir != bush.game.Ini.save_prefix
+                return sav_dir != bush.game.Ini.save_prefix
             def Execute(self): _self.MoveFiles(profile=None)
         class _SaveProfileLink(EnabledLink):
             @property
@@ -648,13 +656,13 @@ class Save_Move(ChoiceLink):
                     'save_profile': os.path.join(
                         bush.game.Ini.save_prefix, self._text)}
             def _enable(self):
-                return saves_dir != _win_join(self._text)
+                return sav_dir != _win_join(self._text)
             def Execute(self): _self.MoveFiles(profile=self._text)
         self.__class__.choiceLinkType = _SaveProfileLink
         self.extraItems = [_Default()]
 
     def MoveFiles(self, profile: str | None):
-        destDir = bass.dirs['saveBase'].join('Saves')
+        destDir = bass.dirs['saveBase'].join(bush.game.Ess.saves_dir)
         if profile is not None:
             destDir = destDir.join(profile)
         if destDir == bosh.saveInfos.store_dir:

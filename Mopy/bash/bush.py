@@ -269,32 +269,32 @@ def _detectGames(cli_path_arg: str = '') -> tuple[
     # no game found in installPaths - foundGames are the ones from the registry
     return foundGames_, None, None
 
-def __setGame(gamename, gamePath, msg, opts, init_warnigns):
+def __setGame(gamename, gamePath, msg, opts, init_warnings):
     """Set bush game globals - raise if they are already set."""
     global game
     global ws_info
     if game is not None or ws_info is not None:
         raise BoltError(u'Trying to reset the game')
-    game = _allGames[gamename](gamePath, opts, init_warnigns)
+    game = _allGames[gamename](gamePath, opts, init_warnings)
     ws_info = get_legacy_ws_game_info(game)
     deprint(msg % {u'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
     _allGames.clear()
     game.init()
 
-def detect_and_set_game(opts, init_warnigns, gname=None, gm_path=None):
+def detect_and_set_game(opts, init_warnings, gname=None, gm_path=None):
     if gname is None: # detect available games
         foundGames_, gname, gm_path = _detectGames(opts.oblivionPath)
         foundGames.update(foundGames_) # set the global name -> game path dict
     # Try the game returned by detectGames() or specified
     if gname is not None and gm_path is not None:
         __setGame(gname, gm_path, 'Using %(gamename)s game:', opts,
-                  init_warnigns)
+                  init_warnings)
         return None
     elif len(foundGames) == 1 and len(single_game_paths := next(
             iter(foundGames.values()))) == 1:
         __setGame(next(iter(foundGames)), single_game_paths[0],
-                  'Single game found [%(gamename)s]:', opts, init_warnigns)
+                  'Single game found [%(gamename)s]:', opts, init_warnings)
         return None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
@@ -305,7 +305,7 @@ def game_path(target_unique_dn): return foundGames[target_unique_dn]
 
 def game_version():
     """Get the game version - be careful about Windows Store versions."""
-    test_path = bass.dirs['app'].join(game.version_detect_file)
+    test_path = bass.dirs['exe'].join(game.version_detect_file)
     try:
         gver = get_file_version(test_path.s)
         if gver == (0, 0, 0, 0) and ws_info.installed:

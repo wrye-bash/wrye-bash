@@ -45,14 +45,13 @@ __all__ = ['ObseButton', 'AutoQuitButton', 'GameButton', 'TESCSButton',
 #------------------------------------------------------------------------------
 # StatusBar Buttons -----------------------------------------------------------
 #------------------------------------------------------------------------------
-def _strip_version(exe_path=None, ver_tuple=()):
-    """File version with leading and trailing zeros stripped."""
+def _read_file_version(ver_file_path=None, *, ver_tuple=()) -> str:
+    """Read version from the specified tuple or, if falsy, the specified file
+    path."""
     try:
-        version = list(ver_tuple or get_file_version(exe_path.s))
-        while version and version[0] == 0:
-            version.pop(0)
-        while version and version[-1] == 0:
-            version.pop()
+        version = list(ver_tuple or get_file_version(ver_file_path.s))
+        if all(x == 0 for x in version):
+            return '' # Display all-zero versions as empty strings
         return '.'.join([f'{x}' for x in version]) # '.'.join([]) == ''
     except OSError:
         return ''
@@ -129,9 +128,9 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
     @property
     def obseVersion(self):
         for ver_file in bush.game.Se.ver_files:
-            ver_path = bass.dirs[u'app'].join(ver_file)
-            if ver := _strip_version(ver_path):
-                return f'{ver}'
+            ver_path = bass.dirs['exe'].join(ver_file)
+            if ver := _read_file_version(ver_path):
+                return ver
         return ''
 
     def sb_click(self):
@@ -188,7 +187,7 @@ class AppButton(AppLauncher, StatusBarButton):
 
     @property
     def _app_version(self):
-        return (_strip_version(self._app_path)
+        return (_read_file_version(self._app_path)
                 if bass.settings['bash.statusbar.showversion'] else '')
 
     def sb_click(self, *, custom_args: tuple[str, ...] = ()):
@@ -454,7 +453,7 @@ class GameButton(_ExeButton):
     """Will close app on execute if autoquit is on."""
 
     def __init__(self, images):
-        super().__init__(bass.dirs['app'].join(bush.game.launch_exe), images,
+        super().__init__(bass.dirs['exe'].join(bush.game.launch_exe), images,
             bush.game.display_name, uid='Oblivion')
 
     @property
@@ -484,7 +483,7 @@ class GameButton(_ExeButton):
 
     @property
     def _app_version(self):
-        return (_strip_version(ver_tuple=(bush.game_version()))
+        return (_read_file_version(ver_tuple=bush.game_version())
                 if bass.settings['bash.statusbar.showversion'] else '')
 
     def allow_create(self):
@@ -509,7 +508,7 @@ class TESCSButton(_ExeButton):
             if cse_path.is_file():
                 cse_version = ''
                 if bass.settings['bash.statusbar.showversion']:
-                    cse_version = _strip_version(cse_path)
+                    cse_version = _read_file_version(cse_path)
                 final_tip += f' + CSE{cse_version}'
         return final_tip
 
@@ -518,10 +517,11 @@ class TESCSButton(_ExeButton):
         # If the script extender for this game has CK support, the xSE loader
         # is present and xSE is enabled, use that executable and pass the
         # editor argument to it
-        isobse = self._exe_args and BashStatusBar.obseButton.button_state and (
-            ##: does this work for Oblivion or use exe_path_sc here
-            exe_xse := bass.dirs['app'].join(bush.game.Se.exe)).is_file()
-        return exe_xse if isobse else super().app_path
+        exe_xse = bush.game.Se.exe_path_sc()
+        is_obse_available = (self._exe_args and
+                             BashStatusBar.obseButton.button_state and
+                             exe_xse is not None)
+        return exe_xse if is_obse_available else super().app_path
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBarButton):
@@ -555,8 +555,8 @@ class ObseButton(_StatefulButton):
     _state_img_key = u'checkbox.green.%s.%s'
 
     def allow_create(self):
-        return (bool(bush.game.Se.se_abbrev)
-                and bass.dirs['app'].join(bush.game.Se.exe).is_file())
+        return (bool(bush.game.Se.se_abbrev) and
+                bush.game.Se.exe_path_sc() is not None)
 
     def sb_click(self):
         super().sb_click()
