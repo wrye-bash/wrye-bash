@@ -887,7 +887,7 @@ def get_save_header_type(game_fsName) -> type[SaveFileHeader]:
             return FalloutNVSaveHeader
         case 'Morrowind':
             return MorrowindSaveHeader
-        case 'Oblivion':
+        case 'Oblivion' | 'OblivionRE':
             return OblivionSaveHeader
         case 'Starfield':
             return StarfieldSaveHeader

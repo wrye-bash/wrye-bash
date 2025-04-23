@@ -376,8 +376,9 @@ class ImportSpellStatsPatcher(APreserver):
                  for x in bush.game.spell_stats_types}
     _fid_rec_attrs = {x: bush.game.spell_stats_fid_attrs
                       for x in bush.game.spell_stats_types}
-    _csv_parser = parsers.SpellRecords if bush.game.fsName == 'Oblivion' \
-        else None
+    _csv_parser = (parsers.SpellRecords
+                   if bush.game.fsName in ('Oblivion', 'OblivionRE')
+                   else None)
     patcher_tags = {'SpellStats'}
     _csv_key = 'Spells'
 

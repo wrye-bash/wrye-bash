@@ -330,7 +330,7 @@ class _AWeightTweak(CustomChoiceTweak):
 class _AWeightTweak_SEFF(_AWeightTweak):
     """Base class for weight tweaks that need to ignore SEFF effects."""
     _seff_code = (b'SEFF', 0)
-    _ignore_effects = bush.game.fsName != u'Oblivion'
+    _ignore_effects = bush.game.fsName not in ('Oblivion', 'OblivionRE')
 
     def wants_record(self, record):
         if not super().wants_record(record):
