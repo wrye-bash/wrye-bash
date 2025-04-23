@@ -2151,7 +2151,9 @@ class MreSlgm(_ObIcon):
 class MreSoun(MelRecord):
     """Sound."""
     rec_sig = b'SOUN'
-    _has_duplicate_attrs = True # SNDD is an older version of SNDX
+    # SNDD is an older version of SNDX
+    _allowed_duplicate_attrs = {'minDistance', 'maxDistance', 'freqAdjustment',
+                                'unused1', 'flags', 'unused2'}
 
     class _SounFlags(Flags):
         randomFrequencyShift: bool

@@ -2795,7 +2795,12 @@ class MreScpt(MelRecord):
 class MreSoun(MelRecord):
     """Sound."""
     rec_sig = b'SOUN'
-    _has_duplicate_attrs = True # SNDX, ANAM, GNAM and HNAM upgrade to SNDD
+    # SNDX, ANAM, GNAM and HNAM upgrade to SNDD
+    _allowed_duplicate_attrs = {
+        'minDist', 'maxDist', 'freqAdj', 'unusedSndd', 'flags',
+        'static_attenuation', 'stopTime', 'startTime', 'point0', 'point1',
+        'point2', 'point3', 'point4', 'reverb', 'priority',
+    }
 
     class _flags(Flags):
         randomFrequencyShift: bool = flag(0)
@@ -2998,7 +3003,35 @@ class MreVtyp(MelRecord):
 class MreWatr(MelRecord):
     """Water."""
     rec_sig = b'WATR'
-    _has_duplicate_attrs = True # DATA is an older version of DNAM + DATA
+
+    _els = [('windVelocity', 0.1), ('windDirection', 90), ('waveAmp', 0.5),
+        ('waveFreq', 1), ('sunPower', 50), ('reflectAmt', 0.5),
+        ('fresnelAmt', 0.025), 'unknown1', ('fogNear', 27852.8),
+        ('fogFar', 163840), 'shallowRed', ('shallowGreen', 128),
+        ('shallowBlue', 128), 'unused1', 'deepRed', 'deepGreen',
+        ('deepBlue', 25), 'unused2', ('reflRed', 255),
+        ('reflGreen', 255), ('reflBlue', 255), 'unused3', 'unknown2',
+        ('rainForce', 0.1), ('rainVelocity', 0.6), ('rainFalloff', 0.9850),
+        ('rainDampner', 2), ('rainSize', 0.01), ('dispForce', 0.4),
+        ('dispVelocity', 0.6), ('dispFalloff', 0.9850), ('dispDampner', 10),
+        ('dispSize', 0.05), ('noiseNormalsScale', 1.8),
+        'noiseLayer1WindDirection',
+        ('noiseLayer2WindDirection', -431602080.05),
+        ('noiseLayer3WindDirection', -431602080.05), 'noiseLayer1WindVelocity',
+        ('noiseLayer2WindVelocity', -431602080.05),
+        ('noiseLayer3WindVelocity', -431602080.05),
+        'noiseNormalsDepthFalloffStart', ('noiseNormalsDepthFalloffEnd', 0.10),
+        ('fogAboveWaterAmount', 1), ('noiseNormalsUvScale', 500),
+        ('fogUnderWaterAmount', 1), 'fogUnderWaterNear',
+        ('fogUnderWaterFar', 1000), ('distortionAmount', 250),
+        ('shininess', 100), ('reflectHdrMult', 1), ('lightRadius', 10000),
+        ('lightBrightness', 1), ('noiseLayer1UvScale', 100),
+        ('noiseLayer2UvScale', 100), ('noiseLayer3UvScale', 100)]
+    _fmts = ['10f', '3B', 's', '3B', 's', '3B', 's', 'I',]
+
+    # DATA is an older version of DNAM + DATA
+    _allowed_duplicate_attrs = {e[0] if isinstance(e, tuple) else e
+                                for e in _els}
 
     class _flags(Flags):
         causesDmg: bool
@@ -3028,31 +3061,6 @@ class MreWatr(MelRecord):
             if len(unpacked_val) == 55:
                 unpacked_val = unpacked_val[:-1]
             return super()._pre_process_unpacked(unpacked_val)
-
-    _els = [('windVelocity', 0.1), ('windDirection', 90), ('waveAmp', 0.5),
-        ('waveFreq', 1), ('sunPower', 50), ('reflectAmt', 0.5),
-        ('fresnelAmt', 0.025), 'unknown1', ('fogNear', 27852.8),
-        ('fogFar', 163840), 'shallowRed', ('shallowGreen', 128),
-        ('shallowBlue', 128), 'unused1', 'deepRed', 'deepGreen',
-        ('deepBlue', 25), 'unused2', ('reflRed', 255),
-        ('reflGreen', 255), ('reflBlue', 255), 'unused3', 'unknown2',
-        ('rainForce', 0.1), ('rainVelocity', 0.6), ('rainFalloff', 0.9850),
-        ('rainDampner', 2), ('rainSize', 0.01), ('dispForce', 0.4),
-        ('dispVelocity', 0.6), ('dispFalloff', 0.9850), ('dispDampner', 10),
-        ('dispSize', 0.05), ('noiseNormalsScale', 1.8),
-        'noiseLayer1WindDirection',
-        ('noiseLayer2WindDirection', -431602080.05),
-        ('noiseLayer3WindDirection', -431602080.05), 'noiseLayer1WindVelocity',
-        ('noiseLayer2WindVelocity', -431602080.05),
-        ('noiseLayer3WindVelocity', -431602080.05),
-        'noiseNormalsDepthFalloffStart', ('noiseNormalsDepthFalloffEnd', 0.10),
-        ('fogAboveWaterAmount', 1), ('noiseNormalsUvScale', 500),
-        ('fogUnderWaterAmount', 1), 'fogUnderWaterNear',
-        ('fogUnderWaterFar', 1000), ('distortionAmount', 250),
-        ('shininess', 100), ('reflectHdrMult', 1), ('lightRadius', 10000),
-        ('lightBrightness', 1), ('noiseLayer1UvScale', 100),
-        ('noiseLayer2UvScale', 100), ('noiseLayer3UvScale', 100)]
-    _fmts = [u'10f', u'3B', u's', u'3B', u's', u'3B', u's', u'I',]
 
     melSet = MelSet(
         MelEdid(),

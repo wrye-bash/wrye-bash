@@ -1474,7 +1474,8 @@ class MreFact(MelRecord):
 class MreFlor(AMreWithKeywords, _AMreWithProperties):
     """Flora."""
     rec_sig = b'FLOR'
-    _has_duplicate_attrs = True # RNAM is an older version of ATTX
+    # RNAM is an older version of ATTX
+    _allowed_duplicate_attrs = {'activate_text_override'}
 
     melSet = MelSet(
         MelEdid(),
@@ -1763,17 +1764,20 @@ class MreImad(AMreImad): # see AMreImad for details
 class MreImgs(MelRecord):
     """Image Space."""
     rec_sig = b'IMGS'
-    _has_duplicate_attrs = True # ENAM is an older version of HNAM/CNAM/TNAM
+    _enam_attrs = [
+        'hdr_eye_adapt_speed', 'hdr_tonemap_e', 'hdr_bloom_threshold',
+        'hdr_bloom_scale', 'hdr_auto_exposure_min_max', 'hdr_sunlight_scale',
+        'hdr_sky_scale', 'cinematic_saturation', 'cinematic_brightness',
+        'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'),
+    ]
+    # ENAM is an older version of HNAM/CNAM/TNAM
+    _allowed_duplicate_attrs = set(_enam_attrs)
 
     melSet = MelSet(
         MelEdid(),
         # Only found in one record (DefaultImageSpaceExterior [IMGS:00000161]),
         # skip for everything else
-        MelReadOnly(MelStruct(b'ENAM', ['14f'], 'hdr_eye_adapt_speed',
-            'hdr_tonemap_e', 'hdr_bloom_threshold', 'hdr_bloom_scale',
-            'hdr_auto_exposure_min_max', 'hdr_sunlight_scale', 'hdr_sky_scale',
-            'cinematic_saturation', 'cinematic_brightness',
-            'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'))),
+        MelReadOnly(MelStruct(b'ENAM', ['14f'], *_enam_attrs)),
         ##: Do we need to specify defaults for hdr_auto_exposure_max,
         # hdr_auto_exposure_min and hdr_middle_gray so that we can upgrade ENAM
         # to HNAM?
@@ -1982,7 +1986,7 @@ class MreKssm(MelRecord):
 class MreKywd(MelRecord):
     """Keyword."""
     rec_sig = b'KYWD'
-    _has_duplicate_attrs = True # NNAM is an older version of FULL
+    _allowed_duplicate_attrs = {'full'} # NNAM is an older version of FULL
 
     class HeaderFlags(MelRecord.HeaderFlags):
         restricted: bool = flag(15)
