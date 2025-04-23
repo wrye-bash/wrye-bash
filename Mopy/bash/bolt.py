@@ -1136,7 +1136,7 @@ class Path(os.PathLike):
     def walk(self, topdown=True, onerror=None, *, relative=False):
         """Like os.walk."""
         if relative:
-            start = len(self._s)
+            start = len(self._s) + 1 # + 1 for the os.sep
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
                 yield (GPath(root_dir[start:]),
                        [GPath_no_norm(x) for x in dirs],

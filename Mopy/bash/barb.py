@@ -267,9 +267,9 @@ class RestoreSettings(object):
             self._timestamped_old = None
         # restore all the settings files
         def _restore_file(dest_dir_, back_path_, *end_path):
-            deprint(f'{back_path_.join(*end_path)} --> '
-                    f'{dest_dir_.join(*end_path)}')
-            full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
+            dest = dest_dir_.join(*end_path)
+            deprint(f'{back_path_.join(*end_path)} --> {dest}')
+            full_back_path.join(*end_path).copyTo(dest)
         restore_paths = list(_init_settings_files(bak_name, mg_name,
                                                   root_prefix, mods_folder))
         for dest_dir, back_path in restore_paths:
@@ -283,7 +283,6 @@ class RestoreSettings(object):
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(
                     True, None, relative=True):
-                root_dir = GPath(f'.{root_dir}')
                 for fname in files_:
                     _restore_file(saves_dir, back_path, root_dir, fname)
 

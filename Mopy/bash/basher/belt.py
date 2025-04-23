@@ -579,8 +579,8 @@ class WryeParser(PreParser):
             return 1
 
     def fnCompareWBVersion(self, wbWant):
-        wbHave = bass.AppVersion
-        return bolt.cmp_(LooseVersion(wbHave), LooseVersion(wbWant))
+        wbHave = bass.AppVersion # silently accept ints/floats - debug hack
+        return bolt.cmp_(LooseVersion(wbHave), LooseVersion(str(wbWant)))
 
     def fnDataFileExists(self, *rel_paths):
         for rel_path in rel_paths:
@@ -660,7 +660,7 @@ class WryeParser(PreParser):
                     sub = bass.dirs['installers'].join(self._path, subpackage)
                     for root_dir, dirs, files in sub.walk(relative=True):
                         for file_ in files:
-                            rel = root_dir[1:].join(file_) # chop off path sep
+                            rel = root_dir.join(file_)
                             List.append(rel.s)
                 List.sort()
             if not List:
