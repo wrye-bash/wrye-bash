@@ -376,6 +376,8 @@ class MreBsgn(MelRecord):
 class MreCell(AMreCell):
     """Cell."""
     # TODO ref_types and co?
+    # INTV is an older version of WHGT
+    _allowed_duplicate_attrs = {'water_height'}
 
     class _CellFlags(Flags):
         is_interior_cell: bool = flag(0)
@@ -903,7 +905,8 @@ class MreNpc_(MelRecord):
             12: MelStruct(b'NPDT', ['H', '3B', '3s', 'I'], 'npc_level',
                 'npc_disposition', 'npc_reputation', 'npc_rank', 'unused1',
                 'npc_gold'),
-            52: MelNpcData(b'NPDT', ['H', '8B', '27B', 's', '3H', '3B', 's', 'I'],
+            52: MelNpcData(b'NPDT', ['H', '8B', '27B', 's', 'H', 'H', 'H', 'B',
+                                     'B', 'B', 's', 'I'],
                 'npc_level', ('attributes', [0] * 8), ('skills', [0] * 27),
                 'unused2', 'npc_health', 'npc_magicka', 'npc_fatigue',
                 'npc_disposition', 'npc_reputation', 'npc_rank', 'unused3',
@@ -975,13 +978,15 @@ class MreRace(MelRecord):
         MelDeleted(),
         MelFullTes3(),
         # Bad names to match other games (race patchers)
-        _MelRaceRadt(b'RADT', ['14i', '16i', '4f', 'I'], ('skills', [0] * 14),
-            'maleStrength', 'femaleStrength', 'maleIntelligence',
-            'femaleIntelligence', 'maleWillpower', 'femaleWillpower',
-            'maleAgility', 'femaleAgility', 'maleSpeed', 'femaleSpeed',
-            'maleEndurance', 'femaleEndurance', 'malePersonality',
-            'femalePersonality', 'maleLuck', 'femaleLuck', 'maleHeight',
-            'femaleHeight', 'maleWeight', 'femaleWeight',
+        _MelRaceRadt(b'RADT', ['14i', 'i', 'i', 'i', 'i', 'i', 'i', 'i', 'i',
+                               'i', 'i', 'i', 'i', 'i', 'i', 'i', 'i', 'f',
+                               'f', 'f', 'f', 'I'],
+            ('skills', [0] * 14), 'maleStrength', 'femaleStrength',
+            'maleIntelligence', 'femaleIntelligence', 'maleWillpower',
+            'femaleWillpower', 'maleAgility', 'femaleAgility', 'maleSpeed',
+            'femaleSpeed', 'maleEndurance', 'femaleEndurance',
+            'malePersonality', 'femalePersonality', 'maleLuck', 'femaleLuck',
+            'maleHeight', 'femaleHeight', 'maleWeight', 'femaleWeight',
             (_RaceFlags, 'race_flags')),
         MelSpellsTes3(),
         MelDescription(),

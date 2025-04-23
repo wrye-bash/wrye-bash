@@ -418,6 +418,18 @@ class MelArray(MelBase):
             [self._element.pack_subrecord_data(arr_entry) for arr_entry in
              array_val])
 
+    def find_duplicate_slots(self) -> set[str]:
+        found_duplicates = set()
+        if self._prelude:
+            element_slots = set(self._element.getSlotsUsed())
+            prelude_slots = set(self._prelude.getSlotsUsed())
+            if dup := element_slots & prelude_slots:
+                found_duplicates |= dup
+        found_duplicates |= self._element.find_duplicate_slots()
+        if self._prelude:
+            found_duplicates |= self._prelude.find_duplicate_slots()
+        return found_duplicates
+
 #------------------------------------------------------------------------------
 class MelSimpleArray(MelArray):
     """A MelArray of simple elements (currently MelNum) - override loading and
@@ -928,6 +940,15 @@ class MelUnion(MelBase):
         if element in self._sort_elements:
             element.sort_subrecord(record)
 
+    def find_duplicate_slots(self) -> set[str]:
+        # Duplicates between different union entries are perfectly valid (e.g.
+        # the same 'value' attribute with different types for GMST), but each
+        # element may still have duplicates within it
+        found_duplicates = set()
+        for element in self.element_mapping.values():
+            found_duplicates |= element.find_duplicate_slots()
+        return found_duplicates
+
     @property
     def signatures(self):
         return self._possible_sigs
@@ -985,6 +1006,9 @@ class _MelWrapper(MelBase):
 
     def sort_subrecord(self, record):
         self._wrapped_mel.sort_subrecord(record)
+
+    def find_duplicate_slots(self) -> set[str]:
+        return self._wrapped_mel.find_duplicate_slots()
 
     @property
     def signatures(self):

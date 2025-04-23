@@ -852,6 +852,29 @@ class MelEffectsTes4(MelSequential):
         for form_element in target_form_elements:
             form_element.mapFids(record, function, save_fids)
 
+    def find_duplicate_slots(self) -> set[str]:
+        found_duplicates = set()
+        # Validate each side separately, because overlap between the two is of
+        # course expected and fine
+        vanilla_slots = set()
+        for vanilla_element in self._vanilla_elements:
+            found_duplicates |= vanilla_element.find_duplicate_slots()
+            element_slots = set(vanilla_element.getSlotsUsed())
+            if dup := element_slots & vanilla_slots:
+                found_duplicates |= dup
+            vanilla_slots |= element_slots
+        # We expect effect_sig to be duplicate, see comment about
+        # EFID.effect_sig and EFIT.effect_sig in __init__
+        found_duplicates.remove('effect_sig')
+        obme_slots = set()
+        for obme_element in self._obme_elements:
+            found_duplicates |= obme_element.find_duplicate_slots()
+            element_slots = set(obme_element.getSlotsUsed())
+            if dup := element_slots & obme_slots:
+                found_duplicates |= dup
+            obme_slots |= element_slots
+        return found_duplicates
+
 class MelEffectsTes4ObmeFull(MelString):
     """Hacky class for handling the extra FULL that OBME includes after the
     effects for some reason. We can't just pack this one into MelEffects above

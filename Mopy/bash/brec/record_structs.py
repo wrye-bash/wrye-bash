@@ -30,7 +30,8 @@ from collections import defaultdict
 from typing import Self
 
 from . import utils_constants
-from .basic_elements import SubrecordBlob, unpackSubHeader
+from .basic_elements import SubrecordBlob, unpackSubHeader, MelSequential, \
+    MelBase
 from .mod_io import ModReader, RecordHeader
 from .utils_constants import int_unpacker
 from .. import bolt, exception
@@ -172,20 +173,25 @@ class MelSet(object):
         return list({s for element in self.elements
                      for s in element.getSlotsUsed()})
 
-    def check_duplicate_attrs(self, curr_rec_sig):
+    def check_duplicate_attrs(self, curr_rec_sig: bytes,
+            allowed_duplicate_attrs: set[str]):
         """This will raise a SyntaxError if any record attributes occur in more
         than one element. However, this is sometimes intended behavior (e.g.
         Oblivion's MreSoun uses it to upgrade an old subrecord to a newer one).
-        In such cases, set the MreRecord class variable _has_duplicate_attrs to
-        True for that record type (after carefully checking that there are no
-        unwanted duplicate attributes)."""
+        In such cases, set the MreRecord class variable
+        _allowed_duplicate_attrs to a set of attribute names that are allowed
+        to be duplicated for that record type."""
         all_slots = set()
         for element in self.elements:
             element_slots = set(element.getSlotsUsed())
-            if duplicate_slots := (all_slots & element_slots):
+            internal_duplicates = element.find_duplicate_slots()
+            bad_duplicates = internal_duplicates - allowed_duplicate_attrs
+            duplicate_slots = all_slots & element_slots
+            bad_duplicates |= duplicate_slots - allowed_duplicate_attrs
+            if bad_duplicates:
                 raise SyntaxError(
                     f'Duplicate element attributes in record type '
-                    f'{curr_rec_sig}: {sorted(duplicate_slots)}. This '
+                    f'{curr_rec_sig}: {sorted(bad_duplicates)}. This '
                     f'most likely points at an attribute collision, '
                     f'make sure to choose unique attribute names!')
             all_slots.update(element_slots)
@@ -266,8 +272,13 @@ class RecordType(type):
 
     def __new__(cls, name, bases, classdict):
         slots = classdict.get('__slots__', ())
-        classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
+        slots = (*slots, *melSet.getSlotsUsed()) if (
             melSet := classdict.get('melSet', ())) else slots
+        invalid_slots = [s for s in slots if not s.isidentifier()]
+        if invalid_slots:
+            raise SyntaxError(f'Invalid attribute names: {invalid_slots}. '
+                              f'They must be valid Python identifiers.')
+        classdict['__slots__'] = slots
         new = super(RecordType, cls).__new__(cls, name, bases, classdict)
         if rsig := getattr(new, 'rec_sig', None):
             cls.sig_to_class[rsig] = new
@@ -502,9 +513,9 @@ class MelRecord(MreRecord):
     #--Subclasses must define as MelSet(*mels)
     melSet: MelSet = None
     rec_sig: bytes = None
-    # If set to False, skip the check for duplicate attributes for this
-    # subrecord. See MelSet.check_duplicate_attrs for more information.
-    _has_duplicate_attrs = False
+    # A set of attributes that are allowed to occur more than once in the
+    # record. See MelSet.check_duplicate_attrs for more information.
+    _allowed_duplicate_attrs: set[str] = set()
     # The record attribute and flag name needed to find out if a piece of armor
     # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
     not_playable_flag = ('flags1', 'not_playable')
@@ -527,8 +538,8 @@ class MelRecord(MreRecord):
     @classmethod
     def validate_record_syntax(cls):
         """Performs validations on this record's definition."""
-        if not cls._has_duplicate_attrs:
-            cls.melSet.check_duplicate_attrs(cls.rec_sig)
+        cls.melSet.check_duplicate_attrs(cls.rec_sig,
+            cls._allowed_duplicate_attrs)
 
     @classmethod
     def getDefault(cls, attr):

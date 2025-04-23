@@ -644,6 +644,8 @@ class MreAppa(MelRecord):
 class MreArma(MelRecord):
     """Armor Addon."""
     rec_sig = b'ARMA'
+    # BODT is an older version of BOD2
+    _allowed_duplicate_attrs = {'armor_type', 'biped_flags'}
 
     melSet = MelSet(
         MelEdid(),
@@ -656,6 +658,8 @@ class MreArma(MelRecord):
 class MreArmo(AMreWithKeywords):
     """Armor."""
     rec_sig = b'ARMO'
+    # BODT is an older version of BOD2
+    _allowed_duplicate_attrs = {'armor_type', 'biped_flags'}
 
     class HeaderFlags(MelRecord.HeaderFlags):
         not_playable: bool = flag(2)
@@ -864,7 +868,8 @@ class MreCell(AMreCell):
     ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
                  b'PHZD', b'PMIS', b'REFR'}
     interior_temp_extra = [b'NAVM']
-    _has_duplicate_attrs = True # XWCS is an older version of XWCN
+    # XWCS is an older version of XWCN
+    _allowed_duplicate_attrs = {'water_current_count'}
 
     class HeaderFlags(AMreCell.HeaderFlags):
         partial_form: bool = flag(14)
@@ -1616,16 +1621,19 @@ class MreImad(AMreImad): # see AMreImad for details
 class MreImgs(MelRecord):
     """Image Space."""
     rec_sig = b'IMGS'
-    _has_duplicate_attrs = True # ENAM is an older version of HNAM/CNAM
+    _enam_attrs = [
+        'hdr_eye_adapt_speed', 'hdr_bloom_blur_radius', 'hdr_bloom_threshold',
+        'hdr_bloom_scale', 'hdr_receive_bloom_threshold', 'hdr_sunlight_scale',
+        'hdr_sky_scale', 'cinematic_saturation', 'cinematic_brightness',
+        'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'),
+    ]
+    # ENAM is an older version of HNAM/CNAM
+    _allowed_duplicate_attrs = set(_enam_attrs)
 
     melSet = MelSet(
         MelEdid(),
         # Only found in two records, skip for everything else
-        MelReadOnly(MelStruct(b'ENAM', ['14f'], 'hdr_eye_adapt_speed',
-            'hdr_bloom_blur_radius', 'hdr_bloom_threshold', 'hdr_bloom_scale',
-            'hdr_receive_bloom_threshold', 'hdr_sunlight_scale',
-            'hdr_sky_scale', 'cinematic_saturation', 'cinematic_brightness',
-            'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'))),
+        MelReadOnly(MelStruct(b'ENAM', ['14f'], *_enam_attrs)),
         ##: Do we need to specify defaults for hdr_white and
         # hdr_eye_adapt_strength so that we can upgrade ENAM to HNAM?
         MelStruct(b'HNAM', ['9f'], 'hdr_eye_adapt_speed',
@@ -2587,6 +2595,8 @@ class _MelTintMasks(MelGroups):
 class MreRace(AMreRace, AMreWithKeywords):
     """Race."""
     rec_sig = b'RACE'
+    # BODT is an older version of BOD2
+    _allowed_duplicate_attrs = {'armor_type', 'biped_flags'}
 
     class HeaderFlags(MelRecord.HeaderFlags):
         critter: bool = flag(19)    # maybe
@@ -2890,6 +2900,8 @@ class MreRace(AMreRace, AMreWithKeywords):
 class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
+    # XWCS is an older version of XWCN
+    _allowed_duplicate_attrs = {'water_current_count'}
 
     class HeaderFlags(MelRecord.HeaderFlags):
         door_hidden_from_local_map: bool = flag(6)  # DOOR
@@ -3631,14 +3643,14 @@ class MreWeap(AMreWithKeywords):
         MelFid(b'EFSD', 'scopeEffect'),
         MelBase(b'NNAM', 'unused1'),
         MelImpactDataset(b'INAM'),
-        MelFid(b'WNAM',' firstPersonModelObject',),
+        MelFid(b'WNAM', 'firstPersonModelObject'),
         MelSound(),
-        MelFid(b'XNAM', 'attackSound2D',),
-        MelFid(b'NAM7', 'attackLoopSound',),
-        MelFid(b'TNAM', 'attackFailSound',),
-        MelFid(b'UNAM', 'idleSound',),
-        MelFid(b'NAM9', 'equipSound',),
-        MelFid(b'NAM8', 'unequipSound',),
+        MelFid(b'XNAM', 'attackSound2D'),
+        MelFid(b'NAM7', 'attackLoopSound'),
+        MelFid(b'TNAM', 'attackFailSound'),
+        MelFid(b'UNAM', 'idleSound'),
+        MelFid(b'NAM9', 'equipSound'),
+        MelFid(b'NAM8', 'unequipSound'),
         MelStruct(b'DATA', ['I', 'f', 'H'], 'value', 'weight', 'damage',),
         MelStruct(b'DNAM', ['B', '3s', '2f', 'H', '2s', 'f', '4s', '4B', '2f',
                             '2I', '7f', '4s', 'i', '8s', 'i', '4s', 'f'],

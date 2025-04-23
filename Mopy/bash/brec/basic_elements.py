@@ -229,6 +229,12 @@ class MelBase(Subrecord):
         """Sorts this subrecord. Does nothing by default, override if you need
         to sort."""
 
+    def find_duplicate_slots(self) -> set[str]:
+        """Check if this subrecord has any duplicate slots used within
+        itself and return them as a set. Returns an empty set by default, since
+        MelBase only has one attribute and no nesting."""
+        return set()
+
     @property
     def signatures(self) -> set[bytes]:
         """Returns a set containing all the signatures (aka mel_sigs) that
@@ -296,7 +302,7 @@ class MelSequential(MelBase):
     """Represents a sequential, which is simply a way for one record element to
     delegate loading to multiple other record elements. It basically behaves
     like MelGroup, but does not assign to an attribute."""
-    def __init__(self, *elements):
+    def __init__(self, *elements: MelBase):
         # Filter out None, produced by static deciders like fnv_only
         self.elements = [e for e in elements if e is not None]
         self.form_elements = set()
@@ -354,6 +360,21 @@ class MelSequential(MelBase):
     def sort_subrecord(self, record):
         for element in self._sort_elements:
             element.sort_subrecord(record)
+
+    def find_duplicate_slots(self) -> set[str]:
+        # Here, we want to find both internal duplicates (where an element has
+        # duplicate attributes in itself) and inter-element duplicates (where
+        # this sequential element has two elements as children that share
+        # attributes)
+        found_duplicates = set()
+        all_slots = set()
+        for element in self.elements:
+            found_duplicates |= element.find_duplicate_slots()
+            element_slots = set(element.getSlotsUsed())
+            if dup := element_slots & all_slots:
+                found_duplicates |= dup
+            all_slots |= element_slots
+        return found_duplicates
 
     @property
     def signatures(self):
@@ -716,6 +737,15 @@ class MelStruct(MelBase):
             result = function(getattr(record, attr))
             if save_fids: setattr(record, attr, result)
 
+    def find_duplicate_slots(self) -> set[str]:
+        all_attrs = set()
+        found_duplicates = set()
+        for struct_attr in self.attrs:
+            if struct_attr in all_attrs:
+                found_duplicates.add(struct_attr)
+            all_attrs.add(struct_attr)
+        return found_duplicates
+
     @property
     def static_size(self):
         return self._static_size
@@ -723,7 +753,7 @@ class MelStruct(MelBase):
     def _parseElements(self, struct_formats, *elements, __zero_fid=ZERO_FID):
         formAttrs = set()
         lenEls = len(elements)
-        attrs, deflts, actions = [0] * lenEls, [0] * lenEls, [None] * lenEls
+        attrs, deflts, actions = [''] * lenEls, [0] * lenEls, [None] * lenEls
         self._action_dexes = set()
         expanded_fmts = self._expand_formats(elements, struct_formats)
         for index, (element, fmt_str) in enumerate(zip(elements, expanded_fmts)):
