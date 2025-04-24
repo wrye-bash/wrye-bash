@@ -64,7 +64,6 @@ from ..plugin_types import MergeabilityCheck, PluginFlag
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
-empty_path = GPath(u'') # evaluates to False in boolean expressions
 _ListInf = AFile | ListInfo | None| FName
 
 #--Singletons
@@ -840,7 +839,7 @@ class ModInfo(_WithMastersInfo):
         for str_format in bush.game.Esp.stringsFiles:
             yield os.path.join('Strings', str_format % fmt_dict)
 
-    def getStringsPaths(self, lang):
+    def getStringsPaths(self, lang) -> set[Path]:
         """If Strings Files are available as loose files, just point to
         those, otherwise extract needed files from BSA. Only use for localized
         plugins."""

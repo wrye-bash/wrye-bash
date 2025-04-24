@@ -22,22 +22,21 @@
 # =============================================================================
 """Collection of data structures the gui package needs from outside. Keep
 those at minimum."""
-import os
 from copy import copy
 from itertools import product
 
-from ..bolt import Path as _Path
+from ..bolt import Path as _Path, empty_path
 
 _gui_images = {} # todo defaultdict with fallback? mark final
-_image_resource_dir = ''
+_image_resource_dir = empty_path
 _color_checks = None
 _installer_icons = None
 
-def init_image_resources(images_dir):
+def init_image_resources(images_dir: _Path):
     global _image_resource_dir, _color_checks, _installer_icons
-    _image_resource_dir = images_dir
-    if not os.path.isdir(images_dir): # CI Hack we could move to caller or add a param
-        _image_resource_dir = _Path.getcwd().join('Mopy', 'bash', 'images')
+    # CI Hack we could move to caller or add a param
+    _image_resource_dir = images_dir if images_dir.is_dir() else \
+        _Path.getcwd().join('Mopy', 'bash', 'images')
     from .images import GuiImage
     def _icc(fname, bm_px_size=16):
         """Creates an Image wrapper.

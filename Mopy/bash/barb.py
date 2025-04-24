@@ -44,7 +44,7 @@ from os.path import join as jo
 from . import archives, bolt, initialization
 from . import bass  # for settings (duh!)
 from .bass import AppVersion, dirs
-from .bolt import GPath, GPath_no_norm, deprint, top_level_files
+from .bolt import GPath, GPath_no_norm, deprint, top_level_files, empty_path
 from .exception import BoltError, StateError
 from .wbtemp import TempDir
 
@@ -202,7 +202,7 @@ class RestoreSettings(object):
     to restore the backed up ini, if it exists. Restoring the settings must
     be done on boot as soon as we are able to initialize bass#dirs."""
     __tmpdir_prefix = u'RestoreSettingsWryeBash_'
-    __unset = bolt.Path('')
+    __unset = empty_path
 
     def __init__(self, settings_file):
         self._settings_file = GPath(settings_file)

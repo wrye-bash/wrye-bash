@@ -846,18 +846,16 @@ def GPath(str_or_uni: str | os.PathLike[str]) -> Path: ...
 def GPath(str_or_uni: str | os.PathLike[str] | None) -> Path | None:
     """Path factory and cache."""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
-    if not str_or_uni: return Path('') # needed, os.path.normpath('') = '.'!
+    if not str_or_uni: return empty_path # needed, os.path.normpath('') = '.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
 
 ##: generally points at file names, masters etc. using Paths, which they should
 # not - hunt down and just use strings
-def GPath_no_norm(str_or_uni):
+def GPath_no_norm(str_or_uni: str) -> Path:
     """Alternative to GPath that does not call normpath. It is up to the caller
     to ensure that the precondition name == os.path.normpath(name) holds for
-    all values passed into this method. Only str instances accepted!
-
-    :rtype: Path"""
+    all values passed into this method. Only str instances accepted!"""
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(str_or_uni))
 
@@ -903,7 +901,7 @@ class Path(os.PathLike):
 
     @staticmethod
     def getcwd():
-        return Path(os.getcwd())
+        return GPath_no_norm(os.getcwd())
 
     @staticmethod
     def has_invalid_chars(path_str):
@@ -1347,6 +1345,7 @@ class Path(os.PathLike):
         return self # immutable
 
 undefinedPath = GPath(r'C:\not\a\valid\path.exe')
+empty_path = GPath_no_norm('') # evaluates to False in boolean expressions
 
 # We need to split every time we hit a new 'type' of component. So greedily
 # match as many of one type as possible (except dots and dashes, since those

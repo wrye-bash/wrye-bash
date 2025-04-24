@@ -1238,16 +1238,16 @@ def _real_sys_prefix():
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
-    return p.replace(u'/', u'\\')
+    return p.replace('/', '\\')
 
-def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: _Path | str) -> _Path | None:
     """Alter the case of a case-insensitive path to match directories and files
     actually present in the filesystem, if any. This is basically identical to
     what Wine does when emulating case insensitivity. If this returns None, the
     path does not exist. However, if this does not return None then there is no
     guarantee that the path exists, so check using exists()/is_file()/etc."""
     # Windows is case-insensitive, nothing to do here
-    return _Path(os.fspath(ci_path))
+    return _GPath_no_norm(ci_path)
 
 def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
     """Mark the file with the specified path as hidden or unhidden, based on
