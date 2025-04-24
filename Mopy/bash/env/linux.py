@@ -274,14 +274,14 @@ def mark_high_dpi_aware():
     pass # Windows only
 
 def convert_separators(p):
-    return p.replace(u'\\', u'/')
+    return p.replace('\\', '/')
 
 ##: A more performant implementation would maybe cache folder contents or
 # something similar, as it stands this is not usable for fixing BAIN on Linux
-def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: _Path | str) -> _Path | None:
     if os.path.exists(ci_path):
-        # Fast path, but GPath it as we haven't normpathed it yet
-        return _GPath(ci_path)
+        # to_os_path receives a Path and passes us a str - we have normpathed
+        return _GPath_no_norm(ci_path)
     # Find the longest prefix that exists in the filesystem - *some* prefix
     # must exist, even if it's only root
     path_prefix, ci_rem_part = os.path.split(os.path.normpath(ci_path))

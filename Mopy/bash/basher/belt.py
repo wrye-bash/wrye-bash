@@ -714,22 +714,20 @@ class WryeParser(PreParser):
             self.reversing -= 1
             self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values = self.choices[self.choiceIdex], hitCase=False)
             return
-        imageJoin = self._wizard_dir.join
-        for i in images_:
+        im_dir_join = get_image_dir().join
+        for im in images_:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from
             # Mopy/bash/images/Wizard Images)
             # Note that these are almost always Windows paths, so we have to
             # convert them if we're on Linux
-            wiz_img_path = to_os_path(imageJoin(i))
+            wiz_img_path = to_os_path(self._wizard_dir.join(im))
             if wiz_img_path and wiz_img_path.is_file():
                 image_paths.append(wiz_img_path)
-            elif i.lower().startswith('wizard images'):
-                std_img_path = to_os_path(os.path.join(get_image_dir(), i))
-                if std_img_path and std_img_path.is_file():
-                    image_paths.append(std_img_path)
-                else:
-                    image_paths.append(None)
+            elif im.lower().startswith('wizard images'):
+                std_img_path = to_os_path(im_dir_join(im))
+                image_paths.append(std_img_path if std_img_path and
+                    std_img_path.is_file() else None)
             else:
                 image_paths.append(None)
         self.page = PageSelect(self._wiz_parent, bMany, main_desc, titles,

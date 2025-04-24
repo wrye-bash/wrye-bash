@@ -388,7 +388,6 @@ def dump_environment(wxver=None):
         ifileoperation_ver = 'not found'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
-    fse = bolt.Path.sys_fs_enc
     msg = [
         f'Using Wrye Bash Version {bass.AppVersion}'
         f'{u" (Standalone)" if bass.is_standalone else u""}',
@@ -412,8 +411,7 @@ def dump_environment(wxver=None):
         # 'encoding' attribute and stdin will be None
         f'Input encoding: {sys.stdin.encoding if sys.stdin else None}; '
         f'output encoding: {getattr(sys.stdout, u"encoding", None)}',
-        f'Filesystem encoding: {fse}'
-        f'{f" - using {bolt.Path.sys_fs_enc}" if not fse else ""}',
+        f'Filesystem encoding: {bolt.Path.sys_fs_enc}'
         f'Command line: {sys.argv}',
     ]
     bolt.deprint(msg := '\n\t'.join([l for l in msg if l is not None]))

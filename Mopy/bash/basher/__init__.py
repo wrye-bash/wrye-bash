@@ -1821,9 +1821,8 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         return list(self.target_inis.values())[settings['bash.ini.choice']]
 
     @property
-    def target_inis(self):
-        """Return settings[u'bash.ini.choices'], set in IniInfos#__init__.
-        :rtype: OrderedDict[str, bolt.Path]"""
+    def target_inis(self) -> OrderedDict[str, bolt.Path]:
+        """Return settings['bash.ini.choices'], set in IniInfos.__init__."""
         return settings[u'bash.ini.choices']
 
     @property
@@ -3810,7 +3809,7 @@ def Init(bash_app):
     """Initialize the application data and create the BashFrame."""
     #--OnStartup SplashScreen and/or Progress
     # Progress gets hidden behind splash by default
-    splash = GPath(os.path.join(get_image_dir(), 'wryesplash.png'))
+    splash = get_image_dir().join('wryesplash.png')
     show_splash = bass.inisettings['EnableSplashScreen'] and splash.is_file()
     with CenteredSplash(splash.s, show_splash), balt.Progress(
             'Wrye Bash', _('Initializing') + ' ' * 10, elapsed=False) as prog:
@@ -3895,7 +3894,7 @@ def InitImages():
             settings[u'bash.colors'][color_key] = color_val
         colors[color_key] = Color(*color_val)
     #--Images
-    init_image_resources(bass.dirs['images'].s)
+    init_image_resources(bass.dirs['images'])
 
 ##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

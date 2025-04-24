@@ -32,7 +32,7 @@ from typing import Any
 # First import the shared API
 from .common import *
 from .common import file_operation as _default_file_operation
-from ..bolt import os_name, GPath_no_norm, Path, GPath, deprint
+from ..bolt import os_name, GPath_no_norm, Path, deprint, empty_path
 from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
@@ -54,17 +54,17 @@ def _resolve(parent: _TShellWindow):
         return parent   # type: ignore
 
 # Higher level APIs using imported OS-specific ones ---------------------------
-def to_os_path(questionable_path: os.PathLike | str) -> Path | None:
+def to_os_path(questionable_path: Path) -> Path | None:
     """Convenience method for converting a path of unknown origin to a path
     compatible with this OS/FS. See canonize_ci_path and convert_separators
     for more information."""
-    return canonize_ci_path(convert_separators(os.fspath(questionable_path)))
+    return canonize_ci_path(convert_separators(questionable_path.s))
 
 def shellDelete(files: Iterable[Path], parent: _TShellWindow = None, *,
                 ask_confirm: _ConfirmationPrompt=None, recycle=False,
                 __shell=True):
     operate = file_operation if __shell else _default_file_operation
-    srcs_dsts = dict.fromkeys(files, GPath(''))
+    srcs_dsts = dict.fromkeys(files, empty_path)
     try:
         return operate(FileOperationType.DELETE, srcs_dsts, allow_undo=recycle,
             ask_confirm=ask_confirm, silent=False, parent=_resolve(parent))

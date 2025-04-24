@@ -28,8 +28,8 @@ from collections import OrderedDict
 
 from .. import balt, bass, bolt, bosh, bush, load_order, wrye_text
 from ..balt import Link, Resources
-from ..bolt import FName, FNDict
-from ..bosh import empty_path, mods_metadata, omods
+from ..bolt import FName, FNDict, empty_path
+from ..bosh import mods_metadata, omods
 from ..env import canonize_ci_path
 from ..exception import StateError, CancelError
 from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \

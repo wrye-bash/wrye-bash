@@ -90,7 +90,7 @@ class GuiImage(Lazy):
             raise ArgumentError('You must specify iconSize to '
                                 'rasterize an SVG to a bitmap!')
         if not os.path.isabs(img_path):
-            img_path = os.path.join(get_image_dir(), img_path)
+            img_path = get_image_dir().join(img_path).s
         if cls is not GuiImage:
             return cls(img_path, iconSize, img_type, quality)
         if img_type == _wx.BITMAP_TYPE_ICO:
@@ -131,8 +131,9 @@ class _SvgFromPath(GuiImage):
         """Create a composite SVG image, by combining elements from the given
         layers, with the first layer being the lowest layer.
         """
-        svg_paths = [p if os.path.isabs(p) else os.path.join(
-            get_image_dir(), p) for p in (base_svg, *layer_svgs)]
+        im_dir_join = get_image_dir().join
+        svg_paths = [p if os.path.isabs(p) else im_dir_join(p).s for p in
+                     (base_svg, *layer_svgs)]
         for (ldex, layer) in enumerate(map(ET.parse, svg_paths)):
             layer_svg_root = layer.getroot()
             if layer_svg_root is None:
