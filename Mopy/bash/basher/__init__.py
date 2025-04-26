@@ -1922,15 +1922,15 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
             bosh.iniInfos.ini = self.current_ini_path
         return new_target
 
-    def ShowPanel(self, target_changed=False, clean_targets=False, **kwargs):
+    def ShowPanel(self, *, target_changed, clean_targets=False, **kwargs):
         if self._firstShow:
             super(INIDetailsPanel, self).ShowPanel(**kwargs)
-            target_changed = True # to display the target ini
         target_changed |= self.check_new_target()
         self._enable_buttons() # if a game ini was deleted will disable edit
         if clean_targets: self._clean_targets()
         # first refresh_ini_contents as refresh_tweak_contents needs its lines
-        if target_changed:
+        if target_changed or bosh.iniInfos.redraw_target: # a msg from your store
+            bosh.iniInfos.redraw_target = False
             self.iniContents.refresh_ini_contents()
             Link.Frame.warn_game_ini()
         self._inis_combo_box.set_selection(settings[u'bash.ini.choice'])
@@ -1953,19 +1953,16 @@ class INIPanel(BashTab):
         self.detailsPanel.ShowPanel(target_changed=True)
 
     _ini_same_item = object()
-    def ShowPanel(self, refresh_infos=False, refresh_target=True,
-            clean_targets=False, focus_list=True, detail_item=_ini_same_item,
-            **kwargs):
+    def ShowPanel(self, refresh_infos=False, focus_list=True,
+                  detail_item=_ini_same_item, booting=False, **kwargs):
         # Have to do this first, since IniInfos.refresh will otherwise use the
         # old INI and report no change, so we won't refresh the INI in the
         # details panel
         target_ch = self.detailsPanel.check_new_target()
-        changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
-                                        refresh_target=refresh_target) ##: add booting?
-        changes.ini_changed |= target_ch
-        super().ShowPanel(target_changed=changes.ini_changed,
-                          clean_targets=clean_targets)
-        if changes: # we need this to be more granular
+        rdata = not booting and bosh.iniInfos.refresh( # we refreshed on boot
+            refresh_infos=refresh_infos)
+        super().ShowPanel(target_changed=target_ch, clean_targets=not booting)
+        if rdata or target_ch: ##:(701) we need this to be more granular
             if detail_item is not self._ini_same_item:
                 self.uiList.RefreshUI(focus_list=focus_list,
                                       detail_item=detail_item)
@@ -3559,8 +3556,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         """Call panel's ShowPanel() and set the current panel."""
         if event.GetId() == self.GetId(): ##: why ?
             bolt.GPathPurge()
-            self.currentPage.ShowPanel(
-                refresh_target=load_order.using_ini_file())
+            self.currentPage.ShowPanel()
             event.Skip() ##: shouldn't this always be called ?
 
 #------------------------------------------------------------------------------
@@ -3726,7 +3722,7 @@ class BashFrame(WindowFrame):
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
-                                            clean_targets=not booting)
+                                            booting=booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self._warn_reset_load_order()

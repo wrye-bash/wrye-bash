@@ -388,7 +388,7 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
                 target_ini_file = bosh.BestIniFile(target_path)
                 apply_to[target_ini_file].append(ini_name)
         rdata = bosh.iniInfos.refresh(refresh_infos=RefrIn.from_tabled_infos(
-            extra_attrs=new_infos), refresh_target=False)
+            extra_attrs=new_infos))
         lastApplied = None
         for target_ini_file, tweaks in apply_to.items():
             infos = [inf for t in tweaks if (inf := bosh.iniInfos.get(t))]

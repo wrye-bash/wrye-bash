@@ -1585,7 +1585,6 @@ class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
-    _rdata_type = RefrData
     factory: type[AFile]
     # Whether these file infos track ownership in a table
     tracks_ownership = False
@@ -1610,13 +1609,13 @@ class _AFileInfos(DataStore):
     def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False,
                 **kwargs):
         """Refresh from file directory."""
-        rdata = self._rdata_type()
         try:
             new_or_present, delinfos = (refresh_infos.new_or_present,
                                         refresh_infos.del_infos)
         except AttributeError:
             new_or_present, delinfos = self._list_store_dir() \
                 if refresh_infos else ({}, set())
+        rdata = RefrData() # create the return value instance then scan changes
         for new, (oldInfo, kws) in new_or_present.items():
             try:
                 if oldInfo is not None:
@@ -1821,18 +1820,10 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
                      else INIInfo)
     return ini_info_type(fullpath, detected_encoding)
 
-@dataclass(slots=True)
-class _RDIni(RefrData):
-    ini_changed: bool = False
-
-    def __bool__(self): # _RDIni is needed below
-        return super(_RDIni, self).__bool__() or self.ini_changed
-
 class INIInfos(TableFileInfos):
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
     unique_store_key = Store.INIS
-    _rdata_type = _RDIni
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
@@ -1888,7 +1879,7 @@ class INIInfos(TableFileInfos):
                 previous_ini)
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
-            bass.settings[u'bash.ini.choice']]
+            bass.settings['bash.ini.choice']] # set self.redraw_target = True
 
     def refresh(self, refresh_infos=True, *, booting=False,
                 refresh_target=True, **kwargs):
@@ -1903,12 +1894,17 @@ class INIInfos(TableFileInfos):
                 default_info.reset_status()
             else: # booting
                 rdata.to_add.add(k)
-        rdata.ini_changed = refresh_target and (
-                    self.ini.updated or self.ini.do_update())
-        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
-            self.ini.updated = False
-            for ini_info in self.values(): ini_info.reset_status()
+        if refresh_target and ((targ := self.ini).updated or targ.do_update()):
+            # reset the status of all infos and let RefreshUI set it
+            targ.updated = False
+            rdata |= self._reset_all_statuses()
         return rdata
+
+    def _reset_all_statuses(self):
+        updt = {ini_info.reset_status() or ini_info.fn_key for ini_info in
+                self.values()} ##:(701) only return infos that changed status
+        self.redraw_target = True # we are called on target update - msg the UI
+        return RefrData(updt)
 
     def check_removed(self, infos):
         regular_tweaks = []
@@ -1958,19 +1954,17 @@ class INIInfos(TableFileInfos):
         if self._ini is not None and self._ini.abs_path == ini_path:
             return # nothing to do
         self._ini = BestIniFile(ini_path)
-        for ini_info in self.values(): ini_info.reset_status()
+        self._reset_all_statuses()
 
     @staticmethod
-    def update_targets(targets_dict):
-        """Update 'bash.ini.choices' with targets_dict then re-sort the dict
-        of target INIs"""
-        for existing_ini in bass.settings[u'bash.ini.choices']:
-            targets_dict.pop(existing_ini, None)
-        if targets_dict:
-            bass.settings[u'bash.ini.choices'].update(targets_dict)
-            # now resort
+    def update_targets(targets):
+        """Update 'bash.ini.choices' with new inis in targets dictionnary,
+        then re-sort the dict of target INIs."""
+        inis = bass.settings['bash.ini.choices']
+        if targets := {k: v for k, v in targets.items() if k not in inis}:
+            inis.update(targets)
             INIInfos.__sort_target_inis()
-        return targets_dict
+        return targets
 
     @staticmethod
     def __sort_target_inis():
@@ -2878,7 +2872,7 @@ class ModInfos(TableFileInfos):
         calculate it JIT using the cached result of get_bsas_from_inis.
         Therefore, self.__bsa_lo is initially populated by bsas loaded from
         the inis, having ±sys.maxsize load order."""
-        ##:(233) we do this once till next refresh - not entirely correct,
+        ##:(701) we do this once till next refresh - not entirely correct,
         # as deletions/installs of BSAs from inside Bash (BAIN or future
         # bsa tab) should rerun _refresh_mod_inis_and_strings/notify modInfos
         if self.__available_bsas is not None:

@@ -818,7 +818,7 @@ class UIList(PanelWin):
             kwargs.setdefault('focus_list', True)
             ui_refreshes[self.data_store.unique_store_key] = kwargs
         # if a RefreshUI is requested for ModList we should also refresh Saves
-        # TODO(353): we need to be more granular here which needs caching
+        # TODO(701): we need to be more granular here which needs caching
         #  info_status - we need similar logic in _refresh_mod_inis_and_strings
         #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
         if refr_saves and ui_refreshes.get(Store.MODS):

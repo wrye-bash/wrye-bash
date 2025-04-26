@@ -48,8 +48,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from . import bass, bolt, exception
-from .games_lo import FixInfo, INIGame, LoGame, LoList, LoTuple
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName, RefrData
+from .games_lo import FixInfo, LoGame, LoList, LoTuple
 
 # LoGame instance providing load order operations API
 _lo_handler: LoGame | None = None
@@ -441,8 +441,6 @@ def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> list[FName]
     """See LoGame.pinned_plugins."""
     return _lo_handler.pinned_plugins(set(imods), fixed_order=fixed_order,
                                       filter_mods=filter_mods)
-
-def using_ini_file(): return isinstance(_lo_handler, INIGame)
 
 def get_lo_files() -> set[bolt.Path]:
     """Retrieve a set of all files used by this game for storing load order."""
