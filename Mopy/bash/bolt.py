@@ -1908,7 +1908,7 @@ class RefrIn:
         """Copy persistent attributes from info objects (or dict) - info
         objects are discarded, so we request refresh for *adding* infos."""
         try:
-            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
+            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude=exclude)})
                     for k, v in fn_info_dict.items()}
         except AttributeError: # ScreenInfos or fn_info_dict is None
             rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}

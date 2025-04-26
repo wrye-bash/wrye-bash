@@ -1276,18 +1276,20 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         if not self.edited and self.fileStr != new_text:
             self.SetEdited()
 
-    @balt.conversation
-    def _refresh_detail_info(self, refresh_info=True, **kwargs):
+    def _refresh_detail_info(self, refresh_info, ren_data, ref_saves=None,
+                             **kwargs):
         # Although we could avoid rereading the header by passing the info in I
         # leave it here as an extra error check - error handling is WIP
         store = self.panel_uilist.data_store
-        store.refresh(refresh_info and RefrIn.from_tabled_infos(
-            {self.file_info.fn_key: self.file_info}, exclude=True), **kwargs)
-        if not store.get(fn := self.file_info.fn_key):
+        ren_data |= store.refresh(refresh_info and RefrIn.from_tabled_infos(
+            {self.file_info.fn_key: self.file_info}), **kwargs)
+        if not store.get(det_it := self.file_info.fn_key):
             showError(self, _('File corrupted on save!') +
-                      f'\n{store.corrupted[fn].error_message}')
-            return None
-        return fn
+                      f'\n{store.corrupted[det_it].error_message}')
+            det_it = None
+            ref_saves = ref_saves is not None
+        self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
+                                            detail_item=det_it)
 
     def _rename_detail_item(self):
         newName = FName(self.fileStr.strip())
@@ -1613,10 +1615,8 @@ class ModDetails(_ModsSavesDetails):
         #--Change date?
         if changeDate:
             self._set_date(mod_inf) # crc recalculated in writeHeader if needed
-        detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
-        self.panel_uilist.propagate_refresh(True, refr_saves=(
-                detail_item is None or changeName or unlock_lo),
-            detail_item=detail_item)
+        self._refresh_detail_info(refr_inf, changeName,
+                                  changeName or unlock_lo, unlock_lo=unlock_lo)
 
     def _rename_detail_item(self):
         file_str = self.fileStr.strip()
@@ -2231,13 +2231,7 @@ class SaveDetails(_ModsSavesDetails):
                              in zip(prev_masters, curr_masters) if m1 != m2}
             saveInfo.write_masters(master_remaps)
             saveInfo.setmtime(prevMTime)
-            detail_item = self._refresh_detail_info()
-        else: detail_item = self.file_info.fn_key
-        if detail_item is None:
-            rdata.to_del |= {self.file_info.fn_key} # we failed rewriting
-        else:
-            rdata.redraw.add(detail_item)
-        self.panel_uilist.RefreshUI(rdata, detail_item=detail_item)
+        self._refresh_detail_info(changeMasters, rdata)
 
     def RefreshUIColors(self):
         self._update_masters_warning()

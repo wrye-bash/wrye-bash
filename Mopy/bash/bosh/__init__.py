@@ -245,9 +245,11 @@ class _TabledInfo:
             except AttributeError: return
         else: setattr(self, self.__class__._key_to_attr[prop_key], val)
 
-    def get_persistent_attrs(self, exclude):
+    def get_persistent_attrs(self, *, exclude=frozenset()):
+        if exclude is True: exclude = frozenset()
         return {pickle_key: val for pickle_key in self.__class__._key_to_attr
-                if  (val := self.get_table_prop(pickle_key)) is not None}
+                if (val := self.get_table_prop(pickle_key)) is not None and
+                pickle_key not in exclude}
 
 class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
@@ -422,15 +424,14 @@ class ModInfo(_WithMastersInfo):
         # list of string bsas sorted by search order for localized plugins -
         # None otherwise
         self.str_bsas_sorted = None
-        if itsa_ghost is not None:  # refresh() path when coming from _list_dir
-            self.is_ghost = itsa_ghost
-        else:
+        if itsa_ghost is None:
             if fullpath.cs[-6:] == '.ghost':
                 fullpath = fullpath.root
-                self.is_ghost = True
+                itsa_ghost = True
             else:
-                self.is_ghost = not fullpath.is_file() and os.path.isfile(
+                itsa_ghost = not fullpath.is_file() and os.path.isfile(
                     f'{fullpath}.ghost')
+        self.is_ghost = itsa_ghost
         super().__init__(fullpath, **kwargs)
 
     def get_hide_dir(self):
@@ -449,14 +450,14 @@ class ModInfo(_WithMastersInfo):
                 return groupDir
         return dest_dir
 
-    def get_persistent_attrs(self, exclude):
+    def get_persistent_attrs(self, *, exclude=frozenset()):
         if exclude is True:
             exclude = frozenset([ #'allowGhosting', 'bash.patch.configs',
                 'bp_split_parent', # 'doc', 'docEdit', 'group', 'installer',
                 # 'rating', 'autoBashTags', 'bashTags', ##: reset bashTags on reverting?
                 # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
                 'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
-        return super().get_persistent_attrs(exclude)
+        return super().get_persistent_attrs(exclude=exclude)
 
     @classmethod
     def _store(cls): return modInfos
@@ -1630,15 +1631,21 @@ class _AFileInfos(DataStore):
             except (FileError, UnicodeError, BoltError,
                     NotImplementedError) as e:
                 # old still corrupted, or new(ly) corrupted or we landed
-                # here cause cor_path was un/ghosted but file remained
+                # here cause cor_path was manually un/ghosted but file remained
                 # corrupted so in any case re-add to corrupted
                 cor_path = self.store_dir.join(new)
+                if del_inf := self.pop(new, None): # effectively deleted
+                    delinfos.add(del_inf)
+                    cor_path = del_inf.abs_path
+                elif self is modInfos: # needs be set here!
+                    if (isg := kws.get('itsa_ghost')) is None:
+                        isg = not cor_path.is_file() and os.path.isfile(
+                            f'{cor_path}.ghost')
+                    if isg: cor_path = cor_path + '.ghost' # Path __add__ !
                 er = e.message if hasattr(e, 'message') else f'{e}'
-                self.corrupted[new] = cor = _Corrupted(cor_path, er, **kws)
+                self.corrupted[new] = cor = _Corrupted(cor_path, er, new,**kws)
                 deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                         traceback=True)
-                if new := self.pop(new, None): # effectively deleted
-                    delinfos.add(new)
         rdata.to_del = {d.fn_key for d in delinfos}
         if delinfos: self._delete_refresh(delinfos)
         if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
@@ -1665,7 +1672,7 @@ class _AFileInfos(DataStore):
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
         delinfos = {inf for inf in [*self.values(), *self.corrupted.values()]
-                     if inf.fn_key not in inodes}
+                    if inf.fn_key not in inodes}
         new_or_present = {}
         for k, kws in inodes.items():
             # corrupted that has been updated on disk - if cor.abs_path
@@ -1742,17 +1749,15 @@ class TableFileInfos(_AFileInfos):
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
         for k, v in self.items():
-            if pickle_dict := v.get_persistent_attrs(frozenset()):
+            if pickle_dict := v.get_persistent_attrs():
                 pd.pickled_data[k] = pickle_dict
         pd.save()
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
-    def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
-        self.fn_key = FName(fullpath.stail)
-        if itsa_ghost:
-            fullpath = fullpath + '.ghost' # Path.__add__ !
+    def __init__(self, fullpath, error_message, cor_key, **kwargs):
+        self.fn_key = cor_key
         super().__init__(fullpath, **kwargs)
         self.error_message = error_message
 
