@@ -410,7 +410,7 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
                 new_targets[target_path.stail] = target_path
                 target_ini_file = None
                 for ini_name, installer, ret in tweaks:
-                    if not (iniFile in installer.ci_dest_sizeCrc and
+                    if not (#iniFile in installer.ci_dest_sizeCrc and
                             ret.should_install):
                         # Can only automatically apply ini tweaks if the ini was
                         # actually installed.  Since BAIN is setup to not auto

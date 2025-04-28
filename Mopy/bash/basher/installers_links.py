@@ -124,7 +124,7 @@ class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
         # Create Project
         projectName = self._askFilename(_('Project Name'),
             _('External Installation'), inst_type=bosh.InstallerProject,
-            check_exists=False) # we will use unique_name
+            check_exists=False) # we will use unique_name ## TODO fix aborts
         if not projectName:
             return
         self.__pr_path = bosh.InstallerProject.unique_name(projectName)
