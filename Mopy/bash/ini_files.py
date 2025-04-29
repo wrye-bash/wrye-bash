@@ -180,7 +180,7 @@ class AIniInfo(ListInfo):
         return lines
 
     @classmethod
-    def parse_ini_line(cls, whole_line, *, inline_comments=False,
+    def parse_ini_line(cls, whole_line, *, parse_comments=False,
                        parse_value=False, analyze_comments=False):
         lstripped = whole_line.lstrip()
         # deleted settings are comments with a dash after the comment character
@@ -196,7 +196,7 @@ class AIniInfo(ListInfo):
                         else ''
         except IndexError: # empty or a single comment character
             lstripped = ''
-        return cls._parse_setting(lstripped, is_del, inline_comments,
+        return cls._parse_setting(lstripped, is_del, parse_comments,
                                   parse_value)
 
     @classmethod
@@ -359,7 +359,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                 # We may have to create the file
                 for line in self.read_ini_content(missing_ok=True):
                     stripped, setting, val, new_section, is_del = \
-                        self.parse_ini_line(line, inline_comments=True)
+                        self.parse_ini_line(line, parse_comments=True)
                     if setting and not skip: # modify? we need be in a section
                         sect = new_section or section
                         try: # Check if we have a value for this setting
@@ -503,6 +503,7 @@ class OBSEIniFile(IniFileInfo):
             if ma_obse := regex.match(stripped):
                 val = cls._parse_value(ma_obse.group(2)) if parse_value else \
                     ma_obse.group(2)
+                val = (val, None) if parse_comments else val
                 return stripped, ma_obse.group(1), val, sectionKey, is_del
         return '', None, None, None, False
 

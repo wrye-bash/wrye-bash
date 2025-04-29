@@ -50,6 +50,7 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 from __future__ import annotations
 
+import functools
 import os
 import sys
 import time
@@ -1192,6 +1193,14 @@ class _DetailsMixin(object):
             self._resetDetails()
         return fileName
 
+def _check_displayed(func):
+    """Check there is an item displayed before proceeding."""
+    @functools.wraps(func)
+    def _check_item(self, *args, **kwargs):
+        if not self.file_info: return
+        return func(self, *args, **kwargs)
+    return _check_item
+
 class _EditableMixin(_DetailsMixin):
     """Mixin for detail panels that allow editing the info they display."""
 
@@ -1250,9 +1259,9 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         #                       size=(self._min_controls_width, -1))
         self.panel_uilist = ui_list_panel.uiList
 
+    @_check_displayed
     def OnFileEdited(self):
         """Event: Finished editing file name."""
-        if not self.file_info: return
         #--Changed?
         text_cnt = self._fname_ctrl.text_content
         if self.file_info.named_as(text_cnt):
@@ -1271,9 +1280,9 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
     def testChanges(self): raise NotImplementedError
 
+    @_check_displayed
     def OnFileEdit(self, new_text):
         """Event: Editing filename."""
-        if not self.file_info: return
         if not self.edited and self.fileStr != new_text:
             self.SetEdited()
 
@@ -1495,8 +1504,8 @@ class ModDetails(_ModsSavesDetails):
         else:
             self._desc_label.reset_foreground_color()
 
+    @_check_displayed
     def _on_text_typed(self, old_text, new_text):
-        if not self.modInfo: return
         if not self.edited and old_text != new_text: self.SetEdited()
 
     def _on_author_typed(self, new_text):
@@ -1512,8 +1521,8 @@ class ModDetails(_ModsSavesDetails):
         # writing out
         self._set_desc_label(to_win_newlines(new_text))
 
+    @_check_displayed
     def _on_author_finished(self):
-        if not self.modInfo: return
         authorStr = self.gAuthor.text_content
         if authorStr != self.authorStr:
             self.authorStr = authorStr
@@ -1525,8 +1534,8 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt.text_content = fmt_timestamp
         self.SetEdited()
 
+    @_check_displayed
     def _on_modified_finished(self):
-        if not self.modInfo: return
         modifiedStr = self.modified_txt.text_content
         if modifiedStr == self.modifiedStr: return
         try:
@@ -1540,8 +1549,8 @@ class ModDetails(_ModsSavesDetails):
             return
         self._apply_modified_timestamp(time.strftime('%c', newTimeTup))
 
+    @_check_displayed
     def _on_desc_finished(self):
-        if not self.modInfo: return
         new_desc = to_unix_newlines(self._desc_area.text_content)
         if new_desc != self.descriptionStr:
             self.descriptionStr = new_desc
@@ -1649,9 +1658,9 @@ class ModDetails(_ModsSavesDetails):
     ##: Once we're on wx4.1.1, we can use OnDimiss to fully refreshUI the
     # plugin in question (and do the same when removing a tag), so that
     # adding/removing a NoMerge tag properly updates the text color
+    @_check_displayed
     def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
         """Show bash tag selection menu."""
-        if not self.modInfo: return
         _mod_details = self
         mod_info = self.modInfo # type: bosh.ModInfo
         app_tags = mod_info.getBashTags()
@@ -1683,10 +1692,10 @@ class ModDetails(_ModsSavesDetails):
         # immediately (since it's transient)
         return EventResult.FINISH
 
+    @_check_displayed
     def _remove_selected_tags(self):
         """Callback to remove the selected bash tags from the current
         plugin."""
-        if not self.modInfo: return
         sel_tags = set(self.gTags.lb_get_selected_strings())
         if not sel_tags: return
         # Remember where the first selected tag was so we can reselect
@@ -1706,9 +1715,9 @@ class ModDetails(_ModsSavesDetails):
                 # we can reselect at the same index to get the next item
                 self.gTags.lb_select_index(first_tag_index)
 
+    @_check_displayed
     def _popup_misc_tags(self, _lb_selection_dex):
         """Show a menu for miscellaneous tags menu functionality."""
-        if not self.modInfo: return
         #--Links closure
         mod_info = self.modInfo # type: bosh.ModInfo
         mod_tags = mod_info.getBashTags()
@@ -2147,16 +2156,16 @@ class SaveDetails(_ModsSavesDetails):
     def SetFile(self, fileName=_same_file):
         fileName = super(SaveDetails, self).SetFile(fileName)
         if fileName:
-            saveInfo = self.saveInfo = bosh.saveInfos[fileName]
+            sinf = self.saveInfo = bosh.saveInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = str(saveInfo.fn_key)
-            self.playerNameStr = saveInfo.header.pcName
-            self.curCellStr = saveInfo.header.pcLocation
-            self.gameDays = saveInfo.header.gameDays
-            self.playMinutes = saveInfo.header.gameTicks//60000
-            self.playerLevel = saveInfo.header.pcLevel
-            self.coSaves = saveInfo.get_cosave_tags()
-            note_text = saveInfo.get_table_prop(u'info', u'')
+            self.fileStr = str(sinf.fn_key)
+            self.playerNameStr = sinf.header.pcName
+            self.curCellStr = sinf.header.pcLocation
+            self.gameDays = sinf.header.gameDays
+            self.playMinutes = sinf.header.gameTicks//60000
+            self.playerLevel = sinf.header.pcLevel
+            self.coSaves = sinf.get_cosave_tags()
+            note_text = sinf.get_table_prop(u'info', u'')
         else:
             note_text = u''
         #--Set Fields
@@ -2204,9 +2213,10 @@ class SaveDetails(_ModsSavesDetails):
         else:
             self._masters_label.reset_foreground_color()
 
+    @_check_displayed
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
-        if self.saveInfo and self.gInfo.modified:
+        if self.gInfo.modified:
             self.saveInfo.set_table_prop(u'info', new_text)
 
     def testChanges(self): # used by the master list when editing is disabled
@@ -2216,22 +2226,21 @@ class SaveDetails(_ModsSavesDetails):
     @balt.conversation
     def DoSave(self):
         """Event: Clicked Save button."""
-        saveInfo = self.saveInfo
+        saveinf = self.saveInfo
         #--Change Tests
         changeMasters = self.uilist.edited
-        #--Backup
-        saveInfo.makeBackup() ##: why backup when just renaming - #292
-        prevMTime = saveInfo.ftime
+        prevMTime = saveinf.ftime
         #--Change Name?
         rdata = self._rename_detail_item()
         #--Change masters?
         if changeMasters:
-            prev_masters = saveInfo.masterNames
+            saveinf.makeBackup()
+            prev_masters = saveinf.masterNames
             curr_masters = self.uilist.GetNewMasters()
             master_remaps = {m1: m2 for m1, m2
                              in zip(prev_masters, curr_masters) if m1 != m2}
-            saveInfo.write_masters(master_remaps)
-            saveInfo.setmtime(prevMTime)
+            saveinf.write_masters(master_remaps)
+            saveinf.setmtime(prevMTime)
         self._refresh_detail_info(changeMasters, rdata)
 
     def RefreshUIColors(self):
