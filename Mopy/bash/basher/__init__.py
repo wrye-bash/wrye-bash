@@ -89,7 +89,7 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     TextField, VLayout, WindowFrame, WithMouseEvents, get_shift_down, \
     read_files_from_clipboard_cb, showError, askYes, showWarning, askWarning, \
     showOk, BmpFromStream, init_image_resources, get_image, \
-    get_installer_color_checks, get_image_dir
+    get_installer_color_checks, get_image_dir, copy_text_to_clipboard
 from ..localize import format_date
 from ..update_checker import LatestVersion, UCThread
 
@@ -1722,7 +1722,18 @@ class ModDetails(_ModsSavesDetails):
         old_tags |= added_tags
         old_tags -= deleted_tags
         dir_diff = bosh.mods_metadata.diff_tags(mod_tags, old_tags)
+        class Tags_CopyTagList(AppendableLink, ItemLink):
+            _text = _('Copy Tag List')
+            _help = _('Copies a list of all bash tags for this game to the '
+                      'clipboard.')
+            def _append(self, window):
+                return bass.inisettings['ShowDevTools']
+            def Execute(self):
+                ci_sorted_tags = sorted(bush.game.allTags, key=str.lower)
+                copy_text_to_clipboard('\n'.join(ci_sorted_tags))
         class Tags_CopyToBashTags(EnabledLink):
+            """Copy manually assigned bash tags into the Data/BashTags
+            folder."""
             _text = _('Copy to BashTags')
             _help = _('Copies a diff between currently applied tags and '
                       'description/LOOT tags to %(bashtags_path)s.') % {
@@ -1732,19 +1743,17 @@ class ModDetails(_ModsSavesDetails):
                 return (not mod_info.is_auto_tagged() and
                         read_dir_tags(tag_plugin_name) != dir_diff)
             def Execute(self):
-                """Copy manually assigned bash tags into the Data/BashTags
-                folder."""
                 bosh.mods_metadata.save_tags_to_dir(tag_plugin_name, dir_diff)
                 _refresh_only_details()
         class Tags_CopyToDescription(EnabledLink):
-            _text = _(u'Copy to Description')
-            _help = _(u'Copies currently applied tags to the plugin '
-                      u'description.')
+            """Copy manually assigned bash tags into the mod description"""
+            _text = _('Copy to Description')
+            _help = _('Copies currently applied tags to the plugin '
+                      'description.')
             def _enable(self):
                 return (not mod_info.is_auto_tagged()
                         and mod_tags != bashTagsDesc)
             def Execute(self):
-                """Copy manually assigned bash tags into the mod description"""
                 if mod_info.setBashTagsDesc(mod_tags):
                     _refresh_only_details()
                 else:
@@ -1753,16 +1762,17 @@ class ModDetails(_ModsSavesDetails):
                         'most 511 characters. Edit the description to leave '
                         'enough room.'))
         class Tags_SelectAll(ItemLink):
-            _text = _(u'Select All')
-            _help = _(u'Selects all currently applied tags.')
+            _text = _('Select All')
+            _help = _('Selects all currently applied tags.')
             def Execute(self):
                 self.window.lb_select_all()
         class Tags_DeselectAll(ItemLink):
-            _text = _(u'Deselect All')
-            _help = _(u'Deselects all currently applied tags.')
+            _text = _('Deselect All')
+            _help = _('Deselects all currently applied tags.')
             def Execute(self):
                 self.window.lb_select_none()
         tag_links = Links()
+        tag_links.append_link(Tags_CopyTagList())
         tag_links.append_link(Tags_Automatic())
         tag_links.append_link(SeparatorLink())
         tag_links.append_link(Tags_CopyToBashTags())
