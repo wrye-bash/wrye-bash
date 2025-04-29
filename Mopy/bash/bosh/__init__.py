@@ -211,7 +211,7 @@ class _TabledInfo:
 
     def __init__(self, *args, att_val=None, **kwargs):
         for k, v in (att_val or {}).items(): # set table props used in refresh
-            try: ##: nightly regression storing 'installer' as FName - drop!
+            try: ##: nightly regression storing 'installer' as FName - convert to fname actually!
                 if k == 'installer': v = str(v)
                 elif k == 'doc': # needed for updates from old settings
                     v = GPath(v)

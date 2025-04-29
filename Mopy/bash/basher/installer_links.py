@@ -131,17 +131,6 @@ class _NoMarkerLink(_InstallerLink):
         return bool(self._installables) and super()._enable()
 
 #------------------------------------------------------------------------------
-class _Installer_AWizardLink(_NoMarkerLink):
-    """Base class for wizard links."""
-    def _perform_install(self, sel_package, **kwargs):
-        if sel_package.is_active: # If it's currently installed, anneal
-            title, do_it = _('Annealing…'), self.idata.bain_anneal
-        else: # Install if it's not installed
-            title, do_it = _('Installing…'), self.idata.bain_install
-        with balt.Progress(title) as progress:
-            kwargs['progress'] = progress
-            do_it([sel_package.fn_key], **kwargs)
-
 class _Installer_AViewOrEditFile(_SingleInstallable):
     """Base class for View/Edit wizard/FOMOD links."""
     def _run_on_archive(self):
@@ -176,6 +165,7 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
     _wants_install_checkbox: bool
 
     def _perform_action(self, **kwargs):
+        to_install = []
         # Use list() since we're going to deselect packages
         for sel_package in list(self.iselected_infos()):
             try:
@@ -197,7 +187,9 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
                 if ret.canceled:
                     continue
                 # Now we're ready to execute the link's specific action
-                self._execute_action(sel_package, ret, **kwargs)
+                self._fomod_action(sel_package, ret)
+                if ret.should_install:
+                    to_install.append(sel_package)
             except XMLParsingError:
                 deprint('Invalid FOMOD XML syntax:', traceback=True)
                 msg = _("The ModuleConfig.xml file that comes with "
@@ -208,24 +200,28 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
                     "it in your report.")
                 self._showError(msg % {'package_name': sel_package.fn_key},
                                 title=_('Invalid FOMOD XML Syntax'))
+        return to_install
 
-    def _execute_action(self, sel_package, ret, **kwargs):
+    def _fomod_action(self, sel_package, ret):
         raise NotImplementedError
 
-class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
+class Installer_RunFomod(_NoMarkerLink, _Installer_ARunFomod):
     """Runs the FOMOD installer and installs the output via BAIN."""
     _text = _('Run FOMOD…')
     _help = _('Run the FOMOD installer and install the output.')
     _wants_install_checkbox = True
 
-    def _execute_action(self, sel_package, ret, **kwargs):
+    def _perform_action(self, **kwargs):
+        if to_install := super()._perform_action(**kwargs):
+            kwargs['progress'] = balt.Progress
+            self.idata.bain_wiz_install(to_install, **kwargs)
+
+    def _fomod_action(self, sel_package, ret):
         # Switch the GUI to FOMOD mode and pass selected files to BAIN
         idetails = self.iPanel.detailsPanel
         idetails.set_fomod_mode(fomod_enabled=True)
         sel_package.extras_dict['fomod_dict_v2'] = ret.install_files
         idetails.refreshCurrent(sel_package)
-        if ret.should_install:
-            self._perform_install(sel_package, **kwargs)
 
 class Installer_CaptureFomodOutput(_Installer_ARunFomod):
     _text = _dialog_title = _('Capture FOMOD Output…')
@@ -235,7 +231,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
     # would have the same behavior as hitting 'Cancel' for this link
     _wants_install_checkbox = False
 
-    def _execute_action(self, sel_package, ret, **kwargs):
+    def _fomod_action(self, sel_package, ret):
         working_on_archive = sel_package.is_archive
         proj_default = (sel_package.abs_path.sbody if working_on_archive
                         else sel_package.fn_key)
@@ -287,7 +283,7 @@ class Installer_EditWizard(_Installer_AViewOrEditFile):
     @_with_busy_cursor
     def Execute(self): self._selected_info.open_wizard()
 
-class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
+class Installer_Wizard(Installer_Op, _NoMarkerLink):
     """Runs the install wizard to select sub-packages and filter plugins."""
     def __init__(self, *, auto_wizard):
         super(Installer_Wizard, self).__init__()
@@ -327,13 +323,11 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
             i.hasWizard for i in self.iselected_infos())
 
     def _perform_action(self, **kwargs):
-        ##: Investigate why we have so many refreshCurrents in here.
-        # Installer_RunFomod has just one!
+        # TODO Investigate why we have so many refreshCurrents in here.
+        #  Installer_RunFomod has just one!
         idetails = self.iPanel.detailsPanel
-        # Build any ini tweaks
-        manuallyApply = [] # List of tweaks the user needs to  manually apply
-        new_targets = {}
-        apply_to = defaultdict(list)
+        to_install = []
+        target_to_ini = defaultdict(list)
         # Use list() since we're going to deselect packages
         for sel_package in list(self.iselected_infos()):
             with BusyCursor():
@@ -376,14 +370,14 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
                 sel_package.setEspmName(oldName, renamed)
             idetails.refreshCurrent(sel_package)
             #Install if necessary
-            if ret.should_install:
-                self._perform_install(sel_package, **kwargs)
-            self._apply_tweaks(sel_package, ret, apply_to, new_targets,
-                               manuallyApply, **kwargs)
-        return apply_to, new_targets, manuallyApply
+            if ret.should_install: to_install.append(sel_package)
+            self._create_edits(sel_package, ret, target_to_ini, **kwargs)
+        kwargs['progress'] = balt.Progress
+        self.idata.bain_wiz_install(to_install, **kwargs)
+        return self.__apply_tweaks(target_to_ini)
 
-    def _apply_tweaks(self, installer, ret, apply_to, new_targets,
-                      manuallyApply, *, rui_data, **kwargs):
+    def _create_edits(self, installer, ret, target_to_ini, *, rui_data,
+                      **kwargs):
         from ..bosh import iniInfos
         for iniFile, wizardEdits in ret.ini_edits.items():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
@@ -396,25 +390,38 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
             rui_data[iniInfos] |= RefrIn.from_tabled_infos(extra_attrs={(
-                ini_name := outFile.stail): {'installer': installer.fn_key}})
-            # We won't automatically apply tweaks to anything other than
-            # Oblivion.ini or an ini from this installer
+                ini_name := FName(outFile.stail)): {
+                    'installer': str(installer.fn_key)}})
+            target_to_ini[iniFile].append((ini_name, installer, ret))
+
+    def __apply_tweaks(self, target_to_ini):
+        # now that the target inis are created we can decide if we apply tweaks
+        manuallyApply = [] # List of tweaks the user needs to  manually apply
+        new_targets = {}
+        apply_to = defaultdict(list)
+        # We won't automatically apply tweaks to anything other than
+        # Oblivion.ini or an ini from this installer
+        for iniFile, tweaks in target_to_ini.items():
             game_ini = bosh.get_game_ini(iniFile, is_abs=False)
             if game_ini:
-                apply_to[game_ini].append(ini_name)
+                apply_to[game_ini].extend(t[0] for t in tweaks)
             else: # suppose that the target ini file is in the Data/ dir
                 target_path = bass.dirs[u'mods'].join(iniFile)
                 new_targets[target_path.stail] = target_path
-                if not (iniFile in installer.ci_dest_sizeCrc and
-                        ret.should_install):
-                    # Can only automatically apply ini tweaks if the ini was
-                    # actually installed.  Since BAIN is setup to not auto
-                    # install after the wizard, we'll show a message telling
-                    # the User what tweaks to apply manually.
-                    manuallyApply.append((outFile.stail, iniFile))
-                    continue
-                target_ini_file = bosh.BestIniFile(target_path)
-                apply_to[target_ini_file].append(ini_name)
+                target_ini_file = None
+                for ini_name, installer, ret in tweaks:
+                    if not (iniFile in installer.ci_dest_sizeCrc and
+                            ret.should_install):
+                        # Can only automatically apply ini tweaks if the ini was
+                        # actually installed.  Since BAIN is setup to not auto
+                        # install after the wizard, we'll show a message telling
+                        # the User what tweaks to apply manually.
+                        manuallyApply.append((ini_name, iniFile))
+                        continue
+                    target_ini_file = target_ini_file or bosh.BestIniFile(
+                        target_path)
+                    apply_to[target_ini_file].append(ini_name)
+        return apply_to, new_targets, manuallyApply
 
 class Installer_OpenReadme(_SingleInstallable):
     """Opens the installer's readme if BAIN can find one."""

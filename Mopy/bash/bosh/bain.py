@@ -2884,6 +2884,19 @@ class InstallersData(DataStore):
                 self.__restore(installer, removes, restores, **kwargs)
         self._remove_restore(removes, restores, frozenset(), **kwargs)
 
+    @_bain_op
+    def bain_wiz_install(self, packages, *, progress, **kwargs):
+        an_key = (_('Annealing…'), self._anneal_packages)
+        ins_key = (_('Installing…'), self._install_packages)
+        op_inst = defaultdict(list)
+        for sel_package in packages:
+            op_inst[an_key if sel_package.is_active else ins_key].append(
+                sel_package)
+        for (title, op), insts in op_inst.items():
+            with progress(title) as prog:
+                kwargs['progress'] = prog
+                op(insts, **kwargs)
+
     def get_clean_data_dir_list(self):
         ci_keep_files = set(chain.from_iterable(
             installer.ci_dest_sizeCrc for installer in # relative to Data/
