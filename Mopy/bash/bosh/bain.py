@@ -2685,20 +2685,22 @@ class InstallersData(DataStore):
         tweaksCreated -= removed
 
     @_bain_op
-    def bain_install(self, packages, last=False, override=True, *, progress,
-                     **kwargs):
+    def bain_install(self, packages, last=False, override=True, **kwargs):
         """Install selected packages. If override is False install only
         missing files. Otherwise, all (unmasked) files."""
-        tweaksCreated = set()
-        #--Mask and/or reorder to last
-        mask = set()
         if last:
             self.moveArchives(packages, len(self))
         to_install = {self[x] for x in packages}
+        return self._install_packages(to_install, override, **kwargs)
+
+    def _install_packages(self, to_install, override=True, *, progress,
+                          **kwargs):
         min_order = min(x.order for x in to_install)
         #--Install packages in turn
-        progress.setFull(len(packages))
+        progress.setFull(len(to_install))
         index = 0
+        mask = set()
+        tweaksCreated = set()
         for inst in self.sorted_values(reverse=True): # type: _InstallerPackage
             if inst in to_install:
                 progress(index, inst.fn_key)
@@ -2861,9 +2863,13 @@ class InstallersData(DataStore):
         * Install missing files from active anPackages."""
         if annealed_package_fnames is None:
             annealed_package_fnames = self.filterInstallables(self)
+        to_anneal = (self[p] for p in annealed_package_fnames)
+        self._anneal_packages(to_anneal, **kwargs)
+
+    def _anneal_packages(self, to_anneal, **kwargs):
         #--Get remove/refresh files from annealed packages
         removes = set()
-        for installer in (self[p] for p in annealed_package_fnames):
+        for installer in to_anneal:
             removes |= installer.underrides
             if installer.is_active:
                 removes |= installer.missingFiles  # re-added in __restore
