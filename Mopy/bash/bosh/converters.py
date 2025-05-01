@@ -447,7 +447,7 @@ class InstallerConverter(object):
                 #--Note all extracted files
                 for crc in combined_temp_dir.ilist():
                     fpath = combined_temp_dir.join(crc)
-                    for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
+                    for root_dir, y, files in fpath.walk():
                         for file in files:
                             file = root_dir.join(file)
                             # crc is an FName, but we want to store strings

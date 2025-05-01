@@ -235,7 +235,7 @@ class LOOTParser(object):
             self._tagCache = {}
 
     ##: move cache into loot_parser, then build more sophisticated invalidation
-    # mechanism to handle CRCs, active status, etc. - ref #353
+    # mechanism to handle CRCs, active status, etc. - ref #701
     def get_tags_from_loot(self, modName: FName) -> _RTags:
         """Gets bash tag info from the cache, or from loot_parser if it is not
         cached."""

@@ -245,9 +245,11 @@ class _TabledInfo:
             except AttributeError: return
         else: setattr(self, self.__class__._key_to_attr[prop_key], val)
 
-    def get_persistent_attrs(self, exclude):
+    def get_persistent_attrs(self, *, exclude=frozenset()):
+        if exclude is True: exclude = frozenset()
         return {pickle_key: val for pickle_key in self.__class__._key_to_attr
-                if  (val := self.get_table_prop(pickle_key)) is not None}
+                if (val := self.get_table_prop(pickle_key)) is not None and
+                pickle_key not in exclude}
 
 class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
@@ -422,15 +424,14 @@ class ModInfo(_WithMastersInfo):
         # list of string bsas sorted by search order for localized plugins -
         # None otherwise
         self.str_bsas_sorted = None
-        if itsa_ghost is not None:  # refresh() path when coming from _list_dir
-            self.is_ghost = itsa_ghost
-        else:
+        if itsa_ghost is None:
             if fullpath.cs[-6:] == '.ghost':
                 fullpath = fullpath.root
-                self.is_ghost = True
+                itsa_ghost = True
             else:
-                self.is_ghost = not fullpath.is_file() and os.path.isfile(
+                itsa_ghost = not fullpath.is_file() and os.path.isfile(
                     f'{fullpath}.ghost')
+        self.is_ghost = itsa_ghost
         super().__init__(fullpath, **kwargs)
 
     def get_hide_dir(self):
@@ -449,14 +450,14 @@ class ModInfo(_WithMastersInfo):
                 return groupDir
         return dest_dir
 
-    def get_persistent_attrs(self, exclude):
+    def get_persistent_attrs(self, *, exclude=frozenset()):
         if exclude is True:
             exclude = frozenset([ #'allowGhosting', 'bash.patch.configs',
                 'bp_split_parent', # 'doc', 'docEdit', 'group', 'installer',
                 # 'rating', 'autoBashTags', 'bashTags', ##: reset bashTags on reverting?
                 # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
                 'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
-        return super().get_persistent_attrs(exclude)
+        return super().get_persistent_attrs(exclude=exclude)
 
     @classmethod
     def _store(cls): return modInfos
@@ -1498,8 +1499,9 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
-    def refresh(self, refresh_infos: RefrIn | list[FName] | bool = True,
-                **kwargs): raise NotImplementedError
+    def refresh(self, refresh_infos: RefrIn | bool = True,
+                **kwargs) -> RefrData:
+        raise NotImplementedError
 
     @final
     def delete(self, delete_keys, *, recycle=True):
@@ -1511,7 +1513,7 @@ class DataStore(DataDict):
         try:
             self._delete_operation(finfos, recycle)
         finally: # markers are popped from finfos - we refreshed in _delete_op
-            if finfos := self.check_existence(finfos):
+            if finfos := self.check_removed(finfos):
                 # ok to suppose the only lo modification is due to deleted
                 # files at this point
                 self.refresh(RefrIn(del_infos=finfos), what='I',
@@ -1522,7 +1524,7 @@ class DataStore(DataDict):
                 *chain.from_iterable(inf.delete_paths() for inf in finfos)]:
             env.shellDelete(abs_del_paths, recycle=recycle)
 
-    def check_existence(self, infos):
+    def check_removed(self, infos):
         """Lift your skirts, we are entering the realm of #241."""
         return {inf for inf in infos if not inf.abs_path.exists()}
 
@@ -1585,17 +1587,16 @@ class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
-    _rdata_type = RefrData
     factory: type[AFile]
     # Whether these file infos track ownership in a table
     tracks_ownership = False
     _boot_refresh_args = {'booting': True}
 
-    def __init__(self, factory=None, *, do_refresh=True):
+    def __init__(self, factory=None):
         """Init with specified directory and specified factory type."""
         super().__init__(self._init_store(self.set_store_dir()))
         self.factory = factory or self.__class__.factory
-        if do_refresh: self.refresh(**self._boot_refresh_args)
+        if self._boot_refresh_args: self.refresh(**self._boot_refresh_args)
 
     def _init_store(self, storedir):
         """Set up the self's _data/corrupted and return the former."""
@@ -1610,13 +1611,13 @@ class _AFileInfos(DataStore):
     def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False,
                 **kwargs):
         """Refresh from file directory."""
-        rdata = self._rdata_type()
         try:
             new_or_present, delinfos = (refresh_infos.new_or_present,
                                         refresh_infos.del_infos)
         except AttributeError:
             new_or_present, delinfos = self._list_store_dir() \
                 if refresh_infos else ({}, set())
+        rdata = RefrData() # create the return value instance then scan changes
         for new, (oldInfo, kws) in new_or_present.items():
             try:
                 if oldInfo is not None:
@@ -1631,15 +1632,21 @@ class _AFileInfos(DataStore):
             except (FileError, UnicodeError, BoltError,
                     NotImplementedError) as e:
                 # old still corrupted, or new(ly) corrupted or we landed
-                # here cause cor_path was un/ghosted but file remained
+                # here cause cor_path was manually un/ghosted but file remained
                 # corrupted so in any case re-add to corrupted
                 cor_path = self.store_dir.join(new)
+                if del_inf := self.pop(new, None): # effectively deleted
+                    delinfos.add(del_inf)
+                    cor_path = del_inf.abs_path
+                elif self is modInfos: # needs be set here!
+                    if (isg := kws.get('itsa_ghost')) is None:
+                        isg = not cor_path.is_file() and os.path.isfile(
+                            f'{cor_path}.ghost')
+                    if isg: cor_path = cor_path + '.ghost' # Path __add__ !
                 er = e.message if hasattr(e, 'message') else f'{e}'
-                self.corrupted[new] = cor = _Corrupted(cor_path, er, **kws)
+                self.corrupted[new] = cor = _Corrupted(cor_path, er, new,**kws)
                 deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                         traceback=True)
-                if new := self.pop(new, None): # effectively deleted
-                    delinfos.add(new)
         rdata.to_del = {d.fn_key for d in delinfos}
         if delinfos: self._delete_refresh(delinfos)
         if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
@@ -1666,7 +1673,7 @@ class _AFileInfos(DataStore):
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
         delinfos = {inf for inf in [*self.values(), *self.corrupted.values()]
-                     if inf.fn_key not in inodes}
+                    if inf.fn_key not in inodes}
         new_or_present = {}
         for k, kws in inodes.items():
             # corrupted that has been updated on disk - if cor.abs_path
@@ -1743,17 +1750,15 @@ class TableFileInfos(_AFileInfos):
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
         for k, v in self.items():
-            if pickle_dict := v.get_persistent_attrs(frozenset()):
+            if pickle_dict := v.get_persistent_attrs():
                 pd.pickled_data[k] = pickle_dict
         pd.save()
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
-    def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
-        self.fn_key = FName(fullpath.stail)
-        if itsa_ghost:
-            fullpath = fullpath + '.ghost' # Path.__add__ !
+    def __init__(self, fullpath, error_message, cor_key, **kwargs):
+        self.fn_key = cor_key
         super().__init__(fullpath, **kwargs)
         self.error_message = error_message
 
@@ -1821,18 +1826,10 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
                      else INIInfo)
     return ini_info_type(fullpath, detected_encoding)
 
-@dataclass(slots=True)
-class _RDIni(RefrData):
-    ini_changed: bool = False
-
-    def __bool__(self): # _RDIni is needed below
-        return super(_RDIni, self).__bool__() or self.ini_changed
-
 class INIInfos(TableFileInfos):
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
     unique_store_key = Store.INIS
-    _rdata_type = _RDIni
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
@@ -1888,13 +1885,13 @@ class INIInfos(TableFileInfos):
                 previous_ini)
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
-            bass.settings[u'bash.ini.choice']]
+            bass.settings['bash.ini.choice']] # set self.redraw_target = True
 
     def refresh(self, refresh_infos=True, *, booting=False,
                 refresh_target=True, **kwargs):
         rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
-        # delete should take care of this but needs to update redraw...)
+        # delete should take care of this but needs to update rdata...)
         for k, default_info in ((k1, v) for k1, v in
                 self._default_tweaks.items() if k1 not in self):
             self[k] = default_info  # type: DefaultIniInfo
@@ -1903,18 +1900,23 @@ class INIInfos(TableFileInfos):
                 default_info.reset_status()
             else: # booting
                 rdata.to_add.add(k)
-        rdata.ini_changed = refresh_target and (
-                    self.ini.updated or self.ini.do_update())
-        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
-            self.ini.updated = False
-            for ini_info in self.values(): ini_info.reset_status()
+        if refresh_target and ((targ := self.ini).updated or targ.do_update()):
+            # reset the status of all infos and let RefreshUI set it
+            targ.updated = False
+            rdata |= self._reset_all_statuses()
         return rdata
 
-    def check_existence(self, infos):
+    def _reset_all_statuses(self):
+        updt = {ini_info.reset_status() or ini_info.fn_key for ini_info in
+                self.values()} ##:(701) only return infos that changed status
+        self.redraw_target = True # we are called on target update - msg the UI
+        return RefrData(updt)
+
+    def check_removed(self, infos):
         regular_tweaks = []
         def_tweaks = {inf for inf in infos if inf.fn_key in
                       self._default_tweaks or regular_tweaks.append(inf)}
-        return {*def_tweaks, *super().check_existence(regular_tweaks)}
+        return {*def_tweaks, *super().check_removed(regular_tweaks)}
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Can't remove default tweaks
@@ -1958,19 +1960,17 @@ class INIInfos(TableFileInfos):
         if self._ini is not None and self._ini.abs_path == ini_path:
             return # nothing to do
         self._ini = BestIniFile(ini_path)
-        for ini_info in self.values(): ini_info.reset_status()
+        self._reset_all_statuses()
 
     @staticmethod
-    def update_targets(targets_dict):
-        """Update 'bash.ini.choices' with targets_dict then re-sort the dict
-        of target INIs"""
-        for existing_ini in bass.settings[u'bash.ini.choices']:
-            targets_dict.pop(existing_ini, None)
-        if targets_dict:
-            bass.settings[u'bash.ini.choices'].update(targets_dict)
-            # now resort
+    def update_targets(targets):
+        """Update 'bash.ini.choices' with new inis in targets dictionnary,
+        then re-sort the dict of target INIs."""
+        inis = bass.settings['bash.ini.choices']
+        if targets := {k: v for k, v in targets.items() if k not in inis}:
+            inis.update(targets)
             INIInfos.__sort_target_inis()
-        return targets_dict
+        return targets
 
     @staticmethod
     def __sort_target_inis():
@@ -2878,7 +2878,7 @@ class ModInfos(TableFileInfos):
         calculate it JIT using the cached result of get_bsas_from_inis.
         Therefore, self.__bsa_lo is initially populated by bsas loaded from
         the inis, having ±sys.maxsize load order."""
-        ##:(233) we do this once till next refresh - not entirely correct,
+        ##:(701) we do this once till next refresh - not entirely correct,
         # as deletions/installs of BSAs from inside Bash (BAIN or future
         # bsa tab) should rerun _refresh_mod_inis_and_strings/notify modInfos
         if self.__available_bsas is not None:
@@ -3380,6 +3380,7 @@ class ScreenInfos(_AFileInfos):
     file_pattern = re.compile(
         r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
     factory = ScreenInfo
+    _boot_refresh_args = {}
 
     def set_store_dir(self):
         # Check if we need to adjust the screenshot dir

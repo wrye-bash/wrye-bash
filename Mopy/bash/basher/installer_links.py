@@ -124,7 +124,8 @@ class _RefreshingLink(_SingleInstallable):
         self.window.RefreshUI()
 
 class _NoMarkerLink(_InstallerLink):
-    """Installer link that does not accept any markers."""
+    """Installer link that is enabled if any of the selected packages can
+    perform BAIN operations."""
     def _enable(self):
         self._installables = self.idata.filterInstallables(self.selected)
         return bool(self._installables) and super()._enable()
@@ -388,7 +389,7 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
                 target_ini_file = bosh.BestIniFile(target_path)
                 apply_to[target_ini_file].append(ini_name)
         rdata = bosh.iniInfos.refresh(refresh_infos=RefrIn.from_tabled_infos(
-            extra_attrs=new_infos), refresh_target=False)
+            extra_attrs=new_infos))
         lastApplied = None
         for target_ini_file, tweaks in apply_to.items():
             infos = [inf for t in tweaks if (inf := bosh.iniInfos.get(t))]

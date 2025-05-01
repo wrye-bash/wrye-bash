@@ -286,12 +286,12 @@ class Parser(object):
             if numArgs < self.minArgs:
                 args = self.Type, self.callable_name, numArgs
                 if self.maxArgs == KEY.NO_MAX:
-                    _err_too_few_args(*args, f'>= {self.minArgs}')
+                    msg = f'>= {self.minArgs}'
                 elif self.minArgs == self.maxArgs:
-                    _err_too_few_args(*args, self.minArgs)
+                    msg = self.minArgs
                 else:
-                    _err_too_few_args(*args,
-                        f'>= {self.minArgs} && <= {self.maxArgs}')
+                    msg = f'>= {self.minArgs} && <= {self.maxArgs}'
+                _err_too_few_args(*args, msg)
             return self.function(*args)
 
     class Operator(Callable):

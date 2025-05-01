@@ -1136,7 +1136,7 @@ class Path(os.PathLike):
     def walk(self, topdown=True, onerror=None, *, relative=False):
         """Like os.walk."""
         if relative:
-            start = len(self._s)
+            start = len(self._s) + 1 # + 1 for the os.sep
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
                 yield (GPath(root_dir[start:]),
                        [GPath_no_norm(x) for x in dirs],
@@ -1908,7 +1908,7 @@ class RefrIn:
         """Copy persistent attributes from info objects (or dict) - info
         objects are discarded, so we request refresh for *adding* infos."""
         try:
-            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
+            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude=exclude)})
                     for k, v in fn_info_dict.items()}
         except AttributeError: # ScreenInfos or fn_info_dict is None
             rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}

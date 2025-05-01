@@ -818,10 +818,10 @@ class UIList(PanelWin):
             kwargs.setdefault('focus_list', True)
             ui_refreshes[self.data_store.unique_store_key] = kwargs
         # if a RefreshUI is requested for ModList we should also refresh Saves
-        # TODO(353): we need to be more granular here which needs caching
+        # TODO(701): we need to be more granular here which needs caching
         #  info_status - we need similar logic in _refresh_mod_inis_and_strings
         #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
-        if refr_saves and Store.MODS in ui_refreshes:
+        if refr_saves and ui_refreshes.get(Store.MODS):
             ui_refreshes[Store.SAVES] = True
         Link.Frame.refresh_and_warn(ui_refreshes, booting)
 
@@ -1134,11 +1134,11 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, info, new_root, store_refr=None, *, force_ext=False):
+    def try_rename(self, info, new_root, store_refr=None, *, forced_ext=''):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
-         this needs to be atomic with respect to refreshes and ideally
-         atomic short - store_refr is Installers only. Inis won't be added."""
-        newName = info.unique_key(new_root, force_ext)
+        this needs to be atomic with respect to refreshes and ideally atomic
+        short - store_refr is Installers only. Inis won't be added."""
+        newName = info.unique_key(new_root, forced_ext)
         if newName is None: # new and old names are ci-same
             return RefrData()
         try:

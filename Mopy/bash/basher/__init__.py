@@ -897,15 +897,16 @@ class TargetINILineCtrl(INIListCtrl):
 
     def refresh_ini_contents(self):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
-        if bosh.iniInfos.ini.isCorrupted: return
+        target_ini = bosh.iniInfos.ini
+        if target_ini.isCorrupted: return
         self.Freeze()
         try:
             # Clear the list, then populate it with the new lines
             self.DeleteAllItems()
             main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
-                                 bosh.iniInfos.ini.abs_path.stail)
+                                 target_ini.abs_path.stail)
             try:
-                sel_ini_lines = bosh.iniInfos.ini.read_ini_content()
+                sel_ini_lines = target_ini.read_ini_content()
                 if main_ini_selected: # If we got here, reading the INI worked
                     Link.Frame.oblivionIniMissing = False
                 for i, line in enumerate(sel_ini_lines):
@@ -1276,18 +1277,20 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         if not self.edited and self.fileStr != new_text:
             self.SetEdited()
 
-    @balt.conversation
-    def _refresh_detail_info(self, refresh_info=True, **kwargs):
+    def _refresh_detail_info(self, refresh_info, ren_data, ref_saves=None,
+                             **kwargs):
         # Although we could avoid rereading the header by passing the info in I
         # leave it here as an extra error check - error handling is WIP
         store = self.panel_uilist.data_store
-        store.refresh(refresh_info and RefrIn.from_tabled_infos(
-            {self.file_info.fn_key: self.file_info}, exclude=True), **kwargs)
-        if not store.get(fn := self.file_info.fn_key):
+        ren_data |= store.refresh(refresh_info and RefrIn.from_tabled_infos(
+            {self.file_info.fn_key: self.file_info}), **kwargs)
+        if not store.get(det_it := self.file_info.fn_key):
             showError(self, _('File corrupted on save!') +
-                      f'\n{store.corrupted[fn].error_message}')
-            return None
-        return fn
+                      f'\n{store.corrupted[det_it].error_message}')
+            det_it = None
+            ref_saves = ref_saves is not None
+        self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
+                                            detail_item=det_it)
 
     def _rename_detail_item(self):
         newName = FName(self.fileStr.strip())
@@ -1594,9 +1597,11 @@ class ModDetails(_ModsSavesDetails):
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(mod_inf)
-            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock_lo)
+            rdata = bosh.modInfos.refresh(refresh_infos=False,
+                                          unlock_lo=unlock_lo)
+            rdata.redraw.add(mod_inf.fn_key) # needed!
             self.panel_uilist.propagate_refresh( # refresh saves if lo changed
-                True, refr_saves=not bush.game.using_txt_file)
+                rdata, refr_saves=unlock_lo)
             return
         #--Change hedr/masters?
         if refr_inf := (changeHedr or changeMasters):
@@ -1611,10 +1616,8 @@ class ModDetails(_ModsSavesDetails):
         #--Change date?
         if changeDate:
             self._set_date(mod_inf) # crc recalculated in writeHeader if needed
-        detail_item = self._refresh_detail_info(refr_inf, unlock_lo=unlock_lo)
-        self.panel_uilist.propagate_refresh(True, refr_saves=(
-                detail_item is None or changeName or unlock_lo),
-            detail_item=detail_item)
+        self._refresh_detail_info(refr_inf, changeName,
+                                  changeName or unlock_lo, unlock_lo=unlock_lo)
 
     def _rename_detail_item(self):
         file_str = self.fileStr.strip()
@@ -1920,15 +1923,15 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
             bosh.iniInfos.ini = self.current_ini_path
         return new_target
 
-    def ShowPanel(self, target_changed=False, clean_targets=False, **kwargs):
+    def ShowPanel(self, *, target_changed, clean_targets=False, **kwargs):
         if self._firstShow:
             super(INIDetailsPanel, self).ShowPanel(**kwargs)
-            target_changed = True # to display the target ini
         target_changed |= self.check_new_target()
         self._enable_buttons() # if a game ini was deleted will disable edit
         if clean_targets: self._clean_targets()
         # first refresh_ini_contents as refresh_tweak_contents needs its lines
-        if target_changed:
+        if target_changed or bosh.iniInfos.redraw_target: # a msg from your store
+            bosh.iniInfos.redraw_target = False
             self.iniContents.refresh_ini_contents()
             Link.Frame.warn_game_ini()
         self._inis_combo_box.set_selection(settings[u'bash.ini.choice'])
@@ -1951,19 +1954,16 @@ class INIPanel(BashTab):
         self.detailsPanel.ShowPanel(target_changed=True)
 
     _ini_same_item = object()
-    def ShowPanel(self, refresh_infos=False, refresh_target=True,
-            clean_targets=False, focus_list=True, detail_item=_ini_same_item,
-            **kwargs):
+    def ShowPanel(self, refresh_infos=False, focus_list=True,
+                  detail_item=_ini_same_item, booting=False, **kwargs):
         # Have to do this first, since IniInfos.refresh will otherwise use the
         # old INI and report no change, so we won't refresh the INI in the
         # details panel
         target_ch = self.detailsPanel.check_new_target()
-        changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
-                                        refresh_target=refresh_target) ##: add booting?
-        changes.ini_changed |= target_ch
-        super().ShowPanel(target_changed=changes.ini_changed,
-                          clean_targets=clean_targets)
-        if changes: # we need this to be more granular
+        rdata = not booting and bosh.iniInfos.refresh( # we refreshed on boot
+            refresh_infos=refresh_infos)
+        super().ShowPanel(target_changed=target_ch, clean_targets=not booting)
+        if rdata or target_ch: ##:(701) we need this to be more granular
             if detail_item is not self._ini_same_item:
                 self.uiList.RefreshUI(focus_list=focus_list,
                                       detail_item=detail_item)
@@ -2053,7 +2053,7 @@ class SaveList(UIList):
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
         if rdata := self.try_rename(sinf, fn_item.fn_body,
-                                    force_ext=extension):
+                                    forced_ext=extension):
             self.RefreshUI(rdata)
 
     # Save profiles
@@ -2232,13 +2232,7 @@ class SaveDetails(_ModsSavesDetails):
                              in zip(prev_masters, curr_masters) if m1 != m2}
             saveInfo.write_masters(master_remaps)
             saveInfo.setmtime(prevMTime)
-            detail_item = self._refresh_detail_info()
-        else: detail_item = self.file_info.fn_key
-        if detail_item is None:
-            rdata.to_del |= {self.file_info.fn_key} # we failed rewriting
-        else:
-            rdata.redraw.add(detail_item)
-        self.panel_uilist.RefreshUI(rdata, detail_item=detail_item)
+        self._refresh_detail_info(changeMasters, rdata)
 
     def RefreshUIColors(self):
         self._update_masters_warning()
@@ -2333,8 +2327,8 @@ class InstallersList(UIList):
         #--Rename each installer, keeping the old extension (for archives)
         if isinstance(root, tuple):
             root = root[0]
-        ui_refreshes = defaultdict(bool) # Store refreshes
-        return newName, root, ui_refreshes
+        store_refr = defaultdict(bool) # Store refreshes
+        return newName, root, store_refr
 
     @staticmethod
     def _unhide_wildcard():
@@ -3291,7 +3285,7 @@ class ScreensPanel(BashTab):
 
     def __init__(self,parent):
         """Initialize."""
-        self.listData = bosh.screen_infos = bosh.ScreenInfos(do_refresh=False)
+        self.listData = bosh.screen_infos = bosh.ScreenInfos()
         super(ScreensPanel, self).__init__(parent)
 
     def ShowPanel(self, **kwargs):
@@ -3557,8 +3551,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         """Call panel's ShowPanel() and set the current panel."""
         if event.GetId() == self.GetId(): ##: why ?
             bolt.GPathPurge()
-            self.currentPage.ShowPanel(
-                refresh_target=load_order.using_ini_file())
+            self.currentPage.ShowPanel()
             event.Skip() ##: shouldn't this always be called ?
 
 #------------------------------------------------------------------------------
@@ -3724,7 +3717,7 @@ class BashFrame(WindowFrame):
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
-                                            clean_targets=not booting)
+                                            booting=booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self._warn_reset_load_order()
@@ -3743,22 +3736,22 @@ class BashFrame(WindowFrame):
                 title=_('Lock Load Order'))
             load_order.warn_locked = False
 
-    def refresh_and_warn(self, ui_refresh, booting):
+    def refresh_and_warn(self, ui_refreshes, booting):
         # ONLY use in propagate_refresh
-        for list_key, do_refr in ui_refresh.items():
-            if do_refr and (uil := self.all_uilists[list_key]) is not None:
-                if not isinstance(do_refr, dict): # True or RefrData
-                    do_refr = {'rdata': do_refr} if isinstance(do_refr,
+        for list_key, ref_args in ui_refreshes.items():
+            if ref_args and (uil := self.all_uilists[list_key]) is not None:
+                if not isinstance(ref_args, dict): # True or RefrData
+                    ref_args = {'rdata': ref_args} if isinstance(ref_args,
                         RefrData) else {}
-                do_refr.setdefault('focus_list', False)
-                uil.RefreshUI(**do_refr)
+                ref_args.setdefault('focus_list', False)
+                uil.RefreshUI(**ref_args)
         stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
                   Store.SAVES: bosh.saveInfos} # this belongs to stores
         if booting: # trigger warnings on boot, ui_refresh is empty then
-            ui_refresh = dict.fromkeys(stores, True)
+            ui_refreshes = dict.fromkeys(stores, True)
         multi_warns, lo_warns = [], []
-        for list_key, do_refr in ui_refresh.items():
-            if do_refr and (ds := stores.get(list_key)):
+        for list_key, ref_args in ui_refreshes.items():
+            if ref_args and (ds := stores.get(list_key)):
                 ds.warning_args(multi_warns, lo_warns, self, list_key)
         if multi_warns:
             mk = (mwd := MultiWarningDialog).make_highlight_entry
@@ -3826,11 +3819,11 @@ class BashFrame(WindowFrame):
         #--Clean rename dictionary.
         modNames = {*bosh.modInfos.corrupted}
         modNames.update(bosh.modInfos)
-        renames = bass.settings[u'bash.mods.renames']
+        bash_mod_renames = bass.settings['bash.mods.renames']
         # Make a copy, we may alter it in the loop
-        for old_mname, new_mname in list(renames.items()):
+        for old_mname, new_mname in list(bash_mod_renames.items()):
             if new_mname not in modNames:
-                del renames[old_mname]
+                del bash_mod_renames[old_mname]
         # Clean backup directories of old .es*/.es*f files
         for tc_store in (bosh.modInfos, bosh.saveInfos):
             existing_roots = {p.fn_body for p in tc_store}
