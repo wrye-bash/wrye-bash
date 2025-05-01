@@ -163,8 +163,8 @@ msgstr "வழிகாட்டி கோப்பைத் திறக்க 
 msgid "Compressing files…"
 msgstr "கோப்புகளை அமைக்கிறது…"
 
-#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1602
-#: Mopy/bash/bosh/bain.py:1622 Mopy/bash/bosh/converters.py:318
+#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1601
+#: Mopy/bash/bosh/bain.py:1621 Mopy/bash/bosh/converters.py:318
 #: Mopy/bash/bosh/converters.py:338 Mopy/bash/bosh/converters.py:539
 msgid "Extracting files…"
 msgstr "கோப்புகளை பிரித்தெடுக்கும்…"
@@ -196,7 +196,7 @@ msgstr "கூட்டு"
 msgid "Rename"
 msgstr "மறுபெயரிடுங்கள்"
 
-#: Mopy/bash/balt.py:239 Mopy/bash/basher/__init__.py:1802
+#: Mopy/bash/balt.py:239 Mopy/bash/basher/__init__.py:1805
 #: Mopy/bash/basher/gui_patchers.py:313
 msgid "Remove"
 msgstr "அகற்று"
@@ -295,7 +295,7 @@ msgstr "தேர்ந்தெடுக்கப்பட்ட பொரு�
 msgid "Delete the selected items (some of the selected items cannot be deleted and will be skipped)."
 msgstr "தேர்ந்தெடுக்கப்பட்ட உருப்படிகளை நீக்கவும் (தேர்ந்தெடுக்கப்பட்ட சில பொருட்களை நீக்க முடியாது, மேலும் தவிர்க்கப்படும்)."
 
-#: Mopy/bash/balt.py:1972 Mopy/bash/basher/installer_links.py:966
+#: Mopy/bash/balt.py:1972 Mopy/bash/basher/installer_links.py:967
 #: Mopy/bash/basher/settings_dialog.py:691
 msgid "Rename…"
 msgstr "மறுபெயரிடுங்கள்…"
@@ -458,62 +458,62 @@ msgstr "காப்புப்பிரதி எதுவும் உரு�
 msgid "Unable to Create Backup!"
 msgstr "காப்புப்பிரதியை உருவாக்க முடியவில்லை!"
 
-#: Mopy/bash/barb.py:297
+#: Mopy/bash/barb.py:296
 msgid "The data format of the selected backup file is newer than the current Wrye Bash version!"
 msgstr "தேர்ந்தெடுக்கப்பட்ட காப்புப்பிரதி கோப்பின் தரவு வடிவம் தற்போதைய WRY BASH பதிப்பை விட புதியது!"
 
-#: Mopy/bash/barb.py:299
+#: Mopy/bash/barb.py:298
 #, python-format
 msgid "Backup %(saved_backup_ver)s is not compatible with %(wb_ver)s."
 msgstr "காப்புப்பிரதி %(wb_ver)s %(saved_backup_ver)s உடன் பொருந்தாது."
 
-#: Mopy/bash/barb.py:303
+#: Mopy/bash/barb.py:302
 msgid "You cannot use this backup with this version of Wrye Bash."
 msgstr "இந்த காப்புப்பிரதியை WRYE BASH இன் இந்த பதிப்பில் பயன்படுத்த முடியாது."
 
-#: Mopy/bash/barb.py:304
+#: Mopy/bash/barb.py:303
 msgid "Error: Settings Are From Newer Wrye Bash Version"
 msgstr "பிழை: அமைப்புகள் புதிய WRY BASH பதிப்பிலிருந்து வந்தவை"
 
-#: Mopy/bash/barb.py:310
+#: Mopy/bash/barb.py:309
 #, python-format
 msgid "The selected backup file is for %(game_name)s while your current game is %(curr_bak_name)s"
 msgstr "தேர்ந்தெடுக்கப்பட்ட காப்புப்பிரதி கோப்பு %(game_name)s, உங்கள் தற்போதைய விளையாட்டு %(curr_bak_name)s"
 
-#: Mopy/bash/barb.py:312
+#: Mopy/bash/barb.py:311
 msgid "Error: Settings Are From a Different Game"
 msgstr "பிழை: அமைப்புகள் வேறு விளையாட்டிலிருந்து வந்தவை"
 
-#: Mopy/bash/barb.py:312
+#: Mopy/bash/barb.py:311
 msgid "You cannot use this backup with this game."
 msgstr "இந்த விளையாட்டுடன் இந்த காப்புப்பிரதியைப் பயன்படுத்த முடியாது."
 
-#: Mopy/bash/barb.py:321
+#: Mopy/bash/barb.py:320
 msgid "The version of Wrye Bash used to create the selected backup file does not match the current Wrye Bash version!"
 msgstr "தேர்ந்தெடுக்கப்பட்ட காப்புப்பிரதி கோப்பை உருவாக்கப் பயன்படுத்தப்படும் WRY BASH இன் பதிப்பு தற்போதைய WRY BASH பதிப்போடு பொருந்தவில்லை!"
 
-#: Mopy/bash/barb.py:324
+#: Mopy/bash/barb.py:323
 #, python-format
 msgid "Backup %(saved_backup_ver)s does not match %(wb_ver)s."
 msgstr "காப்புப்பிரதி %(wb_ver)s %(saved_backup_ver)s உடன் பொருந்தவில்லை."
 
-#: Mopy/bash/barb.py:328
+#: Mopy/bash/barb.py:327
 msgid "Do you want to restore this backup anyway?"
 msgstr "இந்த காப்புப்பிரதியை எப்படியும் மீட்டெடுக்க விரும்புகிறீர்களா?"
 
-#: Mopy/bash/barb.py:328
+#: Mopy/bash/barb.py:327
 msgid "Warning: Version Mismatch"
 msgstr "எச்சரிக்கை: பதிப்பு பொருந்தாத தன்மை"
 
-#: Mopy/bash/barb.py:376
+#: Mopy/bash/barb.py:375
 msgid "There was an error while trying to restore your settings from the backup file!"
 msgstr "உங்கள் அமைப்புகளை காப்புப்பிரதி கோப்பிலிருந்து மீட்டெடுக்க முயற்சிக்கும்போது பிழை ஏற்பட்டது!"
 
-#: Mopy/bash/barb.py:377
+#: Mopy/bash/barb.py:376
 msgid "No settings were restored."
 msgstr "அமைப்புகள் எதுவும் மீட்டெடுக்கப்படவில்லை."
 
-#: Mopy/bash/barb.py:378
+#: Mopy/bash/barb.py:377
 msgid "Unable to restore backup!"
 msgstr "காப்புப்பிரதியை மீட்டெடுக்க முடியவில்லை!"
 
@@ -555,8 +555,8 @@ msgstr "WRYA பாசின் 'தேர்ந்தெடுக்கப்�
 msgid "Generating HTML file from '%(gen_target)s'"
 msgstr "'%(gen_target)s' இலிருந்து உஉகுமொ கோப்பை உருவாக்குதல்"
 
-#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:3909
-#: Mopy/bash/bosh/bain.py:1908
+#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:3902
+#: Mopy/bash/bosh/bain.py:1907
 msgid "Done"
 msgstr "முடிந்தது"
 
@@ -755,11 +755,11 @@ msgstr "பீட்டா"
 msgid "Update Masters"
 msgstr "முதுநிலை புதுப்பிப்பு"
 
-#: Mopy/bash/basher/__init__.py:533 Mopy/bash/basher/__init__.py:998
+#: Mopy/bash/basher/__init__.py:533 Mopy/bash/basher/__init__.py:999
 msgid "Plugin name incompatible, will not load."
 msgstr "சொருகி பெயர் பொருந்தாது, ஏற்றாது."
 
-#: Mopy/bash/basher/__init__.py:536 Mopy/bash/basher/__init__.py:1001
+#: Mopy/bash/basher/__init__.py:536 Mopy/bash/basher/__init__.py:1002
 msgid "Plugin name incompatible, cannot be activated."
 msgstr "சொருகு பெயர் incompatible, cannot be activated."
 
@@ -816,7 +816,7 @@ msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr "%(default_ini)s நகலெடுப்பதன் மூலம் அதை உருவாக்க வ்ரி பாச் விரும்புகிறீர்களா?"
 
 #: Mopy/bash/basher/__init__.py:801 Mopy/bash/basher/__init__.py:805
-#: Mopy/bash/basher/__init__.py:821 Mopy/bash/basher/__init__.py:3789
+#: Mopy/bash/basher/__init__.py:821 Mopy/bash/basher/__init__.py:3782
 msgid "Missing Game INI"
 msgstr "இந்த விளையாட்டைக் காணவில்லை"
 
@@ -834,218 +834,218 @@ msgstr "%(target_ini_pth)s ஐ %(def_ini_path)s நகலெடுப்பத�
 msgid "Apply an INI tweak to %(curr_target_ini)s? Make sure you trust the tweak, as incorrect tweaks can cause crashes."
 msgstr "%(curr_target_ini)s ஒரு இனி மாற்றங்களைப் பயன்படுத்தவா? தவறான மாற்றங்கள் செயலிழப்பை ஏற்படுத்தும் என்பதால், மாற்றத்தை நீங்கள் நம்புகிறீர்கள் என்பதை உறுதிப்படுத்திக் கொள்ளுங்கள்."
 
-#: Mopy/bash/basher/__init__.py:833 Mopy/bash/basher/installer_links.py:567
+#: Mopy/bash/basher/__init__.py:833 Mopy/bash/basher/installer_links.py:568
 msgid "INI Tweaks"
 msgstr "இது ஒரு மாற்றமாகும்"
 
-#: Mopy/bash/basher/__init__.py:978
+#: Mopy/bash/basher/__init__.py:979
 msgid "Reordering mods is only allowed when they are sorted by Load Order."
 msgstr "சுமை வரிசையால் வரிசைப்படுத்தப்படும்போது மட்டுமே மோட்சை மறுவரிசைப்படுத்த அனுமதிக்கப்படுகிறது."
 
-#: Mopy/bash/basher/__init__.py:984
+#: Mopy/bash/basher/__init__.py:985
 msgid "You can't reorder the following mods:"
 msgstr "பின்வரும் மோட்சை நீங்கள் மறுவரிசைப்படுத்த முடியாது:"
 
-#: Mopy/bash/basher/__init__.py:1004
+#: Mopy/bash/basher/__init__.py:1005
 msgid "Plugin is missing string localization files."
 msgstr "சொருகி சரம் உள்ளூர்மயமாக்கல் கோப்புகளைக் காணவில்லை."
 
-#: Mopy/bash/basher/__init__.py:1006
+#: Mopy/bash/basher/__init__.py:1007
 msgid "Has master names that will not load."
 msgstr "ஏற்றப்படாத முதன்மை பெயர்கள் உள்ளன."
 
-#: Mopy/bash/basher/__init__.py:1015
+#: Mopy/bash/basher/__init__.py:1016
 msgid "One or more masters are missing."
 msgstr "ஒன்று அல்லது அதற்கு மேற்பட்ட எசமானர்கள் காணவில்லை."
 
-#: Mopy/bash/basher/__init__.py:1018
+#: Mopy/bash/basher/__init__.py:1019
 msgid "Loads before its masters."
 msgstr "அதன் எசமானர்களுக்கு முன் ஏற்றுகிறது."
 
-#: Mopy/bash/basher/__init__.py:1020
+#: Mopy/bash/basher/__init__.py:1021
 msgid "Masters have been re-ordered."
 msgstr "முதுநிலை மீண்டும் ஆர்டர் செய்யப்பட்டுள்ளது."
 
-#: Mopy/bash/basher/__init__.py:1022
+#: Mopy/bash/basher/__init__.py:1023
 msgid "Active in load order."
 msgstr "சுமை வரிசையில் செயலில் உள்ளது."
 
-#: Mopy/bash/basher/__init__.py:1024
+#: Mopy/bash/basher/__init__.py:1025
 msgid "Imported into Bashed Patch."
 msgstr "பாச்ட் பேட்சில் இறக்குமதி செய்யப்பட்டது."
 
-#: Mopy/bash/basher/__init__.py:1144
+#: Mopy/bash/basher/__init__.py:1145
 msgid "You can't activate the following mods:"
 msgstr "பின்வரும் மோட்களை நீங்கள் செயல்படுத்த முடியாது:"
 
-#: Mopy/bash/basher/__init__.py:1147
+#: Mopy/bash/basher/__init__.py:1148
 msgid "You can't deactivate the following mods:"
 msgstr "பின்வரும் மோட்களை நீங்கள் செயலிழக்க முடியாது:"
 
-#: Mopy/bash/basher/__init__.py:1165
+#: Mopy/bash/basher/__init__.py:1166
 msgid "Unable to create new Bashed Patch: 10 Bashed Patches already exist!"
 msgstr "புதிய பாச்ட் பேட்சை உருவாக்க முடியவில்லை: 10 பாச்ட் திட்டுகள் ஏற்கனவே உள்ளன!"
 
-#: Mopy/bash/basher/__init__.py:1287
+#: Mopy/bash/basher/__init__.py:1288
 msgid "File corrupted on save!"
 msgstr "சேமிப்பதில் கோப்பு சிதைந்துள்ளது!"
 
-#: Mopy/bash/basher/__init__.py:1334 Mopy/bash/basher/__init__.py:2195
+#: Mopy/bash/basher/__init__.py:1337 Mopy/bash/basher/__init__.py:2195
 msgid "Masters:"
 msgstr "முதுநிலை:"
 
-#: Mopy/bash/basher/__init__.py:1381
+#: Mopy/bash/basher/__init__.py:1384
 msgid "Change this value using an interactive dialog."
 msgstr "ஊடாடும் உரையாடலைப் பயன்படுத்தி இந்த மதிப்பை மாற்றவும்."
 
-#: Mopy/bash/basher/__init__.py:1398
+#: Mopy/bash/basher/__init__.py:1401
 msgid "Add bash tags to this plugin."
 msgstr "இந்த சொருகி பாச் குறிச்சொற்களைச் சேர்க்கவும்."
 
-#: Mopy/bash/basher/__init__.py:1402
+#: Mopy/bash/basher/__init__.py:1405
 msgid "Remove the selected tags from this plugin."
 msgstr "இந்த சொருகி இருந்து தேர்ந்தெடுக்கப்பட்ட குறிச்சொற்களை அகற்றவும்."
 
-#: Mopy/bash/basher/__init__.py:1409 Mopy/bash/basher/__init__.py:3334
+#: Mopy/bash/basher/__init__.py:1412 Mopy/bash/basher/__init__.py:3328
 msgid "File:"
 msgstr "கோப்பு:"
 
-#: Mopy/bash/basher/__init__.py:1413
+#: Mopy/bash/basher/__init__.py:1416
 msgid "Modified:"
 msgstr "மாற்றியமைக்கப்பட்ட:"
 
-#: Mopy/bash/basher/__init__.py:1423
+#: Mopy/bash/basher/__init__.py:1426
 msgid "Bash Tags:"
 msgstr "பாச் குறிச்சொற்கள்:"
 
-#: Mopy/bash/basher/__init__.py:1475
+#: Mopy/bash/basher/__init__.py:1478
 #, python-format
 msgid "Author - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 msgstr "ஆசிரியர் - [%(max_bytes)d/%(curr_bytes)d பைட்டுகள்]:"
 
-#: Mopy/bash/basher/__init__.py:1487
+#: Mopy/bash/basher/__init__.py:1490
 #, python-format
 msgid "Description - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 msgstr "விளக்கம் - [%(max_bytes)d/%(curr_bytes)d பைட்டுகள்]:"
 
-#: Mopy/bash/basher/__init__.py:1533
+#: Mopy/bash/basher/__init__.py:1536
 #, python-format
 msgid "Invalid date \"%(unrecognized_date)s\", formatting is likely incorrect."
 msgstr "தவறான தேதி \"%(unrecognized_date)s\", வடிவமைப்பு தவறானது."
 
-#: Mopy/bash/basher/__init__.py:1555
+#: Mopy/bash/basher/__init__.py:1558
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s) and an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will become detached when the plugin is renamed."
 msgstr "இந்தச் சொருகி ஒரு தொடர்புடைய பிஎச்ஏ (%(assoc_bsa_name)s) மற்றும் அதனுடன் தொடர்புடைய சொருகி-பெயர்-குறிப்பிட்ட அடைவு (எ.கா. %(pnd_example)s) ஆகியவற்றைக் கொண்டுள்ளது, இது சொருகி மறுபெயரிடப்படும்போது பிரிக்கப்படும்."
 
-#: Mopy/bash/basher/__init__.py:1558
+#: Mopy/bash/basher/__init__.py:1561
 msgid "Note that the BSA may also contain a plugin-name-specific directory, which would remain detached even if the archive name were adjusted."
 msgstr "பிஎச்ஏ ஒரு சொருகி-பெயர்-குறிப்பிட்ட கோப்பகத்தையும் கொண்டிருக்கலாம் என்பதை நினைவில் கொள்க, இது காப்பக பெயர் சரிசெய்யப்பட்டாலும் கூட பிரிக்கப்பட்டிருக்கும்."
 
-#: Mopy/bash/basher/__init__.py:1561
+#: Mopy/bash/basher/__init__.py:1564
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s), which will become detached when the plugin is renamed."
 msgstr "இந்த சொருகி ஒரு தொடர்புடைய பிஎச்ஏ (%(assoc_bsa_name)s) ஐக் கொண்டுள்ளது, இது சொருகி மறுபெயரிடும்போது பிரிக்கப்படும்."
 
-#: Mopy/bash/basher/__init__.py:1563
+#: Mopy/bash/basher/__init__.py:1566
 #, python-format
 msgid "Note that the BSA may contain a plugin-name-specific directory (e.g. %(pnd_example)s), which would remain detached even if the archive file name were adjusted."
 msgstr "பிஎச்ஏ ஒரு சொருகி-பெயர்-குறிப்பிட்ட கோப்பகத்தைக் கொண்டிருக்கலாம் என்பதை நினைவில் கொள்க (எ.கா. %(pnd_example)s), அவை காப்பக கோப்பு பெயர் சரிசெய்யப்பட்டாலும் கூட பிரிக்கப்பட்டிருக்கும்."
 
-#: Mopy/bash/basher/__init__.py:1567
+#: Mopy/bash/basher/__init__.py:1570
 #, python-format
 msgid "This plugin has an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will become detached when the plugin is renamed."
 msgstr "இந்த சொருகி தொடர்புடைய சொருகி-பெயர்-குறிப்பிட்ட கோப்பகத்தைக் கொண்டுள்ளது (எ.கா. %(pnd_example)s), இது சொருகி மறுபெயரிடப்படும்போது பிரிக்கப்படும்."
 
-#: Mopy/bash/basher/__init__.py:1580
+#: Mopy/bash/basher/__init__.py:1583
 #, python-format
 msgid "File name %(bad_file_name)s cannot be encoded to Windows-1252. %(game_name)s may not be able to activate this plugin because of this. Do you want to rename the plugin anyway?"
 msgstr "கோப்பு பெயர் %(game_name)s சாளரங்கள் -1252 க்கு குறியாக்கம் செய்ய முடியாது. %(bad_file_name)s இதன் காரணமாக இந்த சொருகி செயல்படுத்த முடியாமல் போகலாம். எப்படியும் சொருகி மறுபெயரிட விரும்புகிறீர்களா?"
 
-#: Mopy/bash/basher/__init__.py:1626
+#: Mopy/bash/basher/__init__.py:1629
 #, python-format
 msgid "Rename %(target_file_name)s"
 msgstr "மறுபெயரிடுதல் %(target_file_name)s"
 
-#: Mopy/bash/basher/__init__.py:1673
+#: Mopy/bash/basher/__init__.py:1676
 msgid "Check a tag to add it to the plugin."
 msgstr "சொருகி சேர்க்க ஒரு குறிச்சொல்லைச் சரிபார்க்கவும்."
 
-#: Mopy/bash/basher/__init__.py:1674
+#: Mopy/bash/basher/__init__.py:1677
 msgid "Add all shown tags to the plugin."
 msgstr "காட்டப்பட்டுள்ள அனைத்து குறிச்சொற்களையும் சொருகி சேர்க்கவும்."
 
-#: Mopy/bash/basher/__init__.py:1675
+#: Mopy/bash/basher/__init__.py:1678
 msgid "Remove all shown tags from the plugin."
 msgstr "சொருகி இருந்து காட்டப்பட்டுள்ள அனைத்து குறிச்சொற்களையும் அகற்று."
 
-#: Mopy/bash/basher/__init__.py:1716 Mopy/bash/basher/gui_patchers.py:308
+#: Mopy/bash/basher/__init__.py:1719 Mopy/bash/basher/gui_patchers.py:308
 #: Mopy/bash/basher/settings_dialog.py:1090
 msgid "Automatic"
 msgstr "தானியங்கி"
 
-#: Mopy/bash/basher/__init__.py:1717
+#: Mopy/bash/basher/__init__.py:1720
 msgid "Use the tags from the description and masterlist/userlist."
 msgstr "விளக்கம் மற்றும் மாச்டர்லிச்ட்/பயனர் பட்டியலில் இருந்து குறிச்சொற்களைப் பயன்படுத்தவும்."
 
-#: Mopy/bash/basher/__init__.py:1738
+#: Mopy/bash/basher/__init__.py:1741
 msgid "Copy to BashTags"
 msgstr "பச்டேக்குகளுக்கு நகலெடுக்கவும்"
 
-#: Mopy/bash/basher/__init__.py:1739
+#: Mopy/bash/basher/__init__.py:1742
 #, python-format
 msgid "Copies a diff between currently applied tags and description/LOOT tags to %(bashtags_path)s."
 msgstr "தற்போது பயன்படுத்தப்படும் குறிச்சொற்கள் மற்றும் விளக்கம்/கொள்ளை குறிச்சொற்களுக்கு இடையே உள்ள வேறுபாட்டை %(bashtags_path)s இதற்கு நகலெடுக்கிறது."
 
-#: Mopy/bash/basher/__init__.py:1752
+#: Mopy/bash/basher/__init__.py:1755
 msgid "Copy to Description"
 msgstr "விளக்கத்திற்கு நகலெடுக்கவும்"
 
-#: Mopy/bash/basher/__init__.py:1753
+#: Mopy/bash/basher/__init__.py:1756
 msgid "Copies currently applied tags to the plugin description."
 msgstr "நகல்கள் தற்போது சொருகி விளக்கத்திற்கு குறிச்சொற்களைப் பயன்படுத்தின."
 
-#: Mopy/bash/basher/__init__.py:1763
+#: Mopy/bash/basher/__init__.py:1766
 msgid "Description field including the Bash Tags must be at most 511 characters. Edit the description to leave enough room."
 msgstr "பாச் குறிச்சொற்கள் உள்ளிட்ட விளக்கம் புலம் 511 எழுத்துக்களாக இருக்க வேண்டும். போதுமான அறையை விட்டு வெளியேற விளக்கத்தைத் திருத்தவும்."
 
-#: Mopy/bash/basher/__init__.py:1768 Mopy/bash/basher/belt.py:282
-#: Mopy/bash/basher/gui_fomod.py:567 Mopy/bash/basher/installer_links.py:946
-#: Mopy/bash/basher/installer_links.py:1054 Mopy/bash/gui/buttons.py:163
+#: Mopy/bash/basher/__init__.py:1771 Mopy/bash/basher/belt.py:282
+#: Mopy/bash/basher/gui_fomod.py:567 Mopy/bash/basher/installer_links.py:947
+#: Mopy/bash/basher/installer_links.py:1055 Mopy/bash/gui/buttons.py:163
 msgid "Select All"
 msgstr "அனைத்தையும் தெரிவுசெய்"
 
-#: Mopy/bash/basher/__init__.py:1769
+#: Mopy/bash/basher/__init__.py:1772
 msgid "Selects all currently applied tags."
 msgstr "தற்போது பயன்படுத்தப்படும் அனைத்து குறிச்சொற்களையும் தேர்ந்தெடுக்கிறது."
 
-#: Mopy/bash/basher/__init__.py:1773 Mopy/bash/basher/belt.py:289
-#: Mopy/bash/basher/gui_fomod.py:574 Mopy/bash/basher/installer_links.py:956
-#: Mopy/bash/basher/installer_links.py:1060 Mopy/bash/gui/buttons.py:171
+#: Mopy/bash/basher/__init__.py:1776 Mopy/bash/basher/belt.py:289
+#: Mopy/bash/basher/gui_fomod.py:574 Mopy/bash/basher/installer_links.py:957
+#: Mopy/bash/basher/installer_links.py:1061 Mopy/bash/gui/buttons.py:171
 msgid "Deselect All"
 msgstr "அனைத்தையும் தேர்வு செய்யுங்கள்"
 
-#: Mopy/bash/basher/__init__.py:1774
+#: Mopy/bash/basher/__init__.py:1777
 msgid "Deselects all currently applied tags."
 msgstr "தற்போது பயன்படுத்தப்படும் அனைத்து குறிச்சொற்களையும் தேர்வுசெய்கிறது."
 
-#: Mopy/bash/basher/__init__.py:1805
+#: Mopy/bash/basher/__init__.py:1808
 msgid "Edit…"
 msgstr "திருத்து…"
 
-#: Mopy/bash/basher/__init__.py:1893
+#: Mopy/bash/basher/__init__.py:1896
 msgid "Supported files"
 msgstr "ஆதரிக்கப்பட்ட கோப்புகள்"
 
-#: Mopy/bash/basher/__init__.py:1895
+#: Mopy/bash/basher/__init__.py:1898
 msgid "INI files"
 msgstr "இது ஒரு கோப்புகள்"
 
-#: Mopy/bash/basher/__init__.py:1896
+#: Mopy/bash/basher/__init__.py:1899
 msgid "Config files"
 msgstr "கோப்புகளை கட்டமைத்தல்"
 
-#: Mopy/bash/basher/__init__.py:1897
+#: Mopy/bash/basher/__init__.py:1900
 msgid "TOML files"
 msgstr "டாம்ல் கோப்புகள்"
 
@@ -1089,304 +1089,304 @@ msgstr "முதுநிலை (சாத்தியமற்றது, ம�
 msgid "This save has ESL masters and cannot be displayed accurately without an up-to-date cosave. Please install the latest version of %(se_name)s and create a new save to see the true master order."
 msgstr "இந்த சேமிப்பில் ஈ.எச்.எல் முதுநிலை உள்ளது மற்றும் புதுப்பித்த கோசேவ் இல்லாமல் துல்லியமாக காட்ட முடியாது. தயவுசெய்து %(se_name)s இன் அண்மைக் கால பதிப்பை நிறுவி, உண்மையான முதன்மை வரிசையைக் காண புதிய சேமிப்பகத்தை உருவாக்கவும்."
 
-#: Mopy/bash/basher/__init__.py:2251
+#: Mopy/bash/basher/__init__.py:2245
 #, python-format
 msgid "Saves: %(status_num)d"
 msgstr "சேமிக்கிறது: %(status_num)d"
 
-#: Mopy/bash/basher/__init__.py:2267
+#: Mopy/bash/basher/__init__.py:2261
 msgid "Last"
 msgstr "கடைசி"
 
-#: Mopy/bash/basher/__init__.py:2326
+#: Mopy/bash/basher/__init__.py:2320
 msgid "Wrye Bash can't rename mixed package types."
 msgstr "Wrye பாச் கலப்பு தொகுப்பு வகைகளை மறுபெயரிட முடியாது."
 
-#: Mopy/bash/basher/__init__.py:2342
+#: Mopy/bash/basher/__init__.py:2336
 msgid "Mod Archives"
 msgstr "மோட் காப்பகங்கள்"
 
-#: Mopy/bash/basher/__init__.py:2370
+#: Mopy/bash/basher/__init__.py:2364
 #, python-format
 msgid "The project '%(omod_project)s' already exists. Do you want to overwrite it with '%(omod_name)s'?"
 msgstr "'%(omod_project)s' திட்டம் ஏற்கனவே உள்ளது. '%(omod_name)s' உடன் அதை மேலெழுத விரும்புகிறீர்களா?"
 
-#: Mopy/bash/basher/__init__.py:2393
+#: Mopy/bash/basher/__init__.py:2387
 msgid "The following OMODs were unpacked:"
 msgstr "பின்வரும் OMOD கள் திறக்கப்படவில்லை:"
 
-#: Mopy/bash/basher/__init__.py:2394
+#: Mopy/bash/basher/__init__.py:2388
 msgid "The following OMODs were skipped:"
 msgstr "பின்வரும் OMOD கள் தவிர்க்கப்பட்டன:"
 
-#: Mopy/bash/basher/__init__.py:2399
+#: Mopy/bash/basher/__init__.py:2393
 msgid "The following OMODs failed to extract:"
 msgstr "பின்வரும் ஓமோட்ச் பிரித்தெடுக்கத் தவறிவிட்டது:"
 
-#: Mopy/bash/basher/__init__.py:2401
+#: Mopy/bash/basher/__init__.py:2395
 msgid "OMOD Extraction Canceled"
 msgstr "OMOD பிரித்தெடுத்தல் ரத்து செய்யப்பட்டது"
 
-#: Mopy/bash/basher/__init__.py:2403
+#: Mopy/bash/basher/__init__.py:2397
 msgid "The following OMODs failed to extract. This could be a file IO error, or an unsupported OMOD format:"
 msgstr "பின்வரும் ஓமோட்ச் பிரித்தெடுக்கத் தவறிவிட்டது. இது ஒரு கோப்பு io பிழை அல்லது ஆதரிக்கப்படாத OMOD வடிவமாக இருக்கலாம்:"
 
-#: Mopy/bash/basher/__init__.py:2406
+#: Mopy/bash/basher/__init__.py:2400
 msgid "OMOD Extraction Complete"
 msgstr "OMOD பிரித்தெடுத்தல் முடிந்தது"
 
-#: Mopy/bash/basher/__init__.py:2408
+#: Mopy/bash/basher/__init__.py:2402
 msgid "Refreshing…"
 msgstr "புத்துணர்ச்சி…"
 
-#: Mopy/bash/basher/__init__.py:2413
+#: Mopy/bash/basher/__init__.py:2407
 msgid "You have dragged the following files into Wrye Bash:"
 msgstr "பின்வரும் கோப்புகளை நீங்கள் வெறுக்கத்தக்க பாசுக்கு இழுத்துள்ளீர்கள்:"
 
-#: Mopy/bash/basher/__init__.py:2416
+#: Mopy/bash/basher/__init__.py:2410
 msgid "What would you like to do with them?"
 msgstr "அவர்களுடன் நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?"
 
-#: Mopy/bash/basher/__init__.py:2430
+#: Mopy/bash/basher/__init__.py:2424
 #, python-format
 msgid "A package with the name '%(target_fname)s' already exists. Do you want to overwrite it?"
 msgstr "'%(target_fname)s' என்ற பெயருடன் ஒரு தொகுப்பு ஏற்கனவே உள்ளது. அதை மேலெழுத விரும்புகிறீர்களா?"
 
-#: Mopy/bash/basher/__init__.py:2434
+#: Mopy/bash/basher/__init__.py:2428
 msgid "Overwrite Package?"
 msgstr "தொகுப்பை மேலெழுதவா?"
 
-#: Mopy/bash/basher/__init__.py:2436
+#: Mopy/bash/basher/__init__.py:2430
 #, python-format
 msgid "A BCF with the name '%(target_fname)s' already exists. Do you want to overwrite it?"
 msgstr "'%(target_fname)s' என்ற பெயருடன் ஒரு பி.சி.எஃப் ஏற்கனவே உள்ளது. அதை மேலெழுத விரும்புகிறீர்களா?"
 
-#: Mopy/bash/basher/__init__.py:2440
+#: Mopy/bash/basher/__init__.py:2434
 msgid "Overwrite BCF?"
 msgstr "பி.சி.எஃப் மேலெழுதவா?"
 
-#: Mopy/bash/basher/__init__.py:2459 Mopy/bash/basher/__init__.py:3115
+#: Mopy/bash/basher/__init__.py:2453 Mopy/bash/basher/__init__.py:3109
 msgid "Extracting OMODs…"
 msgstr "OMOD களைப் பிரித்தெடுக்கிறது…"
 
-#: Mopy/bash/basher/__init__.py:2495
+#: Mopy/bash/basher/__init__.py:2489
 msgid "Drag and drop in the Installer's list is only allowed when the list is sorted by install order"
 msgstr "நிறுவி பட்டியலை நிறுவி பட்டியலில் இழுத்து விடுங்கள், நிறுவல் ஆர்டர் மூலம் பட்டியல் வரிசைப்படுத்தப்படும் போது மட்டுமே அனுமதிக்கப்படுகிறது"
 
-#: Mopy/bash/basher/__init__.py:2603 Mopy/bash/basher/__init__.py:2609
+#: Mopy/bash/basher/__init__.py:2597 Mopy/bash/basher/__init__.py:2603
 msgid "Refreshing Packages…"
 msgstr "புத்துணர்ச்சியூட்டும் தொகுப்புகள்…"
 
-#: Mopy/bash/basher/__init__.py:2619
+#: Mopy/bash/basher/__init__.py:2613
 #, python-format
 msgid "Refreshing from %(data_folder)s…"
 msgstr "%(data_folder)s இலிருந்து புத்துணர்ச்சி…"
 
-#: Mopy/bash/basher/__init__.py:2664 Mopy/bash/basher/settings_dialog.py:588
+#: Mopy/bash/basher/__init__.py:2658 Mopy/bash/basher/settings_dialog.py:588
 #: Mopy/bash/basher/settings_dialog.py:1543
 #: Mopy/bash/basher/settings_dialog.py:1566
 #: Mopy/bash/basher/settings_dialog.py:1582
 msgid "General"
 msgstr "பொது"
 
-#: Mopy/bash/basher/__init__.py:2665
+#: Mopy/bash/basher/__init__.py:2659
 msgid "Matched"
 msgstr "பொருந்தியது"
 
-#: Mopy/bash/basher/__init__.py:2666
+#: Mopy/bash/basher/__init__.py:2660
 msgid "Missing"
 msgstr "இல்லை"
 
-#: Mopy/bash/basher/__init__.py:2667
+#: Mopy/bash/basher/__init__.py:2661
 msgid "Mismatched"
 msgstr "பொருந்தவில்லை"
 
-#: Mopy/bash/basher/__init__.py:2668
+#: Mopy/bash/basher/__init__.py:2662
 msgid "Conflicts"
 msgstr "மோதல்கள்"
 
-#: Mopy/bash/basher/__init__.py:2669
+#: Mopy/bash/basher/__init__.py:2663
 msgid "Underridden"
 msgstr "துணை"
 
-#: Mopy/bash/basher/__init__.py:2670
+#: Mopy/bash/basher/__init__.py:2664
 msgid "Dirty"
 msgstr "அழுக்கு"
 
-#: Mopy/bash/basher/__init__.py:2671
+#: Mopy/bash/basher/__init__.py:2665
 msgid "Skipped"
 msgstr "தவிர்க்கப்பட்டது"
 
-#: Mopy/bash/basher/__init__.py:2690
+#: Mopy/bash/basher/__init__.py:2684
 msgid "Disable the regular BAIN sub-packages and use the results of the last FOMOD installer run instead."
 msgstr "வழக்கமான பெயின் துணை தொகுப்புகளை முடக்கவும், அதற்கு பதிலாக கடைசி FOMOD நிறுவி ஓட்டத்தின் முடிவுகளைப் பயன்படுத்தவும்."
 
-#: Mopy/bash/basher/__init__.py:2693 Mopy/bash/basher/__init__.py:2697
+#: Mopy/bash/basher/__init__.py:2687 Mopy/bash/basher/__init__.py:2691
 #: Mopy/bash/basher/belt.py:370
 msgid "Sub-Packages"
 msgstr "துணை தொகுப்புகள்"
 
-#: Mopy/bash/basher/__init__.py:2694
+#: Mopy/bash/basher/__init__.py:2688
 msgid "Use the regular BAIN sub-packages."
 msgstr "வழக்கமான பெயின் துணை தொகுப்புகளைப் பயன்படுத்தவும்."
 
-#: Mopy/bash/basher/__init__.py:2718
+#: Mopy/bash/basher/__init__.py:2712
 msgid "Plugin Filter"
 msgstr "சொருகி வடிகட்டி"
 
-#: Mopy/bash/basher/__init__.py:2725
+#: Mopy/bash/basher/__init__.py:2719
 msgid "Comments"
 msgstr "கருத்துகள்"
 
-#: Mopy/bash/basher/__init__.py:2835
+#: Mopy/bash/basher/__init__.py:2829
 #, python-format
 msgid "Type: %(package_type)s"
 msgstr "வகை: %(package_type)s"
 
-#: Mopy/bash/basher/__init__.py:2835 Mopy/bash/basher/installer_links.py:1418
+#: Mopy/bash/basher/__init__.py:2829 Mopy/bash/basher/installer_links.py:1419
 #: Mopy/bash/patcher/patch_files.py:56
 msgid "Overview"
 msgstr "கண்ணோட்டம்"
 
-#: Mopy/bash/basher/__init__.py:2844
+#: Mopy/bash/basher/__init__.py:2838
 #, python-format
 msgid "Modified: %(modified_date)s"
 msgstr "மாற்றியமைக்கப்பட்ட: %(modified_date)s"
 
-#: Mopy/bash/basher/__init__.py:2847
+#: Mopy/bash/basher/__init__.py:2841
 #, python-format
 msgid "Data CRC: %(data_crc)s"
 msgstr "தரவு CRC: %(data_crc)s"
 
-#: Mopy/bash/basher/__init__.py:2849
+#: Mopy/bash/basher/__init__.py:2843
 #, python-format
 msgid "Files: %(num_files)s"
 msgstr "கோப்புகள்: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2851
+#: Mopy/bash/basher/__init__.py:2845
 #, python-format
 msgid "Configured: %(files_and_size)s"
 msgstr "கட்டமைக்கப்பட்ட: %(files_and_size)s"
 
-#: Mopy/bash/basher/__init__.py:2854
+#: Mopy/bash/basher/__init__.py:2848
 #, python-format
 msgid "Matched: %(num_files)s"
 msgstr "பொருந்தியது: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2856
+#: Mopy/bash/basher/__init__.py:2850
 #, python-format
 msgid "Missing: %(num_files)s"
 msgstr "காணவில்லை: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2858
+#: Mopy/bash/basher/__init__.py:2852
 #, python-format
 msgid "Conflicts: %(num_files)s"
 msgstr "மோதல்கள்: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2862
+#: Mopy/bash/basher/__init__.py:2856
 msgid "Configured Files"
 msgstr "கட்டமைக்கப்பட்ட கோப்புகள்"
 
-#: Mopy/bash/basher/__init__.py:2881
+#: Mopy/bash/basher/__init__.py:2875
 msgid "Skipped (Extension)"
 msgstr "தவிர்க்கப்பட்டது (நீட்டிப்பு)"
 
-#: Mopy/bash/basher/__init__.py:2883
+#: Mopy/bash/basher/__init__.py:2877
 msgid "Skipped (Dir)"
 msgstr "தவிர்க்கப்பட்டது (டிர்)"
 
-#: Mopy/bash/basher/__init__.py:3045 Mopy/bash/basher/installers_links.py:437
+#: Mopy/bash/basher/__init__.py:3039 Mopy/bash/basher/installers_links.py:437
 msgid "Do you want to enable Installers?"
 msgstr "நிறுவிகளை இயக்க விரும்புகிறீர்களா?"
 
-#: Mopy/bash/basher/__init__.py:3045 Mopy/bash/basher/installers_links.py:438
+#: Mopy/bash/basher/__init__.py:3039 Mopy/bash/basher/installers_links.py:438
 msgid "If you do, Wrye Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
 msgstr "நீங்கள் செய்தால், WRYE பாச் முதலில் சில தரவைத் தொடங்க வேண்டும். பல மோட்ச் நிறுவப்பட்டிருந்தால் இது ஐந்து நிமிடங்கள் ஆர்டர் எடுக்கலாம்."
 
-#: Mopy/bash/basher/__init__.py:3048
+#: Mopy/bash/basher/__init__.py:3042
 msgid "If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'."
 msgstr "இல்லையென்றால், நெடுவரிசை தலைப்பு மெனுவை வலது சொடுக்கு செய்து 'இயக்கப்பட்ட' என்பதைத் தேர்ந்தெடுப்பதன் மூலம் எந்த நேரத்திலும் அதை இயக்கலாம்."
 
-#: Mopy/bash/basher/__init__.py:3052
+#: Mopy/bash/basher/__init__.py:3046
 msgid "Enable Installers?"
 msgstr "நிறுவிகளை இயக்கவா?"
 
-#: Mopy/bash/basher/__init__.py:3092
+#: Mopy/bash/basher/__init__.py:3086
 msgid "Refreshing Installers…"
 msgstr "புத்துணர்ச்சியூட்டும் நிறுவிகள்…"
 
-#: Mopy/bash/basher/__init__.py:3139
+#: Mopy/bash/basher/__init__.py:3133
 msgid "OMOD Extraction - Cleanup Error"
 msgstr "OMOD பிரித்தெடுத்தல் - தூய்மைப்படுத்தும் பிழை"
 
-#: Mopy/bash/basher/__init__.py:3145
+#: Mopy/bash/basher/__init__.py:3139
 msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have already been extracted."
 msgstr "ஏற்கனவே பிரித்தெடுக்கப்பட்ட OMOD களை நீக்க நிர்வாகி சலுகைகள் தேவை."
 
-#: Mopy/bash/basher/__init__.py:3148 Mopy/bash/basher/__init__.py:3174
+#: Mopy/bash/basher/__init__.py:3142 Mopy/bash/basher/__init__.py:3168
 #: Mopy/bash/basher/patcher_dialog.py:337 Mopy/bash/bosh/__init__.py:2998
 msgid "Try again?"
 msgstr "மீண்டும் முயற்சிக்கிறீர்களா?"
 
-#: Mopy/bash/basher/__init__.py:3171
+#: Mopy/bash/basher/__init__.py:3165
 msgid "Wrye Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory."
 msgstr "பாச் நிறுவிகள் கோப்பகத்திலிருந்து தோல்வியுற்ற OMOD களை நகர்த்துவதற்கான நிர்வாகி சலுகைகள் தேவை."
 
-#: Mopy/bash/basher/__init__.py:3184
+#: Mopy/bash/basher/__init__.py:3178
 #, python-format
 msgid "Packages: %(status_num)d/%(total_status_num)d"
 msgstr "தொகுப்புகள்: %(total_status_num)d/ %(status_num)d"
 
-#: Mopy/bash/basher/__init__.py:3288
+#: Mopy/bash/basher/__init__.py:3282
 #, python-format
 msgid "Screenshots: %(status_num)d"
 msgstr "திரை சாட்கள்: %(status_num)d"
 
-#: Mopy/bash/basher/__init__.py:3352 Mopy/bash/basher/__init__.py:3354
+#: Mopy/bash/basher/__init__.py:3346 Mopy/bash/basher/__init__.py:3348
 #: Mopy/bash/basher/belt.py:381
 msgid "Notes:"
 msgstr "குறிப்புகள்:"
 
-#: Mopy/bash/basher/__init__.py:3375
+#: Mopy/bash/basher/__init__.py:3369
 #, python-format
 msgid "BSAs: %(status_num)d"
 msgstr "BSAS: %(status_num)d"
 
-#: Mopy/bash/basher/__init__.py:3392
+#: Mopy/bash/basher/__init__.py:3386
 #, python-format
 msgid "Show/Hide the %(tabtitle)s Tab."
 msgstr "%(tabtitle)s தாவலைக் காட்டவும்/மறைக்கவும்."
 
-#: Mopy/bash/basher/__init__.py:3619
+#: Mopy/bash/basher/__init__.py:3612
 #, python-format
 msgid "It appears that you have more than 325 plugins and BSAs in your %(data_folder)s folder and auto-ghosting is disabled. This may cause problems in %(game_name)s; see the auto-ghost section of the readme for more details and consider enabling auto-ghosting."
 msgstr "உங்கள் %(game_name)sோப்புறையில் 325 க்கும் மேற்பட்ட செருகுநிரல்கள் மற்றும் பிஎச்ஏக்கள் இருப்பதாகத் தெரிகிறது மற்றும் ஆட்டோ-கோச்டிங் முடக்கப்பட்டுள்ளது. இது %(data_folder)s சிக்கல்களை ஏற்படுத்தக்கூடும்; மேலும் விவரங்களுக்கு README இன் ஆட்டோ-கோச்ட் பகுதியைப் பார்க்கவும், ஆட்டோ-கோச்டிங்கை இயக்குவதைக் கருத்தில் கொள்ளுங்கள்."
 
-#: Mopy/bash/basher/__init__.py:3628
+#: Mopy/bash/basher/__init__.py:3621
 #, python-format
 msgid "It appears that you have more than 400 plugins and BSAs in your %(data_folder)s folder and auto-ghosting is disabled. This will cause problems in %(game_name)s; see the auto-ghost section of the readme for more details."
 msgstr "உங்கள் %(game_name)sோப்புறையில் 400 க்கும் மேற்பட்ட செருகுநிரல்கள் மற்றும் பிஎச்ஏக்கள் இருப்பதாகத் தெரிகிறது மற்றும் ஆட்டோ-கோச்டிங் முடக்கப்பட்டுள்ளது. இது %(data_folder)s சிக்கல்களை ஏற்படுத்தும்; மேலும் விவரங்களுக்கு README இன் ஆட்டோ-கோச்ட் பகுதியைப் பார்க்கவும்."
 
-#: Mopy/bash/basher/__init__.py:3635
+#: Mopy/bash/basher/__init__.py:3628
 msgid "Too Many Plugins."
 msgstr "பல செருகுநிரல்கள்."
 
-#: Mopy/bash/basher/__init__.py:3674
+#: Mopy/bash/basher/__init__.py:3667
 #, python-format
 msgid "%(wb_alt_name)s %(wb_version)s (Standalone)"
 msgstr "%(wb_alt_name)s %(wb_version)s (தனியாக)"
 
-#: Mopy/bash/basher/__init__.py:3679
+#: Mopy/bash/basher/__init__.py:3672
 #, python-format
 msgid "Wrye Bash %(wb_version)s (Standalone) for %(game_name)s"
 msgstr "%(game_name)s க்கு fory bash %(wb_version)s (bentalone)"
 
-#: Mopy/bash/basher/__init__.py:3682
+#: Mopy/bash/basher/__init__.py:3675
 #, python-format
 msgid "Wrye Bash %(wb_version)s for %(game_name)s"
 msgstr "%(wb_version)s க்கான wry bash %(game_name)s"
 
-#: Mopy/bash/basher/__init__.py:3693 Mopy/bash/basher/saves_links.py:208
+#: Mopy/bash/basher/__init__.py:3686 Mopy/bash/basher/saves_links.py:208
 #: Mopy/bash/basher/saves_links.py:638
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:469
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:473
@@ -1407,41 +1407,41 @@ msgstr "%(wb_version)s க்கான wry bash %(game_name)s"
 msgid "Default"
 msgstr "இயல்புநிலை"
 
-#: Mopy/bash/basher/__init__.py:3739
+#: Mopy/bash/basher/__init__.py:3732
 msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr "சுமை ஆர்டர் WRYE BASH க்கு வெளியே மாறிவிட்டது, மேலும் வ்ரியா பாசில் சேமிக்கப்பட்டவருக்கு மாற்றப்பட்டுள்ளது. நீங்கள் கட்டுப்பாடு + சட் ஐ அடிக்கலாம், அதே நேரத்தில் MODS பட்டியல் இதை செயல்தவிர்க்க கவனம் செலுத்துகிறது."
 
-#: Mopy/bash/basher/__init__.py:3743 Mopy/bash/basher/mods_links.py:421
+#: Mopy/bash/basher/__init__.py:3736 Mopy/bash/basher/mods_links.py:421
 #: Mopy/bash/basher/mods_links.py:435
 msgid "Lock Load Order"
 msgstr "பூட்டு சுமை வரிசை"
 
-#: Mopy/bash/basher/__init__.py:3770
+#: Mopy/bash/basher/__init__.py:3763
 #, python-format
 msgid "%(game_ini_file)s does not exist yet. %(game_name)s will create this file on first run. INI tweaks will not be usable until then."
 msgstr "%(game_ini_file)s இன்னும் இல்லை. %(game_name)s இந்த கோப்பை முதல் ஓட்டத்தில் உருவாக்கும். இனி மாற்றங்கள் அதுவரை பயன்படுத்தப்படாது."
 
-#: Mopy/bash/basher/__init__.py:3779
+#: Mopy/bash/basher/__init__.py:3772
 msgid "Please replace the INI with a default copy and restart Wrye Bash."
 msgstr "இயல்புநிலை நகலுடன் ஐ.என்.ஐ."
 
-#: Mopy/bash/basher/__init__.py:3782
+#: Mopy/bash/basher/__init__.py:3775
 msgid "Corrupted Game INI"
 msgstr "சிதைந்த விளையாட்டு இனி"
 
-#: Mopy/bash/basher/__init__.py:3888
+#: Mopy/bash/basher/__init__.py:3881
 msgid "Initializing"
 msgstr "துவக்குதல்"
 
-#: Mopy/bash/basher/__init__.py:3894
+#: Mopy/bash/basher/__init__.py:3887
 msgid "Generating Blank Bashed Patch"
 msgstr "வெற்று பாச்ட் பேட்சை உருவாக்குகிறது"
 
-#: Mopy/bash/basher/__init__.py:3899
+#: Mopy/bash/basher/__init__.py:3892
 msgid "Initializing Version"
 msgstr "பதிப்பைத் தொடங்குதல்"
 
-#: Mopy/bash/basher/__init__.py:3907
+#: Mopy/bash/basher/__init__.py:3900
 msgid "Initializing Windows"
 msgstr "சாளரங்களைத் தொடங்குதல்"
 
@@ -1612,7 +1612,7 @@ msgstr "'For' அறிக்கைக்கான தவறான தொடர�
 msgid "Installer Wizard"
 msgstr "நிறுவி வழிகாட்டி"
 
-#: Mopy/bash/basher/belt.py:201 Mopy/bash/basher/installer_links.py:1430
+#: Mopy/bash/basher/belt.py:201 Mopy/bash/basher/installer_links.py:1431
 msgid "Options:"
 msgstr "விருப்பங்கள்:"
 
@@ -1629,7 +1629,7 @@ msgid "Deselects all options on this page."
 msgstr "இந்த பக்கத்தில் உள்ள அனைத்து விருப்பங்களையும் தேர்வுசெய்கிறது."
 
 #: Mopy/bash/basher/belt.py:296 Mopy/bash/basher/gui_fomod.py:581
-#: Mopy/bash/basher/installer_links.py:1066
+#: Mopy/bash/basher/installer_links.py:1067
 msgid "Toggle Selection"
 msgstr "தேர்வை மாற்றவும்"
 
@@ -1879,7 +1879,7 @@ msgstr "செல்லுபடியாகாத"
 msgid "This is the text color used for invalid packages."
 msgstr "தவறான தொகுப்புகளுக்கு பயன்படுத்தப்படும் உரை வண்ணம் இது."
 
-#: Mopy/bash/basher/constants.py:80 Mopy/bash/bosh/bain.py:1446
+#: Mopy/bash/basher/constants.py:80 Mopy/bash/bosh/bain.py:1445
 msgid "Marker"
 msgstr "மார்க்கர்"
 
@@ -2278,7 +2278,7 @@ msgstr "அந்த பெயருடன் ஏற்கனவே ஒரு �
 msgid "Pick a different name for the project and try again."
 msgstr "திட்டத்திற்கு வேறு பெயரைத் தேர்ந்தெடுத்து மீண்டும் முயற்சிக்கவும்."
 
-#: Mopy/bash/basher/dialogs.py:283 Mopy/bash/basher/installer_links.py:267
+#: Mopy/bash/basher/dialogs.py:283 Mopy/bash/basher/installer_links.py:268
 #: Mopy/bash/basher/installers_links.py:135
 msgid "Creating Project…"
 msgstr "திட்டத்தை உருவாக்குதல்…"
@@ -2681,7 +2681,7 @@ msgstr "கோப்பு தவிர்க்கப்பட்டது: %(s
 msgid "File skipped: %(skipped_file)s. File is already present."
 msgstr "கோப்பு தவிர்க்கப்பட்டது: %(skipped_file)s. கோப்பு ஏற்கனவே உள்ளது."
 
-#: Mopy/bash/basher/files_links.py:86 Mopy/bash/basher/installer_links.py:443
+#: Mopy/bash/basher/files_links.py:86 Mopy/bash/basher/installer_links.py:444
 msgid "Duplicate…"
 msgstr "நகல்…"
 
@@ -2717,68 +2717,68 @@ msgstr "இந்த சொருகி தொடர்புடைய சொர
 msgid "Duplicate as:"
 msgstr "நகல்:"
 
-#: Mopy/bash/basher/files_links.py:151
+#: Mopy/bash/basher/files_links.py:152
 msgid "List Masters…"
 msgstr "பட்டியல் முதுநிலை…"
 
-#: Mopy/bash/basher/files_links.py:155
+#: Mopy/bash/basher/files_links.py:156
 #, python-format
 msgid "Copies list of %(filename)s's masters to the clipboard."
 msgstr "கிளிப்போர்டுக்கு %(filename)s இன் முதுநிலை பட்டியல்."
 
-#: Mopy/bash/basher/files_links.py:166
+#: Mopy/bash/basher/files_links.py:167
 msgid "Backup"
 msgstr "காப்புப்பிரதி"
 
-#: Mopy/bash/basher/files_links.py:167
+#: Mopy/bash/basher/files_links.py:168
 msgid "Creates a backup of the selected files."
 msgstr "தேர்ந்தெடுக்கப்பட்ட கோப்புகளின் காப்புப்பிரதியை உருவாக்குகிறது."
 
-#: Mopy/bash/basher/files_links.py:178
+#: Mopy/bash/basher/files_links.py:179
 msgid "Revert to First Backup…"
 msgstr "முதல் காப்புப்பிரதிக்கு மாற்றவும்…"
 
-#: Mopy/bash/basher/files_links.py:179
+#: Mopy/bash/basher/files_links.py:180
 msgid "Revert to Backup…"
 msgstr "காப்புப்பிரதிக்கு திரும்பவும்…"
 
-#: Mopy/bash/basher/files_links.py:188
+#: Mopy/bash/basher/files_links.py:189
 #, python-format
 msgid "Revert %(file)s to its first backup"
 msgstr "%(file)s அதன் முதல் காப்புப்பிரதிக்கு மாற்றவும்"
 
-#: Mopy/bash/basher/files_links.py:188
+#: Mopy/bash/basher/files_links.py:189
 #, python-format
 msgid "Revert %(file)s to its last backup"
 msgstr "%(file)s அதன் கடைசி காப்புப்பிரதிக்கு மாற்றவும்"
 
-#: Mopy/bash/basher/files_links.py:210
+#: Mopy/bash/basher/files_links.py:211
 #, python-format
 msgid "Failed to revert %(target_file_name)s to backup dated %(backup_date)s. The backup file may be corrupt. Do you want to restore the original file again? 'No' keeps the reverted, possibly broken backup instead."
 msgstr "%(backup_date)s காப்புப்பிரதி தேதியிட்ட %(target_file_name)s மாற்றுவதில் தோல்வி. காப்புப்பிரதி கோப்பு ஊழல் நிறைந்ததாக இருக்கலாம். அசல் கோப்பை மீண்டும் மீட்டெடுக்க விரும்புகிறீர்களா? 'இல்லை' அதற்கு பதிலாக மாற்றப்பட்ட, உடைந்த காப்புப்பிரதியை வைத்திருக்கிறது."
 
-#: Mopy/bash/basher/files_links.py:217
+#: Mopy/bash/basher/files_links.py:218
 msgid "Revert to Backup - Error"
 msgstr "காப்புப்பிரதிக்கு மாற்றவும் - பிழை"
 
-#: Mopy/bash/basher/files_links.py:226
+#: Mopy/bash/basher/files_links.py:227
 #, python-format
 msgid "Revert %(target_file_name)s to backup dated %(backup_date)s?"
 msgstr "%(backup_date)s காப்புப்பிரதிக்கு %(target_file_name)s?"
 
-#: Mopy/bash/basher/files_links.py:238
+#: Mopy/bash/basher/files_links.py:239
 msgid "Redate…"
 msgstr "விளையாடியது …"
 
-#: Mopy/bash/basher/files_links.py:239
+#: Mopy/bash/basher/files_links.py:240
 msgid "Changes the modification times of the selected files to start at a specified date."
 msgstr "ஒரு குறிப்பிட்ட தேதியில் தொடங்க தேர்ந்தெடுக்கப்பட்ட கோப்புகளின் மாற்ற நேரங்களை மாற்றுகிறது."
 
-#: Mopy/bash/basher/files_links.py:265
+#: Mopy/bash/basher/files_links.py:266
 msgid "Jump to Source"
 msgstr "மூலத்திற்கு செல்லவும்"
 
-#: Mopy/bash/basher/files_links.py:269
+#: Mopy/bash/basher/files_links.py:270
 #, python-format
 msgid "Jump to the package associated with %(filename)s. You can Alt-Click on the file to the same effect."
 msgstr "%(filename)sுடன் தொடர்புடைய தொகுப்புக்கு செல்லவும். அதே விளைவுக்கு கோப்பில் நீங்கள் ஆல்ட்-கிளிக் செய்யலாம்."
@@ -2840,7 +2840,7 @@ msgstr "%(target_file_name)s ஆவணத்தைத் தேர்ந்த�
 msgid "Rename file to:"
 msgstr "கோப்பை மறுபெயரிடுங்கள்:"
 
-#: Mopy/bash/basher/frames.py:464 Mopy/bash/basher/installer_links.py:1022
+#: Mopy/bash/basher/frames.py:464 Mopy/bash/basher/installer_links.py:1023
 msgid "Plugin List"
 msgstr "சொருகி பட்டியல்"
 
@@ -2979,7 +2979,7 @@ msgid "This option cannot be selected."
 msgstr "இந்த விருப்பத்தைத் தேர்ந்தெடுக்க முடியாது."
 
 #: Mopy/bash/basher/gui_fomod.py:327 Mopy/bash/basher/mod_links.py:424
-#: Mopy/bash/basher/settings_dialog.py:1404 Mopy/bash/bosh/__init__.py:1255
+#: Mopy/bash/basher/settings_dialog.py:1404 Mopy/bash/bosh/__init__.py:1256
 #: Mopy/bash/patcher/base.py:180 Mopy/bash/patcher/patchers/checkers.py:171
 #: Mopy/bash/patcher/patchers/mergers.py:961
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:263
@@ -3588,739 +3588,739 @@ msgid "Enter '0' to use 7z's default size."
 msgstr "7Z இன் இயல்புநிலை அளவைப் பயன்படுத்த '0' ஐ உள்ளிடவும்."
 
 #: Mopy/bash/basher/installer_links.py:120
-#: Mopy/bash/basher/installer_links.py:491
+#: Mopy/bash/basher/installer_links.py:492
 msgid "Override Skips"
 msgstr "மேலெழுதும் ச்கிப்ச்"
 
-#: Mopy/bash/basher/installer_links.py:137
-#: Mopy/bash/basher/installer_links.py:436
+#: Mopy/bash/basher/installer_links.py:138
+#: Mopy/bash/basher/installer_links.py:437
 #: Mopy/bash/basher/installers_links.py:171
 msgid "Annealing…"
 msgstr "அனீலிங்…"
 
-#: Mopy/bash/basher/installer_links.py:140
-#: Mopy/bash/basher/installer_links.py:535
+#: Mopy/bash/basher/installer_links.py:141
+#: Mopy/bash/basher/installer_links.py:536
 msgid "Installing…"
 msgstr "நிறுவுதல்…"
 
-#: Mopy/bash/basher/installer_links.py:162
+#: Mopy/bash/basher/installer_links.py:163
 msgid "View ModuleConfig…"
 msgstr "மாடுலெகான்ஃபிக் காண்க…"
 
-#: Mopy/bash/basher/installer_links.py:163
+#: Mopy/bash/basher/installer_links.py:164
 msgid "Edit ModuleConfig…"
 msgstr "மாடுலெகான்ஃபிக் திருத்து…"
 
-#: Mopy/bash/basher/installer_links.py:167
+#: Mopy/bash/basher/installer_links.py:168
 msgid "View the ModuleConfig.xml associated with this archive."
 msgstr "இந்த காப்பகத்துடன் தொடர்புடைய ModuleConfig.xml ஐக் காண்க."
 
-#: Mopy/bash/basher/installer_links.py:169
+#: Mopy/bash/basher/installer_links.py:170
 msgid "Edit the ModuleConfig.xml associated with this project."
 msgstr "இந்த திட்டத்துடன் தொடர்புடைய ModuleConfig.xml ஐத் திருத்தவும்."
 
-#: Mopy/bash/basher/installer_links.py:203
+#: Mopy/bash/basher/installer_links.py:204
 #, python-format
 msgid "The ModuleConfig.xml file that comes with %(package_name)s has invalid syntax. Please report this to the mod author so it can be fixed properly. The BashBugDump.log in Wrye Bash's Mopy folder contains additional details, please include it in your report."
 msgstr "%(package_name)s உடன் வரும் ModuleConfig.xml கோப்பில் தவறான தொடரியல் உள்ளது. இதை மோட் எழுத்தாளரிடம் புகாரளிக்கவும், எனவே அதை சரியாக சரிசெய்ய முடியும். Wrye Bash’s Mopy கோப்புறையில் உள்ள Bashbugdump.log கூடுதல் விவரங்களைக் கொண்டுள்ளது, தயவுசெய்து அதை உங்கள் அறிக்கையில் சேர்க்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:210
+#: Mopy/bash/basher/installer_links.py:211
 msgid "Invalid FOMOD XML Syntax"
 msgstr "தவறான FOMOD நீகுமொ தொடரியல்"
 
-#: Mopy/bash/basher/installer_links.py:217
+#: Mopy/bash/basher/installer_links.py:218
 msgid "Run FOMOD…"
 msgstr "ஃபோமோட் இயக்கவும்…"
 
-#: Mopy/bash/basher/installer_links.py:218
+#: Mopy/bash/basher/installer_links.py:219
 msgid "Run the FOMOD installer and install the output."
 msgstr "FOMOD நிறுவியை இயக்கி வெளியீட்டை நிறுவவும்."
 
-#: Mopy/bash/basher/installer_links.py:231
+#: Mopy/bash/basher/installer_links.py:232
 msgid "Capture FOMOD Output…"
 msgstr "ஃபோமோட் வெளியீட்டைப் பிடிக்கவும்…"
 
-#: Mopy/bash/basher/installer_links.py:232
+#: Mopy/bash/basher/installer_links.py:233
 msgid "Run the FOMOD installer and create a new project from the output."
 msgstr "FOMOD நிறுவியை இயக்கி, வெளியீட்டிலிருந்து புதிய திட்டத்தை உருவாக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:242
+#: Mopy/bash/basher/installer_links.py:243
 #: Mopy/bash/basher/installers_links.py:128
 msgid "Project Name"
 msgstr "திட்ட பெயர்"
 
-#: Mopy/bash/basher/installer_links.py:249
+#: Mopy/bash/basher/installer_links.py:250
 msgid "Unpacking Archive…"
 msgstr "காப்பகத்தைத் திறக்கும்…"
 
-#: Mopy/bash/basher/installer_links.py:275
+#: Mopy/bash/basher/installer_links.py:276
 msgid "View Wizard…"
 msgstr "மந்திரவாதியைக் காண்க…"
 
-#: Mopy/bash/basher/installer_links.py:276
+#: Mopy/bash/basher/installer_links.py:277
 msgid "Edit Wizard…"
 msgstr "மந்திரவாதியைத் திருத்து…"
 
-#: Mopy/bash/basher/installer_links.py:280
+#: Mopy/bash/basher/installer_links.py:281
 msgid "View the wizard.txt associated with this archive."
 msgstr "இந்த காப்பகத்துடன் தொடர்புடைய வழிகாட்டி. Txt ஐக் காண்க."
 
-#: Mopy/bash/basher/installer_links.py:282
+#: Mopy/bash/basher/installer_links.py:283
 msgid "Edit the wizard.txt associated with this project."
 msgstr "இந்த திட்டத்துடன் தொடர்புடைய வழிகாட்டி. TXT ஐத் திருத்தவும்."
 
-#: Mopy/bash/basher/installer_links.py:295
+#: Mopy/bash/basher/installer_links.py:296
 msgid "Auto Wizard…"
 msgstr "ஆட்டோ வழிகாட்டி…"
 
-#: Mopy/bash/basher/installer_links.py:295
+#: Mopy/bash/basher/installer_links.py:296
 msgid "Manual Wizard…"
 msgstr "கையேடு வழிகாட்டி…"
 
-#: Mopy/bash/basher/installer_links.py:297
+#: Mopy/bash/basher/installer_links.py:298
 msgid "Run the install wizard, selecting the default options."
 msgstr "நிறுவல் வழிகாட்டி இயக்கவும், இயல்புநிலை விருப்பங்களைத் தேர்ந்தெடுக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:298
+#: Mopy/bash/basher/installer_links.py:299
 msgid "Run the install wizard."
 msgstr "நிறுவப்பட்ட வழிகாட்டியை இயக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:409
+#: Mopy/bash/basher/installer_links.py:410
 msgid "The following INI Tweaks were not automatically applied. Be sure to apply them after installing the package."
 msgstr "பின்வரும் இனி மாற்றங்கள் தானாகவே பயன்படுத்தப்படவில்லை. தொகுப்பை நிறுவிய பின் அவற்றைப் பயன்படுத்த மறக்காதீர்கள்."
 
-#: Mopy/bash/basher/installer_links.py:413
+#: Mopy/bash/basher/installer_links.py:414
 #, python-format
 msgid "To: %(tweak_target)s"
 msgstr "இதற்கு: %(tweak_target)s"
 
-#: Mopy/bash/basher/installer_links.py:419
+#: Mopy/bash/basher/installer_links.py:420
 msgid "Open Readme"
 msgstr "திறந்த README"
 
-#: Mopy/bash/basher/installer_links.py:420
+#: Mopy/bash/basher/installer_links.py:421
 msgid "Open the installer's readme if BAIN can find one"
 msgstr "பெய்ன் ஒன்றைக் கண்டுபிடிக்க முடிந்தால் நிறுவியின் README ஐத் திறக்கவும்"
 
-#: Mopy/bash/basher/installer_links.py:431
+#: Mopy/bash/basher/installer_links.py:432
 msgid "Anneal"
 msgstr "சீராற்று"
 
-#: Mopy/bash/basher/installer_links.py:432
+#: Mopy/bash/basher/installer_links.py:433
 #, python-format
 msgid "Install any missing files (for active packages) and update the contents of the %(data_folder)s folder to account for install order and configuration changes in the selected packages."
 msgstr "எஞ்சியிருக்கும் கோப்புகளை (செயலில் உள்ள தொகுப்புகளுக்கு) நிறுவவும் மற்றும் தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளில் உள்ளமைவு மாற்றங்களை நிறுவுவதற்கு %(data_folder)sோப்புறையின் உள்ளடக்கங்களைப் புதுப்பிக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:447
+#: Mopy/bash/basher/installer_links.py:448
 #, python-format
 msgid "Duplicate selected %(sel_pkg)s."
 msgstr "தேர்ந்தெடுக்கப்பட்ட %(sel_pkg)s நகல்."
 
-#: Mopy/bash/basher/installer_links.py:458
+#: Mopy/bash/basher/installer_links.py:459
 #, python-format
 msgid "Duplicate %(target_package)s to:"
 msgstr "நகல் %(target_package)s இது:"
 
-#: Mopy/bash/basher/installer_links.py:478
+#: Mopy/bash/basher/installer_links.py:479
 msgid "Has Extra Directories"
 msgstr "கூடுதல் கோப்பகங்களைக் கொண்டுள்ளது"
 
-#: Mopy/bash/basher/installer_links.py:479
+#: Mopy/bash/basher/installer_links.py:480
 msgid "Allow installation of files in non-standard directories."
 msgstr "தரமற்ற கோப்பகங்களில் கோப்புகளை நிறுவ அனுமதிக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:495
+#: Mopy/bash/basher/installer_links.py:496
 #, python-format
 msgid "Override global file type skipping for %(sel_pkg)s."
 msgstr "%(sel_pkg)s க்கு உலகளாவிய கோப்பு வகை தவிர்க்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:508
+#: Mopy/bash/basher/installer_links.py:509
 msgid "Don't Refresh"
 msgstr "புதுப்பிக்க வேண்டாம்"
 
-#: Mopy/bash/basher/installer_links.py:509
+#: Mopy/bash/basher/installer_links.py:510
 msgid "Don't automatically refresh project."
 msgstr "திட்டத்தை தானாக புதுப்பிக்க வேண்டாம்."
 
-#: Mopy/bash/basher/installer_links.py:525
+#: Mopy/bash/basher/installer_links.py:526
 msgid "Install Configured"
 msgstr "கட்டமைக்கப்பட்ட நிறுவவும்"
 
-#: Mopy/bash/basher/installer_links.py:526
+#: Mopy/bash/basher/installer_links.py:527
 msgid "Install Last"
 msgstr "கடைசியாக நிறுவவும்"
 
-#: Mopy/bash/basher/installer_links.py:527
+#: Mopy/bash/basher/installer_links.py:528
 msgid "Install Missing Files"
 msgstr "காணாமல் போன கோப்புகளை நிறுவவும்"
 
-#: Mopy/bash/basher/installer_links.py:528
+#: Mopy/bash/basher/installer_links.py:529
 msgid "Install all configured files from the selected packages, overwriting mismatched files."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளிலிருந்து கட்டமைக்கப்பட்ட அனைத்து கோப்புகளையும் நிறுவவும், பொருந்தாத கோப்புகளை மேலெழுதும்."
 
-#: Mopy/bash/basher/installer_links.py:530
+#: Mopy/bash/basher/installer_links.py:531
 msgid "Install all configured files from the selected packages at the last position, overwriting mismatched files."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளிலிருந்து கட்டமைக்கப்பட்ட அனைத்து கோப்புகளையும் கடைசி நிலையில் நிறுவவும், பொருந்தாத கோப்புகளை மேலெழுதும்."
 
-#: Mopy/bash/basher/installer_links.py:533
+#: Mopy/bash/basher/installer_links.py:534
 msgid "Install all missing files from the selected packages. Never overwrites files."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளிலிருந்து காணாமல் போன அனைத்து கோப்புகளையும் நிறுவவும். ஒருபோதும் கோப்புகளை மேலெழுதாது."
 
-#: Mopy/bash/basher/installer_links.py:564
+#: Mopy/bash/basher/installer_links.py:565
 msgid "The following INI Tweaks were created, because the existing INI was different than what BAIN installed:"
 msgstr "பின்வரும் இன்னி மாற்றங்கள் உருவாக்கப்பட்டன, ஏனென்றால் தற்போதுள்ள ஐ.என்.ஐ பெய்ன் நிறுவியதை விட வித்தியாசமானது:"
 
-#: Mopy/bash/basher/installer_links.py:579
+#: Mopy/bash/basher/installer_links.py:580
 msgid "Installed unconfigured packages"
 msgstr "கட்டமைக்கப்படாத தொகுப்புகள் நிறுவப்பட்டுள்ளன"
 
-#: Mopy/bash/basher/installer_links.py:580
+#: Mopy/bash/basher/installer_links.py:581
 msgid "To remedy this, use the \"Sub-Packages\" and \"Plugin Filter\" boxes to select game data to install for the affected packages, then use \"Anneal\" to update the installation. You can also identify this problem by the white package checkbox."
 msgstr "இதை சரிசெய்ய, பாதிக்கப்பட்ட தொகுப்புகளுக்கு நிறுவ விளையாட்டு தரவைத் தேர்ந்தெடுக்க \"துணை-பேக்கேச்கள்\" மற்றும் \"சொருகி வடிகட்டி\" பெட்டிகளைப் பயன்படுத்தவும், பின்னர் நிறுவலைப் புதுப்பிக்க \"அன்னியல்\" ஐப் பயன்படுத்தவும். இந்த சிக்கலை வெள்ளை தொகுப்பு தேர்வுப்பெட்டி மூலம் அடையாளம் காணலாம்."
 
-#: Mopy/bash/basher/installer_links.py:588
+#: Mopy/bash/basher/installer_links.py:589
 #, python-format
 msgid "The package you installed (%(sel_pkg)s) is complex, which means it has sub-packages. However, you did not activate any sub-packages for it, which is probably a mistake since it means no game data has been installed for it."
 msgstr "நீங்கள் நிறுவிய தொகுப்பு (%(sel_pkg)s) சிக்கலானது, அதாவது துணை தொகுப்புகள் உள்ளன. இருப்பினும், அதற்கான எந்தவொரு துணை தொகுப்புகளையும் நீங்கள் செயல்படுத்தவில்லை, இது ஒரு தவறு என்பதால், அதற்காக விளையாட்டு தரவு எதுவும் நிறுவப்படவில்லை."
 
-#: Mopy/bash/basher/installer_links.py:595
+#: Mopy/bash/basher/installer_links.py:596
 msgid "To remedy this, use the \"Sub-Packages\" and \"Plugin Filter\" boxes to select game data to install for the affected package, then use \"Anneal\" to update the installation. You can also identify this problem by the white package checkbox."
 msgstr "இதை சரிசெய்ய, பாதிக்கப்பட்ட தொகுப்புக்கு நிறுவ விளையாட்டு தரவைத் தேர்ந்தெடுக்க \"துணை பேக்கேச்கள்\" மற்றும் \"சொருகி வடிகட்டி\" பெட்டிகளைப் பயன்படுத்தவும், பின்னர் நிறுவலைப் புதுப்பிக்க \"அன்னியல்\" ஐப் பயன்படுத்தவும். இந்த சிக்கலை வெள்ளை தொகுப்பு தேர்வுப்பெட்டி மூலம் அடையாளம் காணலாம்."
 
-#: Mopy/bash/basher/installer_links.py:601
+#: Mopy/bash/basher/installer_links.py:602
 msgid "Installed unconfigured package"
 msgstr "கட்டமைக்கப்படாத தொகுப்பு நிறுவப்பட்டது"
 
-#: Mopy/bash/basher/installer_links.py:603
+#: Mopy/bash/basher/installer_links.py:604
 msgid "The packages you installed are complex, which means they have sub-packages. However, you did not activate any sub-packages for them, which is probably a mistake since it means no game data has been installed for them."
 msgstr "நீங்கள் நிறுவிய தொகுப்புகள் சிக்கலானவை, அதாவது அவை துணை தொகுப்புகளைக் கொண்டுள்ளன. இருப்பினும், அவர்களுக்கான எந்தவொரு துணை பேக்குகளையும் நீங்கள் செயல்படுத்தவில்லை, இது அநேகமாக ஒரு தவறு, ஏனெனில் அவர்களுக்கு எந்த விளையாட்டு தரவு நிறுவப்படவில்லை."
 
-#: Mopy/bash/basher/installer_links.py:610
+#: Mopy/bash/basher/installer_links.py:611
 msgid "One or more of the packages you installed are complex, which means they have sub-packages. However, you did not activate any sub-packages for them, which is probably a mistake since it means no game data has been installed for them."
 msgstr "நீங்கள் நிறுவிய ஒன்று அல்லது அதற்கு மேற்பட்ட தொகுப்புகள் சிக்கலானவை, அதாவது அவை துணை தொகுப்புகளைக் கொண்டுள்ளன. இருப்பினும், அவர்களுக்கான எந்தவொரு துணை பேக்குகளையும் நீங்கள் செயல்படுத்தவில்லை, இது அநேகமாக ஒரு தவறு, ஏனெனில் அவர்களுக்கு எந்த விளையாட்டு தரவு நிறுவப்படவில்லை."
 
-#: Mopy/bash/basher/installer_links.py:623
+#: Mopy/bash/basher/installer_links.py:624
 msgid "Install…"
 msgstr "நிறுவு…"
 
-#: Mopy/bash/basher/installer_links.py:624
+#: Mopy/bash/basher/installer_links.py:625
 msgid "Installs the selected packages, preferring a visual method if available."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளை நிறுவுகிறது, கிடைத்தால் காட்சி முறையை விரும்புகிறது."
 
-#: Mopy/bash/basher/installer_links.py:655
+#: Mopy/bash/basher/installer_links.py:656
 msgid "List Structure…"
 msgstr "பட்டியல் அமைப்பு…"
 
-#: Mopy/bash/basher/installer_links.py:656
+#: Mopy/bash/basher/installer_links.py:657
 msgid "Displays the folder structure of the selected installer (and copies it to the system clipboard)."
 msgstr "தேர்ந்தெடுக்கப்பட்ட நிறுவியின் கோப்புறை கட்டமைப்பைக் காட்டுகிறது (மேலும் அதை கணினி கிளிப்போர்டுக்கு நகலெடுக்கிறது)."
 
-#: Mopy/bash/basher/installer_links.py:664
+#: Mopy/bash/basher/installer_links.py:665
 msgid "Package Structure"
 msgstr "தொகுப்பு அமைப்பு"
 
-#: Mopy/bash/basher/installer_links.py:669
+#: Mopy/bash/basher/installer_links.py:670
 msgid "Export Achlist"
 msgstr "ஏற்றுமதி அக்லிச்ட்"
 
-#: Mopy/bash/basher/installer_links.py:671
+#: Mopy/bash/basher/installer_links.py:672
 #, python-format
 msgid "Create achlist file for use by the %(ck_name)s."
 msgstr "%(ck_name)s மூலம் பயன்படுத்த ACHLIST கோப்பை உருவாக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:692 Mopy/bash/basher/mod_links.py:269
+#: Mopy/bash/basher/installer_links.py:693 Mopy/bash/basher/mod_links.py:269
 msgid "Move To…"
 msgstr "செல்லுங்கள்…"
 
-#: Mopy/bash/basher/installer_links.py:693
+#: Mopy/bash/basher/installer_links.py:694
 msgid "Move the selected packages to a position of your choice."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளை நீங்கள் விரும்பும் நிலைக்கு நகர்த்தவும்."
 
-#: Mopy/bash/basher/installer_links.py:700
+#: Mopy/bash/basher/installer_links.py:701
 msgid "Move selected packages to what position?"
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளை எந்த நிலைக்கு நகர்த்தவும்?"
 
-#: Mopy/bash/basher/installer_links.py:701
+#: Mopy/bash/basher/installer_links.py:702
 #, python-format
 msgid "Last: %(last_key)s; First of Last: %(first_of_last_key)s; Semi-Last: %(semi_last_key)s."
 msgstr "கடைசி: %(last_key)s; கடைசியாக: %(first_of_last_key)s; அரை கடைசி: %(semi_last_key)s."
 
-#: Mopy/bash/basher/installer_links.py:750
+#: Mopy/bash/basher/installer_links.py:751
 #, python-format
 msgid "Opens this mod's page at the %(nexusName)s."
 msgstr "இந்த மோடியின் பக்கத்தை %(nexusName)s."
 
-#: Mopy/bash/basher/installer_links.py:753
+#: Mopy/bash/basher/installer_links.py:754
 #, python-format
 msgid "Attempt to open this as a mod at %(nexusName)s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %(nexusName)s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %(nexusName)s."
 msgstr "%(nexusName)s என மோட் ஆகத் திறக்க முயற்சிக்கிறீர்களா? தொகுப்பின் பெயரில் பின்தங்கிய இலக்கங்கள் உண்மையில் %(nexusName)s மோடின் அடையாள எண் என்று இது கருதுகிறது. இந்த அனுமானம் தவறாக இருந்தால், நீங்கள் ஒரு சீரற்ற மோட் பக்கத்தை (அல்லது பிழை அறிவிப்பு) %(nexusName)s பெறுவீர்கள்."
 
-#: Mopy/bash/basher/installer_links.py:759
+#: Mopy/bash/basher/installer_links.py:760
 #, python-format
 msgid "Open at %(nexusName)s"
 msgstr "%(nexusName)s திறக்கவும்"
 
-#: Mopy/bash/basher/installer_links.py:769
+#: Mopy/bash/basher/installer_links.py:770
 msgid "Searches for this mod's title on Google."
 msgstr "கூகிளில் இந்த மோடின் தலைப்பைத் தேடுகிறது."
 
-#: Mopy/bash/basher/installer_links.py:771
+#: Mopy/bash/basher/installer_links.py:772
 msgid "Open a search for this on Google?"
 msgstr "கூகிளில் இதற்கான தேடலைத் திறக்கவா?"
 
-#: Mopy/bash/basher/installer_links.py:772
+#: Mopy/bash/basher/installer_links.py:773
 msgid "Open at Google"
 msgstr "Google இல் திறக்கவும்"
 
-#: Mopy/bash/basher/installer_links.py:795
+#: Mopy/bash/basher/installer_links.py:796
 msgid "Opens this mod's page at TES Alliance."
 msgstr "TES கூட்டணியில் இந்த மோடின் பக்கத்தைத் திறக்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:797
+#: Mopy/bash/basher/installer_links.py:798
 msgid "Attempt to open this as a mod at TES Alliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Alliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Alliance."
 msgstr "TES கூட்டணியில் இதைத் திறக்க முயற்சிக்கிறீர்களா? தொகுப்பின் பெயரில் பின்தங்கிய இலக்கங்கள் உண்மையில் TES கூட்டணியில் உள்ள மோட் இன் அடையாள எண் என்று இது கருதுகிறது. இந்த அனுமானம் தவறாக இருந்தால், நீங்கள் TES கூட்டணியில் ஒரு சீரற்ற மோட் பக்கத்தை (அல்லது பிழை அறிவிப்பு) பெறுவீர்கள்."
 
-#: Mopy/bash/basher/installer_links.py:803
+#: Mopy/bash/basher/installer_links.py:804
 msgid "Open at TES Alliance"
 msgstr "TES கூட்டணியில் திறந்திருக்கும்"
 
-#: Mopy/bash/basher/installer_links.py:811 Mopy/bash/basher/mod_links.py:568
+#: Mopy/bash/basher/installer_links.py:812 Mopy/bash/basher/mod_links.py:568
 msgid "Refresh"
 msgstr "புதுப்பிப்பு"
 
-#: Mopy/bash/basher/installer_links.py:812
+#: Mopy/bash/basher/installer_links.py:813
 msgid "Rescan selected packages. Ignores \"Don't Refresh\" flag on projects. Will forcibly recalculate the CRCs of all files in any selected projects."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளை மீட்டெடுங்கள். திட்டங்களில் \"புதுப்பிக்க வேண்டாம்\" என்று புறக்கணிக்கிறது. தேர்ந்தெடுக்கப்பட்ட எந்தவொரு திட்டத்திலும் உள்ள அனைத்து கோப்புகளின் சி.ஆர்.சி.களையும் வலுக்கட்டாயமாக மறுபரிசீலனை செய்யும்."
 
-#: Mopy/bash/basher/installer_links.py:826
+#: Mopy/bash/basher/installer_links.py:827
 msgid "Quick Refresh"
 msgstr "விரைவான புதுப்பிப்பு"
 
-#: Mopy/bash/basher/installer_links.py:827
+#: Mopy/bash/basher/installer_links.py:828
 msgid "Rescan selected packages. Ignores \"Don't Refresh\" flag on projects."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளை மீட்டெடுங்கள். திட்டங்களில் \"புதுப்பிக்க வேண்டாம்\" என்று புறக்கணிக்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:833
+#: Mopy/bash/basher/installer_links.py:834
 msgid "Skip Voices"
 msgstr "குரல்களைத் தவிர்க்கவும்"
 
-#: Mopy/bash/basher/installer_links.py:837
+#: Mopy/bash/basher/installer_links.py:838
 #, python-format
 msgid "Skip over any voice files in %(sel_pkg)s"
 msgstr "%(sel_pkg)s இல் எந்த குரல் கோப்புகளையும் தவிர்க்கவும்"
 
-#: Mopy/bash/basher/installer_links.py:848
+#: Mopy/bash/basher/installer_links.py:849
 msgid "Uninstall"
 msgstr "நிறுவல் நீக்க"
 
-#: Mopy/bash/basher/installer_links.py:849
+#: Mopy/bash/basher/installer_links.py:850
 #, python-format
 msgid "Uninstall the selected packages, removing all their matched files from the %(data_folder)s folder."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளை நிறுவல் நீக்கவும், அவற்றின் பொருந்திய அனைத்து கோப்புகளையும் %(data_folder)sோப்புறையிலிருந்து அகற்றவும்."
 
-#: Mopy/bash/basher/installer_links.py:852
+#: Mopy/bash/basher/installer_links.py:853
 #: Mopy/bash/basher/installers_links.py:182
 msgid "Uninstalling…"
 msgstr "நிறுவல் நீக்குதல்…"
 
-#: Mopy/bash/basher/installer_links.py:859
+#: Mopy/bash/basher/installer_links.py:860
 msgid "Copy Conflicts to Project"
 msgstr "திட்டத்திற்கு மோதல்களை நகலெடுக்கவும்"
 
-#: Mopy/bash/basher/installer_links.py:860
+#: Mopy/bash/basher/installer_links.py:861
 msgid "Copy all files that conflict with the selected package into a new project. Conflicts with inactive packages are included."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புடன் முரண்படும் அனைத்து கோப்புகளையும் புதிய திட்டத்தில் நகலெடுக்கவும். செயலற்ற தொகுப்புகளுடன் மோதல்கள் சேர்க்கப்பட்டுள்ளன."
 
-#: Mopy/bash/basher/installer_links.py:871
+#: Mopy/bash/basher/installer_links.py:872
 #, python-format
 msgid "No files to install for %(sel_pkg)s."
 msgstr "%(sel_pkg)s நிறுவ கோப்புகள் இல்லை."
 
-#: Mopy/bash/basher/installer_links.py:875
-#: Mopy/bash/basher/installer_links.py:881 Mopy/bash/bosh/bain.py:1997
-#: Mopy/bash/bosh/bain.py:2253
+#: Mopy/bash/basher/installer_links.py:876
+#: Mopy/bash/basher/installer_links.py:882 Mopy/bash/bosh/bain.py:1996
+#: Mopy/bash/bosh/bain.py:2252
 msgid "Scanning Packages…"
 msgstr "தொகுப்புகளை ச்கேன் செய்தல்…"
 
-#: Mopy/bash/basher/installer_links.py:895
+#: Mopy/bash/basher/installer_links.py:896
 #, python-format
 msgid "No conflicts detected for %(sel_pkg)s"
 msgstr "%(sel_pkg)s எந்த மோதல்களும் கண்டறியப்படவில்லை"
 
-#: Mopy/bash/basher/installer_links.py:906
+#: Mopy/bash/basher/installer_links.py:907
 msgid "Copying files…"
 msgstr "கோப்புகளை நகலெடுக்கும்…"
 
-#: Mopy/bash/basher/installer_links.py:918
+#: Mopy/bash/basher/installer_links.py:919
 msgid "Copying Conflicts…"
 msgstr "மோதல்களை நகலெடுக்கும்…"
 
-#: Mopy/bash/basher/installer_links.py:947
+#: Mopy/bash/basher/installer_links.py:948
 msgid "Selects all plugin files in the selected sub-packages."
 msgstr "தேர்ந்தெடுக்கப்பட்ட துணை தொகுப்புகளில் உள்ள அனைத்து சொருகி கோப்புகளையும் தேர்ந்தெடுக்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:957
+#: Mopy/bash/basher/installer_links.py:958
 msgid "Deselects all plugin files in the selected sub-packages."
 msgstr "தேர்ந்தெடுக்கப்பட்ட துணை தொகுப்புகளில் உள்ள அனைத்து சொருகி கோப்புகளையும் தேர்வுசெய்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:967
+#: Mopy/bash/basher/installer_links.py:968
 msgid "Changes the name under which this plugin will be installed."
 msgstr "இந்த சொருகி நிறுவப்படும் பெயரை மாற்றுகிறது."
 
-#: Mopy/bash/basher/installer_links.py:973
+#: Mopy/bash/basher/installer_links.py:974
 msgid "Enter new name (without the extension):"
 msgstr "புதிய பெயரை உள்ளிடவும் (நீட்டிப்பு இல்லாமல்):"
 
-#: Mopy/bash/basher/installer_links.py:974
+#: Mopy/bash/basher/installer_links.py:975
 msgid "Rename Plugin"
 msgstr "சொருகி மறுபெயரிடுங்கள்"
 
-#: Mopy/bash/basher/installer_links.py:984
+#: Mopy/bash/basher/installer_links.py:985
 msgid "Reset Name"
 msgstr "பெயரை மீட்டமை"
 
-#: Mopy/bash/basher/installer_links.py:985
+#: Mopy/bash/basher/installer_links.py:986
 msgid "Resets the name under which this plugin will be installed back to its default name."
 msgstr "இந்த சொருகி அதன் இயல்புநிலை பெயருக்கு மீண்டும் நிறுவப்படும் பெயரை மீட்டமைக்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:999
+#: Mopy/bash/basher/installer_links.py:1000
 msgid "Reset All Names"
 msgstr "எல்லா பெயர்களையும் மீட்டமைக்கவும்"
 
-#: Mopy/bash/basher/installer_links.py:1000
+#: Mopy/bash/basher/installer_links.py:1001
 msgid "Resets all plugins with changed names back to their default ones."
 msgstr "மாற்றப்பட்ட பெயர்களுடன் அனைத்து செருகுநிரல்களையும் அவற்றின் இயல்புநிலைக்கு மீட்டமைக்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:1009
+#: Mopy/bash/basher/installer_links.py:1010
 msgid "List Plugins"
 msgstr "பட்டியல் செருகுநிரல்கள்"
 
-#: Mopy/bash/basher/installer_links.py:1010
+#: Mopy/bash/basher/installer_links.py:1011
 msgid "Displays a list of all plugin files in the selected sub-packages (and copies it to the system clipboard)."
 msgstr "தேர்ந்தெடுக்கப்பட்ட துணை தொகுப்புகளில் உள்ள அனைத்து சொருகி கோப்புகளின் பட்டியலையும் காட்டுகிறது (மேலும் அதை கணினி கிளிப்போர்டுக்கு நகலெடுக்கிறது)."
 
-#: Mopy/bash/basher/installer_links.py:1014
+#: Mopy/bash/basher/installer_links.py:1015
 #, python-format
 msgid "Plugin List for %(sel_pkg)s:"
 msgstr "%(sel_pkg)s க்கான சொருகி பட்டியல்:"
 
-#: Mopy/bash/basher/installer_links.py:1026
+#: Mopy/bash/basher/installer_links.py:1027
 msgid "Jump to Plugin"
 msgstr "சொருகி செல்லவும்"
 
-#: Mopy/bash/basher/installer_links.py:1027
+#: Mopy/bash/basher/installer_links.py:1028
 msgid "Jumps to this plugin on the Mods tab. You can double-click on this plugin to the same effect."
 msgstr "மோட்ச் தாவலில் இந்த சொருகி குதிக்கிறது. இந்த சொருகி மீது நீங்கள் இருமுறை சொடுக்கு செய்யலாம்."
 
-#: Mopy/bash/basher/installer_links.py:1055
+#: Mopy/bash/basher/installer_links.py:1056
 msgid "Selects all sub-packages in this installer."
 msgstr "இந்த நிறுவியில் உள்ள அனைத்து துணை தொகுப்புகளையும் தேர்ந்தெடுக்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:1061
+#: Mopy/bash/basher/installer_links.py:1062
 msgid "Deselects all sub-packages in this installer."
 msgstr "இந்த நிறுவியில் உள்ள அனைத்து துணை தொகுப்புகளையும் தேர்வுசெய்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:1067
+#: Mopy/bash/basher/installer_links.py:1068
 msgid "Deselects all selected sub-packages and vice versa."
 msgstr "தேர்ந்தெடுக்கப்பட்ட அனைத்து துணை தொகுப்புகளையும் தேர்வுசெய்கிறது மற்றும் நேர்மாறாகவும்."
 
-#: Mopy/bash/basher/installer_links.py:1079
+#: Mopy/bash/basher/installer_links.py:1080
 msgid "List Sub-Packages"
 msgstr "துணை தொகுப்புகளை பட்டியலிடுங்கள்"
 
-#: Mopy/bash/basher/installer_links.py:1080
+#: Mopy/bash/basher/installer_links.py:1081
 msgid "Displays a list of all sub-packages in this package (and copies it to the system clipboard)."
 msgstr "இந்த தொகுப்பில் உள்ள அனைத்து துணை தொகுப்புகளின் பட்டியலையும் காட்டுகிறது (மேலும் அதை கணினி கிளிப்போர்டுக்கு நகலெடுக்கிறது)."
 
-#: Mopy/bash/basher/installer_links.py:1084
+#: Mopy/bash/basher/installer_links.py:1085
 #, python-format
 msgid "Sub-Packages List for %(sel_pkg)s:"
 msgstr "%(sel_pkg)s க்கான துணை பேக்கேச்கள் பட்டியல்:"
 
-#: Mopy/bash/basher/installer_links.py:1092
+#: Mopy/bash/basher/installer_links.py:1093
 msgid "Sub-Package List"
 msgstr "துணை தொகுப்பு பட்டியல்"
 
-#: Mopy/bash/basher/installer_links.py:1099
+#: Mopy/bash/basher/installer_links.py:1100
 msgid "Unpack to Project…"
 msgstr "திட்டத்தைத் திறக்கவும்…"
 
-#: Mopy/bash/basher/installer_links.py:1100
+#: Mopy/bash/basher/installer_links.py:1101
 msgid "Unpack the selected archives, creating project copies from them."
 msgstr "தேர்ந்தெடுக்கப்பட்ட காப்பகங்களைத் திறக்கவும், அவர்களிடமிருந்து திட்ட நகல்களை உருவாக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:1111
+#: Mopy/bash/basher/installer_links.py:1112
 #, python-format
 msgid "Name the project that %(target_archive)s should get unpacked into:"
 msgstr "%(target_archive)s திறக்கப்பட வேண்டும் என்று திட்டத்தின் பெயரிடுங்கள்:"
 
-#: Mopy/bash/basher/installer_links.py:1117
+#: Mopy/bash/basher/installer_links.py:1118
 #, python-format
 msgid "%(target_proj)s already exists. Overwrite it?"
 msgstr "%(target_proj)s ஏற்கனவே உள்ளன. அதை மேலெழுதவா?"
 
-#: Mopy/bash/basher/installer_links.py:1124
+#: Mopy/bash/basher/installer_links.py:1125
 msgid "Unpacking to project…"
 msgstr "திட்டத்தைத் திறத்தல்…"
 
-#: Mopy/bash/basher/installer_links.py:1144
+#: Mopy/bash/basher/installer_links.py:1145
 msgid "OMOD Info…"
 msgstr "ஓமோட் செய்தி …"
 
-#: Mopy/bash/basher/installer_links.py:1145
+#: Mopy/bash/basher/installer_links.py:1146
 msgid "Projects only. Allows you to read/write OMOD configuration info."
 msgstr "திட்டங்கள் மட்டுமே. OMOD உள்ளமைவு தகவலைப் படிக்க/எழுத உங்களை அனுமதிக்கிறது."
 
-#: Mopy/bash/basher/installer_links.py:1154
+#: Mopy/bash/basher/installer_links.py:1155
 msgid "Sync From Data…"
 msgstr "தரவிலிருந்து ஒத்திசைக்கவும்…"
 
-#: Mopy/bash/basher/installer_links.py:1155
+#: Mopy/bash/basher/installer_links.py:1156
 #, python-format
 msgid "Synchronize a package with files from the %(data_folder)s folder."
 msgstr "%(data_folder)sோப்புறையிலிருந்து கோப்புகளுடன் ஒரு தொகுப்பை ஒத்திசைக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:1165
+#: Mopy/bash/basher/installer_links.py:1166
 msgid ".rar files cannot be modified. Wrye Bash can however repack them to .7z files, which can then be modified."
 msgstr ".rar கோப்புகளை மாற்ற முடியாது. இருப்பினும், அவற்றை .7z கோப்புகளுக்கு மறுபரிசீலனை செய்யலாம், பின்னர் அதை மாற்றலாம்."
 
-#: Mopy/bash/basher/installer_links.py:1167
+#: Mopy/bash/basher/installer_links.py:1168
 msgid "Note that doing this will leave the old .rar file behind, so you may want to manually delete it afterwards."
 msgstr "இதைச் செய்வது பழைய .rar கோப்பை விட்டுச் செல்லும் என்பதை நினைவில் கொள்க, எனவே நீங்கள் அதை கைமுறையாக நீக்க விரும்பலாம்."
 
-#: Mopy/bash/basher/installer_links.py:1169
+#: Mopy/bash/basher/installer_links.py:1170
 msgid "Click 'Yes' to repack, or 'No' to abort the sync."
 msgstr "மறுபிரசுரம் செய்ய 'ஆம்' என்பதைக் சொடுக்கு செய்க, அல்லது ஒத்திசைவை நிறுத்த 'இல்லை' என்பதைக் சொடுக்கு செய்க."
 
-#: Mopy/bash/basher/installer_links.py:1180
+#: Mopy/bash/basher/installer_links.py:1181
 msgid "Updating files."
 msgstr "கோப்புகளைப் புதுப்பித்தல்."
 
-#: Mopy/bash/basher/installer_links.py:1187
+#: Mopy/bash/basher/installer_links.py:1188
 #, python-format
 msgid "Something went wrong when updating %(target_package)s."
 msgstr "%(target_package)s புதுப்பிக்கும்போது ஏதோ தவறு ஏற்பட்டது."
 
-#: Mopy/bash/basher/installer_links.py:1189
+#: Mopy/bash/basher/installer_links.py:1190
 #, python-format
 msgid "Deleted %(act_deleted)d files, expected to delete %(exp_deleted)d files."
 msgstr "நீக்கப்பட்ட %(act_deleted)d கோப்புகள், %(exp_deleted)d கோப்புகளை நீக்கும் என்று எதிர்பார்க்கப்படுகிறது."
 
-#: Mopy/bash/basher/installer_links.py:1191
+#: Mopy/bash/basher/installer_links.py:1192
 #, python-format
 msgid "Updated %(act_updated)d files, expected to update %(exp_updated)d files."
 msgstr "புதுப்பிக்கப்பட்ட %(act_updated)d கோப்புகள், %(exp_updated)d கோப்புகளை புதுப்பிக்கும் என்று எதிர்பார்க்கப்படுகிறது."
 
-#: Mopy/bash/basher/installer_links.py:1193
+#: Mopy/bash/basher/installer_links.py:1194
 #, python-format
 msgid "Check the integrity of %(target_package)s."
 msgstr "%(target_package)s இன் ஒருமைப்பாட்டை சரிபார்க்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:1216
+#: Mopy/bash/basher/installer_links.py:1217
 msgid "Pack to Archive…"
 msgstr "காப்பகத்திற்கு பொதி செய்யுங்கள்…"
 
-#: Mopy/bash/basher/installer_links.py:1217
+#: Mopy/bash/basher/installer_links.py:1218
 msgid "Pack this project, creating a copy of it as an archive."
 msgstr "இந்த திட்டத்தை பொதி செய்து, அதன் நகலை ஒரு காப்பகமாக உருவாக்குகிறது."
 
-#: Mopy/bash/basher/installer_links.py:1225
+#: Mopy/bash/basher/installer_links.py:1226
 #, python-format
 msgid "Name the archive that %(sel_proj)s should get packed into:"
 msgstr "காப்பகத்திற்கு பெயரிடுங்கள் %(sel_proj)s நிரம்ப வேண்டும்:"
 
-#: Mopy/bash/basher/installer_links.py:1236
+#: Mopy/bash/basher/installer_links.py:1237
 #, python-format
 msgid "Use solid compression for %(new_archive)s?"
 msgstr "%(new_archive)s திட சுருக்கத்தைப் பயன்படுத்தவா?"
 
-#: Mopy/bash/basher/installer_links.py:1243
+#: Mopy/bash/basher/installer_links.py:1244
 msgid "Packing to archive…"
 msgstr "காப்பகத்திற்கு பொதி…"
 
-#: Mopy/bash/basher/installer_links.py:1257
+#: Mopy/bash/basher/installer_links.py:1258
 msgid "Package for Release…"
 msgstr "வெளியீட்டிற்கான தொகுப்பு…"
 
-#: Mopy/bash/basher/installer_links.py:1258
+#: Mopy/bash/basher/installer_links.py:1259
 msgid "Pack this project for release, creating a copy of it as an archive. Does not package development files."
 msgstr "இந்த திட்டத்தை வெளியீட்டிற்குக் கட்டவும், அதன் நகலை ஒரு காப்பகமாக உருவாக்கவும். மேம்பாட்டு கோப்புகளை தொகுக்கவில்லை."
 
-#: Mopy/bash/basher/installer_links.py:1278
+#: Mopy/bash/basher/installer_links.py:1279
 msgid "Installers with identical content selected:"
 msgstr "தேர்ந்தெடுக்கப்பட்ட ஒத்த உள்ளடக்கத்துடன் நிறுவிகள்:"
 
-#: Mopy/bash/basher/installer_links.py:1281
+#: Mopy/bash/basher/installer_links.py:1282
 msgid "Identical installers content"
 msgstr "ஒத்த நிறுவிகள் உள்ளடக்கம்"
 
-#: Mopy/bash/basher/installer_links.py:1287
-#: Mopy/bash/basher/installer_links.py:1340
+#: Mopy/bash/basher/installer_links.py:1288
+#: Mopy/bash/basher/installer_links.py:1341
 msgid "Apply BCF…"
 msgstr "BCF ஐப் பயன்படுத்துங்கள்…"
 
-#: Mopy/bash/basher/installer_links.py:1300
+#: Mopy/bash/basher/installer_links.py:1301
 #, python-format
 msgid "Applies %(bcf_name)s to the selected packages."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளுக்கு %(bcf_name)s பொருந்தும்."
 
-#: Mopy/bash/basher/installer_links.py:1305
+#: Mopy/bash/basher/installer_links.py:1306
 msgid "Please only select the packages this BCF was made for."
 msgstr "தயவுசெய்து இந்த பி.சி.எஃப் செய்யப்பட்ட தொகுப்புகளை மட்டுமே தேர்ந்தெடுக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:1314
+#: Mopy/bash/basher/installer_links.py:1315
 msgid "Using:"
 msgstr "பயன்படுத்துகிறது:"
 
-#: Mopy/bash/basher/installer_links.py:1320
+#: Mopy/bash/basher/installer_links.py:1321
 msgid "Converting to Archive…"
 msgstr "காப்பகமாக மாற்றுவது…"
 
-#: Mopy/bash/basher/installer_links.py:1322
+#: Mopy/bash/basher/installer_links.py:1323
 #, python-format
 msgid "%(dest_archive)s: An error occurred while applying a BCF. This can occur if the BCF is applied to an already BCF-converted archive. More details about the error follow:"
 msgstr "%(dest_archive)s: BCF ஐப் பயன்படுத்தும் போது பிழை ஏற்பட்டது. ஏற்கனவே பி.சி.எஃப்-மாற்றப்பட்ட காப்பகத்திற்கு பி.சி.எஃப் பயன்படுத்தப்பட்டால் இது நிகழலாம். பிழை பற்றிய கூடுதல் விவரங்கள் பின்வருமாறு:"
 
-#: Mopy/bash/basher/installer_links.py:1337
+#: Mopy/bash/basher/installer_links.py:1338
 msgid "Embedded BCF"
 msgstr "உட்பொதிக்கப்பட்ட பி.சி.எஃப்"
 
-#: Mopy/bash/basher/installer_links.py:1338
+#: Mopy/bash/basher/installer_links.py:1339
 msgid "Applies the BAIN conversion files (BCFs) embedded in the selected packages."
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகளில் பதிக்கப்பட்ட பெயின் மாற்று கோப்புகளை (பி.சி.எஃப்) பயன்படுத்துகிறது."
 
-#: Mopy/bash/basher/installer_links.py:1346
+#: Mopy/bash/basher/installer_links.py:1347
 msgid "Output file:"
 msgstr "வெளியீட்டு கோப்பு:"
 
-#: Mopy/bash/basher/installer_links.py:1348
+#: Mopy/bash/basher/installer_links.py:1349
 msgid "Extracting BCF…"
 msgstr "பி.சி.எஃப் பிரித்தெடுக்கும்…"
 
-#: Mopy/bash/basher/installer_links.py:1356
+#: Mopy/bash/basher/installer_links.py:1357
 msgid "Create…"
 msgstr "உருவாக்கு…"
 
-#: Mopy/bash/basher/installer_links.py:1357
+#: Mopy/bash/basher/installer_links.py:1358
 msgid "Creates a new BAIN conversion file (BCF)."
 msgstr "புதிய பெயின் மாற்று கோப்பை (பி.சி.எஃப்) உருவாக்குகிறது."
 
-#: Mopy/bash/basher/installer_links.py:1358
+#: Mopy/bash/basher/installer_links.py:1359
 msgid "Create BCF…"
 msgstr "BCF ஐ உருவாக்கவும்…"
 
-#: Mopy/bash/basher/installer_links.py:1362
+#: Mopy/bash/basher/installer_links.py:1363
 msgid "Please only select installers that are needed."
 msgstr "தேவையான நிறுவிகளை மட்டுமே தேர்ந்தெடுக்கவும்."
 
-#: Mopy/bash/basher/installer_links.py:1369
+#: Mopy/bash/basher/installer_links.py:1370
 msgid "Select the BAIN'ed Archive:"
 msgstr "பெயின் காப்பகத்தைத் தேர்ந்தெடுக்கவும்:"
 
-#: Mopy/bash/basher/installer_links.py:1375
+#: Mopy/bash/basher/installer_links.py:1376
 #, python-format
 msgid "%(arcname)s is not a valid archive name."
 msgstr "%(arcname)s சரியான காப்பக பெயர் அல்ல."
 
-#: Mopy/bash/basher/installer_links.py:1379
+#: Mopy/bash/basher/installer_links.py:1380
 #, python-format
 msgid "%(arcname)s must be in the Bash Installers directory."
 msgstr "%(arcname)s பாச் நிறுவிகள் கோப்பகத்தில் இருக்க வேண்டும்."
 
-#: Mopy/bash/basher/installer_links.py:1385
+#: Mopy/bash/basher/installer_links.py:1386
 msgid "Convert:"
 msgstr "மாற்ற:"
 
-#: Mopy/bash/basher/installer_links.py:1387
+#: Mopy/bash/basher/installer_links.py:1388
 msgid "To:"
 msgstr "இதற்கு:"
 
-#: Mopy/bash/basher/installer_links.py:1406
+#: Mopy/bash/basher/installer_links.py:1407
 #, python-format
 msgid "Creating %(bcf_name)s…"
 msgstr "%(bcf_name)s உருவாக்குதல்…"
 
-#: Mopy/bash/basher/installer_links.py:1414
+#: Mopy/bash/basher/installer_links.py:1415
 msgid "Refreshing Converters…"
 msgstr "புத்துணர்ச்சியூட்டும் மாற்றிகள்…"
 
-#: Mopy/bash/basher/installer_links.py:1420
+#: Mopy/bash/basher/installer_links.py:1421
 #, python-format
 msgid "Name: %(bcf_name)s"
 msgstr "பெயர்: %(bcf_name)s"
 
-#: Mopy/bash/basher/installer_links.py:1421
+#: Mopy/bash/basher/installer_links.py:1422
 #, python-format
 msgid "Size: %(total_bcf_size)s"
 msgstr "அளவு: %(total_bcf_size)s"
 
-#: Mopy/bash/basher/installer_links.py:1423
+#: Mopy/bash/basher/installer_links.py:1424
 #, python-format
 msgid "Remapped: %(num_remapped)d files"
 msgstr "மறுபிரசுரம்: %(num_remapped)d கோப்புகள்"
 
-#: Mopy/bash/basher/installer_links.py:1425
+#: Mopy/bash/basher/installer_links.py:1426
 #, python-format
 msgid "Requires: %(num_required)d files"
 msgstr "தேவை: %(num_required)d கோப்புகள்"
 
-#: Mopy/bash/basher/installer_links.py:1431
+#: Mopy/bash/basher/installer_links.py:1432
 #, python-format
 msgid "Skip Voices: %(skip_voices)s"
 msgstr "குரல்களைத் தவிர்க்கவும்: %(skip_voices)s"
 
-#: Mopy/bash/basher/installer_links.py:1433
+#: Mopy/bash/basher/installer_links.py:1434
 #, python-format
 msgid "Solid Archive: %(solid_archive)s"
 msgstr "திட காப்பகம்: %(solid_archive)s"
 
-#: Mopy/bash/basher/installer_links.py:1437
+#: Mopy/bash/basher/installer_links.py:1438
 #, python-format
 msgid "Solid Block Size: %(block_size)s"
 msgstr "திட தொகுதி அளவு: %(block_size)s"
 
-#: Mopy/bash/basher/installer_links.py:1440
+#: Mopy/bash/basher/installer_links.py:1441
 msgid "Solid Block Size: 7z Default"
 msgstr "திட தொகுதி அளவு: 7Z இயல்புநிலை"
 
-#: Mopy/bash/basher/installer_links.py:1441
+#: Mopy/bash/basher/installer_links.py:1442
 #, python-format
 msgid "Has Comments: %(has_comments)s"
 msgstr "கருத்துகள் உள்ளன: %(has_comments)s"
 
-#: Mopy/bash/basher/installer_links.py:1443
+#: Mopy/bash/basher/installer_links.py:1444
 #, python-format
 msgid "Has Extra Directories: %(has_extra_dirs)s"
 msgstr "கூடுதல் கோப்பகங்களைக் கொண்டுள்ளது: %(has_extra_dirs)s"
 
-#: Mopy/bash/basher/installer_links.py:1445
+#: Mopy/bash/basher/installer_links.py:1446
 #, python-format
 msgid "Has Unselected Plugins: %(has_unsel_plugins)s"
 msgstr "தேர்வு செய்யப்படாத செருகுநிரல்கள் உள்ளன: %(has_unsel_plugins)s"
 
-#: Mopy/bash/basher/installer_links.py:1447
+#: Mopy/bash/basher/installer_links.py:1448
 #, python-format
 msgid "Has Selected Packages: %(has_sel_packages)s"
 msgstr "தேர்ந்தெடுக்கப்பட்ட தொகுப்புகள் உள்ளன: %(has_sel_packages)s"
 
-#: Mopy/bash/basher/installer_links.py:1449
+#: Mopy/bash/basher/installer_links.py:1450
 #, python-format
 msgid "Contains %(num_contained_files)d files:"
 msgstr "%(num_contained_files)d கோப்புகள் உள்ளன:"
 
-#: Mopy/bash/basher/installer_links.py:1453
+#: Mopy/bash/basher/installer_links.py:1454
 msgid "BCF Information"
 msgstr "பி.சி.எஃப் செய்தி"
 
-#: Mopy/bash/basher/installer_links.py:1460
+#: Mopy/bash/basher/installer_links.py:1461
 msgid "Apply.."
 msgstr "பொருந்தும் .."
 
-#: Mopy/bash/basher/installer_links.py:1506
+#: Mopy/bash/basher/installer_links.py:1507
 msgid "Archive.."
 msgstr "காப்பகம் .."
 
-#: Mopy/bash/basher/installer_links.py:1511
+#: Mopy/bash/basher/installer_links.py:1512
 msgid "Project.."
 msgstr "திட்டம் .."
 
@@ -5758,7 +5758,7 @@ msgstr "என்விடியா கருப்பு திரை பிழ
 msgid "Apply Nvidia fog fix. This modifies fog values in interior cells to avoid the Nvidia black screen bug."
 msgstr "என்விடியா மூடுபனி பிழைத்திருத்தத்தைப் பயன்படுத்துங்கள். என்விடியா கருப்பு திரை பிழையைத் தவிர்க்க இது உள்துறை கலங்களில் மூடுபனி மதிப்புகளை மாற்றியமைக்கிறது."
 
-#: Mopy/bash/basher/mod_links.py:1361 Mopy/bash/basher/saves_links.py:923
+#: Mopy/bash/basher/mod_links.py:1361 Mopy/bash/basher/saves_links.py:922
 #, python-format
 msgid "Scanning %(scanning_plugin)s"
 msgstr "ச்கேனிங் %(scanning_plugin)s"
@@ -6941,7 +6941,7 @@ msgstr "சாதனை திறக்கப்பட்டது: மோடஓ
 msgid "Failed to split the Bashed Patch. The simple algorithm used for splitting it right now cannot handle the situation we have encountered here. Please post to the Wrye Bash Discord (including your BashBugDump)."
 msgstr "பாச்ட் பேட்சைப் பிரிக்கத் தவறிவிட்டது. இப்போது பிரிக்கப் பயன்படுத்தப்படும் எளிய வழிமுறை இங்கே நாம் சந்தித்த சூழ்நிலையை கையாள முடியாது. தயவுசெய்து WRYE BASH DISORD (உங்கள் பாச்பக்டம்ப் உட்பட) இடுகையிடவும்."
 
-#: Mopy/bash/basher/patcher_dialog.py:233 Mopy/bash/basher/saves_links.py:890
+#: Mopy/bash/basher/patcher_dialog.py:233 Mopy/bash/basher/saves_links.py:889
 msgid "Saving…"
 msgstr "சேமிப்பு…"
 
@@ -7269,220 +7269,220 @@ msgstr "தேர்ந்தெடுக்கப்பட்ட சேமி�
 msgid "You can't move saves to the current profile!"
 msgstr "தற்போதைய சுயவிவரத்திற்கு சேமிப்புகளை நீங்கள் நகர்த்த முடியாது!"
 
-#: Mopy/bash/basher/saves_links.py:672
+#: Mopy/bash/basher/saves_links.py:671
 #, python-format
 msgid "%(num_save_files)d files copied to %(save_profile)s."
 msgstr "%(num_save_files)d கோப்புகள் %(save_profile)s நகலெடுக்கப்படுகின்றன."
 
-#: Mopy/bash/basher/saves_links.py:674
+#: Mopy/bash/basher/saves_links.py:673
 #, python-format
 msgid "%(num_save_files)d files moved to %(save_profile)s."
 msgstr "%(num_save_files)d கோப்புகள் %(save_profile)s."
 
-#: Mopy/bash/basher/saves_links.py:677
+#: Mopy/bash/basher/saves_links.py:676
 msgid "Saves Copied"
 msgstr "நகலெடுக்கப்பட்ட சேமிப்புகள்"
 
-#: Mopy/bash/basher/saves_links.py:677
+#: Mopy/bash/basher/saves_links.py:676
 msgid "Saves Moved"
 msgstr "சேமிப்புகள் நகர்ந்தன"
 
-#: Mopy/bash/basher/saves_links.py:690
+#: Mopy/bash/basher/saves_links.py:689
 #, python-format
 msgid "A file named %(conflicting_save)s already exists in %(save_profile)s. Overwrite it?"
 msgstr "%(conflicting_save)s என்ற பெயரிடப்பட்ட ஒரு கோப்பு ஏற்கனவே %(save_profile)s உள்ளது. அதை மேலெழுதவா?"
 
-#: Mopy/bash/basher/saves_links.py:694
+#: Mopy/bash/basher/saves_links.py:693
 msgid "Move File"
 msgstr "கோப்பை நகர்த்தவும்"
 
-#: Mopy/bash/basher/saves_links.py:713 Mopy/bash/basher/saves_links.py:734
+#: Mopy/bash/basher/saves_links.py:712 Mopy/bash/basher/saves_links.py:733
 msgid "Repair Abomb"
 msgstr "பழுதுபார்க்கும் அபோம்ப்"
 
-#: Mopy/bash/basher/saves_links.py:714
+#: Mopy/bash/basher/saves_links.py:713
 msgid "Repair animation slowing"
 msgstr "அனிமேசன் மெதுவாக பழுதுபார்க்கும்"
 
-#: Mopy/bash/basher/saves_links.py:727
+#: Mopy/bash/basher/saves_links.py:726
 msgid "Abomb counter is too low to reset."
 msgstr "அபோம்ப் கவுண்டர் மீட்டமைக்க மிகக் குறைவு."
 
-#: Mopy/bash/basher/saves_links.py:730
+#: Mopy/bash/basher/saves_links.py:729
 #, python-format
 msgid "Reset Abomb counter (current progress: %(abomb_progress)s)?"
 msgstr "அபோம்ப் கவுண்டரை மீட்டமைக்கவும் (தற்போதைய முன்னேற்றம்: %(abomb_progress)s)?"
 
-#: Mopy/bash/basher/saves_links.py:732
+#: Mopy/bash/basher/saves_links.py:731
 #, python-format
 msgid "Note: Abomb animation slowing won't occur until progress is near %(critical_pct)s."
 msgstr "குறிப்பு: முன்னேற்றம் %(critical_pct)s வரை இருக்கும் வரை அபோம்ப் அனிமேசன் மந்தநிலை ஏற்படாது."
 
-#: Mopy/bash/basher/saves_links.py:737
+#: Mopy/bash/basher/saves_links.py:736
 msgid "Abomb counter reset."
 msgstr "Abomb எதிர் மீட்டமைப்பு."
 
-#: Mopy/bash/basher/saves_links.py:742
+#: Mopy/bash/basher/saves_links.py:741
 msgid "Repair Hair"
 msgstr "முடி பழுதுபார்க்கவும்"
 
-#: Mopy/bash/basher/saves_links.py:743
+#: Mopy/bash/basher/saves_links.py:742
 msgid "Repair hair that has been zeroed due to removal of a hair mod."
 msgstr "முடி மோட் அகற்றப்பட்டதன் காரணமாக பூச்சியமாக்கப்பட்ட முடி பழுதுபார்க்கும்."
 
-#: Mopy/bash/basher/saves_links.py:748
+#: Mopy/bash/basher/saves_links.py:747
 msgid "Hair repaired."
 msgstr "முடி பழுதுபார்க்கப்பட்டது."
 
-#: Mopy/bash/basher/saves_links.py:750
+#: Mopy/bash/basher/saves_links.py:749
 msgid "No repair necessary."
 msgstr "பழுது தேவையில்லை."
 
-#: Mopy/bash/basher/saves_links.py:755
+#: Mopy/bash/basher/saves_links.py:754
 msgid "Reweigh Potions…"
 msgstr "Prweek pospans…"
 
-#: Mopy/bash/basher/saves_links.py:756
+#: Mopy/bash/basher/saves_links.py:755
 msgid "Change weight of all player potions to specified value"
 msgstr "அனைத்து பிளேயர் போசன்களின் எடையை குறிப்பிட்ட மதிப்புக்கு மாற்றவும்"
 
-#: Mopy/bash/basher/saves_links.py:763
+#: Mopy/bash/basher/saves_links.py:762
 msgid "Set weight of all player-created potions to:"
 msgstr "அனைத்து வீரர் உருவாக்கிய போசன்களின் எடையை அமைக்கவும்:"
 
-#: Mopy/bash/basher/saves_links.py:764 Mopy/bash/basher/saves_links.py:771
-#: Mopy/bash/basher/saves_links.py:775 Mopy/bash/basher/saves_links.py:791
-#: Mopy/bash/basher/saves_links.py:795
+#: Mopy/bash/basher/saves_links.py:763 Mopy/bash/basher/saves_links.py:770
+#: Mopy/bash/basher/saves_links.py:774 Mopy/bash/basher/saves_links.py:790
+#: Mopy/bash/basher/saves_links.py:794
 msgid "Reweigh Potions"
 msgstr "போசன்களை மறுபரிசீலனை செய்யுங்கள்"
 
-#: Mopy/bash/basher/saves_links.py:770
+#: Mopy/bash/basher/saves_links.py:769
 #, python-format
 msgid "Invalid weight: %(invalid_weight)s"
 msgstr "தவறான எடை: %(invalid_weight)s"
 
-#: Mopy/bash/basher/saves_links.py:779 Mopy/bash/patcher/patch_files.py:291
+#: Mopy/bash/basher/saves_links.py:778 Mopy/bash/patcher/patch_files.py:291
 msgid "Processing."
 msgstr "செயலாக்கம்."
 
-#: Mopy/bash/basher/saves_links.py:790
+#: Mopy/bash/basher/saves_links.py:789
 #, python-format
 msgid "Potions reweighed: %(num_reweighed)d."
 msgstr "போசன்கள் மறுபரிசீலனை செய்தன: %(num_reweighed)d."
 
-#: Mopy/bash/basher/saves_links.py:794
+#: Mopy/bash/basher/saves_links.py:793
 msgid "No potions to reweigh!"
 msgstr "மறுபரிசீலனை செய்ய மருந்துகள் இல்லை!"
 
-#: Mopy/bash/basher/saves_links.py:800 Mopy/bash/basher/saves_links.py:805
+#: Mopy/bash/basher/saves_links.py:799 Mopy/bash/basher/saves_links.py:804
 msgid "Statistics"
 msgstr "புள்ளிவிவரங்கள்"
 
-#: Mopy/bash/basher/saves_links.py:801
+#: Mopy/bash/basher/saves_links.py:800
 msgid "Show savefile statistics"
 msgstr "சேவ்ஃபைல் புள்ளிவிவரங்களைக் காட்டு"
 
-#: Mopy/bash/basher/saves_links.py:808
+#: Mopy/bash/basher/saves_links.py:807
 msgid "Calculating statistics."
 msgstr "புள்ளிவிவரங்களைக் கணக்கிடுதல்."
 
-#: Mopy/bash/basher/saves_links.py:835
+#: Mopy/bash/basher/saves_links.py:834
 #, python-format
 msgid "Dump %(co_ext)s Contents"
 msgstr "டம்ப் %(co_ext)s உள்ளடக்கங்கள்"
 
-#: Mopy/bash/basher/saves_links.py:837
+#: Mopy/bash/basher/saves_links.py:836
 #, python-format
 msgid "Create a report of the contents of the associated %(xse_abbr)s cosave."
 msgstr "தொடர்புடைய %(xse_abbr)sCAVE இன் உள்ளடக்கங்களின் அறிக்கையை உருவாக்கவும்."
 
-#: Mopy/bash/basher/saves_links.py:848
+#: Mopy/bash/basher/saves_links.py:847
 msgid "Dump .pluggy Contents"
 msgstr "டம்ப் .பிளக்கி உள்ளடக்கங்கள்"
 
-#: Mopy/bash/basher/saves_links.py:849
+#: Mopy/bash/basher/saves_links.py:848
 msgid "Dumps contents of associated Pluggy cosave into a log."
 msgstr "தொடர்புடைய பிளக் கோசேவின் உள்ளடக்கங்களை ஒரு பதிவாக மாற்றுகிறது."
 
-#: Mopy/bash/basher/saves_links.py:859
+#: Mopy/bash/basher/saves_links.py:858
 msgid "Remove Bloat…"
 msgstr "வீக்கத்தை அகற்று…"
 
-#: Mopy/bash/basher/saves_links.py:860
+#: Mopy/bash/basher/saves_links.py:859
 msgid "Unbloat savegame. Experimental ! Back up your saves before using it on them"
 msgstr "Unbleat saveGame. சோதனை! உங்கள் சேமிப்புகளை அவற்றைப் பயன்படுத்துவதற்கு முன்பு காப்புப் பிரதி எடுக்கவும்"
 
-#: Mopy/bash/basher/saves_links.py:865
+#: Mopy/bash/basher/saves_links.py:864
 msgid "Scanning for Bloat"
 msgstr "வீக்கத்திற்கு ச்கேன்"
 
-#: Mopy/bash/basher/saves_links.py:872
+#: Mopy/bash/basher/saves_links.py:871
 msgid "No bloating found."
 msgstr "வீக்கம் எதுவும் கிடைக்கவில்லை."
 
-#: Mopy/bash/basher/saves_links.py:874
+#: Mopy/bash/basher/saves_links.py:873
 msgid "Remove savegame bloating?"
 msgstr "சேவ் கேம் வீக்கத்தை அகற்றவா?"
 
-#: Mopy/bash/basher/saves_links.py:880
+#: Mopy/bash/basher/saves_links.py:879
 #, python-format
 msgid "Null Reference Objects: %(num_ref_objs)d"
 msgstr "சுழிய குறிப்பு பொருள்கள்: %(num_ref_objs)d"
 
-#: Mopy/bash/basher/saves_links.py:883
+#: Mopy/bash/basher/saves_links.py:882
 msgid "WARNING: This is a risky procedure that may corrupt your savegame! Use it only if necessary!"
 msgstr "எச்சரிக்கை: இது உங்கள் சேமிப்பகத்தை சிதைக்கக்கூடிய ஆபத்தான செயல்முறையாகும்! தேவைப்பட்டால் மட்டுமே அதைப் பயன்படுத்துங்கள்!"
 
-#: Mopy/bash/basher/saves_links.py:885
+#: Mopy/bash/basher/saves_links.py:884
 msgid "Remove bloating?"
 msgstr "வீக்கத்தை அகற்றவா?"
 
-#: Mopy/bash/basher/saves_links.py:888
+#: Mopy/bash/basher/saves_links.py:887
 msgid "Removing Bloat"
 msgstr "வீக்கத்தை நீக்குதல்"
 
-#: Mopy/bash/basher/saves_links.py:892
+#: Mopy/bash/basher/saves_links.py:891
 #, python-format
 msgid "Uncreated Objects: %(num_uncreated_objs)d"
 msgstr "உருவாக்கப்படாத பொருள்கள்: %(num_uncreated_objs)d"
 
-#: Mopy/bash/basher/saves_links.py:893
+#: Mopy/bash/basher/saves_links.py:892
 #, python-format
 msgid "Uncreated References: %(num_uncreated_refs)d"
 msgstr "உருவாக்கப்படாத குறிப்புகள்: %(num_uncreated_refs)d"
 
-#: Mopy/bash/basher/saves_links.py:894
+#: Mopy/bash/basher/saves_links.py:893
 #, python-format
 msgid "Un-nulled Refs: %(num_unnulled_refs)d"
 msgstr "அன்-பூசப்பட்ட குறிப்புகள்: %(num_unnulled_refs)d"
 
-#: Mopy/bash/basher/saves_links.py:904
+#: Mopy/bash/basher/saves_links.py:903
 msgid "Update NPC Levels…"
 msgstr "NPC நிலைகளைப் புதுப்பிக்கவும்…"
 
-#: Mopy/bash/basher/saves_links.py:905
+#: Mopy/bash/basher/saves_links.py:904
 msgid "Update NPC levels from active mods"
 msgstr "செயலில் உள்ள மோட்களிலிருந்து NPC அளவைப் புதுப்பிக்கவும்"
 
-#: Mopy/bash/basher/saves_links.py:910
+#: Mopy/bash/basher/saves_links.py:909
 msgid "This will relevel the NPCs in the selected saves according to the NPC levels in the currently active plugins. This supersedes the older \"Import NPC Levels\" command."
 msgstr "இது தற்போது செயலில் உள்ள செருகுநிரல்களில் NPC நிலைகளுக்கு ஏற்ப தேர்ந்தெடுக்கப்பட்ட சேமிப்புகளில் NPC களை வெளிப்படுத்தும். இது பழைய \"இறக்குமதி NPC நிலைகள்\" கட்டளையை மீறுகிறது."
 
-#: Mopy/bash/basher/saves_links.py:914 Mopy/bash/basher/saves_links.py:915
-#: Mopy/bash/basher/saves_links.py:982
+#: Mopy/bash/basher/saves_links.py:913 Mopy/bash/basher/saves_links.py:914
+#: Mopy/bash/basher/saves_links.py:981
 msgid "Update NPC Levels"
 msgstr "NPC அளவைப் புதுப்பிக்கவும்"
 
-#: Mopy/bash/basher/saves_links.py:943
+#: Mopy/bash/basher/saves_links.py:942
 msgid "NPCs Releveled:"
 msgstr "NPC கள் வெளியிடப்பட்டவை:"
 
-#: Mopy/bash/basher/saves_links.py:945 Mopy/bash/basher/saves_links.py:974
+#: Mopy/bash/basher/saves_links.py:944 Mopy/bash/basher/saves_links.py:973
 #, python-format
 msgid "Updating %(updating_save)s"
 msgstr "புதுப்பித்தல் %(updating_save)s"
 
-#: Mopy/bash/basher/saves_links.py:980
+#: Mopy/bash/basher/saves_links.py:979
 msgid "Some mods had load errors and were skipped:"
 msgstr "சில மோட்களில் சுமை பிழைகள் இருந்தன, அவை தவிர்க்கப்பட்டன:"
 
@@ -8365,94 +8365,94 @@ msgstr "கோப்பு %(bad_name_str)s ஏற்கனவே உள்ள�
 msgid "Stored size does not match the one on disk."
 msgstr "சேமிக்கப்பட்ட அளவு வட்டில் பொருந்தாது."
 
-#: Mopy/bash/bosh/__init__.py:630 Mopy/bash/bosh/__init__.py:661
+#: Mopy/bash/bosh/__init__.py:631 Mopy/bash/bosh/__init__.py:662
 msgid "No tags"
 msgstr "குறிச்சொற்கள் இல்லை"
 
-#: Mopy/bash/bosh/__init__.py:635
+#: Mopy/bash/bosh/__init__.py:636
 msgid "From Plugin Description:"
 msgstr "சொருகி விளக்கத்திலிருந்து:"
 
-#: Mopy/bash/bosh/__init__.py:640
+#: Mopy/bash/bosh/__init__.py:641
 msgid "From LOOT Masterlist and/or Userlist:"
 msgstr "கொள்ளை மாச்டர்லிச்ட் மற்றும்/அல்லது பயனர் பட்டியலில் இருந்து:"
 
-#: Mopy/bash/bosh/__init__.py:643
+#: Mopy/bash/bosh/__init__.py:644
 msgid "Removed by LOOT Masterlist and/or Userlist:"
 msgstr "கொள்ளை மாச்டர்லிச்ட் மற்றும்/அல்லது பயனர் பட்டியல் மூலம் அகற்றப்பட்டது:"
 
-#: Mopy/bash/bosh/__init__.py:650
+#: Mopy/bash/bosh/__init__.py:651
 #, python-format
 msgid "Added by %(tags_file)s:"
 msgstr "%(tags_file)s மூலம் சேர்க்கப்பட்டது:"
 
-#: Mopy/bash/bosh/__init__.py:653
+#: Mopy/bash/bosh/__init__.py:654
 #, python-format
 msgid "Removed by %(tags_file)s:"
 msgstr "%(tags_file)s மூலம் அகற்றப்பட்டது:"
 
-#: Mopy/bash/bosh/__init__.py:658
+#: Mopy/bash/bosh/__init__.py:659
 msgid "From Manual (overrides all other sources):"
 msgstr "கையேட்டில் இருந்து (மற்ற எல்லா மூலங்களையும் மீறுகிறது):"
 
-#: Mopy/bash/bosh/__init__.py:660
+#: Mopy/bash/bosh/__init__.py:661
 msgid "Result:"
 msgstr "முடிவு:"
 
-#: Mopy/bash/bosh/__init__.py:805
+#: Mopy/bash/bosh/__init__.py:806
 msgid "Active"
 msgstr "செயலில்"
 
-#: Mopy/bash/bosh/__init__.py:806 Mopy/bash/patcher/patchers/mergers.py:959
+#: Mopy/bash/bosh/__init__.py:807 Mopy/bash/patcher/patchers/mergers.py:959
 msgid "Merged"
 msgstr "ஒன்றிணைந்தது"
 
-#: Mopy/bash/bosh/__init__.py:807
+#: Mopy/bash/bosh/__init__.py:808
 msgid "Imported"
 msgstr "இறக்குமதி செய்யப்பட்டது"
 
-#: Mopy/bash/bosh/__init__.py:808
+#: Mopy/bash/bosh/__init__.py:809
 msgid "Inactive"
 msgstr "செயலற்றது"
 
-#: Mopy/bash/bosh/__init__.py:959
+#: Mopy/bash/bosh/__init__.py:960
 msgid "Has size-mismatched masters."
 msgstr "அளவு பொருந்தாத முதுநிலை."
 
-#: Mopy/bash/bosh/__init__.py:995
+#: Mopy/bash/bosh/__init__.py:996
 msgid "Contains dirty edits, needs cleaning."
 msgstr "அழுக்கு திருத்தங்கள் உள்ளன, தூய்மை தேவை."
 
-#: Mopy/bash/bosh/__init__.py:1220
+#: Mopy/bash/bosh/__init__.py:1221
 msgid "Format mismatch:"
 msgstr "வடிவமைப்பு பொருந்தாத தன்மை:"
 
-#: Mopy/bash/bosh/__init__.py:1222
+#: Mopy/bash/bosh/__init__.py:1223
 msgid "Target format is INI, tweak format is Batch Script."
 msgstr "இலக்கு வடிவம் இன்னி, மாற்றும் வடிவம் தொகுதி ச்கிரிப்ட் ஆகும்."
 
-#: Mopy/bash/bosh/__init__.py:1225
+#: Mopy/bash/bosh/__init__.py:1226
 msgid "Target format is Batch Script, tweak format is INI."
 msgstr "இலக்கு வடிவம் தொகுதி ச்கிரிப்ட், மாற்ற வடிவம் இன்னி."
 
-#: Mopy/bash/bosh/__init__.py:1232
+#: Mopy/bash/bosh/__init__.py:1233
 msgid "No valid INI format lines."
 msgstr "இந்த வடிவமைப்பு கோடுகள் செல்லுபடியாகாது."
 
-#: Mopy/bash/bosh/__init__.py:1234
+#: Mopy/bash/bosh/__init__.py:1235
 msgid "No valid Batch Script format lines."
 msgstr "செல்லுபடியாகும் தொகுதி ச்கிரிப்ட் வடிவமைப்பு கோடுகள் இல்லை."
 
-#: Mopy/bash/bosh/__init__.py:1243
+#: Mopy/bash/bosh/__init__.py:1244
 msgid "Invalid Header"
 msgstr "தவறான தலைப்பு"
 
-#: Mopy/bash/bosh/__init__.py:1252
+#: Mopy/bash/bosh/__init__.py:1253
 msgid "Settings missing from target INI:"
 msgstr "இலக்கு இனி இலிருந்து அமைப்புகள் காணவில்லை:"
 
-#: Mopy/bash/bosh/__init__.py:1864 Mopy/bash/bosh/__init__.py:1883
-#: Mopy/bash/bosh/__init__.py:1884 Mopy/bash/bosh/__init__.py:1983
+#: Mopy/bash/bosh/__init__.py:1861 Mopy/bash/bosh/__init__.py:1880
+#: Mopy/bash/bosh/__init__.py:1881 Mopy/bash/bosh/__init__.py:1983
 msgid "Browse…"
 msgstr "உலாவுக…"
 
@@ -8577,38 +8577,38 @@ msgstr "பின்வரும் பிஎச்ஏக்கள் ஒரு 
 msgid "The following BA2s have filenames whose hashes collide, which will cause one or more of them to fail to work correctly. This should be corrected by the mod authors by renaming the files to avoid the collision."
 msgstr "பின்வரும் BA2 களில் கோப்பு பெயர்கள் உள்ளன, அதன் ஆச்கள் மோதுகின்றன, அவற்றில் ஒன்று அல்லது அதற்கு மேற்பட்டவை சரியாக வேலை செய்யத் தவறிவிடும். மோதலைத் தவிர்ப்பதற்காக கோப்புகளை மறுபெயரிடுவதன் மூலம் மோட் ஆசிரியர்களால் இதை சரிசெய்ய வேண்டும்."
 
-#: Mopy/bash/bosh/__init__.py:3483
+#: Mopy/bash/bosh/__init__.py:3484
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr "எழுதுபேசு அமைப்புகள் தரவுத்தளத்தைப் படிப்பதில் பிழை எற்பட்டது(பிழை '%(settings_err)s'). இது தற்போதைய கோப்பில் மீட்டெடுக்கப்படாது. காப்புப்பிரதி %(settings_file_name)s ஐ முயற்சிக்க விரும்புகிறீர்களா (இது உங்கள் எல்லா அமைப்புகளையும் இரண்டாவது முதல் கடைசி நேரம்வரை நீங்கள் WRYE BASH ஐப் பயன்படுத்தியிருக்கும்)?"
 
-#: Mopy/bash/bosh/__init__.py:3491 Mopy/bash/bosh/__init__.py:3503
-#: Mopy/bash/bosh/__init__.py:3513
+#: Mopy/bash/bosh/__init__.py:3492 Mopy/bash/bosh/__init__.py:3504
+#: Mopy/bash/bosh/__init__.py:3514
 msgid "Settings Load Error"
 msgstr "அமைப்புகள் சுமை பிழை"
 
-#: Mopy/bash/bosh/__init__.py:3496
+#: Mopy/bash/bosh/__init__.py:3497
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr "காப்புப்பிரதியைப் படிப்பதில் பிழை WRY பாச் அமைப்புகள் தரவுத்தளத்தை (பிழை '%(settings_err)s'). இது தற்போதைய கோப்பில் மீட்டெடுக்கப்படாது. நீங்கள் சேமித்த அமைப்புகள் இல்லாமல் சிதைந்த அமைப்புகளை நீக்கி, வதக்கப்பட்ட அமைப்புகள் இல்லாமல் சுமை செய்ய விரும்புகிறீர்களா ('இல்லை' என்பதைத் தேர்ந்தெடுப்பது மிகவும் பாச் வெளியேறும்)?"
 
-#: Mopy/bash/bosh/__init__.py:3509
+#: Mopy/bash/bosh/__init__.py:3510
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr "நீங்கள் சேமித்த அமைப்புகள் இல்லாமல் சிதைந்த அமைப்புகளை நீக்கி, வதக்கப்பட்ட அமைப்புகள் இல்லாமல் சுமை செய்ய விரும்புகிறீர்களா ('இல்லை' என்பதைத் தேர்ந்தெடுப்பது மிகவும் பாச் வெளியேறும்)?"
 
-#: Mopy/bash/bosh/__init__.py:3524
+#: Mopy/bash/bosh/__init__.py:3525
 msgid "Initializing BSAs"
 msgstr "BSA களைத் தொடங்குதல்"
 
-#: Mopy/bash/bosh/__init__.py:3526
+#: Mopy/bash/bosh/__init__.py:3527
 msgid "Initializing plugins"
 msgstr "செருகுநிரல்களைத் தொடங்குதல்"
 
-#: Mopy/bash/bosh/__init__.py:3528
+#: Mopy/bash/bosh/__init__.py:3529
 msgid "Initializing saves"
 msgstr "சேமிப்புகளைத் தொடங்குதல்"
 
-#: Mopy/bash/bosh/__init__.py:3530
+#: Mopy/bash/bosh/__init__.py:3531
 msgid "Initializing INIs"
 msgstr "INIS ஐ துவக்குதல்"
 
@@ -8815,133 +8815,133 @@ msgstr "உள்ளமைவின் மாற்றம் காரணமா�
 msgid "Needs Annealing due to a change in Install Order."
 msgstr "நிறுவல் வரிசையில் மாற்றம் காரணமாக அனீலிங் தேவை."
 
-#: Mopy/bash/bosh/bain.py:1378
+#: Mopy/bash/bosh/bain.py:1377
 msgid "Package Structure:"
 msgstr "தொகுப்பு அமைப்பு:"
 
-#: Mopy/bash/bosh/bain.py:1407
+#: Mopy/bash/bosh/bain.py:1406
 #, python-format
 msgid "Syncing from %(data_folder)s folder…"
 msgstr "%(data_folder)s கோப்புறையிலிருந்து ஒத்திசைத்தல்…"
 
-#: Mopy/bash/bosh/bain.py:1481
+#: Mopy/bash/bosh/bain.py:1480
 msgid "Size: N/A"
 msgstr "அளவு: இதற்கில்லை"
 
-#: Mopy/bash/bosh/bain.py:1483
+#: Mopy/bash/bosh/bain.py:1482
 msgid "Structure: N/A"
 msgstr "கட்டமைப்பு: இதற்கில்லை"
 
-#: Mopy/bash/bosh/bain.py:1490
+#: Mopy/bash/bosh/bain.py:1489
 msgid "Marker Package. Use for grouping installers together"
 msgstr "குறியிடுகருவி தொகுப்பு. நிறுவிகளை ஒன்றாகத் தொகுக்கப் பயன்படுகிறது"
 
-#: Mopy/bash/bosh/bain.py:1496
+#: Mopy/bash/bosh/bain.py:1495
 msgid "Archive"
 msgstr "காப்பகம்"
 
-#: Mopy/bash/bosh/bain.py:1503
+#: Mopy/bash/bosh/bain.py:1502
 #, python-format
 msgid "Solid, Block Size: %(block_size)s"
 msgstr "திட, தொகுதி அளவு: %(block_size)s"
 
-#: Mopy/bash/bosh/bain.py:1506
+#: Mopy/bash/bosh/bain.py:1505
 msgid "Solid, Block Size: Unknown"
 msgstr "திட, தொகுதி அளவு: தெரியவில்லை"
 
-#: Mopy/bash/bosh/bain.py:1508
+#: Mopy/bash/bosh/bain.py:1507
 msgid "Solid, Block Size: 7z Default"
 msgstr "திட, தொகுதி அளவு: 7Z இயல்புநிலை"
 
-#: Mopy/bash/bosh/bain.py:1510
+#: Mopy/bash/bosh/bain.py:1509
 msgid "Non-solid"
 msgstr "அல்லாத"
 
-#: Mopy/bash/bosh/bain.py:1511
+#: Mopy/bash/bosh/bain.py:1510
 #, python-format
 msgid "Size: %(package_size)s (%(package_solid)s)"
 msgstr "அளவு: %(package_size)s ( %(package_solid)s)"
 
-#: Mopy/bash/bosh/bain.py:1520
+#: Mopy/bash/bosh/bain.py:1519
 #, python-format
 msgid "%(invalid_name)s does not have correct extension (%(allowed_extensions)s)."
 msgstr "%(invalid_name)s சரியான நீட்டிப்பு இல்லை (%(allowed_extensions)s)."
 
-#: Mopy/bash/bosh/bain.py:1525
+#: Mopy/bash/bosh/bain.py:1524
 #, python-format
 msgid "The %(invalid_extension)s extension is unsupported. Using %(default_extension)s instead."
 msgstr "%(default_extension)s நீட்டிப்பு ஆதரிக்கப்படவில்லை. அதற்குப் பதிலாக %(invalid_extension)s பயன்படுத்துகின்றன."
 
-#: Mopy/bash/bosh/bain.py:1606
+#: Mopy/bash/bosh/bain.py:1605
 msgid "Organizing files…"
 msgstr "கோப்புகளை ஒழுங்கமைத்தல்…"
 
-#: Mopy/bash/bosh/bain.py:1625 Mopy/bash/bosh/bain.py:1805
+#: Mopy/bash/bosh/bain.py:1624 Mopy/bash/bosh/bain.py:1804
 #: Mopy/bash/bosh/converters.py:369
 msgid "Moving files…"
 msgstr "நகரும் கோப்புகள்…"
 
-#: Mopy/bash/bosh/bain.py:1671
+#: Mopy/bash/bosh/bain.py:1670
 msgid "Extracting images…"
 msgstr "படங்களை பிரித்தெடுக்கும்…"
 
-#: Mopy/bash/bosh/bain.py:1707
+#: Mopy/bash/bosh/bain.py:1706
 msgid "Project"
 msgstr "திட்டம்"
 
-#: Mopy/bash/bosh/bain.py:1775 Mopy/bash/bosh/bain.py:2352
+#: Mopy/bash/bosh/bain.py:1774 Mopy/bash/bosh/bain.py:2351
 #: Mopy/bash/patcher/patch_files.py:369
 msgid "Scanning…"
 msgstr "ச்கேனிங்…"
 
-#: Mopy/bash/bosh/bain.py:2014
+#: Mopy/bash/bosh/bain.py:2013
 msgid "Loading Data…"
 msgstr "தரவை ஏற்றுகிறது…"
 
-#: Mopy/bash/bosh/bain.py:2134
+#: Mopy/bash/bosh/bain.py:2133
 msgid "Some packages could not be found and were skipped:"
 msgstr "சில தொகுப்புகளைக் கண்டுபிடிக்க முடியவில்லை மற்றும் தவிர்க்கப்பட்டது:"
 
-#: Mopy/bash/bosh/bain.py:2189
+#: Mopy/bash/bosh/bain.py:2188
 msgid "An error occurred while applying an Embedded BCF."
 msgstr "உட்பொதிக்கப்பட்ட பி.சி.எஃப் பயன்படுத்தும் போது பிழை ஏற்பட்டது."
 
-#: Mopy/bash/bosh/bain.py:2312
+#: Mopy/bash/bosh/bain.py:2311
 msgid "Pre-Scanning…"
 msgstr "முன் ச்கேனிங்…"
 
-#: Mopy/bash/bosh/bain.py:2486
+#: Mopy/bash/bosh/bain.py:2485
 #, python-format
 msgid "%(data_folder)s: Skips overrides…"
 msgstr "%(data_folder)s: ச்கிப்ச் மேலெழுதும்…"
 
-#: Mopy/bash/bosh/bain.py:2637
+#: Mopy/bash/bosh/bain.py:2635
 #, python-format
 msgid "INI Tweak created by Wrye Bash %(wb_version)s, using settings from old file."
 msgstr "பழைய கோப்பிலிருந்து அமைப்புகளைப் பயன்படுத்தி, Wrya பாச் %(wb_version)s உருவாக்கிய இனி TWEAK."
 
-#: Mopy/bash/bosh/bain.py:3136
+#: Mopy/bash/bosh/bain.py:3134
 msgid "Active BSA Conflicts"
 msgstr "செயலில் உள்ள பிஎச்ஏ மோதல்கள்"
 
-#: Mopy/bash/bosh/bain.py:3139 Mopy/bash/bosh/bain.py:3154
-#: Mopy/bash/bosh/bain.py:3159 Mopy/bash/bosh/bain.py:3172
+#: Mopy/bash/bosh/bain.py:3137 Mopy/bash/bosh/bain.py:3152
+#: Mopy/bash/bosh/bain.py:3157 Mopy/bash/bosh/bain.py:3170
 msgid "Lower"
 msgstr "கீழ்"
 
-#: Mopy/bash/bosh/bain.py:3156 Mopy/bash/bosh/bain.py:3174
+#: Mopy/bash/bosh/bain.py:3154 Mopy/bash/bosh/bain.py:3172
 msgid "Higher"
 msgstr "உயர்ந்த"
 
-#: Mopy/bash/bosh/bain.py:3157
+#: Mopy/bash/bosh/bain.py:3155
 msgid "Loose File Conflicts"
 msgstr "தளர்வான கோப்பு மோதல்கள்"
 
-#: Mopy/bash/bosh/bain.py:3177
+#: Mopy/bash/bosh/bain.py:3175
 msgid "No Underrides. Mod is not completely un-installed."
 msgstr "இல்லை. மோட் முற்றிலும் நிறுவப்படவில்லை."
 
-#: Mopy/bash/bosh/bain.py:3184
+#: Mopy/bash/bosh/bain.py:3182
 msgid "BAIN Packages:"
 msgstr "பெயின் தொகுப்புகள்:"
 
