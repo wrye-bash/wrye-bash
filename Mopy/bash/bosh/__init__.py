@@ -1499,8 +1499,9 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
-    def refresh(self, refresh_infos: RefrIn | list[FName] | bool = True,
-                **kwargs): raise NotImplementedError
+    def refresh(self, refresh_infos: RefrIn | bool = True,
+                **kwargs) -> RefrData:
+        raise NotImplementedError
 
     @final
     def delete(self, delete_keys, *, recycle=True):
@@ -1591,11 +1592,11 @@ class _AFileInfos(DataStore):
     tracks_ownership = False
     _boot_refresh_args = {'booting': True}
 
-    def __init__(self, factory=None, *, do_refresh=True):
+    def __init__(self, factory=None):
         """Init with specified directory and specified factory type."""
         super().__init__(self._init_store(self.set_store_dir()))
         self.factory = factory or self.__class__.factory
-        if do_refresh: self.refresh(**self._boot_refresh_args)
+        if self._boot_refresh_args: self.refresh(**self._boot_refresh_args)
 
     def _init_store(self, storedir):
         """Set up the self's _data/corrupted and return the former."""
@@ -1890,7 +1891,7 @@ class INIInfos(TableFileInfos):
                 refresh_target=True, **kwargs):
         rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
-        # delete should take care of this but needs to update redraw...)
+        # delete should take care of this but needs to update rdata...)
         for k, default_info in ((k1, v) for k1, v in
                 self._default_tweaks.items() if k1 not in self):
             self[k] = default_info  # type: DefaultIniInfo
@@ -3379,6 +3380,7 @@ class ScreenInfos(_AFileInfos):
     file_pattern = re.compile(
         r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
     factory = ScreenInfo
+    _boot_refresh_args = {}
 
     def set_store_dir(self):
         # Check if we need to adjust the screenshot dir

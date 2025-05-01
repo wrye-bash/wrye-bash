@@ -897,15 +897,16 @@ class TargetINILineCtrl(INIListCtrl):
 
     def refresh_ini_contents(self):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
-        if bosh.iniInfos.ini.isCorrupted: return
+        target_ini = bosh.iniInfos.ini
+        if target_ini.isCorrupted: return
         self.Freeze()
         try:
             # Clear the list, then populate it with the new lines
             self.DeleteAllItems()
             main_ini_selected = (bush.game.Ini.dropdown_inis[0] ==
-                                 bosh.iniInfos.ini.abs_path.stail)
+                                 target_ini.abs_path.stail)
             try:
-                sel_ini_lines = bosh.iniInfos.ini.read_ini_content()
+                sel_ini_lines = target_ini.read_ini_content()
                 if main_ini_selected: # If we got here, reading the INI worked
                     Link.Frame.oblivionIniMissing = False
                 for i, line in enumerate(sel_ini_lines):
@@ -3284,7 +3285,7 @@ class ScreensPanel(BashTab):
 
     def __init__(self,parent):
         """Initialize."""
-        self.listData = bosh.screen_infos = bosh.ScreenInfos(do_refresh=False)
+        self.listData = bosh.screen_infos = bosh.ScreenInfos()
         super(ScreensPanel, self).__init__(parent)
 
     def ShowPanel(self, **kwargs):

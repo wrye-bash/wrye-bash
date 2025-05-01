@@ -1307,8 +1307,7 @@ class _InstallerPackage(Installer, AFileInfo):
     def install(self, destFiles: set[CIstr], progress):
         """Install specified files to Data directory."""
         dest_src = self.refreshDataSizeCrc(True)
-        for k in list(dest_src):
-            if k not in destFiles: del dest_src[k]
+        dest_src = {k: v for k, v in dest_src.items() if k in destFiles}
         if not dest_src: return bolt.LowerDict(), defaultdict(bool)
         progress = progress if progress else bolt.Progress()
         return self._install(dest_src, progress)
@@ -2526,7 +2525,7 @@ class InstallersData(DataStore):
             except OSError: # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(apath, None)
                 del_paths.add(apath)
-        do_refresh = False
+        do_refresh = bool(altered)
         def _path_key():
             # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
@@ -2538,7 +2537,6 @@ class InstallersData(DataStore):
         for apath, siz_tim in altered.items():
             s, m = siz_tim or apath.size_mtime()
             self.data_sizeCrcDate[_path_key()] = (s, apath.crc, m)
-            do_refresh = True
         return do_refresh #Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
@@ -2971,7 +2969,7 @@ class InstallersData(DataStore):
 
     @staticmethod
     def _parse_error(bsa_inf, reason):
-        deprint(u'Error parsing %s [%s]' % (bsa_inf, reason), traceback=True)
+        deprint(f'Error parsing {bsa_inf} [{reason}]', traceback=True)
 
     ##: Maybe cache the result? Can take a bit of time to calculate
     def find_conflicts(self, src_installer, active_bsas=None, bsa_cause=None,
@@ -3202,7 +3200,7 @@ class InstallersData(DataStore):
         return (x for x in installerKeys if
                 isinstance(self[x], _InstallerPackage))
 
-    def createFromData(self, projectPath, ci_files: list[CIstr], progress,
+    def createFromData(self, projectPath, ci_files: set[CIstr], progress,
                        mod_infos):
         if not ci_files: return
         subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))

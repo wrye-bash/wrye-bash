@@ -124,7 +124,8 @@ class _RefreshingLink(_SingleInstallable):
         self.window.RefreshUI()
 
 class _NoMarkerLink(_InstallerLink):
-    """Installer link that does not accept any markers."""
+    """Installer link that is enabled if any of the selected packages can
+    perform BAIN operations."""
     def _enable(self):
         self._installables = self.idata.filterInstallables(self.selected)
         return bool(self._installables) and super()._enable()
