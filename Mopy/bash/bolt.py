@@ -1923,8 +1923,8 @@ class RefrIn:
         if store: # fish the infos so we copy table attributes over
             fn_info_dict = {k: v for k in extra_attrs if (v := store.get(k))}
         try:
-            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude=exclude)})
-                    for k, v in fn_info_dict.items()}
+            rinf = {k: (None, {'att_val': v.get_persistent_attrs(
+                exclude=exclude)}) for k, v in fn_info_dict.items()}
         except AttributeError: # ScreenInfos or fn_info_dict is None
             rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}
         for k, v in (extra_attrs or {}).items():

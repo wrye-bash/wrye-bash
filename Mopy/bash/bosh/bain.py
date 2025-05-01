@@ -1316,7 +1316,7 @@ class _InstallerPackage(Installer, AFileInfo):
         raise NotImplementedError
 
     def _fs_install(self, dest_src, srcDirJoin, progress, subprogressPlus,
-            unpackDir, *, data_updates, store_to_paths, rui_data, **kwargs):
+                    unpackDir, *, rui_data, **kwargs):
         """Filesystem install, if unpackDir is not None we are installing
          an archive."""
         data_sizeCrcDate_update = bolt.LowerDict()
@@ -1324,6 +1324,7 @@ class _InstallerPackage(Installer, AFileInfo):
         stores = data_tracking_stores()
         sources_dests = defaultdict(set)
         join_data_dir = bass.dirs[u'mods'].join
+        dest_to_store = {}
         for dest, src in dest_src.items():
             dest_size, crc = data_sizeCrc[dest]
             # Work with ghosts lopped off internally and check the destination,
@@ -1335,14 +1336,15 @@ class _InstallerPackage(Installer, AFileInfo):
                     except TypeError: # info is present, possibly ghosted
                         dest_path = fname_key.abs_path
                         fname_key = fname_key.fn_key
-                    rui_data[store] |= RefrIn.from_tabled_infos(
-                        exclude=True, extra_attrs={fname_key: {
-                            'installer': self.fn_key}}, store=store)
-                    store_to_paths[store].add((fname_key, dest))
+                    at = {'crc': crc, 'installer': str(self.fn_key),
+                          'crc_size': dest_size}
+                    rui_data[store] |= RefrIn.from_tabled_infos(exclude=True,
+                        extra_attrs={fname_key: at}, store=store)
+                    dest_to_store[dest] = store, fname_key
                     break
             else:
                 dest_path = join_data_dir(dest)
-            data_sizeCrcDate_update[dest] = [dest_size, crc, -1]
+            data_sizeCrcDate_update[dest] = [dest_size, crc, dest_path]
             # Append the ghost extension JIT since the FS operation below will
             # need the exact path to copy to
             sources_dests[srcDirJoin(src)].add(dest_path)
@@ -1357,7 +1359,17 @@ class _InstallerPackage(Installer, AFileInfo):
             if unpackDir:
                 cleanup_temp_dir(unpackDir)
         #--Update Installers data
-        data_updates.update(data_sizeCrcDate_update)
+        # update mtime for the rest of the files
+        idata_data_scd = self.instData.data_sizeCrcDate
+        for dest, (s, c, dest_path) in data_sizeCrcDate_update.items():
+            try:
+                store, fname_key = dest_to_store[dest]
+                cached_stat = dest_path.size_mtime_ctime()  ##:(701) pass this to info init
+                at = {fname_key: {'crc_mtime': (d := cached_stat[1])}}
+                rui_data[store] |= RefrIn.from_tabled_infos(extra_attrs=at)
+            except KeyError:
+                d = dest_path.mtime
+            idata_data_scd[dest] = (s, c, d)
 
     def listSource(self):
         """Return package structure as text."""
@@ -1824,8 +1836,6 @@ def _bain_op(func):
     @wraps(func)
     def _modify_data_dir(self: InstallersData, *args, **kwargs):
         rui_data = kwargs['rui_data']
-        kwargs['data_updates'] = data_updates = bolt.LowerDict()
-        kwargs['store_to_paths'] = store_to_paths = defaultdict(set)
         kwargs['cede_ownership'] = cede_ownership = defaultdict(set)
         kwargs['removed_tracked'] = removed_tracked = {s: set() for s in
                                                        data_tracking_stores()}
@@ -1857,17 +1867,6 @@ def _bain_op(func):
             for store, refr_in in rui_data.items():
                 rui_data[store] = store.refresh(refr_in, unlock_lo=True)
             self.refreshTracked() # after we notify BAIN in refresh
-            for store, owned_files in store_to_paths.items():
-                for (owned_file, dest) in owned_files:
-                    try:
-                        data_updates[dest][2] = store[owned_file].ftime
-                    except KeyError: # failed to add the file - look in corrupted
-                        data_updates[dest][2] = store.corrupted[
-                            owned_file].ftime
-            # update mtime for the rest of the files
-            for dest, (s, c, d) in data_updates.items():
-                self.data_sizeCrcDate[dest] = (
-                    s, c, bass.dirs['mods'].join(dest).mtime if d == -1 else d)
             # Set the 'installer' column for files that track their owner
             stores = [s for s in removed_tracked if s.tracks_ownership]
             for ikey, owned_files in cede_ownership.items():
