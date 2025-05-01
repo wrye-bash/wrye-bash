@@ -163,8 +163,8 @@ msgstr "Não foi possível abrir o arquivo do assistente."
 msgid "Compressing files…"
 msgstr "Compactando arquivos…"
 
-#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1602
-#: Mopy/bash/bosh/bain.py:1622 Mopy/bash/bosh/converters.py:318
+#: Mopy/bash/archives.py:114 Mopy/bash/bosh/bain.py:1601
+#: Mopy/bash/bosh/bain.py:1621 Mopy/bash/bosh/converters.py:318
 #: Mopy/bash/bosh/converters.py:338 Mopy/bash/bosh/converters.py:539
 msgid "Extracting files…"
 msgstr "Extraindo arquivos…"
@@ -196,7 +196,7 @@ msgstr "Adicionar"
 msgid "Rename"
 msgstr "Renomear"
 
-#: Mopy/bash/balt.py:239 Mopy/bash/basher/__init__.py:1802
+#: Mopy/bash/balt.py:239 Mopy/bash/basher/__init__.py:1805
 #: Mopy/bash/basher/gui_patchers.py:313
 msgid "Remove"
 msgstr "Remover"
@@ -295,7 +295,7 @@ msgstr "Excluir os itens selecionados."
 msgid "Delete the selected items (some of the selected items cannot be deleted and will be skipped)."
 msgstr "Excluir os itens selecionados (alguns itens selecionados não podem ser excluídos e serão ignorados)."
 
-#: Mopy/bash/balt.py:1972 Mopy/bash/basher/installer_links.py:966
+#: Mopy/bash/balt.py:1972 Mopy/bash/basher/installer_links.py:967
 #: Mopy/bash/basher/settings_dialog.py:691
 msgid "Rename…"
 msgstr "Renomear…"
@@ -458,62 +458,62 @@ msgstr "Nenhum backup foi criado."
 msgid "Unable to Create Backup!"
 msgstr "Não foi possível Criar o Backup!"
 
-#: Mopy/bash/barb.py:297
+#: Mopy/bash/barb.py:296
 msgid "The data format of the selected backup file is newer than the current Wrye Bash version!"
 msgstr "O formato de dados do arquivo de backup selecionado é mais recente que a versão atual do Wrye Bash!"
 
-#: Mopy/bash/barb.py:299
+#: Mopy/bash/barb.py:298
 #, python-format
 msgid "Backup %(saved_backup_ver)s is not compatible with %(wb_ver)s."
 msgstr "O backup %(saved_backup_ver)s não é compatível com %(wb_ver)s."
 
-#: Mopy/bash/barb.py:303
+#: Mopy/bash/barb.py:302
 msgid "You cannot use this backup with this version of Wrye Bash."
 msgstr "Você não pode usar este backup com esta versão do Wrye Bash."
 
-#: Mopy/bash/barb.py:304
+#: Mopy/bash/barb.py:303
 msgid "Error: Settings Are From Newer Wrye Bash Version"
 msgstr "Erro: As Configurações são de uma Versão Mais Recente do Wrye Bash"
 
-#: Mopy/bash/barb.py:310
+#: Mopy/bash/barb.py:309
 #, python-format
 msgid "The selected backup file is for %(game_name)s while your current game is %(curr_bak_name)s"
 msgstr "O arquivo de backup selecionado é para %(game_name)s enquanto seu jogo atual é %(curr_bak_name)s"
 
-#: Mopy/bash/barb.py:312
+#: Mopy/bash/barb.py:311
 msgid "Error: Settings Are From a Different Game"
 msgstr "Erro: As Configurações são de um Jogo Diferente"
 
-#: Mopy/bash/barb.py:312
+#: Mopy/bash/barb.py:311
 msgid "You cannot use this backup with this game."
 msgstr "Você não pode usar este backup com este jogo."
 
-#: Mopy/bash/barb.py:321
+#: Mopy/bash/barb.py:320
 msgid "The version of Wrye Bash used to create the selected backup file does not match the current Wrye Bash version!"
 msgstr "A versão do Wrye Bash usada para criar o arquivo de backup selecionado não corresponde à versão atual do Wrye Bash!"
 
-#: Mopy/bash/barb.py:324
+#: Mopy/bash/barb.py:323
 #, python-format
 msgid "Backup %(saved_backup_ver)s does not match %(wb_ver)s."
 msgstr "O backup %(saved_backup_ver)s não corresponde a %(wb_ver)s."
 
-#: Mopy/bash/barb.py:328
+#: Mopy/bash/barb.py:327
 msgid "Do you want to restore this backup anyway?"
 msgstr "Deseja restaurar este backup mesmo assim?"
 
-#: Mopy/bash/barb.py:328
+#: Mopy/bash/barb.py:327
 msgid "Warning: Version Mismatch"
 msgstr "Aviso: Incompatibilidade de Versão"
 
-#: Mopy/bash/barb.py:376
+#: Mopy/bash/barb.py:375
 msgid "There was an error while trying to restore your settings from the backup file!"
 msgstr "Ocorreu um erro ao tentar restaurar suas configurações a partir do arquivo de backup!"
 
-#: Mopy/bash/barb.py:377
+#: Mopy/bash/barb.py:376
 msgid "No settings were restored."
 msgstr "Nenhuma configuração foi restaurada."
 
-#: Mopy/bash/barb.py:378
+#: Mopy/bash/barb.py:377
 msgid "Unable to restore backup!"
 msgstr "Não foi possível restaurar o backup!"
 
@@ -555,8 +555,8 @@ msgstr "O nome de exibição do último jogo que foi iniciado através da caixa 
 msgid "Generating HTML file from '%(gen_target)s'"
 msgstr "Gerando arquivo HTML a partir de '%(gen_target)s'"
 
-#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:3909
-#: Mopy/bash/bosh/bain.py:1908
+#: Mopy/bash/bash.py:511 Mopy/bash/basher/__init__.py:3902
+#: Mopy/bash/bosh/bain.py:1907
 msgid "Done"
 msgstr "Concluído"
 
@@ -755,11 +755,11 @@ msgstr "BETA"
 msgid "Update Masters"
 msgstr "Atualizar Mestres"
 
-#: Mopy/bash/basher/__init__.py:533 Mopy/bash/basher/__init__.py:998
+#: Mopy/bash/basher/__init__.py:533 Mopy/bash/basher/__init__.py:999
 msgid "Plugin name incompatible, will not load."
 msgstr "Nome do plugin incompatível, não será carregado."
 
-#: Mopy/bash/basher/__init__.py:536 Mopy/bash/basher/__init__.py:1001
+#: Mopy/bash/basher/__init__.py:536 Mopy/bash/basher/__init__.py:1002
 msgid "Plugin name incompatible, cannot be activated."
 msgstr "Nome do plugin incompatível, não pode ser ativado."
 
@@ -816,7 +816,7 @@ msgid "Do you want Wrye Bash to create it by copying %(default_ini)s ?"
 msgstr "Deseja que o Wrye Bash o crie copiando %(default_ini)s?"
 
 #: Mopy/bash/basher/__init__.py:801 Mopy/bash/basher/__init__.py:805
-#: Mopy/bash/basher/__init__.py:821 Mopy/bash/basher/__init__.py:3789
+#: Mopy/bash/basher/__init__.py:821 Mopy/bash/basher/__init__.py:3782
 msgid "Missing Game INI"
 msgstr "INI do Jogo Ausente"
 
@@ -834,218 +834,218 @@ msgstr "Falha ao copiar %(def_ini_path)s para %(target_ini_pth)s."
 msgid "Apply an INI tweak to %(curr_target_ini)s? Make sure you trust the tweak, as incorrect tweaks can cause crashes."
 msgstr "Aplicar um ajuste INI a %(curr_target_ini)s? Certifique-se de confiar no ajuste, pois ajustes incorretos podem causar travamentos."
 
-#: Mopy/bash/basher/__init__.py:833 Mopy/bash/basher/installer_links.py:567
+#: Mopy/bash/basher/__init__.py:833 Mopy/bash/basher/installer_links.py:568
 msgid "INI Tweaks"
 msgstr "Ajustes INI"
 
-#: Mopy/bash/basher/__init__.py:978
+#: Mopy/bash/basher/__init__.py:979
 msgid "Reordering mods is only allowed when they are sorted by Load Order."
 msgstr "A reordenação de mods só é permitida quando eles estão classificados por Ordem de Carregamento."
 
-#: Mopy/bash/basher/__init__.py:984
+#: Mopy/bash/basher/__init__.py:985
 msgid "You can't reorder the following mods:"
 msgstr "Você não pode reordenar os seguintes mods:"
 
-#: Mopy/bash/basher/__init__.py:1004
+#: Mopy/bash/basher/__init__.py:1005
 msgid "Plugin is missing string localization files."
 msgstr "Faltam arquivos de localização de string no plugin."
 
-#: Mopy/bash/basher/__init__.py:1006
+#: Mopy/bash/basher/__init__.py:1007
 msgid "Has master names that will not load."
 msgstr "Possui nomes de mestre que não serão carregados."
 
-#: Mopy/bash/basher/__init__.py:1015
+#: Mopy/bash/basher/__init__.py:1016
 msgid "One or more masters are missing."
 msgstr "Um ou mais mestres estão ausentes."
 
-#: Mopy/bash/basher/__init__.py:1018
+#: Mopy/bash/basher/__init__.py:1019
 msgid "Loads before its masters."
 msgstr "Carrega antes de seus mestres."
 
-#: Mopy/bash/basher/__init__.py:1020
+#: Mopy/bash/basher/__init__.py:1021
 msgid "Masters have been re-ordered."
 msgstr "Os mestres foram reordenados."
 
-#: Mopy/bash/basher/__init__.py:1022
+#: Mopy/bash/basher/__init__.py:1023
 msgid "Active in load order."
 msgstr "Ativo na ordem de carregamento."
 
-#: Mopy/bash/basher/__init__.py:1024
+#: Mopy/bash/basher/__init__.py:1025
 msgid "Imported into Bashed Patch."
 msgstr "Importado para o Patch Consolidado."
 
-#: Mopy/bash/basher/__init__.py:1144
+#: Mopy/bash/basher/__init__.py:1145
 msgid "You can't activate the following mods:"
 msgstr "Você não pode ativar os seguintes mods:"
 
-#: Mopy/bash/basher/__init__.py:1147
+#: Mopy/bash/basher/__init__.py:1148
 msgid "You can't deactivate the following mods:"
 msgstr "Você não pode desativar os seguintes mods:"
 
-#: Mopy/bash/basher/__init__.py:1165
+#: Mopy/bash/basher/__init__.py:1166
 msgid "Unable to create new Bashed Patch: 10 Bashed Patches already exist!"
 msgstr "Não é possível criar um novo Patch Consolidado: 10 Patches Consolidados já existem!"
 
-#: Mopy/bash/basher/__init__.py:1287
+#: Mopy/bash/basher/__init__.py:1288
 msgid "File corrupted on save!"
 msgstr "Arquivo corrompido ao salvar!"
 
-#: Mopy/bash/basher/__init__.py:1334 Mopy/bash/basher/__init__.py:2195
+#: Mopy/bash/basher/__init__.py:1337 Mopy/bash/basher/__init__.py:2195
 msgid "Masters:"
 msgstr "Mestres:"
 
-#: Mopy/bash/basher/__init__.py:1381
+#: Mopy/bash/basher/__init__.py:1384
 msgid "Change this value using an interactive dialog."
 msgstr "Altere este valor usando uma caixa de diálogo interativa."
 
-#: Mopy/bash/basher/__init__.py:1398
+#: Mopy/bash/basher/__init__.py:1401
 msgid "Add bash tags to this plugin."
 msgstr "Adicionar tags bash a este plugin."
 
-#: Mopy/bash/basher/__init__.py:1402
+#: Mopy/bash/basher/__init__.py:1405
 msgid "Remove the selected tags from this plugin."
 msgstr "Remover as tags selecionadas deste plugin."
 
-#: Mopy/bash/basher/__init__.py:1409 Mopy/bash/basher/__init__.py:3334
+#: Mopy/bash/basher/__init__.py:1412 Mopy/bash/basher/__init__.py:3328
 msgid "File:"
 msgstr "Arquivo:"
 
-#: Mopy/bash/basher/__init__.py:1413
+#: Mopy/bash/basher/__init__.py:1416
 msgid "Modified:"
 msgstr "Modificado:"
 
-#: Mopy/bash/basher/__init__.py:1423
+#: Mopy/bash/basher/__init__.py:1426
 msgid "Bash Tags:"
 msgstr "Tags Bash:"
 
-#: Mopy/bash/basher/__init__.py:1475
+#: Mopy/bash/basher/__init__.py:1478
 #, python-format
 msgid "Author - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 msgstr "Autor - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 
-#: Mopy/bash/basher/__init__.py:1487
+#: Mopy/bash/basher/__init__.py:1490
 #, python-format
 msgid "Description - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 msgstr "Descrição - [%(curr_bytes)d/%(max_bytes)d bytes]:"
 
-#: Mopy/bash/basher/__init__.py:1533
+#: Mopy/bash/basher/__init__.py:1536
 #, python-format
 msgid "Invalid date \"%(unrecognized_date)s\", formatting is likely incorrect."
 msgstr "Data inválida \"%(unrecognized_date)s\", a formatação provavelmente está incorreta."
 
-#: Mopy/bash/basher/__init__.py:1555
+#: Mopy/bash/basher/__init__.py:1558
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s) and an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will become detached when the plugin is renamed."
 msgstr "Este plugin tem um BSA associado (%(assoc_bsa_name)s) e um diretório específico do nome do plugin associado (ex: %(pnd_example)s), que serão desvinculados quando o plugin for renomeado."
 
-#: Mopy/bash/basher/__init__.py:1558
+#: Mopy/bash/basher/__init__.py:1561
 msgid "Note that the BSA may also contain a plugin-name-specific directory, which would remain detached even if the archive name were adjusted."
 msgstr "Observe que o BSA também pode conter um diretório específico do nome do plugin, que permaneceria desvinculado mesmo se o nome do arquivo fosse ajustado."
 
-#: Mopy/bash/basher/__init__.py:1561
+#: Mopy/bash/basher/__init__.py:1564
 #, python-format
 msgid "This plugin has an associated BSA (%(assoc_bsa_name)s), which will become detached when the plugin is renamed."
 msgstr "Este plugin tem um BSA associado (%(assoc_bsa_name)s), que será desvinculado quando o plugin for renomeado."
 
-#: Mopy/bash/basher/__init__.py:1563
+#: Mopy/bash/basher/__init__.py:1566
 #, python-format
 msgid "Note that the BSA may contain a plugin-name-specific directory (e.g. %(pnd_example)s), which would remain detached even if the archive file name were adjusted."
 msgstr "Observe que o BSA pode conter um diretório específico do nome do plugin (ex: %(pnd_example)s), que permaneceria desvinculado mesmo se o nome do arquivo fosse ajustado."
 
-#: Mopy/bash/basher/__init__.py:1567
+#: Mopy/bash/basher/__init__.py:1570
 #, python-format
 msgid "This plugin has an associated plugin-name-specific directory (e.g. %(pnd_example)s), which will become detached when the plugin is renamed."
 msgstr "Este plugin tem um diretório específico do nome do plugin associado (ex: %(pnd_example)s), que será desvinculado quando o plugin for renomeado."
 
-#: Mopy/bash/basher/__init__.py:1580
+#: Mopy/bash/basher/__init__.py:1583
 #, python-format
 msgid "File name %(bad_file_name)s cannot be encoded to Windows-1252. %(game_name)s may not be able to activate this plugin because of this. Do you want to rename the plugin anyway?"
 msgstr "O nome do arquivo %(bad_file_name)s não pode ser codificado para Windows-1252. %(game_name)s pode não conseguir ativar este plugin por causa disso. Deseja renomear o plugin mesmo assim?"
 
-#: Mopy/bash/basher/__init__.py:1626
+#: Mopy/bash/basher/__init__.py:1629
 #, python-format
 msgid "Rename %(target_file_name)s"
 msgstr "Renomear %(target_file_name)s"
 
-#: Mopy/bash/basher/__init__.py:1673
+#: Mopy/bash/basher/__init__.py:1676
 msgid "Check a tag to add it to the plugin."
 msgstr "Marque uma tag para adicioná-la ao plugin."
 
-#: Mopy/bash/basher/__init__.py:1674
+#: Mopy/bash/basher/__init__.py:1677
 msgid "Add all shown tags to the plugin."
 msgstr "Adicionar todas as tags exibidas ao plugin."
 
-#: Mopy/bash/basher/__init__.py:1675
+#: Mopy/bash/basher/__init__.py:1678
 msgid "Remove all shown tags from the plugin."
 msgstr "Remover todas as tags exibidas do plugin."
 
-#: Mopy/bash/basher/__init__.py:1716 Mopy/bash/basher/gui_patchers.py:308
+#: Mopy/bash/basher/__init__.py:1719 Mopy/bash/basher/gui_patchers.py:308
 #: Mopy/bash/basher/settings_dialog.py:1090
 msgid "Automatic"
 msgstr "Automático"
 
-#: Mopy/bash/basher/__init__.py:1717
+#: Mopy/bash/basher/__init__.py:1720
 msgid "Use the tags from the description and masterlist/userlist."
 msgstr "Usar as tags da descrição e da lista mestre/lista do usuário."
 
-#: Mopy/bash/basher/__init__.py:1738
+#: Mopy/bash/basher/__init__.py:1741
 msgid "Copy to BashTags"
 msgstr "Copiar para BashTags"
 
-#: Mopy/bash/basher/__init__.py:1739
+#: Mopy/bash/basher/__init__.py:1742
 #, python-format
 msgid "Copies a diff between currently applied tags and description/LOOT tags to %(bashtags_path)s."
 msgstr "Copia uma diferença entre as tags aplicadas atualmente e as tags da descrição/LOOT para %(bashtags_path)s."
 
-#: Mopy/bash/basher/__init__.py:1752
+#: Mopy/bash/basher/__init__.py:1755
 msgid "Copy to Description"
 msgstr "Copiar para Descrição"
 
-#: Mopy/bash/basher/__init__.py:1753
+#: Mopy/bash/basher/__init__.py:1756
 msgid "Copies currently applied tags to the plugin description."
 msgstr "Copia as tags aplicadas atualmente para a descrição do plugin."
 
-#: Mopy/bash/basher/__init__.py:1763
+#: Mopy/bash/basher/__init__.py:1766
 msgid "Description field including the Bash Tags must be at most 511 characters. Edit the description to leave enough room."
 msgstr "O campo de descrição, incluindo as Bash Tags, deve ter no máximo 511 caracteres. Edite a descrição para deixar espaço suficiente."
 
-#: Mopy/bash/basher/__init__.py:1768 Mopy/bash/basher/belt.py:282
-#: Mopy/bash/basher/gui_fomod.py:567 Mopy/bash/basher/installer_links.py:946
-#: Mopy/bash/basher/installer_links.py:1054 Mopy/bash/gui/buttons.py:163
+#: Mopy/bash/basher/__init__.py:1771 Mopy/bash/basher/belt.py:282
+#: Mopy/bash/basher/gui_fomod.py:567 Mopy/bash/basher/installer_links.py:947
+#: Mopy/bash/basher/installer_links.py:1055 Mopy/bash/gui/buttons.py:163
 msgid "Select All"
 msgstr "Selecionar Tudo"
 
-#: Mopy/bash/basher/__init__.py:1769
+#: Mopy/bash/basher/__init__.py:1772
 msgid "Selects all currently applied tags."
 msgstr "Seleciona todas as tags aplicadas atualmente."
 
-#: Mopy/bash/basher/__init__.py:1773 Mopy/bash/basher/belt.py:289
-#: Mopy/bash/basher/gui_fomod.py:574 Mopy/bash/basher/installer_links.py:956
-#: Mopy/bash/basher/installer_links.py:1060 Mopy/bash/gui/buttons.py:171
+#: Mopy/bash/basher/__init__.py:1776 Mopy/bash/basher/belt.py:289
+#: Mopy/bash/basher/gui_fomod.py:574 Mopy/bash/basher/installer_links.py:957
+#: Mopy/bash/basher/installer_links.py:1061 Mopy/bash/gui/buttons.py:171
 msgid "Deselect All"
 msgstr "Desmarcar Tudo"
 
-#: Mopy/bash/basher/__init__.py:1774
+#: Mopy/bash/basher/__init__.py:1777
 msgid "Deselects all currently applied tags."
 msgstr "Desmarca todas as tags aplicadas atualmente."
 
-#: Mopy/bash/basher/__init__.py:1805
+#: Mopy/bash/basher/__init__.py:1808
 msgid "Edit…"
 msgstr "Editar…"
 
-#: Mopy/bash/basher/__init__.py:1893
+#: Mopy/bash/basher/__init__.py:1896
 msgid "Supported files"
 msgstr "Arquivos suportados"
 
-#: Mopy/bash/basher/__init__.py:1895
+#: Mopy/bash/basher/__init__.py:1898
 msgid "INI files"
 msgstr "Arquivos INI"
 
-#: Mopy/bash/basher/__init__.py:1896
+#: Mopy/bash/basher/__init__.py:1899
 msgid "Config files"
 msgstr "Arquivos de Configuração"
 
-#: Mopy/bash/basher/__init__.py:1897
+#: Mopy/bash/basher/__init__.py:1900
 msgid "TOML files"
 msgstr "Arquivos TOML"
 
@@ -1089,304 +1089,304 @@ msgstr "Mestres (provavelmente impreciso, passe o mouse para mais informações)
 msgid "This save has ESL masters and cannot be displayed accurately without an up-to-date cosave. Please install the latest version of %(se_name)s and create a new save to see the true master order."
 msgstr "Este salvamento tem mestres ESL e não pode ser exibido com precisão sem um cosave atualizado. Instale a versão mais recente de %(se_name)s e crie um novo salvamento para ver a ordem real dos mestres."
 
-#: Mopy/bash/basher/__init__.py:2251
+#: Mopy/bash/basher/__init__.py:2245
 #, python-format
 msgid "Saves: %(status_num)d"
 msgstr "Salvos: %(status_num)d"
 
-#: Mopy/bash/basher/__init__.py:2267
+#: Mopy/bash/basher/__init__.py:2261
 msgid "Last"
 msgstr "Último"
 
-#: Mopy/bash/basher/__init__.py:2326
+#: Mopy/bash/basher/__init__.py:2320
 msgid "Wrye Bash can't rename mixed package types."
 msgstr "O Wrye Bash não pode renomear tipos de pacotes mistos."
 
-#: Mopy/bash/basher/__init__.py:2342
+#: Mopy/bash/basher/__init__.py:2336
 msgid "Mod Archives"
 msgstr "Arquivos de Mod"
 
-#: Mopy/bash/basher/__init__.py:2370
+#: Mopy/bash/basher/__init__.py:2364
 #, python-format
 msgid "The project '%(omod_project)s' already exists. Do you want to overwrite it with '%(omod_name)s'?"
 msgstr "O projeto '%(omod_project)s' já existe. Deseja substituí-lo por '%(omod_name)s'?"
 
-#: Mopy/bash/basher/__init__.py:2393
+#: Mopy/bash/basher/__init__.py:2387
 msgid "The following OMODs were unpacked:"
 msgstr "Os seguintes OMODs foram descompactados:"
 
-#: Mopy/bash/basher/__init__.py:2394
+#: Mopy/bash/basher/__init__.py:2388
 msgid "The following OMODs were skipped:"
 msgstr "Os seguintes OMODs foram ignorados:"
 
-#: Mopy/bash/basher/__init__.py:2399
+#: Mopy/bash/basher/__init__.py:2393
 msgid "The following OMODs failed to extract:"
 msgstr "Falha ao extrair os seguintes OMODs:"
 
-#: Mopy/bash/basher/__init__.py:2401
+#: Mopy/bash/basher/__init__.py:2395
 msgid "OMOD Extraction Canceled"
 msgstr "Extração de OMOD Cancelada"
 
-#: Mopy/bash/basher/__init__.py:2403
+#: Mopy/bash/basher/__init__.py:2397
 msgid "The following OMODs failed to extract. This could be a file IO error, or an unsupported OMOD format:"
 msgstr "Falha ao extrair os seguintes OMODs. Isso pode ser um erro de E/S de arquivo ou um formato OMOD não suportado:"
 
-#: Mopy/bash/basher/__init__.py:2406
+#: Mopy/bash/basher/__init__.py:2400
 msgid "OMOD Extraction Complete"
 msgstr "Extração de OMOD Concluída"
 
-#: Mopy/bash/basher/__init__.py:2408
+#: Mopy/bash/basher/__init__.py:2402
 msgid "Refreshing…"
 msgstr "Atualizando…"
 
-#: Mopy/bash/basher/__init__.py:2413
+#: Mopy/bash/basher/__init__.py:2407
 msgid "You have dragged the following files into Wrye Bash:"
 msgstr "Você arrastou os seguintes arquivos para o Wrye Bash:"
 
-#: Mopy/bash/basher/__init__.py:2416
+#: Mopy/bash/basher/__init__.py:2410
 msgid "What would you like to do with them?"
 msgstr "O que você gostaria de fazer com eles?"
 
-#: Mopy/bash/basher/__init__.py:2430
+#: Mopy/bash/basher/__init__.py:2424
 #, python-format
 msgid "A package with the name '%(target_fname)s' already exists. Do you want to overwrite it?"
 msgstr "Um pacote com o nome '%(target_fname)s' já existe. Deseja substituí-lo?"
 
-#: Mopy/bash/basher/__init__.py:2434
+#: Mopy/bash/basher/__init__.py:2428
 msgid "Overwrite Package?"
 msgstr "Substituir Pacote?"
 
-#: Mopy/bash/basher/__init__.py:2436
+#: Mopy/bash/basher/__init__.py:2430
 #, python-format
 msgid "A BCF with the name '%(target_fname)s' already exists. Do you want to overwrite it?"
 msgstr "Um BCF com o nome '%(target_fname)s' já existe. Deseja substituí-lo?"
 
-#: Mopy/bash/basher/__init__.py:2440
+#: Mopy/bash/basher/__init__.py:2434
 msgid "Overwrite BCF?"
 msgstr "Substituir BCF?"
 
-#: Mopy/bash/basher/__init__.py:2459 Mopy/bash/basher/__init__.py:3115
+#: Mopy/bash/basher/__init__.py:2453 Mopy/bash/basher/__init__.py:3109
 msgid "Extracting OMODs…"
 msgstr "Extraindo OMODs…"
 
-#: Mopy/bash/basher/__init__.py:2495
+#: Mopy/bash/basher/__init__.py:2489
 msgid "Drag and drop in the Installer's list is only allowed when the list is sorted by install order"
 msgstr "Arrastar e soltar na lista do Instalador só é permitido quando a lista está classificada por ordem de instalação"
 
-#: Mopy/bash/basher/__init__.py:2603 Mopy/bash/basher/__init__.py:2609
+#: Mopy/bash/basher/__init__.py:2597 Mopy/bash/basher/__init__.py:2603
 msgid "Refreshing Packages…"
 msgstr "Atualizando Pacotes…"
 
-#: Mopy/bash/basher/__init__.py:2619
+#: Mopy/bash/basher/__init__.py:2613
 #, python-format
 msgid "Refreshing from %(data_folder)s…"
 msgstr "Atualizando de %(data_folder)s…"
 
-#: Mopy/bash/basher/__init__.py:2664 Mopy/bash/basher/settings_dialog.py:588
+#: Mopy/bash/basher/__init__.py:2658 Mopy/bash/basher/settings_dialog.py:588
 #: Mopy/bash/basher/settings_dialog.py:1543
 #: Mopy/bash/basher/settings_dialog.py:1566
 #: Mopy/bash/basher/settings_dialog.py:1582
 msgid "General"
 msgstr "Geral"
 
-#: Mopy/bash/basher/__init__.py:2665
+#: Mopy/bash/basher/__init__.py:2659
 msgid "Matched"
 msgstr "Correspondente"
 
-#: Mopy/bash/basher/__init__.py:2666
+#: Mopy/bash/basher/__init__.py:2660
 msgid "Missing"
 msgstr "Ausente"
 
-#: Mopy/bash/basher/__init__.py:2667
+#: Mopy/bash/basher/__init__.py:2661
 msgid "Mismatched"
 msgstr "Incompatível"
 
-#: Mopy/bash/basher/__init__.py:2668
+#: Mopy/bash/basher/__init__.py:2662
 msgid "Conflicts"
 msgstr "Conflitos"
 
-#: Mopy/bash/basher/__init__.py:2669
+#: Mopy/bash/basher/__init__.py:2663
 msgid "Underridden"
 msgstr "Substituído"
 
-#: Mopy/bash/basher/__init__.py:2670
+#: Mopy/bash/basher/__init__.py:2664
 msgid "Dirty"
 msgstr "Sujo"
 
-#: Mopy/bash/basher/__init__.py:2671
+#: Mopy/bash/basher/__init__.py:2665
 msgid "Skipped"
 msgstr "Ignorado"
 
-#: Mopy/bash/basher/__init__.py:2690
+#: Mopy/bash/basher/__init__.py:2684
 msgid "Disable the regular BAIN sub-packages and use the results of the last FOMOD installer run instead."
 msgstr "Desativar os subpacotes BAIN regulares e usar os resultados da última execução do instalador FOMOD."
 
-#: Mopy/bash/basher/__init__.py:2693 Mopy/bash/basher/__init__.py:2697
+#: Mopy/bash/basher/__init__.py:2687 Mopy/bash/basher/__init__.py:2691
 #: Mopy/bash/basher/belt.py:370
 msgid "Sub-Packages"
 msgstr "Subpacotes"
 
-#: Mopy/bash/basher/__init__.py:2694
+#: Mopy/bash/basher/__init__.py:2688
 msgid "Use the regular BAIN sub-packages."
 msgstr "Usar os subpacotes BAIN regulares."
 
-#: Mopy/bash/basher/__init__.py:2718
+#: Mopy/bash/basher/__init__.py:2712
 msgid "Plugin Filter"
 msgstr "Filtro de Plugin"
 
-#: Mopy/bash/basher/__init__.py:2725
+#: Mopy/bash/basher/__init__.py:2719
 msgid "Comments"
 msgstr "Comentários"
 
-#: Mopy/bash/basher/__init__.py:2835
+#: Mopy/bash/basher/__init__.py:2829
 #, python-format
 msgid "Type: %(package_type)s"
 msgstr "Tipo: %(package_type)s"
 
-#: Mopy/bash/basher/__init__.py:2835 Mopy/bash/basher/installer_links.py:1418
+#: Mopy/bash/basher/__init__.py:2829 Mopy/bash/basher/installer_links.py:1419
 #: Mopy/bash/patcher/patch_files.py:56
 msgid "Overview"
 msgstr "Visão Geral"
 
-#: Mopy/bash/basher/__init__.py:2844
+#: Mopy/bash/basher/__init__.py:2838
 #, python-format
 msgid "Modified: %(modified_date)s"
 msgstr "Modificado: %(modified_date)s"
 
-#: Mopy/bash/basher/__init__.py:2847
+#: Mopy/bash/basher/__init__.py:2841
 #, python-format
 msgid "Data CRC: %(data_crc)s"
 msgstr "CRC de Dados: %(data_crc)s"
 
-#: Mopy/bash/basher/__init__.py:2849
+#: Mopy/bash/basher/__init__.py:2843
 #, python-format
 msgid "Files: %(num_files)s"
 msgstr "Arquivos: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2851
+#: Mopy/bash/basher/__init__.py:2845
 #, python-format
 msgid "Configured: %(files_and_size)s"
 msgstr "Configurado: %(files_and_size)s"
 
-#: Mopy/bash/basher/__init__.py:2854
+#: Mopy/bash/basher/__init__.py:2848
 #, python-format
 msgid "Matched: %(num_files)s"
 msgstr "Correspondentes: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2856
+#: Mopy/bash/basher/__init__.py:2850
 #, python-format
 msgid "Missing: %(num_files)s"
 msgstr "Ausentes: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2858
+#: Mopy/bash/basher/__init__.py:2852
 #, python-format
 msgid "Conflicts: %(num_files)s"
 msgstr "Conflitos: %(num_files)s"
 
-#: Mopy/bash/basher/__init__.py:2862
+#: Mopy/bash/basher/__init__.py:2856
 msgid "Configured Files"
 msgstr "Arquivos Configurados"
 
-#: Mopy/bash/basher/__init__.py:2881
+#: Mopy/bash/basher/__init__.py:2875
 msgid "Skipped (Extension)"
 msgstr "Ignorado (Extensão)"
 
-#: Mopy/bash/basher/__init__.py:2883
+#: Mopy/bash/basher/__init__.py:2877
 msgid "Skipped (Dir)"
 msgstr "Ignorado (Dir)"
 
-#: Mopy/bash/basher/__init__.py:3045 Mopy/bash/basher/installers_links.py:437
+#: Mopy/bash/basher/__init__.py:3039 Mopy/bash/basher/installers_links.py:437
 msgid "Do you want to enable Installers?"
 msgstr "Deseja habilitar os Instaladores?"
 
-#: Mopy/bash/basher/__init__.py:3045 Mopy/bash/basher/installers_links.py:438
+#: Mopy/bash/basher/__init__.py:3039 Mopy/bash/basher/installers_links.py:438
 msgid "If you do, Wrye Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed."
 msgstr "Se sim, o Wrye Bash precisará primeiro inicializar alguns dados. Isso pode levar cerca de cinco minutos se houver muitos mods instalados."
 
-#: Mopy/bash/basher/__init__.py:3048
+#: Mopy/bash/basher/__init__.py:3042
 msgid "If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'."
 msgstr "Caso contrário, você pode habilitá-lo a qualquer momento clicando com o botão direito no menu do cabeçalho da coluna e selecionando 'Habilitado'."
 
-#: Mopy/bash/basher/__init__.py:3052
+#: Mopy/bash/basher/__init__.py:3046
 msgid "Enable Installers?"
 msgstr "Habilitar Instaladores?"
 
-#: Mopy/bash/basher/__init__.py:3092
+#: Mopy/bash/basher/__init__.py:3086
 msgid "Refreshing Installers…"
 msgstr "Atualizando Instaladores…"
 
-#: Mopy/bash/basher/__init__.py:3139
+#: Mopy/bash/basher/__init__.py:3133
 msgid "OMOD Extraction - Cleanup Error"
 msgstr "Extração de OMOD - Erro de Limpeza"
 
-#: Mopy/bash/basher/__init__.py:3145
+#: Mopy/bash/basher/__init__.py:3139
 msgid "Wrye Bash needs Administrator Privileges to delete OMODs that have already been extracted."
 msgstr "O Wrye Bash precisa de Privilégios de Administrador para excluir OMODs que já foram extraídos."
 
-#: Mopy/bash/basher/__init__.py:3148 Mopy/bash/basher/__init__.py:3174
+#: Mopy/bash/basher/__init__.py:3142 Mopy/bash/basher/__init__.py:3168
 #: Mopy/bash/basher/patcher_dialog.py:337 Mopy/bash/bosh/__init__.py:2998
 msgid "Try again?"
 msgstr "Tentar novamente?"
 
-#: Mopy/bash/basher/__init__.py:3171
+#: Mopy/bash/basher/__init__.py:3165
 msgid "Wrye Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory."
 msgstr "O Wrye Bash precisa de Privilégios de Administrador para mover OMODs com falha para fora do diretório Bash Installers."
 
-#: Mopy/bash/basher/__init__.py:3184
+#: Mopy/bash/basher/__init__.py:3178
 #, python-format
 msgid "Packages: %(status_num)d/%(total_status_num)d"
 msgstr "Pacotes: %(status_num)d/%(total_status_num)d"
 
-#: Mopy/bash/basher/__init__.py:3288
+#: Mopy/bash/basher/__init__.py:3282
 #, python-format
 msgid "Screenshots: %(status_num)d"
 msgstr "Capturas de Tela: %(status_num)d"
 
-#: Mopy/bash/basher/__init__.py:3352 Mopy/bash/basher/__init__.py:3354
+#: Mopy/bash/basher/__init__.py:3346 Mopy/bash/basher/__init__.py:3348
 #: Mopy/bash/basher/belt.py:381
 msgid "Notes:"
 msgstr "Notas:"
 
-#: Mopy/bash/basher/__init__.py:3375
+#: Mopy/bash/basher/__init__.py:3369
 #, python-format
 msgid "BSAs: %(status_num)d"
 msgstr "BSAs: %(status_num)d"
 
-#: Mopy/bash/basher/__init__.py:3392
+#: Mopy/bash/basher/__init__.py:3386
 #, python-format
 msgid "Show/Hide the %(tabtitle)s Tab."
 msgstr "Mostrar/Ocultar a Aba %(tabtitle)s."
 
-#: Mopy/bash/basher/__init__.py:3619
+#: Mopy/bash/basher/__init__.py:3612
 #, python-format
 msgid "It appears that you have more than 325 plugins and BSAs in your %(data_folder)s folder and auto-ghosting is disabled. This may cause problems in %(game_name)s; see the auto-ghost section of the readme for more details and consider enabling auto-ghosting."
 msgstr "Parece que você tem mais de 325 plugins e BSAs na sua pasta %(data_folder)s e o auto-ghosting está desativado. Isso pode causar problemas em %(game_name)s; consulte a seção auto-ghost do readme para mais detalhes e considere ativar o auto-ghosting."
 
-#: Mopy/bash/basher/__init__.py:3628
+#: Mopy/bash/basher/__init__.py:3621
 #, python-format
 msgid "It appears that you have more than 400 plugins and BSAs in your %(data_folder)s folder and auto-ghosting is disabled. This will cause problems in %(game_name)s; see the auto-ghost section of the readme for more details."
 msgstr "Parece que você tem mais de 400 plugins e BSAs na sua pasta %(data_folder)s e o auto-ghosting está desativado. Isso causará problemas em %(game_name)s; consulte a seção auto-ghost do readme para mais detalhes."
 
-#: Mopy/bash/basher/__init__.py:3635
+#: Mopy/bash/basher/__init__.py:3628
 msgid "Too Many Plugins."
 msgstr "Muitos Plugins."
 
-#: Mopy/bash/basher/__init__.py:3674
+#: Mopy/bash/basher/__init__.py:3667
 #, python-format
 msgid "%(wb_alt_name)s %(wb_version)s (Standalone)"
 msgstr "%(wb_alt_name)s %(wb_version)s (Autônomo)"
 
-#: Mopy/bash/basher/__init__.py:3679
+#: Mopy/bash/basher/__init__.py:3672
 #, python-format
 msgid "Wrye Bash %(wb_version)s (Standalone) for %(game_name)s"
 msgstr "Wrye Bash %(wb_version)s (Autônomo) para %(game_name)s"
 
-#: Mopy/bash/basher/__init__.py:3682
+#: Mopy/bash/basher/__init__.py:3675
 #, python-format
 msgid "Wrye Bash %(wb_version)s for %(game_name)s"
 msgstr "Wrye Bash %(wb_version)s para %(game_name)s"
 
-#: Mopy/bash/basher/__init__.py:3693 Mopy/bash/basher/saves_links.py:208
+#: Mopy/bash/basher/__init__.py:3686 Mopy/bash/basher/saves_links.py:208
 #: Mopy/bash/basher/saves_links.py:638
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:469
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:473
@@ -1407,41 +1407,41 @@ msgstr "Wrye Bash %(wb_version)s para %(game_name)s"
 msgid "Default"
 msgstr "Padrão"
 
-#: Mopy/bash/basher/__init__.py:3739
+#: Mopy/bash/basher/__init__.py:3732
 msgid "Load order has changed outside of Wrye Bash and has been reverted to the one saved in Wrye Bash. You can hit Ctrl + Z while the mods list has focus to undo this."
 msgstr "A ordem de carregamento foi alterada fora do Wrye Bash e foi revertida para a salva no Wrye Bash. Você pode pressionar Ctrl + Z enquanto a lista de mods estiver em foco para desfazer isso."
 
-#: Mopy/bash/basher/__init__.py:3743 Mopy/bash/basher/mods_links.py:421
+#: Mopy/bash/basher/__init__.py:3736 Mopy/bash/basher/mods_links.py:421
 #: Mopy/bash/basher/mods_links.py:435
 msgid "Lock Load Order"
 msgstr "Travar Ordem de Carregamento"
 
-#: Mopy/bash/basher/__init__.py:3770
+#: Mopy/bash/basher/__init__.py:3763
 #, python-format
 msgid "%(game_ini_file)s does not exist yet. %(game_name)s will create this file on first run. INI tweaks will not be usable until then."
 msgstr "%(game_ini_file)s ainda não existe. %(game_name)s criará este arquivo na primeira execução. Ajustes INI não serão utilizáveis até então."
 
-#: Mopy/bash/basher/__init__.py:3779
+#: Mopy/bash/basher/__init__.py:3772
 msgid "Please replace the INI with a default copy and restart Wrye Bash."
 msgstr "Substitua o INI por uma cópia padrão e reinicie o Wrye Bash."
 
-#: Mopy/bash/basher/__init__.py:3782
+#: Mopy/bash/basher/__init__.py:3775
 msgid "Corrupted Game INI"
 msgstr "INI do Jogo Corrompido"
 
-#: Mopy/bash/basher/__init__.py:3888
+#: Mopy/bash/basher/__init__.py:3881
 msgid "Initializing"
 msgstr "Inicializando"
 
-#: Mopy/bash/basher/__init__.py:3894
+#: Mopy/bash/basher/__init__.py:3887
 msgid "Generating Blank Bashed Patch"
 msgstr "Gerando Patch Consolidado Vazio"
 
-#: Mopy/bash/basher/__init__.py:3899
+#: Mopy/bash/basher/__init__.py:3892
 msgid "Initializing Version"
 msgstr "Inicializando Versão"
 
-#: Mopy/bash/basher/__init__.py:3907
+#: Mopy/bash/basher/__init__.py:3900
 msgid "Initializing Windows"
 msgstr "Inicializando Janelas"
 
@@ -1612,7 +1612,7 @@ msgstr "Sintaxe inválida para a declaração 'For'. Formato esperado: %(expecte
 msgid "Installer Wizard"
 msgstr "Assistente de Instalação"
 
-#: Mopy/bash/basher/belt.py:201 Mopy/bash/basher/installer_links.py:1430
+#: Mopy/bash/basher/belt.py:201 Mopy/bash/basher/installer_links.py:1431
 msgid "Options:"
 msgstr "Opções:"
 
@@ -1629,7 +1629,7 @@ msgid "Deselects all options on this page."
 msgstr "Desmarca todas as opções nesta página."
 
 #: Mopy/bash/basher/belt.py:296 Mopy/bash/basher/gui_fomod.py:581
-#: Mopy/bash/basher/installer_links.py:1066
+#: Mopy/bash/basher/installer_links.py:1067
 msgid "Toggle Selection"
 msgstr "Alternar Seleção"
 
@@ -1879,7 +1879,7 @@ msgstr "Inválido"
 msgid "This is the text color used for invalid packages."
 msgstr "Esta é a cor do texto usada para pacotes inválidos."
 
-#: Mopy/bash/basher/constants.py:80 Mopy/bash/bosh/bain.py:1446
+#: Mopy/bash/basher/constants.py:80 Mopy/bash/bosh/bain.py:1445
 msgid "Marker"
 msgstr "Marcador"
 
@@ -2278,7 +2278,7 @@ msgstr "Já existe um projeto com esse nome!"
 msgid "Pick a different name for the project and try again."
 msgstr "Escolha um nome diferente para o projeto e tente novamente."
 
-#: Mopy/bash/basher/dialogs.py:283 Mopy/bash/basher/installer_links.py:267
+#: Mopy/bash/basher/dialogs.py:283 Mopy/bash/basher/installer_links.py:268
 #: Mopy/bash/basher/installers_links.py:135
 msgid "Creating Project…"
 msgstr "Criando Projeto…"
@@ -2681,7 +2681,7 @@ msgstr "Arquivo ignorado: %(skipped_file)s. Arquivo não é válido."
 msgid "File skipped: %(skipped_file)s. File is already present."
 msgstr "Arquivo ignorado: %(skipped_file)s. Arquivo já está presente."
 
-#: Mopy/bash/basher/files_links.py:86 Mopy/bash/basher/installer_links.py:443
+#: Mopy/bash/basher/files_links.py:86 Mopy/bash/basher/installer_links.py:444
 msgid "Duplicate…"
 msgstr "Duplicar…"
 
@@ -2717,68 +2717,68 @@ msgstr "Este plugin tem um diretório específico do nome do plugin associado (e
 msgid "Duplicate as:"
 msgstr "Duplicar como:"
 
-#: Mopy/bash/basher/files_links.py:151
+#: Mopy/bash/basher/files_links.py:152
 msgid "List Masters…"
 msgstr "Listar Mestres…"
 
-#: Mopy/bash/basher/files_links.py:155
+#: Mopy/bash/basher/files_links.py:156
 #, python-format
 msgid "Copies list of %(filename)s's masters to the clipboard."
 msgstr "Copia a lista de mestres de %(filename)s para a área de transferência."
 
-#: Mopy/bash/basher/files_links.py:166
+#: Mopy/bash/basher/files_links.py:167
 msgid "Backup"
 msgstr "Backup"
 
-#: Mopy/bash/basher/files_links.py:167
+#: Mopy/bash/basher/files_links.py:168
 msgid "Creates a backup of the selected files."
 msgstr "Cria um backup dos arquivos selecionados."
 
-#: Mopy/bash/basher/files_links.py:178
+#: Mopy/bash/basher/files_links.py:179
 msgid "Revert to First Backup…"
 msgstr "Reverter para o Primeiro Backup…"
 
-#: Mopy/bash/basher/files_links.py:179
+#: Mopy/bash/basher/files_links.py:180
 msgid "Revert to Backup…"
 msgstr "Reverter para Backup…"
 
-#: Mopy/bash/basher/files_links.py:188
+#: Mopy/bash/basher/files_links.py:189
 #, python-format
 msgid "Revert %(file)s to its first backup"
 msgstr "Reverter %(file)s para seu primeiro backup"
 
-#: Mopy/bash/basher/files_links.py:188
+#: Mopy/bash/basher/files_links.py:189
 #, python-format
 msgid "Revert %(file)s to its last backup"
 msgstr "Reverter %(file)s para seu último backup"
 
-#: Mopy/bash/basher/files_links.py:210
+#: Mopy/bash/basher/files_links.py:211
 #, python-format
 msgid "Failed to revert %(target_file_name)s to backup dated %(backup_date)s. The backup file may be corrupt. Do you want to restore the original file again? 'No' keeps the reverted, possibly broken backup instead."
 msgstr "Falha ao reverter %(target_file_name)s para o backup datado de %(backup_date)s. O arquivo de backup pode estar corrompido. Deseja restaurar o arquivo original novamente? 'Não' mantém o backup revertido, possivelmente quebrado."
 
-#: Mopy/bash/basher/files_links.py:217
+#: Mopy/bash/basher/files_links.py:218
 msgid "Revert to Backup - Error"
 msgstr "Reverter para Backup - Erro"
 
-#: Mopy/bash/basher/files_links.py:226
+#: Mopy/bash/basher/files_links.py:227
 #, python-format
 msgid "Revert %(target_file_name)s to backup dated %(backup_date)s?"
 msgstr "Reverter %(target_file_name)s para o backup datado de %(backup_date)s?"
 
-#: Mopy/bash/basher/files_links.py:238
+#: Mopy/bash/basher/files_links.py:239
 msgid "Redate…"
 msgstr "Redatar…"
 
-#: Mopy/bash/basher/files_links.py:239
+#: Mopy/bash/basher/files_links.py:240
 msgid "Changes the modification times of the selected files to start at a specified date."
 msgstr "Altera os tempos de modificação dos arquivos selecionados para iniciar em uma data especificada."
 
-#: Mopy/bash/basher/files_links.py:265
+#: Mopy/bash/basher/files_links.py:266
 msgid "Jump to Source"
 msgstr "Ir para Fonte"
 
-#: Mopy/bash/basher/files_links.py:269
+#: Mopy/bash/basher/files_links.py:270
 #, python-format
 msgid "Jump to the package associated with %(filename)s. You can Alt-Click on the file to the same effect."
 msgstr "Ir para o pacote associado a %(filename)s. Você pode Alt-Clicar no arquivo para o mesmo efeito."
@@ -2840,7 +2840,7 @@ msgstr "Selecionar documento para %(target_file_name)s:"
 msgid "Rename file to:"
 msgstr "Renomear arquivo para:"
 
-#: Mopy/bash/basher/frames.py:464 Mopy/bash/basher/installer_links.py:1022
+#: Mopy/bash/basher/frames.py:464 Mopy/bash/basher/installer_links.py:1023
 msgid "Plugin List"
 msgstr "Lista de Plugins"
 
@@ -2979,7 +2979,7 @@ msgid "This option cannot be selected."
 msgstr "Esta opção não pode ser selecionada."
 
 #: Mopy/bash/basher/gui_fomod.py:327 Mopy/bash/basher/mod_links.py:424
-#: Mopy/bash/basher/settings_dialog.py:1404 Mopy/bash/bosh/__init__.py:1255
+#: Mopy/bash/basher/settings_dialog.py:1404 Mopy/bash/bosh/__init__.py:1256
 #: Mopy/bash/patcher/base.py:180 Mopy/bash/patcher/patchers/checkers.py:171
 #: Mopy/bash/patcher/patchers/mergers.py:961
 #: Mopy/bash/patcher/patchers/multitweak_settings.py:263
@@ -3588,739 +3588,739 @@ msgid "Enter '0' to use 7z's default size."
 msgstr "Digite '0' para usar o tamanho padrão do 7z."
 
 #: Mopy/bash/basher/installer_links.py:120
-#: Mopy/bash/basher/installer_links.py:491
+#: Mopy/bash/basher/installer_links.py:492
 msgid "Override Skips"
 msgstr "Substituir Ignorados"
 
-#: Mopy/bash/basher/installer_links.py:137
-#: Mopy/bash/basher/installer_links.py:436
+#: Mopy/bash/basher/installer_links.py:138
+#: Mopy/bash/basher/installer_links.py:437
 #: Mopy/bash/basher/installers_links.py:171
 msgid "Annealing…"
 msgstr "Consolidando…"
 
-#: Mopy/bash/basher/installer_links.py:140
-#: Mopy/bash/basher/installer_links.py:535
+#: Mopy/bash/basher/installer_links.py:141
+#: Mopy/bash/basher/installer_links.py:536
 msgid "Installing…"
 msgstr "Instalando…"
 
-#: Mopy/bash/basher/installer_links.py:162
+#: Mopy/bash/basher/installer_links.py:163
 msgid "View ModuleConfig…"
 msgstr "Visualizar ModuleConfig…"
 
-#: Mopy/bash/basher/installer_links.py:163
+#: Mopy/bash/basher/installer_links.py:164
 msgid "Edit ModuleConfig…"
 msgstr "Editar ModuleConfig…"
 
-#: Mopy/bash/basher/installer_links.py:167
+#: Mopy/bash/basher/installer_links.py:168
 msgid "View the ModuleConfig.xml associated with this archive."
 msgstr "Visualizar o ModuleConfig.xml associado a este arquivo."
 
-#: Mopy/bash/basher/installer_links.py:169
+#: Mopy/bash/basher/installer_links.py:170
 msgid "Edit the ModuleConfig.xml associated with this project."
 msgstr "Editar o ModuleConfig.xml associado a este projeto."
 
-#: Mopy/bash/basher/installer_links.py:203
+#: Mopy/bash/basher/installer_links.py:204
 #, python-format
 msgid "The ModuleConfig.xml file that comes with %(package_name)s has invalid syntax. Please report this to the mod author so it can be fixed properly. The BashBugDump.log in Wrye Bash's Mopy folder contains additional details, please include it in your report."
 msgstr "O arquivo ModuleConfig.xml que acompanha %(package_name)s tem sintaxe inválida. Por favor, reporte isso ao autor do mod para que possa ser corrigido adequadamente. O BashBugDump.log na pasta Mopy do Wrye Bash contém detalhes adicionais, por favor, inclua-o no seu relatório."
 
-#: Mopy/bash/basher/installer_links.py:210
+#: Mopy/bash/basher/installer_links.py:211
 msgid "Invalid FOMOD XML Syntax"
 msgstr "Sintaxe XML FOMOD Inválida"
 
-#: Mopy/bash/basher/installer_links.py:217
+#: Mopy/bash/basher/installer_links.py:218
 msgid "Run FOMOD…"
 msgstr "Executar FOMOD…"
 
-#: Mopy/bash/basher/installer_links.py:218
+#: Mopy/bash/basher/installer_links.py:219
 msgid "Run the FOMOD installer and install the output."
 msgstr "Executar o instalador FOMOD e instalar a saída."
 
-#: Mopy/bash/basher/installer_links.py:231
+#: Mopy/bash/basher/installer_links.py:232
 msgid "Capture FOMOD Output…"
 msgstr "Capturar Saída FOMOD…"
 
-#: Mopy/bash/basher/installer_links.py:232
+#: Mopy/bash/basher/installer_links.py:233
 msgid "Run the FOMOD installer and create a new project from the output."
 msgstr "Executar o instalador FOMOD e criar um novo projeto a partir da saída."
 
-#: Mopy/bash/basher/installer_links.py:242
+#: Mopy/bash/basher/installer_links.py:243
 #: Mopy/bash/basher/installers_links.py:128
 msgid "Project Name"
 msgstr "Nome do Projeto"
 
-#: Mopy/bash/basher/installer_links.py:249
+#: Mopy/bash/basher/installer_links.py:250
 msgid "Unpacking Archive…"
 msgstr "Descompactando Arquivo…"
 
-#: Mopy/bash/basher/installer_links.py:275
+#: Mopy/bash/basher/installer_links.py:276
 msgid "View Wizard…"
 msgstr "Visualizar Assistente…"
 
-#: Mopy/bash/basher/installer_links.py:276
+#: Mopy/bash/basher/installer_links.py:277
 msgid "Edit Wizard…"
 msgstr "Editar Assistente…"
 
-#: Mopy/bash/basher/installer_links.py:280
+#: Mopy/bash/basher/installer_links.py:281
 msgid "View the wizard.txt associated with this archive."
 msgstr "Visualizar o wizard.txt associado a este arquivo."
 
-#: Mopy/bash/basher/installer_links.py:282
+#: Mopy/bash/basher/installer_links.py:283
 msgid "Edit the wizard.txt associated with this project."
 msgstr "Editar o wizard.txt associado a este projeto."
 
-#: Mopy/bash/basher/installer_links.py:295
+#: Mopy/bash/basher/installer_links.py:296
 msgid "Auto Wizard…"
 msgstr "Assistente Automático…"
 
-#: Mopy/bash/basher/installer_links.py:295
+#: Mopy/bash/basher/installer_links.py:296
 msgid "Manual Wizard…"
 msgstr "Assistente Manual…"
 
-#: Mopy/bash/basher/installer_links.py:297
+#: Mopy/bash/basher/installer_links.py:298
 msgid "Run the install wizard, selecting the default options."
 msgstr "Executar o assistente de instalação, selecionando as opções padrão."
 
-#: Mopy/bash/basher/installer_links.py:298
+#: Mopy/bash/basher/installer_links.py:299
 msgid "Run the install wizard."
 msgstr "Executar o assistente de instalação."
 
-#: Mopy/bash/basher/installer_links.py:409
+#: Mopy/bash/basher/installer_links.py:410
 msgid "The following INI Tweaks were not automatically applied. Be sure to apply them after installing the package."
 msgstr "Os seguintes Ajustes INI não foram aplicados automaticamente. Certifique-se de aplicá-los após instalar o pacote."
 
-#: Mopy/bash/basher/installer_links.py:413
+#: Mopy/bash/basher/installer_links.py:414
 #, python-format
 msgid "To: %(tweak_target)s"
 msgstr "Para: %(tweak_target)s"
 
-#: Mopy/bash/basher/installer_links.py:419
+#: Mopy/bash/basher/installer_links.py:420
 msgid "Open Readme"
 msgstr "Abrir Readme"
 
-#: Mopy/bash/basher/installer_links.py:420
+#: Mopy/bash/basher/installer_links.py:421
 msgid "Open the installer's readme if BAIN can find one"
 msgstr "Abrir o readme do instalador se o BAIN puder encontrar um"
 
-#: Mopy/bash/basher/installer_links.py:431
+#: Mopy/bash/basher/installer_links.py:432
 msgid "Anneal"
 msgstr "Consolidar"
 
-#: Mopy/bash/basher/installer_links.py:432
+#: Mopy/bash/basher/installer_links.py:433
 #, python-format
 msgid "Install any missing files (for active packages) and update the contents of the %(data_folder)s folder to account for install order and configuration changes in the selected packages."
 msgstr "Instalar quaisquer arquivos ausentes (para pacotes ativos) e atualizar o conteúdo da pasta %(data_folder)s para levar em conta a ordem de instalação e as alterações de configuração nos pacotes selecionados."
 
-#: Mopy/bash/basher/installer_links.py:447
+#: Mopy/bash/basher/installer_links.py:448
 #, python-format
 msgid "Duplicate selected %(sel_pkg)s."
 msgstr "Duplicar %(sel_pkg)s selecionado(s)."
 
-#: Mopy/bash/basher/installer_links.py:458
+#: Mopy/bash/basher/installer_links.py:459
 #, python-format
 msgid "Duplicate %(target_package)s to:"
 msgstr "Duplicar %(target_package)s para:"
 
-#: Mopy/bash/basher/installer_links.py:478
+#: Mopy/bash/basher/installer_links.py:479
 msgid "Has Extra Directories"
 msgstr "Possui Diretórios Extras"
 
-#: Mopy/bash/basher/installer_links.py:479
+#: Mopy/bash/basher/installer_links.py:480
 msgid "Allow installation of files in non-standard directories."
 msgstr "Permitir a instalação de arquivos em diretórios não padrão."
 
-#: Mopy/bash/basher/installer_links.py:495
+#: Mopy/bash/basher/installer_links.py:496
 #, python-format
 msgid "Override global file type skipping for %(sel_pkg)s."
 msgstr "Substituir a omissão global de tipo de arquivo para %(sel_pkg)s."
 
-#: Mopy/bash/basher/installer_links.py:508
+#: Mopy/bash/basher/installer_links.py:509
 msgid "Don't Refresh"
 msgstr "Não Atualizar"
 
-#: Mopy/bash/basher/installer_links.py:509
+#: Mopy/bash/basher/installer_links.py:510
 msgid "Don't automatically refresh project."
 msgstr "Não atualizar automaticamente o projeto."
 
-#: Mopy/bash/basher/installer_links.py:525
+#: Mopy/bash/basher/installer_links.py:526
 msgid "Install Configured"
 msgstr "Instalar Configurado"
 
-#: Mopy/bash/basher/installer_links.py:526
+#: Mopy/bash/basher/installer_links.py:527
 msgid "Install Last"
 msgstr "Instalar por Último"
 
-#: Mopy/bash/basher/installer_links.py:527
+#: Mopy/bash/basher/installer_links.py:528
 msgid "Install Missing Files"
 msgstr "Instalar Arquivos Ausentes"
 
-#: Mopy/bash/basher/installer_links.py:528
+#: Mopy/bash/basher/installer_links.py:529
 msgid "Install all configured files from the selected packages, overwriting mismatched files."
 msgstr "Instalar todos os arquivos configurados dos pacotes selecionados, substituindo arquivos incompatíveis."
 
-#: Mopy/bash/basher/installer_links.py:530
+#: Mopy/bash/basher/installer_links.py:531
 msgid "Install all configured files from the selected packages at the last position, overwriting mismatched files."
 msgstr "Instalar todos os arquivos configurados dos pacotes selecionados na última posição, substituindo arquivos incompatíveis."
 
-#: Mopy/bash/basher/installer_links.py:533
+#: Mopy/bash/basher/installer_links.py:534
 msgid "Install all missing files from the selected packages. Never overwrites files."
 msgstr "Instalar todos os arquivos ausentes dos pacotes selecionados. Nunca substitui arquivos."
 
-#: Mopy/bash/basher/installer_links.py:564
+#: Mopy/bash/basher/installer_links.py:565
 msgid "The following INI Tweaks were created, because the existing INI was different than what BAIN installed:"
 msgstr "Os seguintes Ajustes INI foram criados, porque o INI existente era diferente do que o BAIN instalou:"
 
-#: Mopy/bash/basher/installer_links.py:579
+#: Mopy/bash/basher/installer_links.py:580
 msgid "Installed unconfigured packages"
 msgstr "Pacotes não configurados instalados"
 
-#: Mopy/bash/basher/installer_links.py:580
+#: Mopy/bash/basher/installer_links.py:581
 msgid "To remedy this, use the \"Sub-Packages\" and \"Plugin Filter\" boxes to select game data to install for the affected packages, then use \"Anneal\" to update the installation. You can also identify this problem by the white package checkbox."
 msgstr "Para remediar isso, use as caixas \"Subpacotes\" e \"Filtro de Plugin\" para selecionar dados do jogo a serem instalados para os pacotes afetados e, em seguida, use \"Consolidar\" para atualizar a instalação. Você também pode identificar este problema pela caixa de seleção branca do pacote."
 
-#: Mopy/bash/basher/installer_links.py:588
+#: Mopy/bash/basher/installer_links.py:589
 #, python-format
 msgid "The package you installed (%(sel_pkg)s) is complex, which means it has sub-packages. However, you did not activate any sub-packages for it, which is probably a mistake since it means no game data has been installed for it."
 msgstr "O pacote que você instalou (%(sel_pkg)s) é complexo, o que significa que tem subpacotes. No entanto, você não ativou nenhum subpacote para ele, o que provavelmente é um erro, pois significa que nenhum dado do jogo foi instalado para ele."
 
-#: Mopy/bash/basher/installer_links.py:595
+#: Mopy/bash/basher/installer_links.py:596
 msgid "To remedy this, use the \"Sub-Packages\" and \"Plugin Filter\" boxes to select game data to install for the affected package, then use \"Anneal\" to update the installation. You can also identify this problem by the white package checkbox."
 msgstr "Para remediar isso, use as caixas \"Subpacotes\" e \"Filtro de Plugin\" para selecionar dados do jogo a serem instalados para o pacote afetado e, em seguida, use \"Consolidar\" para atualizar a instalação. Você também pode identificar este problema pela caixa de seleção branca do pacote."
 
-#: Mopy/bash/basher/installer_links.py:601
+#: Mopy/bash/basher/installer_links.py:602
 msgid "Installed unconfigured package"
 msgstr "Pacote não configurado instalado"
 
-#: Mopy/bash/basher/installer_links.py:603
+#: Mopy/bash/basher/installer_links.py:604
 msgid "The packages you installed are complex, which means they have sub-packages. However, you did not activate any sub-packages for them, which is probably a mistake since it means no game data has been installed for them."
 msgstr "Os pacotes que você instalou são complexos, o que significa que eles têm subpacotes. No entanto, você não ativou nenhum subpacote para eles, o que provavelmente é um erro, pois significa que nenhum dado do jogo foi instalado para eles."
 
-#: Mopy/bash/basher/installer_links.py:610
+#: Mopy/bash/basher/installer_links.py:611
 msgid "One or more of the packages you installed are complex, which means they have sub-packages. However, you did not activate any sub-packages for them, which is probably a mistake since it means no game data has been installed for them."
 msgstr "Um ou mais dos pacotes que você instalou são complexos, o que significa que eles têm subpacotes. No entanto, você não ativou nenhum subpacote para eles, o que provavelmente é um erro, pois significa que nenhum dado do jogo foi instalado para eles."
 
-#: Mopy/bash/basher/installer_links.py:623
+#: Mopy/bash/basher/installer_links.py:624
 msgid "Install…"
 msgstr "Instalar…"
 
-#: Mopy/bash/basher/installer_links.py:624
+#: Mopy/bash/basher/installer_links.py:625
 msgid "Installs the selected packages, preferring a visual method if available."
 msgstr "Instala os pacotes selecionados, preferindo um método visual se disponível."
 
-#: Mopy/bash/basher/installer_links.py:655
+#: Mopy/bash/basher/installer_links.py:656
 msgid "List Structure…"
 msgstr "Listar Estrutura…"
 
-#: Mopy/bash/basher/installer_links.py:656
+#: Mopy/bash/basher/installer_links.py:657
 msgid "Displays the folder structure of the selected installer (and copies it to the system clipboard)."
 msgstr "Exibe a estrutura de pastas do instalador selecionado (e a copia para a área de transferência do sistema)."
 
-#: Mopy/bash/basher/installer_links.py:664
+#: Mopy/bash/basher/installer_links.py:665
 msgid "Package Structure"
 msgstr "Estrutura do Pacote"
 
-#: Mopy/bash/basher/installer_links.py:669
+#: Mopy/bash/basher/installer_links.py:670
 msgid "Export Achlist"
 msgstr "Exportar Achlist"
 
-#: Mopy/bash/basher/installer_links.py:671
+#: Mopy/bash/basher/installer_links.py:672
 #, python-format
 msgid "Create achlist file for use by the %(ck_name)s."
 msgstr "Criar arquivo achlist para uso pelo %(ck_name)s."
 
-#: Mopy/bash/basher/installer_links.py:692 Mopy/bash/basher/mod_links.py:269
+#: Mopy/bash/basher/installer_links.py:693 Mopy/bash/basher/mod_links.py:269
 msgid "Move To…"
 msgstr "Mover Para…"
 
-#: Mopy/bash/basher/installer_links.py:693
+#: Mopy/bash/basher/installer_links.py:694
 msgid "Move the selected packages to a position of your choice."
 msgstr "Mover os pacotes selecionados para uma posição de sua escolha."
 
-#: Mopy/bash/basher/installer_links.py:700
+#: Mopy/bash/basher/installer_links.py:701
 msgid "Move selected packages to what position?"
 msgstr "Mover pacotes selecionados para qual posição?"
 
-#: Mopy/bash/basher/installer_links.py:701
+#: Mopy/bash/basher/installer_links.py:702
 #, python-format
 msgid "Last: %(last_key)s; First of Last: %(first_of_last_key)s; Semi-Last: %(semi_last_key)s."
 msgstr "Último: %(last_key)s; Primeiro do Último: %(first_of_last_key)s; Penúltimo: %(semi_last_key)s."
 
-#: Mopy/bash/basher/installer_links.py:750
+#: Mopy/bash/basher/installer_links.py:751
 #, python-format
 msgid "Opens this mod's page at the %(nexusName)s."
 msgstr "Abre a página deste mod no %(nexusName)s."
 
-#: Mopy/bash/basher/installer_links.py:753
+#: Mopy/bash/basher/installer_links.py:754
 #, python-format
 msgid "Attempt to open this as a mod at %(nexusName)s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %(nexusName)s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %(nexusName)s."
 msgstr "Tentar abrir isso como um mod no %(nexusName)s? Isso assume que os dígitos finais no nome do pacote são, na verdade, o número de ID do mod no %(nexusName)s. Se essa suposição estiver errada, você obterá apenas uma página de mod aleatória (ou aviso de erro) no %(nexusName)s."
 
-#: Mopy/bash/basher/installer_links.py:759
+#: Mopy/bash/basher/installer_links.py:760
 #, python-format
 msgid "Open at %(nexusName)s"
 msgstr "Abrir no %(nexusName)s"
 
-#: Mopy/bash/basher/installer_links.py:769
+#: Mopy/bash/basher/installer_links.py:770
 msgid "Searches for this mod's title on Google."
 msgstr "Procura o título deste mod no Google."
 
-#: Mopy/bash/basher/installer_links.py:771
+#: Mopy/bash/basher/installer_links.py:772
 msgid "Open a search for this on Google?"
 msgstr "Abrir uma busca por isso no Google?"
 
-#: Mopy/bash/basher/installer_links.py:772
+#: Mopy/bash/basher/installer_links.py:773
 msgid "Open at Google"
 msgstr "Abrir no Google"
 
-#: Mopy/bash/basher/installer_links.py:795
+#: Mopy/bash/basher/installer_links.py:796
 msgid "Opens this mod's page at TES Alliance."
 msgstr "Abre a página deste mod no TES Alliance."
 
-#: Mopy/bash/basher/installer_links.py:797
+#: Mopy/bash/basher/installer_links.py:798
 msgid "Attempt to open this as a mod at TES Alliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Alliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Alliance."
 msgstr "Tentar abrir isso como um mod no TES Alliance? Isso assume que os dígitos finais no nome do pacote são, na verdade, o número de ID do mod no TES Alliance. Se essa suposição estiver errada, você obterá apenas uma página de mod aleatória (ou aviso de erro) no TES Alliance."
 
-#: Mopy/bash/basher/installer_links.py:803
+#: Mopy/bash/basher/installer_links.py:804
 msgid "Open at TES Alliance"
 msgstr "Abrir no TES Alliance"
 
-#: Mopy/bash/basher/installer_links.py:811 Mopy/bash/basher/mod_links.py:568
+#: Mopy/bash/basher/installer_links.py:812 Mopy/bash/basher/mod_links.py:568
 msgid "Refresh"
 msgstr "Atualizar"
 
-#: Mopy/bash/basher/installer_links.py:812
+#: Mopy/bash/basher/installer_links.py:813
 msgid "Rescan selected packages. Ignores \"Don't Refresh\" flag on projects. Will forcibly recalculate the CRCs of all files in any selected projects."
 msgstr "Reescanear pacotes selecionados. Ignora a flag \"Não Atualizar\" em projetos. Recalculará forçadamente os CRCs de todos os arquivos em quaisquer projetos selecionados."
 
-#: Mopy/bash/basher/installer_links.py:826
+#: Mopy/bash/basher/installer_links.py:827
 msgid "Quick Refresh"
 msgstr "Atualização Rápida"
 
-#: Mopy/bash/basher/installer_links.py:827
+#: Mopy/bash/basher/installer_links.py:828
 msgid "Rescan selected packages. Ignores \"Don't Refresh\" flag on projects."
 msgstr "Reescanear pacotes selecionados. Ignora a flag \"Não Atualizar\" em projetos."
 
-#: Mopy/bash/basher/installer_links.py:833
+#: Mopy/bash/basher/installer_links.py:834
 msgid "Skip Voices"
 msgstr "Ignorar Vozes"
 
-#: Mopy/bash/basher/installer_links.py:837
+#: Mopy/bash/basher/installer_links.py:838
 #, python-format
 msgid "Skip over any voice files in %(sel_pkg)s"
 msgstr "Ignorar quaisquer arquivos de voz em %(sel_pkg)s"
 
-#: Mopy/bash/basher/installer_links.py:848
+#: Mopy/bash/basher/installer_links.py:849
 msgid "Uninstall"
 msgstr "Desinstalar"
 
-#: Mopy/bash/basher/installer_links.py:849
+#: Mopy/bash/basher/installer_links.py:850
 #, python-format
 msgid "Uninstall the selected packages, removing all their matched files from the %(data_folder)s folder."
 msgstr "Desinstalar os pacotes selecionados, removendo todos os seus arquivos correspondentes da pasta %(data_folder)s."
 
-#: Mopy/bash/basher/installer_links.py:852
+#: Mopy/bash/basher/installer_links.py:853
 #: Mopy/bash/basher/installers_links.py:182
 msgid "Uninstalling…"
 msgstr "Desinstalando…"
 
-#: Mopy/bash/basher/installer_links.py:859
+#: Mopy/bash/basher/installer_links.py:860
 msgid "Copy Conflicts to Project"
 msgstr "Copiar Conflitos para Projeto"
 
-#: Mopy/bash/basher/installer_links.py:860
+#: Mopy/bash/basher/installer_links.py:861
 msgid "Copy all files that conflict with the selected package into a new project. Conflicts with inactive packages are included."
 msgstr "Copiar todos os arquivos que conflitam com o pacote selecionado para um novo projeto. Conflitos com pacotes inativos são incluídos."
 
-#: Mopy/bash/basher/installer_links.py:871
+#: Mopy/bash/basher/installer_links.py:872
 #, python-format
 msgid "No files to install for %(sel_pkg)s."
 msgstr "Nenhum arquivo para instalar para %(sel_pkg)s."
 
-#: Mopy/bash/basher/installer_links.py:875
-#: Mopy/bash/basher/installer_links.py:881 Mopy/bash/bosh/bain.py:1997
-#: Mopy/bash/bosh/bain.py:2253
+#: Mopy/bash/basher/installer_links.py:876
+#: Mopy/bash/basher/installer_links.py:882 Mopy/bash/bosh/bain.py:1996
+#: Mopy/bash/bosh/bain.py:2252
 msgid "Scanning Packages…"
 msgstr "Escaneando Pacotes…"
 
-#: Mopy/bash/basher/installer_links.py:895
+#: Mopy/bash/basher/installer_links.py:896
 #, python-format
 msgid "No conflicts detected for %(sel_pkg)s"
 msgstr "Nenhum conflito detectado para %(sel_pkg)s"
 
-#: Mopy/bash/basher/installer_links.py:906
+#: Mopy/bash/basher/installer_links.py:907
 msgid "Copying files…"
 msgstr "Copiando arquivos…"
 
-#: Mopy/bash/basher/installer_links.py:918
+#: Mopy/bash/basher/installer_links.py:919
 msgid "Copying Conflicts…"
 msgstr "Copiando Conflitos…"
 
-#: Mopy/bash/basher/installer_links.py:947
+#: Mopy/bash/basher/installer_links.py:948
 msgid "Selects all plugin files in the selected sub-packages."
 msgstr "Seleciona todos os arquivos de plugin nos subpacotes selecionados."
 
-#: Mopy/bash/basher/installer_links.py:957
+#: Mopy/bash/basher/installer_links.py:958
 msgid "Deselects all plugin files in the selected sub-packages."
 msgstr "Desmarca todos os arquivos de plugin nos subpacotes selecionados."
 
-#: Mopy/bash/basher/installer_links.py:967
+#: Mopy/bash/basher/installer_links.py:968
 msgid "Changes the name under which this plugin will be installed."
 msgstr "Altera o nome sob o qual este plugin será instalado."
 
-#: Mopy/bash/basher/installer_links.py:973
+#: Mopy/bash/basher/installer_links.py:974
 msgid "Enter new name (without the extension):"
 msgstr "Digite o novo nome (sem a extensão):"
 
-#: Mopy/bash/basher/installer_links.py:974
+#: Mopy/bash/basher/installer_links.py:975
 msgid "Rename Plugin"
 msgstr "Renomear Plugin"
 
-#: Mopy/bash/basher/installer_links.py:984
+#: Mopy/bash/basher/installer_links.py:985
 msgid "Reset Name"
 msgstr "Redefinir Nome"
 
-#: Mopy/bash/basher/installer_links.py:985
+#: Mopy/bash/basher/installer_links.py:986
 msgid "Resets the name under which this plugin will be installed back to its default name."
 msgstr "Redefine o nome sob o qual este plugin será instalado de volta ao seu nome padrão."
 
-#: Mopy/bash/basher/installer_links.py:999
+#: Mopy/bash/basher/installer_links.py:1000
 msgid "Reset All Names"
 msgstr "Redefinir Todos os Nomes"
 
-#: Mopy/bash/basher/installer_links.py:1000
+#: Mopy/bash/basher/installer_links.py:1001
 msgid "Resets all plugins with changed names back to their default ones."
 msgstr "Redefine todos os plugins com nomes alterados de volta aos seus padrões."
 
-#: Mopy/bash/basher/installer_links.py:1009
+#: Mopy/bash/basher/installer_links.py:1010
 msgid "List Plugins"
 msgstr "Listar Plugins"
 
-#: Mopy/bash/basher/installer_links.py:1010
+#: Mopy/bash/basher/installer_links.py:1011
 msgid "Displays a list of all plugin files in the selected sub-packages (and copies it to the system clipboard)."
 msgstr "Exibe uma lista de todos os arquivos de plugin nos subpacotes selecionados (e a copia para a área de transferência do sistema)."
 
-#: Mopy/bash/basher/installer_links.py:1014
+#: Mopy/bash/basher/installer_links.py:1015
 #, python-format
 msgid "Plugin List for %(sel_pkg)s:"
 msgstr "Lista de Plugins para %(sel_pkg)s:"
 
-#: Mopy/bash/basher/installer_links.py:1026
+#: Mopy/bash/basher/installer_links.py:1027
 msgid "Jump to Plugin"
 msgstr "Ir para Plugin"
 
-#: Mopy/bash/basher/installer_links.py:1027
+#: Mopy/bash/basher/installer_links.py:1028
 msgid "Jumps to this plugin on the Mods tab. You can double-click on this plugin to the same effect."
 msgstr "Salta para este plugin na aba Mods. Você pode clicar duas vezes neste plugin para o mesmo efeito."
 
-#: Mopy/bash/basher/installer_links.py:1055
+#: Mopy/bash/basher/installer_links.py:1056
 msgid "Selects all sub-packages in this installer."
 msgstr "Seleciona todos os subpacotes neste instalador."
 
-#: Mopy/bash/basher/installer_links.py:1061
+#: Mopy/bash/basher/installer_links.py:1062
 msgid "Deselects all sub-packages in this installer."
 msgstr "Desmarca todos os subpacotes neste instalador."
 
-#: Mopy/bash/basher/installer_links.py:1067
+#: Mopy/bash/basher/installer_links.py:1068
 msgid "Deselects all selected sub-packages and vice versa."
 msgstr "Desmarca todos os subpacotes selecionados e vice-versa."
 
-#: Mopy/bash/basher/installer_links.py:1079
+#: Mopy/bash/basher/installer_links.py:1080
 msgid "List Sub-Packages"
 msgstr "Listar Subpacotes"
 
-#: Mopy/bash/basher/installer_links.py:1080
+#: Mopy/bash/basher/installer_links.py:1081
 msgid "Displays a list of all sub-packages in this package (and copies it to the system clipboard)."
 msgstr "Exibe uma lista de todos os subpacotes neste pacote (e a copia para a área de transferência do sistema)."
 
-#: Mopy/bash/basher/installer_links.py:1084
+#: Mopy/bash/basher/installer_links.py:1085
 #, python-format
 msgid "Sub-Packages List for %(sel_pkg)s:"
 msgstr "Lista de Subpacotes para %(sel_pkg)s:"
 
-#: Mopy/bash/basher/installer_links.py:1092
+#: Mopy/bash/basher/installer_links.py:1093
 msgid "Sub-Package List"
 msgstr "Lista de Subpacotes"
 
-#: Mopy/bash/basher/installer_links.py:1099
+#: Mopy/bash/basher/installer_links.py:1100
 msgid "Unpack to Project…"
 msgstr "Descompactar para Projeto…"
 
-#: Mopy/bash/basher/installer_links.py:1100
+#: Mopy/bash/basher/installer_links.py:1101
 msgid "Unpack the selected archives, creating project copies from them."
 msgstr "Descompactar os arquivos selecionados, criando cópias de projeto a partir deles."
 
-#: Mopy/bash/basher/installer_links.py:1111
+#: Mopy/bash/basher/installer_links.py:1112
 #, python-format
 msgid "Name the project that %(target_archive)s should get unpacked into:"
 msgstr "Nomeie o projeto para o qual %(target_archive)s deve ser descompactado:"
 
-#: Mopy/bash/basher/installer_links.py:1117
+#: Mopy/bash/basher/installer_links.py:1118
 #, python-format
 msgid "%(target_proj)s already exists. Overwrite it?"
 msgstr "%(target_proj)s já existe. Substituí-lo?"
 
-#: Mopy/bash/basher/installer_links.py:1124
+#: Mopy/bash/basher/installer_links.py:1125
 msgid "Unpacking to project…"
 msgstr "Descompactando para projeto…"
 
-#: Mopy/bash/basher/installer_links.py:1144
+#: Mopy/bash/basher/installer_links.py:1145
 msgid "OMOD Info…"
 msgstr "Informações OMOD…"
 
-#: Mopy/bash/basher/installer_links.py:1145
+#: Mopy/bash/basher/installer_links.py:1146
 msgid "Projects only. Allows you to read/write OMOD configuration info."
 msgstr "Apenas projetos. Permite ler/escrever informações de configuração OMOD."
 
-#: Mopy/bash/basher/installer_links.py:1154
+#: Mopy/bash/basher/installer_links.py:1155
 msgid "Sync From Data…"
 msgstr "Sincronizar a Partir dos Dados…"
 
-#: Mopy/bash/basher/installer_links.py:1155
+#: Mopy/bash/basher/installer_links.py:1156
 #, python-format
 msgid "Synchronize a package with files from the %(data_folder)s folder."
 msgstr "Sincronizar um pacote com arquivos da pasta %(data_folder)s."
 
-#: Mopy/bash/basher/installer_links.py:1165
+#: Mopy/bash/basher/installer_links.py:1166
 msgid ".rar files cannot be modified. Wrye Bash can however repack them to .7z files, which can then be modified."
 msgstr "Arquivos .rar não podem ser modificados. O Wrye Bash pode, no entanto, reempacotá-los para arquivos .7z, que podem então ser modificados."
 
-#: Mopy/bash/basher/installer_links.py:1167
+#: Mopy/bash/basher/installer_links.py:1168
 msgid "Note that doing this will leave the old .rar file behind, so you may want to manually delete it afterwards."
 msgstr "Observe que fazer isso deixará o arquivo .rar antigo para trás, então você pode querer excluí-lo manualmente depois."
 
-#: Mopy/bash/basher/installer_links.py:1169
+#: Mopy/bash/basher/installer_links.py:1170
 msgid "Click 'Yes' to repack, or 'No' to abort the sync."
 msgstr "Clique em 'Sim' para reempacotar, ou 'Não' para abortar a sincronização."
 
-#: Mopy/bash/basher/installer_links.py:1180
+#: Mopy/bash/basher/installer_links.py:1181
 msgid "Updating files."
 msgstr "Atualizando arquivos."
 
-#: Mopy/bash/basher/installer_links.py:1187
+#: Mopy/bash/basher/installer_links.py:1188
 #, python-format
 msgid "Something went wrong when updating %(target_package)s."
 msgstr "Algo deu errado ao atualizar %(target_package)s."
 
-#: Mopy/bash/basher/installer_links.py:1189
+#: Mopy/bash/basher/installer_links.py:1190
 #, python-format
 msgid "Deleted %(act_deleted)d files, expected to delete %(exp_deleted)d files."
 msgstr "Excluídos %(act_deleted)d arquivos, esperado excluir %(exp_deleted)d arquivos."
 
-#: Mopy/bash/basher/installer_links.py:1191
+#: Mopy/bash/basher/installer_links.py:1192
 #, python-format
 msgid "Updated %(act_updated)d files, expected to update %(exp_updated)d files."
 msgstr "Atualizados %(act_updated)d arquivos, esperado atualizar %(exp_updated)d arquivos."
 
-#: Mopy/bash/basher/installer_links.py:1193
+#: Mopy/bash/basher/installer_links.py:1194
 #, python-format
 msgid "Check the integrity of %(target_package)s."
 msgstr "Verifique a integridade de %(target_package)s."
 
-#: Mopy/bash/basher/installer_links.py:1216
+#: Mopy/bash/basher/installer_links.py:1217
 msgid "Pack to Archive…"
 msgstr "Empacotar para Arquivo…"
 
-#: Mopy/bash/basher/installer_links.py:1217
+#: Mopy/bash/basher/installer_links.py:1218
 msgid "Pack this project, creating a copy of it as an archive."
 msgstr "Empacotar este projeto, criando uma cópia dele como um arquivo."
 
-#: Mopy/bash/basher/installer_links.py:1225
+#: Mopy/bash/basher/installer_links.py:1226
 #, python-format
 msgid "Name the archive that %(sel_proj)s should get packed into:"
 msgstr "Nomeie o arquivo para o qual %(sel_proj)s deve ser empacotado:"
 
-#: Mopy/bash/basher/installer_links.py:1236
+#: Mopy/bash/basher/installer_links.py:1237
 #, python-format
 msgid "Use solid compression for %(new_archive)s?"
 msgstr "Usar compressão sólida para %(new_archive)s?"
 
-#: Mopy/bash/basher/installer_links.py:1243
+#: Mopy/bash/basher/installer_links.py:1244
 msgid "Packing to archive…"
 msgstr "Empacotando para arquivo…"
 
-#: Mopy/bash/basher/installer_links.py:1257
+#: Mopy/bash/basher/installer_links.py:1258
 msgid "Package for Release…"
 msgstr "Pacote para Lançamento…"
 
-#: Mopy/bash/basher/installer_links.py:1258
+#: Mopy/bash/basher/installer_links.py:1259
 msgid "Pack this project for release, creating a copy of it as an archive. Does not package development files."
 msgstr "Empacotar este projeto para lançamento, criando uma cópia dele como um arquivo. Não empacota arquivos de desenvolvimento."
 
-#: Mopy/bash/basher/installer_links.py:1278
+#: Mopy/bash/basher/installer_links.py:1279
 msgid "Installers with identical content selected:"
 msgstr "Instaladores com conteúdo idêntico selecionados:"
 
-#: Mopy/bash/basher/installer_links.py:1281
+#: Mopy/bash/basher/installer_links.py:1282
 msgid "Identical installers content"
 msgstr "Conteúdo idêntico de instaladores"
 
-#: Mopy/bash/basher/installer_links.py:1287
-#: Mopy/bash/basher/installer_links.py:1340
+#: Mopy/bash/basher/installer_links.py:1288
+#: Mopy/bash/basher/installer_links.py:1341
 msgid "Apply BCF…"
 msgstr "Aplicar BCF…"
 
-#: Mopy/bash/basher/installer_links.py:1300
+#: Mopy/bash/basher/installer_links.py:1301
 #, python-format
 msgid "Applies %(bcf_name)s to the selected packages."
 msgstr "Aplica %(bcf_name)s aos pacotes selecionados."
 
-#: Mopy/bash/basher/installer_links.py:1305
+#: Mopy/bash/basher/installer_links.py:1306
 msgid "Please only select the packages this BCF was made for."
 msgstr "Selecione apenas os pacotes para os quais este BCF foi feito."
 
-#: Mopy/bash/basher/installer_links.py:1314
+#: Mopy/bash/basher/installer_links.py:1315
 msgid "Using:"
 msgstr "Usando:"
 
-#: Mopy/bash/basher/installer_links.py:1320
+#: Mopy/bash/basher/installer_links.py:1321
 msgid "Converting to Archive…"
 msgstr "Convertendo para Arquivo…"
 
-#: Mopy/bash/basher/installer_links.py:1322
+#: Mopy/bash/basher/installer_links.py:1323
 #, python-format
 msgid "%(dest_archive)s: An error occurred while applying a BCF. This can occur if the BCF is applied to an already BCF-converted archive. More details about the error follow:"
 msgstr "%(dest_archive)s: Ocorreu um erro ao aplicar um BCF. Isso pode ocorrer se o BCF for aplicado a um arquivo já convertido por BCF. Mais detalhes sobre o erro seguem:"
 
-#: Mopy/bash/basher/installer_links.py:1337
+#: Mopy/bash/basher/installer_links.py:1338
 msgid "Embedded BCF"
 msgstr "BCF Embutido"
 
-#: Mopy/bash/basher/installer_links.py:1338
+#: Mopy/bash/basher/installer_links.py:1339
 msgid "Applies the BAIN conversion files (BCFs) embedded in the selected packages."
 msgstr "Aplica os arquivos de conversão BAIN (BCFs) embutidos nos pacotes selecionados."
 
-#: Mopy/bash/basher/installer_links.py:1346
+#: Mopy/bash/basher/installer_links.py:1347
 msgid "Output file:"
 msgstr "Arquivo de saída:"
 
-#: Mopy/bash/basher/installer_links.py:1348
+#: Mopy/bash/basher/installer_links.py:1349
 msgid "Extracting BCF…"
 msgstr "Extraindo BCF…"
 
-#: Mopy/bash/basher/installer_links.py:1356
+#: Mopy/bash/basher/installer_links.py:1357
 msgid "Create…"
 msgstr "Criar…"
 
-#: Mopy/bash/basher/installer_links.py:1357
+#: Mopy/bash/basher/installer_links.py:1358
 msgid "Creates a new BAIN conversion file (BCF)."
 msgstr "Cria um novo arquivo de conversão BAIN (BCF)."
 
-#: Mopy/bash/basher/installer_links.py:1358
+#: Mopy/bash/basher/installer_links.py:1359
 msgid "Create BCF…"
 msgstr "Criar BCF…"
 
-#: Mopy/bash/basher/installer_links.py:1362
+#: Mopy/bash/basher/installer_links.py:1363
 msgid "Please only select installers that are needed."
 msgstr "Selecione apenas os instaladores necessários."
 
-#: Mopy/bash/basher/installer_links.py:1369
+#: Mopy/bash/basher/installer_links.py:1370
 msgid "Select the BAIN'ed Archive:"
 msgstr "Selecione o Arquivo BAIN'ed:"
 
-#: Mopy/bash/basher/installer_links.py:1375
+#: Mopy/bash/basher/installer_links.py:1376
 #, python-format
 msgid "%(arcname)s is not a valid archive name."
 msgstr "%(arcname)s não é um nome de arquivo válido."
 
-#: Mopy/bash/basher/installer_links.py:1379
+#: Mopy/bash/basher/installer_links.py:1380
 #, python-format
 msgid "%(arcname)s must be in the Bash Installers directory."
 msgstr "%(arcname)s deve estar no diretório Bash Installers."
 
-#: Mopy/bash/basher/installer_links.py:1385
+#: Mopy/bash/basher/installer_links.py:1386
 msgid "Convert:"
 msgstr "Converter:"
 
-#: Mopy/bash/basher/installer_links.py:1387
+#: Mopy/bash/basher/installer_links.py:1388
 msgid "To:"
 msgstr "Para:"
 
-#: Mopy/bash/basher/installer_links.py:1406
+#: Mopy/bash/basher/installer_links.py:1407
 #, python-format
 msgid "Creating %(bcf_name)s…"
 msgstr "Criando %(bcf_name)s…"
 
-#: Mopy/bash/basher/installer_links.py:1414
+#: Mopy/bash/basher/installer_links.py:1415
 msgid "Refreshing Converters…"
 msgstr "Atualizando Conversores…"
 
-#: Mopy/bash/basher/installer_links.py:1420
+#: Mopy/bash/basher/installer_links.py:1421
 #, python-format
 msgid "Name: %(bcf_name)s"
 msgstr "Nome: %(bcf_name)s"
 
-#: Mopy/bash/basher/installer_links.py:1421
+#: Mopy/bash/basher/installer_links.py:1422
 #, python-format
 msgid "Size: %(total_bcf_size)s"
 msgstr "Tamanho: %(total_bcf_size)s"
 
-#: Mopy/bash/basher/installer_links.py:1423
+#: Mopy/bash/basher/installer_links.py:1424
 #, python-format
 msgid "Remapped: %(num_remapped)d files"
 msgstr "Remapeados: %(num_remapped)d arquivos"
 
-#: Mopy/bash/basher/installer_links.py:1425
+#: Mopy/bash/basher/installer_links.py:1426
 #, python-format
 msgid "Requires: %(num_required)d files"
 msgstr "Requer: %(num_required)d arquivos"
 
-#: Mopy/bash/basher/installer_links.py:1431
+#: Mopy/bash/basher/installer_links.py:1432
 #, python-format
 msgid "Skip Voices: %(skip_voices)s"
 msgstr "Pular Vozes: %(skip_voices)s"
 
-#: Mopy/bash/basher/installer_links.py:1433
+#: Mopy/bash/basher/installer_links.py:1434
 #, python-format
 msgid "Solid Archive: %(solid_archive)s"
 msgstr "Arquivo Sólido: %(solid_archive)s"
 
-#: Mopy/bash/basher/installer_links.py:1437
+#: Mopy/bash/basher/installer_links.py:1438
 #, python-format
 msgid "Solid Block Size: %(block_size)s"
 msgstr "Tamanho do Bloco Sólido: %(block_size)s"
 
-#: Mopy/bash/basher/installer_links.py:1440
+#: Mopy/bash/basher/installer_links.py:1441
 msgid "Solid Block Size: 7z Default"
 msgstr "Tamanho do Bloco Sólido: Padrão 7z"
 
-#: Mopy/bash/basher/installer_links.py:1441
+#: Mopy/bash/basher/installer_links.py:1442
 #, python-format
 msgid "Has Comments: %(has_comments)s"
 msgstr "Tem Comentários: %(has_comments)s"
 
-#: Mopy/bash/basher/installer_links.py:1443
+#: Mopy/bash/basher/installer_links.py:1444
 #, python-format
 msgid "Has Extra Directories: %(has_extra_dirs)s"
 msgstr "Tem Diretórios Extras: %(has_extra_dirs)s"
 
-#: Mopy/bash/basher/installer_links.py:1445
+#: Mopy/bash/basher/installer_links.py:1446
 #, python-format
 msgid "Has Unselected Plugins: %(has_unsel_plugins)s"
 msgstr "Tem Plugins Não Selecionados: %(has_unsel_plugins)s"
 
-#: Mopy/bash/basher/installer_links.py:1447
+#: Mopy/bash/basher/installer_links.py:1448
 #, python-format
 msgid "Has Selected Packages: %(has_sel_packages)s"
 msgstr "Tem Pacotes Selecionados: %(has_sel_packages)s"
 
-#: Mopy/bash/basher/installer_links.py:1449
+#: Mopy/bash/basher/installer_links.py:1450
 #, python-format
 msgid "Contains %(num_contained_files)d files:"
 msgstr "Contém %(num_contained_files)d arquivos:"
 
-#: Mopy/bash/basher/installer_links.py:1453
+#: Mopy/bash/basher/installer_links.py:1454
 msgid "BCF Information"
 msgstr "Informações do BCF"
 
-#: Mopy/bash/basher/installer_links.py:1460
+#: Mopy/bash/basher/installer_links.py:1461
 msgid "Apply.."
 msgstr "Aplicar.."
 
-#: Mopy/bash/basher/installer_links.py:1506
+#: Mopy/bash/basher/installer_links.py:1507
 msgid "Archive.."
 msgstr "Arquivo.."
 
-#: Mopy/bash/basher/installer_links.py:1511
+#: Mopy/bash/basher/installer_links.py:1512
 msgid "Project.."
 msgstr "Projeto.."
 
@@ -5758,7 +5758,7 @@ msgstr "Modifica os valores de neblina em células interiores para evitar o bug 
 msgid "Apply Nvidia fog fix. This modifies fog values in interior cells to avoid the Nvidia black screen bug."
 msgstr "Aplica a correção de neblina da Nvidia. Isso modifica os valores de neblina em células interiores para evitar o bug da tela preta da Nvidia."
 
-#: Mopy/bash/basher/mod_links.py:1361 Mopy/bash/basher/saves_links.py:923
+#: Mopy/bash/basher/mod_links.py:1361 Mopy/bash/basher/saves_links.py:922
 #, python-format
 msgid "Scanning %(scanning_plugin)s"
 msgstr "Verificando %(scanning_plugin)s"
@@ -6941,7 +6941,7 @@ msgstr "Conquista Desbloqueada: Modaholic!"
 msgid "Failed to split the Bashed Patch. The simple algorithm used for splitting it right now cannot handle the situation we have encountered here. Please post to the Wrye Bash Discord (including your BashBugDump)."
 msgstr "Falha ao dividir o Bashed Patch. O algoritmo simples usado para dividi-lo agora não consegue lidar com a situação que encontramos aqui. Por favor, poste no Discord do Wrye Bash (incluindo seu BashBugDump)."
 
-#: Mopy/bash/basher/patcher_dialog.py:233 Mopy/bash/basher/saves_links.py:890
+#: Mopy/bash/basher/patcher_dialog.py:233 Mopy/bash/basher/saves_links.py:889
 msgid "Saving…"
 msgstr "Salvando…"
 
@@ -7269,220 +7269,220 @@ msgstr "Copia os saves selecionados para %(save_profile)s."
 msgid "You can't move saves to the current profile!"
 msgstr "Você não pode mover saves para o perfil atual!"
 
-#: Mopy/bash/basher/saves_links.py:672
+#: Mopy/bash/basher/saves_links.py:671
 #, python-format
 msgid "%(num_save_files)d files copied to %(save_profile)s."
 msgstr "%(num_save_files)d arquivos copiados para %(save_profile)s."
 
-#: Mopy/bash/basher/saves_links.py:674
+#: Mopy/bash/basher/saves_links.py:673
 #, python-format
 msgid "%(num_save_files)d files moved to %(save_profile)s."
 msgstr "%(num_save_files)d arquivos movidos para %(save_profile)s."
 
-#: Mopy/bash/basher/saves_links.py:677
+#: Mopy/bash/basher/saves_links.py:676
 msgid "Saves Copied"
 msgstr "Saves Copiados"
 
-#: Mopy/bash/basher/saves_links.py:677
+#: Mopy/bash/basher/saves_links.py:676
 msgid "Saves Moved"
 msgstr "Saves Movidos"
 
-#: Mopy/bash/basher/saves_links.py:690
+#: Mopy/bash/basher/saves_links.py:689
 #, python-format
 msgid "A file named %(conflicting_save)s already exists in %(save_profile)s. Overwrite it?"
 msgstr "Um arquivo chamado %(conflicting_save)s já existe em %(save_profile)s. Sobrescrevê-lo?"
 
-#: Mopy/bash/basher/saves_links.py:694
+#: Mopy/bash/basher/saves_links.py:693
 msgid "Move File"
 msgstr "Mover Arquivo"
 
-#: Mopy/bash/basher/saves_links.py:713 Mopy/bash/basher/saves_links.py:734
+#: Mopy/bash/basher/saves_links.py:712 Mopy/bash/basher/saves_links.py:733
 msgid "Repair Abomb"
 msgstr "Reparar Abomb"
 
-#: Mopy/bash/basher/saves_links.py:714
+#: Mopy/bash/basher/saves_links.py:713
 msgid "Repair animation slowing"
 msgstr "Repara lentidão na animação"
 
-#: Mopy/bash/basher/saves_links.py:727
+#: Mopy/bash/basher/saves_links.py:726
 msgid "Abomb counter is too low to reset."
 msgstr "O contador Abomb está muito baixo para ser redefinido."
 
-#: Mopy/bash/basher/saves_links.py:730
+#: Mopy/bash/basher/saves_links.py:729
 #, python-format
 msgid "Reset Abomb counter (current progress: %(abomb_progress)s)?"
 msgstr "Redefinir contador Abomb (progresso atual: %(abomb_progress)s)?"
 
-#: Mopy/bash/basher/saves_links.py:732
+#: Mopy/bash/basher/saves_links.py:731
 #, python-format
 msgid "Note: Abomb animation slowing won't occur until progress is near %(critical_pct)s."
 msgstr "Observação: A lentidão na animação Abomb não ocorrerá até que o progresso esteja próximo de %(critical_pct)s."
 
-#: Mopy/bash/basher/saves_links.py:737
+#: Mopy/bash/basher/saves_links.py:736
 msgid "Abomb counter reset."
 msgstr "Contador Abomb redefinido."
 
-#: Mopy/bash/basher/saves_links.py:742
+#: Mopy/bash/basher/saves_links.py:741
 msgid "Repair Hair"
 msgstr "Reparar Cabelo"
 
-#: Mopy/bash/basher/saves_links.py:743
+#: Mopy/bash/basher/saves_links.py:742
 msgid "Repair hair that has been zeroed due to removal of a hair mod."
 msgstr "Repara cabelo que foi zerado devido à remoção de um mod de cabelo."
 
-#: Mopy/bash/basher/saves_links.py:748
+#: Mopy/bash/basher/saves_links.py:747
 msgid "Hair repaired."
 msgstr "Cabelo reparado."
 
-#: Mopy/bash/basher/saves_links.py:750
+#: Mopy/bash/basher/saves_links.py:749
 msgid "No repair necessary."
 msgstr "Nenhum reparo necessário."
 
-#: Mopy/bash/basher/saves_links.py:755
+#: Mopy/bash/basher/saves_links.py:754
 msgid "Reweigh Potions…"
 msgstr "Repesar Poções…"
 
-#: Mopy/bash/basher/saves_links.py:756
+#: Mopy/bash/basher/saves_links.py:755
 msgid "Change weight of all player potions to specified value"
 msgstr "Altera o peso de todas as poções do jogador para o valor especificado"
 
-#: Mopy/bash/basher/saves_links.py:763
+#: Mopy/bash/basher/saves_links.py:762
 msgid "Set weight of all player-created potions to:"
 msgstr "Definir o peso de todas as poções criadas pelo jogador para:"
 
-#: Mopy/bash/basher/saves_links.py:764 Mopy/bash/basher/saves_links.py:771
-#: Mopy/bash/basher/saves_links.py:775 Mopy/bash/basher/saves_links.py:791
-#: Mopy/bash/basher/saves_links.py:795
+#: Mopy/bash/basher/saves_links.py:763 Mopy/bash/basher/saves_links.py:770
+#: Mopy/bash/basher/saves_links.py:774 Mopy/bash/basher/saves_links.py:790
+#: Mopy/bash/basher/saves_links.py:794
 msgid "Reweigh Potions"
 msgstr "Repesar Poções"
 
-#: Mopy/bash/basher/saves_links.py:770
+#: Mopy/bash/basher/saves_links.py:769
 #, python-format
 msgid "Invalid weight: %(invalid_weight)s"
 msgstr "Peso inválido: %(invalid_weight)s"
 
-#: Mopy/bash/basher/saves_links.py:779 Mopy/bash/patcher/patch_files.py:291
+#: Mopy/bash/basher/saves_links.py:778 Mopy/bash/patcher/patch_files.py:291
 msgid "Processing."
 msgstr "Processando."
 
-#: Mopy/bash/basher/saves_links.py:790
+#: Mopy/bash/basher/saves_links.py:789
 #, python-format
 msgid "Potions reweighed: %(num_reweighed)d."
 msgstr "Poções repesadas: %(num_reweighed)d."
 
-#: Mopy/bash/basher/saves_links.py:794
+#: Mopy/bash/basher/saves_links.py:793
 msgid "No potions to reweigh!"
 msgstr "Nenhuma poção para repesar!"
 
-#: Mopy/bash/basher/saves_links.py:800 Mopy/bash/basher/saves_links.py:805
+#: Mopy/bash/basher/saves_links.py:799 Mopy/bash/basher/saves_links.py:804
 msgid "Statistics"
 msgstr "Estatísticas"
 
-#: Mopy/bash/basher/saves_links.py:801
+#: Mopy/bash/basher/saves_links.py:800
 msgid "Show savefile statistics"
 msgstr "Mostra estatísticas do arquivo de save"
 
-#: Mopy/bash/basher/saves_links.py:808
+#: Mopy/bash/basher/saves_links.py:807
 msgid "Calculating statistics."
 msgstr "Calculando estatísticas."
 
-#: Mopy/bash/basher/saves_links.py:835
+#: Mopy/bash/basher/saves_links.py:834
 #, python-format
 msgid "Dump %(co_ext)s Contents"
 msgstr "Despejar Conteúdo %(co_ext)s"
 
-#: Mopy/bash/basher/saves_links.py:837
+#: Mopy/bash/basher/saves_links.py:836
 #, python-format
 msgid "Create a report of the contents of the associated %(xse_abbr)s cosave."
 msgstr "Cria um relatório do conteúdo do cosave %(xse_abbr)s associado."
 
-#: Mopy/bash/basher/saves_links.py:848
+#: Mopy/bash/basher/saves_links.py:847
 msgid "Dump .pluggy Contents"
 msgstr "Despejar Conteúdo .pluggy"
 
-#: Mopy/bash/basher/saves_links.py:849
+#: Mopy/bash/basher/saves_links.py:848
 msgid "Dumps contents of associated Pluggy cosave into a log."
 msgstr "Despeja o conteúdo do cosave Pluggy associado em um log."
 
-#: Mopy/bash/basher/saves_links.py:859
+#: Mopy/bash/basher/saves_links.py:858
 msgid "Remove Bloat…"
 msgstr "Remover Inchaço…"
 
-#: Mopy/bash/basher/saves_links.py:860
+#: Mopy/bash/basher/saves_links.py:859
 msgid "Unbloat savegame. Experimental ! Back up your saves before using it on them"
 msgstr "Desinchar jogo salvo. Experimental! Faça backup dos seus saves antes de usar"
 
-#: Mopy/bash/basher/saves_links.py:865
+#: Mopy/bash/basher/saves_links.py:864
 msgid "Scanning for Bloat"
 msgstr "Verificando Inchaço"
 
-#: Mopy/bash/basher/saves_links.py:872
+#: Mopy/bash/basher/saves_links.py:871
 msgid "No bloating found."
 msgstr "Nenhum inchaço encontrado."
 
-#: Mopy/bash/basher/saves_links.py:874
+#: Mopy/bash/basher/saves_links.py:873
 msgid "Remove savegame bloating?"
 msgstr "Remover inchaço do jogo salvo?"
 
-#: Mopy/bash/basher/saves_links.py:880
+#: Mopy/bash/basher/saves_links.py:879
 #, python-format
 msgid "Null Reference Objects: %(num_ref_objs)d"
 msgstr "Objetos de Referência Nula: %(num_ref_objs)d"
 
-#: Mopy/bash/basher/saves_links.py:883
+#: Mopy/bash/basher/saves_links.py:882
 msgid "WARNING: This is a risky procedure that may corrupt your savegame! Use it only if necessary!"
 msgstr "AVISO: Este é um procedimento arriscado que pode corromper seu jogo salvo! Use-o apenas se necessário!"
 
-#: Mopy/bash/basher/saves_links.py:885
+#: Mopy/bash/basher/saves_links.py:884
 msgid "Remove bloating?"
 msgstr "Remover inchaço?"
 
-#: Mopy/bash/basher/saves_links.py:888
+#: Mopy/bash/basher/saves_links.py:887
 msgid "Removing Bloat"
 msgstr "Removendo Inchaço"
 
-#: Mopy/bash/basher/saves_links.py:892
+#: Mopy/bash/basher/saves_links.py:891
 #, python-format
 msgid "Uncreated Objects: %(num_uncreated_objs)d"
 msgstr "Objetos Não Criados: %(num_uncreated_objs)d"
 
-#: Mopy/bash/basher/saves_links.py:893
+#: Mopy/bash/basher/saves_links.py:892
 #, python-format
 msgid "Uncreated References: %(num_uncreated_refs)d"
 msgstr "Referências Não Criadas: %(num_uncreated_refs)d"
 
-#: Mopy/bash/basher/saves_links.py:894
+#: Mopy/bash/basher/saves_links.py:893
 #, python-format
 msgid "Un-nulled Refs: %(num_unnulled_refs)d"
 msgstr "Referências Não Anuladas: %(num_unnulled_refs)d"
 
-#: Mopy/bash/basher/saves_links.py:904
+#: Mopy/bash/basher/saves_links.py:903
 msgid "Update NPC Levels…"
 msgstr "Atualizar Níveis de NPC…"
 
-#: Mopy/bash/basher/saves_links.py:905
+#: Mopy/bash/basher/saves_links.py:904
 msgid "Update NPC levels from active mods"
 msgstr "Atualiza níveis de NPC a partir dos mods ativos"
 
-#: Mopy/bash/basher/saves_links.py:910
+#: Mopy/bash/basher/saves_links.py:909
 msgid "This will relevel the NPCs in the selected saves according to the NPC levels in the currently active plugins. This supersedes the older \"Import NPC Levels\" command."
 msgstr "Isso renivelará os NPCs nos saves selecionados de acordo com os níveis de NPC nos plugins ativos no momento. Isso substitui o comando mais antigo \"Importar Níveis de NPC\"."
 
-#: Mopy/bash/basher/saves_links.py:914 Mopy/bash/basher/saves_links.py:915
-#: Mopy/bash/basher/saves_links.py:982
+#: Mopy/bash/basher/saves_links.py:913 Mopy/bash/basher/saves_links.py:914
+#: Mopy/bash/basher/saves_links.py:981
 msgid "Update NPC Levels"
 msgstr "Atualizar Níveis de NPC"
 
-#: Mopy/bash/basher/saves_links.py:943
+#: Mopy/bash/basher/saves_links.py:942
 msgid "NPCs Releveled:"
 msgstr "NPCs Renivelados:"
 
-#: Mopy/bash/basher/saves_links.py:945 Mopy/bash/basher/saves_links.py:974
+#: Mopy/bash/basher/saves_links.py:944 Mopy/bash/basher/saves_links.py:973
 #, python-format
 msgid "Updating %(updating_save)s"
 msgstr "Atualizando %(updating_save)s"
 
-#: Mopy/bash/basher/saves_links.py:980
+#: Mopy/bash/basher/saves_links.py:979
 msgid "Some mods had load errors and were skipped:"
 msgstr "Alguns mods tiveram erros de carregamento e foram ignorados:"
 
@@ -8365,94 +8365,94 @@ msgstr "O arquivo %(bad_name_str)s já existe."
 msgid "Stored size does not match the one on disk."
 msgstr "O tamanho armazenado não corresponde ao do disco."
 
-#: Mopy/bash/bosh/__init__.py:630 Mopy/bash/bosh/__init__.py:661
+#: Mopy/bash/bosh/__init__.py:631 Mopy/bash/bosh/__init__.py:662
 msgid "No tags"
 msgstr "Sem tags"
 
-#: Mopy/bash/bosh/__init__.py:635
+#: Mopy/bash/bosh/__init__.py:636
 msgid "From Plugin Description:"
 msgstr "Da Descrição do Plugin:"
 
-#: Mopy/bash/bosh/__init__.py:640
+#: Mopy/bash/bosh/__init__.py:641
 msgid "From LOOT Masterlist and/or Userlist:"
 msgstr "Da Lista Mestra e/ou Lista de Usuário do LOOT:"
 
-#: Mopy/bash/bosh/__init__.py:643
+#: Mopy/bash/bosh/__init__.py:644
 msgid "Removed by LOOT Masterlist and/or Userlist:"
 msgstr "Removido pela Lista Mestra e/ou Lista de Usuário do LOOT:"
 
-#: Mopy/bash/bosh/__init__.py:650
+#: Mopy/bash/bosh/__init__.py:651
 #, python-format
 msgid "Added by %(tags_file)s:"
 msgstr "Adicionado por %(tags_file)s:"
 
-#: Mopy/bash/bosh/__init__.py:653
+#: Mopy/bash/bosh/__init__.py:654
 #, python-format
 msgid "Removed by %(tags_file)s:"
 msgstr "Removido por %(tags_file)s:"
 
-#: Mopy/bash/bosh/__init__.py:658
+#: Mopy/bash/bosh/__init__.py:659
 msgid "From Manual (overrides all other sources):"
 msgstr "Do Manual (sobrescreve todas as outras fontes):"
 
-#: Mopy/bash/bosh/__init__.py:660
+#: Mopy/bash/bosh/__init__.py:661
 msgid "Result:"
 msgstr "Resultado:"
 
-#: Mopy/bash/bosh/__init__.py:805
+#: Mopy/bash/bosh/__init__.py:806
 msgid "Active"
 msgstr "Ativo"
 
-#: Mopy/bash/bosh/__init__.py:806 Mopy/bash/patcher/patchers/mergers.py:959
+#: Mopy/bash/bosh/__init__.py:807 Mopy/bash/patcher/patchers/mergers.py:959
 msgid "Merged"
 msgstr "Mesclado"
 
-#: Mopy/bash/bosh/__init__.py:807
+#: Mopy/bash/bosh/__init__.py:808
 msgid "Imported"
 msgstr "Importado"
 
-#: Mopy/bash/bosh/__init__.py:808
+#: Mopy/bash/bosh/__init__.py:809
 msgid "Inactive"
 msgstr "Inativo"
 
-#: Mopy/bash/bosh/__init__.py:959
+#: Mopy/bash/bosh/__init__.py:960
 msgid "Has size-mismatched masters."
 msgstr "Tem mestres com tamanhos incompatíveis."
 
-#: Mopy/bash/bosh/__init__.py:995
+#: Mopy/bash/bosh/__init__.py:996
 msgid "Contains dirty edits, needs cleaning."
 msgstr "Contém edições sujas, precisa de limpeza."
 
-#: Mopy/bash/bosh/__init__.py:1220
+#: Mopy/bash/bosh/__init__.py:1221
 msgid "Format mismatch:"
 msgstr "Incompatibilidade de formato:"
 
-#: Mopy/bash/bosh/__init__.py:1222
+#: Mopy/bash/bosh/__init__.py:1223
 msgid "Target format is INI, tweak format is Batch Script."
 msgstr "O formato de destino é INI, o formato do ajuste é Script em Lote."
 
-#: Mopy/bash/bosh/__init__.py:1225
+#: Mopy/bash/bosh/__init__.py:1226
 msgid "Target format is Batch Script, tweak format is INI."
 msgstr "O formato de destino é Script em Lote, o formato do ajuste é INI."
 
-#: Mopy/bash/bosh/__init__.py:1232
+#: Mopy/bash/bosh/__init__.py:1233
 msgid "No valid INI format lines."
 msgstr "Nenhuma linha de formato INI válida."
 
-#: Mopy/bash/bosh/__init__.py:1234
+#: Mopy/bash/bosh/__init__.py:1235
 msgid "No valid Batch Script format lines."
 msgstr "Nenhuma linha de formato Script em Lote válida."
 
-#: Mopy/bash/bosh/__init__.py:1243
+#: Mopy/bash/bosh/__init__.py:1244
 msgid "Invalid Header"
 msgstr "Cabeçalho Inválido"
 
-#: Mopy/bash/bosh/__init__.py:1252
+#: Mopy/bash/bosh/__init__.py:1253
 msgid "Settings missing from target INI:"
 msgstr "Configurações ausentes no INI de destino:"
 
-#: Mopy/bash/bosh/__init__.py:1864 Mopy/bash/bosh/__init__.py:1883
-#: Mopy/bash/bosh/__init__.py:1884 Mopy/bash/bosh/__init__.py:1983
+#: Mopy/bash/bosh/__init__.py:1861 Mopy/bash/bosh/__init__.py:1880
+#: Mopy/bash/bosh/__init__.py:1881 Mopy/bash/bosh/__init__.py:1983
 msgid "Browse…"
 msgstr "Procurar…"
 
@@ -8577,38 +8577,38 @@ msgstr "Os seguintes BSAs têm uma versão diferente da esperada por %(game_name
 msgid "The following BA2s have filenames whose hashes collide, which will cause one or more of them to fail to work correctly. This should be corrected by the mod authors by renaming the files to avoid the collision."
 msgstr "Os seguintes BA2s têm nomes de arquivo cujos hashes colidem, o que fará com que um ou mais deles falhem em funcionar corretamente. Isso deve ser corrigido pelos autores do mod renomeando os arquivos para evitar a colisão."
 
-#: Mopy/bash/bosh/__init__.py:3483
+#: Mopy/bash/bosh/__init__.py:3484
 #, python-format
 msgid "Error reading the Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to try the backup %(settings_file_name)s (it will have all your settings from the second to last time that you used Wrye Bash)?"
 msgstr "Erro ao ler o banco de dados de Configurações do Wrye Bash (o erro é '%(settings_err)s'). Isso provavelmente não é recuperável com o arquivo atual. Deseja tentar o backup %(settings_file_name)s (ele terá todas as suas configurações da penúltima vez que você usou o Wrye Bash)?"
 
-#: Mopy/bash/bosh/__init__.py:3491 Mopy/bash/bosh/__init__.py:3503
-#: Mopy/bash/bosh/__init__.py:3513
+#: Mopy/bash/bosh/__init__.py:3492 Mopy/bash/bosh/__init__.py:3504
+#: Mopy/bash/bosh/__init__.py:3514
 msgid "Settings Load Error"
 msgstr "Erro ao Carregar Configurações"
 
-#: Mopy/bash/bosh/__init__.py:3496
+#: Mopy/bash/bosh/__init__.py:3497
 #, python-format
 msgid "Error reading the backup Wrye Bash Settings database (the error is '%(settings_err)s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr "Erro ao ler o banco de dados de Configurações do Wrye Bash de backup (o erro é '%(settings_err)s'). Isso provavelmente não é recuperável com o arquivo atual. Deseja excluir as configurações corrompidas e carregar o Wrye Bash sem suas configurações salvas (escolher 'Não' fará o Wrye Bash sair)?"
 
-#: Mopy/bash/bosh/__init__.py:3509
+#: Mopy/bash/bosh/__init__.py:3510
 msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved settings (choosing 'No' will cause Wrye Bash to exit)?"
 msgstr "Deseja excluir as configurações corrompidas e carregar o Wrye Bash sem suas configurações salvas (escolher 'Não' fará o Wrye Bash sair)?"
 
-#: Mopy/bash/bosh/__init__.py:3524
+#: Mopy/bash/bosh/__init__.py:3525
 msgid "Initializing BSAs"
 msgstr "Inicializando BSAs"
 
-#: Mopy/bash/bosh/__init__.py:3526
+#: Mopy/bash/bosh/__init__.py:3527
 msgid "Initializing plugins"
 msgstr "Inicializando plugins"
 
-#: Mopy/bash/bosh/__init__.py:3528
+#: Mopy/bash/bosh/__init__.py:3529
 msgid "Initializing saves"
 msgstr "Inicializando saves"
 
-#: Mopy/bash/bosh/__init__.py:3530
+#: Mopy/bash/bosh/__init__.py:3531
 msgid "Initializing INIs"
 msgstr "Inicializando INIs"
 
@@ -8815,133 +8815,133 @@ msgstr "Precisa de Consolidação devido a uma alteração na configuração."
 msgid "Needs Annealing due to a change in Install Order."
 msgstr "Precisa de Consolidação devido a uma alteração na Ordem de Instalação."
 
-#: Mopy/bash/bosh/bain.py:1378
+#: Mopy/bash/bosh/bain.py:1377
 msgid "Package Structure:"
 msgstr "Estrutura do Pacote:"
 
-#: Mopy/bash/bosh/bain.py:1407
+#: Mopy/bash/bosh/bain.py:1406
 #, python-format
 msgid "Syncing from %(data_folder)s folder…"
 msgstr "Sincronizando da pasta %(data_folder)s…"
 
-#: Mopy/bash/bosh/bain.py:1481
+#: Mopy/bash/bosh/bain.py:1480
 msgid "Size: N/A"
 msgstr "Tamanho: N/A"
 
-#: Mopy/bash/bosh/bain.py:1483
+#: Mopy/bash/bosh/bain.py:1482
 msgid "Structure: N/A"
 msgstr "Estrutura: N/A"
 
-#: Mopy/bash/bosh/bain.py:1490
+#: Mopy/bash/bosh/bain.py:1489
 msgid "Marker Package. Use for grouping installers together"
 msgstr "Pacote Marcador. Use para agrupar instaladores"
 
-#: Mopy/bash/bosh/bain.py:1496
+#: Mopy/bash/bosh/bain.py:1495
 msgid "Archive"
 msgstr "Arquivo"
 
-#: Mopy/bash/bosh/bain.py:1503
+#: Mopy/bash/bosh/bain.py:1502
 #, python-format
 msgid "Solid, Block Size: %(block_size)s"
 msgstr "Sólido, Tamanho do Bloco: %(block_size)s"
 
-#: Mopy/bash/bosh/bain.py:1506
+#: Mopy/bash/bosh/bain.py:1505
 msgid "Solid, Block Size: Unknown"
 msgstr "Sólido, Tamanho do Bloco: Desconhecido"
 
-#: Mopy/bash/bosh/bain.py:1508
+#: Mopy/bash/bosh/bain.py:1507
 msgid "Solid, Block Size: 7z Default"
 msgstr "Sólido, Tamanho do Bloco: Padrão 7z"
 
-#: Mopy/bash/bosh/bain.py:1510
+#: Mopy/bash/bosh/bain.py:1509
 msgid "Non-solid"
 msgstr "Não sólido"
 
-#: Mopy/bash/bosh/bain.py:1511
+#: Mopy/bash/bosh/bain.py:1510
 #, python-format
 msgid "Size: %(package_size)s (%(package_solid)s)"
 msgstr "Tamanho: %(package_size)s (%(package_solid)s)"
 
-#: Mopy/bash/bosh/bain.py:1520
+#: Mopy/bash/bosh/bain.py:1519
 #, python-format
 msgid "%(invalid_name)s does not have correct extension (%(allowed_extensions)s)."
 msgstr "%(invalid_name)s não tem a extensão correta (%(allowed_extensions)s)."
 
-#: Mopy/bash/bosh/bain.py:1525
+#: Mopy/bash/bosh/bain.py:1524
 #, python-format
 msgid "The %(invalid_extension)s extension is unsupported. Using %(default_extension)s instead."
 msgstr "A extensão %(invalid_extension)s não é suportada. Usando %(default_extension)s em vez disso."
 
-#: Mopy/bash/bosh/bain.py:1606
+#: Mopy/bash/bosh/bain.py:1605
 msgid "Organizing files…"
 msgstr "Organizando arquivos…"
 
-#: Mopy/bash/bosh/bain.py:1625 Mopy/bash/bosh/bain.py:1805
+#: Mopy/bash/bosh/bain.py:1624 Mopy/bash/bosh/bain.py:1804
 #: Mopy/bash/bosh/converters.py:369
 msgid "Moving files…"
 msgstr "Movendo arquivos…"
 
-#: Mopy/bash/bosh/bain.py:1671
+#: Mopy/bash/bosh/bain.py:1670
 msgid "Extracting images…"
 msgstr "Extraindo imagens…"
 
-#: Mopy/bash/bosh/bain.py:1707
+#: Mopy/bash/bosh/bain.py:1706
 msgid "Project"
 msgstr "Projeto"
 
-#: Mopy/bash/bosh/bain.py:1775 Mopy/bash/bosh/bain.py:2352
+#: Mopy/bash/bosh/bain.py:1774 Mopy/bash/bosh/bain.py:2351
 #: Mopy/bash/patcher/patch_files.py:369
 msgid "Scanning…"
 msgstr "Verificando…"
 
-#: Mopy/bash/bosh/bain.py:2014
+#: Mopy/bash/bosh/bain.py:2013
 msgid "Loading Data…"
 msgstr "Carregando Dados…"
 
-#: Mopy/bash/bosh/bain.py:2134
+#: Mopy/bash/bosh/bain.py:2133
 msgid "Some packages could not be found and were skipped:"
 msgstr "Alguns pacotes não puderam ser encontrados e foram ignorados:"
 
-#: Mopy/bash/bosh/bain.py:2189
+#: Mopy/bash/bosh/bain.py:2188
 msgid "An error occurred while applying an Embedded BCF."
 msgstr "Ocorreu um erro ao aplicar um BCF Incorporado."
 
-#: Mopy/bash/bosh/bain.py:2312
+#: Mopy/bash/bosh/bain.py:2311
 msgid "Pre-Scanning…"
 msgstr "Pré-Verificação…"
 
-#: Mopy/bash/bosh/bain.py:2486
+#: Mopy/bash/bosh/bain.py:2485
 #, python-format
 msgid "%(data_folder)s: Skips overrides…"
 msgstr "%(data_folder)s: Substituições de omissões…"
 
-#: Mopy/bash/bosh/bain.py:2637
+#: Mopy/bash/bosh/bain.py:2635
 #, python-format
 msgid "INI Tweak created by Wrye Bash %(wb_version)s, using settings from old file."
 msgstr "Ajuste INI criado pelo Wrye Bash %(wb_version)s, usando configurações do arquivo antigo."
 
-#: Mopy/bash/bosh/bain.py:3136
+#: Mopy/bash/bosh/bain.py:3134
 msgid "Active BSA Conflicts"
 msgstr "Conflitos de BSA Ativos"
 
-#: Mopy/bash/bosh/bain.py:3139 Mopy/bash/bosh/bain.py:3154
-#: Mopy/bash/bosh/bain.py:3159 Mopy/bash/bosh/bain.py:3172
+#: Mopy/bash/bosh/bain.py:3137 Mopy/bash/bosh/bain.py:3152
+#: Mopy/bash/bosh/bain.py:3157 Mopy/bash/bosh/bain.py:3170
 msgid "Lower"
 msgstr "Inferior"
 
-#: Mopy/bash/bosh/bain.py:3156 Mopy/bash/bosh/bain.py:3174
+#: Mopy/bash/bosh/bain.py:3154 Mopy/bash/bosh/bain.py:3172
 msgid "Higher"
 msgstr "Superior"
 
-#: Mopy/bash/bosh/bain.py:3157
+#: Mopy/bash/bosh/bain.py:3155
 msgid "Loose File Conflicts"
 msgstr "Conflitos de Arquivo Solto"
 
-#: Mopy/bash/bosh/bain.py:3177
+#: Mopy/bash/bosh/bain.py:3175
 msgid "No Underrides. Mod is not completely un-installed."
 msgstr "Sem Subescritas. O mod não está completamente desinstalado."
 
-#: Mopy/bash/bosh/bain.py:3184
+#: Mopy/bash/bosh/bain.py:3182
 msgid "BAIN Packages:"
 msgstr "Pacotes BAIN:"
 
