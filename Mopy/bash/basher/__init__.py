@@ -1213,6 +1213,12 @@ class _EditableMixin(_DetailsMixin):
         self._cancel_btn.on_clicked.subscribe(self.DoCancel)
         self._save_btn.enabled = False
         self._cancel_btn.enabled = False
+        #--File Name
+        self._fname_ctrl = TextField(self.left,
+                                     max_length=self._max_filename_chars)
+        self._fname_ctrl.on_focus_lost.subscribe(self.OnFileEdited)
+        self._fname_ctrl.on_text_changed.subscribe(self.OnFileEdit)
+        self.panel_uilist = ui_list_panel.uiList
 
     # Details panel API
     def SetFile(self, fileName=_same_file):
@@ -1233,9 +1239,37 @@ class _EditableMixin(_DetailsMixin):
             self._save_btn.enabled = True
         self._cancel_btn.enabled = True
 
-    def DoSave(self): raise NotImplementedError
+    @balt.conversation
+    def DoSave(self):
+        """Event: Clicked Save button."""
+        #--Change Tests
+        if (ren_data := self._rename_detail_item()) is None:
+            return
+        change_hdr, ref_saves, kwargs = self._extra_changes(ren_data)
+        # Although we could avoid rereading the header by passing the info in
+        # I leave it here as an extra error check - error handling is WIP
+        store = self.panel_uilist.data_store
+        ren_data |= store.refresh(change_hdr and RefrIn.from_tabled_infos(
+            {self.file_info.fn_key: self.file_info}), **kwargs)
+        if not store.get(det_it := self.file_info.fn_key):
+            showError(self, _('File corrupted on save!') +
+                      f'\n{store.corrupted[det_it].error_message}')
+            det_it = None
+            ref_saves = ref_saves is not None
+        self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
+                                            detail_item=det_it)
+
+    def _rename_detail_item(self):
+        newName = FName(self.fileStr.strip())
+        # OnFileEdited checked if filename existed in validate_name
+        #  but this happened before and since maybe modinfos are
+        #  updated, we need to check again todo: possibly cancel?
+        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
 
     def DoCancel(self): self.SetFile()
+
+    def _extra_changes(self, rename_data): # changes that need refresh
+        return False, None, {}
 
 class _EditableMixinOnFileInfos(_EditableMixin):
     """Bsa/Mods/Saves details, DEPRECATED: we need common data infos API!"""
@@ -1246,18 +1280,6 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     @property
     def displayed_item(self):
         return self.file_info.fn_key if self.file_info else None
-
-    def __init__(self, masterPanel, ui_list_panel):
-        # super(_EditableMixinOnFileInfos, self).__init__(masterPanel)
-        _EditableMixin.__init__(self, masterPanel, ui_list_panel)
-        #--File Name
-        self._fname_ctrl = TextField(self.left,
-                                     max_length=self._max_filename_chars)
-        self._fname_ctrl.on_focus_lost.subscribe(self.OnFileEdited)
-        self._fname_ctrl.on_text_changed.subscribe(self.OnFileEdit)
-        # TODO(nycz): GUI set_size
-        #                       size=(self._min_controls_width, -1))
-        self.panel_uilist = ui_list_panel.uiList
 
     @_check_displayed
     def OnFileEdited(self):
@@ -1285,28 +1307,6 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         """Event: Editing filename."""
         if not self.edited and self.fileStr != new_text:
             self.SetEdited()
-
-    def _refresh_detail_info(self, refr_self, ren_data, ref_saves=None,
-                             **kwargs):
-        # Although we could avoid rereading the header by passing the info in I
-        # leave it here as an extra error check - error handling is WIP
-        store = self.panel_uilist.data_store
-        ren_data |= store.refresh(refr_self and RefrIn.from_tabled_infos(
-            {self.file_info.fn_key: self.file_info}), **kwargs)
-        if not store.get(det_it := self.file_info.fn_key):
-            showError(self, _('File corrupted on save!') +
-                      f'\n{store.corrupted[det_it].error_message}')
-            det_it = None
-            ref_saves = ref_saves is not None
-        self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
-                                            detail_item=det_it)
-
-    def _rename_detail_item(self):
-        newName = FName(self.fileStr.strip())
-        # OnFileEdited checked if filename existed in validate_name
-        #  but this happened before and since maybe modinfos are
-        #  updated, we need to check again todo: possibly cancel?
-        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
@@ -1592,12 +1592,8 @@ class ModDetails(_ModsSavesDetails):
     __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
         'Windows-1252. %(game_name)s may not be able to activate this '
         'plugin because of this. Do you want to rename the plugin anyway?')
-    @balt.conversation
-    def DoSave(self):
+    def _extra_changes(self, rename_data):
         mod_inf = self.modInfo
-        #--Change Tests
-        if (changeName := self._rename_detail_item()) is None:
-            return
         changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
         change_hdr = self.uilist.edited or (
                 self.authorStr != mod_inf.header.author or
@@ -1612,17 +1608,15 @@ class ModDetails(_ModsSavesDetails):
             mod_inf.header.masters = self.uilist.GetNewMasters()
             mod_inf.header.setChanged()
             mod_inf.writeHeader(old_mi_masters)
-        ref_saves = bool(changeName)
+        ref_saves = bool(rename_data)
         #--Change date?
         if unlock_lo := changeDate:
             unlock_lo = not bush.game.using_txt_file
             mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
             #--Only change date?
-            if not (changeName or change_hdr):
-                changeName.redraw.add(mod_inf.fn_key) # needed!
-        ref_saves |= unlock_lo
-        self._refresh_detail_info(change_hdr, changeName, ref_saves,
-                                  unlock_lo=unlock_lo)
+            if not (rename_data or change_hdr):
+                rename_data.redraw.add(mod_inf.fn_key) # needed!
+        return change_hdr, ref_saves | unlock_lo, {'unlock_lo': unlock_lo}
 
     def _rename_detail_item(self):
         file_str = self.fileStr.strip()
@@ -2122,7 +2116,6 @@ class SaveDetails(_ModsSavesDetails):
         #--Save Info
         self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
-        # TODO(nycz): GUI set_size size=(textWidth, 64)
         #--Layouts
         VLayout(item_expand=True, items=[
             self._fname_ctrl,
@@ -2216,17 +2209,11 @@ class SaveDetails(_ModsSavesDetails):
         if not self.saveInfo or self.saveInfo.named_as(self.fileStr):
             self.DoCancel()
 
-    @balt.conversation
-    def DoSave(self):
-        """Event: Clicked Save button."""
+    def _extra_changes(self, rename_data):
         saveinf = self.saveInfo
-        #--Change Tests
-        changeMasters = self.uilist.edited
         prevMTime = saveinf.ftime
-        #--Change Name?
-        rdata = self._rename_detail_item()
         #--Change masters?
-        if changeMasters:
+        if changeMasters := self.uilist.edited:
             saveinf.makeBackup()
             prev_masters = saveinf.masterNames
             curr_masters = self.uilist.GetNewMasters()
@@ -2234,7 +2221,7 @@ class SaveDetails(_ModsSavesDetails):
                              in zip(prev_masters, curr_masters) if m1 != m2}
             saveinf.write_masters(master_remaps)
             saveinf.setmtime(prevMTime)
-        self._refresh_detail_info(changeMasters, rdata)
+        return changeMasters, None, {}
 
     def RefreshUIColors(self):
         self._update_masters_warning()
@@ -3357,12 +3344,6 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         """Info field was edited."""
         if self._bsa_info and self.gInfo.modified:
             self._bsa_info.set_table_prop(u'info', new_text)
-
-    @balt.conversation
-    def DoSave(self):
-        """Event: Clicked Save button."""
-        if self._rename_detail_item():
-            self.panel_uilist.RefreshUI(detail_item=self.file_info.fn_key)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):
