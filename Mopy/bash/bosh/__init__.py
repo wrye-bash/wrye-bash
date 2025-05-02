@@ -1536,16 +1536,12 @@ class DataStore(DataDict):
             # saves) shellMove will offer to skip and raise SkipError
             if tup[0] == tup[1] or not tup[0].exists():
                 rename_paths.remove(tup)
-        env.shellMove(ren := dict(rename_paths))
+        if ren := dict(rename_paths): env.shellMove(ren)
         # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
-        old_key = member_info.fn_key
-        member_info.fn_key = newName = FName(newName)
-        #--FileInfo
-        self[newName] = member_info
-        member_info.abs_path = self.store_dir.join(newName)
-        del self[old_key]
-        return RefrData({newName}, to_del={old_key},
-                        renames={old_key: newName}, ren_paths=ren)
+        ren_d = member_info.set_path_keys(FName(newName))
+        self[member_info.fn_key] = member_info
+        del self[next(iter(ren_d.to_del))]
+        return ren_d
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
