@@ -1834,6 +1834,13 @@ class ListInfo:
     def _store(cls): # use sparingly
         raise NotImplementedError(f'{cls} does not provide a data store')
 
+    def set_path_keys(self, new_fn: FName, *, infodir=None):
+        old_key, self.fn_key = self.fn_key, new_fn
+        return RefrData({new_fn}, to_del={old_key}, renames={old_key: new_fn})
+
+    def get_rename_paths(self, newName):
+        return [] # no rename paths for markers
+
     def info_status(self, **kwargs):
         raise NotImplementedError # screens, bsas
 
@@ -1888,6 +1895,13 @@ class AFileInfo(AFile, ListInfo):
     @property
     def info_dir(self):
         return self.abs_path.head
+
+    def set_path_keys(self, new_fn: FName, *, infodir=None):
+        ren_d = super().set_path_keys(new_fn)
+        new_path = (infodir or self._store().store_dir).join(new_fn)
+        old_path, self.abs_path = self.abs_path, new_path
+        ren_d.ren_paths[old_path] = new_path
+        return ren_d
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
         return super(AFile, self).__repr__()

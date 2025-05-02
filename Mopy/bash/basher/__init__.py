@@ -2291,8 +2291,7 @@ class InstallersList(UIList):
         #--Rename each installer, keeping the old extension (for archives)
         if isinstance(root, tuple):
             root = root[0]
-        store_refr = defaultdict(bool) # Store refreshes
-        return newName, root, store_refr
+        return newName, root, defaultdict(RefrData) # see store_refr
 
     @staticmethod
     def _unhide_wildcard():

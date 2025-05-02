@@ -1983,13 +1983,14 @@ class InstallersData(DataStore):
         """The BAIN version - illustrates the differences between _AFileInfos
         and InstallersData refresh()."""
         # if we are passed a RefrIn, we only need to update for deleted
-        if isinstance(refresh_info, RefrIn): ##: use RefrIn all along
+        if isinstance(refresh_info, RefrIn): ##:(701) use RefrIn all along
             return RefrData(to_del={i.fn_key for i in refresh_info.del_infos})
         dirs_files = None
-        if isinstance(refresh_info, list): # we are passed existing installers
+        if isinstance(refresh_info, (list | set)): # we are passed existing installers
+            dirs_files = [[], []]
+            for yak in refresh_info: # call update_installers to update those
+                dirs_files[self.store_dir.join(yak).is_file()].append(yak)
             refresh_info = RefrData(to_add=set(refresh_info))
-            # call update_installers to update those
-            dirs_files = refresh_info.to_add, ()
         elif refresh_info is None: # we really need to scan installers
             dirs_files = top_level_items(bass.dirs['installers'])
         if dirs_files:
@@ -2044,21 +2045,17 @@ class InstallersData(DataStore):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
-        if member_info.is_marker:
-            del self[old := member_info.fn_key]
-            new = member_info.fn_key = FName(name_new) ##: make sure newName is fn
-            self[new] = member_info
-            return RefrData({new}, to_del={old}, renames={old: new})
         rdata_ren = super().rename_operation(member_info, name_new, store_refr)
         # Update the ownership information for relevant data stores
-        old_key = next(iter(rdata_ren.renames))
-        for store in data_tracking_stores():
-            if not store.tracks_ownership: continue
-            owned = [v for v in store.values() if str( # str due to Paths
-                v.get_table_prop('installer')) == old_key]
+        old_key = next(iter(rdata_ren.to_del))
+        stores = [s for s in data_tracking_stores() if s.tracks_ownership] if \
+            rdata_ren.ren_paths else () # else it's a marker
+        for store in stores:
+            owned = {k: v for k, v in store.items() if str(  # str due to Paths
+                v.get_table_prop('installer')) == old_key}
             if owned:
-                store_refr[store] = True
-            for v in owned:
+                store_refr[store.unique_store_key] |= RefrData(set(owned))
+            for v in owned.values():
                 v.set_table_prop('installer', '%s' % name_new)
         return rdata_ren
 

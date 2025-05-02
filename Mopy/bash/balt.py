@@ -1143,7 +1143,7 @@ class UIList(PanelWin):
             return RefrData()
         try:
             return self.data_store.rename_operation(info, newName,
-                store_refr=store_refr) # a RefrData instance
+                store_refr=store_refr) # a defaultdict(RefrData) or None
         except (CancelError, OSError):
             deprint(f'Renaming {info} to {newName} failed', traceback=True)
             # When using moveTo I would get "WindowsError:[Error 32]The process
