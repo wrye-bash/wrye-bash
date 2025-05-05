@@ -28,7 +28,7 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
     ItemLink, Link, OneItemLink, RadioLink, SeparatorLink
-from ..bolt import GPath, FName
+from ..bolt import GPath, FName, RefrIn
 from ..gui import AutoSize, BusyCursor, ImgFromPath
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
@@ -59,7 +59,6 @@ class Screens_NextScreenShot(EnabledLink):
     def Execute(self):
         base_key = bush.game.Ini.screenshot_base_key
         index_key = bush.game.Ini.screenshot_index_key
-        enabled_key = bush.game.Ini.screenshot_enabled_key
         base = bosh.oblivionIni.getSetting(*base_key)
         index = bosh.oblivionIni.getSetting(*index_key)
         pattern = self._askText(
@@ -74,6 +73,7 @@ class Screens_NextScreenShot(EnabledLink):
         settings_screens = defaultdict(dict)
         settings_screens[base_key[0]][base_key[1]] = new_base
         settings_screens[index_key[0]][index_key[1]] = (new_index or index)
+        enabled_key = bush.game.Ini.screenshot_enabled_key
         settings_screens[enabled_key[0]][enabled_key[1]] = enabled_key[2]
         screens_dir = GPath(new_base).head
         if screens_dir:
@@ -99,6 +99,7 @@ class Screen_ConvertTo(EnabledLink):
         return bool(self.convertable)
 
     def Execute(self):
+        converted = {}
         try:
             msg = _('Converting to %(img_ext)s') % {'img_ext': self._ext[1:]}
             with balt.Progress(msg) as progress:
@@ -106,16 +107,20 @@ class Screen_ConvertTo(EnabledLink):
                 for index, fileName in enumerate(self.convertable):
                     progress(index, fileName)
                     srcPath = bosh.screen_infos[fileName].abs_path
-                    destPath = srcPath.root + self._ext
+                    destPath = srcPath.root + self._ext # Path __add__ !
                     if srcPath == destPath or destPath.exists(): continue
                     bmp = ImgFromPath.from_path(srcPath.s,
                         quality=bass.settings['bash.screens.jpgQuality'])
                     result = bmp.save_bmp(destPath.s, self._ext)
                     if not result: continue
                     srcPath.remove()
+                    converted[bosh.screen_infos[fileName]] = FName(
+                        fileName.fn_body + self._ext)
         finally:
-            bosh.screen_infos.refresh(True) ##: 701
-            self.window.RefreshUI()
+            if converted:
+                rinf = RefrIn.from_added(converted.values())
+                rinf.del_infos.update(converted)
+                self.window.RefreshUI(bosh.screen_infos.refresh(rinf))
 
 #------------------------------------------------------------------------------
 class Screens_JpgQuality(RadioLink):
