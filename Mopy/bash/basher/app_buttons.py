@@ -384,8 +384,8 @@ class _AAppLOManager(_ExeButton):
             # Refresh to get the new load order that the manager specified. If
             # on timestamp method scan the data dir, if not loadorder.txt
             # should have changed, refreshLoadOrder should detect that
-            rdata = bosh.modInfos.refresh(unlock_lo=True,
-                refresh_infos=not bush.game.using_txt_file)
+            rdata = bosh.modInfos.refresh(not bush.game.using_txt_file,
+                                          unlock_lo=True)
             # Refresh UI, so WB is made aware of the changes to load order
             Link.Frame.all_uilists[Store.MODS].propagate_refresh(rdata,
                 focus_list=False)

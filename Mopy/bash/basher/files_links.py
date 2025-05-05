@@ -251,8 +251,7 @@ class File_Redate(ItemLink):
         for to_redate in self._infos_to_redate():
             to_redate.setmtime(user_timestamp)
             user_timestamp += 60.0
-        self._data_store.refresh(refresh_infos=False,
-                                 unlock_lo=not bush.game.using_txt_file)
+        self._data_store.refresh(False, unlock_lo=not bush.game.using_txt_file)
         self.window.propagate_refresh(True)
 
     # Overrides for Mod_Redate
