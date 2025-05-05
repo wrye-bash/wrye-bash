@@ -55,7 +55,7 @@ class AFallout3GameInfo(PatchGame):
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus.continue'
 
-    using_txt_file = False
+    mtime_lo = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'characters', 'bodymods'),
         _j('textures', 'characters', 'facemods'),

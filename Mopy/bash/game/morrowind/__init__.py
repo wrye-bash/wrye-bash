@@ -58,7 +58,7 @@ class _AMorrowindGameInfo(PatchGame):
     nexusName = u'Morrowind Nexus'
     nexusKey = u'bash.installers.openMorrowindNexus.continue'
 
-    using_txt_file = False
+    mtime_lo = True
     plugin_name_specific_dirs = [] # Morrowind seems to have no such dirs
 
     allTags = set() # no BP functionality yet

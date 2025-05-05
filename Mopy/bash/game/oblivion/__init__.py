@@ -60,7 +60,7 @@ class AOblivionGameInfo(PatchGame):
     nexusName = u'Oblivion Nexus'
     nexusKey = u'bash.installers.openOblivionNexus.continue'
 
-    using_txt_file = False
+    mtime_lo = True
     has_standalone_pluggy = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'faces'),

@@ -117,8 +117,7 @@ if bush.game.Esp.check_master_sizes:
     )
 
 # Does the LO use timestamps? -------------------------------------------------
-##: Is this condition OK? We can't really call load_order to check...
-if not bush.game.using_txt_file:
+if bush.game.mtime_lo:
     colorInfo['mods.bkgd.doubleTime.exists'] = (_('Inactive Time Conflict'),
         _mod_tab + _('This is the background color used for a plugin with an '
             'inactive time conflict. This means that two or more plugins have '
