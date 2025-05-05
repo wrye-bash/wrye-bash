@@ -1600,7 +1600,7 @@ class ModDetails(_ModsSavesDetails):
         ref_saves = bool(rename_data)
         #--Change date?
         if unlock_lo := changeDate:
-            unlock_lo = not bush.game.using_txt_file
+            unlock_lo = bush.game.mtime_lo
             mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
             #--Only change date?
             if not (rename_data or change_hdr):

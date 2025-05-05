@@ -2767,7 +2767,7 @@ class ModInfos(TableFileInfos):
             new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
             if new_mod in lwip: lwip.remove(new_mod)  # ...
             dex = lwip.index(previous)
-            if not bush.game.using_txt_file:
+            if bush.game.mtime_lo:
                 t_prev = self[previous].ftime
                 if lwip[-1] == previous:  # place it after the last mod
                     new_time = t_prev + 60
