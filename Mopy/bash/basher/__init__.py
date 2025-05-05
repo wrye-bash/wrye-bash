@@ -810,7 +810,7 @@ class INIList(UIList):
             if ini_uilist := balt.Link.Frame.all_uilists[Store.INIS]:
                 ini_uilist.panel.ShowPanel()
             else:
-                bosh.iniInfos.refresh(refresh_infos=False)
+                bosh.iniInfos.refresh(False)
             return True
         except OSError:
             target_ini_pth = target_ini_file.abs_path
@@ -1939,8 +1939,8 @@ class INIPanel(BashTab):
         # old INI and report no change, so we won't refresh the INI in the
         # details panel
         target_ch = self.detailsPanel.check_new_target()
-        rdata = not booting and bosh.iniInfos.refresh( # we refreshed on boot
-            refresh_infos=refresh_infos)
+        rdata = not booting and bosh.iniInfos.refresh( # we refreshed on init
+            refresh_infos)
         super().ShowPanel(target_changed=target_ch, clean_targets=not booting)
         if rdata or target_ch: ##:(701) we need this to be more granular
             if detail_item is not self._ini_same_item:
@@ -2040,7 +2040,7 @@ class SaveList(UIList):
         if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=_(
             u'Setting the save profile is done by editing the game ini.')):
             return
-        self.data_store.refresh(save_dir=new_saves, do_swap=do_swap)
+        self.data_store.refresh(True, save_dir=new_saves, do_swap=do_swap)
         balt.Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
@@ -3246,8 +3246,8 @@ class ScreensPanel(BashTab):
 
     def ShowPanel(self, **kwargs):
         """Panel is shown. Update self.data."""
-        if bosh.screen_infos.refresh():
-            self.uiList.RefreshUI(focus_list=False)
+        if rdata := bosh.screen_infos.refresh(True):
+            self.uiList.RefreshUI(rdata, focus_list=False)
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
@@ -3542,7 +3542,6 @@ class BashFrame(WindowFrame):
                 bush.game.Se.plugin_dir, 'plugins', lf))
             if lf_path and lf_path.is_file():
                 return # Limit-fixing xSE plugin installed
-        if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         infos_num = len(bosh.bsaInfos) + len(bosh.modInfos)
         if infos_num >= 325 and not settings['bash.mods.autoGhost']:
             message = _(
@@ -3646,7 +3645,7 @@ class BashFrame(WindowFrame):
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
         ui_refresh = {store.unique_store_key: rdata for store in (
             bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
-             rdata := not booting and store.refresh())}
+             rdata := not booting and store.refresh(True))}
         #--Repopulate, focus will be set in ShowPanel
         self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
             Store.MODS), ui_refresh, focus_list=False, booting=booting)

@@ -23,7 +23,6 @@
 
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
-from collections import defaultdict
 from itertools import chain
 
 from . import Installers_Link
@@ -93,10 +92,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         self._showOk(_('You may now install your mod. When installation is '
                        'complete, press OK.'), _('External Installation'))
         # Refresh Data
-        ui_refresh = defaultdict(bool)
-        for store in bosh.data_tracking_stores():
-            ui_refresh[store.unique_store_key] = bool(
-                store.refresh(unlock_lo=True))
+        rd_refresh = {store: bool(store.refresh(True, unlock_lo=True)) for store in
+                      bosh.data_tracking_stores()}
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
@@ -136,9 +133,9 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
         # createFromData placed the new project last in install order - install
         try:
-            self.idata.bain_install([pr_path], ui_refresh, override=False)
+            self.idata.bain_install([pr_path], rd_refresh, override=False)
         finally:
-            self.window.propagate_refresh(True, ui_refresh)
+            self.window.propagate_refresh(True, rd_refresh)
         # Select new installer
         self.window.SelectLast()
 

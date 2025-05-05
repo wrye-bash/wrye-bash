@@ -320,7 +320,7 @@ class Save_RenamePlayer(ItemLink):
         for save_inf in self.iselected_infos():
             savedPlayer = _saves.Save_NPCEdits(save_inf)
             savedPlayer.renamePlayer(newName)
-        bosh.saveInfos.refresh()
+        bosh.saveInfos.refresh(True)
         self.refresh_sel()
 
 #------------------------------------------------------------------------------

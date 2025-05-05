@@ -81,8 +81,8 @@ class Screens_NextScreenShot(EnabledLink):
                 screens_dir = bass.dirs[u'app'].join(screens_dir)
             screens_dir.makedirs()
         bosh.oblivionIni.saveSettings(settings_screens)
-        bosh.screen_infos.refresh()
-        self.window.RefreshUI()
+        rdata = bosh.screen_infos.refresh(True)
+        self.window.RefreshUI(rdata)
 
 #------------------------------------------------------------------------------
 class Screen_ConvertTo(EnabledLink):
@@ -114,7 +114,7 @@ class Screen_ConvertTo(EnabledLink):
                     if not result: continue
                     srcPath.remove()
         finally:
-            bosh.screen_infos.refresh()
+            bosh.screen_infos.refresh(True) ##: 701
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
