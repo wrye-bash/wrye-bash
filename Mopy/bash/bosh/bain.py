@@ -1135,11 +1135,11 @@ class Installer(ListInfo):
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
         underrides = set()
-        status = 0
+        inst_status = 0
         missing.clear()
         mismatched.clear()
         if not self.has_recognized_structure:
-            status = -20
+            inst_status = -20
         elif data_sizeCrc:
             for filename,sizeCrc in data_sizeCrc.items():
                 sizeCrcDate = get_cached(filename)
@@ -1149,11 +1149,11 @@ class Installer(ListInfo):
                     mismatched.add(filename)
                 if sizeCrc == ci_underrides_sizeCrc.get(filename):
                     underrides.add(filename)
-            if missing: status = -10
+            if missing: inst_status = -10
             elif any(ModInfos.rightFileType(f) for f in mismatched):
-                status = 10
-            elif mismatched: status = 20
-            else: status = 30
+                inst_status = 10
+            elif mismatched: inst_status = 20
+            else: inst_status = 30
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
         for filename, sizeCrc in list(dirty_sizeCrc.items()):
@@ -1163,8 +1163,8 @@ class Installer(ListInfo):
                 ):
                 del dirty_sizeCrc[filename]
         #--Done
-        changed = self.status != status or self.underrides != underrides
-        self.status, self.underrides = status, underrides
+        changed = self.status != inst_status or self.underrides != underrides
+        self.status, self.underrides = inst_status, underrides
         return changed
 
     def format_item(self, idata, item_format): ##: add more mouse texts
@@ -2279,17 +2279,13 @@ class InstallersData(DataStore):
         """Refresh installer status."""
         inOrder, ordering = [], []
         # not specifying the key below results in double time
-        for iname, installer in dict_sort(self):
-            if installer.order >= 0:
-                inOrder.append((iname, installer))
-            else:
-                ordering.append((iname, installer))
-        inOrder.sort(key=lambda x: x[1].order)
-        for dex, (key, value) in enumerate(inOrder):
-            if self.lastKey == key:
-                inOrder[dex:dex] = ordering
-                break
-        else:
+        for iname, inst in dict_sort(self, key_f=lambda k: (self[k].order, k)):
+            (inOrder if inst.order >= 0 else ordering).append((iname, inst))
+        try:
+            dex = next(i for i, (k, _v) in enumerate(inOrder) if
+                       k == self.lastKey)
+            inOrder[dex:dex] = ordering
+        except StopIteration: # should not happen!
             inOrder.extend(ordering)
         change = set()
         for order, (iname, installer) in enumerate(inOrder):
