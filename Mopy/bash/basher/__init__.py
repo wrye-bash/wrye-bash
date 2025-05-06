@@ -1286,12 +1286,12 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         if not self.edited and self.fileStr != new_text:
             self.SetEdited()
 
-    def _refresh_detail_info(self, refresh_info, ren_data, ref_saves=None,
+    def _refresh_detail_info(self, refr_self, ren_data, ref_saves=None,
                              **kwargs):
         # Although we could avoid rereading the header by passing the info in I
         # leave it here as an extra error check - error handling is WIP
         store = self.panel_uilist.data_store
-        ren_data |= store.refresh(refresh_info and RefrIn.from_tabled_infos(
+        ren_data |= store.refresh(refr_self and RefrIn.from_tabled_infos(
             {self.file_info.fn_key: self.file_info}), **kwargs)
         if not store.get(det_it := self.file_info.fn_key):
             showError(self, _('File corrupted on save!') +
@@ -1599,21 +1599,11 @@ class ModDetails(_ModsSavesDetails):
         if (changeName := self._rename_detail_item()) is None:
             return
         changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
-        changeHedr = (self.authorStr != mod_inf.header.author or
-                      self.descriptionStr != mod_inf.header.description)
-        changeMasters = self.uilist.edited
-        unlock_lo = changeDate and not bush.game.using_txt_file
-        #--Only change date?
-        if changeDate and not (changeName or changeHedr or changeMasters):
-            self._set_date(mod_inf)
-            rdata = bosh.modInfos.refresh(refresh_infos=False,
-                                          unlock_lo=unlock_lo)
-            rdata.redraw.add(mod_inf.fn_key) # needed!
-            self.panel_uilist.propagate_refresh( # refresh saves if lo changed
-                rdata, refr_saves=unlock_lo)
-            return
+        change_hdr = self.uilist.edited or (
+                self.authorStr != mod_inf.header.author or
+                self.descriptionStr != mod_inf.header.description)
         #--Change hedr/masters?
-        if refr_inf := (changeHedr or changeMasters):
+        if change_hdr:
             #--Backup
             mod_inf.makeBackup()
             mod_inf.header.author = self.authorStr.strip()
@@ -1622,11 +1612,17 @@ class ModDetails(_ModsSavesDetails):
             mod_inf.header.masters = self.uilist.GetNewMasters()
             mod_inf.header.setChanged()
             mod_inf.writeHeader(old_mi_masters)
+        ref_saves = bool(changeName)
         #--Change date?
-        if changeDate:
-            self._set_date(mod_inf) # crc recalculated in writeHeader if needed
-        self._refresh_detail_info(refr_inf, changeName,
-                                  changeName or unlock_lo, unlock_lo=unlock_lo)
+        if unlock_lo := changeDate:
+            unlock_lo = not bush.game.using_txt_file
+            mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
+            #--Only change date?
+            if not (changeName or change_hdr):
+                changeName.redraw.add(mod_inf.fn_key) # needed!
+        ref_saves |= unlock_lo
+        self._refresh_detail_info(change_hdr, changeName, ref_saves,
+                                  unlock_lo=unlock_lo)
 
     def _rename_detail_item(self):
         file_str = self.fileStr.strip()
@@ -1650,9 +1646,6 @@ class ModDetails(_ModsSavesDetails):
         if ren_data: ##: bash.mods.renames needs a spec
             settings['bash.mods.renames'].update(ren_data.renames)
         return ren_data
-
-    def _set_date(self, mod_inf):
-        mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
 
     #--Bash Tags
     ##: Once we're on wx4.1.1, we can use OnDimiss to fully refreshUI the

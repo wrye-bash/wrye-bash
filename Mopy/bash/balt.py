@@ -1461,7 +1461,7 @@ class UIList(PanelWin):
                 inf.move_info(destDir)
                 moved_infos.add(inf)
         # no need to check existence, we just moved them
-        self.data_store.refresh(RefrIn(del_infos=moved_infos))
+        self.data_store.refresh(RefrIn(del_infos=moved_infos), unlock_lo=True)
 
     @staticmethod
     def _unhide_wildcard(): raise NotImplementedError
