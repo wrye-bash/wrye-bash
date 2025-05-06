@@ -1085,23 +1085,22 @@ class UIList(PanelWin):
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
-        newName, root, *args = self._rename_args(evt_label, selected)
-        if root is None:
-            showError(self, newName)
+        *args, store_refr = self._rename_args(evt_label, selected)
+        if args[1] is None:
+            showError(self, args[0])
             return EventResult.CANCEL # validate_filename would Veto
         item_edited = self.panel.detailsPanel.displayed_item
+        ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            rdata = RefrData()
-            for sel_inf in selected:
-                try:
-                    rdata |= self.try_rename(sel_inf, root, *args)
-                except TypeError: # try_rename returned None
-                    break
-            self.refresh_renames(item_edited, rdata, *args)
+            if rdata := self.try_rename(ren_args, store_refr):
+                self.refresh_renames(item_edited, rdata, store_refr)
         return EventResult.CANCEL # needed! clears new name from label on exception
 
+    def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
+        return [(sel_inf, args[1]) for sel_inf in selected]
+
     def _rename_args(self, evt_label, selected):
-        return selected[0].validate_filename_str(evt_label)
+        return *selected[0].validate_filename_str(evt_label), None
 
     def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
         if rdata:
@@ -1134,32 +1133,19 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, info, new_root, store_refr=None, *, forced_ext=''):
+    def try_rename(self, ren_args, store_refr=None, *, forced_ext=''):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
-        newName = info.unique_key(new_root, forced_ext)
-        if newName is None: # new and old names are ci-same
-            return RefrData()
-        try:
-            return self.data_store.rename_operation(info, newName,
-                store_refr=store_refr) # a defaultdict(RefrData) or None
-        except (CancelError, OSError):
-            deprint(f'Renaming {info} to {newName} failed', traceback=True)
-            # When using moveTo I would get "WindowsError:[Error 32]The process
-            # cannot access ..." -  the code below was reverting the changes.
-            # With shellMove I mostly get CancelError so below not needed -
-            # except if a save is locked and user presses Skip - so cosaves are
-            # renamed! Error handling is still a WIP
-            for old, new in info.get_rename_paths(newName):
-                if old == new: continue
-                if (nex := new.exists()) and not (oex := old.exists()):
-                    # some cosave move failed, restore files
-                    new.moveTo(old, check_exist=False) # we just checked
-                elif nex and oex:
-                    # move copies then deletes, so the delete part failed
-                    new.remove()  # return None # break
-            return None # maybe a msg if really really needed
+        info_new_name = []
+        for info, new_root in ren_args:# check if new and old names are ci-same
+            if (new_fn := info.unique_key(new_root, forced_ext)) is not None:
+                info_new_name.append((info, new_fn))
+        rdata = RefrData()
+        if not info_new_name:
+            return rdata
+        self.data_store.rename_operation(info_new_name, rdata, store_refr)
+        return rdata if rdata else None # maybe a msg if really really needed
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags

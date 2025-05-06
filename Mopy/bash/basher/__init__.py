@@ -1270,11 +1270,11 @@ class _EditableMixin(_DetailsMixin):
                                             detail_item=det_it)
 
     def _rename_detail_item(self):
-        newName = FName(self.fileStr.strip())
+        new_n = FName(self.fileStr.strip())
         # OnFileEdited checked if filename existed in validate_name
         #  but this happened before and since maybe modinfos are
         #  updated, we need to check again todo: possibly cancel?
-        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
+        return self.panel_uilist.try_rename([[self.file_info, new_n.fn_body]])
 
     def _extra_changes(self, rename_data): # changes that need refresh
         return False, None, {}
@@ -2040,7 +2040,7 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        if rdata := self.try_rename(sinf, fn_item.fn_body,
+        if rdata := self.try_rename([[sinf, fn_item.fn_body]],
                                     forced_ext=extension):
             self.RefreshUI(rdata)
 
@@ -3166,29 +3166,13 @@ class ScreensList(UIList):
             self.OpenSelected(selected=[hitItem])
         return EventResult.FINISH
 
-    @balt.conversation
-    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Rename selected screenshots."""
-        if is_edit_cancelled: return EventResult.CANCEL
-        selected = self.get_selected_infos_filtered()
-        if not selected:
-            # Sometimes seems to happen on wxGTK, simply abort
-            return EventResult.CANCEL
-        root, numStr, num, digits = self._rename_args(evt_label, selected)
-        if numStr is None: # note we allow for number only names
-            showError(self, root)
-            return EventResult.CANCEL
-        item_edited = self.panel.detailsPanel.displayed_item
-        with BusyCursor():
-            rdata = RefrData()
-            for sel_inf in selected:
-                try:
-                    rdata |= self.try_rename(sel_inf, root + numStr)
-                    numStr = numStr and str(num := num + 1).zfill(digits)
-                except TypeError: # try_rename returned None
-                    break
-            self.refresh_renames(item_edited, rdata)
-            return EventResult.CANCEL
+    def _info_to_name(self, selected, *args):
+        root, numStr, num, digits = args
+        ren_args = []
+        for sel_inf in selected:
+            ren_args.append((sel_inf, root + numStr))
+            numStr = numStr and str(num := num + 1).zfill(digits)
+        return ren_args
 
     def _rename_args(self, evt_label, selected):
         root, numStr = selected[0].validate_filename_str(evt_label)
@@ -3196,7 +3180,7 @@ class ScreensList(UIList):
         num = int(numStr or 0)
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr and numStr.zfill(digits)
-        return root, numStr, num, digits
+        return root, numStr, num, digits, None
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens

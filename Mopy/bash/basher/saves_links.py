@@ -34,7 +34,7 @@ from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
 from ..bass import Store
-from ..bolt import FName, GPath, Path, RefrIn, SubProgress, RefrData
+from ..bolt import FName, GPath, Path, RefrIn, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
@@ -399,18 +399,16 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'), title=_('Renumber Saves'), initial_num=1,
             min_num=1, max_num=10000)
         if nfn_number is None: return
-        rdata = RefrData()
+        ren_args = []
         for s_groups, sinf in self._matches:
             # We have to pass the root, so strip off the extension
             ofn_root = FName(s_groups[2]).fn_body
             nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
             if nfn_save != sinf.fn_key.fn_body:
-                try:
-                    rdata |= self.window.try_rename(sinf, nfn_save)
-                except TypeError:
-                    break
+                ren_args.append((sinf, nfn_save))
                 nfn_number += 1
-        self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
+        if rdata := self.window.try_rename(ren_args):
+            self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):

@@ -2094,23 +2094,23 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, member_info, name_new, store_refr=None):
+    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
+                         try_once=True):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
-        rdata_ren = super().rename_operation(member_info, name_new, store_refr)
+        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
         # Update the ownership information for relevant data stores
-        old_key = next(iter(rdata_ren.to_del))
         stores = [s for s in data_tracking_stores() if s.tracks_ownership] if \
-            rdata_ren.ren_paths else () # else it's a marker
-        for store in stores:
-            owned = {k: v for k, v in store.items() if str(  # str due to Paths
-                v.get_table_prop('installer')) == old_key}
-            if owned:
-                store_refr[store.unique_store_key] |= RefrData(set(owned))
-            for v in owned.values():
-                v.set_table_prop('installer', '%s' % name_new)
-        return rdata_ren
+            rd_ren.ren_paths else () # else it's a marker
+        for dex, (old_key, name_new) in enumerate(rd_ren.renames.items()):
+            for store in stores: # str due to Paths
+                owned = {k: v for k, v in store.items() if str(
+                    v.get_table_prop('installer')) == old_key}
+                if owned:
+                    store_refr[store.unique_store_key] |= RefrData(set(owned))
+                for v in owned.values():
+                    v.set_table_prop('installer', '%s' % name_new)
 
     #--Dict Functions ---------------------------------------------------------
     def _delete_operation(self, infos, recycle):

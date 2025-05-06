@@ -1482,6 +1482,27 @@ class ScreenInfo(AFileInfo):
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
 #------------------------------------------------------------------------------
+def _check_renamed(paths_per_file):
+    for inf, (rename_paths, new_name) in [*paths_per_file.items()]:
+        if all(p[1].exists() for p in rename_paths):
+            for p in rename_paths:
+                p[0].remove() #(241) clear paths left behind (needed?)
+            continue
+        deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
+        del paths_per_file[inf]
+        # When using moveTo I would get "WindowsError:[Error 32]The process
+        # cannot access ..." -  the code below was reverting the changes.
+        # With shellMove I mostly get CancelError so below not needed -
+        # except if a save is locked and user presses Skip - so cosaves are
+        # renamed! Error handling is still a WIP
+        for old, new in rename_paths:
+            if (nex := new.exists()) and not (oex := old.exists()):
+                # some cosave move failed, restore files
+                new.moveTo(old, check_exist=False)  # just checked
+            elif nex and oex:
+                # move copies then deletes, so the delete part failed
+                new.remove()
+
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
@@ -1527,20 +1548,50 @@ class DataStore(DataDict):
         """Lift your skirts, we are entering the realm of #241."""
         return {inf for inf in infos if not inf.abs_path.exists()}
 
-    def rename_operation(self, member_info, newName, store_refr=None):
-        rename_paths = member_info.get_rename_paths(newName)
-        for tup in rename_paths[1:]: # first rename path must always exist
-            # if cosaves or backups do not exist shellMove fails!
-            # if filenames are the same (for instance cosaves in disabling
-            # saves) shellMove will offer to skip and raise SkipError
-            if tup[0] == tup[1] or not tup[0].exists():
-                rename_paths.remove(tup)
-        if ren := dict(rename_paths): env.shellMove(ren)
+    _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
+                    '%(new)s.'), '', '',
+        _('The file is in use by another process such as %(xedit_name)s.'), '',
+        _('Please close the other program that is accessing %(new)s.'), '', '',
+        _('Try again?')]
+    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
+                         try_once=True):
+        all_rename_paths = {}
+        paths_per_file = {} # revert partial renames
+        for inf, new_name in info_new_name:
+            rename_paths = inf.get_rename_paths(new_name)
+            for tup in rename_paths[1:]: # first rename path must always exist
+                # if cosaves or backups do not exist shellMove fails!
+                # if filenames are the same (for instance cosaves in disabling
+                # saves) shellMove will offer to skip and raise SkipError
+                if tup[0] == tup[1] or not tup[0].exists():
+                    rename_paths.remove(tup)
+            all_rename_paths.update(rename_paths)
+            paths_per_file[inf] = rename_paths, new_name
+        if not all_rename_paths:
+            return
+        while try_once:
+            try:
+                env.shellMove(all_rename_paths)
+            except (CancelError, OSError) as e:
+                if try_once is not True:
+                    ##:(#241)  only for swapping Oblivion esm, duh - was
+                    # PermissionError, occurred if SHFileOperation isn't called
+                    # (now we use IFileOperation anyway) - CancelError? Test!
+                    old, new = next(iter(all_rename_paths.items()))
+                    msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
+                        'xedit_name': bush.game.Xe.full_name}
+                    if isinstance(e, OSError) and try_once(
+                            msg, title=_('File in Use')):
+                        continue
+                    _check_renamed(paths_per_file)
+                    raise
+                _check_renamed(paths_per_file)
+            break
         # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
-        ren_d = member_info.set_path_keys(FName(newName))
-        self[member_info.fn_key] = member_info
-        del self[next(iter(ren_d.to_del))]
-        return ren_d
+        for inf, (_rename_paths, new_name) in paths_per_file.items():
+            del self[inf.fn_key]
+            rd_ren |= inf.set_path_keys(FName(new_name))
+            self[inf.fn_key] = inf # fn_key was set to new value
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1646,8 +1697,8 @@ class _AFileInfos(DataStore):
         rdata.to_del = {d.fn_key for d in delinfos}
         if delinfos: self._delete_refresh(delinfos)
         if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
-            self._notify_bain(altered={self[n].abs_path for n in alt},
-                              del_set={inf.abs_path for inf in delinfos})
+            alt = {self[n].abs_path for n in alt}
+            self._notify_bain({inf.abs_path for inf in delinfos}, alt)
         return rdata
 
     def _list_store_dir(self):
@@ -1714,11 +1765,11 @@ class _AFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-    def rename_operation(self, member_info, newName, store_refr=None):
+    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
+                         try_once=True):
         # Override to allow us to notify BAIN if necessary
-        rdata_ren = super().rename_operation(member_info, newName)
-        self._notify_bain(set(rp := rdata_ren.ren_paths), set(rp.values()))
-        return rdata_ren
+        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
+        self._notify_bain(set(rp := rd_ren.ren_paths), set(rp.values()))
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
@@ -2413,20 +2464,20 @@ class ModInfos(TableFileInfos):
         return merged_,imported_
 
     # Rest of DataStore overrides ---------------------------------------------
-    def rename_operation(self, member_info, newName, store_refr=None):
-        """Renames member file from oldName to newName."""
-        isSelected = load_order.cached_is_active(member_info.fn_key)
-        if isSelected:
-            self.lo_deactivate(member_info.fn_key)
-        rdata_ren = super().rename_operation(member_info, newName)
+    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
+                         try_once=True):
+        if act_mods := {fn for inf, _new_name in info_new_name if
+                        load_order.cached_is_active(fn := inf.fn_key)}:
+            self.lo_deactivate(*act_mods)
+        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
         # rename in load order caches
-        self._lo_move_mod(old_key := next(iter(rdata_ren.renames)),
-                          FName(newName), isSelected, save_all=True)
-        # Update linked BP parts if the parent BP got renamed
-        for mod_inf in self.values():
-            if mod_inf.get_table_prop('bp_split_parent') == old_key:
-                mod_inf.set_table_prop('bp_split_parent', str(newName))
-        return rdata_ren
+        for dex, (old_key, new_fn) in enumerate(rd_ren.renames.items()):
+            self._lo_move_mod(old_key, new_fn, old_key in act_mods,
+                              save_all=dex == len(rd_ren.renames) - 1)
+            # Update linked BP parts if the parent BP got renamed
+            for mod_inf in self.values():
+                if mod_inf.get_table_prop('bp_split_parent') == old_key:
+                    mod_inf.set_table_prop('bp_split_parent', str(new_fn))
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
@@ -2984,11 +3035,6 @@ class ModInfos(TableFileInfos):
         return master_name
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
-                    '%(new)s.'), '', '',
-        _('The file is in use by another process such as %(xedit_name)s.'), '',
-        _('Please close the other program that is accessing %(new)s.'), '', '',
-        _('Try again?')]
     def try_set_version(self, set_version, *, do_swap=None):
         """Set Oblivion version to specified one - dry run if do_swap is None,
         else do_swap must be an askYes callback. Our caches must be fresh from
@@ -3005,7 +3051,7 @@ class ModInfos(TableFileInfos):
             if not do_swap: return True # we can swap
         else: return False
         # Swap Oblivion.esm to specified version - do_swap is askYes callback
-        # if new version is '1.1' then copy_from is FName(Oblivion_1.1.esm)
+        # if new version=='1.1' then copy_from==FName(Oblivion_1.1.esm)
         copy_from = FName(f'{fnb}_{set_version}.esm')
         swapped_inf = self[copy_from]
         swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
@@ -3016,36 +3062,24 @@ class ModInfos(TableFileInfos):
         is_new_info_active = load_order.cached_is_active(copy_from)
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
-        rename_args = (baseInfo, move_to), (swapped_inf, master_esm)
-        deltd = swapped_inf.abs_path # will be (effectively) deleted
-        for do_undo, inf_fname in enumerate(rename_args):
-            while True:
-                try:
-                    file_info_rename_op(*inf_fname)
-                    break
-                except PermissionError: ##: can only occur if SHFileOperation
-                    # isn't called - file operation API badly needed (#241)
-                    old = inf_fname[0].abs_path
-                    new = inf_fname[0].get_rename_paths(inf_fname[1])[0][1]
-                    msg = '\n'.join(self._retry_msg) % {'old': old, 'new': new,
-                        'xedit_name': bush.game.Xe.full_name, }
-                    if do_swap(msg, title=_('File in Use')):
-                        continue
-                    if do_undo: file_info_rename_op(self[move_to], master_esm)
-                    raise
-                except CancelError:
-                    if do_undo: file_info_rename_op(self[move_to], master_esm)
-                    return
-        master_inf = self[master_esm]
-        # set mtimes to previous respective values
-        master_inf.setmtime(master_time)
-        if swapping_a_ghost: # we need to unghost the master esm
-            master_inf.setGhost(False)
+        ren_data = RefrData()
+        for inf_fname in (baseInfo, move_to), (swapped_inf, master_esm):
+            try:
+                file_info_rename_op(inf_fname, ren_data, try_once=do_swap)
+            except CancelError:
+                return
+            finally:
+                rens = ren_data.renames
+                if master_esm in rens and copy_from not in rens:
+                    file_info_rename_op((self[move_to], master_esm), ren_data)
+                master_inf = self[master_esm]
+                # set mtimes to previous respective values
+                master_inf.setmtime(master_time)
+                if swapping_a_ghost: # we need to unghost the master esm
+                    master_inf.setGhost(False)
         self[move_to].setmtime(new_info_time)
         self._lo_move_mod(copy_from, move_to, is_new_info_active,
             deactivate=not is_new_info_active, save_all=True) # always deactivate?
-        # make sure to notify BAIN rename_operation passes only renames param
-        self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
         self.voCurrent = set_version
         self._voAvailable.add(curr_ver)
         self._voAvailable.remove(set_version)
@@ -3192,13 +3226,14 @@ class SaveInfos(TableFileInfos):
             self.set_store_dir(save_dir, do_swap)
         return super().refresh(refresh_infos, booting=booting, **kwargs)
 
-    def rename_operation(self, member_info, newName, store_refr=None):
+    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
+                         try_once=True):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        rdata_ren = super().rename_operation(member_info, newName)
-        for co_type, co_file in self[newName]._co_saves.items():
-            co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
-        return rdata_ren
+        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
+        for newn in rd_ren.renames.values():
+            for co_type, co_file in self[newn]._co_saves.items():
+                co_file.abs_path = co_type.get_cosave_path(self[newn].abs_path)
 
     @staticmethod
     def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
