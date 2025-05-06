@@ -284,14 +284,14 @@ class Save_ImportFace(OneItemLink):
         fname = srcPath.tail.s
         if bosh.SaveInfos.rightFileType(fname): # Import from a save
             #--Get face
-            srcInfo = bosh.SaveInfo(srcPath)
+            srcInfo = bosh.saveInfos.factory(srcPath)
             with balt.Progress(fname) as progress:
                 saveFile = _saves.SaveFile(srcInfo)
                 saveFile.load(progress)
             srcFaces = faces.PCFaces.save_getFaces(saveFile)
         elif bosh.ModInfos.rightFileType(fname): # Import from a mod
             #--Get faces
-            srcInfo = bosh.ModInfo(srcPath)
+            srcInfo = bosh.modInfos.factory(srcPath)
             srcFaces = faces.PCFaces.mod_getFaces(srcInfo)
             #--No faces to import?
             if not srcFaces:

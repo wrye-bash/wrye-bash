@@ -1120,10 +1120,6 @@ class ModList(_ModsUIList):
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
 
-    @staticmethod
-    def _unhide_wildcard():
-        return bosh.modInfos.plugin_wildcard()
-
     # Helpers -----------------------------------------------------------------
     @balt.conversation
     def _toggle_active_state(self, *mods):
@@ -2007,12 +2003,6 @@ class SaveList(UIList):
         'Cell': _ask_info('header.pcLocation'),
     }
 
-    @staticmethod
-    def _unhide_wildcard():
-        starred = f'*{bush.game.Ess.ext};*.bak'
-        return f'{bush.game.display_name} ' + _(
-            'Save files') + f' ({starred})|{starred}'
-
     #--Populate Item
     def _set_icon_text(self, inf, *args, **kwargs):
         status = super()._set_icon_text(inf, *args, **kwargs)
@@ -2301,12 +2291,6 @@ class InstallersList(UIList):
         if isinstance(root, tuple):
             root = root[0]
         return newName, root, defaultdict(RefrData) # see store_refr
-
-    @staticmethod
-    def _unhide_wildcard():
-        starred = ';'.join(f'*{e}' for e in archives.readExts)
-        return f'{bush.game.display_name} {_("Mod Archives")} ' \
-               f'({starred})|{starred}'
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):

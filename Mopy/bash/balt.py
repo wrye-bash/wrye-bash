@@ -1449,13 +1449,11 @@ class UIList(PanelWin):
         # no need to check existence, we just moved them
         self.data_store.refresh(RefrIn(del_infos=moved_infos), unlock_lo=True)
 
-    @staticmethod
-    def _unhide_wildcard(): raise NotImplementedError
     def unhide(self):
         srcDir = self.data_store.hide_dir
         # Otherwise the unhide command will open some random directory
         srcDir.makedirs()
-        wildcard = self._unhide_wildcard()
+        wildcard = self.data_store.unhide_wildcard()
         destDir = self.data_store.store_dir
         srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
             defaultDir=srcDir, wildcard=wildcard)

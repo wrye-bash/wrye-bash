@@ -1934,6 +1934,12 @@ class InstallersData(DataStore):
     @property
     def hide_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
 
+    @classmethod
+    def unhide_wildcard(cls):
+        starred = ';'.join(f'*{e}' for e in archives.readExts)
+        return f'{bush.game.display_name} {_("Mod Archives")} ' \
+               f'({starred})|{starred}'
+
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
             install_order=None, do_refresh=True, _index=None, fs_load=True):
         """Create, add to self and return a new _InstallerPackage.

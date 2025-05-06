@@ -1677,7 +1677,7 @@ class Mod_Face_Import(OneItemLink):
                                 wildcard=wildcard)
         if not srcPath: return
         #--Get face
-        srcInfo = bosh.SaveInfo(srcPath, load_cache=True)
+        srcInfo = bosh.saveInfos.factory(srcPath, load_cache=True)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
@@ -1768,7 +1768,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             if ext == u'.csv':
                 parser.read_csv(textPath)
             else:
-                srcInfo = bosh.ModInfo(textPath)
+                srcInfo = bosh.modInfos.factory(textPath)
                 parser.readFromMod(srcInfo)
             progress(0.2, _('Applying to %(applying_plugin)s.') % {
                 'applying_plugin': self._selected_item})
