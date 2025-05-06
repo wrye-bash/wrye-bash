@@ -2283,14 +2283,14 @@ class InstallersList(UIList):
                 return None, _("Wrye Bash can't rename mixed package types.")
         return rename_type, rename_err
 
-    def _rename_args(self, evt_label, selected):
+    def _rename_args(self, evt_label, selected, **val_kwargs):
         # all selected have common type! enforced in OnBeginEditLabel
-        newName, root = selected[0].validate_filename_str(evt_label,
-            allowed_exts=archives.readExts)
+        ren_args = super()._rename_args(evt_label, selected,
+                                        allowed_exts=archives.readExts)
         #--Rename each installer, keeping the old extension (for archives)
-        if isinstance(root, tuple):
-            root = root[0]
-        return newName, root, defaultdict(RefrData) # see store_refr
+        if isinstance(ren_args[1], tuple):
+            ren_args[1] = ren_args[1][0]
+        return ren_args[:2], {'store_refr': defaultdict(RefrData)}
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -3158,13 +3158,13 @@ class ScreensList(UIList):
             numStr = numStr and str(num := num + 1).zfill(digits)
         return ren_args
 
-    def _rename_args(self, evt_label, selected):
-        root, numStr = selected[0].validate_filename_str(evt_label)
+    def _rename_args(self, evt_label, selected, **val_kwargs):
+        root, numStr, st_ref = super()._rename_args(evt_label, selected)
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or 0)
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr and numStr.zfill(digits)
-        return root, numStr, num, digits, None
+        return root, numStr, num, digits, st_ref
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens

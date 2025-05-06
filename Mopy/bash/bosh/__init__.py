@@ -333,13 +333,14 @@ class FileInfo(_TabledInfo, AFileInfo):
     def delete_paths(self): # will include cosave ones
         return *super().delete_paths(), *self.all_backup_paths()
 
-    def get_rename_paths(self, newName):
-        old_new_paths = super().get_rename_paths(newName)
+    def get_rename_paths(self, new_name, dest_dir=None, with_backups=True):
+        old_new_paths = super().get_rename_paths(new_name, dest_dir, with_backups)
         # all_backup_paths will return the backup paths for this file and its
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
-        old_new_paths.extend(
-            zip(self.all_backup_paths(), self.all_backup_paths(newName)))
+        if with_backups:
+            old_new_paths.extend(
+                zip(self.all_backup_paths(), self.all_backup_paths(new_name)))
         return old_new_paths
 
 class _WithMastersInfo(FileInfo):
@@ -354,9 +355,9 @@ class _WithMastersInfo(FileInfo):
         self.extras = {} # ModInfo only - don't use!
         super().__init__(fullpath, **kwargs)
 
-    def _reset_cache(self, stat_tuple, **kwargs):
+    def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
-        if kwargs.get('load_cache'): self.readHeader()
+        if load_cache: self.readHeader()
 
     def readHeader(self):
         """Read header from file and set self.header attribute."""
@@ -1012,8 +1013,8 @@ class ModInfo(_WithMastersInfo):
             dup_path = st[destName].abs_path # used the (possibly) ghosted path
         super().fs_copy(dup_path, set_time=set_time)
 
-    def get_rename_paths(self, newName):
-        old_new_paths = super().get_rename_paths(newName)
+    def get_rename_paths(self, new_name, dest_dir=None, with_backups=True):
+        old_new_paths = super().get_rename_paths(new_name, dest_dir, with_backups)
         if self.is_ghost: # add ghost extension to dest path - Path.__add__!
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
         return old_new_paths
@@ -1274,6 +1275,13 @@ class SaveInfo(_WithMastersInfo):
         self._co_saves = self.get_cosaves_for_path(fullpath)
         super().__init__(fullpath, **kwargs)
 
+    def set_path_keys(self, *args, **kwargs):
+        """Update our cosave instance names/paths."""
+        ren_d = super().set_path_keys(*args, **kwargs)
+        for co_type, co_file in self._co_saves.items():
+            co_file.abs_path = co_type.get_cosave_path(self.abs_path)
+        return ren_d
+
     @classmethod
     def _store(cls): return saveInfos
 
@@ -1448,8 +1456,8 @@ class SaveInfo(_WithMastersInfo):
         super().fs_copy(dup_path, set_time=set_time)
         SaveInfos.co_copy_or_move(self._co_saves, dup_path)
 
-    def get_rename_paths(self, newName):
-        old_new_paths = super().get_rename_paths(newName)
+    def get_rename_paths(self, new_name, dest_dir=None, with_backups=True):
+        old_new_paths = super().get_rename_paths(new_name, dest_dir, with_backups)
         # super call added the backup paths but not the actual rename cosave
         # paths inside the store_dir - add those only if they exist
         old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
@@ -1553,12 +1561,13 @@ class DataStore(DataDict):
         _('The file is in use by another process such as %(xedit_name)s.'), '',
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
-    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
-                         try_once=True):
+    def rename_operation(self, info_new_name, rd_ren, *, try_once=True,
+                         dest_dir=None, ren_parent=None, with_backups=True):
         all_rename_paths = {}
         paths_per_file = {} # revert partial renames
         for inf, new_name in info_new_name:
-            rename_paths = inf.get_rename_paths(new_name)
+            rename_paths = inf.get_rename_paths(new_name, dest_dir,
+                                                with_backups)
             for tup in rename_paths[1:]: # first rename path must always exist
                 # if cosaves or backups do not exist shellMove fails!
                 # if filenames are the same (for instance cosaves in disabling
@@ -1571,7 +1580,7 @@ class DataStore(DataDict):
             return
         while try_once:
             try:
-                env.shellMove(all_rename_paths)
+                env.shellMove(all_rename_paths, ren_parent)
             except (CancelError, OSError) as e:
                 if try_once is not True:
                     ##:(#241)  only for swapping Oblivion esm, duh - was
@@ -1589,9 +1598,13 @@ class DataStore(DataDict):
             break
         # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
         for inf, (_rename_paths, new_name) in paths_per_file.items():
-            del self[inf.fn_key]
-            rd_ren |= inf.set_path_keys(FName(new_name))
-            self[inf.fn_key] = inf # fn_key was set to new value
+            rd_ren |= RefrData(**{ # pop the old key - else unhiding
+                'to_add': {new_name},
+                'renames': {(old_key := inf.fn_key): new_name},
+                'to_del': {old_key} if self.pop(old_key, None) else set(),
+                'ren_paths': inf.set_path_keys(new_name, infodir=dest_dir)})
+            if dest_dir is None: # else we are going to create new infos ##:701
+                self[inf.fn_key] = inf # fn_key was set to new value
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1616,15 +1629,6 @@ class DataStore(DataDict):
 
     @classmethod
     def unhide_wildcard(cls): raise NotImplementedError
-
-    def move_infos(self, sources, destinations, window):
-        """Hasty hack for Files_Unhide - only use on files, not folders!"""
-        try:
-            env.shellMove(dict(zip(sources, destinations)), parent=window)
-        except (CancelError, SkipError):
-            pass
-        return forward_compat_path_to_fn_list(
-            {d.stail for d in destinations if d.exists()}, ret_type=set)
 
     def save_pickle(self): pass # for Screenshots
 
@@ -1768,10 +1772,9 @@ class _AFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
-                         try_once=True):
+    def rename_operation(self, info_new_name, rd_ren, **kwargs):
         # Override to allow us to notify BAIN if necessary
-        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
+        super().rename_operation(info_new_name, rd_ren, **kwargs)
         self._notify_bain(set(rp := rd_ren.ren_paths), set(rp.values()))
 
 class TableFileInfos(_AFileInfos):
@@ -2467,12 +2470,11 @@ class ModInfos(TableFileInfos):
         return merged_,imported_
 
     # Rest of DataStore overrides ---------------------------------------------
-    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
-                         try_once=True):
+    def rename_operation(self, info_new_name, rd_ren, **kwargs):
         if act_mods := {fn for inf, _new_name in info_new_name if
                         load_order.cached_is_active(fn := inf.fn_key)}:
             self.lo_deactivate(*act_mods)
-        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
+        super().rename_operation(info_new_name, rd_ren, **kwargs)
         # rename in load order caches
         for dex, (old_key, new_fn) in enumerate(rd_ren.renames.items()):
             self._lo_move_mod(old_key, new_fn, old_key in act_mods,
@@ -2485,11 +2487,6 @@ class ModInfos(TableFileInfos):
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
         return {k: self.get(k) for k in fn_items if k != self._master_esm}
-
-    def move_infos(self, sources, destinations, window):
-        moved = super().move_infos(sources, destinations, window)
-        self.refresh(RefrIn.from_added(moved))
-        return moved
 
     @property
     def bash_dir(self): return dirs[u'modsBash']
@@ -3236,15 +3233,6 @@ class SaveInfos(TableFileInfos):
             self.set_store_dir(save_dir, do_swap)
         return super().refresh(refresh_infos, booting=booting, **kwargs)
 
-    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
-                         try_once=True):
-        """Renames member file from oldName to newName, update also cosave
-        instance names."""
-        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
-        for newn in rd_ren.renames.values():
-            for co_type, co_file in self[newn]._co_saves.items():
-                co_file.abs_path = co_type.get_cosave_path(self[newn].abs_path)
-
     @staticmethod
     def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
         for co_type, co_file in co_instances.items():
@@ -3254,17 +3242,6 @@ class SaveInfos(TableFileInfos):
             if co_apath.exists():
                 path_func = co_apath.moveTo if move_cosave else co_apath.copyTo
                 path_func(newPath)
-
-    def move_infos(self, sources, destinations, window):
-        # we should use fs_copy in base method so cosaves are copied - we
-        # need to create infos for the hidden files using _store.factory
-        moved = super().move_infos(sources, destinations, window)
-        for s, d in zip(sources, destinations):
-            if FName(d.stail) in moved:
-                co_instances = SaveInfo.get_cosaves_for_path(s)
-                self.co_copy_or_move(co_instances, d, move_cosave=True)
-        self.refresh(RefrIn.from_added(moved))
-        return moved
 
 #------------------------------------------------------------------------------
 class BSAInfos(TableFileInfos):

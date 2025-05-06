@@ -1835,9 +1835,9 @@ class ListInfo:
 
     def set_path_keys(self, new_fn: FName, *, infodir=None):
         old_key, self.fn_key = self.fn_key, new_fn
-        return RefrData({new_fn}, to_del={old_key}, renames={old_key: new_fn})
+        return {}
 
-    def get_rename_paths(self, newName):
+    def get_rename_paths(self, new_name, dest_dir=None, with_backups=True):
         return [] # no rename paths for markers
 
     def info_status(self, **kwargs):
@@ -1877,10 +1877,10 @@ class AFileInfo(AFile, ListInfo):
         responsible for calling _delete_refresh of the data store."""
         self.abs_path.moveTo(destDir.join(self.fn_key))
 
-    def get_rename_paths(self, newName):
+    def get_rename_paths(self, new_name, dest_dir=None, with_backups=True):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
-        return [(self.abs_path, self._store().store_dir.join(newName))]
+        return [(self.abs_path, (dest_dir or self.info_dir).join(new_name))]
 
     def validate_name(self, name_str, check_store=True):
         super_validate = super().validate_name(name_str,
@@ -1896,11 +1896,10 @@ class AFileInfo(AFile, ListInfo):
         return self.abs_path.head
 
     def set_path_keys(self, new_fn: FName, *, infodir=None):
-        ren_d = super().set_path_keys(new_fn)
-        new_path = (infodir or self._store().store_dir).join(new_fn)
+        super().set_path_keys(new_fn)
+        new_path = (infodir or self.info_dir).join(new_fn)
         old_path, self.abs_path = self.abs_path, new_path
-        ren_d.ren_paths[old_path] = new_path
-        return ren_d
+        return {old_path: new_path}
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
         return super(AFile, self).__repr__()

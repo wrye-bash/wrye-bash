@@ -1085,29 +1085,29 @@ class UIList(PanelWin):
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
-        *args, store_refr = self._rename_args(evt_label, selected)
+        *args, ren_kwargs = self._rename_args(evt_label, selected)
         if args[1] is None:
             showError(self, args[0])
             return EventResult.CANCEL # validate_filename would Veto
         item_edited = self.panel.detailsPanel.displayed_item
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            if rdata := self.try_rename(ren_args, store_refr):
-                self.refresh_renames(item_edited, rdata, store_refr)
+            if rdata := self.try_rename(ren_args, **ren_kwargs):
+                self.refresh_renames(item_edited, rdata, **ren_kwargs)
         return EventResult.CANCEL # needed! clears new name from label on exception
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
         return [(sel_inf, args[1]) for sel_inf in selected]
 
-    def _rename_args(self, evt_label, selected):
-        return *selected[0].validate_filename_str(evt_label), None
+    def _rename_args(self, evt_label, selected, **val_kwargs):
+        return *selected[0].validate_filename_str(evt_label, **val_kwargs), {}
 
-    def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
+    def refresh_renames(self, item_edited, rdata, store_refr=None):
         if rdata:
             args_dict = {'detail_item': rdata.renames.get(item_edited,
                 item_edited)} # in case the displayed item was *not* renamed
-            if ui_refreshes is not None:
-                self.propagate_refresh(rdata, ui_refreshes, **args_dict)
+            if store_refr is not None:
+                self.propagate_refresh(rdata, store_refr, **args_dict)
             else:
                 self.RefreshUI(rdata, **args_dict)
             #--Reselect the renamed items
@@ -1133,7 +1133,7 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, ren_args, store_refr=None, *, forced_ext=''):
+    def try_rename(self, ren_args, *, forced_ext='', **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
@@ -1144,7 +1144,7 @@ class UIList(PanelWin):
         rdata = RefrData()
         if not info_new_name:
             return rdata
-        self.data_store.rename_operation(info_new_name, rdata, store_refr)
+        self.data_store.rename_operation(info_new_name, rdata, **ren_kwargs)
         return rdata if rdata else None # maybe a msg if really really needed
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
@@ -1448,16 +1448,6 @@ class UIList(PanelWin):
                 moved_infos.add(inf)
         # no need to check existence, we just moved them
         self.data_store.refresh(RefrIn(del_infos=moved_infos), unlock_lo=True)
-
-    def unhide(self):
-        srcDir = self.data_store.hide_dir
-        # Otherwise the unhide command will open some random directory
-        srcDir.makedirs()
-        wildcard = self.data_store.unhide_wildcard()
-        destDir = self.data_store.store_dir
-        srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
-            defaultDir=srcDir, wildcard=wildcard)
-        return destDir, srcDir, srcPaths
 
     def jump_to_source(self, uil_item: FName) -> bool:
         """Jumps to the installer associated with the specified UIList item."""

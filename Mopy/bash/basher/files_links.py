@@ -23,8 +23,9 @@
 
 from .. import balt, bass, bolt, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bolt import FNDict, GPath_no_norm, RefrIn
-from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
+from ..bolt import FNDict, GPath_no_norm, RefrIn, RefrData
+from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
+    FileOpenMultiple
 from ..localize import format_date
 from ..wbtemp import TempFile
 
@@ -44,39 +45,47 @@ class Files_Unhide(ItemLink):
 
     @balt.conversation
     def Execute(self):
+        uil = self.window
+        dstore = uil.data_store
         #--File dialog
-        destDir, srcDir, srcPaths = self.window.unhide()
+        hide_d = dstore.hide_dir
+        # Otherwise the unhide command will open some random directory
+        hide_d.makedirs()
+        wildcard = dstore.unhide_wildcard()
+        st_dir = dstore.store_dir
+        srcPaths = FileOpenMultiple.display_dialog(uil, _('Unhide files:'),
+            defaultDir=hide_d, wildcard=wildcard)
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
-        destFiles = []
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
-            if newSrcDir == destDir:
+            if newSrcDir == st_dir:
                 self._showError(_("You can't unhide files from this "
                                   "directory."))
                 return
             # Validate that the file is valid and isn't already present
-            if not self._data_store.rightFileType(srcFileName.s):
+            if not dstore.rightFileType(srcFileName.s):
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'not valid.') % {'skipped_file': srcFileName})
                 continue
-            destPath = destDir.join(srcFileName)
-            if destPath.exists() or (destPath + u'.ghost').exists():
+            inf = dstore.factory(srcPath, load_cache=False) # don't load cache we will refresh
+            if (fn_key := inf.fn_key) in dstore:
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'already present.') % {'skipped_file': srcFileName})
                 continue
-            # File
-            srcFiles.append(srcPath)
-            destFiles.append(destPath)
+            srcFiles.append((inf, fn_key))
         #--Now move everything at once
         if not srcFiles:
             return
-        moved = self._data_store.move_infos(srcFiles, destFiles, self.window)
-        if moved: # pick one at random to show details for
-            self.window.propagate_refresh(True, detail_item=next(iter(moved)))
-            self.window.SelectItemsNoCallback(moved, deselectOthers=True)
+        ren_data = RefrData()
+        dstore.rename_operation(srcFiles, ren_data, ren_parent=uil,
+            dest_dir=st_dir, with_backups=False) # we ain't handling backups
+        if rd := dstore.refresh(RefrIn.from_added(ren_data.to_add), what='I'):
+            unhidden = rd.to_add # pick one at random to show details for
+            uil.propagate_refresh(rd, detail_item=next(iter(unhidden)))
+            uil.SelectItemsNoCallback(unhidden, deselectOthers=True)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
