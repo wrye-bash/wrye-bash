@@ -1216,18 +1216,18 @@ class Installer(ListInfo):
 class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
-    def __init__(self, fn_key, *, progress=None, fs_load=False):
+    def __init__(self, fn_key, *, load_cache=False, par_dir=None, **kwargs):
         super().__init__(fn_key) # will call Installer -> ListInfo __init__
-        self._file_key = bass.dirs['installers'].join(self.fn_key)
-        if fs_load: # load from disc, useful when adding a new installer
-            AFile.__init__(self, self._file_key, progress=progress)
+        self._file_key = (par_dir or bass.dirs['installers']).join(self.fn_key)
+        if load_cache: # load from disc, useful when adding a new installer
+            AFile.__init__(self, self._file_key, **kwargs)
 
     def copy_to(self, dup_path: Path, *, set_time=None):
         super().copy_to(dup_path, set_time=set_time)
         clone = self._store().new_info(FName(dup_path.stail),
             is_proj=self.is_project, install_order=self.order + 1,
             do_refresh=False, # we only need to call refresh_n()
-            fs_load=False) # don't load from disc - copy all attributes over
+            load_cache=False) # don't load from disc - copy all attributes over
         atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
         for att in atts:
             setattr(clone, att, copy.copy(getattr(self, att)))
@@ -1536,7 +1536,7 @@ class InstallerArchive(_InstallerPackage):
         if root is None:
             return name_path, None
         if msg: # propagate the msg for extension change
-            return name_path, (root, msg)
+            return name_path, (root, msg) # see Installers_Link._askFilename
         return name_path, root
 
     def __reduce__(self):
@@ -1944,7 +1944,7 @@ class InstallersData(DataStore):
             ';'.join(f'*{e}' for e in archives.readExts))
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
-            install_order=None, do_refresh=True, _index=None, fs_load=True):
+            install_order=None, do_refresh=True, _index=None, load_cache=True):
         """Create, add to self and return a new _InstallerPackage.
         :param fileName: the filename of the package to create
         :param is_proj: if True create a project, otherwise an archive
@@ -1953,7 +1953,7 @@ class InstallersData(DataStore):
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
         :param _index: if given create a subprogress
-        :param fs_load: if True call AFile.__init__ -> _reset_cache()
+        :param load_cache: if True call AFile.__init__ -> _reset_cache()
         """
         if not is_mark:
             progress = progress if _index is None else SubProgress(
@@ -1963,7 +1963,7 @@ class InstallersData(DataStore):
             if install_order is None:
                 install_order = self[self.lastKey].order
         info = self[fileName] = self._inst_types[is_proj](
-            fileName, progress=progress, fs_load=fs_load)
+            fileName, progress=progress, load_cache=load_cache)
         if install_order is not None:
             self.moveArchives([fileName], install_order)
         if progress and not is_mark: progress(1.0, _('Done'))
@@ -1971,13 +1971,18 @@ class InstallersData(DataStore):
             self.refresh_ns()
         return info
 
+    def factory(self, inst_path, **kwargs):
+        h, t = inst_path.headTail
+        return self._inst_types[inst_path.is_dir()](FName(t.s), par_dir=h,
+                                                    **kwargs)
+
     @classmethod
     def rightFileType(cls, fileName: bolt.FName | str):
         ##: What about projects? Do we have to just return True here?
         return cls.file_pattern.search(fileName)
 
     def refresh(self, *args, **kwargs):
-        """Only used in delete - align with _AFileInfos one."""
+        """Only used in delete/unhide - align with _AFileInfos one."""
         return self.irefresh(*args, **kwargs)
 
     def irefresh(self, refresh_info: RefrIn | list | None = None, *,
@@ -2046,7 +2051,10 @@ class InstallersData(DataStore):
         and InstallersData refresh()."""
         # if we are passed a RefrIn, we only need to update for deleted
         if isinstance(refresh_info, RefrIn): ##:(701) use RefrIn all along
-            return RefrData(to_del={i.fn_key for i in refresh_info.del_infos})
+            if refresh_info.new_or_present: ##: YAK coming from unhide
+                refresh_info = [*refresh_info.new_or_present]
+            else:
+                return RefrData(to_del={i.fn_key for i in refresh_info.del_infos})
         dirs_files = None
         if isinstance(refresh_info, (list | set)): # we are passed existing installers
             dirs_files = [[], []]
@@ -2103,15 +2111,16 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, info_new_name, rd_ren, store_refr=None,
-                         try_once=True):
+    def rename_operation(self, info_new_name, rd_ren, dest_dir=None, *,
+                         store_refr=None, **kwargs):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
-        super().rename_operation(info_new_name, rd_ren, store_refr, try_once)
+        super().rename_operation(info_new_name, rd_ren, dest_dir, **kwargs)
         # Update the ownership information for relevant data stores
-        stores = [s for s in data_tracking_stores() if s.tracks_ownership] if \
-            rd_ren.ren_paths else () # else it's a marker
+        if not rd_ren.ren_paths or store_refr is None:
+            return
+        stores = [s for s in data_tracking_stores() if s.tracks_ownership]
         for dex, (old_key, name_new) in enumerate(rd_ren.renames.items()):
             for store in stores: # str due to Paths
                 owned = {k: v for k, v in store.items() if str(
@@ -2140,11 +2149,6 @@ class InstallersData(DataStore):
         # Can't open markers since they're virtual
         return {i: p for i in fn_items if
                 isinstance(p := self[i], _InstallerPackage)}
-
-    def move_infos(self, sources, destinations, window):
-        moved = super().move_infos(sources, destinations, window)
-        self.refresh_i(moved)
-        return moved
 
     def reorder_packages(self, partial_order: list[FName]) -> str:
         """Changes the BAIN package order to match the specified partial order
