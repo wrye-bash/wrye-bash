@@ -1975,13 +1975,12 @@ class RefrData:
     def __ior__(self, other):
         # we suppose `other` is more up to date so deleted infos might reappear
         self.to_del -= other.new_changed()
-        it = ((getattr(self, att), oth_att) for att in self.__slots__ if
-              (oth_att := getattr(other, att)))
-        for self_att, other_att in it:
-            self_att.update(other_att) # sets and dicts
+        self.to_del |= other.to_del
         for att in ('redraw', 'to_add'):
-            setattr(self, att, getattr(self, att) - self.to_del)
-        # we suppose renames/ren_paths key/values are unique while we ior them
+            (attr := getattr(self, att)).update(getattr(other, att))
+            attr.difference_update(other.to_del)
+        for att in ('renames', 'ren_paths'):
+            getattr(self, att).update(getattr(other, att))
         return self
 
     def new_changed(self): return self.to_add | self.redraw

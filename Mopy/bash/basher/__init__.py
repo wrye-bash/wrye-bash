@@ -1247,17 +1247,21 @@ class _EditableMixin(_DetailsMixin):
     def DoSave(self):
         """Event: Clicked Save button."""
         #--Change Tests
-        if (ren_data := self._rename_detail_item()) is None:
+        det_it = FName(self.fileStr.strip())
+        if self.file_info.named_as(det_it):
+            ren_data = RefrData()
+        elif (ren_data := self._rename_detail_item(det_it)) is None:
             return
-        self.detail_fn = det_it = next(iter(ren.values())) if (
-            ren := ren_data.renames) else self.detail_fn
-        change_hdr, ref_saves, kwargs = self._extra_changes(ren_data)
+        else: # we renamed - set detail_fn so we can retrieve self.file_info
+            self.detail_fn = det_it = next(iter(ren_data.renames.values()))
+        change_hdr, ref_saves, kwargs = self._extra_changes(ren_data,
+                                                            self.file_info)
         # Although we could avoid rereading the header by passing the info in
         # I leave it here as an extra error check - error handling is WIP
         store = self.panel_uilist.data_store
         ren_data |= store.refresh(change_hdr and RefrIn.from_tabled_infos(
-            {self.file_info.fn_key: self.file_info}), **kwargs)
-        if not store.get(det_it := self.file_info.fn_key):
+            {det_it: self.file_info}), **kwargs)
+        if not store.get(det_it): ##:(701) rework saving logic - see RestoreInfo.Execute
             showError(self, _('File corrupted on save!') +
                       f'\n{store.corrupted[det_it].error_message}')
             det_it = None
@@ -1265,14 +1269,14 @@ class _EditableMixin(_DetailsMixin):
         self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
                                             detail_item=det_it)
 
-    def _rename_detail_item(self):
-        newName = FName(self.fileStr.strip())
+    def _rename_detail_item(self, new_n):
         # OnFileEdited checked if filename existed in validate_name
         #  but this happened before and since maybe modinfos are
         #  updated, we need to check again todo: possibly cancel?
-        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
+        renargs = [(self.file_info, new_n.fn_body)]
+        return self.panel_uilist.try_rename(renargs) or None # rename failed
 
-    def _extra_changes(self, rename_data): # changes that need refresh
+    def _extra_changes(self, rename_data, finf): # changes that need refresh
         return False, None, {}
 
     @_check_displayed
@@ -1577,8 +1581,7 @@ class ModDetails(_ModsSavesDetails):
     __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
         'Windows-1252. %(game_name)s may not be able to activate this '
         'plugin because of this. Do you want to rename the plugin anyway?')
-    def _extra_changes(self, rename_data):
-        mod_inf = self.file_info
+    def _extra_changes(self, rename_data, mod_inf):
         changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
         change_hdr = self.uilist.edited or (
                 self.authorStr != mod_inf.header.author or
@@ -1603,25 +1606,22 @@ class ModDetails(_ModsSavesDetails):
                 rename_data.redraw.add(mod_inf.fn_key) # needed!
         return change_hdr, ref_saves | unlock_lo, {'unlock_lo': unlock_lo}
 
-    def _rename_detail_item(self):
-        file_str = self.fileStr.strip()
-        if not self.file_info.named_as(file_str):
-            #--Warn on rename if file has BSA and/or dialog
-            msg = self.file_info.ask_resources_ok(
-                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
-                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
-            if msg and not askWarning(self, msg, title=_('Rename %('
-                 'target_file_name)s') % {'target_file_name': self.file_info}):
-                return
-            #--Change Name?
-            #--Bad name?
-            if bosh.modInfos.isBadFileName(file_str):
-                msg = self.__bad_name_msg % {'bad_file_name': file_str,
-                    'game_name': bush.game.display_name}
-                if not balt.askContinue(self, msg,
-                                        'bash.rename.isBadFileName.continue'):
-                    return
-        ren_data = super()._rename_detail_item()
+    def _rename_detail_item(self, new_n):
+        #--Warn on rename if file has BSA and/or dialog
+        msg = self.file_info.ask_resources_ok(
+            bsa_and_blocking_msg=self._bsa_and_blocking_msg,
+            bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
+        if msg and not askWarning(self, msg, title=_('Rename %('
+                'target_file_name)s') % {'target_file_name': self.file_info}):
+            return None
+        #--Bad name?
+        if bosh.modInfos.isBadFileName(new_n):
+            msg = self.__bad_name_msg % {'bad_file_name': new_n,
+                                         'game_name': bush.game.display_name}
+            if not balt.askContinue(self, msg,
+                                    'bash.rename.isBadFileName.continue'):
+                return None
+        ren_data = super()._rename_detail_item(new_n)
         if ren_data: ##: bash.mods.renames needs a spec
             settings['bash.mods.renames'].update(ren_data.renames)
         return ren_data
@@ -2030,7 +2030,7 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        if rdata := self.try_rename(sinf, fn_item.fn_body,
+        if rdata := self.try_rename([[sinf, fn_item.fn_body]],
                                     forced_ext=extension):
             self.RefreshUI(rdata)
 
@@ -2183,11 +2183,10 @@ class SaveDetails(_ModsSavesDetails):
         if not self.file_info or self.file_info.named_as(self.fileStr):
             self.SetFile()
 
-    def _extra_changes(self, rename_data):
-        saveinf = self.file_info
-        prevMTime = saveinf.ftime
+    def _extra_changes(self, rename_data, saveinf):
         #--Change masters?
         if changeMasters := self.uilist.edited:
+            prevMTime = saveinf.ftime
             saveinf.makeBackup()
             prev_masters = saveinf.masterNames
             curr_masters = self.uilist.GetNewMasters()
@@ -3150,29 +3149,13 @@ class ScreensList(UIList):
             self.OpenSelected(selected=[hitItem])
         return EventResult.FINISH
 
-    @balt.conversation
-    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Rename selected screenshots."""
-        if is_edit_cancelled: return EventResult.CANCEL
-        selected = self.get_selected_infos_filtered()
-        if not selected:
-            # Sometimes seems to happen on wxGTK, simply abort
-            return EventResult.CANCEL
-        root, numStr, num, digits = self._rename_args(evt_label, selected)
-        if numStr is None: # note we allow for number only names
-            showError(self, root)
-            return EventResult.CANCEL
-        item_edited = self.panel.detailsPanel.detail_fn
-        with BusyCursor():
-            rdata = RefrData()
-            for sel_inf in selected:
-                try:
-                    rdata |= self.try_rename(sel_inf, root + numStr)
-                    numStr = numStr and str(num := num + 1).zfill(digits)
-                except TypeError: # try_rename returned None
-                    break
-            self.refresh_renames(item_edited, rdata)
-            return EventResult.CANCEL
+    def _info_to_name(self, selected, *args):
+        root, numStr, num, digits = args
+        ren_args = []
+        for sel_inf in selected:
+            ren_args.append((sel_inf, root + numStr))
+            numStr = numStr and str(num := num + 1).zfill(digits)
+        return ren_args
 
     def _rename_args(self, evt_label, selected):
         root, numStr = selected[0].validate_filename_str(evt_label)
@@ -3180,7 +3163,7 @@ class ScreensList(UIList):
         num = int(numStr or 0)
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr and numStr.zfill(digits)
-        return root, numStr, num, digits
+        return root, numStr, num, digits, None
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens
