@@ -692,7 +692,7 @@ class UIList(PanelWin):
 
     def _handle_select(self, item_key):
         self._select(item_key)
-    def _select(self, item): self.panel.SetDetails(item)
+    def _select(self, item): self.panel.SetDetails(FName(item))
 
     # properties to encapsulate access to the list control
     @property
