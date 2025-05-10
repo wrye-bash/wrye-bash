@@ -1563,6 +1563,10 @@ class DataStore(DataDict):
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 
+    @classmethod
+    def unhide_wildcard(cls, *, _pl_str, _joined):
+        return f'{bush.game.display_name} {_pl_str} (*{_joined})|*{_joined}'
+
     def move_infos(self, sources, destinations, window):
         """Hasty hack for Files_Unhide - only use on files, not folders!"""
         try:
@@ -2882,10 +2886,10 @@ class ModInfos(TableFileInfos):
             self.__available_bsas = None
         return self.__bsa_lo, self.__bsa_cause
 
-    @staticmethod
-    def plugin_wildcard(file_str=_('Plugins')):
+    @classmethod
+    def unhide_wildcard(cls, **kwargs):
         joinstar = ';*'.join(bush.game.espm_extensions)
-        return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
+        return super().unhide_wildcard(_pl_str=_('Plugins'), _joined=joinstar)
 
     def getVersion(self, fileName):
         """Check we have a fileInfo for fileName and call get_version on it."""
@@ -3072,8 +3076,8 @@ class SaveInfos(TableFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = tracks_ownership = False
     # Enabled and disabled saves, no .bak files ##: needed?
-    file_pattern = re.compile('(%s)(f?)$' % '|'.join(fr'\.{s}' for s in
-        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
+    _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
+    file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
     unique_store_key = Store.SAVES
 
     def __init__(self):
@@ -3129,6 +3133,11 @@ class SaveInfos(TableFileInfos):
                    'likely means that they are corrupt.'),
                  corruptSaves - link_frame.knownCorrupted, store_key))
             link_frame.knownCorrupted |= corruptSaves
+
+    @classmethod
+    def unhide_wildcard(cls, **kwargs):
+        return super().unhide_wildcard(_pl_str=_('Save files'),
+            _joined=f'*{";*".join([*cls._exts, ".bak"])}')
 
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
