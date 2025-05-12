@@ -412,8 +412,8 @@ class GameInfo(object):
     # Additional game info - override as needed -------------------------------
     # All file extensions used by plugins for this game
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
-    # Load order info
-    using_txt_file = True
+    # True if the game uses modification time of files to determine Load order
+    mtime_lo = False
     # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
     # What mergeability checks to perform for this game. See MergeabilityCheck

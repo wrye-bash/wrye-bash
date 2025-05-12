@@ -1499,8 +1499,7 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
-    def refresh(self, refresh_infos: RefrIn | bool = True,
-                **kwargs) -> RefrData:
+    def refresh(self, refresh_infos: RefrIn | bool, **kwargs) -> RefrData:
         raise NotImplementedError
 
     @final
@@ -1536,16 +1535,12 @@ class DataStore(DataDict):
             # saves) shellMove will offer to skip and raise SkipError
             if tup[0] == tup[1] or not tup[0].exists():
                 rename_paths.remove(tup)
-        env.shellMove(ren := dict(rename_paths))
+        if ren := dict(rename_paths): env.shellMove(ren)
         # self[newName]._mark_unchanged() # not needed with shellMove ! (#241...)
-        old_key = member_info.fn_key
-        member_info.fn_key = newName = FName(newName)
-        #--FileInfo
-        self[newName] = member_info
-        member_info.abs_path = self.store_dir.join(newName)
-        del self[old_key]
-        return RefrData({newName}, to_del={old_key},
-                        renames={old_key: newName}, ren_paths=ren)
+        ren_d = member_info.set_path_keys(FName(newName))
+        self[member_info.fn_key] = member_info
+        del self[next(iter(ren_d.to_del))]
+        return ren_d
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1567,6 +1562,10 @@ class DataStore(DataDict):
     def hide_dir(self) -> Path:
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
+
+    @classmethod
+    def unhide_wildcard(cls, *, _pl_str, _joined):
+        return f'{bush.game.display_name} {_pl_str} (*{_joined})|*{_joined}'
 
     def move_infos(self, sources, destinations, window):
         """Hasty hack for Files_Unhide - only use on files, not folders!"""
@@ -1596,7 +1595,8 @@ class _AFileInfos(DataStore):
         """Init with specified directory and specified factory type."""
         super().__init__(self._init_store(self.set_store_dir()))
         self.factory = factory or self.__class__.factory
-        if self._boot_refresh_args: self.refresh(**self._boot_refresh_args)
+        if self._boot_refresh_args:
+            self.refresh(True, **self._boot_refresh_args)
 
     def _init_store(self, storedir):
         """Set up the self's _data/corrupted and return the former."""
@@ -1608,7 +1608,7 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos: bool | RefrIn = True, *, booting=False,
+    def refresh(self, refresh_infos: bool | RefrIn, *, booting=False,
                 **kwargs):
         """Refresh from file directory."""
         try:
@@ -1736,7 +1736,7 @@ class TableFileInfos(_AFileInfos):
         return bolt.DataTable(self.bash_dir.join('Table.dat'),
                               load_pickle=True).pickled_data
 
-    def refresh(self, refresh_infos=True, **kwargs):
+    def refresh(self, refresh_infos, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
             new_or_present, delinfos = self._list_store_dir()
@@ -1834,7 +1834,6 @@ class INIInfos(TableFileInfos):
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
     _dir_key = 'ini_tweaks'
-    _boot_refresh_args = {'booting': True, 'refresh_target': False}
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
@@ -1887,8 +1886,7 @@ class INIInfos(TableFileInfos):
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings['bash.ini.choice']] # set self.redraw_target = True
 
-    def refresh(self, refresh_infos=True, *, booting=False,
-                refresh_target=True, **kwargs):
+    def refresh(self, refresh_infos, *, booting=False, **kwargs):
         rdata = super().refresh(refresh_infos, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
         # delete should take care of this but needs to update rdata...)
@@ -1900,7 +1898,7 @@ class INIInfos(TableFileInfos):
                 default_info.reset_status()
             else: # booting
                 rdata.to_add.add(k)
-        if refresh_target and ((targ := self.ini).updated or targ.do_update()):
+        if not booting and ((targ := self.ini).updated or targ.do_update()):
             # reset the status of all infos and let RefreshUI set it
             targ.updated = False
             rdata |= self._reset_all_statuses()
@@ -2131,7 +2129,7 @@ class ModInfos(TableFileInfos):
 
     # Refresh - not quite surprisingly this is super complex - therefore define
     # refresh satellite methods before even defining the DataStore overrides
-    def refresh(self, refresh_infos=True, *, booting=False, unlock_lo=False,
+    def refresh(self, refresh_infos, *, booting=False, unlock_lo=False,
                 insert_after: FNDict[FName, FName] | None = None, **kwargs):
         """Update file data for additions, removals and date changes.
         See usages for how to use the refresh_infos and unlock_lo params.
@@ -2773,7 +2771,7 @@ class ModInfos(TableFileInfos):
             new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
             if new_mod in lwip: lwip.remove(new_mod)  # ...
             dex = lwip.index(previous)
-            if not bush.game.using_txt_file:
+            if bush.game.mtime_lo:
                 t_prev = self[previous].ftime
                 if lwip[-1] == previous:  # place it after the last mod
                     new_time = t_prev + 60
@@ -2888,10 +2886,10 @@ class ModInfos(TableFileInfos):
             self.__available_bsas = None
         return self.__bsa_lo, self.__bsa_cause
 
-    @staticmethod
-    def plugin_wildcard(file_str=_('Plugins')):
+    @classmethod
+    def unhide_wildcard(cls, **kwargs):
         joinstar = ';*'.join(bush.game.espm_extensions)
-        return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
+        return super().unhide_wildcard(_pl_str=_('Plugins'), _joined=joinstar)
 
     def getVersion(self, fileName):
         """Check we have a fileInfo for fileName and call get_version on it."""
@@ -3078,8 +3076,8 @@ class SaveInfos(TableFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = tracks_ownership = False
     # Enabled and disabled saves, no .bak files ##: needed?
-    file_pattern = re.compile('(%s)(f?)$' % '|'.join(fr'\.{s}' for s in
-        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
+    _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
+    file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
     unique_store_key = Store.SAVES
 
     def __init__(self):
@@ -3135,6 +3133,11 @@ class SaveInfos(TableFileInfos):
                    'likely means that they are corrupt.'),
                  corruptSaves - link_frame.knownCorrupted, store_key))
             link_frame.knownCorrupted |= corruptSaves
+
+    @classmethod
+    def unhide_wildcard(cls, **kwargs):
+        return super().unhide_wildcard(_pl_str=_('Save files'),
+            _joined=f'*{";*".join([*cls._exts, ".bak"])}')
 
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
@@ -3193,7 +3196,7 @@ class SaveInfos(TableFileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos=True, *, booting=False, save_dir=None,
+    def refresh(self, refresh_infos, *, booting=False, save_dir=None,
                 do_swap=None, **kwargs):
         if not booting: # else we just called __init__
             self.set_store_dir(save_dir, do_swap)
@@ -3420,9 +3423,9 @@ class ScreenInfos(_AFileInfos):
             return None
         return super().data_path_to_info(filename, would_be)
 
-    def refresh(self, refresh_infos=True, *, booting=False, **kwargs):
+    def refresh(self, *args, **kwargs):
         self.set_store_dir()
-        return super().refresh(refresh_infos, booting=booting)
+        return super().refresh(*args, **kwargs)
 
 #------------------------------------------------------------------------------
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter

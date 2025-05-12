@@ -692,7 +692,7 @@ class UIList(PanelWin):
 
     def _handle_select(self, item_key):
         self._select(item_key)
-    def _select(self, item): self.panel.SetDetails(item)
+    def _select(self, item): self.panel.SetDetails(FName(item))
 
     # properties to encapsulate access to the list control
     @property
@@ -1143,7 +1143,7 @@ class UIList(PanelWin):
             return RefrData()
         try:
             return self.data_store.rename_operation(info, newName,
-                store_refr=store_refr) # a RefrData instance
+                store_refr=store_refr) # a defaultdict(RefrData) or None
         except (CancelError, OSError):
             deprint(f'Renaming {info} to {newName} failed', traceback=True)
             # When using moveTo I would get "WindowsError:[Error 32]The process
@@ -1461,15 +1461,13 @@ class UIList(PanelWin):
                 inf.move_info(destDir)
                 moved_infos.add(inf)
         # no need to check existence, we just moved them
-        self.data_store.refresh(RefrIn(del_infos=moved_infos))
+        self.data_store.refresh(RefrIn(del_infos=moved_infos), unlock_lo=True)
 
-    @staticmethod
-    def _unhide_wildcard(): raise NotImplementedError
     def unhide(self):
         srcDir = self.data_store.hide_dir
         # Otherwise the unhide command will open some random directory
         srcDir.makedirs()
-        wildcard = self._unhide_wildcard()
+        wildcard = self.data_store.unhide_wildcard()
         destDir = self.data_store.store_dir
         srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
             defaultDir=srcDir, wildcard=wildcard)

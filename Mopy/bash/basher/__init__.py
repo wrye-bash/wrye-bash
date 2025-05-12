@@ -50,6 +50,7 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 from __future__ import annotations
 
+import functools
 import os
 import sys
 import time
@@ -809,7 +810,7 @@ class INIList(UIList):
             if ini_uilist := balt.Link.Frame.all_uilists[Store.INIS]:
                 ini_uilist.panel.ShowPanel()
             else:
-                bosh.iniInfos.refresh(refresh_infos=False)
+                bosh.iniInfos.refresh(False)
             return True
         except OSError:
             target_ini_pth = target_ini_file.abs_path
@@ -1119,10 +1120,6 @@ class ModList(_ModsUIList):
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
 
-    @staticmethod
-    def _unhide_wildcard():
-        return bosh.modInfos.plugin_wildcard()
-
     # Helpers -----------------------------------------------------------------
     @balt.conversation
     def _toggle_active_state(self, *mods):
@@ -1170,30 +1167,43 @@ class ModList(_ModsUIList):
 class _DetailsMixin(object):
     """Mixin for panels that display detailed info on mods, saves etc."""
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self._resetDetails()
+        super().__init__(*args, **kwargs)
 
     @property
     def file_info(self): return self.file_infos.get(self.displayed_item, None)
     @property
-    def displayed_item(self): raise NotImplementedError
+    def displayed_item(self): return self._detail_fn
     @property
     def file_infos(self): raise NotImplementedError
 
-    def _resetDetails(self): raise NotImplementedError
+    def _resetDetails(self):
+        self._detail_fn = None
 
     # Details panel API
-    def SetFile(self, fileName: str | FName | None = _same_file):
+    def SetFile(self, fileName: FName | None = _same_file):
         """Set file to be viewed. Leave fileName empty to reset."""
         #--Reset?
         fileName = self.displayed_item if fileName is _same_file else fileName
         if not fileName or (fileName not in self.file_infos):
-            fileName = None
             self._resetDetails()
-        return fileName
+        else:
+            self._detail_fn = fileName
+        return self._detail_fn
+
+def _check_displayed(func):
+    """Check there is an item displayed before proceeding."""
+    @functools.wraps(func)
+    def _check_item(self, *args, **kwargs):
+        if not self.file_info: return
+        return func(self, *args, **kwargs)
+    return _check_item
 
 class _EditableMixin(_DetailsMixin):
-    """Mixin for detail panels that allow editing the info they display."""
+    """Mixin for detail panels that allow editing the info they display.
+    Bsa/Mods/Saves details."""
+    _max_filename_chars = 256
+    _min_controls_width = 128
 
     def __init__(self, buttonsParent, ui_list_panel):
         self.edited = False
@@ -1201,9 +1211,15 @@ class _EditableMixin(_DetailsMixin):
         self._save_btn = SaveButton(buttonsParent)
         self._save_btn.on_clicked.subscribe(self.DoSave)
         self._cancel_btn = CancelButton(buttonsParent)
-        self._cancel_btn.on_clicked.subscribe(self.DoCancel)
+        self._cancel_btn.on_clicked.subscribe(self.SetFile)
         self._save_btn.enabled = False
         self._cancel_btn.enabled = False
+        #--File Name
+        self._fname_ctrl = TextField(self.left,
+                                     max_length=self._max_filename_chars)
+        self._fname_ctrl.on_focus_lost.subscribe(self.OnFileEdited)
+        self._fname_ctrl.on_text_changed.subscribe(self.OnFileEdit)
+        self.panel_uilist = ui_list_panel.uiList
 
     # Details panel API
     def SetFile(self, fileName=_same_file):
@@ -1211,48 +1227,57 @@ class _EditableMixin(_DetailsMixin):
         self.edited = False
         self._save_btn.enabled = False
         self._cancel_btn.enabled = False
-        return super(_EditableMixin, self).SetFile(fileName)
+        if fileName := super().SetFile(fileName):
+            self.fileStr = str(fileName)
+        return fileName
 
-    # Abstract edit methods
+    def _resetDetails(self):
+        super()._resetDetails()
+        self.fileStr = ''
+
     @property
-    def allowDetailsEdit(self): raise NotImplementedError
+    def allowDetailsEdit(self): return True
 
+    @_check_displayed
     def SetEdited(self):
-        if not self.displayed_item: return
         self.edited = True
         if self.allowDetailsEdit:
             self._save_btn.enabled = True
         self._cancel_btn.enabled = True
 
-    def DoSave(self): raise NotImplementedError
+    @balt.conversation
+    def DoSave(self):
+        """Event: Clicked Save button."""
+        #--Change Tests
+        if (ren_data := self._rename_detail_item()) is None:
+            return
+        change_hdr, ref_saves, kwargs = self._extra_changes(ren_data)
+        # Although we could avoid rereading the header by passing the info in
+        # I leave it here as an extra error check - error handling is WIP
+        store = self.panel_uilist.data_store
+        ren_data |= store.refresh(change_hdr and RefrIn.from_tabled_infos(
+            {self.file_info.fn_key: self.file_info}), **kwargs)
+        if not store.get(det_it := self.file_info.fn_key):
+            showError(self, _('File corrupted on save!') +
+                      f'\n{store.corrupted[det_it].error_message}')
+            det_it = None
+            ref_saves = ref_saves is not None
+        self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
+                                            detail_item=det_it)
 
-    def DoCancel(self): self.SetFile()
+    def _rename_detail_item(self):
+        newName = FName(self.fileStr.strip())
+        # OnFileEdited checked if filename existed in validate_name
+        #  but this happened before and since maybe modinfos are
+        #  updated, we need to check again todo: possibly cancel?
+        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
 
-class _EditableMixinOnFileInfos(_EditableMixin):
-    """Bsa/Mods/Saves details, DEPRECATED: we need common data infos API!"""
-    _max_filename_chars = 256
-    _min_controls_width = 128
-    @property
-    def file_info(self): raise NotImplementedError
-    @property
-    def displayed_item(self):
-        return self.file_info.fn_key if self.file_info else None
+    def _extra_changes(self, rename_data): # changes that need refresh
+        return False, None, {}
 
-    def __init__(self, masterPanel, ui_list_panel):
-        # super(_EditableMixinOnFileInfos, self).__init__(masterPanel)
-        _EditableMixin.__init__(self, masterPanel, ui_list_panel)
-        #--File Name
-        self._fname_ctrl = TextField(self.left,
-                                     max_length=self._max_filename_chars)
-        self._fname_ctrl.on_focus_lost.subscribe(self.OnFileEdited)
-        self._fname_ctrl.on_text_changed.subscribe(self.OnFileEdit)
-        # TODO(nycz): GUI set_size
-        #                       size=(self._min_controls_width, -1))
-        self.panel_uilist = ui_list_panel.uiList
-
+    @_check_displayed
     def OnFileEdited(self):
         """Event: Finished editing file name."""
-        if not self.file_info: return
         #--Changed?
         text_cnt = self._fname_ctrl.text_content
         if self.file_info.named_as(text_cnt):
@@ -1271,33 +1296,11 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
     def testChanges(self): raise NotImplementedError
 
+    @_check_displayed
     def OnFileEdit(self, new_text):
         """Event: Editing filename."""
-        if not self.file_info: return
         if not self.edited and self.fileStr != new_text:
             self.SetEdited()
-
-    def _refresh_detail_info(self, refresh_info, ren_data, ref_saves=None,
-                             **kwargs):
-        # Although we could avoid rereading the header by passing the info in I
-        # leave it here as an extra error check - error handling is WIP
-        store = self.panel_uilist.data_store
-        ren_data |= store.refresh(refresh_info and RefrIn.from_tabled_infos(
-            {self.file_info.fn_key: self.file_info}), **kwargs)
-        if not store.get(det_it := self.file_info.fn_key):
-            showError(self, _('File corrupted on save!') +
-                      f'\n{store.corrupted[det_it].error_message}')
-            det_it = None
-            ref_saves = ref_saves is not None
-        self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
-                                            detail_item=det_it)
-
-    def _rename_detail_item(self):
-        newName = FName(self.fileStr.strip())
-        # OnFileEdited checked if filename existed in validate_name
-        #  but this happened before and since maybe modinfos are
-        #  updated, we need to check again todo: possibly cancel?
-        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
@@ -1315,7 +1318,7 @@ class _SashDetailsPanel(_DetailsMixin, SashPanel):
     def _get_sub_splitter(self):
         return Splitter(self.right, min_pane_size=64)
 
-class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
+class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
     """Mod and Saves details panel, feature a master's list.
 
     I named the master list attribute 'uilist' to stand apart from the
@@ -1328,8 +1331,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         # min_pane_size split the bottom panel into the master uilist and mod tags/save notes
         self.masterPanel, self._bottom_low_panel = \
             self.subSplitter.make_panes(vertically=split_vertically)
-        _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
-                                           ui_list_panel)
+        _EditableMixin.__init__(self, self.masterPanel, ui_list_panel)
         #--Masters
         self.uilist = self._master_list_type(
             self.masterPanel, keyPrefix=self.keyPrefix, panel=ui_list_panel,
@@ -1353,8 +1355,6 @@ class ModDetails(_ModsSavesDetails):
     _master_list_type = MasterList
 
     @property
-    def file_info(self): return self.modInfo
-    @property
     def file_infos(self): return bosh.modInfos
     @property
     def allowDetailsEdit(self): return bush.game.Esp.canEditHeader
@@ -1363,8 +1363,6 @@ class ModDetails(_ModsSavesDetails):
         super(ModDetails, self).__init__(parent, ui_list_panel,
                                          split_vertically=True)
         top, bottom = self.left, self.right
-        #--Data
-        self.modInfo = None
         #--Version
         self._version = Label(top, 'v0.00')
         #--Author
@@ -1437,20 +1435,16 @@ class ModDetails(_ModsSavesDetails):
         return Splitter(self.right, min_pane_size=128)
 
     def _resetDetails(self):
-        self.modInfo = None
-        self.fileStr = u''
+        super()._resetDetails()
         self.authorStr = u''
         self.modifiedStr = u''
         self.descriptionStr = u''
         self.versionStr = u'v0.00'
 
     def SetFile(self, fileName=_same_file):
-        fileName = super(ModDetails, self).SetFile(fileName)
-        if fileName:
-            mod_inf = self.modInfo = bosh.modInfos[fileName]
+        if super().SetFile(fileName):
             #--Remember values for edit checks
-            self.fileStr = str(mod_inf.fn_key)
-            self.authorStr = mod_inf.header.author
+            self.authorStr = (mod_inf := self.file_info).header.author
             self.modifiedStr = format_date(mod_inf.ftime)
             self.descriptionStr = mod_inf.header.description
             self.versionStr = f'v{mod_inf.header.version:0.2f}'
@@ -1463,9 +1457,9 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt.text_content = self.modifiedStr
         self._desc_area.text_content = self.descriptionStr
         self._version.label_text = self.versionStr
-        self.uilist.SetFileInfo(self.modInfo)
+        self.uilist.SetFileInfo(inf := self.file_info)
         self.gTags.lb_set_items(minf_tags)
-        if self.modInfo and not self.modInfo.is_auto_tagged():
+        if inf and not inf.is_auto_tagged():
             self.gTags.set_background_color(
                 self.gAuthor.get_background_color())
         else:
@@ -1495,8 +1489,8 @@ class ModDetails(_ModsSavesDetails):
         else:
             self._desc_label.reset_foreground_color()
 
+    @_check_displayed
     def _on_text_typed(self, old_text, new_text):
-        if not self.modInfo: return
         if not self.edited and old_text != new_text: self.SetEdited()
 
     def _on_author_typed(self, new_text):
@@ -1512,8 +1506,8 @@ class ModDetails(_ModsSavesDetails):
         # writing out
         self._set_desc_label(to_win_newlines(new_text))
 
+    @_check_displayed
     def _on_author_finished(self):
-        if not self.modInfo: return
         authorStr = self.gAuthor.text_content
         if authorStr != self.authorStr:
             self.authorStr = authorStr
@@ -1525,8 +1519,8 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt.text_content = fmt_timestamp
         self.SetEdited()
 
+    @_check_displayed
     def _on_modified_finished(self):
-        if not self.modInfo: return
         modifiedStr = self.modified_txt.text_content
         if modifiedStr == self.modifiedStr: return
         try:
@@ -1540,8 +1534,8 @@ class ModDetails(_ModsSavesDetails):
             return
         self._apply_modified_timestamp(time.strftime('%c', newTimeTup))
 
+    @_check_displayed
     def _on_desc_finished(self):
-        if not self.modInfo: return
         new_desc = to_unix_newlines(self._desc_area.text_content)
         if new_desc != self.descriptionStr:
             self.descriptionStr = new_desc
@@ -1573,38 +1567,24 @@ class ModDetails(_ModsSavesDetails):
         'renamed.')
 
     def testChanges(self): # used by the master list when editing is disabled
-        mod_inf = self.modInfo
+        mod_inf = self.file_info
         if not mod_inf or (mod_inf.named_as(self.fileStr) and
                            self.modifiedStr == format_date(mod_inf.ftime) and
                            self.authorStr == mod_inf.header.author and
                            self.descriptionStr == mod_inf.header.description):
-            self.DoCancel()
+            self.SetFile()
 
     __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
         'Windows-1252. %(game_name)s may not be able to activate this '
         'plugin because of this. Do you want to rename the plugin anyway?')
-    @balt.conversation
-    def DoSave(self):
-        mod_inf = self.modInfo
-        #--Change Tests
-        if (changeName := self._rename_detail_item()) is None:
-            return
+    def _extra_changes(self, rename_data):
+        mod_inf = self.file_info
         changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
-        changeHedr = (self.authorStr != mod_inf.header.author or
-                      self.descriptionStr != mod_inf.header.description)
-        changeMasters = self.uilist.edited
-        unlock_lo = changeDate and not bush.game.using_txt_file
-        #--Only change date?
-        if changeDate and not (changeName or changeHedr or changeMasters):
-            self._set_date(mod_inf)
-            rdata = bosh.modInfos.refresh(refresh_infos=False,
-                                          unlock_lo=unlock_lo)
-            rdata.redraw.add(mod_inf.fn_key) # needed!
-            self.panel_uilist.propagate_refresh( # refresh saves if lo changed
-                rdata, refr_saves=unlock_lo)
-            return
+        change_hdr = self.uilist.edited or (
+                self.authorStr != mod_inf.header.author or
+                self.descriptionStr != mod_inf.header.description)
         #--Change hedr/masters?
-        if refr_inf := (changeHedr or changeMasters):
+        if change_hdr:
             #--Backup
             mod_inf.makeBackup()
             mod_inf.header.author = self.authorStr.strip()
@@ -1613,11 +1593,15 @@ class ModDetails(_ModsSavesDetails):
             mod_inf.header.masters = self.uilist.GetNewMasters()
             mod_inf.header.setChanged()
             mod_inf.writeHeader(old_mi_masters)
+        ref_saves = bool(rename_data)
         #--Change date?
-        if changeDate:
-            self._set_date(mod_inf) # crc recalculated in writeHeader if needed
-        self._refresh_detail_info(refr_inf, changeName,
-                                  changeName or unlock_lo, unlock_lo=unlock_lo)
+        if unlock_lo := changeDate:
+            unlock_lo = bush.game.mtime_lo
+            mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
+            #--Only change date?
+            if not (rename_data or change_hdr):
+                rename_data.redraw.add(mod_inf.fn_key) # needed!
+        return change_hdr, ref_saves | unlock_lo, {'unlock_lo': unlock_lo}
 
     def _rename_detail_item(self):
         file_str = self.fileStr.strip()
@@ -1642,18 +1626,15 @@ class ModDetails(_ModsSavesDetails):
             settings['bash.mods.renames'].update(ren_data.renames)
         return ren_data
 
-    def _set_date(self, mod_inf):
-        mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
-
     #--Bash Tags
     ##: Once we're on wx4.1.1, we can use OnDimiss to fully refreshUI the
     # plugin in question (and do the same when removing a tag), so that
     # adding/removing a NoMerge tag properly updates the text color
+    @_check_displayed
     def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
         """Show bash tag selection menu."""
-        if not self.modInfo: return
         _mod_details = self
-        mod_info = self.modInfo # type: bosh.ModInfo
+        mod_info = self.file_info # type: bosh.ModInfo
         app_tags = mod_info.getBashTags()
         class BashTagsPopup(MultiChoicePopup):
             def _update_tags(self, changed_tags, tags_were_added):
@@ -1683,17 +1664,17 @@ class ModDetails(_ModsSavesDetails):
         # immediately (since it's transient)
         return EventResult.FINISH
 
+    @_check_displayed
     def _remove_selected_tags(self):
         """Callback to remove the selected bash tags from the current
         plugin."""
-        if not self.modInfo: return
         sel_tags = set(self.gTags.lb_get_selected_strings())
         if not sel_tags: return
         # Remember where the first selected tag was so we can reselect
         first_tag_index = next(iter(self.gTags.lb_get_selections()))
-        if self.modInfo.is_auto_tagged():
-            self.modInfo.set_auto_tagged(False)
-        self.modInfo.setBashTags(self.modInfo.getBashTags() - sel_tags)
+        if (inf := self.file_info).is_auto_tagged():
+            inf.set_auto_tagged(False)
+        inf.setBashTags(inf.getBashTags() - sel_tags)
         self.SetFile() # refresh only details
         new_tag_count = self.gTags.lb_get_items_count()
         if new_tag_count:
@@ -1706,11 +1687,11 @@ class ModDetails(_ModsSavesDetails):
                 # we can reselect at the same index to get the next item
                 self.gTags.lb_select_index(first_tag_index)
 
+    @_check_displayed
     def _popup_misc_tags(self, _lb_selection_dex):
         """Show a menu for miscellaneous tags menu functionality."""
-        if not self.modInfo: return
         #--Links closure
-        mod_info = self.modInfo # type: bosh.ModInfo
+        mod_info = self.file_info # type: bosh.ModInfo
         mod_tags = mod_info.getBashTags()
         def _refresh_only_details():
             self.SetFile()
@@ -1792,15 +1773,12 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     keyPrefix = u'bash.ini.details'
 
     @property
-    def displayed_item(self): return self._ini_detail
-    @property
     def file_infos(self): return bosh.iniInfos
 
     def __init__(self, parent, ui_list_panel):
         super(INIDetailsPanel, self).__init__(parent, isVertical=True)
         self._ini_panel = ui_list_panel
-        self._ini_detail = None
-        left,right = self.left, self.right
+        left, right = self.left, self.right
         #--Remove from list button
         self.removeButton = Button(right, _(u'Remove'))
         self.removeButton.on_clicked.subscribe(self._OnRemove)
@@ -1850,11 +1828,8 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     @property
     def ini_name(self): return self._ini_keys[settings[u'bash.ini.choice']]
 
-    def _resetDetails(self): pass
-
     def SetFile(self, fileName=_same_file):
-        fileName = super(INIDetailsPanel, self).SetFile(fileName)
-        self._ini_detail = fileName
+        fileName = super().SetFile(fileName)
         self.tweakContents.refresh_tweak_contents(fileName)
         self.tweakName.text_content = fileName.fn_body if fileName else u''
 
@@ -1960,8 +1935,8 @@ class INIPanel(BashTab):
         # old INI and report no change, so we won't refresh the INI in the
         # details panel
         target_ch = self.detailsPanel.check_new_target()
-        rdata = not booting and bosh.iniInfos.refresh( # we refreshed on boot
-            refresh_infos=refresh_infos)
+        rdata = not booting and bosh.iniInfos.refresh( # we refreshed on init
+            refresh_infos)
         super().ShowPanel(target_changed=target_ch, clean_targets=not booting)
         if rdata or target_ch: ##:(701) we need this to be more granular
             if detail_item is not self._ini_same_item:
@@ -2019,12 +1994,6 @@ class SaveList(UIList):
         'Cell': _ask_info('header.pcLocation'),
     }
 
-    @staticmethod
-    def _unhide_wildcard():
-        starred = f'*{bush.game.Ess.ext};*.bak'
-        return f'{bush.game.display_name} ' + _(
-            'Save files') + f' ({starred})|{starred}'
-
     #--Populate Item
     def _set_icon_text(self, inf, *args, **kwargs):
         status = super()._set_icon_text(inf, *args, **kwargs)
@@ -2061,7 +2030,7 @@ class SaveList(UIList):
         if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=_(
             u'Setting the save profile is done by editing the game ini.')):
             return
-        self.data_store.refresh(save_dir=new_saves, do_swap=do_swap)
+        self.data_store.refresh(True, save_dir=new_saves, do_swap=do_swap)
         balt.Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
@@ -2097,17 +2066,13 @@ class SaveDetails(_ModsSavesDetails):
                    if bush.game.Ess.has_screenshots else 88)
 
     @property
-    def file_info(self): return self.saveInfo
-    @property
     def file_infos(self): return bosh.saveInfos
     @property
-    def allowDetailsEdit(self): return self.saveInfo.header.can_edit_header
+    def allowDetailsEdit(self): return self.file_info.header.can_edit_header
 
     def __init__(self, parent, ui_list_panel):
         super(SaveDetails, self).__init__(parent, ui_list_panel)
         top, bottom = self.left, self.right
-        #--Data
-        self.saveInfo = None
         textWidth = 200
         #--Player Info
         self.playerInfo = Label(top, u' \n \n ')
@@ -2120,7 +2085,6 @@ class SaveDetails(_ModsSavesDetails):
         #--Save Info
         self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
-        # TODO(nycz): GUI set_size size=(textWidth, 64)
         #--Layouts
         VLayout(item_expand=True, items=[
             self._fname_ctrl,
@@ -2135,8 +2099,7 @@ class SaveDetails(_ModsSavesDetails):
         ]).apply_to(self._bottom_low_panel)
 
     def _resetDetails(self):
-        self.saveInfo = None
-        self.fileStr = u''
+        super()._resetDetails()
         self.playerNameStr = u''
         self.curCellStr = u''
         self.playerLevel = 0
@@ -2145,31 +2108,28 @@ class SaveDetails(_ModsSavesDetails):
         self.coSaves = u'--\n--'
 
     def SetFile(self, fileName=_same_file):
-        fileName = super(SaveDetails, self).SetFile(fileName)
-        if fileName:
-            saveInfo = self.saveInfo = bosh.saveInfos[fileName]
+        if super().SetFile(fileName):
             #--Remember values for edit checks
-            self.fileStr = str(saveInfo.fn_key)
-            self.playerNameStr = saveInfo.header.pcName
-            self.curCellStr = saveInfo.header.pcLocation
-            self.gameDays = saveInfo.header.gameDays
-            self.playMinutes = saveInfo.header.gameTicks//60000
-            self.playerLevel = saveInfo.header.pcLevel
-            self.coSaves = saveInfo.get_cosave_tags()
-            note_text = saveInfo.get_table_prop(u'info', u'')
+            self.playerNameStr = (sinf := self.file_info).header.pcName
+            self.curCellStr = sinf.header.pcLocation
+            self.gameDays = sinf.header.gameDays
+            self.playMinutes = sinf.header.gameTicks//60000
+            self.playerLevel = sinf.header.pcLevel
+            self.coSaves = sinf.get_cosave_tags()
+            note_text = sinf.get_table_prop(u'info', u'')
         else:
             note_text = u''
         #--Set Fields
         self._fname_ctrl.text_content = self.fileStr
         self._set_player_info_label()
         self.gCoSaves.label_text = self.coSaves
-        self.uilist.SetFileInfo(self.saveInfo)
+        self.uilist.SetFileInfo(sinf := self.file_info)
         # Picture - lazily loaded since it takes up so much memory
-        if self.saveInfo and bush.game.Ess.has_screenshots:
-            if not self.saveInfo.header.image_loaded:
-                self.saveInfo.header.read_save_header(load_image=True)
+        if sinf and bush.game.Ess.has_screenshots:
+            if not sinf.header.image_loaded:
+                sinf.header.read_save_header(load_image=True)
             new_save_screen = BmpFromStream(
-                *self.saveInfo.header.image_parameters)
+                *sinf.header.image_parameters)
         else:
             new_save_screen = None # reset to default
         self.picture.set_bitmap(new_save_screen)
@@ -2204,35 +2164,29 @@ class SaveDetails(_ModsSavesDetails):
         else:
             self._masters_label.reset_foreground_color()
 
+    @_check_displayed
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
-        if self.saveInfo and self.gInfo.modified:
-            self.saveInfo.set_table_prop(u'info', new_text)
+        if self.gInfo.modified:
+            self.file_info.set_table_prop('info', new_text)
 
     def testChanges(self): # used by the master list when editing is disabled
-        if not self.saveInfo or self.saveInfo.named_as(self.fileStr):
-            self.DoCancel()
+        if not self.file_info or self.file_info.named_as(self.fileStr):
+            self.SetFile()
 
-    @balt.conversation
-    def DoSave(self):
-        """Event: Clicked Save button."""
-        saveInfo = self.saveInfo
-        #--Change Tests
-        changeMasters = self.uilist.edited
-        #--Backup
-        saveInfo.makeBackup() ##: why backup when just renaming - #292
-        prevMTime = saveInfo.ftime
-        #--Change Name?
-        rdata = self._rename_detail_item()
+    def _extra_changes(self, rename_data):
+        saveinf = self.file_info
+        prevMTime = saveinf.ftime
         #--Change masters?
-        if changeMasters:
-            prev_masters = saveInfo.masterNames
+        if changeMasters := self.uilist.edited:
+            saveinf.makeBackup()
+            prev_masters = saveinf.masterNames
             curr_masters = self.uilist.GetNewMasters()
             master_remaps = {m1: m2 for m1, m2
                              in zip(prev_masters, curr_masters) if m1 != m2}
-            saveInfo.write_masters(master_remaps)
-            saveInfo.setmtime(prevMTime)
-        self._refresh_detail_info(changeMasters, rdata)
+            saveinf.write_masters(master_remaps)
+            saveinf.setmtime(prevMTime)
+        return changeMasters, None, {}
 
     def RefreshUIColors(self):
         self._update_masters_warning()
@@ -2327,14 +2281,7 @@ class InstallersList(UIList):
         #--Rename each installer, keeping the old extension (for archives)
         if isinstance(root, tuple):
             root = root[0]
-        store_refr = defaultdict(bool) # Store refreshes
-        return newName, root, store_refr
-
-    @staticmethod
-    def _unhide_wildcard():
-        starred = ';'.join(f'*{e}' for e in archives.readExts)
-        return f'{bush.game.display_name} {_("Mod Archives")} ' \
-               f'({starred})|{starred}'
+        return newName, root, defaultdict(RefrData) # see store_refr
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -2630,8 +2577,6 @@ class InstallersDetails(_SashDetailsPanel):
     }
 
     @property
-    def displayed_item(self): return self._displayed_installer
-    @property
     def file_infos(self): return self._idata
 
     def __init__(self, parent, ui_list_panel):
@@ -2641,7 +2586,6 @@ class InstallersDetails(_SashDetailsPanel):
         super().__init__(parent)
         self.installersPanel = ui_list_panel
         self._idata = self.installersPanel.listData
-        self._displayed_installer = None
         top, bottom = self.left, self.right
         commentsSplitter = self.splitter
         self.subSplitter, commentsPanel = commentsSplitter.make_panes(
@@ -2731,7 +2675,7 @@ class InstallersDetails(_SashDetailsPanel):
         if wx_id == self.gNotebook.wx_id_(): # todo because of BashNotebook event??
             # todo use the pages directly not the index
             gPage,initialized = self.infoPages[selected_index]
-            if self._displayed_installer and not initialized:
+            if self._detail_fn and not initialized:
                 self.RefreshInfoPage(selected_index, self.file_info)
 
     def ClosePanel(self, destroy=False):
@@ -2750,10 +2694,9 @@ class InstallersDetails(_SashDetailsPanel):
 
     def SetFile(self, fileName=_same_file):
         """Refreshes detail view associated with data from item."""
-        if self._displayed_installer is not None:
+        if self._detail_fn is not None:
             self._save_comments()
         fileName = super(InstallersDetails, self).SetFile(fileName)
-        self._displayed_installer = fileName
         del self.espm_checklist_fns[:]
         if fileName:
             installer = self._idata[fileName]
@@ -2789,6 +2732,7 @@ class InstallersDetails(_SashDetailsPanel):
             self.gComments.text_content = installer.comments
 
     def _resetDetails(self):
+        super()._resetDetails()
         if self.gPackage:
             self.gPackage.text_content = ''
             for index, (gPage, state) in enumerate(self.infoPages):
@@ -3247,25 +3191,21 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         super().__init__(parent)
         self.screenshot_control = Picture(self, 256, 192,
             background=colors['screens.bkgd.image'])
-        self.displayed_screen: bolt.Path | None = None
         HLayout(item_expand=True, item_weight=1,
                 items=[self.screenshot_control]).apply_to(self)
-
-    @property
-    def displayed_item(self): return self.displayed_screen
 
     @property
     def file_infos(self): return bosh.screen_infos
 
     def _resetDetails(self):
+        super()._resetDetails()
         if self.screenshot_control:
             self.screenshot_control.set_bitmap(None)
 
     def SetFile(self, fileName=_same_file):
         """Set file to be viewed."""
         #--Reset?
-        self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
-        if not self.displayed_screen: return
+        if not super().SetFile(fileName): return
         if self.file_info.cached_bitmap is None:
             self.file_info.cached_bitmap = self.screenshot_control.set_bitmap(
                 self.file_info.abs_path)
@@ -3290,8 +3230,8 @@ class ScreensPanel(BashTab):
 
     def ShowPanel(self, **kwargs):
         """Panel is shown. Update self.data."""
-        if bosh.screen_infos.refresh():
-            self.uiList.RefreshUI(focus_list=False)
+        if rdata := bosh.screen_infos.refresh(True):
+            self.uiList.RefreshUI(rdata, focus_list=False)
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
@@ -3304,22 +3244,16 @@ class BSAList(UIList):
     labels = _common_labels
 
 #------------------------------------------------------------------------------
-class BSADetails(_EditableMixinOnFileInfos, SashPanel):
+class BSADetails(_EditableMixin, SashPanel):
     """BSAfile details panel."""
 
     @property
-    def file_info(self): return self._bsa_info
-    @property
     def file_infos(self): return bosh.bsaInfos
-    @property
-    def allowDetailsEdit(self): return True
 
     def __init__(self, parent, ui_list_panel):
         SashPanel.__init__(self, parent, isVertical=False)
         top, bottom = self.left, self.right
-        _EditableMixinOnFileInfos.__init__(self, bottom, ui_list_panel)
-        #--Data
-        self._bsa_info = None
+        _EditableMixin.__init__(self, bottom, ui_list_panel)
         #--BSA Info
         self.gInfo = TextArea(bottom)
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
@@ -3331,18 +3265,10 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             HLayout(spacing=4, items=[self._save_btn, self._cancel_btn])
         ]).apply_to(bottom)
 
-    def _resetDetails(self):
-        self._bsa_info = None
-        self.fileStr = u''
-
     def SetFile(self, fileName=_same_file):
         """Set file to be viewed."""
-        fileName = super(BSADetails, self).SetFile(fileName)
-        if fileName:
-            self._bsa_info = bosh.bsaInfos[fileName]
-            #--Remember values for edit checks
-            self.fileStr = str(self._bsa_info.fn_key)
-            self.gInfo.text_content = self._bsa_info.get_table_prop('info',
+        if super().SetFile(fileName):
+            self.gInfo.text_content = self.file_info.get_table_prop('info',
                 _('Notes:') + ' ')
         else:
             self.gInfo.text_content = _('Notes:') + ' '
@@ -3353,14 +3279,8 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
 
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
-        if self._bsa_info and self.gInfo.modified:
-            self._bsa_info.set_table_prop(u'info', new_text)
-
-    @balt.conversation
-    def DoSave(self):
-        """Event: Clicked Save button."""
-        if self._rename_detail_item():
-            self.panel_uilist.RefreshUI(detail_item=self.file_info.fn_key)
+        if self.file_info and self.gInfo.modified:
+            self.file_info.set_table_prop('info', new_text)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):
@@ -3606,7 +3526,6 @@ class BashFrame(WindowFrame):
                 bush.game.Se.plugin_dir, 'plugins', lf))
             if lf_path and lf_path.is_file():
                 return # Limit-fixing xSE plugin installed
-        if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         infos_num = len(bosh.bsaInfos) + len(bosh.modInfos)
         if infos_num >= 325 and not settings['bash.mods.autoGhost']:
             message = _(
@@ -3710,7 +3629,7 @@ class BashFrame(WindowFrame):
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
         ui_refresh = {store.unique_store_key: rdata for store in (
             bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
-             rdata := not booting and store.refresh())}
+             rdata := not booting and store.refresh(True))}
         #--Repopulate, focus will be set in ShowPanel
         self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
             Store.MODS), ui_refresh, focus_list=False, booting=booting)

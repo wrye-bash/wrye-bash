@@ -224,8 +224,8 @@ class Mod_CreateDummyMasters(OneItemLink):
                 dir_path=mods_ds.store_dir)
             mod_previous[master] = previous_master
             previous_master = master
-        rdata= mods_ds.refresh(RefrIn.from_added(mod_previous),
-                               insert_after=mod_previous)
+        rdata = mods_ds.refresh(RefrIn.from_added(mod_previous),
+                                insert_after=mod_previous)
         self.window.propagate_refresh(rdata,
                                       detail_item=next(reversed(mod_previous)))
         self.window.SelectItemsNoCallback(mod_previous)
@@ -245,7 +245,7 @@ class Mod_OrderByName(EnabledLink):
     @balt.conversation
     def Execute(self):
         message = _('Reorder selected plugins in alphabetical order starting '
-            'at the lowest ordered?') if bush.game.using_txt_file else _(
+            'at the lowest ordered?') if not bush.game.mtime_lo else _(
             'Reorder selected plugins in alphabetical order? The first plugin '
             'will be given the date/time of the current earliest plugin in '
             'the group, with consecutive files following at 1 minute '

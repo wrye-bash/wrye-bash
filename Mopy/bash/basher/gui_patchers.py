@@ -926,7 +926,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
 
     def OnAdd(self):
         srcDir = bosh.modInfos.store_dir
-        wildcard = bosh.modInfos.plugin_wildcard()
+        wildcard = bosh.modInfos.unhide_wildcard()
         #--File dialog
         srcPaths = FileOpenMultiple.display_dialog(self.gConfigPanel,
             self._add_dialog_title, srcDir, '', wildcard)
