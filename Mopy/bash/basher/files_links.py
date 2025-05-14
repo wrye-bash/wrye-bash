@@ -21,7 +21,7 @@
 #
 # =============================================================================
 
-from .. import balt, bass, bolt, bosh, bush
+from .. import balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bolt import FNDict, GPath_no_norm, RefrIn
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
@@ -29,7 +29,8 @@ from ..localize import format_date
 from ..wbtemp import TempFile
 
 __all__ = ['File_Backup', 'File_Duplicate', 'File_JumpToSource', 'File_Redate',
-           'File_ListMasters', 'File_RevertToBackup', 'Files_Unhide']
+           'File_ListMasters', 'File_RevertToBackup', 'Files_Unhide',
+           'RestoreInfo']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -172,7 +173,46 @@ class File_Backup(ItemLink):
             fileInfo.makeBackup(forceBackup=True)
 
 #------------------------------------------------------------------------------
-class _RevertBackup(OneItemLink):
+class RestoreInfo(OneItemLink):
+    """Restore backups/snapshots"""
+
+    @balt.conversation
+    def Execute(self):
+        #--Warning box
+        if not self._ask_revert(): return
+        sel_file = self._selected_item
+        with BusyCursor(), TempFile() as known_good_copy:
+            info_path = (sel_inf := self._selected_info).abs_path
+            # Make a temp copy first in case reverting to backup fails
+            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
+            self._restore()
+            # in case the restored file is a BP: refresh below will try to
+            # refresh info sets, but we don't back up the config so we can't
+            # really detect changes in imported/merged - a (another) backup
+            # edge case - as backup is half-baked anyway let's agree for now
+            # that BPs remain BPs with the same config as before - if not,
+            # manually run a mergeability scan after updating the config
+            self._data_store.refresh(
+                RefrIn.from_tabled_infos({sel_file: sel_inf}, exclude=True))
+            if not self._data_store.get(sel_file):
+                # Reverting to backup failed - may be corrupt
+                bolt.deprint('Failed to revert to backup', traceback=True)
+                self.window.panel.ClearDetails()
+                if self._failed_msg():
+                    # Restore the known good file again - no error check needed
+                    info_path.replace_with_temp(known_good_copy)
+                    self._data_store.refresh(RefrIn.from_tabled_infos(
+                        {sel_file: sel_inf}))  # re-add all attrs
+        # don't refresh saves as neither selection state nor load order change
+        self.refresh_sel()
+
+    def _ask_revert(self): raise NotImplementedError
+
+    def _restore(self): raise NotImplementedError
+
+    def _failed_msg(self): raise NotImplementedError
+
+class _RevertBackup(RestoreInfo):
 
     def __init__(self, first=False):
         super().__init__()
@@ -186,42 +226,34 @@ class _RevertBackup(OneItemLink):
 
     @property
     def link_help(self):
-        return (_('Revert %(file)s to its first backup') if self.first else _(
-            'Revert %(file)s to its last backup')) % {
-            'file': self._selected_item}
+        msg = _('Revert %(file)s to its first backup') if self.first else _(
+            'Revert %(file)s to its last backup')
+        return msg % {'file': self._selected_item}
 
     def _enable(self):
         return super()._enable() and self._backup_path.exists()
 
-    @balt.conversation
-    def Execute(self):
-        #--Warning box
-        if not self._ask_revert(): return
-        sel_file = self._selected_item
-        with BusyCursor(), TempFile() as known_good_copy:
-            sel_inf = self._selected_info
-            # Make a temp copy first in case reverting to backup fails
-            info_path = sel_inf.abs_path
-            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
-            sel_inf.revert_backup(self.first)
-            if not self._data_store.get(sel_file):
-                # Reverting to backup failed - may be corrupt
-                bolt.deprint('Failed to revert to backup', traceback=True)
-                self.window.panel.ClearDetails()
-                if self._askYes(_(
-                        "Failed to revert %(target_file_name)s to backup "
-                        "dated %(backup_date)s. The backup file may be "
-                        "corrupt. Do you want to restore the original file "
-                        "again? 'No' keeps the reverted, possibly broken "
-                        "backup instead.") % {'target_file_name': sel_file,
-                          'backup_date': format_date(self._backup_path.mtime)},
-                                title=_('Revert to Backup - Error')):
-                    # Restore the known good file again - no error check needed
-                    info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh(RefrIn.from_tabled_infos({
-                        sel_file: sel_inf})) # re-add all attrs
-        # don't refresh saves as neither selection state nor load order change
-        self.refresh_sel()
+    def _restore(self):
+        sel_inf = self._selected_info
+        backup_paths = sel_inf.backup_restore_paths(self.first)
+        for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
+            if not tup[0].exists():
+                # if cosave exists while its backup not, delete it on restoring
+                tup[1].remove()
+                backup_paths.remove(tup)
+        env.shellCopy(dict(backup_paths))
+        # do not change load order for timestamp games - rest works ok
+        sel_inf.setmtime(sel_inf.ftime)
+
+    def _failed_msg(self):
+        return self._askYes(
+            _("Failed to revert %(target_file_name)s to backup dated "
+              "%(backup_date)s. The backup file may be corrupt. Do you want "
+              "to restore the original file again? 'No' keeps the reverted, "
+              "possibly broken backup instead.") % {
+                'target_file_name': self._selected_item,
+                'backup_date': format_date(self._backup_path.mtime)},
+            title=_('Revert to Backup - Error'))
 
     def _ask_revert(self):
         msg = _('Revert %(target_file_name)s to backup dated %(backup_date)s?')

@@ -33,7 +33,6 @@ import sys
 import time
 from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable, Callable
-from dataclasses import dataclass
 from functools import wraps
 from itertools import chain
 from typing import final
@@ -310,25 +309,6 @@ class FileInfo(_TabledInfo, AFileInfo):
         """
         return [backPath for first in (True, False) for backPath, __path in
                 self.backup_restore_paths(first, fname)]
-
-    def revert_backup(self, first): # single call site - good
-        backup_paths = self.backup_restore_paths(first)
-        for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
-            if not tup[0].exists():
-                # if cosave exists while its backup not, delete it on restoring
-                tup[1].remove()
-                backup_paths.remove(tup)
-        env.shellCopy(dict(backup_paths))
-        # do not change load order for timestamp games - rest works ok
-        self.setmtime(self.ftime)
-        # in case the restored file is a BP: refresh below will try to
-        # refresh info sets, but we don't back up the config so we can't
-        # really detect changes in imported/merged - a (another) backup edge
-        # case - as backup is half-baked anyway let's agree for now that BPs
-        # remain BPs with the same config as before - if not, manually run a
-        # mergeability scan after updating the config
-        self._store().refresh(RefrIn.from_tabled_infos(
-            {self.fn_key: self}, exclude=True))
 
     def delete_paths(self): # will include cosave ones
         return *super().delete_paths(), *self.all_backup_paths()

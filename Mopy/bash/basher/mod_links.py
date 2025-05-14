@@ -33,14 +33,14 @@ from itertools import chain
 from .constants import settingDefaults
 from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
     ListDependentDialog, MasterErrorsDialog
-from .files_links import File_Duplicate, File_Redate
+from .files_links import File_Duplicate, File_Redate, RestoreInfo
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
-    GPath_no_norm, RefrIn, RefrData
+    RefrIn, RefrData
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
@@ -52,7 +52,6 @@ from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     ItemStats, ScriptText, SigilStoneDetails, SpellRecords, _AParser
 from ..patcher.patch_files import PatchFile
 from ..plugin_types import MergeabilityCheck, PluginFlag
-from ..wbtemp import TempFile
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
@@ -2337,43 +2336,26 @@ class Mod_Snapshot(ItemLink):
             fileInfo.fs_copy(destDir.join(destName))
 
 #------------------------------------------------------------------------------
-class Mod_RevertToSnapshot(OneItemLink):
+class Mod_RevertToSnapshot(RestoreInfo):
     """Revert to Snapshot."""
     _text = _('Revert to Snapshot…')
     _help = _('Revert to a previously created snapshot from the '
               'Bash/Snapshots dir.')
 
-    @balt.conversation
-    def Execute(self):
-        """Revert to Snapshot."""
-        if not self._ask_revert(): return
-        sel_file = self._selected_item
-        with BusyCursor(), TempFile() as known_good_copy:
-            info_path = (sel_inf := self._selected_info).abs_path
-            # Make a temp copy first in case reverting to snapshot fails
-            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
-            # keep load order (so mtime)
-            self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
-            self._data_store.refresh(RefrIn.from_tabled_infos({
-                sel_file: sel_inf}, exclude=True))
-            if not self._data_store.get(sel_file):
-                # Reverting to snapshot failed - may be corrupt
-                bolt.deprint('Failed to revert to snapshot', traceback=True)
-                self.window.panel.ClearDetails()
-                if self._askYes(
-                    _("Failed to revert %(target_file_name)s to snapshot "
-                      "%(snapshot_file_name)s. The snapshot file may be "
-                      "corrupt. Do you want to restore the original file "
-                      "again? 'No' keeps the reverted, possibly broken "
-                      "snapshot instead.") % {'target_file_name': sel_file,
-                            'snapshot_file_name': self._backup_path.tail},
-                        title=_('Revert to Snapshot - Error')):
-                    # Restore the known good file again - no error check needed
-                    info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh(RefrIn.from_tabled_infos({
-                        sel_file: sel_inf}))
-        # don't refresh saves as neither selection state nor load order change
-        self.refresh_sel()
+    def _restore(self):
+        # keep load order (so mtime)
+        info_path = (sel_inf := self._selected_info).abs_path
+        self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
+
+    def _failed_msg(self):
+        return self._askYes(
+            _("Failed to revert %(target_file_name)s to snapshot "
+              "%(snapshot_file_name)s. The snapshot file may be corrupt. Do "
+              "you want to restore the original file again? 'No' keeps the "
+              "reverted, possibly broken snapshot instead.") % {
+                'target_file_name': self._selected_item,
+                'snapshot_file_name': self._backup_path.tail},
+            title=_('Revert to Snapshot - Error'))
 
     @property
     def _backup_path(self):
