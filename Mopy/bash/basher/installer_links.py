@@ -716,7 +716,7 @@ class Installer_Move(_InstallerLink):
         self.idata.moveArchives(self.selected, newPos)
         self.idata.refresh_n()
         self.window.RefreshUI(
-            detail_item=self.iPanel.detailsPanel.displayed_item)
+            detail_item=self.iPanel.detailsPanel.detail_fn)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):

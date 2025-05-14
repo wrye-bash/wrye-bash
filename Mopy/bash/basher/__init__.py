@@ -539,7 +539,7 @@ class MasterList(_ModsUIList):
         status, checkMark = super()._set_icon_text(masterInfo, item_format,
             item_name, loadOrderIndex=self._curr_lo_index[item_name],
             mi=mi, _mouse_text=mouseText)
-        on_display = self.detailsPanel.displayed_item
+        on_display = self.detailsPanel.detail_fn
         if status == 30: # master is missing
             mouseText.append(_('Missing master of %(child_plugin_name)s.') % {
                 'child_plugin_name': on_display})
@@ -1171,25 +1171,23 @@ class _DetailsMixin(object):
         super().__init__(*args, **kwargs)
 
     @property
-    def file_info(self): return self.file_infos.get(self.displayed_item, None)
-    @property
-    def displayed_item(self): return self._detail_fn
+    def file_info(self): return self.file_infos.get(self.detail_fn, None)
+
     @property
     def file_infos(self): raise NotImplementedError
 
     def _resetDetails(self):
-        self._detail_fn = None
+        self.detail_fn = None
 
     # Details panel API
     def SetFile(self, fileName: FName | None = _same_file):
         """Set file to be viewed. Leave fileName empty to reset."""
         #--Reset?
-        fileName = self.displayed_item if fileName is _same_file else fileName
-        if not fileName or (fileName not in self.file_infos):
+        self.detail_fn = fn = self.detail_fn if fileName is _same_file \
+            else fileName
+        if not fn or (fn not in self.file_infos):
             self._resetDetails()
-        else:
-            self._detail_fn = fileName
-        return self._detail_fn
+        return self.detail_fn
 
 def _check_displayed(func):
     """Check there is an item displayed before proceeding."""
@@ -1251,6 +1249,7 @@ class _EditableMixin(_DetailsMixin):
         #--Change Tests
         if (ren_data := self._rename_detail_item()) is None:
             return
+        self.detail_fn = det_it = next(iter(ren_data.renames.values()))
         change_hdr, ref_saves, kwargs = self._extra_changes(ren_data)
         # Although we could avoid rereading the header by passing the info in
         # I leave it here as an extra error check - error handling is WIP
@@ -2586,7 +2585,7 @@ class InstallersDetails(_SashDetailsPanel):
     }
 
     @property
-    def file_infos(self): return self._idata
+    def file_infos(self): return self.installersPanel.listData
 
     def __init__(self, parent, ui_list_panel):
         """Initialize."""
@@ -2594,7 +2593,6 @@ class InstallersDetails(_SashDetailsPanel):
         self.infoPages = []
         super().__init__(parent)
         self.installersPanel = ui_list_panel
-        self._idata = self.installersPanel.listData
         top, bottom = self.left, self.right
         commentsSplitter = self.splitter
         self.subSplitter, commentsPanel = commentsSplitter.make_panes(
@@ -2684,7 +2682,7 @@ class InstallersDetails(_SashDetailsPanel):
         if wx_id == self.gNotebook.wx_id_(): # todo because of BashNotebook event??
             # todo use the pages directly not the index
             gPage,initialized = self.infoPages[selected_index]
-            if self._detail_fn and not initialized:
+            if self.detail_fn and not initialized:
                 self.RefreshInfoPage(selected_index, self.file_info)
 
     def ClosePanel(self, destroy=False):
@@ -2699,16 +2697,16 @@ class InstallersDetails(_SashDetailsPanel):
         inst = self.file_info
         if inst and self.gComments.modified:
             inst.comments = self.gComments.text_content
-            self._idata.hasChanged = True
+            self.file_infos.hasChanged = True
 
     def SetFile(self, fileName=_same_file):
         """Refreshes detail view associated with data from item."""
-        if self._detail_fn is not None:
+        if self.detail_fn is not None:
             self._save_comments()
         fileName = super(InstallersDetails, self).SetFile(fileName)
         del self.espm_checklist_fns[:]
         if fileName:
-            installer = self._idata[fileName]
+            installer = self.file_info
             #--Name
             self.gPackage.text_content = fileName
             #--Info Pages
@@ -2816,10 +2814,10 @@ class InstallersDetails(_SashDetailsPanel):
         elif pageName == u'gMismatched':
             gPage.text_content = _dumpFiles(installer.mismatchedFiles)
         elif pageName == u'gConflicts':
-            gPage.text_content = self._idata.getConflictReport(
+            gPage.text_content = self.file_infos.getConflictReport(
                 installer, u'OVER', bosh.modInfos)
         elif pageName == u'gUnderrides':
-            gPage.text_content = self._idata.getConflictReport(
+            gPage.text_content = self.file_infos.getConflictReport(
                 installer, u'UNDER', bosh.modInfos)
         elif pageName == u'gDirty':
             gPage.text_content = _dumpFiles(installer.dirty_sizeCrc)
@@ -2833,13 +2831,13 @@ class InstallersDetails(_SashDetailsPanel):
     def refreshCurrent(self,installer):
         """Refreshes current item while retaining scroll positions."""
         installer.refreshDataSizeCrc()
-        installer.refreshStatus(self._idata)
+        installer.refreshStatus(self.file_infos)
         # Save scroll bar positions, because gList.RefreshUI will
         subScrollPos  = self.gSubList.lb_get_vertical_scroll_pos()
         espmScrollPos = self.gEspmList.lb_get_vertical_scroll_pos()
         subIndices = self.gSubList.lb_get_selections()
-        self.installersPanel.uiList.RefreshUI(RefrData({self.displayed_item}),
-                                              detail_item=self.displayed_item)
+        self.installersPanel.uiList.RefreshUI(RefrData({self.detail_fn}),
+                                              detail_item=self.detail_fn)
         for subIndex in subIndices:
             self.gSubList.lb_select_index(subIndex)
         # Reset the scroll bars back to their original position
@@ -3162,7 +3160,7 @@ class ScreensList(UIList):
         if numStr is None: # note we allow for number only names
             showError(self, root)
             return EventResult.CANCEL
-        item_edited = self.panel.detailsPanel.displayed_item
+        item_edited = self.panel.detailsPanel.detail_fn
         with BusyCursor():
             rdata = RefrData()
             for sel_inf in selected:

@@ -1089,7 +1089,7 @@ class UIList(PanelWin):
         if root is None:
             showError(self, newName)
             return EventResult.CANCEL # validate_filename would Veto
-        item_edited = self.panel.detailsPanel.displayed_item
+        item_edited = self.panel.detailsPanel.detail_fn
         with BusyCursor():
             rdata = RefrData()
             for sel_inf in selected:
