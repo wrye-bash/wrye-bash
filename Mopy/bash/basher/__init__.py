@@ -3774,13 +3774,8 @@ class BashFrame(WindowFrame):
     def refresh_global_menu_visibility(self):
         """Hides or shows the global menu, depending on the setting the user
         chose."""
-        # Forcibly hide it on Linux because of the possibility that someone is
-        # using a system-wide menubar (e.g. Ubuntu). wxWidgets (and hence also
-        # wxPython) do not generate open/close events for that style of
-        # menubar, which means we can't implement our JIT global menu - it will
-        # simply display empty global menus that do nothing when clicked.
         # bash.global_menu == 2 -> Column Menu Only
-        show_gm = bass.settings['bash.global_menu'] != 2 and os_name == 'nt'
+        show_gm = bass.settings['bash.global_menu'] != 2
         self._native_widget.SetMenuBar(self.global_menu._native_widget
                                        if show_gm else None)
 

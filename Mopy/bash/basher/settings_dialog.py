@@ -1155,10 +1155,6 @@ class GeneralPage(_AScrollablePage):
         self._global_menu_dropdown.on_combo_select.subscribe(
             self._on_global_menu)
         global_menu_label = Label(self, _('Global or Column Menu:'))
-        # Hide the whole section on Linux - see refresh_global_menu_visibility
-        if os_name != 'nt':
-            global_menu_label.visible = False
-            self._global_menu_dropdown.visible = False
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
             chkbx_tooltip=_("Remember where you left off last time and "
