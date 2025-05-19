@@ -1387,12 +1387,13 @@ class _InstallerPackage(Installer, AFileInfo):
     def _list_package(apath, log):
         raise NotImplementedError
 
-    def sync_from_data(self, delta_files: set[CIstr], progress):
+    def sync_from_data(self, delta_files: set[CIstr], progress, archive_name):
         """Updates this installer according to the specified files in the Data
         directory.
 
         :param delta_files: The missing or mismatched files to sync.
-        :param progress: A progress dialog to use when syncing."""
+        :param progress: A progress dialog to use when syncing.
+        :param archive_name: only for rar archives, the 7z output filename."""
         raise NotImplementedError
 
     def _do_sync_data(self, proj_dir, delta_files: set[CIstr], progress):
@@ -1441,6 +1442,8 @@ class _InstallerPackage(Installer, AFileInfo):
         """Return a path to a directory containing all files needed for an
         FOMOD to run."""
         return self._make_wizard_file_dir(self.has_fomod_conf, progress)
+
+    def writable_archive_name(self): return self.fn_key
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
@@ -1682,14 +1685,14 @@ class InstallerArchive(_InstallerPackage):
         # Cleaned up by the wizard GUI clients
         return unpack_dir
 
-    def sync_from_data(self, delta_files: set[CIstr], progress):
+    def sync_from_data(self, delta_files: set[CIstr], progress, archive_name):
         # Extract to a temp project, then perform the sync as if it were a
         # regular project and finally repack
         unpack_dir = self.unpackToTemp([x[0] for x in self.fileSizeCrcs],
             recurse=True, progress=SubProgress(progress, 0.1, 0.4))
         upt_numb, del_numb = self._do_sync_data(
             unpack_dir, delta_files, progress=SubProgress(progress, 0.4, 0.5))
-        self.packToArchive(unpack_dir, self.writable_archive_name(),
+        self.packToArchive(unpack_dir, archive_name,
                            isSolid=True, blockSize=None,
                            progress=SubProgress(progress, 0.5, 1.0))
         cleanup_temp_dir(unpack_dir)
@@ -1811,7 +1814,7 @@ class InstallerProject(_InstallerPackage):
         self._fs_install(dest_src, srcDirJoin, progress, progressPlus, None,
                          **kwargs)
 
-    def sync_from_data(self, delta_files: set[CIstr], progress):
+    def sync_from_data(self, delta_files: set[CIstr], progress, archive_name):
         return self._do_sync_data(self.abs_path, delta_files, progress)
 
     @staticmethod
@@ -1944,7 +1947,7 @@ class InstallersData(DataStore):
             ';'.join(f'*{e}' for e in archives.readExts))
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
-            install_order=None, do_refresh=True, _index=None, load_cache=True):
+                 install_order=None, do_refresh=True, load_cache=True):
         """Create, add to self and return a new _InstallerPackage.
         :param fileName: the filename of the package to create
         :param is_proj: if True create a project, otherwise an archive
@@ -1952,13 +1955,9 @@ class InstallersData(DataStore):
         :param progress: to pass to _InstallerPackage._reset_cache
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
-        :param _index: if given create a subprogress
         :param load_cache: if True call AFile.__init__ -> _reset_cache()
         """
-        if not is_mark:
-            progress = progress if _index is None else SubProgress(
-                progress, _index, _index + 1)
-        else:
+        if is_mark:
             is_proj = 2
             if install_order is None:
                 install_order = self[self.lastKey].order
@@ -2314,16 +2313,15 @@ class InstallersData(DataStore):
             for item in items:
                 progress(index, _('Scanning Packages…') + f'\n{item}')
                 index += 1
-                inst = self.get(item)
-                if inst is None or inst.fn_key != item:
+                if (inst := self.get(item)) is None or inst.fn_key != item:
                     if inst: # some rename bug - corrupted
                         refresh_info.redraw.add(item)
                         deprint(f'{item} invalid idata key: {inst.fn_key}')
                         del self[item]  # delete the stored installer
                     else: refresh_info.to_add.add(item)
                     # refresh_info will notify callers to call irefresh('N')
-                    self.new_info(item, progress, is_proj=is_proj,
-                                  _index=index - 1, do_refresh=False)
+                    sub = SubProgress(progress, index - 1, index)
+                    self.new_info(item, sub, is_proj=is_proj, do_refresh=False)
                     continue
                 # if we just loaded __setstate just updated existing Installers
                 if not fresh_load and inst.do_update(force_update=fullRefresh,

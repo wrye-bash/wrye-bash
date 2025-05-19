@@ -1167,7 +1167,8 @@ class Installer_SyncFromData(_SingleInstallable):
             self._selected_info.mismatchedFiles)
 
     def Execute(self):
-        was_rar = self._selected_item.fn_ext == '.rar'
+        was_rar = self._selected_item != (
+            final_package := self._selected_info.writable_archive_name())
         if was_rar and not self._askYes('\n\n'.join([
                 _('.rar files cannot be modified. Wrye Bash can however '
                   'repack them to .7z files, which can then be modified.'),
@@ -1187,7 +1188,7 @@ class Installer_SyncFromData(_SingleInstallable):
             progress(0.1, _('Updating files.'))
             actual_upd, actual_del = self._selected_info.sync_from_data(
                 set(ed_missing) | set(ed_mismatched),
-                progress=SubProgress(progress, 0.1, 0.7))
+                SubProgress(progress, 0.1, 0.7), final_package)
             if (actual_del != len(ed_missing)
                     or actual_upd != len(ed_mismatched)):
                 msg = '\n'.join([
@@ -1207,12 +1208,11 @@ class Installer_SyncFromData(_SingleInstallable):
                 recalculate_project_crc=True,
                 progress=SubProgress(progress, 0.7, 0.8))
             if was_rar:
-                final_package = self._selected_info.writable_archive_name()
+                sub = SubProgress(progress, 0.8, 0.9)
                 # Move the new archive directly underneath the old archive
-                self.idata.new_info(final_package, progress, is_proj=False,
-                    do_refresh=False, _index=0.8,
+                created_package = self.idata.new_info(final_package, sub,
+                    is_proj=False, do_refresh=False,
                     install_order=self._selected_info.order + 1)
-                created_package = self.idata[final_package]
                 created_package.is_active = self._selected_info.is_active
             self.idata.refresh_ns(progress=SubProgress(progress, 0.9, 0.99))
             self.window.RefreshUI()
