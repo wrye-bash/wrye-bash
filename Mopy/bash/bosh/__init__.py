@@ -35,6 +35,7 @@ from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable, Callable
 from functools import wraps
 from itertools import chain
+from os import DirEntry
 from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
@@ -1509,6 +1510,41 @@ class DataStore(DataDict):
     def refresh(self, refresh_infos: RefrIn | bool, **kwargs) -> RefrData:
         raise NotImplementedError
 
+    def _list_store_dir(self): # performance intensive
+        inodes = FNDict()
+        with os.scandir(self.store_dir) as it:
+            for x in it:
+                try:
+                    if kws := self._add_node(x):
+                        inodes[x.name] = kws
+                except OSError: # this should not happen
+                    deprint(f'Failed to stat {x.name} in {self.store_dir}',
+                            traceback=True)
+        return self._diff_dir(inodes)
+
+    def _add_node(self, node: DirEntry):
+        raise NotImplementedError
+
+    def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
+        dict[FName, tuple[AFile | None, dict]], set[ListInfo]]:
+        """Return a dict of fn keys (see overrides) of files present in data
+        dir and a set of deleted keys."""
+        # for modInfos '.ghost' must have been lopped off from inode keys
+        delinfos = self._get_delinfos(inodes)
+        new_or_present = {}
+        for k, kws in inodes.items():
+            # corrupted that has been updated on disk - if cor.abs_path
+            # changed ghost state (effectively deleted) do_update returns True
+            # ghost state can only change manually for corrupted - don't!
+            self._get_info(k, kws, new_or_present)
+        return new_or_present, delinfos
+
+    def _get_delinfos(self, inodes):
+        raise NotImplementedError
+
+    def _get_info(self, k, kws, new_or_present):
+        raise NotImplementedError
+
     @final
     def delete(self, delete_keys, *, recycle=True, do_refr=True):
         """Deletes member file(s)."""
@@ -1524,7 +1560,7 @@ class DataStore(DataDict):
                 # files at this point
                 if do_refr: self.refresh(RefrIn(del_infos=finfos), what='I',
                                          unlock_lo=True)
-            return finfos
+        return finfos
 
     def _delete_operation(self, finfos: list, recycle):
         if abs_del_paths := [
@@ -1687,36 +1723,19 @@ class _AFileInfos(DataStore):
             self._notify_bain({inf.abs_path for inf in delinfos}, alt)
         return rdata
 
-    def _list_store_dir(self):
-        file_matches_store = self.rightFileType
-        inodes = FNDict()
-        with os.scandir(self.store_dir) as it: # performance intensive
-            for x in it:
-                try:
-                    if x.is_file() and file_matches_store(n := x.name):
-                        inodes[n] = {'cached_stat': x.stat()}
-                except OSError: # this should not happen - investigating
-                    deprint(f'Failed to stat {x.name} in {self.store_dir}',
-                            traceback=True)
-        return self._diff_dir(inodes)
+    def _add_node(self, node):
+        return {'cached_stat': node.stat()} if node.is_file() and \
+            self.rightFileType(node.name) else None
 
-    def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
-        dict[FName, tuple[AFile | None, dict]], set[ListInfo]]:
-        """Return a dict of fn keys (see overrides) of files present in data
-        dir and a set of deleted keys."""
-        # for modInfos '.ghost' must have been lopped off from inode keys
-        delinfos = {inf for inf in [*self.values(), *self.corrupted.values()]
-                    if inf.fn_key not in inodes}
-        new_or_present = {}
-        for k, kws in inodes.items():
-            # corrupted that has been updated on disk - if cor.abs_path
-            # changed ghost state (effectively deleted) do_update returns True
-            # ghost state can only change manually for corrupted - don't!
-            if (cor := self.corrupted.get(k)) and cor.do_update():
-                new_or_present[k] = (None, kws)
-            elif not cor: # for default tweaks with a corrupted copy
-                new_or_present[k] = (self.get(k), kws)
-        return new_or_present, delinfos
+    def _get_delinfos(self, inodes):
+        return {inf for inf in [*self.values(), *self.corrupted.values()]
+                if inf.fn_key not in inodes}
+
+    def _get_info(self, k, kws, new_or_present):
+        if (cor := self.corrupted.get(k)) and cor.do_update():
+            new_or_present[k] = (None, kws)
+        elif not cor:  # for default tweaks with a corrupted copy
+            new_or_present[k] = (self.get(k), kws)
 
     def _delete_refresh(self, infos):
         """Only called from refresh - should be inlined but for ModInfos.
