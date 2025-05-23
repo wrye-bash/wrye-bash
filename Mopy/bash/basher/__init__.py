@@ -3051,7 +3051,8 @@ class InstallersPanel(BashTab):
                         self._user_cancelled = True # User canceled the refresh
                     finally:
                         self._data_dir_scanned = True
-            if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
+            if refreshui: ##:(701) be more granular here
+                self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False

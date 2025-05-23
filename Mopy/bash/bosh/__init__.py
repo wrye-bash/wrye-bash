@@ -2870,13 +2870,13 @@ class ModInfos(TableFileInfos):
         except UnicodeEncodeError:
             return True
 
-    def create_new_mod(self, newName: str | FName,
+    def create_new_mod(self, mod_fn: str | FName,
             selected: tuple[FName, ...] = (), *,
             wanted_masters: list[FName] | None = None, dir_path=None,
             author_str='', flags_dict=None) -> ModInfo | None:
         """Create a new plugin.
 
-        :param newName: The name the created plugin will have.
+        :param mod_fn: The name the created plugin will have.
         :param selected: The currently selected after which the plugin will be
             created in the load order. If empty, the new plugin will be placed
             last in the load order. Only relevant if dir_path is unset or
@@ -2890,7 +2890,7 @@ class ModInfos(TableFileInfos):
             InvalidPluginFlagsError."""
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
-        newInfo = self.factory((dir_path or self.store_dir).join(newName))
+        newInfo = self.factory((dir_path or self.store_dir).join(mod_fn))
         newFile = ModFile(newInfo)
         newFile.tes4.masters = wanted_masters
         if author_str:
@@ -2903,8 +2903,8 @@ class ModInfos(TableFileInfos):
         if dir_path is None:
             last_selected = (load_order.get_ordered(selected) if selected
                              else self._lo_wip)[-1]
-            new = FNDict([(newName, last_selected)])
-            rdata = self.refresh(RefrIn.from_added(new), insert_after=new)
+            new = FNDict([(mod_fn := FName(mod_fn), last_selected)])
+            rdata = self.refresh(RefrIn.from_added([mod_fn]), insert_after=new)
             # if we failed to add this will raise KeyError we 'd want to
             # return the message from corrupted
             return self[rdata.to_add.pop()]

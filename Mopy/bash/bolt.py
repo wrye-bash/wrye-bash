@@ -1937,6 +1937,8 @@ class RefrIn:
 
     @classmethod
     def from_added(cls, added_fns):
+        if isinstance(added_fns, dict):
+            return cls({k: (None, v) for k, v in added_fns.items()})
         return cls({k: (None, {}) for k in added_fns})
 
     def __ior__(self, other, *, __np=attrgetter_cache['new_or_present']):

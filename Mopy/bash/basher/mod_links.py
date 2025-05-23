@@ -231,7 +231,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 dir_path=mods_ds.store_dir)
             mod_previous[master] = previous_master
             previous_master = master
-        rdata = mods_ds.refresh(RefrIn.from_added(mod_previous),
+        rdata = mods_ds.refresh(RefrIn.from_added([*mod_previous]),
                                 insert_after=mod_previous)
         self.window.propagate_refresh(rdata,
                                       detail_item=next(reversed(mod_previous)))

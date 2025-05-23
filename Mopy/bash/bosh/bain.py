@@ -1984,8 +1984,8 @@ class InstallersData(DataStore):
         """Only used in delete/unhide - align with _AFileInfos one."""
         return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, refresh_info: RefrIn | list | None = None, *,
-        what='DIONSC', progress=None, fullRefresh=False, **kwargs) -> RefrData:
+    def irefresh(self, refresh_info: RefrIn | None = None, *, what='DIONSC',
+                 progress=None, fullRefresh=False, **kwargs) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
@@ -2048,18 +2048,15 @@ class InstallersData(DataStore):
     def _list_store_dir(self, refresh_info, fresh_load, fullRefresh, progress):
         """The BAIN version - illustrates the differences between _AFileInfos
         and InstallersData refresh()."""
-        # if we are passed a RefrIn, we only need to update for deleted
-        if isinstance(refresh_info, RefrIn): ##:(701) use RefrIn all along
-            if refresh_info.new_or_present: ##: YAK coming from unhide
-                refresh_info = [*refresh_info.new_or_present]
-            else:
+        dirs_files = None # remains None in case refresh_info is a RefrData
+        if isinstance(refresh_info, RefrIn):
+            if toadd := refresh_info.new_or_present: # coming from unhide/BCFs
+                dirs_files = [[], []]
+                for k, (_inf, kws) in toadd.items():
+                    dirs_files[not kws['is_proj']].append(k)
+                refresh_info = RefrData(to_add=set(toadd))
+            else: # we only need to update for deleted
                 return RefrData(to_del={i.fn_key for i in refresh_info.del_infos})
-        dirs_files = None
-        if isinstance(refresh_info, (list | set)): # we are passed existing installers
-            dirs_files = [[], []]
-            for yak in refresh_info: # call update_installers to update those
-                dirs_files[self.store_dir.join(yak).is_file()].append(yak)
-            refresh_info = RefrData(to_add=set(refresh_info))
         elif refresh_info is None: # we really need to scan installers
             dirs_files = top_level_items(bass.dirs['installers'])
         if dirs_files:
@@ -2075,8 +2072,9 @@ class InstallersData(DataStore):
     def refresh_n(self):
         self.irefresh(what='N')
 
-    def refresh_i(self, refresh_info: RefrIn | list):
-        self.irefresh(refresh_info, what='I')
+    def refresh_i(self, archives_list: list):
+        self.irefresh(RefrIn.from_added( # only uses are for archives
+            {k: {'is_proj': False} for k in archives_list}), what='I')
 
     def __load(self, progress):
         progress = progress or bolt.Progress()

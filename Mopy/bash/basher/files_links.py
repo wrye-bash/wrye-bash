@@ -82,7 +82,9 @@ class Files_Unhide(ItemLink):
         ren_data = RefrData()
         dstore.rename_operation(srcFiles, ren_data, ren_parent=uil,
             dest_dir=st_dir, with_backups=False) # we ain't handling backups
-        if rd := dstore.refresh(RefrIn.from_added(ren_data.to_add), what='I'):
+        rinf = RefrIn.from_added({k: {'is_proj': False} for k in
+                                  ren_data.to_add})
+        if rd := dstore.refresh(rinf, what='I'):
             unhidden = rd.to_add # pick one at random to show details for
             uil.propagate_refresh(rd, detail_item=next(iter(unhidden)))
             uil.SelectItemsNoCallback(unhidden, deselectOthers=True)
