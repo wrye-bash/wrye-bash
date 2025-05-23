@@ -2030,9 +2030,8 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        if rdata := self.try_rename([[sinf, fn_item.fn_body]],
-                                    forced_ext=extension):
-            self.RefreshUI(rdata)
+        self.try_rename([[sinf, fn_item.fn_body]], item_edited=fn_item,
+                        forced_ext=extension)
 
     # Save profiles
     def set_local_save(self, new_saves, *, do_swap=None):

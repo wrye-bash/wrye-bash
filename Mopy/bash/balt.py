@@ -1101,8 +1101,7 @@ class UIList(PanelWin):
         item_edited = self.panel.detailsPanel.detail_fn
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            if rdata := self.try_rename(ren_args, **ren_kwargs):
-                self.refresh_renames(item_edited, rdata, **ren_kwargs)
+            self.try_rename(ren_args, item_edited=item_edited, **ren_kwargs)
         return EventResult.CANCEL # needed! clears new name from label on exception
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
@@ -1110,17 +1109,6 @@ class UIList(PanelWin):
 
     def _rename_args(self, evt_label, selected, **val_kwargs):
         return *selected[0].validate_filename_str(evt_label, **val_kwargs), {}
-
-    def refresh_renames(self, item_edited, rdata, store_refr=None):
-        if rdata:
-            args_dict = {'detail_item': rdata.renames.get(item_edited,
-                item_edited)} # in case the displayed item was *not* renamed
-            if store_refr is not None:
-                self.propagate_refresh(rdata, store_refr, **args_dict)
-            else:
-                self.RefreshUI(rdata, **args_dict)
-            #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.to_add)
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1142,7 +1130,8 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, ren_args, *, forced_ext='', **ren_kwargs):
+    def try_rename(self, ren_args, *, forced_ext='', item_edited=None,
+                   **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
@@ -1153,6 +1142,13 @@ class UIList(PanelWin):
         rdata = RefrData()
         if info_new_name:
             self.data_store.rename_operation(info_new_name, rdata, **ren_kwargs)
+        if item_edited and rdata:
+            args_dict = {'detail_item': rdata.renames.get(item_edited,
+                item_edited)} # in case the displayed item was *not* renamed
+            self.propagate_refresh(rdata, ren_kwargs.get('store_refr'),
+                                   **args_dict)
+            #--Reselect the renamed items
+            self.SelectItemsNoCallback(rdata.to_add)
         return rdata
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):

@@ -414,8 +414,7 @@ class Save_Renumber(EnabledLink):
             if nfn_save != sinf.fn_key.fn_body:
                 ren_args.append((sinf, nfn_save))
                 nfn_number += 1
-        if rdata := self.window.try_rename(ren_args):
-            self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
+        self.window.try_rename(ren_args,item_edited=self._matches[0][1].fn_key)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
