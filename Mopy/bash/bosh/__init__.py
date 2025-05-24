@@ -1507,26 +1507,25 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
-    def refresh(self, refresh_infos: RefrIn | bool, **kwargs) -> RefrData:
+    def refresh(self, refresh_in: RefrIn | bool, **kwargs) -> RefrData:
         raise NotImplementedError
 
-    def _list_store_dir(self): # performance intensive
+    def list_store_dir(self, **kw_add): # performance intensive
         inodes = FNDict()
         with os.scandir(self.store_dir) as it:
             for x in it:
                 try:
-                    if kws := self._add_node(x):
+                    if kws := self._add_node(x, **kw_add):
                         inodes[x.name] = kws
                 except OSError: # this should not happen
                     deprint(f'Failed to stat {x.name} in {self.store_dir}',
                             traceback=True)
         return self._diff_dir(inodes)
 
-    def _add_node(self, node: DirEntry):
+    def _add_node(self, node: DirEntry, **kw_add):
         raise NotImplementedError
 
-    def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
-        dict[FName, tuple[AFile | None, dict]], set[ListInfo]]:
+    def _diff_dir(self, inodes) -> RefrIn:
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted keys."""
         # for modInfos '.ghost' must have been lopped off from inode keys
@@ -1537,7 +1536,7 @@ class DataStore(DataDict):
             # changed ghost state (effectively deleted) do_update returns True
             # ghost state can only change manually for corrupted - don't!
             self._get_info(k, kws, new_or_present)
-        return new_or_present, delinfos
+        return RefrIn(new_or_present, delinfos)
 
     def _get_delinfos(self, inodes):
         raise NotImplementedError
@@ -1677,17 +1676,13 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_infos: bool | RefrIn, *, booting=False,
-                **kwargs):
+    def refresh(self, refresh_in, *, booting=False, **kwargs):
         """Refresh from file directory."""
-        try:
-            new_or_present, delinfos = (refresh_infos.new_or_present,
-                                        refresh_infos.del_infos)
-        except AttributeError:
-            new_or_present, delinfos = self._list_store_dir() \
-                if refresh_infos else ({}, set())
+        if not isinstance(refresh_in, RefrIn):
+            refresh_in = self.list_store_dir() if refresh_in else RefrIn()
         rdata = RefrData() # create the return value instance then scan changes
-        for new, (oldInfo, kws) in new_or_present.items():
+        delinfos = refresh_in.del_infos
+        for new, (oldInfo, kws) in refresh_in.new_or_present.items():
             try:
                 if oldInfo is not None:
                     # reread the header if any file attributes changed
@@ -1723,7 +1718,7 @@ class _AFileInfos(DataStore):
             self._notify_bain({inf.abs_path for inf in delinfos}, alt)
         return rdata
 
-    def _add_node(self, node):
+    def _add_node(self, node, **kw_add):
         return {'cached_stat': node.stat()} if node.is_file() and \
             self.rightFileType(node.name) else None
 
@@ -1787,16 +1782,15 @@ class TableFileInfos(_AFileInfos):
         return bolt.DataTable(self.bash_dir.join('Table.dat'),
                               load_pickle=True).pickled_data
 
-    def refresh(self, refresh_infos, **kwargs):
+    def refresh(self, refresh_in, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
-            new_or_present, delinfos = self._list_store_dir()
+            refresh_in = self.list_store_dir()
             table = self._init_from_table()
-            for fn, (_inf, kws) in new_or_present.items():
+            for fn, (_inf, kws) in refresh_in.new_or_present.items():
                 if props := table.get(fn):
                     kws['att_val'] = props
-            refresh_infos = RefrIn(new_or_present, delinfos)
-        return super().refresh(refresh_infos, **kwargs)
+        return super().refresh(refresh_in, **kwargs)
 
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
@@ -1937,8 +1931,8 @@ class INIInfos(TableFileInfos):
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings['bash.ini.choice']] # set self.redraw_target = True
 
-    def refresh(self, refresh_infos, *, booting=False, **kwargs):
-        rdata = super().refresh(refresh_infos, booting=booting)
+    def refresh(self, refresh_in, *, booting=False, **kwargs):
+        rdata = super().refresh(refresh_in, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
         # delete should take care of this but needs to update rdata...)
         for k, default_info in ((k1, v) for k1, v in
@@ -1983,11 +1977,13 @@ class INIInfos(TableFileInfos):
     def _diff_dir(self, inodes):
         old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
                          *self.corrupted.values()}
-        new_or_present, delinfos = super()._diff_dir(inodes)
+        rin_diff = super()._diff_dir(inodes)
         # if iinf is a default tweak a file has replaced it - set it to None
-        new_or_present = {k: (inf and (None if inf.is_default_tweak else inf),
-            kws) for k, (inf, kws) in new_or_present.items()}
-        return new_or_present, delinfos & old_ini_infos # drop default tweaks
+        rin_diff.new_or_present = {
+            k: (inf and (None if inf.is_default_tweak else inf), kws) for
+            k, (inf, kws) in rin_diff.new_or_present.items()}
+        rin_diff.del_infos &= old_ini_infos # drop default tweaks
+        return rin_diff
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         parts = os.path.split(os.fspath(data_path))
@@ -2180,7 +2176,7 @@ class ModInfos(TableFileInfos):
 
     # Refresh - not quite surprisingly this is super complex - therefore define
     # refresh satellite methods before even defining the DataStore overrides
-    def refresh(self, refresh_infos, *, booting=False, unlock_lo=False,
+    def refresh(self, refresh_in, *, booting=False, unlock_lo=False,
                 insert_after: FNDict[FName, FName] | None = None, **kwargs):
         """Update file data for additions, removals and date changes.
         See usages for how to use the refresh_infos and unlock_lo params.
@@ -2189,7 +2185,7 @@ class ModInfos(TableFileInfos):
         some of the set_load_order methods, or pass unlock_lo=True
         (refreshLoadOrder only *gets* load order)."""
         # Scan the data dir, getting info on added, deleted and modified files
-        rdata = super().refresh(refresh_infos, booting=booting)
+        rdata = super().refresh(refresh_in, booting=booting)
         mods_changes = bool(rdata)
         self._refresh_bash_tags()
         ldiff = LordDiff()
@@ -3241,11 +3237,11 @@ class SaveInfos(TableFileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos, *, booting=False, save_dir=None,
+    def refresh(self, refresh_in, *, booting=False, save_dir=None,
                 do_swap=None, **kwargs):
         if not booting: # else we just called __init__
             self.set_store_dir(save_dir, do_swap)
-        return super().refresh(refresh_infos, booting=booting, **kwargs)
+        return super().refresh(refresh_in, booting=booting, **kwargs)
 
     @staticmethod
     def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
