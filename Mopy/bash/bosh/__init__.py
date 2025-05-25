@@ -1551,24 +1551,19 @@ class DataStore(DataDict):
         # let it blow if we are called with non-existing keys(join(None), boom)
         finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
                   self.filter_essential(delete_keys).items()]
+        return self._delete_operation(finfos, recycle, do_refr)
+
+    def _delete_operation(self, finfos: list, recycle, do_refr):
         try:
-            self._delete_operation(finfos, recycle)
-        finally: # markers are popped from finfos - we refreshed in _delete_op
-            if finfos := self.check_removed(finfos):
-                # ok to suppose the only lo modification is due to deleted
-                # files at this point
-                if do_refr: self.refresh(RefrIn(del_infos=finfos), what='I',
-                                         unlock_lo=True)
+            if abs_del_paths := [*chain.from_iterable(
+                    inf.delete_paths() for inf in finfos)]:
+                env.shellDelete(abs_del_paths, recycle=recycle)
+        finally:
+            finfos = {inf for inf in finfos if not inf.abs_path.exists()}
+            if finfos and do_refr:
+                finfos = self.refresh(RefrIn(del_infos=finfos), what='I',
+                                      unlock_lo=True)
         return finfos
-
-    def _delete_operation(self, finfos: list, recycle):
-        if abs_del_paths := [
-                *chain.from_iterable(inf.delete_paths() for inf in finfos)]:
-            env.shellDelete(abs_del_paths, recycle=recycle)
-
-    def check_removed(self, infos):
-        """Lift your skirts, we are entering the realm of #241."""
-        return {inf for inf in infos if not inf.abs_path.exists()}
 
     _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '
                     '%(new)s.'), '', '',
@@ -1938,8 +1933,8 @@ class INIInfos(TableFileInfos):
         for k, default_info in ((k1, v) for k1, v in
                 self._default_tweaks.items() if k1 not in self):
             self[k] = default_info  # type: DefaultIniInfo
-            if k in rdata.to_del:  # we restore default over copy
-                rdata.redraw.add(k)
+            if k in rdata.to_del: # we restore default over copy
+                rdata |= RefrData({k}) # will pop it from to_del also
                 default_info.reset_status()
             else: # booting
                 rdata.to_add.add(k)
@@ -1954,12 +1949,6 @@ class INIInfos(TableFileInfos):
                 self.values()} ##:(701) only return infos that changed status
         self.redraw_target = True # we are called on target update - msg the UI
         return RefrData(updt)
-
-    def check_removed(self, infos):
-        regular_tweaks = []
-        def_tweaks = {inf for inf in infos if inf.fn_key in
-                      self._default_tweaks or regular_tweaks.append(inf)}
-        return {*def_tweaks, *super().check_removed(regular_tweaks)}
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Can't remove default tweaks

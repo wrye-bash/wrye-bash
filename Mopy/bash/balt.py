@@ -785,10 +785,11 @@ class UIList(PanelWin):
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in rdata.new_changed():
+                for upd in (modified := rdata.new_changed()):
                     self.PopulateItem(item=upd, **ui_kwargs)
                 #--Sort
-                self.SortItems()
+                if modified: # if we only deleted items sorting does not change
+                    self.SortItems()
                 self.autosizeColumns()
         # refresh details
         if detail_item is None:
@@ -1420,10 +1421,10 @@ class UIList(PanelWin):
             trash_icon=get_image('trash_can.32'))
         if not dd_ok or not dd_items: return
         try:
-            self.data_store.delete(dd_items, recycle=dd_recycle)
-        except (PermissionError, CancelError, SkipError): pass
-        # Also cleans _gList internal dicts
-        self.propagate_refresh(True)
+            rd_del = self.data_store.delete(dd_items, recycle=dd_recycle)
+        except (PermissionError, CancelError, SkipError):
+            rd_del = True # perform a refresh to see if items were deleted
+        self.propagate_refresh(rd_del) # also cleans _gList internal dicts
 
     def open_data_store(self):
         try:

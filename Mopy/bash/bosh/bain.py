@@ -2128,15 +2128,17 @@ class InstallersData(DataStore):
                     v.set_table_prop('installer', '%s' % name_new)
 
     #--Dict Functions ---------------------------------------------------------
-    def _delete_operation(self, infos, recycle):
+    def _delete_operation(self, infos, recycle, do_refr):
         toDelete = []
-        markers = [inst.fn_key for inst in infos if
-                   inst.is_marker or toDelete.append(inst)] # or None
-        super()._delete_operation(toDelete, recycle)
-        for m in markers: del self[m]
-        if len(infos) == len(markers): # only markers - just refresh order
-            self.refreshOrder() # do the refresh here if we only have markers
-        infos[:] = toDelete # eliminate markers from the list, we are done
+        markers = {inst.fn_key for inst in infos if
+                   inst.is_marker or toDelete.append(inst)} # or None
+        if rd_mark := RefrData(to_del=markers):
+            for m in markers: del self[m]
+            if not toDelete: # only markers - just refresh order
+                self.refreshOrder() # refresh here if we only have markers
+                return rd_mark
+        rd_mark |= super()._delete_operation(toDelete, recycle, do_refr)
+        return rd_mark
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
