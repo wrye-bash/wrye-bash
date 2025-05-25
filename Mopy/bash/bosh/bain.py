@@ -1422,10 +1422,10 @@ class _InstallerPackage(Installer, AFileInfo):
             _remove_empty_dirs(proj_dir)
         return upt_numb, del_numb
 
+    def _open_txt_file(self, rel_path): raise NotImplementedError
     def open_readme(self): self._open_txt_file(self.hasReadme)
     def open_wizard(self): self._open_txt_file(self.hasWizard)
     def open_fomod_conf(self): self._open_txt_file(self.has_fomod_conf)
-    def _open_txt_file(self, rel_path): raise NotImplementedError
 
     def _make_wizard_file_dir(self, wizard_file_name, progress):
         """Abstract method that should return a directory containing the
@@ -1853,8 +1853,8 @@ def _bain_op(func):
                 # Delete files that no data store cares about
                 if removed_untracked:
                     par = p.getParent() if (p := kwargs['progress']) else None
-                    env.shellDelete(self._determineEmptyDirs(
-                        removed_untracked), parent=par)
+                    env.shellDelete(self._determineEmptyDirs( # pass a copy in
+                        {*removed_untracked}), parent=par)
                 # Delegate deletion of files that data stores care about to
                 # those data stores
                 for store, removed_files in removed_tracked.items():
@@ -2494,14 +2494,14 @@ class InstallersData(DataStore):
         self.data_sizeCrcDate.update(new_sizeCrcDate)
 
     def update_for_overridden_skips(self, dont_skip=None, progress=None):
+        data_scd = self.data_sizeCrcDate
         if dont_skip is not None:
-            dont_skip.difference_update(self.data_sizeCrcDate)
+            dont_skip.difference_update(data_scd)
             self.overridden_skips |= dont_skip
         elif self.__clean_overridden_after_load: # needed on first load
-            self.overridden_skips.difference_update(self.data_sizeCrcDate)
+            self.overridden_skips.difference_update(data_scd)
             self.__clean_overridden_after_load = False
-        new_skips_overrides = (self.overridden_skips -
-                               self.data_sizeCrcDate.keys())
+        new_skips_overrides = self.overridden_skips - data_scd.keys()
         progress = progress or bolt.Progress()
         progress(0, _('%(data_folder)s: Skips overrides…') % {
             'data_folder': bush.game.mods_dir_name} + '\n')
@@ -2690,32 +2690,28 @@ class InstallersData(DataStore):
 
     #--Uninstall, Anneal, Clean
     @staticmethod
-    def _determineEmptyDirs(removedFiles):
+    def _determineEmptyDirs(allRemoves):
         # Determine which directories will be empty, replacing subsets of
-        # removedFiles by their parent dir if the latter will be emptied
-        allRemoves = set(removedFiles)
+        # allRemoves by their parent dir if the latter will be emptied
         emptyDirs = {p.head for p in allRemoves}
-        allRemovesAdd, removedFilesAdd = allRemoves.add, removedFiles.add
-        emptyDirsClear, emptyDirsAdd = emptyDirs.clear, emptyDirs.add
         # exclude those (Data won't likely be removed, Docs we want it around)
         excludir = {bass.dirs['mods'], bass.dirs['mods'].join('Docs')}
         emptyDirs -= excludir
         while emptyDirs:
             testDirs = set(emptyDirs)
-            emptyDirsClear()
+            emptyDirs.clear()
+            # Sorting by length, descending, ensure we are always processing
+            # the deepest directories first
             for folder in sorted(testDirs, key=len, reverse=True):
-                # Sorting by length, descending, ensure we always
-                # are processing the deepest directories first
                 files = {folder.join(x) for x in folder.ilist()}
                 remaining = files - allRemoves
                 if not remaining: # If all items in this directory will be
                     # removed, this directory is also safe to remove.
-                    removedFiles -= files
-                    removedFilesAdd(folder)
-                    allRemovesAdd(folder)
-                    emptyDirsAdd(folder.head)
+                    allRemoves -= files
+                    allRemoves.add(folder)
+                    emptyDirs.add(folder.head)
             emptyDirs -= excludir
-        return removedFiles
+        return allRemoves
 
     def _removeFiles(self, ci_removes, *, removed_tracked, removed_untracked,
                      **kwargs):
@@ -2919,7 +2915,7 @@ class InstallersData(DataStore):
                         f'failed', traceback=True)
         for store, del_infs in store_del.items():
             rui_data[store].del_infos |= del_infs
-        for emptyDir in emptyDirs:
+        for emptyDir in emptyDirs: ##: use determineEmptyDirs?
             if emptyDir.is_dir() and not [*emptyDir.ilist()]:
                 emptyDir.removedirs()
 
