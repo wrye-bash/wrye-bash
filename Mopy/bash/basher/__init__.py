@@ -74,10 +74,10 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
 from ..bass import Store
-from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, deprint, \
-    dict_sort, forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
-    to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
-    fast_cached_property, attrgetter_cache, top_level_files
+from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
+    attrgetter_cache, deprint, dict_sort, fast_cached_property, \
+    forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
+    to_win_newlines, top_level_files
 from ..bosh import ModInfo, omods
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
@@ -2527,8 +2527,9 @@ class InstallersList(UIList):
         try:
             index = self._get_uil_index(new_marker)
         except KeyError: # '====' not found in the internal dictionary
-            self.data_store.new_info(new_marker, install_order=max_order,
-                                     is_mark=True)
+            mark_inst = self.data_store.new_info(
+                new_marker, install_order=max_order, is_mark=True)
+            mark_inst.status = -20 ##:(701) status handling hack needed for RUI
             self.RefreshUI() # need to redraw all items cause order changed
             index = self._get_uil_index(new_marker)
         if index != -1:
@@ -3011,48 +3012,32 @@ class InstallersPanel(BashTab):
             if settings.get('bash.installers.updatedCRCs', True): # only checked here
                 settings['bash.installers.updatedCRCs'] = False
                 self._data_dir_scanned = False
-            do_refresh = scan_data_dir = scan_data_dir or not \
-                self._data_dir_scanned
-            refresh_info = None
-            if self.frameActivated: # otherwise we are called directly
-                folders, files = map(list,
-                                     top_level_items(bass.dirs['installers']))
-                omds = [fninst for fninst in files if
-                        fninst.fn_ext in archives.omod_exts]
-                if any(inst_path not in omods.failedOmods for inst_path in
-                       omds):
-                    omod_projects = self.__extractOmods(omds) ##: change above to filter?
-                    if omod_projects:
-                        deprint(f'Extending projects: {omod_projects}')
-                        folders.extend(omod_projects)
-                if not do_refresh:
-                    #with balt.Progress(_('Scanning Packages…')) as progress:
-                    refresh_info = self.listData.update_installers(folders,
-                        files, fullRefresh, progress=bolt.Progress())
-                    do_refresh = bool(refresh_info)
-            refreshui = refresh_info or RefrData()
-            what = prog = None
-            if (tracked := self.listData.refreshTracked()) or do_refresh:
-                what = 'DISC' if scan_data_dir else (
-                    'ISC' if tracked else 'IC')
-                prog = balt.Progress(_('Refreshing Installers…'), abort=canCancel)
-            elif self.frameActivated:
-                what = 'C' # setting progress leads to infinite refresh in MSW!
-                # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
-                prog = bolt.Progress()
+            what = {*(
+                'DISC' if scan_data_dir or not self._data_dir_scanned else '')}
+            if extract_omods := (self.frameActivated and self.__extractOmods):
+                what.update('IC') # otherwise we are called directly
+            if self.listData.refreshTracked(): # on first load this is no op
+                what.update('ISC')
+            fresh_load = not self.listData.loaded
+            ##:(728) setting progress after boot steals focus from Bash in MSW!
+            prog = (balt.Progress(_('Refreshing Installers…'), abort=canCancel)
+                if fresh_load else bolt.Progress() # should be `if 'I' in what`
+                ) # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
             if what:
-                with prog as progress:
+                with (prog if fresh_load else BusyCursor()):
                     try:
-                        refreshui = self.listData.irefresh(refresh_info,
-                            what=what, fullRefresh=fullRefresh,
-                            progress=progress)
+                        refreshui = self.listData.irefresh('I' in what,
+                           what=what, fullRefresh=fullRefresh,
+                           extract_omods=extract_omods, progress=prog)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh
+                        refreshui = False
                     finally:
                         self._data_dir_scanned = True
-            if refreshui: ##:(701) be more granular here
-                self.uiList.RefreshUI(focus_list=focus_list)
+                if refreshui or fresh_load:
+                    self.uiList.RefreshUI(refreshui or None,
+                                          focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
@@ -3064,6 +3049,7 @@ class InstallersPanel(BashTab):
             progress.setFull(max(len(omds), 1))
             omodMoves, omodRemoves = set(), set()
             for i, fn_omod in enumerate(omds):
+                if fn_omod in omods.failedOmods: continue
                 progress(i, fn_omod)
                 pr_name = bosh.InstallerProject.unique_name(fn_omod.fn_body,
                                                             check_exists=True)
@@ -3124,7 +3110,10 @@ class InstallersPanel(BashTab):
                         _move_omods(omodMoves)
                     except (CancelError, SkipError):
                         continue
-        return omod_projects
+        if omod_projects:
+            deprint(f'Extending projects: {omod_projects}')
+        return RefrIn.from_added(
+                {k: {'is_proj': True} for k in omod_projects})
 
     def sb_count_str(self):
         active = sum(x.is_active for x in self.listData.values())

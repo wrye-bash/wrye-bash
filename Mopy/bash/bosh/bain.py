@@ -44,10 +44,10 @@ from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
 from ..bass import Store
-from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
-    RefrIn, SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, round_size, top_level_items, \
-    DefaultFNDict, copy_or_reflink2, AFileInfo, RefrData
+from ..bolt import AFile, AFileInfo, CIstr, DefaultFNDict, FName, \
+    GPath_no_norm, ListInfo, Path, RefrData, RefrIn, SubProgress, \
+    copy_or_reflink2, deprint, dict_sort, forward_compat_path_to_fn, \
+    forward_compat_path_to_fn_list, round_size
 from ..exception import ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
@@ -210,7 +210,7 @@ class Installer(ListInfo):
         #--Icon
         if self.is_corrupt_package:
             iconkey = 'corrupt'
-        else:
+        else: # status must be set by now to an int value (not None)
             iconkey = 'on' if self.is_active else 'off'
             iconkey += f'.{idata.status_color[self.status]}'
             if bass.settings['bash.installers.wizardOverlay'] and self.hasWizard:
@@ -317,7 +317,7 @@ class Installer(ListInfo):
         self.espms = set()
         self.unSize = 0
         #--Volatile: set by refreshStatus
-        self.status = 0
+        self.status = None
         self.underrides = set()
         self.missingFiles = set()
         self.mismatchedFiles = set()
@@ -1136,16 +1136,16 @@ class Installer(ListInfo):
         """
         data_sizeCrc = self.ci_dest_sizeCrc
         get_cached = installersData.data_sizeCrcDate.get
-        ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
         underrides = set()
         inst_status = 0
         missing.clear()
         mismatched.clear()
-        if not self.has_recognized_structure:
+        if not self.has_recognized_structure: # markers also (bain_type = 0)
             inst_status = -20
         elif data_sizeCrc:
+            ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
             for filename,sizeCrc in data_sizeCrc.items():
                 sizeCrcDate = get_cached(filename)
                 if not sizeCrcDate:
@@ -1946,6 +1946,33 @@ class InstallersData(DataStore):
         return super().unhide_wildcard(_pl_str=_('Mod Archives'), _joined=
             ';'.join(f'*{e}' for e in archives.readExts))
 
+    def _add_node(self, node, *, with_omods=None,
+                  __skip_prefixes=('bash', '--')):
+        low = node.name.lower()
+        if is_proj := node.is_dir():
+            if low in self.installers_dir_skips:
+                return None # skip Bash directories and user specified ones
+        elif node.is_file(): # (241) what we do with symlinks?
+            b, e = os.path.splitext(low)
+            if with_omods is not None and e in archives.omod_exts:
+                with_omods.append(node)
+                return None
+            if e not in readExts: # will return None for omods also
+                return None
+        else: return None
+        if low.startswith(__skip_prefixes):
+            return None
+        return {'cached_stat': node.stat(), 'is_proj': is_proj}
+
+    def _get_delinfos(self, inodes):
+        return {self[k] for k in set(self.ipackages(self)) - inodes.keys()}
+
+    def _get_info(self, k, kws, new_or_present):
+        if (inst := self.get(k)) is not None and inst.fn_key != k:
+            deprint(f'{k} invalid idata key: {inst.fn_key}')
+            inst.set_path_keys(k) # rename bug - set paths, rest should be ok
+        new_or_present[k] = (inst, kws)
+
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
                  install_order=None, do_refresh=True, load_cache=True):
         """Create, add to self and return a new _InstallerPackage.
@@ -1984,8 +2011,9 @@ class InstallersData(DataStore):
         """Only used in delete/unhide - align with _AFileInfos one."""
         return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, refresh_info: RefrIn | None = None, *, what='DIONSC',
-                 progress=None, fullRefresh=False, **kwargs) -> RefrData:
+    def irefresh(self, refresh_in: RefrIn | bool = True, *, what='DIONSC',
+                 extract_omods=None, progress=None, fullRefresh=False,
+                 **kwargs) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
@@ -2008,13 +2036,12 @@ class InstallersData(DataStore):
             changes |= self._refresh_from_data_dir(progress, fullRefresh)
         if 'I' in what:
             progress = progress or bolt.Progress()
-            refresh_info = self._list_store_dir(refresh_info, fresh_load,
-                                                fullRefresh, progress)
-            for del_item in refresh_info.to_del:
-                self.pop(del_item)
+            progress(0, _('Scanning Packages…'))
+            refresh_info = self.update_installers(refresh_in, fullRefresh,
+                progress, fresh_load, extract_omods)
             changes |= bool(refresh_info)
-        elif refresh_info is None: # 'I' in what will set it to a RefrData instance
-            refresh_info = RefrData() # None only when called from ShowPanel (...)
+        else: # 'I' in what will set it to a RefrData instance
+            refresh_info = RefrData()
         if 'O' in what or changes:
             order_changed = self.refreshOrder()
             refresh_info.redraw.update(order_changed)
@@ -2035,7 +2062,7 @@ class InstallersData(DataStore):
                 except KeyError: pass # file is not installed in data dir
             changes |= self.ci_underrides_sizeCrc != ci_underrides_sizeCrc
             self.ci_underrides_sizeCrc = ci_underrides_sizeCrc
-        if 'S' in what or changes:
+        if 'S' in what or changes: # on boot adds *all* Installers to rdata
             st_changed = {k for k, v in self.items() if v.refreshStatus(self)}
             refresh_info.redraw.update(st_changed)
             changes |= bool(st_changed)
@@ -2043,27 +2070,6 @@ class InstallersData(DataStore):
             self.converters_data.refreshConverters(progress, fullRefresh)
         #--Done
         if changes: self.hasChanged = True
-        return refresh_info
-
-    def _list_store_dir(self, refresh_info, fresh_load, fullRefresh, progress):
-        """The BAIN version - illustrates the differences between _AFileInfos
-        and InstallersData refresh()."""
-        dirs_files = None # remains None in case refresh_info is a RefrData
-        if isinstance(refresh_info, RefrIn):
-            if toadd := refresh_info.new_or_present: # coming from unhide/BCFs
-                dirs_files = [[], []]
-                for k, (_inf, kws) in toadd.items():
-                    dirs_files[not kws['is_proj']].append(k)
-                refresh_info = RefrData(to_add=set(toadd))
-            else: # we only need to update for deleted
-                return RefrData(to_del={i.fn_key for i in refresh_info.del_infos})
-        elif refresh_info is None: # we really need to scan installers
-            dirs_files = top_level_items(bass.dirs['installers'])
-        if dirs_files:
-            progress(0, _('Scanning Packages…'))
-            refresh_info = self.update_installers(*dirs_files, fullRefresh,
-                progress, refresh_info=refresh_info,
-                fresh_load=fresh_load) # avoid re-stating freshly unpickled
         return refresh_info
 
     def refresh_ns(self, progress=None):
@@ -2290,49 +2296,38 @@ class InstallersData(DataStore):
                 show_warning(f'{msg}\n\n{e.message}')
             raise # UI expects that
 
-    def update_installers(self, folders, files, fullRefresh, progress, *,
-            refresh_info: RefrData | None = None, fresh_load=False,
-            __skip_prefixes=('bash', '--')) -> RefrData:
-        """Update installer info on given folders and files, adding new and
-        updating modified projects/packages, skipping as necessary."""
-        installers = set()
-        if scanning := (refresh_info is None):
-            # we are called with a listing of installers dir - filter packages
-            files = [f for f in files if f.fn_ext in readExts
-                     and not f.lower().startswith(__skip_prefixes)]
-            folders = {f for f in folders if
-                # skip Bash directories and user specified ones
-                (low := f.lower()) not in self.installers_dir_skips and
-                not low.startswith(__skip_prefixes)}
-            refresh_info = RefrData()
-            if not (files or folders):
-                return refresh_info
-        progress.setFull(len(files) + len(folders))
+    def update_installers(self, refresh_in, fullRefresh, progress,
+                          fresh_load, extract_omods) -> RefrData:
+        """The BAIN version of _AFileInfos.refresh()."""
+        if not isinstance(refresh_in, RefrIn):
+            if refresh_in:
+                refresh_in = self._list_store_dir(
+                    with_omods=(omds := [] if extract_omods else None))
+                if omds:
+                    refresh_in |= extract_omods(omds)
+            else:
+                refresh_in = RefrIn()
+        rdata = RefrData() # create the return value instance then scan changes
         index = 0
-        for items, is_proj in ((files, False), (folders, True)):
-            for item in items:
-                progress(index, _('Scanning Packages…') + f'\n{item}')
-                index += 1
-                if (inst := self.get(item)) is None or inst.fn_key != item:
-                    if inst: # some rename bug - corrupted
-                        refresh_info.redraw.add(item)
-                        deprint(f'{item} invalid idata key: {inst.fn_key}')
-                        del self[item]  # delete the stored installer
-                    else: refresh_info.to_add.add(item)
-                    # refresh_info will notify callers to call irefresh('N')
-                    sub = SubProgress(progress, index - 1, index)
-                    self.new_info(item, sub, is_proj=is_proj, do_refresh=False)
-                    continue
-                # if we just loaded __setstate just updated existing Installers
-                if not fresh_load and inst.do_update(force_update=fullRefresh,
-                        progress=SubProgress(progress, index - 1, index),
-                        recalculate_project_crc=fullRefresh):
-                    refresh_info.redraw.add(item)
-                else: installers.add(item)
-        if scanning:
-            exist = installers | refresh_info.new_changed()
-            refresh_info.to_del = set(self.ipackages(self)) - exist
-        return refresh_info
+        if items := refresh_in.new_or_present: progress.setFull(len(items))
+        for item, (inst, kws) in items.items():
+            progress(index, _('Scanning Packages…') + f'\n{item}')
+            index += 1
+            if inst is None:  # new file or updated corrupted, get a new info
+                # refresh_info will notify callers to call irefresh('N')
+                sub = SubProgress(progress, index - 1, index)
+                self[item] = self._inst_types[kws['is_proj']](item,
+                    progress=sub, load_cache=True)
+                sub(1.0, _('Done'))
+                rdata.to_add.add(item)
+            elif not fresh_load and inst.do_update(force_update=fullRefresh,
+                   progress=SubProgress(progress, index - 1, index),
+                   recalculate_project_crc=fullRefresh, **kws):
+                rdata.redraw.add(item)
+        for del_item in {d.fn_key for d in refresh_in.del_infos}:
+            rdata.to_del.add(del_item)
+            self.pop(del_item)
+        return rdata
 
     def refreshOrder(self):
         """Refresh installer status."""

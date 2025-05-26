@@ -1510,7 +1510,8 @@ class DataStore(DataDict):
     def refresh(self, refresh_in: RefrIn | bool, **kwargs) -> RefrData:
         raise NotImplementedError
 
-    def list_store_dir(self, **kw_add): # performance intensive
+    @final
+    def _list_store_dir(self, **kw_add): # performance intensive
         inodes = FNDict()
         with os.scandir(self.store_dir) as it:
             for x in it:
@@ -1674,7 +1675,7 @@ class _AFileInfos(DataStore):
     def refresh(self, refresh_in, *, booting=False, **kwargs):
         """Refresh from file directory."""
         if not isinstance(refresh_in, RefrIn):
-            refresh_in = self.list_store_dir() if refresh_in else RefrIn()
+            refresh_in = self._list_store_dir() if refresh_in else RefrIn()
         rdata = RefrData() # create the return value instance then scan changes
         delinfos = refresh_in.del_infos
         for new, (oldInfo, kws) in refresh_in.new_or_present.items():
@@ -1780,7 +1781,7 @@ class TableFileInfos(_AFileInfos):
     def refresh(self, refresh_in, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
-            refresh_in = self.list_store_dir()
+            refresh_in = self._list_store_dir()
             table = self._init_from_table()
             for fn, (_inf, kws) in refresh_in.new_or_present.items():
                 if props := table.get(fn):
