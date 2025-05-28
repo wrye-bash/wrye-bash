@@ -1988,8 +1988,8 @@ class InstallersData(DataStore):
             is_proj = 2
             if install_order is None:
                 install_order = self[self.lastKey].order
-        info = self[fileName] = self._inst_types[is_proj](
-            fileName, progress=progress, load_cache=load_cache)
+        info = self[fileName] = self.factory(self.store_dir.join(fileName),
+            is_proj=is_proj, progress=progress, load_cache=load_cache)
         if install_order is not None:
             self.moveArchives([fileName], install_order)
         if progress and not is_mark: progress(1.0, _('Done'))
@@ -1997,10 +1997,10 @@ class InstallersData(DataStore):
             self.refresh_ns()
         return info
 
-    def factory(self, inst_path, **kwargs):
+    def factory(self, inst_path, *, is_proj=None, **kwargs):
         h, t = inst_path.headTail
-        return self._inst_types[inst_path.is_dir()](FName(t.s), par_dir=h,
-                                                    **kwargs)
+        proj_dex = inst_path.is_dir() if is_proj is None else is_proj
+        return self._inst_types[proj_dex](FName(t.s), par_dir=h, **kwargs)
 
     @classmethod
     def rightFileType(cls, fileName: bolt.FName | str):
@@ -2308,22 +2308,19 @@ class InstallersData(DataStore):
             else:
                 refresh_in = RefrIn()
         rdata = RefrData() # create the return value instance then scan changes
-        index = 0
-        if items := refresh_in.new_or_present: progress.setFull(len(items))
-        for item, (inst, kws) in items.items():
-            progress(index, _('Scanning Packages…') + f'\n{item}')
-            index += 1
-            if inst is None:  # new file or updated corrupted, get a new info
-                # refresh_info will notify callers to call irefresh('N')
-                sub = SubProgress(progress, index - 1, index)
-                self[item] = self._inst_types[kws['is_proj']](item,
-                    progress=sub, load_cache=True)
+        if nop := refresh_in.new_or_present: progress.setFull(len(nop))
+        for index, (new, (oldInfo, kws)) in enumerate(nop.items()):
+            progress(index, _('Scanning Packages…') + f'\n{new}')
+            sub = SubProgress(progress, index, index + 1)
+            if oldInfo is not None:
+                if not fresh_load and oldInfo.do_update(force_update=fullRefresh,
+                    progress=sub, recalculate_project_crc=fullRefresh, **kws):
+                        rdata.redraw.add(new)
+            else: # refresh_info will notify callers to call irefresh('N')
+                self[new] = self.factory(self.store_dir.join(new),
+                    progress=sub, load_cache=True, **kws)
                 sub(1.0, _('Done'))
-                rdata.to_add.add(item)
-            elif not fresh_load and inst.do_update(force_update=fullRefresh,
-                   progress=SubProgress(progress, index - 1, index),
-                   recalculate_project_crc=fullRefresh, **kws):
-                rdata.redraw.add(item)
+                rdata.to_add.add(new)
         for del_item in {d.fn_key for d in refresh_in.del_infos}:
             rdata.to_del.add(del_item)
             self.pop(del_item)
