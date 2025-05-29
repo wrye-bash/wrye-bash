@@ -426,7 +426,7 @@ class TabDragMixin(object):
 #------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
-    _style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH
+    _style = wx.PD_APP_MODAL | wx.PD_SMOOTH | wx.PD_AUTO_HIDE
 
     def __init__(self, title=_('Progress'), message=f'\n{" " * 60}',
                  parent=None, abort=False, elapsed=True, __style=_style):
@@ -435,7 +435,7 @@ class Progress(bolt.Progress):
         # TODO(inf) de-wx? Or maybe stop using None as parent for Progress?
         parent = _AComponent._resolve(parent) if parent else None
         self.dialog = wx.GenericProgressDialog(title, message, 100, parent,
-                                               __style)
+                                               __style) # wx.ProgressDialog
         bolt.Progress.__init__(self)
         self.message = message
         self.isDestroyed = False
@@ -444,7 +444,8 @@ class Progress(bolt.Progress):
         self.prevTime = 0
 
     # __enter__ and __exit__ for use with the 'with' statement
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.Destroy()
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.Destroy()
 
     def getParent(self): return self.dialog.GetParent()
 
@@ -496,7 +497,8 @@ class Progress(bolt.Progress):
 
     def Destroy(self):
         if self.dialog:
-            # self._do_progress(self.full, _(u'Done'))
+            par = self.getParent()
+            # self._do_progress(1.0, _('Done'))
             self.dialog.Destroy()
             self.dialog = None
 

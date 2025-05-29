@@ -3452,10 +3452,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     def OnShowPage(self,event):
         """Call panel's ShowPanel() and set the current panel."""
-        if event.GetId() == self.GetId(): ##: why ?
-            bolt.GPathPurge()
-            self.currentPage.ShowPanel()
-            event.Skip() ##: shouldn't this always be called ?
+        # bolt.GPathPurge()
+        self.currentPage.ShowPanel()
+        event.Skip()
 
 #------------------------------------------------------------------------------
 class BashFrame(WindowFrame):
@@ -3599,7 +3598,9 @@ class BashFrame(WindowFrame):
         """Refresh all data - window activation event callback, called also
         on boot."""
         #--Ignore deactivation events.
+        print(f'{evt_active=}')
         if not evt_active or self.inRefreshData: return
+        self.raise_frame()
         #--UPDATES-----------------------------------------
         self.inRefreshData = True
         #--Config helpers

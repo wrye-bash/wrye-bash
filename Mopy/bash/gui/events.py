@@ -176,6 +176,12 @@ class EventHandler(object):
         the listener and reacts accordingly.
 
         :param event: The event that occurred."""
+        import wx
+        if not isinstance(event, wx.MouseEvent ):
+            print(event)
+            if isinstance(event, wx.ActivateEvent):
+                print(event.GetActivationReason())
+                print(event.GetEventObject())
         listener_args = self._arg_processor(event)
         for listener in self._listeners:
             result = listener(*listener_args)
