@@ -1507,8 +1507,31 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
-    def refresh(self, refresh_in: RefrIn | bool, **kwargs) -> RefrData:
-        raise NotImplementedError
+    def refresh(self, refresh_in: RefrData | RefrIn | bool, *,
+                extract_omods=None, **kwargs):
+        """Refreshes the store infos cache, returning a RefrData instance with
+        the info on which files were added/modified/deleted. Base
+        implementation defines the handling of the refresh_in parameter,
+        which can be:
+        - RefrData: cache was updated already (see rename_operation)
+        - RefrIn: we need to update the data store according to the changes
+          encoded in the RefrIn instance
+        - bool: if True, we need to scan the store directory else skip infos
+          refresh (we are called to update other data store info like load
+          order).
+        """
+        if isinstance(refresh_in, RefrData):
+            return refresh_in, RefrIn() # already scanned, return as is
+        if not isinstance(refresh_in, RefrIn):
+            if refresh_in:
+                refresh_in = self._list_store_dir(
+                    with_omods=(omds := [] if extract_omods else None))
+                if omds:
+                    refresh_in |= extract_omods(omds)
+            else:
+                refresh_in = RefrIn()
+        # create the return value instance then scan changes
+        return RefrData(), refresh_in
 
     @final
     def _list_store_dir(self, **kw_add): # performance intensive
@@ -1672,11 +1695,9 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_in, *, booting=False, **kwargs):
+    def refresh(self, refresh_in, *, booting=False, **kwargs) -> RefrData:
         """Refresh from file directory."""
-        if not isinstance(refresh_in, RefrIn):
-            refresh_in = self._list_store_dir() if refresh_in else RefrIn()
-        rdata = RefrData() # create the return value instance then scan changes
+        rdata, refresh_in = super().refresh(refresh_in)
         delinfos = refresh_in.del_infos
         for new, (oldInfo, kws) in refresh_in.new_or_present.items():
             try:

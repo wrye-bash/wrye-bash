@@ -2299,15 +2299,8 @@ class InstallersData(DataStore):
     def update_installers(self, refresh_in, fullRefresh, progress,
                           fresh_load, extract_omods) -> RefrData:
         """The BAIN version of _AFileInfos.refresh()."""
-        if not isinstance(refresh_in, RefrIn):
-            if refresh_in:
-                refresh_in = self._list_store_dir(
-                    with_omods=(omds := [] if extract_omods else None))
-                if omds:
-                    refresh_in |= extract_omods(omds)
-            else:
-                refresh_in = RefrIn()
-        rdata = RefrData() # create the return value instance then scan changes
+        rdata, refresh_in = super().refresh(refresh_in,
+                                            extract_omods=extract_omods)
         if nop := refresh_in.new_or_present: progress.setFull(len(nop))
         for index, (new, (oldInfo, kws)) in enumerate(nop.items()):
             progress(index, _('Scanning Packages…') + f'\n{new}')
