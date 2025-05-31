@@ -129,6 +129,7 @@ class ASkyrimGameInfo(PatchGame):
             'grass',
             'interface',
             'kreate', # 3P: KreatE
+            'kiloader', # 3P: kiloader
             'lightplacer', # 3P: LightPlacer
             'lodsettings',
             'mapmarkers', # 3P: Common Marker Addon Project
@@ -153,6 +154,8 @@ class ASkyrimGameInfo(PatchGame):
             'source', # see Psc.source_redirects above
             'strings',
             'tools', # 3P: FNIS
+            'ostim', # 3P: OSTIM
+            'pandora_engine', # 3P: Pandora Behavior Engine
         }
         keep_data_dirs = {'lsdata'}
         no_skip = GameInfo.Bain.no_skip | {*(_j('interface', x) for x in (
