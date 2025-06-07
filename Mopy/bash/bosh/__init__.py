@@ -1594,8 +1594,11 @@ class DataStore(DataDict):
         _('The file is in use by another process such as %(xedit_name)s.'), '',
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
-    def rename_operation(self, info_new_name, rd_ren, dest_dir=None, *,
-                         try_once=True, ren_parent=None, with_backups=True):
+    def rename_operation(self, info_new_name, dest_dir=None, *, try_once=True,
+                         ren_parent=None, with_backups=True) -> RefrData:
+        rd_ren = RefrData()
+        if not info_new_name:
+            return rd_ren
         all_rename_paths = {}
         paths_per_file = {} # revert partial renames
         for inf, new_name in info_new_name:
@@ -1637,6 +1640,7 @@ class DataStore(DataDict):
                 ren_paths=inf.set_path_keys(new_name, infodir=dest_dir))
             if dest_dir is None: # else we are going to create new infos ##:701
                 self[inf.fn_key] = inf # fn_key was set to new value
+        return rd_ren
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1712,28 +1716,31 @@ class _AFileInfos(DataStore):
                     rdata.to_add.add(new)
             except (FileError, UnicodeError, BoltError,
                     NotImplementedError) as e:
-                # old still corrupted, or new(ly) corrupted or we landed
-                # here cause cor_path was manually un/ghosted but file remained
-                # corrupted so in any case re-add to corrupted
-                cor_path = self.store_dir.join(new)
-                if del_inf := self.pop(new, None): # effectively deleted
-                    delinfos.add(del_inf)
-                    cor_path = del_inf.abs_path
-                elif self is modInfos: # modInfos needs be set here!
-                    if (isg := kws.get('itsa_ghost')) is None:
-                        isg = not cor_path.is_file() and os.path.isfile(
-                            f'{cor_path}.ghost')
-                    if isg: cor_path = cor_path + '.ghost' # Path __add__ !
-                er = e.message if hasattr(e, 'message') else f'{e}'
-                self.corrupted[new] = cor = _Corrupted(cor_path, er, new,**kws)
-                deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
-                        traceback=True)
+                self._add_to_cor(new, kws, delinfos, e)
         if delinfos:
             rdata.to_del |= self._delete_refresh(delinfos)
         if not booting and ((alt := rdata.new_changed()) or delinfos):
             alt = {self[n].abs_path for n in alt}
             self._notify_bain({inf.abs_path for inf in delinfos}, alt)
         return rdata
+
+    def _add_to_cor(self, new, kws, delinfos, e):
+        # old still corrupted, or new(ly) corrupted or we landed
+        # here cause cor_path was manually un/ghosted but file remained
+        # corrupted so in any case re-add to corrupted
+        cor_path = self.store_dir.join(new)
+        if del_inf := self.pop(new, None): # effectively deleted
+            delinfos.add(del_inf)
+            cor_path = del_inf.abs_path
+        elif self is modInfos:  # modInfos needs be set here!
+            if (isg := kws.get('itsa_ghost')) is None:
+                isg = not cor_path.is_file() and os.path.isfile(
+                    f'{cor_path}.ghost')
+            if isg: cor_path = cor_path + '.ghost'  # Path __add__ !
+        er = e.message if hasattr(e, 'message') else f'{e}'
+        self.corrupted[new] = cor = _Corrupted(cor_path, er, new, **kws)
+        deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
+                traceback=True)
 
     def _add_node(self, node, **kw_add):
         return {'cached_stat': node.stat()} if node.is_file() and \
@@ -1783,10 +1790,11 @@ class _AFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-    def rename_operation(self, info_new_name, rd_ren, dest_dir=None, **kwargs):
+    def rename_operation(self, info_new_name, dest_dir=None, **kwargs):
         # Override to allow us to notify BAIN if necessary
-        super().rename_operation(info_new_name, rd_ren, dest_dir, **kwargs)
+        rd_ren = super().rename_operation(info_new_name, dest_dir, **kwargs)
         self._notify_bain(set(rp := rd_ren.ren_paths), set(rp.values()))
+        return rd_ren
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
@@ -2480,13 +2488,13 @@ class ModInfos(TableFileInfos):
                 2: self.imported}
 
     # Rest of DataStore overrides ---------------------------------------------
-    def rename_operation(self, info_new_name, rd_ren, dest_dir=None, **kwargs):
+    def rename_operation(self, info_new_name, dest_dir=None, **kwargs):
         if act_mods := dest_dir is None and {fn for inf, _new_name in
             info_new_name if load_order.cached_is_active(fn := inf.fn_key)}:
             self.lo_deactivate(*act_mods)
-        super().rename_operation(info_new_name, rd_ren, dest_dir, **kwargs)
+        rd_ren = super().rename_operation(info_new_name, dest_dir, **kwargs)
         # rename in load order caches
-        if dest_dir: return # unhiding
+        if dest_dir: return rd_ren # unhiding
         for dex, (old_key, new_fn) in enumerate(rd_ren.renames.items()):
             self._lo_move_mod(old_key, new_fn, old_key in act_mods,
                               save_all=dex == len(rd_ren.renames) - 1)
@@ -2494,6 +2502,7 @@ class ModInfos(TableFileInfos):
             for mod_inf in self.values():
                 if mod_inf.get_table_prop('bp_split_parent') == old_key:
                     mod_inf.set_table_prop('bp_split_parent', str(new_fn))
+        return rd_ren
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
@@ -3077,13 +3086,13 @@ class ModInfos(TableFileInfos):
         ren_data = RefrData()
         try:
             inf_target = [(baseInfo, move_to), (swapped_inf, master_esm)]
-            file_info_rename_op(inf_target, ren_data, try_once=do_swap)
+            ren_data |= file_info_rename_op(inf_target, try_once=do_swap)
         except CancelError:
             return
         finally:
             rens = ren_data.renames
             if revert := master_esm in rens and copy_from not in rens:
-                file_info_rename_op([(self[move_to], master_esm)], ren_data)
+                file_info_rename_op([(self[move_to], master_esm)])
             master_inf = self[master_esm]
             # set mtimes to previous respective values
             master_inf.setmtime(master_time)

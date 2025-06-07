@@ -23,7 +23,7 @@
 
 from .. import balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bolt import FNDict, GPath_no_norm, RefrIn, RefrData
+from ..bolt import FNDict, GPath_no_norm, RefrIn
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
     FileOpenMultiple
 from ..localize import format_date
@@ -77,10 +77,7 @@ class Files_Unhide(ItemLink):
                 continue
             srcFiles.append((inf, fn_key))
         #--Now move everything at once
-        if not srcFiles:
-            return
-        ren_data = RefrData()
-        dstore.rename_operation(srcFiles, ren_data, ren_parent=uil,
+        ren_data = dstore.rename_operation(srcFiles, ren_parent=uil,
             dest_dir=st_dir, with_backups=False) # we ain't handling backups
         rinf = RefrIn.from_added({k: {'is_proj': False} for k in
                                   ren_data.to_add})

@@ -2114,15 +2114,15 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, info_new_name, rd_ren, dest_dir=None, *,
+    def rename_operation(self, info_new_name, dest_dir=None, *,
                          store_refr=None, **kwargs):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
-        super().rename_operation(info_new_name, rd_ren, dest_dir, **kwargs)
+        rd_ren = super().rename_operation(info_new_name, dest_dir, **kwargs)
         # Update the ownership information for relevant data stores
         if not rd_ren.ren_paths or store_refr is None:
-            return
+            return rd_ren
         stores = [s for s in data_tracking_stores() if s.tracks_ownership]
         for dex, (old_key, name_new) in enumerate(rd_ren.renames.items()):
             for store in stores: # str due to Paths
@@ -2132,6 +2132,7 @@ class InstallersData(DataStore):
                     store_refr[store.unique_store_key] |= RefrData(set(owned))
                 for v in owned.values():
                     v.set_table_prop('installer', '%s' % name_new)
+        return rd_ren
 
     #--Dict Functions ---------------------------------------------------------
     def _delete_operation(self, infos, recycle, do_refr):

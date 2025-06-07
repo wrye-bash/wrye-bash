@@ -1139,9 +1139,7 @@ class UIList(PanelWin):
         for info, new_root in ren_args:# check if new and old names are ci-same
             if (new_fn := info.unique_key(new_root, forced_ext)) is not None:
                 info_new_name.append((info, new_fn))
-        rdata = RefrData()
-        if info_new_name:
-            self.data_store.rename_operation(info_new_name, rdata, **ren_kwargs)
+        rdata = self.data_store.rename_operation(info_new_name, **ren_kwargs)
         if item_edited and rdata:
             args_dict = {'detail_item': rdata.renames.get(item_edited,
                 item_edited)} # in case the displayed item was *not* renamed
