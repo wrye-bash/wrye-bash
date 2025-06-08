@@ -48,9 +48,9 @@ from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
-    ListInfo, Path, RefrIn, deprint, dict_sort, \
+    ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
-    OrderedLowerDict, attrgetter_cache, RefrData
+    OrderedLowerDict, attrgetter_cache
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
@@ -1507,12 +1507,12 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
-    def refresh(self, refresh_in: RefrData | RefrIn | bool, *,
-                extract_omods=None, **kwargs):
-        """Refreshes the store infos cache, returning a RefrData instance with
-        the info on which files were added/modified/deleted. Base
-        implementation defines the handling of the refresh_in parameter,
-        which can be:
+    def refresh(self, refresh_in: RefrData | RefrIn | bool, *, booting=False,
+                extract_omods=None, progress=None, **kw_do_upd) -> RefrData:
+        """Refreshes the store caches, returning a RefrData instance encoding
+        information on which files were added/modified/deleted. Base
+        implementation refreshes the main infos cache (namely self._data)
+        according to the refresh_in parameter, which can be:
         - RefrData: cache was updated already (see rename_operation)
         - RefrIn: we need to update the data store according to the changes
           encoded in the RefrIn instance
@@ -1521,7 +1521,7 @@ class DataStore(DataDict):
           order).
         """
         if isinstance(refresh_in, RefrData):
-            return refresh_in, RefrIn() # already scanned, return as is
+            return refresh_in # already scanned, return as is
         if not isinstance(refresh_in, RefrIn):
             if refresh_in:
                 refresh_in = self._list_store_dir(
@@ -1531,7 +1531,40 @@ class DataStore(DataDict):
             else:
                 refresh_in = RefrIn()
         # create the return value instance then scan changes
-        return RefrData(), refresh_in
+        rdata = RefrData()
+        delinfos = refresh_in.del_infos
+        if (nop := refresh_in.new_or_present) and progress:
+            progress.setFull(len(nop))
+        for index, (new, (old_inf, kws)) in enumerate(nop.items()):
+            if progress: # currently only installers and only on boot
+                progress(index, _('Scanning Packages…') + f'\n{new}')
+                kws['progress'] = SubProgress(progress, index, index + 1)
+            try:
+                if old_inf is None: # new file or updated corrupted
+                    self[new] = self.factory(self.store_dir.join(new),
+                        load_cache=True, do_pop=True, **kws, **kw_do_upd)
+                    rdata.to_add.add(new)
+                elif not booting and old_inf.do_update(**kws, **kw_do_upd):
+                    # on boot for _AFileInfos old_inf is always None while for
+                    # InstallersData we just loaded/refreshed existing infos
+                    rdata.redraw.add(new)
+            except Exception as e:
+                self._add_to_cor(new, kws, delinfos, e)
+        if delinfos:
+            rdata.to_del |= self._delete_refresh(delinfos)
+        return rdata
+
+    def factory(self, info_path, **kwargs): # WIP!
+        raise NotImplementedError
+
+    def _delete_refresh(self, delinfos):
+        """Only called from refresh.
+        :param delinfos: the infos corresponding to deleted items."""
+        return {del_fn for del_inf in delinfos if
+                self.pop(del_fn := del_inf.fn_key, None)}
+
+    def _add_to_cor(self, new, kws, delinfos, e):
+        raise # see override for all but Installers
 
     @final
     def _list_store_dir(self, **kw_add): # performance intensive
@@ -1571,8 +1604,7 @@ class DataStore(DataDict):
     @final
     def delete(self, delete_keys, *, recycle=True, do_refr=True):
         """Deletes member file(s)."""
-        # factory is _AFileInfos only, but installers don't have corrupted so
-        # let it blow if we are called with non-existing keys(join(None), boom)
+        # for _AFileInfos k may correspond to a corrupted file - create an info
         finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
                   self.filter_essential(delete_keys).items()]
         return self._delete_operation(finfos, recycle, do_refr)
@@ -1677,7 +1709,7 @@ class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
-    factory: type[AFile]
+    _factory_type: type[AFile]
     # Whether these file infos track ownership in a table
     tracks_ownership = False
     _boot_refresh_args = {'booting': True}
@@ -1685,9 +1717,15 @@ class _AFileInfos(DataStore):
     def __init__(self, factory=None):
         """Init with specified directory and specified factory type."""
         super().__init__(self._init_store(self.set_store_dir()))
-        self.factory = factory or self.__class__.factory
+        self._factory_type = factory or self.__class__._factory_type
         if self._boot_refresh_args:
             self.refresh(True, **self._boot_refresh_args)
+
+    def factory(self, info_path, do_pop=False, **kwargs):
+        new_inf = self._factory_type(info_path, **kwargs)
+        if do_pop:
+            self.corrupted.pop(info_path.tail.s, None)
+        return new_inf
 
     def _init_store(self, storedir):
         """Set up the self's _data/corrupted and return the former."""
@@ -1699,32 +1737,17 @@ class _AFileInfos(DataStore):
         return self._data
 
     #--Refresh
-    def refresh(self, refresh_in, *, booting=False, **kwargs) -> RefrData:
+    def refresh(self, refresh_in, *, booting=False, **kwargs):
         """Refresh from file directory."""
-        rdata, refresh_in = super().refresh(refresh_in)
-        delinfos = refresh_in.del_infos
-        for new, (oldInfo, kws) in refresh_in.new_or_present.items():
-            try:
-                if oldInfo is not None:
-                    # reread the header if any file attributes changed
-                    if oldInfo.do_update(**kws):
-                        rdata.redraw.add(new)
-                else: # new file or updated corrupted, get a new info
-                    self[new] = self.factory(self.store_dir.join(new),
-                        load_cache=True, **kws)
-                    self.corrupted.pop(new, None)
-                    rdata.to_add.add(new)
-            except (FileError, UnicodeError, BoltError,
-                    NotImplementedError) as e:
-                self._add_to_cor(new, kws, delinfos, e)
-        if delinfos:
-            rdata.to_del |= self._delete_refresh(delinfos)
-        if not booting and ((alt := rdata.new_changed()) or delinfos):
-            alt = {self[n].abs_path for n in alt}
-            self._notify_bain({inf.abs_path for inf in delinfos}, alt)
+        rdata = super().refresh(refresh_in, booting=booting)
+        if not booting and (alt := rdata.new_changed()):
+            self._notify_bain(altered={self[n].abs_path for n in alt})
         return rdata
 
     def _add_to_cor(self, new, kws, delinfos, e):
+        if not isinstance(e, (FileError, UnicodeError, BoltError,
+                    NotImplementedError)): ##:701 revisit this - why NIE?
+            super()._add_to_cor(new, kws, delinfos, e)
         # old still corrupted, or new(ly) corrupted or we landed
         # here cause cor_path was manually un/ghosted but file remained
         # corrupted so in any case re-add to corrupted
@@ -1756,14 +1779,10 @@ class _AFileInfos(DataStore):
         elif not cor:  # for default tweaks with a corrupted copy
             new_or_present[k] = (self.get(k), kws)
 
-    def _delete_refresh(self, infos):
-        """Only called from refresh - should be inlined but for ModInfos.
-        :param infos: the infos corresponding to deleted items."""
-        del_keys = set()
-        for del_inf in infos:
-            if self.pop(del_fn := del_inf.fn_key, None):
-                del_keys.add(del_fn)
+    def _delete_refresh(self, delinfos):
+        for del_fn in (del_keys := super()._delete_refresh(delinfos)):
             self.corrupted.pop(del_fn, None)
+        self._notify_bain({inf.abs_path for inf in delinfos})
         return del_keys
 
     def _notify_bain(self, del_set: set[Path] = frozenset(),
@@ -1902,7 +1921,7 @@ class INIInfos(TableFileInfos):
     unique_store_key = Store.INIS
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
-    factory: Callable[[...], INIInfo]
+    _factory_type: Callable[[...], INIInfo]
     _dir_key = 'ini_tweaks'
 
     def __init__(self):
@@ -3424,7 +3443,7 @@ class ScreenInfos(_AFileInfos):
     unique_store_key = Store.SCREENSHOTS
     file_pattern = re.compile(
         r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
-    factory = ScreenInfo
+    _factory_type = ScreenInfo
     _boot_refresh_args = {}
 
     def set_store_dir(self):

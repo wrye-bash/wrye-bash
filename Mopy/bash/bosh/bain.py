@@ -2037,8 +2037,9 @@ class InstallersData(DataStore):
         if 'I' in what:
             progress = progress or bolt.Progress()
             progress(0, _('Scanning Packages…'))
-            refresh_info = self.update_installers(refresh_in, fullRefresh,
-                progress, fresh_load, extract_omods)
+            refresh_info = super().refresh(refresh_in, booting=fresh_load,
+                progress=progress, extract_omods=extract_omods, # do_update kws
+                force_update=fullRefresh, recalculate_project_crc=fullRefresh)
             changes |= bool(refresh_info)
         else: # 'I' in what will set it to a RefrData instance
             refresh_info = RefrData()
@@ -2296,29 +2297,6 @@ class InstallersData(DataStore):
             if show_warning:
                 show_warning(f'{msg}\n\n{e.message}')
             raise # UI expects that
-
-    def update_installers(self, refresh_in, fullRefresh, progress,
-                          fresh_load, extract_omods) -> RefrData:
-        """The BAIN version of _AFileInfos.refresh()."""
-        rdata, refresh_in = super().refresh(refresh_in,
-                                            extract_omods=extract_omods)
-        if nop := refresh_in.new_or_present: progress.setFull(len(nop))
-        for index, (new, (oldInfo, kws)) in enumerate(nop.items()):
-            progress(index, _('Scanning Packages…') + f'\n{new}')
-            sub = SubProgress(progress, index, index + 1)
-            if oldInfo is not None:
-                if not fresh_load and oldInfo.do_update(force_update=fullRefresh,
-                    progress=sub, recalculate_project_crc=fullRefresh, **kws):
-                        rdata.redraw.add(new)
-            else: # refresh_info will notify callers to call irefresh('N')
-                self[new] = self.factory(self.store_dir.join(new),
-                    progress=sub, load_cache=True, **kws)
-                sub(1.0, _('Done'))
-                rdata.to_add.add(new)
-        for del_item in {d.fn_key for d in refresh_in.del_infos}:
-            rdata.to_del.add(del_item)
-            self.pop(del_item)
-        return rdata
 
     def refreshOrder(self):
         """Refresh installer status."""
