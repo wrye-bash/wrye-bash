@@ -2133,7 +2133,7 @@ class MreLigh(AMreWithKeywords, _AMreWithProperties):
             'light_fe_intensity_amplitude', 'light_fe_movement_amplitude',
             'light_constant', 'light_scalar', 'light_exponent',
             'light_god_rays_near_clip', 'value', 'weight', old_versions={
-                'iI3BsI10fI', 'iI3BsI8f',
+                'iI3BsI10fI', 'iI3BsI10f', 'iI3BsI8f',
             }),
         MelLighFade(),
         MelString(b'NAM0', 'light_gobo'),

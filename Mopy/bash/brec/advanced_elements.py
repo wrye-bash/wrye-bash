@@ -489,7 +489,7 @@ class MelTruncatedStruct(MelStruct):
             target_unpacker = self._all_unpackers[size_]
         except KeyError:
             raise ModSizeError(ins.inName, debug_strs,
-                               tuple(self._all_unpackers), size_)
+                               tuple(self._all_unpackers), size_) from None
         # Actually unpack the struct and pad it with defaults if it's an older,
         # truncated version
         unpacked_val = ins.unpack(target_unpacker, size_, *debug_strs)
