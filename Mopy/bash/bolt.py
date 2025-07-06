@@ -965,15 +965,15 @@ class Path(os.PathLike):
     #--String/unicode versions.
     @property
     def s(self):
-        """Path as string."""
+        """Returns this path as a string."""
         return self._s
     @property
     def cs(self):
-        """Path as string in normalized case."""
+        """Returns this path as a string in lowercase."""
         return self._cs
     @property
     def sroot(self):
-        """Root as string."""
+        """For alpha/beta.gamma returns alpha/beta as a string."""
         try:
             return self._sroot
         except AttributeError:
@@ -981,7 +981,7 @@ class Path(os.PathLike):
             return self._sroot
     @property
     def shead(self):
-        """Head as string."""
+        """For alpha/beta.gamma, returns alpha as a string."""
         try:
             return self._shead
         except AttributeError:
@@ -989,7 +989,7 @@ class Path(os.PathLike):
             return self._shead
     @property
     def stail(self):
-        """Tail as string."""
+        """For alpha/beta.gamma, returns beta.gamma as a string."""
         try:
             return self._stail
         except AttributeError:
@@ -997,7 +997,7 @@ class Path(os.PathLike):
             return self._stail
     @property
     def sbody(self):
-        """For alpha\beta.gamma returns beta as string."""
+        """For alpha/beta.gamma returns beta as a string."""
         try:
             return self._sbody
         except AttributeError:
@@ -1007,29 +1007,30 @@ class Path(os.PathLike):
     #--Head, tail
     @property
     def headTail(self):
-        """For alpha\beta.gamma returns (alpha,beta.gamma)"""
-        return [GPath(self.shead), GPath(self.stail)]
+        """For alpha/beta.gamma, returns (alpha, beta.gamma)"""
+        return GPath(self.shead), GPath(self.stail)
     @property
     def head(self):
-        """For alpha\beta.gamma, returns alpha."""
+        """For alpha/beta.gamma, returns alpha."""
         return GPath(self.shead)
     @property
     def tail(self):
-        """For alpha\beta.gamma, returns beta.gamma."""
+        """For alpha/beta.gamma, returns beta.gamma."""
         return GPath_no_norm(self.stail)
     @property
     def body(self):
-        """For alpha\beta.gamma, returns beta."""
+        """For alpha/beta.gamma, returns beta."""
         return GPath_no_norm(self.sbody)
 
     #--Root, ext
     @property
     def root(self):
-        """For alpha\beta.gamma returns alpha\beta"""
+        """For alpha/beta.gamma, returns alpha/beta."""
         return GPath(self.sroot)
     @property
     def ext(self):
-        """Extension (including leading period, e.g. '.txt')."""
+        """For alpha/beta.gamma, returns .gamma as a string (including leading
+        period, e.g. '.txt')."""
         try:
             return self._ext
         except AttributeError:
@@ -1037,7 +1038,8 @@ class Path(os.PathLike):
             return self._ext
     @property
     def cext(self):
-        """Extension in normalized case."""
+        """For alpha/beta.gamma, returns .gamma as a lowercase string (e.g.
+        foo.TxT becomes '.txt')."""
         try:
             return self._cext
         except AttributeError:
@@ -1061,8 +1063,8 @@ class Path(os.PathLike):
 
     @property
     def backup(self):
-        """Backup file path."""
-        return self+u'.bak'
+        """Returns a copy of this path with .bak appended to the end."""
+        return self + '.bak' # Path.__add__ !
 
     #--size, atime
     @property

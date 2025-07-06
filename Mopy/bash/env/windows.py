@@ -1246,8 +1246,10 @@ def canonize_ci_path(ci_path: _Path | str) -> _Path | None:
     what Wine does when emulating case insensitivity. If this returns None, the
     path does not exist. However, if this does not return None then there is no
     guarantee that the path exists, so check using exists()/is_file()/etc."""
-    # Windows is case-insensitive, nothing to do here
-    return _GPath_no_norm(ci_path)
+    # Windows is case-insensitive, nothing to do here - ci_path could either be
+    # a str or a Path, but _GPath_no_norm wants a string, so check first
+    return (ci_path if isinstance(ci_path, _Path) else
+            _GPath_no_norm(ci_path))
 
 def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
     """Mark the file with the specified path as hidden or unhidden, based on

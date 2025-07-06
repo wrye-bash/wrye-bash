@@ -280,8 +280,10 @@ def convert_separators(p):
 # something similar, as it stands this is not usable for fixing BAIN on Linux
 def canonize_ci_path(ci_path: _Path | str) -> _Path | None:
     if os.path.exists(ci_path):
-        # to_os_path receives a Path and returns a str - we have normpath'ed
-        return _GPath_no_norm(ci_path)
+        # ci_path could either be a str or a Path, but _GPath_no_norm wants a
+        # string, so check first
+        return (ci_path if isinstance(ci_path, _Path) else
+                _GPath_no_norm(ci_path))
     # Find the longest prefix that exists in the filesystem - *some* prefix
     # must exist, even if it's only root
     path_prefix, ci_rem_part = os.path.split(os.path.normpath(ci_path))
