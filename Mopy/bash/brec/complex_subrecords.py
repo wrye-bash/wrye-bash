@@ -590,6 +590,12 @@ class MelOmodData(MelPartialCounter):
         for od_property in record.od_properties:
             od_property.map_property_fids(function, save_fids)
 
+    def needs_sorting(self):
+        return True
+
+    def sort_subrecord(self, record):
+        record.od_properties.sort(key=lambda p: p.op_property)
+
 #------------------------------------------------------------------------------
 # OBME - Oblivion Magic Extender
 #------------------------------------------------------------------------------
