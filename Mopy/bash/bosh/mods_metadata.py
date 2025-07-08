@@ -86,15 +86,13 @@ def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
 # Some wrappers to decouple other files from process_tags
 def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
     """Wrapper around get_tags_from_dir. See that method for docs."""
-    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
-        ci_cached_bt_contents=ci_cached_bt_contents)
-    return process_tags(added_tags), process_tags(deleted_tags)
+    return *map(process_tags, get_tags_from_dir(plugin_name,
+        ci_cached_bt_contents=ci_cached_bt_contents)),
 
 def read_loot_tags(plugin_name):
     """Wrapper around get_tags_from_loot. See that method for docs."""
-    added_tags, deleted_tags = initialization.lootDb.get_tags_from_loot(
-        plugin_name)
-    return process_tags(added_tags), process_tags(deleted_tags)
+    return *map(process_tags,
+                initialization.lootDb.get_tags_from_loot(plugin_name, )),
 
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
@@ -108,21 +106,15 @@ def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
         directory. If specified, get_tags_from_dir avoids having to stat to
         figure out if the file in question exists.
     :return: A tuple containing two sets of added and deleted tags."""
-    tag_file = None
-    # Check if the file even exists first, using the cache if possible
+    removed, added = set(), set()
     bt_file_name = f'{plugin_name.fn_body}.txt'
+    # Check if the file even exists first, using the cache if possible
+    tag_file = bass.dirs['tag_files'].join(bt_file_name)
     if ci_cached_bt_contents is not None:
         if bt_file_name.lower() not in ci_cached_bt_contents:
-            return set(), set()
-    else:
-        tag_file = bass.dirs['tag_files'].join(bt_file_name)
-        if not tag_file.is_file():
-            return set(), set()
-    if tag_file is None: # If we hit the cache, we need to set tag_file here
-        tag_file = bass.dirs['tag_files'].join(bt_file_name)
-    removed, added = set(), set()
-    add_removed = removed.add
-    add_added = added.add
+            return removed, added
+    elif not tag_file.is_file():
+        return removed, added
     # BashTags files must be in UTF-8 (or ASCII, obviously)
     with tag_file.open(u'r', encoding=u'utf-8') as ins:
         for tag_line in ins:
@@ -130,15 +122,15 @@ def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
             tag_line = tag_line.split(u'#')[0].strip()
             if not tag_line: continue
             for tag_entry in tag_line.split(u','):
+                tag_entry = tag_entry.strip()
                 # Guard against things (e.g. typos) like 'TagA,,TagB'
                 if not tag_entry: continue
-                tag_entry = tag_entry.strip()
                 # If it starts with a minus, it's removing a tag
                 if tag_entry[0] == u'-':
                     # Guard against a typo like '- C.Water'
-                    add_removed(tag_entry[1:].strip())
+                    removed.add(tag_entry[1:].strip())
                 else:
-                    add_added(tag_entry)
+                    added.add(tag_entry)
     return added, removed
 
 def save_tags_to_dir(plugin_name, plugin_tag_diff):

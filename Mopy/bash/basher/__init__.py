@@ -1599,8 +1599,7 @@ class ModDetails(_ModsSavesDetails):
         class BashTagsPopup(MultiChoicePopup):
             def _update_tags(self, changed_tags, tags_were_added):
                 """Adds or removes the specified set of tags."""
-                if mod_info.is_auto_tagged():
-                    mod_info.set_auto_tagged(False)
+                mod_info.set_auto_tagged(False)
                 curr_app_tags = mod_info.getBashTags()
                 if tags_were_added:
                     curr_app_tags |= changed_tags
@@ -1632,8 +1631,7 @@ class ModDetails(_ModsSavesDetails):
         if not sel_tags: return
         # Remember where the first selected tag was so we can reselect
         first_tag_index = next(iter(self.gTags.lb_get_selections()))
-        if (inf := self.file_info).is_auto_tagged():
-            inf.set_auto_tagged(False)
+        (inf := self.file_info).set_auto_tagged(False)
         inf.setBashTags(inf.getBashTags() - sel_tags)
         self.SetFile() # refresh only details
         new_tag_count = self.gTags.lb_get_items_count()
@@ -1665,7 +1663,6 @@ class ModDetails(_ModsSavesDetails):
                 """Toggle automatic bash tags on/off."""
                 new_auto = not mod_info.is_auto_tagged()
                 mod_info.set_auto_tagged(new_auto)
-                if new_auto: mod_info.reloadBashTags()
                 _refresh_only_details()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()

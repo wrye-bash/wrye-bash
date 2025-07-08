@@ -229,7 +229,7 @@ class PatchFile(ModFile):
                         MergeabilityCheck.MERGE.cached_types(self.p_file_minfos)[0]]
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
-            bashTags = self.all_tags[modName]
+            alltags = self.all_tags[modName]
             is_loaded = modName in active_mods
             for master in modInfo.masterNames:
                 if master not in active_mods:
@@ -244,10 +244,10 @@ class PatchFile(ModFile):
             previousMods.add(modName)
             if modName in self.active_mm or modName in self.delinquent:
                 continue
-            can_filter = 'Filter' in bashTags
+            can_filter = 'Filter' in alltags
             if modName in list(self.inactive_mm):
                 if not can_filter:
-                    if bashTags - non_import_bts:
+                    if alltags - non_import_bts:
                         # This plugin has missing masters, is not Filter-tagged but
                         # still wants to import data -> user needs to add Filter tag
                         self.needs_filter_mods[modName] = self.inactive_mm[modName]
@@ -257,7 +257,7 @@ class PatchFile(ModFile):
                     # then recheck in merge_record - drop from inactive_mm
                     del self.inactive_mm[modName]
             if (modName in mi_mergeable and modName not in
-                    self.inactive_inm and 'NoMerge' not in bashTags):
+                    self.inactive_inm and 'NoMerge' not in alltags):
                 self.bp_mergeable.add(modName)
 
     def getKeeper(self):

@@ -42,15 +42,14 @@ from typing import final
 from . import bsa_files, converters, cosaves
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
-from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
-    read_loot_tags
+from .mods_metadata import process_tags, read_dir_tags, read_loot_tags
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
-    OrderedLowerDict, attrgetter_cache
+    OrderedLowerDict, attrgetter_cache, top_level_files
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
@@ -666,23 +665,19 @@ class ModInfo(_WithMastersInfo):
         return fixed_tags & bush.game.allTags
 
     def getBashTagsDesc(self, *, __tags_search=re.compile(
-        '{{ *BASH *:([^}]+)}}', re.I).search):
+            '{{ *BASH *:([^}]+)}}', re.I).search):
         """Returns any Bash flag keys."""
-        maBashKeys = __tags_search(self.header.description)
-        if not maBashKeys:
+        if not (re_match := __tags_search(self.header.description)):
             return set()
-        else:
-            tags_set = {tag.strip() for tag in maBashKeys.group(1).split(u',')}
-            # Remove obsolete and unknown tags and resolve any tag aliases
-            return process_tags(tags_set)
+        # Remove obsolete and unknown tags and resolve any tag aliases
+        return process_tags({*map(str.strip, re_match.group(1).split(','))})
 
     def reloadBashTags(self, ci_cached_bt_contents=None):
         """Reloads bash tags from mod description, LOOT and Data/BashTags.
 
         :param ci_cached_bt_contents: Passed to get_tags_from_dir, see there
             for docs."""
-        wip_tags = set()
-        wip_tags |= self.getBashTagsDesc()
+        wip_tags = self.getBashTagsDesc()
         # Tags from LOOT take precedence over the description
         added_tags, deleted_tags = read_loot_tags(self.fn_key)
         wip_tags |= added_tags
@@ -702,10 +697,12 @@ class ModInfo(_WithMastersInfo):
         :type default_auto: bool | None"""
         return self.get_table_prop(u'autoBashTags', default_auto)
 
-    def set_auto_tagged(self, auto_tagged):
+    def set_auto_tagged(self, auto_tagged, *, bt_contents=None):
         """Changes whether or not this plugin receives its tags
         automatically. See is_auto_tagged."""
         self.set_table_prop(u'autoBashTags', auto_tagged)
+        if auto_tagged:
+            self.reloadBashTags(bt_contents)
 
     #--Header Editing ---------------------------------------------------------
     def readHeader(self):
@@ -2463,8 +2460,7 @@ class ModInfos(TableFileInfos):
         """Reloads bash tags for all mods set to receive automatic bash
         tags."""
         try:
-            bt_contents = {t.lower() for t
-                           in os.listdir(bass.dirs['tag_files'])}
+            bt_contents = {*top_level_files(bass.dirs['tag_files'])}
         except FileNotFoundError:
             bt_contents = set() # No BashTags folder -> no BashTags files
         for modinf in self.values(): # type: ModInfo
@@ -2472,12 +2468,11 @@ class ModInfos(TableFileInfos):
             if autoTag is None:
                 if modinf.get_table_prop('bashTags') is None:
                     # A new mod, set auto tags to True (default)
-                    modinf.set_auto_tagged(True)
-                    autoTag = True
+                    modinf.set_auto_tagged(True, bt_contents=bt_contents)
                 else:
                     # An old mod that had manual bash tags added
                     modinf.set_auto_tagged(False) # disable auto tags
-            if autoTag:
+            elif autoTag:
                 modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
     def getSemiActive(self, patches):

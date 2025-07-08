@@ -576,7 +576,6 @@ class Mods_ClearManualBashTags(ItemLink):
             if not p.is_auto_tagged():
                 pl_reset.append(pl_name)
                 p.set_auto_tagged(True)
-                p.reloadBashTags()
         self.refresh_sel(pl_reset)
         self._showInfo(_('Cleared tags from %(total_cleared)d plugins.') % {
             'total_cleared': len(pl_reset)},

@@ -426,8 +426,7 @@ class ImportCellsPatcher(ImportPatcher):
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
             srcInfo = self.patchFile.all_plugins[srcMod]
-            bashTags = self.patchFile.all_tags[srcMod]
-            tags = bashTags & set(self.recAttrs)
+            tags = self.patchFile.all_tags[srcMod] & self.recAttrs.keys()
             if not tags: continue
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             attrs = set(chain.from_iterable(
