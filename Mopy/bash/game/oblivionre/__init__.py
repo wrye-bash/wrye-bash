@@ -102,6 +102,22 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
             # OBSE plugins have to go to
             # OblivionRemastered/Binaries/Win64/OBSE/Plugins, tackle in #719
             'obse',
+            'pluggy', # 3P: Pluggy - hasn't been ported to Oblivion Remastered
+        } | {
+            'magicloader', # 3P: MagicLoader 2
+            'syncmap', # 3P: UE4SS TesSyncMapInjector
+        }
+        keep_data_dirs = {'lsdata'}
+        keep_data_files = set()
+        skip_bain_refresh = AOblivionGameInfo.Bain.skip_bain_refresh - {
+            'tes4edit backups',
+            'tes4edit cache',
+        } | {
+            'tes4redit backups',
+            'tes4redit cache',
+        }
+        wrye_bash_data_files = AOblivionGameInfo.Bain.wrye_bash_data_files | {
+            'loadorder.txt', 'loadorder.txt.bak', 'plugins.txt.bak',
         }
 
     patchers = AOblivionGameInfo.patchers - {

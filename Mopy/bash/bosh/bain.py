@@ -539,15 +539,20 @@ class Installer(ListInfo):
         # skips files starting with...
         if bass.settings[u'bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
-        if bass.settings[u'bash.installers.skipLandscapeLODMeshes']:
+        if (bush.game.Bain.lod_meshes_dir and
+                bass.settings['bash.installers.skipLandscapeLODMeshes']):
             Installer._global_start_skips.append(bush.game.Bain.lod_meshes_dir)
         if bass.settings[u'bash.installers.skipScreenshots']:
             Installer._global_start_skips.extend(Installer.screenshot_dirs)
         # LOD textures
-        skipLODTextures = bass.settings[
-            u'bash.installers.skipLandscapeLODTextures']
-        skipLODNormals = bass.settings[
-            u'bash.installers.skipLandscapeLODNormals']
+        skipLODTextures = (
+                bush.game.Bain.lod_textures_dir and
+                bass.settings['bash.installers.skipLandscapeLODTextures']
+        )
+        skipLODNormals = (
+                bush.game.Bain.lod_textures_normals_suffix and
+                bass.settings['bash.installers.skipLandscapeLODNormals']
+        )
         skipAllTextures = skipLODTextures and skipLODNormals
         tex_gen = bush.game.Bain.lod_textures_dir
         normals_ext = f'{bush.game.Bain.lod_textures_normals_suffix}.dds'

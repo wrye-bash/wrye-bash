@@ -105,6 +105,8 @@ class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
         touchedFiles = {file_ for file_ in sameFiles if
                         scd_before_install[file_][2] != curData[file_][2]}
         touchedFiles -= changedFiles
+        touchedFiles -= bush.game.Bain.wrye_bash_data_files
+        changedFiles -= bush.game.Bain.wrye_bash_data_files
         if not (newFiles or changedFiles or touchedFiles or delFiles):
             self._showOk(_('No changes were detected in the %(data_folder)s '
                            'folder.') % {'data_folder': bush.game.mods_dir_name},
@@ -640,25 +642,34 @@ class _Installers_SkipDistantLOD(AppendableLink, _Installers_Skip):
         return 'distantlod' in bush.game.Bain.data_dirs
 
 #------------------------------------------------------------------------------
-class _Installers_SkipLandscapeLODMeshes(_Installers_Skip):
+class _Installers_SkipLandscapeLODMeshes(AppendableLink, _Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
     _text = _('Skip LOD Meshes')
     _help = _('Skips the installation of LOD meshes.')
     _bl_key = 'bash.installers.skipLandscapeLODMeshes'
 
+    def _append(self, window):
+        return bool(bush.game.Bain.lod_meshes_dir)
+
 #------------------------------------------------------------------------------
-class _Installers_SkipLandscapeLODTextures(_Installers_Skip):
+class _Installers_SkipLandscapeLODTextures(AppendableLink, _Installers_Skip):
     """Toggle skipLandscapeLODTextures setting and update."""
     _text = _('Skip LOD Textures')
     _help = _('Skips the installation of LOD textures (except normals).')
     _bl_key = 'bash.installers.skipLandscapeLODTextures'
 
+    def _append(self, window):
+        return bool(bush.game.Bain.lod_textures_dir)
+
 #------------------------------------------------------------------------------
-class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
+class _Installers_SkipLandscapeLODNormals(AppendableLink, _Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
     _text = _('Skip LOD Normals')
     _help = _('Skips the installation of LOD normals.')
     _bl_key = 'bash.installers.skipLandscapeLODNormals'
+
+    def _append(self, window):
+        return bool(bush.game.Bain.lod_textures_normals_suffix)
 
 #------------------------------------------------------------------------------
 class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
