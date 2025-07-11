@@ -422,6 +422,9 @@ def _restore_lo(index_move):
                    __index_move=index_move, quiet=True)
 
 # _game_handle wrappers -------------------------------------------------------
+def lo_sort_key(**kws):
+    return _lo_handler.lo_sort_key(**kws)
+
 def check_active_limit(mods, as_type=set):
     return _lo_handler.check_active_limit(mods, as_type=as_type)
 

@@ -476,8 +476,7 @@ class LoGame:
             else: # append all to the end, even esms, will be reordered below
                 lord.append(mod)
         # See if any esm files are loaded below an esp and reorder as necessary
-        is_m = lambda fn: self._game_handle.master_flags.sort_masters_key(
-            cached_minfs[fn])
+        is_m = self.lo_sort_key(by_name=False)
         lord.sort(key=is_m)
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
@@ -490,6 +489,15 @@ class LoGame:
             lo_order_changed = True
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
+
+    def lo_sort_key(self, *, by_name=True, by_time=False):
+        minfs = self.mod_infos
+        def _key(fn):
+            is_m = self._game_handle.master_flags.sort_masters_key(minfs[fn])
+            if by_time:
+                is_m = *is_m, minfs[fn].ftime
+            return (*is_m, fn) if by_name else is_m
+        return _key
 
     def _fix_active_plugins(self, acti, lord, fix_active, on_disc):
         """Always called with a valid load order (in set_load_order lord has
@@ -729,13 +737,10 @@ class TimestampGame(LoGame):
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
-        mods = ((k, self.mod_infos[k]) for k in
-                (self.mod_infos if mods is None else mods))
-        is_m = self._game_handle.master_flags.sort_masters_key
-        return [m for m, _inf in sorted(mods, key=lambda x: (
-            # split into master block and not master block then sort by ftime
-            # then by name case insensitive (for time conflicts)
-            *is_m(x[1]), x[1].ftime, x[0]))]
+        # split into master block and not master block then sort by ftime then
+        # by name case insensitive (for time conflicts)
+        is_m = self.lo_sort_key(by_time=True)
+        return sorted(self.mod_infos if mods is None else mods, key=is_m)
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order

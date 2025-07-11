@@ -258,8 +258,7 @@ class Mod_OrderByName(EnabledLink):
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  title=self._text): return
         #--Do it
-        self.selected.sort(key=lambda m: ( # sort masters first
-            *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
+        self.selected.sort(key=load_order.lo_sort_key())
         lowest = load_order.get_ordered(self.selected)[0]
         lordata = bosh.modInfos.lo_insert_at(lowest, self.selected,
                                              save_all=True)

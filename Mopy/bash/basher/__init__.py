@@ -292,8 +292,7 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=lambda a: not bush.game.master_flag.cached_type(
-                self.data_store[a]))
+            items.sort(key=load_order.lo_sort_key(by_name=False))
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
