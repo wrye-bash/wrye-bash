@@ -387,11 +387,6 @@ class LoGame:
         newPath directory (if present)."""
         return self._plugins_txt.upd_on_swap(old_dir, new_dir)
 
-    def _backup_active_plugins(self):
-        """This method should make a backup of whatever file is storing the
-        active plugins list."""
-        self._plugins_txt.create_backup()
-
     def _fetch_active_plugins(self):
         try:
             active, _lo = self._plugins_txt.parse_modfile()
@@ -399,10 +394,13 @@ class LoGame:
         except FileNotFoundError:
             return []
 
-    def _persist_active_plugins(self, active, lord):
-        self._write_plugins_txt(active, active)
+    def _persist_active_plugins(self, active, lord, *, backup_act=False):
+        """Write out whatever file stores the active plugins list."""
+        self._write_plugins_txt(active, active, backup_act=backup_act)
 
-    def _write_plugins_txt(self, lord, active):
+    def _write_plugins_txt(self, lord, active, *, backup_act=False): ##: two uses - remove!
+        if backup_act:
+            self._plugins_txt.create_backup()
         self._plugins_txt.write_modfile(lord, active)
         self._plugins_txt.do_update()
 
@@ -543,8 +541,7 @@ class LoGame:
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user and backup previous plugins.txt
                 fix_active.act_header = 'Invalid Plugin txt corrected:'
-                self._backup_active_plugins()
-                self._persist_active_plugins(acti, lord)
+                self._persist_active_plugins(acti, lord, backup_act=True)
             else: # active list we passed in when setting load order is invalid
                 fix_active.act_header = 'Invalid active plugins list corrected:'
             return True # changes, saved if loading plugins.txt
@@ -853,7 +850,7 @@ class TextfileGame(_TextFileLo):
         except FileNotFoundError:
             mods = cached_active or []
             if cached_active is not None and not pl_path.exists():
-                self._write_plugins_txt(cached_active, cached_active)
+                self._persist_active_plugins(cached_active, cached_active)
                 bolt.deprint(f'Created {pl_path} based on cached info')
             elif cached_active is None and pl_path.exists():
                 mods = self._fetch_active_plugins() # will add Skyrim.esm
@@ -908,8 +905,7 @@ class TextfileGame(_TextFileLo):
             if self._remove_game_master_from_plugins_txt:
                 bolt.deprint(f'Removing {self._game_handle.master_file} from '
                              f'{self._plugins_txt.abs_path}')
-                self._backup_active_plugins()
-                act = self._persist_active_plugins(act, act)
+                act = self._persist_active_plugins(act, act, backup_act=True)
             else:
                 # Game master already in active and should not be removed
                 return act
@@ -920,13 +916,13 @@ class TextfileGame(_TextFileLo):
         self._loadorder_txt.write_modfile(lord, lord)
         self._loadorder_txt.do_update()
 
-    def _persist_active_plugins(self, active, lord):
+    def _persist_active_plugins(self, active, lord, **kw):
         active_filtered = (
             [x for x in active if x != self._game_handle.master_file]
             if self._remove_game_master_from_plugins_txt
             else active
         )
-        super()._persist_active_plugins(active_filtered, active_filtered)
+        super()._persist_active_plugins(active_filtered, active_filtered, **kw)
         return active_filtered
 
     def _persist_if_changed(self, active, lord, previous_active,
@@ -962,8 +958,8 @@ class AsteriskGame(_TextFileLo):
                 bolt.deprint(f'Removing {_pl(any_dropped)} from '
                              f'{self._plugins_txt.abs_path}')
                 # We removed plugins that don't belong here, back up first
-                self._backup_active_plugins()
-                lo, active = self._persist_load_order(lo, active)
+                lo, active = self._persist_load_order(lo, active,
+                                                      backup_act=True)
             # Prepend all present fixed-order plugins that can't be in the
             # plugins txt to the active and lord lists
             sorted_rem = self.pinned_plugins(rem_from_acti, fixed_order=True)
@@ -998,15 +994,15 @@ class AsteriskGame(_TextFileLo):
     def _fetch_active_plugins(self) -> list[FName]:
         raise NotImplementedError # no override for AsteriskGame
 
-    def _persist_load_order(self, lord, active):
+    def _persist_load_order(self, lord, active, *, backup_act=False):
         rem_from_acti = self._active_if_present # remove those from plugins.txt
         lord = [x for x in lord if x not in rem_from_acti]
         active = [x for x in active if x not in rem_from_acti]
-        self._write_plugins_txt(lord, active)
+        self._write_plugins_txt(lord, active, backup_act=backup_act)
         return lord, active
 
-    def _persist_active_plugins(self, active, lord):
-        return self._persist_load_order(lord, active)
+    def _persist_active_plugins(self, active, lord, *, backup_act=False):
+        return self._persist_load_order(lord, active, backup_act=backup_act)
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fixed_active: return # plugins.txt already saved
