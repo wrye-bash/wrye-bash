@@ -159,8 +159,7 @@ class MasterInfo:
         """For esm missing masters check extension - for scale flags rely on
         cached info."""
         if pflag is bush.game.master_flag:
-            return pflag in bush.game.plugin_flags.guess_flags(
-                self.get_extension(), bush.game)
+            return bush.game.guess_flags(self.get_extension()).get(pflag, False)
         return pflag in self._was_scale # should we use ext heuristics for esl?
 
     @_mod_info_delegate
@@ -452,7 +451,7 @@ class ModInfo(_WithMastersInfo):
         for pl_flag, flag_val in flags_dict.items():
             pl_flag.set_mod_flag(self, flag_val, bush.game)
             if flag_val is not None and pl_flag is bush.game.master_flag:
-                self._update_onam() # recalculate ONAM info if necessary
+                self._update_onam(pl_flag) # recalculate ONAM info if necessary
         if save_flags: self.writeHeader(rescan_merge=True)
 
     def _scan_fids(self, fid_cond):
@@ -939,12 +938,12 @@ class ModInfo(_WithMastersInfo):
                 return _('Has size-mismatched masters.')
         return ''
 
-    def _update_onam(self):
+    def _update_onam(self, mf):
         """Checks if this plugin needs ONAM data and either adds or removes it
         based on that."""
         # Skip for games that don't need the ONAM generation
         if bush.game.Esp.generate_temp_child_onam:
-            if bush.game.master_flag.cached_type(self):
+            if mf.cached_type(self):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)

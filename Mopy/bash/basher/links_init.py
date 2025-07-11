@@ -552,8 +552,9 @@ def InitModLinks():
         ModList.context_links.append_link(SeparatorLink())
         for pflag in chain(*reversed(bush.game.all_flags)):
             ModList.context_links.append_link(AFlipFlagLink(pflag))
-        ModList.context_links.append_link(Mod_FlipMasters())
-        ModList.context_links.append_link(Mod_CreateDummyMasters())
+        if mf := bush.game.master_flag:
+            ModList.context_links.append_link(Mod_FlipMasters(mf))
+        ModList.context_links.append_link(Mod_CreateDummyMasters(mf))
     ModList.context_links.append_link(SeparatorLink())
     if True: #--Plugin
         plugin_menu = MenuLink(_('Plugin..'))

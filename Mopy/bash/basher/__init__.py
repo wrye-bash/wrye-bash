@@ -288,6 +288,11 @@ class _ModsUIList(UIList):
     _do_size_checks = bush.game.Esp.check_master_sizes
     _masters_first_default = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if bush.game.master_flag:
+            self._extra_sortings.insert(0, _ModsUIList._sort_masters_first)
+
     def _sort_masters_first(self, items):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
@@ -307,7 +312,7 @@ class _ModsUIList(UIList):
                 elif x in set_imported: return 2
                 else: return 3
             items.sort(key=_sel_sort_key)
-    _extra_sortings = [_sort_masters_first, _activeModsFirst]
+    _extra_sortings = [_activeModsFirst]
 
     @property
     def masters_first(self):

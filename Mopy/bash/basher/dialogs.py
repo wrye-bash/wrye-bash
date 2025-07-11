@@ -397,15 +397,13 @@ class CreateNewPlugin(DialogWindow):
         curr_p_ext = self._plugin_ext.get_value()
         # For .esl files force-check the ESM/ESL flags, for .esm the ESM flag
         # and force disable the OVERLAY flag if no masters are present
-        pflags = bush.game.plugin_flags
-        force_flags = pflags.guess_flags(curr_p_ext, bush.game,
-                                         self._chosen_masters)
+        force_flags = bush.game.guess_flags(curr_p_ext, self._chosen_masters)
         for pflag, chkbox in self._flags_chkboxes.items():
             chkbox.is_checked = force_flags.get(pflag, chkbox.is_checked)
             chkbox.enabled = pflag not in force_flags
         checks = {pflag: chkbox.is_checked for pflag, chkbox in
                   self._flags_chkboxes.items()}
-        checks = pflags.check_flag_assignments(
+        checks = bush.game.plugin_flags.check_flag_assignments(
             checks, raise_on_invalid=False)
         for pflag, is_checked in checks.items():
             self._flags_chkboxes[pflag].is_checked = is_checked

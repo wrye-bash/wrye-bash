@@ -27,6 +27,7 @@ from ..oblivion import AOblivionGameInfo
 from ..store_mixins import SteamMixin
 from ...bolt import FName
 from ...games_lo import TextfileGame
+from ...plugin_types import NoMasterFlag
 
 class _AOblivionReGameInfo(AOblivionGameInfo):
     display_name = 'Oblivion Remastered'
@@ -45,6 +46,7 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
     nexusUrl = 'https://www.nexusmods.com/oblivionremastered/'
     nexusName = 'Oblivion Remastered Nexus'
     nexusKey = 'bash.installers.openOblivionRemasteredNexus.continue'
+    master_flags = NoMasterFlag # no master flag for ORE
 
     has_standalone_pluggy = False
     check_legacy_paths = False

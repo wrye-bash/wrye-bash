@@ -225,13 +225,14 @@ class Mods_ActivePlugins(MenuLink):
         return active_lists
 
 # "Sort by" submenu -----------------------------------------------------------
-class Mods_MastersFirst(CheckLink, EnabledLink):
+class Mods_MastersFirst(AppendableLink, CheckLink, EnabledLink):
     """Sort masters to the top."""
     _text = _('Masters First')
     _help = _('Sort masters by type. Always on if current sort is Load Order.')
 
     def _enable(self): return not self.window.masters_first_required
     def _check(self): return self.window.masters_first
+    def _append(self, window): return bool(bush.game.master_flag)
 
     def Execute(self):
         self.window.masters_first = not self.window.masters_first

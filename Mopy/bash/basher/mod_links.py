@@ -191,6 +191,10 @@ class Mod_CreateDummyMasters(OneItemLink):
     def _enable(self): # enable if there are missing masters
         return super()._enable() and self._selected_info.info_status() == 30
 
+    def __init__(self, mf):
+        super().__init__()
+        self.__mf = (lambda x: False) if mf is None else mf.cached_type
+
     def Execute(self):
         """Create Dummy Masters"""
         bgame = bush.game
@@ -204,13 +208,14 @@ class Mod_CreateDummyMasters(OneItemLink):
         mod_previous = FNDict() # previous master for each master
         mods_ds = self._data_store
         # creates esp files - so place them correctly after the last esm
-        for mod in load_order.cached_lo_tuple():
-            if not bgame.master_flag.cached_type(mods_ds[mod]):
+        previous_master, *lo_tuple = load_order.cached_lo_tuple() # game master
+        for mod in lo_tuple:
+            if not self.__mf(mods_ds[mod]):
                 break
-            previous_master = mod # game master is an esm, so this is defined
+            previous_master = mod
         for master in self._selected_info.masterNames:
             if master in mods_ds:
-                if not bgame.master_flag.cached_type(mods_ds[master]):
+                if not self.__mf(mods_ds[master]):
                     # if previous master is an esp put this one after it
                     previous_master = master
                 continue
@@ -218,7 +223,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
-            force_flags = bgame.plugin_flags.guess_flags(master.fn_ext, bgame)
+            force_flags = bgame.guess_flags(master.fn_ext)
             mods_ds.create_new_mod(master, author_str='BASHED DUMMY',
                 flags_dict=force_flags,
                 wanted_masters=[], # previous behavior - correct?
@@ -1392,9 +1397,9 @@ class _CopyToLink(EnabledLink):
     @balt.conversation
     def Execute(self):
         modInfos, added = bosh.modInfos, {}
-        pflags = bush.game.plugin_flags
-        force_flags = pflags.guess_flags(self._target_ext, bush.game)
-        force_flags = pflags.check_flag_assignments(force_flags)
+        force_flags = bush.game.guess_flags(self._target_ext)
+        force_flags = bush.game.plugin_flags.check_flag_assignments(
+            force_flags)
         mod_previous = FNDict()
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
@@ -1504,7 +1509,7 @@ class AFlipFlagLink(EnabledLink):
     """Base class for links that enable or disable a flag in the plugin
     header."""
 
-    def __init__(self, plugin_flag: PluginFlag | None = None):
+    def __init__(self, plugin_flag: PluginFlag):
         super().__init__()
         self._plugin_flag: PluginFlag = plugin_flag
         self._allowed_ext = plugin_flag.convert_exts
@@ -1565,10 +1570,6 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
         'loading ESP-mastered mods in the %(ck_name)s.') % {
             'ck_name': bush.game.Ck.long_name}, 'bash.flipMasters.continue')
 
-    def __init__(self):
-        super(AFlipFlagLink, self).__init__()
-        self._plugin_flag = bush.game.master_flag
-
     def _initData(self, window, selection):
         super(AFlipFlagLink, self)._initData(window, selection)
         present_mods = window.data_store
@@ -1581,7 +1582,7 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
         else:
             self._to_flip = []
         # all elements in _to_flip have an .esp extension - check the esm flag
-        self._flag_value = not any(map(bush.game.master_flag.has_flagged,
+        self._flag_value = not any(map(self._plugin_flag.has_flagged,
                                        self._to_flip))
 
     @property

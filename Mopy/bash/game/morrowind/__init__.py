@@ -64,6 +64,11 @@ class _AMorrowindGameInfo(PatchGame):
 
     allTags = set() # no BP functionality yet
 
+    def force_ext_flags(self, mod_info, pflag):
+        ##: This is wrong, but works for now. We need game-specific
+        # record headers to parse the ESM flag for MW correctly - #480!
+        return pflag is self.master_flag and mod_info.get_extension() == '.esm'
+
     @staticmethod
     def get_lo_dir(bass_dirs):
         # LO file is Morrowind.ini, which is in the game folder

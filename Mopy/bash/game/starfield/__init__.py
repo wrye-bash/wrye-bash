@@ -75,6 +75,18 @@ class _AStarfieldGameInfo(PatchGame):
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
     ]
 
+    def guess_flags(self, mod_fn_ext, masters_supplied=()):
+        sup = super().guess_flags(mod_fn_ext)
+        return sup if masters_supplied else {self.plugin_flags.OVERLAY: False,
+                                             **sup}
+
+    def force_ext_flags(self, mod_info, pflag):
+        # .esl extension does not matter for overlay flagged plugins
+        # check the flag attribute directly we may be called in
+        # ESL.set_mod_flag(None), before OVERLAY.set_mod_flag(None)
+        return not self.plugin_flags.OVERLAY.has_flagged(mod_info) and super(
+            ).force_ext_flags(mod_info, pflag)
+
     @staticmethod
     def get_fid_class(augmented_masters, in_overlay_plugin):
         # Overlay plugins (whose TES4 record header flags feature an
