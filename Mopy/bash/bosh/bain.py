@@ -3188,7 +3188,7 @@ class InstallersData(DataStore):
                 isinstance(self[x], _InstallerPackage))
 
     def createFromData(self, projectPath, ci_files: set[CIstr], progress,
-                       mod_infos):
+                       modinfos):
         if not ci_files: return
         subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))
         srcJoin = bass.dirs[u'mods'].join
@@ -3198,7 +3198,7 @@ class InstallersData(DataStore):
             try:
                 srcJoin(ci_rel_path).copyTo(dstJoin(ci_rel_path))
             except FileNotFoundError: # modInfos MUST BE UPDATED
-                if minf := mod_infos.get(str(ci_rel_path)): # try the ghost
+                if minf := modinfos.get(str(ci_rel_path)): # try the ghost
                     minf.fs_copy(dstJoin(ci_rel_path))
                 else: raise
         # Refresh, so we can manipulate the InstallerProject item

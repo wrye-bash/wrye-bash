@@ -1861,8 +1861,7 @@ class AppendableLink(Link):
 
     def AppendToMenu(self, menu, window, selection):
         if not self._append(window): return
-        return super(AppendableLink, self).AppendToMenu(menu, window,
-                                                        selection)
+        return super().AppendToMenu(menu, window, selection)
 
 class MultiLink(Link):
     """A link that resolves to several links when appended."""

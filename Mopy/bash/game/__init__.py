@@ -159,12 +159,12 @@ class _EslMixin(PluginFlag):
             mod_fn_ext, game_handle)
 
     @classmethod
-    def format_fid(cls, whole_lo_fid, fid_orig_plugin, mod_infos):
+    def format_fid(cls, whole_lo_fid, fid_orig_plugin, modinfos):
         """Format a whole-LO FormID, which can exceed normal FormID limits
         (e.g. 211000800 is perfectly fine in a load order with ESLs), so
         that xEdit (and the game) can understand it."""
-        orig_minf = mod_infos[fid_orig_plugin]
-        proper_index = mod_infos.real_indices[fid_orig_plugin][0]
+        orig_minf = modinfos[fid_orig_plugin]
+        proper_index = modinfos.real_indices[fid_orig_plugin][0]
         for pflag in scale_flags:
             if pflag.cached_type(orig_minf):
                 return (pflag.index_str(proper_index) + pflag.fid_fmt_str %
@@ -935,15 +935,15 @@ class GameInfo(object):
         return {y: x.split('_', 1)[1].rsplit('.', 1)[0] for x, y in
                 self.modding_esm_size.items()}
 
-    def modding_esms(self, mod_infos):
+    def modding_esms(self, modinfos):
         """Set current (and available) master game esm(s) - Oblivion only."""
         if not self.modding_esm_size: return set(), None
         version_strs = set()
         for modding_esm, esm_size in self.modding_esm_size.items():
-            if (info := mod_infos.get(modding_esm)) and info.fsize == esm_size:
+            if (info := modinfos.get(modding_esm)) and info.fsize == esm_size:
                 version_strs.add(self.size_esm_version[esm_size])
         current_esm = self.size_esm_version.get(
-            mod_infos[self.master_file].fsize, None)
+            modinfos[self.master_file].fsize, None)
         return version_strs, current_esm
 
     @classmethod

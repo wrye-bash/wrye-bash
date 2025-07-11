@@ -286,6 +286,7 @@ class _ModsUIList(UIList):
     # True if we should highlight masters whose stored size does not match the
     # size of the plugin on disk
     _do_size_checks = bush.game.Esp.check_master_sizes
+    _masters_first_default = True
 
     def _sort_masters_first(self, items):
         """Conditional sort, performs the actual 'masters-first' sorting if
@@ -313,8 +314,8 @@ class _ModsUIList(UIList):
     def masters_first(self):
         """Whether or not masters should be sorted before non-masters for the
         current sort column."""
-        return (settings.get(f'{self.keyPrefix}.esmsFirst', True) or
-                self.masters_first_required)
+        return self.masters_first_required or settings.get(
+            f'{self.keyPrefix}.esmsFirst', self._masters_first_default)
 
     @masters_first.setter
     def masters_first(self, val):
@@ -426,18 +427,9 @@ class MasterList(_ModsUIList):
             self._item_name(mi)][1],
     }
     banned_columns = {'Indices', 'Current Index'} # These are Saves-specific
-
-    @property
-    def masters_first(self):
-        # Flip the default for masters, we want to show the order in the save
-        # so as to not make renamed/disabled masters 'jump around'
-        return (settings.get(f'{self.keyPrefix}.esmsFirst', False) or
-                self.masters_first_required)
-
-    # We have to override this, otherwise Mods_MastersFirst breaks
-    @masters_first.setter
-    def masters_first(self, val):
-        settings[f'{self.keyPrefix}.esmsFirst'] = val
+    # Flip the default for masters, we want to show the order in the save so as
+    # to not make renamed/disabled masters 'jump around'
+    _masters_first_default = False
 
     @property
     def cols(self):

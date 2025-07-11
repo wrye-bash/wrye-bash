@@ -269,7 +269,7 @@ class PluginFlag(Enum):
 
     # FIDs and mod index handling
     @classmethod
-    def format_fid(cls, whole_lo_fid: int, _fid_orig_plugin, mod_infos):
+    def format_fid(cls, whole_lo_fid: int, _fid_orig_plugin, modinfos):
         """For non-ESL games simple hexadecimal formatting will do."""
         return f'{whole_lo_fid:08X}'
 
@@ -340,17 +340,18 @@ class AMasterFlag(PluginFlag):
                 'turning masters into regular plugins and vice versa.')
 
     def _force_ext_flags(self, mod_info, game_handle, mext):
-        if self is not self.ESM: # only check extension for esms
-            return False
-        if game_handle.fsName == 'Morrowind':
-            ##: This is wrong, but works for now. We need game-specific
-            # record headers to parse the ESM flag for MW correctly - #480!
-            return mext == '.esm'
-        elif game_handle.Esp.extension_forces_flags:
-            # For games since FO4/SSE, .esm and .esl files set the master flag
-            # in memory even if not set on the file on disk. For .esp files we
-            # must check for the flag explicitly.
-            return self in game_handle.plugin_flags.guess_flags(mext, game_handle)
+        if self is self.ESM: # only check extension for esms
+            if game_handle.fsName == 'Morrowind':
+                ##: This is wrong, but works for now. We need game-specific
+                # record headers to parse the ESM flag for MW correctly - #480!
+                return mext == '.esm'
+            elif game_handle.Esp.extension_forces_flags:
+                # For games since FO4/SSE, .esm and .esl files set the
+                # master flag in memory even if not set on the file on disk.
+                # For .esp files we must check for the flag explicitly.
+                return self in game_handle.plugin_flags.guess_flags(
+                    mext, game_handle)
+        return False
 
     @classmethod
     def checkboxes(cls):
