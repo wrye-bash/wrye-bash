@@ -1964,7 +1964,8 @@ class InstallersData(DataStore):
         :param progress: to pass to _InstallerPackage._reset_cache
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
-        :param load_cache: if True call AFile.__init__ -> _reset_cache()
+        :param load_cache: if True call AFile.__init__ -> _reset_cache() - only
+            set to False in _InstallerPackage.copy_to
         """
         if is_mark:
             is_proj = 2

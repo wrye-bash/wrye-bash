@@ -202,7 +202,7 @@ class LOOTParser(object):
         return check_dirty(self._perform_merge(plugin_name))
 
     def _perform_merge(self, plugin_s: FName) -> _PluginEntry:
-        """Checks the masterlist and all regexes for a match with the spcified
+        """Checks the masterlist and all regexes for a match with the specified
         plugin name string, then merges the resulting entries, stores the final
         entry in _cached_merges and returns it."""
         all_entries = []

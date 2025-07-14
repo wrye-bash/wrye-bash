@@ -231,7 +231,7 @@ def init_dirs(game_info, opts, init_warnings):
         init_warnings.append(ci_warn + '\n\n' + get_case_sensitivity_advice())
     # these are relative to the mods path so they must be set here
     dirs[u'patches'] = dirs[u'mods'].join(u'Bash Patches')
-    dirs[u'tag_files'] = dirs[u'mods'].join(u'BashTags')
+    dirs['tag_files'] = dirs['mods'].join('BashTags')
     dirs[u'ini_tweaks'] = dirs[u'mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(game_info)

@@ -84,37 +84,30 @@ def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
     return ret_tags
 
 # Some wrappers to decouple other files from process_tags
-def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
-    """Wrapper around get_tags_from_dir. See that method for docs."""
-    return *map(process_tags, get_tags_from_dir(plugin_name,
-        ci_cached_bt_contents=ci_cached_bt_contents)),
-
-def read_loot_tags(plugin_name):
+def read_loot_tags(mod_info):
     """Wrapper around get_tags_from_loot. See that method for docs."""
-    return *map(process_tags,
-                initialization.lootDb.get_tags_from_loot(plugin_name, )),
+    return *map(process_tags, initialization.lootDb.get_tags_from_loot(
+        mod_info.fn_key)),
 
 # BashTags dir ----------------------------------------------------------------
-def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
+def read_dir_tags(mod_info, ci_bt_filenames=None):
     """Retrieves a tuple containing a set of added and a set of deleted
     tags from the 'Data/BashTags/PLUGIN_NAME.txt' file, if it is
     present.
 
-    :param plugin_name: The name of the plugin to check the tag file for.
-    :param ci_cached_bt_contents: An optional set containing lower-case
+    :param mod_info: The plugin info to check the tag file for.
+    :param ci_bt_filenames: An optional set containing lower-case
         versions of the names of all files currently present in the BashTags
         directory. If specified, get_tags_from_dir avoids having to stat to
         figure out if the file in question exists.
     :return: A tuple containing two sets of added and deleted tags."""
     removed, added = set(), set()
-    bt_file_name = f'{plugin_name.fn_body}.txt'
     # Check if the file even exists first, using the cache if possible
-    tag_file = bass.dirs['tag_files'].join(bt_file_name)
-    if ci_cached_bt_contents is not None:
-        if bt_file_name.lower() not in ci_cached_bt_contents:
-            return removed, added
-    elif not tag_file.is_file():
-        return removed, added
+    tag_file: bolt.Path = mod_info.tags_path()
+    has_tags = tag_file.is_file() if ci_bt_filenames is None else \
+        tag_file.stail.lower() in ci_bt_filenames
+    if not has_tags:
+        return added, removed
     # BashTags files must be in UTF-8 (or ASCII, obviously)
     with tag_file.open(u'r', encoding=u'utf-8') as ins:
         for tag_line in ins:
@@ -131,20 +124,19 @@ def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
                     removed.add(tag_entry[1:].strip())
                 else:
                     added.add(tag_entry)
-    return added, removed
+    return *map(process_tags, (added, removed)),
 
-def save_tags_to_dir(plugin_name, plugin_tag_diff):
+def save_tags_to_dir(mod_info, plugin_tag_diff): # one use!
     """Compares plugin_tags to plugin_old_tags and saves the diff to
     Data/BashTags/PLUGIN_NAME.txt.
 
-    :param plugin_name: The name of the plugin to modify the tag file for.
+    :param mod_info: The plugin info to modify the tag file for.
     :param plugin_tag_diff: A tuple of two sets, as returned by diff_tags,
         representing a diff of all bash tags currently applied to the
         plugin in question vs. all bash tags applied to the plugin
         by its description and the LOOT masterlist / userlist.."""
-    tag_files_dir = bass.dirs['tag_files']
-    tag_files_dir.makedirs()
-    tag_file = tag_files_dir.join(f'{plugin_name.fn_body}.txt')
+    bass.dirs['tag_files'].makedirs()
+    tag_file = mod_info.tags_path()
     # Calculate the diff and ignore the minus when sorting the result
     tag_diff_add, tag_diff_del = plugin_tag_diff
     processed_diff = sorted(tag_diff_add | {f'-{t}' for t in tag_diff_del},

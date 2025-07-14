@@ -595,7 +595,6 @@ class ModInfo(_WithMastersInfo):
 
     #--Bash Tags --------------------------------------------------------------
     def tagsies(self, tagList): ##: join the strings once here
-        mname = self.fn_key
         # Tracks if this plugin has at least one bash tags source - which may
         # still result in no tags at the end, e.g. if source A adds a tag and
         # source B removes it
@@ -608,7 +607,7 @@ class ModInfo(_WithMastersInfo):
         if tags_desc:
             tagList = _tags(_('From Plugin Description:'),
                 sorted(tags_desc), tagList)
-        loot_added, loot_removed = read_loot_tags(mname)
+        loot_added, loot_removed = read_loot_tags(self)
         has_tags_source |= bool(loot_added | loot_removed)
         if loot_added:
             tagList = _tags(_('From LOOT Masterlist and/or Userlist:'),
@@ -616,10 +615,10 @@ class ModInfo(_WithMastersInfo):
         if loot_removed:
             tagList = _tags(_('Removed by LOOT Masterlist and/or '
                               'Userlist:'), sorted(loot_removed), tagList)
-        dir_added, dir_removed = read_dir_tags(mname)
+        dir_added, dir_removed = read_dir_tags(self)
         has_tags_source |= bool(dir_added | dir_removed)
         tags_file_fmt = {'tags_file': os.path.join(
-            bush.game.mods_dir_name, 'BashTags', f'{mname.fn_body}.txt')}
+            bush.game.mods_dir_name, 'BashTags', f'{self.fn_key.fn_body}.txt')}
         if dir_added:
             tagList = _tags(_('Added by %(tags_file)s:') % tags_file_fmt,
                 sorted(dir_added), tagList)
@@ -633,6 +632,9 @@ class ModInfo(_WithMastersInfo):
                 sorted_tags, tagList)
         return (_tags(_('Result:'), sorted_tags, tagList)
                 if has_tags_source else tagList + f"    {_('No tags')}\n")
+
+    def tags_path(self) -> bolt.Path:
+        return bass.dirs['tag_files'].join(f'{self.fn_key.fn_body}.txt')
 
     def setBashTags(self,keys):
         """Sets bash keys as specified."""
@@ -679,13 +681,12 @@ class ModInfo(_WithMastersInfo):
             for docs."""
         wip_tags = self.getBashTagsDesc()
         # Tags from LOOT take precedence over the description
-        added_tags, deleted_tags = read_loot_tags(self.fn_key)
+        added_tags, deleted_tags = read_loot_tags(self)
         wip_tags |= added_tags
         wip_tags -= deleted_tags
         # Tags from Data/BashTags/{self.fn_key}.txt take precedence over both
         # the description and LOOT
-        added_tags, deleted_tags = read_dir_tags(self.fn_key,
-            ci_cached_bt_contents=ci_cached_bt_contents)
+        added_tags, deleted_tags = read_dir_tags(self, ci_cached_bt_contents)
         wip_tags |= added_tags
         wip_tags -= deleted_tags
         self.setBashTags(wip_tags)
@@ -1694,10 +1695,10 @@ class _AFileInfos(DataStore):
     tracks_ownership = False
     _boot_refresh_args = {'booting': True}
 
-    def __init__(self, factory=None):
+    def __init__(self, factory_type=None):
         """Init with specified directory and specified factory type."""
         super().__init__(self._init_store(self.set_store_dir()))
-        self._factory_type = factory or self.__class__._factory_type
+        self._factory_type = factory_type or self.__class__._factory_type
         if self._boot_refresh_args:
             self.refresh(True, **self._boot_refresh_args)
 

@@ -1601,10 +1601,8 @@ class ModDetails(_ModsSavesDetails):
                 """Adds or removes the specified set of tags."""
                 mod_info.set_auto_tagged(False)
                 curr_app_tags = mod_info.getBashTags()
-                if tags_were_added:
-                    curr_app_tags |= changed_tags
-                else:
-                    curr_app_tags -= changed_tags
+                (curr_app_tags.update if tags_were_added else
+                 curr_app_tags.difference_update)(changed_tags)
                 mod_info.setBashTags(curr_app_tags)
                 _mod_details.SetFile() # refresh only details
             def on_item_checked(self, choice_name, choice_checked):
@@ -1666,10 +1664,9 @@ class ModDetails(_ModsSavesDetails):
                 _refresh_only_details()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
-        tag_plugin_name = mod_info.fn_key
         # We need to grab both the ones from the description and from LOOT,
         # since we need to save a diff in case of Copy to BashTags
-        added_tags, deleted_tags = read_loot_tags(tag_plugin_name)
+        added_tags, deleted_tags = read_loot_tags(mod_info)
         # Emulate the effects of applying the LOOT tags
         old_tags = bashTagsDesc.copy()
         old_tags |= added_tags
@@ -1690,13 +1687,12 @@ class ModDetails(_ModsSavesDetails):
             _text = _('Copy to BashTags')
             _help = _('Copies a diff between currently applied tags and '
                       'description/LOOT tags to %(bashtags_path)s.') % {
-                'bashtags_path': bass.dirs['tag_files'].join(
-                    f'{mod_info.fn_key.fn_body}.txt')}
+                'bashtags_path': mod_info.tags_path()}
             def _enable(self):
                 return (not mod_info.is_auto_tagged() and
-                        read_dir_tags(tag_plugin_name) != dir_diff)
+                        read_dir_tags(mod_info) != dir_diff)
             def Execute(self):
-                bosh.mods_metadata.save_tags_to_dir(tag_plugin_name, dir_diff)
+                bosh.mods_metadata.save_tags_to_dir(mod_info, dir_diff)
                 _refresh_only_details()
         class Tags_CopyToDescription(EnabledLink):
             """Copy manually assigned bash tags into the mod description"""
