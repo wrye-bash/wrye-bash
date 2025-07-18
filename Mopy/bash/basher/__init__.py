@@ -1423,7 +1423,7 @@ class ModDetails(_ModsSavesDetails):
         self._version.label_text = self.versionStr
         self.uilist.SetFileInfo(inf := self.file_info)
         self.gTags.lb_set_items(minf_tags)
-        if inf and not inf.is_auto_tagged():
+        if inf and not inf.mod_auto_bash_tags:
             self.gTags.set_background_color(
                 self.gAuthor.get_background_color())
         else:
@@ -1587,7 +1587,7 @@ class ModDetails(_ModsSavesDetails):
         return ren_data
 
     #--Bash Tags
-    ##: Once we're on wx4.1.1, we can use OnDimiss to fully refreshUI the
+    ##: Once we're on wx4.1.1, we can use OnDismiss to fully refreshUI the
     # plugin in question (and do the same when removing a tag), so that
     # adding/removing a NoMerge tag properly updates the text color
     @_check_displayed
@@ -1597,13 +1597,10 @@ class ModDetails(_ModsSavesDetails):
         mod_info = self.file_info # type: bosh.ModInfo
         app_tags = mod_info.getBashTags()
         class BashTagsPopup(MultiChoicePopup):
-            def _update_tags(self, changed_tags, tags_were_added):
+            def _update_tags(self, changed_tags, addtags):
                 """Adds or removes the specified set of tags."""
-                mod_info.set_auto_tagged(False)
-                curr_app_tags = mod_info.getBashTags()
-                (curr_app_tags.update if tags_were_added else
-                 curr_app_tags.difference_update)(changed_tags)
-                mod_info.setBashTags(curr_app_tags)
+                mod_info.setBashTags(
+                    **{'add_tags' if addtags else 'remove_tags': changed_tags})
                 _mod_details.SetFile() # refresh only details
             def on_item_checked(self, choice_name, choice_checked):
                 self._update_tags({choice_name}, choice_checked)
@@ -1629,8 +1626,7 @@ class ModDetails(_ModsSavesDetails):
         if not sel_tags: return
         # Remember where the first selected tag was so we can reselect
         first_tag_index = next(iter(self.gTags.lb_get_selections()))
-        (inf := self.file_info).set_auto_tagged(False)
-        inf.setBashTags(inf.getBashTags() - sel_tags)
+        self.file_info.setBashTags(remove_tags=sel_tags)
         self.SetFile() # refresh only details
         new_tag_count = self.gTags.lb_get_items_count()
         if new_tag_count:
@@ -1656,11 +1652,10 @@ class ModDetails(_ModsSavesDetails):
             _text = _(u'Automatic')
             _help = _(u'Use the tags from the description and '
                       u'masterlist/userlist.')
-            def _check(self): return mod_info.is_auto_tagged()
+            def _check(self): return mod_info.mod_auto_bash_tags
             def Execute(self):
                 """Toggle automatic bash tags on/off."""
-                new_auto = not mod_info.is_auto_tagged()
-                mod_info.set_auto_tagged(new_auto)
+                mod_info.set_auto_tagged(not mod_info.mod_auto_bash_tags)
                 _refresh_only_details()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
@@ -1689,7 +1684,7 @@ class ModDetails(_ModsSavesDetails):
                       'description/LOOT tags to %(bashtags_path)s.') % {
                 'bashtags_path': mod_info.tags_path()}
             def _enable(self):
-                return (not mod_info.is_auto_tagged() and
+                return (not mod_info.mod_auto_bash_tags and
                         read_dir_tags(mod_info) != dir_diff)
             def Execute(self):
                 bosh.mods_metadata.save_tags_to_dir(mod_info, dir_diff)
@@ -1700,7 +1695,7 @@ class ModDetails(_ModsSavesDetails):
             _help = _('Copies currently applied tags to the plugin '
                       'description.')
             def _enable(self):
-                return (not mod_info.is_auto_tagged()
+                return (not mod_info.mod_auto_bash_tags
                         and mod_tags != bashTagsDesc)
             def Execute(self):
                 if mod_info.setBashTagsDesc(mod_tags):

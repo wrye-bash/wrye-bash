@@ -225,6 +225,8 @@ class _TabledInfo:
                     except (TypeError, ValueError, AttributeError):
                         # Convert older settings (had a bool in canMerge)
                         v = -1, {}
+                elif k == 'bashTags': # don't drop tags from later WB versions
+                    v = process_tags(v, drop_unknown=False)
                 self.set_table_prop(k, v)
             except KeyError:  # 'mtime' - we don't need another mtime cache
                 self.fn_key = FName(GPath(args[0]).stail) # for repr below
@@ -385,15 +387,17 @@ class ModInfo(_WithMastersInfo):
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
     _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
-        'autoBashTags': 'mod_auto_bash_tags',
+        'autoBashTags': 'mod_auto_bash_tags', # this one is actually used
         'bash.patch.configs': 'mod_bp_config', 'bashTags': 'mod_bash_tags',
         'bp_split_parent': 'mod_bp_split_parent', 'crc': 'mod_crc',
         'crc_mtime': 'mod_crc_mtime', 'crc_size': 'mod_crc_size',
         'doc': 'mod_doc', 'docEdit': 'mod_editing_doc', 'group': 'mod_group',
         'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
         'mergeInfo': 'mod_merge_info', 'rating': 'mod_rating'}
+    mod_auto_bash_tags: bool # autoBashTags - always set on __init__
 
-    def __init__(self, fullpath, itsa_ghost=None, **kwargs):
+    def __init__(self, fullpath, *, itsa_ghost=None, bt_contents=None,
+                 load_cache=False, **kwargs):
         # list of string bsas sorted by search order for localized plugins -
         # None otherwise
         self.str_bsas_sorted = None
@@ -405,7 +409,25 @@ class ModInfo(_WithMastersInfo):
                 itsa_ghost = not fullpath.is_file() and os.path.isfile(
                     f'{fullpath}.ghost')
         self.is_ghost = itsa_ghost
-        super().__init__(fullpath, **kwargs)
+        super().__init__(fullpath, load_cache=load_cache, **kwargs)
+        if (auto := self.get_table_prop('autoBashTags')) is None:
+            # For a new mod with no tags, set auto tags to True (default)
+            # else set it to False
+            auto = self.get_table_prop('bashTags') is None
+        if auto and load_cache: # we need to access the header to load the tags
+            self.set_auto_tagged(auto, bt_contents) # sets mod_auto_bash_tags
+        else: # if auto is True we don't load the tags - call do_update to load
+            self.mod_auto_bash_tags = auto
+
+    def do_update(self, *, itsa_ghost, bt_contents=None, **kwargs):
+        # only call in refresh and always pass itsa_ghost
+        old_ghost = self.is_ghost
+        self.is_ghost = itsa_ghost
+        # mark updated if ghost state changed but only reread header if needed
+        did_change = super().do_update(**kwargs)
+        if self.mod_auto_bash_tags: # we are only called on refresh (ideally)
+            did_change |= self.set_auto_tagged(True, bt_contents)
+        return did_change or self.is_ghost != old_ghost
 
     def get_hide_dir(self):
         hide_d = self._store().hide_dir
@@ -426,8 +448,8 @@ class ModInfo(_WithMastersInfo):
     def get_persistent_attrs(self, *, exclude=frozenset()):
         if exclude is True:
             exclude = frozenset([ #'allowGhosting', 'bash.patch.configs',
-                'bp_split_parent', # 'doc', 'docEdit', 'group', 'installer',
-                # 'rating', 'autoBashTags', 'bashTags', ##: reset bashTags on reverting?
+                # 'doc', 'docEdit', 'group', 'installer', 'rating',
+                'bp_split_parent', # 'autoBashTags', 'bashTags',
                 # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
                 'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
         return super().get_persistent_attrs(exclude=exclude)
@@ -555,14 +577,6 @@ class ModInfo(_WithMastersInfo):
         return ret_masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def do_update(self, *, itsa_ghost, **kwargs):
-        # only call in refresh and always pass itsa_ghost
-        old_ghost = self.is_ghost
-        self.is_ghost = itsa_ghost
-        # mark updated if ghost state changed but only reread header if needed
-        did_change = super().do_update(**kwargs)
-        return did_change or self.is_ghost != old_ghost
-
     @FileInfo.abs_path.getter
     def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
@@ -626,7 +640,7 @@ class ModInfo(_WithMastersInfo):
             tagList = _tags(_('Removed by %(tags_file)s:') % tags_file_fmt,
                 sorted(dir_removed), tagList)
         sorted_tags = sorted(self.getBashTags())
-        if not self.is_auto_tagged() and sorted_tags:
+        if not self.mod_auto_bash_tags and sorted_tags:
             has_tags_source = True
             tagList = _tags(_('From Manual (overrides all other sources):'),
                 sorted_tags, tagList)
@@ -636,9 +650,23 @@ class ModInfo(_WithMastersInfo):
     def tags_path(self) -> bolt.Path:
         return bass.dirs['tag_files'].join(f'{self.fn_key.fn_body}.txt')
 
-    def setBashTags(self,keys):
-        """Sets bash keys as specified."""
-        self.set_table_prop(u'bashTags', keys)
+    def setBashTags(self, *, override_tags=None, add_tags=None,
+                    remove_tags=None, set_auto_false=True) -> bool:
+        """Set bash tags as specified - you must pass processed tags."""
+        if sum(arg is not None for arg in
+               (override_tags, add_tags, remove_tags)) != 1:
+            raise ValueError(f'Pass exactly one of {override_tags=}, '
+                             f'{add_tags=}, {remove_tags=}')
+        curr_tags = self.getBashTags()
+        if override_tags is None:
+            override_tags = curr_tags.copy()
+            (override_tags.update if add_tags else
+                override_tags.difference_update)(add_tags or remove_tags)
+        if tags_changed := curr_tags != override_tags:
+            self.set_table_prop('bashTags', override_tags)
+            if set_auto_false: # we manually set tags, autoBashTags -> False
+                self.set_auto_tagged(False)
+        return tags_changed
 
     def setBashTagsDesc(self, keys, *, __re_bash_tags=re.compile(
             '{{ *BASH *:[^}]*}}\\s*\\n?', re.I)):
@@ -660,11 +688,7 @@ class ModInfo(_WithMastersInfo):
 
     def getBashTags(self) -> set[str]:
         """Returns any Bash flag keys. Drops obsolete tags."""
-        ret_tags = self.get_table_prop(u'bashTags', set())
-        fixed_tags = process_tags(ret_tags, drop_unknown=False)
-        if fixed_tags != ret_tags:
-            self.setBashTags(fixed_tags)
-        return fixed_tags & bush.game.allTags
+        return self.get_table_prop('bashTags', set()) & bush.game.allTags
 
     def getBashTagsDesc(self, *, __tags_search=re.compile(
             '{{ *BASH *:([^}]+)}}', re.I).search):
@@ -674,11 +698,15 @@ class ModInfo(_WithMastersInfo):
         # Remove obsolete and unknown tags and resolve any tag aliases
         return process_tags({*map(str.strip, re_match.group(1).split(','))})
 
-    def reloadBashTags(self, ci_cached_bt_contents=None):
-        """Reloads bash tags from mod description, LOOT and Data/BashTags.
+    def set_auto_tagged(self, auto_tagged, bt_contents=None) -> bool:
+        """Set whether this plugin receives its tags automatically and if yes
+        reload bash tags from mod description, LOOT and Data/BashTags. Return
+        True in this case if the tags actually changed, else False.
 
-        :param ci_cached_bt_contents: Passed to get_tags_from_dir, see there
-            for docs."""
+        :param bt_contents: Passed to read_dir_tags, see there for docs."""
+        self.mod_auto_bash_tags = auto_tagged
+        if not auto_tagged:
+            return False
         wip_tags = self.getBashTagsDesc()
         # Tags from LOOT take precedence over the description
         added_tags, deleted_tags = read_loot_tags(self)
@@ -686,24 +714,10 @@ class ModInfo(_WithMastersInfo):
         wip_tags -= deleted_tags
         # Tags from Data/BashTags/{self.fn_key}.txt take precedence over both
         # the description and LOOT
-        added_tags, deleted_tags = read_dir_tags(self, ci_cached_bt_contents)
+        added_tags, deleted_tags = read_dir_tags(self, bt_contents)
         wip_tags |= added_tags
         wip_tags -= deleted_tags
-        self.setBashTags(wip_tags)
-
-    def is_auto_tagged(self, default_auto=True):
-        """Returns True if this plugin receives its tags automatically from
-        sources like the description, LOOT masterlist and BashTags files.
-
-        :type default_auto: bool | None"""
-        return self.get_table_prop(u'autoBashTags', default_auto)
-
-    def set_auto_tagged(self, auto_tagged, *, bt_contents=None):
-        """Changes whether or not this plugin receives its tags
-        automatically. See is_auto_tagged."""
-        self.set_table_prop(u'autoBashTags', auto_tagged)
-        if auto_tagged:
-            self.reloadBashTags(bt_contents)
+        return self.setBashTags(override_tags=wip_tags, set_auto_false=False)
 
     #--Header Editing ---------------------------------------------------------
     def readHeader(self):
@@ -1720,7 +1734,7 @@ class _AFileInfos(DataStore):
     #--Refresh
     def refresh(self, refresh_in, *, booting=False, **kwargs):
         """Refresh from file directory."""
-        rdata = super().refresh(refresh_in, booting=booting)
+        rdata = super().refresh(refresh_in, booting=booting, **kwargs)
         if not booting and (alt := rdata.new_changed()):
             self._notify_bain(altered={self[n].abs_path for n in alt})
         return rdata
@@ -2217,9 +2231,13 @@ class ModInfos(TableFileInfos):
         some of the set_load_order methods, or pass unlock_lo=True
         (refreshLoadOrder only *gets* load order)."""
         # Scan the data dir, getting info on added, deleted and modified files
-        rdata = super().refresh(refresh_in, booting=booting)
+        try:
+            bt_contents = {*top_level_files(bass.dirs['tag_files'])}
+        except FileNotFoundError:
+            bt_contents = set()  # No BashTags folder -> no BashTags files
+        rdata = super().refresh(refresh_in, booting=booting,
+                                bt_contents=bt_contents)
         mods_changes = bool(rdata)
-        self._refresh_bash_tags()
         ldiff = LordDiff()
         if insert_after:
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
@@ -2456,25 +2474,6 @@ class ModInfos(TableFileInfos):
             inis_active.append(acti_ini)
         # values in active order, later loading inis override previous settings
         return FNDict((k.abs_path.stail, k) for k in reversed(inis_active))
-
-    def _refresh_bash_tags(self):
-        """Reloads bash tags for all mods set to receive automatic bash
-        tags."""
-        try:
-            bt_contents = {*top_level_files(bass.dirs['tag_files'])}
-        except FileNotFoundError:
-            bt_contents = set() # No BashTags folder -> no BashTags files
-        for modinf in self.values(): # type: ModInfo
-            autoTag = modinf.is_auto_tagged(default_auto=None)
-            if autoTag is None:
-                if modinf.get_table_prop('bashTags') is None:
-                    # A new mod, set auto tags to True (default)
-                    modinf.set_auto_tagged(True, bt_contents=bt_contents)
-                else:
-                    # An old mod that had manual bash tags added
-                    modinf.set_auto_tagged(False) # disable auto tags
-            elif autoTag:
-                modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
     def getSemiActive(self, patches):
         """Return (merged,imported) mods made semi-active by Bashed Patch.

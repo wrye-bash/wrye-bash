@@ -547,13 +547,10 @@ class Mods_ImportBashTags(_AMods_BashTags):
         pl_name, curr_tags = csv_fields
         if (pl_name := FName(pl_name)) in bosh.modInfos:
             target_tags = {t.strip() for t in curr_tags.split(u',')}
-            target_pl = bosh.modInfos[pl_name]
             # Only import if doing this would actually change anything and mark
             # as non-automatic (otherwise they'll just get deleted immediately)
-            if target_pl.getBashTags() != target_tags:
+            if bosh.modInfos[pl_name].setBashTags(override_tags=target_tags):
                 self.plugins_imported.append(pl_name)
-                target_pl.setBashTags(target_tags)
-                target_pl.set_auto_tagged(False)
 
 #------------------------------------------------------------------------------
 class Mods_ClearManualBashTags(ItemLink):
@@ -570,11 +567,8 @@ class Mods_ClearManualBashTags(ItemLink):
                 _('Are you sure you want to proceed?'),
                 title=_('Clear Manual Bash Tags - Warning')):
             return
-        pl_reset = []
-        for pl_name, p in bosh.modInfos.items():
-            if not p.is_auto_tagged():
-                pl_reset.append(pl_name)
-                p.set_auto_tagged(True)
+        pl_reset = [pl_name for pl_name, p in bosh.modInfos.items() if
+                    p.set_auto_tagged(True)]
         self.refresh_sel(pl_reset)
         self._showInfo(_('Cleared tags from %(total_cleared)d plugins.') % {
             'total_cleared': len(pl_reset)},
