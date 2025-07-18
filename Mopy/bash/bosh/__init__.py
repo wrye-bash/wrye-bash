@@ -384,8 +384,7 @@ class FileInfo(_TabledInfo, AFileInfo):
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Sets ftime. Defaults to current value (i.e. reset)."""
         set_to = set_time or self.ftime
-        self.abs_path.mtime = set_to
-        self.ftime = set_to
+        self.abs_path.mtime = self.ftime = set_to
         return set_to
 
     # Backup stuff - beta, see #292 -------------------------------------------
