@@ -396,7 +396,7 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
             if INIList.apply_tweaks(infos, target_ini_file):
                 lastApplied = infos[-1].fn_key, target_ini_file.abs_path.stail
         #--Refresh after all the tweaks are applied
-        if rdata: ui_refresh |= Store.INIS.DO() # trigger refresh UI
+        if rdata: ui_refresh |= {Store.INIS: True} # trigger refresh UI
         if lastApplied is not None:
             lastApplied, target_name = lastApplied
             target_updated = bosh.INIInfos.update_targets(new_targets)

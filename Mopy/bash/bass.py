@@ -24,7 +24,6 @@
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
 import copy
-from collections import defaultdict
 from enum import Enum
 from typing import TYPE_CHECKING, NewType
 
@@ -91,10 +90,6 @@ class Store(Enum):
     BSAS = ('BSAs', False)
     INIS = ('INI Edits', True)
     SCREENSHOTS = ('Screenshots', True)
-
-    def DO(self):
-        """Unconditionally refresh the respective UIList."""
-        return defaultdict(bool, {self: True})
 
     def __repr__(self):
         return self.name

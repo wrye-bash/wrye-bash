@@ -2489,25 +2489,18 @@ class InstallersData(DataStore):
         InstallersData._miscTrackedFiles[abspath] = AFile(abspath)
 
     @classmethod
-    def notify_external(cls, altered: set[Path] = frozenset(),
-                        del_set: set[Path] = frozenset(),
-                        renamed: dict[Path, Path] = None):
+    def notify_external(cls, del_set: set[Path], altered: set[Path]):
         """Notifies BAIN of changes in the Data folder done by something other
         than BAIN.
 
-        :param altered: A set of file paths that have changed.
         :param del_set: A set of file paths that have been deleted.
-        :param renamed: A dict of file paths that were renamed. Maps old file
-            paths to new ones. Currently, only updates tracked changed/deleted
-            paths."""
-        if renamed is None: renamed = {}
+        :param altered: A set of file paths that have changed."""
         cls._externally_updated.update(altered)
+        # a file might have been deleted and another file renamed back to it
+        cls._externally_deleted -= altered
         cls._externally_deleted.update(del_set)
-        for ext_tracker in (cls._externally_updated, cls._externally_deleted):
-            if renamed_keys := (renamed.keys() & ext_tracker):
-                ext_tracker.difference_update(renamed_keys) # remove old paths
-                ext_tracker.update(
-                    v for k, v in renamed.items() if k in renamed_keys)
+        # a file might have been renamed to a new name then deleted
+        cls._externally_updated -= del_set
 
     def refreshTracked(self):
         del_paths = set(InstallersData._externally_deleted)
@@ -2936,15 +2929,13 @@ class InstallersData(DataStore):
             for ci_rel_path in ci_removes:
                 for store in stores:
                     if store_inf := store.data_path_to_info(str(ci_rel_path)):
+                        store_del[store].add(store_inf)
                         full_path = store_inf.abs_path
                         break
                 else:
-                    store = None
                     full_path = bass.dirs['mods'].join(ci_rel_path)
                 try:
                     full_path.moveTo(destDir.join(ci_rel_path)) # will drop .ghost
-                    if store is not None:
-                        store_del[store].add(store_inf)
                     self.data_sizeCrcDate.pop(ci_rel_path, None)
                     emptyDirs.add(full_path.head)
                 except (StateError, OSError):

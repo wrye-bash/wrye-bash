@@ -210,7 +210,7 @@ class _TabledInfo:
 
     def __init__(self, *args, att_val=None, **kwargs):
         for k, v in (att_val or {}).items(): # set table props used in refresh
-            try: ##: nightly regression storing 'installer' as FName - drop!
+            try: ##: nightly regression storing 'installer' as FName - convert to fname actually!
                 if k == 'installer': v = str(v)
                 elif k == 'doc': # needed for updates from old settings
                     v = GPath(v)
@@ -596,7 +596,7 @@ class ModInfo(_WithMastersInfo):
         # reset cache info as un/ghosting should not make do_update return True
         self._reset_cache((self.fsize, self.ftime, self.ctime))
         # This is necessary if BAIN externally tracked the (un)ghosted file
-        self._store()._notify_bain(renamed={ghost_source: ghost_target})
+        self._store()._notify_bain({ghost_source}, altered={ghost_target})
         return True
 
     #--Bash Tags --------------------------------------------------------------
@@ -1626,11 +1626,11 @@ class _AFileInfos(DataStore):
                 self.corrupted[new] = cor = _Corrupted(cor_path, er, new,**kws)
                 deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                         traceback=True)
-        rdata.to_del = {d.fn_key for d in delinfos}
-        if delinfos: self._delete_refresh(delinfos)
+        if delinfos:
+            rdata.to_del |= self._delete_refresh(delinfos)
         if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
-            self._notify_bain(altered={self[n].abs_path for n in alt},
-                              del_set={inf.abs_path for inf in delinfos})
+            alt = {self[n].abs_path for n in alt}
+            self._notify_bain({inf.abs_path for inf in delinfos}, alt)
         return rdata
 
     def _list_store_dir(self):
@@ -1667,18 +1667,18 @@ class _AFileInfos(DataStore):
     def _delete_refresh(self, infos):
         """Only called from refresh - should be inlined but for ModInfos.
         :param infos: the infos corresponding to deleted items."""
-        del_keys = [inf.fn_key for inf in infos]
-        for del_fn in del_keys:
-            self.pop(del_fn, None)
+        del_keys = set()
+        for del_inf in infos:
+            if self.pop(del_fn := del_inf.fn_key, None):
+                del_keys.add(del_fn)
             self.corrupted.pop(del_fn, None)
         return del_keys
 
     def _notify_bain(self, del_set: set[Path] = frozenset(),
-        altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
+                     altered: set[Path] = frozenset()):
         """Note that all of these parameters need to be absolute paths!"""
         if self._bain_notify:
-            InstallersData.notify_external(del_set=del_set, altered=altered,
-                                           renamed=renamed)
+            InstallersData.notify_external(del_set, altered)
 
     #--Right File Type?
     @classmethod
@@ -1701,7 +1701,7 @@ class _AFileInfos(DataStore):
     def rename_operation(self, member_info, newName, store_refr=None):
         # Override to allow us to notify BAIN if necessary
         rdata_ren = super().rename_operation(member_info, newName)
-        self._notify_bain(renamed=rdata_ren.ren_paths)
+        self._notify_bain(set(rp := rdata_ren.ren_paths), set(rp.values()))
         return rdata_ren
 
 class TableFileInfos(_AFileInfos):
@@ -3029,7 +3029,7 @@ class ModInfos(TableFileInfos):
         self._lo_move_mod(copy_from, move_to, is_new_info_active,
             deactivate=not is_new_info_active, save_all=True) # always deactivate?
         # make sure to notify BAIN rename_operation passes only renames param
-        self._notify_bain(altered={master_inf.abs_path}, del_set={deltd})
+        self._notify_bain({deltd}, altered={master_inf.abs_path})
         self.voCurrent = set_version
         self._voAvailable.add(curr_ver)
         self._voAvailable.remove(set_version)
