@@ -275,10 +275,10 @@ class RestoreSettings(object):
             full_back_path.join(*end_path).copyTo(dest)
         restore_paths = list(_init_settings_files(
             bak_name, mg_name, root_prefix, mods_folder_name))
-        for dest_dir, back_path in restore_paths:
+        for destdir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
             for fname in top_level_files(full_back_path):
-                _restore_file(dest_dir, GPath(back_path), fname)
+                _restore_file(destdir, GPath(back_path), fname)
         # restore savegame profile settings
         back_path = GPath('My Games').join(mg_name, saves_folder)
         sav_path = dirs['saveBase'].join(saves_folder)

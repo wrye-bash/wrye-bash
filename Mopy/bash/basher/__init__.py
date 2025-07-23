@@ -1249,7 +1249,8 @@ class _EditableMixin(_DetailsMixin):
         #--Change Tests
         if (ren_data := self._rename_detail_item()) is None:
             return
-        self.detail_fn = det_it = next(iter(ren_data.renames.values()))
+        self.detail_fn = det_it = next(iter(ren.values())) if (
+            ren := ren_data.renames) else self.detail_fn
         change_hdr, ref_saves, kwargs = self._extra_changes(ren_data)
         # Although we could avoid rereading the header by passing the info in
         # I leave it here as an extra error check - error handling is WIP

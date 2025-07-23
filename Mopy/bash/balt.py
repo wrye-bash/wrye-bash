@@ -786,7 +786,7 @@ class UIList(PanelWin):
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in rdata.redraw | rdata.to_add:
+                for upd in rdata.new_changed():
                     self.PopulateItem(item=upd, **ui_kwargs)
                 #--Sort
                 self.SortItems()
@@ -1120,7 +1120,7 @@ class UIList(PanelWin):
             else:
                 self.RefreshUI(rdata, **args_dict)
             #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.redraw)
+            self.SelectItemsNoCallback(rdata.to_add)
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""

@@ -413,20 +413,20 @@ class ModInfo(_WithMastersInfo):
         super().__init__(fullpath, **kwargs)
 
     def get_hide_dir(self):
-        dest_dir = self._store().hide_dir
+        hide_d = self._store().hide_dir
         #--Use author subdirectory instead?
         mod_author = self.header.author
         if mod_author:
-            authorDir = dest_dir.join(mod_author)
+            authorDir = hide_d.join(mod_author)
             if authorDir.is_dir():
                 return authorDir
         #--Use group subdirectory instead?
         file_group = self.get_table_prop(u'group')
         if file_group:
-            groupDir = dest_dir.join(file_group)
+            groupDir = hide_d.join(file_group)
             if groupDir.is_dir():
                 return groupDir
-        return dest_dir
+        return hide_d
 
     def get_persistent_attrs(self, *, exclude=frozenset()):
         if exclude is True:
@@ -1628,7 +1628,7 @@ class _AFileInfos(DataStore):
                         traceback=True)
         if delinfos:
             rdata.to_del |= self._delete_refresh(delinfos)
-        if not booting and ((alt := rdata.redraw | rdata.to_add) or delinfos):
+        if not booting and ((alt := rdata.new_changed()) or delinfos):
             alt = {self[n].abs_path for n in alt}
             self._notify_bain({inf.abs_path for inf in delinfos}, alt)
         return rdata
@@ -2016,8 +2016,8 @@ def _lo_cache(lord_func):
                 new_inactive = ldiff.new_inact | (ldiff.added - ldiff.new_act)
                 ghostify.update({k: True for k in new_inactive if
                     self[k].get_table_prop('allowGhosting', True)})
-            ldiff.affected.update(mod for mod, modGhost in ghostify.items()
-                                  if self[mod].setGhost(modGhost))
+            ldiff.affected.update(mod for mod, ghost_it in ghostify.items()
+                                  if self[mod].setGhost(ghost_it))
             return ldiff.to_rdata()
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())

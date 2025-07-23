@@ -1837,7 +1837,8 @@ class ListInfo:
 
     def set_path_keys(self, new_fn: FName, *, infodir=None):
         old_key, self.fn_key = self.fn_key, new_fn
-        return RefrData({new_fn}, to_del={old_key}, renames={old_key: new_fn})
+        return RefrData(to_add={new_fn}, to_del={old_key},
+                        renames={old_key: new_fn})
 
     def get_rename_paths(self, newName):
         return [] # no rename paths for markers
@@ -1901,7 +1902,7 @@ class AFileInfo(AFile, ListInfo):
         ren_d = super().set_path_keys(new_fn)
         new_path = (infodir or self._store().store_dir).join(new_fn)
         old_path, self.abs_path = self.abs_path, new_path
-        ren_d.ren_paths[old_path] = new_path
+        ren_d.ren_paths[old_path] = self.abs_path
         return ren_d
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
@@ -1973,7 +1974,7 @@ class RefrData:
 
     def __ior__(self, other):
         # we suppose `other` is more up to date so deleted infos might reappear
-        self.to_del -= other.redraw | other.to_add
+        self.to_del -= other.new_changed()
         it = ((getattr(self, att), oth_att) for att in self.__slots__ if
               (oth_att := getattr(other, att)))
         for self_att, other_att in it:
@@ -1982,6 +1983,8 @@ class RefrData:
             setattr(self, att, getattr(self, att) - self.to_del)
         # we suppose renames/ren_paths key/values are unique while we ior them
         return self
+
+    def new_changed(self): return self.to_add | self.redraw
 
 #------------------------------------------------------------------------------
 class PickleDict(object):

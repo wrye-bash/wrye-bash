@@ -2328,7 +2328,7 @@ class InstallersData(DataStore):
                     refresh_info.redraw.add(item)
                 else: installers.add(item)
         if scanning:
-            exist = installers | refresh_info.to_add | refresh_info.redraw
+            exist = installers | refresh_info.new_changed()
             refresh_info.to_del = set(self.ipackages(self)) - exist
         return refresh_info
 
