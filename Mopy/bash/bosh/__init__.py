@@ -1731,7 +1731,8 @@ class DataStore(DataDict):
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
     def rename_operation(self, info_new_name, dest_dir=None, *, try_once=True,
-                         ren_parent=None, with_backups=True) -> RefrData:
+                         ren_parent=None, with_backups=True, set_mtime=None,
+                         act_mods=frozenset()) -> RefrData:
         rd_ren = RefrData()
         if not info_new_name:
             return rd_ren
@@ -1774,9 +1775,11 @@ class DataStore(DataDict):
                 to_del={old_key} if self.pop(old_key, None) else set(),
                 # lastly set the new info abspath
                 ren_paths=inf.set_path_keys(new_name, infodir=dest_dir))
-            if dest_dir is None: # else we are going to create new infos ##:701
+            add_to_store = not _rename_paths or inf.info_dir == self.store_dir
+            if add_to_store: # add the info (or marker info) to the store
                 self[inf.fn_key] = inf # fn_key was set to new value
-        return rd_ren
+        return self.refresh(rd_ren, unlock_lo=True, what='I',
+                            set_mtime=set_mtime, act_mods=act_mods)
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1844,8 +1847,9 @@ class _AFileInfos(DataStore):
     def refresh(self, refresh_in, *, booting=False, **kwargs):
         """Refresh from file directory."""
         rdata = super().refresh(refresh_in, booting=booting, **kwargs)
-        if not booting and (alt := rdata.new_changed()):
-            self._notify_bain(altered={self[n].abs_path for n in alt})
+        if not booting and ((alt := rdata.new_changed()) or rdata.ren_paths):
+            self._notify_bain( # normal deletions are handled in super
+                {*rdata.ren_paths}, {self[n].abs_path for n in alt})
         return rdata
 
     def _add_to_cor(self, new, kws, delinfos, e):
@@ -1912,12 +1916,6 @@ class _AFileInfos(DataStore):
             return inf
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
-
-    def rename_operation(self, info_new_name, dest_dir=None, **kwargs):
-        # Override to allow us to notify BAIN if necessary
-        rd_ren = super().rename_operation(info_new_name, dest_dir, **kwargs)
-        self._notify_bain(set(rp := rd_ren.ren_paths), set(rp.values()))
-        return rd_ren
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
@@ -2350,7 +2348,8 @@ class ModInfos(TableFileInfos):
     # Refresh - not quite surprisingly this is super complex - therefore define
     # refresh satellite methods before even defining the DataStore overrides
     def refresh(self, refresh_in, *, booting=False, unlock_lo=False,
-                insert_after: FNDict[FName, FName] | None = None, **kwargs):
+                insert_after: FNDict[FName, FName] | None = None,
+                set_mtime=None, act_mods=frozenset(), **kwargs):
         """Update file data for additions, removals and date changes.
         See usages for how to use the refresh_infos and unlock_lo params.
         NB: if an operation *we* performed changed the load order we do not
@@ -2369,6 +2368,13 @@ class ModInfos(TableFileInfos):
         if insert_after:
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
                                             ldiff=ldiff)
+        elif rdata.is_rename: # rename in load order caches
+            lordata = self._lo_move_mod(rdata.renames, act_mods, set_mtime,
+                                        ldiff=ldiff, save_all=True)
+            for mod_inf in self.values():
+                if par := rdata.renames.get(
+                        mod_inf.get_table_prop('bp_split_parent')):
+                    mod_inf.set_table_prop('bp_split_parent', str(par))
         else: # if refresh_infos is False but mods are added force refresh
             lordata = self.refreshLoadOrder(ldiff=ldiff,
                 forceRefresh=mods_changes or unlock_lo,
@@ -2636,17 +2642,7 @@ class ModInfos(TableFileInfos):
         if act_mods := dest_dir is None and {fn for inf, _new_name in
             info_new_name if load_order.cached_is_active(fn := inf.fn_key)}:
             self.lo_deactivate(*act_mods)
-        rd_ren = super().rename_operation(info_new_name, dest_dir, **kwargs)
-        # rename in load order caches
-        if dest_dir: return rd_ren # unhiding
-        for dex, (old_key, new_fn) in enumerate(rd_ren.renames.items()):
-            self._lo_move_mod(old_key, new_fn, old_key in act_mods,
-                              save_all=dex == len(rd_ren.renames) - 1)
-            # Update linked BP parts if the parent BP got renamed
-            for mod_inf in self.values():
-                if mod_inf.get_table_prop('bp_split_parent') == old_key:
-                    mod_inf.set_table_prop('bp_split_parent', str(new_fn))
-        return rd_ren
+        return super().rename_operation(info_new_name, dest_dir, **kwargs)
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
@@ -2946,18 +2942,21 @@ class ModInfos(TableFileInfos):
         return ''
 
     @_lo_op
-    def _lo_move_mod(self, old_name, new_name, do_activate, *,
-                     deactivate=False, out_diff):
+    def _lo_move_mod(self, renames_di, act_mods, set_mtime, *, out_diff):
         """Move new_name to the place of old_name and handle active state."""
-        oldIndex = self._lo_wip.index(old_name)
-        self._lo_wip[oldIndex] = new_name
-        self._active_wip = [x for x in self._active_wip if x != old_name]
-        if do_activate:
-            self._lo_activate(new_name)
-        elif deactivate:
-            self.lo_deactivate(new_name)
+        if set_mtime: # only set in self.try_set_version
+            for k, v in set_mtime.items():
+                self[k].setmtime(v)
+            if len(renames_di) == 2:
+                move_to = renames_di.pop(self._master_esm)
+                renames_di = {next(iter(renames_di)): move_to}
+        self._lo_wip = [renames_di.get(x, x) for x in self._lo_wip]
+        self._active_wip = [x for x in self._active_wip if x not in renames_di]
+        for act in act_mods:
+            self._lo_activate(renames_di[act])
         # only the truth value of out_diff matters
-        out_diff.added, out_diff.missing = {new_name}, {old_name} # inform diff
+        out_diff.missing.update(renames_di)
+        out_diff.added.update(renames_di.values())
 
     @_lo_op
     def lo_insert_at(self, first, modlist, *, out_diff):
@@ -3217,33 +3216,24 @@ class ModInfos(TableFileInfos):
         swapping_a_ghost = swapped_inf.is_ghost # will ghost the master esm!
         #--Rename
         baseInfo = self[master_esm]
-        master_time = baseInfo.ftime
-        new_info_time = swapped_inf.ftime
-        is_new_info_active = load_order.cached_is_active(copy_from)
+        act = {copy_from} if load_order.cached_is_active(copy_from) else set()
         # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
+        mt = {master_esm: baseInfo.ftime}
         ren_data = RefrData()
         try:
             inf_target = [(baseInfo, move_to), (swapped_inf, master_esm)]
-            ren_data |= file_info_rename_op(inf_target, try_once=do_swap)
+            # set mtimes to previous respective values
+            ren_data |= file_info_rename_op(inf_target, set_mtime={**mt,
+                move_to: swapped_inf.ftime}, try_once=do_swap, act_mods=act)
         except CancelError:
             return
         finally:
-            rens = ren_data.renames
-            if revert := master_esm in rens and copy_from not in rens:
-                file_info_rename_op([(self[move_to], master_esm)])
-            master_inf = self[master_esm]
-            # set mtimes to previous respective values
-            master_inf.setmtime(master_time)
+            if master_esm not in self:
+                ren_data |= file_info_rename_op(
+                    [(self[move_to], master_esm)], set_mtime=mt)
             if swapping_a_ghost: # we need to unghost the master esm
-                master_inf.setGhost(False)
-            if not revert:
-                self[move_to].setmtime(new_info_time)
-                self._lo_move_mod(copy_from, move_to, is_new_info_active,
-                    deactivate=not is_new_info_active, save_all=True) # always deactivate?
-                self.voCurrent = set_version
-                self._voAvailable.add(curr_ver)
-                self._voAvailable.remove(set_version)
+                self[master_esm].setGhost(False)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size

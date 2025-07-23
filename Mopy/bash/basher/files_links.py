@@ -70,21 +70,16 @@ class Files_Unhide(ItemLink):
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'not valid.') % {'skipped_file': srcFileName})
                 continue
-            inf = dstore.factory(srcPath, load_cache=False) # don't load cache we will refresh
+            inf = dstore.factory(srcPath, load_cache=True, is_proj=False)
             if (fn_key := inf.fn_key) in dstore:
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'already present.') % {'skipped_file': srcFileName})
                 continue
             srcFiles.append((inf, fn_key))
         #--Now move everything at once
-        ren_data = dstore.rename_operation(srcFiles, ren_parent=uil,
-            dest_dir=st_dir, with_backups=False) # we ain't handling backups
-        rinf = RefrIn.from_added({k: {'is_proj': False} for k in
-                                  ren_data.to_add})
-        if rd := dstore.refresh(rinf, what='I'):
-            unhidden = rd.to_add # pick one at random to show details for
-            uil.propagate_refresh(rd, detail_item=next(iter(unhidden)))
-            uil.SelectItemsNoCallback(unhidden, deselectOthers=True)
+        uil.try_rename(srcFiles, ren_parent=uil, dest_dir=st_dir,
+            check_unique=False, deselect=True, # we ain't handling backups
+            with_backups=False)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------

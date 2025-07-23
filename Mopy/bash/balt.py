@@ -987,10 +987,9 @@ class UIList(PanelWin):
         if args[1] is None:
             showError(self, args[0])
             return EventResult.CANCEL # validate_filename would Veto
-        item_edited = self.panel.detailsPanel.detail_fn
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            self.try_rename(ren_args, item_edited=item_edited, **ren_kwargs)
+            self.try_rename(ren_args, **ren_kwargs)
         return EventResult.CANCEL # clears new name from label on exception!
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
@@ -1019,23 +1018,25 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, ren_args, *, forced_ext='', item_edited=None,
-                   **ren_kwargs):
+    def try_rename(self, ren_args, *, forced_ext='', refresh_ui=True,
+                   check_unique=True, deselect=False, **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
-        info_new_name = []
-        for info, new_root in ren_args:# check if new and old names are ci-same
-            if (new_fn := info.unique_key(new_root, forced_ext)) is not None:
-                info_new_name.append((info, new_fn))
+        if check_unique: # check if new and old names are ci-same
+            info_new_name = [(info, new_fn) for info, new_root in ren_args if (
+                new_fn := info.unique_key(new_root, forced_ext)) is not None]
+        else:
+            info_new_name = ren_args
         rdata = self.data_store.rename_operation(info_new_name, **ren_kwargs)
-        if item_edited and rdata:
-            args_dict = {'detail_item': rdata.renames.get(item_edited,
-                item_edited)} # in case the displayed item was *not* renamed
-            self.propagate_refresh(rdata, ui_refreshes=ren_kwargs.get(
-                'store_refr'), **args_dict)
+        if refresh_ui and rdata:
+            fn = next(iter(rdata.renames.values()))
+            # in case the displayed item was *not* renamed
+            args_dict = {'detail_item': fn} if fn in self.data_store else {}
+            args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
+            self.propagate_refresh(rdata, **args_dict)
             #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.to_add)
+            self.SelectItemsNoCallback(rdata.to_add, deselectOthers=deselect)
         return rdata
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):

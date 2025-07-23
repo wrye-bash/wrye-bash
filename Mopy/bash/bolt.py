@@ -1988,6 +1988,10 @@ class RefrData:
 
     def new_changed(self): return self.to_add | self.redraw
 
+    @property
+    def is_rename(self) -> bool:
+        return self.renames and all(k != v for k, v in self.renames.items())
+
 #------------------------------------------------------------------------------
 class PickleDict(object):
     """Dictionary saved in a pickle file.
