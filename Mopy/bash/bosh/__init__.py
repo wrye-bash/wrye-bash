@@ -1003,6 +1003,9 @@ class ModInfo(_WithMastersInfo):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
         if self.is_ghost: # add ghost extension to dest path - Path.__add__!
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
+        if rename_dir is None: # renames only, not the rest of rename_op uses
+            old_new_paths.append((tp := self.tags_path(),
+                                  tp.head.join(f'{new_name.fn_body}.txt')))
         return old_new_paths
 
     def _masters_order_status(self, *, __lo=load_order.cached_lo_index):

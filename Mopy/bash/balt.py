@@ -991,7 +991,7 @@ class UIList(PanelWin):
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
             self.try_rename(ren_args, item_edited=item_edited, **ren_kwargs)
-        return EventResult.CANCEL # needed! clears new name from label on exception
+        return EventResult.CANCEL # clears new name from label on exception!
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
         return [(sel_inf, args[1]) for sel_inf in selected]

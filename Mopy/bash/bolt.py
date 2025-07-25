@@ -1664,14 +1664,14 @@ class AFile(object):
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
-    def __init__(self, fullpath, *, raise_on_error=False, cached_stat=None,
+    def __init__(self, fullpath, *, raise_os_error=False, cached_stat=None,
                  **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         # Set cache info (ftime, size[, ctime]) and reload/reset cache
         try:
             self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
-            if raise_on_error: raise
+            if raise_os_error: raise
             self._reset_cache(self._null_stat)
 
     def _stat_tuple(self, cached_stat=None):
@@ -1684,15 +1684,15 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, *, raise_on_error=False, force_update=False,
+    def do_update(self, *, raise_os_error=False, force_update=False,
                   cached_stat=None, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
-        consider the file deleted and return True except if raise_on_error is
-        True, whereupon raise the OSError we got in stat(). If raise_on_error
+        consider the file deleted and return True except if raise_os_error is
+        True, whereupon raise the OSError we got in stat(). If raise_os_error
         is False user must check if file exists.
 
-        :param raise_on_error: If True, raise on errors instead of just
+        :param raise_os_error: If True, raise on errors instead of just
             resetting the cache and returning.
         :param **kwargs: various:
             - itsa_ghost: In ModInfos, if we have the ghosting info available,
@@ -1704,7 +1704,7 @@ class AFile(object):
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
             self._reset_cache(self._null_stat, **kwargs)
-            if raise_on_error: raise
+            if raise_os_error: raise
             return file_was_stated # file previously existed, we need to update
         if force_update or self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True, **kwargs)

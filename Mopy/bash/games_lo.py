@@ -1022,7 +1022,7 @@ class AsteriskGame(_TextFileLo):
         if self._ccc_filename:
             ccc_path = self._get_ccc_path()
             try:
-                ccc_file = LoFile(False, ccc_path, raise_on_error=True)
+                ccc_file = LoFile(False, ccc_path, raise_os_error=True)
                 _act, ccc_contents = ccc_file.parse_modfile()
                 ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
                 force_active = {*(fload := self.__class__.force_load_first)}

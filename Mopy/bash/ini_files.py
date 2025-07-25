@@ -236,10 +236,10 @@ class IniFileInfo(AIniInfo, AFileInfo):
         self.updated = False # notify iniInfos which should clear this flag
 
     # AFile overrides ---------------------------------------------------------
-    def do_update(self, *, raise_on_error=False, **kwargs):
+    def do_update(self, *, raise_os_error=False, **kwargs):
         try:
             # do_update will return True if the file was deleted then restored
-            self.updated |= super().do_update(raise_on_error=True)
+            self.updated |= super().do_update(raise_os_error=True)
             if self._deleted: # restored
                 self._deleted = False
             return self.updated
@@ -249,7 +249,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
             if update:
                 # mark as deleted to avoid requesting updates on each refresh
                 self._deleted = self.updated = True
-            if raise_on_error: raise
+            if raise_os_error: raise
             return update
 
     def _reset_cache(self, stat_tuple, **kwargs):
@@ -281,7 +281,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         whitespace. If you modify them do a copy first !"""
         try:
             if self._ci_settings_cache_linenum is self.__empty_settings \
-                    or self.do_update(raise_on_error=True):
+                    or self.do_update(raise_os_error=True):
                 try:
                     ci_settings = LowerDict()
                     ci_deleted_settings = LowerDict()
