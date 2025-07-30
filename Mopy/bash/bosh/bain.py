@@ -2642,8 +2642,8 @@ class InstallersData(DataStore):
                 s, c, bass.dirs['mods'].join(dest).mtime if d == -1 else d)
         return refresh_ui_
 
-    def bain_install(self, packages, refresh_ui, progress=None, last=False,
-                     override=True):
+    def bain_install(self, packages, last=False, override=True, *, rui_data,
+                     progress):
         """Install selected packages. If override is False install only
         missing files. Otherwise, all (unmasked) files."""
         try:
@@ -2666,7 +2666,7 @@ class InstallersData(DataStore):
                         destFiles &= inst.missingFiles
                     if destFiles:
                         self._createTweaks(destFiles, inst, tweaksCreated)
-                        refresh_ui.update(self._installer_install(
+                        rui_data.update(self._installer_install(
                             inst, destFiles, index, progress))
                     index += 1 # increment after it's used in _installer_install
                     inst.is_active = True
@@ -2677,7 +2677,7 @@ class InstallersData(DataStore):
             if tweaksCreated:
                 self._editTweaks(tweaksCreated)
                 if tweaksCreated:
-                    refresh_ui[Store.INIS] = True
+                    rui_data[Store.INIS] = True
             return tweaksCreated
         finally:
             self.refresh_ns()
@@ -2788,7 +2788,7 @@ class InstallersData(DataStore):
                     cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
         return set(dest_sc)
 
-    def bain_uninstall(self, unArchives, refresh_ui_, progress=None):
+    def bain_uninstall(self, unArchives, **kwargs):
         """Uninstall selected packages."""
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
@@ -2820,14 +2820,16 @@ class InstallersData(DataStore):
                 masked |= self.__restore(installer, removes, restores,
                                          _cede_ownership)
         anneal = bass.settings[u'bash.installers.autoAnneal']
-        self._remove_restore(removes, restores, refresh_ui_, _cede_ownership,
-                             progress, unArchives, anneal)
+        self._remove_restore(removes, restores,_cede_ownership, unArchives,
+                             anneal, **kwargs)
 
-    def _remove_restore(self, removes, restores, refresh_ui, cede_ownership,
-            progress, unArchives: list | set = frozenset(), anneal=True):
+    def _remove_restore(self, removes, restores, cede_ownership,
+                        unArchives: list | set = frozenset(), anneal=True, *,
+                        progress, rui_data):
+        progress = progress if progress else bolt.Progress()
         try:
             #--Remove files, update InstallersData, update load order
-            self._removeFiles(removes, refresh_ui, progress)
+            self._removeFiles(removes, rui_data, progress)
             #--De-activate
             for inst in unArchives:
                 inst.is_active = False
@@ -2843,7 +2845,7 @@ class InstallersData(DataStore):
                     for index, (fn_inst, destFiles) in enumerate(fninst_dests):
                         progress(index, fn_inst)
                         if destFiles:
-                            refresh_ui.update(self._installer_install(
+                            rui_data.update(self._installer_install(
                                 self[fn_inst], destFiles, index, progress))
             # Set the 'installer' column for files that track their owner
             stores = data_tracking_stores()
@@ -2854,19 +2856,18 @@ class InstallersData(DataStore):
                             if store.tracks_ownership:
                                 store_info.set_table_prop(
                                     'installer', f'{ikey}')
-                            refresh_ui[store.unique_store_key] = True
+                            rui_data[store.unique_store_key] = True
                             # Each file may only belong to one data store
                             break
         finally:
             self.refresh_ns()
 
     def bain_anneal(self, annealed_package_fnames: Iterable[FName] | None,
-            refresh_ui_, progress=None):
+                    **kwargs):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
-        progress = progress if progress else bolt.Progress()
         if annealed_package_fnames is None:
             annealed_package_fnames = self.filterInstallables(self)
         annealed_packages = [self[p] for p in annealed_package_fnames]
@@ -2886,8 +2887,7 @@ class InstallersData(DataStore):
             #  And/or may block later uninstalls.
             if installer.is_active:
                 self.__restore(installer, removes, restores, _cede_ownership)
-        self._remove_restore(removes, restores, refresh_ui_, _cede_ownership,
-                             progress)
+        self._remove_restore(removes, restores, _cede_ownership, **kwargs)
 
     def get_clean_data_dir_list(self):
         ci_keep_files = set(chain.from_iterable(
@@ -2919,7 +2919,7 @@ class InstallersData(DataStore):
             skipDir in bain.wrye_bash_data_dirs | bain.keep_data_dirs))
         return [f for f in ci_removes if not f.lower().startswith(skip_start)]
 
-    def clean_data_dir(self, ci_removes, refresh_ui):
+    def bain_clean_data_dir(self, ci_removes, *, rui_data, **kwargs):
         destDir = bass.dirs['bainData'].join(
             f'{bush.game.mods_dir} Folder Contents ({bolt.timestamp()})')
         try:
@@ -2944,7 +2944,7 @@ class InstallersData(DataStore):
                             f'failed', traceback=True)
             for store, del_infs in store_del.items():
                 rd = store.refresh(RefrIn(del_infos=del_infs), unlock_lo=True)
-                refresh_ui[store.unique_store_key] = {'rdata': rd}
+                rui_data[store.unique_store_key] = {'rdata': rd}
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:
                     emptyDir.removedirs()

@@ -2078,13 +2078,13 @@ class Installer_Op(ItemLink):
         try:
             with (Progress(*self._prog_args) if self._prog_args else
                   bolt.Progress() as progress):
-                return self._perform_action(ui_refresh, progress)
+                return self._perform_action(progress=progress, rui_data=ui_refresh)
         except (CancelError, SkipError):
             return None
         finally:
             self.window.propagate_refresh(True, ui_refresh)
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         raise NotImplementedError
 
 # wx Wrappers -----------------------------------------------------------------

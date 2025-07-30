@@ -141,7 +141,7 @@ class _Installer_AWizardLink(_NoMarkerLink):
             title = _('Installing…')
             do_it = self.idata.bain_install
         with balt.Progress(title) as progress:
-            do_it([sel_package.fn_key], ui_refresh_, progress)
+            do_it([sel_package.fn_key], rui_data=ui_refresh_, progress=progress)
 
 class _Installer_AViewOrEditFile(_SingleInstallable):
     """Base class for View/Edit wizard/FOMOD links."""
@@ -176,7 +176,7 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
     """Base class for FOMOD links that need to run the FOMOD wizard."""
     _wants_install_checkbox: bool
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, *, rui_data, **kwargs):
         # Use list() since we're going to deselect packages
         for sel_package in list(self.iselected_infos()):
             try:
@@ -198,7 +198,7 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
                 if ret.canceled:
                     continue
                 # Now we're ready to execute the link's specific action
-                self._execute_action(sel_package, ret, ui_refresh_)
+                self._execute_action(sel_package, ret, rui_data)
             except XMLParsingError:
                 deprint('Invalid FOMOD XML syntax:', traceback=True)
                 msg = _("The ModuleConfig.xml file that comes with "
@@ -302,8 +302,8 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
         return super(Installer_Wizard, self)._enable() and all(
             i.hasWizard for i in self.iselected_infos())
 
-    def _perform_action(self, ui_refresh_, progress):
-        ##: Investigate why we have so many refreshCurrents in here.
+    def _perform_action(self, *, rui_data, **kwargs):
+        # TODO Investigate why we have so many refreshCurrents in here.
         # Installer_RunFomod has just one!
         idetails = self.iPanel.detailsPanel
         # Use list() since we're going to deselect packages
@@ -349,8 +349,8 @@ class Installer_Wizard(Installer_Op, _Installer_AWizardLink):
             idetails.refreshCurrent(sel_package)
             #Install if necessary
             if ret.should_install:
-                self._perform_install(sel_package, ui_refresh_)
-            self._apply_tweaks(sel_package, ret, ui_refresh_)
+                self._perform_install(sel_package, rui_data)
+            self._apply_tweaks(sel_package, ret, rui_data)
 
     def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
@@ -436,8 +436,8 @@ class Installer_Anneal(Installer_Op, _NoMarkerLink):
               'packages.') % {'data_folder': bush.game.mods_dir}
     _prog_args = _('Annealing…'),
 
-    def _perform_action(self, ui_refresh_, progress):
-        self.idata.bain_anneal(self._installables, ui_refresh_, progress)
+    def _perform_action(self, **kwargs):
+        self.idata.bain_anneal(self._installables, **kwargs)
 
 class Installer_Duplicate(_SingleInstallable):
     """Duplicate selected Installer."""
@@ -549,12 +549,12 @@ class Installer_Install(Installer_Op, _NoMarkerLink):
         self._warn_nothing_installed()
         self._warn_mismatched_ini_tweaks_created(new_tweaks)
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         last = (self.mode == 'LAST')
         override = (self.mode != 'MISSING')
         try:
-            return self.idata.bain_install(self._installables, ui_refresh_,
-                                           progress, last, override)
+            return self.idata.bain_install(self._installables, last, override,
+                                           **kwargs)
         except (CancelError, SkipError):
             return
         except StateError as e:
@@ -852,8 +852,8 @@ class Installer_Uninstall(Installer_Op, _NoMarkerLink):
         'data_folder': bush.game.mods_dir}
     _prog_args = _('Uninstalling…'),
 
-    def _perform_action(self, ui_refresh_, progress):
-        self.idata.bain_uninstall(self._installables, ui_refresh_, progress)
+    def _perform_action(self, **kwargs):
+        self.idata.bain_uninstall(self._installables, **kwargs)
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
