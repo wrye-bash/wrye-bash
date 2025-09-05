@@ -906,12 +906,10 @@ class Save_Unbloat(OneItemLink):
         self.refresh_sel()
 
 #------------------------------------------------------------------------------
-class Save_UpdateNPCLevels(EnabledLink):
+class Save_UpdateNPCLevels(ItemLink):
     """Update NPC levels from active mods."""
     _text = _('Update NPC Levels…')
     _help = _(u'Update NPC levels from active mods')
-
-    def _enable(self): return bool(load_order.cached_active_tuple())
 
     def Execute(self):
         msg = _('This will relevel the NPCs in the selected saves according '

@@ -293,6 +293,9 @@ class _ModsUIList(UIList):
         if bush.game.master_flag:
             self._extra_sortings.insert(0, _ModsUIList._sort_masters_first)
 
+    def _cache_rui_structs(self):
+        return {'act_dicts': bosh.modInfos.active_statuses()}
+
     def _sort_masters_first(self, items):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
@@ -301,18 +304,18 @@ class _ModsUIList(UIList):
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            set_active = set(load_order.cached_active_tuple())
-            set_merged = set(bosh.modInfos.merged)
-            set_imported = set(bosh.modInfos.imported)
+            act_dicts = bosh.modInfos.active_statuses()
             def _sel_sort_key(x):
                 # First active, then merged, then imported, then inactive
-                x = self._item_name(x)
-                if x in set_active: return 0
-                elif x in set_merged: return 1
-                elif x in set_imported: return 2
-                else: return 3
+                return self._active_keys(self._item_name(x), act_dicts, 3)
             items.sort(key=_sel_sort_key)
     _extra_sortings = [_activeModsFirst]
+
+    def _active_keys(self, item_key, act_dicts, unactive_val):
+        for k, v in act_dicts.items():
+            if item_key in v:
+                return k
+        return unactive_val
 
     @property
     def masters_first(self):
@@ -342,9 +345,9 @@ class _ModsUIList(UIList):
     def _item_name(self, x): # hack to centralize some nasty modInfos accesses
         return x
 
-    def set_item_format(self, item_key, item_format, target_ini_setts):
+    def set_item_format(self, item_key, item_format, **ui_kwargs):
         self.mouseTexts[item_key] = mouseText = []
-        minf = super().set_item_format(item_key, item_format, target_ini_setts)
+        minf = super().set_item_format(item_key, item_format, **ui_kwargs)
         if minf.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
             mouseText.append(_('Another plugin has the same timestamp.'))
@@ -364,11 +367,10 @@ class _ModsUIList(UIList):
         self.mouseTexts[item_key] = ' '.join(mouseText)
         return minf
 
-    def _set_icon_text(self, minf, item_format, item_name, *, _mouse_text,
-                       **kwargs): # we get item_name not item_key so we need _mouse_text
-        checkMark = (load_order.cached_is_active(item_name) # 1
-                     or (item_name in bosh.modInfos.merged and 2) or (
-                             item_name in bosh.modInfos.imported and 3)) # or 0
+    def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
+                       # we get item_name not item_key so we need _mouse_text
+                       _mouse_text, **kwargs):
+        checkMark = self._active_keys(item_name, act_dicts, -1) + 1
         status = super()._set_icon_text(minf, item_format, item_name, **kwargs)
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
@@ -453,9 +455,8 @@ class MasterList(_ModsUIList):
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
-        super(MasterList, self).__init__(parent,
-                      listData=listData if listData is not None else {},
-                      keyPrefix=keyPrefix, panel=panel)
+        super().__init__(parent, listData={} if listData is None else listData,
+                         keyPrefix=keyPrefix, panel=panel)
 
     @property
     def allowEdit(self): return bass.settings.get(self._allowEditKey, False)
@@ -516,8 +517,8 @@ class MasterList(_ModsUIList):
                     ma_name in sc_masters})
         self._reList()
 
-    def set_item_format(self, item_key, item_format, target_ini_setts):
-        minf = super().set_item_format(item_key, item_format, target_ini_setts)
+    def set_item_format(self, item_key, item_format, **ui_kwargs):
+        minf = super().set_item_format(item_key, item_format, **ui_kwargs)
         if self.allowEdit:
             if minf.old_name in settings['bash.mods.renames']:
                 item_format.bold = True
@@ -534,7 +535,7 @@ class MasterList(_ModsUIList):
                                'activated.'))
         status, checkMark = super()._set_icon_text(masterInfo, item_format,
             item_name, loadOrderIndex=self._curr_lo_index[item_name],
-            mi=mi, _mouse_text=mouseText)
+            mi=mi, _mouse_text=mouseText, **kwargs)
         on_display = self.detailsPanel.detail_fn
         if status == 30: # master is missing
             mouseText.append(_('Missing master of %(child_plugin_name)s.') % {
@@ -654,7 +655,9 @@ class INIList(UIList):
     labels = {'File': lambda self, p: p,
         'Installer': _ask_info('get_table_prop', ('installer', '')),
     }
-    _target_ini = True # pass the target_ini settings on PopulateItem
+
+    def _cache_rui_structs(self):
+        return {'target_ini_settings': self.data_store.ini.get_ci_settings()}
 
     @property
     def current_ini_name(self): return self.panel.detailsPanel.ini_name

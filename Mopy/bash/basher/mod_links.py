@@ -1019,7 +1019,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         # Clean up some memory
         bolt.GPathPurge()
         # We need active mods
-        if not load_order.cached_active_tuple():
+        if len(load_order.cached_active_tuple()) == 1: # game esm always active
             self._showWarning(
                 _('That which does not exist cannot be patched.') + '\n' +
                 _('Load some plugins and try again.'),

@@ -153,13 +153,10 @@ class _Mods_EditActivePluginsLists(_AMods_ActivePluginsContext):
         balt.ListEditor.display_dialog(self.window, _('Active Plugins Lists'),
             ap_editor_data)
 
-class _Mods_SaveActivePluginsList(EnabledLink, _AMods_ActivePluginsContext):
+class _Mods_SaveActivePluginsList(_AMods_ActivePluginsContext):
     _text = _('Save Active Plugins List…')
     _help = _('Save the currently active plugins to a new active '
               'plugins list.')
-
-    def _enable(self):
-        return bool(load_order.cached_active_tuple())
 
     def Execute(self):
         new_actives_name = self._askText(_('Save currently active plugins '

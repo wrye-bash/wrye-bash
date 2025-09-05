@@ -592,7 +592,6 @@ class UIList(PanelWin):
     #--DnD
     _dndFiles = _dndList = False
     _dndColumns = ()
-    _target_ini = False # pass the target_ini settings on PopulateItem
     _copy_paths = False # enable the Ctrl+C shortcut
 
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
@@ -699,7 +698,7 @@ class UIList(PanelWin):
     def item_count(self): return self.__gList.lc_item_count()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None, target_ini_setts=None):
+    def PopulateItem(self, itemDex=-1, item=None, **ui_kwargs):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
 
@@ -726,12 +725,12 @@ class UIList(PanelWin):
             # first SetItem call - see InsertListCtrlItem
             self.__gList.InsertListCtrlItem(
                 itemDex, str_label, item,
-                decorate_cb=partial(self.__setUI, item, target_ini_setts))
+                decorate_cb=partial(self.__setUI, fileName=item, **ui_kwargs))
         else:
             # The item is already in the UIList, so we only need to redecorate
             # and set text for all labels
             gItem = self.__gList.get_item_data(itemDex)
-            self.__setUI(item, target_ini_setts, gItem)
+            self.__setUI(item, gItem, **ui_kwargs)
             # Piggyback off the SetItem call we need for __setUI to also set
             # the first column's text
             gItem.SetText(str_label)
@@ -747,26 +746,25 @@ class UIList(PanelWin):
         with self.pause_drawing():
             self.mouseTexts.clear()
             items = set(self.data_store)
-            if self.__class__._target_ini:
-                # hack for avoiding the syscall in get_ci_settings
-                t_setts = self.data_store.ini.get_ci_settings()
-            else:
-                t_setts = None
+            ui_kwargs = self._cache_rui_structs()
             #--Update existing items.
             index = 0
             while index < self.item_count:
                 item = self.GetItem(index)
                 if item not in items: self.__gList.RemoveItemAt(index)
                 else:
-                    self.PopulateItem(itemDex=index, target_ini_setts=t_setts)
+                    self.PopulateItem(itemDex=index, **ui_kwargs)
                     items.remove(item)
                     index += 1
             #--Add remaining new items
             for item in items:
-                self.PopulateItem(item=item, target_ini_setts=t_setts)
+                self.PopulateItem(item=item, **ui_kwargs)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
+
+    def _cache_rui_structs(self):
+        return {}
 
     _same_item = object()
     @final
@@ -782,13 +780,14 @@ class UIList(PanelWin):
         if rdata is None:
             self.populate_items()
         else: # a RefrData instance
+            ui_kwargs = self._cache_rui_structs()
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
                 for upd in rdata.redraw | rdata.to_add:
-                    self.PopulateItem(item=upd)
+                    self.PopulateItem(item=upd, **ui_kwargs)
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
@@ -852,15 +851,14 @@ class UIList(PanelWin):
             'installers.text.complex',
         ])}
 
-    def set_item_format(self, item, item_format, target_ini_setts):
+    def set_item_format(self, item, item_format, **ui_kwargs):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
         data_store is a FileInfo subclass) for calling info_status to update
         respective info's status."""
+        inf = self.data_store[item]
         try:
-            inf = self.data_store[item]
-            icon_key = self._set_icon_text(inf, item_format, item,
-                target_ini_settings=target_ini_setts)
+            icon_key = self._set_icon_text(inf, item_format, item, **ui_kwargs)
             item_format.icon_dex = self.icons.img_dex(*icon_key)
         except NotImplementedError:
             return # screens, bsas
@@ -871,10 +869,10 @@ class UIList(PanelWin):
         icon key tuple - populate mouse text, item_format attrs, etc."""
         return inf.info_status(**kwargs)
 
-    def __setUI(self, fileName, target_ini_setts, gItem):
+    def __setUI(self, fileName, gItem, **ui_kwargs):
         """Set font, status icon, background text etc."""
         df = _ListItemFormat(self)
-        self.set_item_format(fileName, df, target_ini_setts)
+        self.set_item_format(fileName, df, **ui_kwargs)
         if (icon_index := df.icon_dex) is not None:
             gItem.SetImage(icon_index)
         gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
@@ -898,10 +896,11 @@ class UIList(PanelWin):
         else:
             return self._defaultTextBackground
 
-    def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]],
-                           target_ini_setts=None) -> DecoratedTreeDict:
+    def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]]
+                           ) -> DecoratedTreeDict:
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
+        ui_kwargs = self._cache_rui_structs()
         def _decorate(i):
             lif = _ListItemFormat(self)
             # Only run set_item_format when the item is actually present,
@@ -909,7 +908,7 @@ class UIList(PanelWin):
             # those since the default text/background colors may have been
             # changed from the OS default)
             if i in self.data_store:
-                self.set_item_format(i, lif, target_ini_setts)
+                self.set_item_format(i, lif, **ui_kwargs)
             return lif.to_tree_node_format()
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}

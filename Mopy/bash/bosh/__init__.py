@@ -779,7 +779,7 @@ class ModInfo(_WithMastersInfo):
     def isBP(self):
         return self.header.author == u'BASHED PATCH'
 
-    def txt_status(self):
+    def txt_status(self): ##:(701) we should cache the modInfo status (checkMark)
         fnkey = self.fn_key
         if load_order.cached_is_active(fnkey): return _(u'Active')
         elif fnkey in modInfos.merged: return _(u'Merged')
@@ -2331,12 +2331,11 @@ class ModInfos(TableFileInfos):
             return self.plugin_inis # empty FNDict
         # First, check the Data folder for INIs present in it. Order does not
         # matter, we will only use this to look up existence
-        lower_data_cont = (f.lower() for f in os.listdir(data_folder_path))
-        present_inis = {i for i in lower_data_cont if i.endswith('.ini')}
+        present_inis = {i for i in os.listdir(data_folder_path) if
+                        i.lower().endswith('.ini')}
         # Determine which INIs are active based on LO. Order now matters
-        possible_inis = [self[m].get_ini_name() for m in
-                         load_order.cached_active_tuple()]
-        active_inis = [i for i in possible_inis if i.lower() in present_inis]
+        active_inis = [i for m in load_order.cached_active_tuple() if
+                       (i := self[m].get_ini_name()).lower() in present_inis]
         # Add new or modified INIs to the cache and copy the final order
         inis_active = []
         # check present inis for updates
@@ -2381,7 +2380,7 @@ class ModInfos(TableFileInfos):
         it merges or imports.
 
         :param patches: A set of mods to look for bashed patches in."""
-        merged_,imported_ = set(),set()
+        merged_, imported_ = set(), set()
         for patch in patches & self.bashed_patches: # this must be up to date!
             patchConfigs = self[patch].get_table_prop('bash.patch.configs')
             if not patchConfigs: continue
@@ -2394,7 +2393,12 @@ class ModInfos(TableFileInfos):
             for mod_set, bp_mods in mod_sets:
                 mod_set.update(fn for fn in forward_compat_path_to_fn_list(
                     bp_mods) if fn in self)
-        return merged_,imported_
+        return merged_, imported_
+
+    def active_statuses(self):
+        """Return a dict with keys 0, 1, 2 for active, merged and imported."""
+        return {0: set(load_order.cached_active_tuple()), 1: self.merged,
+                2: self.imported}
 
     # Rest of DataStore overrides ---------------------------------------------
     def rename_operation(self, member_info, newName, store_refr=None):
@@ -2898,18 +2902,17 @@ class ModInfos(TableFileInfos):
             log.setHeader(head + _('Missing Masters for %(mm_plugin)s:') % {
                 'mm_plugin': fileInfo})
             for mod in missing:
-                log(bul + f'xx {mod}')
+                log(f'{bul}xx {mod}')
             log.setHeader(head + _('Masters for %(m_plugin)s:') % {
                 'm_plugin': fileInfo})
             present = {x for x in masters_set if x in self}
             if fileInfo.fn_key in self: #--In case is bashed patch (cf getSemiActive)
                 present.add(fileInfo.fn_key)
             merged, imported = self.getSemiActive(present)
+            all_mods = (masters_set | merged | imported) & set(self)
         else:
             log.setHeader(head + _(u'Active Plugins:'))
-            masters_set = set(load_order.cached_active_tuple())
-            merged, imported = self.merged, self.imported
-        all_mods = (masters_set | merged | imported) & set(self)
+            all_mods = {*chain.from_iterable(self.active_statuses().values())}
         all_mods = load_order.get_ordered(all_mods)
         #--List
         modIndex = 0
