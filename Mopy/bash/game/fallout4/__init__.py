@@ -134,6 +134,8 @@ class AFallout4GameInfo(PatchGame):
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
             _j('interface', 'translations'): {'.txt'},
+            # 3P: BodySlide and Outfit Studio
+            _j('calientetools', 'bodyslide', 'res', 'images'): {'.png'},
         }
         no_skip_regexes = (
             # 3P: xSE PluginPreloader F4

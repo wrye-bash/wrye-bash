@@ -184,6 +184,15 @@ class ASkyrimGameInfo(PatchGame):
             _j('interface', 'translations'): {'.txt'},
             # 3P: .NET Script Framework
             _j('netscriptframework', 'plugins'): {'.txt'},
+            # 3P: Community Shaders
+            _j('interface', 'communityshaders', 'icons', 'action icons'):
+                {'.png'},
+            _j('interface', 'communityshaders', 'icons', 'categories'):
+                {'.png'},
+            _j('interface', 'communityshaders', 'icons',
+                'community shaders logo'): {'.png'},
+            # 3P: BodySlide and Outfit Studio
+            _j('calientetools', 'bodyslide', 'res', 'images'): {'.png'},
         }
         no_skip_regexes = (
             # 3P: FNIS - meshes\actors\character\animations\<mod name>\
