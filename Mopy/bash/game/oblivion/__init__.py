@@ -157,6 +157,7 @@ class AOblivionGameInfo(PatchGame):
             'facegen',
             'fonts',
             'knights - revelation music', # 3P: KotN Revelation
+            'mapmarkers', # 3P: Map Marker Extension Framework
             'menus',
             'obse', # 3P: OBSE
             'pluggy', # 3P: Pluggy
