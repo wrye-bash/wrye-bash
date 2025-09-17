@@ -1180,9 +1180,12 @@ class Installer(ListInfo):
             # 2 subNames would be a Complex/Simple package
             item_format.text_key = 'installers.text.complex'
         #--Background
+        mouse_text = ''
         if self.skipDirFiles:
             item_format.back_key = 'installers.bkgd.skipped'
-        mouse_text = ''
+            mouse_text = _('Some files present in the package will not be '
+                           'installed. This can sometimes be fixed with Has '
+                           'Extra Directories.')
         if self.dirty_sizeCrc:
             item_format.back_key = 'installers.bkgd.dirty'
             mouse_text = _('Needs Annealing due to a change in configuration.')
