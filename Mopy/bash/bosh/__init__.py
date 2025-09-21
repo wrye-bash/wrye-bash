@@ -1618,7 +1618,7 @@ class _AFileInfos(DataStore):
                 if del_inf := self.pop(new, None): # effectively deleted
                     delinfos.add(del_inf)
                     cor_path = del_inf.abs_path
-                elif self is modInfos: # needs be set here!
+                elif self is modInfos: # modInfos needs be set here!
                     if (isg := kws.get('itsa_ghost')) is None:
                         isg = not cor_path.is_file() and os.path.isfile(
                             f'{cor_path}.ghost')

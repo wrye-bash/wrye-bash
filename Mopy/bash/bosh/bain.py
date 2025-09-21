@@ -1862,6 +1862,8 @@ def _bain_op(func):
             self.refreshTracked() # after we notify BAIN in refresh
             # Set the 'installer' column for files that track their owner
             stores = [s for s in removed_tracked if s.tracks_ownership]
+            rui_data.update( # cede_ownership might add new stores
+                (st, RefrData()) for st in stores if st not in rui_data)
             for ikey, owned_files in cede_ownership.items():
                 for owned_path in owned_files:
                     for store in stores:
@@ -2581,13 +2583,9 @@ class InstallersData(DataStore):
         """Move specified archives to specified position."""
         old_ordered = self.sorted_values(set(self) - set(moveList))
         new_ordered = self.sorted_values(moveList)
-        if newPos >= len(self): newPos = len(old_ordered)
-        for index, installer in enumerate(old_ordered[:newPos]):
+        for index, installer in enumerate(chain(old_ordered[:newPos],
+                new_ordered, old_ordered[newPos:])):
             installer.order = index
-        for index, installer in enumerate(new_ordered):
-            installer.order = newPos + index
-        for index, installer in enumerate(old_ordered[newPos:]):
-            installer.order = newPos + len(new_ordered) + index
         self.hasChanged = True
 
     #--Install

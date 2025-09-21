@@ -163,6 +163,12 @@ class PatchDialog(DialogWindow):
         patcher.Layout()
         self.currentPatcher = patcher
 
+    _congrats = _('Congratulations on managing to get a single top group to '
+        '>%(max_num_masters)d masters (you got %(curr_num_masters)d in top '
+        'grup %(top_group_sig)s)! Please post to the Wrye Bash Discord '
+        '(including your BashBugDump), we seriously did not think anyone would'
+        ' manage this. This error is fatal by the way, Wrye Bash currently '
+        'does not support splitting the Bashed Patch within a top group.')
     @balt.conversation
     def PatchExecute(self):
         """Do the patch."""
@@ -191,19 +197,11 @@ class PatchDialog(DialogWindow):
             mlimit = bush.game.Esp.master_limit
             for t_sig, t_masters in master_dict.items():
                 if len(t_masters) > mlimit:
-                    showError(self, _(
-                        'Congratulations on managing to get a single top '
-                        'group to >%(max_num_masters)d masters (you got '
-                        '%(curr_num_masters)d in top grup %(top_group_sig)s)! '
-                        'Please post to the Wrye Bash Discord (including your '
-                        'BashBugDump), we seriously did not think anyone '
-                        'would manage this. This error is fatal by the way, '
-                        'Wrye Bash currently does not support splitting the '
-                        'Bashed Patch within a top group.') % {
-                        'max_num_masters': mlimit,
-                        'curr_num_masters': len(t_masters),
-                        'top_group_sig': bolt.sig_to_str(t_sig)},
-                        title=_('Achievement Unlocked: Modaholic!'))
+                    fmt = {'max_num_masters': mlimit,
+                           'curr_num_masters': len(t_masters),
+                           'top_group_sig': bolt.sig_to_str(t_sig)}
+                    showError(self, self._congrats % fmt,
+                              title=_('Achievement Unlocked: Modaholic!'))
                     return # Abort, we can't fix this right now
                 all_bp_masters |= t_masters
             if len(all_bp_masters) <= mlimit:
