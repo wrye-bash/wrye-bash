@@ -539,15 +539,20 @@ class Installer(ListInfo):
         # skips files starting with...
         if bass.settings[u'bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
-        if bass.settings[u'bash.installers.skipLandscapeLODMeshes']:
+        if (bush.game.Bain.lod_meshes_dir and
+                bass.settings['bash.installers.skipLandscapeLODMeshes']):
             Installer._global_start_skips.append(bush.game.Bain.lod_meshes_dir)
         if bass.settings[u'bash.installers.skipScreenshots']:
             Installer._global_start_skips.extend(Installer.screenshot_dirs)
         # LOD textures
-        skipLODTextures = bass.settings[
-            u'bash.installers.skipLandscapeLODTextures']
-        skipLODNormals = bass.settings[
-            u'bash.installers.skipLandscapeLODNormals']
+        skipLODTextures = (
+                bush.game.Bain.lod_textures_dir and
+                bass.settings['bash.installers.skipLandscapeLODTextures']
+        )
+        skipLODNormals = (
+                bush.game.Bain.lod_textures_normals_suffix and
+                bass.settings['bash.installers.skipLandscapeLODNormals']
+        )
         skipAllTextures = skipLODTextures and skipLODNormals
         tex_gen = bush.game.Bain.lod_textures_dir
         normals_ext = f'{bush.game.Bain.lod_textures_normals_suffix}.dds'
@@ -1055,7 +1060,7 @@ class Installer(ListInfo):
             if rootStr.lower() in dataDirsPlus: return
             root = layout[rootStr]
             rootStr = u''.join((rootStr, _os_sep))
-            data_dir = bush.game.mods_dir.lower()
+            data_dir_heuristic = bush.game.mods_dir_path[-1].lower()
             while True:
                 if root[u'files']:
                     # There are files in this folder, call it the starting point
@@ -1068,7 +1073,7 @@ class Installer(ListInfo):
                     rootDirKey = list(rootDirs)[0]
                     rootDirKeyL = rootDirKey.lower()
                     if (rootDirKeyL in dataDirsPlus or
-                            rootDirKeyL == data_dir or
+                            rootDirKeyL == data_dir_heuristic or
                             rootDirKeyL == 'fomod'):
                         # Found suitable starting point
                         break
@@ -1397,7 +1402,7 @@ class _InstallerPackage(Installer, AFileInfo):
             if rel_src not in delta_files: continue
             progress(del_numb + upt_numb,
                      _('Syncing from %(data_folder)s folder…') % {
-                         'data_folder': bush.game.mods_dir} + f'\n{rel_src}')
+                         'data_folder': bush.game.mods_dir_name} + f'\n{rel_src}')
             full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
             full_dest = proj_dir_join(rel_dest)
             if not full_src.exists():
@@ -2350,10 +2355,10 @@ class InstallersData(DataStore):
         (but not files) specified in Installer global skips and remove empty
         dirs if the setting is on."""
         progress = progress if progress else bolt.Progress()
-        mods_dir = bass.dirs['mods']
+        data_dir_path = bass.dirs['mods']
         # Scan top level files and folders in the Data dir - for plugins use
         # modInfos cache, for other files (bsas etc.) use data_sizeCrcDate
-        progress_msg = f'{(dirname := mods_dir.stail)}: ' + '%s\n' % _(
+        progress_msg = f'{(dirname := data_dir_path.stail)}: ' + '%s\n' % _(
             'Pre-Scanning…')
         progress.setFull(1)
         progress(0, progress_msg)
@@ -2366,7 +2371,7 @@ class InstallersData(DataStore):
         # modInfos.refresh and so does RefreshData when tabbing in)
         plugins_scd = bolt.LowerDict()
         non_ghosts = set()
-        for dirent in os.scandir(mods_dir):
+        for dirent in os.scandir(data_dir_path):
             rpFile = dirent.name
             if dirent.is_dir():
                 data_dirs[rpFile] = dirent.path
@@ -2392,7 +2397,7 @@ class InstallersData(DataStore):
                 else:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate)
         dirs_paths = InstallersData._skips_in_data_dir(data_dirs)
-        root_len = len(mods_dir) + 1 # compute relative paths to the Data dir
+        root_len = len(data_dir_path) + 1 # compute relative paths to the Data dir
         progress_msg = f'{dirname}: ' + '%s\n' % _('Scanning…')
         progress.setFull(1 + len(dirs_paths))
         #--Remove empty dirs?
@@ -2407,7 +2412,7 @@ class InstallersData(DataStore):
         # don't add this logic to _walk_data_dirs it would slow usual case down
         if recalculate_all_crcs:
             siz_apath_mtime.update(
-                (k, (v[0], os.path.join(mods_dir, k), v[2])) for k, v in
+                (k, (v[0], os.path.join(data_dir_path, k), v[2])) for k, v in
                 new_sizeCrcDate.items())
             new_sizeCrcDate = plugins_scd # already calculated in fullRefresh +ghosts
         else:
@@ -2528,7 +2533,7 @@ class InstallersData(DataStore):
                                self.data_sizeCrcDate.keys())
         progress = progress or bolt.Progress()
         progress(0, _('%(data_folder)s: Skips overrides…') % {
-            'data_folder': bush.game.mods_dir} + '\n')
+            'data_folder': bush.game.mods_dir_name} + '\n')
         self.update_data_SizeCrcDate(new_skips_overrides, progress)
 
     @staticmethod
@@ -2921,7 +2926,7 @@ class InstallersData(DataStore):
     @_bain_op
     def bain_clean_data_dir(self, ci_removes, *, rui_data, **kwargs):
         destDir = bass.dirs['bainData'].join(
-            f'{bush.game.mods_dir} Folder Contents ({bolt.timestamp()})')
+            f'{bush.game.mods_dir_name} Folder Contents ({bolt.timestamp()})')
         emptyDirs = set()
         stores = data_tracking_stores()
         store_del = defaultdict(set)

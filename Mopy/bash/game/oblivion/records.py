@@ -24,6 +24,7 @@
 import random
 import re
 
+from ... import bush
 from ...bolt import Flags, LowerDict, flag, int_or_none, int_or_zero, \
     sig_to_str, str_or_none, str_to_sig, structs_cache
 from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
@@ -52,7 +53,23 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, MelRegnEntryGrasses, \
-    MelRegnEntryMapName, AMreEyes, MelEyesFlags, MelEnchantmentCharge
+    MelRegnEntryMapName, AMreEyes, MelEyesFlags, MelEnchantmentCharge, \
+    MelMgefEdidTes4Re
+
+_is_obre = bush.game.fsName == 'OblivionRE'
+
+def if_obre(ob_version, re_version):
+    """Resolves to one of two different objects, depending on whether we're
+    managing Oblivion or Oblivion Remastered."""
+    return re_version if _is_obre else ob_version
+
+def re_only(re_obj):
+    """Wrapper around if_obre that resolves to None for Oblivion. Useful for
+    things that have been added in Oblivion Remastered as MelSet will ignore
+    None elements. Can also be used with Flags, but keep in mind that a None
+    flag will still take up an index in the flags list, so it's a good idea to
+    specify flag indices explicitly when using it."""
+    return if_obre(ob_version=None, re_version=re_obj)
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -802,6 +819,8 @@ class MreCell(AMreCell):
         MelFid(b'XCCM', 'climate'),
         MelFid(b'XCWT', 'water'),
         MelOwnershipTes4(),
+        re_only(MelUInt32(b'XTLI', 'threat_level')),
+        re_only(MelBase(b'XLRL', 'unknown_xlrl')),
     )
 
 #------------------------------------------------------------------------------
@@ -1645,7 +1664,10 @@ class MreMgef(MelRecord):
     }
 
     melSet = MelSet(
-        MelMgefEdidTes4(),
+        if_obre(
+            ob_version=MelMgefEdidTes4(),
+            re_version=MelMgefEdidTes4Re(),
+        ),
         MelObme(extra_format=['2B', '2s', '4s', 'I', '4s'], extra_contents=[
             'obme_param_a_info', 'obme_param_b_info', 'obme_unused_mgef',
             'obme_handler', (_ObmeFlagOverrides, 'obme_flag_overrides'),
@@ -2034,6 +2056,8 @@ class MreRefr(MelRecord):
         MelBase(b'XRGD', 'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
         MelUInt8(b'XSOL', 'ref_soul'),
+        re_only(MelBase(b'XAAG', 'unknown_xaag')),
+        re_only(MelString(b'XACN', 'unknown_xacn')),
         MelRef3D(),
     ).with_distributor({
         b'FULL': 'full', # unused, but still need to distribute it

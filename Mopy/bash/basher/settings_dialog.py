@@ -761,7 +761,7 @@ class BackupsPage(_AFixedPage):
             bkp_setts = barb.BackupSettings(
                 settings_file, bush.game.bak_game_name,
                 bush.game.my_games_name, bush.game.bash_root_prefix,
-                bush.game.mods_dir)
+                bush.game.mods_dir_name, bush.game.Ess.saves_dir)
         try:
             with BusyCursor(): bkp_setts.backup_settings(balt)
         except exception.StateError:

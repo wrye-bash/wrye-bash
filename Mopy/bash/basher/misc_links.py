@@ -206,7 +206,7 @@ class Master_ChangeTo(_Master_EditList):
         #--Valid directory?
         if newDir != bosh.modInfos.store_dir:
             self._showError(_('File must be selected from %(data_folder)s '
-                              'folder.') % {'data_folder': bush.game.mods_dir})
+                              'folder.') % {'data_folder': bush.game.mods_dir_name})
             return
         # Handle ghosts: simply chop off the extension
         if newName.cext == '.ghost':

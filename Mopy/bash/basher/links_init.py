@@ -552,8 +552,9 @@ def InitModLinks():
         ModList.context_links.append_link(SeparatorLink())
         for pflag in chain(*reversed(bush.game.all_flags)):
             ModList.context_links.append_link(AFlipFlagLink(pflag))
-        ModList.context_links.append_link(Mod_FlipMasters())
-        ModList.context_links.append_link(Mod_CreateDummyMasters())
+        if mf := bush.game.master_flag:
+            ModList.context_links.append_link(Mod_FlipMasters(mf))
+        ModList.context_links.append_link(Mod_CreateDummyMasters(mf))
     ModList.context_links.append_link(SeparatorLink())
     if True: #--Plugin
         plugin_menu = MenuLink(_('Plugin..'))
@@ -715,7 +716,7 @@ def InitSaveLinks():
         files_menu.links.append_link(Files_Unhide(_('Unhides hidden saves.')))
     SaveList.column_links.append_link(files_menu)
     SaveList.column_links.append_link(SeparatorLink())
-    if True: #--Profile
+    if bush.game.Ini.save_profiles_key: #--Profile
         subDirMenu = MenuLink(_('Profile..'))
         subDirMenu.links.append_link(Saves_Profiles())
         SaveList.column_links.append_link(subDirMenu)
@@ -734,11 +735,11 @@ def InitSaveLinks():
         file_menu.links.append_link(File_Backup())
         file_menu.links.append_link(File_RevertToBackup())
         SaveList.context_links.append_link(file_menu)
-    if True: #--Move To
+    if bush.game.Ini.save_profiles_key: #--Move To
         moveMenu = MenuLink(_('Move To..'))
         moveMenu.links.append_link(Save_Move())
         SaveList.context_links.append_link(moveMenu)
-    if True: #--Copy To
+    if bush.game.Ini.save_profiles_key: #--Copy To
         copyMenu = MenuLink(_('Copy To..'))
         copyMenu.links.append_link(Save_Move(copyMode=True))
         SaveList.context_links.append_link(copyMenu)

@@ -288,6 +288,11 @@ class _ModsUIList(UIList):
     _do_size_checks = bush.game.Esp.check_master_sizes
     _masters_first_default = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if bush.game.master_flag:
+            self._extra_sortings.insert(0, _ModsUIList._sort_masters_first)
+
     def _sort_masters_first(self, items):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
@@ -307,7 +312,7 @@ class _ModsUIList(UIList):
                 elif x in set_imported: return 2
                 else: return 3
             items.sort(key=_sel_sort_key)
-    _extra_sortings = [_sort_masters_first, _activeModsFirst]
+    _extra_sortings = [_activeModsFirst]
 
     @property
     def masters_first(self):
@@ -2557,7 +2562,8 @@ class InstallersList(UIList):
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _('Refreshing from %(data_folder)s…') % {
-                        'data_folder': bush.game.mods_dir} + f'\n{" " * 60}')
+                        'data_folder': bush.game.mods_dir_name}
+                                + f'\n{" " * 60}')
                     self.data_store.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
@@ -3532,7 +3538,7 @@ class BashFrame(WindowFrame):
                 'disabled. This may cause problems in %(game_name)s; see the '
                 'auto-ghost section of the readme for more details and '
                 'consider enabling auto-ghosting.') % {
-                'data_folder': bush.game.mods_dir,
+                'data_folder': bush.game.mods_dir_name,
                 'game_name': bush.game.display_name}
             if infos_num >= 400:
                 message = _(
@@ -3540,7 +3546,7 @@ class BashFrame(WindowFrame):
                     'in your %(data_folder)s folder and auto-ghosting is '
                     'disabled. This will cause problems in %(game_name)s; see '
                     'the auto-ghost section of the readme for more '
-                    'details.') % {'data_folder': bush.game.mods_dir,
+                    'details.') % {'data_folder': bush.game.mods_dir_name,
                                    'game_name': bush.game.display_name}
             showWarning(self, message, title=_('Too Many Plugins.'))
 

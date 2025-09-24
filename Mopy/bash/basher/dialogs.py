@@ -397,15 +397,13 @@ class CreateNewPlugin(DialogWindow):
         curr_p_ext = self._plugin_ext.get_value()
         # For .esl files force-check the ESM/ESL flags, for .esm the ESM flag
         # and force disable the OVERLAY flag if no masters are present
-        pflags = bush.game.plugin_flags
-        force_flags = pflags.guess_flags(curr_p_ext, bush.game,
-                                         self._chosen_masters)
+        force_flags = bush.game.guess_flags(curr_p_ext, self._chosen_masters)
         for pflag, chkbox in self._flags_chkboxes.items():
             chkbox.is_checked = force_flags.get(pflag, chkbox.is_checked)
             chkbox.enabled = pflag not in force_flags
         checks = {pflag: chkbox.is_checked for pflag, chkbox in
                   self._flags_chkboxes.items()}
-        checks = pflags.check_flag_assignments(
+        checks = bush.game.plugin_flags.check_flag_assignments(
             checks, raise_on_invalid=False)
         for pflag, is_checked in checks.items():
             self._flags_chkboxes[pflag].is_checked = is_checked
@@ -569,7 +567,7 @@ class SyncFromDataEditor(_ABainMLE):
             mlel_items=list(map(str, pkg_mismatched)))
         sync_desc = _('Update %(target_package)s according to '
                       '%(data_folder)s folder?') % {
-            'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
+            'target_package': pkg_name, 'data_folder': bush.game.mods_dir_name}
         sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
         super().__init__(parent, data_desc=sync_desc,
             list_data=[del_data, upd_data], ok_label=_('Update'))
@@ -581,7 +579,7 @@ class CleanDataEditor(_ABainMLE):
     _def_size = (450, 500)
 
     def __init__(self, parent, *, unknown_files: list[CIstr]):
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         to_move_data = MLEList(
             mlel_title=_('Files To Move (%(to_move_count)d):') % {
                 'to_move_count': len(unknown_files)},
@@ -601,7 +599,7 @@ class MonitorExternalInstallationEditor(_ABainMLE):
     def __init__(self, parent, *, new_files: list[CIstr],
             changed_files: list[CIstr], touched_files: list[CIstr],
             deleted_files: list[CIstr]):
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         newf_data = MLEList(
             mlel_title=_('New Files (%(new_file_cnt)d):') % {
                 'new_file_cnt': len(new_files)},

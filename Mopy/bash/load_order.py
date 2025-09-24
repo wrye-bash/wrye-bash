@@ -65,14 +65,9 @@ __active_mods_sentinel = {}
 _active_mods_lists = {}
 
 def initialize_load_order_files():
-    if bass.dirs['saveBase'] == bass.dirs['app']:
-        #--If using the game directory as rather than the appdata dir.
-        _dir = bass.dirs['app']
-    else:
-        _dir = bass.dirs['userApp']
     global _plugins_txt_path, _loadorder_txt_path, _lord_pickle_path
-    _plugins_txt_path = _dir.join('plugins.txt')
-    _loadorder_txt_path = _dir.join('loadorder.txt')
+    _plugins_txt_path = bass.dirs['lo'].join('plugins.txt')
+    _loadorder_txt_path = bass.dirs['lo'].join('loadorder.txt')
     _lord_pickle_path = bass.dirs['saveBase'].join('BashLoadOrders.dat')
 
 def initialize_load_order_handle(modinfos, game_handle):

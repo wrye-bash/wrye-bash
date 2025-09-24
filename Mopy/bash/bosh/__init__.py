@@ -159,8 +159,7 @@ class MasterInfo:
         """For esm missing masters check extension - for scale flags rely on
         cached info."""
         if pflag is bush.game.master_flag:
-            return pflag in bush.game.plugin_flags.guess_flags(
-                self.get_extension(), bush.game)
+            return bush.game.guess_flags(self.get_extension()).get(pflag, False)
         return pflag in self._was_scale # should we use ext heuristics for esl?
 
     @_mod_info_delegate
@@ -452,7 +451,7 @@ class ModInfo(_WithMastersInfo):
         for pl_flag, flag_val in flags_dict.items():
             pl_flag.set_mod_flag(self, flag_val, bush.game)
             if flag_val is not None and pl_flag is bush.game.master_flag:
-                self._update_onam() # recalculate ONAM info if necessary
+                self._update_onam(pl_flag) # recalculate ONAM info if necessary
         if save_flags: self.writeHeader(rescan_merge=True)
 
     def _scan_fids(self, fid_cond):
@@ -624,8 +623,8 @@ class ModInfo(_WithMastersInfo):
                               'Userlist:'), sorted(loot_removed), tagList)
         dir_added, dir_removed = read_dir_tags(mname)
         has_tags_source |= bool(dir_added | dir_removed)
-        tags_file_fmt = {'tags_file': f"'{bush.game.mods_dir}/BashTags"
-                                      f"/{mname.fn_body}.txt'"}
+        tags_file_fmt = {'tags_file': os.path.join(
+            bush.game.mods_dir_name, 'BashTags', f'{mname.fn_body}.txt')}
         if dir_added:
             tagList = _tags(_('Added by %(tags_file)s:') % tags_file_fmt,
                 sorted(dir_added), tagList)
@@ -939,12 +938,12 @@ class ModInfo(_WithMastersInfo):
                 return _('Has size-mismatched masters.')
         return ''
 
-    def _update_onam(self):
+    def _update_onam(self, mf):
         """Checks if this plugin needs ONAM data and either adds or removes it
         based on that."""
         # Skip for games that don't need the ONAM generation
         if bush.game.Esp.generate_temp_child_onam:
-            if bush.game.master_flag.cached_type(self):
+            if mf.cached_type(self):
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)
@@ -2460,7 +2459,7 @@ class ModInfos(TableFileInfos):
             lo_warnings.append((_('The following plugins could not be found '
                     'in the %(data_folder)s folder or are corrupt and have '
                     'thus been removed from the load order.') % {
-                                    'data_folder': bush.game.mods_dir, },
+                                    'data_folder': bush.game.mods_dir_name, },
                                 self.warn_missing_lo_act))
             self.warn_missing_lo_act = set()
         if self.selectedExtra:
@@ -3055,6 +3054,7 @@ class ModInfos(TableFileInfos):
 class SaveInfos(TableFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = tracks_ownership = False
+    _ess_skips = bush.game.Ess.save_skips
     # Enabled and disabled saves, no .bak files ##: needed?
     _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
     file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
@@ -3077,14 +3077,21 @@ class SaveInfos(TableFileInfos):
         oblivion.ini file, else update the ini with save_dir."""
         # saveInfos singleton is constructed in InitData after oblivionIni
         prev = getattr(self, 'localSave', None)
-        if save_dir is None:
-            save_dir = oblivionIni.getSetting(*bush.game.Ini.save_profiles_key,
-                default=bush.game.Ini.save_prefix).rstrip('\\')
-        else: # set SLocalSavePath in Oblivion.ini - the latter must exist
-            # not sure if appending the slash is needed for the game to parse
-            # the setting correctly, kept previous behavior
-            oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
-                                    value=f'{save_dir}\\')
+        if bush.game.Ini.save_profiles_key:
+            if save_dir is None:
+                save_dir = oblivionIni.getSetting(
+                    *bush.game.Ini.save_profiles_key,
+                    default=bush.game.Ini.save_prefix).rstrip('\\')
+            else:
+                # set SLocalSavePath in Oblivion.ini - the latter must exist.
+                # Not sure if appending the slash is needed for the game to
+                # parse the setting correctly, kept previous behavior
+                oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
+                                        value=f'{save_dir}\\')
+        else:
+            # The game has no INI key for the Saves folder and instead uses a
+            # hardcoded folder name
+            save_dir = bush.game.Ess.saves_dir
         self.localSave = save_dir
         if (boot := prev is None) or prev != save_dir:
             old = not boot and self.store_dir
@@ -3136,6 +3143,8 @@ class SaveInfos(TableFileInfos):
 
     @classmethod
     def rightFileType(cls, fileName: bolt.FName | str):
+        if fileName in cls._ess_skips:
+            return False
         return all(cls._parse_save_path(fileName))
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:

@@ -193,7 +193,8 @@ class _AGmstTweak(_ASettingsTweak):
         return lower_eid # fallback, should never happen
 
     def validate_values(self, chosen_values: tuple) -> str | None:
-        if bush.game.fsName == 'Oblivion': ##: add a comment why TES4 only!
+        ##: add a comment why TES4 only!
+        if bush.game.fsName in ('Oblivion', 'OblivionRE'):
             for target_value in chosen_values:
                 if not isinstance(target_value, str) and target_value < 0:
                     return _("Oblivion GMST values can't be negative")

@@ -439,7 +439,7 @@ class Installer_Anneal(Installer_Op, _NoMarkerLink):
     _help = _('Install any missing files (for active packages) and update '
               'the contents of the %(data_folder)s folder to account for '
               'install order and configuration changes in the selected '
-              'packages.') % {'data_folder': bush.game.mods_dir}
+              'packages.') % {'data_folder': bush.game.mods_dir_name}
     _prog_args = _('Annealing…'),
 
     def _perform_action(self, **kwargs):
@@ -687,7 +687,7 @@ class Installer_ExportAchlist(_SingleInstallable):
         with BusyCursor(), achlist.open(u'w', encoding=u'cp1252') as out:
             out.write(u'[\n\t"')
             lines = u'",\n\t"'.join(
-                u'\\'.join((bush.game.mods_dir, d)).replace(u'\\', u'\\\\')
+                u'\\'.join((*bush.game.mods_dir_path, d)).replace(u'\\', u'\\\\')
                 for d in bolt.sortFiles(self._selected_info.ci_dest_sizeCrc)
                 # exclude top level files and docs - last one monkey patched
                 if os.path.split(d)[0] and not d.lower().startswith(u'docs'))
@@ -855,7 +855,7 @@ class Installer_Uninstall(Installer_Op, _NoMarkerLink):
     _text = _('Uninstall')
     _help = _('Uninstall the selected packages, removing all their matched '
               'files from the %(data_folder)s folder.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
     _prog_args = _('Uninstalling…'),
 
     def _perform_action(self, **kwargs):
@@ -1160,7 +1160,7 @@ class Installer_SyncFromData(_SingleInstallable):
     """Synchronize an archive or project with files from the Data directory."""
     _text = _('Sync From Data…')
     _help = _('Synchronize a package with files from the %(data_folder)s '
-              'folder.') % {'data_folder': bush.game.mods_dir}
+              'folder.') % {'data_folder': bush.game.mods_dir_name}
 
     def _enable(self):
         return super()._enable() and bool(self._selected_info.missingFiles or

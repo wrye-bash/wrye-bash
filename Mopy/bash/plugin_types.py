@@ -24,9 +24,9 @@
 as flags but file extension may play a role. The PluginFlag enum is used to
 define the various flags a plugin can have, while the MergeabilityCheck enum
 is used to define the various mergeability checks that a game can have. We
-might need game specific information (check the game_handle argument) but these
-classes are above GameInfo - keep this module top level. PF was created after
-MC as plugin types started proliferating - their contract is still WIP."""
+might need game specific information but these classes are above GameInfo -
+keep this module top level. PF was created after MC as plugin types started
+proliferating - their contract is still WIP."""
 import os
 import sys
 from collections import Counter, defaultdict
@@ -54,7 +54,7 @@ def _pbash_mergeable_no_load(mod_inf, minfos, reasons, game_handle):
     if is_vanilla(mod_inf, reasons, game_handle):
         return False # don't do further checks even in verbose mode
     _exit = __exit if reasons is None else reasons.append # append returns None
-    if game_handle.master_flag.has_flagged(mod_inf) and _exit(_(
+    if (mf := game_handle.master_flag) and mf.has_flagged(mod_inf) and _exit(_(
             'This plugin has the ESM flag.')):
         return False
     #--Bashed Patch
@@ -248,24 +248,14 @@ class PluginFlag(Enum):
             else: # just init
                 set_flag = self.has_flagged(mod_info)
             if not set_flag: # if we are not flagged check the file extension
-                set_flag = self._force_ext_flags(mod_info, game_handle,
-                                                 mod_info.get_extension())
+                set_flag = game_handle.force_ext_flags(mod_info, self)
             setattr(mod_info, self._mod_info_attr, set_flag)
         except AttributeError: # mod_info is a ModInfo.header.flags1 instance
             setattr(mod_info, self._flag_attr, set_flag)
 
-    def _force_ext_flags(self, mod_info, game_handle, mext):
-        return False
-
     @classmethod
     def check_flag_assignments(cls, flag_dict, raise_on_invalid=True):
         return flag_dict
-
-    @classmethod
-    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
-        """Guess the flags of a mod/master info from its filename extension.
-        Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
-        return {game_handle.master_flag: True} if mod_fn_ext == '.esm' else {}
 
     # FIDs and mod index handling
     @classmethod
@@ -328,7 +318,15 @@ PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 PluginFlag.max_plugins = 255
 PluginFlag.error_msgs = {}
 
-class AMasterFlag(PluginFlag):
+class NoMasterFlag(PluginFlag):
+    """Base class: No master flag."""
+
+    @classmethod
+    def sort_masters_key(cls, _mod_inf) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first."""
+        return ()
+
+class AMasterFlag(NoMasterFlag, PluginFlag):
     """Master flags - affect load order - mutually compatible and compatible
     with scale flags."""
 
@@ -339,27 +337,8 @@ class AMasterFlag(PluginFlag):
             self.help_flip = _('Flip the ESM flag on the selected plugins, '
                 'turning masters into regular plugins and vice versa.')
 
-    def _force_ext_flags(self, mod_info, game_handle, mext):
-        if self is self.ESM: # only check extension for esms
-            if game_handle.fsName == 'Morrowind':
-                ##: This is wrong, but works for now. We need game-specific
-                # record headers to parse the ESM flag for MW correctly - #480!
-                return mext == '.esm'
-            elif game_handle.Esp.extension_forces_flags:
-                # For games since FO4/SSE, .esm and .esl files set the
-                # master flag in memory even if not set on the file on disk.
-                # For .esp files we must check for the flag explicitly.
-                return self in game_handle.plugin_flags.guess_flags(
-                    mext, game_handle)
-        return False
-
     @classmethod
     def checkboxes(cls):
         return {cls.ESM: {'cb_label': _('ESM Flag'), 'chkbx_tooltip': _(
             'Whether or not the the resulting plugin will be a master, i.e. '
             'have the ESM flag.')}}
-
-    @classmethod
-    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
-        """Return a key so that ESMs come first."""
-        return not cls.ESM.cached_type(mod_inf),

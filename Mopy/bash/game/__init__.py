@@ -57,6 +57,11 @@ class _MasterFlag(AMasterFlag):
     """Enum with a single member for the Master flag."""
     ESM = ('esm_flag', '_is_master', 'm')
 
+    @classmethod
+    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first."""
+        return not cls.ESM.cached_type(mod_inf),
+
 class _EslMixin(PluginFlag):
     """Mixin for ESL and newer games. The flags in this emum can not be set
     together but seems they are always compatible with AMasterFlag's."""
@@ -148,16 +153,6 @@ class _EslMixin(PluginFlag):
             k: k in set_true for k in cls}}
 
     # Overrides ---------------------------------------------------------------
-    def _force_ext_flags(self, mod_info, game_handle, mext):
-        return self is type(self).ESL and self in self.guess_flags(mext,
-                                                                   game_handle)
-
-    @classmethod
-    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
-        return {game_handle.master_flag: True, cls.ESL: True} if \
-            mod_fn_ext == '.esl' else super().guess_flags(
-            mod_fn_ext, game_handle)
-
     @classmethod
     def format_fid(cls, whole_lo_fid, fid_orig_plugin, modinfos):
         """Format a whole-LO FormID, which can exceed normal FormID limits
@@ -245,13 +240,6 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
             self.fid_fmt_str = '%04X'
             self.fid_mask = 0x0000FFFF
 
-    def _force_ext_flags(self, mod_info, game_handle, mext):
-        # .esl extension does not matter for overlay flagged plugins
-        # check the flag attribute directly we may be called in
-        # ESL.set_mod_flag(None), before OVERLAY.set_mod_flag(None)
-        return not type(self).OVERLAY.has_flagged(mod_info) and \
-            super()._force_ext_flags(mod_info, game_handle, mext)
-
     @classmethod
     def checkboxes(cls):
         ttip = _('Whether or not the resulting plugin will only be limited to '
@@ -268,11 +256,6 @@ class _SFPluginFlag(_EslMixin, PluginFlag):
                 'max_regular_plugins': cls.max_plugins,
                 'max_esl_plugins': cls.ESL.max_plugins,
                 'max_mid_plugins': cls.MID.max_plugins}
-
-    @classmethod
-    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
-        sup = super().guess_flags(mod_fn_ext, game_handle)
-        return sup if masters_supplied else {**sup, cls.OVERLAY: False}
 
 _SFPluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M:'
     ' %(status_num_espm)d, ESL: %(ESL)d, MID: %(MID)d, Overlay: %(OVERLAY)d)')
@@ -344,16 +327,18 @@ class GameInfo(object):
     # default Bashed Patch resource files (e.g. CSV files) are stored. If
     # empty, indicates that WB does not come with any such files for this game
     bash_patches_dir = u''
-    # True if the game uses the 'My Documents' folder, False to just use the
-    # game path
-    uses_personal_folders = True
     # Name of the folder in My Documents\My Games that holds this game's data
     # (saves, INIs, etc.)
     my_games_name = u''
-    # Name of the game's AppData folder, relative to %LocalAppData%
-    appdata_name = u''
+    # Name of the game's AppData folder, relative to %LocalAppData%. If empty,
+    # indicates that this game has no AppData folder
+    appdata_name = ''
+    # The path segments (relative to the game folder) leading to the directory
+    # where the launch_exe sits (and thus where tools like the script extender
+    # have to be placed)
+    executable_dir = []
     # The exe to use when launching the game (without xSE present)
-    launch_exe = u'' ## Example: u'TESV.exe'
+    launch_exe = '' ## Example: 'TESV.exe'
     # Path to one or more files to look for to see if this is the right game
     # when joined with the game's root path (i.e. the one above the Data
     # folder). The combination of these files must be unique among all games.
@@ -368,15 +353,19 @@ class GameInfo(object):
     # these are GOG, Steam and Windows Store).
     game_detect_excludes = set()
     # Path to a file to pass to env.get_file_version to determine the game's
-    # version. Usually the same as launch_exe, but some games need different
-    # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
-    # and therefore needs a different file here).
-    version_detect_file = u''
+    # version. Usually the same as launch_exe (and will be looked for in the
+    # same directory), but some games need different ones here (e.g. Enderal,
+    # which has Skyrim's version in the launch_exe, and therefore needs a
+    # different file here).
+    version_detect_file = ''
     # The main plugin Wrye Bash should look for
     master_file: bolt.FName = bolt.FName('')
-    # The directory in which mods and other data files reside. This is relative
-    # to the game directory.
-    mods_dir = u'Data'
+    # The name of the directory in which mods and other data files reside. This
+    # will be shown to the user and should be the simple name of the directory
+    mods_dir_name = 'Data'
+    # The path to the directory in which mods and other data files reside,
+    # relative to the game directory. Given as path components.
+    mods_dir_path = ['Data']
     # The name of the directory containing the taglist for this game, relative
     # to 'Mopy/taglists'
     taglist_dir = u''
@@ -462,6 +451,22 @@ class GameInfo(object):
             self.game_ini_path = initialization.init_dirs(self, *args)
         self._init_plugin_types()
 
+    def guess_flags(self, mod_fn_ext, masters_supplied=()):
+        """Guess the flags of a mod/master info from its filename extension.
+        Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
+        if (mf := self.master_flag) is None:
+            return {}
+        if mod_fn_ext == '.esl':
+            return {mf: True, self.plugin_flags.ESL: True}
+        return {mf: True} if mod_fn_ext == '.esm' else {}
+
+    def force_ext_flags(self, mod_info, pflag):
+        # For games since FO4/SSE, .esm and .esl files set the master flag in
+        # memory even if not set on the file on disk. For .esp files we must
+        # check for the flag explicitly.
+        return self.Esp.extension_forces_flags and self.guess_flags(
+            mod_info.get_extension()).get(pflag, False)
+
     # Master esm form ids factory
     __master_fids = {}
     @classmethod
@@ -486,6 +491,13 @@ class GameInfo(object):
                     # Clamp HITMEs to the plugin's own address space
                     return __masters[-1], self.short_fid & 0xFFFFFF
         return _FormID
+
+    @staticmethod
+    def get_lo_dir(bass_dirs):
+        """Determine the directory where plugins.txt etc. are stored. Called
+        in the middle of bass.dirs initialization, hence the need for the
+        bass_dirs parameter."""
+        return bass_dirs['userApp']
 
     class St:
         """Information about this game on Steam."""
@@ -570,7 +582,7 @@ class GameInfo(object):
 
         @classmethod
         def exe_path_sc(cls):
-            exe_xse = bass.dirs['app'].join(cls.exe)
+            exe_xse = bass.dirs['exe'].join(cls.exe)
             return exe_xse if exe_xse.is_file() else None
 
     class Sd(object):
@@ -631,10 +643,15 @@ class GameInfo(object):
         # first one *must* be the main INI!
         #  Example: [u'Oblivion.ini']
         dropdown_inis = []
+        # Whether the INIs sit in My Documents (=> True) or above the Data
+        # folder (=> False)
+        game_inis_in_my_documents = True
         # Whether or not this game supports the OBSE INI format
         has_obse_inis = False
         # INI setting used to setup Save Profiles
         #  (section, key)
+        # If empty, indicates that this game does not have such an INI key and
+        # thus does not support profiles
         save_profiles_key = (u'General', u'SLocalSavePath')
         # Base dir for the save_profiles_key setting above
         save_prefix = u'Saves'
@@ -713,6 +730,17 @@ class GameInfo(object):
         ext = u'.ess'
         # Whether or not this game has screenshots in its savegames
         has_screenshots = True
+        # Filenames of files that have the save extension, but aren't actually
+        # saves and should thus be skipped
+        save_skips = set()
+        # The name of the folder inside the saveBase directory (see
+        # base_saves_path below) where save games are stored
+        saves_dir = 'Saves'
+
+        @classmethod
+        def base_saves_path(cls, personal: bolt.Path, my_games_name: str):
+            """Determines the saveBase directory for this game."""
+            return personal.join('My Games', my_games_name)
 
     class Bsa(object):
         """Information about the BSAs (Bethesda Archives) used by this game."""
@@ -809,11 +837,14 @@ class GameInfo(object):
         keep_data_files = set()
         # File prefixes in the Data folder to exclude from Clean Data
         keep_data_file_prefixes = set()
-        # The directory into which LOD meshes are installed
+        # The directory into which LOD meshes are installed. An empty string
+        # means no such directory exists.
         lod_meshes_dir = _j('meshes', 'lod')
-        # The directory into which LOD textures are installed
+        # The directory into which LOD textures are installed. An empty string
+        # means no such directory exists.
         lod_textures_dir = _j('textures', 'lod')
-        # The suffix that LOD textures used as normals have in this game
+        # The suffix that LOD textures used as normals have in this game. An
+        # empty string means this game has no LOD normals.
         lod_textures_normals_suffix = '_n'
         # Literal file paths BAIN shouldn't skip
         no_skip = set()
@@ -828,7 +859,8 @@ class GameInfo(object):
         skip_bain_refresh = set(
             # Use lowercase names
         )
-        # Wrye Bash files to exclude from Clean Data
+        # Files generated by Wrye Bash in the Data folder. They should thus be
+        # excluded from Clean Data and Monitor External Installation.
         wrye_bash_data_files = set()
         # Wrye Bash directories to install and exclude from Clean Data
         wrye_bash_data_dirs = {'bash patches', 'bashtags', 'ini tweaks'}
@@ -992,15 +1024,14 @@ class GameInfo(object):
                     {(h % {'FLAG': k}, msg % fmt): lam for (h, msg), lam in
                      v.items()})
         pflags = self.plugin_flags
-        self.all_flags = self.master_flags, pflags
-        self.master_flag = self.master_flags.ESM
+        self.all_flags = (mfs := self.master_flags), pflags
+        self.master_flag = next(iter(reversed(mfs)), None) # ESM comes last!
         # careful here, we might be re-initializing (bash.ini handling in bash)
         scale_flags.clear()
         scale_flags.update((m, m.fl_offset) for m in pflags if m.fl_offset)
         # leave magic 255 below we might re-initialize!
         PluginFlag.max_plugins = 255 - len(scale_flags)
-        master_suffixes = ['', *_prod(*
-            (('', f.ui_letter_key) for f in self.master_flags))]
+        master_suffixes = ['', *_prod(*(('', f.ui_letter_key) for f in mfs))]
         type_prefixes = ['', *_prod(*(('', f.ui_letter_key) for f in pflags))]
         # plugin flags are mutually exclusive - generate mouse texts
         forbidden_suffixes = [su for su in type_prefixes if len(su) > 1]

@@ -103,7 +103,7 @@ class AOblivionGameInfo(PatchGame):
         def exe_path_sc(cls):
             # OBSE refuses to start when its EXE is launched on a Steam
             # installation
-            if 'steam' in bass.dirs['app'].cs:
+            if 'steam' in bass.dirs['exe'].cs:
                 return None
             return super().exe_path_sc()
 

@@ -563,7 +563,7 @@ class WryeParser(PreParser):
         if bush.game.Se.se_abbrev:
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs['exe'].join(ver_file)
                 if ver_path.exists(): break
             return self._TestVersion(self._TestVersion_Want(seWant), ver_path)[
                 0]
@@ -779,7 +779,7 @@ class WryeParser(PreParser):
         if bush.game.Se.se_abbrev:
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs['exe'].join(ver_file)
                 if ver_path.exists(): break
             need_have = self._TestVersion(seWant, ver_path)
             bSEOk = need_have[0] >= 0
