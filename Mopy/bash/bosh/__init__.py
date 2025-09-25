@@ -1099,7 +1099,7 @@ class ModInfo(_WithMastersInfo):
         # in this case the file is marked as normal but let's delete the ghost
         return *sup, self.abs_path + '.ghost' # Path.__add__!
 
-    def fs_copy(self, dup_path, *, set_time=None):
+    def fs_copy(self, dup_path, *, set_time=None, do_move=False):
         destDir, destName = dup_path.head, dup_path.stail
         if destDir == (st := self._store()).store_dir and destName in st:
             dup_path = st[destName].abs_path # used the (possibly) ghosted path
@@ -1533,16 +1533,16 @@ class SaveInfo(_WithMastersInfo):
         # now add backups and cosaves backups
         return *super().delete_paths(), *map(__abs, self._co_saves.values())
 
-    def move_info(self, destDir):
-        """Moves member file to destDir. Will overwrite!"""
-        super().move_info(destDir)
-        SaveInfos.co_copy_or_move(self._co_saves, destDir.join(self.fn_key),
-                                  move_cosave=True)
-
-    def fs_copy(self, dup_path, *, set_time=None):
+    def fs_copy(self, dup_path, *, do_move=False, **kwargs):
         """Copies savefile and associated cosaves file(s)."""
-        super().fs_copy(dup_path, set_time=set_time)
-        SaveInfos.co_copy_or_move(self._co_saves, dup_path)
+        super().fs_copy(dup_path, do_move=do_move,  **kwargs)
+        for co_type, co_file in self._co_saves.items():
+            newPath = co_type.get_cosave_path(dup_path)
+            if newPath.exists(): newPath.remove() ##: dont like it, investigate
+            co_apath = co_file.abs_path
+            if co_apath.exists():
+                path_func = co_apath.moveTo if do_move else co_apath.copyTo
+                path_func(newPath)
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
@@ -3369,16 +3369,6 @@ class SaveInfos(_AFileInfos):
         if not booting: # else we just called __init__
             self.set_store_dir(save_dir, do_swap, rd_out)
         return super().refresh(refresh_in, booting=booting, **kwargs)
-
-    @staticmethod
-    def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
-        for co_type, co_file in co_instances.items():
-            newPath = co_type.get_cosave_path(dest_path)
-            if newPath.exists(): newPath.remove() ##: dont like it, investigate
-            co_apath = co_file.abs_path
-            if co_apath.exists():
-                path_func = co_apath.moveTo if move_cosave else co_apath.copyTo
-                path_func(newPath)
 
 #------------------------------------------------------------------------------
 class BSAInfos(_AFileInfos):

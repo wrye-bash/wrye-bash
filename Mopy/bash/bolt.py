@@ -1732,11 +1732,13 @@ class AFile(object):
         """
         self.fsize, self.ftime = stat_tuple
 
-    def fs_copy(self, dup_path: Path, *, set_time=None):
-        """Duplicate file to dup_path. If set_time is None, we set the mtime
+    def fs_copy(self, dup_path: Path, *, set_time=None, do_move=False):
+        """Copy/move file to dup_path. If set_time is None, we set the mtime
         of the duplicate path to ftime. This should really be a
         _mark_not_changed internal API (what about ctime?)."""
-        self.abs_path.copyTo(dup_path, set_time=set_time or self.ftime)
+        op = self.abs_path.moveTo if do_move else partial(
+            self.abs_path.copyTo, set_time=set_time or self.ftime)
+        op(dup_path)
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.abs_path.stail}>'
@@ -1865,7 +1867,7 @@ class ListInfo:
         # TODO(ut) : when duplicating pass the info in and load_cache=False
         self.fs_copy(dup_path, set_time=set_time)
 
-    def fs_copy(self, dup_path, *, set_time=None):
+    def fs_copy(self, dup_path, **kwargs):
         raise NotImplementedError # not all ListInfos are AFiles
 
     def __str__(self):
@@ -1885,11 +1887,6 @@ class AFileInfo(AFile, ListInfo):
     def delete_paths(self):
         """Paths to delete when this item is deleted - abs_path comes first!"""
         return self.abs_path,
-
-    def move_info(self, destDir):
-        """Hasty method used in UIList.hide(). Will overwrite! The client is
-        responsible for calling _delete_refresh of the data store."""
-        self.abs_path.moveTo(destDir.join(self.fn_key))
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         """Return possible paths this file's renaming might affect (possibly

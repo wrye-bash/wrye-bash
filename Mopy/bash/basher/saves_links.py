@@ -696,10 +696,7 @@ class Save_Move(ChoiceLink):
                 #if result is true just do the job but ask next time if applicable as well
                 if not result: continue
                 ask = ask and result != 2 # so don't warn for rest of operation
-            if self.copyMode:
-                save_inf.fs_copy(destDir.join(fileName))
-            else:
-                save_inf.move_info(destDir)
+            save_inf.fs_copy(destDir.join(fileName), do_move=not self.copyMode)
             if att_dict := save_inf.get_persistent_attrs():
                 destTable.pickled_data[fileName] = att_dict
                 do_save = 1
