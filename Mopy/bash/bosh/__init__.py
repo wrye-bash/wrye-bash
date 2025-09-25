@@ -417,9 +417,6 @@ class FileInfo(_TabledInfo, AFileInfo):
         return [backPath for first in (True, False) for backPath, __path in
                 self.backup_restore_paths(first, fname)]
 
-    def delete_paths(self): # will include cosave ones
-        return *super().delete_paths(), *self.all_backup_paths()
-
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
         # all_backup_paths will return the backup paths for this file and its
@@ -1091,14 +1088,6 @@ class ModInfo(_WithMastersInfo):
         return self.fn_key in bush.game.modding_esm_size or \
                self.fn_key == 'Oblivion.esm'
 
-    def delete_paths(self):
-        sup = super().delete_paths()
-        if self.is_ghost:
-            return sup
-        # Add ghosts - the file may exist in both states (bug, or user mistake)
-        # in this case the file is marked as normal but let's delete the ghost
-        return *sup, self.abs_path + '.ghost' # Path.__add__!
-
     def fs_copy(self, dup_path, *, set_time=None, do_move=False):
         destDir, destName = dup_path.head, dup_path.stail
         if destDir == (st := self._store()).store_dir and destName in st:
@@ -1106,11 +1095,17 @@ class ModInfo(_WithMastersInfo):
         super().fs_copy(dup_path, set_time=set_time)
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
+        old_new_paths = super().get_rename_paths(new_name, rename_dir,
+                                                 with_backups)
         if rename_dir is None: # renames only, not the rest of rename_op uses
+            new_ghost = old_new_paths[0][1] + '.ghost' # Path.__add__!
             if self.is_ghost: # add ghost extension to dest path
-                old_new_paths[0] = (self.abs_path, # Path.__add__!
-                                    old_new_paths[0][1] + '.ghost')
+                old_new_paths[0] = self.abs_path, new_ghost
+            else:
+                # Add ghosts - the file may exist in both states (bug, or user
+                # mistake) in this case the file is marked as normal but let's
+                # rename the ghost too - else will appear and frighten the user
+                old_new_paths.append((self.abs_path + '.ghost', new_ghost))
             old_new_paths.append((tp := self.tags_path(),
                                   tp.head.join(f'{new_name.fn_body}.txt')))
         return old_new_paths
@@ -1529,10 +1524,6 @@ class SaveInfo(_WithMastersInfo):
         except (AttributeError, NotImplementedError):
             self.has_inaccurate_masters = False
 
-    def delete_paths(self, *, __abs=attrgetter_cache['abs_path']):
-        # now add backups and cosaves backups
-        return *super().delete_paths(), *map(__abs, self._co_saves.values())
-
     def fs_copy(self, dup_path, *, do_move=False, **kwargs):
         """Copies savefile and associated cosaves file(s)."""
         super().fs_copy(dup_path, do_move=do_move,  **kwargs)
@@ -1721,9 +1712,10 @@ class DataStore(DataDict):
         return self._delete_operation(finfos, recycle, do_refr)
 
     def _delete_operation(self, finfos: list, recycle, do_refr):
-        try:
-            if abs_del_paths := [*chain.from_iterable(
-                    inf.delete_paths() for inf in finfos)]:
+        renpaths = chain.from_iterable(inf.get_rename_paths(
+            inf.fn_key, None, True) for inf in finfos)
+        try: # collect all the info/cosaves/backup paths
+            if abs_del_paths := [a for a, b in renpaths]:
                 env.shellDelete(abs_del_paths, recycle=recycle)
         finally:
             finfos = {inf for inf in finfos if not inf.abs_path.exists()}

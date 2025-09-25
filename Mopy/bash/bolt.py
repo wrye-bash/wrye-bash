@@ -1884,10 +1884,6 @@ class AFileInfo(AFile, ListInfo):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
         super().__init__(fullpath, **kwargs)
 
-    def delete_paths(self):
-        """Paths to delete when this item is deleted - abs_path comes first!"""
-        return self.abs_path,
-
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
