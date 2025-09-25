@@ -1810,7 +1810,7 @@ class ListInfo:
             name_str = cls._new_name(base_name, __unique_counter)
         return FName(name_str)
 
-    def unique_key(self, new_root, ext='', add_copy=False):
+    def unique_key(self, new_root, ext='', add_copy=False) -> FName | None:
         """Generate a unique name based on fn_key. When copying or renaming."""
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext

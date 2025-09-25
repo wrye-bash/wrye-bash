@@ -1107,9 +1107,10 @@ class ModInfo(_WithMastersInfo):
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
-        if self.is_ghost: # add ghost extension to dest path - Path.__add__!
-            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
         if rename_dir is None: # renames only, not the rest of rename_op uses
+            if self.is_ghost: # add ghost extension to dest path
+                old_new_paths[0] = (self.abs_path, # Path.__add__!
+                                    old_new_paths[0][1] + '.ghost')
             old_new_paths.append((tp := self.tags_path(),
                                   tp.head.join(f'{new_name.fn_body}.txt')))
         return old_new_paths
@@ -1730,17 +1731,16 @@ class DataStore(DataDict):
         _('The file is in use by another process such as %(xedit_name)s.'), '',
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
-    def rename_operation(self, info_new_name, dest_dir=None, *, try_once=True,
-                         ren_parent=None, with_backups=True, set_mtime=None
-                         ) -> RefrData:
+    def rename_operation(self, info_new_name, *, try_once=True, set_mtime=None,
+                         ren_parent=None, with_backups=True) -> RefrData:
         rd_ren = RefrData()
         if not info_new_name:
             return rd_ren
         all_rename_paths = {}
         paths_per_file = {} # revert partial renames
-        for inf, new_name in info_new_name:
-            rename_paths = inf.get_rename_paths(new_name, dest_dir,
-                                                with_backups)
+        for inf, new_name, *inf_dir in info_new_name:
+            infdir = inf_dir[0] if inf_dir else None
+            rename_paths = inf.get_rename_paths(new_name, infdir, with_backups)
             for tup in rename_paths[1:]: # first rename path must always exist
                 # if cosaves or backups do not exist shellMove fails!
                 # if filenames are the same (for instance cosaves in disabling
@@ -1748,7 +1748,7 @@ class DataStore(DataDict):
                 if tup[0] == tup[1] or not tup[0].exists():
                     rename_paths.remove(tup)
             all_rename_paths.update(rename_paths)
-            paths_per_file[inf] = rename_paths, new_name
+            paths_per_file[inf] = rename_paths, new_name, infdir
         if all_rename_paths:
             while try_once:
                 try:
@@ -1769,15 +1769,16 @@ class DataStore(DataDict):
                     _check_renamed(paths_per_file)
                 break
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
-        for inf, (_rename_paths, new_name) in paths_per_file.items():
-            rd_ren |= RefrData(to_add={new_name}, renames={
-                (old_key := inf.fn_key): new_name}, # pop if not unhiding
+        for inf, (_rename_paths, new_name, infdir) in paths_per_file.items():
+            rd_ren |= RefrData(renames={(old_key := inf.fn_key): new_name},
+                # pop if not unhiding
                 to_del={old_key} if self.pop(old_key, None) else set(),
                 # lastly set the new info abspath
-                ren_paths=inf.set_path_keys(new_name, infodir=dest_dir))
+                ren_paths=inf.set_path_keys(new_name, infodir=infdir))
             add_to_store = not _rename_paths or inf.info_dir == self.store_dir
             if add_to_store: # add the info (or marker info) to the store
                 self[inf.fn_key] = inf # fn_key was set to new value
+                rd_ren.to_add.add(new_name)
         if set_mtime: # only set in self.try_set_version
             for k, v in set_mtime.items():
                 self[k].setmtime(v)

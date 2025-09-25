@@ -75,11 +75,10 @@ class Files_Unhide(ItemLink):
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'already present.') % {'skipped_file': srcFileName})
                 continue
-            srcFiles.append((inf, fn_key))
+            srcFiles.append((inf, fn_key, st_dir))
         #--Now move everything at once
-        uil.try_rename(srcFiles, ren_parent=uil, dest_dir=st_dir,
-            check_unique=False, deselect=True, # we ain't handling backups
-            with_backups=False)
+        uil.try_rename(srcFiles, check_unique=False, deselect=True,
+                       with_backups=False) #292: we ain't handling backups
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------

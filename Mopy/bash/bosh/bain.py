@@ -2084,12 +2084,11 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, info_new_name, dest_dir=None, *,
-                         store_refr=None, **kwargs):
+    def rename_operation(self, info_new_name, *, store_refr=None, **kwargs):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
-        rd_ren = super().rename_operation(info_new_name, dest_dir, **kwargs)
+        rd_ren = super().rename_operation(info_new_name, **kwargs)
         # Update the ownership information for relevant data stores
         if not rd_ren.ren_paths or store_refr is None:
             return rd_ren
