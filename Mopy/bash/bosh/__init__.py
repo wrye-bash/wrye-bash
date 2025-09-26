@@ -390,9 +390,9 @@ class FileInfo(_TabledInfo, AFileInfo):
         if self not in self._store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.fs_copy(self.backup_restore_paths(False)[0][0])
+        self.fs_copy(self.backup_restore_paths(False)[0][1])
         #--First backup
-        firstBackup = self.backup_restore_paths(True)[0][0]
+        firstBackup = self.backup_restore_paths(True)[0][1]
         if not firstBackup.exists():
             self.fs_copy(firstBackup)
         self.madeBackup = True
@@ -402,19 +402,9 @@ class FileInfo(_TabledInfo, AFileInfo):
         destinations. If fname is not given returns the (first) backup
         filename corresponding to self.abs_path, else the backup filename
         for fname mapped to its restore location in data_store.store_dir."""
-        restore_path = (fname and self._store().store_dir.join(
-            fname)) or self.abs_path
-        fname = fname or self.fn_key
-        return [(self._store().bash_dir.join('Backups').join(
-            fname + 'f' * first), restore_path)]
-
-    def all_backup_paths(self, fname=None):
-        """Return the list of all possible paths a backup operation may create.
-        __path does not really matter and is not necessarily correct when fname
-        is passed in
-        """
-        return [backPath for first in (True, False) for backPath, __path in
-                self.backup_restore_paths(first, fname)]
+        new_fn = FName((fname or self.fn_key) + 'f' * first)
+        return self.get_rename_paths(new_fn, self._store().bash_dir.join(
+            'Backups'), False)
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
@@ -422,8 +412,10 @@ class FileInfo(_TabledInfo, AFileInfo):
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
         if with_backups:
-            old_new_paths.extend(
-                zip(self.all_backup_paths(), self.all_backup_paths(new_name)))
+            __bp = self.backup_restore_paths
+            for fir in (True, False):
+                old_new_paths.extend(zip((b for a, b in __bp(fir)),
+                                         (b for a, b in __bp(fir, new_name))))
         return old_new_paths
 
 class _WithMastersInfo(FileInfo):
@@ -1412,20 +1404,20 @@ class SaveInfo(_WithMastersInfo):
     def do_update(self, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
+        csaves = self._co_saves
         for co_type in SaveInfo.cosave_types:
             co_path = co_type.get_cosave_path(self.abs_path)
             if co_path.is_file():
-                if co_type in self._co_saves:
+                if co_type in csaves:
                     # Existing cosave could have changed, check if it did
-                    cosaves_changed |= self._co_saves[co_type].do_update()
+                    cosaves_changed |= csaves[co_type].do_update()
                 else:
                     # New cosave attached, add it to cache
-                    self._co_saves[co_type] = self.make_cosave(co_type,
-                                                               co_path)
+                    csaves[co_type] = self.make_cosave(co_type, co_path)
                     cosaves_changed = True
-            elif co_type in self._co_saves:
+            elif co_type in csaves:
                 # Old cosave deleted, remove it from cache
-                del self._co_saves[co_type]
+                del csaves[co_type]
                 cosaves_changed = True
         # If the cosaves have changed, the cached masters can no longer be
         # trusted since they may have been retrieved from the cosaves
@@ -1462,15 +1454,15 @@ class SaveInfo(_WithMastersInfo):
                     abs(inst.abs_path.mtime - self.ftime) < 10]
         return u'\n'.join(co_ui_strings)
 
-    def backup_restore_paths(self, first, fname=None):
-        """Return as parent and in addition back up paths for the cosaves."""
-        back_to_dest = super().backup_restore_paths(first, fname)
-        # see if we have cosave backups - we must delete cosaves when restoring
-        # if the backup does not have a cosave
-        for co_type in self.cosave_types:
-            co_paths = tuple(co_type.get_cosave_path(x) for x in back_to_dest[0])
-            back_to_dest.append(co_paths)
-        return back_to_dest
+    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
+        # super call added the backup paths but not the actual rename cosave
+        # paths inside the store_dir - add those even if they don't exist as we
+        # must delete cosaves when restoring (if the backup has no cosaves)
+        old_new_paths.extend(
+            tuple(map(co_type.get_cosave_path, old_new_paths[0])) for co_type
+            in self.cosave_types)
+        return old_new_paths
 
     @staticmethod
     def make_cosave(co_type, co_path):
@@ -1533,15 +1525,6 @@ class SaveInfo(_WithMastersInfo):
             if co_apath.exists():
                 path_func = co_apath.moveTo if do_move else co_apath.copyTo
                 path_func(newPath)
-
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
-        # super call added the backup paths but not the actual rename cosave
-        # paths inside the store_dir - add those only if they exist
-        old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
-        old_new_paths.extend((co_file.abs_path, co_type.get_cosave_path(new))
-                             for co_type, co_file in self._co_saves.items())
-        return old_new_paths
 
 #------------------------------------------------------------------------------
 class ScreenInfo(AFileInfo):

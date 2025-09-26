@@ -206,7 +206,7 @@ class _RevertBackup(RestoreInfo):
 
     @property
     def _backup_path(self):
-        return self._selected_info.backup_restore_paths(self.first)[0][0]
+        return self.__backup_paths[0][1]
 
     @property
     def link_help(self):
@@ -215,11 +215,13 @@ class _RevertBackup(RestoreInfo):
         return msg % {'file': self._selected_item}
 
     def _enable(self):
-        return super()._enable() and self._backup_path.exists()
+        if not super()._enable(): return False
+        self.__backup_paths = self._selected_info.backup_restore_paths(
+            self.first)
+        return self._backup_path.exists()
 
     def _restore(self):
-        sel_inf = self._selected_info
-        backup_paths = sel_inf.backup_restore_paths(self.first)
+        backup_paths = [(b, a) for a, b in self.__backup_paths]
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists():
                 # if cosave exists while its backup not, delete it on restoring
@@ -227,7 +229,7 @@ class _RevertBackup(RestoreInfo):
                 backup_paths.remove(tup)
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
-        sel_inf.setmtime(sel_inf.ftime)
+        self._selected_info.setmtime(self._selected_info.ftime)
 
     def _failed_msg(self):
         return self._askYes(
