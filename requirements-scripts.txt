@@ -5,5 +5,6 @@ isort==6.0.1
 pyfiglet==1.0.3
 pygit2==1.18.0
 PyGithub==2.6.1
-pyinstaller==6.14.2
+# PY3.13: try upgrading again & testing if restoring from backup still crashes
+pyinstaller==6.9.0
 pytest==8.4.1

@@ -1342,7 +1342,9 @@ class _InstallerPackage(Installer, AFileInfo):
                     try: # FName
                         dest_path = store.store_dir.join(fname_key)
                     except TypeError: # info is present, possibly ghosted
-                        dest_path = fname_key.abs_path
+                        # we may be installing a DefaultIni here (no abs_path)
+                        dest_path = ap if (ap := getattr(fname_key, 'abs_path',
+                            None)) else join_data_dir(dest)
                         fname_key = fname_key.fn_key
                     dest_to_store[dest] = store, fname_key
                     break

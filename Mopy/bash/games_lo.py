@@ -488,12 +488,12 @@ class LoGame:
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
 
-    def lo_sort_key(self, *, by_name=True, by_time=False):
-        minfs = self.mod_infos
+    def lo_sort_key(self, *, ds=None, by_name=True, by_time=False):
+        ds = self.mod_infos if ds is None else ds
         def _key(fn):
-            is_m = self._game_handle.master_flags.sort_masters_key(minfs[fn])
+            is_m = self._game_handle.master_flags.sort_masters_key(ds[fn])
             if by_time:
-                is_m = *is_m, minfs[fn].ftime
+                is_m = *is_m, ds[fn].ftime
             return (*is_m, fn) if by_name else is_m
         return _key
 

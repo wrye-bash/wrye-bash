@@ -30,8 +30,7 @@ from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
-from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
-    reverse_dict
+from ..bolt import deprint, dict_sort, readme_url, LooseVersion, reverse_dict
 from ..env import is_uac, shellDelete, shellMove
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \

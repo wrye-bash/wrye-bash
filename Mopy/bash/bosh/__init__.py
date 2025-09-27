@@ -2912,7 +2912,9 @@ class ModInfos(TableFileInfos):
             all_mods = (masters_set | merged | imported) & set(self)
         else:
             log.setHeader(head + _(u'Active Plugins:'))
-            all_mods = {*chain.from_iterable(self.active_statuses().values())}
+            statuses = self.active_statuses()
+            all_mods = {*chain.from_iterable(statuses.values())}
+            masters_set, merged = statuses[0], statuses[1]
         all_mods = load_order.get_ordered(all_mods)
         #--List
         modIndex = 0

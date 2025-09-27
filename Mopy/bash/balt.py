@@ -822,6 +822,15 @@ class UIList(PanelWin):
         #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
         if refr_saves and ui_refreshes.get(Store.MODS):
             ui_refreshes[Store.SAVES] = True
+        for list_key, ref_args in [*ui_refreshes.items()]:
+            if ref_args:
+                if not isinstance(ref_args, dict): # True or RefrData
+                    ref_args = {'rdata': ref_args} if isinstance(ref_args,
+                        RefrData) else {}
+                ref_args.setdefault('focus_list', False)
+                ui_refreshes[list_key] = ref_args
+            else:
+                del ui_refreshes[list_key]
         Link.Frame.refresh_and_warn(ui_refreshes, booting)
 
     def Focus(self):

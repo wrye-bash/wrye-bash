@@ -58,9 +58,9 @@ class _MasterFlag(AMasterFlag):
     ESM = ('esm_flag', '_is_master', 'm')
 
     @classmethod
-    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
+    def sort_masters_key(cls, minf) -> tuple[bool, ...]:
         """Return a key so that ESMs come first."""
-        return not cls.ESM.cached_type(mod_inf),
+        return not cls.ESM.cached_type(minf),
 
 class _EslMixin(PluginFlag):
     """Mixin for ESL and newer games. The flags in this emum can not be set

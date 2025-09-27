@@ -300,7 +300,8 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=load_order.lo_sort_key(by_name=False))
+            items.sort(key=load_order.lo_sort_key(ds=self.data_store,
+                                                  by_name=False))
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -3663,22 +3664,19 @@ class BashFrame(WindowFrame):
             load_order.warn_locked = False
 
     def refresh_and_warn(self, ui_refreshes, booting):
-        # ONLY use in propagate_refresh
+        # ONLY use in propagate_refresh - RUI will be triggered for each key
         for list_key, ref_args in ui_refreshes.items():
-            if ref_args and (uil := self.all_uilists[list_key]) is not None:
-                if not isinstance(ref_args, dict): # True or RefrData
-                    ref_args = {'rdata': ref_args} if isinstance(ref_args,
-                        RefrData) else {}
-                ref_args.setdefault('focus_list', False)
+            if (uil := self.all_uilists[list_key]) is not None:
                 uil.RefreshUI(**ref_args)
         stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
                   Store.SAVES: bosh.saveInfos} # this belongs to stores
         if booting: # trigger warnings on boot, ui_refresh is empty then
-            ui_refreshes = dict.fromkeys(stores, True)
+            ui_refreshes = stores
+        else:
+            ui_refreshes = {k: stores[k] for k in ui_refreshes if k in stores}
         multi_warns, lo_warns = [], []
-        for list_key, ref_args in ui_refreshes.items():
-            if ref_args and (ds := stores.get(list_key)):
-                ds.warning_args(multi_warns, lo_warns, self, list_key)
+        for list_key, ds in ui_refreshes.items():
+            ds.warning_args(multi_warns, lo_warns, self, list_key)
         if multi_warns:
             mk = (mwd := MultiWarningDialog).make_highlight_entry
             mwd(self, highlight_items=starmap(mk, multi_warns)).show_modeless()

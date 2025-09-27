@@ -42,10 +42,10 @@ class _SFMasterFlag(AMasterFlag):
                                'plugins.')
 
     @classmethod
-    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
+    def sort_masters_key(cls, minf) -> tuple[bool, ...]:
         """Return a key so that ESMs come first and blueprint masters last."""
-        is_master = cls.ESM.cached_type(mod_inf)
-        return is_master and cls.BLUEPRINT.cached_type(mod_inf), not is_master
+        is_master = cls.ESM.cached_type(minf)
+        return is_master and cls.BLUEPRINT.cached_type(minf), not is_master
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
