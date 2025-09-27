@@ -338,7 +338,7 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
                 idetails.refreshCurrent(sel_package)
                 try:
                     wizard = InstallerWizard(self.window, sel_package,
-                                             self._auto, balt.Progress)
+                        self._auto, balt.Progress, bosh.modInfos)
                 except CancelError:
                     return
                 wizard.ensureDisplayed()

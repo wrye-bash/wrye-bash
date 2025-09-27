@@ -2157,6 +2157,16 @@ def _lo_op(lop_func):
     return _lo_wip_wrapper
 
 #------------------------------------------------------------------------------
+# active status magic numbers
+ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = *range(3), -1
+
+def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
+    """Return the key in act_dicts whose value contains item_key."""
+    for k, v in act_dicts.items():
+        if item_key in v:
+            return k
+    return unactive_val
+
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     unique_store_key = Store.MODS
@@ -2503,8 +2513,8 @@ class ModInfos(TableFileInfos):
 
     def active_statuses(self):
         """Return a dict with keys 0, 1, 2 for active, merged and imported."""
-        return {0: set(load_order.cached_active_tuple()), 1: self.merged,
-                2: self.imported}
+        return {ST_ACTIVE: set(load_order.cached_active_tuple()),
+                ST_MERGED: self.merged, ST_IMPORTED: self.imported}
 
     # Rest of DataStore overrides ---------------------------------------------
     def rename_operation(self, info_new_name, dest_dir=None, **kwargs):
@@ -3016,7 +3026,7 @@ class ModInfos(TableFileInfos):
             log.setHeader(head + _(u'Active Plugins:'))
             statuses = self.active_statuses()
             all_mods = {*chain.from_iterable(statuses.values())}
-            masters_set, merged = statuses[0], statuses[1]
+            masters_set, merged = statuses[ST_ACTIVE], statuses[ST_MERGED]
         all_mods = load_order.get_ordered(all_mods)
         #--List
         modIndex = 0

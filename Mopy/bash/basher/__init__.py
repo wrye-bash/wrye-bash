@@ -78,7 +78,7 @@ from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
     forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
     to_win_newlines, top_level_files
-from ..bosh import ModInfo, omods
+from ..bosh import ModInfo, omods, active_keys
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -315,15 +315,9 @@ class _ModsUIList(UIList):
             act_dicts = bosh.modInfos.active_statuses()
             def _sel_sort_key(x):
                 # First active, then merged, then imported, then inactive
-                return self._active_keys(self._item_name(x), act_dicts, 3)
+                return active_keys(self._item_name(x), act_dicts, 3)
             items.sort(key=_sel_sort_key)
     _extra_sortings = [_activeModsFirst]
-
-    def _active_keys(self, item_key, act_dicts, unactive_val):
-        for k, v in act_dicts.items():
-            if item_key in v:
-                return k
-        return unactive_val
 
     @property
     def masters_first(self):
@@ -379,7 +373,7 @@ class _ModsUIList(UIList):
     def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
                        # we get item_name not item_key so we need _mouse_text
                        _mouse_text, **kwargs):
-        checkMark = self._active_keys(item_name, act_dicts, -1) + 1
+        checkMark = active_keys(item_name, act_dicts) + 1
         status = super()._set_icon_text(minf, item_format, item_name, **kwargs)
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color

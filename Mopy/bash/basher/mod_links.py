@@ -1011,7 +1011,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
 
-    def _execute_bp(self, mod_infos_singl, bp_rdata):
+    def _execute_bp(self, mod_infos, bp_rdata):
         patch_info = self._find_parent_bp()
         if patch_info is None:
             self._error_no_parent_bp()
@@ -1038,11 +1038,11 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                 return False
             bp_config = {}
         # Create the PatchFile instance
-        bashed_patch = PatchFile(patch_info, mod_infos_singl)
+        bashed_patch = PatchFile(patch_info, mod_infos)
         #--Check if we should be deactivating some plugins
         if self._ask_deactivate_mergeable(bashed_patch):
             # we might have de-activated plugins so recalculate active sets
-            bashed_patch.set_active_arrays(bosh.modInfos)
+            bashed_patch.set_active_arrays()
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
         bp_master_errors = []
         if missing:

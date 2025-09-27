@@ -347,7 +347,7 @@ class _AStarfieldGameInfo(PatchGame):
                 'BlueprintShips-Starfield.esm')}
             # we won't remove Blueprint masters from plugins.txt but we need
             # to append them in lo if present so we don't warn
-            blue = {k: v for k, v in self.mod_infos.items() if all(
+            blue = {k: v for k, v in self._mod_infos.items() if all(
                 pf.cached_type(v) for pf in self._game_handle.master_flags)}
             blue = [t[0] for t in # sort blueprint masters ftime/mod ascending
                     sorted(blue.items(), key=lambda x: (x[1].ftime, x[0]))]
