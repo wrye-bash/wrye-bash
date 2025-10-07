@@ -1772,7 +1772,7 @@ class InstallerProject(_InstallerPackage):
         # refreshDataSizeCrc. Compare to InstallersData._refresh_from_data_dir.
         rootName = self.abs_path.stail
         progress = progress if progress else bolt.Progress()
-        progress_msg = f'{rootName}\n%s\n' % _('Scanning…')
+        progress_msg = f"{rootName}\n{_('Scanning…')}\n"
         progress(0, progress_msg)
         progress.setFull(1)
         size_apath_date, proj_size, max_node_mtime = stat_tuple
@@ -2361,8 +2361,8 @@ class InstallersData(DataStore):
         data_dir_path = bass.dirs['mods']
         # Scan top level files and folders in the Data dir - for plugins use
         # modInfos cache, for other files (bsas etc.) use data_sizeCrcDate
-        progress_msg = f'{(dirname := data_dir_path.stail)}: ' + '%s\n' % _(
-            'Pre-Scanning…')
+        progress_msg = f'{(dirname := data_dir_path.stail)}: ' \
+                       f"{_('Pre-Scanning…')}\n"
         progress.setFull(1)
         progress(0, progress_msg)
         data_dirs = {} # collect those and filter them after
@@ -2401,7 +2401,7 @@ class InstallersData(DataStore):
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate)
         dirs_paths = InstallersData._skips_in_data_dir(data_dirs)
         root_len = len(data_dir_path) + 1 # compute relative paths to the Data dir
-        progress_msg = f'{dirname}: ' + '%s\n' % _('Scanning…')
+        progress_msg = f"{dirname}: {_('Scanning…')}\n"
         progress.setFull(1 + len(dirs_paths))
         #--Remove empty dirs?
         remove_empty = bass.settings['bash.installers.removeEmptyDirs']
