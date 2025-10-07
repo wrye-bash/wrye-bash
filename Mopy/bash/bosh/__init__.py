@@ -1820,9 +1820,9 @@ class DataStore(DataDict):
 
     def save_pickle(self): pass # for Screenshots
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+    def warning_args(self, multi_warnings, lo_warnings):
         """Append the arguments for the warning message to the multi_warnings
-        and lo_warnings lists, checking the caches currently in Link.Frame."""
+        and lo_warnings lists, checking the data store _known_* caches."""
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -2307,6 +2307,10 @@ def _lo_op(lop_func):
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     _dir_key = 'mods'
+    # caches for UI warnings
+    _known_cor_mods = set()
+    _known_invalid_versions = set()
+    _known_older_form_versions = set()
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
@@ -2667,43 +2671,41 @@ class ModInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash']
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
-        store_key = self
+    def warning_args(self, multi_warnings, lo_warnings):
         corruptMods = set(self.corrupted)
-        if new_cor := corruptMods - link_frame.knownCorrupted:
-            multi_warnings.append(
-                (_('The following plugins could not be read. This most likely '
-                   'means that they are corrupt.'), new_cor, store_key))
-            link_frame.knownCorrupted |= corruptMods
+        if new_cor := corruptMods - self._known_cor_mods:
+            msg = _('The following plugins could not be read. This most '
+                    'likely means that they are corrupt.')
+            multi_warnings.append((msg, new_cor, self))
+            self._known_cor_mods |= corruptMods
         valid_vers = bush.game.Esp.validHeaderVersions
         invalidVersions = {ck for ck, x in self.items() if
                            all(x.header.version != v for v in valid_vers)}
-        if new_inv := invalidVersions - link_frame.known_invalid_versions:
-            multi_warnings.append(
-                (_('The following plugins have header versions that are not '
-                   'valid for this game. This may mean that they are '
-                   'actually intended to be used for a different game.'),
-                 new_inv, store_key))
-            link_frame.known_invalid_versions |= invalidVersions
+        if new_inv := invalidVersions - self._known_invalid_versions:
+            multi_warnings.append((_(
+                'The following plugins have header versions that are not '
+                'valid for this game. This may mean that they are actually '
+                'intended to be used for a different game.'), new_inv, self))
+            self._known_invalid_versions |= invalidVersions
         old_fvers = self.older_form_versions
-        if new_old_fvers := old_fvers - link_frame.known_older_form_versions:
-            multi_warnings.append(
-                (_('The following plugins use an older Form Version for their '
-                   'main header. This most likely means that they were not '
-                   'ported properly (if at all).'), new_old_fvers, store_key))
-            link_frame.known_older_form_versions |= old_fvers
+        if new_old_fvers := old_fvers - self._known_older_form_versions:
+            msg = _('The following plugins use an older Form Version for '
+                    'their main header. This most likely means that they '
+                    'were not ported properly (if at all).')
+            multi_warnings.append((msg, new_old_fvers, self))
+            self._known_older_form_versions |= old_fvers
         if self.new_missing_strings:
-            multi_warnings.append(
-                (_('The following plugins are marked as localized, but are '
-                   'missing strings localization files in the language your '
-                   'game is set to. This will cause CTDs if they are '
-                   'activated.'), self.new_missing_strings, store_key))
+            msg = _('The following plugins are marked as localized, but are '
+                    'missing strings localization files in the language your '
+                    'game is set to. This will cause CTDs if they are '
+                    'activated.')
+            multi_warnings.append((msg, self.new_missing_strings, self))
             self.new_missing_strings = set()
         if self.warn_missing_lo_act:
-            lo_warnings.append((_('The following plugins could not be found '
-                    'in the %(data_folder)s folder or are corrupt and have '
-                    'thus been removed from the load order.') % {
-                                    'data_folder': bush.game.mods_dir_name, },
+            msg = _('The following plugins could not be found in the '
+                    '%(data_folder)s folder or are corrupt and have thus '
+                    'been removed from the load order.')
+            lo_warnings.append((msg % {'data_folder': bush.game.mods_dir_name},
                                 self.warn_missing_lo_act))
             self.warn_missing_lo_act = set()
         if self.selectedExtra:
@@ -3283,6 +3285,7 @@ class SaveInfos(TableFileInfos):
     # Enabled and disabled saves, no .bak files ##: needed?
     _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
     file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
+    _known_cor_saves = set()
 
     def __init__(self):
         SaveInfo.cosave_types = cosaves.get_cosave_types(
@@ -3336,15 +3339,14 @@ class SaveInfos(TableFileInfos):
                 self._init_store(sd)
         return self.store_dir
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
-        store_key = self
+    def warning_args(self, multi_warnings, lo_warnings):
         corruptSaves = set(self.corrupted)
-        if not corruptSaves <= link_frame.knownCorrupted:
+        if not corruptSaves <= self._known_cor_saves:
             multi_warnings.append(
                 (_('The following save files could not be read. This most '
                    'likely means that they are corrupt.'),
-                 corruptSaves - link_frame.knownCorrupted, store_key))
-            link_frame.knownCorrupted |= corruptSaves
+                 corruptSaves - self._known_cor_saves, self))
+            self._known_cor_saves |= corruptSaves
 
     @classmethod
     def unhide_wildcard(cls, **kwargs):
@@ -3432,9 +3434,11 @@ class BSAInfos(TableFileInfos):
     # BSAs that have versions other than the one expected for the current game
     mismatched_versions = set()
     # Maps BA2 hashes to BA2 names, used to detect collisions
-    _ba2_hashes = defaultdict(set)
+    ba2_hashes = defaultdict(set)
     ba2_collisions = set()
     _dir_key = 'mods'
+    _known_mismatched_version_bsas = set()
+    _known_ba2_collisions = set()
 
     def __init__(self):
         ##: Hack, this should not use display_name
@@ -3454,6 +3458,11 @@ class BSAInfos(TableFileInfos):
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
                 self._reset_bsa_mtime()
+                # If the BSA has a mismatched version, schedule a warning
+                if bush.game.Bsa.valid_versions and self.inspect_version() \
+                        not in bush.game.Bsa.valid_versions:
+                    BSAInfos.mismatched_versions.add(self.fn_key)
+                self._check_collisions(BSAInfos)
             _key_to_attr = {'info': 'bsa_notes', 'installer': 'bsa_owner_inst'}
 
             @classmethod
@@ -3476,47 +3485,26 @@ class BSAInfos(TableFileInfos):
                         self.setmtime(default_mtime)
         super().__init__(BSAInfo)
 
-    def refresh(self, *args, **kwargs):
-        rdata = super().refresh(*args, **kwargs)
-        for new_bsa_name in rdata.to_add:
-            binf = self[new_bsa_name]
-            # If the BSA has a mismatched version, schedule a warning
-            if bush.game.Bsa.valid_versions: # else skip checks for this game
-                if binf.inspect_version() not in bush.game.Bsa.valid_versions:
-                    self.mismatched_versions.add(new_bsa_name)
-            # For BA2s, check for hash collisions
-            if new_bsa_name.fn_ext == '.ba2':
-                ba2_entry = self._ba2_hashes[binf.ba2_hash()]
-                # Drop the previous collision if it's present, then check if we
-                # have a new one
-                self.ba2_collisions.discard(' & '.join(sorted(ba2_entry)))
-                ba2_entry.add(new_bsa_name)
-                if len(ba2_entry) >= 2:
-                    self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
-        return rdata
-
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
-        store_key = self
+    def warning_args(self, multi_warnings, lo_warnings):
         bsa_mvers = self.mismatched_versions
-        if not bsa_mvers <= link_frame.known_mismatched_version_bsas:
+        if not bsa_mvers <= self._known_mismatched_version_bsas:
+            m = _('The following BSAs have a version different from the one '
+                  '%(game_name)s expects. This can lead to CTDs, please '
+                  'extract and repack them using the %(ck_name)s-provided '
+                  'tool.') % {'game_name': bush.game.display_name,
+                              'ck_name': bush.game.Ck.long_name}
             multi_warnings.append(
-                (_('The following BSAs have a version different from the one '
-                   '%(game_name)s expects. This can lead to CTDs, please '
-                   'extract and repack them using the %(ck_name)s-provided '
-                   'tool.') % {'game_name': bush.game.display_name,
-                               'ck_name': bush.game.Ck.long_name},
-                 bsa_mvers - link_frame.known_mismatched_version_bsas,
-                 store_key))
-            link_frame.known_mismatched_version_bsas |= bsa_mvers
+                (m, bsa_mvers - self._known_mismatched_version_bsas, self))
+            self._known_mismatched_version_bsas |= bsa_mvers
         ba2_colls = self.ba2_collisions
-        if not ba2_colls <= link_frame.known_ba2_collisions:
+        if not ba2_colls <= self._known_ba2_collisions:
+            m = _('The following BA2s have filenames whose hashes collide, '
+                  'which will cause one or more of them to fail to work '
+                  'correctly. This should be corrected by the mod authors '
+                  'by renaming the files to avoid the collision.')
             multi_warnings.append(
-                (_('The following BA2s have filenames whose hashes collide, '
-                   'which will cause one or more of them to fail to work '
-                   'correctly. This should be corrected by the mod authors '
-                   'by renaming the files to avoid the collision.'),
-                 ba2_colls - link_frame.known_ba2_collisions, store_key))
-            link_frame.known_ba2_collisions |= ba2_colls
+                (m, ba2_colls - self._known_ba2_collisions, self))
+            self._known_ba2_collisions |= ba2_colls
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')

@@ -3465,11 +3465,6 @@ class BashFrame(WindowFrame):
         self.notebook = BashNotebook(self._native_widget)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
-        self.knownCorrupted = set()
-        self.known_invalid_versions = set()
-        self.known_older_form_versions = set()
-        self.known_mismatched_version_bsas = set()
-        self.known_ba2_collisions = set()
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -3636,7 +3631,7 @@ class BashFrame(WindowFrame):
             ui_refreshes = [k for k in ui_refreshes if k in stores]
         multi_warns, lo_warns = [], []
         for ds in ui_refreshes:
-            ds.warning_args(multi_warns, lo_warns, self)
+            ds.warning_args(multi_warns, lo_warns)
         if multi_warns:
             mk = (mwd := MultiWarningDialog).make_highlight_entry
             mwd(self, highlight_items=starmap(mk, multi_warns)).show_modeless()
