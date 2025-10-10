@@ -29,7 +29,7 @@ from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
 from ..balt import DecoratedTreeDict, colors, Link
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict, RefrData
-from ..bosh import ModInfo, faces
+from ..bosh import faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     CheckBox, CheckListBox, DeselectAllButton, DialogWindow, DocumentViewer, \
@@ -47,16 +47,16 @@ class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
     _min_size = (550, 300)
 
-    def __init__(self, parent, title, fileInfo, faces):
+    def __init__(self, parent, title, fileInfo, src_faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and not isinstance(next(iter(faces)), str):
+        if src_faces and not isinstance(next(iter(src_faces)), str):
             # Keys are FormIDs, convert them to human-readable strings
             self.fdata = {f'{key_fid} {val_face.pcName}': val_face for
-                          key_fid, val_face in faces.items()}
+                          key_fid, val_face in src_faces.items()}
         else:
             # Keys are EditorIDs, good to go
-            self.fdata = faces
+            self.fdata = src_faces
         self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI
         super().__init__(parent, title=title, sizes_dict=bass.settings)
@@ -65,7 +65,7 @@ class ImportFaceDialog(DialogWindow):
                                onSelect=self.EvtListBox)
         self.listBox.set_min_size(175, 150)
         #--Name,Race,Gender Checkboxes
-        fi_flgs = bosh.faces.PCFaces.pcf_flags(
+        fi_flgs = faces.PCFaces.pcf_flags(
             bass.settings.get('bash.faceImport.flags', 0x4))
         self.nameCheck = CheckBox(self, _('Name'), checked=fi_flgs.pcf_name)
         self.raceCheck = CheckBox(self, _('Race'), checked=fi_flgs.pcf_race)
@@ -122,7 +122,7 @@ class ImportFaceDialog(DialogWindow):
         itemDex = selections[0]
         item = self.list_items[itemDex]
         #--Do import
-        pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
+        pc_flags = faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
         pc_flags.pcf_hair = pc_flags.pcf_eye = True
         pc_flags.pcf_name = self.nameCheck.is_checked
         pc_flags.pcf_race = self.raceCheck.is_checked
@@ -131,8 +131,7 @@ class ImportFaceDialog(DialogWindow):
         pc_flags.pcf_class = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
-        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
-                                        pc_flags)
+        faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item], pc_flags)
         showOk(self, _('Face imported.'), self.fileInfo.fn_key)
         self.accept_modal()
 
@@ -449,28 +448,30 @@ class CreateNewPlugin(DialogWindow):
         """Internal callback to handle the OK button."""
         pw = self._parent_window
         pl_name = self._plugin_name.text_content + self._plugin_ext.get_value()
-        newName, root = ModInfo.validate_filename_str(pl_name)
+        mod_infos = pw.data_store
+        mod_info = mod_infos._factory_type
+        newName, root = mod_info.validate_filename_str(pl_name)
         if root is None:
             showError(self, newName)
             self._plugin_name.set_focus()
             self._plugin_name.select_all_text()
             return EventResult.FINISH # leave the dialog open
-        chosen_name = ModInfo.unique_name(newName)
-        created_plugin = pw.data_store.create_new_mod(chosen_name,
+        chosen_name = mod_info.unique_name(newName)
+        created_plugin = mod_infos.create_new_mod(chosen_name,
             windowSelected := pw.GetSelected(), flags_dict={k: v for k, v in
                 self._flags_chkboxes.items() if v.is_checked},
             wanted_masters=[*map(FName, self._chosen_masters)])
         # Check if we made a plugin with circular masters - we need the ModInfo
         # object itself to check this. A bit ugly from a UX perspective, but OK
-        # because it's a  rare scenario anyways
+        # because it's a rare scenario anyways
         if created_plugin.has_circular_masters():
-            showError(self, _('Creating a plugin named %(chosen_plugin_name)s '
-                              'with the chosen masters will cause it to '
-                              'have circular masters, i.e. depend on '
-                              'itself.') % {'chosen_plugin_name': chosen_name})
+            msg = _('Creating a plugin named %(chosen_plugin_name)s with the '
+                    'chosen masters will cause it to have circular masters, '
+                    'i.e. depend on itself.')
+            showError(self, msg % {'chosen_plugin_name': chosen_name})
             return EventResult.FINISH # leave the dialog open
         if windowSelected:  # assign it the group of the first selected mod
-            if grp := pw.data_store[windowSelected[0]].get_table_prop('group'):
+            if grp := mod_infos[windowSelected[0]].get_table_prop('group'):
                 created_plugin.set_table_prop('group', grp)
         pw.ClearSelected(clear_details=True)
         pw.RefreshUI(RefrData({chosen_name}), detail_item=chosen_name)

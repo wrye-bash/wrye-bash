@@ -757,7 +757,7 @@ def forward_compat_path_to_fn_list(li, ret_type=list):
     try:
         return ret_type(map(FName, map(str, li)))
     except ValueError: # tried to FName(str(path)) where type(path.s) == CIstr
-        return ret_type(map(FName, map(str,  map(str, li))))
+        return ret_type(map(FName, map(str, map(str, li))))
 
 class DefaultLowerDict(LowerDict, collections.defaultdict):
     """LowerDict that inherits from defaultdict."""
@@ -1893,15 +1893,18 @@ class AFileInfo(AFile, ListInfo):
                 'bad_name_str': name_str}, None
         return super_validate
 
-    @property
-    def info_dir(self):
-        return self.abs_path.head
-
     def set_path_keys(self, new_fn: FName, *, infodir=None):
         super().set_path_keys(new_fn)
         new_path = (infodir or self.info_dir).join(new_fn)
         old_path, self.abs_path = self.abs_path, new_path
         return {old_path: self.abs_path} # use abs_path here for ghosts
+
+    @property
+    def info_dir(self):
+        return self.abs_path.head
+
+    def get_hide_dir(self):
+        return self._store().hide_dir
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
         return super(AFile, self).__repr__()

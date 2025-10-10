@@ -99,9 +99,6 @@ _common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
 bain_image_exts = {*_common_image_exts, '.webp'}
 ss_image_exts = {*_common_image_exts, '.tga'}
 
-#--Typing
-_CosaveDict = dict[type[cosaves.ACosave], cosaves.ACosave]
-
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -388,9 +385,6 @@ class FileInfo(_TabledInfo, AFileInfo):
         return set_to
 
     # Backup stuff - beta, see #292 -------------------------------------------
-    def get_hide_dir(self):
-        return self._store().hide_dir
-
     def makeBackup(self, forceBackup=False):
         """Creates backup(s) of file."""
         #--Skip backup?
@@ -545,7 +539,7 @@ class ModInfo(_WithMastersInfo):
         return did_change or self.is_ghost != old_ghost
 
     def get_hide_dir(self):
-        hide_d = self._store().hide_dir
+        hide_d = super().get_hide_dir()
         #--Use author subdirectory instead?
         mod_author = self.header.author
         if mod_author:
@@ -1369,13 +1363,15 @@ class SaveInfo(_WithMastersInfo):
     _valid_exts_re = r'(\.(?:' + '|'.join(
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
     _key_to_attr = {'info': 'save_notes'}
-    _co_saves: _CosaveDict
+    _co_saves: dict[type[cosaves.ACosave], cosaves.ACosave]
 
     def __init__(self, fullpath, **kwargs):
         # Dict of cosaves that may come with this save file. Need to get this
         # first, since readHeader calls _get_masters, which relies on the
         # cosave for SSE and FO4
-        self._co_saves = self.get_cosaves_for_path(fullpath)
+        self._co_saves = {co_type: cos for co_type in SaveInfo.cosave_types if
+            (cos := SaveInfo.make_cosave(co_type, co_type.get_cosave_path(
+                fullpath)))}
         super().__init__(fullpath, **kwargs)
 
     def set_path_keys(self, *args, **kwargs):
@@ -1493,17 +1489,6 @@ class SaveInfo(_WithMastersInfo):
             if not isinstance(e, FileNotFoundError):
                 deprint(f'Failed to open {co_path}', traceback=True)
             return None
-
-    @staticmethod
-    def get_cosaves_for_path(save_path: Path) -> _CosaveDict:
-        """Get ACosave instances for save_path if those paths exist.
-        Return a dict of those instances keyed by their type."""
-        result = {}
-        for co_type in SaveInfo.cosave_types:
-            new_cosave = SaveInfo.make_cosave(
-                co_type, co_type.get_cosave_path(save_path))
-            if new_cosave: result[co_type] = new_cosave
-        return result
 
     def get_xse_cosave(self):
         """:rtype: xSECosave | None"""
@@ -2035,8 +2020,8 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
     return ini_info_type(fullpath, detected_encoding)
 
 class INIInfos(TableFileInfos):
-    file_pattern = re.compile('|'.join(
-        f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
+    file_pattern = re.compile('|'.join(map(re.escape, supported_ini_exts)) +
+                              '$', re.I)
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     _factory_type: Callable[[...], INIInfo]
@@ -2099,8 +2084,8 @@ class INIInfos(TableFileInfos):
         rdata = super().refresh(refresh_in, booting=booting)
         # re-add default tweaks (booting / restoring a default over copy,
         # delete should take care of this but needs to update rdata...)
-        for k, default_info in ((k1, v) for k1, v in
-                self._default_tweaks.items() if k1 not in self):
+        miss = (dt for dt in self._default_tweaks.items() if dt[0] not in self)
+        for k, default_info in miss:
             self[k] = default_info  # type: DefaultIniInfo
             if k in rdata.to_del: # we restore default over copy
                 rdata |= RefrData({k}) # will pop it from to_del also
@@ -2108,9 +2093,8 @@ class INIInfos(TableFileInfos):
             else: # booting
                 rdata.to_add.add(k)
         if not booting and ((targ := self.ini).updated or targ.do_update()):
-            # reset the status of all infos and let RefreshUI set it
             targ.updated = False
-            rdata |= self._reset_all_statuses()
+            rdata |= self._reset_all_statuses() # set the status of all infos
         return rdata
 
     def _reset_all_statuses(self): # only return infos that changed status
@@ -2262,10 +2246,10 @@ def _lo_cache(lord_func):
                         if len(confls_act := confls & activ) > 1:
                             # active mods conflicting with other active mods
                             act_lo_conflicts |= confls_act
-                # mods that started/stopped conflicting/were redated
+                # mods that started/stopped conflicting or were redated
                 mt_conflicts_changes |= (self.lo_conflicts ^ lo_conflicts |
                     act_lo_conflicts ^ self.act_lo_conflicts |
-                    self.scan_redated())
+                    self.scan_redated()) & set(self) # drop missing mods
                 self.lo_conflicts = lo_conflicts
                 self.act_lo_conflicts = act_lo_conflicts
             # note we ignore missing/added here - this is the responsibility of
@@ -2313,7 +2297,7 @@ class ModInfos(TableFileInfos):
     _known_older_form_versions = set()
 
     def __init__(self):
-        exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
+        exts = '|'.join(map(re.escape, bush.game.espm_extensions))
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
@@ -3304,17 +3288,15 @@ class SaveInfos(TableFileInfos):
         oblivion.ini file, else update the ini with save_dir."""
         # saveInfos singleton is constructed in InitData after oblivionIni
         prev = getattr(self, 'localSave', None)
-        if bush.game.Ini.save_profiles_key:
+        if sp_key := bush.game.Ini.save_profiles_key:
             if save_dir is None:
-                save_dir = oblivionIni.getSetting(
-                    *bush.game.Ini.save_profiles_key,
+                save_dir = oblivionIni.getSetting(*sp_key,
                     default=bush.game.Ini.save_prefix).rstrip('\\')
             else:
                 # set SLocalSavePath in Oblivion.ini - the latter must exist.
                 # Not sure if appending the slash is needed for the game to
                 # parse the setting correctly, kept previous behavior
-                oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
-                                        value=f'{save_dir}\\')
+                oblivionIni.saveSetting(*sp_key, value=f'{save_dir}\\')
         else:
             # The game has no INI key for the Saves folder and instead uses a
             # hardcoded folder name

@@ -27,7 +27,7 @@ import time
 from datetime import timedelta
 
 from .dialogs import DeleteBPPartsEditor
-from .. import balt, bass, bolt, bosh, bush, env, wrye_text
+from .. import balt, bass, bolt, bush, env, wrye_text
 from ..balt import Resources
 from ..bolt import GPath_no_norm, RefrIn, SubProgress
 from ..exception import BoltError, BPConfigError, CancelError, SkipError
@@ -221,11 +221,12 @@ class PatchDialog(DialogWindow):
                 for i, bp_file in enumerate(bp_files_to_save):
                     bp_file.set_attributes(was_split=True, split_part=i)
             parts_to_del = patchFile.find_unneded_parts(bp_files_to_save)
+            minfos = patchFile.p_file_minfos
             if parts_to_del:
                 ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
                     self, unneeded_parts=parts_to_del)
                 if ed_ok and ed_parts:
-                    self._bp_rdata |= patchFile.p_file_minfos.delete(ed_parts)
+                    self._bp_rdata |= minfos.delete(ed_parts)
             #--Save
             progress.setCancel(False, f"{patch_name}\n{_('Saving…')}")
             progress(0.9)
@@ -244,7 +245,7 @@ class PatchDialog(DialogWindow):
             delta_seconds = round((timer2 - timer1) / 1_000_000_000, 3)
             timerString = str(timedelta(seconds=delta_seconds)).rstrip('0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-            data_docs_dir = bosh.modInfos.store_dir.join('Docs')
+            data_docs_dir = minfos.store_dir.join('Docs')
             readme = data_docs_dir.join(patch_name.fn_body + '.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
             with TempDir(temp_prefix='Docs') as trd:
@@ -290,7 +291,7 @@ class PatchDialog(DialogWindow):
             self._bps.extend(attrs)
             # We have to parse the new infos first since the masters may differ
             # note this won't activate the new masters, the caller has to do it
-            self._bp_rdata |= patchFile.p_file_minfos.refresh(rinf)
+            self._bp_rdata |= minfos.refresh(rinf)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly

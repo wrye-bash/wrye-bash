@@ -31,7 +31,7 @@ from collections import Counter, defaultdict
 from itertools import chain
 
 from ..base import ImportPatcher
-from ... import bush, load_order, parsers
+from ... import bush, parsers
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
 from ...brec import RecordType
 from ...exception import ModSigMismatchError

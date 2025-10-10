@@ -298,8 +298,8 @@ def _fn_is_master(fname: str, _bosh, _game_handle) -> bool:
 
     :param fname: The file name to check."""
     # Need to check if it's on disk first, otherwise modInfos[x] errors
-    return fname in _bosh.modInfos and (mf := _game_handle.master_flag) and \
-        mf.cached_type(_bosh.modInfos[fname])
+    return (mas_esm := _bosh.modInfos.get(fname)) and (
+        mf := _game_handle.master_flag) and mf.cached_type(mas_esm)
 
 def _fn_many(path_regex: str) -> bool:
     """Takes a regex. Returns True iff more than 1 file matching the specified
@@ -396,10 +396,9 @@ def _fn_version(file_path: str, expected_ver: str, comparison: Comparison,
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    if _bosh.modInfos.rightFileType(file_path.s):
+    if (minfos := _bosh.modInfos).rightFileType(file_path.s):
         # Read version from the description
-        actual_ver = LooseVersion(
-            _bosh.modInfos.getVersion(file_path.stail) or '0')
+        actual_ver = LooseVersion(minfos.getVersion(file_path.stail) or '0')
     elif file_path.cext in ('.exe', '.dll'):
         # Read version from executable fields
         actual_ver = LooseVersion(_read_binary_ver(file_path.s))

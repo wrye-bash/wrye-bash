@@ -1589,7 +1589,7 @@ class ModDetails(_ModsSavesDetails):
     def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
         """Show bash tag selection menu."""
         _mod_details = self
-        mod_info = self.file_info # type: bosh.ModInfo
+        mod_info: bosh.ModInfo = self.file_info
         app_tags = mod_info.getBashTags()
         class BashTagsPopup(MultiChoicePopup):
             def _update_tags(self, changed_tags, addtags):
@@ -1637,7 +1637,7 @@ class ModDetails(_ModsSavesDetails):
     def _popup_misc_tags(self, _lb_selection_dex):
         """Show a menu for miscellaneous tags menu functionality."""
         #--Links closure
-        mod_info = self.file_info # type: bosh.ModInfo
+        mod_info: bosh.ModInfo = self.file_info
         mod_tags = mod_info.getBashTags()
         _mod_details = self
         # Toggle auto Bash tags

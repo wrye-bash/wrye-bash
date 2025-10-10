@@ -293,11 +293,6 @@ class _AParser(_HandleAliases):
         # Internal variable, keeps track of mods we've already processed during
         # the first pass to avoid repeating work
         self._fp_mods = set()
-        # The name of the mod that is currently being loaded. Some parsers need
-        # this to change their behavior when loading a mod file. This is a
-        # unicode string matching the name of the mod being loaded, or None if
-        # no mod is being loaded.
-        self._current_mod = None
         # True if id_context needs another round of processing during the
         # second pass
         self._context_needs_followup = False
@@ -397,12 +392,8 @@ class _AParser(_HandleAliases):
         automatically clear id_stored_data to allow combining multiple sources.
 
         :param mod_info: The ModInfo instance to read from."""
-        self._current_mod = mod_info.fn_key
         # Check if we need to read at all
-        a_types = self.all_types
-        if not a_types:
-            # We need to unset _current_mod since we're no longer loading a mod
-            self._current_mod = None
+        if not (a_types := self.all_types):
             return
         # Load mod_info once and for all, then execute every needed pass
         loaded_mod = self._load_plugin(mod_info, target_types=a_types)
@@ -410,8 +401,6 @@ class _AParser(_HandleAliases):
             self._read_plugin_fp(loaded_mod, modinfos)
         if self._sp_types:
             self._read_plugin_sp(loaded_mod)
-        # We need to unset _current_mod since we're no longer loading a mod
-        self._current_mod = None
 
     # Writing to plugins
     @classmethod

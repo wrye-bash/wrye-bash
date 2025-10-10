@@ -1915,12 +1915,11 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
                 bass.settings[u'bash.mods.export.deprefix'],
                 bass.settings[u'bash.mods.export.skipcomments'])
         #finally:
-        msg = (_('Exported %(num_exported_scripts)d scripts from '
-                 '%(script_export_target)s:')) % {
-            'num_exported_scripts': len(exportedScripts),
-            'script_export_target': fileInfo}
-        msg +='\n' + '\n'.join(exportedScripts)
-        self._showLog(msg, title=_(u'Export Scripts'), asDialog=True)
+        fmt = {'num_exported_scripts': len(exportedScripts),
+               'script_export_target': fileInfo}
+        msg = [_('Exported %(num_exported_scripts)d scripts from '
+                 '%(script_export_target)s:') % fmt, *exportedScripts]
+        self._showLog('\n'.join(msg), title=_('Export Scripts'), asDialog=True)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file."""

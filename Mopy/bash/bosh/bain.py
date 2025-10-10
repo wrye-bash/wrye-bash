@@ -437,9 +437,6 @@ class Installer(ListInfo):
             deprint(f'Failed loading {values[0]}', traceback=True)
         self.fn_key = '' # reset self.fn_key to '' to remove self in __load()
 
-    def get_hide_dir(self): ##: Copy-pasted from InstallersData.hide_dir!
-        return bass.dirs[u'modsBash'].join(u'Hidden')
-
     def __setstate(self,values):
         for a, v in zip(self.persistent, values[1:]):
             setattr(self, a, v)
@@ -1917,17 +1914,6 @@ class InstallersData(DataStore):
         self._inst_types = [InstallerArchive, InstallerProject,
                             InstallerMarker]
 
-    @property
-    def bash_dir(self): return bass.dirs[u'bainData']
-
-    @property
-    def hide_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
-
-    @classmethod
-    def unhide_wildcard(cls, **kwargs):
-        return super().unhide_wildcard(_pl_str=_('Mod Archives'), _joined=
-            ';'.join(f'*{e}' for e in archives.readExts))
-
     def _add_node(self, node, *, with_omods=None,
                   __skip_prefixes=('bash', '--')):
         low = node.name.lower()
@@ -2118,7 +2104,6 @@ class InstallersData(DataStore):
                     v.set_table_prop('installer', '%s' % name_new)
         return rd_ren
 
-    #--Dict Functions ---------------------------------------------------------
     def _delete_operation(self, infos, recycle, do_refr):
         toDelete = []
         markers = {inst.fn_key for inst in infos if
@@ -2130,6 +2115,18 @@ class InstallersData(DataStore):
                 return rd_mark
         rd_mark |= super()._delete_operation(toDelete, recycle, do_refr)
         return rd_mark
+
+    # Rest of DataStore overrides ---------------------------------------------
+    @property
+    def bash_dir(self): return bass.dirs['bainData']
+
+    @property
+    def hide_dir(self): return bass.dirs['modsBash'].join('Hidden')
+
+    @classmethod
+    def unhide_wildcard(cls, **kwargs):
+        return super().unhide_wildcard(_pl_str=_('Mod Archives'), _joined=
+            ';'.join(f'*{e}' for e in archives.readExts))
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present

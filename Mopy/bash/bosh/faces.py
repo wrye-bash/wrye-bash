@@ -395,19 +395,6 @@ class PCFaces(object):
         return faces
 
     @staticmethod
-    def mod_getRaceFaces(modInfo):
-        """Returns an array of Race Faces from a mod file."""
-        modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'RACE'])
-        faces = {}
-        for _rid, race in modFile.tops[b'RACE'].iter_present_records():
-            face = PCFaces.PCFace()
-            face.face_masters = []
-            for field in (u'eid',u'fggs_p',u'fgga_p',u'fgts_p'):
-                setattr(face,field,getattr(race,field))
-            faces[face.eid] = face
-        return faces
-
-    @staticmethod
     def mod_addFace(modInfo,face):
         """Writes a pcFace to a mod file."""
         #--Mod File
