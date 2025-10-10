@@ -1079,20 +1079,15 @@ class ModInfo(_WithMastersInfo):
         return self.fn_key in bush.game.modding_esm_size or \
                self.fn_key == 'Oblivion.esm'
 
-    def fs_copy(self, dup_path, *, set_time=None, do_move=False):
-        destDir, destName = dup_path.head, dup_path.stail
-        if destDir == (st := self._store()).store_dir and destName in st:
-            dup_path = st[destName].abs_path # used the (possibly) ghosted path
-        super().fs_copy(dup_path, set_time=set_time)
-
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir,
                                                  with_backups)
-        if rename_dir is None: # renames only, not the rest of rename_op uses
+        renaming = rename_dir is None # rename, not the rest of rename_op uses
+        if renaming or rename_dir == self._store().store_dir:
             new_ghost = old_new_paths[0][1] + '.ghost' # Path.__add__!
             if self.is_ghost: # add ghost extension to dest path
                 old_new_paths[0] = self.abs_path, new_ghost
-            else:
+            elif renaming:
                 # Add ghosts - the file may exist in both states (bug, or user
                 # mistake) in this case the file is marked as normal but let's
                 # rename the ghost too - else will appear and frighten the user
@@ -1456,9 +1451,9 @@ class SaveInfo(_WithMastersInfo):
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
-        # super call added the backup paths but not the actual rename cosave
-        # paths inside the store_dir - add those even if they don't exist as we
-        # must delete cosaves when restoring (if the backup has no cosaves)
+        # super call added the backup paths but not the actual cosave paths
+        # inside the store_dir - add those even if they don't exist as we must
+        # delete cosaves for backup (if the backup has no cosaves)
         old_new_paths.extend(
             tuple(map(co_type.get_cosave_path, old_new_paths[0])) for co_type
             in self.cosave_types)
@@ -1514,17 +1509,6 @@ class SaveInfo(_WithMastersInfo):
             xse_cosave.has_accurate_master_list())
         except (AttributeError, NotImplementedError):
             self.has_inaccurate_masters = False
-
-    def fs_copy(self, dup_path, *, do_move=False, **kwargs):
-        """Copies savefile and associated cosaves file(s)."""
-        super().fs_copy(dup_path, do_move=do_move,  **kwargs)
-        for co_type, co_file in self._co_saves.items():
-            newPath = co_type.get_cosave_path(dup_path)
-            if newPath.exists(): newPath.remove() ##: dont like it, investigate
-            co_apath = co_file.abs_path
-            if co_apath.exists():
-                path_func = co_apath.moveTo if do_move else co_apath.copyTo
-                path_func(newPath)
 
 #------------------------------------------------------------------------------
 class ScreenInfo(AFileInfo):

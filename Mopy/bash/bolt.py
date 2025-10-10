@@ -1865,6 +1865,7 @@ class ListInfo:
         the data_store if copied inside the store_dir but the client is
         responsible for calling the final refresh of the data store."""
         # TODO(ut) : when duplicating pass the info in and load_cache=False
+        # the only use that copies into store dir
         self.fs_copy(dup_path, set_time=set_time)
 
     def fs_copy(self, dup_path, **kwargs):
@@ -1888,6 +1889,26 @@ class AFileInfo(AFile, ListInfo):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
         return [(self.abs_path, (rename_dir or self.info_dir).join(new_name))]
+
+    def fs_copy(self, dup_path, *, set_time=None, do_move=False):
+        ##:(241) note all the subtleties below - moveTo/copyTo must land in env
+        dest_dir, dest_fn = dup_path.headTail
+        src_dst = iter(self.get_rename_paths(FName(dest_fn.s), dest_dir,
+                                             with_backups=False))
+        src, dst = next(src_dst) # base info path always exists
+        sys_op = src.moveTo if do_move else partial(src.copyTo,
+            set_time=set_time or self.ftime)
+        sys_op(dst)
+        # rest is for cosaves - for mods, as we pass a destDir, we only get one
+        # path back from get_rename_paths
+        for src, dst in src_dst:
+            if dst.exists(): ##: moveTo repeats this check - needed for copyTo?
+                ##: for makeBackup and Save_Move, the latter needs some thought
+                dst.remove() # remove existing file in case self has no cosave
+            if not src.exists(): continue
+            sys_op = partial(src.moveTo, check_exist=False) if do_move else \
+                src.copyTo
+            sys_op(dst)
 
     def validate_name(self, name_str, check_store=True):
         super_validate = super().validate_name(name_str,

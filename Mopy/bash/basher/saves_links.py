@@ -622,7 +622,7 @@ class Save_Move(ChoiceLink):
     """Moves or copies selected files to alternate profile."""
 
     def __init__(self, copyMode=False):
-        super(Save_Move, self).__init__()
+        super().__init__()
         self.copyMode = copyMode
         self._help_str = (_('Copy the selected saves to %(save_profile)s.')
                           if copyMode else

@@ -1367,23 +1367,22 @@ class _CopyToLink(EnabledLink):
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
-                newName = FName(f'{curName.fn_body}{self._target_ext}')
+                new_fn = FName(f'{curName.fn_body}{self._target_ext}')
                 #--Replace existing file?
                 newTime = None
-                if newName in modInfos:
-                    existing = modInfos[newName]
-                    # abs_path as existing may be ghosted
-                    if not self._askYes(
+                if new_fn in modInfos:
+                    existing = modInfos[new_fn]
+                    if not self._askYes( # abs_path as existing may be ghosted
                             _('Replace existing %(existing_plugin)s?') % {
                                 'existing_plugin': existing.abs_path.stail}):
                         continue
                     existing.makeBackup()
                     newTime = existing.ftime
                 # Copy and set flag - will use ghosted path if needed
-                minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
-                added[newName] = minfo
+                minfo.copy_to(minfo.info_dir.join(new_fn), set_time=newTime)
+                added[new_fn] = minfo
                 if newTime is None: # otherwise it has a load order already!
-                    mod_previous[newName] = curName
+                    mod_previous[new_fn] = curName
         #--Repopulate
         if added:
             rinf = RefrIn.from_tabled_infos(added, exclude=True)
@@ -2304,16 +2303,16 @@ class Mod_Snapshot(ItemLink):
             fileVersion = bolt.getMatch(
                 re.search(r'[ _]+v?([.\d]+)$', fileRoot), 1)
             snapVersion = bolt.getMatch(re.search(r'-[\d.]+$', destRoot))
-            fileHedr = fileInfo.header
-            if (fileVersion or snapVersion) and bosh.reVersion.search(fileHedr.description):
+            descr = fileInfo.header.description
+            if (fileVersion or snapVersion) and bosh.reVersion.search(descr):
                 if fileVersion and snapVersion:
                     newVersion = fileVersion+snapVersion
                 elif snapVersion:
                     newVersion = snapVersion[1:]
                 else:
                     newVersion = fileVersion
-                newDescription = bosh.reVersion.sub(fr'\1 {newVersion}', fileHedr.description, 1)
-                fileInfo.writeDescription(newDescription)
+                new_descr = bosh.reVersion.sub(fr'\1 {newVersion}', descr, 1)
+                fileInfo.writeDescription(new_descr)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
             fileInfo.fs_copy(destDir.join(destName))
