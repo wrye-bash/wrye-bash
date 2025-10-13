@@ -27,7 +27,6 @@ from __future__ import annotations
 import threading
 import time
 from collections import defaultdict
-from dataclasses import dataclass
 from functools import partial, wraps
 from itertools import islice
 from typing import final
@@ -50,6 +49,7 @@ from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     askNumber, askYes, askWarning, showOk, showError, showWarning, showInfo, \
     TreeNodeFormat, DnDStatusBar, get_image, get_color_checks, ImageList
 from .gui.base_components import _AComponent
+from .gui.list_ctrl import ListItemFormat
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -95,7 +95,7 @@ class ColorChecks(ImageList):
         elif status <= -10: color_key = 'blue'
         elif status <= 0: color_key = 'green'
         elif status <= 10: color_key = 'yellow'
-        elif status <= 20: color_key = 'orange'
+        elif 20 <= status < 30: color_key = 'orange' # 20 or 21 for modList
         else: color_key = 'red'
         return self._indices[f'{self._int_to_state[on]}.{color_key}']
 
@@ -520,42 +520,6 @@ def conversation(func):
     return _conversation_wrapper
 
 #------------------------------------------------------------------------------
-@dataclass(slots=True)
-class _ListItemFormat:
-    _parent_uil: UIList
-    icon_dex: int | None = None
-    bold: bool = False
-    italics: bool = False
-    underline: bool = False
-    _text_key: str = 'default.text'
-    _back_key: str = 'default.bkgd'
-
-    def to_tree_node_format(self):
-        """Convert this list item format to an equivalent tree node format,
-        relative to the specified parent UIList."""
-        return TreeNodeFormat(icon_idx=self.icon_dex,
-            back_color=self._parent_uil.lookup_back_key(self.back_key),
-            text_color=self._parent_uil.lookup_text_key(self.text_key),
-            bold=self.bold, italics=self.italics, underline=self.underline)
-
-    @property
-    def back_key(self) -> str:
-        return self._back_key
-
-    @back_key.setter
-    def back_key(self, val: str):
-        self._back_key = max(val, self._back_key,
-            key=self._parent_uil.back_key_priority.__getitem__)
-
-    @property
-    def text_key(self) -> str:
-        return self._text_key
-
-    @text_key.setter
-    def text_key(self, val: str):
-        self._text_key = max(val, self._text_key,
-            key=self._parent_uil.text_key_priority.__getitem__)
-
 DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
     list[tuple[FName, TreeNodeFormat | None]]]]
 
@@ -607,13 +571,27 @@ class UIList(PanelWin):
         self.__class__.persistent_columns = {self._default_sort_col}
         self._col_index = {} # used in setting column sort indicator
         #--gList
+        backkey_priority = {k: j for j, k in enumerate([
+            # Plugins ---------------------------------------------------------
+            'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
+            'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
+            # INIs ------------------------------------------------------------
+            'ini.bkgd.invalid',
+            # Installers ------------------------------------------------------
+            'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
+            'installers.bkgd.dirty'])}
+        from . import bush # todo pass game in!
+        textkey_priority = {k: j for j, k in enumerate([
+            # Plugins ---------------------------------------------------------
+            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
+            # Installers ------------------------------------------------------
+            'installers.text.invalid', 'installers.text.marker',
+            'installers.text.complex', ])}
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
-                                  self.__class__._sunkenBorder,
-                                  self.__class__._singleCell, self.dndAllow,
-                                  dndFiles=self.__class__._dndFiles,
-                                  dndList=self.__class__._dndList,
-                                  fnDropFiles=self.OnDropFiles,
-                                  fnDropIndexes=self.OnDropIndexes)
+            self.__class__._sunkenBorder, self.__class__._singleCell, colors,
+            backkey_priority, textkey_priority, self.dndAllow,
+            dndFiles=self.__class__._dndFiles, dndList=self.__class__._dndList,
+            fnDropFiles=self.OnDropFiles, fnDropIndexes=self.OnDropIndexes)
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
         self.icons.native_init(recreate=False)
@@ -648,8 +626,6 @@ class UIList(PanelWin):
         self._clean_column_settings()
         self.PopulateColumns()
         #--Items
-        self._defaultTextBackground = Color.from_wx(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
     @fast_cached_property
@@ -706,34 +682,33 @@ class UIList(PanelWin):
         :param item: an FName or an int (Masters), the key in self.data
         :param target_ini_setts: Cached information about the INI settings.
             Used on the INI Edits tab"""
-        insert = False
         allow_cols = self.allowed_cols # property, calculate once
         if not allow_cols:
             return # No visible columns, nothing to do
-        if item is not None:
+        if item is None: # no way we're inserting with a None item
+            item = self.GetItem(itemDex)
+        else:
             try:
                 itemDex = self._get_uil_index(item)
             except KeyError: # item is not present, so inserting
-                itemDex = self.item_count # insert at the end
-                insert = True
-        else: # no way we're inserting with a None item
-            item = self.GetItem(itemDex)
+                itemDex = None
         str_label = self.labels[allow_cols[0]](self, item)
-        if insert:
+        _inf, df = self.set_item_format(item, **ui_kwargs)
+        if itemDex is None:
             # We're inserting a new item, so we need special handling for the
             # first SetItem call - see InsertListCtrlItem
             self.__gList.InsertListCtrlItem(
-                itemDex, str_label, item,
-                decorate_cb=partial(self.__setUI, fileName=item, **ui_kwargs))
+                str_label, item, decorate_cb=partial(self.__setUI, df=df))
         else:
             # The item is already in the UIList, so we only need to redecorate
             # and set text for all labels
             gItem = self.__gList.get_item_data(itemDex)
-            self.__setUI(item, gItem, **ui_kwargs)
+            self.__setUI(df, gItem)
             # Piggyback off the SetItem call we need for __setUI to also set
             # the first column's text
             gItem.SetText(str_label)
             self.__gList.set_item_data(gItem)
+        itemDex = self.item_count - 1 if itemDex is None else itemDex
         for col_dex, col in enumerate(allow_cols[1:], start=1):
             self.__gList.set_item_data(itemDex, col_dex,
                                        self.labels[col](self, item))
@@ -837,73 +812,39 @@ class UIList(PanelWin):
         self.__gList.set_focus()
 
     #--Decorating -------------------------------------------------------------
-    @fast_cached_property
-    def back_key_priority(self):
-        return {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
-            'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
-            # INIs ------------------------------------------------------------
-            'ini.bkgd.invalid',
-            # Installers ------------------------------------------------------
-            'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
-            'installers.bkgd.dirty'])}
-
-    @fast_cached_property
-    def text_key_priority(self):
-        from . import bush
-        return {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
-            # Installers ------------------------------------------------------
-            'installers.text.invalid', 'installers.text.marker',
-            'installers.text.complex',
-        ])}
-
-    def set_item_format(self, item, item_format, **ui_kwargs):
+    def set_item_format(self, item, **ui_kwargs):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
         data_store is a FileInfo subclass) for calling info_status to update
         respective info's status."""
-        inf = self.data_store[item]
+        item_format = ListItemFormat(self.__gList)
+        # Only run set_item_format when the item is actually present, otherwise
+        # just use the default settings (we do still have to use those since
+        # the default text/background colors may have been changed from the OS
+        # default)
+        if not (inf := self.data_store.get(item)):
+            return None, item_format
         try:
             icon_key = self._set_icon_text(inf, item_format, item, **ui_kwargs)
             item_format.icon_dex = self.icons.img_dex(*icon_key)
         except NotImplementedError:
-            return # screens, bsas
-        return inf # used in overrides
+            return inf, item_format # screens, bsas
+        return inf, item_format # used in overrides
 
     def _set_icon_text(self, inf, item_format, item_key, **kwargs):
         """Base method just returns the status - always override to return the
         icon key tuple - populate mouse text, item_format attrs, etc."""
         return inf.info_status(**kwargs)
 
-    def __setUI(self, fileName, gItem, **ui_kwargs):
+    def __setUI(self, df, gItem):
         """Set font, status icon, background text etc."""
-        df = _ListItemFormat(self)
-        self.set_item_format(fileName, df, **ui_kwargs)
         if (icon_index := df.icon_dex) is not None:
             gItem.SetImage(icon_index)
-        gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
+        gItem.SetTextColour(self.__gList.lookup_text_key(df.text_key).to_rgba_tuple())
         gItem.SetBackgroundColour(
-            self.lookup_back_key(df.back_key).to_rgba_tuple())
+            self.__gList.lookup_back_key(df.back_key).to_rgba_tuple())
         gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
                                  slant=df.italics, underline=df.underline))
-
-    def lookup_text_key(self, target_text_color: str):
-        """Helper method to look up a text color from a list item format."""
-        if target_text_color:
-            return colors[target_text_color]
-        else:
-            return self.__gList.get_text_color()
-
-    def lookup_back_key(self, target_back_color: str):
-        """Helper method to look up a background color from a list item
-        format."""
-        if target_back_color:
-            return colors[target_back_color]
-        else:
-            return self._defaultTextBackground
 
     def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]]
                            ) -> DecoratedTreeDict:
@@ -911,14 +852,8 @@ class UIList(PanelWin):
         mapping items in this UIList to lists of items in this UIList."""
         ui_kwargs = self._cache_rui_structs()
         def _decorate(i):
-            lif = _ListItemFormat(self)
-            # Only run set_item_format when the item is actually present,
-            # otherwise just use the default settings (we do still have to use
-            # those since the default text/background colors may have been
-            # changed from the OS default)
-            if i in self.data_store:
-                self.set_item_format(i, lif, **ui_kwargs)
-            return lif.to_tree_node_format()
+            _inf, lif = self.set_item_format(i, **ui_kwargs)
+            return lif.to_tree_node_format(TreeNodeFormat)
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
 

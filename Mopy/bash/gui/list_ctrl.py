@@ -27,6 +27,7 @@ from __future__ import annotations
 __author__ = u'Lojack, Utumno'
 
 import pickle
+from dataclasses import dataclass
 
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -203,11 +204,11 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     _native_widget: _DragListCtrl
 
     def __init__(self, parent, allow_edit, is_border_sunken, is_single_cell,
-            *args, **kwargs):
+                 colors, backkey_priority, textkey_priority, *args, **kwargs):
         kwargs['style'] = _wx.LC_REPORT | (allow_edit and _wx.LC_EDIT_LABELS
             ) | (is_border_sunken and _wx.BORDER_SUNKEN) | (
                 is_single_cell and _wx.LC_SINGLE_SEL)
-        super(UIListCtrl, self).__init__(parent, *args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
         evt_col = lambda event: [event.GetColumn()]
         self.on_lst_col_rclick = self._evt_handler(
             _wx.EVT_LIST_COL_RIGHT_CLICK, evt_col)
@@ -229,6 +230,12 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         #--Item/Id mapping
         self._item_itemId: dict[bolt.FName | str | int, int] = {}
         self._itemId_item: dict[int, bolt.FName | str | int] = {}
+        # decorate items
+        self._colors_dict = colors
+        self._defaultTextBackground = Color.from_wx(
+            _wx.SystemSettings.GetColour(_wx.SYS_COLOUR_WINDOW))
+        self.back_key_priority = backkey_priority
+        self.text_key_priority = textkey_priority
 
     # API (beta) -------------------------------------------------------------
     # Internal id <-> item mappings used in wx._controls.ListCtrl.SortItems
@@ -239,14 +246,14 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self._itemId_item[self.__item_id] = item
         return self.__item_id
 
-    def InsertListCtrlItem(self, index, value, item, decorate_cb):
-        """Insert an item to the list control giving it an internal id.
+    def InsertListCtrlItem(self, value, item, decorate_cb):
+        """Insert an item last to the list control giving it an internal id.
 
         :param decorate_cb: A callback that will be passed the created wx item.
             Use this to set properties on the item once before it is inserted
             into the ListCtrl via SetItem."""
         i = self.__id(item)
-        new_index = self._native_widget.InsertItem(index, value)
+        new_index = self._native_widget.InsertItem(self.lc_item_count(), value)
         if new_index == -1:
             raise RuntimeError(f'Failed to insert UIList item {value}')
         # The item/row is inserted now, but all ancillary data has to be added
@@ -354,9 +361,6 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     def get_item_data(self, dex):
         return self._native_widget.GetItem(dex)
 
-    def get_text_color(self):
-        return Color.from_wx(self._native_widget.GetTextColour())
-
     def resize_last_col(self):
         self._native_widget.resizeLastColumn(0)
 
@@ -386,3 +390,55 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
 
     def set_scroll_pos(self, pos):
         return self._native_widget.ScrollLines(pos)
+
+    # Decorate items
+    def lookup_text_key(self, target_text_color: str):
+        """Helper method to look up a text color from a list item format."""
+        if target_text_color:
+            return self._colors_dict[target_text_color]
+        else:
+            return Color.from_wx(self._native_widget.GetTextColour())
+
+    def lookup_back_key(self, target_back_color: str):
+        """Helper method to look up a background color from a list item
+        format."""
+        if target_back_color:
+            return self._colors_dict[target_back_color]
+        else:
+            return self._defaultTextBackground
+
+@dataclass(slots=True)
+class ListItemFormat:
+    _parent_lc: UIListCtrl
+    icon_dex: int | None = None
+    bold: bool = False
+    italics: bool = False
+    underline: bool = False
+    _text_key: str = 'default.text'
+    _back_key: str = 'default.bkgd'
+
+    def to_tree_node_format(self, tree_node_type):
+        """Convert this list item format to an equivalent tree node format,
+        relative to the specified parent UIList."""
+        return tree_node_type(icon_idx=self.icon_dex,
+            back_color=self._parent_lc.lookup_back_key(self.back_key),
+            text_color=self._parent_lc.lookup_text_key(self.text_key),
+            bold=self.bold, italics=self.italics, underline=self.underline)
+
+    @property
+    def back_key(self) -> str:
+        return self._back_key
+
+    @back_key.setter
+    def back_key(self, val: str):
+        self._back_key = max(val, self._back_key,
+                             key=self._parent_lc.back_key_priority.__getitem__)
+
+    @property
+    def text_key(self) -> str:
+        return self._text_key
+
+    @text_key.setter
+    def text_key(self, val: str):
+        self._text_key = max(val, self._text_key,
+                             key=self._parent_lc.text_key_priority.__getitem__)

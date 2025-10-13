@@ -346,27 +346,28 @@ class _ModsUIList(UIList):
     def _item_name(self, x): # hack to centralize some nasty modInfos accesses
         return x
 
-    def set_item_format(self, item_key, item_format, **ui_kwargs):
+    def set_item_format(self, item_key, **ui_kwargs):
         self.mouseTexts[item_key] = mouseText = []
-        minf = super().set_item_format(item_key, item_format, **ui_kwargs)
-        if minf.hasActiveTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.load'
-            mouseText.append(_('Another plugin has the same timestamp.'))
-        elif minf.hasTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.exists'
-            mouseText.append(_('Another plugin has the same timestamp.'))
-        if minf.is_ghost:
-            item_format.back_key = 'mods.bkgd.ghosted'
-            mouseText.append(_('Plugin is ghosted.'))
-        if msg := minf.has_master_size_mismatch(self._do_size_checks):
-            item_format.back_key = 'mods.bkgd.size_mismatch'
-            mouseText.append(msg)
-        if settings['bash.mods.scanDirty']:
-            if msg := minf.getDirtyMessage():
+        minf, item_format = super().set_item_format(item_key, **ui_kwargs)
+        if minf:
+            if minf.hasActiveTimeConflict():
+                item_format.back_key = 'mods.bkgd.doubleTime.load'
+                mouseText.append(_('Another plugin has the same timestamp.'))
+            elif minf.hasTimeConflict():
+                item_format.back_key = 'mods.bkgd.doubleTime.exists'
+                mouseText.append(_('Another plugin has the same timestamp.'))
+            if minf.is_ghost:
+                item_format.back_key = 'mods.bkgd.ghosted'
+                mouseText.append(_('Plugin is ghosted.'))
+            if msg := minf.has_master_size_mismatch(self._do_size_checks):
+                item_format.back_key = 'mods.bkgd.size_mismatch'
                 mouseText.append(msg)
-                item_format.underline = True
+            if settings['bash.mods.scanDirty']:
+                if msg := minf.getDirtyMessage():
+                    mouseText.append(msg)
+                    item_format.underline = True
         self.mouseTexts[item_key] = ' '.join(mouseText)
-        return minf
+        return minf, item_format
 
     def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
                        # we get item_name not item_key so we need _mouse_text
@@ -518,11 +519,12 @@ class MasterList(_ModsUIList):
                     ma_name in sc_masters})
         self._reList()
 
-    def set_item_format(self, item_key, item_format, **ui_kwargs):
-        minf = super().set_item_format(item_key, item_format, **ui_kwargs)
-        if self.allowEdit:
+    def set_item_format(self, item_key, **ui_kwargs):
+        minf, item_format = super().set_item_format(item_key, **ui_kwargs)
+        if minf and self.allowEdit:
             if minf.old_name in settings['bash.mods.renames']:
                 item_format.bold = True
+        return minf, item_format
 
     def _set_icon_text(self, masterInfo, item_format, mi, **kwargs):
         mouseText = self.mouseTexts[mi]
