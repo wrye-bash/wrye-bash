@@ -42,7 +42,7 @@ from .bolt import FName, Path, RefrIn, deprint, readme_url, \
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
-    DirOpen, EventResult, FileOpen, FileSave, Font, GlobalMenu, HLayout, \
+    DirOpen, EventResult, FileOpen, FileSave, GlobalMenu, HLayout, \
     LayoutOptions, ListBox, Links, LogDialog, LogFrame, PanelWin, TextArea, \
     UIListCtrl, VLayout, bell, copy_files_to_clipboard, DeletionDialog, \
     web_viewer_available, AutoSize, get_shift_down, ContinueDialog, askText, \
@@ -673,50 +673,30 @@ class UIList(PanelWin):
     def item_count(self): return self.__gList.lc_item_count()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None, **ui_kwargs):
+    def PopulateItem(self, item_dex, item=None, allow_cols=None, **ui_kwargs):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
 
-        :param itemDex: the index of the item in the list - must be given if
-        item is None
+        :param item_dex: the index of the item in the list or None if item is
+            specified and not present in the list
         :param item: an FName or an int (Masters), the key in self.data
-        :param target_ini_setts: Cached information about the INI settings.
-            Used on the INI Edits tab"""
-        allow_cols = self.allowed_cols # property, calculate once
-        if not allow_cols:
-            return # No visible columns, nothing to do
+        :param ui_kwargs: Cached information to use on item formatting."""
+        allow_cols = allow_cols or self.allowed_cols # property, calculate once
         if item is None: # no way we're inserting with a None item
-            item = self.GetItem(itemDex)
+            item = self.GetItem(item_dex)
         else:
             try:
-                itemDex = self._get_uil_index(item)
+                item_dex = self._get_uil_index(item)
             except KeyError: # item is not present, so inserting
-                itemDex = None
-        str_label = self.labels[allow_cols[0]](self, item)
+                item_dex = None
         _inf, df = self.set_item_format(item, **ui_kwargs)
-        if itemDex is None:
-            # We're inserting a new item, so we need special handling for the
-            # first SetItem call - see InsertListCtrlItem
-            self.__gList.InsertListCtrlItem(
-                str_label, item, decorate_cb=partial(self.__setUI, df=df))
-        else:
-            # The item is already in the UIList, so we only need to redecorate
-            # and set text for all labels
-            gItem = self.__gList.get_item_data(itemDex)
-            self.__setUI(df, gItem)
-            # Piggyback off the SetItem call we need for __setUI to also set
-            # the first column's text
-            gItem.SetText(str_label)
-            self.__gList.set_item_data(gItem)
-        itemDex = self.item_count - 1 if itemDex is None else itemDex
-        for col_dex, col in enumerate(allow_cols[1:], start=1):
-            self.__gList.set_item_data(itemDex, col_dex,
-                                       self.labels[col](self, item))
+        self.__gList.insert_update_item(df, item_dex, item, allow_cols)
 
     def populate_items(self):
         """Sort items and populate entire list."""
-        # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
+        # Make sure to freeze/thaw, all the insert_update_item calls make the
         # GUI lag
+        cols = self.allowed_cols # property, calculate once
         with self.pause_drawing():
             self.mouseTexts.clear()
             items = set(self.data_store)
@@ -727,12 +707,12 @@ class UIList(PanelWin):
                 item = self.GetItem(index)
                 if item not in items: self.__gList.RemoveItemAt(index)
                 else:
-                    self.PopulateItem(itemDex=index, **ui_kwargs)
+                    self.PopulateItem(index, allow_cols=cols, **ui_kwargs)
                     items.remove(item)
                     index += 1
             #--Add remaining new items
             for item in items:
-                self.PopulateItem(item=item, **ui_kwargs)
+                self.PopulateItem(None, item, allow_cols=cols, **ui_kwargs)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
@@ -755,13 +735,14 @@ class UIList(PanelWin):
             self.populate_items()
         else: # a RefrData instance
             ui_kwargs = self._cache_rui_structs()
-            # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
+            cols = self.allowed_cols # property, calculate once
+            # Make sure to freeze/thaw, all the insert_update_item calls make
             # the GUI lag
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
                 for upd in (modified := rdata.new_changed()):
-                    self.PopulateItem(item=upd, **ui_kwargs)
+                    self.PopulateItem(None, upd, allow_cols=cols, **ui_kwargs)
                 #--Sort
                 if modified: # if we only deleted items sorting does not change
                     self.SortItems()
@@ -835,16 +816,6 @@ class UIList(PanelWin):
         """Base method just returns the status - always override to return the
         icon key tuple - populate mouse text, item_format attrs, etc."""
         return inf.info_status(**kwargs)
-
-    def __setUI(self, df, gItem):
-        """Set font, status icon, background text etc."""
-        if (icon_index := df.icon_dex) is not None:
-            gItem.SetImage(icon_index)
-        gItem.SetTextColour(self.__gList.lookup_text_key(df.text_key).to_rgba_tuple())
-        gItem.SetBackgroundColour(
-            self.__gList.lookup_back_key(df.back_key).to_rgba_tuple())
-        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
-                                 slant=df.italics, underline=df.underline))
 
     def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]]
                            ) -> DecoratedTreeDict:

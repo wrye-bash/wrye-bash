@@ -614,7 +614,7 @@ class MasterList(_ModsUIList):
             bass.settings[u'bash.mods.renames'][
                 masterInfo.old_name] = masterInfo.curr_name
             # populate, refresh must be called last
-            self.PopulateItem(itemDex=evt_index)
+            self.PopulateItem(evt_index)
             return EventResult.FINISH ##: needed?
         elif evt_label == u'':
             return EventResult.CANCEL
