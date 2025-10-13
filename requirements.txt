@@ -1,27 +1,30 @@
 # Runtime, required -----------------------------------------------------------
+# Newer releases of chardet are fully AI-generated and there are license
+# concerns as the original was LGPL, but they've suddenly changed to MIT/0BSD
+# without asking contributors... let's stay on v5 for now.
 chardet==5.2.0
 ifileoperation==1.2.6; sys_platform == 'win32'
-lz4==4.4.4
-pywin32==310; sys_platform == 'win32'
-PyYAML==6.0.2
+lz4==4.4.5
+pywin32==311; sys_platform == 'win32'
+PyYAML==6.0.3
 vdf==3.4
-wxPython==4.2.3
+wxPython==4.2.5
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
-lxml==6.0.0
+lxml==6.0.2
 # For parsing download conditions when checking for updates
-packaging==25.0
+packaging==26.0
 # For generating bash_default.ini section headers
-pyfiglet==1.0.3
+pyfiglet==1.0.4
 # For PDF support in the doc browser
-PyMuPDF==1.26.3
+PyMuPDF==1.27.2.2
 # For reflink copies (does not support Windows/ReFS yet)
 reflink==0.2.2; sys_platform != 'win32'
 # For various Internet-based functionality
-requests[use_chardet_on_py3]==2.32.4
+requests[use_chardet_on_py3]==2.33.0
 # For sending files to the recycle bin on non-Windows platforms
-send2trash==1.8.3; sys_platform != 'win32'
+send2trash==2.1.0; sys_platform != 'win32'
 # For Nexus Mods integration
-websocket-client==1.8.0
+websocket-client==1.9.0
 # Compile/Build-time ----------------------------------------------------------
 -r requirements-scripts.txt

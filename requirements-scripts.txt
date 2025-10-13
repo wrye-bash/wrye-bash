@@ -3,9 +3,10 @@
 # pulling in the tons of extra stuff from requirements.txt.
 # PY3.13: try removing when we update to pyinstaller 6.17.0+
 altgraph<0.17.5
-isort==6.0.1
-pygit2==1.18.0
-PyGithub==2.6.1
+isort==8.0.1
+pygit2==1.19.1
+PyGithub==2.9.0
 # PY3.13: try upgrading again & testing if restoring from backup still crashes
-pyinstaller==6.9.0
-pytest==8.4.1
+pyinstaller==6.9.0; sys_platform == 'win32'
+pyinstaller; sys_platform != 'win32' # Hack for Linux distros on py3.14
+pytest==9.0.2
