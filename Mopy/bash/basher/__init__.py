@@ -405,22 +405,20 @@ class MasterList(_ModsUIList):
     _bypass_gm_setting = True
     keyPrefix = u'bash.masters' # use for settings shared among the lists (cols)
     _editLabels = True
-    #--Sorting
-    _default_sort_col = u'Num'
-    _sort_keys = {
-        u'Num'          : None, # sort by master index, the key itself
-        u'File'         : lambda self, a:
-            self.data_store[a].curr_name.lower(),
-        # Missing mods sort last alphabetically
-        u'Current Order': lambda self, a: self._curr_lo_index[
-            self.data_store[a].curr_name],
-        'Indices': lambda self, a: self._save_lo_real_index[
-            self.data_store[a].curr_name][0],
-        'Current Index': lambda self, a: self._curr_real_index[
-            self.data_store[a].curr_name],
-    }
-    def _item_name(self, x):
+    def _item_name(self, x: int):
        return self.data_store[x].curr_name
+    #--Sorting
+    _sort_keys = {
+        'Num': None, # sort by master index, the key itself
+        'File': lambda self, a: self._item_name(a).lower(),
+        # Missing mods sort last alphabetically
+        'Current Order': lambda self, a: self._curr_lo_index[
+            self._item_name(a)],
+        'Indices': lambda self, a: self._save_lo_real_index[
+            self._item_name(a)][0],
+        'Current Index': lambda self, a: self._curr_real_index[
+            self._item_name(a)],
+    }
     _sunkenBorder, _singleCell = False, True
     #--Labels
     labels = {
@@ -2229,7 +2227,6 @@ class InstallersList(UIList):
     global_links = defaultdict(lambda: Links()) # Global menu
     _sunkenBorder = False
     _editLabels = _copy_paths = True
-    _default_sort_col = u'Package'
     _sort_keys = {'Package': None,
         'Order'   : _ask_info('order'),
         'Modified': _ask_info('ftime'),

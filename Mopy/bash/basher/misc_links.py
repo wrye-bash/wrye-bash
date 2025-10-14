@@ -289,7 +289,7 @@ class _Column(CheckLink, EnabledLink):
             u'colname': self._text}
 
     def _enable(self):
-        return self.colName not in self.window.persistent_columns
+        return self.colName != self.window.default_sort_col
 
     def _check(self): return self.colName in self.window.cols
 

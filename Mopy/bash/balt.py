@@ -547,8 +547,8 @@ class UIList(PanelWin):
     _singleCell = False # allow only single selections (no ctrl/shift+click)
     #--Sorting
     nonReversibleCols = {u'Load Order', u'Current Order'}
-    _default_sort_col = u'File' # override as needed
-    _sort_keys = {} # sort_keys[col] provides the sort key for this col
+    # maps columns to sorting functions - must not be empty!
+    _sort_keys = {} # first entry is the default_sort_column
     _extra_sortings = [] #extra self.methods for fancy sortings - order matters
     # Labels, map the (permanent) order of columns to the label generating code
     labels = {}
@@ -568,7 +568,6 @@ class UIList(PanelWin):
         #--Settings key
         self.keyPrefix = keyPrefix
         #--Columns
-        self.__class__.persistent_columns = {self._default_sort_col}
         self._col_index = {} # used in setting column sort indicator
         #--gList
         backkey_priority = {k: j for j, k in enumerate([
@@ -660,9 +659,11 @@ class UIList(PanelWin):
     # the current sort column
     @property
     def sort_column(self):
-        return _settings.get(f'{self.keyPrefix}.sort', self._default_sort_col)
+        return _settings.get(f'{self.keyPrefix}.sort', self.default_sort_col)
     @sort_column.setter
     def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
+    @property
+    def default_sort_col(self): return next(iter(self._sort_keys))
 
     def _handle_select(self, item_key):
         self._select(item_key)
@@ -1194,8 +1195,8 @@ class UIList(PanelWin):
         def _mk_key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return bolt.natural_key() if k is None else partial(k, self)
-        defaultKey = _mk_key(self._default_sort_col)
-        defSort = col == self._default_sort_col
+        defaultKey = _mk_key(self.default_sort_col)
+        defSort = col == self.default_sort_col
         # always apply default sort
         items = sorted(self.data_store if items is None else items,
                        key=defaultKey, reverse=defSort and reverse)
@@ -1231,7 +1232,7 @@ class UIList(PanelWin):
                 stored_cols.remove(c)
         # Finally, reset the sort column to the default if it's invalid now
         if self.sort_column not in valid_columns:
-            self.sort_column = self._default_sort_col
+            self.sort_column = self.default_sort_col
 
     def PopulateColumns(self):
         """Create/name columns in ListCtrl."""
