@@ -557,13 +557,16 @@ class UIList(PanelWin):
     _dndColumns = ()
     _copy_paths = False # enable the Ctrl+C shortcut
 
-    def __init__(self, parent, keyPrefix, listData=None, panel=None):
+    def __init__(self, parent, keyPrefix, *, ui_settings, ui_colors,
+                 listData=None, panel=None):
         super().__init__(parent, wants_chars=True, no_border=False)
-        self.data_store = listData # never use as local variable name !
+        # never use as local variable name !
+        self.data_store = {} if listData is None else listData
         try:
             Link.Frame.all_uilists[self.data_store.unique_store_key] = self
         except AttributeError:
             pass # not one of the singleton DataStores
+        self._ui_settings = ui_settings
         self.panel = panel
         #--Settings key
         self.keyPrefix = keyPrefix
@@ -587,8 +590,8 @@ class UIList(PanelWin):
             'installers.text.invalid', 'installers.text.marker',
             'installers.text.complex', ])}
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
-            self.__class__._sunkenBorder, self.__class__._singleCell, colors,
-            backkey_priority, textkey_priority, self.dndAllow,
+            self.__class__._sunkenBorder, self.__class__._singleCell,
+            ui_colors, backkey_priority, textkey_priority, self.dndAllow,
             dndFiles=self.__class__._dndFiles, dndList=self.__class__._dndList,
             fnDropFiles=self.OnDropFiles, fnDropIndexes=self.OnDropIndexes)
         # Image List: Column sorting order indicators
@@ -638,30 +641,30 @@ class UIList(PanelWin):
     def all_allowed_cols(self):
         return [c for c in self.allCols if c not in self.banned_columns]
     @property
-    def colWidths(self): return _settings[f'{self.keyPrefix}.colWidths']
+    def colWidths(self): return self._ui_settings[f'{self.keyPrefix}.colWidths']
     @property
     def colReverse(self):
         """Dictionary column->isReversed."""
-        return _settings[f'{self.keyPrefix}.colReverse']
+        return self._ui_settings[f'{self.keyPrefix}.colReverse']
     @property
-    def cols(self): return _settings[f'{self.keyPrefix}.cols']
+    def cols(self): return self._ui_settings[f'{self.keyPrefix}.cols']
     @property
     def allowed_cols(self):
         """Version of cols that filters out banned_columns."""
         return [c for c in self.cols if c not in self.banned_columns]
     @property
     def auto_col_widths(self):
-        return _settings.get(f'{self.keyPrefix}.auto_size_columns',
+        return self._ui_settings.get(f'{self.keyPrefix}.auto_size_columns',
             AutoSize.FIT_MANUAL)
     @auto_col_widths.setter
     def auto_col_widths(self, val):
-        _settings[f'{self.keyPrefix}.auto_size_columns'] = val
+        self._ui_settings[f'{self.keyPrefix}.auto_size_columns'] = val
     # the current sort column
     @property
     def sort_column(self):
-        return _settings.get(f'{self.keyPrefix}.sort', self.default_sort_col)
+        return self._ui_settings.get(f'{self.keyPrefix}.sort', self.default_sort_col)
     @sort_column.setter
-    def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
+    def sort_column(self, val): self._ui_settings[f'{self.keyPrefix}.sort'] = val
     @property
     def default_sort_col(self): return next(iter(self._sort_keys))
 
@@ -843,7 +846,7 @@ class UIList(PanelWin):
         return (self.column_links and not # column menu must be set
             self.__gList.ec_rename_prompt_opened() and # See DoItemMenu below
             # bash.global_menu == 1 -> Global Menu Only
-            (self._bypass_gm_setting or _settings['bash.global_menu'] != 1))
+            (self._bypass_gm_setting or self._ui_settings['bash.global_menu'] != 1))
 
     def DoItemMenu(self):
         """Show item menu."""
@@ -1220,7 +1223,7 @@ class UIList(PanelWin):
         valid_columns = set(self.allCols)
         # Clean the widths/reverse dictionaries
         for dict_key in ('.colWidths', '.colReverse'):
-            stored_dict = _settings[f'{self.keyPrefix}{dict_key}']
+            stored_dict = self._ui_settings[f'{self.keyPrefix}{dict_key}']
             invalid_columns = set(stored_dict) - valid_columns
             for c in invalid_columns:
                 del stored_dict[c]
@@ -1239,12 +1242,13 @@ class UIList(PanelWin):
         # this may have been updated in ColumnsMenu.Execute()
         allow_cols = self.allowed_cols
         numCols = len(allow_cols)
-        names = {_settings[u'bash.colNames'].get(key) for key in allow_cols}
+        col_names = self._ui_settings['bash.colNames']
+        names = {col_names.get(key) for key in allow_cols}
         self._col_index.clear()
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
             colKey = allow_cols[colDex]
-            colName = _settings[u'bash.colNames'].get(colKey, colKey)
+            colName = col_names.get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.lc_get_columns_count(): # Make a new column
                 listCtrl.lc_insert_column(colDex, colName)
@@ -1278,14 +1282,14 @@ class UIList(PanelWin):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[f'{self.keyPrefix}.scrollPos'] = self.__gList.get_scroll_pos(
-            isVertical)
+        self._ui_settings[f'{self.keyPrefix}.scrollPos'] = \
+            self.__gList.get_scroll_pos(isVertical)
 
     def SetScrollPosition(self):
-        if _settings['bash.restore_scroll_positions']:
+        if self._ui_settings['bash.restore_scroll_positions']:
             with self.__gList.pause_drawing():
                 self.__gList.set_scroll_pos(
-                    _settings.get(f'{self.keyPrefix}.scrollPos', 0))
+                    self._ui_settings.get(f'{self.keyPrefix}.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
@@ -1318,7 +1322,7 @@ class UIList(PanelWin):
         # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             title=dialogTitle, items_to_delete=items, default_recycle=recycle,
-            sizes_dict=_settings, icon_bundle=Resources.bashBlue,
+            sizes_dict=self._ui_settings, icon_bundle=Resources.bashBlue,
             trash_icon=get_image('trash_can.32'))
         if not dd_ok or not dd_items: return
         try:
@@ -1374,7 +1378,7 @@ class UIList(PanelWin):
         enabled but not constructed (i.e. hidden) or the item does not have an
         associated package."""
         if (not Link.Frame.iPanel or
-                not _settings['bash.installers.enabled']):
+                not self._ui_settings['bash.installers.enabled']):
             return None # Installers disabled or not initialized
         return FName(self.data_store[uil_item].get_table_prop('installer'))
 

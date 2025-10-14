@@ -23,7 +23,7 @@
 import re
 from collections import defaultdict
 
-from . import SaveDetails
+from . import SaveDetails, MasterList
 from .settings_dialog import SettingsDialog
 from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
@@ -159,10 +159,13 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Master_AllowEdit(CheckLink, EnabledLink):
+class _MasterLinkBase(EnabledLink):
+    window: MasterList
+
+class Master_AllowEdit(CheckLink, _MasterLinkBase):
     _text, _help = _(u'Allow Editing'), _(u'Allow editing the masters list.')
 
-    def _enable(self): return self.window.panel.detailsPanel.allowDetailsEdit
+    def _enable(self): return self.window.parent_details.allowDetailsEdit
     def _check(self): return self.window.allowEdit
     def Execute(self): self.window.allowEdit ^= True
 
@@ -175,7 +178,7 @@ class Master_ClearRenames(ItemLink):
         bass.settings[u'bash.mods.renames'].clear()
         self.window.RefreshUI()
 
-class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
+class _Master_EditList(OneItemLink, _MasterLinkBase): # one item cause _singleSelect = True
 
     def _enable(self): return self.window.allowEdit
 
@@ -250,7 +253,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
         # Only allow doing this for saves and only for games where removing a
         # master from an existing save is safe
         return bush.game.Ess.can_safely_remove_masters and isinstance(
-            window.detailsPanel, SaveDetails)
+            window.parent_details, SaveDetails)
 
     def _enable(self):
         if not super(Master_Disable, self)._enable(): return False

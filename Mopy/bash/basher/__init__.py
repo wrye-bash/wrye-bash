@@ -230,12 +230,13 @@ class SashUIListPanel(SashPanel):
     """SashPanel featuring a UIList and a corresponding listData datasource."""
     listData = None
     _status_str = 'OVERRIDE: %(status_num)d'
-    _ui_list_type: type[UIList] = None
+    _ui_list_type: type[UIList] | None = UIList
 
     def __init__(self, parent, isVertical=True):
-        super(SashUIListPanel, self).__init__(parent, isVertical)
-        self.uiList = self._ui_list_type(self.left, listData=self.listData,
-                                         keyPrefix=self.keyPrefix, panel=self)
+        super().__init__(parent, isVertical)
+        self.uiList = self._ui_list_type(self.left, keyPrefix=self.keyPrefix,
+            listData=self.listData, panel=self, ui_colors=colors,
+            ui_settings=bass.settings)
 
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
@@ -442,11 +443,10 @@ class MasterList(_ModsUIList):
         # using self.__class__.keyPrefix for common saves/mods masters settings
         return settings[self.__class__.keyPrefix + u'.cols']
 
-    def __init__(self, parent, listData=None, keyPrefix=keyPrefix, panel=None,
-                 detailsPanel=None):
+    def __init__(self, parent, keyPrefix=keyPrefix, *, par_details, **kwargs):
         #--Data/Items
         self.edited = False
-        self.detailsPanel = detailsPanel
+        self.parent_details: _ModsSavesDetails = par_details
         self.fileInfo = None
         self._curr_lo_index = {} # cache, orders missing last alphabetically
         self._curr_real_index = {}
@@ -455,14 +455,13 @@ class MasterList(_ModsUIList):
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
-        super().__init__(parent, listData={} if listData is None else listData,
-                         keyPrefix=keyPrefix, panel=panel)
+        super().__init__(parent, keyPrefix=keyPrefix, **kwargs)
 
     @property
     def allowEdit(self): return bass.settings.get(self._allowEditKey, False)
     @allowEdit.setter
     def allowEdit(self, val):
-        if val and (not self.detailsPanel.allowDetailsEdit or not
+        if val and (not self.parent_details.allowDetailsEdit or not
             balt.askContinue(self, _(
                 'Edit/update the masters list? Note that the update process '
                 'may automatically rename some files. Be sure to review the '
@@ -474,7 +473,7 @@ class MasterList(_ModsUIList):
             self.InitEdit()
         else:
             self.SetFileInfo(self.fileInfo)
-            self.detailsPanel.testChanges() # disable buttons if no other edits
+            self.parent_details.testChanges() # disable buttons if no other edits
 
     def _handle_select(self, item_key): pass
     def _handle_key_up(self, wrapped_evt): pass
@@ -537,7 +536,7 @@ class MasterList(_ModsUIList):
         status, checkMark = super()._set_icon_text(masterInfo, item_format,
             item_name, loadOrderIndex=self._curr_lo_index[item_name],
             mi=mi, _mouse_text=mouseText, **kwargs)
-        on_display = self.detailsPanel.detail_fn
+        on_display = self.parent_details.detail_fn
         if status == 30: # master is missing
             mouseText.append(_('Missing master of %(child_plugin_name)s.') % {
                 'child_plugin_name': on_display})
@@ -579,7 +578,7 @@ class MasterList(_ModsUIList):
     def SetMasterlistEdited(self, repopulate=False):
         self._reList(repopulate)
         self.edited = True
-        self.detailsPanel.SetEdited() # inform the details panel
+        self.parent_details.SetEdited() # inform the details panel
 
     #--Column Menu
     def _pop_menu(self):
@@ -1339,7 +1338,7 @@ class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
         #--Masters
         self.uilist = self._master_list_type(
             self.masterPanel, keyPrefix=self.keyPrefix, panel=ui_list_panel,
-            detailsPanel=self)
+            par_details=self, ui_colors=colors, ui_settings=bass.settings)
         self._masters_label = Label(self.masterPanel, _(u'Masters:'))
         VLayout(spacing=4, items=[
             self._masters_label,
@@ -1364,8 +1363,7 @@ class ModDetails(_ModsSavesDetails):
     def allowDetailsEdit(self): return bush.game.Esp.canEditHeader
 
     def __init__(self, parent, ui_list_panel):
-        super(ModDetails, self).__init__(parent, ui_list_panel,
-                                         split_vertically=True)
+        super().__init__(parent, ui_list_panel, split_vertically=True)
         top, bottom = self.left, self.right
         #--Version
         self._version = Label(top, 'v0.00')
@@ -2079,7 +2077,7 @@ class SaveDetails(_ModsSavesDetails):
     def allowDetailsEdit(self): return self.file_info.header.can_edit_header
 
     def __init__(self, parent, ui_list_panel):
-        super(SaveDetails, self).__init__(parent, ui_list_panel)
+        super().__init__(parent, ui_list_panel)
         top, bottom = self.left, self.right
         textWidth = 200
         #--Player Info
