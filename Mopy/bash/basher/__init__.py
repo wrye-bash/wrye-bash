@@ -57,7 +57,7 @@ import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
 from functools import partial
-from itertools import chain, repeat, starmap
+from itertools import chain, repeat, starmap, count
 
 import wx
 
@@ -288,8 +288,14 @@ class _ModsUIList(UIList):
     # size of the plugin on disk
     _do_size_checks = bush.game.Esp.check_master_sizes
     _masters_first_default = True
+    _back_key_priority = ('mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
+        'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load')
+    _back_key_priority = UIList._back_key_priority | {k: j for j, k in
+        enumerate(_back_key_priority, 1)}
 
     def __init__(self, *args, **kwargs):
+        self._text_key_priority = {**UIList._text_key_priority, **dict(zip(
+            dict.fromkeys(bush.game.mod_keys.values()), count(1)))}
         super().__init__(*args, **kwargs)
         if bush.game.master_flag:
             self._extra_sortings.insert(0, _ModsUIList._sort_masters_first)
@@ -643,6 +649,7 @@ class INIList(UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
+    _back_key_priority = {**UIList._back_key_priority, 'ini.bkgd.invalid': 1}
     _sort_keys = {
         'File'     : None,
         'Installer': _ask_info('get_table_prop', ('installer', '')),
@@ -2231,6 +2238,12 @@ class InstallersList(UIList):
         'Size'    : _ask_info('fsize'),
         'Files'   : _ask_info('num_of_files'),
     }
+    _back_key_priority = UIList._back_key_priority | {
+        k: j for j, k in enumerate(['installers.bkgd.skipped',
+            'installers.bkgd.outOfOrder', 'installers.bkgd.dirty'], 1)}
+    _text_key_priority = UIList._text_key_priority | {
+        k: j for j, k in enumerate(['installers.text.invalid',
+            'installers.text.marker', 'installers.text.complex'], 1)}
     #--Special sorters
     def _sortStructure(self, items, *, __lm=_ask_info('bain_type')):
         if settings[u'bash.installers.sortStructure']:

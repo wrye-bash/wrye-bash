@@ -556,6 +556,8 @@ class UIList(PanelWin):
     _dndFiles = _dndList = False
     _dndColumns = ()
     _copy_paths = False # enable the Ctrl+C shortcut
+    _back_key_priority = {'default.bkgd': 0} # maps background keys to priority
+    _text_key_priority = {'default.text': 0} # maps text colour to priority
 
     def __init__(self, parent, keyPrefix, *, ui_settings, ui_colors,
                  listData=None, panel=None):
@@ -573,27 +575,12 @@ class UIList(PanelWin):
         #--Columns
         self._col_index = {} # used in setting column sort indicator
         #--gList
-        backkey_priority = {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
-            'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
-            # INIs ------------------------------------------------------------
-            'ini.bkgd.invalid',
-            # Installers ------------------------------------------------------
-            'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
-            'installers.bkgd.dirty'])}
-        from . import bush # todo pass game in!
-        textkey_priority = {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
-            # Installers ------------------------------------------------------
-            'installers.text.invalid', 'installers.text.marker',
-            'installers.text.complex', ])}
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
             self.__class__._sunkenBorder, self.__class__._singleCell,
-            ui_colors, backkey_priority, textkey_priority, self.dndAllow,
-            dndFiles=self.__class__._dndFiles, dndList=self.__class__._dndList,
-            fnDropFiles=self.OnDropFiles, fnDropIndexes=self.OnDropIndexes)
+            ui_colors, self._back_key_priority, self._text_key_priority,
+            self.dndAllow, dndFiles=self.__class__._dndFiles,
+            dndList=self.__class__._dndList, fnDropFiles=self.OnDropFiles,
+            fnDropIndexes=self.OnDropIndexes)
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
         self.icons.native_init(recreate=False)
