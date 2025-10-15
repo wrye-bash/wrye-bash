@@ -665,7 +665,13 @@ class Installer_ListStructure(_SingleInstallable):
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
-        source_list_txt = self._selected_info.listSource()
+        """Return package structure as text."""
+        log = bolt.LogFile(io.StringIO())
+        log.setHeader(f'{self} ' + _('Package Structure:'))
+        log('[spoiler]\n', False) ##: do we need these spoiler tags?
+        self._selected_info.list_package(log)
+        log('[/spoiler]')
+        source_list_txt = log.out.getvalue()
         #--Get masters list
         copy_text_to_clipboard(source_list_txt)
         self._showLog(source_list_txt, title=_('Package Structure'))

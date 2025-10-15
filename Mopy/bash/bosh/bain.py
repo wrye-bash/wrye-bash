@@ -1312,21 +1312,16 @@ class _InstallerPackage(Installer, AFileInfo):
         raise NotImplementedError
 
     #--ABSTRACT ---------------------------------------------------------------
-    def install(self, destFiles: set[CIstr], progress, **kwargs):
+    def install(self, destFiles: set[CIstr], progress, *, rui_data, **kwargs):
         """Install specified files to Data directory."""
         dest_src = self.refreshDataSizeCrc(True)
         dest_src = {k: v for k, v in dest_src.items() if k in destFiles}
-        if not dest_src: return bolt.LowerDict(), defaultdict(bool)
+        if not dest_src:
+            return
         progress = progress if progress else bolt.Progress()
-        self._install(dest_src, progress, **kwargs)
-
-    def _install(self, dest_src, progress, **kwargs):
-        raise NotImplementedError
-
-    def _fs_install(self, dest_src, srcDirJoin, progress, subprogressPlus,
-                    unpackDir, *, rui_data, **kwargs):
-        """Filesystem install, if unpackDir is not None we are installing
-         an archive."""
+        srcDirJoin, subprogressPlus, unpackDir = self._install_source_args(
+            dest_src, progress)
+        # Filesystem install, unpackDir is not None only for archives
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
         stores = data_tracking_stores()
@@ -1365,7 +1360,7 @@ class _InstallerPackage(Installer, AFileInfo):
         idata_data_scd = self.instData.data_sizeCrcDate
         from ..bosh import modInfos
         for dest, (s, c, dest_path) in data_sizeCrcDate_update.items():
-            d = dest_path.mtime # update mtime after copy/move
+            d = dest_path.mtime # update mtime after copy/move ##:(241) needed or use cached value?
             if st_fn := dest_to_store.get(dest):
                 at = {'installer': str(self.fn_key)}
                 if (st := st_fn[0]) is modInfos:
@@ -1374,17 +1369,10 @@ class _InstallerPackage(Installer, AFileInfo):
                     extra_attrs={st_fn[1]: at}, store=st)
             idata_data_scd[dest] = (s, c, d)
 
-    def listSource(self):
-        """Return package structure as text."""
-        log = bolt.LogFile(io.StringIO())
-        log.setHeader(f'{self} ' + _('Package Structure:'))
-        log('[spoiler]\n', False) ##: do we need these spoiler tags?
-        self._list_package(self.abs_path, log)
-        log('[/spoiler]')
-        return log.out.getvalue()
+    def _install_source_args(self, dest_src, progress):
+        raise NotImplementedError
 
-    @staticmethod
-    def _list_package(apath, log):
+    def list_package(self, log):
         raise NotImplementedError
 
     def sync_from_data(self, delta_files: set[CIstr], progress, archive_name):
@@ -1602,7 +1590,7 @@ class InstallerArchive(_InstallerPackage):
                 bolt.clearReadOnly(unpack_dir)
         return GPath_no_norm(unpack_dir)
 
-    def _install(self, dest_src, progress, **kwargs):
+    def _install_source_args(self, dest_src, progress):
         #--Extract
         progress(0, ('%s\n' % self) + _('Extracting files…'))
         unpackDir = self.unpackToTemp(list(dest_src.values()),
@@ -1610,11 +1598,10 @@ class InstallerArchive(_InstallerPackage):
         #--Rearrange files
         progress(0.9, ('%s\n' % self) + _('Organizing files…'))
         srcDirJoin = unpackDir.join
-        subprogress = SubProgress(progress,0.9,1.0)
+        subprogress = SubProgress(progress, 0.9, 1.0)
         subprogress.setFull(len(dest_src))
         subprogressPlus = subprogress.plus
-        self._fs_install(dest_src, srcDirJoin, progress, subprogressPlus,
-                         unpackDir, **kwargs)
+        return srcDirJoin, subprogressPlus, unpackDir
 
     def unpackToProject(self, project, progress):
         """Unpacks archive to build directory."""
@@ -1642,8 +1629,7 @@ class InstallerArchive(_InstallerPackage):
         cleanup_temp_dir(unpack_dir)
         return count
 
-    @staticmethod
-    def _list_package(apath, log):
+    def list_package(self, log):
         list_text = []
         filepath = u''
         def _parse_archive_line(key, value):
@@ -1655,7 +1641,7 @@ class InstallerArchive(_InstallerPackage):
                     (f'{filepath}', value and (u'D' in value)))
             elif key == u'Method':
                 filepath = u''
-        list_archive(apath, _parse_archive_line)
+        list_archive(self.abs_path, _parse_archive_line)
         list_text.sort()
         #--Output
         for node, isdir_ in list_text:
@@ -1805,20 +1791,18 @@ class InstallerProject(_InstallerPackage):
         self.project_refreshed = True
 
     # Installer API -----------------------------------------------------------
-    def _install(self, dest_src, progress, **kwargs):
+    def _install_source_args(self, dest_src, progress):
         progress.setFull(len(dest_src))
         progress(0, f'{self}\n' + _('Moving files…'))
         progressPlus = progress.plus
         #--Copy Files
         srcDirJoin = self.abs_path.join
-        self._fs_install(dest_src, srcDirJoin, progress, progressPlus, None,
-                         **kwargs)
+        return srcDirJoin, progressPlus, None
 
     def sync_from_data(self, delta_files: set[CIstr], progress, archive_name):
         return self._do_sync_data(self.abs_path, delta_files, progress)
 
-    @staticmethod
-    def _list_package(apath, log):
+    def list_package(self, log):
         def walkPath(folder, depth):
             r, folders, files = next(os.walk(folder))
             indent = u' ' * depth
@@ -1829,7 +1813,7 @@ class InstallerProject(_InstallerPackage):
                 depth += 2
                 walkPath(os.path.join(r, d), depth)
                 depth -= 2
-        walkPath(apath, 0)
+        walkPath(self.abs_path, 0)
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
@@ -2713,23 +2697,6 @@ class InstallersData(DataStore):
             emptyDirs -= excludir
         return allRemoves
 
-    def _removeFiles(self, ci_removes, *, removed_tracked, removed_untracked,
-                     **kwargs):
-        """Performs the actual deletion of files and updating of internal data,
-           used by 'bain_uninstall' and 'bain_anneal'."""
-        if not ci_removes: return
-        mods_dir_join = bass.dirs[u'mods'].join
-        #--Construct list of files to delete
-        for ci_rel_path in ci_removes:
-            for store, removed_files in removed_tracked.items():
-                if store_info := store.data_path_to_info(ci_rel_path):
-                    removed_files.add(store_info.fn_key)
-                    break
-            else:
-                path = mods_dir_join(ci_rel_path)
-                if path.exists():
-                    removed_untracked.add(path)
-
     def __restore(self, installer, removes, restores, *, cede_ownership,
                   **kwargs):
         """Populate restores dict with files to be restored by this
@@ -2781,6 +2748,7 @@ class InstallersData(DataStore):
         for installer in self.sorted_values(reverse=True):
             #--Uninstall archive?
             if installer in unArchives:
+                installer.is_active = False
                 for data_sizeCrc in (installer.ci_dest_sizeCrc,installer.dirty_sizeCrc):
                     for ci_file, sizeCrc in data_sizeCrc.items():
                         try:
@@ -2794,15 +2762,22 @@ class InstallersData(DataStore):
             elif installer.is_active:
                 masked |= self.__restore(installer, removes, restores, **kwargs)
         anneal = bass.settings[u'bash.installers.autoAnneal']
-        self._remove_restore(removes, restores, unArchives, anneal, **kwargs)
+        self._remove_restore(removes, restores, anneal, **kwargs)
 
-    def _remove_restore(self, removes, restores, unArchives, anneal=True, *,
-                        progress, **kwargs):
-        #--Remove files, update InstallersData, update load order
-        self._removeFiles(removes, **kwargs)
-        #--De-activate
-        for inst in unArchives:
-            inst.is_active = False
+    def _remove_restore(self, removes, restores, anneal=True, *, progress,
+                        removed_tracked, removed_untracked, **kwargs):
+        #--Construct list of files to delete
+        if removes:
+            mods_dir_join = bass.dirs['mods'].join
+            for ci_rel_path in removes:
+                for store, removed_files in removed_tracked.items():
+                    if store_info := store.data_path_to_info(ci_rel_path):
+                        removed_files.add(store_info.fn_key)
+                        break
+                else:
+                    path = mods_dir_join(ci_rel_path)
+                    if path.exists():
+                        removed_untracked.add(path)
         #--Restore files
         if anneal:
             restores = dict_sort(restores, by_value=True)
@@ -2846,7 +2821,7 @@ class InstallersData(DataStore):
             #  And/or may block later uninstalls.
             if installer.is_active:
                 self.__restore(installer, removes, restores, **kwargs)
-        self._remove_restore(removes, restores, frozenset(), **kwargs)
+        self._remove_restore(removes, restores, **kwargs)
 
     @_bain_op
     def bain_wiz_install(self, packages, *, progress, **kwargs):
