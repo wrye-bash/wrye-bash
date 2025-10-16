@@ -689,26 +689,24 @@ class INIList(UIList):
         tweaklist += u'[/spoiler]\n'
         return tweaklist
 
-    def _set_icon_text(self, iniInfo, item_format, ini_name, **kwargs):
+    def _set_icon_text(self, iniInfo, item_format, ini_name, *,
+            __st_codes=defaultdict(int, {20: 1, 15: 3, 10: 3}), **kwargs):
         status = super()._set_icon_text(iniInfo, item_format, ini_name, **kwargs)
         #--Image
-        checkMark = 0
+        checkMark = __st_codes[status]
         icon_ = 0    # Ok tweak, not applied
         mousetext = ''
         if status == 20:
             # Valid tweak, applied
-            checkMark = 1
             mousetext = _('Tweak is currently applied.')
         elif status == 15:
             # Valid tweak, some settings applied, others are
             # overwritten by values in another tweak from same installer
-            checkMark = 3
             mousetext = _('Some settings are applied. Some are overwritten '
                           'by another tweak from the same installer.')
         elif status == 10:
             # Ok tweak, some parts are applied, others not
             icon_ = 10
-            checkMark = 3
             mousetext = _('Some settings are changed.')
         elif status < 0:
             # Bad tweak
@@ -780,7 +778,6 @@ class INIList(UIList):
             #--No point applying a tweak that's already applied
             if target_ini: # if target was given calculate the status for it
                 stat = ini_info.getStatus(target_ini_file)
-                ini_info.reset_status() # iniInfos.ini may differ from target
             else: stat = ini_info.info_status()
             if stat == 20 or not ini_info.is_applicable(stat): continue
             needsRefresh |= target_ini_file.apply_tweak(ini_info)

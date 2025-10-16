@@ -333,7 +333,7 @@ class _WithMastersInfo(FileInfo):
         self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {} # ModInfo only - don't use!
-        self.master_st = None # the status of the masters, cached ##:(701) use in SaveInfo
+        self.master_st = None # the status of the masters, cached
         super().__init__(fullpath, **kwargs)
 
     def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
@@ -1106,17 +1106,18 @@ def best_ini_files(abs_ini_paths):
 
 class AINIInfo(_TabledInfo, AIniInfo):
     """Ini info, adding cached status and functionality to the ini files."""
-    _status = None
+    ini_st = None
     is_default_tweak = False
     _key_to_attr = {'installer': 'ini_owner_inst'}
 
     @classmethod
     def _store(cls): return iniInfos
 
-    def info_status(self, *, target_ini_settings=None, **kwargs):
-        if self._status is None:
-            self.getStatus(target_ini_settings=target_ini_settings)
-        return self._status
+    def info_status(self, *, target_ini_settings=None, recalc_st=False,
+                    **kwargs):
+        if recalc_st or self.ini_st is None: self.ini_st = self.getStatus(
+            target_ini_settings=target_ini_settings)
+        return self.ini_st
 
     def _incompatible(self, other):
         if not isinstance(self, OBSEIniFile):
@@ -1130,44 +1131,40 @@ class AINIInfo(_TabledInfo, AIniInfo):
 
     def getStatus(self, target_ini=None, target_ini_settings=None):
         """Returns status of the ini tweak:
-        20: installed (green with check)
-        15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
-        10: mismatches (yellow)
-        0: not installed (green)
-        -10: tweak file contains new sections/settings
-        -20: incompatible tweak file (red)
-        Also caches the value in self._status"""
+            20: installed (green with check)
+            15: mismatches (green with dot) - mismatches are with another
+                tweak from same installer that is applied
+            10: mismatches (yellow)
+            0: not installed (green)
+            -10: tweak file contains new sections/settings
+            -20: incompatible tweak file (red)"""
         infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.get_ci_settings()
         if self._incompatible(target_ini) or not tweak_settings:
-            return self.reset_status(-20)
+            return -20
         found_match = False
         mismatch = 0
         ini_settings = target_ini_settings if target_ini_settings is not None \
             else target_ini.get_ci_settings()
-        self_installer = FName( # make comparison case insensitive below
-            self.get_table_prop(u'installer'))
+        if self_installer := (FName(self.get_table_prop('installer')) or []):
+            self_installer = [inf for inf in infos.values() if not (
+                inf.get_table_prop('installer') != self_installer or
+                inf is self or self._incompatible(inf))]
         for section_key in tweak_settings:
             if section_key not in ini_settings:
-                return self.reset_status(-10)
+                return -10
             target_section = ini_settings[section_key]
             tweak_section = tweak_settings[section_key]
             for item in tweak_section:
                 if item not in target_section:
-                    return self.reset_status(-10)
+                    return -10
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another ini
                         # tweak that is applied, and from the same installer
                         mismatch = 2
-                        if self_installer is None: continue
-                        for ini_info in infos.values():
-                            if self is ini_info: continue
-                            if self_installer != ini_info.get_table_prop(
-                                    u'installer'): continue
-                            # It's from the same installer
-                            if self._incompatible(ini_info): continue
+                        for ini_info in self_installer:
                             value = ini_info.getSetting(section_key, item, None)
                             if value == target_section[item][0]:
                                 # The other tweak has the setting we're worried about
@@ -1176,17 +1173,13 @@ class AINIInfo(_TabledInfo, AIniInfo):
                 else:
                     found_match = True
         if not found_match:
-            return self.reset_status(0)
+            return 0
         elif not mismatch:
-            return self.reset_status(20)
+            return 20
         elif mismatch == 1:
-            return self.reset_status(15)
+            return 15
         elif mismatch == 2:
-            return self.reset_status(10)
-
-    def reset_status(self, s=None):
-        self._status = s
-        return s
+            return 10
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
@@ -1851,7 +1844,7 @@ class INIInfo(IniFileInfo, AINIInfo):
 
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
-        self.reset_status()
+        self.ini_st = None
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
@@ -1965,6 +1958,8 @@ class INIInfos(TableFileInfos):
             choice = list(bass.settings[u'bash.ini.choices']).index(
                 previous_ini)
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
+        global iniInfos
+        iniInfos = self # needed for status calculation in getStatus
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings['bash.ini.choice']] # set self.redraw_target = True
 
@@ -1977,7 +1972,7 @@ class INIInfos(TableFileInfos):
             self[k] = default_info  # type: DefaultIniInfo
             if k in rdata.to_del: # we restore default over copy
                 rdata |= RefrData({k}) # will pop it from to_del also
-                default_info.reset_status()
+                default_info.ini_st = None # force status recalculation
             else: # booting
                 rdata.to_add.add(k)
         if not booting and ((targ := self.ini).updated or targ.do_update()):
@@ -1986,9 +1981,9 @@ class INIInfos(TableFileInfos):
             rdata |= self._reset_all_statuses()
         return rdata
 
-    def _reset_all_statuses(self):
-        updt = {ini_info.reset_status() or ini_info.fn_key for ini_info in
-                self.values()} ##:(701) only return infos that changed status
+    def _reset_all_statuses(self): # only return infos that changed status
+        updt = {fn for fn, ini_info in self.items() if
+                ini_info.ini_st != ini_info.info_status(recalc_st=True)}
         self.redraw_target = True # we are called on target update - msg the UI
         return RefrData(updt)
 
@@ -2410,8 +2405,8 @@ class ModInfos(TableFileInfos):
         refreshed if active mods change or mods are added/removed - but also
         in a plain tab out/in Bash, as those are regular files. We should
         centralize data dir scanning. String files depend on inis."""
-        ##: depends on bsaInfos thus a bsaInfos.refresh should trigger
-        # a modInfos.refresh - see comments in get_bsa_lo
+        ##:(701) depends on bsaInfos thus a bsaInfos.refresh should trigger a
+        # modInfos.refresh - see comments in get_bsa_lo
         data_folder_path = bass.dirs['mods']
         self.plugin_inis = self.__load_plugin_inis(data_folder_path)
         # We'll be removing BSAs from here once we've given them a position
@@ -3605,5 +3600,5 @@ def init_stores(progress):
     progress(0.5, _('Initializing saves'))
     saveInfos = SaveInfos()
     progress(0.6, _('Initializing INIs'))
-    iniInfos = INIInfos()
+    INIInfos() # iniInfos global is set in __init__
     return modInfos

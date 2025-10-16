@@ -764,11 +764,6 @@ class UIList(PanelWin):
             kwargs.setdefault('focus_list', True)
             ui_refreshes[self.data_store.unique_store_key] = kwargs
         # if a RefreshUI is requested for ModList we should also refresh Saves
-        # TODO(701): we need to be more granular here which needs caching
-        #  info_status - we need similar logic in _refresh_mod_inis_and_strings
-        #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
-        if refr_saves and ui_refreshes.get(Store.MODS):
-            ui_refreshes[Store.SAVES] = True
         for list_key, ref_args in [*ui_refreshes.items()]:
             if ref_args:
                 if not isinstance(ref_args, dict): # True or RefrData
@@ -778,6 +773,19 @@ class UIList(PanelWin):
                 ui_refreshes[list_key] = ref_args
             else:
                 del ui_refreshes[list_key]
+        if refr_saves and ui_refreshes.get(Store.MODS):
+            from .bosh import saveInfos
+            to_redraw = set()
+            for fn, save in saveInfos.items():
+                old, new = save.master_st, save.info_status(recalc_st=True)
+                if old != new: # save master status changed, redraw
+                    to_redraw.add(fn)
+            if rdict := ui_refreshes.get(Store.SAVES):
+                if rd_saves := rdict.get('rdata'): # else it's None so refresh all
+                    rd_saves |= RefrData(to_redraw)
+            else:
+                ui_refreshes[Store.SAVES] = {'rdata': RefrData(to_redraw),
+                                             'focus_list': False}
         Link.Frame.refresh_and_warn(ui_refreshes, booting)
 
     def Focus(self):
