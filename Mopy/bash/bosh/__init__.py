@@ -333,6 +333,7 @@ class _WithMastersInfo(FileInfo):
         self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {} # ModInfo only - don't use!
+        self.master_st = None # the status of the masters, cached ##:(701) use in SaveInfo
         super().__init__(fullpath, **kwargs)
 
     def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
@@ -347,7 +348,7 @@ class _WithMastersInfo(FileInfo):
         #--Master Names/Order
         self.masterNames = tuple(self._get_masters())
 
-    def _masters_order_status(self, status):
+    def _masters_order_status(self):
         raise NotImplementedError
 
     def _get_masters(self):
@@ -368,21 +369,14 @@ class _WithMastersInfo(FileInfo):
             if altering a master list would cause it to become circular."""
         raise NotImplementedError
 
-    def info_status(self, **kwargs):
-        """Returns status of this file -- which depends on status of masters.
-        0:  Good
-        10: Out of order master(s)
-        20: Loads before its master(s)
-        21: 10 + 20
-        30: Missing master(s)."""
-        #--Worst status from masters
-        status = 30 if any( # if self.masterNames is empty returns False
-            (m not in modInfos) for m in self.masterNames) else 0
-        #--Missing files?
-        if status == 30:
-            return status
-        #--Misordered?
-        return self._masters_order_status(status)
+    def info_status(self, *, recalc_st=False, **kwargs):
+        """Returns status of this file -- which depends on status of masters:
+            - 30: Missing master(s)."""
+        #--Missing files? (if self.masterNames is empty any() returns False)
+        if recalc_st or self.master_st is None:
+            self.master_st = 30 if any((m not in modInfos)
+                for m in self.masterNames) else self._masters_order_status()
+        return self.master_st
 
 #------------------------------------------------------------------------------
 class ModInfo(_WithMastersInfo):
@@ -999,18 +993,21 @@ class ModInfo(_WithMastersInfo):
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
         return old_new_paths
 
-    def _masters_order_status(self, status):
+    def _masters_order_status(self, *, __lo=load_order.cached_lo_index):
+        """Returns:
+            - 0:  Good
+            - 10: Out of order master(s)
+            - 20: Loads before its master(s)
+            - 21: 10 + 20"""
         mo = tuple(load_order.get_ordered(self.masterNames)) # masterOrder
-        loads_before_its_masters = mo and load_order.cached_lo_index(
-            mo[-1]) > load_order.cached_lo_index(self.fn_key)
-        if mo != self.masterNames and loads_before_its_masters:
+        loads_before_its_masters = mo and __lo(mo[-1]) > __lo(self.fn_key)
+        if (inordered := mo != self.masterNames) and loads_before_its_masters:
             return 21
         elif loads_before_its_masters:
             return 20
-        elif mo != self.masterNames:
+        elif inordered:
             return 10
-        else:
-            return status
+        return 0
 
     def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         hasBsa, hasBlocking = self.hasResources()
@@ -1265,13 +1262,10 @@ class SaveInfo(_WithMastersInfo):
     @classmethod
     def _store(cls): return saveInfos
 
-    def _masters_order_status(self, status):
+    def _masters_order_status(self):
         mo = tuple(load_order.get_ordered(self.masterNames))
         if mo != self.masterNames:
             return 20 # Reordered masters are far more important in saves
-        elif status > 0:
-            # Missing or reordered masters -> orange or red
-            return status
         active_tuple = load_order.cached_active_tuple()
         if mo == active_tuple:
             # Exact match with LO -> purple
@@ -1279,10 +1273,9 @@ class SaveInfo(_WithMastersInfo):
         if mo == active_tuple[:len(mo)]:
             # Matches LO except for new plugins at the end -> blue
             return -10
-        else:
-            # Does not match the LO's active plugins, but the order is correct.
-            # That means the LO has new plugins, but not at the end -> green
-            return 0
+        # Does not match the LO's active plugins, but the order is correct.
+        # That means the LO has new plugins, but not at the end -> green
+        return 0
 
     def is_save_enabled(self):
         """True if I am enabled."""
@@ -2310,12 +2303,13 @@ class ModInfos(TableFileInfos):
         changed = set()
         # We need to scan dependent mods first to account for mergeability of
         # their masters
-        for fn_mod, modInfo in dict_sort(self, reverse=True,
-                                         key_f=load_order.cached_lo_index):
-            for p_master in modInfo.masterNames:
+        none_ = (None, {})
+        for fn_mod, plug in dict_sort(self, reverse=True,
+                                      key_f=load_order.cached_lo_index):
+            for p_master in plug.masterNames:
                 cached_dependents[p_master].add(fn_mod)
             isact = load_order.cached_is_active(fn_mod)
-            if modInfo.isBP():
+            if plug.isBP():
                 self.bashed_patches.add(fn_mod)
                 if isact: active_patches.add(fn_mod)
             if self.isBadFileName(fn_mod):
@@ -2326,22 +2320,21 @@ class ModInfos(TableFileInfos):
                     self.activeBad.add(fn_mod)
                 else:
                     self.bad_names.add(fn_mod)
-            cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
-                                                           (None, {}))
+            cached_size, canMerge = plug.get_table_prop('mergeInfo', none_)
             # Quickly check if some mergeability types are impossible for this
             # plugin (because it already has the target type)
             new_checks = {m: False for m, m_check in quick_checks.items() if
-                          m_check(modInfo)}
+                          m_check(plug)}
             # If ve already covered all required checks with the quick checks
             # above (e.g. an ESL-flagged plugin in a game with only ESL
             # support -> not ESL-flaggable), or the cached size matches what we
             # have on disk, and we have data for all required mergeability
             # checks, we can cache the info
             if len(new_checks) == all_checks or (len(canMerge) == all_checks
-                    and cached_size == modInfo.fsize):
+                    and cached_size == plug.fsize):
                 if canMerge != (canMerge := canMerge | new_checks):
                     changed.add(fn_mod)
-                modInfo.set_table_prop('mergeInfo', (modInfo.fsize, canMerge))
+                plug.set_table_prop('mergeInfo', (plug.fsize, canMerge))
             else:
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
@@ -2360,10 +2353,16 @@ class ModInfos(TableFileInfos):
         self.merged, self.imported = self.getSemiActive(active_patches)
         dex_xor = (k for k, v in self.real_indices.items() ^ old_dexs.items()
             if v[0] != sys.maxsize) # added from defaultdict for inactive mods
-        return {plug for plug in chain(dex_xor, changed, rescan_mods,
-            self.bashed_patches ^ bps, self.merged ^ mrgd,
-            self.imported ^ imprtd, self.activeBad ^ old_ab,
-            self.bad_names ^ old_bad) if plug in self}
+        chain_ch = {*chain(dex_xor, changed, rescan_mods, self.merged ^ mrgd,
+            self.imported ^ imprtd, self.bashed_patches ^ bps,
+            self.activeBad ^ old_ab, self.bad_names ^ old_bad)}
+        to_redraw = set()
+        # reset and cache master status for (all) mod infos (more granular?)
+        for fn, plug in self.items(): # we could use dependents here?
+            old, new = plug.master_st, plug.info_status(recalc_st=True)
+            if old != new or fn in chain_ch: # we need to redraw
+                to_redraw.add(fn)
+        return to_redraw
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
                         return_results=False, sort_descending_lo=True):

@@ -803,7 +803,7 @@ class UIList(PanelWin):
             return inf, item_format # screens, bsas
         return inf, item_format # used in overrides
 
-    def _set_icon_text(self, inf, item_format, item_key, **kwargs):
+    def _set_icon_text(self, inf, item_format, item_key, **kwargs): # one use!
         """Base method just returns the status - always override to return the
         icon key tuple - populate mouse text, item_format attrs, etc."""
         return inf.info_status(**kwargs)
