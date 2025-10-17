@@ -2102,22 +2102,25 @@ def _lo_cache(lord_func):
         """Sync the ModInfos load order and active caches and refresh for
         load order or active changes."""
         try:
-            ldiff = LordDiff() if ldiff is None else ldiff
+            ldiff = LordDiff() if ldiff is None else ldiff #only set in refresh
             ldiff |= lord_func(self, *args, **kwargs)
-            if ldiff.inact_changes_only():
-                return ldiff.to_rdata()
-            # Update all data structures that may be affected by LO change
-            ldiff.affected |= self._refresh_mod_inis_and_strings()
-            ldiff.affected |= self._file_or_active_updates()
-            # unghost new active plugins and ghost new inactive (if autoGhost)
-            ghostify = dict.fromkeys(ldiff.new_act, False)
-            if bass.settings['bash.mods.autoGhost']: # new mods, ghost
-                new_inactive = ldiff.new_inact | (ldiff.added - ldiff.new_act)
-                ghostify.update({k: True for k in new_inactive if
-                    self[k].get_table_prop('allowGhosting', True)})
-            ldiff.affected.update(mod for mod, ghost_it in ghostify.items()
-                                  if self[mod].setGhost(ghost_it))
-            return ldiff.to_rdata()
+            if ldiff:
+                # Update all data structures that may be affected by LO change
+                ldiff.affected |= self._refresh_mod_inis_and_strings()
+                ldiff.affected |= self._file_or_active_updates()
+                # unghost new active mods and ghost new inactive (if autoGhost)
+                ghostify = dict.fromkeys(ldiff.new_act, False)
+                if bass.settings['bash.mods.autoGhost']: # new mods, ghost
+                    new_inactive = ldiff.new_inact | (
+                                ldiff.added - ldiff.new_act)
+                    ghostify.update({k: True for k in new_inactive if
+                        self[k].get_table_prop('allowGhosting', True)})
+                ldiff.affected.update(mod for mod, ghost_it in ghostify.items()
+                                      if self[mod].setGhost(ghost_it))
+            # note we ignore missing/added here - this is the responsibility of
+            # refresh - if we are not called from refresh those should be empty
+            return RefrData(ldiff.reordered | ldiff.affected |
+                            ldiff.act_ord_status())
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
             self._active_wip = list(load_order.cached_active_tuple())
@@ -2134,7 +2137,7 @@ def _lo_op(lop_func):
         :param save_act: save plugins.txt - always call with a valid load order
         """
         out_diff = kwargs.setdefault('out_diff', LordDiff())
-        ldiff = LordDiff() if ldiff is None else ldiff
+        ldiff = LordDiff() if ldiff is None else ldiff #output: used in refresh
         save = sum((save_act, save_wip_lo, save_all))
         if save > 1:
             raise ValueError(f'{save_act=}/{save_wip_lo=}/{save_all=}')
@@ -2145,7 +2148,7 @@ def _lo_op(lop_func):
             if save:
                 out_diff = self._wip_lo_save(save_wip_lo or save_all,
                     save_act or save_all, ldiff=ldiff) if out_diff else \
-                        out_diff.to_rdata() # should be empty
+                        RefrData() # out_diff is empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
     return _lo_wip_wrapper
 
@@ -2240,8 +2243,8 @@ class ModInfos(TableFileInfos):
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
         rdata |= lordata
-        # if active did not change, we must perform the refreshes below
-        if ldiff.inact_changes_only():
+        # if load order did not change, we must perform the refreshes below
+        if not ldiff:
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
@@ -2279,9 +2282,9 @@ class ModInfos(TableFileInfos):
 
     def _file_or_active_updates(self):
         """If any plugins have been added, updated or deleted, or the active
-        order/status changed we need to recalculate cached data structures.
-        We could be more granular but the performance is elsewhere plus the
-        complexity might not worth it."""
+        order/status changed we need to recalculate cached data structures."""
+        ##:(701) We could be more granular passing ldiff (and rdata) - this
+        # would be a final check for ModInfos.refresh
         # Recalculate the dependents cache. See ModInfo.get_dependents
         cached_dependents = self.dependents
         cached_dependents.clear()
