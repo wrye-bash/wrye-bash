@@ -54,7 +54,7 @@ import functools
 import os
 import sys
 import time
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple, Counter
 from collections.abc import Iterable
 from enum import Enum
 from functools import partial
@@ -651,32 +651,6 @@ class INIList(UIList):
 
     @property
     def current_ini_name(self): return self.panel.detailsPanel.ini_name
-
-    def CountTweakStatus(self):
-        """Returns number of each type of tweak, in the
-        following format:
-        (applied,mismatched,not_applied,invalid)"""
-        applied = 0
-        mismatch = 0
-        not_applied = 0
-        invalid = 0
-        for ini_info in self.data_store.values():
-            status = ini_info.info_status()
-            if status == -10: invalid += 1
-            elif status == 0: not_applied += 1
-            elif status == 10: mismatch += 1
-            elif status == 20: applied += 1
-        return applied,mismatch,not_applied,invalid
-
-    def ListTweaks(self):
-        """Returns text list of tweaks"""
-        tweaklist = _('Active INI Tweaks:') + '\n'
-        tweaklist += u'[spoiler]\n'
-        for tweak, info in dict_sort(self.data_store):
-            if not info.info_status() == 20: continue
-            tweaklist+= f'{tweak}\n'
-        tweaklist += u'[/spoiler]\n'
-        return tweaklist
 
     def _set_icon_text(self, iniInfo, item_format, ini_name, *,
             __st_codes=defaultdict(int, {20: 1, 15: 3, 10: 3}), **kwargs):
@@ -1941,9 +1915,12 @@ class INIPanel(BashTab):
                 self.uiList.RefreshUI(focus_list=focus_list)
 
     def sb_count_str(self):
-        stati = self.uiList.CountTweakStatus()
+        counts = Counter(ini_info.ini_st for ini_info in
+                         self.uiList.data_store.values())
+        applied, mismatch, not_applied = counts[20], counts[10], counts[0]
         return _('Tweaks: %(status_num)d/%(total_status_num)d') % {
-            'status_num': stati[0], 'total_status_num': sum(stati[:-1])}
+            'status_num': applied, 'total_status_num': sum(
+                (applied, mismatch, not_applied))}
 
 #------------------------------------------------------------------------------
 class ModPanel(BashTab):

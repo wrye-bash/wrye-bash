@@ -25,6 +25,7 @@ attribute points to IniList singleton."""
 
 from .. import balt, bass, bosh
 from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink
+from ..bolt import dict_sort
 from ..gui import copy_text_to_clipboard
 
 __all__ = ['INI_ValidTweaksFirst', 'INI_AllowNewLines', 'INI_ListINIs',
@@ -59,7 +60,10 @@ class INI_ListINIs(ItemLink):
 
     def Execute(self):
         """Handle printing out the errors."""
-        tweak_list = self.window.ListTweaks()
+        tweaklist = [_('Active INI Tweaks:'), '[spoiler]', *map(str, (
+            tweak for tweak, info in dict_sort(self._data_store)
+            if not info.ini_st == 20)), '[/spoiler]', '']
+        tweak_list = '\n'.join(tweaklist)
         copy_text_to_clipboard(tweak_list)
         self._showLog(tweak_list, title=_('Active INIs'))
 
@@ -71,7 +75,7 @@ class INI_ListErrors(EnabledLink):
 
     def _enable(self):
         self._erroneous = [inf for inf in self.iselected_infos()
-                           if inf.info_status() < 0]
+                           if inf.ini_st < 0]
         return bool(self._erroneous)
 
     def Execute(self):
@@ -120,7 +124,7 @@ class INI_CreateNew(OneItemLink):
         }
 
     def _enable(self):
-        return super()._enable() and self._selected_info.info_status() >= 0
+        return super()._enable() and self._selected_info.ini_st >= 0
 
     @balt.conversation
     def Execute(self):
