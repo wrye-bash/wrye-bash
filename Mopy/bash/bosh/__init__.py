@@ -57,7 +57,8 @@ from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
 from ..load_order import LordDiff, LoadOrder
 from ..mod_files import ModFile, ModHeaderReader
-from ..plugin_types import MergeabilityCheck, PluginFlag
+from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
+    ST_MERGED, ST_IMPORTED
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -1392,6 +1393,9 @@ class SaveInfo(_WithMastersInfo):
         # That means the LO has new plugins, but not at the end -> green
         return 0
 
+    def info_status(self, *args, **kwargs):
+        return super().info_status(*args, **kwargs), self.is_save_enabled()
+
     def is_save_enabled(self):
         """True if I am enabled."""
         return self.fn_key.fn_ext == bush.game.Ess.ext
@@ -2266,16 +2270,6 @@ def _lo_op(lop_func):
     return _lo_wip_wrapper
 
 #------------------------------------------------------------------------------
-# active status magic numbers
-ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = *range(3), -1
-
-def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
-    """Return the key in act_dicts whose value contains item_key."""
-    for k, v in act_dicts.items():
-        if item_key in v:
-            return k
-    return unactive_val
-
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     _dir_key = 'mods'
@@ -2477,8 +2471,11 @@ class ModInfos(TableFileInfos):
             self.activeBad ^ old_ab, self.bad_names ^ old_bad)}
         to_redraw = set()
         # reset and cache master status for (all) mod infos (more granular?)
+        self.active_statuses = {ST_ACTIVE: {*load_order.cached_active_tuple()},
+            ST_MERGED: self.merged, ST_IMPORTED: self.imported}
         for fn, plug in self.items(): # we could use dependents here?
-            old, new = plug.master_st, plug.info_status(recalc_st=True)
+            old, new = plug.master_st, plug.info_status(recalc_st=True,
+                act_dicts=self.active_statuses)
             if old != new or fn in chain_ch: # we need to redraw
                 to_redraw.add(fn)
         return to_redraw
@@ -2607,11 +2604,6 @@ class ModInfos(TableFileInfos):
                 mod_set.update(fn for fn in forward_compat_path_to_fn_list(
                     bp_mods) if fn in self)
         return merged_, imported_
-
-    def active_statuses(self):
-        """Return a dict with keys 0, 1, 2 for active, merged and imported."""
-        return {ST_ACTIVE: set(load_order.cached_active_tuple()),
-                ST_MERGED: self.merged, ST_IMPORTED: self.imported}
 
     # Rest of DataStore overrides ---------------------------------------------
     def rename_operation(self, info_new_name, dest_dir=None, **kwargs):
@@ -3122,7 +3114,7 @@ class ModInfos(TableFileInfos):
             all_mods = (masters_set | merged | imported) & set(self)
         else:
             log.setHeader(head + _(u'Active Plugins:'))
-            statuses = self.active_statuses()
+            statuses = self.active_statuses
             all_mods = {*chain.from_iterable(statuses.values())}
             masters_set, merged = statuses[ST_ACTIVE], statuses[ST_MERGED]
         all_mods = load_order.get_ordered(all_mods)

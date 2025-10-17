@@ -78,8 +78,8 @@ from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
     forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
     to_win_newlines, top_level_files
-from ..bosh import DataStore, ModInfo, active_keys, omods, read_dir_tags, \
-    read_loot_tags, save_tags_to_dir
+from ..bosh import DataStore, ModInfo, omods, read_dir_tags, read_loot_tags, \
+    save_tags_to_dir
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
@@ -91,6 +91,7 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     showOk, BmpFromStream, init_image_resources, get_image, \
     get_installer_color_checks, get_image_dir, copy_text_to_clipboard
 from ..localize import format_date
+from ..plugin_types import active_keys, ST_MERGED
 from ..update_checker import LatestVersion, UCThread
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
@@ -290,7 +291,7 @@ class _ModsUIList(UIList):
             self._extra_sortings.insert(0, _ModsUIList._sort_masters_first)
 
     def _cache_rui_structs(self):
-        return {'act_dicts': bosh.modInfos.active_statuses()}
+        return {'act_dicts': bosh.modInfos.active_statuses}
 
     def _sort_masters_first(self, items):
         """Conditional sort, performs the actual 'masters-first' sorting if
@@ -301,7 +302,7 @@ class _ModsUIList(UIList):
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            act_dicts = bosh.modInfos.active_statuses()
+            act_dicts = bosh.modInfos.active_statuses
             def _sel_sort_key(x):
                 # First active, then merged, then imported, then inactive
                 return active_keys(self._item_name(x), act_dicts, 3)
@@ -362,7 +363,7 @@ class _ModsUIList(UIList):
     def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
                        # we get item_name not item_key so we need _mouse_text
                        _mouse_text, **kwargs):
-        checkMark = active_keys(item_name, act_dicts) + 1
+        checkMark = active_keys(item_name, act_dicts)
         status = super()._set_icon_text(minf, item_format, item_name, **kwargs)
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
@@ -370,7 +371,7 @@ class _ModsUIList(UIList):
             item_format.text_key = 'mods.text.bashedPatch'
             _mouse_text.append(_('Bashed Patch.'))
         for mchk in bush.game.mergeability_checks:
-            txtkey, mtext = mchk.display_info(minf, checkMark)
+            txtkey, mtext = mchk.display_info(minf, checkMark == ST_MERGED)
             if txtkey:
                 item_format.text_key = txtkey
                 _mouse_text.append(mtext)
@@ -384,7 +385,7 @@ class _ModsUIList(UIList):
             pass
         if 'Deactivate' in minf.getBashTags(): # was for mods only
             item_format.italics = True
-        return status, checkMark
+        return status, checkMark + 1 # duh - the chekboxes key
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -600,7 +601,7 @@ class MasterList(_ModsUIList):
             bass.settings[u'bash.mods.renames'][
                 masterInfo.old_name] = masterInfo.curr_name
             # populate, refresh must be called last
-            self.PopulateItem(evt_index)
+            self.PopulateItem(evt_index, **self._cache_rui_structs())
             return EventResult.FINISH ##: needed?
         elif evt_label == u'':
             return EventResult.CANCEL
@@ -1945,11 +1946,6 @@ class SaveList(UIList):
         'Cell': _ask_info('header.pcLocation'),
     }
 
-    #--Populate Item
-    def _set_icon_text(self, inf, *args, **kwargs):
-        status = super()._set_icon_text(inf, *args, **kwargs)
-        return status, inf.is_save_enabled()
-
     # Events ------------------------------------------------------------------
     @balt.conversation
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
@@ -1970,8 +1966,7 @@ class SaveList(UIList):
             u'save_ext_on': enabled_ext, u'save_ext_off': disabled_ext}
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
-        do_enable = not sinf.is_save_enabled()
-        extension = enabled_ext if do_enable else disabled_ext
+        extension = disabled_ext if sinf.is_save_enabled() else enabled_ext
         self.try_rename([[sinf, fn_item.fn_body]], item_edited=fn_item,
                         forced_ext=extension)
 
@@ -3625,7 +3620,7 @@ class BashFrame(WindowFrame):
         if refr_saves and ui_refreshes.get(bosh.modInfos):
             to_redraw = set()
             for fn, save in bosh.saveInfos.items():
-                old, new = save.master_st, save.info_status(recalc_st=True)
+                old, new = save.master_st, save.info_status(recalc_st=True)[0]
                 if old != new: # save master status changed, redraw
                     to_redraw.add(fn)
             if rdict := ui_refreshes.get(bosh.saveInfos):
