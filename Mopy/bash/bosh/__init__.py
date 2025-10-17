@@ -58,7 +58,7 @@ from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
 from ..load_order import LordDiff, LoadOrder
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
-    ST_MERGED, ST_IMPORTED
+    ST_MERGED, ST_IMPORTED, ST_INACTIVE, active_keys
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -186,16 +186,17 @@ class MasterInfo:
         """Ask the mod info or shrug."""
         return set()
 
-    def info_status(self, *, loadOrderIndex, mi):
+    def info_status(self, *, loadOrderIndex, mi, **kwargs):
         if self.mod_info:
+            act_st = self.mod_info.act_st
             ordered = load_order.cached_active_tuple()
             # current load order of master relative to other masters
             if mi != loadOrderIndex:  # there are active masters out of order
-                return 20  # orange
+                return 20, act_st  # orange
             elif (mi < len(ordered)) and (ordered[mi] == self.curr_name):
-                return -10  # Blue else 0, Green
-            return 0
-        return 30 # 30: does not exist
+                return -10, act_st  # Blue else 0, Green
+            return 0, act_st
+        return 30, ST_INACTIVE # 30: does not exist
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
@@ -521,6 +522,7 @@ class ModInfo(_WithMastersInfo):
                 itsa_ghost = not fullpath.is_file() and os.path.isfile(
                     f'{fullpath}.ghost')
         self.is_ghost = itsa_ghost
+        self.act_st = None # cache active/merged/imported/inactive status
         super().__init__(fullpath, load_cache=load_cache, **kwargs)
         if (auto := self.get_table_prop('autoBashTags')) is None:
             # For a new mod with no tags, set auto tags to True (default)
@@ -895,12 +897,10 @@ class ModInfo(_WithMastersInfo):
     def isBP(self):
         return self.header.author == u'BASHED PATCH'
 
-    def txt_status(self): ##:(701) we should cache the modInfo status (checkMark)
-        fnkey = self.fn_key
-        if load_order.cached_is_active(fnkey): return _(u'Active')
-        elif fnkey in modInfos.merged: return _(u'Merged')
-        elif fnkey in modInfos.imported: return _(u'Imported')
-        else: return _('Inactive')
+    def txt_status(self, *, __st_names={ST_ACTIVE: _('Active'),
+            ST_MERGED: _('Merged'), ST_IMPORTED: _('Imported'),
+            ST_INACTIVE: _('Inactive')}):
+        return __st_names[self.act_st]
 
     def hasTimeConflict(self):
         """True if there is another mod with the same ftime."""
@@ -1131,6 +1131,12 @@ class ModInfo(_WithMastersInfo):
         elif inordered:
             return 10
         return 0
+
+    def info_status(self, *args, act_dicts, recalc_st=False, **kwargs):
+        if recalc_st or self.act_st is None:
+            self.act_st = active_keys(self.fn_key, act_dicts)
+        return super().info_status(*args, recalc_st=recalc_st, **kwargs
+                                   ), self.act_st
 
     def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         hasBsa, hasBlocking = self.hasResources()
@@ -2305,8 +2311,7 @@ class ModInfos(TableFileInfos):
         self.plugin_inis = FNDict()
         # Set of plugins with form versions < RecordHeader.plugin_form_version
         self.older_form_versions = set()
-        # merged, imported, bashed_patches caches
-        self.merged, self.imported, self.bashed_patches = set(), set(), set()
+        self.bashed_patches = set() # bashed_patches cache
         #--Oblivion version
         self.voCurrent = None
         self._voAvailable = set()
@@ -2390,7 +2395,7 @@ class ModInfos(TableFileInfos):
             (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
             inodes.items()))
 
-    def _file_or_active_updates(self):
+    def _file_or_active_updates(self, *, __lo=load_order.cached_lo_index):
         """If any plugins have been added, updated or deleted, or the active
         order/status changed we need to recalculate cached data structures."""
         ##:(701) We could be more granular passing ldiff (and rdata) - this
@@ -2417,11 +2422,11 @@ class ModInfos(TableFileInfos):
         # We need to scan dependent mods first to account for mergeability of
         # their masters
         none_ = (None, {})
-        for fn_mod, plug in dict_sort(self, reverse=True,
-                                      key_f=load_order.cached_lo_index):
+        act = {*(act_tuple := load_order.cached_active_tuple())}
+        for fn_mod, plug in dict_sort(self, reverse=True, key_f=__lo):
             for p_master in plug.masterNames:
                 cached_dependents[p_master].add(fn_mod)
-            isact = load_order.cached_is_active(fn_mod)
+            isact = fn_mod in act
             if plug.isBP():
                 self.bashed_patches.add(fn_mod)
                 if isact: active_patches.add(fn_mod)
@@ -2461,22 +2466,20 @@ class ModInfos(TableFileInfos):
         # plugins are handled by our defaultdict factory
         old_dexs = self.real_indices
         self.real_indices = bush.game.plugin_flags.get_indexes(
-            ((p, self[p]) for p in load_order.cached_active_tuple()))
-        mrgd, imprtd = self.merged, self.imported
-        self.merged, self.imported = self.getSemiActive(active_patches)
+            ((p, self[p]) for p in act_tuple))
+        merged, imported = self.getSemiActive(active_patches)
         dex_xor = (k for k, v in self.real_indices.items() ^ old_dexs.items()
             if v[0] != sys.maxsize) # added from defaultdict for inactive mods
-        chain_ch = {*chain(dex_xor, changed, rescan_mods, self.merged ^ mrgd,
-            self.imported ^ imprtd, self.bashed_patches ^ bps,
-            self.activeBad ^ old_ab, self.bad_names ^ old_bad)}
-        to_redraw = set()
+        chain_ch = chain(self.bashed_patches ^ bps, dex_xor, changed,
+            rescan_mods, self.activeBad ^ old_ab, self.bad_names ^ old_bad)
+        to_redraw = {m for m in chain_ch if m in self}
         # reset and cache master status for (all) mod infos (more granular?)
-        self.active_statuses = {ST_ACTIVE: {*load_order.cached_active_tuple()},
-            ST_MERGED: self.merged, ST_IMPORTED: self.imported}
+        self.active_statuses = {ST_ACTIVE: act,
+                                ST_MERGED: merged, ST_IMPORTED: imported}
         for fn, plug in self.items(): # we could use dependents here?
-            old, new = plug.master_st, plug.info_status(recalc_st=True,
-                act_dicts=self.active_statuses)
-            if old != new or fn in chain_ch: # we need to redraw
+            old, new = (plug.master_st, plug.act_st), plug.info_status(
+                recalc_st=True, act_dicts=self.active_statuses)
+            if old != new: # we need to redraw
                 to_redraw.add(fn)
         return to_redraw
 

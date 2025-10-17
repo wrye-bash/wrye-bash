@@ -363,8 +363,8 @@ class _ModsUIList(UIList):
     def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
                        # we get item_name not item_key so we need _mouse_text
                        _mouse_text, **kwargs):
-        checkMark = active_keys(item_name, act_dicts)
-        status = super()._set_icon_text(minf, item_format, item_name, **kwargs)
+        status, checkMark = super()._set_icon_text(minf, item_format,
+            item_name, act_dicts=act_dicts, **kwargs)
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
         if item_name in bosh.modInfos.bashed_patches:
