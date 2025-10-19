@@ -1512,17 +1512,18 @@ class GmstTweak_Magic_MaxSummons(_AGmstCCTweak):
 
 #------------------------------------------------------------------------------
 class GmstTweak_Actor_VerticalObjectDetection(_AGmstCCTweak):
-    tweak_name = _(u'Actor: Vertical Object Detection')
-    tweak_tip = _(u'Changes the vertical range in which NPCs detect objects. '
-                  u'The first value must be >= 0 and the second one must be '
-                  u'<= 0.')
-    tweak_key = (u'fSandboxCylinderTop', u'fSandboxCylinderBottom')
-    tweak_choices = [(u'x1', 150.0, -100.0),
-                     (u'x2', 300.0, -200.0),
-                     (u'x3', 450.0, -300.0),
-                     (u'x4', 600.0, -400.0),
-                     (u'x5', 750.0, -500.0)]
-    default_choice = u'x1'
+    tweak_name = _('Actor: Vertical Object Detection')
+    tweak_tip = _('Changes the vertical range in which NPCs detect objects. '
+                  'The first value, the top, must be >= 0 and the second one, '
+                  'the bottom, must be <= 0. It is recommened to sync them.')
+    tweak_key = ('fSandboxCylinderTop', 'fSandboxCylinderBottom')
+    tweak_choices = [(_('Default'), 150.0, -100.0),
+                     (_('x1 Top'), 150.0, -150.0),
+                     (_('x2 Top'), 300.0, -300.0),
+                     (_('x3 Top'), 450.0, -450.0),
+                     (_('x4 Top'), 600.0, -600.0),
+                     (_('x5 Top'), 750.0, -750.0)]
+    default_choice = _('Default')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Player_FastTravelTimeMultiplier(_AGmstCCTweak):
