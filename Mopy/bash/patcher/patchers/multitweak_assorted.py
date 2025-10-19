@@ -857,6 +857,31 @@ class AssortedTweak_SetLightRadii(CustomChoiceTweak):
         record.light_radius = int(record.light_radius * self.chosen_radius)
 
 #------------------------------------------------------------------------------
+class AssortedTweak_NoAmbientCellLighting(MultiTweakItem):
+    """Removes ambient lighting from certain cells."""
+    tweak_read_classes = b'CELL',
+    tweak_name = _('No Ambient Cell Lighting')
+    tweak_tip = _('Sets RGB values for ambient lighting and fog to 0 for '
+                  'dungeon cells or all cells. Cells with the dungeon music '
+                  'type are considered dungeon cells for this tweak.')
+    tweak_key = 'NoAmbientCellLighting'
+    tweak_log_msg = _('Cells with ambient lighting removed: %(total_changed)d')
+    tweak_choices = [(_('All Cells'), {0, 1, 2}),
+                     (_('Dungeons'), {2})]
+    _color_attrs = ('ambientRed', 'ambientGreen', 'ambientBlue', 'fogRed',
+                    'fogGreen', 'fogBlue')
+
+    def wants_record(self, record):
+        return (record.music in self.choiceValues[self.chosen][0] and not
+                all([getattr(record, attr) == 0 or # avoid ITPOs
+                     getattr(record, attr) is None for attr in
+                     self._color_attrs]))
+
+    def tweak_record(self, record):
+        for attr in self._color_attrs:
+            setattr(record, attr, 0)
+
+#------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     # Run this before all other tweakers, since it contains the 'playable'

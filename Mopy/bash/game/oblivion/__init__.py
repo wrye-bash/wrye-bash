@@ -1123,6 +1123,7 @@ class AOblivionGameInfo(PatchGame):
         'AssortedTweak_AttackSpeedStavesMinimum',
         'AssortedTweak_AttackSpeedStavesMaximum',
         'AssortedTweak_SetLightRadii',
+        'AssortedTweak_NoAmbientCellLighting',
     }
     staff_condition = ('weaponType', 4)
     static_attenuation_rec_type = b'SOUN'
