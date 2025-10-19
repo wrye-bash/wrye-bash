@@ -911,6 +911,24 @@ class AssortedTweak_HarvestChanceMult(CustomChoiceTweak, _ANirnrootTweak):
                                       * self.chosen_chance))
 
 #------------------------------------------------------------------------------
+class AssortedTweak_SaveSortingFix(MultiTweakItem):
+    """Removes underscores from CELL editor IDs to fix save sorting."""
+    tweak_read_classes = b'CELL',
+    tweak_name = _('Save Sorting Fix')
+    tweak_tip = _('Removes underscores from cell editor IDs to fix saves made '
+                  'in such cells not getting sorted under the appropriate '
+                  'character name.')
+    tweak_key = 'SaveSortingFix'
+    tweak_log_msg = _('Editor IDs with underscores removed: %(total_changed)d')
+    default_enabled = True
+
+    def wants_record(self, record):
+        return '_' in record.eid # check the (decoded) EDID
+
+    def tweak_record(self, record):
+        record.eid = record.eid.replace('_', '')
+
+#------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     # Run this before all other tweakers, since it contains the 'playable'

@@ -290,9 +290,6 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         'ccvsvsse004-beafarmer.esl',
     }
 
-    assorted_tweaks = ASkyrimGameInfo.assorted_tweaks | {
-        'AssortedTweak_ArrowWeight'}
-
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
@@ -303,6 +300,12 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
     stats_attrs = ASkyrimGameInfo.stats_attrs | {
         b'AMMO': ('value', 'damage', 'weight'),
     }
+
+    #--------------------------------------------------------------------------
+    # Tweak Assorted
+    #--------------------------------------------------------------------------
+    assorted_tweaks = ASkyrimGameInfo.assorted_tweaks | {
+        'AssortedTweak_ArrowWeight', 'AssortedTweak_SaveSortingFix'}
 
     #--------------------------------------------------------------------------
     # Tweak Names
