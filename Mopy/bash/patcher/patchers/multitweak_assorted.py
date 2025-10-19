@@ -835,6 +835,28 @@ class AssortedTweak_AbsorbSummonFix(IndexingTweak):
         record.spell_flags.no_absorb_reflect = True
 
 #------------------------------------------------------------------------------
+class AssortedTweak_SetLightRadii(CustomChoiceTweak):
+    """Multiplies the radius of all light sources by a set value."""
+    tweak_read_classes = b'LIGH',
+    tweak_name = _('Set Light Radii')
+    tweak_tip = _('Sets the radius of all light records to tweak percentage '
+                  'times current radius.')
+    tweak_key = 'SetLightRadii'
+    tweak_choices = [('50%', 50), ('75%', 75), ('125%', 125), ('150%', 150),
+                     ('175%', 175), ('200%', 200)]
+    tweak_log_msg = _('Lights Modified: %(total_changed)d')
+
+    @property
+    def chosen_radius(self): return self.choiceValues[self.chosen][0] / 100
+
+    def wants_record(self, record):
+        return record.light_radius and self.chosen_radius != 1 # avoid ITPOs
+
+    def tweak_record(self, record):
+        # Must be an int on py3, otherwise errors on dump
+        record.light_radius = int(record.light_radius * self.chosen_radius)
+
+#------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     # Run this before all other tweakers, since it contains the 'playable'

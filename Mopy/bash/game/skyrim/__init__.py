@@ -1222,6 +1222,7 @@ class ASkyrimGameInfo(PatchGame):
         'AssortedTweak_BookWeight',
         'AssortedTweak_AttackSpeedStavesMinimum',
         'AssortedTweak_AttackSpeedStavesMaximum',
+        'AssortedTweak_SetLightRadii',
     }
     staff_condition = ('animationType', 8)
 

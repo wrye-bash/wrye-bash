@@ -1080,6 +1080,7 @@ class AFallout3GameInfo(PatchGame):
         'AssortedTweak_UniformGroundcover',
         'AssortedTweak_GunsUseISAnimation',
         'AssortedTweak_BookWeight',
+        'AssortedTweak_SetLightRadii',
     }
     static_attenuation_rec_type = b'SOUN'
 
