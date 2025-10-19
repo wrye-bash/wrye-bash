@@ -1692,8 +1692,6 @@ class MreLscr(MelRecord):
         MelEdid(),
         MelIcon(),
         MelDescription(),
-        # Marked as an unused byte array in FO3Edit, but has the exact same
-        # size so just treat it the same as TES4/FNV
         MelLscrLocations(),
         fnv_only(MelFid(b'WMI1', 'lscr_type')),
     )

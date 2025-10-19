@@ -1834,16 +1834,15 @@ class MreLscr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelIcons(),
         MelDescription(),
         MelConditionList(),
         MelLscrNif(),
         MelFloat(b'SNAM', 'lscr_initial_scale'),
-        MelStruct(b'RNAM', ['3h'], 'lscr_rotation_grid_y',
-            'lscr_rotation_grid_x', 'lscr_rotation_grid_z'),
+        MelStruct(b'RNAM', ['3h'], 'lscr_rotation_grid_x',
+            'lscr_rotation_grid_y', 'lscr_rotation_grid_z'),
         MelLscrRotation(),
-        MelStruct(b'XNAM', ['3f'], 'lscr_translation_grid_y',
-            'lscr_translation_grid_x', 'lscr_translation_grid_z'),
+        MelStruct(b'XNAM', ['3f'], 'lscr_translation_grid_x',
+            'lscr_translation_grid_y', 'lscr_translation_grid_z'),
         MelLscrCameraPath(),
     )
 
