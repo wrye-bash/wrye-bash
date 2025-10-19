@@ -505,8 +505,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     _silent_attrs['projectileSpeed'] = 9999
 
     def wants_record(self, record):
-        # u'' here is on purpose! We're checking the EDID, which gets decoded
-        return record.eid == u'SEFF' and any(
+        return record.eid == 'SEFF' and any( # check the (decoded) EDID
             getattr(record, a) != v for a, v in self._silent_attrs.items())
 
     def tweak_record(self, record):
@@ -519,7 +518,18 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
         super().tweak_log(log, {})
 
 #------------------------------------------------------------------------------
-class AssortedTweak_HarvestChance(CustomChoiceTweak):
+class _ANirnrootTweak(MultiTweakItem):
+    """Shared code of tweaks involving nirnroots."""
+    _nirnroot_words = {'nirnroot', 'vynroot', 'vynwurz'}
+
+    @classmethod
+    def _is_nirnroot(cls, record):
+        """Helper method for checking whether a record is a nirnroot."""
+        return (reid := record.eid) and any( # check the (decoded) EDID
+            x in reid.lower() for x in cls._nirnroot_words)
+
+#------------------------------------------------------------------------------
+class AssortedTweak_HarvestChance(CustomChoiceTweak, _ANirnrootTweak):
     """Adjust Harvest Chances."""
     tweak_read_classes = b'FLOR',
     tweak_name = _(u'Harvest Chance')
@@ -537,7 +547,7 @@ class AssortedTweak_HarvestChance(CustomChoiceTweak):
         return self.choiceValues[self.chosen][0]
 
     def wants_record(self, record):
-        return (u'nirnroot' not in record.eid.lower() # skip Nirnroots
+        return (not self._is_nirnroot(record) # skip Nirnroots
                 and any(getattr(record, a) != self.chosen_chance for a
                         in self._season_attrs))
 
@@ -639,19 +649,12 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         record.set_default_icon()
 
 #------------------------------------------------------------------------------
-class _AAttenuationTweak(CustomChoiceTweak):
+class _AAttenuationTweak(CustomChoiceTweak, _ANirnrootTweak):
     """Shared code of sound attenuation tweaks."""
     tweak_read_classes = bush.game.static_attenuation_rec_type,
     tweak_choices = [(u'0%', 0), (u'5%', 5), (u'10%', 10), (u'20%', 20),
                      (u'50%', 50), (u'80%', 80)]
     tweak_log_msg = _(u'Sounds Modified: %(total_changed)d')
-    _nirnroot_words = {u'nirnroot', u'vynroot', u'vynwurz'}
-
-    @classmethod
-    def _is_nirnroot(cls, record):
-        """Helper method for checking whether a record is a nirnroot."""
-        return (reid := record.eid) and any(
-            x in reid.lower() for x in cls._nirnroot_words)
 
     @property
     def chosen_atten(self): return self.choiceValues[self.chosen][0] / 100
@@ -759,8 +762,7 @@ class AssortedTweak_SEFFIcon(CustomChoiceTweak):
     def chosen_icon(self): return self.choiceValues[self.chosen][0].lower()
 
     def wants_record(self, record):
-        # u'' here is on purpose! We're checking the EDID, which gets decoded
-        return (record.eid == u'SEFF' and
+        return (record.eid == 'SEFF' and # check the (decoded) EDID
                 record.iconPath.lower() != self.chosen_icon)
 
     def tweak_record(self, record):
@@ -880,6 +882,33 @@ class AssortedTweak_NoAmbientCellLighting(MultiTweakItem):
     def tweak_record(self, record):
         for attr in self._color_attrs:
             setattr(record, attr, 0)
+
+#------------------------------------------------------------------------------
+class AssortedTweak_HarvestChanceMult(CustomChoiceTweak, _ANirnrootTweak):
+    """Multiplies Harvest Chances by a set value."""
+    tweak_read_classes = b'FLOR',
+    tweak_name = _('Harvest Chance Multiplier')
+    tweak_tip = _('Harvest chances on all harvestables will be set to the '
+                  'chosen percentage times the current chance.')
+    tweak_key = 'HarvestChanceMult'
+    tweak_choices = [('25%', 25), ('50%', 50), ('75%', 75), ('150%', 150),
+                     ('200%', 200), ('400%', 400)]
+    tweak_log_msg = _('Harvest Chances Changed: %(total_changed)d')
+    _season_attrs = ('sip_spring', 'sip_summer', 'sip_fall', 'sip_winter')
+
+    @property
+    def chosen_chance(self): return self.choiceValues[self.chosen][0] / 100
+
+    def wants_record(self, record):
+        return (not self._is_nirnroot(record) # skip Nirnroots
+                and self.chosen_chance != 1 # avoid ITPOs
+                and not all([getattr(record, attr) == 0 for # avoid more ITPOs
+                             attr in self._season_attrs]))
+
+    def tweak_record(self, record):
+        for attr in self._season_attrs:
+            setattr(record, attr, int(getattr(record, attr)
+                                      * self.chosen_chance))
 
 #------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
