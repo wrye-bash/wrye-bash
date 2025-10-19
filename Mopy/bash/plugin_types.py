@@ -64,9 +64,6 @@ def _pbash_mergeable_no_load(mod_inf, minfos, reasons, game_handle):
     if is_vanilla(mod_inf, reasons, game_handle):
         return False # don't do further checks even in verbose mode
     _exit = __exit if reasons is None else reasons.append # append returns None
-    if (mf := game_handle.master_flag) and mf.has_flagged(mod_inf) and _exit(_(
-            'This plugin has the ESM flag.')):
-        return False
     #--Bashed Patch
     if mod_inf.isBP() and _exit(_('This plugin is a Bashed Patch.')):
         return False

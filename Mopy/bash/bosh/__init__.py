@@ -3428,12 +3428,13 @@ class BSAInfos(_AFileInfos):
         if do_redirect and not aii_bsa:
             source = dirs['templates'].join(
                 bush.game.template_dir, self._aii_name)
-            source.mtime = aiBsaMTime
+            target = self.store_dir.join(self._aii_name)
             try:
-                env.shellCopy({source: self.store_dir.join(self._aii_name)},
+                env.shellCopy({source: target},
                     allow_undo=True, auto_rename=True)
             except (PermissionError, CancelError, SkipError):
                 return
+            target.mtime = aiBsaMTime
         # Strip any existing redirectors out, then add our own
         bsa_archs = [x_s for x in sArchives.split(',') if
                      (x_s := x.strip()).lower() not in self._bsa_redirectors]

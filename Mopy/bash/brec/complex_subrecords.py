@@ -1383,6 +1383,9 @@ class _MelObts(MelPartialCounter):
             obts_property.dump_property(out)
         return out.getvalue()
 
+    def hasFids(self, formElements):
+        formElements.add(self)
+
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
         result_kwds = [function(obts_kwd) for obts_kwd in record.obts_keywords]
