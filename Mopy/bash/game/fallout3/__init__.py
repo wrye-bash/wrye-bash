@@ -1059,6 +1059,8 @@ class AFallout3GameInfo(PatchGame):
         'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
         'GmstTweak_Warning_ExteriorDistanceToHostiles',
         'GmstTweak_Warning_InteriorDistanceToHostiles',
+        'GmstTweak_Player_HealthEnduranceMult',
+        'GmstTweak_Player_HealthLevelMult',
     }
 
     #--------------------------------------------------------------------------

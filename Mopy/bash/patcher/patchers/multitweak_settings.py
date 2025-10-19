@@ -2001,7 +2001,7 @@ class GmstTweak_Actor_MasterCostMultiplier(_AGmstCCTweak):
     default_choice = 'x5'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_BlockTimeAverage(_AGmstCCTweak):
+class GmstTweak_Combat_BlockTimeAverage(_AGmstCCSecondsTweak):
     tweak_name = _('Combat: Block Time (Average)')
     tweak_tip = _('The average time for which NPCs will keep their shield '
                   'raised or block with their weapon during combat.')
@@ -2032,7 +2032,7 @@ class GmstTweak_Combat_BlockTimeMaximum_Tes5(
     default_choice = _('Unlimited') # Nice one, Bethesda
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCTweak):
+class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCSecondsTweak):
     tweak_name = _('Combat: Block Time (Minimum)')
     tweak_tip = _('The minimum time for which NPCs will keep their shield '
                   'raised or block with their weapon during combat.')
@@ -2043,6 +2043,36 @@ class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCTweak):
                      (_('8 Seconds'),   8.0),
                      (_('12 Seconds'), 12.0)]
     default_choice = _('4 Seconds')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_HealthEnduranceMult(_AGmstCCTweak):
+    tweak_name = _('Player: Health Endurance Multiplier')
+    tweak_tip = _('The amount of health per endurance point added to the '
+                  "player's total.")
+    tweak_key = ('fAVDHealthEnduranceMult',)
+    tweak_choices = [('5.0',   5.0),
+                     ('10.0', 10.0),
+                     ('20.0', 20.0),
+                     ('30.0', 30.0),
+                     ('40.0', 40.0)]
+    default_choice = '20.0'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_HealthLevelMult(_AGmstCCTweak):
+    tweak_name = _('Player: Health Level Multiplier')
+    tweak_tip = _('The amount of health per level (after the first) added to '
+                  "the player's total.")
+    tweak_key = ('fAVDHealthLevelMult',)
+    tweak_choices = [('5.0',   5.0),
+                     ('10.0', 10.0),
+                     ('20.0', 20.0),
+                     ('30.0', 30.0),
+                     ('40.0', 40.0)]
+    default_choice = '10.0'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_HealthLevelMult_Fnv(GmstTweak_Player_HealthLevelMult):
+    default_choice = '5.0'
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
