@@ -2081,21 +2081,16 @@ class InstallersData(DataStore):
         # Update volatile attributes of the loaded infos using data_sizeCrcDate
         # and ci_underrides_sizeCrc caches (calculated from ci_dest_sizeCrc)
         if 'N' in what or changes:
-            #--dict mapping all should-be-installed files to their attributes
-            norm_sizeCrc = bolt.LowerDict()
-            for package in (x for x in self.sorted_values() if x.is_active):
-                norm_sizeCrc.update(package.ci_dest_sizeCrc)
-            # Populate self.ci_underrides_sizeCrc with all underridden files -
-            # files installed in data dir, but from a lower loading installer
-            # (or manually)
-            ci_underrides_sizeCrc = bolt.LowerDict()
-            for path, sizeCrc in norm_sizeCrc.items():
-                try:
-                    if sizeCrc != (data_sc := self.data_sizeCrcDate[path][:2]):
-                        ci_underrides_sizeCrc[path] = data_sc
-                except KeyError: pass # file is not installed in data dir
-            changes |= self.ci_underrides_sizeCrc != ci_underrides_sizeCrc
-            self.ci_underrides_sizeCrc = ci_underrides_sizeCrc
+            # Populate ci_underrides_sizeCrc with all underridden files - files
+            # installed in data dir, but from a lower loading installer (or
+            # manually) by comparing the should-be-installed files to the cache
+            act_ci_sc = dict(ci_sc for x in self.sorted_values() if x.is_active
+                             for ci_sc in x.ci_dest_sizeCrc.items())
+            ci_underrides_size_crc = bolt.LowerDict((ci, (scd[0], scd[1])) for
+                ci, sc in act_ci_sc.items() if (scd := self.data_sizeCrcDate.get(
+                ci)) and (sc[0] != scd[0] or sc[1] != scd[1]))
+            changes |= self.ci_underrides_sizeCrc != ci_underrides_size_crc
+            self.ci_underrides_sizeCrc = ci_underrides_size_crc
         if 'S' in what or changes: # on boot adds *all* Installers to rdata
             st_changed = {k for k, v in self.items() if v.refreshStatus(self)}
             refresh_info.redraw.update(st_changed)
