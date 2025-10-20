@@ -264,29 +264,6 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         return f'<div align={self._align_text[mo.group(1)]}>'
 
 #------------------------------------------------------------------------------
-class AssortedTweak_FogFix(MultiTweakItem):
-    """Fix fog in cell to be non-zero."""
-    tweak_read_classes = b'CELL',
-    tweak_name = _('Nvidia Fog Fix')
-    tweak_tip = _('Fix fog related Nvidia black screen problems.')
-    tweak_key = 'FogFix'
-    tweak_log_msg = _('Cells With Fog Tweaked To 0.0001: %(total_changed)d')
-    # Probably not needed on newer games, so default-enable only on TES4
-    default_enabled = bush.game.fsName == 'Oblivion'
-
-    def wants_record(self, record):
-        # All of these floats must be approximately equal to 0
-        for fog_attr in ('fogNear', 'fogFar', 'fogClip'):
-            fog_val = getattr(record, fog_attr)
-            # Skip records missing XCLL, WB won't write it if it is
-            if fog_val is None or fog_val != 0.0: # type: bolt.Rounder
-                return False
-        return not record.should_skip()
-
-    def tweak_record(self, record):
-        record.fogNear = 0.0001
-
-#------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):
     """Remove light flickering for low end machines."""
     tweak_read_classes = b'LIGH',

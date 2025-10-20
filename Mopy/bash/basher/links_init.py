@@ -579,8 +579,6 @@ def InitModLinks():
                 cleanMenu.links.append_link(SeparatorLink())
                 cleanMenu.links.append_link(Mod_ScanDirty())
                 cleanMenu.links.append_link(Mod_RemoveWorldOrphans())
-                if _is_oblivion:
-                    cleanMenu.links.append_link(Mod_FogFixer())
                 plugin_menu.links.append_link(cleanMenu)
         ModList.context_links.append_link(plugin_menu)
     if bush.game.Esp.canBash: #--Advanced

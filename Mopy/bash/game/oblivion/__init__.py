@@ -1099,7 +1099,6 @@ class AOblivionGameInfo(PatchGame):
         'AssortedTweak_BowReach',
         'AssortedTweak_ConsistentRings',
         'AssortedTweak_DarnBooks',
-        'AssortedTweak_FogFix',
         'AssortedTweak_NoLightFlicker',
         'AssortedTweak_PotionWeight',
         'AssortedTweak_PotionWeightMinimum',

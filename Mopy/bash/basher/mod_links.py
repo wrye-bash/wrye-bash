@@ -69,11 +69,11 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Scripts_Import', u'Mod_SigilStoneDetails_Import',
            u'Mod_SpellRecords_Import', u'Mod_Face_Import', u'Mod_Fids_Replace',
            u'Mod_SkipDirtyCheck', u'Mod_ScanDirty', u'Mod_RemoveWorldOrphans',
-           u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
-           'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
-           'Mod_Move', 'Mod_RecalcRecordCounts', 'Mod_Duplicate',
-           'Mod_DumpSubrecords', 'Mod_DumpRecordTypeNames', 'Mod_Snapshot',
-           'Mod_RevertToSnapshot', 'AFlipFlagLink']
+           'Mod_CopyToMenu', 'Mod_DecompileAll', 'Mod_FlipMasters',
+           'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
+           'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords',
+           'Mod_DumpRecordTypeNames', 'Mod_Snapshot', 'Mod_RevertToSnapshot',
+           'AFlipFlagLink']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -1342,39 +1342,6 @@ class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
                     'num_orphans_removed': orphans}, fileName)
             else:
                 self._showOk(_('No changes required.'), fileName)
-
-#------------------------------------------------------------------------------
-class Mod_FogFixer(ItemLink):
-    """Fix fog on selected cells."""
-    _text = _('Nvidia Fog Fix')
-    _help = _('Modify fog values in interior cells to avoid the Nvidia black '
-              'screen bug')
-
-    def Execute(self):
-        message = _('Apply Nvidia fog fix. This modifies fog values in '
-                    'interior cells to avoid the Nvidia black screen bug.')
-        if not self._askContinue(message, u'bash.cleanMod.continue',
-                                 _(u'Nvidia Fog Fix')): return
-        fixed = {}
-        with balt.Progress(_(u'Nvidia Fog Fix')) as progress:
-            progress.setFull(len(self.selected))
-            for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
-                if fileName == bush.game.master_file: continue
-                progress(index, _('Scanning %(scanning_plugin)s') % {
-                    'scanning_plugin': fileName})
-                fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
-                fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
-                if fog_fixer.fixedCells:
-                    fixed[fileName] = fog_fixer.fixedCells
-        if fixed:
-            message = '===' + _('Cells Fixed:') + '\n' + '\n'.join([
-                f'* {fixed_pname}: {len(cells_fixed)}'
-                for fixed_pname, cells_fixed in fixed.items()])
-            self._showWryeLog(message)
-            self.refresh_sel(fixed)
-        else:
-            message = _(u'No changes required.')
-            self._showOk(message)
 
 # Rest of menu Links ----------------------------------------------------------
 #------------------------------------------------------------------------------

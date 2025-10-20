@@ -1067,10 +1067,8 @@ class AFallout3GameInfo(PatchGame):
     # Tweak Assorted
     #--------------------------------------------------------------------------
     ##: Mostly mirrored from valda's version - some of these seem to make no sense
-    # (e.g. I can't find anything regarding FO3/FNV suffering from the fog bug).
     assorted_tweaks = {
         'AssortedTweak_ArmorPlayable',
-        'AssortedTweak_FogFix',
         'AssortedTweak_NoLightFlicker',
         'AssortedTweak_WindSpeed',
         'AssortedTweak_SetSoundAttenuationLevels',

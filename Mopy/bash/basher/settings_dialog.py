@@ -862,9 +862,8 @@ class ConfirmationsPage(_AFixedPage):
         u'MOVE': _(u'Move'),
     }
     _label_to_action = reverse_dict(_action_to_label)
-    ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
-    # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
-    # sense for non-SSE/FO4 games
+    ##: Maybe hide some of these per game? E.g. Add/Remove ESL Flag makes no
+    # sense for non-SSE/FO4/SF games
     ##: We should also enforce that a key is in here before allowing
     # askContinue to proceed, so that we won't ever forget to add one here (or
     # come up with a better way to store these)
@@ -899,8 +898,6 @@ class ConfirmationsPage(_AFixedPage):
             'bash.flipToEsmp.continue',
         _("[Mods] Adding or removing the ESM flag from a plugin's masters"):
             'bash.flipMasters.continue',
-        _('[Mods] Applying the Nvidia Fog Fix'):
-            'bash.cleanMod.continue',
         _("[Mods] Changing a plugin's version to 0.8"):
             'bash.setModVersion.continue',
         _('[Mods] Exporting load order to a text file: OBMM warning'):
