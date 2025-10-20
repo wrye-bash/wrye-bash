@@ -3019,16 +3019,17 @@ class InstallersPanel(BashTab):
             if self.listData.refreshTracked(): # on first load this is no op
                 what.update('ISC')
             fresh_load = not self.listData.loaded
-            ##:(728) setting progress after boot steals focus from Bash in MSW!
-            prog = (balt.Progress(_('Refreshing Installers…'), abort=canCancel)
-                if fresh_load else bolt.Progress() # should be `if 'I' in what`
-                ) # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
-            if what:
-                with (prog if fresh_load else BusyCursor()):
+            prog = (balt.Progress(_('Refreshing Installers…'),
+                                  abort=canCancel) if 'I' in what else
+                    # setting progress leads to infinite refresh in MSW!
+                    #balt.Progress(_('Refreshing Converters…'),abort=canCancel)
+                    bolt.Progress() if what else None)
+            if prog is not None:
+                with prog as progress:
                     try:
                         refreshui = self.listData.irefresh('I' in what,
                            what=what, fullRefresh=fullRefresh,
-                           extract_omods=extract_omods, progress=prog)
+                           extract_omods=extract_omods, progress=progress)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh
