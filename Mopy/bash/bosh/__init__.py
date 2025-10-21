@@ -31,7 +31,7 @@ import re
 import sys
 import time
 from collections import defaultdict, deque, OrderedDict
-from collections.abc import Iterable, Callable
+from collections.abc import Iterable
 from functools import wraps, partial
 from itertools import chain
 from os import DirEntry
@@ -1562,9 +1562,14 @@ class DataStore(DataDict):
     _dir_key: str # key in dirs dict for the store_dir
     dat_loaded = False
     file_exts = None # subclasses must define this !
+    factory_type: type[AFileInfo]
+    _boot_refresh_args: dict = {}
 
     def __init__(self):
+        """Init then refresh if _boot_refresh arguments is not empty."""
         super().__init__(self._init_store(self.set_store_dir()))
+        if self._boot_refresh_args:
+            self.refresh(True, **self._boot_refresh_args)
 
     def set_store_dir(self):
         self.store_dir = sd = dirs[self._dir_key]
@@ -1642,12 +1647,11 @@ class DataStore(DataDict):
         Will try loading from disk, only call on existing files."""
         if old_inf is None:
             if not isinstance(fname, Path): fname = self.store_dir.join(fname)
-            return self.factory(fname, load_cache=True, # pop from corrupted
-                                do_pop=fname.head == self.store_dir, **kwargs)
+            return self.factory(fname, load_cache=True, **kwargs)
         return old_inf.do_update(**kwargs)
 
-    def factory(self, info_path, **kwargs): # WIP!
-        raise NotImplementedError
+    def factory(self, info_path, **kwargs):
+        return self.factory_type(info_path, **kwargs)
 
     def _delete_refresh(self, delinfos):
         """Only called from refresh.
@@ -1806,28 +1810,14 @@ class DataStore(DataDict):
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
-    _factory_type: type[AFile]
     # Whether these file infos track ownership in a table
     tracks_ownership = True
     _boot_refresh_args = {'booting': True}
-
-    def __init__(self, factory_type=None):
-        """Init with specified directory and specified factory type."""
-        self._factory_type = factory_type or self.__class__._factory_type
-        super().__init__()
-        if self._boot_refresh_args:
-            self.refresh(True, **self._boot_refresh_args)
 
     def _init_store(self, storedir):
         """Set up self's _data/corrupted and return the former."""
         self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         return super()._init_store(storedir)
-
-    def factory(self, info_path, do_pop=False, **kwargs):
-        new_inf = self._factory_type(info_path, **kwargs)
-        if do_pop:
-            self.corrupted.pop(info_path.tail.s, None)
-        return new_inf
 
     #--Refresh
     def refresh(self, refresh_in, *, booting=False, **kwargs):
@@ -1840,7 +1830,10 @@ class _AFileInfos(DataStore):
 
     def get_update_info(self, fn, old_inf=None, *, _delinfos=None, **kwargs):
         try: ##:701 revisit this - why NIE?
-            return super().get_update_info(fn, old_inf, **kwargs)
+            info = super().get_update_info(fn, old_inf, **kwargs)
+            if _delinfos is not None:
+                self.corrupted.pop(fn, None) # effectively updated
+            return info
         except (FileError, UnicodeError, BoltError, NotImplementedError) as e:
             # old still corrupted, or new(ly) corrupted or we landed
             # here cause cor_path was manually un/ghosted but file remained
@@ -1973,29 +1966,16 @@ class DefaultIniInfo(AINIInfo):
         # Default tweak, so the file doesn't actually exist
         self._store().copy_to_new_tweak(self, FName(cp_dest_path.stail))
 
-# noinspection PyUnusedLocal
-def ini_info_factory(fullpath, **kwargs) -> INIInfo:
-    """INIInfos factory
-
-    :param fullpath: Full path to the INI file to wrap
-    :param kwargs: Cached ghost status information, ignored for INIs"""
-    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
-        consider_obse_inis=bush.game.Ini.has_obse_inis)
-    ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
-                     else INIInfo)
-    return ini_info_type(fullpath, detected_encoding)
-
 class INIInfos(_AFileInfos):
     file_exts = supported_ini_exts
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
-    _factory_type: Callable[[...], INIInfo]
     _dir_key = 'ini_tweaks'
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
                                       bush.game.default_tweaks.items())
-        super().__init__(ini_info_factory)
+        super().__init__()
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -2061,6 +2041,17 @@ class INIInfos(_AFileInfos):
             targ.updated = False
             rdata |= self._reset_all_statuses() # set the status of all infos
         return rdata
+
+    def factory(self, fullpath, **kwargs) -> INIInfo:
+        """INIInfos factory
+
+        :param fullpath: Full path to the INI file to wrap
+        :param kwargs: Cached ghost status information, ignored for INIs"""
+        inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
+            consider_obse_inis=bush.game.Ini.has_obse_inis)
+        ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
+                         else INIInfo)
+        return ini_info_type(fullpath, detected_encoding)
 
     def _reset_all_statuses(self): # only return infos that changed status
         updt = {fn for fn, ini_info in self.items() if
@@ -2261,6 +2252,7 @@ class ModInfos(_AFileInfos):
     _known_invalid_versions = set()
     _known_older_form_versions = set()
     file_exts = frozenset(bush.game.espm_extensions)
+    factory_type = ModInfo
 
     def __init__(self):
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
@@ -2309,7 +2301,7 @@ class ModInfos(_AFileInfos):
         modInfos = self ##: hack needed in ModInfo.readHeader
         # lo conflicts cache only used in _ModsUIList.set_item_format
         self.lo_conflicts, self.act_lo_conflicts = set(), set()
-        super().__init__(ModInfo)
+        super().__init__()
 
     # Refresh - not quite surprisingly this is super complex - therefore define
     # refresh satellite methods before even defining the DataStore overrides
@@ -3195,13 +3187,14 @@ class SaveInfos(_AFileInfos):
     # Enabled and disabled saves and .bak files
     file_exts = frozenset([_e := bush.game.Ess.ext, _e[:-1] + 'r', '.bak'])
     _known_cor_saves = set()
+    factory_type = SaveInfo
 
     def __init__(self):
         all_ext = {*(fe := self.file_exts), *(f'{e}f' for e in fe)}
         par = partial(self.check_filename, allow_ext=all_ext)
         SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game.fsName, par,
             bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
-        super().__init__(SaveInfo)
+        super().__init__()
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs['saveBase'].join('BashProfiles.dat'), load_pickle=True)
@@ -3362,7 +3355,8 @@ class BSAInfos(_AFileInfos):
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
                     if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
-        super().__init__(BSAInfo)
+        self.factory_type = BSAInfo
+        super().__init__()
 
     def warning_args(self, multi_warnings, lo_warnings):
         bsa_mvers = self.mismatched_versions
@@ -3441,7 +3435,7 @@ class ScreenInfos(_AFileInfos):
     _ss_skips = {*map(FName, ('enblensmask.png', 'enbpalette.bmp',
         'enbsunsprite.bmp', 'enbsunsprite.tga', 'enbunderwaternoise.bmp'))}
     file_exts = ss_image_exts
-    _factory_type = ScreenInfo
+    factory_type = ScreenInfo
     _boot_refresh_args = {}
     tracks_ownership = False
     dat_loaded = True # nothing to load
