@@ -34,6 +34,7 @@ from .. import archives, bolt
 from ..archives import defaultExt, readExts
 from ..bolt import DataDict, Path, PickleDict, SubProgress, \
     forward_compat_path_to_fn_list, top_level_files, GPath_no_norm
+from ..env import convert_separators
 from ..exception import ArgumentError, StateError
 from ..wbtemp import TempDir, TempFile
 
@@ -372,33 +373,35 @@ class InstallerConverter(object):
         tempJoin = GPath_no_norm(src_temp).join
         destJoin = GPath_no_norm(dst_temp).join
         #--Move every file
-        for index, (crcValue, srcDir_File, destFile) in enumerate(
+        for index, (crc_value, raw_src_dir_file, raw_dest_file) in enumerate(
                 self.convertedFiles):
-            srcDir, srcFile = srcDir_File
-            #--srcDir is either 'BCF-Missing', or crc read from 7z l -slt
-            srcDir = f'{srcDir:08X}' if isinstance(srcDir, int) else srcDir
-            src_rel = os.path.join(srcDir, srcFile)
+            src_dir, raw_src_file = raw_src_dir_file
+            actual_src_file = convert_separators(raw_src_file)
+            #--src_dir is either 'BCF-Missing', or crc read from 7z l -slt
+            src_dir = f'{src_dir:08X}' if isinstance(src_dir, int) else src_dir
+            src_rel = os.path.join(src_dir, actual_src_file)
             src_full = tempJoin(src_rel)
             if not src_full.exists():
                 raise StateError(_('%(bcf_rel)s: Missing source file:') % {
                     'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
-            if destFile is None:
+            if raw_dest_file is None:
                 raise StateError(_('%(bcf_rel)s: Unable to determine file '
                                    'destination for:') % {
                     'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
-            numDupes = dupes[crcValue]
+            actual_dest_file = convert_separators(raw_dest_file)
+            numDupes = dupes[crc_value]
             #--Keep track of how many times the file is referenced by
             # convertedFiles
             #--This allows files to be moved whenever possible, speeding
             # file operations up
-            dest_full = destJoin(destFile)
+            dest_full = destJoin(actual_dest_file)
             if numDupes > 1:
-                progress(index, _('Copying file…') + f'\n{destFile}')
+                progress(index, _('Copying file…') + f'\n{actual_dest_file}')
                 # Decrement so that the last usage can be a move
-                dupes[crcValue] = numDupes - 1
+                dupes[crc_value] = numDupes - 1
                 src_full.copyTo(dest_full)
             else:
-                progress(index, _('Moving file…') + f'\n{destFile}')
+                progress(index, _('Moving file…') + f'\n{actual_dest_file}')
                 src_full.moveTo(dest_full)
 
     def build(self, srcArchives, idata, destArchive, bcf_archive, blockSize,
