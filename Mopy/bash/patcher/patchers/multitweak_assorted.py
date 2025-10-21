@@ -31,6 +31,7 @@ import re
 from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
     MultiTweakItem
 from ... import bolt, bush
+from ...brec.utils_constants import ZERO_FID
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -927,6 +928,33 @@ class AssortedTweak_SaveSortingFix(MultiTweakItem):
 
     def tweak_record(self, record):
         record.eid = record.eid.replace('_', '')
+
+#------------------------------------------------------------------------------
+class AssortedTweak_RemoveLoadScreenModels(MultiTweakItem):
+    """Removes the model from loading screens."""
+    tweak_read_classes = b'LSCR',
+    tweak_name = _('Remove Load Screen Models')
+    tweak_tip = _('Removes models and related attributes from load screens.')
+    tweak_key = 'RemoveLoadScreenModels'
+    tweak_log_msg = _('Load Screen Models Removed: %(total_changed)d')
+
+    def wants_record(self, record):
+        return record.lscr_nif
+
+    def tweak_record(self, record):
+        # Setting to None matches CK behavior, but doesn't remove model
+        record.lscr_nif = ZERO_FID
+        # Setting model to NONE in CK removes the following attributes as well
+        record.lscr_initial_scale = None
+        record.lscr_rotation_grid_x = None
+        record.lscr_rotation_grid_y = None
+        record.lscr_rotation_grid_z = None
+        record.lscr_rotation_min = None
+        record.lscr_rotation_max = None
+        record.lscr_translation_grid_x = None
+        record.lscr_translation_grid_y = None
+        record.lscr_translation_grid_z = None
+        record.lscr_camera_path = None
 
 #------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):
