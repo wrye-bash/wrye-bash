@@ -74,10 +74,10 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
 from ..bass import Store
-from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, deprint, \
-    dict_sort, forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
-    to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
-    fast_cached_property, attrgetter_cache, top_level_files
+from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
+    attrgetter_cache, deprint, dict_sort, fast_cached_property, \
+    forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
+    to_win_newlines, top_level_files
 from ..bosh import ModInfo, omods
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
@@ -1247,17 +1247,21 @@ class _EditableMixin(_DetailsMixin):
     def DoSave(self):
         """Event: Clicked Save button."""
         #--Change Tests
-        if (ren_data := self._rename_detail_item()) is None:
+        det_it = FName(self.fileStr.strip())
+        if self.file_info.named_as(det_it):
+            ren_data = RefrData()
+        elif (ren_data := self._rename_detail_item(det_it)) is None:
             return
-        self.detail_fn = det_it = next(iter(ren.values())) if (
-            ren := ren_data.renames) else self.detail_fn
-        change_hdr, ref_saves, kwargs = self._extra_changes(ren_data)
+        else: # we renamed - set detail_fn so we can retrieve self.file_info
+            self.detail_fn = det_it = next(iter(ren_data.renames.values()))
+        change_hdr, ref_saves, kwargs = self._extra_changes(ren_data,
+                                                            self.file_info)
         # Although we could avoid rereading the header by passing the info in
         # I leave it here as an extra error check - error handling is WIP
         store = self.panel_uilist.data_store
         ren_data |= store.refresh(change_hdr and RefrIn.from_tabled_infos(
-            {self.file_info.fn_key: self.file_info}), **kwargs)
-        if not store.get(det_it := self.file_info.fn_key):
+            {det_it: self.file_info}), **kwargs)
+        if not store.get(det_it): ##:(701) rework saving logic - see RestoreInfo.Execute
             showError(self, _('File corrupted on save!') +
                       f'\n{store.corrupted[det_it].error_message}')
             det_it = None
@@ -1265,14 +1269,14 @@ class _EditableMixin(_DetailsMixin):
         self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
                                             detail_item=det_it)
 
-    def _rename_detail_item(self):
-        newName = FName(self.fileStr.strip())
+    def _rename_detail_item(self, new_n):
         # OnFileEdited checked if filename existed in validate_name
         #  but this happened before and since maybe modinfos are
         #  updated, we need to check again todo: possibly cancel?
-        return self.panel_uilist.try_rename(self.file_info, newName.fn_body)
+        renargs = [(self.file_info, new_n.fn_body)]
+        return self.panel_uilist.try_rename(renargs) or None # rename failed
 
-    def _extra_changes(self, rename_data): # changes that need refresh
+    def _extra_changes(self, rename_data, finf): # changes that need refresh
         return False, None, {}
 
     @_check_displayed
@@ -1577,8 +1581,7 @@ class ModDetails(_ModsSavesDetails):
     __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
         'Windows-1252. %(game_name)s may not be able to activate this '
         'plugin because of this. Do you want to rename the plugin anyway?')
-    def _extra_changes(self, rename_data):
-        mod_inf = self.file_info
+    def _extra_changes(self, rename_data, mod_inf):
         changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
         change_hdr = self.uilist.edited or (
                 self.authorStr != mod_inf.header.author or
@@ -1603,25 +1606,22 @@ class ModDetails(_ModsSavesDetails):
                 rename_data.redraw.add(mod_inf.fn_key) # needed!
         return change_hdr, ref_saves | unlock_lo, {'unlock_lo': unlock_lo}
 
-    def _rename_detail_item(self):
-        file_str = self.fileStr.strip()
-        if not self.file_info.named_as(file_str):
-            #--Warn on rename if file has BSA and/or dialog
-            msg = self.file_info.ask_resources_ok(
-                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
-                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
-            if msg and not askWarning(self, msg, title=_('Rename %('
-                 'target_file_name)s') % {'target_file_name': self.file_info}):
-                return
-            #--Change Name?
-            #--Bad name?
-            if bosh.modInfos.isBadFileName(file_str):
-                msg = self.__bad_name_msg % {'bad_file_name': file_str,
-                    'game_name': bush.game.display_name}
-                if not balt.askContinue(self, msg,
-                                        'bash.rename.isBadFileName.continue'):
-                    return
-        ren_data = super()._rename_detail_item()
+    def _rename_detail_item(self, new_n):
+        #--Warn on rename if file has BSA and/or dialog
+        msg = self.file_info.ask_resources_ok(
+            bsa_and_blocking_msg=self._bsa_and_blocking_msg,
+            bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
+        if msg and not askWarning(self, msg, title=_('Rename %('
+                'target_file_name)s') % {'target_file_name': self.file_info}):
+            return None
+        #--Bad name?
+        if bosh.modInfos.isBadFileName(new_n):
+            msg = self.__bad_name_msg % {'bad_file_name': new_n,
+                                         'game_name': bush.game.display_name}
+            if not balt.askContinue(self, msg,
+                                    'bash.rename.isBadFileName.continue'):
+                return None
+        ren_data = super()._rename_detail_item(new_n)
         if ren_data: ##: bash.mods.renames needs a spec
             settings['bash.mods.renames'].update(ren_data.renames)
         return ren_data
@@ -2030,9 +2030,8 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        if rdata := self.try_rename(sinf, fn_item.fn_body,
-                                    forced_ext=extension):
-            self.RefreshUI(rdata)
+        self.try_rename([[sinf, fn_item.fn_body]], item_edited=fn_item,
+                        forced_ext=extension)
 
     # Save profiles
     def set_local_save(self, new_saves, *, do_swap=None):
@@ -2183,11 +2182,10 @@ class SaveDetails(_ModsSavesDetails):
         if not self.file_info or self.file_info.named_as(self.fileStr):
             self.SetFile()
 
-    def _extra_changes(self, rename_data):
-        saveinf = self.file_info
-        prevMTime = saveinf.ftime
+    def _extra_changes(self, rename_data, saveinf):
         #--Change masters?
         if changeMasters := self.uilist.edited:
+            prevMTime = saveinf.ftime
             saveinf.makeBackup()
             prev_masters = saveinf.masterNames
             curr_masters = self.uilist.GetNewMasters()
@@ -2283,14 +2281,14 @@ class InstallersList(UIList):
                 return None, _("Wrye Bash can't rename mixed package types.")
         return rename_type, rename_err
 
-    def _rename_args(self, evt_label, selected):
+    def _rename_args(self, evt_label, selected, **val_kwargs):
         # all selected have common type! enforced in OnBeginEditLabel
-        newName, root = selected[0].validate_filename_str(evt_label,
-            allowed_exts=archives.readExts)
+        ren_args = super()._rename_args(evt_label, selected,
+                                        allowed_exts=archives.readExts)
         #--Rename each installer, keeping the old extension (for archives)
-        if isinstance(root, tuple):
-            root = root[0]
-        return newName, root, defaultdict(RefrData) # see store_refr
+        if isinstance(ren_args[1], tuple):
+            ren_args[1] = ren_args[1][0] # drop the message for ext change
+        return *ren_args[:2], {'store_refr': defaultdict(RefrData)}
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -2528,8 +2526,9 @@ class InstallersList(UIList):
         try:
             index = self._get_uil_index(new_marker)
         except KeyError: # '====' not found in the internal dictionary
-            self.data_store.new_info(new_marker, install_order=max_order,
-                                     is_mark=True)
+            mark_inst = self.data_store.new_info(
+                new_marker, install_order=max_order, is_mark=True)
+            mark_inst.status = -20 ##:(701) status handling hack needed for RUI
             self.RefreshUI() # need to redraw all items cause order changed
             index = self._get_uil_index(new_marker)
         if index != -1:
@@ -3012,47 +3011,32 @@ class InstallersPanel(BashTab):
             if settings.get('bash.installers.updatedCRCs', True): # only checked here
                 settings['bash.installers.updatedCRCs'] = False
                 self._data_dir_scanned = False
-            do_refresh = scan_data_dir = scan_data_dir or not \
-                self._data_dir_scanned
-            refresh_info = None
-            if self.frameActivated: # otherwise we are called directly
-                folders, files = map(list,
-                                     top_level_items(bass.dirs['installers']))
-                omds = [fninst for fninst in files if
-                        fninst.fn_ext in archives.omod_exts]
-                if any(inst_path not in omods.failedOmods for inst_path in
-                       omds):
-                    omod_projects = self.__extractOmods(omds) ##: change above to filter?
-                    if omod_projects:
-                        deprint(f'Extending projects: {omod_projects}')
-                        folders.extend(omod_projects)
-                if not do_refresh:
-                    #with balt.Progress(_('Scanning Packages…')) as progress:
-                    refresh_info = self.listData.update_installers(folders,
-                        files, fullRefresh, progress=bolt.Progress())
-                    do_refresh = bool(refresh_info)
-            refreshui = refresh_info or RefrData()
-            what = prog = None
-            if (tracked := self.listData.refreshTracked()) or do_refresh:
-                what = 'DISC' if scan_data_dir else (
-                    'ISC' if tracked else 'IC')
-                prog = balt.Progress(_('Refreshing Installers…'), abort=canCancel)
-            elif self.frameActivated:
-                what = 'C' # setting progress leads to infinite refresh in MSW!
-                # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
-                prog = bolt.Progress()
+            what = {*(
+                'DISC' if scan_data_dir or not self._data_dir_scanned else '')}
+            if extract_omods := (self.frameActivated and self.__extractOmods):
+                what.update('IC') # otherwise we are called directly
+            if self.listData.refreshTracked(): # on first load this is no op
+                what.update('ISC')
+            fresh_load = not self.listData.loaded
+            ##:(728) setting progress after boot steals focus from Bash in MSW!
+            prog = (balt.Progress(_('Refreshing Installers…'), abort=canCancel)
+                if fresh_load else bolt.Progress() # should be `if 'I' in what`
+                ) # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
             if what:
-                with prog as progress:
+                with (prog if fresh_load else BusyCursor()):
                     try:
-                        refreshui = self.listData.irefresh(refresh_info,
-                            what=what, fullRefresh=fullRefresh,
-                            progress=progress)
+                        refreshui = self.listData.irefresh('I' in what,
+                           what=what, fullRefresh=fullRefresh,
+                           extract_omods=extract_omods, progress=prog)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh
+                        refreshui = False
                     finally:
                         self._data_dir_scanned = True
-            if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
+                if refreshui or fresh_load:
+                    self.uiList.RefreshUI(refreshui or None,
+                                          focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
@@ -3064,6 +3048,7 @@ class InstallersPanel(BashTab):
             progress.setFull(max(len(omds), 1))
             omodMoves, omodRemoves = set(), set()
             for i, fn_omod in enumerate(omds):
+                if fn_omod in omods.failedOmods: continue
                 progress(i, fn_omod)
                 pr_name = bosh.InstallerProject.unique_name(fn_omod.fn_body,
                                                             check_exists=True)
@@ -3124,7 +3109,10 @@ class InstallersPanel(BashTab):
                         _move_omods(omodMoves)
                     except (CancelError, SkipError):
                         continue
-        return omod_projects
+        if omod_projects:
+            deprint(f'Extending projects: {omod_projects}')
+        return RefrIn.from_added(
+                {k: {'is_proj': True} for k in omod_projects})
 
     def sb_count_str(self):
         active = sum(x.is_active for x in self.listData.values())
@@ -3150,37 +3138,21 @@ class ScreensList(UIList):
             self.OpenSelected(selected=[hitItem])
         return EventResult.FINISH
 
-    @balt.conversation
-    def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Rename selected screenshots."""
-        if is_edit_cancelled: return EventResult.CANCEL
-        selected = self.get_selected_infos_filtered()
-        if not selected:
-            # Sometimes seems to happen on wxGTK, simply abort
-            return EventResult.CANCEL
-        root, numStr, num, digits = self._rename_args(evt_label, selected)
-        if numStr is None: # note we allow for number only names
-            showError(self, root)
-            return EventResult.CANCEL
-        item_edited = self.panel.detailsPanel.detail_fn
-        with BusyCursor():
-            rdata = RefrData()
-            for sel_inf in selected:
-                try:
-                    rdata |= self.try_rename(sel_inf, root + numStr)
-                    numStr = numStr and str(num := num + 1).zfill(digits)
-                except TypeError: # try_rename returned None
-                    break
-            self.refresh_renames(item_edited, rdata)
-            return EventResult.CANCEL
+    def _info_to_name(self, selected, *args):
+        root, numStr, num, digits = args
+        ren_args = []
+        for sel_inf in selected:
+            ren_args.append((sel_inf, root + numStr))
+            numStr = numStr and str(num := num + 1).zfill(digits)
+        return ren_args
 
-    def _rename_args(self, evt_label, selected):
-        root, numStr = selected[0].validate_filename_str(evt_label)
+    def _rename_args(self, evt_label, selected, **val_kwargs):
+        root, numStr, st_ref = super()._rename_args(evt_label, selected)
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or 0)
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr and numStr.zfill(digits)
-        return root, numStr, num, digits
+        return root, numStr, num, digits, st_ref
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens

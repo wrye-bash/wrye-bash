@@ -1837,10 +1837,9 @@ class ListInfo:
 
     def set_path_keys(self, new_fn: FName, *, infodir=None):
         old_key, self.fn_key = self.fn_key, new_fn
-        return RefrData(to_add={new_fn}, to_del={old_key},
-                        renames={old_key: new_fn})
+        return {}
 
-    def get_rename_paths(self, newName):
+    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         return [] # no rename paths for markers
 
     def info_status(self, **kwargs):
@@ -1880,10 +1879,10 @@ class AFileInfo(AFile, ListInfo):
         responsible for calling _delete_refresh of the data store."""
         self.abs_path.moveTo(destDir.join(self.fn_key))
 
-    def get_rename_paths(self, newName):
+    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
-        return [(self.abs_path, self._store().store_dir.join(newName))]
+        return [(self.abs_path, (rename_dir or self.info_dir).join(new_name))]
 
     def validate_name(self, name_str, check_store=True):
         super_validate = super().validate_name(name_str,
@@ -1899,11 +1898,10 @@ class AFileInfo(AFile, ListInfo):
         return self.abs_path.head
 
     def set_path_keys(self, new_fn: FName, *, infodir=None):
-        ren_d = super().set_path_keys(new_fn)
-        new_path = (infodir or self._store().store_dir).join(new_fn)
+        super().set_path_keys(new_fn)
+        new_path = (infodir or self.info_dir).join(new_fn)
         old_path, self.abs_path = self.abs_path, new_path
-        ren_d.ren_paths[old_path] = self.abs_path
-        return ren_d
+        return {old_path: self.abs_path} # use abs_path here for ghosts
 
     def __repr__(self): # bypass AFInfo - abs path is not always set
         return super(AFile, self).__repr__()
@@ -1939,6 +1937,8 @@ class RefrIn:
 
     @classmethod
     def from_added(cls, added_fns):
+        if isinstance(added_fns, dict):
+            return cls({k: (None, v) for k, v in added_fns.items()})
         return cls({k: (None, {}) for k in added_fns})
 
     def __ior__(self, other, *, __np=attrgetter_cache['new_or_present']):
@@ -1975,13 +1975,12 @@ class RefrData:
     def __ior__(self, other):
         # we suppose `other` is more up to date so deleted infos might reappear
         self.to_del -= other.new_changed()
-        it = ((getattr(self, att), oth_att) for att in self.__slots__ if
-              (oth_att := getattr(other, att)))
-        for self_att, other_att in it:
-            self_att.update(other_att) # sets and dicts
+        self.to_del |= other.to_del
         for att in ('redraw', 'to_add'):
-            setattr(self, att, getattr(self, att) - self.to_del)
-        # we suppose renames/ren_paths key/values are unique while we ior them
+            (attr := getattr(self, att)).update(getattr(other, att))
+            attr.difference_update(other.to_del)
+        for att in ('renames', 'ren_paths'):
+            getattr(self, att).update(getattr(other, att))
         return self
 
     def new_changed(self): return self.to_add | self.redraw

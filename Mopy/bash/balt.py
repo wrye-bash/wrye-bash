@@ -43,13 +43,12 @@ from .bolt import FName, Path, RefrIn, deprint, readme_url, \
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
-    DirOpen, EventResult, FileOpen, FileOpenMultiple, FileSave, Font, \
-    GlobalMenu, HLayout, LayoutOptions, ListBox, Links, LogDialog, LogFrame, \
-    PanelWin, TextArea, UIListCtrl, VLayout, bell, copy_files_to_clipboard, \
-    DeletionDialog, web_viewer_available, AutoSize, get_shift_down, \
-    ContinueDialog, askText, askNumber, askYes, askWarning, showOk, showError, \
-    showWarning, showInfo, TreeNodeFormat, DnDStatusBar, get_image, \
-    get_color_checks, ImageList
+    DirOpen, EventResult, FileOpen, FileSave, Font, GlobalMenu, HLayout, \
+    LayoutOptions, ListBox, Links, LogDialog, LogFrame, PanelWin, TextArea, \
+    UIListCtrl, VLayout, bell, copy_files_to_clipboard, DeletionDialog, \
+    web_viewer_available, AutoSize, get_shift_down, ContinueDialog, askText, \
+    askNumber, askYes, askWarning, showOk, showError, showWarning, showInfo, \
+    TreeNodeFormat, DnDStatusBar, get_image, get_color_checks, ImageList
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -786,10 +785,11 @@ class UIList(PanelWin):
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in rdata.new_changed():
+                for upd in (modified := rdata.new_changed()):
                     self.PopulateItem(item=upd, **ui_kwargs)
                 #--Sort
-                self.SortItems()
+                if modified: # if we only deleted items sorting does not change
+                    self.SortItems()
                 self.autosizeColumns()
         # refresh details
         if detail_item is None:
@@ -1089,38 +1089,26 @@ class UIList(PanelWin):
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Should only be subscribed if _editLabels==True."""
         if is_edit_cancelled: return EventResult.FINISH
-        selected = self.get_selected_infos_filtered()
+        selected = [*self.data_store.filter_essential(
+            None or self.GetSelected()).values()]
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
-        newName, root, *args = self._rename_args(evt_label, selected)
-        if root is None:
-            showError(self, newName)
+        *args, ren_kwargs = self._rename_args(evt_label, selected)
+        if args[1] is None:
+            showError(self, args[0])
             return EventResult.CANCEL # validate_filename would Veto
         item_edited = self.panel.detailsPanel.detail_fn
+        ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            rdata = RefrData()
-            for sel_inf in selected:
-                try:
-                    rdata |= self.try_rename(sel_inf, root, *args)
-                except TypeError: # try_rename returned None
-                    break
-            self.refresh_renames(item_edited, rdata, *args)
+            self.try_rename(ren_args, item_edited=item_edited, **ren_kwargs)
         return EventResult.CANCEL # needed! clears new name from label on exception
 
-    def _rename_args(self, evt_label, selected):
-        return selected[0].validate_filename_str(evt_label)
+    def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
+        return [(sel_inf, args[1]) for sel_inf in selected]
 
-    def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
-        if rdata:
-            args_dict = {'detail_item': rdata.renames.get(item_edited,
-                item_edited)} # in case the displayed item was *not* renamed
-            if ui_refreshes is not None:
-                self.propagate_refresh(rdata, ui_refreshes, **args_dict)
-            else:
-                self.RefreshUI(rdata, **args_dict)
-            #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.to_add)
+    def _rename_args(self, evt_label, selected, **val_kwargs):
+        return *selected[0].validate_filename_str(evt_label, **val_kwargs), {}
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1142,32 +1130,24 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, info, new_root, store_refr=None, *, forced_ext=''):
+    def try_rename(self, ren_args, *, forced_ext='', item_edited=None,
+                   **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
-        newName = info.unique_key(new_root, forced_ext)
-        if newName is None: # new and old names are ci-same
-            return RefrData()
-        try:
-            return self.data_store.rename_operation(info, newName,
-                store_refr=store_refr) # a defaultdict(RefrData) or None
-        except (CancelError, OSError):
-            deprint(f'Renaming {info} to {newName} failed', traceback=True)
-            # When using moveTo I would get "WindowsError:[Error 32]The process
-            # cannot access ..." -  the code below was reverting the changes.
-            # With shellMove I mostly get CancelError so below not needed -
-            # except if a save is locked and user presses Skip - so cosaves are
-            # renamed! Error handling is still a WIP
-            for old, new in info.get_rename_paths(newName):
-                if old == new: continue
-                if (nex := new.exists()) and not (oex := old.exists()):
-                    # some cosave move failed, restore files
-                    new.moveTo(old, check_exist=False) # we just checked
-                elif nex and oex:
-                    # move copies then deletes, so the delete part failed
-                    new.remove()  # return None # break
-            return None # maybe a msg if really really needed
+        info_new_name = []
+        for info, new_root in ren_args:# check if new and old names are ci-same
+            if (new_fn := info.unique_key(new_root, forced_ext)) is not None:
+                info_new_name.append((info, new_fn))
+        rdata = self.data_store.rename_operation(info_new_name, **ren_kwargs)
+        if item_edited and rdata:
+            args_dict = {'detail_item': rdata.renames.get(item_edited,
+                item_edited)} # in case the displayed item was *not* renamed
+            self.propagate_refresh(rdata, ren_kwargs.get('store_refr'),
+                                   **args_dict)
+            #--Reselect the renamed items
+            self.SelectItemsNoCallback(rdata.to_add)
+        return rdata
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags
@@ -1197,11 +1177,6 @@ class UIList(PanelWin):
     def GetSelectedInfos(self, selected=None):
         """Return list of infos selected (highlighted) in the interface."""
         return [self.data_store[k] for k in (selected or self.GetSelected())]
-
-    def get_selected_infos_filtered(self, selected=None):
-        """Version of GetSelectedInfos that filters out essential infos."""
-        return [*self.data_store.filter_essential(
-            selected or self.GetSelected()).values()]
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self._get_uil_index(item)
@@ -1440,10 +1415,10 @@ class UIList(PanelWin):
             trash_icon=get_image('trash_can.32'))
         if not dd_ok or not dd_items: return
         try:
-            self.data_store.delete(dd_items, recycle=dd_recycle)
-        except (PermissionError, CancelError, SkipError): pass
-        # Also cleans _gList internal dicts
-        self.propagate_refresh(True)
+            rd_del = self.data_store.delete(dd_items, recycle=dd_recycle)
+        except (PermissionError, CancelError, SkipError):
+            rd_del = True # perform a refresh to see if items were deleted
+        self.propagate_refresh(rd_del) # also cleans _gList internal dicts
 
     def open_data_store(self):
         try:
@@ -1471,16 +1446,6 @@ class UIList(PanelWin):
         # no need to check existence, we just moved them
         self.data_store.refresh(RefrIn(del_infos=moved_infos), what='I',
                                 unlock_lo=True)
-
-    def unhide(self):
-        srcDir = self.data_store.hide_dir
-        # Otherwise the unhide command will open some random directory
-        srcDir.makedirs()
-        wildcard = self.data_store.unhide_wildcard()
-        destDir = self.data_store.store_dir
-        srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
-            defaultDir=srcDir, wildcard=wildcard)
-        return destDir, srcDir, srcPaths
 
     def jump_to_source(self, uil_item: FName) -> bool:
         """Jumps to the installer associated with the specified UIList item."""
