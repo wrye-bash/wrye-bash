@@ -1641,7 +1641,7 @@ class Mod_Face_Import(OneItemLink):
                                 wildcard=wildcard)
         if not srcPath: return
         #--Get face
-        srcInfo = bosh.saveInfos.factory(srcPath, load_cache=True)
+        srcInfo = bosh.saveInfos.get_update_info(srcPath)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)

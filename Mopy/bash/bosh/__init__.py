@@ -1627,18 +1627,24 @@ class DataStore(DataDict):
             if progress: # currently only installers and only on boot
                 progress(index, _('Scanning Packages…') + f'\n{new}')
                 kws['progress'] = SubProgress(progress, index, index + 1)
-            try:
-                if old_inf is None: # new file or updated corrupted
-                    self[new] = self.factory(self.store_dir.join(new),
-                        load_cache=True, do_pop=True, **kws, **kw_do_upd)
-                    rdata.to_add.add(new)
-                elif old_inf.do_update(**kws, **kw_do_upd):
-                    rdata.redraw.add(new)
-            except Exception as e:
-                self._add_to_cor(new, kws, delinfos, e)
+            if newinf := self.get_update_info(new, old_inf, _delinfos=delinfos,
+                                              **kws, **kw_do_upd):
+                if create_inf := old_inf is None:
+                    self[new] = newinf
+                (rdata.to_add if create_inf else rdata.redraw).add(new)
         if delinfos:
             rdata.to_del |= self._delete_refresh(delinfos)
         return rdata
+
+    def get_update_info(self, fname: FName | Path,
+            old_inf: AFileInfo | None = None, *, _delinfos=None,**kwargs):
+        """Get new info (for new file or updated corrupted) else check updates.
+        Will try loading from disk, only call on existing files."""
+        if old_inf is None:
+            if not isinstance(fname, Path): fname = self.store_dir.join(fname)
+            return self.factory(fname, load_cache=True, # pop from corrupted
+                                do_pop=fname.head == self.store_dir, **kwargs)
+        return old_inf.do_update(**kwargs)
 
     def factory(self, info_path, **kwargs): # WIP!
         raise NotImplementedError
@@ -1648,9 +1654,6 @@ class DataStore(DataDict):
         :param delinfos: the infos corresponding to deleted items."""
         return {del_fn for del_inf in delinfos if
                 self.pop(del_fn := del_inf.fn_key, None)}
-
-    def _add_to_cor(self, new, kws, delinfos, e):
-        raise # see override for all but Installers
 
     @classmethod
     def check_filename(cls, fileName: FName | str, *, allow_ext=None,
@@ -1835,26 +1838,28 @@ class _AFileInfos(DataStore):
                 {*rdata.ren_paths}, {self[n].abs_path for n in alt})
         return rdata
 
-    def _add_to_cor(self, new, kws, delinfos, e):
-        if not isinstance(e, (FileError, UnicodeError, BoltError,
-                    NotImplementedError)): ##:701 revisit this - why NIE?
-            super()._add_to_cor(new, kws, delinfos, e)
-        # old still corrupted, or new(ly) corrupted or we landed
-        # here cause cor_path was manually un/ghosted but file remained
-        # corrupted so in any case re-add to corrupted
-        cor_path = self.store_dir.join(new)
-        if del_inf := self.pop(new, None): # effectively deleted
-            delinfos.add(del_inf)
-            cor_path = del_inf.abs_path
-        elif self is modInfos:  # modInfos needs be set here!
-            if (isg := kws.get('itsa_ghost')) is None:
-                isg = not cor_path.is_file() and os.path.isfile(
-                    f'{cor_path}.ghost')
-            if isg: cor_path = cor_path + '.ghost'  # Path __add__ !
-        er = e.message if hasattr(e, 'message') else f'{e}'
-        self.corrupted[new] = cor = _Corrupted(cor_path, er, new, **kws)
-        deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
-                traceback=True)
+    def get_update_info(self, fn, old_inf=None, *, _delinfos=None, **kwargs):
+        try: ##:701 revisit this - why NIE?
+            return super().get_update_info(fn, old_inf, **kwargs)
+        except (FileError, UnicodeError, BoltError, NotImplementedError) as e:
+            # old still corrupted, or new(ly) corrupted or we landed
+            # here cause cor_path was manually un/ghosted but file remained
+            # corrupted so in any case re-add to corrupted
+            er = e.message if hasattr(e, 'message') else f'{e}'
+        cor_path = fn if isinstance(fn, Path) else self.store_dir.join(fn)
+        if _delinfos is not None: # we are called from refresh, fn is FName
+            if del_inf := self.pop(fn, None): # effectively deleted
+                _delinfos.add(del_inf)
+                cor_path = del_inf.abs_path
+            elif self is modInfos: # modInfos needs be set here!
+                if (isg := kwargs.get('itsa_ghost')) is None:
+                    isg = not cor_path.is_file() and os.path.isfile(
+                        f'{cor_path}.ghost')
+                if isg: cor_path = cor_path + '.ghost'  # Path.__add__ !
+            self.corrupted[fn] = cor = _Corrupted(cor_path, er, fn, **kwargs)
+            cor_path = cor.abs_path
+        deprint(f'Failed to load {fn} from {cor_path}: {er}', traceback=True)
+        return False
 
     def _get_delinfos(self, inodes):
         return {inf for inf in [*self.values(), *self.corrupted.values()]

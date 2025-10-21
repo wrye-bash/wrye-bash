@@ -1220,15 +1220,16 @@ class _InstallerPackage(Installer, AFileInfo):
 
     def copy_to(self, dup_path: Path, *, set_time=None):
         super().copy_to(dup_path, set_time=set_time)
-        clone = self._store().new_info(FName(dup_path.stail),
-            is_proj=self.is_project, install_order=self.order + 1,
-            do_refresh=False, # we only need to call refresh_n()
-            load_cache=False) # don't load from disc - copy all attributes over
+        # use factory -> init(load_cache=False) - then copy all attributes over
+        idata = self._store()
+        clone = idata.factory(dup_path, is_proj=self.is_project)
+        idata[fn := clone.fn_key] = clone
         atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
         for att in atts:
             setattr(clone, att, copy.copy(getattr(self, att)))
         clone.is_active = False # make sure we mark as inactive
-        self._store().refresh_n() # no need to change installer status here
+        # no need to change installers status here
+        idata.moveArchives([fn], self.order + 1, ref_norm=True)
 
     def _reset_cache(self, stat_tuple=None, *, __skips_start=tuple(
             s.replace(os_sep, '') for s in Installer._silentSkipsStart),
@@ -1938,7 +1939,7 @@ class InstallersData(DataStore):
         return {self[k] for k in set(self.ipackages(self)) - inodes.keys()}
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
-                 install_order=None, do_refresh=True, load_cache=True):
+                 install_order=None, do_refresh=True):
         """Create, add to self and return a new _InstallerPackage.
         :param fileName: the filename of the package to create
         :param is_proj: if True create a project, otherwise an archive
@@ -1946,15 +1947,13 @@ class InstallersData(DataStore):
         :param progress: to pass to _InstallerPackage._reset_cache
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
-        :param load_cache: if True call AFile.__init__ -> _reset_cache() - only
-            set to False in _InstallerPackage.copy_to
         """
         if is_mark:
             is_proj = 2
             if install_order is None:
                 install_order = self.last_marker_order()
-        info = self[fileName] = self.factory(self.store_dir.join(fileName),
-            is_proj=is_proj, progress=progress, load_cache=load_cache)
+        info = self[fileName] = self.get_update_info(FName(fileName),
+            is_proj=is_proj, progress=progress)
         if install_order is not None:
             self.moveArchives([fileName], install_order)
         if progress and not is_mark: progress(1.0, _('Done'))
