@@ -250,10 +250,9 @@ class TreePanel(_APageComponent):
                                            page_name, page_val)
                 self._all_link_pages.append(link_page)
                 self.add_page(link_page, page_name)
-                for subpage_name in sorted(page_val):
-                    subpage_val = page_val[subpage_name]
-                    if subpage_val.should_appear():
-                        new_subpage = subpage_val(self, page_descriptions.get(
+                for subpage_name, subpage_type in dict_sort(page_val):
+                    if subpage_type.should_appear():
+                        new_subpage = subpage_type(self, page_descriptions.get(
                             f'{page_name}/{subpage_name}', ''))
                         self._all_leaf_pages.append(new_subpage)
                         self.add_sub_page(new_subpage, subpage_name)

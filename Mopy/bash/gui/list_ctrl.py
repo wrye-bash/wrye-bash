@@ -27,11 +27,12 @@ from __future__ import annotations
 __author__ = u'Lojack, Utumno'
 
 import pickle
+from dataclasses import dataclass
 
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from . import EventHandler
+from . import EventHandler, Font
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
     _auto_size_to_wx
 from .. import bolt
@@ -192,7 +193,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
 class UIListCtrl(WithMouseEvents, WithCharEvents):
     """Backing list control for UILists. Wraps a wx list control, which needs
     a peculiar system with internal ids to support sorting PY3: something simpler?
-    ALWAYS add new items via InsertListCtrlItem() and delete them via
+    ALWAYS add new items via insert_update_item() and delete them via
     RemoveItemAt().
     Events:
       - on_item_selected(uilist_item_key): on clicking on an item on the list -
@@ -203,11 +204,12 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     _native_widget: _DragListCtrl
 
     def __init__(self, parent, allow_edit, is_border_sunken, is_single_cell,
-            *args, **kwargs):
+                 colors, backkey_priority, textkey_priority, *args, **kwargs):
         kwargs['style'] = _wx.LC_REPORT | (allow_edit and _wx.LC_EDIT_LABELS
             ) | (is_border_sunken and _wx.BORDER_SUNKEN) | (
                 is_single_cell and _wx.LC_SINGLE_SEL)
-        super(UIListCtrl, self).__init__(parent, *args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
+        self._uil_parent = parent
         evt_col = lambda event: [event.GetColumn()]
         self.on_lst_col_rclick = self._evt_handler(
             _wx.EVT_LIST_COL_RIGHT_CLICK, evt_col)
@@ -229,6 +231,12 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         #--Item/Id mapping
         self._item_itemId: dict[bolt.FName | str | int, int] = {}
         self._itemId_item: dict[int, bolt.FName | str | int] = {}
+        # decorate items
+        self._colors_dict = colors
+        self._defaultTextBackground = Color.from_wx(
+            _wx.SystemSettings.GetColour(_wx.SYS_COLOUR_WINDOW))
+        self.back_key_priority = backkey_priority
+        self.text_key_priority = textkey_priority
 
     # API (beta) -------------------------------------------------------------
     # Internal id <-> item mappings used in wx._controls.ListCtrl.SortItems
@@ -238,28 +246,6 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self._item_itemId[item] = self.__item_id
         self._itemId_item[self.__item_id] = item
         return self.__item_id
-
-    def InsertListCtrlItem(self, index, value, item, decorate_cb):
-        """Insert an item to the list control giving it an internal id.
-
-        :param decorate_cb: A callback that will be passed the created wx item.
-            Use this to set properties on the item once before it is inserted
-            into the ListCtrl via SetItem."""
-        i = self.__id(item)
-        new_index = self._native_widget.InsertItem(index, value)
-        if new_index == -1:
-            raise RuntimeError(f'Failed to insert UIList item {value}')
-        # The item/row is inserted now, but all ancillary data has to be added
-        # to the actual wx object, then committed (see below)
-        gItem = self._native_widget.GetItem(new_index)
-        # Associate our internal id with this item/row
-        gItem.SetData(i)
-        ##: de-wx! This is a wx object escaping - should be internal-only,
-        # need to absorb __setUI in gui and export a public API like
-        # ListItemFormat for that
-        decorate_cb(gItem=gItem)
-        # This commits the actual changed data in the ListCtrl
-        self._native_widget.SetItem(gItem)
 
     def RemoveItemAt(self, index):
         """Remove item at specified list index."""
@@ -348,15 +334,6 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         return self._native_widget.GetNextItem(after, __next_all,
                                                __state_selected)
 
-    def set_item_data(self, *args):
-        self._native_widget.SetItem(*args)
-
-    def get_item_data(self, dex):
-        return self._native_widget.GetItem(dex)
-
-    def get_text_color(self):
-        return Color.from_wx(self._native_widget.GetTextColour())
-
     def resize_last_col(self):
         self._native_widget.resizeLastColumn(0)
 
@@ -386,3 +363,83 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
 
     def set_scroll_pos(self, pos):
         return self._native_widget.ScrollLines(pos)
+
+    # Decorate items
+    def lookup_text_key(self, target_text_color: str):
+        """Helper method to look up a text color from a list item format."""
+        if target_text_color:
+            return self._colors_dict[target_text_color]
+        else:
+            return Color.from_wx(self._native_widget.GetTextColour()) ##:cache?
+
+    def lookup_back_key(self, target_back_color: str):
+        """Helper method to look up a background color from a list item
+        format."""
+        if target_back_color:
+            return self._colors_dict[target_back_color]
+        else:
+            return self._defaultTextBackground
+
+    def insert_update_item(self, df, item_dex: int | None, item, allow_cols):
+        """Insert an item last to the list control giving it an internal id."""
+        labs = (ul := self._uil_parent).labels
+        str_label = labs[allow_cols[0]](ul, item)
+        if insert := item_dex is None:
+            item_dex = self._native_widget.InsertItem(self.lc_item_count(),
+                                                      str_label)
+            if item_dex == -1:
+                raise RuntimeError(f'Failed to insert UIList item {str_label}')
+            # The item/row is inserted now, but all ancillary data has to be
+            # added to the actual wx object, then committed (see below)
+        g_item = self._native_widget.GetItem(item_dex)
+        # Set font, status icon, background text etc
+        if (icon_index := df.icon_dex) is not None:
+            g_item.SetImage(icon_index)
+        g_item.SetTextColour(df.text_key.to_rgba_tuple())
+        g_item.SetBackgroundColour(df.back_key.to_rgba_tuple())
+        g_item.SetFont(Font.Style(g_item.GetFont(), strong=df.bold,
+                                  slant=df.italics, underline=df.underline))
+        if insert: # associate our internal id with this item/row
+            i = self.__id(item)
+            g_item.SetData(i)
+        else: # set the first column's text
+            g_item.SetText(str_label)
+        # This commits the actual changed data in the ListCtrl
+        self._native_widget.SetItem(g_item)
+        for col_dex, col in enumerate(allow_cols[1:], start=1):
+            self._native_widget.SetItem(item_dex, col_dex, labs[col](ul, item))
+
+@dataclass(slots=True)
+class ListItemFormat:
+    _parent_lc: UIListCtrl
+    icon_dex: int | None = None
+    bold: bool = False
+    italics: bool = False
+    underline: bool = False
+    _text_key: str = 'default.text'
+    _back_key: str = 'default.bkgd'
+
+    def to_tree_node_format(self, tree_node_type):
+        """Convert this list item format to an equivalent tree node format,
+        relative to the specified parent UIListCtrl."""
+        return tree_node_type(icon_idx=self.icon_dex, back_color=self.back_key,
+            text_color=self.text_key, bold=self.bold, italics=self.italics,
+            underline=self.underline)
+
+    @property
+    def back_key(self) -> str:
+        return self._parent_lc.lookup_back_key(self._back_key)
+
+    @back_key.setter
+    def back_key(self, val: str):
+        self._back_key = max(val, self._back_key,
+                             key=self._parent_lc.back_key_priority.__getitem__)
+
+    @property
+    def text_key(self) -> str:
+        return self._parent_lc.lookup_text_key(self._text_key)
+
+    @text_key.setter
+    def text_key(self, val: str):
+        self._text_key = max(val, self._text_key,
+                             key=self._parent_lc.text_key_priority.__getitem__)

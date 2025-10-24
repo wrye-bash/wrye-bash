@@ -57,7 +57,7 @@ import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
 from functools import partial
-from itertools import chain, repeat, starmap
+from itertools import chain, repeat, starmap, count
 
 import wx
 
@@ -230,12 +230,13 @@ class SashUIListPanel(SashPanel):
     """SashPanel featuring a UIList and a corresponding listData datasource."""
     listData = None
     _status_str = 'OVERRIDE: %(status_num)d'
-    _ui_list_type: type[UIList] = None
+    _ui_list_type: type[UIList] | None = UIList
 
     def __init__(self, parent, isVertical=True):
-        super(SashUIListPanel, self).__init__(parent, isVertical)
-        self.uiList = self._ui_list_type(self.left, listData=self.listData,
-                                         keyPrefix=self.keyPrefix, panel=self)
+        super().__init__(parent, isVertical)
+        self.uiList = self._ui_list_type(self.left, keyPrefix=self.keyPrefix,
+            listData=self.listData, panel=self, ui_colors=colors,
+            ui_settings=bass.settings)
 
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
@@ -287,8 +288,14 @@ class _ModsUIList(UIList):
     # size of the plugin on disk
     _do_size_checks = bush.game.Esp.check_master_sizes
     _masters_first_default = True
+    _back_key_priority = ('mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
+        'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load')
+    _back_key_priority = UIList._back_key_priority | {k: j for j, k in
+        enumerate(_back_key_priority, 1)}
 
     def __init__(self, *args, **kwargs):
+        self._text_key_priority = {**UIList._text_key_priority, **dict(zip(
+            dict.fromkeys(bush.game.mod_keys.values()), count(1)))}
         super().__init__(*args, **kwargs)
         if bush.game.master_flag:
             self._extra_sortings.insert(0, _ModsUIList._sort_masters_first)
@@ -346,27 +353,28 @@ class _ModsUIList(UIList):
     def _item_name(self, x): # hack to centralize some nasty modInfos accesses
         return x
 
-    def set_item_format(self, item_key, item_format, **ui_kwargs):
+    def set_item_format(self, item_key, **ui_kwargs):
         self.mouseTexts[item_key] = mouseText = []
-        minf = super().set_item_format(item_key, item_format, **ui_kwargs)
-        if minf.hasActiveTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.load'
-            mouseText.append(_('Another plugin has the same timestamp.'))
-        elif minf.hasTimeConflict():
-            item_format.back_key = 'mods.bkgd.doubleTime.exists'
-            mouseText.append(_('Another plugin has the same timestamp.'))
-        if minf.is_ghost:
-            item_format.back_key = 'mods.bkgd.ghosted'
-            mouseText.append(_('Plugin is ghosted.'))
-        if msg := minf.has_master_size_mismatch(self._do_size_checks):
-            item_format.back_key = 'mods.bkgd.size_mismatch'
-            mouseText.append(msg)
-        if settings['bash.mods.scanDirty']:
-            if msg := minf.getDirtyMessage():
+        minf, item_format = super().set_item_format(item_key, **ui_kwargs)
+        if minf:
+            if minf.hasActiveTimeConflict():
+                item_format.back_key = 'mods.bkgd.doubleTime.load'
+                mouseText.append(_('Another plugin has the same timestamp.'))
+            elif minf.hasTimeConflict():
+                item_format.back_key = 'mods.bkgd.doubleTime.exists'
+                mouseText.append(_('Another plugin has the same timestamp.'))
+            if minf.is_ghost:
+                item_format.back_key = 'mods.bkgd.ghosted'
+                mouseText.append(_('Plugin is ghosted.'))
+            if msg := minf.has_master_size_mismatch(self._do_size_checks):
+                item_format.back_key = 'mods.bkgd.size_mismatch'
                 mouseText.append(msg)
-                item_format.underline = True
+            if settings['bash.mods.scanDirty']:
+                if msg := minf.getDirtyMessage():
+                    mouseText.append(msg)
+                    item_format.underline = True
         self.mouseTexts[item_key] = ' '.join(mouseText)
-        return minf
+        return minf, item_format
 
     def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
                        # we get item_name not item_key so we need _mouse_text
@@ -404,22 +412,20 @@ class MasterList(_ModsUIList):
     _bypass_gm_setting = True
     keyPrefix = u'bash.masters' # use for settings shared among the lists (cols)
     _editLabels = True
-    #--Sorting
-    _default_sort_col = u'Num'
-    _sort_keys = {
-        u'Num'          : None, # sort by master index, the key itself
-        u'File'         : lambda self, a:
-            self.data_store[a].curr_name.lower(),
-        # Missing mods sort last alphabetically
-        u'Current Order': lambda self, a: self._curr_lo_index[
-            self.data_store[a].curr_name],
-        'Indices': lambda self, a: self._save_lo_real_index[
-            self.data_store[a].curr_name][0],
-        'Current Index': lambda self, a: self._curr_real_index[
-            self.data_store[a].curr_name],
-    }
-    def _item_name(self, x):
+    def _item_name(self, x: int):
        return self.data_store[x].curr_name
+    #--Sorting
+    _sort_keys = {
+        'Num': None, # sort by master index, the key itself
+        'File': lambda self, a: self._item_name(a).lower(),
+        # Missing mods sort last alphabetically
+        'Current Order': lambda self, a: self._curr_lo_index[
+            self._item_name(a)],
+        'Indices': lambda self, a: self._save_lo_real_index[
+            self._item_name(a)][0],
+        'Current Index': lambda self, a: self._curr_real_index[
+            self._item_name(a)],
+    }
     _sunkenBorder, _singleCell = False, True
     #--Labels
     labels = {
@@ -443,11 +449,10 @@ class MasterList(_ModsUIList):
         # using self.__class__.keyPrefix for common saves/mods masters settings
         return settings[self.__class__.keyPrefix + u'.cols']
 
-    def __init__(self, parent, listData=None, keyPrefix=keyPrefix, panel=None,
-                 detailsPanel=None):
+    def __init__(self, parent, keyPrefix=keyPrefix, *, par_details, **kwargs):
         #--Data/Items
         self.edited = False
-        self.detailsPanel = detailsPanel
+        self.parent_details: _ModsSavesDetails = par_details
         self.fileInfo = None
         self._curr_lo_index = {} # cache, orders missing last alphabetically
         self._curr_real_index = {}
@@ -456,14 +461,13 @@ class MasterList(_ModsUIList):
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
-        super().__init__(parent, listData={} if listData is None else listData,
-                         keyPrefix=keyPrefix, panel=panel)
+        super().__init__(parent, keyPrefix=keyPrefix, **kwargs)
 
     @property
     def allowEdit(self): return bass.settings.get(self._allowEditKey, False)
     @allowEdit.setter
     def allowEdit(self, val):
-        if val and (not self.detailsPanel.allowDetailsEdit or not
+        if val and (not self.parent_details.allowDetailsEdit or not
             balt.askContinue(self, _(
                 'Edit/update the masters list? Note that the update process '
                 'may automatically rename some files. Be sure to review the '
@@ -475,7 +479,7 @@ class MasterList(_ModsUIList):
             self.InitEdit()
         else:
             self.SetFileInfo(self.fileInfo)
-            self.detailsPanel.testChanges() # disable buttons if no other edits
+            self.parent_details.testChanges() # disable buttons if no other edits
 
     def _handle_select(self, item_key): pass
     def _handle_key_up(self, wrapped_evt): pass
@@ -518,11 +522,12 @@ class MasterList(_ModsUIList):
                     ma_name in sc_masters})
         self._reList()
 
-    def set_item_format(self, item_key, item_format, **ui_kwargs):
-        minf = super().set_item_format(item_key, item_format, **ui_kwargs)
-        if self.allowEdit:
+    def set_item_format(self, item_key, **ui_kwargs):
+        minf, item_format = super().set_item_format(item_key, **ui_kwargs)
+        if minf and self.allowEdit:
             if minf.old_name in settings['bash.mods.renames']:
                 item_format.bold = True
+        return minf, item_format
 
     def _set_icon_text(self, masterInfo, item_format, mi, **kwargs):
         mouseText = self.mouseTexts[mi]
@@ -537,7 +542,7 @@ class MasterList(_ModsUIList):
         status, checkMark = super()._set_icon_text(masterInfo, item_format,
             item_name, loadOrderIndex=self._curr_lo_index[item_name],
             mi=mi, _mouse_text=mouseText, **kwargs)
-        on_display = self.detailsPanel.detail_fn
+        on_display = self.parent_details.detail_fn
         if status == 30: # master is missing
             mouseText.append(_('Missing master of %(child_plugin_name)s.') % {
                 'child_plugin_name': on_display})
@@ -579,7 +584,7 @@ class MasterList(_ModsUIList):
     def SetMasterlistEdited(self, repopulate=False):
         self._reList(repopulate)
         self.edited = True
-        self.detailsPanel.SetEdited() # inform the details panel
+        self.parent_details.SetEdited() # inform the details panel
 
     #--Column Menu
     def _pop_menu(self):
@@ -612,7 +617,7 @@ class MasterList(_ModsUIList):
             bass.settings[u'bash.mods.renames'][
                 masterInfo.old_name] = masterInfo.curr_name
             # populate, refresh must be called last
-            self.PopulateItem(itemDex=evt_index)
+            self.PopulateItem(evt_index)
             return EventResult.FINISH ##: needed?
         elif evt_label == u'':
             return EventResult.CANCEL
@@ -644,6 +649,7 @@ class INIList(UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
+    _back_key_priority = {**UIList._back_key_priority, 'ini.bkgd.invalid': 1}
     _sort_keys = {
         'File'     : None,
         'Installer': _ask_info('get_table_prop', ('installer', '')),
@@ -1339,7 +1345,7 @@ class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
         #--Masters
         self.uilist = self._master_list_type(
             self.masterPanel, keyPrefix=self.keyPrefix, panel=ui_list_panel,
-            detailsPanel=self)
+            par_details=self, ui_colors=colors, ui_settings=bass.settings)
         self._masters_label = Label(self.masterPanel, _(u'Masters:'))
         VLayout(spacing=4, items=[
             self._masters_label,
@@ -1364,8 +1370,7 @@ class ModDetails(_ModsSavesDetails):
     def allowDetailsEdit(self): return bush.game.Esp.canEditHeader
 
     def __init__(self, parent, ui_list_panel):
-        super(ModDetails, self).__init__(parent, ui_list_panel,
-                                         split_vertically=True)
+        super().__init__(parent, ui_list_panel, split_vertically=True)
         top, bottom = self.left, self.right
         #--Version
         self._version = Label(top, 'v0.00')
@@ -2079,7 +2084,7 @@ class SaveDetails(_ModsSavesDetails):
     def allowDetailsEdit(self): return self.file_info.header.can_edit_header
 
     def __init__(self, parent, ui_list_panel):
-        super(SaveDetails, self).__init__(parent, ui_list_panel)
+        super().__init__(parent, ui_list_panel)
         top, bottom = self.left, self.right
         textWidth = 200
         #--Player Info
@@ -2227,13 +2232,18 @@ class InstallersList(UIList):
     global_links = defaultdict(lambda: Links()) # Global menu
     _sunkenBorder = False
     _editLabels = _copy_paths = True
-    _default_sort_col = u'Package'
     _sort_keys = {'Package': None,
         'Order'   : _ask_info('order'),
         'Modified': _ask_info('ftime'),
         'Size'    : _ask_info('fsize'),
         'Files'   : _ask_info('num_of_files'),
     }
+    _back_key_priority = UIList._back_key_priority | {
+        k: j for j, k in enumerate(['installers.bkgd.skipped',
+            'installers.bkgd.outOfOrder', 'installers.bkgd.dirty'], 1)}
+    _text_key_priority = UIList._text_key_priority | {
+        k: j for j, k in enumerate(['installers.text.invalid',
+            'installers.text.marker', 'installers.text.complex'], 1)}
     #--Special sorters
     def _sortStructure(self, items, *, __lm=_ask_info('bain_type')):
         if settings[u'bash.installers.sortStructure']:

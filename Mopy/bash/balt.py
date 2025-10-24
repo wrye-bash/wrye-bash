@@ -27,7 +27,6 @@ from __future__ import annotations
 import threading
 import time
 from collections import defaultdict
-from dataclasses import dataclass
 from functools import partial, wraps
 from itertools import islice
 from typing import final
@@ -43,13 +42,14 @@ from .bolt import FName, Path, RefrIn, deprint, readme_url, \
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
-    DirOpen, EventResult, FileOpen, FileSave, Font, GlobalMenu, HLayout, \
+    DirOpen, EventResult, FileOpen, FileSave, GlobalMenu, HLayout, \
     LayoutOptions, ListBox, Links, LogDialog, LogFrame, PanelWin, TextArea, \
     UIListCtrl, VLayout, bell, copy_files_to_clipboard, DeletionDialog, \
     web_viewer_available, AutoSize, get_shift_down, ContinueDialog, askText, \
     askNumber, askYes, askWarning, showOk, showError, showWarning, showInfo, \
     TreeNodeFormat, DnDStatusBar, get_image, get_color_checks, ImageList
 from .gui.base_components import _AComponent
+from .gui.list_ctrl import ListItemFormat
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -95,7 +95,7 @@ class ColorChecks(ImageList):
         elif status <= -10: color_key = 'blue'
         elif status <= 0: color_key = 'green'
         elif status <= 10: color_key = 'yellow'
-        elif status <= 20: color_key = 'orange'
+        elif 20 <= status < 30: color_key = 'orange' # 20 or 21 for modList
         else: color_key = 'red'
         return self._indices[f'{self._int_to_state[on]}.{color_key}']
 
@@ -520,42 +520,6 @@ def conversation(func):
     return _conversation_wrapper
 
 #------------------------------------------------------------------------------
-@dataclass(slots=True)
-class _ListItemFormat:
-    _parent_uil: UIList
-    icon_dex: int | None = None
-    bold: bool = False
-    italics: bool = False
-    underline: bool = False
-    _text_key: str = 'default.text'
-    _back_key: str = 'default.bkgd'
-
-    def to_tree_node_format(self):
-        """Convert this list item format to an equivalent tree node format,
-        relative to the specified parent UIList."""
-        return TreeNodeFormat(icon_idx=self.icon_dex,
-            back_color=self._parent_uil.lookup_back_key(self.back_key),
-            text_color=self._parent_uil.lookup_text_key(self.text_key),
-            bold=self.bold, italics=self.italics, underline=self.underline)
-
-    @property
-    def back_key(self) -> str:
-        return self._back_key
-
-    @back_key.setter
-    def back_key(self, val: str):
-        self._back_key = max(val, self._back_key,
-            key=self._parent_uil.back_key_priority.__getitem__)
-
-    @property
-    def text_key(self) -> str:
-        return self._text_key
-
-    @text_key.setter
-    def text_key(self, val: str):
-        self._text_key = max(val, self._text_key,
-            key=self._parent_uil.text_key_priority.__getitem__)
-
 DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
     list[tuple[FName, TreeNodeFormat | None]]]]
 
@@ -583,8 +547,8 @@ class UIList(PanelWin):
     _singleCell = False # allow only single selections (no ctrl/shift+click)
     #--Sorting
     nonReversibleCols = {u'Load Order', u'Current Order'}
-    _default_sort_col = u'File' # override as needed
-    _sort_keys = {} # sort_keys[col] provides the sort key for this col
+    # maps columns to sorting functions - must not be empty!
+    _sort_keys = {} # first entry is the default_sort_column
     _extra_sortings = [] #extra self.methods for fancy sortings - order matters
     # Labels, map the (permanent) order of columns to the label generating code
     labels = {}
@@ -592,28 +556,31 @@ class UIList(PanelWin):
     _dndFiles = _dndList = False
     _dndColumns = ()
     _copy_paths = False # enable the Ctrl+C shortcut
+    _back_key_priority = {'default.bkgd': 0} # maps background keys to priority
+    _text_key_priority = {'default.text': 0} # maps text colour to priority
 
-    def __init__(self, parent, keyPrefix, listData=None, panel=None):
+    def __init__(self, parent, keyPrefix, *, ui_settings, ui_colors,
+                 listData=None, panel=None):
         super().__init__(parent, wants_chars=True, no_border=False)
-        self.data_store = listData # never use as local variable name !
+        # never use as local variable name !
+        self.data_store = {} if listData is None else listData
         try:
             Link.Frame.all_uilists[self.data_store.unique_store_key] = self
         except AttributeError:
             pass # not one of the singleton DataStores
+        self._ui_settings = ui_settings
         self.panel = panel
         #--Settings key
         self.keyPrefix = keyPrefix
         #--Columns
-        self.__class__.persistent_columns = {self._default_sort_col}
         self._col_index = {} # used in setting column sort indicator
         #--gList
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
-                                  self.__class__._sunkenBorder,
-                                  self.__class__._singleCell, self.dndAllow,
-                                  dndFiles=self.__class__._dndFiles,
-                                  dndList=self.__class__._dndList,
-                                  fnDropFiles=self.OnDropFiles,
-                                  fnDropIndexes=self.OnDropIndexes)
+            self.__class__._sunkenBorder, self.__class__._singleCell,
+            ui_colors, self._back_key_priority, self._text_key_priority,
+            self.dndAllow, dndFiles=self.__class__._dndFiles,
+            dndList=self.__class__._dndList, fnDropFiles=self.OnDropFiles,
+            fnDropIndexes=self.OnDropIndexes)
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
         self.icons.native_init(recreate=False)
@@ -648,8 +615,6 @@ class UIList(PanelWin):
         self._clean_column_settings()
         self.PopulateColumns()
         #--Items
-        self._defaultTextBackground = Color.from_wx(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
     @fast_cached_property
@@ -663,30 +628,32 @@ class UIList(PanelWin):
     def all_allowed_cols(self):
         return [c for c in self.allCols if c not in self.banned_columns]
     @property
-    def colWidths(self): return _settings[f'{self.keyPrefix}.colWidths']
+    def colWidths(self): return self._ui_settings[f'{self.keyPrefix}.colWidths']
     @property
     def colReverse(self):
         """Dictionary column->isReversed."""
-        return _settings[f'{self.keyPrefix}.colReverse']
+        return self._ui_settings[f'{self.keyPrefix}.colReverse']
     @property
-    def cols(self): return _settings[f'{self.keyPrefix}.cols']
+    def cols(self): return self._ui_settings[f'{self.keyPrefix}.cols']
     @property
     def allowed_cols(self):
         """Version of cols that filters out banned_columns."""
         return [c for c in self.cols if c not in self.banned_columns]
     @property
     def auto_col_widths(self):
-        return _settings.get(f'{self.keyPrefix}.auto_size_columns',
+        return self._ui_settings.get(f'{self.keyPrefix}.auto_size_columns',
             AutoSize.FIT_MANUAL)
     @auto_col_widths.setter
     def auto_col_widths(self, val):
-        _settings[f'{self.keyPrefix}.auto_size_columns'] = val
+        self._ui_settings[f'{self.keyPrefix}.auto_size_columns'] = val
     # the current sort column
     @property
     def sort_column(self):
-        return _settings.get(f'{self.keyPrefix}.sort', self._default_sort_col)
+        return self._ui_settings.get(f'{self.keyPrefix}.sort', self.default_sort_col)
     @sort_column.setter
-    def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
+    def sort_column(self, val): self._ui_settings[f'{self.keyPrefix}.sort'] = val
+    @property
+    def default_sort_col(self): return next(iter(self._sort_keys))
 
     def _handle_select(self, item_key):
         self._select(item_key)
@@ -697,51 +664,30 @@ class UIList(PanelWin):
     def item_count(self): return self.__gList.lc_item_count()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None, **ui_kwargs):
+    def PopulateItem(self, item_dex, item=None, allow_cols=None, **ui_kwargs):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
 
-        :param itemDex: the index of the item in the list - must be given if
-        item is None
+        :param item_dex: the index of the item in the list or None if item is
+            specified and not present in the list
         :param item: an FName or an int (Masters), the key in self.data
-        :param target_ini_setts: Cached information about the INI settings.
-            Used on the INI Edits tab"""
-        insert = False
-        allow_cols = self.allowed_cols # property, calculate once
-        if not allow_cols:
-            return # No visible columns, nothing to do
-        if item is not None:
-            try:
-                itemDex = self._get_uil_index(item)
-            except KeyError: # item is not present, so inserting
-                itemDex = self.item_count # insert at the end
-                insert = True
-        else: # no way we're inserting with a None item
-            item = self.GetItem(itemDex)
-        str_label = self.labels[allow_cols[0]](self, item)
-        if insert:
-            # We're inserting a new item, so we need special handling for the
-            # first SetItem call - see InsertListCtrlItem
-            self.__gList.InsertListCtrlItem(
-                itemDex, str_label, item,
-                decorate_cb=partial(self.__setUI, fileName=item, **ui_kwargs))
+        :param ui_kwargs: Cached information to use on item formatting."""
+        allow_cols = allow_cols or self.allowed_cols # property, calculate once
+        if item is None: # no way we're inserting with a None item
+            item = self.GetItem(item_dex)
         else:
-            # The item is already in the UIList, so we only need to redecorate
-            # and set text for all labels
-            gItem = self.__gList.get_item_data(itemDex)
-            self.__setUI(item, gItem, **ui_kwargs)
-            # Piggyback off the SetItem call we need for __setUI to also set
-            # the first column's text
-            gItem.SetText(str_label)
-            self.__gList.set_item_data(gItem)
-        for col_dex, col in enumerate(allow_cols[1:], start=1):
-            self.__gList.set_item_data(itemDex, col_dex,
-                                       self.labels[col](self, item))
+            try:
+                item_dex = self._get_uil_index(item)
+            except KeyError: # item is not present, so inserting
+                item_dex = None
+        _inf, df = self.set_item_format(item, **ui_kwargs)
+        self.__gList.insert_update_item(df, item_dex, item, allow_cols)
 
     def populate_items(self):
         """Sort items and populate entire list."""
-        # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
+        # Make sure to freeze/thaw, all the insert_update_item calls make the
         # GUI lag
+        cols = self.allowed_cols # property, calculate once
         with self.pause_drawing():
             self.mouseTexts.clear()
             items = set(self.data_store)
@@ -752,12 +698,12 @@ class UIList(PanelWin):
                 item = self.GetItem(index)
                 if item not in items: self.__gList.RemoveItemAt(index)
                 else:
-                    self.PopulateItem(itemDex=index, **ui_kwargs)
+                    self.PopulateItem(index, allow_cols=cols, **ui_kwargs)
                     items.remove(item)
                     index += 1
             #--Add remaining new items
             for item in items:
-                self.PopulateItem(item=item, **ui_kwargs)
+                self.PopulateItem(None, item, allow_cols=cols, **ui_kwargs)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
@@ -780,13 +726,14 @@ class UIList(PanelWin):
             self.populate_items()
         else: # a RefrData instance
             ui_kwargs = self._cache_rui_structs()
-            # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
+            cols = self.allowed_cols # property, calculate once
+            # Make sure to freeze/thaw, all the insert_update_item calls make
             # the GUI lag
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
                 for upd in (modified := rdata.new_changed()):
-                    self.PopulateItem(item=upd, **ui_kwargs)
+                    self.PopulateItem(None, upd, allow_cols=cols, **ui_kwargs)
                 #--Sort
                 if modified: # if we only deleted items sorting does not change
                     self.SortItems()
@@ -837,73 +784,29 @@ class UIList(PanelWin):
         self.__gList.set_focus()
 
     #--Decorating -------------------------------------------------------------
-    @fast_cached_property
-    def back_key_priority(self):
-        return {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
-            'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
-            # INIs ------------------------------------------------------------
-            'ini.bkgd.invalid',
-            # Installers ------------------------------------------------------
-            'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
-            'installers.bkgd.dirty'])}
-
-    @fast_cached_property
-    def text_key_priority(self):
-        from . import bush
-        return {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
-            # Installers ------------------------------------------------------
-            'installers.text.invalid', 'installers.text.marker',
-            'installers.text.complex',
-        ])}
-
-    def set_item_format(self, item, item_format, **ui_kwargs):
+    def set_item_format(self, item, **ui_kwargs):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
         data_store is a FileInfo subclass) for calling info_status to update
         respective info's status."""
-        inf = self.data_store[item]
+        item_format = ListItemFormat(self.__gList)
+        # Only run set_item_format when the item is actually present, otherwise
+        # just use the default settings (we do still have to use those since
+        # the default text/background colors may have been changed from the OS
+        # default)
+        if not (inf := self.data_store.get(item)):
+            return None, item_format
         try:
             icon_key = self._set_icon_text(inf, item_format, item, **ui_kwargs)
             item_format.icon_dex = self.icons.img_dex(*icon_key)
         except NotImplementedError:
-            return # screens, bsas
-        return inf # used in overrides
+            return inf, item_format # screens, bsas
+        return inf, item_format # used in overrides
 
     def _set_icon_text(self, inf, item_format, item_key, **kwargs):
         """Base method just returns the status - always override to return the
         icon key tuple - populate mouse text, item_format attrs, etc."""
         return inf.info_status(**kwargs)
-
-    def __setUI(self, fileName, gItem, **ui_kwargs):
-        """Set font, status icon, background text etc."""
-        df = _ListItemFormat(self)
-        self.set_item_format(fileName, df, **ui_kwargs)
-        if (icon_index := df.icon_dex) is not None:
-            gItem.SetImage(icon_index)
-        gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
-        gItem.SetBackgroundColour(
-            self.lookup_back_key(df.back_key).to_rgba_tuple())
-        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
-                                 slant=df.italics, underline=df.underline))
-
-    def lookup_text_key(self, target_text_color: str):
-        """Helper method to look up a text color from a list item format."""
-        if target_text_color:
-            return colors[target_text_color]
-        else:
-            return self.__gList.get_text_color()
-
-    def lookup_back_key(self, target_back_color: str):
-        """Helper method to look up a background color from a list item
-        format."""
-        if target_back_color:
-            return colors[target_back_color]
-        else:
-            return self._defaultTextBackground
 
     def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]]
                            ) -> DecoratedTreeDict:
@@ -911,14 +814,8 @@ class UIList(PanelWin):
         mapping items in this UIList to lists of items in this UIList."""
         ui_kwargs = self._cache_rui_structs()
         def _decorate(i):
-            lif = _ListItemFormat(self)
-            # Only run set_item_format when the item is actually present,
-            # otherwise just use the default settings (we do still have to use
-            # those since the default text/background colors may have been
-            # changed from the OS default)
-            if i in self.data_store:
-                self.set_item_format(i, lif, **ui_kwargs)
-            return lif.to_tree_node_format()
+            _inf, lif = self.set_item_format(i, **ui_kwargs)
+            return lif.to_tree_node_format(TreeNodeFormat)
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
 
@@ -936,7 +833,7 @@ class UIList(PanelWin):
         return (self.column_links and not # column menu must be set
             self.__gList.ec_rename_prompt_opened() and # See DoItemMenu below
             # bash.global_menu == 1 -> Global Menu Only
-            (self._bypass_gm_setting or _settings['bash.global_menu'] != 1))
+            (self._bypass_gm_setting or self._ui_settings['bash.global_menu'] != 1))
 
     def DoItemMenu(self):
         """Show item menu."""
@@ -1288,8 +1185,8 @@ class UIList(PanelWin):
         def _mk_key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return bolt.natural_key() if k is None else partial(k, self)
-        defaultKey = _mk_key(self._default_sort_col)
-        defSort = col == self._default_sort_col
+        defaultKey = _mk_key(self.default_sort_col)
+        defSort = col == self.default_sort_col
         # always apply default sort
         items = sorted(self.data_store if items is None else items,
                        key=defaultKey, reverse=defSort and reverse)
@@ -1313,7 +1210,7 @@ class UIList(PanelWin):
         valid_columns = set(self.allCols)
         # Clean the widths/reverse dictionaries
         for dict_key in ('.colWidths', '.colReverse'):
-            stored_dict = _settings[f'{self.keyPrefix}{dict_key}']
+            stored_dict = self._ui_settings[f'{self.keyPrefix}{dict_key}']
             invalid_columns = set(stored_dict) - valid_columns
             for c in invalid_columns:
                 del stored_dict[c]
@@ -1325,19 +1222,20 @@ class UIList(PanelWin):
                 stored_cols.remove(c)
         # Finally, reset the sort column to the default if it's invalid now
         if self.sort_column not in valid_columns:
-            self.sort_column = self._default_sort_col
+            self.sort_column = self.default_sort_col
 
     def PopulateColumns(self):
         """Create/name columns in ListCtrl."""
         # this may have been updated in ColumnsMenu.Execute()
         allow_cols = self.allowed_cols
         numCols = len(allow_cols)
-        names = {_settings[u'bash.colNames'].get(key) for key in allow_cols}
+        col_names = self._ui_settings['bash.colNames']
+        names = {col_names.get(key) for key in allow_cols}
         self._col_index.clear()
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
             colKey = allow_cols[colDex]
-            colName = _settings[u'bash.colNames'].get(colKey, colKey)
+            colName = col_names.get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.lc_get_columns_count(): # Make a new column
                 listCtrl.lc_insert_column(colDex, colName)
@@ -1371,14 +1269,14 @@ class UIList(PanelWin):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[f'{self.keyPrefix}.scrollPos'] = self.__gList.get_scroll_pos(
-            isVertical)
+        self._ui_settings[f'{self.keyPrefix}.scrollPos'] = \
+            self.__gList.get_scroll_pos(isVertical)
 
     def SetScrollPosition(self):
-        if _settings['bash.restore_scroll_positions']:
+        if self._ui_settings['bash.restore_scroll_positions']:
             with self.__gList.pause_drawing():
                 self.__gList.set_scroll_pos(
-                    _settings.get(f'{self.keyPrefix}.scrollPos', 0))
+                    self._ui_settings.get(f'{self.keyPrefix}.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
@@ -1411,7 +1309,7 @@ class UIList(PanelWin):
         # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             title=dialogTitle, items_to_delete=items, default_recycle=recycle,
-            sizes_dict=_settings, icon_bundle=Resources.bashBlue,
+            sizes_dict=self._ui_settings, icon_bundle=Resources.bashBlue,
             trash_icon=get_image('trash_can.32'))
         if not dd_ok or not dd_items: return
         try:
@@ -1467,7 +1365,7 @@ class UIList(PanelWin):
         enabled but not constructed (i.e. hidden) or the item does not have an
         associated package."""
         if (not Link.Frame.iPanel or
-                not _settings['bash.installers.enabled']):
+                not self._ui_settings['bash.installers.enabled']):
             return None # Installers disabled or not initialized
         return FName(self.data_store[uil_item].get_table_prop('installer'))
 
