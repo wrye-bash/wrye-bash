@@ -46,7 +46,6 @@ from .gui_fomod import InstallerFomod
 from .. import archives, balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide, Installer_Op
-from ..bass import Store
 from ..bolt import FName, LogFile, RefrIn, SubProgress, deprint, round_size
 from ..bosh import InstallerConverter, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
@@ -295,18 +294,19 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
     def Execute(self):
         apply_to, new_targets, manuallyApply = super().Execute()
         lastApplied = target_ini_file = None
+        ini_infos = bosh.iniInfos
         for target_ini_file, tweaks in apply_to.items():
-            infos = [inf for t in tweaks if (inf := bosh.iniInfos.get(t))]
+            infos = [inf for t in tweaks if (inf := ini_infos.get(t))]
             if INIList.apply_tweaks(infos, target_ini_file):
                 lastApplied = infos[-1].fn_key
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:
             target_updated = bosh.INIInfos.update_targets(new_targets)
-            if (ini_uilist := BashFrame.all_uilists[Store.INIS]) is not None:
+            if (ini_uilist := BashFrame.all_uilists[ini_infos]) is not None:
                 ini_uilist.panel.detailsPanel.set_choice(
-                  target_ini_file.abs_path.stail, reset_choices=target_updated)
+                    target_ini_file.abs_path.stail, reset_choices=target_updated)
                 ini_uilist.panel.ShowPanel(focus_list=False,
-                    refresh_infos=False, detail_item=lastApplied)
+                                           refresh_infos=False, detail_item=lastApplied)
         if manuallyApply:
             message = [_('The following INI Tweaks were not automatically '
                          'applied. Be sure to apply them after installing the '

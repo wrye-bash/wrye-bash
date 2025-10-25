@@ -46,7 +46,7 @@ from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
     read_loot_tags
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
-from ..bass import dirs, inisettings, Store
+from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
@@ -1481,9 +1481,6 @@ class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
     _dir_key: str # key in dirs dict for the store_dir
-    # Each subclass must define this. Used when information related to the
-    # store is passed between the GUI and the backend
-    unique_store_key: Store
 
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
@@ -1687,7 +1684,7 @@ class DataStore(DataDict):
 
     def save_pickle(self): pass # for Screenshots
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
         """Append the arguments for the warning message to the multi_warnings
         and lo_warnings lists, checking the caches currently in Link.Frame."""
 
@@ -1904,7 +1901,6 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
 class INIInfos(TableFileInfos):
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
-    unique_store_key = Store.INIS
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     _factory_type: Callable[[...], INIInfo]
@@ -2160,7 +2156,6 @@ def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
 
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
-    unique_store_key = Store.MODS
     _dir_key = 'mods'
 
     def __init__(self):
@@ -2537,7 +2532,8 @@ class ModInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash']
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+        store_key = self
         corruptMods = set(self.corrupted)
         if new_cor := corruptMods - link_frame.knownCorrupted:
             multi_warnings.append(
@@ -3156,7 +3152,6 @@ class SaveInfos(TableFileInfos):
     # Enabled and disabled saves, no .bak files ##: needed?
     _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
     file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
-    unique_store_key = Store.SAVES
 
     def __init__(self):
         SaveInfo.cosave_types = cosaves.get_cosave_types(
@@ -3210,7 +3205,8 @@ class SaveInfos(TableFileInfos):
                 self._init_store(sd)
         return self.store_dir
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+        store_key = self
         corruptSaves = set(self.corrupted)
         if not corruptSaves <= link_frame.knownCorrupted:
             multi_warnings.append(
@@ -3307,7 +3303,6 @@ class BSAInfos(TableFileInfos):
     # Maps BA2 hashes to BA2 names, used to detect collisions
     _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
-    unique_store_key = Store.BSAS
     _dir_key = 'mods'
 
     def __init__(self):
@@ -3369,7 +3364,8 @@ class BSAInfos(TableFileInfos):
                     self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
         return rdata
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+        store_key = self
         bsa_mvers = self.mismatched_versions
         if not bsa_mvers <= link_frame.known_mismatched_version_bsas:
             multi_warnings.append(
@@ -3447,7 +3443,6 @@ class ScreenInfos(_AFileInfos):
     _ss_skips = {FName(s) for s in (
         'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
         'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
-    unique_store_key = Store.SCREENSHOTS
     file_pattern = re.compile(
         r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
     _factory_type = ScreenInfo

@@ -36,7 +36,6 @@ import wx.adv
 
 from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
-from .bass import Store
 from .bolt import FName, Path, RefrIn, deprint, readme_url, \
     fast_cached_property, RefrData
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
@@ -565,8 +564,8 @@ class UIList(PanelWin):
         # never use as local variable name !
         self.data_store = {} if listData is None else listData
         try:
-            Link.Frame.all_uilists[self.data_store.unique_store_key] = self
-        except AttributeError:
+            Link.Frame.all_uilists[self.data_store] = self
+        except TypeError: # TypeError: unhashable type: 'dict'
             pass # not one of the singleton DataStores
         self._ui_settings = ui_settings
         self.panel = panel
@@ -752,9 +751,8 @@ class UIList(PanelWin):
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
 
-    _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
-    def propagate_refresh(self, rdata, *, ui_refreshes: _ui_in = None,
-                          refr_saves=True, booting=False, **kwargs):
+    def propagate_refresh(self, rdata, *, ui_refreshes=None, refr_saves=True,
+                          booting=False, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
         :param ui_refreshes: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
@@ -769,8 +767,9 @@ class UIList(PanelWin):
                     ref_args = {'rdata': ref_args} if isinstance(ref_args,
                         RefrData) else {}
                 ref_args.setdefault('focus_list', False)
-                ui_refreshes[st.unique_store_key] = ref_args
-            del ui_refreshes[st]
+                ui_refreshes[st] = ref_args
+            else:
+                del ui_refreshes[st]
         Link.Frame.refresh_and_warn(ui_refreshes, booting, refr_saves)
 
     def Focus(self):

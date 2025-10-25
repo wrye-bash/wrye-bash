@@ -56,10 +56,11 @@ import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
+from enum import Enum
 from functools import partial
 from itertools import chain, repeat, starmap, count
 
-import wx
+import wx ##:(190) de-wx!
 
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
@@ -73,12 +74,11 @@ from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
 from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
-from ..bass import Store
 from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
     forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
     to_win_newlines, top_level_files
-from ..bosh import ModInfo, omods, active_keys
+from ..bosh import ModInfo, omods, active_keys, DataStore
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -803,11 +803,12 @@ class INIList(UIList):
             showError(None, msg, title=_('Missing Game INI'))
             return False
         try:
+            ini_infos = bosh.iniInfos
             default_ini.copyTo(target_ini_file.abs_path)
-            if ini_uilist := balt.Link.Frame.all_uilists[Store.INIS]:
+            if ini_uilist := balt.Link.Frame.all_uilists[ini_infos]:
                 ini_uilist.panel.ShowPanel()
             else:
-                bosh.iniInfos.refresh(False)
+                ini_infos.refresh(False)
             return True
         except OSError:
             target_ini_pth = target_ini_file.abs_path
@@ -3337,6 +3338,21 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
                 Link.Frame.notebook.InsertPage(insertAt,panel._native_widget,title)
         bass.settings[u'bash.tabs.order'][self.tabKey] ^= True
 
+# Bash Notebook ---------------------------------------------------------------
+class _BashTab(Enum):
+    """Define Bash tabs order and default enabled state - member values are the
+    tab key in tabInfo and default enabled state, members order is the default
+    tabs order."""
+    INSTALLERS = ('Installers', True)
+    MODS = ('Mods', True)
+    SAVES = ('Saves', True)
+    BSAS = ('BSAs', False)
+    INIS = ('INI Edits', True)
+    SCREENSHOTS = ('Screenshots', True)
+
+    def __repr__(self):
+        return self.name
+
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     def __init__(self, parent):
@@ -3346,7 +3362,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         iInstallers = iMods = -1
         self._tab_menu = Links()
         # default tabs order and default enabled state, keys as in tabInfo
-        tabs_enabled_ordered = dict(e.value for e in Store)
+        tabs_enabled_ordered = dict(e.value for e in _BashTab)
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
         if not isinstance(newOrder, dict): # convert, on updating to 306 ##: still needed
             enabled = settings.get('bash.tabs',  # deprecated - never use
@@ -3464,7 +3480,7 @@ class BashFrame(WindowFrame):
     plugin_checker = None
     # UILists - use sparingly for inter Panel communication - may be None if
     # the tab is not enabled
-    all_uilists: dict[Store, UIList | None] = defaultdict(lambda: None)
+    all_uilists: dict[DataStore, UIList | None] = defaultdict(lambda: None)
     # Panels - use sparingly
     iPanel = None # BAIN panel
     # initial size/position
@@ -3609,13 +3625,13 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
+        modinfs = bosh.modInfos
         ui_refresh = {store: rdata for store in (
-            bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
+            bosh.bsaInfos, modinfs, bosh.saveInfos) if (
                 rdata := not booting and store.refresh(True))}
         #--Repopulate, focus will be set in ShowPanel
-        self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
-            bosh.modInfos), ui_refreshes=ui_refresh, focus_list=False,
-            booting=booting)
+        self.all_uilists[modinfs].propagate_refresh(ui_refresh.get(modinfs),
+            ui_refreshes=ui_refresh, focus_list=False, booting=booting)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
@@ -3641,30 +3657,29 @@ class BashFrame(WindowFrame):
     def refresh_and_warn(self, ui_refreshes, booting, refr_saves):
         # ONLY use in propagate_refresh - RUI will be triggered for each key
         # if a RefreshUI is requested for ModList we should also refresh Saves
-        if refr_saves and ui_refreshes.get(Store.MODS):
+        if refr_saves and ui_refreshes.get(bosh.modInfos):
             to_redraw = set()
             for fn, save in bosh.saveInfos.items():
                 old, new = save.master_st, save.info_status(recalc_st=True)
                 if old != new: # save master status changed, redraw
                     to_redraw.add(fn)
-            if rdict := ui_refreshes.get(Store.SAVES):
+            if rdict := ui_refreshes.get(bosh.saveInfos):
                 if rd_saves := rdict.get('rdata'):
                     rd_saves |= RefrData(to_redraw) # else leave it to None
             else:
-                ui_refreshes[Store.SAVES] = {'rdata': RefrData(to_redraw),
-                                             'focus_list': False}
-        for list_key, ref_args in ui_refreshes.items():
-            if (uil := self.all_uilists[list_key]) is not None:
+                ui_refreshes[bosh.saveInfos] = {'rdata': RefrData(to_redraw),
+                                                'focus_list': False}
+        for ds, ref_args in ui_refreshes.items():
+            if (uil := self.all_uilists[ds]) is not None:
                 uil.RefreshUI(**ref_args)
-        stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
-                  Store.SAVES: bosh.saveInfos} # this belongs to Store somehow
+        stores = [bosh.bsaInfos, bosh.modInfos, bosh.saveInfos]
         if booting: # trigger warnings on boot, ui_refresh is empty then
             ui_refreshes = stores
         else:
-            ui_refreshes = {k: stores[k] for k in ui_refreshes if k in stores}
+            ui_refreshes = [k for k in ui_refreshes if k in stores]
         multi_warns, lo_warns = [], []
-        for list_key, ds in ui_refreshes.items():
-            ds.warning_args(multi_warns, lo_warns, self, list_key)
+        for ds in ui_refreshes:
+            ds.warning_args(multi_warns, lo_warns, self)
         if multi_warns:
             mk = (mwd := MultiWarningDialog).make_highlight_entry
             mwd(self, highlight_items=starmap(mk, multi_warns)).show_modeless()
