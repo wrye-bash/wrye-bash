@@ -753,7 +753,7 @@ class UIList(PanelWin):
         if focus_list: self.Focus()
 
     _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
-    def propagate_refresh(self, rdata, ui_refreshes: _ui_in = None, *,
+    def propagate_refresh(self, rdata, *, ui_refreshes: _ui_in = None,
                           refr_saves=True, booting=False, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
         :param ui_refreshes: A dict mapping unique data store keys (see
@@ -762,31 +762,16 @@ class UIList(PanelWin):
         if rdata:
             kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
             kwargs.setdefault('focus_list', True)
-            ui_refreshes[self.data_store.unique_store_key] = kwargs
-        # if a RefreshUI is requested for ModList we should also refresh Saves
-        for list_key, ref_args in [*ui_refreshes.items()]:
+            ui_refreshes[self.data_store] = kwargs
+        for st, ref_args in [*ui_refreshes.items()]:
             if ref_args:
                 if not isinstance(ref_args, dict): # True or RefrData
                     ref_args = {'rdata': ref_args} if isinstance(ref_args,
                         RefrData) else {}
                 ref_args.setdefault('focus_list', False)
-                ui_refreshes[list_key] = ref_args
-            else:
-                del ui_refreshes[list_key]
-        if refr_saves and ui_refreshes.get(Store.MODS):
-            from .bosh import saveInfos
-            to_redraw = set()
-            for fn, save in saveInfos.items():
-                old, new = save.master_st, save.info_status(recalc_st=True)
-                if old != new: # save master status changed, redraw
-                    to_redraw.add(fn)
-            if rdict := ui_refreshes.get(Store.SAVES):
-                if rd_saves := rdict.get('rdata'): # else it's None so refresh all
-                    rd_saves |= RefrData(to_redraw)
-            else:
-                ui_refreshes[Store.SAVES] = {'rdata': RefrData(to_redraw),
-                                             'focus_list': False}
-        Link.Frame.refresh_and_warn(ui_refreshes, booting)
+                ui_refreshes[st.unique_store_key] = ref_args
+            del ui_refreshes[st]
+        Link.Frame.refresh_and_warn(ui_refreshes, booting, refr_saves)
 
     def Focus(self):
         self.__gList.set_focus()
@@ -1048,8 +1033,8 @@ class UIList(PanelWin):
         if item_edited and rdata:
             args_dict = {'detail_item': rdata.renames.get(item_edited,
                 item_edited)} # in case the displayed item was *not* renamed
-            self.propagate_refresh(rdata, ren_kwargs.get('store_refr'),
-                                   **args_dict)
+            self.propagate_refresh(rdata, ui_refreshes=ren_kwargs.get(
+                'store_refr'), **args_dict)
             #--Reselect the renamed items
             self.SelectItemsNoCallback(rdata.to_add)
         return rdata
@@ -1966,8 +1951,7 @@ class Installer_Op(ItemLink):
             else: # Installers_MonitorExternalInstallation
                 for k, v in rin.items(): # merge giving priority to rin
                     rd_refresh[k] |= v
-            ui_refs = {st.unique_store_key: v for st, v in rd_refresh.items()}
-            self.window.propagate_refresh(True, ui_refs)
+            self.window.propagate_refresh(True, ui_refreshes=rd_refresh)
 
     def _perform_action(self, **kwargs):
         raise NotImplementedError

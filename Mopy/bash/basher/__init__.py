@@ -3609,12 +3609,13 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        ui_refresh = {store.unique_store_key: rdata for store in (
+        ui_refresh = {store: rdata for store in (
             bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
-             rdata := not booting and store.refresh(True))}
+                rdata := not booting and store.refresh(True))}
         #--Repopulate, focus will be set in ShowPanel
         self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
-            Store.MODS), ui_refresh, focus_list=False, booting=booting)
+            bosh.modInfos), ui_refreshes=ui_refresh, focus_list=False,
+            booting=booting)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
@@ -3637,13 +3638,26 @@ class BashFrame(WindowFrame):
                 title=_('Lock Load Order'))
             load_order.warn_locked = False
 
-    def refresh_and_warn(self, ui_refreshes, booting):
+    def refresh_and_warn(self, ui_refreshes, booting, refr_saves):
         # ONLY use in propagate_refresh - RUI will be triggered for each key
+        # if a RefreshUI is requested for ModList we should also refresh Saves
+        if refr_saves and ui_refreshes.get(Store.MODS):
+            to_redraw = set()
+            for fn, save in bosh.saveInfos.items():
+                old, new = save.master_st, save.info_status(recalc_st=True)
+                if old != new: # save master status changed, redraw
+                    to_redraw.add(fn)
+            if rdict := ui_refreshes.get(Store.SAVES):
+                if rd_saves := rdict.get('rdata'):
+                    rd_saves |= RefrData(to_redraw) # else leave it to None
+            else:
+                ui_refreshes[Store.SAVES] = {'rdata': RefrData(to_redraw),
+                                             'focus_list': False}
         for list_key, ref_args in ui_refreshes.items():
             if (uil := self.all_uilists[list_key]) is not None:
                 uil.RefreshUI(**ref_args)
         stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
-                  Store.SAVES: bosh.saveInfos} # this belongs to stores
+                  Store.SAVES: bosh.saveInfos} # this belongs to Store somehow
         if booting: # trigger warnings on boot, ui_refresh is empty then
             ui_refreshes = stores
         else:

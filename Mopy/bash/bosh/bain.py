@@ -2114,7 +2114,7 @@ class InstallersData(DataStore):
                 owned = {k: v for k, v in store.items() if str(
                     v.get_table_prop('installer')) == old_key}
                 if owned:
-                    store_refr[store.unique_store_key] |= RefrData(set(owned))
+                    store_refr[store] |= RefrData(set(owned))
                 for v in owned.values():
                     v.set_table_prop('installer', '%s' % name_new)
         return rd_ren
