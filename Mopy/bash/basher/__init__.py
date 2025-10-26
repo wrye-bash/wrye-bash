@@ -153,17 +153,6 @@ class Installers_Link(ItemLink):
                 return
         return archive_path
 
-#--Information about the various Tabs
-tabInfo = {
-    # InternalName: [className, title, instance]
-    u'Installers': [u'InstallersPanel', _(u'Installers'), None],
-    u'Mods': [u'ModPanel', _(u'Mods'), None],
-    u'Saves': [u'SavePanel', _(u'Saves'), None],
-    u'INI Edits': [u'INIPanel', _(u'INI Edits'), None],
-    u'Screenshots': [u'ScreensPanel', _(u'Screenshots'), None],
-    # 'BSAs': ['BSAPanel', 'BSAs', None],
-}
-
 #------------------------------------------------------------------------------
 # Panels ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -3277,8 +3266,47 @@ class BSAPanel(BashTab):
         self.listData = bosh.bsaInfos
         super(BSAPanel, self).__init__(parent)
 
+#--Information about the various Tabs -----------------------------------------
+class TabInfo(Enum):
+    """Define Bash Tabs order and default enabled state - member values are the
+    tab key (in 'bash.tabs.order' bass.setting), the default enabled state and
+    localized title, members order is the default tabs order."""
+    INSTALLERS = 'Installers', True, _('Installers')
+    MODS = 'Mods', True, _('Mods')
+    SAVES = 'Saves', True, _('Saves')
+    # BSAS = 'BSAs', False, _('BSAs')
+    INIS = 'INI Edits', True, _('INI Edits')
+    SCREENSHOTS = 'Screenshots', True, _('Screenshots')
+
+    def __init__(self, *args):
+        self.order_key, self.default_enabled, self.tab_title = args
+        self._panel = None
+        match self.order_key:
+            case 'Installers': cls = InstallersPanel
+            case 'Mods': cls = ModPanel
+            case 'Saves': cls = SavePanel
+            # case 'BSAs': cls = BSAPanel
+            case 'INI Edits': cls = INIPanel
+            case 'Screenshots': cls = ScreensPanel
+            case _: cls = None
+        self.panel_class = cls
+
+    @property
+    def tab_panel(self):
+        return self._panel
+
+    @tab_panel.setter
+    def tab_panel(self, val):
+        if self._panel is not None:
+            raise BoltError('Tab panel already set')
+        self._panel = val
+
+    def __repr__(self):
+        return self.name
+
+_keyed_tabs = {e.order_key: e for e in TabInfo} # keys as in settings for order
+
 #--Tabs menu ------------------------------------------------------------------
-_title_to_tab = {v[1]: k for k, v in tabInfo.items()}
 class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
 
@@ -3296,29 +3324,23 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     def _check(self): return bass.settings[u'bash.tabs.order'][self.tabKey]
 
     def Execute(self):
-        tab_info = tabInfo
+        btab = _keyed_tabs[self.tabKey]
+        page_count = Link.Frame.notebook.GetPageCount()
         if bass.settings[u'bash.tabs.order'][self.tabKey]:
             # It was enabled, disable it.
-            iMods = None
-            iInstallers = None
-            iDelete = None
-            for i in range(Link.Frame.notebook.GetPageCount()):
-                pageTitle = Link.Frame.notebook.GetPageText(i)
-                if pageTitle == tab_info[u'Mods'][1]:
-                    iMods = i
-                elif pageTitle == tab_info[u'Installers'][1]:
-                    iInstallers = i
-                if pageTitle == tab_info[self.tabKey][1]:
-                    iDelete = i
+            pageTitle = {Link.Frame.notebook.GetPageText(i): i for i in
+                         range(page_count)}
+            iMods = pageTitle[TabInfo.MODS.tab_title] # should always exist!
+            iInstallers = pageTitle.get(TabInfo.INSTALLERS.tab_title)
+            iDelete = pageTitle[btab.tab_title]
             if iDelete == Link.Frame.notebook.GetSelection():
                 # We're deleting the current page...
                 if ((iDelete == 0 and iInstallers == 1) or
                         (iDelete - 1 == iInstallers)):
-                    # The auto-page change will change to
-                    # the 'Installers' tab.  Change to the
-                    # 'Mods' tab instead.
+                    # The auto-page change will change to the 'Installers' tab.
+                    # Change to the 'Mods' tab instead.
                     Link.Frame.notebook.SetSelection(iMods)
-            tab_info[self.tabKey][2].ClosePanel() ##: note the panel remains in memory
+            btab.tab_panel.ClosePanel() ##: note the panel remains in memory
             page = Link.Frame.notebook.GetPage(iDelete)
             Link.Frame.notebook.RemovePage(iDelete)
             page.Show(False)
@@ -3328,31 +3350,16 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             for k, k_enabled in bass.settings[u'bash.tabs.order'].items():
                 if k == self.tabKey: break
                 insertAt += k_enabled
-            className,title,panel = tab_info[self.tabKey]
-            if not panel:
-                panel = globals()[className](Link.Frame.notebook)
-                tab_info[self.tabKey][2] = panel
-            if insertAt > Link.Frame.notebook.GetPageCount():
-                Link.Frame.notebook.AddPage(panel._native_widget,title)
+            if not (pan := btab.tab_panel):
+                btab.tab_panel = pan = btab.panel_class(Link.Frame.notebook)
+            if insertAt > page_count:
+                Link.Frame.notebook.AddPage(pan._native_widget, btab.tab_title)
             else:
-                Link.Frame.notebook.InsertPage(insertAt,panel._native_widget,title)
+                Link.Frame.notebook.InsertPage(insertAt, pan._native_widget,
+                                               btab.tab_title)
         bass.settings[u'bash.tabs.order'][self.tabKey] ^= True
 
 # Bash Notebook ---------------------------------------------------------------
-class _BashTab(Enum):
-    """Define Bash tabs order and default enabled state - member values are the
-    tab key in tabInfo and default enabled state, members order is the default
-    tabs order."""
-    INSTALLERS = ('Installers', True)
-    MODS = ('Mods', True)
-    SAVES = ('Saves', True)
-    BSAS = ('BSAs', False)
-    INIS = ('INI Edits', True)
-    SCREENSHOTS = ('Screenshots', True)
-
-    def __repr__(self):
-        return self.name
-
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     def __init__(self, parent):
@@ -3362,7 +3369,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         iInstallers = iMods = -1
         self._tab_menu = Links()
         # default tabs order and default enabled state, keys as in tabInfo
-        tabs_enabled_ordered = dict(e.value for e in _BashTab)
+        tabs_enabled_ordered = {e.order_key:e.default_enabled for e in TabInfo}
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
         if not isinstance(newOrder, dict): # convert, on updating to 306 ##: still needed
             enabled = settings.get('bash.tabs',  # deprecated - never use
@@ -3372,31 +3379,32 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             # is unchanged from default and the new version also removes a tab
             if x in enabled}
         # append any new tabs - appends last
-        newTabs = set(tabInfo) - set(newOrder)
+        newTabs = _keyed_tabs.keys() - newOrder.keys()
         for n in newTabs: newOrder[n] = tabs_enabled_ordered[n]
         # delete any removed tabs
-        removed_tabs = set(newOrder) - set(tabInfo)
+        removed_tabs = newOrder.keys() - _keyed_tabs.keys()
         for d in removed_tabs: del newOrder[d]
         # Ensure the 'Mods' tab is always shown
         newOrder['Mods'] = True # would insert last
         settings[u'bash.tabs.order'] = newOrder
-        tabs = {k: (v, *tabInfo[k][:2]) for k, v in newOrder.items()}
-        for page, (enabled, className, title) in tabs.items():
-            self._tab_menu.append_link(
-                _Tab_Link(title, page, canDisable=page != 'Mods'))
-            if not enabled: continue
-            panel = globals().get(className,None)
-            if panel is None: continue
+        dex = 0
+        for page, enabled in newOrder.items():
+            btab = _keyed_tabs[page]
+            self._tab_menu.append_link(_Tab_Link(
+                title := btab.tab_title, page, canDisable=page != 'Mods'))
+            if not enabled or btab.panel_class is None:
+                continue
             deprint(f"Constructing panel '{title}'")
             # Some page specific stuff
-            if page == u'Installers': iInstallers = self.GetPageCount()
-            elif page == u'Mods': iMods = self.GetPageCount()
+            if page == 'Installers': iInstallers = dex
+            elif page == 'Mods': iMods = dex
             # Add the page
             try:
-                item = panel(self)
+                item = btab.panel_class(self)
                 self.AddPage(item._native_widget, title)
-                tabInfo[page][2] = item
+                btab.tab_panel = item
                 deprint(f"Panel '{title}' constructed successfully")
+                dex += 1
             except:
                 if page == 'Mods':
                     deprint(f"Fatal error constructing panel '{title}'.")
@@ -3405,8 +3413,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                         traceback=True)
                 settings['bash.tabs.order'][page] = False
         #--Selection
-        pageIndex = max(min(
-            settings[u'bash.page'], self.GetPageCount() - 1), 0)
+        pageIndex = max(min(settings['bash.page'], dex - 1), 0)
         if settings[u'bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
@@ -3415,8 +3422,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     @property
     def currentPage(self):
-        return tabInfo[_title_to_tab[
-            self.GetPageText(self.GetSelection())]][2]
+        """Return the current tab panel."""
+        tab_title = self.GetPageText(self.GetSelection()) # a simpler way?
+        return [t for t in TabInfo if t.tab_title == tab_title][0].tab_panel
 
     def SelectPage(self, page_title, item):
         """Jumps to the specified item on the specified tab.
@@ -3432,7 +3440,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             ind += is_enabled
         else: raise BoltError(f'Invalid tab key: {page_title}')
         self.SetSelection(ind)
-        tabInfo[page_title][2].SelectUIListItem(item, deselectOthers=True)
+        _keyed_tabs[page_title].tab_panel.SelectUIListItem(item,
+                                                           deselectOthers=True)
 
     def DoTabMenu(self,event):
         pos = event.GetPosition()
@@ -3448,7 +3457,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         removeTitle = self.GetPageText(newPos)
         oldOrder = list(settings[u'bash.tabs.order'])
         for removeKey in oldOrder:
-            if tabInfo[removeKey][1] == removeTitle:
+            if _keyed_tabs[removeKey].tab_title == removeTitle:
                 break
         oldOrder.remove(removeKey)
         if newPos == 0: # Moved to the front
@@ -3458,7 +3467,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         else: # Moved somewhere in the middle
             nextTabTitle = self.GetPageText(newPos+1)
             for nextTabKey in oldOrder:
-                if tabInfo[nextTabKey][1] == nextTabTitle:
+                if _keyed_tabs[nextTabKey].tab_title == nextTabTitle:
                     break
             nextTabIndex = oldOrder.index(nextTabKey)
             newOrder = oldOrder[:nextTabIndex]+[removeKey]+oldOrder[nextTabIndex:]
@@ -3730,14 +3739,14 @@ class BashFrame(WindowFrame):
         if Link.Frame.docBrowser: Link.Frame.docBrowser.DoSave()
         settings[u'bash.frameMax'] = self.is_maximized
         settings[u'bash.page'] = self.notebook.GetSelection()
-        # use tabInfo below so we save settings of panels that the user closed
-        for _k, (_cname, tab_name, panel) in tabInfo.items():
-            if panel is None: continue
+        # use TabInfo below, so we save settings of panels that the user closed
+        for btab in TabInfo:
+            if (pan := btab.tab_panel) is None: continue
             try:
-                panel.ClosePanel(destroy)
+                pan.ClosePanel(destroy)
             except:
                 deprint(f'An error occurred while saving settings of '
-                        f'the {tab_name} panel:', traceback=True)
+                        f'the {btab.tab_title} panel:', traceback=True)
         settings.save()
 
     @staticmethod

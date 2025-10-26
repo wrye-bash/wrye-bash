@@ -25,7 +25,7 @@ import os
 import webbrowser
 from collections import defaultdict
 
-from . import tabInfo
+from . import TabInfo
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
@@ -282,9 +282,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     def UpdateUIColors():
         """Update the Bash Frame with the new colors"""
         with BusyCursor():
-            for (_className, _title, panel) in tabInfo.values():
-                if panel is not None:
-                    panel.RefreshUIColors()
+            for btab in TabInfo:
+                if (pan := btab.tab_panel) is not None:
+                    pan.RefreshUIColors()
 
     def UpdateUIButtons(self):
         # Apply All and Default All
