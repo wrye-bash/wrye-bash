@@ -95,7 +95,7 @@ class _RecordsGrup(_AMobBase):
         """Return the number of leaf records contained in this group."""
         return sum(1 for __ in self.iter_records(skip_flagged=False))
 
-    def get_all_signatures(self):
+    def get_all_signatures(self): ##: only used once - absorb in merge_records?
         """Returns a set of all signatures actually contained in this block."""
         return {r._rec_sig for r in self.iter_records()} # skip deleted/ignored
 
@@ -104,7 +104,7 @@ class _RecordsGrup(_AMobBase):
         for record in self.iter_records(skip_flagged=False):
             record.updateMasters(masterset_add)
 
-    # Patch API
+    # Abstract Patch API ------------------------------------------------------
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         raise NotImplementedError
@@ -363,7 +363,8 @@ class _ChildrenGrup(MobObjects):
 _EOF = -1 # endPos is at the end of file - used for non-headed groups
 class _Nested(_RecordsGrup):
     """A nested grup of records with some optional records[ in front]."""
-    # signatures of 'stray' records - appear at most once except if required
+    # signatures of 'stray' records - appear at most once (or exactly once
+    # if required, like _ComplexRec.master_record)
     _extra_records: tuple[bytes] = ()
     # we need to know the top type this group belongs to for _load_rec_group
     _top_type = None
@@ -629,8 +630,7 @@ class _ComplexRec(_Nested):
                 mergeIdsAdd(src_rec.fid)
                 self.master_record = src_rec.getTypeCopy()
             # Now we're ready to filter and/or merge the children
-            super().merge_records(src_block, loaded_mods, mergeIds,
-                                  skip_merge)
+            super().merge_records(src_block, loaded_mods, mergeIds, skip_merge)
 
     def __str__(self):
         mr = mr.fid if (mr := self.master_record) else \
@@ -660,6 +660,10 @@ class TopGrup(MobObjects):
 class TopComplexGrup(TopGrup):
     """CELL, WRLD and DIAL."""
     _top_rec_class: type[_ComplexRec] = None
+
+    def get_all_signatures(self):
+        return {*chain(
+            *(r.get_all_signatures() for r in self.id_records.values()))}
 
     def _group_element(self, header, ins, end_pos=_EOF, **kwargs) -> _ComplexRec:
         return self._top_rec_class(self._load_f, ins, end_pos, **kwargs)
