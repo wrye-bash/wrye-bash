@@ -3112,10 +3112,8 @@ class InstallersData(DataStore):
         log = bolt.LogFile(io.StringIO())
         log.setHeader(_('BAIN Packages:'))
         #--List
-        log(u'[spoiler]\n', False)
         for inst in self.sorted_values():
             inst.log_package(log, showInactive)
-        log(u'[/spoiler]')
         return log.out.getvalue()
 
     def filterInstallables(self, installerKeys: Iterable[FName]):

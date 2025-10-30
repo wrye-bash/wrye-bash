@@ -751,8 +751,6 @@ class Mod_CopyModInfo(ItemLink):
                     'plugin_ver': vers})
             info_txt.append('\n'.join(mod_text))
         info_txt = '\n\n'.join(info_txt) # add a blank line in between mods
-        if len(self.selected) > 5:
-            info_txt = f'[spoiler]\n{info_txt}\n[/spoiler]'
         # Show results + copy to clipboard
         copy_text_to_clipboard(info_txt)
         self._showLog(info_txt, title=_('Plugin Info Report'))
@@ -1124,7 +1122,6 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
               'report has also been copied into your clipboard.') + '\n')
         clip = io.StringIO()
         clip.write('%s %s:\n' % (bp_parent_info.fn_key, _('Config')))
-        clip.write(u'[spoiler]\n')
         log.setHeader(u'== '+_(u'Patch Mode'))
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
         log(u'Python')
@@ -1134,7 +1131,6 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             patcher._bp = temp_bp
             patcher.log_config(config, clip, log)
         #-- Show log
-        clip.write(u'[/spoiler]')
         copy_text_to_clipboard(clip.getvalue())
         log_text = log.out.getvalue()
         self._showWryeLog(log_text, title=_(u'Bashed Patch Configuration'))

@@ -60,9 +60,8 @@ class INI_ListINIs(ItemLink):
 
     def Execute(self):
         """Handle printing out the errors."""
-        tweaklist = [_('Active INI Tweaks:'), '[spoiler]', *map(str, (
-            tweak for tweak, info in dict_sort(self._data_store)
-            if not info.ini_st == 20)), '[/spoiler]', '']
+        tweaklist = [_('Active INI Tweaks:'), *map(str, (tweak for tweak, info
+            in dict_sort(self._data_store) if not info.ini_st == 20)), '']
         tweak_list = '\n'.join(tweaklist)
         copy_text_to_clipboard(tweak_list)
         self._showLog(tweak_list, title=_('Active INIs'))

@@ -266,20 +266,20 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_FogFix(MultiTweakItem):
     """Fix fog in cell to be non-zero."""
-    tweak_name = _(u'Nvidia Fog Fix')
-    tweak_tip = _(u'Fix fog related Nvidia black screen problems.')
-    tweak_key = u'FogFix'
-    tweak_choices = [(u'0.0001', u'0.0001')]
-    tweak_log_msg = _(u'Cells With Fog Tweaked To 0.0001: %(total_changed)d')
-    # Probably not needed on newer games, so default-enable only on TES4
-    default_enabled = bush.game.fsName == u'Oblivion'
     tweak_read_classes = b'CELL',
+    tweak_name = _('Nvidia Fog Fix')
+    tweak_tip = _('Fix fog related Nvidia black screen problems.')
+    tweak_key = 'FogFix'
+    tweak_log_msg = _('Cells With Fog Tweaked To 0.0001: %(total_changed)d')
+    # Probably not needed on newer games, so default-enable only on TES4
+    default_enabled = bush.game.fsName == 'Oblivion'
 
     def wants_record(self, record):
         # All of these floats must be approximately equal to 0
-        for fog_attr in (u'fogNear', u'fogFar', u'fogClip'):
+        for fog_attr in ('fogNear', 'fogFar', 'fogClip'):
             fog_val = getattr(record, fog_attr)
-            if fog_val is not None and fog_val != 0.0: # type: bolt.Rounder
+            # Skip records missing XCLL, WB won't write it if it is
+            if fog_val is None or fog_val != 0.0: # type: bolt.Rounder
                 return False
         return not record.should_skip()
 

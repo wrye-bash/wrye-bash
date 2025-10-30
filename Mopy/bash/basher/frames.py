@@ -498,7 +498,7 @@ class PluginChecker(WindowFrame):
 
     def OnCopyText(self):
         """Copies text of report to clipboard."""
-        mods_txt = f'[spoiler]\n{self.check_mods_text}[/spoiler]'
+        mods_txt = self.check_mods_text
         mods_txt = re.sub(r'\[\[.+?\|\s*(.+?)\]\]', r'\1', mods_txt)
         mods_txt = re.sub(r'(__|\*\*|~~)', '', mods_txt)
         mods_txt = re.sub('&bull; &bull;', '**', mods_txt)

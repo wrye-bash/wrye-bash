@@ -3021,7 +3021,6 @@ class ModInfos(TableFileInfos):
         all_mods = load_order.get_ordered(all_mods)
         #--List
         modIndex = 0
-        if not wtxt: log(u'[spoiler]\n', appendNewline=False)
         for mname in all_mods:
             if mname in masters_set:
                 prefix = f'{bul}{modIndex:02X}'
@@ -3045,7 +3044,6 @@ class ModInfos(TableFileInfos):
                     elif load_order.get_ordered(
                             (mname, master2))[1] == master2:
                         log(sDelinquent % {'d_master': master2})
-        if not wtxt: log(u'[/spoiler]')
         return log.out.getvalue()
 
     def getTagList(self, mod_list=None):
@@ -3053,7 +3051,6 @@ class ModInfos(TableFileInfos):
         ones are applied via a patch) - either for all mods in the data folder
         or if specified for one specific mod."""
         tagList = f"=== {_('Current Bash Tags:')}\n"
-        tagList += u'[spoiler]\n'
         tagList += _(u'Note: Sources are processed from top to bottom, '
                      u'meaning that lower-ranking sources override '
                      u'higher-ranking ones.') + u'\n'
@@ -3067,7 +3064,6 @@ class ModInfos(TableFileInfos):
         for modInfo in mod_list:
             tagList += f'\n* {modInfo}\n'
             tagList = modInfo.tagsies(tagList)
-        tagList += u'[/spoiler]'
         return tagList
 
     def masterWithVersion(self, master_name):

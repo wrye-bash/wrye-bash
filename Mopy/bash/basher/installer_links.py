@@ -667,10 +667,8 @@ class Installer_ListStructure(_SingleInstallable):
     def Execute(self):
         """Return package structure as text."""
         log = bolt.LogFile(io.StringIO())
-        log.setHeader(f'{self} ' + _('Package Structure:'))
-        log('[spoiler]\n', False) ##: do we need these spoiler tags?
+        log.setHeader(f"{self._selected_item} {_('Package Structure:')}")
         self._selected_info.list_package(log)
-        log('[/spoiler]')
         source_list_txt = log.out.getvalue()
         #--Get masters list
         copy_text_to_clipboard(source_list_txt)
@@ -1024,13 +1022,12 @@ class Installer_Espm_List(_Installer_Details_Link):
               'sub-packages (and copies it to the system clipboard).')
 
     def Execute(self):
-        subs = _('Plugin List for %(sel_pkg)s:') % {'sel_pkg': self._installer}
-        subs += '\n[spoiler]\n'
+        subs = _('Plugin List for %(sel_pkg)s:') % {
+            'sel_pkg': self._installer} + '\n'
         el = self.window.gEspmList
         for i in range(el.lb_get_items_count()):
             subs += (f"{'**' if el.lb_is_checked_at_index(i) else '  '} "
                      f"{self.window.get_espm(i)}\n")
-        subs += '[/spoiler]'
         copy_text_to_clipboard(subs)
         self._showLog(subs, title=_('Plugin List'))
 
@@ -1095,12 +1092,11 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 
     def Execute(self):
         subs = _('Sub-Packages List for %(sel_pkg)s:') % {
-            'sel_pkg': self._installer} + '\n[spoiler]\n'
+            'sel_pkg': self._installer} + '\n'
         sl = self.window.gSubList
         for i in range(sl.lb_get_items_count()):
             subs += (f"{'**' if sl.lb_is_checked_at_index(i) else '  '} "
                      f"{sl.lb_get_str_item_at_index(i)}\n")
-        subs += '[/spoiler]'
         copy_text_to_clipboard(subs)
         self._showLog(subs, title=_('Sub-Package List'))
 
