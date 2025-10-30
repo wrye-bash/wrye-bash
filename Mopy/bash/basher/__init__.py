@@ -1596,8 +1596,8 @@ class ModDetails(_ModsSavesDetails):
         class BashTagsPopup(MultiChoicePopup):
             def _update_tags(self, changed_tags, addtags):
                 """Adds or removes the specified set of tags."""
-                mod_info.setBashTags(
-                    **{'add_tags' if addtags else 'remove_tags': changed_tags})
+                kws = {'add_tags' if addtags else 'remove_tags': changed_tags}
+                mod_info.set_auto_tagged(False, **kws)
                 _mod_details._refresh_tags()
             def on_item_checked(self, choice_name, choice_checked):
                 self._update_tags({choice_name}, choice_checked)
@@ -1623,10 +1623,9 @@ class ModDetails(_ModsSavesDetails):
             return
         # Remember where the first selected tag was so we can reselect
         first_tag_index = next(iter(self.gTags.lb_get_selections()))
-        self.file_info.setBashTags(remove_tags=sel_tags)
+        self.file_info.set_auto_tagged(False, remove_tags=sel_tags)
         self._refresh_tags()
-        new_tag_count = self.gTags.lb_get_items_count()
-        if new_tag_count:
+        if new_tag_count := self.gTags.lb_get_items_count():
             # If we removed the end of the tags list, select the new last tag
             # Otherwise we removed in the middle, so starting from our
             # selection, everything will have shifted down by one, meaning

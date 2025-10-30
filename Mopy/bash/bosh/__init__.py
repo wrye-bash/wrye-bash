@@ -761,24 +761,6 @@ class ModInfo(_WithMastersInfo):
     def tags_path(self) -> bolt.Path:
         return bass.dirs['tag_files'].join(f'{self.fn_key.fn_body}.txt')
 
-    def setBashTags(self, *, override_tags=None, add_tags=None,
-                    remove_tags=None, set_auto_false=True) -> bool:
-        """Set bash tags as specified - you must pass processed tags."""
-        if sum(arg is not None for arg in
-               (override_tags, add_tags, remove_tags)) != 1:
-            raise ValueError(f'Pass exactly one of {override_tags=}, '
-                             f'{add_tags=}, {remove_tags=}')
-        curr_tags = self.getBashTags()
-        if override_tags is None:
-            override_tags = curr_tags.copy()
-            (override_tags.update if add_tags else
-                override_tags.difference_update)(add_tags or remove_tags)
-        if tags_changed := curr_tags != override_tags:
-            self.set_table_prop('bashTags', override_tags)
-            if set_auto_false: # we manually set tags, autoBashTags -> False
-                self.set_auto_tagged(False)
-        return tags_changed
-
     def setBashTagsDesc(self, keys, *, __re_bash_tags=re.compile(
             '{{ *BASH *:[^}]*}}\\s*\\n?', re.I)):
         """Sets bash keys as specified."""
@@ -809,26 +791,40 @@ class ModInfo(_WithMastersInfo):
         # Remove obsolete and unknown tags and resolve any tag aliases
         return _process_tags({*map(str.strip, re_match.group(1).split(','))})
 
-    def set_auto_tagged(self, auto_tagged, bt_contents=None) -> bool:
+    def set_auto_tagged(self, auto_tagged, bt_contents=None,
+            override_tags=None, add_tags=None, remove_tags=None) -> bool:
         """Set whether this plugin receives its tags automatically and if yes
         reload bash tags from mod description, LOOT and Data/BashTags. Return
         True in this case if the tags actually changed, else False.
 
         :param bt_contents: Passed to read_dir_tags, see there for docs."""
         self.mod_auto_bash_tags = auto_tagged
-        if not auto_tagged:
-            return False
-        wip_tags = self.getBashTagsDesc()
-        # Tags from LOOT take precedence over the description
-        added_tags, deleted_tags = read_loot_tags(self)
-        wip_tags |= added_tags
-        wip_tags -= deleted_tags
-        # Tags from Data/BashTags/{self.fn_key}.txt take precedence over both
-        # the description and LOOT
-        added_tags, deleted_tags = read_dir_tags(self, bt_contents)
-        wip_tags |= added_tags
-        wip_tags -= deleted_tags
-        return self.setBashTags(override_tags=wip_tags, set_auto_false=False)
+        curr_tags = self.getBashTags()
+        if not any(args := [override_tags, add_tags, remove_tags]):
+            if not auto_tagged:
+                return False
+            wip_tags = self.getBashTagsDesc()
+            # Tags from LOOT take precedence over the description
+            added_tags, deleted_tags = read_loot_tags(self)
+            wip_tags |= added_tags
+            wip_tags -= deleted_tags
+            # Tags from Data/BashTags/{self.fn_key}.txt take precedence over both
+            # the description and LOOT
+            added_tags, deleted_tags = read_dir_tags(self, bt_contents)
+            wip_tags |= added_tags
+            wip_tags -= deleted_tags
+            override_tags = wip_tags
+        elif sum(a is not None for a in args) > 1:
+            raise ValueError(f'Pass exactly one of {override_tags=}, '
+                             f'{add_tags=}, {remove_tags=}')
+        else:
+            if override_tags is None and add_tags:
+                override_tags = curr_tags | add_tags
+            elif remove_tags:
+                override_tags = curr_tags - remove_tags
+        if tags_changed := curr_tags != override_tags:
+            self.set_table_prop('bashTags', override_tags)
+        return tags_changed
 
     #--Header Editing ---------------------------------------------------------
     def readHeader(self):

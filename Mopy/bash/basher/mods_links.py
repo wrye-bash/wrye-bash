@@ -544,13 +544,13 @@ class Mods_ImportBashTags(_AMods_BashTags):
             if len(csv_fields) != 2:
                 raise exception.BoltError(f'Header error: {csv_fields}')
             return
-        pl_name, curr_tags = csv_fields
-        if (pl_name := FName(pl_name)) in bosh.modInfos:
-            target_tags = {t.strip() for t in curr_tags.split(u',')}
+        fn_pl, curr_tags = csv_fields
+        if (fn_pl := FName(fn_pl)) in bosh.modInfos:
+            tags = {t.strip() for t in curr_tags.split(',')}
             # Only import if doing this would actually change anything and mark
             # as non-automatic (otherwise they'll just get deleted immediately)
-            if bosh.modInfos[pl_name].setBashTags(override_tags=target_tags):
-                self.plugins_imported.append(pl_name)
+            if bosh.modInfos[fn_pl].set_auto_tagged(False, override_tags=tags):
+                self.plugins_imported.append(fn_pl)
 
 #------------------------------------------------------------------------------
 class Mods_ClearManualBashTags(ItemLink):
