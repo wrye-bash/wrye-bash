@@ -153,7 +153,7 @@ class PatchFile(ModFile):
         self._patcher_instances = [p for p in patcher_instances if p.isActive]
 
     #--Instance
-    def __init__(self, modInfo, pfile_minfos):
+    def __init__(self, modInfo, mod_infos):
         """Initialization."""
         super().__init__(modInfo, None)
         self.tes4.author = 'BASHED PATCH'
@@ -177,7 +177,7 @@ class PatchFile(ModFile):
         # Load order is not supposed to change during patch execution
         self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
         # exclude modding esms (those tend to be huge)
-        self.all_plugins = {k: pfile_minfos[k] for k in self.all_plugins if
+        self.all_plugins = {k: mod_infos[k] for k in self.all_plugins if
                             k not in bush.game.modding_esm_size}
         # cache the tags
         self.all_tags = {k: v.getBashTags() for k, v in
@@ -187,14 +187,14 @@ class PatchFile(ModFile):
         self.patches_set = set(bass.dirs['patches'].ilist())
         if bass.dirs['defaultPatches']:
             self.patches_set.update(bass.dirs['defaultPatches'].ilist())
-        self.p_file_minfos = pfile_minfos
-        self.set_active_arrays(pfile_minfos)
+        self.p_file_minfos = mod_infos
+        self.set_active_arrays()
         # cache of mods loaded - eventually share between initData/scanModFile
         self._loaded_mods = {}
         # read signatures we need to load per plugin - updated by the patchers
         self._read_signatures = defaultdict(set)
 
-    def set_active_arrays(self, pfile_minfos):
+    def set_active_arrays(self):
         """Populate PatchFile data structures with info on active mods - must
         be rerun when active plugins change"""
         c = count()
@@ -226,7 +226,7 @@ class PatchFile(ModFile):
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
         mi_mergeable = [modinfo.fn_key for modinfo in
-                        MergeabilityCheck.MERGE.cached_types(pfile_minfos)[0]]
+                        MergeabilityCheck.MERGE.cached_types(self.p_file_minfos)[0]]
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
             bashTags = self.all_tags[modName]

@@ -26,10 +26,11 @@ from __future__ import annotations
 import os
 import traceback
 
-from .. import ScriptParser, bass, bolt, bosh, bush, load_order
+from .. import ScriptParser, bass, bolt, bush, load_order
 from ..ScriptParser import error, PreParser
 from ..balt import ItemLink
 from ..bolt import FName, FNDict, LooseVersion
+from ..bosh import ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE, active_keys
 from ..env import get_file_version, to_os_path
 from ..gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
@@ -76,14 +77,14 @@ class InstallerWizard(WizardDialog):
     _def_size = (600, 500)
     _key_prefix = 'bash.wizard'
 
-    def __init__(self, parent, installer, bAuto, progress):
+    def __init__(self, parent, installer, bAuto, progress, mod_infos):
         super().__init__(parent, title=_('Installer Wizard'),
             sizes_dict=bass.settings)
         # get the wizard file - if we are an archive pass a progress to unpack
         self._wizard_dir = installer.get_wizard_file_dir(progress)
         self._wizard_file = self._wizard_dir.join(installer.hasWizard)
         # parser that will spit out the pages
-        self.parser = WryeParser(self, installer, bAuto)
+        self.parser = WryeParser(self, installer, bAuto, mod_infos)
         self.ret = WizInstallInfo()
 
     def disable_wiz_buttons(self):
@@ -474,7 +475,7 @@ def _need_have(need, have):
 class WryeParser(PreParser):
     """A derived class of Parser, for handling BAIN install wizards."""
 
-    def __init__(self, wiz_parent, installer, bAuto):
+    def __init__(self, wiz_parent, installer, bAuto, mod_infos):
         super().__init__()
         self._wiz_parent = wiz_parent
         self.installer = installer
@@ -495,6 +496,12 @@ class WryeParser(PreParser):
         self.plugin_enabled = FNDict.fromkeys(  # type:FNDict[(f:=FName),f]
             sorted(fn_ for sub_plugins in installer.espmMap.values() for fn_ in
                    sub_plugins), False)
+        # used in self.fn_get_plugin_status which uses different constants!
+        int_map = {ST_ACTIVE: 2, ST_MERGED: 3, ST_IMPORTED: 1, ST_INACTIVE: 0}
+        self._act_dicts = {int_map[k]: v for k, v in
+                           mod_infos.active_statuses().items()}
+        # file exists but not active/merged/imported - dicts are ordered
+        self._act_dicts[int_map[ST_INACTIVE]] = mod_infos
 
     def Continue(self):
         self.page = None
@@ -583,8 +590,9 @@ class WryeParser(PreParser):
         return bolt.cmp_(LooseVersion(wbHave), LooseVersion(str(wbWant)))
 
     def fnDataFileExists(self, *rel_paths):
+        all_plugins = self._act_dicts[0] # see __init__ -> int_map
         for rel_path in rel_paths:
-            if rel_path in bosh.modInfos:
+            if rel_path in all_plugins:
                 continue # It's a (potentially ghosted) plugin, check next
             rel_path_os = to_os_path(bass.dirs['mods'].join(rel_path))
             if not rel_path_os or not rel_path_os.exists():
@@ -598,12 +606,7 @@ class WryeParser(PreParser):
             return default_val
 
     def fn_get_plugin_status(self, filename):
-        p_name = FName(filename)
-        if p_name in bosh.modInfos.merged: return 3   # Merged
-        if load_order.cached_is_active(p_name): return 2  # Active
-        if p_name in bosh.modInfos.imported: return 1 # Imported (not active/merged)
-        if p_name in bosh.modInfos: return 0          # Inactive
-        return -1                                   # Not found
+        return active_keys(FName(filename), self._act_dicts, -1) #-1: Not found
 
     _for_syntax_from = '\n ' + '\n '.join([
         'For var_name from value_start to value_end',

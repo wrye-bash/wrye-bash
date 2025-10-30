@@ -28,7 +28,6 @@ from .frames import DocBrowser, PluginChecker
 from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
-from ..bass import Store
 from ..bolt import undefinedPath
 from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
     ExeLauncher, LnkLauncher, set_cwd
@@ -385,7 +384,7 @@ class _AAppLOManager(_ExeButton):
             # should have changed, refreshLoadOrder should detect that
             rdata = bosh.modInfos.refresh(bush.game.mtime_lo, unlock_lo=True)
             # Refresh UI, so WB is made aware of the changes to load order
-            Link.Frame.all_uilists[Store.MODS].propagate_refresh(rdata,
+            Link.Frame.all_uilists[bosh.modInfos].propagate_refresh(rdata,
                 focus_list=False)
 
 #------------------------------------------------------------------------------

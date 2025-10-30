@@ -48,7 +48,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from . import bass, bolt, exception
-from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName, RefrData
+from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 from .games_lo import FixInfo, LoGame, LoList, LoTuple
 
 # LoGame instance providing load order operations API
@@ -140,7 +140,7 @@ def _new_entry():
         lo_entry(time.time(), _cached_lord)]
 
 @dataclass(slots=True)
-class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
+class LordDiff:
     """Diff of two LoadOrders - see LoadOrder.lo_diff for the fields use."""
     missing: set[FName] = field(default_factory=set) # del from lo <=> del mods
     added: set[FName] = field(default_factory=set) # new in lo <=> new mods
@@ -154,19 +154,9 @@ class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
     # order changes, for instance merged plugins upon deactivating a patch
     affected: set[FName] = field(default_factory=set)
 
-    def act_changed(self):
+    def act_ord_status(self):
         """Return existing items whose active state or active order changed."""
         return {*self.active_flips, *self.act_index_change}
-
-    def lo_changed(self):
-        return self.added or self.missing or self.reordered
-
-    def inact_changes_only(self):
-        """Return True if only inactive mods' load order changed."""
-        return not (self.added or self.missing or self.act_changed())
-
-    def to_rdata(self): # not meant to be used if self.missing/added
-        return RefrData(self.reordered | self.act_changed() | self.affected)
 
     def __ior__(self, other):
         for att in self.__slots__:
@@ -378,9 +368,9 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
         # might impose saved (to move new plugins at the end for instance)
         # cache the diff from _cached_lord to saved to return in that case
         ldiff_saved = _cached_lord.lo_diff(saved)
-        if ldiff_saved.lo_changed() or (bass.settings[
+        if ldiff_saved.reordered or (bass.settings[
                 'bash.load_order.lock_active_plugins'] and
-                ldiff_saved.act_changed()):
+                ldiff_saved.act_ord_status()):
             global warn_locked
             warn_locked = True
             save_lo(saved.loadOrder, saved.activeOrdered)

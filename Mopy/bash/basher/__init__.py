@@ -54,12 +54,13 @@ import functools
 import os
 import sys
 import time
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple, Counter
 from collections.abc import Iterable
+from enum import Enum
 from functools import partial
 from itertools import chain, repeat, starmap, count
 
-import wx
+import wx ##:(190) de-wx!
 
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
@@ -73,12 +74,11 @@ from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
 from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
-from ..bass import Store
 from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
     forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
     to_win_newlines, top_level_files
-from ..bosh import ModInfo, omods
+from ..bosh import ModInfo, omods, active_keys, DataStore
 from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -152,17 +152,6 @@ class Installers_Link(ItemLink):
             if not self._askYes(msg, self._dialog_title, default_is_yes=False):
                 return
         return archive_path
-
-#--Information about the various Tabs
-tabInfo = {
-    # InternalName: [className, title, instance]
-    u'Installers': [u'InstallersPanel', _(u'Installers'), None],
-    u'Mods': [u'ModPanel', _(u'Mods'), None],
-    u'Saves': [u'SavePanel', _(u'Saves'), None],
-    u'INI Edits': [u'INIPanel', _(u'INI Edits'), None],
-    u'Screenshots': [u'ScreensPanel', _(u'Screenshots'), None],
-    # 'BSAs': ['BSAPanel', 'BSAs', None],
-}
 
 #------------------------------------------------------------------------------
 # Panels ----------------------------------------------------------------------
@@ -315,15 +304,9 @@ class _ModsUIList(UIList):
             act_dicts = bosh.modInfos.active_statuses()
             def _sel_sort_key(x):
                 # First active, then merged, then imported, then inactive
-                return self._active_keys(self._item_name(x), act_dicts, 3)
+                return active_keys(self._item_name(x), act_dicts, 3)
             items.sort(key=_sel_sort_key)
     _extra_sortings = [_activeModsFirst]
-
-    def _active_keys(self, item_key, act_dicts, unactive_val):
-        for k, v in act_dicts.items():
-            if item_key in v:
-                return k
-        return unactive_val
 
     @property
     def masters_first(self):
@@ -379,7 +362,7 @@ class _ModsUIList(UIList):
     def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
                        # we get item_name not item_key so we need _mouse_text
                        _mouse_text, **kwargs):
-        checkMark = self._active_keys(item_name, act_dicts, -1) + 1
+        checkMark = active_keys(item_name, act_dicts) + 1
         status = super()._set_icon_text(minf, item_format, item_name, **kwargs)
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
@@ -669,52 +652,24 @@ class INIList(UIList):
     @property
     def current_ini_name(self): return self.panel.detailsPanel.ini_name
 
-    def CountTweakStatus(self):
-        """Returns number of each type of tweak, in the
-        following format:
-        (applied,mismatched,not_applied,invalid)"""
-        applied = 0
-        mismatch = 0
-        not_applied = 0
-        invalid = 0
-        for ini_info in self.data_store.values():
-            status = ini_info.info_status()
-            if status == -10: invalid += 1
-            elif status == 0: not_applied += 1
-            elif status == 10: mismatch += 1
-            elif status == 20: applied += 1
-        return applied,mismatch,not_applied,invalid
-
-    def ListTweaks(self):
-        """Returns text list of tweaks"""
-        tweaklist = _('Active INI Tweaks:') + '\n'
-        tweaklist += u'[spoiler]\n'
-        for tweak, info in dict_sort(self.data_store):
-            if not info.info_status() == 20: continue
-            tweaklist+= f'{tweak}\n'
-        tweaklist += u'[/spoiler]\n'
-        return tweaklist
-
-    def _set_icon_text(self, iniInfo, item_format, ini_name, **kwargs):
+    def _set_icon_text(self, iniInfo, item_format, ini_name, *,
+            __st_codes=defaultdict(int, {20: 1, 15: 3, 10: 3}), **kwargs):
         status = super()._set_icon_text(iniInfo, item_format, ini_name, **kwargs)
         #--Image
-        checkMark = 0
+        checkMark = __st_codes[status]
         icon_ = 0    # Ok tweak, not applied
         mousetext = ''
         if status == 20:
             # Valid tweak, applied
-            checkMark = 1
             mousetext = _('Tweak is currently applied.')
         elif status == 15:
             # Valid tweak, some settings applied, others are
             # overwritten by values in another tweak from same installer
-            checkMark = 3
             mousetext = _('Some settings are applied. Some are overwritten '
                           'by another tweak from the same installer.')
         elif status == 10:
             # Ok tweak, some parts are applied, others not
             icon_ = 10
-            checkMark = 3
             mousetext = _('Some settings are changed.')
         elif status < 0:
             # Bad tweak
@@ -786,7 +741,6 @@ class INIList(UIList):
             #--No point applying a tweak that's already applied
             if target_ini: # if target was given calculate the status for it
                 stat = ini_info.getStatus(target_ini_file)
-                ini_info.reset_status() # iniInfos.ini may differ from target
             else: stat = ini_info.info_status()
             if stat == 20 or not ini_info.is_applicable(stat): continue
             needsRefresh |= target_ini_file.apply_tweak(ini_info)
@@ -812,11 +766,12 @@ class INIList(UIList):
             showError(None, msg, title=_('Missing Game INI'))
             return False
         try:
+            ini_infos = bosh.iniInfos
             default_ini.copyTo(target_ini_file.abs_path)
-            if ini_uilist := balt.Link.Frame.all_uilists[Store.INIS]:
+            if ini_uilist := balt.Link.Frame.all_uilists[ini_infos]:
                 ini_uilist.panel.ShowPanel()
             else:
-                bosh.iniInfos.refresh(False)
+                ini_infos.refresh(False)
             return True
         except OSError:
             target_ini_pth = target_ini_file.abs_path
@@ -1960,9 +1915,12 @@ class INIPanel(BashTab):
                 self.uiList.RefreshUI(focus_list=focus_list)
 
     def sb_count_str(self):
-        stati = self.uiList.CountTweakStatus()
+        counts = Counter(ini_info.ini_st for ini_info in
+                         self.uiList.data_store.values())
+        applied, mismatch, not_applied = counts[20], counts[10], counts[0]
         return _('Tweaks: %(status_num)d/%(total_status_num)d') % {
-            'status_num': stati[0], 'total_status_num': sum(stati[:-1])}
+            'status_num': applied, 'total_status_num': sum(
+                (applied, mismatch, not_applied))}
 
 #------------------------------------------------------------------------------
 class ModPanel(BashTab):
@@ -3285,8 +3243,47 @@ class BSAPanel(BashTab):
         self.listData = bosh.bsaInfos
         super(BSAPanel, self).__init__(parent)
 
+#--Information about the various Tabs -----------------------------------------
+class TabInfo(Enum):
+    """Define Bash Tabs order and default enabled state - member values are the
+    tab key (in 'bash.tabs.order' bass.setting), the default enabled state and
+    localized title, members order is the default tabs order."""
+    INSTALLERS = 'Installers', True, _('Installers')
+    MODS = 'Mods', True, _('Mods')
+    SAVES = 'Saves', True, _('Saves')
+    # BSAS = 'BSAs', False, _('BSAs')
+    INIS = 'INI Edits', True, _('INI Edits')
+    SCREENSHOTS = 'Screenshots', True, _('Screenshots')
+
+    def __init__(self, *args):
+        self.order_key, self.default_enabled, self.tab_title = args
+        self._panel = None
+        match self.order_key:
+            case 'Installers': cls = InstallersPanel
+            case 'Mods': cls = ModPanel
+            case 'Saves': cls = SavePanel
+            # case 'BSAs': cls = BSAPanel
+            case 'INI Edits': cls = INIPanel
+            case 'Screenshots': cls = ScreensPanel
+            case _: cls = None
+        self.panel_class = cls
+
+    @property
+    def tab_panel(self):
+        return self._panel
+
+    @tab_panel.setter
+    def tab_panel(self, val):
+        if self._panel is not None:
+            raise BoltError('Tab panel already set')
+        self._panel = val
+
+    def __repr__(self):
+        return self.name
+
+_keyed_tabs = {e.order_key: e for e in TabInfo} # keys as in settings for order
+
 #--Tabs menu ------------------------------------------------------------------
-_title_to_tab = {v[1]: k for k, v in tabInfo.items()}
 class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
 
@@ -3304,29 +3301,23 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     def _check(self): return bass.settings[u'bash.tabs.order'][self.tabKey]
 
     def Execute(self):
-        tab_info = tabInfo
+        btab = _keyed_tabs[self.tabKey]
+        page_count = Link.Frame.notebook.GetPageCount()
         if bass.settings[u'bash.tabs.order'][self.tabKey]:
             # It was enabled, disable it.
-            iMods = None
-            iInstallers = None
-            iDelete = None
-            for i in range(Link.Frame.notebook.GetPageCount()):
-                pageTitle = Link.Frame.notebook.GetPageText(i)
-                if pageTitle == tab_info[u'Mods'][1]:
-                    iMods = i
-                elif pageTitle == tab_info[u'Installers'][1]:
-                    iInstallers = i
-                if pageTitle == tab_info[self.tabKey][1]:
-                    iDelete = i
+            pageTitle = {Link.Frame.notebook.GetPageText(i): i for i in
+                         range(page_count)}
+            iMods = pageTitle[TabInfo.MODS.tab_title] # should always exist!
+            iInstallers = pageTitle.get(TabInfo.INSTALLERS.tab_title)
+            iDelete = pageTitle[btab.tab_title]
             if iDelete == Link.Frame.notebook.GetSelection():
                 # We're deleting the current page...
                 if ((iDelete == 0 and iInstallers == 1) or
                         (iDelete - 1 == iInstallers)):
-                    # The auto-page change will change to
-                    # the 'Installers' tab.  Change to the
-                    # 'Mods' tab instead.
+                    # The auto-page change will change to the 'Installers' tab.
+                    # Change to the 'Mods' tab instead.
                     Link.Frame.notebook.SetSelection(iMods)
-            tab_info[self.tabKey][2].ClosePanel() ##: note the panel remains in memory
+            btab.tab_panel.ClosePanel() ##: note the panel remains in memory
             page = Link.Frame.notebook.GetPage(iDelete)
             Link.Frame.notebook.RemovePage(iDelete)
             page.Show(False)
@@ -3336,16 +3327,16 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             for k, k_enabled in bass.settings[u'bash.tabs.order'].items():
                 if k == self.tabKey: break
                 insertAt += k_enabled
-            className,title,panel = tab_info[self.tabKey]
-            if not panel:
-                panel = globals()[className](Link.Frame.notebook)
-                tab_info[self.tabKey][2] = panel
-            if insertAt > Link.Frame.notebook.GetPageCount():
-                Link.Frame.notebook.AddPage(panel._native_widget,title)
+            if not (pan := btab.tab_panel):
+                btab.tab_panel = pan = btab.panel_class(Link.Frame.notebook)
+            if insertAt > page_count:
+                Link.Frame.notebook.AddPage(pan._native_widget, btab.tab_title)
             else:
-                Link.Frame.notebook.InsertPage(insertAt,panel._native_widget,title)
+                Link.Frame.notebook.InsertPage(insertAt, pan._native_widget,
+                                               btab.tab_title)
         bass.settings[u'bash.tabs.order'][self.tabKey] ^= True
 
+# Bash Notebook ---------------------------------------------------------------
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     def __init__(self, parent):
@@ -3355,7 +3346,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         iInstallers = iMods = -1
         self._tab_menu = Links()
         # default tabs order and default enabled state, keys as in tabInfo
-        tabs_enabled_ordered = dict(e.value for e in Store)
+        tabs_enabled_ordered = {e.order_key:e.default_enabled for e in TabInfo}
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
         if not isinstance(newOrder, dict): # convert, on updating to 306 ##: still needed
             enabled = settings.get('bash.tabs',  # deprecated - never use
@@ -3365,31 +3356,32 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             # is unchanged from default and the new version also removes a tab
             if x in enabled}
         # append any new tabs - appends last
-        newTabs = set(tabInfo) - set(newOrder)
+        newTabs = _keyed_tabs.keys() - newOrder.keys()
         for n in newTabs: newOrder[n] = tabs_enabled_ordered[n]
         # delete any removed tabs
-        removed_tabs = set(newOrder) - set(tabInfo)
+        removed_tabs = newOrder.keys() - _keyed_tabs.keys()
         for d in removed_tabs: del newOrder[d]
         # Ensure the 'Mods' tab is always shown
         newOrder['Mods'] = True # would insert last
         settings[u'bash.tabs.order'] = newOrder
-        tabs = {k: (v, *tabInfo[k][:2]) for k, v in newOrder.items()}
-        for page, (enabled, className, title) in tabs.items():
-            self._tab_menu.append_link(
-                _Tab_Link(title, page, canDisable=page != 'Mods'))
-            if not enabled: continue
-            panel = globals().get(className,None)
-            if panel is None: continue
+        dex = 0
+        for page, enabled in newOrder.items():
+            btab = _keyed_tabs[page]
+            self._tab_menu.append_link(_Tab_Link(
+                title := btab.tab_title, page, canDisable=page != 'Mods'))
+            if not enabled or btab.panel_class is None:
+                continue
             deprint(f"Constructing panel '{title}'")
             # Some page specific stuff
-            if page == u'Installers': iInstallers = self.GetPageCount()
-            elif page == u'Mods': iMods = self.GetPageCount()
+            if page == 'Installers': iInstallers = dex
+            elif page == 'Mods': iMods = dex
             # Add the page
             try:
-                item = panel(self)
+                item = btab.panel_class(self)
                 self.AddPage(item._native_widget, title)
-                tabInfo[page][2] = item
+                btab.tab_panel = item
                 deprint(f"Panel '{title}' constructed successfully")
+                dex += 1
             except:
                 if page == 'Mods':
                     deprint(f"Fatal error constructing panel '{title}'.")
@@ -3398,8 +3390,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                         traceback=True)
                 settings['bash.tabs.order'][page] = False
         #--Selection
-        pageIndex = max(min(
-            settings[u'bash.page'], self.GetPageCount() - 1), 0)
+        pageIndex = max(min(settings['bash.page'], dex - 1), 0)
         if settings[u'bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
@@ -3408,8 +3399,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     @property
     def currentPage(self):
-        return tabInfo[_title_to_tab[
-            self.GetPageText(self.GetSelection())]][2]
+        """Return the current tab panel."""
+        tab_title = self.GetPageText(self.GetSelection()) # a simpler way?
+        return [t for t in TabInfo if t.tab_title == tab_title][0].tab_panel
 
     def SelectPage(self, page_title, item):
         """Jumps to the specified item on the specified tab.
@@ -3425,7 +3417,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             ind += is_enabled
         else: raise BoltError(f'Invalid tab key: {page_title}')
         self.SetSelection(ind)
-        tabInfo[page_title][2].SelectUIListItem(item, deselectOthers=True)
+        _keyed_tabs[page_title].tab_panel.SelectUIListItem(item,
+                                                           deselectOthers=True)
 
     def DoTabMenu(self,event):
         pos = event.GetPosition()
@@ -3441,7 +3434,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         removeTitle = self.GetPageText(newPos)
         oldOrder = list(settings[u'bash.tabs.order'])
         for removeKey in oldOrder:
-            if tabInfo[removeKey][1] == removeTitle:
+            if _keyed_tabs[removeKey].tab_title == removeTitle:
                 break
         oldOrder.remove(removeKey)
         if newPos == 0: # Moved to the front
@@ -3451,7 +3444,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         else: # Moved somewhere in the middle
             nextTabTitle = self.GetPageText(newPos+1)
             for nextTabKey in oldOrder:
-                if tabInfo[nextTabKey][1] == nextTabTitle:
+                if _keyed_tabs[nextTabKey].tab_title == nextTabTitle:
                     break
             nextTabIndex = oldOrder.index(nextTabKey)
             newOrder = oldOrder[:nextTabIndex]+[removeKey]+oldOrder[nextTabIndex:]
@@ -3473,7 +3466,7 @@ class BashFrame(WindowFrame):
     plugin_checker = None
     # UILists - use sparingly for inter Panel communication - may be None if
     # the tab is not enabled
-    all_uilists: dict[Store, UIList | None] = defaultdict(lambda: None)
+    all_uilists: dict[DataStore, UIList | None] = defaultdict(lambda: None)
     # Panels - use sparingly
     iPanel = None # BAIN panel
     # initial size/position
@@ -3618,12 +3611,13 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        ui_refresh = {store.unique_store_key: rdata for store in (
-            bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
-             rdata := not booting and store.refresh(True))}
+        modinfs = bosh.modInfos
+        ui_refresh = {store: rdata for store in (
+            bosh.bsaInfos, modinfs, bosh.saveInfos) if (
+                rdata := not booting and store.refresh(True))}
         #--Repopulate, focus will be set in ShowPanel
-        self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
-            Store.MODS), ui_refresh, focus_list=False, booting=booting)
+        self.all_uilists[modinfs].propagate_refresh(ui_refresh.get(modinfs),
+            ui_refreshes=ui_refresh, focus_list=False, booting=booting)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
@@ -3646,20 +3640,32 @@ class BashFrame(WindowFrame):
                 title=_('Lock Load Order'))
             load_order.warn_locked = False
 
-    def refresh_and_warn(self, ui_refreshes, booting):
+    def refresh_and_warn(self, ui_refreshes, booting, refr_saves):
         # ONLY use in propagate_refresh - RUI will be triggered for each key
-        for list_key, ref_args in ui_refreshes.items():
-            if (uil := self.all_uilists[list_key]) is not None:
+        # if a RefreshUI is requested for ModList we should also refresh Saves
+        if refr_saves and ui_refreshes.get(bosh.modInfos):
+            to_redraw = set()
+            for fn, save in bosh.saveInfos.items():
+                old, new = save.master_st, save.info_status(recalc_st=True)
+                if old != new: # save master status changed, redraw
+                    to_redraw.add(fn)
+            if rdict := ui_refreshes.get(bosh.saveInfos):
+                if rd_saves := rdict.get('rdata'):
+                    rd_saves |= RefrData(to_redraw) # else leave it to None
+            else:
+                ui_refreshes[bosh.saveInfos] = {'rdata': RefrData(to_redraw),
+                                                'focus_list': False}
+        for ds, ref_args in ui_refreshes.items():
+            if (uil := self.all_uilists[ds]) is not None:
                 uil.RefreshUI(**ref_args)
-        stores = {Store.BSAS: bosh.bsaInfos, Store.MODS: bosh.modInfos,
-                  Store.SAVES: bosh.saveInfos} # this belongs to stores
+        stores = [bosh.bsaInfos, bosh.modInfos, bosh.saveInfos]
         if booting: # trigger warnings on boot, ui_refresh is empty then
             ui_refreshes = stores
         else:
-            ui_refreshes = {k: stores[k] for k in ui_refreshes if k in stores}
+            ui_refreshes = [k for k in ui_refreshes if k in stores]
         multi_warns, lo_warns = [], []
-        for list_key, ds in ui_refreshes.items():
-            ds.warning_args(multi_warns, lo_warns, self, list_key)
+        for ds in ui_refreshes:
+            ds.warning_args(multi_warns, lo_warns, self)
         if multi_warns:
             mk = (mwd := MultiWarningDialog).make_highlight_entry
             mwd(self, highlight_items=starmap(mk, multi_warns)).show_modeless()
@@ -3710,14 +3716,14 @@ class BashFrame(WindowFrame):
         if Link.Frame.docBrowser: Link.Frame.docBrowser.DoSave()
         settings[u'bash.frameMax'] = self.is_maximized
         settings[u'bash.page'] = self.notebook.GetSelection()
-        # use tabInfo below so we save settings of panels that the user closed
-        for _k, (_cname, tab_name, panel) in tabInfo.items():
-            if panel is None: continue
+        # use TabInfo below, so we save settings of panels that the user closed
+        for btab in TabInfo:
+            if (pan := btab.tab_panel) is None: continue
             try:
-                panel.ClosePanel(destroy)
+                pan.ClosePanel(destroy)
             except:
                 deprint(f'An error occurred while saving settings of '
-                        f'the {tab_name} panel:', traceback=True)
+                        f'the {btab.tab_title} panel:', traceback=True)
         settings.save()
 
     @staticmethod

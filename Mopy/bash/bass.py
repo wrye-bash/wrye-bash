@@ -24,7 +24,6 @@
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
 import copy
-from enum import Enum
 from typing import TYPE_CHECKING, NewType
 
 if TYPE_CHECKING:
@@ -80,16 +79,3 @@ def get_path_from_ini(option_key, dir_key='app'):
     from .bolt import GPath
     return value if (value := GPath(get_value)).is_absolute() else dirs[
         dir_key].join(value)
-
-class Store(Enum):
-    """Inter panel communication - member values are the tab keys in tabInfo
-    and default enabled state, members order is the default tabs order."""
-    INSTALLERS = ('Installers', True)
-    MODS = ('Mods', True)
-    SAVES = ('Saves', True)
-    BSAS = ('BSAs', False)
-    INIS = ('INI Edits', True)
-    SCREENSHOTS = ('Screenshots', True)
-
-    def __repr__(self):
-        return self.name

@@ -33,7 +33,6 @@ from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
-from ..bass import Store
 from ..bolt import FName, GPath, Path, RefrIn, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
@@ -202,8 +201,8 @@ class Saves_Profiles(ChoiceLink):
             with BusyCursor():
                 self.window.set_local_save(new_dir, do_swap=self._askYes)
                 self.window.DeleteAll() # let call below repopulate
-                self.window.propagate_refresh(True, {Store.MODS: True},
-                                              detail_item=None)
+                self.window.propagate_refresh(True, ui_refreshes={
+                    bosh.modInfos: True}, detail_item=None)
                 self.window.panel.ShowPanel()
 
     choiceLinkType = _ProfileLink
@@ -238,8 +237,8 @@ class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
         lo_warn_msg, lordata = self._lo_operation()
-        refresh_others = {Store.MODS: lordata}
-        self.window.propagate_refresh(True, refresh_others, focus_list=False)
+        self.window.propagate_refresh(True, ui_refreshes={
+            bosh.modInfos: lordata}, focus_list=False)
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)

@@ -36,7 +36,6 @@ import wx.adv
 
 from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
-from .bass import Store
 from .bolt import FName, Path, RefrIn, deprint, readme_url, \
     fast_cached_property, RefrData
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
@@ -565,8 +564,8 @@ class UIList(PanelWin):
         # never use as local variable name !
         self.data_store = {} if listData is None else listData
         try:
-            Link.Frame.all_uilists[self.data_store.unique_store_key] = self
-        except AttributeError:
+            Link.Frame.all_uilists[self.data_store] = self
+        except TypeError: # TypeError: unhashable type: 'dict'
             pass # not one of the singleton DataStores
         self._ui_settings = ui_settings
         self.panel = panel
@@ -752,9 +751,8 @@ class UIList(PanelWin):
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
 
-    _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
-    def propagate_refresh(self, rdata, ui_refreshes: _ui_in = None, *,
-                          refr_saves=True, booting=False, **kwargs):
+    def propagate_refresh(self, rdata, *, ui_refreshes=None, refr_saves=True,
+                          booting=False, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
         :param ui_refreshes: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
@@ -762,23 +760,17 @@ class UIList(PanelWin):
         if rdata:
             kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
             kwargs.setdefault('focus_list', True)
-            ui_refreshes[self.data_store.unique_store_key] = kwargs
-        # if a RefreshUI is requested for ModList we should also refresh Saves
-        # TODO(701): we need to be more granular here which needs caching
-        #  info_status - we need similar logic in _refresh_mod_inis_and_strings
-        #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
-        if refr_saves and ui_refreshes.get(Store.MODS):
-            ui_refreshes[Store.SAVES] = True
-        for list_key, ref_args in [*ui_refreshes.items()]:
+            ui_refreshes[self.data_store] = kwargs
+        for st, ref_args in [*ui_refreshes.items()]:
             if ref_args:
                 if not isinstance(ref_args, dict): # True or RefrData
                     ref_args = {'rdata': ref_args} if isinstance(ref_args,
                         RefrData) else {}
                 ref_args.setdefault('focus_list', False)
-                ui_refreshes[list_key] = ref_args
+                ui_refreshes[st] = ref_args
             else:
-                del ui_refreshes[list_key]
-        Link.Frame.refresh_and_warn(ui_refreshes, booting)
+                del ui_refreshes[st]
+        Link.Frame.refresh_and_warn(ui_refreshes, booting, refr_saves)
 
     def Focus(self):
         self.__gList.set_focus()
@@ -803,7 +795,7 @@ class UIList(PanelWin):
             return inf, item_format # screens, bsas
         return inf, item_format # used in overrides
 
-    def _set_icon_text(self, inf, item_format, item_key, **kwargs):
+    def _set_icon_text(self, inf, item_format, item_key, **kwargs): # one use!
         """Base method just returns the status - always override to return the
         icon key tuple - populate mouse text, item_format attrs, etc."""
         return inf.info_status(**kwargs)
@@ -1040,8 +1032,8 @@ class UIList(PanelWin):
         if item_edited and rdata:
             args_dict = {'detail_item': rdata.renames.get(item_edited,
                 item_edited)} # in case the displayed item was *not* renamed
-            self.propagate_refresh(rdata, ren_kwargs.get('store_refr'),
-                                   **args_dict)
+            self.propagate_refresh(rdata, ui_refreshes=ren_kwargs.get(
+                'store_refr'), **args_dict)
             #--Reselect the renamed items
             self.SelectItemsNoCallback(rdata.to_add)
         return rdata
@@ -1958,8 +1950,7 @@ class Installer_Op(ItemLink):
             else: # Installers_MonitorExternalInstallation
                 for k, v in rin.items(): # merge giving priority to rin
                     rd_refresh[k] |= v
-            ui_refs = {st.unique_store_key: v for st, v in rd_refresh.items()}
-            self.window.propagate_refresh(True, ui_refs)
+            self.window.propagate_refresh(True, ui_refreshes=rd_refresh)
 
     def _perform_action(self, **kwargs):
         raise NotImplementedError

@@ -27,7 +27,6 @@ from typing import Iterable
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
     wrye_text
 from ..balt import DecoratedTreeDict, colors, Link
-from ..bass import Store
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict, RefrData
 from ..bosh import ModInfo, faces
@@ -899,9 +898,9 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
     @classmethod
     def make_highlight_entry(cls, highlight_desc: str,
             highlighted_items: Iterable[FName] | dict[FName, list[FName]],
-            data_key=Store.MODS):
+            data_key=None):
         """Create a _HighlightData object for highlighting dialogs."""
-        target_uil = Link.Frame.all_uilists[data_key]
+        target_uil = Link.Frame.all_uilists[data_key or bosh.modInfos]
         if target_uil is not None:
             tree_dict = highlighted_items if isinstance(highlighted_items,
                 dict) else {i: [] for i in sorted(highlighted_items)}

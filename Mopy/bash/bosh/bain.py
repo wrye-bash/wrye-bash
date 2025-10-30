@@ -43,7 +43,6 @@ from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
-from ..bass import Store
 from ..bolt import AFile, AFileInfo, CIstr, DefaultFNDict, FName, \
     GPath_no_norm, ListInfo, Path, RefrData, RefrIn, SubProgress, \
     copy_or_reflink2, deprint, dict_sort, forward_compat_path_to_fn, \
@@ -1895,7 +1894,6 @@ class InstallersData(DataStore):
     installers_dir_skips = set()
     file_pattern = re.compile(
         fr'\.(?:{"|".join(e[1:] for e in archives.readExts)})$', re.I)
-    unique_store_key = Store.INSTALLERS
     _dir_key = 'installers'
 
     def __init__(self):
@@ -2114,7 +2112,7 @@ class InstallersData(DataStore):
                 owned = {k: v for k, v in store.items() if str(
                     v.get_table_prop('installer')) == old_key}
                 if owned:
-                    store_refr[store.unique_store_key] |= RefrData(set(owned))
+                    store_refr[store] |= RefrData(set(owned))
                 for v in owned.values():
                     v.set_table_prop('installer', '%s' % name_new)
         return rd_ren

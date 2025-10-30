@@ -231,7 +231,9 @@ class LoGame:
                  plugins_txt_type=LoFile, **kwargs):
         """:type mod_infos: bosh.ModInfos"""
         self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
-        self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
+        # this is bosh.modInfos, must be up to date. Heavily used in
+        # TimestampGame - keep uses down to a minimum
+        self._mod_infos = mod_infos
         self._game_handle = game_handle
         self._active_if_present, self._fixed_order_plugins = \
             self._set_pinned_mods()
@@ -444,7 +446,7 @@ class LoGame:
         master_name = self._game_handle.master_file
         # Tracks if fix_lo.lo_reordered needs updating
         lo_order_changed = any(fix_lo.lo_reordered)
-        cached_minfs = self.mod_infos
+        cached_minfs = self._mod_infos
         try:
             mdex = lord.index(master_name)
             if mdex > 0:
@@ -489,7 +491,7 @@ class LoGame:
             fix_lo.lo_reordered = old_lord, lord
 
     def lo_sort_key(self, *, ds=None, by_name=True, by_time=False):
-        ds = self.mod_infos if ds is None else ds
+        ds = self._mod_infos if ds is None else ds
         def _key(fn):
             is_m = self._game_handle.master_flags.sort_masters_key(ds[fn])
             if by_time:
@@ -505,7 +507,7 @@ class LoGame:
         # corrupted too! Preserve acti order
         # Throw out files that aren't on disk as well as .esu files, which must
         # never be active
-        cached_minfs = self.mod_infos
+        cached_minfs = self._mod_infos
         acti_filtered = [x for x in acti if x in cached_minfs
                          and x.fn_ext != u'.esu']
         # Use sets to avoid O(n) lookups due to lists
@@ -552,7 +554,7 @@ class LoGame:
         limit_flags = {pf: (pf.name.title(), mp) for pf in
             self._game_handle.plugin_flags if (mp := pf.max_plugins)}
         for m in acti_filtered:
-            mi = self.mod_infos[m]
+            mi = self._mod_infos[m]
             for pflag in limit_flags:
                 if pflag.cached_type(mi):
                     pl_type_active[pflag].append(m)
@@ -574,7 +576,7 @@ class LoGame:
         or a list of plugins that must have the order they have in this list
         (the first list is always contained in the second). Both lists may only
         contain plugins that are present in modInfos (excluding corrupted)."""
-        modset = self.mod_infos if mods is None else mods & set(self.mod_infos)
+        modset = self._mod_infos if mods is None else mods & set(self._mod_infos)
         mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
             self._active_if_present
         if filter_mods:
@@ -724,11 +726,11 @@ class TimestampGame(LoGame):
     def _must_update_active(cls, deleted_plugins, reord_plugins): return deleted_plugins
 
     def has_load_order_conflict(self, mod_name):
-        ti = int(self.mod_infos[mod_name].ftime)
+        ti = int(self._mod_infos[mod_name].ftime)
         return ti in self._mtime_mods and len(self._mtime_mods[ti]) > 1
 
     def has_load_order_conflict_active(self, mod_name, active):
-        ti = int(self.mod_infos[mod_name].ftime)
+        ti = int(self._mod_infos[mod_name].ftime)
         return self.has_load_order_conflict(mod_name) and bool(
             (self._mtime_mods[ti] - {mod_name}) & active)
 
@@ -737,40 +739,40 @@ class TimestampGame(LoGame):
         # split into master block and not master block then sort by ftime then
         # by name case insensitive (for time conflicts)
         is_m = self.lo_sort_key(by_time=True)
-        return sorted(self.mod_infos if mods is None else mods, key=is_m)
+        return sorted(self._mod_infos if mods is None else mods, key=is_m)
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
         return self.__calculate_mtime_order()
 
     def _persist_load_order(self, lord, active):
-        assert set(self.mod_infos) == set(lord) # (lord must be valid)
+        assert set(self._mod_infos) == set(lord) # (lord must be valid)
         if not lord: return
         current = self.__calculate_mtime_order()
         # break conflicts
-        older = self.mod_infos[current[0]].ftime # initialize to game master
+        older = self._mod_infos[current[0]].ftime # initialize to game master
         for i, mod in enumerate(current[1:]):
-            info = self.mod_infos[mod]
+            info = self._mod_infos[mod]
             if info.ftime == older: break
             older = info.ftime
         else: mod = i = None # define i to avoid warning below
         if mod is not None: # respace this and next mods in 60 sec intervals
             for mod in current[i + 1:]:
-                info = self.mod_infos[mod]
+                info = self._mod_infos[mod]
                 older += 60.0
                 info.setmtime(older)
         restamp = []
         for ordered, mod in zip(lord, current, strict=True):
             if ordered == mod: continue
-            restamp.append((ordered, self.mod_infos[mod].ftime))
+            restamp.append((ordered, self._mod_infos[mod].ftime))
         for ordered, modification_time in restamp:
-            self.mod_infos[ordered].setmtime(modification_time)
+            self._mod_infos[ordered].setmtime(modification_time)
         # rebuild our cache
         self._rebuild_mtimes_cache()
 
     def _rebuild_mtimes_cache(self):
         self._mtime_mods.clear()
-        for mod, info in self.mod_infos.items():
+        for mod, info in self._mod_infos.items():
             self._mtime_mods[int(info.ftime)].add(mod)
 
     def _persist_if_changed(self, active, lord, previous_active,

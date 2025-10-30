@@ -46,7 +46,7 @@ from .mods_metadata import get_tags_from_dir, process_tags, read_dir_tags, \
     read_loot_tags
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
-from ..bass import dirs, inisettings, Store
+from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
@@ -333,6 +333,7 @@ class _WithMastersInfo(FileInfo):
         self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {} # ModInfo only - don't use!
+        self.master_st = None # the status of the masters, cached
         super().__init__(fullpath, **kwargs)
 
     def _reset_cache(self, stat_tuple, *, load_cache=False, **kwargs):
@@ -347,7 +348,7 @@ class _WithMastersInfo(FileInfo):
         #--Master Names/Order
         self.masterNames = tuple(self._get_masters())
 
-    def _masters_order_status(self, status):
+    def _masters_order_status(self):
         raise NotImplementedError
 
     def _get_masters(self):
@@ -368,21 +369,14 @@ class _WithMastersInfo(FileInfo):
             if altering a master list would cause it to become circular."""
         raise NotImplementedError
 
-    def info_status(self, **kwargs):
-        """Returns status of this file -- which depends on status of masters.
-        0:  Good
-        10: Out of order master(s)
-        20: Loads before its master(s)
-        21: 10 + 20
-        30: Missing master(s)."""
-        #--Worst status from masters
-        status = 30 if any( # if self.masterNames is empty returns False
-            (m not in modInfos) for m in self.masterNames) else 0
-        #--Missing files?
-        if status == 30:
-            return status
-        #--Misordered?
-        return self._masters_order_status(status)
+    def info_status(self, *, recalc_st=False, **kwargs):
+        """Returns status of this file -- which depends on status of masters:
+            - 30: Missing master(s)."""
+        #--Missing files? (if self.masterNames is empty any() returns False)
+        if recalc_st or self.master_st is None:
+            self.master_st = 30 if any((m not in modInfos)
+                for m in self.masterNames) else self._masters_order_status()
+        return self.master_st
 
 #------------------------------------------------------------------------------
 class ModInfo(_WithMastersInfo):
@@ -999,18 +993,21 @@ class ModInfo(_WithMastersInfo):
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + '.ghost')
         return old_new_paths
 
-    def _masters_order_status(self, status):
+    def _masters_order_status(self, *, __lo=load_order.cached_lo_index):
+        """Returns:
+            - 0:  Good
+            - 10: Out of order master(s)
+            - 20: Loads before its master(s)
+            - 21: 10 + 20"""
         mo = tuple(load_order.get_ordered(self.masterNames)) # masterOrder
-        loads_before_its_masters = mo and load_order.cached_lo_index(
-            mo[-1]) > load_order.cached_lo_index(self.fn_key)
-        if mo != self.masterNames and loads_before_its_masters:
+        loads_before_its_masters = mo and __lo(mo[-1]) > __lo(self.fn_key)
+        if (inordered := mo != self.masterNames) and loads_before_its_masters:
             return 21
         elif loads_before_its_masters:
             return 20
-        elif mo != self.masterNames:
+        elif inordered:
             return 10
-        else:
-            return status
+        return 0
 
     def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         hasBsa, hasBlocking = self.hasResources()
@@ -1109,17 +1106,18 @@ def best_ini_files(abs_ini_paths):
 
 class AINIInfo(_TabledInfo, AIniInfo):
     """Ini info, adding cached status and functionality to the ini files."""
-    _status = None
+    ini_st = None
     is_default_tweak = False
     _key_to_attr = {'installer': 'ini_owner_inst'}
 
     @classmethod
     def _store(cls): return iniInfos
 
-    def info_status(self, *, target_ini_settings=None, **kwargs):
-        if self._status is None:
-            self.getStatus(target_ini_settings=target_ini_settings)
-        return self._status
+    def info_status(self, *, target_ini_settings=None, recalc_st=False,
+                    **kwargs):
+        if recalc_st or self.ini_st is None: self.ini_st = self.getStatus(
+            target_ini_settings=target_ini_settings)
+        return self.ini_st
 
     def _incompatible(self, other):
         if not isinstance(self, OBSEIniFile):
@@ -1133,44 +1131,40 @@ class AINIInfo(_TabledInfo, AIniInfo):
 
     def getStatus(self, target_ini=None, target_ini_settings=None):
         """Returns status of the ini tweak:
-        20: installed (green with check)
-        15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
-        10: mismatches (yellow)
-        0: not installed (green)
-        -10: tweak file contains new sections/settings
-        -20: incompatible tweak file (red)
-        Also caches the value in self._status"""
+            20: installed (green with check)
+            15: mismatches (green with dot) - mismatches are with another
+                tweak from same installer that is applied
+            10: mismatches (yellow)
+            0: not installed (green)
+            -10: tweak file contains new sections/settings
+            -20: incompatible tweak file (red)"""
         infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.get_ci_settings()
         if self._incompatible(target_ini) or not tweak_settings:
-            return self.reset_status(-20)
+            return -20
         found_match = False
         mismatch = 0
         ini_settings = target_ini_settings if target_ini_settings is not None \
             else target_ini.get_ci_settings()
-        self_installer = FName( # make comparison case insensitive below
-            self.get_table_prop(u'installer'))
+        if self_installer := (FName(self.get_table_prop('installer')) or []):
+            self_installer = [inf for inf in infos.values() if not (
+                inf.get_table_prop('installer') != self_installer or
+                inf is self or self._incompatible(inf))]
         for section_key in tweak_settings:
             if section_key not in ini_settings:
-                return self.reset_status(-10)
+                return -10
             target_section = ini_settings[section_key]
             tweak_section = tweak_settings[section_key]
             for item in tweak_section:
                 if item not in target_section:
-                    return self.reset_status(-10)
+                    return -10
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another ini
                         # tweak that is applied, and from the same installer
                         mismatch = 2
-                        if self_installer is None: continue
-                        for ini_info in infos.values():
-                            if self is ini_info: continue
-                            if self_installer != ini_info.get_table_prop(
-                                    u'installer'): continue
-                            # It's from the same installer
-                            if self._incompatible(ini_info): continue
+                        for ini_info in self_installer:
                             value = ini_info.getSetting(section_key, item, None)
                             if value == target_section[item][0]:
                                 # The other tweak has the setting we're worried about
@@ -1179,17 +1173,13 @@ class AINIInfo(_TabledInfo, AIniInfo):
                 else:
                     found_match = True
         if not found_match:
-            return self.reset_status(0)
+            return 0
         elif not mismatch:
-            return self.reset_status(20)
+            return 20
         elif mismatch == 1:
-            return self.reset_status(15)
+            return 15
         elif mismatch == 2:
-            return self.reset_status(10)
-
-    def reset_status(self, s=None):
-        self._status = s
-        return s
+            return 10
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
@@ -1265,13 +1255,10 @@ class SaveInfo(_WithMastersInfo):
     @classmethod
     def _store(cls): return saveInfos
 
-    def _masters_order_status(self, status):
+    def _masters_order_status(self):
         mo = tuple(load_order.get_ordered(self.masterNames))
         if mo != self.masterNames:
             return 20 # Reordered masters are far more important in saves
-        elif status > 0:
-            # Missing or reordered masters -> orange or red
-            return status
         active_tuple = load_order.cached_active_tuple()
         if mo == active_tuple:
             # Exact match with LO -> purple
@@ -1279,10 +1266,9 @@ class SaveInfo(_WithMastersInfo):
         if mo == active_tuple[:len(mo)]:
             # Matches LO except for new plugins at the end -> blue
             return -10
-        else:
-            # Does not match the LO's active plugins, but the order is correct.
-            # That means the LO has new plugins, but not at the end -> green
-            return 0
+        # Does not match the LO's active plugins, but the order is correct.
+        # That means the LO has new plugins, but not at the end -> green
+        return 0
 
     def is_save_enabled(self):
         """True if I am enabled."""
@@ -1495,9 +1481,6 @@ class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
     _dir_key: str # key in dirs dict for the store_dir
-    # Each subclass must define this. Used when information related to the
-    # store is passed between the GUI and the backend
-    unique_store_key: Store
 
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
@@ -1701,7 +1684,7 @@ class DataStore(DataDict):
 
     def save_pickle(self): pass # for Screenshots
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
         """Append the arguments for the warning message to the multi_warnings
         and lo_warnings lists, checking the caches currently in Link.Frame."""
 
@@ -1858,7 +1841,7 @@ class INIInfo(IniFileInfo, AINIInfo):
 
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
-        self.reset_status()
+        self.ini_st = None
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
@@ -1918,7 +1901,6 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
 class INIInfos(TableFileInfos):
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
-    unique_store_key = Store.INIS
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     _factory_type: Callable[[...], INIInfo]
@@ -1972,6 +1954,8 @@ class INIInfos(TableFileInfos):
             choice = list(bass.settings[u'bash.ini.choices']).index(
                 previous_ini)
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
+        global iniInfos
+        iniInfos = self # needed for status calculation in getStatus
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings['bash.ini.choice']] # set self.redraw_target = True
 
@@ -1984,7 +1968,7 @@ class INIInfos(TableFileInfos):
             self[k] = default_info  # type: DefaultIniInfo
             if k in rdata.to_del: # we restore default over copy
                 rdata |= RefrData({k}) # will pop it from to_del also
-                default_info.reset_status()
+                default_info.ini_st = None # force status recalculation
             else: # booting
                 rdata.to_add.add(k)
         if not booting and ((targ := self.ini).updated or targ.do_update()):
@@ -1993,9 +1977,9 @@ class INIInfos(TableFileInfos):
             rdata |= self._reset_all_statuses()
         return rdata
 
-    def _reset_all_statuses(self):
-        updt = {ini_info.reset_status() or ini_info.fn_key for ini_info in
-                self.values()} ##:(701) only return infos that changed status
+    def _reset_all_statuses(self): # only return infos that changed status
+        updt = {fn for fn, ini_info in self.items() if
+                ini_info.ini_st != ini_info.info_status(recalc_st=True)}
         self.redraw_target = True # we are called on target update - msg the UI
         return RefrData(updt)
 
@@ -2109,22 +2093,25 @@ def _lo_cache(lord_func):
         """Sync the ModInfos load order and active caches and refresh for
         load order or active changes."""
         try:
-            ldiff = LordDiff() if ldiff is None else ldiff
+            ldiff = LordDiff() if ldiff is None else ldiff #only set in refresh
             ldiff |= lord_func(self, *args, **kwargs)
-            if ldiff.inact_changes_only():
-                return ldiff.to_rdata()
-            # Update all data structures that may be affected by LO change
-            ldiff.affected |= self._refresh_mod_inis_and_strings()
-            ldiff.affected |= self._file_or_active_updates()
-            # unghost new active plugins and ghost new inactive (if autoGhost)
-            ghostify = dict.fromkeys(ldiff.new_act, False)
-            if bass.settings['bash.mods.autoGhost']: # new mods, ghost
-                new_inactive = ldiff.new_inact | (ldiff.added - ldiff.new_act)
-                ghostify.update({k: True for k in new_inactive if
-                    self[k].get_table_prop('allowGhosting', True)})
-            ldiff.affected.update(mod for mod, ghost_it in ghostify.items()
-                                  if self[mod].setGhost(ghost_it))
-            return ldiff.to_rdata()
+            if ldiff:
+                # Update all data structures that may be affected by LO change
+                ldiff.affected |= self._refresh_mod_inis_and_strings()
+                ldiff.affected |= self._file_or_active_updates()
+                # unghost new active mods and ghost new inactive (if autoGhost)
+                ghostify = dict.fromkeys(ldiff.new_act, False)
+                if bass.settings['bash.mods.autoGhost']: # new mods, ghost
+                    new_inactive = ldiff.new_inact | (
+                                ldiff.added - ldiff.new_act)
+                    ghostify.update({k: True for k in new_inactive if
+                        self[k].get_table_prop('allowGhosting', True)})
+                ldiff.affected.update(mod for mod, ghost_it in ghostify.items()
+                                      if self[mod].setGhost(ghost_it))
+            # note we ignore missing/added here - this is the responsibility of
+            # refresh - if we are not called from refresh those should be empty
+            return RefrData(ldiff.reordered | ldiff.affected |
+                            ldiff.act_ord_status())
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
             self._active_wip = list(load_order.cached_active_tuple())
@@ -2141,7 +2128,7 @@ def _lo_op(lop_func):
         :param save_act: save plugins.txt - always call with a valid load order
         """
         out_diff = kwargs.setdefault('out_diff', LordDiff())
-        ldiff = LordDiff() if ldiff is None else ldiff
+        ldiff = LordDiff() if ldiff is None else ldiff #output: used in refresh
         save = sum((save_act, save_wip_lo, save_all))
         if save > 1:
             raise ValueError(f'{save_act=}/{save_wip_lo=}/{save_all=}')
@@ -2152,14 +2139,23 @@ def _lo_op(lop_func):
             if save:
                 out_diff = self._wip_lo_save(save_wip_lo or save_all,
                     save_act or save_all, ldiff=ldiff) if out_diff else \
-                        out_diff.to_rdata() # should be empty
+                        RefrData() # out_diff is empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
     return _lo_wip_wrapper
 
 #------------------------------------------------------------------------------
+# active status magic numbers
+ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = *range(3), -1
+
+def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
+    """Return the key in act_dicts whose value contains item_key."""
+    for k, v in act_dicts.items():
+        if item_key in v:
+            return k
+    return unactive_val
+
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
-    unique_store_key = Store.MODS
     _dir_key = 'mods'
 
     def __init__(self):
@@ -2237,8 +2233,8 @@ class ModInfos(TableFileInfos):
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
         rdata |= lordata
-        # if active did not change, we must perform the refreshes below
-        if ldiff.inact_changes_only():
+        # if load order did not change, we must perform the refreshes below
+        if not ldiff:
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
@@ -2276,9 +2272,9 @@ class ModInfos(TableFileInfos):
 
     def _file_or_active_updates(self):
         """If any plugins have been added, updated or deleted, or the active
-        order/status changed we need to recalculate cached data structures.
-        We could be more granular but the performance is elsewhere plus the
-        complexity might not worth it."""
+        order/status changed we need to recalculate cached data structures."""
+        ##:(701) We could be more granular passing ldiff (and rdata) - this
+        # would be a final check for ModInfos.refresh
         # Recalculate the dependents cache. See ModInfo.get_dependents
         cached_dependents = self.dependents
         cached_dependents.clear()
@@ -2300,12 +2296,13 @@ class ModInfos(TableFileInfos):
         changed = set()
         # We need to scan dependent mods first to account for mergeability of
         # their masters
-        for fn_mod, modInfo in dict_sort(self, reverse=True,
-                                         key_f=load_order.cached_lo_index):
-            for p_master in modInfo.masterNames:
+        none_ = (None, {})
+        for fn_mod, plug in dict_sort(self, reverse=True,
+                                      key_f=load_order.cached_lo_index):
+            for p_master in plug.masterNames:
                 cached_dependents[p_master].add(fn_mod)
             isact = load_order.cached_is_active(fn_mod)
-            if modInfo.isBP():
+            if plug.isBP():
                 self.bashed_patches.add(fn_mod)
                 if isact: active_patches.add(fn_mod)
             if self.isBadFileName(fn_mod):
@@ -2316,22 +2313,21 @@ class ModInfos(TableFileInfos):
                     self.activeBad.add(fn_mod)
                 else:
                     self.bad_names.add(fn_mod)
-            cached_size, canMerge = modInfo.get_table_prop('mergeInfo',
-                                                           (None, {}))
+            cached_size, canMerge = plug.get_table_prop('mergeInfo', none_)
             # Quickly check if some mergeability types are impossible for this
             # plugin (because it already has the target type)
             new_checks = {m: False for m, m_check in quick_checks.items() if
-                          m_check(modInfo)}
+                          m_check(plug)}
             # If ve already covered all required checks with the quick checks
             # above (e.g. an ESL-flagged plugin in a game with only ESL
             # support -> not ESL-flaggable), or the cached size matches what we
             # have on disk, and we have data for all required mergeability
             # checks, we can cache the info
             if len(new_checks) == all_checks or (len(canMerge) == all_checks
-                    and cached_size == modInfo.fsize):
+                    and cached_size == plug.fsize):
                 if canMerge != (canMerge := canMerge | new_checks):
                     changed.add(fn_mod)
-                modInfo.set_table_prop('mergeInfo', (modInfo.fsize, canMerge))
+                plug.set_table_prop('mergeInfo', (plug.fsize, canMerge))
             else:
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
@@ -2350,10 +2346,16 @@ class ModInfos(TableFileInfos):
         self.merged, self.imported = self.getSemiActive(active_patches)
         dex_xor = (k for k, v in self.real_indices.items() ^ old_dexs.items()
             if v[0] != sys.maxsize) # added from defaultdict for inactive mods
-        return {plug for plug in chain(dex_xor, changed, rescan_mods,
-            self.bashed_patches ^ bps, self.merged ^ mrgd,
-            self.imported ^ imprtd, self.activeBad ^ old_ab,
-            self.bad_names ^ old_bad) if plug in self}
+        chain_ch = {*chain(dex_xor, changed, rescan_mods, self.merged ^ mrgd,
+            self.imported ^ imprtd, self.bashed_patches ^ bps,
+            self.activeBad ^ old_ab, self.bad_names ^ old_bad)}
+        to_redraw = set()
+        # reset and cache master status for (all) mod infos (more granular?)
+        for fn, plug in self.items(): # we could use dependents here?
+            old, new = plug.master_st, plug.info_status(recalc_st=True)
+            if old != new or fn in chain_ch: # we need to redraw
+                to_redraw.add(fn)
+        return to_redraw
 
     def rescanMergeable(self, names, progress=bolt.Progress(),
                         return_results=False, sort_descending_lo=True):
@@ -2398,8 +2400,8 @@ class ModInfos(TableFileInfos):
         refreshed if active mods change or mods are added/removed - but also
         in a plain tab out/in Bash, as those are regular files. We should
         centralize data dir scanning. String files depend on inis."""
-        ##: depends on bsaInfos thus a bsaInfos.refresh should trigger
-        # a modInfos.refresh - see comments in get_bsa_lo
+        ##:(701) depends on bsaInfos thus a bsaInfos.refresh should trigger a
+        # modInfos.refresh - see comments in get_bsa_lo
         data_folder_path = bass.dirs['mods']
         self.plugin_inis = self.__load_plugin_inis(data_folder_path)
         # We'll be removing BSAs from here once we've given them a position
@@ -2503,8 +2505,8 @@ class ModInfos(TableFileInfos):
 
     def active_statuses(self):
         """Return a dict with keys 0, 1, 2 for active, merged and imported."""
-        return {0: set(load_order.cached_active_tuple()), 1: self.merged,
-                2: self.imported}
+        return {ST_ACTIVE: set(load_order.cached_active_tuple()),
+                ST_MERGED: self.merged, ST_IMPORTED: self.imported}
 
     # Rest of DataStore overrides ---------------------------------------------
     def rename_operation(self, info_new_name, dest_dir=None, **kwargs):
@@ -2530,7 +2532,8 @@ class ModInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash']
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+        store_key = self
         corruptMods = set(self.corrupted)
         if new_cor := corruptMods - link_frame.knownCorrupted:
             multi_warnings.append(
@@ -3016,7 +3019,7 @@ class ModInfos(TableFileInfos):
             log.setHeader(head + _(u'Active Plugins:'))
             statuses = self.active_statuses()
             all_mods = {*chain.from_iterable(statuses.values())}
-            masters_set, merged = statuses[0], statuses[1]
+            masters_set, merged = statuses[ST_ACTIVE], statuses[ST_MERGED]
         all_mods = load_order.get_ordered(all_mods)
         #--List
         modIndex = 0
@@ -3149,7 +3152,6 @@ class SaveInfos(TableFileInfos):
     # Enabled and disabled saves, no .bak files ##: needed?
     _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
     file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
-    unique_store_key = Store.SAVES
 
     def __init__(self):
         SaveInfo.cosave_types = cosaves.get_cosave_types(
@@ -3203,7 +3205,8 @@ class SaveInfos(TableFileInfos):
                 self._init_store(sd)
         return self.store_dir
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+        store_key = self
         corruptSaves = set(self.corrupted)
         if not corruptSaves <= link_frame.knownCorrupted:
             multi_warnings.append(
@@ -3300,7 +3303,6 @@ class BSAInfos(TableFileInfos):
     # Maps BA2 hashes to BA2 names, used to detect collisions
     _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
-    unique_store_key = Store.BSAS
     _dir_key = 'mods'
 
     def __init__(self):
@@ -3362,7 +3364,8 @@ class BSAInfos(TableFileInfos):
                     self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
         return rdata
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame, store_key):
+    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+        store_key = self
         bsa_mvers = self.mismatched_versions
         if not bsa_mvers <= link_frame.known_mismatched_version_bsas:
             multi_warnings.append(
@@ -3440,7 +3443,6 @@ class ScreenInfos(_AFileInfos):
     _ss_skips = {FName(s) for s in (
         'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
         'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
-    unique_store_key = Store.SCREENSHOTS
     file_pattern = re.compile(
         r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
     _factory_type = ScreenInfo
@@ -3593,5 +3595,5 @@ def init_stores(progress):
     progress(0.5, _('Initializing saves'))
     saveInfos = SaveInfos()
     progress(0.6, _('Initializing INIs'))
-    iniInfos = INIInfos()
+    INIInfos() # iniInfos global is set in __init__
     return modInfos
