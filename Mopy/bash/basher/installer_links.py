@@ -30,7 +30,6 @@ Installer_Subs_*: Menu items for the Sub-Packages list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
 """
 
-import io
 import os
 import re
 import webbrowser
@@ -666,7 +665,7 @@ class Installer_ListStructure(_SingleInstallable):
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
         """Return package structure as text."""
-        log = bolt.LogFile(io.StringIO())
+        log = LogFile()
         log.setHeader(f"{self._selected_item} {_('Package Structure:')}")
         self._selected_info.list_package(log)
         source_list_txt = log.out.getvalue()
@@ -1423,7 +1422,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         with balt.Progress(_('Refreshing Converters…')) as progress:
             self.idata.irefresh(what='C', progress=progress)
         #--Generate log
-        log = LogFile(io.StringIO())
+        log = LogFile()
         log.setHeader(f"== {_('Overview')}\n")
         # log('{{CSS:wtxt_sand_small.css}}')
         log(f". {_('Name: %(bcf_name)s')}" % {'bcf_name': bcf_fname})

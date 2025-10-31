@@ -3109,7 +3109,7 @@ class InstallersData(DataStore):
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
-        log = bolt.LogFile(io.StringIO())
+        log = bolt.LogFile()
         log.setHeader(_('BAIN Packages:'))
         #--List
         for inst in self.sorted_values():

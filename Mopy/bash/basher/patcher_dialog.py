@@ -22,7 +22,6 @@
 # =============================================================================
 """Patch dialog"""
 import copy
-import io
 import re
 import time
 from datetime import timedelta
@@ -182,7 +181,7 @@ class PatchDialog(DialogWindow):
             config = self.__config()
             self.patchInfo.set_table_prop('bash.patch.configs', config)
             #--Do it
-            log = bolt.LogFile(io.StringIO())
+            log = bolt.LogFile()
             patchFile = self.bashed_patch
             enabled_patchers = [p.get_patcher_instance(patchFile) for p in
                                 self._gui_patchers if p.isEnabled] ##: what happens if empty

@@ -2363,9 +2363,8 @@ def getMatch(reMatch,group=0):
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Log(object):
-    """Log Callable. This is the abstract/null version. Useful version should
-    override write functions.
+class LogFile:
+    """Log Callable wrapping an io.StringIO instance.
 
     Log is divided into sections with headers. Header text is assigned (through
     setHeader), but isn't written until a message is written under it. I.e.,
@@ -2373,7 +2372,7 @@ class Log(object):
     never written."""
 
     def __init__(self):
-        """Initialize."""
+        self.out = io.StringIO()
         self.log_header = None
         self.prevHeader = None
 
@@ -2381,7 +2380,7 @@ class Log(object):
         """Sets the header."""
         self.log_header = header
         if self.prevHeader:
-            self.prevHeader += u'x'
+            self.prevHeader += 'x'
         self.doFooter = doFooter
         if writeNow: self()
 
@@ -2395,33 +2394,15 @@ class Log(object):
             self.prevHeader = self.log_header
         if message: self.writeMessage(message,appendNewline)
 
-    #--Abstract/null writing functions...
     def writeLogHeader(self, header):
-        """Write header. Abstract/null version."""
-        pass
-    def writeFooter(self):
-        """Write mess. Abstract/null version."""
-        pass
-    def writeMessage(self,message,appendNewline):
-        """Write message to log. Abstract/null version."""
-        pass
-
-#------------------------------------------------------------------------------
-class LogFile(Log):
-    """Log that writes messages to file."""
-    def __init__(self,out):
-        self.out = out
-        Log.__init__(self)
-
-    def writeLogHeader(self, header):
-        self.out.write(header+u'\n')
+        self.out.write(header + '\n')
 
     def writeFooter(self):
-        self.out.write(u'\n')
+        self.out.write('\n')
 
     def writeMessage(self,message,appendNewline):
         self.out.write(message)
-        if appendNewline: self.out.write(u'\n')
+        if appendNewline: self.out.write('\n')
 
 #------------------------------------------------------------------------------
 class Progress(object):

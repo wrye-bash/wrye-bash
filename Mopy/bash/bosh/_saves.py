@@ -424,9 +424,8 @@ class SaveFile(object):
         return iref
 
     #--------------------------------------------------------------------------
-    def logStats(self,log=None, *, __unpacker=int_unpacker):
+    def logStats(self, log, *, __unpacker=int_unpacker):
         """Print stats to log."""
-        log = log or bolt.Log()
         doLostChanges = False
         doUnknownTypes = False
         def getMaster(modIndex):

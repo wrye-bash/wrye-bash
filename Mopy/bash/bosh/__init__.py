@@ -25,7 +25,6 @@ are the DataStore singletons and bolt.AFile subclasses populating the data
 stores. bush.game must be set, to properly instantiate the data stores."""
 from __future__ import annotations
 
-import io
 import os
 import pickle
 import re
@@ -1239,7 +1238,7 @@ class AINIInfo(_TabledInfo, AIniInfo):
                     errors.extend(missing_settings)
         if len(errors) == 1:
             errors.append(' ' + _('None'))
-        log = bolt.LogFile(io.StringIO())
+        log = bolt.LogFile()
         for line in errors:
             log(line)
         return log.out.getvalue()
@@ -2986,7 +2985,7 @@ class ModInfos(TableFileInfos):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
-        log = bolt.LogFile(io.StringIO())
+        log = bolt.LogFile()
         head, bul, sMissing, sDelinquent, sImported = (
             '=== ',
             '* ',

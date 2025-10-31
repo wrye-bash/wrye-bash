@@ -24,7 +24,6 @@
 """Menu items for the main and item menus of the saves tab - their window
 attribute points to SaveList singleton."""
 
-import io
 import os
 import re
 import shutil
@@ -807,7 +806,7 @@ class Save_Stats(OneItemLink):
         saveFile = _saves.SaveFile(self._selected_info)
         with balt.Progress(_(u'Statistics')) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
-            log = bolt.LogFile(io.StringIO())
+            log = bolt.LogFile()
             progress(0.9,_(u'Calculating statistics.'))
             saveFile.logStats(log)
             progress.Destroy()
@@ -827,7 +826,7 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
 
     def Execute(self):
         with BusyCursor():
-            log = bolt.LogFile(io.StringIO())
+            log = bolt.LogFile()
             self._cosave.dump_to_log(log, self._selected_info.header.masters)
             logtxt = log.out.getvalue()
         self._showLog(logtxt, title=self._cosave.abs_path.tail)

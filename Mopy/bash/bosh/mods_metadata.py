@@ -22,7 +22,6 @@
 # =============================================================================
 from __future__ import annotations
 
-import io
 from collections import Counter, defaultdict
 
 from .. import bass, bolt, bush, load_order, initialization
@@ -172,7 +171,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
-    log = bolt.LogFile(io.StringIO())
+    log = bolt.LogFile()
     # -------------------------------------------------------------------------
     # The header we'll be showing at the start of the log. Separate so that we
     # can check if the log is empty

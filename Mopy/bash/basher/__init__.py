@@ -1899,12 +1899,10 @@ class INIPanel(BashTab):
                 self.uiList.RefreshUI(focus_list=focus_list)
 
     def sb_count_str(self):
-        counts = Counter(ini_info.ini_st for ini_info in
-                         self.uiList.data_store.values())
-        applied, mismatch, not_applied = counts[20], counts[10], counts[0]
+        counts = Counter(ist for ini_info in self.listData.values() if
+            (ist := ini_info.ini_st) >= 0) # negative = not applicable
         return _('Tweaks: %(status_num)d/%(total_status_num)d') % {
-            'status_num': applied, 'total_status_num': sum(
-                (applied, mismatch, not_applied))}
+            'status_num': counts[20], 'total_status_num': sum(counts.values())}
 
 #------------------------------------------------------------------------------
 class ModPanel(BashTab):

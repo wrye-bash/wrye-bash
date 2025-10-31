@@ -1116,7 +1116,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             return
         _gui_patchers = [copy.deepcopy(x) for x in all_gui_patchers]
         #--Log & Clipboard text
-        log = bolt.LogFile(io.StringIO())
+        log = bolt.LogFile()
         log.setHeader('= %s %s' % (bp_parent_info.fn_key, _('Config')))
         log(_('This is the current configuration of this Bashed Patch. This '
               'report has also been copied into your clipboard.') + '\n')
@@ -1248,7 +1248,7 @@ class Mod_ScanDirty(ItemLink):
                                     add_deleted_rec(r_header.fid)
         except CancelError:
             return
-        log = bolt.LogFile(io.StringIO())
+        log = bolt.LogFile()
         log.setHeader(u'= '+_(u'Deleted Records'))
         log(_('This is a report of deleted records that were found in the '
               'selected plugins.') + u'\n')
