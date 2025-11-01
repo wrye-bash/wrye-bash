@@ -369,10 +369,6 @@ class LoGame:
                                      previous_lord)
         return lord, active # return what we set or was previously set
 
-    # Conflicts - only for timestamp games
-    def has_load_order_conflict(self, mod_name): return False
-    def has_load_order_conflict_active(self, mod_name, active): return False
-
     @classmethod
     def _must_update_active(cls, deleted_plugins, reord_plugins):
         raise NotImplementedError
@@ -714,8 +710,6 @@ class INIGame(LoGame):
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
-    # Intentionally imprecise mtime cache
-    _mtime_mods: defaultdict[int, set[Path]] = defaultdict(set)
 
     @staticmethod
     def _check_active_order(acti, lord):
@@ -723,16 +717,8 @@ class TimestampGame(LoGame):
         return [] # no need to reorder plugins.txt - fix_lo.act_reordered False
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reord_plugins): return deleted_plugins
-
-    def has_load_order_conflict(self, mod_name):
-        ti = int(self._mod_infos[mod_name].ftime)
-        return ti in self._mtime_mods and len(self._mtime_mods[ti]) > 1
-
-    def has_load_order_conflict_active(self, mod_name, active):
-        ti = int(self._mod_infos[mod_name].ftime)
-        return self.has_load_order_conflict(mod_name) and bool(
-            (self._mtime_mods[ti] - {mod_name}) & active)
+    def _must_update_active(cls, deleted_plugins, reord_plugins):
+        return deleted_plugins
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
@@ -742,7 +728,6 @@ class TimestampGame(LoGame):
         return sorted(self._mod_infos if mods is None else mods, key=is_m)
 
     def _fetch_load_order(self, cached_load_order, cached_active):
-        self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
         return self.__calculate_mtime_order()
 
     def _persist_load_order(self, lord, active):
@@ -767,13 +752,6 @@ class TimestampGame(LoGame):
             restamp.append((ordered, self._mod_infos[mod].ftime))
         for ordered, modification_time in restamp:
             self._mod_infos[ordered].setmtime(modification_time)
-        # rebuild our cache
-        self._rebuild_mtimes_cache()
-
-    def _rebuild_mtimes_cache(self):
-        self._mtime_mods.clear()
-        for mod, info in self._mod_infos.items():
-            self._mtime_mods[int(info.ftime)].add(mod)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):

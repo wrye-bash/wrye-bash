@@ -427,15 +427,6 @@ def get_lo_files() -> set[bolt.Path]:
     # implementations
     return set(_lo_handler.get_lo_files())
 
-# Timestamp games helpers
-def has_load_order_conflict(mod_name):
-    return _lo_handler.has_load_order_conflict(mod_name)
-
-def has_load_order_conflict_active(mod_name):
-    if not cached_is_active(mod_name): return False
-    return _lo_handler.has_load_order_conflict_active(mod_name,
-                                                      _cached_lord.active)
-
 # Lock load order -------------------------------------------------------------
 def toggle_lock_load_order(user_warning_callback):
     global locked

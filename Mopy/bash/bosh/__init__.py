@@ -904,11 +904,11 @@ class ModInfo(_WithMastersInfo):
 
     def hasTimeConflict(self):
         """True if there is another mod with the same ftime."""
-        return load_order.has_load_order_conflict(self.fn_key)
+        return self.fn_key in self._store().lo_conflicts
 
     def hasActiveTimeConflict(self):
         """True if it has an active mtime conflict with another mod."""
-        return load_order.has_load_order_conflict_active(self.fn_key)
+        return self.fn_key in self._store().act_lo_conflicts
 
     def hasBadMasterNames(self): # used in status calculation
         """True if has a master with un unencodable name in cp1252."""
@@ -2240,10 +2240,33 @@ def _lo_cache(lord_func):
                         self[k].get_table_prop('allowGhosting', True)})
                 ldiff.affected.update(mod for mod, ghost_it in ghostify.items()
                                       if self[mod].setGhost(ghost_it))
+            # check for load order conflicts - if ldiff is empty we should keep
+            # it empty (for refresh to check if it needs the refreshes above),
+            # but we should notify the UI to redraw items that changed status
+            mt_conflicts_changes = set()
+            if bush.game.mtime_lo:
+                mtime_mods = defaultdict(set)
+                for mod, info in self.items():
+                    mtime_mods[int(info.ftime)].add(mod)
+                mtime_mods = {frozenset(v) for v in mtime_mods.values() if
+                              len(v) > 1} # keep conflicting sets of mods
+                lo_conflicts, act_lo_conflicts = set(), set()
+                if mtime_mods:
+                    activ = {*load_order.cached_active_tuple()}
+                    for confls in mtime_mods:
+                        lo_conflicts |= confls
+                        if len(confls_act := confls & activ) > 1:
+                            # active mods conflicting with other active mods
+                            act_lo_conflicts |= confls_act
+                # mods that started/stopped conflicting
+                mt_conflicts_changes |= (self.lo_conflicts ^ lo_conflicts |
+                    act_lo_conflicts ^ self.act_lo_conflicts)
+                self.lo_conflicts = lo_conflicts
+                self.act_lo_conflicts = act_lo_conflicts
             # note we ignore missing/added here - this is the responsibility of
             # refresh - if we are not called from refresh those should be empty
             return RefrData(ldiff.reordered | ldiff.affected |
-                            ldiff.act_ord_status())
+                            ldiff.act_ord_status() | mt_conflicts_changes)
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
             self._active_wip = list(load_order.cached_active_tuple())
@@ -2327,6 +2350,8 @@ class ModInfos(TableFileInfos):
         self.__bsa_lo = self.__bsa_cause = self.__available_bsas = None
         global modInfos
         modInfos = self ##: hack needed in ModInfo.readHeader
+        # lo conflicts cache only used in _ModsUIList.set_item_format
+        self.lo_conflicts, self.act_lo_conflicts = set(), set()
         super().__init__(ModInfo)
 
     # Refresh - not quite surprisingly this is super complex - therefore define
@@ -2357,7 +2382,6 @@ class ModInfos(TableFileInfos):
                 forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
-        rdata |= lordata
         # if load order did not change, we must perform the refreshes below
         if not ldiff:
             # in case ini files were deleted or modified or maybe string files
@@ -2366,6 +2390,7 @@ class ModInfos(TableFileInfos):
             rdata.redraw |= self._refresh_mod_inis_and_strings()
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
+        rdata |= lordata
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         return rdata
 
