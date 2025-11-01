@@ -31,6 +31,7 @@ import re
 from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
     MultiTweakItem
 from ... import bolt, bush
+from ...brec.utils_constants import ZERO_FID
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -505,8 +506,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     _silent_attrs['projectileSpeed'] = 9999
 
     def wants_record(self, record):
-        # u'' here is on purpose! We're checking the EDID, which gets decoded
-        return record.eid == u'SEFF' and any(
+        return record.eid == 'SEFF' and any( # check the (decoded) EDID
             getattr(record, a) != v for a, v in self._silent_attrs.items())
 
     def tweak_record(self, record):
@@ -519,7 +519,18 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
         super().tweak_log(log, {})
 
 #------------------------------------------------------------------------------
-class AssortedTweak_HarvestChance(CustomChoiceTweak):
+class _ANirnrootTweak(MultiTweakItem):
+    """Shared code of tweaks involving nirnroots."""
+    _nirnroot_words = {'nirnroot', 'vynroot', 'vynwurz'}
+
+    @classmethod
+    def _is_nirnroot(cls, record):
+        """Helper method for checking whether a record is a nirnroot."""
+        return (reid := record.eid) and any( # check the (decoded) EDID
+            x in reid.lower() for x in cls._nirnroot_words)
+
+#------------------------------------------------------------------------------
+class AssortedTweak_HarvestChance(CustomChoiceTweak, _ANirnrootTweak):
     """Adjust Harvest Chances."""
     tweak_read_classes = b'FLOR',
     tweak_name = _(u'Harvest Chance')
@@ -537,7 +548,7 @@ class AssortedTweak_HarvestChance(CustomChoiceTweak):
         return self.choiceValues[self.chosen][0]
 
     def wants_record(self, record):
-        return (u'nirnroot' not in record.eid.lower() # skip Nirnroots
+        return (not self._is_nirnroot(record) # skip Nirnroots
                 and any(getattr(record, a) != self.chosen_chance for a
                         in self._season_attrs))
 
@@ -639,19 +650,12 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         record.set_default_icon()
 
 #------------------------------------------------------------------------------
-class _AAttenuationTweak(CustomChoiceTweak):
+class _AAttenuationTweak(CustomChoiceTweak, _ANirnrootTweak):
     """Shared code of sound attenuation tweaks."""
     tweak_read_classes = bush.game.static_attenuation_rec_type,
     tweak_choices = [(u'0%', 0), (u'5%', 5), (u'10%', 10), (u'20%', 20),
                      (u'50%', 50), (u'80%', 80)]
     tweak_log_msg = _(u'Sounds Modified: %(total_changed)d')
-    _nirnroot_words = {u'nirnroot', u'vynroot', u'vynwurz'}
-
-    @classmethod
-    def _is_nirnroot(cls, record):
-        """Helper method for checking whether a record is a nirnroot."""
-        return (reid := record.eid) and any(
-            x in reid.lower() for x in cls._nirnroot_words)
 
     @property
     def chosen_atten(self): return self.choiceValues[self.chosen][0] / 100
@@ -759,8 +763,7 @@ class AssortedTweak_SEFFIcon(CustomChoiceTweak):
     def chosen_icon(self): return self.choiceValues[self.chosen][0].lower()
 
     def wants_record(self, record):
-        # u'' here is on purpose! We're checking the EDID, which gets decoded
-        return (record.eid == u'SEFF' and
+        return (record.eid == 'SEFF' and # check the (decoded) EDID
                 record.iconPath.lower() != self.chosen_icon)
 
     def tweak_record(self, record):
@@ -833,6 +836,125 @@ class AssortedTweak_AbsorbSummonFix(IndexingTweak):
 
     def tweak_record(self, record):
         record.spell_flags.no_absorb_reflect = True
+
+#------------------------------------------------------------------------------
+class AssortedTweak_SetLightRadii(CustomChoiceTweak):
+    """Multiplies the radius of all light sources by a set value."""
+    tweak_read_classes = b'LIGH',
+    tweak_name = _('Set Light Radii')
+    tweak_tip = _('Sets the radius of all light records to tweak percentage '
+                  'times current radius.')
+    tweak_key = 'SetLightRadii'
+    tweak_choices = [('50%', 50), ('75%', 75), ('125%', 125), ('150%', 150),
+                     ('175%', 175), ('200%', 200)]
+    tweak_log_msg = _('Lights Modified: %(total_changed)d')
+
+    @property
+    def chosen_radius(self): return self.choiceValues[self.chosen][0] / 100
+
+    def wants_record(self, record):
+        return record.light_radius and self.chosen_radius != 1 # avoid ITPOs
+
+    def tweak_record(self, record):
+        # Must be an int on py3, otherwise errors on dump
+        record.light_radius = int(record.light_radius * self.chosen_radius)
+
+#------------------------------------------------------------------------------
+class AssortedTweak_NoAmbientCellLighting(MultiTweakItem):
+    """Removes ambient lighting from certain cells."""
+    tweak_read_classes = b'CELL',
+    tweak_name = _('No Ambient Cell Lighting')
+    tweak_tip = _('Sets RGB values for ambient lighting and fog to 0 for '
+                  'dungeon cells or all cells. Cells with the dungeon music '
+                  'type are considered dungeon cells for this tweak.')
+    tweak_key = 'NoAmbientCellLighting'
+    tweak_log_msg = _('Cells with ambient lighting removed: %(total_changed)d')
+    tweak_choices = [(_('All Cells'), {0, 1, 2}),
+                     (_('Dungeons'), {2})]
+    _color_attrs = ('ambientRed', 'ambientGreen', 'ambientBlue', 'fogRed',
+                    'fogGreen', 'fogBlue')
+
+    def wants_record(self, record):
+        return (record.music in self.choiceValues[self.chosen][0] and not
+                all([getattr(record, attr) == 0 or # avoid ITPOs
+                     getattr(record, attr) is None for attr in
+                     self._color_attrs]))
+
+    def tweak_record(self, record):
+        for attr in self._color_attrs:
+            setattr(record, attr, 0)
+
+#------------------------------------------------------------------------------
+class AssortedTweak_HarvestChanceMult(CustomChoiceTweak, _ANirnrootTweak):
+    """Multiplies Harvest Chances by a set value."""
+    tweak_read_classes = b'FLOR',
+    tweak_name = _('Harvest Chance Multiplier')
+    tweak_tip = _('Harvest chances on all harvestables will be set to the '
+                  'chosen percentage times the current chance.')
+    tweak_key = 'HarvestChanceMult'
+    tweak_choices = [('25%', 25), ('50%', 50), ('75%', 75), ('150%', 150),
+                     ('200%', 200), ('400%', 400)]
+    tweak_log_msg = _('Harvest Chances Changed: %(total_changed)d')
+    _season_attrs = ('sip_spring', 'sip_summer', 'sip_fall', 'sip_winter')
+
+    @property
+    def chosen_chance(self): return self.choiceValues[self.chosen][0] / 100
+
+    def wants_record(self, record):
+        return (not self._is_nirnroot(record) # skip Nirnroots
+                and self.chosen_chance != 1 # avoid ITPOs
+                and not all([getattr(record, attr) == 0 for # avoid more ITPOs
+                             attr in self._season_attrs]))
+
+    def tweak_record(self, record):
+        for attr in self._season_attrs:
+            setattr(record, attr, int(getattr(record, attr)
+                                      * self.chosen_chance))
+
+#------------------------------------------------------------------------------
+class AssortedTweak_SaveSortingFix(MultiTweakItem):
+    """Removes underscores from CELL editor IDs to fix save sorting."""
+    tweak_read_classes = b'CELL',
+    tweak_name = _('Save Sorting Fix')
+    tweak_tip = _('Removes underscores from cell editor IDs to fix saves made '
+                  'in such cells not getting sorted under the appropriate '
+                  'character name.')
+    tweak_key = 'SaveSortingFix'
+    tweak_log_msg = _('Editor IDs with underscores removed: %(total_changed)d')
+    default_enabled = True
+
+    def wants_record(self, record):
+        return '_' in record.eid # check the (decoded) EDID
+
+    def tweak_record(self, record):
+        record.eid = record.eid.replace('_', '')
+
+#------------------------------------------------------------------------------
+class AssortedTweak_RemoveLoadScreenModels(MultiTweakItem):
+    """Removes the model from loading screens."""
+    tweak_read_classes = b'LSCR',
+    tweak_name = _('Remove Load Screen Models')
+    tweak_tip = _('Removes models and related attributes from load screens.')
+    tweak_key = 'RemoveLoadScreenModels'
+    tweak_log_msg = _('Load Screen Models Removed: %(total_changed)d')
+
+    def wants_record(self, record):
+        return record.lscr_nif
+
+    def tweak_record(self, record):
+        # Setting to None matches CK behavior, but doesn't remove model
+        record.lscr_nif = ZERO_FID
+        # Setting model to NONE in CK removes the following attributes as well
+        record.lscr_initial_scale = None
+        record.lscr_rotation_grid_x = None
+        record.lscr_rotation_grid_y = None
+        record.lscr_rotation_grid_z = None
+        record.lscr_rotation_min = None
+        record.lscr_rotation_max = None
+        record.lscr_translation_grid_x = None
+        record.lscr_translation_grid_y = None
+        record.lscr_translation_grid_z = None
+        record.lscr_camera_path = None
 
 #------------------------------------------------------------------------------
 class TweakAssortedPatcher(MultiTweaker):

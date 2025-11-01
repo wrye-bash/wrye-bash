@@ -527,8 +527,10 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
     #--------------------------------------------------------------------------
     # Tweak Settings
     #--------------------------------------------------------------------------
-    settings_tweaks = AFallout3GameInfo.settings_tweaks | {
-        'GmstTweak_Actor_StrengthEncumbranceMultiplier'}
+    settings_tweaks = ((AFallout3GameInfo.settings_tweaks |
+                       {'GmstTweak_Actor_StrengthEncumbranceMultiplier',
+                        'GmstTweak_Player_HealthLevelMult_Fnv',}) -
+                       {'GmstTweak_Player_HealthLevelMult'})
 
     #--------------------------------------------------------------------------
     # Tweak Names

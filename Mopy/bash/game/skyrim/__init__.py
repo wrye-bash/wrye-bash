@@ -1210,7 +1210,6 @@ class ASkyrimGameInfo(PatchGame):
         'AssortedTweak_IngredientWeight',
         'AssortedTweak_PotionWeightMinimum',
         'AssortedTweak_StaffWeight',
-        'AssortedTweak_HarvestChance',
         'AssortedTweak_WindSpeed',
         'AssortedTweak_UniformGroundcover',
         'AssortedTweak_SetSoundAttenuationLevels',
@@ -1222,6 +1221,8 @@ class ASkyrimGameInfo(PatchGame):
         'AssortedTweak_BookWeight',
         'AssortedTweak_AttackSpeedStavesMinimum',
         'AssortedTweak_AttackSpeedStavesMaximum',
+        'AssortedTweak_SetLightRadii',
+        'AssortedTweak_RemoveLoadScreenModels',
     }
     staff_condition = ('animationType', 8)
 
