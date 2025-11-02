@@ -156,7 +156,7 @@ def diff_tags(plugin_new_tags, plugin_old_tags):
 _cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
                       u'-error-checking.html|Tome of xEdit]]')
 
-def checkMods(progress, modInfos, showModList=False, showCRC=False,
+def checkMods(progress, modinfos, showModList=False, showCRC=False,
               showVersion=True, scan_plugins=True):
     """Checks currently loaded mods for certain errors / warnings."""
     if not bush.game.Esp.canBash:
@@ -167,7 +167,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     full_lo = load_order.cached_lo_tuple()
     plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
     all_present_plugins = set(full_lo)
-    all_present_minfs = {x: modInfos[x] for x in full_lo} #ascending load order
+    all_present_minfs = {x: modinfos[x] for x in full_lo} #ascending load order
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
@@ -180,7 +180,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                     u'identify in your currently installed plugins.')
     # -------------------------------------------------------------------------
     # Check for corrupt plugins
-    all_corrupted = modInfos.corrupted
+    all_corrupted = modinfos.corrupted
     # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
@@ -188,7 +188,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     pflags = bush.game.plugin_flags
     if flag_errors := {k: {h_msg: set() for h_msg in v} for k, v in
                        pflags.error_msgs.items()}:
-        for m, modinf in modInfos.items():
+        for m, modinf in modinfos.items():
             for pflag in flag_errors:
                 if pflag.cached_type(modinf):
                     pflag.validate_type(modinf, flag_errors[pflag].values())
@@ -199,7 +199,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     should_activate = []
     for plugin_fn, p_minf in all_present_minfs.items():
         p_active = plugin_fn in all_active_plugins
-        p_imported = plugin_fn in modInfos.imported
+        p_imported = plugin_fn in modinfos.imported
         p_tags = p_minf.getBashTags()
         if u'Deactivate' in p_tags and p_active:
             should_deactivate.append(plugin_fn)
@@ -241,11 +241,11 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     valid_vers = bush.game.Esp.validHeaderVersions
     invalid_tes4_versions = {
         p: f'{p_ver}' for p in all_active_plugins
-        if (p_ver := modInfos[p].header.version) not in valid_vers}
+        if (p_ver := modinfos[p].header.version) not in valid_vers}
     # -------------------------------------------------------------------------
     # Check for older form versions, which may point to improperly converted
     # plugins
-    old_fvers = modInfos.older_form_versions
+    old_fvers = modinfos.older_form_versions
     # -------------------------------------------------------------------------
     # Check for cleaning information from LOOT.
     cleaning_messages = {}
@@ -332,7 +332,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                 add_old_weapon = old_weapon_records[plugin_fn].append
                 add_hitme = all_hitmes[plugin_fn].append
                 add_null_fid = null_formid_records[plugin_fn].append
-                p_masters = (*modInfos[plugin_fn].masterNames, plugin_fn)
+                p_masters = (*modinfos[plugin_fn].masterNames, plugin_fn)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.items():
                     for r_header, r_eid in d:
@@ -579,7 +579,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""
         # FormIDs must be in long format at this point
-        proper_fid = format_fid(coll_fid, coll_plugin, modInfos)
+        proper_fid = format_fid(coll_fid, coll_plugin, modinfos)
         if coll_inj:
             log('* ' + _('%(injected_formid)s injected into '
                          '%(injection_target)s, colliding versions:') % {
@@ -614,7 +614,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log_plugin_messages(all_corrupted) ##: Just _log_plugins?
     for pflag in pflags:
         if pflag.merge_check is not None:
-            minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
+            minfos_cache, head, msg = pflag.merge_check.cached_types(modinfos)
             if minfos_cache:
                 _log_plugins(head, msg, [minf.fn_key for minf in minfos_cache])
         for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
@@ -624,9 +624,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
     # already been merged into a BP
     if (merge := MergeabilityCheck.MERGE) in bush.game.mergeability_checks:
-        minfos_cache, head, msg = merge.cached_types(modInfos)
+        minfos_cache, head, msg = merge.cached_types(modinfos)
         can_merge = {m for inf in minfos_cache if (m := inf.fn_key) not in
-                     modInfos.merged and 'NoMerge' not in inf.getBashTags()}
+                     modinfos.merged and 'NoMerge' not in inf.getBashTags()}
         if can_merge:
             _log_plugins(head, msg, can_merge)
     if should_deactivate:
@@ -801,7 +801,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             for orig_plugin, dupe_count in duplicates_counter.items():
                 log('* ' + _('%(full_fid)s in %(orig_plugin)s: '
                              'occurs %(num_duplicates)d times') % {
-                    'full_fid': format_fid(orig_fid, orig_plugin, modInfos),
+                    'full_fid': format_fid(orig_fid, orig_plugin, modinfos),
                     'orig_plugin': orig_plugin,
                     'num_duplicates': dupe_count,
                 })
@@ -848,6 +848,6 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # We already logged missing or delinquent masters up above, so don't
     # duplicate that info in the mod list
     if showModList:
-        log(u'\n' + modInfos.getModList(showCRC, showVersion, wtxt=True,
+        log(u'\n' + modinfos.getModList(showCRC, showVersion, wtxt=True,
                                         log_problems=False).strip())
     return log_header + u'\n\n' + log.out.getvalue()

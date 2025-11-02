@@ -3233,7 +3233,7 @@ class TabInfo(Enum):
     INSTALLERS = 'Installers', True, _('Installers')
     MODS = 'Mods', True, _('Mods')
     SAVES = 'Saves', True, _('Saves')
-    # BSAS = 'BSAs', False, _('BSAs')
+    BSAS = 'BSAs', False, None
     INIS = 'INI Edits', True, _('INI Edits')
     SCREENSHOTS = 'Screenshots', True, _('Screenshots')
 
@@ -3244,7 +3244,7 @@ class TabInfo(Enum):
             case 'Installers': cls = InstallersPanel
             case 'Mods': cls = ModPanel
             case 'Saves': cls = SavePanel
-            # case 'BSAs': cls = BSAPanel
+            case 'BSAs': cls = None # BSAPanel to enable the tab
             case 'INI Edits': cls = INIPanel
             case 'Screenshots': cls = ScreensPanel
             case _: cls = None
@@ -3276,7 +3276,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         self._help = _('Show/Hide the %(tabtitle)s Tab.') % {
             'tabtitle': self._text}
 
-    def _append(self, window): return self._text is not None
+    def _append(self, window): return bool(self._text)
 
     def _enable(self): return self.enabled
 

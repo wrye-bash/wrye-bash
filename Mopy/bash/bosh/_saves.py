@@ -665,7 +665,7 @@ class SaveSpells(_SaveData):
         #--spells[(modName,objectIndex)] = (name,type)
         self.allSpells: dict[FormId, (str, int)] = {}
 
-    def load_data(self, progress, modInfos):
+    def load_data(self, progress, modinfos):
         """Load savegame and extract created spells from it and its masters."""
         progress = progress or bolt.Progress()
         self._load_save(SubProgress(progress, 0, 0.4))
@@ -673,8 +673,8 @@ class SaveSpells(_SaveData):
         #--Extract spells from masters
         for index,master in enumerate(self.saveFile._masters):
             progress(index, master)
-            if master in modInfos:
-                self.importMod(modInfos[master])
+            if master in modinfos:
+                self.importMod(modinfos[master])
         #--Extract created spells
         allSpells = self.allSpells
         saveName = self.saveInfo.fn_key

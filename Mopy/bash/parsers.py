@@ -251,7 +251,7 @@ class _HandleAliases(CsvParser):
     def _key2(self, csv_fields):
         return self._coerce_fid(*self._key2_getter(csv_fields))
 
-    def readFromMod(self, mod_inf):
+    def readFromMod(self, mod_inf, modinfos):
         """Hasty readFromMod implementation."""
         modFile = self._load_plugin(mod_inf)
         for top_grup_sig, typeBlock in modFile.iter_tops(self._parser_sigs):
@@ -316,21 +316,12 @@ class _AParser(_HandleAliases):
         for k in sorted(rows, key=lambda k_: (id_eid_.get(k_) or '').lower()):
             yield k, (rows[k], id_eid_[k])
 
-    # Plugin-related utilities
-    def _mod_has_tag(self, tag_name):
-        """Returns True if the current mod has a Bash Tag with the specified
-        name."""
-        from . import bosh
-        return self._current_mod and tag_name in bosh.modInfos[
-            self._current_mod].getBashTags()
-
     # Reading from plugin - first pass
-    def _read_plugin_fp(self, loaded_mod):
+    def _read_plugin_fp(self, loaded_mod, modinfos):
         """Performs a first pass of reading on the specified plugin and its
         masters. Results are stored in id_context.
 
         :param loaded_mod: The loaded mod to read from."""
-        from . import bosh
         def _fp_loop(mod_to_read):
             """Central loop of _read_plugin_fp, factored out into a method so
             that it can easily be used twice."""
@@ -344,7 +335,7 @@ class _AParser(_HandleAliases):
             master_names = load_order.get_ordered(master_names)
         for mod_name in master_names:
             if mod_name in self._fp_mods: continue
-            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
+            _fp_loop(self._load_plugin(modinfos[mod_name],
                                        target_types=self._fp_types))
         # Finally, process the mod itself
         if loaded_mod.fileInfo.fn_key in self._fp_mods: return
@@ -399,7 +390,7 @@ class _AParser(_HandleAliases):
         raise NotImplementedError
 
     # Note the non-PEP8 names - those point to refactored pseudo-API methods
-    def readFromMod(self, mod_info):
+    def readFromMod(self, mod_info, modinfos):
         """Asks this parser to read information from the specified ModInfo
         instance. Executes the needed passes and stores extracted information
         in id_context and / or id_stored_data. Note that this does not
@@ -416,7 +407,7 @@ class _AParser(_HandleAliases):
         # Load mod_info once and for all, then execute every needed pass
         loaded_mod = self._load_plugin(mod_info, target_types=a_types)
         if self._fp_types:
-            self._read_plugin_fp(loaded_mod)
+            self._read_plugin_fp(loaded_mod, modinfos)
         if self._sp_types:
             self._read_plugin_sp(loaded_mod)
         # We need to unset _current_mod since we're no longer loading a mod
@@ -545,15 +536,13 @@ class ActorLevels(_HandleAliases):
         self.gotLevels = set()
         self._skip_mods = {'none', bush.game.master_file.lower()}
 
-    def readFromMod(self, mod_inf):
+    def readFromMod(self, mod_inf, modinfos):
         """Imports actor level data from the specified mod and its masters."""
-        from . import bosh
         mod_id_levels, gotLevels = self.id_stored_data, self.gotLevels
         load_f = self._load_factory(keepAll=False)
         for modName in (*mod_inf.masterNames, mod_inf.fn_key):
             if modName in gotLevels: continue
-            modFile = self._load_plugin(bosh.modInfos[modName],
-                                        load_fact=load_f)
+            modFile = self._load_plugin(modinfos[modName], load_fact=load_f)
             for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
                 items = zip(
                     ('eid', 'npc_flags.pc_level_offset', 'level_offset',

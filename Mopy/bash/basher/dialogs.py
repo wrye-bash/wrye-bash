@@ -900,7 +900,8 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
             highlighted_items: Iterable[FName] | dict[FName, list[FName]],
             data_key=None):
         """Create a _HighlightData object for highlighting dialogs."""
-        target_uil = Link.Frame.all_uilists[data_key or bosh.modInfos]
+        data_key = data_key or bosh.modInfos
+        target_uil = Link.Frame.all_uilists[data_key]
         if target_uil is not None:
             tree_dict = highlighted_items if isinstance(highlighted_items,
                 dict) else {i: [] for i in sorted(highlighted_items)}
@@ -911,9 +912,11 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
             warning_dec_items = {i: (None, []) for i in
                 sorted(highlighted_items)}
             uil_images = None
+        ##:(600) HACK - this mapping belongs to a proper Store class
+        hack = {bosh.modInfos: 'Mods', bosh.saveInfos: 'Saves', bosh.bsaInfos: 'BSAs'}
         return _HighlightData(uil_image_list=uil_images,
             highlight_desc=highlight_desc, highlighted_items=warning_dec_items,
-            parent_tab_key=data_key.value[0])
+            parent_tab_key=hack[data_key])
 
 # Note: we sometimes use 'unnecessary' subclasses here for the separate
 # bass.settings['bash.window.sizes'] key provided by the unique class name

@@ -1695,7 +1695,7 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
                     return
                 readProgress(index, _('Reading %(reading_plugin)s.') % {
                     'reading_plugin': fileName})
-                parser.readFromMod(fileInfo)
+                parser.readFromMod(fileInfo, self._data_store)
             progress(0.8, _('Exporting to %(exporting_file)s.') % {
                 'exporting_file': textPath.stail})
             parser.write_text_file(textPath)
@@ -1734,7 +1734,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
                 parser.read_csv(textPath)
             else:
                 srcInfo = bosh.modInfos.factory(textPath)
-                parser.readFromMod(srcInfo)
+                parser.readFromMod(srcInfo, self._data_store)
             progress(0.2, _('Applying to %(applying_plugin)s.') % {
                 'applying_plugin': self._selected_item})
             changes = parser.writeToMod(self._selected_info)
