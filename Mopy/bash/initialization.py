@@ -77,7 +77,10 @@ def _get_cli_ini_path(my_docs_path, cli_switch, ini_path_key, game_info,
         ]))
     return my_docs_path
 
-def getOblivionModsPath(game_info):
+def getOblivionModsPath(game_info, cli_path_arg):
+    if cli_path_arg:
+        return (cli_path if (cli_path := GPath(cli_path_arg)).is_absolute()
+                else dirs['app'].join(cli_path), 'Command Line Argument')
     ob_mods_path = get_path_from_ini('OblivionMods')
     if ob_mods_path:
         return ob_mods_path, ['[General]', 'sOblivionMods']
@@ -234,7 +237,8 @@ def init_dirs(game_info, opts, init_warnings):
     dirs['tag_files'] = dirs['mods'].join('BashTags')
     dirs[u'ini_tweaks'] = dirs[u'mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
-    oblivionMods, oblivionModsSrc = getOblivionModsPath(game_info)
+    oblivionMods, oblivionModsSrc = getOblivionModsPath(game_info,
+                                                        opts.oblivionMods)
     dirs[u'bash_root'] = oblivionMods
     deprint(f'Game Mods location set to {oblivionMods}')
     dirs['modsBash'], modsBashSrc = _get_ini_path('BashModData', 'bash_root',
