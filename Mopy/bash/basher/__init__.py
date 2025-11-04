@@ -1587,9 +1587,6 @@ class ModDetails(_ModsSavesDetails):
         return ren_data
 
     #--Bash Tags
-    ##: Once we're on wx4.1.1, we can use OnDismiss to fully refreshUI the
-    # plugin in question (and do the same when removing a tag), so that
-    # adding/removing a NoMerge tag properly updates the text color
     @_check_displayed
     def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
         """Show bash tag selection menu."""
@@ -1601,7 +1598,7 @@ class ModDetails(_ModsSavesDetails):
                 """Adds or removes the specified set of tags."""
                 mod_info.setBashTags(
                     **{'add_tags' if addtags else 'remove_tags': changed_tags})
-                _mod_details.SetFile() # refresh only details
+                _mod_details._refresh_tags()
             def on_item_checked(self, choice_name, choice_checked):
                 self._update_tags({choice_name}, choice_checked)
             def on_mass_select(self, curr_choices, choices_checked):
@@ -1622,22 +1619,22 @@ class ModDetails(_ModsSavesDetails):
     def _remove_selected_tags(self):
         """Callback to remove the selected bash tags from the current
         plugin."""
-        sel_tags = set(self.gTags.lb_get_selected_strings())
-        if not sel_tags: return
+        if not (sel_tags := set(self.gTags.lb_get_selected_strings())):
+            return
         # Remember where the first selected tag was so we can reselect
         first_tag_index = next(iter(self.gTags.lb_get_selections()))
         self.file_info.setBashTags(remove_tags=sel_tags)
-        self.SetFile() # refresh only details
+        self._refresh_tags()
         new_tag_count = self.gTags.lb_get_items_count()
         if new_tag_count:
-            if first_tag_index >= new_tag_count:
-                # We removed the end of the tags list, select the new last tag
-                self.gTags.lb_select_index(new_tag_count - 1)
-            else:
-                # Otherwise we removed in the middle, so starting from our
-                # selection, everything will have shifted down by one, meaning
-                # we can reselect at the same index to get the next item
-                self.gTags.lb_select_index(first_tag_index)
+            # If we removed the end of the tags list, select the new last tag
+            # Otherwise we removed in the middle, so starting from our
+            # selection, everything will have shifted down by one, meaning
+            # we can reselect at the same index to get the next item
+            self.gTags.lb_select_index(min(new_tag_count - 1, first_tag_index))
+
+    def _refresh_tags(self):
+        self.panel_uilist.RefreshUI(RefrData({self.detail_fn}))
 
     @_check_displayed
     def _popup_misc_tags(self, _lb_selection_dex):
@@ -1645,8 +1642,7 @@ class ModDetails(_ModsSavesDetails):
         #--Links closure
         mod_info = self.file_info # type: bosh.ModInfo
         mod_tags = mod_info.getBashTags()
-        def _refresh_only_details():
-            self.SetFile()
+        _mod_details = self
         # Toggle auto Bash tags
         class Tags_Automatic(CheckLink):
             _text = _(u'Automatic')
@@ -1655,8 +1651,9 @@ class ModDetails(_ModsSavesDetails):
             def _check(self): return mod_info.mod_auto_bash_tags
             def Execute(self):
                 """Toggle automatic bash tags on/off."""
-                mod_info.set_auto_tagged(not mod_info.mod_auto_bash_tags)
-                _refresh_only_details()
+                if mod_info.set_auto_tagged(not mod_info.mod_auto_bash_tags):
+                    _mod_details._refresh_tags()
+                else: _mod_details.SetFile()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
         # We need to grab both the ones from the description and from LOOT,
@@ -1688,7 +1685,6 @@ class ModDetails(_ModsSavesDetails):
                         read_dir_tags(mod_info) != dir_diff)
             def Execute(self):
                 bosh.mods_metadata.save_tags_to_dir(mod_info, dir_diff)
-                _refresh_only_details()
         class Tags_CopyToDescription(EnabledLink):
             """Copy manually assigned bash tags into the mod description"""
             _text = _('Copy to Description')
@@ -1699,7 +1695,7 @@ class ModDetails(_ModsSavesDetails):
                         and mod_tags != bashTagsDesc)
             def Execute(self):
                 if mod_info.setBashTagsDesc(mod_tags):
-                    _refresh_only_details()
+                    _mod_details._refresh_tags()
                 else:
                     showError(Link.Frame, _(
                         'Description field including the Bash Tags must be at '
