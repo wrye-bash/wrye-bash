@@ -1,4 +1,35 @@
-;#   ____            _       _       _   ____  __ _____ 
+# -*- coding: utf-8 -*-
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software: you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation, either version 3
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
+#
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2025 Wrye Bash Team
+#  https://github.com/wrye-bash
+#
+# =============================================================================
+"""Houses bash_default.ini & functions for generating it."""
+
+__author__ = 'sibir'
+
+from os import path
+from zlib import crc32
+
+def _generate_default_bash_ini():
+    """Return the translated bash_default.ini & checksum for comparison."""
+    default_bash_ini = fr""";#   ____            _       _       _   ____  __ _____ 
 ;#  |  _ \          | |     (_)     (_) |___ \/_ | ____|
 ;#  | |_) | __ _ ___| |__    _ _ __  _    __) || | |__  
 ;#  |  _ < / _` / __| '_ \  | | '_ \| |  |__ < | |___ \ 
@@ -449,3 +480,18 @@
 ;sLOOT=/opt/loot/LOOT
 
 ;sOBMM=OblivionModManager.exe
+"""
+
+    return default_bash_ini, crc32(default_bash_ini.encode())
+
+def write_default_bash_ini():
+    """Write bash_default.ini if missing or changed."""
+    default_bash_ini, default_ini_crc = _generate_default_bash_ini()
+    if path.exists('bash_default.ini'):
+        with open('bash_default.ini', 'r') as f:
+            curr_default_ini_crc = crc32(f.read().encode())
+    else:
+        curr_default_ini_crc = 0
+    if curr_default_ini_crc != default_ini_crc:
+        with open('bash_default.ini', 'w') as f:
+            f.write(default_bash_ini)

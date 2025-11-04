@@ -42,7 +42,9 @@ import traceback
 #  - bolt: Needed by almost every method in here - paths, deprint, etc.
 #  - exception and wbtemp: Needed by bolt, so imported anyways - both were
 #                          designed with this in mind
-from . import bass, bolt, exception, wbtemp
+#  - gen_ini: needed to generate bash_default.ini without adding hundreds of
+#             lines to bash
+from . import bass, bolt, exception, gen_ini, wbtemp
 
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
@@ -697,6 +699,8 @@ def _main(opts, wx_locale, wxver):
     bash_app.MainLoop()
 
 def _detect_game(opts, backup_bash_ini):
+    # Generate the bash_default.ini file
+    gen_ini.write_default_bash_ini()
     # Read the bash.ini file either from Mopy or from the backup location
     _parse_bash_ini(backup_bash_ini)
     # if uArg is None, then get the UserPath from the ini file

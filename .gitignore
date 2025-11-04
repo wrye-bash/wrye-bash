@@ -13,6 +13,9 @@ __pycache__/
 *.diff
 *.tmp
 
+# the generated default ini
+Mopy/bash_default.ini
+
 # the user ini
 Mopy/bash.ini
 
