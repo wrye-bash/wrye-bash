@@ -78,8 +78,8 @@ from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
     forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
     to_win_newlines, top_level_files
-from ..bosh import ModInfo, omods, active_keys, DataStore
-from ..bosh.mods_metadata import read_dir_tags, read_loot_tags
+from ..bosh import DataStore, ModInfo, active_keys, omods, read_dir_tags, \
+    read_loot_tags, save_tags_to_dir
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
@@ -1656,14 +1656,6 @@ class ModDetails(_ModsSavesDetails):
                 else: _mod_details.SetFile()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
-        # We need to grab both the ones from the description and from LOOT,
-        # since we need to save a diff in case of Copy to BashTags
-        added_tags, deleted_tags = read_loot_tags(mod_info)
-        # Emulate the effects of applying the LOOT tags
-        old_tags = bashTagsDesc.copy()
-        old_tags |= added_tags
-        old_tags -= deleted_tags
-        dir_diff = bosh.mods_metadata.diff_tags(mod_tags, old_tags)
         class Tags_CopyTagList(AppendableLink, ItemLink):
             _text = _('Copy Tag List')
             _help = _('Copies a list of all bash tags for this game to the '
@@ -1681,10 +1673,16 @@ class ModDetails(_ModsSavesDetails):
                       'description/LOOT tags to %(bashtags_path)s.') % {
                 'bashtags_path': mod_info.tags_path()}
             def _enable(self):
-                return (not mod_info.mod_auto_bash_tags and
-                        read_dir_tags(mod_info) != dir_diff)
+                if mod_info.mod_auto_bash_tags: return False
+                # We need to grab both the ones from the description and from
+                # LOOT, to calculate the diff with automatic tags
+                added_tags, deleted_tags = read_loot_tags(mod_info)
+                # Emulate the effects of applying the LOOT tags
+                auto_tags = (bashTagsDesc | added_tags) - deleted_tags
+                self._add_rem = mod_tags - auto_tags, auto_tags - mod_tags
+                return read_dir_tags(mod_info) != self._add_rem
             def Execute(self):
-                bosh.mods_metadata.save_tags_to_dir(mod_info, dir_diff)
+                save_tags_to_dir(mod_info, self._add_rem)
         class Tags_CopyToDescription(EnabledLink):
             """Copy manually assigned bash tags into the mod description"""
             _text = _('Copy to Description')

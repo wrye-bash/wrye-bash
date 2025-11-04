@@ -41,7 +41,6 @@ from typing import final
 from . import bsa_files, converters, cosaves
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
-from .mods_metadata import process_tags, read_dir_tags, read_loot_tags
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings
@@ -200,6 +199,119 @@ class MasterInfo:
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
 
+# Deprecated/Obsolete Bash Tags -----------------------------------------------
+# Tags that have been removed from Wrye Bash and should be dropped from pickle
+# files
+_removed_tags = {'Merge', 'ScriptContents'}
+# Indefinite backwards-compatibility aliases for deprecated tags
+_tag_aliases = {
+    'Actors.Perks.Add': {'NPC.Perks.Add'},
+    'Actors.Perks.Change': {'NPC.Perks.Change'},
+    'Actors.Perks.Remove': {'NPC.Perks.Remove'},
+    'Body-F': {'R.Body-F'},
+    'Body-M': {'R.Body-M'},
+    'Body-Size-F': {'R.Body-Size-F'},
+    'Body-Size-M': {'R.Body-Size-M'},
+    'C.GridFlags': {'C.ForceHideLand'},
+    'Derel': {'Relations.Remove'},
+    'Eyes': {'R.Eyes'},
+    'Eyes-D': {'R.Eyes'},
+    'Eyes-E': {'R.Eyes'},
+    'Eyes-R': {'R.Eyes'},
+    'Factions': {'Actors.Factions'},
+    'Hair': {'R.Hair'},
+    'Invent': {'Invent.Add', 'Invent.Remove'},
+    'InventOnly': {'IIM', 'Invent.Add', 'Invent.Remove'},
+    'Npc.EyesOnly': {'NPC.Eyes'},
+    'Npc.HairOnly': {'NPC.Hair'},
+    'NpcFaces': {'NPC.Eyes', 'NPC.Hair', 'NPC.FaceGen'},
+    'R.Relations': {'R.Relations.Add', 'R.Relations.Change',
+                    'R.Relations.Remove'},
+    'Relations': {'Relations.Add', 'Relations.Change'},
+    'Voice-F': {'R.Voice-F'},
+    'Voice-M': {'R.Voice-M'},
+}
+
+def _process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
+    """Removes obsolete tags from and resolves any tag aliases in the
+    specified set of tags. See the comments above for more information. If
+    drop_unknown is True, also removes any unknown tags (tags that are not
+    currently used, obsolete or aliases)."""
+    if not tag_set: return tag_set # fast path - nothing to process
+    ret_tags = tag_set.copy()
+    ret_tags -= _removed_tags
+    for old_tag, replacement_tags in _tag_aliases.items():
+        if old_tag in tag_set:
+            ret_tags.discard(old_tag)
+            ret_tags.update(replacement_tags)
+    if drop_unknown:
+        ret_tags &= bush.game.allTags
+    return ret_tags
+
+def read_loot_tags(mod_info):
+    """Wrapper around get_tags_from_loot. See that method for docs."""
+    return *map(_process_tags, initialization.lootDb.get_tags_from_loot(
+        mod_info.fn_key)),
+
+# BashTags dir ----------------------------------------------------------------
+def read_dir_tags(mod_info, ci_bt_filenames=None):
+    """Retrieves a tuple containing a set of added and a set of deleted
+    tags from the 'Data/BashTags/PLUGIN_NAME.txt' file, if it is
+    present.
+
+    :param mod_info: The plugin info to check the tag file for.
+    :param ci_bt_filenames: An optional set containing lower-case
+        versions of the names of all files currently present in the BashTags
+        directory. If specified, get_tags_from_dir avoids having to stat to
+        figure out if the file in question exists.
+    :return: A tuple containing two sets of added and deleted tags."""
+    removed, added = set(), set()
+    # Check if the file even exists first, using the cache if possible
+    tag_file: bolt.Path = mod_info.tags_path()
+    has_tags = tag_file.is_file() if ci_bt_filenames is None else \
+        tag_file.stail.lower() in ci_bt_filenames
+    if not has_tags:
+        return added, removed
+    # BashTags files must be in UTF-8 (or ASCII, obviously)
+    with tag_file.open(u'r', encoding=u'utf-8') as ins:
+        for tag_line in ins:
+            # Strip out comments and skip lines that are empty as a result
+            tag_line = tag_line.split(u'#')[0].strip()
+            if not tag_line: continue
+            for tag_entry in tag_line.split(u','):
+                tag_entry = tag_entry.strip()
+                # Guard against things (e.g. typos) like 'TagA,,TagB'
+                if not tag_entry: continue
+                # If it starts with a minus, it's removing a tag
+                if tag_entry[0] == u'-':
+                    # Guard against a typo like '- C.Water'
+                    removed.add(tag_entry[1:].strip())
+                else:
+                    added.add(tag_entry)
+    return *map(_process_tags, (added, removed)),
+
+def save_tags_to_dir(mod_info, plugin_tag_diff): # one use!
+    """Accepts the diff of current mod_info tags to what would be applied by
+    its description and the LOOT masterlist / userlist and saves the diff to
+    Data/BashTags/PLUGIN_NAME.txt.
+
+    :param mod_info: The plugin info to modify the tag file for.
+    :param plugin_tag_diff: A tuple of two sets, (added_tags, removed_tags)."""
+    bass.dirs['tag_files'].makedirs()
+    tag_file = mod_info.tags_path()
+    # Calculate the diff and ignore the minus when sorting the result
+    tag_diff_add, tag_diff_del = plugin_tag_diff
+    processed_diff = sorted(tag_diff_add | {f'-{t}' for t in tag_diff_del},
+                            key=lambda t: t[1:] if t[0] == '-' else t)
+    # While all our tags are ASCII, the comment at the top can be localized, so
+    # use UTF-8
+    with tag_file.open('w', encoding='utf-8') as out:
+        # Stick a header in there to indicate that it's machine-generated
+        # Also print the version, which could be helpful
+        out.write(f"# {_('Generated by Wrye Bash %(wb_version)s')}\n" % {
+            'wb_version': bass.AppVersion})
+        out.write(', '.join(processed_diff) + '\n')
+
 #------------------------------------------------------------------------------
 class _TabledInfo:
     """Stores some of its attributes in a pickled dict. Most of the (hacky)
@@ -225,7 +337,7 @@ class _TabledInfo:
                         # Convert older settings (had a bool in canMerge)
                         v = -1, {}
                 elif k == 'bashTags': # don't drop tags from later WB versions
-                    v = process_tags(v, drop_unknown=False)
+                    v = _process_tags(v, drop_unknown=False)
                 self.set_table_prop(k, v)
             except KeyError:  # 'mtime' - we don't need another mtime cache
                 self.fn_key = FName(GPath(args[0]).stail) # for repr below
@@ -695,7 +807,7 @@ class ModInfo(_WithMastersInfo):
         if not (re_match := __tags_search(self.header.description)):
             return set()
         # Remove obsolete and unknown tags and resolve any tag aliases
-        return process_tags({*map(str.strip, re_match.group(1).split(','))})
+        return _process_tags({*map(str.strip, re_match.group(1).split(','))})
 
     def set_auto_tagged(self, auto_tagged, bt_contents=None) -> bool:
         """Set whether this plugin receives its tags automatically and if yes
