@@ -28,18 +28,25 @@ from os import path
 from textwrap import fill
 from zlib import crc32
 
+from .bass import AppVersion
+
+def _gen_section_header(txt):
+    """Use pyfiglet (if installed) to generate section headers."""
+    try:
+        from pyfiglet import figlet_format
+        # Need the two rstrips to remove all extra spaces & newlines
+        return '\n'.join([f';#  {l}'.rstrip() for l in figlet_format(txt,
+            font='big').rstrip().splitlines()])
+    except ImportError:
+        return f';#  {txt}'
+
 def _wrap_ini_comment(txt, indent=';--'):
     """Wrap translatable comments in bash_default.ini."""
     return fill(txt, 80, initial_indent=indent, subsequent_indent=';    ')
 
 def _generate_default_bash_ini():
     """Return the translated bash_default.ini & checksum for comparison."""
-    default_bash_ini = fr""";#   ____            _       _       _   ____  __ _____ 
-;#  |  _ \          | |     (_)     (_) |___ \/_ | ____|
-;#  | |_) | __ _ ___| |__    _ _ __  _    __) || | |__  
-;#  |  _ < / _` / __| '_ \  | | '_ \| |  |__ < | |___ \ 
-;#  | |_) | (_| \__ \ | | |_| | | | | |  ___) || |___) |
-;#  |____/ \__,_|___/_| |_(_)_|_| |_|_| |____/ |_|____/
+    default_bash_ini = fr"""{_gen_section_header(f'Bash.ini {AppVersion}')}
 
 {_wrap_ini_comment(_(
     "This is the generic version of %(bash_config_file)s. You must copy or "
@@ -71,14 +78,9 @@ def _generate_default_bash_ini():
         ';    ')}
 
 
-;    _____                                 _
-;   / ____|                               | |
-;  | |  __   ___  _ __    ___  _ __  __ _ | |
-;  | | |_ | / _ \| '_ \  / _ \| '__|/ _` || |
-;  | |__| ||  __/| | | ||  __/| |  | (_| || |
-;   \_____| \___||_| |_| \___||_|   \__,_||_|
-
 [General]
+
+{_gen_section_header('General')}
 
 {_wrap_ini_comment(_(
     "%(oblivion_mods)s is an alternate root directory for Bash Installers and "
@@ -165,16 +167,9 @@ def _generate_default_bash_ini():
 ;sLocalAppDataPath=C:\Users\Wrye\AppData\Local
 
 
-;    _____        _    _    _
-;   / ____|      | |  | |  (_)
-;  | (___    ___ | |_ | |_  _  _ __    __ _  ___
-;   \___ \  / _ \| __|| __|| || '_ \  / _` |/ __|
-;   ____) ||  __/| |_ | |_ | || | | || (_| |\__ \
-;  |_____/  \___| \__| \__||_||_| |_| \__, ||___/
-;                                      __/ |
-;                                     |___/
-
 [Settings]
+
+{_gen_section_header('Settings')}
 
 {_wrap_ini_comment(_(
     "%(reset_bsa_timestamps)s: whether or not Wrye Bash should automatically "
@@ -321,16 +316,9 @@ def _generate_default_bash_ini():
 ;bSkipWSDetection=True
 
 
-;  _______             _      ____          _    _
-; |__   __|           | |    / __ \        | |  (_)
-;    | |  ___    ___  | |   | |  | | _ __  | |_  _   ___   _ __   ___
-;    | | / _ \  / _ \ | |   | |  | || '_ \ | __|| | / _ \ | '_ \ / __|
-;    | || (_) || (_) || |   | |__| || |_) || |_ | || (_) || | | |\__ \
-;    |_| \___/  \___/ |_|    \____/ | .__/  \__||_| \___/ |_| |_||___/
-;                                   | |
-;                                   |_|
-
 [Tool Options]
+
+{_gen_section_header('Tool Options')}
 
 {_wrap_ini_comment(_("Whether or not to show the various larger non-core tool "
     "launcher segments."))}

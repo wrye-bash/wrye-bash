@@ -2,7 +2,6 @@
 # Used by the CI when it wants to install depedencies for scripts without
 # pulling in the tons of extra stuff from requirements.txt.
 isort==6.0.1
-pyfiglet==1.0.3
 pygit2==1.18.0
 PyGithub==2.6.1
 # PY3.13: try upgrading again & testing if restoring from backup still crashes

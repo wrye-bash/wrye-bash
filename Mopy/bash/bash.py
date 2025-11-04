@@ -388,6 +388,11 @@ def dump_environment(wxver=None):
         ifileoperation_ver = ifileoperation.__version__
     except ImportError:
         ifileoperation_ver = 'not found'
+    try:
+        import pyfiglet
+        pyfiglet_ver = pyfiglet.__version__
+    except ImportError:
+        pyfiglet_ver = 'not found (optional)'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
     msg = [
@@ -402,6 +407,7 @@ def dump_environment(wxver=None):
          if bolt.os_name == 'nt' else None),
         f' - lxml: {lxml_ver}',
         f' - packaging: {packaging_ver}',
+        f' - pyfiglet: {pyfiglet_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
         f' - python-lz4: {lz4_ver}',
         f' - PyYAML: {yaml_ver}',
