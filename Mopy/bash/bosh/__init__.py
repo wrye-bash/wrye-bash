@@ -381,7 +381,7 @@ class FileInfo(_TabledInfo, AFileInfo):
     def _reset_cache(self, stat_tuple, **kwargs):
         self.fsize, self.ftime, self.ctime = stat_tuple
 
-    def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
+    def setmtime(self, set_time: int | float = 0.0, **kwargs):
         """Sets ftime. Defaults to current value (i.e. reset)."""
         set_to = set_time or self.ftime
         self.abs_path.mtime = self.ftime = set_to
@@ -507,6 +507,8 @@ class ModInfo(_WithMastersInfo):
         'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
         'mergeInfo': 'mod_merge_info', 'rating': 'mod_rating'}
     mod_auto_bash_tags: bool # autoBashTags - always set on __init__
+    # we need to notify RUI to redraw redated infos without calling do_update
+    redated = False
 
     def __init__(self, fullpath, *, itsa_ghost=None, bt_contents=None,
                  load_cache=False, **kwargs):
@@ -644,7 +646,8 @@ class ModInfo(_WithMastersInfo):
         except TypeError: # None, should not happen so let it show
             return u'UNKNOWN!'
 
-    def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
+    def setmtime(self, set_time: int | float = 0.0, *, crc_changed=False,
+                 mark_redated=False):
         """Set ftime and if crc_changed is True recalculate the crc."""
         set_to = super().setmtime(set_time)
         # Prevent re-calculating the File CRC
@@ -652,6 +655,8 @@ class ModInfo(_WithMastersInfo):
             self.set_table_prop('crc_mtime', set_to)
         else:
             self.calculate_crc(recalculate=True)
+        if mark_redated:
+            self.redated = True
 
     def _get_masters(self):
         """Return the plugin masters, in the order listed in its header."""
@@ -2257,9 +2262,10 @@ def _lo_cache(lord_func):
                         if len(confls_act := confls & activ) > 1:
                             # active mods conflicting with other active mods
                             act_lo_conflicts |= confls_act
-                # mods that started/stopped conflicting
+                # mods that started/stopped conflicting/were redated
                 mt_conflicts_changes |= (self.lo_conflicts ^ lo_conflicts |
-                    act_lo_conflicts ^ self.act_lo_conflicts)
+                    act_lo_conflicts ^ self.act_lo_conflicts |
+                    self.scan_redated())
                 self.lo_conflicts = lo_conflicts
                 self.act_lo_conflicts = act_lo_conflicts
             # note we ignore missing/added here - this is the responsibility of
@@ -2386,12 +2392,17 @@ class ModInfos(TableFileInfos):
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
-            rdata.redraw |= self._refresh_mod_inis_and_strings()
+            rdata.redraw |= self._refresh_mod_inis_and_strings() | \
+                            self.scan_redated()
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
         rdata |= lordata
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         return rdata
+
+    def scan_redated(self):
+        return {k for k, v in self.items() if # reset 'redated'
+                v.redated and not setattr(v, 'redated', False)}
 
     # _AFileInfos overrides that are used in refresh - ghosts ahead
     def _delete_refresh(self, infos):
@@ -2980,8 +2991,8 @@ class ModInfos(TableFileInfos):
     def _lo_insert_after(self, insert_after, *, out_diff): #only use in refresh
         lwip = self._lo_wip.copy()
         for new_mod, previous in insert_after.items():
-            new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
-            if new_mod in lwip: lwip.remove(new_mod)  # ...
+            # _CopyToLink might overwrite, not DummyMasters/File_Duplicate
+            if new_mod in lwip: lwip.remove(new_mod)
             dex = lwip.index(previous)
             if bush.game.mtime_lo:
                 t_prev = self[previous].ftime
@@ -2995,7 +3006,7 @@ class ModInfos(TableFileInfos):
                     t_prev += 1  # add one second
                     new_time = t_prev if t_prev < t_next else None
                 if new_time is not None:
-                    self[new_mod].setmtime(new_time)
+                    self[new_mod].setmtime(new_time, mark_redated=True)
             lwip[dex + 1:dex + 1] = [new_mod]
         out_diff |= self._diff_los(new_lo=lwip)
         self._lo_wip = lwip

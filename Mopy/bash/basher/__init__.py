@@ -1543,7 +1543,6 @@ class ModDetails(_ModsSavesDetails):
         'Windows-1252. %(game_name)s may not be able to activate this '
         'plugin because of this. Do you want to rename the plugin anyway?')
     def _extra_changes(self, rename_data, mod_inf):
-        changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
         change_hdr = self.uilist.edited or (
                 self.authorStr != mod_inf.header.author or
                 self.descriptionStr != mod_inf.header.description)
@@ -1557,15 +1556,13 @@ class ModDetails(_ModsSavesDetails):
             mod_inf.header.masters = self.uilist.GetNewMasters()
             mod_inf.header.setChanged()
             mod_inf.writeHeader(old_mi_masters)
-        ref_saves = bool(rename_data)
         #--Change date?
-        if unlock_lo := changeDate:
+        if unlock_lo := (self.modifiedStr != format_date(mod_inf.ftime)):
             unlock_lo = bush.game.mtime_lo
-            mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
-            #--Only change date?
-            if not (rename_data or change_hdr):
-                rename_data.redraw.add(mod_inf.fn_key) # needed!
-        return change_hdr, ref_saves | unlock_lo, {'unlock_lo': unlock_lo}
+            mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)),
+                             mark_redated=True) # refresh will add it to redraw
+        return change_hdr, bool(rename_data) | unlock_lo, {
+            'unlock_lo': unlock_lo}
 
     def _rename_detail_item(self, new_n):
         #--Warn on rename if file has BSA and/or dialog

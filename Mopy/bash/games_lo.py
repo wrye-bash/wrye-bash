@@ -738,11 +738,12 @@ class TimestampGame(LoGame):
         mods_it = map(modinfos.__getitem__, current)
         older = next(mods_it).ftime # initialize to game master ftime
         for info in mods_it:
+            # mods_it is ordered in ftime so conflicts come in chunks
             if older == (older := info.ftime):
                 # respace this and next mods in 60 sec intervals
                 for info in (info, *mods_it):
                     older += 60.0
-                    info.setmtime(older)
+                    info.setmtime(older, mark_redated=True)
                 break
         restamp = []
         # len(lord) must be equal to len(modinfos) - collect modification times

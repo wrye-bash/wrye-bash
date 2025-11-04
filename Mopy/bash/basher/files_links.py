@@ -288,10 +288,10 @@ class File_Redate(ItemLink):
         # Perform the redate process and refresh
         user_timestamp = user_datetime.timestamp()
         for to_redate in self._infos_to_redate():
-            to_redate.setmtime(user_timestamp)
+            to_redate.setmtime(user_timestamp, mark_redated=True)
             user_timestamp += 60.0
-        self._data_store.refresh(False, unlock_lo=bush.game.mtime_lo)
-        self.window.propagate_refresh(True)
+        rdata = self._data_store.refresh(False, unlock_lo=bush.game.mtime_lo)
+        self.window.propagate_refresh(rdata)
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):
