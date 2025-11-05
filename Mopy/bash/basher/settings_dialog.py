@@ -429,11 +429,11 @@ class LanguagePage(_AScrollablePage):
     _internal_to_localized = _LangDict({
         'de_DE': f"{_('German')} (Deutsch)",
         'en_US': f"{_('American English')} (American English)",
-        'es': f"{_('Spanish')} (español)",
+        'es_ES': f"{_('Spanish')} (español)",
         'it_IT': f"{_('Italian')} (italiano)",
         'ja_JP': f"{_('Japanese')} (日本語)",
         'pt_BR': f"{_('Brazilian Portuguese')} (português brasileiro)",
-        'pt': f"{_('Portuguese')} (português)",
+        'pt_PT': f"{_('Portuguese')} (português)",
         'ru_RU': f"{_('Russian')} (Русский язык)",
         'sv_SE': f"{_('Swedish')} (svenska)",
         'ta':    f"{_('Tamil')} (தமிழ்)",
