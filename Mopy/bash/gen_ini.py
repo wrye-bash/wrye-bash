@@ -44,6 +44,15 @@ def _wrap_ini_comment(txt, indent=';--'):
     """Wrap translatable comments in bash_default.ini."""
     return fill(txt, 80, initial_indent=indent, subsequent_indent=';    ')
 
+def _wrap_subsection_header(txt, header_len=78):
+    """Wrap subsection headers (in Tool Options section). If wid (text length)
+    exceeds header_len (length of header, excluding encapsulating semicolons),
+    then use wid as header_len to avoid issues with long translations."""
+    bord = f";{'=' * max(header_len, wid := len(txt))};"
+    title = f";{'=' * max((header_len - wid)//2, 0)}{txt}" \
+            f"{'=' * max((header_len - wid + 1)//2, 0)};"
+    return '\n'.join([bord, title, bord])
+
 def _generate_default_bash_ini():
     """Return the translated bash_default.ini & checksum for comparison."""
     default_bash_ini = fr"""{_gen_section_header(f'Bash.ini {AppVersion}')}
@@ -334,9 +343,7 @@ def _generate_default_bash_ini():
 ))}
 
 
-;==================================================;
-;=========ESM/ESP/LOD/NIF Tool Launchers===========;
-;==================================================;
+{_wrap_subsection_header(_('Mod/LOD/NIF Tool Launchers'))}
 
 ;sTes4GeckoPath=Tes4Gecko.jar
 ;sTes4GeckoJavaArg=-Xmx1024m
@@ -364,9 +371,7 @@ def _generate_default_bash_ini():
 ;sTes5GeckoPath=C:\Program Files\Dark Creations\TESVGecko\TESVGecko.exe
 
 
-;==================================================;
-;===========3D Modeling Tool Launchers=============;
-;==================================================;
+{_wrap_subsection_header(_('3D Modeling Tool Launchers'))}
 
 ;sArtOfIllusion=C:\Program Files\ArtOfIllusion\Art of Illusion.exe
 
@@ -395,9 +400,7 @@ def _generate_default_bash_ini():
 ;sWings3D=C:\Program Files\wings3d_1.2\Wings3D.exe
 
 
-;==================================================;
-;==========Texturing/DDS Tool Launchers============;
-;==================================================;
+{_wrap_subsection_header(_('Texturing/DDS Tool Launchers'))}
 
 ;sAniFX=C:\Program Files\AniFX 1.0\AniFX.exe
 
@@ -456,9 +459,7 @@ def _generate_default_bash_ini():
 ;sxNormal=C:\Program Files\Santiago Orgaz\xNormal\3.17.3\x86\xNormal.exe
 
 
-;==================================================;
-;=========General/Modding Tool Launchers===========;
-;==================================================;
+{_wrap_subsection_header(_('General/Modding Tool Launchers'))}
 
 ;sBSACMD=C:\Program Files\BSACommander\bsacmd.exe
 
@@ -486,9 +487,7 @@ def _generate_default_bash_ini():
 ;sTabula=Modding Tools\Tabula.exe
 
 
-;==================================================;
-;======Screenshot/Benchmarking Tool Launchers======;
-;==================================================;
+{_wrap_subsection_header(_('Screenshot/Benchmarking Tool Launchers'))}
 
 ;sFraps=C:\Fraps\Fraps.exe
 
@@ -501,9 +500,7 @@ def _generate_default_bash_ini():
 ;sWinSnap=C:\Program Files\WinSnap\WinSnap.exe
 
 
-;==================================================;
-;============Sound/Audio Tool Launchers============;
-;==================================================;
+{_wrap_subsection_header(_('Sound/Audio Tool Launchers'))}
 
 ;sABCAmberAudioConverter=C:\Program Files\ABC Amber Audio Converter\abcaudio.exe
 
@@ -514,9 +511,7 @@ def _generate_default_bash_ini():
 ;sSwitch=C:\Program Files\NCH Swift Sound\Switch\switch.exe
 
 
-;==================================================;
-;=========Text/Development Tool Launchers==========;
-;==================================================;
+{_wrap_subsection_header(_('Text/Development Tool Launchers'))}
 
 ;sNPP=C:\Program Files\Notepad++\notepad++.exe
 
@@ -527,9 +522,7 @@ def _generate_default_bash_ini():
 ;sFreeplane=C:\Program Files\Freeplane\freeplane.exe
 
 
-;==================================================;
-;========Other/Miscellaneous Tool Launchers========;
-;==================================================;
+{_wrap_subsection_header(_('Other/Miscellaneous Tool Launchers'))}
 
 ;sEVGAPrecision=C:\Program Files\EVGA Precision\EVGAPrecision.exe
 
