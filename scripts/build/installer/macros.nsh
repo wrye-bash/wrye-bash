@@ -894,6 +894,9 @@
         Delete "${Path}\Mopy\bash\images\diamond_*.png"
         ; As of 313, we use SVGs instead of PNGs for the game icons
         Delete "${Path}\Mopy\bash\images\games\*.png"
+        ; As of 315, we made bash_default.ini generate at runtime &
+        ; translatable
+        Delete "${Path}\Mopy\bash_default_Russian.ini"
     !macroend
 
 
