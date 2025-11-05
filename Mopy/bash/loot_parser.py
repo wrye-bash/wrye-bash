@@ -100,7 +100,7 @@ class LOOTParser(object):
     def _refresh_tags_cache(self, _force=False):
         try:
             # keep _force last to update AFile's caches
-            if self._masterlist.do_update(raise_on_error=True) or \
+            if self._masterlist.do_update(raise_os_error=True) or \
                     self._userlist.do_update() or _force:
                 args = [self._masterlist.abs_path]
                 if self._userlist.abs_path.exists(): args.append(
@@ -110,7 +110,7 @@ class LOOTParser(object):
         except (OSError, yaml.YAMLError):
             # No masterlist or an error occurred while reading it
             try: # use the taglist
-                if self._taglist.do_update(raise_on_error=True) or _force:
+                if self._taglist.do_update(raise_os_error=True) or _force:
                     self.load_lists(self._taglist.abs_path)
                 return True
             except OSError:
@@ -202,7 +202,7 @@ class LOOTParser(object):
         return check_dirty(self._perform_merge(plugin_name))
 
     def _perform_merge(self, plugin_s: FName) -> _PluginEntry:
-        """Checks the masterlist and all regexes for a match with the spcified
+        """Checks the masterlist and all regexes for a match with the specified
         plugin name string, then merges the resulting entries, stores the final
         entry in _cached_merges and returns it."""
         all_entries = []

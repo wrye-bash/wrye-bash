@@ -892,9 +892,8 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         config_choice = self.configChoices.get(item)
         if not isinstance(config_choice,set): config_choice = {u'Auto'}
         if u'Auto' in config_choice:
-            bashTags = self._bp.all_tags.get(item, set())
-            config_choice = {'Auto',
-                             *(self.patcher_type.patcher_tags & bashTags)}
+            tags = self._bp.all_tags.get(item, set())
+            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
         self.configChoices[item] = config_choice
         return config_choice
 

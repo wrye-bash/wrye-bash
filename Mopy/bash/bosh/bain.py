@@ -1716,7 +1716,7 @@ class InstallerProject(_InstallerPackage):
         if not force_update and (self.skipRefresh or not bass.settings[
                 'bash.installers.autoRefreshProjects']):
             return False
-        kwargs['raise_on_error'] = True # don't call on deleted!
+        kwargs['raise_os_error'] = True # don't call on deleted!
         return super().do_update(force_update=force_update, **kwargs)
 
     def fs_copy(self, dest_path, **kwargs):
@@ -1964,7 +1964,8 @@ class InstallersData(DataStore):
         :param progress: to pass to _InstallerPackage._reset_cache
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
-        :param load_cache: if True call AFile.__init__ -> _reset_cache()
+        :param load_cache: if True call AFile.__init__ -> _reset_cache() - only
+            set to False in _InstallerPackage.copy_to
         """
         if is_mark:
             is_proj = 2
@@ -2515,7 +2516,7 @@ class InstallersData(DataStore):
         InstallersData._externally_deleted.clear()
         for apath, tracked in list(InstallersData._miscTrackedFiles.items()):
             try:
-                if tracked.do_update(raise_on_error=True):
+                if tracked.do_update(raise_os_error=True):
                     altered[apath] = tracked.fsize, tracked.ftime
                     # if we uninstalled then reinstalled without leaving Bash
                     del_paths.discard(apath)

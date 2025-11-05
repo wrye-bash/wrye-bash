@@ -891,8 +891,8 @@ class ImportRacesSpellsPatcher(ImportPatcher):
     @classmethod
     def _validate_mod(cls, p_file, src_fn, raise_on_errors):
         if sup := super()._validate_mod(p_file, src_fn, raise_on_errors):
-            if 'R.ChangeSpells' in (bashTags := p_file.all_tags[src_fn]) and \
-                    'R.AddSpells' in bashTags:
+            if 'R.ChangeSpells' in (src_tags := p_file.all_tags[src_fn]) and \
+                    'R.AddSpells' in src_tags:
                 if raise_on_errors:
                     raise BPConfigError(f'WARNING mod {src_fn} has both '
                         f'R.AddSpells and R.ChangeSpells tags - only one of '
@@ -907,10 +907,10 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         for srcMod in self.srcs:
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             if not (race_block := srcFile.tops.get(b'RACE')): continue
-            bashTags = self.patchFile.all_tags[srcMod]
+            src_tags = self.patchFile.all_tags[srcMod]
             tmp_race_data = defaultdict(dict) #so as not to carry anything over!
-            change_spells = 'R.ChangeSpells' in bashTags
-            add_spells = 'R.AddSpells' in bashTags
+            change_spells = 'R.ChangeSpells' in src_tags
+            add_spells = 'R.AddSpells' in src_tags
             for rid, race in race_block.iter_present_records():
                 if add_spells:
                     tmp_race_data[rid]['AddSpells'] = race.spells
