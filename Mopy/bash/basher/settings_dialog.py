@@ -429,9 +429,11 @@ class LanguagePage(_AScrollablePage):
     _internal_to_localized = _LangDict({
         'de_DE': f"{_('German')} (Deutsch)",
         'en_US': f"{_('American English')} (American English)",
+        'es': f"{_('Spanish')} (español)",
         'it_IT': f"{_('Italian')} (italiano)",
         'ja_JP': f"{_('Japanese')} (日本語)",
         'pt_BR': f"{_('Brazilian Portuguese')} (português brasileiro)",
+        'pt': f"{_('Portuguese')} (português)",
         'ru_RU': f"{_('Russian')} (Русский язык)",
         'sv_SE': f"{_('Swedish')} (svenska)",
         'ta':    f"{_('Tamil')} (தமிழ்)",
@@ -447,12 +449,12 @@ class LanguagePage(_AScrollablePage):
         # Gather all localizations in the l10n directory. Note that we don't
         # use the 'de_DENEW' thing anymore, but people may still have those
         # files sitting around in their l10n dirs, so keep filtering them
-        all_langs = [f'{b}' for f in bass.dirs['l10n'].ilist()
+        all_langs = {f'{b}' for f in bass.dirs['l10n'].ilist()
                      if f.fn_ext in ('.mo', '.po')
-                     and (b := f.fn_body)[-3:].lower() != 'new']
+                     and (b := f.fn_body)[-3:].lower() != 'new'}
         # Insert English since there's no localization file for that
         if 'en_US' not in all_langs:
-            all_langs.append('en_US')
+            all_langs.add('en_US')
         localized_langs = [self._internal_to_localized[l] for l in all_langs]
         # If the user has an unknown language active
         active_lang = self._internal_to_localized['en_US']
