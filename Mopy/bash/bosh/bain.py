@@ -1894,7 +1894,6 @@ class InstallersData(DataStore):
     _dir_key = 'installers'
 
     def __init__(self):
-        self.set_store_dir()
         super().__init__()
         self.bash_dir.makedirs()
         #--Persistent data
@@ -1913,7 +1912,7 @@ class InstallersData(DataStore):
         self._inst_types = [InstallerArchive, InstallerProject,
                             InstallerMarker]
 
-    def _add_node(self, node, *, with_omods=None,
+    def _add_node(self, node, *, with_omods, skip_stat,
                   __skip_prefixes=('bash', '--')):
         low = node.name.lower()
         if is_proj := node.is_dir():
@@ -1929,7 +1928,8 @@ class InstallersData(DataStore):
         else: return None
         if low.startswith(__skip_prefixes):
             return None
-        return {'cached_stat': node.stat(), 'is_proj': is_proj}
+        return {'cached_stat': None if low in skip_stat else node.stat(),
+                'is_proj': is_proj}
 
     def _get_delinfos(self, inodes):
         return {self[k] for k in set(self.ipackages(self)) - inodes.keys()}
@@ -2068,7 +2068,7 @@ class InstallersData(DataStore):
             elif inst.fn_key != fn_inst: # some rename bug - should be extinct
                 deprint(f'{fn_inst} invalid idata key: {inst.fn_key}')
                 inst.set_path_keys(fn_inst) # set paths, rest should be ok
-        return self._data
+        return set(self._data)
 
     def _merge_dat(self, refresh_in, table_dat):
         # on boot we just loaded/refreshed existing installers so drop those

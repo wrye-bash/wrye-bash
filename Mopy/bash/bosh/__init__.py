@@ -1605,12 +1605,19 @@ class DataStore(DataDict):
     _dir_key: str # key in dirs dict for the store_dir
     dat_loaded = False
 
-    def __init__(self, store_dict=None):
-        super().__init__(FNDict() if store_dict is None else store_dict)
+    def __init__(self):
+        super().__init__(self._init_store(self.set_store_dir()))
 
     def set_store_dir(self):
         self.store_dir = sd = dirs[self._dir_key]
         return sd
+
+    def _init_store(self, storedir):
+        deprint(f'Initializing {self.__class__.__name__}')
+        deprint(f' store_dir: {storedir}')
+        storedir.makedirs()
+        self._data = FNDict()
+        return self._data
 
     # Store operations --------------------------------------------------------
     def refresh(self, refresh_in: RefrData | RefrIn | bool, *,
@@ -1632,11 +1639,21 @@ class DataStore(DataDict):
         if not refresh_in: # False or empty RefrIn
             return rdata
         if (load := not self.dat_loaded) or not isinstance(refresh_in, RefrIn):
-            if load:
+            if table_dat := load:
                 self.dat_loaded = True # one chance to load
                 table_dat = self._load_dat(progress)
-            refresh_in = self._list_store_dir(with_omods=
-                (omds := [] if extract_omods else None))
+            omds = [] if extract_omods else None
+            inodes = FNDict()
+            with os.scandir(self.store_dir) as it:
+                for x in it:
+                    try:
+                        if kws := self._add_node(x, with_omods=omds,
+                                                 skip_stat=table_dat or set()):
+                            inodes[x.name] = kws
+                    except OSError: # this should not happen
+                        deprint(f'Failed to stat {x.name} in {self.store_dir}',
+                                traceback=True)
+            refresh_in = self._diff_dir(inodes)
             if omds:
                 refresh_in |= extract_omods(omds)
             if load:
@@ -1673,23 +1690,10 @@ class DataStore(DataDict):
     def _add_to_cor(self, new, kws, delinfos, e):
         raise # see override for all but Installers
 
-    @final
-    def _list_store_dir(self, **kw_add): # performance intensive
-        inodes = FNDict()
-        with os.scandir(self.store_dir) as it:
-            for x in it:
-                try:
-                    if kws := self._add_node(x, **kw_add):
-                        inodes[x.name] = kws
-                except OSError: # this should not happen
-                    deprint(f'Failed to stat {x.name} in {self.store_dir}',
-                            traceback=True)
-        return self._diff_dir(inodes)
-
-    def _add_node(self, node: DirEntry, **kw_add): #_list_store_dir: single use
+    def _add_node(self, node: DirEntry, **kw_add): # single use in refresh
         raise NotImplementedError
 
-    def _diff_dir(self, inodes) -> RefrIn: # single use apart from super
+    def _diff_dir(self, inodes) -> RefrIn: # single use in refresh (and super)
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted infos."""
         # for modInfos '.ghost' must have been lopped off from inode keys
@@ -1837,25 +1841,21 @@ class _AFileInfos(DataStore):
 
     def __init__(self, factory_type=None):
         """Init with specified directory and specified factory type."""
-        super().__init__(self._init_store(self.set_store_dir()))
         self._factory_type = factory_type or self.__class__._factory_type
+        super().__init__()
         if self._boot_refresh_args:
             self.refresh(True, **self._boot_refresh_args)
+
+    def _init_store(self, storedir):
+        """Set up self's _data/corrupted and return the former."""
+        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
+        return super()._init_store(storedir)
 
     def factory(self, info_path, do_pop=False, **kwargs):
         new_inf = self._factory_type(info_path, **kwargs)
         if do_pop:
             self.corrupted.pop(info_path.tail.s, None)
         return new_inf
-
-    def _init_store(self, storedir):
-        """Set up self._data/corrupted and return the former."""
-        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
-        deprint(f'Initializing {self.__class__.__name__}')
-        deprint(f' store_dir: {storedir}')
-        storedir.makedirs()
-        self._data = FNDict()
-        return self._data
 
     #--Refresh
     def refresh(self, refresh_in, *, booting=False, **kwargs):
