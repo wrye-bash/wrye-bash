@@ -2961,7 +2961,7 @@ class InstallersPanel(BashTab):
                 what.update('IC') # otherwise we are called directly
             if self.listData.refreshTracked(): # on first load this is no op
                 what.update('ISC')
-            fresh_load = not self.listData.loaded
+            fresh_load = not self.listData.dat_loaded
             ##:(728) setting progress after boot steals focus from Bash in MSW!
             prog = (balt.Progress(_('Refreshing Installers…'), abort=canCancel)
                 if fresh_load else bolt.Progress() # should be `if 'I' in what`

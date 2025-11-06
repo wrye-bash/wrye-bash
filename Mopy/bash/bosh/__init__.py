@@ -1682,12 +1682,12 @@ class DataStore(DataDict):
                             traceback=True)
         return self._diff_dir(inodes)
 
-    def _add_node(self, node: DirEntry, **kw_add):
+    def _add_node(self, node: DirEntry, **kw_add): #_list_store_dir: single use
         raise NotImplementedError
 
-    def _diff_dir(self, inodes) -> RefrIn:
+    def _diff_dir(self, inodes) -> RefrIn: # single use apart from super
         """Return a dict of fn keys (see overrides) of files present in data
-        dir and a set of deleted keys."""
+        dir and a set of deleted infos."""
         # for modInfos '.ghost' must have been lopped off from inode keys
         delinfos = self._get_delinfos(inodes)
         new_or_present = {}
@@ -1702,7 +1702,7 @@ class DataStore(DataDict):
         raise NotImplementedError
 
     def _get_info(self, k, kws, new_or_present):
-        raise NotImplementedError
+        new_or_present[k] = (self.get(k), kws)
 
     @final
     def delete(self, delete_keys, *, recycle=True, do_refr=True):
@@ -1889,7 +1889,7 @@ class _AFileInfos(DataStore):
         if (cor := self.corrupted.get(k)) and cor.do_update():
             new_or_present[k] = (None, kws)
         elif not cor:  # for default tweaks with a corrupted copy
-            new_or_present[k] = (self.get(k), kws)
+            super()._get_info(k, kws, new_or_present)
 
     def _delete_refresh(self, delinfos):
         for del_fn in (del_keys := super()._delete_refresh(delinfos)):
@@ -1923,7 +1923,7 @@ class _AFileInfos(DataStore):
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
-    _table_loaded = False
+    dat_loaded = False
 
     def _init_from_table(self, rin_new):
         """Load pickled data for mods, saves, inis and bsas."""
@@ -1936,8 +1936,8 @@ class TableFileInfos(_AFileInfos):
             extra_attrs={k: tdata[k] for k in present_keys})
 
     def refresh(self, refresh_in, **kwargs):
-        if not self._table_loaded:
-            self._table_loaded = True
+        if not self.dat_loaded:
+            self.dat_loaded = True
             refresh_in = self._list_store_dir()
             self._init_from_table(refresh_in)
         return super().refresh(refresh_in, **kwargs)
@@ -3272,7 +3272,7 @@ class SaveInfos(TableFileInfos):
             old = not boot and self.store_dir
             if not boot:
                 self.save_pickle() # save current data before setting store_dir
-                self._table_loaded = False
+                self.dat_loaded = False
             self.store_dir = sd = dirs['saveBase'].join(env.convert_separators(
                 save_dir)) # localSave always has backslashes
             if do_swap:

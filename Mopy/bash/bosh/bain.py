@@ -1907,7 +1907,6 @@ class InstallersData(DataStore):
         #--Volatile
         self.ci_underrides_sizeCrc = bolt.LowerDict() # underridden files
         self.hasChanged = False
-        self.loaded = False
         self.lastKey = FName(u'==Last==')
         # Need to delay the main bosh import until here
         from . import InstallerArchive, InstallerProject, InstallerMarker
@@ -1934,12 +1933,6 @@ class InstallersData(DataStore):
 
     def _get_delinfos(self, inodes):
         return {self[k] for k in set(self.ipackages(self)) - inodes.keys()}
-
-    def _get_info(self, k, kws, new_or_present):
-        if (inst := self.get(k)) is not None and inst.fn_key != k:
-            deprint(f'{k} invalid idata key: {inst.fn_key}')
-            inst.set_path_keys(k) # rename bug - set paths, rest should be ok
-        new_or_present[k] = (inst, kws)
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
                  install_order=None, do_refresh=True, load_cache=True):
@@ -1993,7 +1986,7 @@ class InstallersData(DataStore):
             ##: What about all the other stuff the "BSA Redirection" link does?
             bsaInfos.set_bsa_redirection(do_redirect=True)
         #--Load Installers.dat if not loaded - will set changed to True
-        changes = (fresh_load := not self.loaded) and self.__load(progress)
+        changes = (fresh_load := not self.dat_loaded) and self.__load(progress)
         #--Last marker
         if self.lastKey not in self:
             self[self.lastKey] = InstallerMarker(self.lastKey)
@@ -2062,13 +2055,16 @@ class InstallersData(DataStore):
         pickle = pickl_data.get(u'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
-        # fixup: all markers had their fn_key attribute set to '===='
         for fn_inst, inst in list(self.items()):
             if inst.is_marker:
+                # fixup: all markers had their fn_key attribute set to '===='
                 inst.fn_key = fn_inst
             elif not inst.fn_key: # __setstate blew, probably installer deleted
                 del self[fn_inst]
-        self.loaded = True
+            elif inst.fn_key != fn_inst: # some rename bug - should be extinct
+                deprint(f'{fn_inst} invalid idata key: {inst.fn_key}')
+                inst.set_path_keys(fn_inst) # set paths, rest should be ok
+        self.dat_loaded = True
         return True
 
     def save_pickle(self):
