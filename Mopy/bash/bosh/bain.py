@@ -1980,7 +1980,7 @@ class InstallersData(DataStore):
         """Only used in delete/unhide - align with _AFileInfos one."""
         return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, refresh_in: RefrIn | bool = True, *, what='DIONSC',
+    def irefresh(self, refresh_in: RefrIn | RefrData | bool, *, what,
                  extract_omods=None, progress=None, fullRefresh=False,
                  **kwargs) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
@@ -2003,15 +2003,12 @@ class InstallersData(DataStore):
         #--Refresh Other - FIXME(ut): docs
         if u'D' in what:
             changes |= self._refresh_from_data_dir(progress, fullRefresh)
-        if 'I' in what:
-            progress = progress or bolt.Progress()
-            progress(0, _('Scanning Packages…'))
-            refresh_info = super().refresh(refresh_in, booting=fresh_load,
-                progress=progress, extract_omods=extract_omods, # do_update kws
-                force_update=fullRefresh, recalculate_project_crc=fullRefresh)
-            changes |= bool(refresh_info)
-        else: # 'I' in what will set it to a RefrData instance
-            refresh_info = RefrData()
+        progress = progress or bolt.Progress()
+        progress(0, _('Scanning Packages…'))
+        refresh_info = super().refresh(refresh_in, booting=fresh_load,
+            progress=progress, extract_omods=extract_omods, # do_update kws
+            force_update=fullRefresh, recalculate_project_crc=fullRefresh)
+        changes |= bool(refresh_info)
         if 'O' in what or changes:
             order_changed = self.refreshOrder()
             refresh_info.redraw.update(order_changed)
@@ -2043,10 +2040,10 @@ class InstallersData(DataStore):
         return refresh_info
 
     def refresh_ns(self, progress=None):
-        self.irefresh(what='NS', progress=progress)
+        self.irefresh(False, what='NS', progress=progress)
 
     def refresh_n(self):
-        self.irefresh(what='N')
+        self.irefresh(False, what='N')
 
     def refresh_i(self, archives_list: list):
         self.irefresh(RefrIn.from_added( # only uses are for archives

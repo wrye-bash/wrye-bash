@@ -1627,16 +1627,14 @@ class DataStore(DataDict):
         """
         if isinstance(refresh_in, RefrData):
             return refresh_in # already scanned, return as is
+        rdata = RefrData() # create the return value instance then scan changes
+        if not refresh_in: # False or empty RefrIn
+            return rdata
         if not isinstance(refresh_in, RefrIn):
-            if refresh_in:
-                refresh_in = self._list_store_dir(
-                    with_omods=(omds := [] if extract_omods else None))
-                if omds:
-                    refresh_in |= extract_omods(omds)
-            else:
-                refresh_in = RefrIn()
-        # create the return value instance then scan changes
-        rdata = RefrData()
+            refresh_in = self._list_store_dir(
+                with_omods=(omds := [] if extract_omods else None))
+            if omds:
+                refresh_in |= extract_omods(omds)
         delinfos = refresh_in.del_infos
         if (nop := refresh_in.new_or_present) and progress:
             progress.setFull(len(nop))
@@ -1927,21 +1925,21 @@ class TableFileInfos(_AFileInfos):
     tracks_ownership = True
     _table_loaded = False
 
-    def _init_from_table(self):
+    def _init_from_table(self, rin_new):
         """Load pickled data for mods, saves, inis and bsas."""
         deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
         self.bash_dir.makedirs()
-        return bolt.DataTable(self.bash_dir.join('Table.dat'),
-                              load_pickle=True).pickled_data
+        tdata = bolt.DataTable(self.bash_dir.join('Table.dat'),
+                               load_pickle=True).pickled_data
+        present_keys = tdata.keys() & rin_new.new_or_present
+        rin_new |= RefrIn.from_tabled_infos(
+            extra_attrs={k: tdata[k] for k in present_keys})
 
     def refresh(self, refresh_in, **kwargs):
         if not self._table_loaded:
             self._table_loaded = True
             refresh_in = self._list_store_dir()
-            table = self._init_from_table()
-            for fn, (_inf, kws) in refresh_in.new_or_present.items():
-                if props := table.get(fn):
-                    kws['att_val'] = props
+            self._init_from_table(refresh_in)
         return super().refresh(refresh_in, **kwargs)
 
     def save_pickle(self):
