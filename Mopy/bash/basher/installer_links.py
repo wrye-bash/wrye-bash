@@ -718,9 +718,9 @@ class Installer_Move(_InstallerLink):
             min_num=semi_last_key)
         if newPos is None: return
         if newPos == semi_last_key:
-            newPos = self.idata[self.idata.lastKey].order
+            newPos = self.idata.last_marker_order()
         elif newPos == first_of_last_key:
-            newPos = self.idata[self.idata.lastKey].order + 1
+            newPos = self.idata.last_marker_order() + 1
         elif newPos == last_key:
             newPos = len(self.idata)
         self.idata.moveArchives(self.selected, newPos, ref_norm=True)

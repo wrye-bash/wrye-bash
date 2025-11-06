@@ -1892,6 +1892,7 @@ class InstallersData(DataStore):
     file_pattern = re.compile(
         fr'\.(?:{"|".join(e[1:] for e in readExts)})$', re.I)
     _dir_key = 'installers'
+    _last_key = FName('==Last==')
 
     def __init__(self):
         super().__init__()
@@ -1906,7 +1907,6 @@ class InstallersData(DataStore):
         #--Volatile
         self.ci_underrides_sizeCrc = bolt.LowerDict() # underridden files
         self.hasChanged = False
-        self.lastKey = FName(u'==Last==')
         # Need to delay the main bosh import until here
         from . import InstallerArchive, InstallerProject, InstallerMarker
         self._inst_types = [InstallerArchive, InstallerProject,
@@ -1949,7 +1949,7 @@ class InstallersData(DataStore):
         if is_mark:
             is_proj = 2
             if install_order is None:
-                install_order = self[self.lastKey].order
+                install_order = self.last_marker_order()
         info = self[fileName] = self.factory(self.store_dir.join(fileName),
             is_proj=is_proj, progress=progress, load_cache=load_cache)
         if install_order is not None:
@@ -1980,7 +1980,7 @@ class InstallersData(DataStore):
         that if any of those are not None "changed" will be always True,
         triggering the rest of the refreshes in irefresh."""
         #--Archive invalidation
-        from . import InstallerMarker, modInfos, oblivionIni, bsaInfos
+        from . import modInfos, oblivionIni, bsaInfos
         if (bass.settings['bash.bsaRedirection'] and
                 oblivionIni.abs_path.exists()):
             ##: What about all the other stuff the "BSA Redirection" link does?
@@ -1996,14 +1996,11 @@ class InstallersData(DataStore):
         refresh_info = super().refresh(refresh_in, progress=progress,
             extract_omods=extract_omods, # rest is kw_do_upd - see super()
             force_update=fullRefresh, recalculate_project_crc=fullRefresh)
-        #--Last marker
-        if (last_key := self.lastKey) not in self:
-            self[last_key] = InstallerMarker(last_key)
         changes |= bool(refresh_info)
         # Refresh IData caches from the store dir - should not depend on infos
         if 'D' in what:
             changes |= self._refresh_from_data_dir(progress, fullRefresh)
-        # Refresh order of installers - self.lastKey must be present
+        # Refresh order of installers - will create 'Last' marker if missing
         if 'O' in what or changes:
             order_changed = self.refreshOrder()
             refresh_info.redraw.update(order_changed)
@@ -2130,7 +2127,7 @@ class InstallersData(DataStore):
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
-        return {i: self[i] for i in fn_items if i != self.lastKey}
+        return {i: self[i] for i in fn_items if i != self._last_key}
 
     def filter_unopenable(self, fn_items: Iterable[FName]):
         # Can't open markers since they're virtual
@@ -2186,6 +2183,13 @@ class InstallersData(DataStore):
         return message
 
     # Getters
+    def last_marker_order(self, *, _put_at=None):
+        try:
+            return self[self._last_key].order
+        except KeyError:
+            return self.new_info(self._last_key, is_mark=True,
+                install_order=len(self) if _put_at is None else _put_at).order
+
     def sorted_pairs(self, package_keys: Iterable[FName] | None = None,
             reverse=False) -> Iterable[tuple[FName, Installer]]:
         """Return pairs of key, installer for package_keys in self, sorted by
@@ -2281,15 +2285,10 @@ class InstallersData(DataStore):
     def refreshOrder(self):
         """Refresh installer status."""
         inOrder, ordering = [], []
-        # not specifying the key below results in double time
         for iname, inst in dict_sort(self, key_f=lambda k: (self[k].order, k)):
             (inOrder if inst.order >= 0 else ordering).append((iname, inst))
-        try:
-            dex = next(i for i, (k, _v) in enumerate(inOrder) if
-                       k == self.lastKey)
-            inOrder[dex:dex] = ordering
-        except StopIteration: # should not happen!
-            inOrder.extend(ordering)
+        dex = self.last_marker_order(_put_at=len(inOrder))
+        inOrder[dex:dex] = ordering
         change = set()
         for order, (iname, installer) in enumerate(inOrder):
             if installer.order != order:
