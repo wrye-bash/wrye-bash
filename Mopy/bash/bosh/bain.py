@@ -435,7 +435,7 @@ class Installer(ListInfo):
             deprint(f'Pickled installer {values[0]} not found: {e}')
         except:
             deprint(f'Failed loading {values[0]}', traceback=True)
-        self.fn_key = '' # reset self.fn_key to '' to remove self in __load()
+        self.fn_key = '' # reset self.fn_key to '' to remove self in _load_dat
 
     def __setstate(self,values):
         for a, v in zip(self.persistent, values[1:]):
@@ -471,7 +471,7 @@ class Installer(ListInfo):
             if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
                 self.dirty_sizeCrc = bolt.LowerDict(
                     (f'{x}', y) for x, y in self.dirty_sizeCrc.items())
-            # on error __setstate__ resets fn_key -> entry dropped in __load()
+            # on error __setstate__ resets fn_key -> entry dropped in _load_dat
             stat_tuple = self._stat_tuple()
             # refresh projects once on booting even if skipRefresh flag is
             # on but refresh archives only if changed
@@ -1985,27 +1985,31 @@ class InstallersData(DataStore):
                 oblivionIni.abs_path.exists()):
             ##: What about all the other stuff the "BSA Redirection" link does?
             bsaInfos.set_bsa_redirection(do_redirect=True)
-        #--Load Installers.dat if not loaded - will set changed to True
-        changes = (fresh_load := not self.dat_loaded) and self.__load(progress)
-        #--Last marker
-        if self.lastKey not in self:
-            self[self.lastKey] = InstallerMarker(self.lastKey)
+        changes = not self.dat_loaded
         if fullRefresh: # BAIN uses modInfos crc cache
             sub = SubProgress(progress, 0.0, 0.05) if progress else progress
             modInfos.refresh_crcs(progress=sub)
-        #--Refresh Other - FIXME(ut): docs
-        if u'D' in what:
-            changes |= self._refresh_from_data_dir(progress, fullRefresh)
         progress = progress or bolt.Progress()
         progress(0, _('Scanning Packages…'))
-        refresh_info = super().refresh(refresh_in, booting=fresh_load,
-            progress=progress, extract_omods=extract_omods, # do_update kws
+        # Refresh from the store dir (possibly loading Installers.dat). This
+        # should not depend on IData caches
+        refresh_info = super().refresh(refresh_in, progress=progress,
+            extract_omods=extract_omods, # rest is kw_do_upd - see super()
             force_update=fullRefresh, recalculate_project_crc=fullRefresh)
+        #--Last marker
+        if (last_key := self.lastKey) not in self:
+            self[last_key] = InstallerMarker(last_key)
         changes |= bool(refresh_info)
+        # Refresh IData caches from the store dir - should not depend on infos
+        if 'D' in what:
+            changes |= self._refresh_from_data_dir(progress, fullRefresh)
+        # Refresh order of installers - self.lastKey must be present
         if 'O' in what or changes:
             order_changed = self.refreshOrder()
             refresh_info.redraw.update(order_changed)
             changes |= bool(order_changed)
+        # Update volatile attributes of the loaded infos using data_sizeCrcDate
+        # and ci_underrides_sizeCrc caches (calculated from ci_dest_sizeCrc)
         if 'N' in what or changes:
             #--dict mapping all should-be-installed files to their attributes
             norm_sizeCrc = bolt.LowerDict()
@@ -2042,7 +2046,7 @@ class InstallersData(DataStore):
         self.irefresh(RefrIn.from_added( # only uses are for archives
             {k: {'is_proj': False} for k in archives_list}), what='I')
 
-    def __load(self, progress):
+    def _load_dat(self, progress=None):
         progress = progress or bolt.Progress()
         progress(0, _('Loading Data…'))
         self.dictFile.load()
@@ -2064,8 +2068,12 @@ class InstallersData(DataStore):
             elif inst.fn_key != fn_inst: # some rename bug - should be extinct
                 deprint(f'{fn_inst} invalid idata key: {inst.fn_key}')
                 inst.set_path_keys(fn_inst) # set paths, rest should be ok
-        self.dat_loaded = True
-        return True
+        return self._data
+
+    def _merge_dat(self, refresh_in, table_dat):
+        # on boot we just loaded/refreshed existing installers so drop those
+        refresh_in.new_or_present = {k: v for k, v in
+            refresh_in.new_or_present.items() if v[0] is None}
 
     def save_pickle(self):
         """Saves to pickle file."""

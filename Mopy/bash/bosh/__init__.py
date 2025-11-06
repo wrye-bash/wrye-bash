@@ -1603,6 +1603,7 @@ class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
     _dir_key: str # key in dirs dict for the store_dir
+    dat_loaded = False
 
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
@@ -1612,7 +1613,7 @@ class DataStore(DataDict):
         return sd
 
     # Store operations --------------------------------------------------------
-    def refresh(self, refresh_in: RefrData | RefrIn | bool, *, booting=False,
+    def refresh(self, refresh_in: RefrData | RefrIn | bool, *,
                 extract_omods=None, progress=None, **kw_do_upd) -> RefrData:
         """Refreshes the store caches, returning a RefrData instance encoding
         information on which files were added/modified/deleted. Base
@@ -1630,11 +1631,16 @@ class DataStore(DataDict):
         rdata = RefrData() # create the return value instance then scan changes
         if not refresh_in: # False or empty RefrIn
             return rdata
-        if not isinstance(refresh_in, RefrIn):
-            refresh_in = self._list_store_dir(
-                with_omods=(omds := [] if extract_omods else None))
+        if (load := not self.dat_loaded) or not isinstance(refresh_in, RefrIn):
+            if load:
+                self.dat_loaded = True # one chance to load
+                table_dat = self._load_dat(progress)
+            refresh_in = self._list_store_dir(with_omods=
+                (omds := [] if extract_omods else None))
             if omds:
                 refresh_in |= extract_omods(omds)
+            if load:
+                self._merge_dat(refresh_in, table_dat)
         delinfos = refresh_in.del_infos
         if (nop := refresh_in.new_or_present) and progress:
             progress.setFull(len(nop))
@@ -1647,9 +1653,7 @@ class DataStore(DataDict):
                     self[new] = self.factory(self.store_dir.join(new),
                         load_cache=True, do_pop=True, **kws, **kw_do_upd)
                     rdata.to_add.add(new)
-                elif not booting and old_inf.do_update(**kws, **kw_do_upd):
-                    # on boot for _AFileInfos old_inf is always None while for
-                    # InstallersData we just loaded/refreshed existing infos
+                elif old_inf.do_update(**kws, **kw_do_upd):
                     rdata.redraw.add(new)
             except Exception as e:
                 self._add_to_cor(new, kws, delinfos, e)
@@ -1810,7 +1814,13 @@ class DataStore(DataDict):
     def unhide_wildcard(cls, *, _pl_str, _joined):
         return f'{bush.game.display_name} {_pl_str} (*{_joined})|*{_joined}'
 
-    def save_pickle(self): pass # for Screenshots
+    def _load_dat(self, progress=None):
+        raise NotImplementedError
+
+    def _merge_dat(self, refresh_in, table_dat):
+        raise NotImplementedError
+
+    def save_pickle(self): raise NotImplementedError
 
     def warning_args(self, multi_warnings, lo_warnings):
         """Append the arguments for the warning message to the multi_warnings
@@ -1822,7 +1832,7 @@ class _AFileInfos(DataStore):
     file_pattern = None # subclasses must define this !
     _factory_type: type[AFile]
     # Whether these file infos track ownership in a table
-    tracks_ownership = False
+    tracks_ownership = True
     _boot_refresh_args = {'booting': True}
 
     def __init__(self, factory_type=None):
@@ -1850,7 +1860,7 @@ class _AFileInfos(DataStore):
     #--Refresh
     def refresh(self, refresh_in, *, booting=False, **kwargs):
         """Refresh from file directory."""
-        rdata = super().refresh(refresh_in, booting=booting, **kwargs)
+        rdata = super().refresh(refresh_in, **kwargs)
         if not booting and ((alt := rdata.new_changed()) or rdata.ren_paths):
             self._notify_bain( # normal deletions are handled in super
                 {*rdata.ren_paths}, {self[n].abs_path for n in alt})
@@ -1921,26 +1931,17 @@ class _AFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
-class TableFileInfos(_AFileInfos):
-    tracks_ownership = True
-    dat_loaded = False
-
-    def _init_from_table(self, rin_new):
+    def _load_dat(self, progress=None):
         """Load pickled data for mods, saves, inis and bsas."""
         deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
         self.bash_dir.makedirs()
-        tdata = bolt.DataTable(self.bash_dir.join('Table.dat'),
-                               load_pickle=True).pickled_data
-        present_keys = tdata.keys() & rin_new.new_or_present
-        rin_new |= RefrIn.from_tabled_infos(
-            extra_attrs={k: tdata[k] for k in present_keys})
+        return bolt.DataTable(self.bash_dir.join('Table.dat'),
+                              load_pickle=True).pickled_data
 
-    def refresh(self, refresh_in, **kwargs):
-        if not self.dat_loaded:
-            self.dat_loaded = True
-            refresh_in = self._list_store_dir()
-            self._init_from_table(refresh_in)
-        return super().refresh(refresh_in, **kwargs)
+    def _merge_dat(self, refresh_in, table_dat):
+        table_dat = {k: v for k, v in table_dat.items() if
+                     k in refresh_in.new_or_present}
+        refresh_in |= RefrIn.from_tabled_infos(extra_attrs=table_dat)
 
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!
@@ -2021,7 +2022,7 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
                      else INIInfo)
     return ini_info_type(fullpath, detected_encoding)
 
-class INIInfos(TableFileInfos):
+class INIInfos(_AFileInfos):
     file_pattern = re.compile('|'.join(map(re.escape, supported_ini_exts)) +
                               '$', re.I)
     _ini: IniFileInfo | None
@@ -2290,7 +2291,7 @@ def _lo_op(lop_func):
     return _lo_wip_wrapper
 
 #------------------------------------------------------------------------------
-class ModInfos(TableFileInfos):
+class ModInfos(_AFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     _dir_key = 'mods'
     # caches for UI warnings
@@ -3228,7 +3229,7 @@ class ModInfos(TableFileInfos):
         return pairs
 
 #------------------------------------------------------------------------------
-class SaveInfos(TableFileInfos):
+class SaveInfos(_AFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = tracks_ownership = False
     _ess_skips = bush.game.Ess.save_skips
@@ -3380,7 +3381,7 @@ class SaveInfos(TableFileInfos):
                 path_func(newPath)
 
 #------------------------------------------------------------------------------
-class BSAInfos(TableFileInfos):
+class BSAInfos(_AFileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
     # BSAs that have versions other than the one expected for the current game
     mismatched_versions = set()
@@ -3517,6 +3518,8 @@ class ScreenInfos(_AFileInfos):
         r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
     _factory_type = ScreenInfo
     _boot_refresh_args = {}
+    tracks_ownership = False
+    dat_loaded = True # nothing to load
 
     def set_store_dir(self):
         # Check if we need to adjust the screenshot dir
@@ -3559,6 +3562,8 @@ class ScreenInfos(_AFileInfos):
     def refresh(self, *args, **kwargs):
         self.set_store_dir()
         return super().refresh(*args, **kwargs)
+
+    def save_pickle(self): pass
 
 #------------------------------------------------------------------------------
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter
