@@ -1839,7 +1839,7 @@ def _bain_op(func):
                 # those data stores
                 for store, removed_files in removed_tracked.items():
                     if removed_files:
-                        rui_data[store].del_infos |= store.delete(
+                        rui_data[store].del_infos |= store.delete_op(
                             removed_files, recycle=False, do_refr=False)
             except (CancelError, SkipError): ex = sys.exc_info()
             except:
@@ -2101,16 +2101,16 @@ class InstallersData(DataStore):
                     v.set_table_prop('installer', '%s' % name_new)
         return rd_ren
 
-    def _delete_operation(self, infos, recycle, do_refr):
+    def delete_op(self, info_keys, **kwargs):
         toDelete = []
-        markers = {inst.fn_key for inst in infos if
+        markers = {k for k, inst in self.filter_essential(info_keys).items() if
                    inst.is_marker or toDelete.append(inst)} # or None
         if rd_mark := RefrData(to_del=markers):
             for m in markers: del self[m]
             if not toDelete: # only markers - just refresh order
                 self.refreshOrder() # refresh here if we only have markers
                 return rd_mark
-        rd_mark |= super()._delete_operation(toDelete, recycle, do_refr)
+        rd_mark |= super().delete_op(toDelete, **kwargs, _filter=False)
         return rd_mark
 
     # Rest of DataStore overrides ---------------------------------------------

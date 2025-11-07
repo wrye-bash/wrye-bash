@@ -226,7 +226,7 @@ class PatchDialog(DialogWindow):
                 ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
                     self, unneeded_parts=parts_to_del)
                 if ed_ok and ed_parts:
-                    self._bp_rdata |= minfos.delete(ed_parts)
+                    self._bp_rdata |= minfos.delete_op(ed_parts)
             #--Save
             progress.setCancel(False, f"{patch_name}\n{_('Saving…')}")
             progress(0.9)

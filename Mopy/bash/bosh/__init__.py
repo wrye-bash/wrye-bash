@@ -35,7 +35,6 @@ from collections.abc import Iterable, Callable
 from functools import wraps
 from itertools import chain
 from os import DirEntry
-from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
@@ -1703,15 +1702,11 @@ class DataStore(DataDict):
     def _get_info(self, k, kws, new_or_present):
         new_or_present[k] = (self.get(k), kws)
 
-    @final
-    def delete(self, delete_keys, *, recycle=True, do_refr=True):
+    def delete_op(self, info_keys, *, recycle=True, do_refr=True, _filter=True):
         """Deletes member file(s)."""
         # for _AFileInfos k may correspond to a corrupted file - create an info
         finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
-                  self.filter_essential(delete_keys).items()]
-        return self._delete_operation(finfos, recycle, do_refr)
-
-    def _delete_operation(self, finfos: list, recycle, do_refr):
+            self.filter_essential(info_keys).items()] if _filter else info_keys
         renpaths = chain.from_iterable(inf.get_rename_paths(
             inf.fn_key, None, True) for inf in finfos)
         try: # collect all the info/cosaves/backup paths
@@ -1797,11 +1792,6 @@ class DataStore(DataDict):
         return {k: self[k] for k in fn_items}
 
     @property
-    def bash_dir(self) -> Path:
-        """Return the folder where Bash persists its data.Create it on init!"""
-        raise NotImplementedError
-
-    @property
     def hide_dir(self) -> Path:
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
@@ -1810,6 +1800,16 @@ class DataStore(DataDict):
     def unhide_wildcard(cls, *, _pl_str, _joined):
         return f'{bush.game.display_name} {_pl_str} (*{_joined})|*{_joined}'
 
+    def warning_args(self, multi_warnings, lo_warnings):
+        """Append the arguments for the warning message to the multi_warnings
+        and lo_warnings lists, checking the data store _known_* caches."""
+
+    # Abstract part - persistence (implemented for all but ScreenInfos)
+    @property
+    def bash_dir(self) -> Path:
+        """Return the folder where Bash persists its data.Create it on init!"""
+        raise NotImplementedError
+
     def _load_dat(self, progress=None):
         raise NotImplementedError
 
@@ -1817,10 +1817,6 @@ class DataStore(DataDict):
         raise NotImplementedError
 
     def save_pickle(self): raise NotImplementedError
-
-    def warning_args(self, multi_warnings, lo_warnings):
-        """Append the arguments for the warning message to the multi_warnings
-        and lo_warnings lists, checking the data store _known_* caches."""
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
