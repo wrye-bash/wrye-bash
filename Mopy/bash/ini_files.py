@@ -27,6 +27,7 @@ from __future__ import annotations
 import os
 import re
 from collections import Counter
+from typing import final
 
 # Keep local imports to a minimum, this module is important for booting!
 from .bolt import DefaultLowerDict, ListInfo, LowerDict, decoder, deprint, \
@@ -326,16 +327,10 @@ class IniFileInfo(AIniInfo, AFileInfo):
         return self._ci_settings_cache_linenum
 
     # Modify ini file ---------------------------------------------------------
-    def _open_for_writing(self, temp_path): # preserve windows EOL
-        """Write to ourselves respecting windows newlines and out_encoding.
-        Note content to be writen (if coming from ini tweaks) must be encodable
-        to out_encoding. temp_path must point to some temporary file created
-        via TempFile or similar API."""
-        return open(temp_path, 'w', encoding=self.out_encoding)
-
     def target_ini_exists(self, msg=None):
         return self.abs_path.is_file()
 
+    @final
     def saveSettings(self, ini_settings, deleted_settings=None, *,
                      skip_sections=frozenset(), line_fmt=False):
         """Apply dictionary of settings to ini file. Leaf values in settings
@@ -347,8 +342,12 @@ class IniFileInfo(AIniInfo, AFileInfo):
         deleted_settings = LowerDict((x, y) for x, y in
                                      (deleted_settings or {}).items())
         section = None
-        with TempFile() as tmp_ini_path:
-            with self._open_for_writing(tmp_ini_path) as tmp_ini:
+        with TempFile() as tmp_inipath:
+            # Write to ourselves respecting windows newlines and out_encoding.
+            # Note content to be writen (if coming from ini tweaks) must be
+            # encodable to out_encoding. temp_path must point to some temporary
+            # file created via TempFile or similar API.
+            with open(tmp_inipath, 'w', encoding=self.out_encoding) as tmp_ini:
                 def _add_remaining_new_items(section_setts=None):
                     section_setts = ini_settings.pop(section, {}) \
                         if section_setts is None else section_setts
@@ -391,7 +390,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     if sectionSettings and not isinstance(self, OBSEIniFile):
                         tmp_ini.write(f'[{sect}]\n')
                     _add_remaining_new_items(sectionSettings)
-            self.abs_path.replace_with_temp(tmp_ini_path)
+            self.abs_path.replace_with_temp(tmp_inipath)
 
     @classmethod
     def fmt_setting(cls, setting, value, section=None, comment=''):

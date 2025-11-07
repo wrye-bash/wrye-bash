@@ -2865,11 +2865,12 @@ class InstallersData(DataStore):
         return [f for f in ci_removes if not f.lower().startswith(skip_start)]
 
     @_bain_op
-    def bain_clean_data_dir(self, ci_removes, *, rui_data, **kwargs):
+    def bain_clean_data_dir(self, ci_removes, *, rui_data, removed_tracked,
+                            **kwargs):
         destDir = bass.dirs['bainData'].join(
             f'{bush.game.mods_dir_name} Folder Contents ({bolt.timestamp()})')
         emptyDirs = set()
-        stores = data_tracking_stores()
+        stores = [*removed_tracked]
         store_del = defaultdict(set)
         for ci_rel_path in ci_removes:
             for store in stores:

@@ -79,7 +79,7 @@ def data_tracking_stores() -> Iterable['_AFileInfos']:
     installed/changed/uninstalled. If they set _AFileInfos.tracks_ownership to
     True, they will also get ownership updates."""
     return tuple(s for s in (modInfos, iniInfos, bsaInfos, screen_infos) if
-                 s is not None)
+                 s is not None and s._bain_notify)
 
 #--Header tags
 # re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
@@ -1847,7 +1847,7 @@ class _AFileInfos(DataStore):
         return new_inf
 
     def _init_store(self, storedir):
-        """Set up the self's _data/corrupted and return the former."""
+        """Set up self._data/corrupted and return the former."""
         self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         deprint(f'Initializing {self.__class__.__name__}')
         deprint(f' store_dir: {storedir}')
