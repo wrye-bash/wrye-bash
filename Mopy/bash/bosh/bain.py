@@ -441,9 +441,9 @@ class Installer(ListInfo):
         for a, v in zip(self.persistent, values[1:]):
             setattr(self, a, v)
         rescan = False
-        ##: This is a whole load of backwards compat code - should be dropped
-        # at some point in the (more or less far, depending on when the code
-        # was added) future
+        ##:(734) This is a whole load of backwards compat code - should be
+        # dropped at some point in the (more or less far, depending on when
+        # the code was added) future - keep the lowerdict conversion!
         if not isinstance(self.extras_dict, dict):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
@@ -462,12 +462,12 @@ class Installer(ListInfo):
             self.espmNots = forward_compat_path_to_fn_list(self.espmNots,
                                                            ret_type=set)
         self._remaps = forward_compat_path_to_fn(self._remaps,
-            value_type=lambda v: FName('%s' % v))  # Path -> FName
+                                                 fn_value=True) # Path -> FName
         if isinstance(self, _InstallerPackage):
             self._file_key = bass.dirs['installers'].join(self.fn_key)
             if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
                 self.src_sizeCrcDate = bolt.LowerDict(
-                    (u'%s' % x, y) for x, y in self.src_sizeCrcDate.items())
+                    (f'{x}', y) for x, y in self.src_sizeCrcDate.items())
             if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
                 self.dirty_sizeCrc = bolt.LowerDict(
                     (f'{x}', y) for x, y in self.dirty_sizeCrc.items())

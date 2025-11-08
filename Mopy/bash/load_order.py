@@ -97,7 +97,7 @@ def __load_pickled_load_orders():
     _saved_load_orders = _get('_saved_load_orders', [])
     _current_list_index = _get('_current_list_index', -1)
     _active_mods_lists = _get('_active_mods_lists', active_mods_list)
-    if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
+    if b'Bethesda ESMs' in _active_mods_lists: ##:(734) backwards compat
         _active_mods_lists['Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
         del _active_mods_lists[b'Bethesda ESMs']
     # transform load orders to FName

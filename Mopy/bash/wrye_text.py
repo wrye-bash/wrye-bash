@@ -111,8 +111,8 @@ def genHtml(ins, out=None, *css_dirs):
         srcPath = GPath(ins)
         outPath = GPath(out) or srcPath.root+'.html'
         css_dirs = (srcPath.head,) + css_dirs
-        ins = srcPath.open('r', encoding='utf-8-sig')
-        out = outPath.open('w', encoding='utf-8-sig')
+        ins = srcPath.open_bom()
+        out = outPath.open_bom('w')
     else:
         srcPath = outPath = None
     # Setup
@@ -386,7 +386,7 @@ def genHtml(ins, out=None, *css_dirs):
             if cssPath.exists(): break
         else:
             raise exception.BoltError(f'Css file not found: {cssName}')
-        with cssPath.open('r', encoding='utf-8-sig') as cssIns:
+        with cssPath.open_bom() as cssIns:
             css = ''.join(cssIns.readlines())
         if '<' in css:
             raise exception.BoltError(f'Non css tag in {cssPath}')
@@ -413,5 +413,5 @@ def genHtml(ins, out=None, *css_dirs):
 
 def convert_wtext_to_html(logPath, logText, *css_dirs):
     ins = io.StringIO(logText + '\n{{CSS:wtxt_sand_small.css}}')
-    with logPath.open('w', encoding='utf-8-sig') as out:
+    with logPath.open_bom('w') as out:
         genHtml(ins, out, *css_dirs)

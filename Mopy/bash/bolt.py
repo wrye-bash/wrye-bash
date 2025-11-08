@@ -743,15 +743,17 @@ class FNDict(dict):
     def __repr__(self):
         return f'{type(self).__name__}({super().__repr__()})'
 
-    def __reduce__(self): #[backwards compat]we 'd rather not save custom types
-        return dict, (dict(self),) # you need the dict here - recursion!
+    def __reduce__(self): #734: we 'd rather not save custom types
+        return dict, (dict(self),) # you need the dict here - recursion
 
 # Forward compat functions - as we only want to pickle std types those stay
-def forward_compat_path_to_fn(di, value_type=lambda x: x):
-    try:
-        return FNDict((f'{k}', value_type(v)) for k, v in di.items())
+def forward_compat_path_to_fn(di, fn_value=False): ##:(734) drop f'{k} in try
+    try: # str**2 in case of a Path that wraps a CIstr in its _s attribute
+        return FNDict(((f'{k}', FName(str(f'{v}'))) for k, v in di.items())
+            if fn_value else ((f'{k}', v) for k, v in di.items()))
     except ValueError:
-        return FNDict((str(f'{k}'), value_type(v)) for k, v in di.items())
+        return FNDict(((str(f'{k}'), FName(str(f'{v}'))) for k, v in di.items()
+            )  if fn_value else ((str(f'{k}'), v) for k, v in di.items()))
 
 def forward_compat_path_to_fn_list(li, ret_type=list):
     try:
@@ -1181,9 +1183,7 @@ class Path(os.PathLike):
         else:
             clearReadOnly(self)
 
-    ##: Deprecated, replace with regular open() where possible to help erode
-    # Path dependencies all over WB
-    def open(self,*args,**kwdargs):
+    def open(self, *args, **kwdargs): # use regular open() where possible
         try:
             return open(self._s, *args, **kwdargs)
         except FileNotFoundError:
@@ -1193,6 +1193,16 @@ class Path(os.PathLike):
                 os.makedirs(self.shead)
                 return open(self._s, *args, **kwdargs)
             raise
+
+    def open_bom(self, mode='r', **kwargs):
+        if mode == 'w':
+            return self.open(mode, encoding='utf-8-sig', **kwargs)
+        with self.open('rb') as ins:
+            contents = ins.read()
+        # WB versions before 309 wrote a BOM into some files - drop it
+        if contents.startswith(b'\xef\xbb\xbf'):
+            contents = contents[3:]
+        return io.StringIO(contents.decode('utf-8'))
 
     def makedirs(self):
         os.makedirs(self._s, exist_ok=True)

@@ -44,10 +44,6 @@ from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
 from .brec import FormId, RecordType, attr_csv_struct, null3
 from .mod_files import LoadFactory, ModFile
 
-##: In 311+, all of the BOM garbage (utf-8-sig) should go - that means adding
-# backwards compatibility code. See TrustedBinariesPage._import_lists, we could
-# break that out into a bolt tool for reading an 'optional-BOM UTF-8' file
-
 # Utils
 def _key_sort(di, fid_eid=False, values_key=(), by_value=False):
     """Adapted to current uses - values_key is eid or eid and some numerical
@@ -85,7 +81,7 @@ class _TextParser(object):
     def write_text_file(self, textPath):
         """Export ____ to specified text file. You must override _write_rows.
         """
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
+        with textPath.open_bom('w') as out:
             self._header_row(out)
             self._write_rows(out)
 
@@ -178,9 +174,9 @@ class CsvParser(_TextParser):
         work. ScriptText is a special case.
 
         :param csv_path: The path to the CSV file that should be read."""
-        with open(csv_path, encoding='utf-8-sig') as ins:
+        with csv_path.open_bom() as ins:
             first_line = ins.readline()
-            ##: drop 'excel-tab' format and delimiter = ';'? backwards compat?
+            ##:(734) drop 'excel-tab' format and delimiter = ';'? backwards compat?
             excel_fmt = 'excel-tab' if '\t' in first_line else 'excel'
             ins.seek(0)
             if excel_fmt == 'excel':
@@ -1066,7 +1062,7 @@ class ScriptText(_TextParser):
         return bool(self.eid_data)
 
     def _read_script(self, textPath):
-        with textPath.open(u'r', encoding=u'utf-8-sig') as ins:
+        with textPath.open_bom() as ins:
             all_lines = ins.read().splitlines()
             if len(all_lines) > 3:
                 # First three lines are the header - strip off the comment

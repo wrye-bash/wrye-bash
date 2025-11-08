@@ -3797,8 +3797,7 @@ def InitSettings(): # this must run first !
     settings = bass.settings
     settings.loadDefaults(settingDefaults)
     bass.settings['bash.mods.renames'] = forward_compat_path_to_fn(
-        bass.settings['bash.mods.renames'],
-        value_type=lambda x: FName(str(f'{x}'))) # str**2 in case of CIstr
+        bass.settings['bash.mods.renames'], fn_value=True)
     # The colors dictionary only gets copied into settings if it is missing
     # entirely, copy new entries if needed
     for color_key, color_val in settingDefaults[u'bash.colors'].items():
@@ -3821,7 +3820,7 @@ def InitSettings(): # this must run first !
 
 def InitImages():
     """Initialize color and image collections."""
-    # TODO(inf) backwards compat - remove on settings update
+    ##:(734) backwards compat - remove on settings update
     _conv_dict = {
         b'BLACK': (0,   0,   0),
         b'BLUE':  (0,   0,   255),

@@ -27,8 +27,8 @@ from typing import Iterable
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
     wrye_text
 from ..balt import DecoratedTreeDict, colors, Link
-from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
-    reverse_dict, RefrData
+from ..bolt import CIstr, FName, GPath, GPath_no_norm, RefrData, text_wrap, \
+    top_level_dirs, reverse_dict
 from ..bosh import faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
@@ -1059,7 +1059,7 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
         self.first_line = True
         self._partial_package_order = []
         try:
-            self.read_csv(imp_path)
+            self.read_csv(GPath(imp_path))
         except (exception.BoltError, NotImplementedError):
             balt.showError(self, _('The selected file is not a valid package '
                                    'order CSV export.'),

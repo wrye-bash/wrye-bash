@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import io
 import os
 import webbrowser
 from collections import defaultdict
@@ -1428,12 +1427,7 @@ class TrustedBinariesPage(_AFixedPage):
                 i = i[:-1]
             return int(i)
         try:
-            with textPath.open(u'rb') as ins:
-                contents = ins.read()
-            # WB versions before 309 wrote a BOM into these files
-            if contents.startswith(b'\xef\xbb\xbf'):
-                contents = contents[3:]
-            with io.StringIO(contents.decode(u'utf-8')) as ins:
+            with textPath.open_bom() as ins:
                 good, bad = {}, {}
                 current, dll = None, None
                 for line in ins:

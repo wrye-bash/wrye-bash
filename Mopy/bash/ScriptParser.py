@@ -1529,7 +1529,7 @@ class PreParser(Parser):
         self.ExecCount = 0
         self._wizard_dir = wizard_dir
         try:
-            with wizard_file.open('r', encoding='utf-8-sig') as wiz_script:
+            with wizard_file.open_bom() as wiz_script:
                 # Ensure \n line endings for the script parser
                 self.lines = [bolt.to_unix_newlines(x)
                               for x in wiz_script.readlines()]

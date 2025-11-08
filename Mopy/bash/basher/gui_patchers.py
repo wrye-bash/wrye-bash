@@ -224,7 +224,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         #--Update old configs to use Paths instead of strings.
         # call str twice in case v._s was a str subtype
         self._fn_aliases = forward_compat_path_to_fn(config.get('aliases', {}),
-            value_type=lambda v: FName(str('%s' % v)))
+                                                     fn_value=True)
         return config
 
     def saveConfig(self, configs):

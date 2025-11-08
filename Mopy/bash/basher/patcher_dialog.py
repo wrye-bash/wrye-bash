@@ -252,7 +252,7 @@ class PatchDialog(DialogWindow):
                 temp_readme_dir = GPath_no_norm(trd)
                 temp_readme = temp_readme_dir.join(patch_name.fn_body + '.txt')
                 #--Write log/readme to temp dir first
-                with temp_readme.open(u'w', encoding=u'utf-8-sig') as file:
+                with temp_readme.open_bom('w') as file:
                     file.write(logValue)
                 #--Convert log/readme to wtxt
                 wrye_text.genHtml(temp_readme, None, docsDir)

@@ -202,7 +202,7 @@ class MasterInfo:
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
 # files
 _removed_tags = {'Merge', 'ScriptContents'}
-# Indefinite backwards-compatibility aliases for deprecated tags
+#734: Indefinite backwards-compatibility aliases for deprecated tags
 _tag_aliases = {
     'Actors.Perks.Add': {'NPC.Perks.Add'},
     'Actors.Perks.Change': {'NPC.Perks.Change'},

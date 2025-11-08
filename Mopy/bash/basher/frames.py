@@ -171,7 +171,7 @@ class DocBrowser(WindowFrame):
     def _get_is_wtxt(doc_path, *, __rx=re.compile(r'^=.+=#\s*$')):
         """Determines whether specified path is a wtxt file."""
         try:
-            with doc_path.open(u'r', encoding=u'utf-8-sig') as text_file:
+            with doc_path.open_bom() as text_file:
                 match_text = __rx.match(text_file.readline())
             return match_text is not None
         except (OSError, UnicodeDecodeError):
@@ -299,7 +299,7 @@ class DocBrowser(WindowFrame):
         if not doc_path: return  # nothing to save if no file is loaded
         if not self._doc_ctrl.is_text_modified(): return
         self._doc_ctrl.set_text_modified(False)
-        with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
+        with doc_path.open_bom('w') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
             wrye_text.genHtml(doc_path, None, self._doc_dir)
