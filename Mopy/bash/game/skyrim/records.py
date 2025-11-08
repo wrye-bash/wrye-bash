@@ -1325,6 +1325,7 @@ class MreExpl(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
+        MelVmad(),
         MelBounds(),
         MelFull(),
         MelModel(),

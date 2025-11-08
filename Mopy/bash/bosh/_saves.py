@@ -446,7 +446,7 @@ class SaveFile(object):
         #--FBomb
         log.setHeader(_('Fbomb Counter'))
         log(f"  {_('Next in-game object: %(next_obj_id)s')}" % {
-            'next_obj_id': f'{__unpacker(self.preGlobals[:4]):%08X}'})
+            'next_obj_id': f'{__unpacker(self.preGlobals[:4])[0]:08X}'})
         #--Array Sizes
         log.setHeader(_('Array Sizes'))
         log(f'  {len(self.created)}\t{_("Created Items")}')
