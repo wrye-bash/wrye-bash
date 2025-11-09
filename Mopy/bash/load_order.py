@@ -416,7 +416,8 @@ def check_active_limit(mods, as_type=set):
 def swap(old_dir, new_dir):
     return _lo_handler.swap(old_dir, new_dir)
 
-def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> list[FName]:
+def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> \
+        list[FName] | set[FName]:
     """See LoGame.pinned_plugins."""
     return _lo_handler.pinned_plugins(set(imods), fixed_order=fixed_order,
                                       filter_mods=filter_mods)

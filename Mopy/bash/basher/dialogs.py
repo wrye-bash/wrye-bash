@@ -541,8 +541,7 @@ class _ABainMLE(_AWBMLE):
     def show_modal(self):
         # Add the CIstrs we removed in __init__ (see map(str)'s below) back in
         result = super().show_modal()
-        final_lists = [list(map(CIstr, l)) for l in result[1:]]
-        return result[0], *final_lists
+        return next(it := iter(result)), *([*map(CIstr, li)] for li in it)
 
 #------------------------------------------------------------------------------
 class SyncFromDataEditor(_ABainMLE):
