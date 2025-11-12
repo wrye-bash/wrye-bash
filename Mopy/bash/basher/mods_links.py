@@ -249,12 +249,14 @@ class Mods_ActiveFirst(CheckLink):
 
 # "Oblivion.esm" submenu ------------------------------------------------------
 class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
-    """Single link for setting an Oblivion.esm version."""
+    """Single link for setting an Oblivion.esm version - shared between
+    SaveList and ModList."""
     _version_key: str # must not be None!
 
     def __init__(self, version_key, setProfile=False):
         super().__init__()
         self._version_key = self._text = version_key
+        # true for the saves tab where we also set the profile version
         self.setProfile = setProfile
 
     @property
@@ -265,14 +267,21 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
     def _enable(self):
-        return bosh.modInfos.try_set_version(self._version_key)
+        # for ModList only check to see if version can be set, for SaveList
+        # enable also if our ob.esm version differs from modInfos
+        can_set = bosh.modInfos.try_set_version(self._version_key)
+        if can_set or not self.setProfile:
+            return can_set
+        return self._check() and bosh.saveInfos.get_profile_attr(
+            bosh.saveInfos.localSave, 'vOblivion', None) != self._version_key
 
     def Execute(self):
-        # we will repeat the checks here - should not be needed but won't harm
-        bosh.modInfos.try_set_version(self._version_key, do_swap=self._askYes)
+        # we will repeat the checks here - needed for saves
+        minfs = bosh.modInfos
+        rd_ren = minfs.try_set_version(self._version_key, do_swap=self._askYes)
         # We refresh saves although should only ever depend on Oblivion.esm,
         # not any of the modding ESMs
-        self.window.propagate_refresh(True)
+        Link.Frame.all_uilists[minfs].propagate_refresh(rd_ren)
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)

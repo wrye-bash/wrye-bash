@@ -3179,16 +3179,16 @@ class ModInfos(TableFileInfos):
         else do_swap must be an askYes callback. Our caches must be fresh from
         refresh to detect versions properly."""
         curr_ver = self.voCurrent # may be None if Oblivion.esm size is unknown
-        if set_version is None or curr_ver is None:
-            # for do_swap False set_version != None => curr_ver == None
-            return curr_ver # return curr_ver as a convenience for saveInfos
         master_esm = self._master_esm # Oblivion.esm, say it's currently SI one
         # rename Oblivion.esm to this, for instance: Oblivion_SI.esm
         move_to = FName(f'{(fnb := master_esm.fn_body)}_{curr_ver}.esm')
-        if set_version != curr_ver and set_version in self._voAvailable and \
-                not (move_to in self or move_to in self.corrupted):
-            if not do_swap: return True # we can swap
-        else: return False
+        can_set = (set_version and curr_ver and set_version != curr_ver and
+                   set_version in self._voAvailable and not (
+                        move_to in self or move_to in self.corrupted))
+        if not do_swap: return can_set # we can/can't swap
+        ren_data = RefrData()
+        if not can_set:
+            return ren_data
         # Swap Oblivion.esm to specified version - do_swap is askYes callback
         # if new version=='1.1' then copy_from==FName(Oblivion_1.1.esm)
         copy_from = FName(f'{fnb}_{set_version}.esm')
@@ -3197,20 +3197,20 @@ class ModInfos(TableFileInfos):
         #--Rename
         baseInfo = self[master_esm]
         mt = {master_esm: baseInfo.ftime}
-        ren_data = RefrData()
         try:
             inf_target = [(baseInfo, move_to), (swapped_inf, master_esm)]
             # set mtimes to previous respective values
             ren_data |= self.rename_operation(inf_target, set_mtime={**mt,
                 move_to: swapped_inf.ftime}, try_once=do_swap)
         except CancelError:
-            return
+            pass
         finally:
             if master_esm not in self:
                 ren_data |= self.rename_operation(
                     [(self[move_to], master_esm)], set_mtime=mt)
             if swapping_a_ghost: # we need to unghost the master esm
                 self[master_esm].setGhost(False)
+        return ren_data
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size
@@ -3250,7 +3250,7 @@ class SaveInfos(TableFileInfos):
         for row in [r for r in self.profiles.pickled_data if r.endswith('\\')]:
             self.rename_profile(row, row[:-1])
 
-    def set_store_dir(self, save_dir=None, do_swap=None):
+    def set_store_dir(self, save_dir=None, do_swap=None, rd_out=None):
         """If save_dir is None, read the current save profile from
         oblivion.ini file, else update the ini with save_dir."""
         # saveInfos singleton is constructed in InitData after oblivionIni
@@ -3277,13 +3277,16 @@ class SaveInfos(TableFileInfos):
             self.store_dir = sd = dirs['saveBase'].join(env.convert_separators(
                 save_dir)) # localSave always has backslashes
             if do_swap:
-                # save current plugins into old directory, load plugins from sd
-                if load_order.swap(old, sd):
-                    modInfos.refreshLoadOrder(unlock_lo=True)
-                # Swap Oblivion version to memorized version
+                # try to swap Oblivion version to memorized version - note that
+                # whether we manage or not we don't edit our saved version
                 voNew = self.get_profile_attr(save_dir, 'vOblivion', None)
-                if curr := modInfos.try_set_version(voNew, do_swap=do_swap):
-                    self.set_profile_attr(save_dir, 'vOblivion', curr)
+                rd_mods = modInfos.try_set_version(voNew, do_swap=do_swap)
+                # now we possibly swapped modding esms, we can swap lo/act info
+                # save current plugins into old directory, load plugins from sd
+                if load_order.swap(old, sd): # refresh again
+                    rd_mods |= modInfos.refresh(False, unlock_lo=True)
+                if rd_out is not None:
+                    rd_out |= rd_mods
             if not boot: # else in __init__,  calling _init_store right after
                 self._init_store(sd)
         return self.store_dir
@@ -3362,9 +3365,9 @@ class SaveInfos(TableFileInfos):
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
     def refresh(self, refresh_in, *, booting=False, save_dir=None,
-                do_swap=None, **kwargs):
+                do_swap=None, rd_out=None, **kwargs):
         if not booting: # else we just called __init__
-            self.set_store_dir(save_dir, do_swap)
+            self.set_store_dir(save_dir, do_swap, rd_out)
         return super().refresh(refresh_in, booting=booting, **kwargs)
 
     @staticmethod

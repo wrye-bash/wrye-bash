@@ -1971,11 +1971,11 @@ class SaveList(UIList):
         self.try_rename([[sinf, fn_item.fn_body]], forced_ext=extension)
 
     # Save profiles
-    def set_local_save(self, new_saves, *, do_swap=None):
-        if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=_(
-            u'Setting the save profile is done by editing the game ini.')):
+    def set_local_save(self, **kwargs):
+        msg = _('Setting the save profile is done by editing the game ini.')
+        if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=msg):
             return
-        self.data_store.refresh(True, save_dir=new_saves, do_swap=do_swap)
+        self.data_store.refresh(True, **kwargs)
         balt.Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
