@@ -989,7 +989,7 @@ class UIList(PanelWin):
             return EventResult.CANCEL # validate_filename would Veto
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            self.try_rename(ren_args, **ren_kwargs)
+            self.try_rename(ren_args, check_unique=True,**ren_kwargs)
         return EventResult.CANCEL # clears new name from label on exception!
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
@@ -1019,7 +1019,8 @@ class UIList(PanelWin):
     @final
     @conversation
     def try_rename(self, ren_args, *, forced_ext='', refresh_ui=True,
-            check_unique=True, deselect=False, refr_saves=True, **ren_kwargs):
+                   fn_detail=None, check_unique=False, deselect=False,
+                   refr_saves=True, refr_data=None, **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
@@ -1030,10 +1031,12 @@ class UIList(PanelWin):
                 ren_args if (new_fn := info.unique_key(new_root, forced_ext,
                                                        names=names))]
         rdata = ds.rename_operation(ren_args, ren_parent=self, **ren_kwargs)
+        if refr_data:
+            rdata |= refr_data
         if refresh_ui and rdata:
-            fn = next(iter(rdata.renames.values()))
+            fn_detail = fn_detail or next(iter(rdata.renames.values()))
             # in case the displayed item was *not* renamed
-            args_dict = {'detail_item': fn} if fn in ds else {}
+            args_dict = {'detail_item': fn_detail} if fn_detail in ds else {}
             args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
             self.propagate_refresh(rdata, **args_dict, refr_saves=refr_saves)
             #--Reselect the renamed items
@@ -1920,7 +1923,7 @@ class UIList_Hide(EnabledLink):
                     continue
             else: destDir.makedirs()
             to_move.append((inf, inf.fn_key, destDir))
-        self.window.try_rename(to_move, check_unique=False, with_backups=False)
+        self.window.try_rename(to_move, with_backups=False)
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""

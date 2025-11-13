@@ -1234,7 +1234,8 @@ class _EditableMixin(_DetailsMixin):
         #  but this happened before and since maybe modinfos are
         #  updated, we need to check again todo: possibly cancel?
         renargs = [(self.file_info, new_n.fn_body)] # rename failed return None
-        return self.panel_uilist.try_rename(renargs, refresh_ui=False) or None
+        return self.panel_uilist.try_rename(renargs, check_unique=True,
+                                            refresh_ui=False) or None
 
     def _extra_changes(self):
         # Although we could avoid rereading the header by passing the info in
@@ -1969,7 +1970,8 @@ class SaveList(UIList):
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
         extension = disabled_ext if sinf.is_save_enabled() else enabled_ext
-        self.try_rename([[sinf, fn_item.fn_body]], forced_ext=extension)
+        self.try_rename([[sinf, fn_item.fn_body]], check_unique=True,
+                        forced_ext=extension)
 
     # Save profiles
     def set_local_save(self, **kwargs):

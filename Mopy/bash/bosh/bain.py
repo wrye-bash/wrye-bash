@@ -1210,21 +1210,23 @@ class Installer(ListInfo):
 class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
-    def __init__(self, fn_key, *, load_cache=False, par_dir=None, **kwargs):
+    def __init__(self, fn_key, *, load_cache=False, par_dir=None,
+                 copy_from=None, **kwargs):
         super().__init__(fn_key) # will call Installer -> ListInfo __init__
         self._file_key = (par_dir or bass.dirs['installers']).join(self.fn_key)
         if load_cache: # load from disc, useful when adding a new installer
             AFile.__init__(self, self._file_key, **kwargs)
+        if copy_from:
+            atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
+            for att in atts:
+                setattr(self, att, copy.copy(getattr(copy_from, att)))
 
     def copy_to(self, dup_path: Path, *, set_time=None):
         super().copy_to(dup_path, set_time=set_time)
         # use factory -> init(load_cache=False) - then copy all attributes over
         idata = self._store()
-        clone = idata.factory(dup_path, is_proj=self.is_project)
+        clone = idata.factory(dup_path, is_proj=self.is_project, copy_from=self)
         idata[fn := clone.fn_key] = clone
-        atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
-        for att in atts:
-            setattr(clone, att, copy.copy(getattr(self, att)))
         clone.is_active = False # make sure we mark as inactive
         # no need to change installers status here
         idata.moveArchives([fn], self.order + 1, ref_norm=True)

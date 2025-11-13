@@ -22,7 +22,7 @@
 # =============================================================================
 from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bolt import FNDict, RefrIn, FName
+from ..bolt import FNDict, FName, RefrData
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
     FileOpenMultiple
 from ..localize import format_date
@@ -77,9 +77,8 @@ class Files_Unhide(ItemLink):
                     'already present.') % {'skipped_file': srcFileName})
                 continue
             srcFiles.append((inf, fn_key, st_dir))
-        #--Now move everything at once
-        uil.try_rename(srcFiles, check_unique=False, deselect=True,
-                       with_backups=False) #292: we ain't handling backups
+        #--Now move everything at once  #292: we ain't handling backups
+        uil.try_rename(srcFiles, deselect=True, with_backups=False)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
@@ -93,39 +92,39 @@ class File_Duplicate(ItemLink):
     def Execute(self):
         mod_previous = FNDict()
         fileInfos = self._data_store
-        pairs = dict(self.iselected_pairs())
         names = set(fileInfos)
-        for to_duplicate, fileInfo in pairs.items():
+        ren_args = []
+        rd_def_ini = RefrData()
+        for to_duplicate, fileInfo in self.iselected_pairs():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
-            destName = fileInfo.unique_key(r, e, add_copy=True, names=names)
-            destDir = fileInfo.info_dir
+            fn_dup = fileInfo.unique_key(r, e, add_copy=True, names=names)
+            destDir = fileInfos.store_dir
             if len(self.selected) == 1: # ask the user for a filename
                 # This directory may not exist yet (e.g. INI Tweaks)
                 destDir.makedirs()
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName, wildcard=f'*{e}')
+                    defaultFile=fn_dup, wildcard=f'*{e}')
                 if not destPath: return
-                destDir, destName = destPath.head, FName(destPath.stail)
-                destName, root = fileInfo.validate_name(destName,
+                destDir, fn_dup = destPath.head, FName(destPath.stail)
+                fn_dup, root = fileInfo.validate_name(fn_dup,
                     # check if exists if we duplicate into the store dir
-                    # then we just need to check if destName is in the store
-                    check_store=destDir == fileInfo.info_dir)
+                    # then we just need to check if fn_dup is in the store
+                    check_store=destDir == fileInfos.store_dir)
                 if root is None:
-                    self._showError(destName)
+                    self._showError(fn_dup)
                     return
-            fileInfo.copy_to(destDir.join(destName))
-            mod_previous[destName] = to_duplicate
-        if mod_previous:
-            rinf = RefrIn.from_tabled_infos(
-                {k: pairs[v] for k, v in mod_previous.items()})
-            ##:(701) we should reset-status here for lower loading mods
-            rdata = fileInfos.refresh(rinf, insert_after=mod_previous)
-            self.refresh_sel(rdata.new_changed(),
-                             detail_item=next(reversed(mod_previous)))
-            self.window.SelectItemsNoCallback(mod_previous)
+            # we need to load_cache here - see _TabledInfo.__init__
+            if inf := fileInfos.get_update_info(to_duplicate, copy_from=fileInfo,
+                    dup_path=destDir.join(fn_dup), rd_def_ini=rd_def_ini):
+                ren_args.append((inf, fn_dup, destDir))
+                mod_previous[fn_dup] = to_duplicate
+        if mod_previous or rd_def_ini:
+            fnd = next(reversed(mod_previous or rd_def_ini.renames.values()))
+            self.window.try_rename(ren_args, with_backups=False, copy_inf=True,
+                insert_after=mod_previous, fn_detail=fnd, refr_data=rd_def_ini)
 
     def _disallow_copy(self, fileInfo):
         """Method for checking if fileInfo may not be copied for some reason.
@@ -170,7 +169,7 @@ class RestoreInfo(OneItemLink):
             # create an info in the backup directory and try loading it - note
             # we unlink 'bp_split_parent'!
             if not (inf := self._data_store.get_update_info(self._backup_path,
-                    att_val=sel_inf.get_persistent_attrs(exclude=True))):
+                    copy_from=sel_inf, exclude=True)):
                 self._failed_msg()
                 return
             ren_args = [(inf, self._selected_item, self._data_store.store_dir)]
@@ -180,10 +179,9 @@ class RestoreInfo(OneItemLink):
             # edge case - as backup is half-baked anyway let's agree for now
             # that BPs remain BPs with the same config as before - if not,
             # manually run a mergeability scan after updating the config
-            self.window.try_rename(ren_args, check_unique=False,
+            self.window.try_rename(ren_args, copy_inf=True, with_backups=False,
                 # no refresh saves as neither active mods nor load order change
-                copy_inf=True, with_backups=False, refr_saves=False,
-                set_mtime={sel_inf.fn_key: sel_inf.ftime})
+                refr_saves=False, set_mtime={sel_inf.fn_key: sel_inf.ftime})
 
     @property
     def _backup_path(self): raise NotImplementedError

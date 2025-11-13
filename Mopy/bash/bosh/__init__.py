@@ -316,7 +316,10 @@ class _TabledInfo:
     internals are for translating the legacy dict keys to proper attr names."""
     _key_to_attr = {}
 
-    def __init__(self, *args, att_val=None, **kwargs):
+    def __init__(self, *args, att_val=None, exclude=frozenset(),
+                 copy_from=None, **kwargs):
+        if copy_from: ##:(300) we need to load here - vs InstallersData.factory
+            att_val = copy_from.get_persistent_attrs(exclude=exclude)
         for k, v in (att_val or {}).items(): # set table props used in refresh
             try: ##: nightly regression storing 'installer' as FName - convert to fname actually!
                 if k == 'installer': v = str(v)
@@ -1092,6 +1095,9 @@ class ModInfo(_WithMastersInfo):
                 # rename the ghost too - else will appear and frighten the user
                 old_new_paths.append((self.abs_path + '.ghost', new_ghost))
             if self.info_dir == st_dir: # renaming or duplicating in store dir
+                # Note that if duplicating over an existing mod and we haven't
+                # got a tags file, the other mods tags file will be removed in
+                # rename_operation - ##: specs?
                 old_new_paths.append((tp := self.tags_path(),
                                       tp.head.join(f'{new_name.fn_body}.txt')))
         return old_new_paths
@@ -1717,7 +1723,8 @@ class DataStore(DataDict):
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
     def rename_operation(self, info_new_name, *, try_once=True, set_mtime=None,
-            ren_parent=None, with_backups=True, copy_inf=False) -> RefrData:
+                         ren_parent=None, with_backups=True, copy_inf=False,
+                         insert_after=None) -> RefrData:
         rd_ren = RefrData()
         if not info_new_name:
             return rd_ren
@@ -1769,8 +1776,8 @@ class DataStore(DataDict):
                 ren_paths=inf.set_path_keys(new_name, infodir=infdir))
             add_to_store = not rename_paths or inf.info_dir == self.store_dir
             if add_to_store: # add the info (or marker info) to the store
+                kws = {'redraw' if new_name in self else 'to_add': {new_name}}
                 self[new_name] = inf
-                kws = {'redraw' if copy_inf else 'to_add': {new_name}}
                 rd_ren |= RefrData(**kws) # pop from to_del
                 if set_ghost: # do this after set_path_keys (restore backup)
                     inf.is_ghost = True # we need to mirror get_rename_paths
@@ -1780,7 +1787,8 @@ class DataStore(DataDict):
             if not copy_inf and len(renames_di := rd_ren.renames) == 2:
                 move_to = renames_di.pop(bush.game.master_file)
                 renames_di[next(iter(renames_di))] = move_to
-        return self.refresh(rd_ren, unlock_lo=True, what='I')
+        return self.refresh(rd_ren, unlock_lo=True, insert_after=insert_after,
+                            what='I')
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1970,14 +1978,6 @@ class DefaultIniInfo(AINIInfo):
         # Add a newline at the end of the INI
         return b'\r\n'.join(li.encode('ascii') for li in self.lines) + b'\r\n'
 
-    @property
-    def info_dir(self):
-        return dirs['ini_tweaks']
-
-    def copy_to(self, cp_dest_path, **kwargs):
-        # Default tweak, so the file doesn't actually exist
-        self._store().copy_to_new_tweak(self, FName(cp_dest_path.stail))
-
 class INIInfos(_AFileInfos):
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
@@ -2054,16 +2054,27 @@ class INIInfos(_AFileInfos):
             rdata |= self._reset_all_statuses() # set the status of all infos
         return rdata
 
-    def factory(self, fullpath, **kwargs) -> INIInfo:
-        """INIInfos factory
-
-        :param fullpath: Full path to the INI file to wrap
-        :param kwargs: Cached ghost status information, ignored for INIs"""
-        inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
-            consider_obse_inis=bush.game.Ini.has_obse_inis)
-        ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
-                         else INIInfo)
-        return ini_info_type(fullpath, detected_encoding)
+    def factory(self, fullpath, *, copy_from=None, dup_path=None,
+                rd_def_ini=None, **kwargs) -> INIInfo | None:
+        """INIInfos factory - copy_from/dup_path used when duplicating an ini"""
+        if isinstance(copy_from, DefaultIniInfo):
+            with open(fullpath, 'wb') as ini_file:
+                ini_file.write(copy_from.read_ini_content(as_unicode=False))
+            dup_info = INIInfo(fullpath, 'ascii')
+            dup_info.fs_copy(dup_path, do_move=True)
+            dup_info.set_path_keys(FName(dup_path.stail), infodir=dup_path.head)
+            if dup_info.info_dir == self.store_dir:
+                rd_def_ini |= RefrData(
+                    renames={copy_from.fn_key: (dup_fn := dup_info.fn_key)},
+                    **{'redraw' if dup_fn in self else 'to_add': {dup_fn}})
+                self[dup_fn] = dup_info
+            return None
+        else:
+            inferred_ini_type, detected_encoding = get_ini_type_and_encoding(
+                fullpath, consider_obse_inis=bush.game.Ini.has_obse_inis)
+            ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
+                             else INIInfo)
+        return ini_info_type(fullpath, detected_encoding, copy_from=copy_from)
 
     def _reset_all_statuses(self): # only return infos that changed status
         updt = {fn for fn, ini_info in self.items() if
@@ -2143,7 +2154,7 @@ class INIInfos(_AFileInfos):
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
 
-    def copy_to_new_tweak(self, info, fn_new_tweak: FName):
+    def copy_to_new_tweak(self, info, fn_new_tweak):
         """Duplicate tweak into fn_new_teak."""
         with open(self.store_dir.join(fn_new_tweak), 'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary

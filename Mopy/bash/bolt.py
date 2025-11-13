@@ -2025,6 +2025,7 @@ class RefrData:
 
     @property
     def is_rename(self) -> bool:
+        """True if it's a rename operation (or duplicating in store_dir)."""
         return self.renames and all(k != v for k, v in self.renames.items())
 
 #------------------------------------------------------------------------------
