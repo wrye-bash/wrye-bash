@@ -25,7 +25,7 @@ import io
 from .. import get_meta_value, iter_games, iter_resources, \
     resource_to_unique_display_name, set_game
 from ... import bush
-from ...bolt import LogFile, Rounder, GPath_no_norm
+from ...bolt import LogFile, Rounder
 from ...bosh.cosaves import PluggyCosave, _Remappable, _xSEChunk, \
     _xSEChunkPLGN, _xSEHeader, _xSEModListChunk, get_cosave_types, xSECosave
 from ...wbtemp import TempFile
@@ -76,8 +76,7 @@ class ATestACosave(object):
     def test_write_cosave(self):
         """Tests if writing out all cosaves produces the same checksum."""
         def _check_writing(curr_cosave: xSECosave):
-            with TempFile() as t:
-                temp_cosave_path = GPath_no_norm(t)
+            with TempFile(bolt_path=True) as temp_cosave_path:
                 curr_cosave.write_cosave(temp_cosave_path)
                 assert curr_cosave.abs_path.crc == temp_cosave_path.crc
                 # write_cosave and write_cosave_safe should have the same
@@ -130,8 +129,7 @@ class ATestACosave(object):
             curr_cosave.remap_plugins({first_master: _impossible_master})
             # Check that writing the result out produces a bytestring
             # containing the remapped master name
-            with TempFile() as t:
-                temp_cosave_path = GPath_no_norm(t)
+            with TempFile(bolt_path=True) as temp_cosave_path:
                 curr_cosave.write_cosave(temp_cosave_path)
                 assert curr_cosave.abs_path.crc != temp_cosave_path.crc
                 with open(temp_cosave_path, 'rb') as ins:

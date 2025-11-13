@@ -30,7 +30,7 @@ from zlib import error as zlib_error
 
 from . import bolt, bush, env
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
-    struct_error, GPath_no_norm, FName, unpack_int
+    struct_error, FName, unpack_int
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
@@ -251,11 +251,11 @@ class ModFile(object):
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
         self.fileInfo.makeBackup()
-        with TempFile() as tmp_plugin:
+        with TempFile(bolt_path=True) as tmp_plugin:
             self.save(tmp_plugin)
             # fileInfo created before the file
             if self.fileInfo.ftime is not None:
-                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.ftime ##: ugh
+                tmp_plugin.mtime = self.fileInfo.ftime
             # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
             #  permissions dialog is displayed (should display file in use)
             env.shellMove({tmp_plugin: self.fileInfo.abs_path})

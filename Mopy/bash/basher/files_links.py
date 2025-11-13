@@ -23,7 +23,7 @@
 
 from .. import balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bolt import FNDict, GPath_no_norm, RefrIn
+from ..bolt import FNDict, RefrIn
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
     FileOpenMultiple
 from ..localize import format_date
@@ -165,10 +165,10 @@ class RestoreInfo(OneItemLink):
         #--Warning box
         if not self._ask_revert(): return
         sel_file = self._selected_item
-        with BusyCursor(), TempFile() as known_good_copy:
+        with BusyCursor(), TempFile(bolt_path=True) as known_good_copy:
             info_path = (sel_inf := self._selected_info).abs_path
             # Make a temp copy first in case reverting to backup fails
-            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
+            sel_inf.fs_copy(known_good_copy)
             self._restore()
             # in case the restored file is a BP: refresh below will try to
             # refresh info sets, but we don't back up the config so we can't

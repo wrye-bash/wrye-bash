@@ -1140,14 +1140,12 @@ class Path(os.PathLike):
         if relative:
             start = len(self._s) + 1 # + 1 for the os.sep
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
-                yield (GPath(root_dir[start:]),
-                       [GPath_no_norm(x) for x in dirs],
-                       [GPath_no_norm(x) for x in files])
+                yield (GPath(root_dir[start:]), [*map(GPath_no_norm, dirs)],
+                       [*map(GPath_no_norm, files)])
         else:
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
                 yield (GPath(root_dir), ##: leaves the leading path separator?
-                       [GPath_no_norm(x) for x in dirs],
-                       [GPath_no_norm(x) for x in files])
+                    [*map(GPath_no_norm, dirs)], [*map(GPath_no_norm, files)])
 
     def relpath(self,path): # os.path.relpath(p,[s]): AttributeError if s==None
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))

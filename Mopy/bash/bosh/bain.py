@@ -1576,7 +1576,7 @@ class InstallerArchive(_InstallerPackage):
         with TempFile(temp_prefix='temp_list', temp_suffix='.txt') as tl:
             with open(tl, 'w', encoding='utf8') as out:
                 out.write('\n'.join(fileNames))
-            unpack_dir = new_temp_dir()
+            unpack_dir = new_temp_dir(bolt_path=True)
             try:
                 extract7z(self.abs_path, unpack_dir, progress,
                     recursive=recurse, filelist_to_extract=tl)
@@ -1584,7 +1584,7 @@ class InstallerArchive(_InstallerPackage):
                 ##: Why are we doing this at all? We have a ton of extract7z
                 # calls, but only two do clearReadOnly afterwards
                 bolt.clearReadOnly(unpack_dir)
-        return GPath_no_norm(unpack_dir)
+        return unpack_dir
 
     def _install_source_args(self, dest_src, progress):
         #--Extract

@@ -151,8 +151,8 @@ class BackupSettings(object):
     def backup_settings(self, balt_):
         deprint(u'')
         deprint(f'BACKUP BASH SETTINGS: {self._backup_dest_file}')
-        with TempDir() as temp_settings_backup_dir:
-            self._backup_settings(GPath_no_norm(temp_settings_backup_dir))
+        with TempDir(bolt_path=True) as temp_settings_backup_dir:
+            self._backup_settings(temp_settings_backup_dir)
             self._backup_success(balt_)
 
     def _backup_settings(self, temp_dir):

@@ -27,7 +27,7 @@ from typing import Iterable
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
     wrye_text
 from ..balt import DecoratedTreeDict, colors, Link
-from ..bolt import CIstr, FName, GPath, GPath_no_norm, RefrData, text_wrap, \
+from ..bolt import CIstr, FName, GPath, RefrData, text_wrap, \
     top_level_dirs, reverse_dict
 from ..bosh import faces
 from ..fomod_schema import default_moduleconfig
@@ -226,8 +226,8 @@ class CreateNewProject(DialogWindow):
             return
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
-        with TempDir() as tmp_dir:
-            tmp_project = GPath_no_norm(tmp_dir).join(projectName)
+        with TempDir(bolt_path=True) as tmp_dir:
+            tmp_project = tmp_dir.join(projectName)
             # Create the directory first, otherwise some of the file creation
             # calls below may race and cause undebuggable issues otherwise
             tmp_project.makedirs()

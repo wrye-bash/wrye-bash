@@ -248,9 +248,8 @@ class PatchDialog(DialogWindow):
             data_docs_dir = minfos.store_dir.join('Docs')
             readme = data_docs_dir.join(patch_name.fn_body + '.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
-            with TempDir(temp_prefix='Docs') as trd:
-                temp_readme_dir = GPath_no_norm(trd)
-                temp_readme = temp_readme_dir.join(patch_name.fn_body + '.txt')
+            with TempDir(temp_prefix='Docs', bolt_path=True) as tmp_readme_dir:
+                temp_readme = tmp_readme_dir.join(patch_name.fn_body + '.txt')
                 #--Write log/readme to temp dir first
                 with temp_readme.open_bom('w') as file:
                     file.write(logValue)
@@ -258,7 +257,7 @@ class PatchDialog(DialogWindow):
                 wrye_text.genHtml(temp_readme, None, docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    env.shellMove({temp_readme_dir: data_docs_dir},
+                    env.shellMove({tmp_readme_dir: data_docs_dir},
                         parent=self)
                 except (CancelError, SkipError):
                     # User didn't allow UAC, move to My Games directory instead

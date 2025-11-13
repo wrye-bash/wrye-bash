@@ -45,7 +45,7 @@ __author__ = u'Ganda'
 import functools
 import os
 import sys
-from collections import defaultdict, deque
+from collections import defaultdict
 from enum import Enum
 
 from . import bass, bosh, bush, env # for modInfos

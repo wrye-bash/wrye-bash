@@ -32,7 +32,7 @@ from typing import Any
 # First import the shared API
 from .common import *
 from .common import file_operation as _default_file_operation
-from ..bolt import os_name, GPath_no_norm, Path, deprint, empty_path
+from ..bolt import os_name, Path, deprint, empty_path
 from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
@@ -119,7 +119,7 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
                 folder.makedirs()
             except: ##: tighten
                 # Failed, try the UAC workaround
-                tmpDir = GPath_no_norm(new_temp_dir())
+                tmpDir = new_temp_dir(bolt_path=True)
                 tempDirs.append(tmpDir)
                 toMake = []
                 while not folder.exists() and folder != folder.head:
