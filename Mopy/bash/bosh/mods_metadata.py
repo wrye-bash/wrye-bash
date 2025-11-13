@@ -29,7 +29,7 @@ from ..bolt import SubProgress, dict_sort, sig_to_str
 from ..brec import RecordHeader, RecordType
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
-from ..plugin_types import MergeabilityCheck
+from ..plugin_types import MergeabilityCheck, ST_IMPORTED, ST_MERGED
 
 #--Plugin Checker -------------------------------------------------------------
 _cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
@@ -78,7 +78,7 @@ def checkMods(progress, modinfos, showModList=False, showCRC=False,
     should_activate = []
     for plugin_fn, p_minf in all_present_minfs.items():
         p_active = plugin_fn in all_active_plugins
-        p_imported = plugin_fn in modinfos.imported
+        p_imported = p_minf.act_st == ST_IMPORTED
         p_tags = p_minf.getBashTags()
         if u'Deactivate' in p_tags and p_active:
             should_deactivate.append(plugin_fn)
@@ -504,8 +504,8 @@ def checkMods(progress, modinfos, showModList=False, showCRC=False,
     # already been merged into a BP
     if (merge := MergeabilityCheck.MERGE) in bush.game.mergeability_checks:
         minfos_cache, head, msg = merge.cached_types(modinfos)
-        can_merge = {m for inf in minfos_cache if (m := inf.fn_key) not in
-                     modinfos.merged and 'NoMerge' not in inf.getBashTags()}
+        can_merge = {inf.fn_key for inf in minfos_cache if not (
+                inf.act_st == ST_MERGED or 'NoMerge' in inf.getBashTags())}
         if can_merge:
             _log_plugins(head, msg, can_merge)
     if should_deactivate:

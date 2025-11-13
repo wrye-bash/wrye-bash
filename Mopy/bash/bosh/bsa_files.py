@@ -44,7 +44,7 @@ import lz4.block
 import lz4.frame
 
 from .dds_files import DDSFile, mk_dxgi_fmt
-from ..bolt import AFile, Flags, Progress, deprint, struct_calcsize, \
+from ..bolt import AFile, FName, Flags, Progress, deprint, struct_calcsize, \
     struct_error, struct_unpack, structs_cache, unpack_byte, unpack_int
 from ..env import convert_separators
 from ..exception import BSACompressionError, BSADecodingError, \
@@ -496,7 +496,7 @@ class ABsa(AFile):
 
     def __init__(self, fullpath, load_bsa=False, names_only=True, **kwargs):
         super().__init__(fullpath, **kwargs)
-        self.bsa_name = self.abs_path.stail
+        self._bsa_name = FName(self.abs_path.stail)
         self.bsa_header = typing.get_type_hints(self.__class__)['bsa_header']()
         self.bsa_folders = defaultdict(self._folder_type) # keep folder order
         self._filenames = []
@@ -507,9 +507,9 @@ class ABsa(AFile):
         """Returns the version of this BSA."""
         with self.abs_path.open(u'rb') as ins:
             try:
-                self.bsa_header.load_header(ins, self.bsa_name)
+                self.bsa_header.load_header(ins, self._bsa_name)
             except struct_error as e:
-                raise BSAError(self.bsa_name,
+                raise BSAError(self._bsa_name,
                                f'Error while unpacking header: {e!r}')
             return self.bsa_header.version
 
@@ -520,7 +520,7 @@ class ABsa(AFile):
             else:
                 self._load_bsa_light()
         except struct_error as e:
-            raise BSAError(self.bsa_name, f'Error while unpacking: {e!r}')
+            raise BSAError(self._bsa_name, f'Error while unpacking: {e!r}')
 
     @staticmethod
     def _map_files_to_folders(asset_paths): # lowercase keys and values
@@ -537,6 +537,9 @@ class ABsa(AFile):
             folder_files_dict[key.lower()] = {dest.lower() for _key, dest
                                               in val}
         return folder_files_dict
+
+    def _check_collisions(self, binfos):
+        """Ba2 only."""
 
     def extract_assets(self, asset_paths, dest_folder, progress=None):
         """Extracts certain assets from this BSA into the specified folder.
@@ -561,7 +564,7 @@ class ABsa(AFile):
             for i, (folder, file_records) in enumerate(folder_to_assets.items()):
                 if progress:
                     progress(i, f"{_('Extracting %(target_bsa)s…')}"
-                                f"\n{folder}" % {'target_bsa': self.bsa_name})
+                                f"\n{folder}" % {'target_bsa': self._bsa_name})
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
                 target_dir = os.path.join(dest_folder, *folder.split(path_sep))
@@ -580,12 +583,12 @@ class ABsa(AFile):
                         try:
                             raw_data = self._compression_type.decompress_rec(
                                 bsa_file.read(data_size), uncompressed_size,
-                                self.bsa_name)
+                                self._bsa_name)
                         except BSAError:
                             # Ignore errors for Fallout - Misc.bsa - Bethesda
                             # probably used an old buggy zlib version when
                             # packing it (taken from BSArch sources)
-                            if self.bsa_name == u'Fallout - Misc.bsa':
+                            if self._bsa_name == 'Fallout - Misc.bsa':
                                 continue
                             else:
                                 raise
@@ -663,7 +666,7 @@ class BSA(ABsa):
                 rec = file_records[file_records_index]
                 file_records_index += 1
                 filename = _decode_path(
-                    file_names[names_record_index], self.bsa_name)
+                    file_names[names_record_index], self._bsa_name)
                 names_record_index += 1
                 bsa_folder.folder_assets[filename] = rec
 
@@ -696,11 +699,11 @@ class BSA(ABsa):
                 (f'{fp}{path_sep}{fname.decode(_bsa_encoding)}' for
                  fname in fnames) for fp, fnames in names_pairs)]
         except UnicodeDecodeError:
-            raise BSADecodingError(self.bsa_name, file_names)
+            raise BSADecodingError(self._bsa_name, file_names)
 
     def _read_bsa_file(self, folder_records, read_file_records) -> list[bytes]:
         total_names_length = 0
-        my_bsa_name = self.bsa_name
+        my_bsa_name = self._bsa_name
         with open(self.abs_path, u'rb') as bsa_file:
             bsa_seek = bsa_file.seek
             bsa_read = bsa_file.read
@@ -769,7 +772,7 @@ class BA2(ABsa):
                     # This is a compressed record, so decompress it
                     return self._compression_type.decompress_rec(
                         bsa_file.read(record.packed_size),
-                        record.unpacked_size, self.bsa_name)
+                        record.unpacked_size, self._bsa_name)
                 else:
                     # This is an uncompressed record, just read it
                     return bsa_file.read(record.unpacked_size)
@@ -798,7 +801,7 @@ class BA2(ABsa):
                     folder_to_assets.items()):
                 if progress:
                     progress(i, f"{_('Extracting %(target_bsa)s…')}"
-                                f"\n{folder}" % {'target_bsa': self.bsa_name})
+                                f"\n{folder}" % {'target_bsa': self._bsa_name})
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
                 target_dir = os.path.join(dest_folder, *folder.split(path_sep))
@@ -827,7 +830,7 @@ class BA2(ABsa):
         with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
             my_header = self.bsa_header
-            my_header.load_header(bsa_file, self.bsa_name)
+            my_header.load_header(bsa_file, self._bsa_name)
             # load the folder records from input stream
             if my_header.ba2_files_type == b'GNRL':
                 file_record_type = Ba2FileRecordGeneral
@@ -844,7 +847,7 @@ class BA2(ABsa):
         for index in range(my_header.ba2_num_files):
             name_size = _unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
-                file_names_block[2:name_size + 2].tobytes(), self.bsa_name)
+                file_names_block[2:name_size + 2].tobytes(), self._bsa_name)
             file_names_block = file_names_block[name_size + 2:]
             folder_dex = filename.rfind(path_sep)
             folder_name = '' if folder_dex == -1 else filename[:folder_dex]
@@ -855,7 +858,7 @@ class BA2(ABsa):
         my_header = self.bsa_header
         with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
-            my_header.load_header(bsa_file, self.bsa_name)
+            my_header.load_header(bsa_file, self._bsa_name)
             # load the file names block
             bsa_file.seek(my_header.ba2_name_table_offset)
             file_names_block = memoryview(bsa_file.read())
@@ -863,7 +866,7 @@ class BA2(ABsa):
         for index in range(my_header.ba2_num_files):
             name_size = _unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
-                file_names_block[2:name_size + 2].tobytes(), self.bsa_name)
+                file_names_block[2:name_size + 2].tobytes(), self._bsa_name)
             filenames.append(filename)
             file_names_block = file_names_block[name_size + 2:]
         self._filenames = filenames
@@ -874,6 +877,15 @@ class BA2(ABsa):
         always the same and the BA2s will always be in the same folder
         (Data)."""
         return _hash_ba2_string(self.abs_path.sbody)
+
+    def _check_collisions(self, binfos):
+        """Drop the previous collision if it's present, then check if we have a
+        new one."""
+        ba2_entry = binfos.ba2_hashes[self.ba2_hash()]
+        binfos.ba2_collisions.discard(' & '.join(sorted(ba2_entry)))
+        ba2_entry.add(self._bsa_name)
+        if len(ba2_entry) >= 2:
+            binfos.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
 
 class StarfieldBA2(BA2):
     bsa_header: StarfieldBa2Header
@@ -896,7 +908,7 @@ class MorrowindBsa(ABsa):
         self.file_records = []
         with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
-            self.bsa_header.load_header(bsa_file, self.bsa_name)
+            self.bsa_header.load_header(bsa_file, self._bsa_name)
             # load each file record
             for x in range(self.bsa_header.file_count):
                 rec = BSAMorrowindFileRecord()
@@ -914,7 +926,7 @@ class MorrowindBsa(ABsa):
                     candidate = bsa_file.read(1)
                     if candidate == b'\x00': break  # null terminator
                     read_name += candidate
-                file_record.file_name = _decode_path(read_name, self.bsa_name)
+                file_record.file_name = _decode_path(read_name, self._bsa_name)
                 self._filenames.append(file_record.file_name)
             for file_record in self.file_records:
                 file_record.load_hash(bsa_file)
@@ -944,7 +956,7 @@ class MorrowindBsa(ABsa):
                     # progress bar too frequently
                     progress(i, f"{_('Extracting %(target_bsa)s…')}"
                                 f"\n{os.path.dirname(rec_name)}" % {
-                        'target_bsa': self.bsa_name})
+                        'target_bsa': self._bsa_name})
                 # There is no compression for Morrowind BSAs, but all offsets
                 # are relative to the final_offset we read earlier
                 bsa_file.seek(self.final_offset + file_record.relative_offset)

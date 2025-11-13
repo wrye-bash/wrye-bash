@@ -57,7 +57,8 @@ from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding, supported_ini_exts
 from ..load_order import LordDiff, LoadOrder
 from ..mod_files import ModFile, ModHeaderReader
-from ..plugin_types import MergeabilityCheck, PluginFlag
+from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
+    ST_MERGED, ST_IMPORTED, ST_INACTIVE, active_keys
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -185,16 +186,17 @@ class MasterInfo:
         """Ask the mod info or shrug."""
         return set()
 
-    def info_status(self, *, loadOrderIndex, mi):
+    def info_status(self, *, loadOrderIndex, mi, **kwargs):
         if self.mod_info:
+            act_st = self.mod_info.act_st
             ordered = load_order.cached_active_tuple()
             # current load order of master relative to other masters
             if mi != loadOrderIndex:  # there are active masters out of order
-                return 20  # orange
+                return 20, act_st  # orange
             elif (mi < len(ordered)) and (ordered[mi] == self.curr_name):
-                return -10  # Blue else 0, Green
-            return 0
-        return 30 # 30: does not exist
+                return -10, act_st  # Blue else 0, Green
+            return 0, act_st
+        return 30, ST_INACTIVE # 30: does not exist
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
@@ -379,11 +381,10 @@ class FileInfo(_TabledInfo, AFileInfo):
     def _reset_cache(self, stat_tuple, **kwargs):
         self.fsize, self.ftime, self.ctime = stat_tuple
 
-    def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
+    def setmtime(self, set_time: int | float = 0.0, **kwargs):
         """Sets ftime. Defaults to current value (i.e. reset)."""
         set_to = set_time or self.ftime
-        self.abs_path.mtime = set_to
-        self.ftime = set_to
+        self.abs_path.mtime = self.ftime = set_to
         return set_to
 
     # Backup stuff - beta, see #292 -------------------------------------------
@@ -506,6 +507,8 @@ class ModInfo(_WithMastersInfo):
         'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
         'mergeInfo': 'mod_merge_info', 'rating': 'mod_rating'}
     mod_auto_bash_tags: bool # autoBashTags - always set on __init__
+    # we need to notify RUI to redraw redated infos without calling do_update
+    redated = False
 
     def __init__(self, fullpath, *, itsa_ghost=None, bt_contents=None,
                  load_cache=False, **kwargs):
@@ -520,6 +523,7 @@ class ModInfo(_WithMastersInfo):
                 itsa_ghost = not fullpath.is_file() and os.path.isfile(
                     f'{fullpath}.ghost')
         self.is_ghost = itsa_ghost
+        self.act_st = None # cache active/merged/imported/inactive status
         super().__init__(fullpath, load_cache=load_cache, **kwargs)
         if (auto := self.get_table_prop('autoBashTags')) is None:
             # For a new mod with no tags, set auto tags to True (default)
@@ -642,7 +646,8 @@ class ModInfo(_WithMastersInfo):
         except TypeError: # None, should not happen so let it show
             return u'UNKNOWN!'
 
-    def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
+    def setmtime(self, set_time: int | float = 0.0, *, crc_changed=False,
+                 mark_redated=False):
         """Set ftime and if crc_changed is True recalculate the crc."""
         set_to = super().setmtime(set_time)
         # Prevent re-calculating the File CRC
@@ -650,6 +655,8 @@ class ModInfo(_WithMastersInfo):
             self.set_table_prop('crc_mtime', set_to)
         else:
             self.calculate_crc(recalculate=True)
+        if mark_redated:
+            self.redated = True
 
     def _get_masters(self):
         """Return the plugin masters, in the order listed in its header."""
@@ -894,20 +901,18 @@ class ModInfo(_WithMastersInfo):
     def isBP(self):
         return self.header.author == u'BASHED PATCH'
 
-    def txt_status(self): ##:(701) we should cache the modInfo status (checkMark)
-        fnkey = self.fn_key
-        if load_order.cached_is_active(fnkey): return _(u'Active')
-        elif fnkey in modInfos.merged: return _(u'Merged')
-        elif fnkey in modInfos.imported: return _(u'Imported')
-        else: return _('Inactive')
+    def txt_status(self, *, __st_names={ST_ACTIVE: _('Active'),
+            ST_MERGED: _('Merged'), ST_IMPORTED: _('Imported'),
+            ST_INACTIVE: _('Inactive')}):
+        return __st_names[self.act_st]
 
     def hasTimeConflict(self):
         """True if there is another mod with the same ftime."""
-        return load_order.has_load_order_conflict(self.fn_key)
+        return self.fn_key in self._store().lo_conflicts
 
     def hasActiveTimeConflict(self):
         """True if it has an active mtime conflict with another mod."""
-        return load_order.has_load_order_conflict_active(self.fn_key)
+        return self.fn_key in self._store().act_lo_conflicts
 
     def hasBadMasterNames(self): # used in status calculation
         """True if has a master with un unencodable name in cp1252."""
@@ -1130,6 +1135,12 @@ class ModInfo(_WithMastersInfo):
         elif inordered:
             return 10
         return 0
+
+    def info_status(self, *args, act_dicts, recalc_st=False, **kwargs):
+        if recalc_st or self.act_st is None:
+            self.act_st = active_keys(self.fn_key, act_dicts)
+        return super().info_status(*args, recalc_st=recalc_st, **kwargs
+                                   ), self.act_st
 
     def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         hasBsa, hasBlocking = self.hasResources()
@@ -1391,6 +1402,9 @@ class SaveInfo(_WithMastersInfo):
         # Does not match the LO's active plugins, but the order is correct.
         # That means the LO has new plugins, but not at the end -> green
         return 0
+
+    def info_status(self, *args, **kwargs):
+        return super().info_status(*args, **kwargs), self.is_save_enabled()
 
     def is_save_enabled(self):
         """True if I am enabled."""
@@ -1806,9 +1820,9 @@ class DataStore(DataDict):
 
     def save_pickle(self): pass # for Screenshots
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
+    def warning_args(self, multi_warnings, lo_warnings):
         """Append the arguments for the warning message to the multi_warnings
-        and lo_warnings lists, checking the caches currently in Link.Frame."""
+        and lo_warnings lists, checking the data store _known_* caches."""
 
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
@@ -2230,10 +2244,34 @@ def _lo_cache(lord_func):
                         self[k].get_table_prop('allowGhosting', True)})
                 ldiff.affected.update(mod for mod, ghost_it in ghostify.items()
                                       if self[mod].setGhost(ghost_it))
+            # check for load order conflicts - if ldiff is empty we should keep
+            # it empty (for refresh to check if it needs the refreshes above),
+            # but we should notify the UI to redraw items that changed status
+            mt_conflicts_changes = set()
+            if bush.game.mtime_lo:
+                mtime_mods = defaultdict(set)
+                for mod, info in self.items():
+                    mtime_mods[int(info.ftime)].add(mod)
+                mtime_mods = {frozenset(v) for v in mtime_mods.values() if
+                              len(v) > 1} # keep conflicting sets of mods
+                lo_conflicts, act_lo_conflicts = set(), set()
+                if mtime_mods:
+                    activ = {*load_order.cached_active_tuple()}
+                    for confls in mtime_mods:
+                        lo_conflicts |= confls
+                        if len(confls_act := confls & activ) > 1:
+                            # active mods conflicting with other active mods
+                            act_lo_conflicts |= confls_act
+                # mods that started/stopped conflicting/were redated
+                mt_conflicts_changes |= (self.lo_conflicts ^ lo_conflicts |
+                    act_lo_conflicts ^ self.act_lo_conflicts |
+                    self.scan_redated())
+                self.lo_conflicts = lo_conflicts
+                self.act_lo_conflicts = act_lo_conflicts
             # note we ignore missing/added here - this is the responsibility of
             # refresh - if we are not called from refresh those should be empty
             return RefrData(ldiff.reordered | ldiff.affected |
-                            ldiff.act_ord_status())
+                            ldiff.act_ord_status() | mt_conflicts_changes)
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
             self._active_wip = list(load_order.cached_active_tuple())
@@ -2266,19 +2304,13 @@ def _lo_op(lop_func):
     return _lo_wip_wrapper
 
 #------------------------------------------------------------------------------
-# active status magic numbers
-ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = *range(3), -1
-
-def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
-    """Return the key in act_dicts whose value contains item_key."""
-    for k, v in act_dicts.items():
-        if item_key in v:
-            return k
-    return unactive_val
-
 class ModInfos(TableFileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     _dir_key = 'mods'
+    # caches for UI warnings
+    _known_cor_mods = set()
+    _known_invalid_versions = set()
+    _known_older_form_versions = set()
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
@@ -2311,8 +2343,7 @@ class ModInfos(TableFileInfos):
         self.plugin_inis = FNDict()
         # Set of plugins with form versions < RecordHeader.plugin_form_version
         self.older_form_versions = set()
-        # merged, imported, bashed_patches caches
-        self.merged, self.imported, self.bashed_patches = set(), set(), set()
+        self.bashed_patches = set() # bashed_patches cache
         #--Oblivion version
         self.voCurrent = None
         self._voAvailable = set()
@@ -2328,6 +2359,8 @@ class ModInfos(TableFileInfos):
         self.__bsa_lo = self.__bsa_cause = self.__available_bsas = None
         global modInfos
         modInfos = self ##: hack needed in ModInfo.readHeader
+        # lo conflicts cache only used in _ModsUIList.set_item_format
+        self.lo_conflicts, self.act_lo_conflicts = set(), set()
         super().__init__(ModInfo)
 
     # Refresh - not quite surprisingly this is super complex - therefore define
@@ -2358,17 +2391,22 @@ class ModInfos(TableFileInfos):
                 forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
-        rdata |= lordata
         # if load order did not change, we must perform the refreshes below
         if not ldiff:
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
-            rdata.redraw |= self._refresh_mod_inis_and_strings()
+            rdata.redraw |= self._refresh_mod_inis_and_strings() | \
+                            self.scan_redated()
             if mods_changes:
                 rdata.redraw |= self._file_or_active_updates()
+        rdata |= lordata
         self._voAvailable, self.voCurrent = bush.game.modding_esms(self)
         return rdata
+
+    def scan_redated(self):
+        return {k for k, v in self.items() if # reset 'redated'
+                v.redated and not setattr(v, 'redated', False)}
 
     # _AFileInfos overrides that are used in refresh - ghosts ahead
     def _delete_refresh(self, infos):
@@ -2396,7 +2434,7 @@ class ModInfos(TableFileInfos):
             (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
             inodes.items()))
 
-    def _file_or_active_updates(self):
+    def _file_or_active_updates(self, *, __lo=load_order.cached_lo_index):
         """If any plugins have been added, updated or deleted, or the active
         order/status changed we need to recalculate cached data structures."""
         ##:(701) We could be more granular passing ldiff (and rdata) - this
@@ -2423,11 +2461,11 @@ class ModInfos(TableFileInfos):
         # We need to scan dependent mods first to account for mergeability of
         # their masters
         none_ = (None, {})
-        for fn_mod, plug in dict_sort(self, reverse=True,
-                                      key_f=load_order.cached_lo_index):
+        act = {*(act_tuple := load_order.cached_active_tuple())}
+        for fn_mod, plug in dict_sort(self, reverse=True, key_f=__lo):
             for p_master in plug.masterNames:
                 cached_dependents[p_master].add(fn_mod)
-            isact = load_order.cached_is_active(fn_mod)
+            isact = fn_mod in act
             if plug.isBP():
                 self.bashed_patches.add(fn_mod)
                 if isact: active_patches.add(fn_mod)
@@ -2467,19 +2505,20 @@ class ModInfos(TableFileInfos):
         # plugins are handled by our defaultdict factory
         old_dexs = self.real_indices
         self.real_indices = bush.game.plugin_flags.get_indexes(
-            ((p, self[p]) for p in load_order.cached_active_tuple()))
-        mrgd, imprtd = self.merged, self.imported
-        self.merged, self.imported = self.getSemiActive(active_patches)
+            ((p, self[p]) for p in act_tuple))
+        merged, imported = self.getSemiActive(active_patches)
         dex_xor = (k for k, v in self.real_indices.items() ^ old_dexs.items()
             if v[0] != sys.maxsize) # added from defaultdict for inactive mods
-        chain_ch = {*chain(dex_xor, changed, rescan_mods, self.merged ^ mrgd,
-            self.imported ^ imprtd, self.bashed_patches ^ bps,
-            self.activeBad ^ old_ab, self.bad_names ^ old_bad)}
-        to_redraw = set()
+        chain_ch = chain(self.bashed_patches ^ bps, dex_xor, changed,
+            rescan_mods, self.activeBad ^ old_ab, self.bad_names ^ old_bad)
+        to_redraw = {m for m in chain_ch if m in self}
         # reset and cache master status for (all) mod infos (more granular?)
+        self.active_statuses = {ST_ACTIVE: act,
+                                ST_MERGED: merged, ST_IMPORTED: imported}
         for fn, plug in self.items(): # we could use dependents here?
-            old, new = plug.master_st, plug.info_status(recalc_st=True)
-            if old != new or fn in chain_ch: # we need to redraw
+            old, new = (plug.master_st, plug.act_st), plug.info_status(
+                recalc_st=True, act_dicts=self.active_statuses)
+            if old != new: # we need to redraw
                 to_redraw.add(fn)
         return to_redraw
 
@@ -2608,11 +2647,6 @@ class ModInfos(TableFileInfos):
                     bp_mods) if fn in self)
         return merged_, imported_
 
-    def active_statuses(self):
-        """Return a dict with keys 0, 1, 2 for active, merged and imported."""
-        return {ST_ACTIVE: set(load_order.cached_active_tuple()),
-                ST_MERGED: self.merged, ST_IMPORTED: self.imported}
-
     # Rest of DataStore overrides ---------------------------------------------
     def rename_operation(self, info_new_name, dest_dir=None, **kwargs):
         if act_mods := dest_dir is None and {fn for inf, _new_name in
@@ -2637,43 +2671,41 @@ class ModInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash']
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
-        store_key = self
+    def warning_args(self, multi_warnings, lo_warnings):
         corruptMods = set(self.corrupted)
-        if new_cor := corruptMods - link_frame.knownCorrupted:
-            multi_warnings.append(
-                (_('The following plugins could not be read. This most likely '
-                   'means that they are corrupt.'), new_cor, store_key))
-            link_frame.knownCorrupted |= corruptMods
+        if new_cor := corruptMods - self._known_cor_mods:
+            msg = _('The following plugins could not be read. This most '
+                    'likely means that they are corrupt.')
+            multi_warnings.append((msg, new_cor, self))
+            self._known_cor_mods |= corruptMods
         valid_vers = bush.game.Esp.validHeaderVersions
         invalidVersions = {ck for ck, x in self.items() if
                            all(x.header.version != v for v in valid_vers)}
-        if new_inv := invalidVersions - link_frame.known_invalid_versions:
-            multi_warnings.append(
-                (_('The following plugins have header versions that are not '
-                   'valid for this game. This may mean that they are '
-                   'actually intended to be used for a different game.'),
-                 new_inv, store_key))
-            link_frame.known_invalid_versions |= invalidVersions
+        if new_inv := invalidVersions - self._known_invalid_versions:
+            multi_warnings.append((_(
+                'The following plugins have header versions that are not '
+                'valid for this game. This may mean that they are actually '
+                'intended to be used for a different game.'), new_inv, self))
+            self._known_invalid_versions |= invalidVersions
         old_fvers = self.older_form_versions
-        if new_old_fvers := old_fvers - link_frame.known_older_form_versions:
-            multi_warnings.append(
-                (_('The following plugins use an older Form Version for their '
-                   'main header. This most likely means that they were not '
-                   'ported properly (if at all).'), new_old_fvers, store_key))
-            link_frame.known_older_form_versions |= old_fvers
+        if new_old_fvers := old_fvers - self._known_older_form_versions:
+            msg = _('The following plugins use an older Form Version for '
+                    'their main header. This most likely means that they '
+                    'were not ported properly (if at all).')
+            multi_warnings.append((msg, new_old_fvers, self))
+            self._known_older_form_versions |= old_fvers
         if self.new_missing_strings:
-            multi_warnings.append(
-                (_('The following plugins are marked as localized, but are '
-                   'missing strings localization files in the language your '
-                   'game is set to. This will cause CTDs if they are '
-                   'activated.'), self.new_missing_strings, store_key))
+            msg = _('The following plugins are marked as localized, but are '
+                    'missing strings localization files in the language your '
+                    'game is set to. This will cause CTDs if they are '
+                    'activated.')
+            multi_warnings.append((msg, self.new_missing_strings, self))
             self.new_missing_strings = set()
         if self.warn_missing_lo_act:
-            lo_warnings.append((_('The following plugins could not be found '
-                    'in the %(data_folder)s folder or are corrupt and have '
-                    'thus been removed from the load order.') % {
-                                    'data_folder': bush.game.mods_dir_name, },
+            msg = _('The following plugins could not be found in the '
+                    '%(data_folder)s folder or are corrupt and have thus '
+                    'been removed from the load order.')
+            lo_warnings.append((msg % {'data_folder': bush.game.mods_dir_name},
                                 self.warn_missing_lo_act))
             self.warn_missing_lo_act = set()
         if self.selectedExtra:
@@ -2961,8 +2993,8 @@ class ModInfos(TableFileInfos):
     def _lo_insert_after(self, insert_after, *, out_diff): #only use in refresh
         lwip = self._lo_wip.copy()
         for new_mod, previous in insert_after.items():
-            new_mod = self[new_mod].fn_key  ##: new_mod is not always an FName
-            if new_mod in lwip: lwip.remove(new_mod)  # ...
+            # _CopyToLink might overwrite, not DummyMasters/File_Duplicate
+            if new_mod in lwip: lwip.remove(new_mod)
             dex = lwip.index(previous)
             if bush.game.mtime_lo:
                 t_prev = self[previous].ftime
@@ -2976,7 +3008,7 @@ class ModInfos(TableFileInfos):
                     t_prev += 1  # add one second
                     new_time = t_prev if t_prev < t_next else None
                 if new_time is not None:
-                    self[new_mod].setmtime(new_time)
+                    self[new_mod].setmtime(new_time, mark_redated=True)
             lwip[dex + 1:dex + 1] = [new_mod]
         out_diff |= self._diff_los(new_lo=lwip)
         self._lo_wip = lwip
@@ -3122,7 +3154,7 @@ class ModInfos(TableFileInfos):
             all_mods = (masters_set | merged | imported) & set(self)
         else:
             log.setHeader(head + _(u'Active Plugins:'))
-            statuses = self.active_statuses()
+            statuses = self.active_statuses
             all_mods = {*chain.from_iterable(statuses.values())}
             masters_set, merged = statuses[ST_ACTIVE], statuses[ST_MERGED]
         all_mods = load_order.get_ordered(all_mods)
@@ -3253,6 +3285,7 @@ class SaveInfos(TableFileInfos):
     # Enabled and disabled saves, no .bak files ##: needed?
     _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
     file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
+    _known_cor_saves = set()
 
     def __init__(self):
         SaveInfo.cosave_types = cosaves.get_cosave_types(
@@ -3306,15 +3339,14 @@ class SaveInfos(TableFileInfos):
                 self._init_store(sd)
         return self.store_dir
 
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
-        store_key = self
+    def warning_args(self, multi_warnings, lo_warnings):
         corruptSaves = set(self.corrupted)
-        if not corruptSaves <= link_frame.knownCorrupted:
+        if not corruptSaves <= self._known_cor_saves:
             multi_warnings.append(
                 (_('The following save files could not be read. This most '
                    'likely means that they are corrupt.'),
-                 corruptSaves - link_frame.knownCorrupted, store_key))
-            link_frame.knownCorrupted |= corruptSaves
+                 corruptSaves - self._known_cor_saves, self))
+            self._known_cor_saves |= corruptSaves
 
     @classmethod
     def unhide_wildcard(cls, **kwargs):
@@ -3402,9 +3434,11 @@ class BSAInfos(TableFileInfos):
     # BSAs that have versions other than the one expected for the current game
     mismatched_versions = set()
     # Maps BA2 hashes to BA2 names, used to detect collisions
-    _ba2_hashes = defaultdict(set)
+    ba2_hashes = defaultdict(set)
     ba2_collisions = set()
     _dir_key = 'mods'
+    _known_mismatched_version_bsas = set()
+    _known_ba2_collisions = set()
 
     def __init__(self):
         ##: Hack, this should not use display_name
@@ -3424,6 +3458,11 @@ class BSAInfos(TableFileInfos):
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
                 self._reset_bsa_mtime()
+                # If the BSA has a mismatched version, schedule a warning
+                if bush.game.Bsa.valid_versions and self.inspect_version() \
+                        not in bush.game.Bsa.valid_versions:
+                    BSAInfos.mismatched_versions.add(self.fn_key)
+                self._check_collisions(BSAInfos)
             _key_to_attr = {'info': 'bsa_notes', 'installer': 'bsa_owner_inst'}
 
             @classmethod
@@ -3446,47 +3485,26 @@ class BSAInfos(TableFileInfos):
                         self.setmtime(default_mtime)
         super().__init__(BSAInfo)
 
-    def refresh(self, *args, **kwargs):
-        rdata = super().refresh(*args, **kwargs)
-        for new_bsa_name in rdata.to_add:
-            binf = self[new_bsa_name]
-            # If the BSA has a mismatched version, schedule a warning
-            if bush.game.Bsa.valid_versions: # else skip checks for this game
-                if binf.inspect_version() not in bush.game.Bsa.valid_versions:
-                    self.mismatched_versions.add(new_bsa_name)
-            # For BA2s, check for hash collisions
-            if new_bsa_name.fn_ext == '.ba2':
-                ba2_entry = self._ba2_hashes[binf.ba2_hash()]
-                # Drop the previous collision if it's present, then check if we
-                # have a new one
-                self.ba2_collisions.discard(' & '.join(sorted(ba2_entry)))
-                ba2_entry.add(new_bsa_name)
-                if len(ba2_entry) >= 2:
-                    self.ba2_collisions.add(' & '.join(sorted(ba2_entry)))
-        return rdata
-
-    def warning_args(self, multi_warnings, lo_warnings, link_frame):
-        store_key = self
+    def warning_args(self, multi_warnings, lo_warnings):
         bsa_mvers = self.mismatched_versions
-        if not bsa_mvers <= link_frame.known_mismatched_version_bsas:
+        if not bsa_mvers <= self._known_mismatched_version_bsas:
+            m = _('The following BSAs have a version different from the one '
+                  '%(game_name)s expects. This can lead to CTDs, please '
+                  'extract and repack them using the %(ck_name)s-provided '
+                  'tool.') % {'game_name': bush.game.display_name,
+                              'ck_name': bush.game.Ck.long_name}
             multi_warnings.append(
-                (_('The following BSAs have a version different from the one '
-                   '%(game_name)s expects. This can lead to CTDs, please '
-                   'extract and repack them using the %(ck_name)s-provided '
-                   'tool.') % {'game_name': bush.game.display_name,
-                               'ck_name': bush.game.Ck.long_name},
-                 bsa_mvers - link_frame.known_mismatched_version_bsas,
-                 store_key))
-            link_frame.known_mismatched_version_bsas |= bsa_mvers
+                (m, bsa_mvers - self._known_mismatched_version_bsas, self))
+            self._known_mismatched_version_bsas |= bsa_mvers
         ba2_colls = self.ba2_collisions
-        if not ba2_colls <= link_frame.known_ba2_collisions:
+        if not ba2_colls <= self._known_ba2_collisions:
+            m = _('The following BA2s have filenames whose hashes collide, '
+                  'which will cause one or more of them to fail to work '
+                  'correctly. This should be corrected by the mod authors '
+                  'by renaming the files to avoid the collision.')
             multi_warnings.append(
-                (_('The following BA2s have filenames whose hashes collide, '
-                   'which will cause one or more of them to fail to work '
-                   'correctly. This should be corrected by the mod authors '
-                   'by renaming the files to avoid the collision.'),
-                 ba2_colls - link_frame.known_ba2_collisions, store_key))
-            link_frame.known_ba2_collisions |= ba2_colls
+                (m, ba2_colls - self._known_ba2_collisions, self))
+            self._known_ba2_collisions |= ba2_colls
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'BSA Data')

@@ -37,6 +37,16 @@ from typing import final
 from .bolt import sig_to_str
 from .exception import ModError
 
+# active status magic numbers
+ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = *range(3), -1
+
+def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
+    """Return the key in act_dicts whose value contains item_key."""
+    for k, v in act_dicts.items():
+        if item_key in v:
+            return k
+    return unactive_val
+
 # global holding the scale flags mapped to their offsets see _init_plugin_types
 # ESL, MID in this order - avoid using it, it's for caching function parameters
 scale_flags = {}
@@ -180,7 +190,7 @@ class MergeabilityCheck(Enum):
                     _('The following plugins could be %(FLAG)s-flagged.') % n)
         return [p for p in mod_infos.values() if self in p.merge_types()], h, m
 
-    def display_info(self, minf, checkMark):
+    def display_info(self, minf, is_merged):
         """Return a UI settings key and a mouse text for the mod list UI."""
         if self not in minf.merge_types(): return '', ''
         match self:
@@ -188,7 +198,7 @@ class MergeabilityCheck(Enum):
                 if 'NoMerge' in minf.getBashTags():
                     return 'mods.text.noMerge', _('Technically mergeable, '
                                                   'but has NoMerge tag.')
-                if checkMark == 2: # Merged plugins won't be in master lists
+                if is_merged: # Merged plugins won't be in master lists
                     mtext = _('Merged into Bashed Patch.')
                 else:
                     mtext = _('Can be merged into Bashed Patch.')

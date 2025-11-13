@@ -257,7 +257,7 @@ class LoGame:
             if acti_lo:
                 bolt.deprint(f' - Load order: {acti_lo.pop(0)}')
 
-    # API ---------------------------------------------------------------------
+    # API: Get and helpers ----------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
             cached_active_ordered: LoList, fix_lo) -> tuple[LoTuple, LoTuple]:
         """Get and validate current load order and active plugins information.
@@ -300,6 +300,7 @@ class LoGame:
             self._backup_load_order()
             self._persist_load_order(lo, None) # active is not used here
 
+    # API: Set and helpers ----------------------------------------------------
     def set_load_order(self, lord, active, previous_lord=None,
                        previous_active=None, fix_lo=None):
         """Set the load order and/or active plugins (or just validate if
@@ -369,26 +370,28 @@ class LoGame:
                                      previous_lord)
         return lord, active # return what we set or was previously set
 
-    # Conflicts - only for timestamp games
-    def has_load_order_conflict(self, mod_name): return False
-    def has_load_order_conflict_active(self, mod_name, active): return False
-
     @classmethod
     def _must_update_active(cls, deleted_plugins, reord_plugins):
         raise NotImplementedError
 
+    # API: Helpers
     def request_cache_update(self, cached_load_order, cached_active): # one use
         """Return a pair of values for passing to get_load_order."""
         update_act = cached_active is None or self._plugins_txt.do_update()
         active = None if update_act else cached_active
         return None, active # Timestamp just calculate load order from modInfos
 
-    # Handle active plugins file (always exists)
+    def get_lo_files(self) -> list[Path]:
+        """Returns the paths of the files used by this game for storing load
+        order information."""
+        return [self._plugins_txt.abs_path] # base case
+
     def swap(self, old_dir, new_dir):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
         return self._plugins_txt.upd_on_swap(old_dir, new_dir)
 
+    # Handle active plugins file (always exists)
     def _fetch_active_plugins(self):
         try:
             active, _lo = self._plugins_txt.parse_modfile()
@@ -405,11 +408,6 @@ class LoGame:
             self._plugins_txt.create_backup()
         self._plugins_txt.write_modfile(lord, active)
         self._plugins_txt.do_update()
-
-    def get_lo_files(self) -> list[Path]:
-        """Returns the paths of the files used by this game for storing load
-        order information."""
-        return [self._plugins_txt.abs_path] # base case
 
     def _backup_load_order(self):
         pass # timestamps, no file to backup
@@ -476,8 +474,7 @@ class LoGame:
             else: # append all to the end, even esms, will be reordered below
                 lord.append(mod)
         # See if any esm files are loaded below an esp and reorder as necessary
-        is_m = self.lo_sort_key(by_name=False)
-        lord.sort(key=is_m)
+        lord.sort(key=self.lo_sort_key(by_name=False))
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
@@ -489,15 +486,6 @@ class LoGame:
             lo_order_changed = True
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
-
-    def lo_sort_key(self, *, ds=None, by_name=True, by_time=False):
-        ds = self._mod_infos if ds is None else ds
-        def _key(fn):
-            is_m = self._game_handle.master_flags.sort_masters_key(ds[fn])
-            if by_time:
-                is_m = *is_m, ds[fn].ftime
-            return (*is_m, fn) if by_name else is_m
-        return _key
 
     def _fix_active_plugins(self, acti, lord, fix_active, on_disc):
         """Always called with a valid load order (in set_load_order lord has
@@ -549,6 +537,30 @@ class LoGame:
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
 
+    # API: Exposed validation helpers - see load_order.py
+    def lo_sort_key(self, *, ds=None, by_name=True, by_time=False):
+        ds = self._mod_infos if ds is None else ds
+        def _key(fn):
+            is_m = self._game_handle.master_flags.sort_masters_key(ds[fn])
+            if by_time:
+                is_m = *is_m, ds[fn].ftime
+            return (*is_m, fn) if by_name else is_m
+        return _key
+
+    def pinned_plugins(self, mods: set[FName] | None = None, fixed_order=False,
+                       filter_mods=False) -> list[FName]:
+        """Return a list of plugins (in random order) that are always active
+        or a list of plugins that must have the order they have in this list
+        (the first list is always contained in the second). Both lists may only
+        contain plugins that are present in modInfos (excluding corrupted)."""
+        modset = self._mod_infos if mods is None else mods & set(self._mod_infos)
+        mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
+            self._active_if_present
+        if filter_mods:
+            if fixed_order: mod_set_or_tuple = set(mod_set_or_tuple)
+            return [x for x in modset if x not in mod_set_or_tuple]
+        return [x for x in mod_set_or_tuple if x in modset]
+
     def check_active_limit(self, acti_filtered, *, as_type=set):
         pl_type_active = defaultdict(list)
         limit_flags = {pf: (pf.name.title(), mp) for pf in
@@ -569,20 +581,6 @@ class LoGame:
         if as_type is str:
             return ' and '.join(k for k in filtered)
         raise ValueError(f'Invalid {as_type=}')
-
-    def pinned_plugins(self, mods: set[FName] | None = None, fixed_order=False,
-                       filter_mods=False) -> list[FName]:
-        """Return a list of plugins (in random order) that are always active
-        or a list of plugins that must have the order they have in this list
-        (the first list is always contained in the second). Both lists may only
-        contain plugins that are present in modInfos (excluding corrupted)."""
-        modset = self._mod_infos if mods is None else mods & set(self._mod_infos)
-        mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
-            self._active_if_present
-        if filter_mods:
-            if fixed_order: mod_set_or_tuple = set(mod_set_or_tuple)
-            return [x for x in modset if x not in mod_set_or_tuple]
-        return [x for x in mod_set_or_tuple if x in modset]
 
     @staticmethod
     def _check_active_order(acti, lord):
@@ -714,8 +712,6 @@ class INIGame(LoGame):
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
-    # Intentionally imprecise mtime cache
-    _mtime_mods: defaultdict[int, set[Path]] = defaultdict(set)
 
     @staticmethod
     def _check_active_order(acti, lord):
@@ -723,57 +719,39 @@ class TimestampGame(LoGame):
         return [] # no need to reorder plugins.txt - fix_lo.act_reordered False
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reord_plugins): return deleted_plugins
-
-    def has_load_order_conflict(self, mod_name):
-        ti = int(self._mod_infos[mod_name].ftime)
-        return ti in self._mtime_mods and len(self._mtime_mods[ti]) > 1
-
-    def has_load_order_conflict_active(self, mod_name, active):
-        ti = int(self._mod_infos[mod_name].ftime)
-        return self.has_load_order_conflict(mod_name) and bool(
-            (self._mtime_mods[ti] - {mod_name}) & active)
+    def _must_update_active(cls, deleted_plugins, reord_plugins):
+        return deleted_plugins
 
     # Abstract overrides ------------------------------------------------------
-    def __calculate_mtime_order(self, mods=None): # excludes mods in corrupted
+    def __calculate_mtime_order(self, mods): # excludes mods in corrupted
         # split into master block and not master block then sort by ftime then
         # by name case insensitive (for time conflicts)
-        is_m = self.lo_sort_key(by_time=True)
-        return sorted(self._mod_infos if mods is None else mods, key=is_m)
+        return sorted(mods, key=self.lo_sort_key(by_time=True))
 
     def _fetch_load_order(self, cached_load_order, cached_active):
-        self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
-        return self.__calculate_mtime_order()
+        return self.__calculate_mtime_order(self._mod_infos)
 
     def _persist_load_order(self, lord, active):
-        assert set(self._mod_infos) == set(lord) # (lord must be valid)
-        if not lord: return
-        current = self.__calculate_mtime_order()
+        modinfos = self._mod_infos
+        current = self.__calculate_mtime_order(modinfos)
         # break conflicts
-        older = self._mod_infos[current[0]].ftime # initialize to game master
-        for i, mod in enumerate(current[1:]):
-            info = self._mod_infos[mod]
-            if info.ftime == older: break
-            older = info.ftime
-        else: mod = i = None # define i to avoid warning below
-        if mod is not None: # respace this and next mods in 60 sec intervals
-            for mod in current[i + 1:]:
-                info = self._mod_infos[mod]
-                older += 60.0
-                info.setmtime(older)
+        mods_it = map(modinfos.__getitem__, current)
+        older = next(mods_it).ftime # initialize to game master ftime
+        for info in mods_it:
+            # mods_it is ordered in ftime so conflicts come in chunks
+            if older == (older := info.ftime):
+                # respace this and next mods in 60 sec intervals
+                for info in (info, *mods_it):
+                    older += 60.0
+                    info.setmtime(older, mark_redated=True)
+                break
         restamp = []
+        # len(lord) must be equal to len(modinfos) - collect modification times
         for ordered, mod in zip(lord, current, strict=True):
-            if ordered == mod: continue
-            restamp.append((ordered, self._mod_infos[mod].ftime))
+            if ordered != mod:
+                restamp.append((ordered, modinfos[mod].ftime))
         for ordered, modification_time in restamp:
-            self._mod_infos[ordered].setmtime(modification_time)
-        # rebuild our cache
-        self._rebuild_mtimes_cache()
-
-    def _rebuild_mtimes_cache(self):
-        self._mtime_mods.clear()
-        for mod, info in self._mod_infos.items():
-            self._mtime_mods[int(info.ftime)].add(mod)
+            modinfos[ordered].setmtime(modification_time)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):

@@ -78,8 +78,8 @@ from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
     forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
     to_win_newlines, top_level_files
-from ..bosh import DataStore, ModInfo, active_keys, omods, read_dir_tags, \
-    read_loot_tags, save_tags_to_dir
+from ..bosh import DataStore, ModInfo, omods, read_dir_tags, read_loot_tags, \
+    save_tags_to_dir
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
@@ -91,6 +91,7 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     showOk, BmpFromStream, init_image_resources, get_image, \
     get_installer_color_checks, get_image_dir, copy_text_to_clipboard
 from ..localize import format_date
+from ..plugin_types import active_keys, ST_MERGED
 from ..update_checker import LatestVersion, UCThread
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
@@ -290,7 +291,7 @@ class _ModsUIList(UIList):
             self._extra_sortings.insert(0, _ModsUIList._sort_masters_first)
 
     def _cache_rui_structs(self):
-        return {'act_dicts': bosh.modInfos.active_statuses()}
+        return {'act_dicts': bosh.modInfos.active_statuses}
 
     def _sort_masters_first(self, items):
         """Conditional sort, performs the actual 'masters-first' sorting if
@@ -301,7 +302,7 @@ class _ModsUIList(UIList):
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            act_dicts = bosh.modInfos.active_statuses()
+            act_dicts = bosh.modInfos.active_statuses
             def _sel_sort_key(x):
                 # First active, then merged, then imported, then inactive
                 return active_keys(self._item_name(x), act_dicts, 3)
@@ -362,15 +363,15 @@ class _ModsUIList(UIList):
     def _set_icon_text(self, minf, item_format, item_name, *, act_dicts,
                        # we get item_name not item_key so we need _mouse_text
                        _mouse_text, **kwargs):
-        checkMark = active_keys(item_name, act_dicts) + 1
-        status = super()._set_icon_text(minf, item_format, item_name, **kwargs)
+        status, checkMark = super()._set_icon_text(minf, item_format,
+            item_name, act_dicts=act_dicts, **kwargs)
         #--Font color
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
         if item_name in bosh.modInfos.bashed_patches:
             item_format.text_key = 'mods.text.bashedPatch'
             _mouse_text.append(_('Bashed Patch.'))
         for mchk in bush.game.mergeability_checks:
-            txtkey, mtext = mchk.display_info(minf, checkMark)
+            txtkey, mtext = mchk.display_info(minf, checkMark == ST_MERGED)
             if txtkey:
                 item_format.text_key = txtkey
                 _mouse_text.append(mtext)
@@ -384,7 +385,7 @@ class _ModsUIList(UIList):
             pass
         if 'Deactivate' in minf.getBashTags(): # was for mods only
             item_format.italics = True
-        return status, checkMark
+        return status, checkMark + 1 # duh - the chekboxes key
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -600,7 +601,7 @@ class MasterList(_ModsUIList):
             bass.settings[u'bash.mods.renames'][
                 masterInfo.old_name] = masterInfo.curr_name
             # populate, refresh must be called last
-            self.PopulateItem(evt_index)
+            self.PopulateItem(evt_index, **self._cache_rui_structs())
             return EventResult.FINISH ##: needed?
         elif evt_label == u'':
             return EventResult.CANCEL
@@ -1542,7 +1543,6 @@ class ModDetails(_ModsSavesDetails):
         'Windows-1252. %(game_name)s may not be able to activate this '
         'plugin because of this. Do you want to rename the plugin anyway?')
     def _extra_changes(self, rename_data, mod_inf):
-        changeDate = (self.modifiedStr != format_date(mod_inf.ftime))
         change_hdr = self.uilist.edited or (
                 self.authorStr != mod_inf.header.author or
                 self.descriptionStr != mod_inf.header.description)
@@ -1556,15 +1556,13 @@ class ModDetails(_ModsSavesDetails):
             mod_inf.header.masters = self.uilist.GetNewMasters()
             mod_inf.header.setChanged()
             mod_inf.writeHeader(old_mi_masters)
-        ref_saves = bool(rename_data)
         #--Change date?
-        if unlock_lo := changeDate:
+        if unlock_lo := (self.modifiedStr != format_date(mod_inf.ftime)):
             unlock_lo = bush.game.mtime_lo
-            mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)))
-            #--Only change date?
-            if not (rename_data or change_hdr):
-                rename_data.redraw.add(mod_inf.fn_key) # needed!
-        return change_hdr, ref_saves | unlock_lo, {'unlock_lo': unlock_lo}
+            mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)),
+                             mark_redated=True) # refresh will add it to redraw
+        return change_hdr, bool(rename_data) | unlock_lo, {
+            'unlock_lo': unlock_lo}
 
     def _rename_detail_item(self, new_n):
         #--Warn on rename if file has BSA and/or dialog
@@ -1945,11 +1943,6 @@ class SaveList(UIList):
         'Cell': _ask_info('header.pcLocation'),
     }
 
-    #--Populate Item
-    def _set_icon_text(self, inf, *args, **kwargs):
-        status = super()._set_icon_text(inf, *args, **kwargs)
-        return status, inf.is_save_enabled()
-
     # Events ------------------------------------------------------------------
     @balt.conversation
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
@@ -1970,8 +1963,7 @@ class SaveList(UIList):
             u'save_ext_on': enabled_ext, u'save_ext_off': disabled_ext}
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
-        do_enable = not sinf.is_save_enabled()
-        extension = enabled_ext if do_enable else disabled_ext
+        extension = disabled_ext if sinf.is_save_enabled() else enabled_ext
         self.try_rename([[sinf, fn_item.fn_body]], item_edited=fn_item,
                         forced_ext=extension)
 
@@ -3473,11 +3465,6 @@ class BashFrame(WindowFrame):
         self.notebook = BashNotebook(self._native_widget)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
-        self.knownCorrupted = set()
-        self.known_invalid_versions = set()
-        self.known_older_form_versions = set()
-        self.known_mismatched_version_bsas = set()
-        self.known_ba2_collisions = set()
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -3625,7 +3612,7 @@ class BashFrame(WindowFrame):
         if refr_saves and ui_refreshes.get(bosh.modInfos):
             to_redraw = set()
             for fn, save in bosh.saveInfos.items():
-                old, new = save.master_st, save.info_status(recalc_st=True)
+                old, new = save.master_st, save.info_status(recalc_st=True)[0]
                 if old != new: # save master status changed, redraw
                     to_redraw.add(fn)
             if rdict := ui_refreshes.get(bosh.saveInfos):
@@ -3644,7 +3631,7 @@ class BashFrame(WindowFrame):
             ui_refreshes = [k for k in ui_refreshes if k in stores]
         multi_warns, lo_warns = [], []
         for ds in ui_refreshes:
-            ds.warning_args(multi_warns, lo_warns, self)
+            ds.warning_args(multi_warns, lo_warns)
         if multi_warns:
             mk = (mwd := MultiWarningDialog).make_highlight_entry
             mwd(self, highlight_items=starmap(mk, multi_warns)).show_modeless()

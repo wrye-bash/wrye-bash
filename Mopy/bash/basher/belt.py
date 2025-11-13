@@ -30,7 +30,8 @@ from .. import ScriptParser, bass, bolt, bush, load_order
 from ..ScriptParser import error, PreParser
 from ..balt import ItemLink
 from ..bolt import FName, FNDict, LooseVersion
-from ..bosh import ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE, active_keys
+from ..plugin_types import ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE, \
+    active_keys
 from ..env import get_file_version, to_os_path
 from ..gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
@@ -499,7 +500,7 @@ class WryeParser(PreParser):
         # used in self.fn_get_plugin_status which uses different constants!
         int_map = {ST_ACTIVE: 2, ST_MERGED: 3, ST_IMPORTED: 1, ST_INACTIVE: 0}
         self._act_dicts = {int_map[k]: v for k, v in
-                           mod_infos.active_statuses().items()}
+                           mod_infos.active_statuses.items()}
         # file exists but not active/merged/imported - dicts are ordered
         self._act_dicts[int_map[ST_INACTIVE]] = mod_infos
 

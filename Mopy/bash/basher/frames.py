@@ -37,6 +37,7 @@ from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
     SaveButton, SearchBar, Spacer, Splitter, Stretch, TextArea, TextField, \
     VerticalLine, VLayout, WindowFrame, bell, copy_text_to_clipboard, \
     web_viewer_available, showWarning
+from ..plugin_types import ST_MERGED, ST_IMPORTED
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -519,8 +520,8 @@ class PluginChecker(WindowFrame):
                                      self._controls[ctrl_id].is_checked)
         #--Cache info from modinfos to support auto-update.
         self.orderedActive = load_order.cached_active_tuple()
-        self.__merged = bosh.modInfos.merged.copy()
-        self.__imported = bosh.modInfos.imported.copy()
+        self.__merged = bosh.modInfos.active_statuses[ST_MERGED].copy()
+        self.__imported = bosh.modInfos.active_statuses[ST_IMPORTED].copy()
         #--Do it
         with balt.Progress(_('Checking Plugins…'), parent=self,
                            abort=True) as prog:
@@ -543,8 +544,8 @@ class PluginChecker(WindowFrame):
         """Handle window activate/deactivate. Use for auto-updating list."""
         if (evt_active and (
                 self.orderedActive != load_order.cached_active_tuple() or
-                self.__merged != bosh.modInfos.merged or
-                self.__imported != bosh.modInfos.imported)
+                self.__merged != bosh.modInfos.active_statuses[ST_MERGED] or
+                self.__imported != bosh.modInfos.active_statuses[ST_IMPORTED])
             ):
             self.CheckMods()
 
