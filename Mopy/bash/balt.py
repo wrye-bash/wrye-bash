@@ -1019,7 +1019,7 @@ class UIList(PanelWin):
     @final
     @conversation
     def try_rename(self, ren_args, *, forced_ext='', refresh_ui=True,
-                   check_unique=True, deselect=False, **ren_kwargs):
+            check_unique=True, deselect=False, refr_saves=True, **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
@@ -1035,7 +1035,7 @@ class UIList(PanelWin):
             # in case the displayed item was *not* renamed
             args_dict = {'detail_item': fn} if fn in ds else {}
             args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
-            self.propagate_refresh(rdata, **args_dict)
+            self.propagate_refresh(rdata, **args_dict, refr_saves=refr_saves)
             #--Reselect the renamed items
             if added := rdata.to_add:
                 self.SelectItemsNoCallback(added, deselectOthers=deselect)

@@ -20,14 +20,12 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-from .. import balt, bass, bolt, bosh, bush, env
+from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bolt import FNDict, RefrIn, FName
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
     FileOpenMultiple
 from ..localize import format_date
-from ..wbtemp import TempFile
 
 __all__ = ['File_Backup', 'File_Duplicate', 'File_JumpToSource', 'File_Redate',
            'File_ListMasters', 'File_RevertToBackup', 'Files_Unhide',
@@ -167,35 +165,30 @@ class RestoreInfo(OneItemLink):
     def Execute(self):
         #--Warning box
         if not self._ask_revert(): return
-        sel_file = self._selected_item
-        with BusyCursor(), TempFile(bolt_path=True) as known_good_copy:
-            info_path = (sel_inf := self._selected_info).abs_path
-            # Make a temp copy first in case reverting to backup fails
-            sel_inf.fs_copy(known_good_copy)
-            self._restore()
-            # in case the restored file is a BP: refresh below will try to
+        with BusyCursor():
+            sel_inf = self._selected_info
+            # create an info in the backup directory and try loading it - note
+            # we unlink 'bp_split_parent'!
+            if not (inf := self._data_store.get_update_info(self._backup_path,
+                    att_val=sel_inf.get_persistent_attrs(exclude=True))):
+                self._failed_msg()
+                return
+            ren_args = [(inf, self._selected_item, self._data_store.store_dir)]
+            # in case the restored file is a BP: refresh in rename will try to
             # refresh info sets, but we don't back up the config so we can't
             # really detect changes in imported/merged - a (another) backup
             # edge case - as backup is half-baked anyway let's agree for now
             # that BPs remain BPs with the same config as before - if not,
             # manually run a mergeability scan after updating the config
-            self._data_store.refresh(
-                RefrIn.from_tabled_infos({sel_file: sel_inf}, exclude=True))
-            if not self._data_store.get(sel_file):
-                # Reverting to backup failed - may be corrupt
-                bolt.deprint('Failed to revert to backup', traceback=True)
-                self.window.panel.ClearDetails()
-                if self._failed_msg():
-                    # Restore the known good file again - no error check needed
-                    info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh(RefrIn.from_tabled_infos(
-                        {sel_file: sel_inf}))  # re-add all attrs
-        # don't refresh saves as neither selection state nor load order change
-        self.refresh_sel()
+            self.window.try_rename(ren_args, check_unique=False,
+                # no refresh saves as neither active mods nor load order change
+                copy_inf=True, with_backups=False, refr_saves=False,
+                set_mtime={sel_inf.fn_key: sel_inf.ftime})
+
+    @property
+    def _backup_path(self): raise NotImplementedError
 
     def _ask_revert(self): raise NotImplementedError
-
-    def _restore(self): raise NotImplementedError
 
     def _failed_msg(self): raise NotImplementedError
 
@@ -209,7 +202,7 @@ class _RevertBackup(RestoreInfo):
 
     @property
     def _backup_path(self):
-        return self.__backup_paths[0][1]
+        return self._selected_info.backup_path(self.first)
 
     @property
     def link_help(self):
@@ -218,28 +211,12 @@ class _RevertBackup(RestoreInfo):
         return msg % {'file': self._selected_item}
 
     def _enable(self):
-        if not super()._enable(): return False
-        self.__backup_paths = self._selected_info.backup_restore_paths(
-            self.first)
-        return self._backup_path.exists()
-
-    def _restore(self):
-        backup_paths = [(b, a) for a, b in self.__backup_paths]
-        for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
-            if not tup[0].exists():
-                # if cosave exists while its backup not, delete it on restoring
-                tup[1].remove()
-                backup_paths.remove(tup)
-        env.shellCopy(dict(backup_paths))
-        # do not change load order for timestamp games - rest works ok
-        self._selected_info.setmtime(self._selected_info.ftime)
+        return super()._enable() and self._backup_path.exists()
 
     def _failed_msg(self):
-        return self._askYes(
+        self._showError(
             _("Failed to revert %(target_file_name)s to backup dated "
-              "%(backup_date)s. The backup file may be corrupt. Do you want "
-              "to restore the original file again? 'No' keeps the reverted, "
-              "possibly broken backup instead.") % {
+              "%(backup_date)s. The backup file may be corrupt.") % {
                 'target_file_name': self._selected_item,
                 'backup_date': format_date(self._backup_path.mtime)},
             title=_('Revert to Backup - Error'))

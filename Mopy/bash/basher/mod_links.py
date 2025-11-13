@@ -2324,17 +2324,10 @@ class Mod_RevertToSnapshot(RestoreInfo):
     _help = _('Revert to a previously created snapshot from the '
               'Bash/Snapshots dir.')
 
-    def _restore(self):
-        # keep load order (so mtime)
-        info_path = (sel_inf := self._selected_info).abs_path
-        self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
-
     def _failed_msg(self):
-        return self._askYes(
-            _("Failed to revert %(target_file_name)s to snapshot "
-              "%(snapshot_file_name)s. The snapshot file may be corrupt. Do "
-              "you want to restore the original file again? 'No' keeps the "
-              "reverted, possibly broken snapshot instead.") % {
+        self._showError(
+            _('Failed to revert %(target_file_name)s to snapshot '
+              '%(snapshot_file_name)s. The snapshot file may be corrupt.') % {
                 'target_file_name': self._selected_item,
                 'snapshot_file_name': self._backup_path.tail},
             title=_('Revert to Snapshot - Error'))

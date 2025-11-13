@@ -390,21 +390,16 @@ class FileInfo(_TabledInfo, AFileInfo):
         if self not in self._store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.fs_copy(self.backup_restore_paths(False)[0][1])
+        self.fs_copy(self.backup_path())
         #--First backup
-        firstBackup = self.backup_restore_paths(True)[0][1]
+        firstBackup = self.backup_path(True)
         if not firstBackup.exists():
             self.fs_copy(firstBackup)
         self.madeBackup = True
 
-    def backup_restore_paths(self, first, fname=None) -> list[tuple[Path, Path]]:
-        """Return a list of tuples, mapping backup paths to their restore
-        destinations. If fname is not given returns the (first) backup
-        filename corresponding to self.abs_path, else the backup filename
-        for fname mapped to its restore location in data_store.store_dir."""
-        new_fn = FName((fname or self.fn_key) + 'f' * first)
-        return self.get_rename_paths(new_fn, self._store().bash_dir.join(
-            'Backups'), False)
+    def backup_path(self, is_first=False) -> Path:
+        return self._store().bash_dir.join('Backups',
+                                           self.fn_key + 'f' * is_first)
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
@@ -412,10 +407,12 @@ class FileInfo(_TabledInfo, AFileInfo):
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
         if with_backups:
-            __bp = self.backup_restore_paths
-            for fir in (True, False):
-                old_new_paths.extend(zip((b for a, b in __bp(fir)),
-                                         (b for a, b in __bp(fir, new_name))))
+            bk_dir = self.backup_path().head
+            for fir in ('f', ''): # first backup and regular backup
+                # get the backup paths for current and new names and pair them
+                fn_to_new = (self.get_rename_paths(FName(f), bk_dir, False)
+                    for f in (self.fn_key + fir, new_name + fir))
+                old_new_paths.extend((a[1], b[1]) for a, b in zip(*fn_to_new))
         return old_new_paths
 
 class _WithMastersInfo(FileInfo):
@@ -1082,17 +1079,21 @@ class ModInfo(_WithMastersInfo):
         old_new_paths = super().get_rename_paths(new_name, rename_dir,
                                                  with_backups)
         renaming = rename_dir is None # rename, not the rest of rename_op uses
-        if renaming or rename_dir == self._store().store_dir:
+        mod_infos = self._store()
+        if rename_dir == (st_dir := mod_infos.store_dir) or renaming:
             new_ghost = old_new_paths[0][1] + '.ghost' # Path.__add__!
-            if self.is_ghost: # add ghost extension to dest path
+            ghost_dest = (mod_inf := mod_infos.get( # restoring backup
+                self.fn_key)) and mod_inf.is_ghost
+            if self.is_ghost or ghost_dest: # add ghost extension to dest path
                 old_new_paths[0] = self.abs_path, new_ghost
             elif renaming:
                 # Add ghosts - the file may exist in both states (bug, or user
                 # mistake) in this case the file is marked as normal but let's
                 # rename the ghost too - else will appear and frighten the user
                 old_new_paths.append((self.abs_path + '.ghost', new_ghost))
-            old_new_paths.append((tp := self.tags_path(),
-                                  tp.head.join(f'{new_name.fn_body}.txt')))
+            if self.info_dir == st_dir: # renaming or duplicating in store dir
+                old_new_paths.append((tp := self.tags_path(),
+                                      tp.head.join(f'{new_name.fn_body}.txt')))
         return old_new_paths
 
     def _masters_order_status(self, *, __lo=load_order.cached_lo_index):
@@ -1716,7 +1717,7 @@ class DataStore(DataDict):
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
     def rename_operation(self, info_new_name, *, try_once=True, set_mtime=None,
-                         ren_parent=None, with_backups=True) -> RefrData:
+            ren_parent=None, with_backups=True, copy_inf=False) -> RefrData:
         rd_ren = RefrData()
         if not info_new_name:
             return rd_ren
@@ -1729,14 +1730,19 @@ class DataStore(DataDict):
                 # if cosaves or backups do not exist shellMove fails!
                 # if filenames are the same (for instance cosaves in disabling
                 # saves) shellMove will offer to skip and raise SkipError
-                if tup[0] == tup[1] or not tup[0].exists():
+                if (src_missing := not tup[0].exists()) or tup[0] == tup[1]:
                     rename_paths.remove(tup)
+                    # if cosave exists while its backup not, delete it on
+                    # restoring - copy_inf is currently used in restore backup
+                    if src_missing and copy_inf:
+                        tup[1].remove() ##:(292) we should document this
             all_rename_paths.update(rename_paths)
             paths_per_file[inf] = rename_paths, new_name, infdir
         if all_rename_paths:
             while try_once:
                 try:
-                    env.shellMove(all_rename_paths, ren_parent)
+                    (env.shellCopy if copy_inf else env.shellMove)(
+                        all_rename_paths, ren_parent)
                 except (CancelError, OSError) as e:
                     ##:(#241)  only for swapping Oblivion esm, duh - was
                     # PermissionError, occurred if SHFileOperation isn't called
@@ -1753,20 +1759,25 @@ class DataStore(DataDict):
                     _check_renamed(paths_per_file)
                 break
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
-        for inf, (_rename_paths, new_name, infdir) in paths_per_file.items():
+        for inf, (rename_paths, new_name, infdir) in paths_per_file.items():
+            set_ghost = (ap := getattr(inf, 'abs_path', None)) and \
+                        all_rename_paths[ap].cext == '.ghost'
             rd_ren |= RefrData(renames={(old_key := inf.fn_key): new_name},
-                # pop if not unhiding
-                to_del={old_key} if self.pop(old_key, None) else set(),
-                # lastly set the new info abspath
+                to_del={old_key} if not copy_inf and self.pop(
+                    old_key, None) else set(), # pop if not unhiding/restoring
+                # lastly set the new info abspath/key
                 ren_paths=inf.set_path_keys(new_name, infodir=infdir))
-            add_to_store = not _rename_paths or inf.info_dir == self.store_dir
+            add_to_store = not rename_paths or inf.info_dir == self.store_dir
             if add_to_store: # add the info (or marker info) to the store
-                self[inf.fn_key] = inf # fn_key was set to new value
-                rd_ren.to_add.add(new_name)
-        if set_mtime: # only set in self.try_set_version
+                self[new_name] = inf
+                kws = {'redraw' if copy_inf else 'to_add': {new_name}}
+                rd_ren |= RefrData(**kws) # pop from to_del
+                if set_ghost: # do this after set_path_keys (restore backup)
+                    inf.is_ghost = True # we need to mirror get_rename_paths
+        if set_mtime: # only set in self.try_set_version/restore backup
             for k, v in set_mtime.items():
                 self[k].setmtime(v)
-            if len(renames_di := rd_ren.renames) == 2:
+            if not copy_inf and len(renames_di := rd_ren.renames) == 2:
                 move_to = renames_di.pop(bush.game.master_file)
                 renames_di[next(iter(renames_di))] = move_to
         return self.refresh(rd_ren, unlock_lo=True, what='I')
@@ -2323,7 +2334,7 @@ class ModInfos(_AFileInfos):
                                 bt_contents=bt_contents)
         mods_changes = bool(rdata)
         ldiff = LordDiff()
-        if deltd := rdata.to_del:
+        if deltd := rdata.to_del: #restore first backup is_rename but no to_del
             if rdata.is_rename: # rename in load order caches and properties
                 rget = rdata.renames.get
                 for mod_inf in self.values():
