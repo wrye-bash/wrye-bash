@@ -368,18 +368,11 @@ class PCFaces(object):
         return True
     # MODS --------------------------------------------------------------------
     @staticmethod
-    def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
-        lf = LoadFactory(keepAll=keepAll, by_sig=by_sig)
-        modFile = ModFile(modInfo, lf)
-        if (not keepAll) or modInfo.abs_path.exists(): # read -> keepAll=False
-            modFile.load_plugin()
-        return modFile
-
-    @staticmethod
-    def mod_getFaces(modInfo):
+    def mod_getFaces(mod_path):
         """Returns an array of PCFaces from a mod file."""
         #--Mod File
-        modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'NPC_'])
+        modFile = ModFile(mod_path, LoadFactory(False, by_sig=[b'NPC_']))
+        modFile.load_plugin()
         faces = {}
         for _rid, npc in modFile.tops[b'NPC_'].iter_present_records():
             face = PCFaces.PCFace()
@@ -398,8 +391,8 @@ class PCFaces(object):
     def mod_addFace(modInfo,face):
         """Writes a pcFace to a mod file."""
         #--Mod File
-        modFile = PCFaces._mod_load_fact(modInfo, keepAll=True,
-                                         by_sig=[b'NPC_'])
+        modFile = ModFile(modInfo, LoadFactory(True, by_sig=[b'NPC_']))
+        modFile.load_plugin()
         #--Tes4
         tes4 = modFile.tes4
         if not tes4.author:

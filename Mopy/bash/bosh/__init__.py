@@ -3029,8 +3029,7 @@ class ModInfos(_AFileInfos):
             InvalidPluginFlagsError."""
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
-        newInfo = self.factory((dir_path or self.store_dir).join(mod_fn))
-        newFile = ModFile(newInfo)
+        newFile = ModFile((dir_path or self.store_dir).join(mod_fn))
         newFile.tes4.masters = wanted_masters
         if author_str:
             newFile.tes4.author = author_str

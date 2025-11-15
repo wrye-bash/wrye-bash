@@ -154,7 +154,11 @@ class _TopGroupDict(dict):
 class ModFile(object):
     """Plugin file representation. Will load only the top record types
     specified in its LoadFactory."""
-    def __init__(self, fileInfo,loadFactory=None):
+
+    def __init__(self, fileInfo, loadFactory=None):
+        if isinstance(fileInfo, bolt.Path): # create an info but don't load it!
+            from .bosh import modInfos
+            fileInfo = modInfos.factory(fileInfo)
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load

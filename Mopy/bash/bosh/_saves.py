@@ -248,7 +248,10 @@ class SaveFile(object):
         created: bool
         enabled: bool = flag(30)
 
-    def __init__(self,saveInfo=None,canSave=True):
+    def __init__(self, saveInfo, canSave=True):
+        if isinstance(saveInfo, bolt.Path): # create an info but don't load it!
+            from . import saveInfos
+            saveInfo = saveInfos.factory(saveInfo)
         self.fileInfo = saveInfo
         self.canSave = canSave
         #--File Header, Save Game Header
