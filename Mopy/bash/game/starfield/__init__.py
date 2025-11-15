@@ -156,7 +156,7 @@ class _AStarfieldGameInfo(PatchGame):
 
     class Xe(GameInfo.Xe):
         full_name = 'SF1Edit'
-        xe_key_prefix = 'sf1View' # TODO(SF) verify
+        xe_key_prefix = 'sf1View'
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {

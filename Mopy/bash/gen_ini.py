@@ -352,17 +352,27 @@ def _generate_default_bash_ini():
 
 ;sTes4EditPath=TES4Edit.exe
 
+;sTes4REditPath=TES4REdit.exe
+
 ;sTes5EditPath=TES5Edit.exe
+
+;sTes5VrEditPath=TES5VREdit.exe
 
 ;sEnderalEditPath=EnderalEdit.exe
 
 ;sSSEEditPath=SSEEdit.exe
 
+;sEnderalSEEditPath=EnderalSEEdit.exe
+
 ;sFo4EditPath=FO4Edit.exe
+
+;sFo4VrEditPath=FO4VREdit.exe
 
 ;sFo3EditPath=FO3Edit.exe
 
 ;sFnvEditPath=FNVEdit.exe
+
+;sSf1EditPath=SF1Edit64.exe
 
 ;sTes4LodGenPath=Tes4LodGen.exe
 
