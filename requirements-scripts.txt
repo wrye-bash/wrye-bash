@@ -1,6 +1,8 @@
 # This file contains only the development/compile-time dependencies.
 # Used by the CI when it wants to install depedencies for scripts without
 # pulling in the tons of extra stuff from requirements.txt.
+# PY3.13: try removing when we update to pyinstaller 6.17.0+
+altgraph<0.17.5
 isort==6.0.1
 pygit2==1.18.0
 PyGithub==2.6.1
