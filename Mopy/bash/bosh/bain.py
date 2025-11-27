@@ -1889,8 +1889,7 @@ class InstallersData(DataStore):
     overridden_skips: set[CIstr] = set() # populate with CIstr !
     __clean_overridden_after_load = True
     installers_dir_skips = set()
-    file_pattern = re.compile(
-        fr'\.(?:{"|".join(e[1:] for e in readExts)})$', re.I)
+    file_exts = readExts
     _dir_key = 'installers'
     _last_key = FName('==Last==')
 
@@ -1921,11 +1920,10 @@ class InstallersData(DataStore):
             if low in self.installers_dir_skips:
                 return None # skip Bash directories and user specified ones
         elif node.is_file(): # (241) what we do with symlinks?
-            b, e = os.path.splitext(low)
-            if with_omods is not None and e in archives.omod_exts:
-                with_omods.append(node)
-                return None
-            if e not in readExts: # will return None for omods also
+            if not self.rightFileType(low):
+                if with_omods is not None and os.path.splitext(low)[
+                        1] in archives.omod_exts:
+                    with_omods.append(FName(node.name))
                 return None
         else: return None
         return {'cached_stat': None if low in skip_stat else node.stat(),
@@ -1963,11 +1961,6 @@ class InstallersData(DataStore):
         h, t = inst_path.headTail
         proj_dex = inst_path.is_dir() if is_proj is None else is_proj
         return self._inst_types[proj_dex](FName(t.s), par_dir=h, **kwargs)
-
-    @classmethod
-    def rightFileType(cls, fileName: bolt.FName | str):
-        ##: What about projects? Do we have to just return True here?
-        return cls.file_pattern.search(fileName)
 
     def refresh(self, *args, **kwargs):
         """Only used in delete/unhide - align with _AFileInfos one."""

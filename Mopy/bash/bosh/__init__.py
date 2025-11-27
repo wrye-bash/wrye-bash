@@ -32,7 +32,7 @@ import sys
 import time
 from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable, Callable
-from functools import wraps
+from functools import wraps, partial
 from itertools import chain
 from os import DirEntry
 
@@ -96,7 +96,7 @@ del __exts
 # Image extensions for BAIN and for the Screnshots tab
 _common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
 bain_image_exts = {*_common_image_exts, '.webp'}
-ss_image_exts = {*_common_image_exts, '.tga'}
+ss_image_exts = frozenset([*_common_image_exts, '.tga'])
 
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
@@ -1561,6 +1561,7 @@ class DataStore(DataDict):
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
     _dir_key: str # key in dirs dict for the store_dir
     dat_loaded = False
+    file_exts = None # subclasses must define this !
 
     def __init__(self):
         super().__init__(self._init_store(self.set_store_dir()))
@@ -1649,6 +1650,15 @@ class DataStore(DataDict):
 
     def _add_node(self, node: DirEntry, **kw_add): # single use in refresh
         raise NotImplementedError
+
+    @classmethod
+    def rightFileType(cls, fileName: FName | str, allow_ext=None) -> tuple[
+            str, str] | None:
+        """Check if the filetype is correct for subclass by checking the
+        basename (usually the extension but sometimes also the root)."""
+        base, dot_ext = os.path.splitext(fileName)
+        allow_ext = allow_ext or cls.file_exts
+        return (base, dot_ext) if dot_ext.lower() in allow_ext else None
 
     def _diff_dir(self, inodes) -> RefrIn: # single use in refresh (and super)
         """Return a dict of fn keys (see overrides) of files present in data
@@ -1788,7 +1798,6 @@ class DataStore(DataDict):
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
-    file_pattern = None # subclasses must define this !
     _factory_type: type[AFile]
     # Whether these file infos track ownership in a table
     tracks_ownership = True
@@ -1867,14 +1876,6 @@ class _AFileInfos(DataStore):
         """Note that all of these parameters need to be absolute paths!"""
         if self._bain_notify:
             InstallersData.notify_external(del_set, altered)
-
-    #--Right File Type?
-    @classmethod
-    def rightFileType(cls, fileName: bolt.FName | str):
-        """Check if the filetype is correct for subclass by checking the
-        basename (usually the extension but sometimes also the root).
-        :rtype: _sre.SRE_Match | None"""
-        return cls.file_pattern.search(fileName)
 
     def _load_dat(self, progress=None):
         """Load pickled data for mods, saves, inis and bsas."""
@@ -1979,8 +1980,7 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
     return ini_info_type(fullpath, detected_encoding)
 
 class INIInfos(_AFileInfos):
-    file_pattern = re.compile('|'.join(map(re.escape, supported_ini_exts)) +
-                              '$', re.I)
+    file_exts = supported_ini_exts
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     _factory_type: Callable[[...], INIInfo]
@@ -2254,10 +2254,9 @@ class ModInfos(_AFileInfos):
     _known_cor_mods = set()
     _known_invalid_versions = set()
     _known_older_form_versions = set()
+    file_exts = frozenset(bush.game.espm_extensions)
 
     def __init__(self):
-        exts = '|'.join(map(re.escape, bush.game.espm_extensions))
-        self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
@@ -2366,6 +2365,13 @@ class ModInfos(_AFileInfos):
     def scan_redated(self):
         return {k for k, v in self.items() if # reset 'redated'
                 v.redated and not setattr(v, 'redated', False)}
+
+    @classmethod
+    def rightFileType(cls, fname, **kwargs):
+        if itsa_ghost := fname[-6:].lower() == '.ghost':
+            fname = fname[:-6]
+        sup = super().rightFileType(fname, **kwargs)
+        return sup if not itsa_ghost else {FName(f'{fname}.ghost'): {}}
 
     # _AFileInfos overrides that are used in refresh - ghosts ahead
     def _diff_dir(self, inodes):
@@ -3188,14 +3194,14 @@ class SaveInfos(_AFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = tracks_ownership = False
     _ess_skips = bush.game.Ess.save_skips
-    # Enabled and disabled saves, no .bak files ##: needed?
-    _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
-    file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
+    # Enabled and disabled saves and .bak files
+    file_exts = frozenset([_e := bush.game.Ess.ext, _e[:-1] + 'r', '.bak'])
     _known_cor_saves = set()
 
     def __init__(self):
-        SaveInfo.cosave_types = cosaves.get_cosave_types(
-            bush.game.fsName, self._parse_save_path,
+        all_ext = {*(fe := self.file_exts), *(f'{e}f' for e in fe)}
+        par = partial(self.rightFileType, allow_ext=all_ext)
+        SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game.fsName, par,
             bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
         super().__init__(SaveInfo)
         # Save Profiles database
@@ -3258,7 +3264,7 @@ class SaveInfos(_AFileInfos):
     @classmethod
     def unhide_wildcard(cls, **kwargs):
         return super().unhide_wildcard(_pl_str=_('Save files'),
-            _joined=f'*{";*".join([*cls._exts, ".bak"])}')
+            _joined=f'*{";*".join([*cls.file_exts])}')
 
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
@@ -3276,42 +3282,20 @@ class SaveInfos(_AFileInfos):
             del pd[oldName]
 
     @classmethod
-    def rightFileType(cls, fileName: bolt.FName | str):
-        if fileName in cls._ess_skips:
-            return False
-        return all(cls._parse_save_path(fileName))
-
-    @classmethod
-    def valid_save_exts(cls):
-        """Returns a cached version of the valid extensions that a save may
-        have."""
-        try:
-            return cls._valid_save_exts
-        except AttributeError:
-            std_save_ext = bush.game.Ess.ext[1:]
-            accepted_exts = {std_save_ext, std_save_ext[:-1] + 'r', 'bak'}
-            # Add 'first backup' versions of the extensions too
-            accepted_exts.update(f'{e}f' for e in accepted_exts.copy())
-            cls._valid_save_exts = accepted_exts
-            return accepted_exts
-
-    @classmethod
-    def _parse_save_path(cls, save_name: FName | str) -> tuple[
-            str | None, str | None]:
-        """Parses the specified save name into root and extension, returning
+    def rightFileType(cls, fileName, allow_ext=None):
+        """Parse the specified save name into root and extension and return
         them as a tuple. If the save path does not point to a valid save,
-        returns two Nones instead."""
-        save_root, save_ext = os.path.splitext(save_name)
-        save_ext_trunc = save_ext[1:]
-        if save_ext_trunc.lower() not in cls.valid_save_exts():
-            # Can't be a valid save, doesn't end in ess/esr/bak
-            return None, None
-        cs_ext = bush.game.Se.cosave_ext[1:]
-        if any(s.lower() == cs_ext for s in save_root.split('.')):
-            # Almost certainly not a valid save, had the cosave extension
-            # in one of its root parts
-            return None, None
-        return save_root, save_ext
+        return None instead."""
+        if fileName in cls._ess_skips:
+            return None
+        if sup := super().rightFileType(fileName, allow_ext):
+            save_root, save_ext = sup
+            cs_ext = bush.game.Se.cosave_ext[1:]
+            if any(s.lower() == cs_ext for s in save_root.split('.')):
+                # Almost certainly not a valid save, had the cosave extension
+                # in one of its root parts
+                return None
+        return sup
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         return None # Never relative to Data folder
@@ -3343,8 +3327,7 @@ class BSAInfos(_AFileInfos):
             # Need to do this at runtime since it depends on inisettings (ugh)
             bush.game.Bsa.redate_dict[inisettings[
                 u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'
-        self.__class__.file_pattern = re.compile(
-            f'{re.escape(bush.game.Bsa.bsa_extension)}$', re.I)
+        self.__class__.file_exts = frozenset([bush.game.Bsa.bsa_extension])
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
         class BSAInfo(FileInfo, _bsa_type):
             _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
@@ -3456,11 +3439,9 @@ class ScreenInfos(_AFileInfos):
     # Files that go in the main game folder (aka default screenshots folder)
     # and have screenshot extensions, but aren't screenshots and therefore
     # shouldn't be managed here - right now only ENB stuff
-    _ss_skips = {FName(s) for s in (
-        'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
-        'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
-    file_pattern = re.compile(
-        r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
+    _ss_skips = {*map(FName, ('enblensmask.png', 'enbpalette.bmp',
+        'enbsunsprite.bmp', 'enbsunsprite.tga', 'enbunderwaternoise.bmp'))}
+    file_exts = ss_image_exts
     _factory_type = ScreenInfo
     _boot_refresh_args = {}
     tracks_ownership = False
@@ -3486,11 +3467,11 @@ class ScreenInfos(_AFileInfos):
         return new_store_dir
 
     @classmethod
-    def rightFileType(cls, fileName: bolt.FName):
-        if fileName in cls._ss_skips:
+    def rightFileType(cls, fileName, allow_ext=None):
+        if FName(fileName) in cls._ss_skips:
             # Some non-screenshot file, skip it
-            return False
-        return super().rightFileType(fileName)
+            return None
+        return super().rightFileType(fileName, allow_ext)
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         if not self._bain_notify:

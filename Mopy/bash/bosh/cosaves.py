@@ -1506,8 +1506,8 @@ class ACosave(_Dumpable, _Remappable, AFile):
         :param save_path: The path to the save file that a cosave could belong
             to.
         :return: The path at which the cosave could exist."""
-        sa_root, sa_ext = cls.parse_save_path(f'{save_path}')
-        if sa_root and sa_ext:
+        if sup := cls.parse_save_path(f'{save_path}'):
+            sa_root, sa_ext = sup
             final_cs_path = sa_root + cls.cosave_ext
             # Handle backups that end with 'f' - we just need to append that
             # again at the extension of the final path
@@ -1757,13 +1757,13 @@ class PluggyCosave(ACosave):
             pluggy_block.dump_to_log(log, save_masters_)
 
 # Factory
-def get_cosave_types(game_fsName, parse_save_path, cosave_tag,
-        cosave_ext) -> list[type[ACosave]]:
+def get_cosave_types(game_fsName, parse_save_path_, cosave_tag,
+                     cosave_ext) -> list[type[ACosave]]:
     """Factory method for retrieving the cosave types for the current game.
     Also sets up some class variables for xSE and Pluggy signatures.
 
     :param game_fsName: bush.game.fsName, the name of the current game.
-    :param parse_save_path: A function to parse valid save paths into root and
+    :param parse_save_path_: A function to parse valid save paths into root and
         extension.
     :param cosave_tag: bush.game.Se.cosave_tag, the magic tag used to mark the
         cosave. Empty string if this game doesn't have cosaves.
@@ -1774,7 +1774,7 @@ def get_cosave_types(game_fsName, parse_save_path, cosave_tag,
     # Assign things that concern all games with script extenders
     _xSEHeader.savefile_tag = cosave_tag
     xSECosave.cosave_ext = cosave_ext
-    ACosave.parse_save_path = parse_save_path
+    ACosave.parse_save_path = parse_save_path_
     cosave_types = [xSECosave]
     # Handle game-specific special cases
     if game_fsName == 'Oblivion':
