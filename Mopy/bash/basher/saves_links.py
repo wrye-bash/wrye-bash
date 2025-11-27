@@ -32,7 +32,7 @@ from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
-from ..bolt import FName, GPath, Path, RefrIn, SubProgress
+from ..bolt import FName, GPath, Path, RefrIn, SubProgress, RefrData
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
@@ -110,7 +110,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         if bosh.saveInfos.localSave == oldSaves:
             # this will clear and refresh SaveInfos - we could be smarter as
             # only the abs_path of the infos changes - not worth the complexity
-            self._parent_list.set_local_save(newSaves)
+            self._parent_list.set_local_save(save_dir=newSaves)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
@@ -198,10 +198,12 @@ class Saves_Profiles(ChoiceLink):
         def Execute(self):
             new_dir = self.relativePath
             with BusyCursor():
-                self.window.set_local_save(new_dir, do_swap=self._askYes)
+                rd_out = RefrData()
+                self.window.set_local_save(save_dir=new_dir,
+                                           do_swap=self._askYes, rd_out=rd_out)
                 self.window.DeleteAll() # let call below repopulate
-                self.window.propagate_refresh(True, ui_refreshes={
-                    bosh.modInfos: True}, detail_item=None)
+                self.window.propagate_refresh(True, # True is ok, we repopulate
+                    ui_refreshes={bosh.modInfos: rd_out}, detail_item=None)
                 self.window.panel.ShowPanel()
 
     choiceLinkType = _ProfileLink
@@ -411,7 +413,7 @@ class Save_Renumber(EnabledLink):
             if nfn_save != sinf.fn_key.fn_body:
                 ren_args.append((sinf, nfn_save))
                 nfn_number += 1
-        self.window.try_rename(ren_args,item_edited=self._matches[0][1].fn_key)
+        self.window.try_rename(ren_args)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):

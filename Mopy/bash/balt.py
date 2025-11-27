@@ -987,10 +987,9 @@ class UIList(PanelWin):
         if args[1] is None:
             showError(self, args[0])
             return EventResult.CANCEL # validate_filename would Veto
-        item_edited = self.panel.detailsPanel.detail_fn
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            self.try_rename(ren_args, item_edited=item_edited, **ren_kwargs)
+            self.try_rename(ren_args, **ren_kwargs)
         return EventResult.CANCEL # clears new name from label on exception!
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
@@ -1019,23 +1018,25 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, ren_args, *, forced_ext='', item_edited=None,
-                   **ren_kwargs):
+    def try_rename(self, ren_args, *, forced_ext='', refresh_ui=True,
+                   check_unique=True, deselect=False, **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
-        info_new_name = []
-        for info, new_root in ren_args:# check if new and old names are ci-same
-            if (new_fn := info.unique_key(new_root, forced_ext)) is not None:
-                info_new_name.append((info, new_fn))
-        rdata = self.data_store.rename_operation(info_new_name, **ren_kwargs)
-        if item_edited and rdata:
-            args_dict = {'detail_item': rdata.renames.get(item_edited,
-                item_edited)} # in case the displayed item was *not* renamed
-            self.propagate_refresh(rdata, ui_refreshes=ren_kwargs.get(
-                'store_refr'), **args_dict)
+        if check_unique: # check if new and old names are ci-same
+            ren_args = [(info, new_fn, *ddir) for info, new_root, *ddir in
+                ren_args if (new_fn := info.unique_key(new_root, forced_ext))]
+        rdata = self.data_store.rename_operation(ren_args, ren_parent=self,
+                                                 **ren_kwargs)
+        if refresh_ui and rdata:
+            fn = next(iter(rdata.renames.values()))
+            # in case the displayed item was *not* renamed
+            args_dict = {'detail_item': fn} if fn in self.data_store else {}
+            args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
+            self.propagate_refresh(rdata, **args_dict)
             #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.to_add)
+            if added := rdata.to_add:
+                self.SelectItemsNoCallback(added, deselectOthers=deselect)
         return rdata
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
@@ -1318,24 +1319,6 @@ class UIList(PanelWin):
             deprint(f'Creating {sd}')
             sd.makedirs()
         sd.start()
-
-    def hide(self, items: dict[FName, ...]):
-        """Hides the items in the specified iterable."""
-        moved_infos = set()
-        for fnkey, inf in items.items():
-            destDir = inf.get_hide_dir()
-            if destDir.join(fnkey).exists():
-                message = (_('A file named %(target_file_name)s already '
-                             'exists in the hidden files directory. Overwrite '
-                             'it?') % {'target_file_name': fnkey})
-                if not askYes(self, message, _('Hide Files')): continue
-            #--Do it
-            with BusyCursor():
-                inf.move_info(destDir)
-                moved_infos.add(inf)
-        # no need to check existence, we just moved them
-        self.data_store.refresh(RefrIn(del_infos=moved_infos), what='I',
-                                unlock_lo=True)
 
     def jump_to_source(self, uil_item: FName) -> bool:
         """Jumps to the installer associated with the specified UIList item."""
@@ -1922,14 +1905,23 @@ class UIList_Hide(EnabledLink):
             return _('The selected items cannot be hidden.')
 
     @conversation
-    def Execute(self):
+    def Execute(self): #292: we ain't handling backups
         if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
                           {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
-        self.window.hide(self._filter_unhideable(self.selected))
-        self.window.propagate_refresh(True)
+        to_move = []
+        for fnkey, inf in self._filter_unhideable(self.selected).items():
+            destDir = inf.get_hide_dir()
+            if destDir.join(fnkey).exists():
+                if not self._askYes(_('A file named %(target_file_name)s '
+                    'already exists in the hidden files directory. Overwrite '
+                    'it?') % {'target_file_name': fnkey}, _('Hide Files')):
+                    continue
+            else: destDir.makedirs()
+            to_move.append((inf, inf.fn_key, destDir))
+        self.window.try_rename(to_move, check_unique=False, with_backups=False)
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""

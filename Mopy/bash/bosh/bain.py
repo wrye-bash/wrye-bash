@@ -435,7 +435,7 @@ class Installer(ListInfo):
             deprint(f'Pickled installer {values[0]} not found: {e}')
         except:
             deprint(f'Failed loading {values[0]}', traceback=True)
-        self.fn_key = '' # reset self.fn_key to '' to remove self in __load()
+        self.fn_key = '' # reset self.fn_key to '' to remove self in _load_dat
 
     def __setstate(self,values):
         for a, v in zip(self.persistent, values[1:]):
@@ -471,7 +471,7 @@ class Installer(ListInfo):
             if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
                 self.dirty_sizeCrc = bolt.LowerDict(
                     (f'{x}', y) for x, y in self.dirty_sizeCrc.items())
-            # on error __setstate__ resets fn_key -> entry dropped in __load()
+            # on error __setstate__ resets fn_key -> entry dropped in _load_dat
             stat_tuple = self._stat_tuple()
             # refresh projects once on booting even if skipRefresh flag is
             # on but refresh archives only if changed
@@ -1894,7 +1894,6 @@ class InstallersData(DataStore):
     _dir_key = 'installers'
 
     def __init__(self):
-        self.set_store_dir()
         super().__init__()
         self.bash_dir.makedirs()
         #--Persistent data
@@ -1907,14 +1906,13 @@ class InstallersData(DataStore):
         #--Volatile
         self.ci_underrides_sizeCrc = bolt.LowerDict() # underridden files
         self.hasChanged = False
-        self.loaded = False
         self.lastKey = FName(u'==Last==')
         # Need to delay the main bosh import until here
         from . import InstallerArchive, InstallerProject, InstallerMarker
         self._inst_types = [InstallerArchive, InstallerProject,
                             InstallerMarker]
 
-    def _add_node(self, node, *, with_omods=None,
+    def _add_node(self, node, *, with_omods, skip_stat,
                   __skip_prefixes=('bash', '--')):
         low = node.name.lower()
         if is_proj := node.is_dir():
@@ -1930,16 +1928,11 @@ class InstallersData(DataStore):
         else: return None
         if low.startswith(__skip_prefixes):
             return None
-        return {'cached_stat': node.stat(), 'is_proj': is_proj}
+        return {'cached_stat': None if low in skip_stat else node.stat(),
+                'is_proj': is_proj}
 
     def _get_delinfos(self, inodes):
         return {self[k] for k in set(self.ipackages(self)) - inodes.keys()}
-
-    def _get_info(self, k, kws, new_or_present):
-        if (inst := self.get(k)) is not None and inst.fn_key != k:
-            deprint(f'{k} invalid idata key: {inst.fn_key}')
-            inst.set_path_keys(k) # rename bug - set paths, rest should be ok
-        new_or_present[k] = (inst, kws)
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
                  install_order=None, do_refresh=True, load_cache=True):
@@ -1980,7 +1973,7 @@ class InstallersData(DataStore):
         """Only used in delete/unhide - align with _AFileInfos one."""
         return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, refresh_in: RefrIn | bool = True, *, what='DIONSC',
+    def irefresh(self, refresh_in: RefrIn | RefrData | bool, *, what,
                  extract_omods=None, progress=None, fullRefresh=False,
                  **kwargs) -> RefrData:
         """Refresh context parameters are used for updating installers. Note
@@ -1992,30 +1985,31 @@ class InstallersData(DataStore):
                 oblivionIni.abs_path.exists()):
             ##: What about all the other stuff the "BSA Redirection" link does?
             bsaInfos.set_bsa_redirection(do_redirect=True)
-        #--Load Installers.dat if not loaded - will set changed to True
-        changes = (fresh_load := not self.loaded) and self.__load(progress)
-        #--Last marker
-        if self.lastKey not in self:
-            self[self.lastKey] = InstallerMarker(self.lastKey)
+        changes = not self.dat_loaded
         if fullRefresh: # BAIN uses modInfos crc cache
             sub = SubProgress(progress, 0.0, 0.05) if progress else progress
             modInfos.refresh_crcs(progress=sub)
-        #--Refresh Other - FIXME(ut): docs
-        if u'D' in what:
+        progress = progress or bolt.Progress()
+        progress(0, _('Scanning Packages…'))
+        # Refresh from the store dir (possibly loading Installers.dat). This
+        # should not depend on IData caches
+        refresh_info = super().refresh(refresh_in, progress=progress,
+            extract_omods=extract_omods, # rest is kw_do_upd - see super()
+            force_update=fullRefresh, recalculate_project_crc=fullRefresh)
+        #--Last marker
+        if (last_key := self.lastKey) not in self:
+            self[last_key] = InstallerMarker(last_key)
+        changes |= bool(refresh_info)
+        # Refresh IData caches from the store dir - should not depend on infos
+        if 'D' in what:
             changes |= self._refresh_from_data_dir(progress, fullRefresh)
-        if 'I' in what:
-            progress = progress or bolt.Progress()
-            progress(0, _('Scanning Packages…'))
-            refresh_info = super().refresh(refresh_in, booting=fresh_load,
-                progress=progress, extract_omods=extract_omods, # do_update kws
-                force_update=fullRefresh, recalculate_project_crc=fullRefresh)
-            changes |= bool(refresh_info)
-        else: # 'I' in what will set it to a RefrData instance
-            refresh_info = RefrData()
+        # Refresh order of installers - self.lastKey must be present
         if 'O' in what or changes:
             order_changed = self.refreshOrder()
             refresh_info.redraw.update(order_changed)
             changes |= bool(order_changed)
+        # Update volatile attributes of the loaded infos using data_sizeCrcDate
+        # and ci_underrides_sizeCrc caches (calculated from ci_dest_sizeCrc)
         if 'N' in what or changes:
             #--dict mapping all should-be-installed files to their attributes
             norm_sizeCrc = bolt.LowerDict()
@@ -2043,16 +2037,16 @@ class InstallersData(DataStore):
         return refresh_info
 
     def refresh_ns(self, progress=None):
-        self.irefresh(what='NS', progress=progress)
+        self.irefresh(False, what='NS', progress=progress)
 
     def refresh_n(self):
-        self.irefresh(what='N')
+        self.irefresh(False, what='N')
 
     def refresh_i(self, archives_list: list):
         self.irefresh(RefrIn.from_added( # only uses are for archives
             {k: {'is_proj': False} for k in archives_list}), what='I')
 
-    def __load(self, progress):
+    def _load_dat(self, progress=None):
         progress = progress or bolt.Progress()
         progress(0, _('Loading Data…'))
         self.dictFile.load()
@@ -2065,14 +2059,21 @@ class InstallersData(DataStore):
         pickle = pickl_data.get(u'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
-        # fixup: all markers had their fn_key attribute set to '===='
         for fn_inst, inst in list(self.items()):
             if inst.is_marker:
+                # fixup: all markers had their fn_key attribute set to '===='
                 inst.fn_key = fn_inst
             elif not inst.fn_key: # __setstate blew, probably installer deleted
                 del self[fn_inst]
-        self.loaded = True
-        return True
+            elif inst.fn_key != fn_inst: # some rename bug - should be extinct
+                deprint(f'{fn_inst} invalid idata key: {inst.fn_key}')
+                inst.set_path_keys(fn_inst) # set paths, rest should be ok
+        return set(self._data)
+
+    def _merge_dat(self, refresh_in, table_dat):
+        # on boot we just loaded/refreshed existing installers so drop those
+        refresh_in.new_or_present = {k: v for k, v in
+            refresh_in.new_or_present.items() if v[0] is None}
 
     def save_pickle(self):
         """Saves to pickle file."""
@@ -2084,12 +2085,11 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def rename_operation(self, info_new_name, dest_dir=None, *,
-                         store_refr=None, **kwargs):
+    def rename_operation(self, info_new_name, *, store_refr=None, **kwargs):
         """Rename installer and update store_refr if owned files need be
         redrawn. name_new must be tested (via unique name) otherwise we will
         overwrite!"""
-        rd_ren = super().rename_operation(info_new_name, dest_dir, **kwargs)
+        rd_ren = super().rename_operation(info_new_name, **kwargs)
         # Update the ownership information for relevant data stores
         if not rd_ren.ren_paths or store_refr is None:
             return rd_ren

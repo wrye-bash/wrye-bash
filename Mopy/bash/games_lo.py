@@ -503,7 +503,7 @@ class LoGame:
         fix_active.act_removed = set(acti) - acti_filtered_set
         # present mods that are always active - noop for AsteriskGame as always
         # active plugins are manually added on getting the load order
-        for fn_plugin in self.pinned_plugins():
+        for fn_plugin in self.pinned_plugins(self._mod_infos):
             if fn_plugin not in acti_filtered_set:
                 if fn_plugin == self._game_handle.master_file:
                     acti_filtered.insert(0, fn_plugin)
@@ -547,19 +547,20 @@ class LoGame:
             return (*is_m, fn) if by_name else is_m
         return _key
 
-    def pinned_plugins(self, mods: set[FName] | None = None, fixed_order=False,
-                       filter_mods=False) -> list[FName]:
+    def pinned_plugins(self, mods, fixed_order=False, filter_mods=False) -> \
+            list[FName] | set[FName]:
         """Return a list of plugins (in random order) that are always active
         or a list of plugins that must have the order they have in this list
         (the first list is always contained in the second). Both lists may only
-        contain plugins that are present in modInfos (excluding corrupted)."""
-        modset = self._mod_infos if mods is None else mods & set(self._mod_infos)
+        contain plugins that are present in modInfos (excluding corrupted). If
+        filter_mods is True, return plugins in `mods` that are not pinned."""
         mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
             self._active_if_present
         if filter_mods:
-            if fixed_order: mod_set_or_tuple = set(mod_set_or_tuple)
-            return [x for x in modset if x not in mod_set_or_tuple]
-        return [x for x in mod_set_or_tuple if x in modset]
+            return set(mods) - (set(mod_set_or_tuple) if fixed_order else
+                                mod_set_or_tuple)
+        return [x for x in mod_set_or_tuple if
+                x in mods and x in self._mod_infos]
 
     def check_active_limit(self, acti_filtered, *, as_type=set):
         pl_type_active = defaultdict(list)

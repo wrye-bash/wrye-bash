@@ -1420,7 +1420,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             self.idata.converters_data.addConverter(conv)
         #--Refresh UI
         with balt.Progress(_('Refreshing Converters…')) as progress:
-            self.idata.irefresh(what='C', progress=progress)
+            self.idata.irefresh(False, what='C', progress=progress)
         #--Generate log
         log = LogFile()
         log.setHeader(f"== {_('Overview')}\n")

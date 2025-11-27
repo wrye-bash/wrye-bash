@@ -44,7 +44,7 @@ from .text_components import Label, SearchBar, TextAlignment, TextField, \
     WrappingLabel
 from .top_level_windows import DialogWindow, _TopLevelWin
 ##: Remove GPath, it's for file dialogs
-from ..bolt import GPath, dict_sort, Path
+from ..bolt import GPath, dict_sort, Path, FName
 from ..env import TASK_DIALOG_AVAILABLE, BTN_OK, BTN_CANCEL, TaskDialog, \
     GOOD_EXITS, BTN_YES, BTN_NO
 from ..exception import ArgumentError
@@ -321,9 +321,9 @@ class DeletionDialog(DialogWindow):
         items to be deleted as a tuple of strings and whether the recycling
         checkbox was ticked or not."""
         result = super().show_modal()
-        chosen_strings = self._deletable_items.get_checked_strings()
+        chosen_fns = map(FName, self._deletable_items.get_checked_strings())
         chosen_recycle = self._recycle_checkbox.is_checked
-        return result, chosen_strings, chosen_recycle
+        return result, [*chosen_fns], chosen_recycle
 
 # Date and Time ---------------------------------------------------------------
 _COMMON_FORMAT = '%d/%m/%Y, %H:%M:%S'
