@@ -1911,23 +1911,29 @@ class InstallersData(DataStore):
         self._inst_types = [InstallerArchive, InstallerProject,
                             InstallerMarker]
 
-    def _add_node(self, node, *, with_omods, skip_stat,
-                  __skip_prefixes=('bash', '--')):
-        low = node.name.lower()
-        if low.startswith(__skip_prefixes):
-            return None
-        if is_proj := node.is_dir():
-            if low in self.installers_dir_skips:
-                return None # skip Bash directories and user specified ones
-        elif node.is_file(): # (241) what we do with symlinks?
-            if not self.rightFileType(low):
-                if with_omods is not None and os.path.splitext(low)[
-                        1] in archives.omod_exts:
-                    with_omods.append(FName(node.name))
+    @classmethod
+    def rightFileType(cls, fileName: FName | str, *, allow_ext=None,
+                      _inode=None, with_omods=None, skipstat=None,
+                      __skip_prefixes=('bash', '--')):
+        sup = super().rightFileType(fileName, allow_ext=allow_ext,
+                                    _inode=_inode)
+        if _inode is not None:
+            low = fileName.lower()
+            if low.startswith(__skip_prefixes):
                 return None
-        else: return None
-        return {'cached_stat': None if low in skip_stat else node.stat(),
-                'is_proj': is_proj}
+            if sup: # a file with correct archive extension, sup is a dict
+                next(iter(sup.values()))['is_proj'] = False
+            elif sup is False: # not a file
+                if _inode.is_dir() and not low in cls.installers_dir_skips:
+                    sup = {FName(fileName): {'is_proj': True}}
+            elif sup is None: # wrong extension - still check for omods
+                if with_omods is not None and os.path.splitext(low)[
+                            1] in archives.omod_exts:
+                        with_omods.append(FName(fileName))
+            if sup:
+                st = None if low in skipstat else _inode.stat()
+                next(iter(sup.values()))['cached_stat'] = st
+        return sup
 
     def _get_delinfos(self, inodes):
         return {self[k] for k in set(self.ipackages(self)) - inodes.keys()}

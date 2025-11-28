@@ -1603,11 +1603,15 @@ class DataStore(DataDict):
             omds = [] if extract_omods else None
             inodes = FNDict()
             with os.scandir(self.store_dir) as it:
+                sk = table_dat or set()
                 for x in it:
                     try:
-                        if kws := self._add_node(x, with_omods=omds,
-                                                 skip_stat=table_dat or set()):
-                            inodes[x.name] = kws
+                        if kws := self.rightFileType(x.name, _inode=x,
+                                with_omods=omds, skipstat=sk):
+                            fn, kws = next(iter(kws.items()))
+                            if 'cached_stat' not in kws: # for _AfileInfos
+                                kws['cached_stat'] = x.stat()
+                            inodes[fn] = kws
                     except OSError: # this should not happen
                         deprint(f'Failed to stat {x.name} in {self.store_dir}',
                                 traceback=True)
@@ -1648,17 +1652,18 @@ class DataStore(DataDict):
     def _add_to_cor(self, new, kws, delinfos, e):
         raise # see override for all but Installers
 
-    def _add_node(self, node: DirEntry, **kw_add): # single use in refresh
-        raise NotImplementedError
-
     @classmethod
-    def rightFileType(cls, fileName: FName | str, allow_ext=None) -> tuple[
-            str, str] | None:
+    def rightFileType(cls, fileName: FName | str, *, allow_ext=None,
+            _inode: DirEntry | None=None, **bain_kwargs) -> \
+                tuple[str, str] | None | False | dict:
         """Check if the filetype is correct for subclass by checking the
         basename (usually the extension but sometimes also the root)."""
         base, dot_ext = os.path.splitext(fileName)
-        allow_ext = allow_ext or cls.file_exts
-        return (base, dot_ext) if dot_ext.lower() in allow_ext else None
+        right_ext = dot_ext.lower() in (allow_ext or cls.file_exts)
+        if _inode is None: # else we are in DataStore.refresh
+            return (base, dot_ext) if right_ext else None
+        return _inode.is_file() and ( # see the Installer override
+                    (right_ext and {FName(fileName): {}}) or None)
 
     def _diff_dir(self, inodes) -> RefrIn: # single use in refresh (and super)
         """Return a dict of fn keys (see overrides) of files present in data
@@ -1850,10 +1855,6 @@ class _AFileInfos(DataStore):
         self.corrupted[new] = cor = _Corrupted(cor_path, er, new, **kws)
         deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                 traceback=True)
-
-    def _add_node(self, node, **kw_add):
-        return {'cached_stat': node.stat()} if node.is_file() and \
-            self.rightFileType(node.name) else None
 
     def _get_delinfos(self, inodes):
         return {inf for inf in [*self.values(), *self.corrupted.values()]
@@ -2371,7 +2372,7 @@ class ModInfos(_AFileInfos):
         if itsa_ghost := fname[-6:].lower() == '.ghost':
             fname = fname[:-6]
         sup = super().rightFileType(fname, **kwargs)
-        return sup if not itsa_ghost else {FName(f'{fname}.ghost'): {}}
+        return sup if not itsa_ghost else (sup and {FName(f'{fname}.ghost'): {}})
 
     # _AFileInfos overrides that are used in refresh - ghosts ahead
     def _diff_dir(self, inodes):
@@ -3282,14 +3283,15 @@ class SaveInfos(_AFileInfos):
             del pd[oldName]
 
     @classmethod
-    def rightFileType(cls, fileName, allow_ext=None):
+    def rightFileType(cls, fileName, **kwargs):
         """Parse the specified save name into root and extension and return
         them as a tuple. If the save path does not point to a valid save,
         return None instead."""
         if fileName in cls._ess_skips:
             return None
-        if sup := super().rightFileType(fileName, allow_ext):
-            save_root, save_ext = sup
+        if sup := super().rightFileType(fileName, **kwargs):
+            save_root = sup[0] if isinstance(sup, tuple) else next(
+                iter(sup)).fn_body
             cs_ext = bush.game.Se.cosave_ext[1:]
             if any(s.lower() == cs_ext for s in save_root.split('.')):
                 # Almost certainly not a valid save, had the cosave extension
@@ -3467,11 +3469,11 @@ class ScreenInfos(_AFileInfos):
         return new_store_dir
 
     @classmethod
-    def rightFileType(cls, fileName, allow_ext=None):
+    def rightFileType(cls, fileName, **kwargs):
         if FName(fileName) in cls._ss_skips:
             # Some non-screenshot file, skip it
             return None
-        return super().rightFileType(fileName, allow_ext)
+        return super().rightFileType(fileName, **kwargs)
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         if not self._bain_notify:
