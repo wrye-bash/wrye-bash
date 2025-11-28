@@ -1382,7 +1382,9 @@ class ACosave(_Dumpable, _Remappable, AFile):
     #  2 means the full cosave has been loaded
 
     def __init__(self, cosave_path):
-        super(ACosave, self).__init__(cosave_path, raise_os_error=True)
+        if isinstance(cosave_path, Path) and cosave_path.is_dir():
+            raise IsADirectoryError
+        super().__init__(cosave_path, raise_os_error=True)
         self.cosave_chunks = []
         self.remappable_chunks: list[_Remappable] = []
         self.loading_state = 0 # cosaves are lazily initialized
