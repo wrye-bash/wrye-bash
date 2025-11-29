@@ -29,11 +29,9 @@ from .exception import StateError
 from .wbtemp import TempFile
 
 exe7z = u'7z.exe' if os_name == u'nt' else u'7z'
-defaultExt = u'.7z'
-writeExts = {defaultExt: '7z', '.zip': 'zip'}
-readExts = {u'.rar', u'.001'}
-readExts.update(writeExts)
-omod_exts = {u'.omod', u'.fomod'}
+writeExts = {(defaultExt := '.7z'): '7z', '.zip': 'zip'}
+readExts = frozenset(['.rar', '.001', *writeExts])
+omod_exts = frozenset(['.omod', '.fomod'])
 noSolidExts = {u'.zip'}
 reSolid = re.compile(r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(r'Compressing\s+(.+)', re.U).match

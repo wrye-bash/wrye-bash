@@ -348,11 +348,12 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
                 idetails.refreshCurrent(sel_package)
                 continue
             sel_package.resetAllEspmNames()
-            for index in range(len(sel_package.subNames[1:])):
-                select = (sel_package.subNames[index + 1] in
-                          ret.select_sub_packages)
-                idetails.gSubList.lb_check_at_index(index, select)
-                sel_package.subActives[index + 1] = select
+            it = iter(sel_package.subNames)
+            next(it) # drop silly empty string
+            for index, pack in enumerate(it, 1):
+                select = pack in ret.select_sub_packages
+                idetails.gSubList.lb_check_at_index(index - 1, select)
+                sel_package.subActives[index] = select
             idetails.refreshCurrent(sel_package)
             # Check the plugins that were selected by the wizard
             espm_fns = list(map(FName, idetails.gEspmList.lb_get_str_items()))
@@ -722,8 +723,7 @@ class Installer_Move(_InstallerLink):
             newPos = self.idata[self.idata.lastKey].order + 1
         elif newPos == last_key:
             newPos = len(self.idata)
-        self.idata.moveArchives(self.selected, newPos)
-        self.idata.refresh_n()
+        self.idata.moveArchives(self.selected, newPos, ref_norm=True)
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.detail_fn)
 
@@ -945,6 +945,13 @@ class _Installer_Details_Link(EnabledLink):
     window: InstallersDetails
     selected: int
 
+    def Execute(self):
+        self._details_action()
+        self.window.refreshCurrent(self._installer)
+
+    def _details_action(self):
+        raise NotImplementedError
+
     def _enable(self): return len(self.window.espm_checklist_fns) != 0
 
     @property
@@ -956,20 +963,18 @@ class Installer_Espm_SelectAll(_Installer_Details_Link):
     _text = _(u'Select All')
     _help = _(u'Selects all plugin files in the selected sub-packages.')
 
-    def Execute(self):
+    def _details_action(self):
         self._installer.espmNots = set()
         self.window.gEspmList.set_all_checkmarks(checked=True)
-        self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_DeselectAll(_Installer_Details_Link):
     """Deselect all plugins in installer for installation."""
     _text = _(u'Deselect All')
     _help = _(u'Deselects all plugin files in the selected sub-packages.')
 
-    def Execute(self):
+    def _details_action(self):
         self._installer.espmNots = set(self.window.espm_checklist_fns)
         self.window.gEspmList.set_all_checkmarks(checked=False)
-        self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_Rename(_Installer_Details_Link):
     """Changes the installed name for a plugin."""
@@ -978,7 +983,7 @@ class Installer_Espm_Rename(_Installer_Details_Link):
 
     def _enable(self): return self.selected != -1
 
-    def Execute(self):
+    def _details_action(self):
         curName = self.window.get_espm(self.selected)
         newName = self._askText(_(u'Enter new name (without the extension):'),
                                 title=_(u'Rename Plugin'), default=curName.fn_body)
@@ -987,7 +992,6 @@ class Installer_Espm_Rename(_Installer_Details_Link):
                 self.window.espm_checklist_fns:
             return
         self._installer.setEspmName(curName, newName)
-        self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_Reset(_Installer_Details_Link):
     """Resets the installed name for a plugin."""
@@ -1000,9 +1004,8 @@ class Installer_Espm_Reset(_Installer_Details_Link):
         self.curName = self.window.get_espm(self.selected)
         return self._installer.isEspmRenamed(self.curName)
 
-    def Execute(self):
+    def _details_action(self):
         self._installer.resetEspmName(self.curName)
-        self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_ResetAll(_Installer_Details_Link):
     """Resets all renamed plugins."""
@@ -1010,9 +1013,8 @@ class Installer_Espm_ResetAll(_Installer_Details_Link):
     _help = _(u'Resets all plugins with changed names back to their default '
               u'ones.')
 
-    def Execute(self):
+    def _details_action(self):
         self._installer.resetAllEspmNames()
-        self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_List(_Installer_Details_Link):
     """Lists all plugins in installer for user information."""
@@ -1054,9 +1056,8 @@ class _Installer_Subs_MassSelect(_Installer_Subs):
     """Base class for the (de)select all links."""
     _should_check = False
 
-    def Execute(self):
+    def _details_action(self):
         self.window.set_subpackage_checkmarks(checked=self._should_check)
-        self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_SelectAll(_Installer_Subs_MassSelect):
     """Select All sub-packages in installer for installation."""
@@ -1075,13 +1076,12 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
     _text = _(u'Toggle Selection')
     _help = _(u'Deselects all selected sub-packages and vice versa.')
 
-    def Execute(self):
+    def _details_action(self):
         for index in range(self.window.gSubList.lb_get_items_count()):
             # + 1 due to empty string included in subActives by BAIN
             check = not self._installer.subActives[index + 1]
             self.window.gSubList.lb_check_at_index(index, check)
             self._installer.subActives[index + 1] = check
-        self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""

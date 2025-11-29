@@ -2244,8 +2244,7 @@ class InstallersList(UIList):
             newPos = self.item_count - newPos - 1 - (indexes[-1] - indexes[0])
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
-        self.data_store.moveArchives(self.GetSelected(), newPos)
-        self.data_store.refresh_n()
+        self.data_store.moveArchives(self.GetSelected(), newPos, ref_norm=True)
         self.RefreshUI()
 
     def _extractOmods(self, omodnames, progress):
@@ -2397,8 +2396,8 @@ class InstallersList(UIList):
         kcode = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move installer up/down install order
-            selected = self.GetSelected()
-            if len(selected) < 1: return
+            if not (selected := self.GetSelected()):
+                return
             orderKey = partial(self._sort_keys[u'Order'], self)
             moveMod = 1 if kcode in balt.wxArrowDown else -1 # move down or up
             sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))

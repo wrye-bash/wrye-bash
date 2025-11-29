@@ -1921,16 +1921,6 @@ class _AFileInfos(DataStore):
         :rtype: _sre.SRE_Match | None"""
         return cls.file_pattern.search(fileName)
 
-    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
-        """Return the info corresponding to the specified (str, Fname or CIStr)
-        path relative to the  Data folder - iff it belongs to this data store.
-        If it does not, return None, except if would_be is True whereupon
-        return the fname, if it is a valid one for self."""
-        if (inf := self.get(fnkey := FName(str(data_path)))) or not would_be:
-            return inf
-        return fnkey if os.path.basename(data_path) == data_path and \
-            self.rightFileType(fnkey) else None
-
     def _load_dat(self, progress=None):
         """Load pickled data for mods, saves, inis and bsas."""
         deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
@@ -1949,6 +1939,17 @@ class _AFileInfos(DataStore):
             if pickle_dict := v.get_persistent_attrs():
                 pd.pickled_data[k] = pickle_dict
         pd.save()
+
+    # _AFileInfos specific methods --------------------------------------------
+    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+        """Return the info corresponding to the specified (str, Fname or CIStr)
+        path relative to the  Data folder - iff it belongs to this data store.
+        If it does not, return None, except if would_be is True whereupon
+        return the fname, if it is a valid one for self."""
+        if (inf := self.get(fnkey := FName(str(data_path)))) or not would_be:
+            return inf
+        return fnkey if os.path.basename(data_path) == data_path and \
+            self.rightFileType(fnkey) else None
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
@@ -3326,9 +3327,6 @@ class SaveInfos(_AFileInfos):
             return False
         return all(cls._parse_save_path(fileName))
 
-    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
-        return None # Never relative to Data folder
-
     @classmethod
     def valid_save_exts(cls):
         """Returns a cached version of the valid extensions that a save may
@@ -3360,6 +3358,9 @@ class SaveInfos(_AFileInfos):
             # in one of its root parts
             return None, None
         return save_root, save_ext
+
+    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+        return None # Never relative to Data folder
 
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')

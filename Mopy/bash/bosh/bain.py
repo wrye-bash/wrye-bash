@@ -1483,7 +1483,7 @@ class InstallerMarker(Installer):
 class InstallerArchive(_InstallerPackage):
     """Represents an archive installer entry."""
     type_string = _('Archive')
-    _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in archives.readExts)}))'
+    _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in readExts)}))'
     is_archive = True
 
     def size_info_str(self):
@@ -1890,7 +1890,7 @@ class InstallersData(DataStore):
     __clean_overridden_after_load = True
     installers_dir_skips = set()
     file_pattern = re.compile(
-        fr'\.(?:{"|".join(e[1:] for e in archives.readExts)})$', re.I)
+        fr'\.(?:{"|".join(e[1:] for e in readExts)})$', re.I)
     _dir_key = 'installers'
 
     def __init__(self):
@@ -1915,6 +1915,8 @@ class InstallersData(DataStore):
     def _add_node(self, node, *, with_omods, skip_stat,
                   __skip_prefixes=('bash', '--')):
         low = node.name.lower()
+        if low.startswith(__skip_prefixes):
+            return None
         if is_proj := node.is_dir():
             if low in self.installers_dir_skips:
                 return None # skip Bash directories and user specified ones
@@ -1926,8 +1928,6 @@ class InstallersData(DataStore):
             if e not in readExts: # will return None for omods also
                 return None
         else: return None
-        if low.startswith(__skip_prefixes):
-            return None
         return {'cached_stat': None if low in skip_stat else node.stat(),
                 'is_proj': is_proj}
 
@@ -2126,7 +2126,7 @@ class InstallersData(DataStore):
     @classmethod
     def unhide_wildcard(cls, **kwargs):
         return super().unhide_wildcard(_pl_str=_('Mod Archives'), _joined=
-            ';'.join(f'*{e}' for e in archives.readExts))
+            ';'.join(f'*{e}' for e in readExts))
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
@@ -2535,14 +2535,16 @@ class InstallersData(DataStore):
         return do_refresh #Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
-    def moveArchives(self,moveList,newPos):
+    def moveArchives(self, moveList, new_p=None, ref_norm=False):
         """Move specified archives to specified position."""
         old_ordered = self.sorted_values(set(self) - set(moveList))
         new_ordered = self.sorted_values(moveList)
-        for index, installer in enumerate(chain(old_ordered[:newPos],
-                new_ordered, old_ordered[newPos:])):
+        for index, installer in enumerate(chain(old_ordered[:new_p],
+                new_ordered, old_ordered[new_p:])):
             installer.order = index
         self.hasChanged = True
+        if ref_norm:
+            self.refresh_n()
 
     #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):
