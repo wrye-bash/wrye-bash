@@ -1783,6 +1783,8 @@ class ListInfo:
             'ext_or_root': name_str}), None
 
     def validate_name(self, name_str, check_store=True):
+        """Only used in _EditableMixin.OnFileEdited and File_Duplicate.Execute.
+        """
         # disallow extension change but not if no-extension info type
         check_ext = name_str and self.__class__._valid_exts_re
         if check_ext and not name_str.lower().endswith(
@@ -1881,6 +1883,8 @@ class ListInfo:
 #------------------------------------------------------------------------------
 class AFileInfo(AFile, ListInfo):
     """List Info representing a file."""
+    file_exts = frozenset() # subclasses that represent files must define this!
+
     def __init__(self, fullpath, **kwargs):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
         super().__init__(fullpath, **kwargs)
@@ -1910,6 +1914,11 @@ class AFileInfo(AFile, ListInfo):
                 src.copyTo
             sys_op(dst)
 
+    @classproperty
+    def _valid_exts_re(cls):
+        return fr'(\.(?:{"|".join(x[1:] for x in fe)}))' if (fe :=
+            cls.file_exts) else ''
+
     def validate_name(self, name_str, check_store=True):
         super_validate = super().validate_name(name_str,
             check_store=check_store)
@@ -1932,13 +1941,13 @@ class AFileInfo(AFile, ListInfo):
     def get_hide_dir(self):
         return self._store().hide_dir
 
-    def __repr__(self): # bypass AFInfo - abs path is not always set
+    def __repr__(self): # bypass AFile - abs path is not always set
         return super(AFile, self).__repr__()
 
 #------------------------------------------------------------------------------
 # show your type off - it's unique, maps existing [new] infos fn_keys to tuples
 # of (info (call its do_update) [None (call init)], kwargs for the method call)
-_RIn = dict[FName, tuple[None | ListInfo, dict]]
+_RIn = dict[FName, tuple[None | AFileInfo, dict]]
 @dataclass(slots=True)
 class RefrIn:
     """WIP! requesting refresh from the data store."""

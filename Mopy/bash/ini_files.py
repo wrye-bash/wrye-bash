@@ -226,6 +226,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
     """Any old ini file."""
     __empty_settings = LowerDict()
     _ci_settings_cache_linenum = __empty_settings
+    file_exts = supported_ini_exts
 
     def __init__(self, fullpath, ini_encoding):
         super(AIniInfo, self).__init__(fullpath)

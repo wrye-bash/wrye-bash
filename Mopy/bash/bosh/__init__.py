@@ -46,14 +46,14 @@ from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
-    OrderedLowerDict, attrgetter_cache, top_level_files
+    OrderedLowerDict, attrgetter_cache, top_level_files, classproperty
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
-    get_ini_type_and_encoding, supported_ini_exts
+    get_ini_type_and_encoding
 from ..load_order import LordDiff, LoadOrder
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
@@ -478,8 +478,6 @@ class ModInfo(_WithMastersInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     # Cached, since we need them so often - set by PluginFlag
     _is_master = _is_esl = _is_overlay = _is_blueprint = _is_mid = False
-    _valid_exts_re = r'(\.(?:' + u'|'.join(
-        x[1:] for x in bush.game.espm_extensions) + '))'
     _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
         'autoBashTags': 'mod_auto_bash_tags', # this one is actually used
         'bash.patch.configs': 'mod_bp_config', 'bashTags': 'mod_bash_tags',
@@ -491,6 +489,7 @@ class ModInfo(_WithMastersInfo):
     mod_auto_bash_tags: bool # autoBashTags - always set on __init__
     # we need to notify RUI to redraw redated infos without calling do_update
     redated = False
+    file_exts = frozenset(bush.game.espm_extensions)
 
     def __init__(self, fullpath, *, itsa_ghost=None, bt_contents=None,
                  load_cache=False, **kwargs):
@@ -1342,10 +1341,9 @@ class AINIInfo(_TabledInfo, AIniInfo):
 class SaveInfo(_WithMastersInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
-    _valid_exts_re = r'(\.(?:' + '|'.join(
-        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
     _key_to_attr = {'info': 'save_notes'}
     _co_saves: dict[type[cosaves.ACosave], cosaves.ACosave]
+    file_exts = frozenset([_e := bush.game.Ess.ext, _e[:-1] + 'r', '.bak'])
 
     def __init__(self, fullpath, **kwargs):
         # Dict of cosaves that may come with this save file. Need to get this
@@ -1514,9 +1512,8 @@ class SaveInfo(_WithMastersInfo):
 class ScreenInfo(AFileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
-    _valid_exts_re = r'(\.(?:' + '|'.join(
-        ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
+    file_exts = ss_image_exts
 
     def __init__(self, fullpath, **kwargs):
         super().__init__(fullpath, **kwargs)
@@ -1561,9 +1558,9 @@ class DataStore(DataDict):
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
     _dir_key: str # key in dirs dict for the store_dir
     dat_loaded = False
-    file_exts = None # subclasses must define this !
     factory_type: type[AFileInfo]
     _boot_refresh_args: dict = {}
+    _files_str = '' # used to create unhide wildcard
 
     def __init__(self):
         """Init then refresh if _boot_refresh arguments is not empty."""
@@ -1660,17 +1657,22 @@ class DataStore(DataDict):
                 self.pop(del_fn := del_inf.fn_key, None)}
 
     @classmethod
-    def check_filename(cls, fileName: FName | str, *, allow_ext=None,
+    def check_filename(cls, fileName: FName | str, *, _allow_ext=None,
             _inode: DirEntry | None=None, _inodes=None, **_store_kws) -> \
                 tuple[str, str] | None | False | dict:
         """Check if the filetype is correct for subclass by checking the
-        basename (usually the extension but sometimes also the root)."""
+        basename (usually the extension but sometimes also the root).
+        Returns None (or False) for InstallerProject in any case."""
         base, dot_ext = os.path.splitext(fileName)
-        right_ext = dot_ext.lower() in (allow_ext or cls.file_exts)
+        right_ext = dot_ext.lower() in (_allow_ext or cls._file_exts)
         if _inode is None: # else we are in DataStore.refresh
             return (base, dot_ext) if right_ext else None
         return _inode.is_file() and ( # see the Installer override
                     (right_ext and {FName(fileName): {}}) or None)
+
+    @classproperty
+    def _file_exts(cls):
+        return cls.factory_type.file_exts
 
     def _diff_dir(self, inodes) -> RefrIn: # single use in refresh (and super)
         """Return a dict of fn keys (see overrides) of files present in data
@@ -1786,8 +1788,9 @@ class DataStore(DataDict):
         return self.bash_dir.join(u'Hidden')
 
     @classmethod
-    def unhide_wildcard(cls, *, _pl_str, _joined):
-        return f'{bush.game.display_name} {_pl_str} (*{_joined})|*{_joined}'
+    def unhide_wildcard(cls):
+        exts = f'*{";*".join(cls._file_exts)}'
+        return f'{bush.game.display_name} {cls._files_str} ({exts})|{exts}'
 
     def warning_args(self, multi_warnings, lo_warnings):
         """Append the arguments for the warning message to the multi_warnings
@@ -1916,8 +1919,6 @@ class _Corrupted(AFile):
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFileInfo, AINIInfo):
-    _valid_exts_re = r'(\.(?:' + '|'.join(
-        x[1:] for x in supported_ini_exts) + '))'
 
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
@@ -1967,10 +1968,10 @@ class DefaultIniInfo(AINIInfo):
         self._store().copy_to_new_tweak(self, FName(cp_dest_path.stail))
 
 class INIInfos(_AFileInfos):
-    file_exts = supported_ini_exts
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     _dir_key = 'ini_tweaks'
+    _file_exts = IniFileInfo.file_exts
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
@@ -2251,8 +2252,8 @@ class ModInfos(_AFileInfos):
     _known_cor_mods = set()
     _known_invalid_versions = set()
     _known_older_form_versions = set()
-    file_exts = frozenset(bush.game.espm_extensions)
     factory_type = ModInfo
+    _files_str = _('Plugins')
 
     def __init__(self):
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
@@ -3025,11 +3026,6 @@ class ModInfos(_AFileInfos):
             self.__available_bsas = None
         return self.__bsa_lo, self.__bsa_cause
 
-    @classmethod
-    def unhide_wildcard(cls, **kwargs):
-        joinstar = ';*'.join(bush.game.espm_extensions)
-        return super().unhide_wildcard(_pl_str=_('Plugins'), _joined=joinstar)
-
     def getVersion(self, fileName):
         """Check we have a fileInfo for fileName and call get_version on it."""
         return self[fileName].get_version() if fileName in self else ''
@@ -3185,13 +3181,13 @@ class SaveInfos(_AFileInfos):
     _bain_notify = tracks_ownership = False
     _ess_skips = bush.game.Ess.save_skips
     # Enabled and disabled saves and .bak files
-    file_exts = frozenset([_e := bush.game.Ess.ext, _e[:-1] + 'r', '.bak'])
     _known_cor_saves = set()
     factory_type = SaveInfo
+    _files_str = _('Save files')
 
     def __init__(self):
-        all_ext = {*(fe := self.file_exts), *(f'{e}f' for e in fe)}
-        par = partial(self.check_filename, allow_ext=all_ext)
+        all_ext = {*(fe := SaveInfo.file_exts), *(f'{e}f' for e in fe)}
+        par = partial(self.check_filename, _allow_ext=all_ext)
         SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game.fsName, par,
             bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
         super().__init__()
@@ -3251,11 +3247,6 @@ class SaveInfos(_AFileInfos):
                    'likely means that they are corrupt.'),
                  corruptSaves - self._known_cor_saves, self))
             self._known_cor_saves |= corruptSaves
-
-    @classmethod
-    def unhide_wildcard(cls, **kwargs):
-        return super().unhide_wildcard(_pl_str=_('Save files'),
-            _joined=f'*{";*".join([*cls.file_exts])}')
 
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
@@ -3319,10 +3310,9 @@ class BSAInfos(_AFileInfos):
             # Need to do this at runtime since it depends on inisettings (ugh)
             bush.game.Bsa.redate_dict[inisettings[
                 u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'
-        self.__class__.file_exts = frozenset([bush.game.Bsa.bsa_extension])
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
         class BSAInfo(FileInfo, _bsa_type):
-            _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
+            file_exts = frozenset([bush.game.Bsa.bsa_extension])
             def __init__(self, fullpath, **kwargs):
                 try:
                     super().__init__(fullpath, **kwargs)
@@ -3355,7 +3345,7 @@ class BSAInfos(_AFileInfos):
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
                     if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
-        self.factory_type = BSAInfo
+        self.__class__.factory_type = BSAInfo
         super().__init__()
 
     def warning_args(self, multi_warnings, lo_warnings):
@@ -3434,7 +3424,6 @@ class ScreenInfos(_AFileInfos):
     # shouldn't be managed here - right now only ENB stuff
     _ss_skips = {*map(FName, ('enblensmask.png', 'enbpalette.bmp',
         'enbsunsprite.bmp', 'enbsunsprite.tga', 'enbunderwaternoise.bmp'))}
-    file_exts = ss_image_exts
     factory_type = ScreenInfo
     _boot_refresh_args = {}
     tracks_ownership = False

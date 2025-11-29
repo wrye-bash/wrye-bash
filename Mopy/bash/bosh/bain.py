@@ -611,9 +611,8 @@ class Installer(ListInfo):
             parent_dir, split_fn = _split_fr(file_relative)
             lower_parent = parent_dir.lower()
             lower_root = split_fn.lower()[:-len(fileExt)]
-            package_root = self.fn_key.fn_body if self._valid_exts_re else \
-                self.fn_key
-            if lower_root in package_root.lower() and not self.hasReadme:
+            pack_root = self.fn_key.fn_body if self.file_exts else self.fn_key
+            if lower_root in pack_root.lower() and not self.hasReadme:
                 # This is named similarly to the package (with a doc ext), so
                 # probably a readme
                 self.hasReadme = full
@@ -634,13 +633,13 @@ class Installer(ListInfo):
                 if not parent_dir or lower_parent == 'docs':
                     ma_cd = re_common_docs_match(lower_root)
                     if ma_cd and not (ma_cd.group(1) or ma_cd.group(2)):
-                        dest = dest_start + package_root + ' ' + split_fn
+                        dest = f'{dest_start}{pack_root} {split_fn}'
                     elif maReadMe and not (maReadMe.group(1) or
                                            maReadMe.group(3)):
-                        dest = dest_start + package_root + fileExt
+                        dest = f'{dest_start}{pack_root}{fileExt}'
             if not parent_dir:
                 if fileLower == 'package.txt':
-                    dest = docs_ + package_root + '.package.txt'
+                    dest = f'{docs_}{pack_root}.package.txt'
                     self.packageDoc = dest
                 elif fileLower in ignore_doclike:
                     self.skipDirFiles.add(full)
@@ -816,8 +815,7 @@ class Installer(ListInfo):
                         dirty_sizeCrc[filename] = sizeCrc
             self.ci_dest_sizeCrc.clear()
             return dest_src
-        archiveRoot = self.fn_key.fn_body if self._valid_exts_re else \
-            self.fn_key
+        archiveRoot = self.fn_key.fn_body if self.file_exts else self.fn_key
         docExts = self.docExts
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -1484,8 +1482,8 @@ class InstallerMarker(Installer):
 class InstallerArchive(_InstallerPackage):
     """Represents an archive installer entry."""
     type_string = _('Archive')
-    _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in readExts)}))'
     is_archive = True
+    file_exts = readExts
 
     def size_info_str(self):
         if self.isSolid:
@@ -1890,9 +1888,10 @@ class InstallersData(DataStore):
     overridden_skips: set[CIstr] = set() # populate with CIstr !
     __clean_overridden_after_load = True
     installers_dir_skips = set()
-    file_exts = readExts
+    _file_exts = InstallerArchive.file_exts
     _dir_key = 'installers'
     _last_key = FName('==Last==')
+    _files_str = _('Mod Archives')
 
     def __init__(self):
         super().__init__()
@@ -2116,11 +2115,6 @@ class InstallersData(DataStore):
 
     @property
     def hide_dir(self): return bass.dirs['modsBash'].join('Hidden')
-
-    @classmethod
-    def unhide_wildcard(cls, **kwargs):
-        return super().unhide_wildcard(_pl_str=_('Mod Archives'), _joined=
-            ';'.join(f'*{e}' for e in readExts))
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
