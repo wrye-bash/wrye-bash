@@ -1606,8 +1606,8 @@ class DataStore(DataDict):
                 sk = table_dat or set()
                 for x in it:
                     try:
-                        if kws := self.rightFileType(x.name, _inode=x,
-                                with_omods=omds, skipstat=sk):
+                        if kws := self.check_filename(x.name, _inode=x,
+                                with_omods=omds, skipstat=sk, _inodes=inodes):
                             fn, kws = next(iter(kws.items()))
                             if 'cached_stat' not in kws: # for _AfileInfos
                                 kws['cached_stat'] = x.stat()
@@ -1653,8 +1653,8 @@ class DataStore(DataDict):
         raise # see override for all but Installers
 
     @classmethod
-    def rightFileType(cls, fileName: FName | str, *, allow_ext=None,
-            _inode: DirEntry | None=None, **bain_kwargs) -> \
+    def check_filename(cls, fileName: FName | str, *, allow_ext=None,
+            _inode: DirEntry | None=None, _inodes=None, **_store_kws) -> \
                 tuple[str, str] | None | False | dict:
         """Check if the filetype is correct for subclass by checking the
         basename (usually the extension but sometimes also the root)."""
@@ -1906,7 +1906,7 @@ class _AFileInfos(DataStore):
         if (inf := self.get(fnkey := FName(str(data_path)))) or not would_be:
             return inf
         return fnkey if os.path.basename(data_path) == data_path and \
-            self.rightFileType(fnkey) else None
+            self.check_filename(fnkey) else None
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
@@ -2367,31 +2367,23 @@ class ModInfos(_AFileInfos):
         return {k for k, v in self.items() if # reset 'redated'
                 v.redated and not setattr(v, 'redated', False)}
 
+    # _AFileInfos overrides that are used in refresh - ghosts ahead
     @classmethod
-    def rightFileType(cls, fname, **kwargs):
+    def check_filename(cls, fname, *, _inodes=None, **kwargs):
         if itsa_ghost := fname[-6:].lower() == '.ghost':
             fname = fname[:-6]
-        sup = super().rightFileType(fname, **kwargs)
-        return sup if not itsa_ghost else (sup and {FName(f'{fname}.ghost'): {}})
-
-    # _AFileInfos overrides that are used in refresh - ghosts ahead
-    def _diff_dir(self, inodes):
-        """ModInfos.rightFileType matches ghosts - filter those out from keys
-        and pass the ghost state info to refresh."""
-        ghosts = set()
-        for ghost in [x for x in inodes if x.fn_ext == '.ghost']:
-            if (normal := ghost.fn_body) in inodes: # they exist in both states
-                ##: we need to propagate this warning once refresh dust settles
-                deprint(f'File {normal} and its ghost exist. The ghost '
-                        f'will be ignored but this may lead to undefined '
-                        f'behavior - please remove one or the other')
-            else:
-                inodes[normal] = inodes[ghost]
-                ghosts.add(normal)
-            del inodes[ghost]
-        return super()._diff_dir(FNDict(
-            (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
-            inodes.items()))
+        fname = FName(fname)
+        if _inodes and fname in _inodes:
+            ##: we need to propagate this warning once refresh dust settles
+            deprint(f'File {fname} and its ghost exist. The ghost will be '
+                    f'ignored but this may lead to undefined behavior - please '
+                    f'remove one or the other')
+            if itsa_ghost: return None # ignore the ghost
+            return {fname: {'itsa_ghost': False}} # override entry in _inodes
+        if sup := super().check_filename(fname, **kwargs):
+            if isinstance(sup, dict):
+                sup[fname]['itsa_ghost'] = itsa_ghost
+        return sup
 
     def _file_or_active_updates(self, *, __lo=load_order.cached_lo_index):
         """If any plugins have been added, updated or deleted, or the active
@@ -3201,7 +3193,7 @@ class SaveInfos(_AFileInfos):
 
     def __init__(self):
         all_ext = {*(fe := self.file_exts), *(f'{e}f' for e in fe)}
-        par = partial(self.rightFileType, allow_ext=all_ext)
+        par = partial(self.check_filename, allow_ext=all_ext)
         SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game.fsName, par,
             bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
         super().__init__(SaveInfo)
@@ -3283,13 +3275,13 @@ class SaveInfos(_AFileInfos):
             del pd[oldName]
 
     @classmethod
-    def rightFileType(cls, fileName, **kwargs):
+    def check_filename(cls, fileName, **kwargs):
         """Parse the specified save name into root and extension and return
         them as a tuple. If the save path does not point to a valid save,
         return None instead."""
         if fileName in cls._ess_skips:
             return None
-        if sup := super().rightFileType(fileName, **kwargs):
+        if sup := super().check_filename(fileName, **kwargs):
             save_root = sup[0] if isinstance(sup, tuple) else next(
                 iter(sup)).fn_body
             cs_ext = bush.game.Se.cosave_ext[1:]
@@ -3469,11 +3461,11 @@ class ScreenInfos(_AFileInfos):
         return new_store_dir
 
     @classmethod
-    def rightFileType(cls, fileName, **kwargs):
+    def check_filename(cls, fileName, **kwargs):
         if FName(fileName) in cls._ss_skips:
             # Some non-screenshot file, skip it
             return None
-        return super().rightFileType(fileName, **kwargs)
+        return super().check_filename(fileName, **kwargs)
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         if not self._bain_notify:

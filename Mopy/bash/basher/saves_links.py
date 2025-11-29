@@ -148,7 +148,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         #--Get file count. If > zero, verify with user.
         profileDir = bass.dirs[u'saveBase'].join(profileSaves)
         files = [save_file for save_file in profileDir.ilist() if
-                 bosh.SaveInfos.rightFileType(save_file)]
+                 bosh.SaveInfos.check_filename(save_file)]
         if files:
             message = _('Delete profile %(save_profile)s and the '
                         '%(num_contained_saves)d save files it contains?') % {
@@ -286,13 +286,13 @@ class Save_ImportFace(OneItemLink):
                                 wildcard=wildcard)
         if not srcPath: return
         fname = srcPath.tail.s
-        if bosh.SaveInfos.rightFileType(fname): # Import from a save
+        if bosh.SaveInfos.check_filename(fname): # Import from a save
             #--Get face
             with balt.Progress(fname) as progress:
                 saveFile = _saves.SaveFile(srcPath)
                 saveFile.load(progress)
             srcFaces = faces.PCFaces.save_getFaces(saveFile)
-        elif bosh.ModInfos.rightFileType(fname): # Import from a mod
+        elif bosh.ModInfos.check_filename(fname): # Import from a mod
             #--Get faces
             srcFaces = faces.PCFaces.mod_getFaces(srcPath)
             #--No faces to import?

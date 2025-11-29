@@ -496,7 +496,7 @@ class _ModGroups(CsvParser):
 
     def _parse_line(self, csv_fields):
         """Imports mod groups from specified text file."""
-        if len(csv_fields) >= 2 and bosh.ModInfos.rightFileType(csv_fields[0]):
+        if len(csv_fields) >= 2 and bosh.ModInfos.check_filename(csv_fields[0]):
             mod, mod_grp = csv_fields[:2]
             self.mod_group[FName(mod)] = mod_grp
 
@@ -1762,8 +1762,8 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         #--Extension error check
         ext = textPath.cext
         if ext not in supportedExts:
-            plugin_exts = ', '.join(sorted(bush.game.espm_extensions
-                                           | {'.ghost'}))
+            plugin_exts = ', '.join(
+                sorted({*bush.game.espm_extensions, '.ghost'}))
             if len(supportedExts) > 1:
                 csv_err = _('Source file must be a %(csv_ext)s file or a '
                             'plugin (%(plugin_exts)s).') % {

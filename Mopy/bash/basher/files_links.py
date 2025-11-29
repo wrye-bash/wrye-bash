@@ -66,7 +66,7 @@ class Files_Unhide(ItemLink):
                                   "directory."))
                 return
             # Validate that the file is valid and isn't already present
-            if not dstore.rightFileType(srcFileName.s): # True only if is_file
+            if not dstore.check_filename(srcFileName.s): # True only if is_file
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'not valid.') % {'skipped_file': srcFileName})
                 continue

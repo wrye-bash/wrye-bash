@@ -1151,7 +1151,7 @@ class Installer(ListInfo):
                 if sizeCrc == ci_underrides_sizeCrc.get(filename):
                     underrides.add(filename)
             if missing: inst_status = -10
-            elif any(ModInfos.rightFileType(f) for f in mismatched):
+            elif any(ModInfos.check_filename(str(f)) for f in mismatched):
                 inst_status = 10
             elif mismatched: inst_status = 20
             else: inst_status = 30
@@ -1912,11 +1912,10 @@ class InstallersData(DataStore):
                             InstallerMarker]
 
     @classmethod
-    def rightFileType(cls, fileName: FName | str, *, allow_ext=None,
-                      _inode=None, with_omods=None, skipstat=None,
-                      __skip_prefixes=('bash', '--')):
-        sup = super().rightFileType(fileName, allow_ext=allow_ext,
-                                    _inode=_inode)
+    def check_filename(cls, fileName: FName | str, *, _inode=None,
+                       with_omods=None, skipstat=None,
+                       __skip_prefixes=('bash', '--'), **kwargs):
+        sup = super().check_filename(fileName, _inode=_inode, **kwargs)
         if _inode is not None:
             low = fileName.lower()
             if low.startswith(__skip_prefixes):
