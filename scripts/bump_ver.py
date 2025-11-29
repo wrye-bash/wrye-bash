@@ -23,13 +23,11 @@
 # =============================================================================
 """Bump the various version numbers in Wrye Bash."""
 import logging
-import os
 import re
 import sys
 
-import pyfiglet
 from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, \
-    open_wb_file, edit_bass_version, mk_logfile, run_script, setup_log
+    edit_bass_version, mk_logfile, run_script, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -67,21 +65,6 @@ def main(args):
                                      r'v\d+(?:\.\d+)?</div>'),
             edit_callback=edit_readme, logger=_LOGGER)
         files_bumped.append(MOPY_PATH / 'Docs' / readme_name)
-    # bash_default.ini and bash_default_russian.ini: Use pyfiglet to generate a
-    # new header
-    fmt_header = [f';#  {l}' for l in pyfiglet.figlet_format(
-        f'Bash.ini {new_ver}', font='big').rstrip().splitlines()]
-    _LOGGER.info('Editing version in default INIs')
-    for b_ini_name in ('bash_default.ini',
-                       'bash_default_Russian.ini'):
-        _LOGGER.debug(f'Editing version in default INIs: {b_ini_name}')
-        with open_wb_file(b_ini_name, logger=_LOGGER) as bd_ini:
-            # Skip the first 6 lines (the header)
-            ini_rest = bd_ini.read().splitlines()[6:]
-            bd_ini.seek(0, os.SEEK_SET)
-            bd_ini.truncate(0)
-            bd_ini.write('\n'.join(fmt_header + ini_rest) + '\n')
-        files_bumped.append(MOPY_PATH / b_ini_name)
     _LOGGER.debug('Writing commit with changed files')
     commit_changes(changed_paths=files_bumped,
         commit_msg=f'Bump Wrye Bash version to {new_ver}')

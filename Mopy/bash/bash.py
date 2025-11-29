@@ -42,7 +42,9 @@ import traceback
 #  - bolt: Needed by almost every method in here - paths, deprint, etc.
 #  - exception and wbtemp: Needed by bolt, so imported anyways - both were
 #                          designed with this in mind
-from . import bass, bolt, exception, wbtemp
+#  - gen_ini: needed to generate bash_default.ini without adding hundreds of
+#             lines to bash
+from . import bass, bolt, exception, gen_ini, wbtemp
 
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
@@ -386,6 +388,11 @@ def dump_environment(wxver=None):
         ifileoperation_ver = ifileoperation.__version__
     except ImportError:
         ifileoperation_ver = 'not found'
+    try:
+        import pyfiglet
+        pyfiglet_ver = pyfiglet.__version__
+    except ImportError:
+        pyfiglet_ver = 'not found (optional)'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
     msg = [
@@ -400,6 +407,7 @@ def dump_environment(wxver=None):
          if bolt.os_name == 'nt' else None),
         f' - lxml: {lxml_ver}',
         f' - packaging: {packaging_ver}',
+        f' - pyfiglet: {pyfiglet_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
         f' - python-lz4: {lz4_ver}',
         f' - PyYAML: {yaml_ver}',
@@ -697,6 +705,8 @@ def _main(opts, wx_locale, wxver):
     bash_app.MainLoop()
 
 def _detect_game(opts, backup_bash_ini):
+    # Generate the bash_default.ini file
+    gen_ini.write_default_bash_ini()
     # Read the bash.ini file either from Mopy or from the backup location
     _parse_bash_ini(backup_bash_ini)
     # if uArg is None, then get the UserPath from the ini file

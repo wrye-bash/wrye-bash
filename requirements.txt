@@ -11,6 +11,8 @@ wxPython==4.2.3
 lxml==6.0.0
 # For parsing download conditions when checking for updates
 packaging==25.0
+# For generating bash_default.ini section headers
+pyfiglet==1.0.3
 # For PDF support in the doc browser
 PyMuPDF==1.26.3
 # For reflink copies (does not support Windows/ReFS yet)
