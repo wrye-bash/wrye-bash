@@ -76,6 +76,7 @@ _IGNORES_MANUAL = {
     '*.log',
     '*.pyc',
     'Mopy/bash.ini',
+    'Mopy/bash_default.ini',
     'Mopy/bash/tests',
     'Mopy/redist',
 }
@@ -85,6 +86,7 @@ _IGNORES_STANDALONE = _IGNORES_MANUAL | {
     '*.pyd',
     '*.bat',
     '*.template',
+    'Mopy/bash/__pycache__',
     'Mopy/bash/basher',
     'Mopy/bash/bosh',
     'Mopy/bash/brec',

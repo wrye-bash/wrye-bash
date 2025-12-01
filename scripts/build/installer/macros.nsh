@@ -18,7 +18,9 @@
             /x "*.log" \
             /x "*.py*" \
             /x "bash.ini" \
+            /x "bash_default.ini" \
             /x "Wrye Bash.exe" \
+            /x "__pycache__" \
             /x "basher" \
             /x "bosh" \
             /x "brec" \
@@ -795,10 +797,6 @@
         Delete "${Path}\Mopy\bash\images\readme\Flag_of_Italy_32.png"
         Delete "${Path}\Mopy\bash\images\readme\Flag_of_Japan_32.png"
         Delete "${Path}\Mopy\bash\images\readme\Flag_of_Russia_32.png"
-        ; This isn't European Portuguese, it's Brazilian Portuguese
-        ; TODO Once/if we get a separate European Portuguese translation, drop
-        ; this (duh)
-        Delete "${Path}\Mopy\l10n\pt_PT.po"
         ; As of 311, Auto-Quit uses a checkmark instead of an X
         Delete "${Path}\Mopy\bash\images\checkbox_red_x_24.png"
         Delete "${Path}\Mopy\bash\images\checkbox_red_x_32.png"
@@ -897,6 +895,8 @@
         ; As of 315, we made bash_default.ini generate at runtime &
         ; translatable
         Delete "${Path}\Mopy\bash_default_Russian.ini"
+        ; This was missing from the excludes, so it could sneak into builds
+        RMDir /r "${Path}\Mopy\bash\__pycache__"
     !macroend
 
 
