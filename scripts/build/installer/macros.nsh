@@ -897,6 +897,10 @@
         Delete "${Path}\Mopy\bash_default_Russian.ini"
         ; This was missing from the excludes, so it could sneak into builds
         RMDir /r "${Path}\Mopy\bash\__pycache__"
+        ; As of 315, we merged the VR taglists with their non-VR counterparts
+        ; as LOOT merged them in v0.26.0
+        RMDir /r "${Path}\Mopy\taglists\Fallout4VR"
+        RMDir /r "${Path}\Mopy\taglists\SkyrimVR"
     !macroend
 
 

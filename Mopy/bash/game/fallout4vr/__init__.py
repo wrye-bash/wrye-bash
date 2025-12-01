@@ -41,7 +41,6 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
     game_detect_excludes = set()
     version_detect_file = u'Fallout4VR.exe'
     master_file = bolt.FName(u'Fallout4.esm')
-    taglist_dir = 'Fallout4VR'
     loot_dir = u'Fallout4VR'
     loot_game_name = 'Fallout4VR'
 

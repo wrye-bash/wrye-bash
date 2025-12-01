@@ -40,7 +40,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     game_detect_includes = {'SkyrimVR.exe'}
     game_detect_excludes = set()
     version_detect_file = u'SkyrimVR.exe'
-    taglist_dir = 'SkyrimVR'
     loot_dir = u'Skyrim VR'
     loot_game_name = 'Skyrim VR'
 

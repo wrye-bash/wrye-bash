@@ -183,6 +183,8 @@ class ConditionFunc(_ACondition):
         - many_active
         - product_version
         - version"""
+    # TODO: Unlikely to be necessary, but we're missing readable, file_size,
+    # filename_version, description_contains, & is_executable
     __slots__ = ('func_name', 'func_args')
 
     def __init__(self, func_name: str, func_args: list):
