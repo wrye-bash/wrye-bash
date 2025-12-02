@@ -27,6 +27,7 @@ attribute points to SaveList singleton."""
 import os
 import re
 import shutil
+from itertools import chain
 
 from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
@@ -278,21 +279,21 @@ class Save_ImportFace(OneItemLink):
     def Execute(self):
         #--Select source face file
         srcDir = self._data_store.store_dir
-        exts = u';*'.join(bush.game.espm_extensions | {
-            bush.game.Ess.ext, bush.game.Ess.ext[-1] + u'r'})
+        st = (minfos := bosh.ModInfos, save_infos := bosh.SaveInfos)
+        exts = ';*'.join(chain(*(infs.factory_type.file_exts for infs in st)))
         wildcard = _('Source Files') + f' (*{exts})|*{exts}'
         #--File dialog
         srcPath = self._askOpen(title=_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)
         if not srcPath: return
         fname = srcPath.tail.s
-        if bosh.SaveInfos.check_filename(fname): # Import from a save
+        if save_infos.check_filename(fname): # Import from a save
             #--Get face
             with balt.Progress(fname) as progress:
                 saveFile = _saves.SaveFile(srcPath)
                 saveFile.load(progress)
             srcFaces = faces.PCFaces.save_getFaces(saveFile)
-        elif bosh.ModInfos.check_filename(fname): # Import from a mod
+        elif minfos.check_filename(fname): # Import from a mod
             #--Get faces
             srcFaces = faces.PCFaces.mod_getFaces(srcPath)
             #--No faces to import?
