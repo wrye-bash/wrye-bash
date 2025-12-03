@@ -1628,10 +1628,8 @@ class Mod_Face_Import(OneItemLink):
         srcDir = bosh.saveInfos.store_dir
         wildcard = (_('%(game_name)s Saves') +
                     ' (*%(save_ext_on)s;*%(save_ext_off)s)|*%(save_ext_on)s;'
-                    '*%(save_ext_off)s') % {
-            'game_name': bush.game.display_name,
-            'save_ext_on': bush.game.Ess.ext,
-            'save_ext_off': bush.game.Ess.ext[:-1] + 'r'}
+                    '*%(save_ext_off)s') % {**self._selected_info.sexts,
+            'game_name': bush.game.display_name}
         #--File dialog
         srcPath = self._askOpen(_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)

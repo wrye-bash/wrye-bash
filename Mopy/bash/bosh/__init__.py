@@ -1331,7 +1331,9 @@ class SaveInfo(_WithMastersInfo):
     _key_to_attr = {'info': 'save_notes'}
     # Dict of cosaves that may come with this save file
     _co_saves: dict[type[ACosave], ACosave] = {} # instance attr set in init
-    file_exts = frozenset([_e := bush.game.Ess.ext, _e[:-1] + 'r', '.bak'])
+    sexts = {'save_ext_on': bush.game.Ess.ext}
+    sexts['save_ext_off'] = sexts['save_ext_on'][:-1] + 'r'
+    file_exts = frozenset([*sexts.values(), '.bak'])
 
     def __init__(self, fullpath, **kwargs):
         # Need to update cosaves first, since readHeader calls _get_masters,

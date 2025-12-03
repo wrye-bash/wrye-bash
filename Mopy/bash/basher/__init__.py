@@ -1968,16 +1968,14 @@ class SaveList(UIList):
         if (fn_item := sinf.fn_key).fn_ext == u'.bak':
             showError(self, _('You cannot enable save backups.'))
             return
-        enabled_ext = bush.game.Ess.ext
-        disabled_ext = enabled_ext[:-1] + u'r'
+        exts = sinf.sexts
         msg = _(u'Clicking on a save icon will disable/enable the save '
                 u'by changing its extension to %(save_ext_on)s (enabled) or '
-                u'%(save_ext_off)s (disabled).') % {
-            u'save_ext_on': enabled_ext, u'save_ext_off': disabled_ext}
+                u'%(save_ext_off)s (disabled).') % exts
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
-        newfn = FName(fn_item.fn_body + (disabled_ext if sinf.is_save_enabled()
-                      else enabled_ext))
+        newfn = FName(fn_item.fn_body + exts[['save_ext_on', 'save_ext_off'][
+            sinf.is_save_enabled()]])
         self.try_rename([[sinf, newfn]], check_unique=True, with_backups=True)
 
     # Save profiles
