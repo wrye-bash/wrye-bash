@@ -1061,7 +1061,7 @@ class ModList(_ModsUIList):
                 self.new_bashed_patch()
             else:
                 # Ctrl+N - Create a new plugin
-                CreateNewPlugin.display_dialog(self)
+                CreateNewPlugin.display_dialog(self, self.data_store)
         else:
             return super()._handle_key_up(wrapped_evt)
         return EventResult.FINISH

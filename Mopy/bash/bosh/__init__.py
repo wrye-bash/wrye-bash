@@ -1652,6 +1652,10 @@ class DataStore(DataDict):
     def _file_exts(cls):
         return cls.factory_type.file_exts
 
+    @classmethod
+    def info_exts(cls, with_ghosts=True):
+        return cls._file_exts
+
     def _diff_dir(self, inodes) -> RefrIn: # single use in refresh (and super)
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted infos."""
@@ -1784,8 +1788,8 @@ class DataStore(DataDict):
         return self.bash_dir.join(u'Hidden')
 
     @classmethod
-    def unhide_wildcard(cls):
-        exts = f'*{";*".join(cls._file_exts)}'
+    def unhide_wildcard(cls, *, with_ghosts=True) -> str:
+        exts = f'*{";*".join(cls.info_exts(with_ghosts))}'
         return f'{bush.game.display_name} {cls._files_str} ({exts})|{exts}'
 
     def warning_args(self, multi_warnings, lo_warnings):
@@ -2382,6 +2386,11 @@ class ModInfos(_AFileInfos):
             if isinstance(sup, dict):
                 sup[fname]['itsa_ghost'] = itsa_ghost
         return sup
+
+    @classmethod
+    def info_exts(cls, with_ghosts=True):
+        sup = super().info_exts()
+        return {*sup, '.ghost'} if with_ghosts else sup
 
     def _file_or_active_updates(self, *, __lo=load_order.cached_lo_index):
         """If any plugins have been added, updated or deleted, or the active

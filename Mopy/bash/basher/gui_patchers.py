@@ -924,17 +924,19 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         return super()._get_auto_items()
 
     def OnAdd(self):
-        srcDir = bosh.modInfos.store_dir
-        wildcard = bosh.modInfos.unhide_wildcard()
+        ds = bosh.modInfos
+        srcDir = ds.store_dir
+        wildcard = ds.unhide_wildcard()
         #--File dialog
         srcPaths = FileOpenMultiple.display_dialog(self.gConfigPanel,
             self._add_dialog_title, srcDir, '', wildcard)
         if not srcPaths: return
         #--Get new items
         for srcPath in srcPaths:
-            folder, fname = srcPath.headTail
-            if folder == srcDir and (fn := FName(fname.s)) not in \
-                    self.configItems: self.configItems.append(fn)
+            if srcPath.head == srcDir and (
+                    body_ext := ds.check_filename(srcPath.stail)):
+                if (fn := FName(''.join(body_ext))) not in self.configItems:
+                    self.configItems.append(fn)
         self._sort_and_update_items(self.configItems)
 
     def ShowChoiceMenu(self, itemIndex):

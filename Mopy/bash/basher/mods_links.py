@@ -326,7 +326,7 @@ class Mods_CreateBlank(ItemLink):
     _keyboard_hint = 'Ctrl+N'
 
     def Execute(self):
-        CreateNewPlugin.display_dialog(self.window)
+        CreateNewPlugin.display_dialog(self.window, self._data_store)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
