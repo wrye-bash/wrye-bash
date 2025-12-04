@@ -275,7 +275,8 @@ class DocBrowser(WindowFrame):
         dest_path.remove()
         old_path.moveTo(dest_path)
         if self._doc_is_wtxt:
-            old_html, new_html = (x.root+u'.html' for x in (old_path,dest_path))
+            old_html, new_html = (x.root + '.html' for x in # Path.__add__!
+                                  (old_path, dest_path))
             try: old_html.moveTo(new_html)
             except StateError: new_html.remove()
         #--Remember change

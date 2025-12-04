@@ -285,7 +285,8 @@ def remove_newlines(s: str) -> str:
 # The current OS's path seperator, escaped for use in regexes
 os_sep_re = re.escape(os.path.sep)
 
-def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
+def _conv_obj(o, conv_enc='utf-8', *,
+              __list_types=frozenset((list, set, tuple))):
     """Converts an object containing bytestrings to an equivalent object that
     contains decoded versions of those bytestrings instead. Decoding is done
     by trying the specified encoding first, then falling back on the regular
@@ -293,11 +294,11 @@ def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
     if isinstance(o, dict):
         new_dict = o.copy()
         new_dict.clear()
-        new_dict.update(((conv_obj(k, conv_enc), conv_obj(v, conv_enc))
-                         for k, v in o.items()))
+        new_dict.update(((_conv_obj(k, conv_enc), _conv_obj(v, conv_enc)) for
+                         k, v in o.items()))
         return new_dict
     elif type(o) in __list_types:
-        return type(o)(conv_obj(e, conv_enc) for e in o)
+        return type(o)(_conv_obj(e, conv_enc) for e in o)
     elif isinstance(o, bytes):
         return decoder(o, encoding=conv_enc)
     else:
@@ -344,7 +345,7 @@ _str_to_sig = StrToSig()
 str_to_sig = _str_to_sig.__getitem__
 
 # Helpers ---------------------------------------------------------------------
-def sortFiles(files, __split=os.path.split):
+def sortFiles(files, *, __split=os.path.split):
     """Utility function. Sorts files by directory, then file name."""
     return sorted(files, key=lambda x: __split(x.lower()))
 
@@ -2072,8 +2073,8 @@ class PickleDict(object):
                     elif firstPickle == b'VDATA2':
                         # old format, load and convert
                         _perform_load()
-                        self.vdata = conv_obj(self.vdata)
-                        self.pickled_data = conv_obj(self.pickled_data)
+                        self.vdata = _conv_obj(self.vdata)
+                        self.pickled_data = _conv_obj(self.pickled_data)
                         deprint(f'Converted {path} to VDATA3 format')
                         resave = True
                     else:
@@ -2173,63 +2174,63 @@ class _StructsCache(dict):
         return self.setdefault(key, struct.Struct(key))
 
 structs_cache = _StructsCache()
-def unpack_str16(ins, __unpack=structs_cache[u'H'].unpack) -> bytes:
+def unpack_str16(ins, *, __unpack=structs_cache['H'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(2))[0])
-def unpack_str32(ins, __unpack=structs_cache[u'I'].unpack) -> bytes:
+def unpack_str32(ins, *, __unpack=structs_cache['I'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(4))[0])
-def unpack_int(ins, __unpack=structs_cache[u'I'].unpack) -> int:
+def unpack_int(ins, *, __unpack=structs_cache['I'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int(out, value: int, __pack=structs_cache[u'=I'].pack):
+def pack_int(out, value: int, *, __pack=structs_cache['=I'].pack):
     out.write(__pack(value))
-def unpack_int64(ins, __unpack=structs_cache['Q'].unpack) -> int:
+def unpack_int64(ins, *, __unpack=structs_cache['Q'].unpack) -> int:
     return __unpack(ins.read(8))[0]
-def unpack_short(ins, __unpack=structs_cache[u'H'].unpack) -> int:
+def unpack_short(ins, *, __unpack=structs_cache['H'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def pack_short(out, val: int, __pack=structs_cache[u'=H'].pack):
+def pack_short(out, val: int, *, __pack=structs_cache['=H'].pack):
     out.write(__pack(val))
-def unpack_float(ins, __unpack=structs_cache[u'f'].unpack) -> float:
+def unpack_float(ins, *, __unpack=structs_cache['f'].unpack) -> float:
     return __unpack(ins.read(4))[0]
-def pack_float(out, val: float, __pack=structs_cache[u'=f'].pack):
+def pack_float(out, val: float, *, __pack=structs_cache['=f'].pack):
     out.write(__pack(val))
-def unpack_double(ins, __unpack=structs_cache[u'd'].unpack) -> float:
+def unpack_double(ins, *, __unpack=structs_cache['d'].unpack) -> float:
     return __unpack(ins.read(8))[0]
-def pack_double(out, val: float, __pack=structs_cache[u'=d'].pack):
+def pack_double(out, val: float, *, __pack=structs_cache['=d'].pack):
     out.write(__pack(val))
-def unpack_byte(ins, __unpack=structs_cache[u'B'].unpack) -> int:
+def unpack_byte(ins, *, __unpack=structs_cache['B'].unpack) -> int:
     return __unpack(ins.read(1))[0]
-def pack_byte(out, val: int, __pack=structs_cache[u'=B'].pack):
+def pack_byte(out, val: int, *, __pack=structs_cache['=B'].pack):
     out.write(__pack(val))
-def unpack_int_signed(ins, __unpack=structs_cache[u'i'].unpack) -> int:
+def unpack_int_signed(ins, *, __unpack=structs_cache['i'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int_signed(out, val: int, __pack=structs_cache[u'=i'].pack):
+def pack_int_signed(out, val: int, *, __pack=structs_cache['=i'].pack):
     out.write(__pack(val))
-def unpack_int64_signed(ins, __unpack=structs_cache[u'q'].unpack) -> int:
+def unpack_int64_signed(ins, *, __unpack=structs_cache['q'].unpack) -> int:
     return __unpack(ins.read(8))[0]
-def unpack_4s(ins, __unpack=structs_cache[u'4s'].unpack) -> bytes:
+def unpack_4s(ins, *, __unpack=structs_cache['4s'].unpack) -> bytes:
     return __unpack(ins.read(4))[0]
-def pack_4s(out, val: bytes, __pack=structs_cache[u'=4s'].pack):
+def pack_4s(out, val: bytes, *, __pack=structs_cache['=4s'].pack):
     out.write(__pack(val))
-def unpack_str16_delim(ins, __unpack=structs_cache[u'Hc'].unpack) -> bytes:
+def unpack_str16_delim(ins, *, __unpack=structs_cache['Hc'].unpack) -> bytes:
     str_len = __unpack(ins.read(3))[0]
     # The actual string (including terminator) isn't stored for empty strings
     if not str_len: return b''
     str_value = ins.read(str_len)
     ins.seek(1, 1) # discard string terminator
     return str_value
-def unpack_str_int_delim(ins, __unpack=structs_cache[u'Ic'].unpack) -> int:
+def unpack_str_int_delim(ins, *, __unpack=structs_cache['Ic'].unpack) -> int:
     return __unpack(ins.read(5))[0]
-def unpack_str_byte_delim(ins, __unpack=structs_cache[u'Bc'].unpack) -> int:
+def unpack_str_byte_delim(ins, *, __unpack=structs_cache['Bc'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def unpack_str8(ins, __unpack=structs_cache[u'B'].unpack) -> bytes:
+def unpack_str8(ins, *, __unpack=structs_cache['B'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(1))[0])
-def pack_str8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
+def pack_str8(out, val: bytes, *, __pack=structs_cache['=B'].pack):
     pack_byte(out, len(val))
     out.write(val)
-def pack_bzstr8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
+def pack_bzstr8(out, val: bytes, *, __pack=structs_cache['=B'].pack):
     pack_byte(out, len(val) + 1)
     out.write(val)
     out.write(b'\x00')
-def pack_byte_signed(out, value: int, __pack=structs_cache[u'b'].pack):
+def pack_byte_signed(out, value: int, *, __pack=structs_cache['b'].pack):
     out.write(__pack(value))
 
 def unpack_many(ins, fmt: str):

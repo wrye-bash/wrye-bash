@@ -39,7 +39,7 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
     appdata_name = ''
     executable_dir = ['OblivionRemastered', 'Binaries', 'Win64']
     launch_exe = 'OblivionRemastered-Win64-Shipping.exe'
-    game_detect_includes = {'OblivionRemastered'}
+    game_detect_includes = {'OblivionRemastered'} # it's a folder for ORE
     game_detect_excludes = set()
     version_detect_file = 'OblivionRemastered-Win64-Shipping.exe'
     mods_dir_path = ['OblivionRemastered', 'Content', 'Dev', 'ObvData', 'Data']

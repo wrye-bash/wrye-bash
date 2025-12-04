@@ -1343,10 +1343,10 @@ class SaveInfo(_WithMastersInfo):
 
     def set_path_keys(self, *args, **kwargs):
         """Update our cosave instance names/paths."""
-        ren_paths = super().set_path_keys(*args, **kwargs)
+        rpaths = super().set_path_keys(*args, **kwargs)
         for co_type, co_file in self._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self.abs_path)
-        return ren_paths
+        return rpaths
 
     @classmethod
     def _store(cls): return saveInfos
@@ -2058,6 +2058,17 @@ class INIInfos(_AFileInfos):
                              else INIInfo)
         return ini_info_type(fullpath, detected_encoding, copy_from=copy_from)
 
+    def _diff_dir(self, inodes):
+        old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
+                         *self.corrupted.values()}
+        rin_diff = super()._diff_dir(inodes)
+        # if iinf is a default tweak a file has replaced it - set it to None
+        rin_diff.new_or_present = {
+            k: (inf and (None if inf.is_default_tweak else inf), kws) for
+            k, (inf, kws) in rin_diff.new_or_present.items()}
+        rin_diff.del_infos &= old_ini_infos # drop default tweaks
+        return rin_diff
+
     def _reset_all_statuses(self): # only return infos that changed status
         updt = {fn for fn, ini_info in self.items() if
                 ini_info.ini_st != ini_info.info_status(recalc_st=True)}
@@ -2077,17 +2088,6 @@ class INIInfos(_AFileInfos):
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
     # _AFileInfos overrides ---------------------------------------------------
-    def _diff_dir(self, inodes):
-        old_ini_infos = {*(v for v in self.values() if not v.is_default_tweak),
-                         *self.corrupted.values()}
-        rin_diff = super()._diff_dir(inodes)
-        # if iinf is a default tweak a file has replaced it - set it to None
-        rin_diff.new_or_present = {
-            k: (inf and (None if inf.is_default_tweak else inf), kws) for
-            k, (inf, kws) in rin_diff.new_or_present.items()}
-        rin_diff.del_infos &= old_ini_infos # drop default tweaks
-        return rin_diff
-
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         parts = os.path.split(os.fspath(data_path))
         # 1. Must have a single parent folder
@@ -3248,29 +3248,11 @@ class SaveInfos(_AFileInfos):
                 self._init_store(sd)
         return self.store_dir
 
-    def warning_args(self, multi_warnings, lo_warnings):
-        corruptSaves = set(self.corrupted)
-        if not corruptSaves <= self._known_cor_saves:
-            multi_warnings.append(
-                (_('The following save files could not be read. This most '
-                   'likely means that they are corrupt.'),
-                 corruptSaves - self._known_cor_saves, self))
-            self._known_cor_saves |= corruptSaves
-
-    def get_profile_attr(self, prof_key, attr_key, default_val):
-        return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
-                                                                default_val)
-
-    def set_profile_attr(self, prof_key, attr_key, val):
-        self.profiles.pickled_data.setdefault(prof_key, {})[attr_key] = val
-
-    def rename_profile(self, oldName, newName):
-        """Rename save profile - if newName is None just delete the row."""
-        pd = self.profiles.pickled_data
-        if oldName in pd:
-            if newName is not None:
-                pd[newName] = pd[oldName]
-            del pd[oldName]
+    def refresh(self, refresh_in, *, booting=False, save_dir=None,
+                do_swap=None, rd_out=None, **kwargs):
+        if not booting: # else we just called __init__
+            self.set_store_dir(save_dir, do_swap, rd_out)
+        return super().refresh(refresh_in, booting=booting, **kwargs)
 
     @classmethod
     def check_filename(cls, fileName, **kwargs):
@@ -3289,17 +3271,36 @@ class SaveInfos(_AFileInfos):
                 return None
         return sup
 
+    def warning_args(self, multi_warnings, lo_warnings):
+        corruptSaves = set(self.corrupted)
+        if not corruptSaves <= self._known_cor_saves:
+            multi_warnings.append(
+                (_('The following save files could not be read. This most '
+                   'likely means that they are corrupt.'),
+                 corruptSaves - self._known_cor_saves, self))
+            self._known_cor_saves |= corruptSaves
+
+    @property
+    def bash_dir(self): return self.store_dir.join('Bash')
+
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         return None # Never relative to Data folder
 
-    @property
-    def bash_dir(self): return self.store_dir.join(u'Bash')
+    # SaveInfos Profiles ------------------------------------------------------
+    def get_profile_attr(self, prof_key, attr_key, default_val):
+        return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
+                                                                default_val)
 
-    def refresh(self, refresh_in, *, booting=False, save_dir=None,
-                do_swap=None, rd_out=None, **kwargs):
-        if not booting: # else we just called __init__
-            self.set_store_dir(save_dir, do_swap, rd_out)
-        return super().refresh(refresh_in, booting=booting, **kwargs)
+    def set_profile_attr(self, prof_key, attr_key, val):
+        self.profiles.pickled_data.setdefault(prof_key, {})[attr_key] = val
+
+    def rename_profile(self, oldName, newName):
+        """Rename save profile - if newName is None just delete the row."""
+        pd = self.profiles.pickled_data
+        if oldName in pd:
+            if newName is not None:
+                pd[newName] = pd[oldName]
+            del pd[oldName]
 
 #------------------------------------------------------------------------------
 class BSAInfos(_AFileInfos):
