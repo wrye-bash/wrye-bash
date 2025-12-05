@@ -1842,20 +1842,20 @@ class _AFileInfos(DataStore):
             # here cause cor_path was manually un/ghosted but file remained
             # corrupted so in any case re-add to corrupted
             er = e.message if hasattr(e, 'message') else f'{e}'
-        cor_path = fn if isinstance(fn, Path) else self.store_dir.join(fn)
-        if _delinfos is not None: # we are called from refresh, fn is FName
-            if del_inf := self.pop(fn, None): # effectively deleted
-                _delinfos.add(del_inf)
-                cor_path = del_inf.abs_path
-            elif self is modInfos: # modInfos needs be set here!
-                if (isg := kwargs.get('itsa_ghost')) is None:
-                    isg = not cor_path.is_file() and os.path.isfile(
-                        f'{cor_path}.ghost')
-                if isg: cor_path = cor_path + '.ghost'  # Path.__add__ !
-            self.corrupted[fn] = cor = _Corrupted(cor_path, er, fn, **kwargs)
-            cor_path = cor.abs_path
-        deprint(f'Failed to load {fn} from {cor_path}: {er}', traceback=True)
-        return False
+            cor_path = fn if isinstance(fn, Path) else self.store_dir.join(fn)
+            if _delinfos is not None: # we are called from refresh, fn is FName
+                if del_inf := self.pop(fn, None): # effectively deleted
+                    _delinfos.add(del_inf)
+                    cor_path = del_inf.abs_path
+                elif self is modInfos: # modInfos needs be set here!
+                    if (isg := kwargs.get('itsa_ghost')) is None:
+                        isg = not cor_path.is_file() and os.path.isfile(
+                            f'{cor_path}.ghost')
+                    if isg: cor_path = cor_path + '.ghost'  # Path.__add__ !
+                self.corrupted[fn] = cor = _Corrupted(cor_path, er, fn, **kwargs)
+                cor_path = cor.abs_path
+            deprint(f'Failed to load {fn} from {cor_path}: {er}', traceback=True)
+            return False
 
     def _get_delinfos(self, inodes):
         return {inf for inf in [*self.values(), *self.corrupted.values()]

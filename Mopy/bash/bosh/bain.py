@@ -1244,7 +1244,7 @@ class _InstallerPackage(Installer, AFileInfo):
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
         found_bain_type = 0
-        subNameSet = {''}
+        low_subname = {'': ''}
         valid_top_ext = self.__class__._re_top_extensions.search
         valid_sub_top_ext = self.__class__._re_top_plus_docs.search
         dataDirsPlus = self.dataDirsPlus
@@ -1254,7 +1254,7 @@ class _InstallerPackage(Installer, AFileInfo):
         module_config = os.path.join('fomod', 'moduleconfig.xml')
         found_module_config = False
         # break if type is 1 else churn on
-        for full, _cached_size, crc in self.fileSizeCrcs:
+        for full, _cached_size, _cached_crc in self.fileSizeCrcs:
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
                 full = full[self.fileRootIdex:]
@@ -1262,20 +1262,19 @@ class _InstallerPackage(Installer, AFileInfo):
                 continue
             if full_lower.endswith(module_config):
                 found_module_config = True
-            frags = full.split(__os_sep)
-            nfrags = len(frags)
-            f0_lower = frags[0].lower()
+            frags_lower = full_lower.split(__os_sep)
+            nfrags = len(frags_lower)
+            f0_lower = frags_lower[0]
             #--Type 1? break! data files/dirs are not allowed in type 2 top
             if (nfrags == 1 and valid_top_ext(f0_lower) or
                 nfrags > 1 and f0_lower in dataDirsPlus):
                 found_bain_type = 1
                 break
             #--Else churn on to see if we have a Type 2 package
-            elif not frags[0] in subNameSet and not \
-                    f0_lower.startswith(__skips_start) and (
-                    (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
-                    (nfrags == 2 and valid_sub_top_ext(frags[1]))):
-                subNameSet.add(frags[0])
+            elif not f0_lower in low_subname and (
+                    (nfrags > 2 and frags_lower[1] in dataDirsPlus) or
+                    (nfrags == 2 and valid_sub_top_ext(frags_lower[1]))):
+                low_subname[f0_lower] = full[:len(f0_lower)]
                 found_bain_type = 2
                 # keep looking for a type 1 package - having a loose file or a
                 # top directory with name in dataDirsPlus will turn this into a
@@ -1286,7 +1285,7 @@ class _InstallerPackage(Installer, AFileInfo):
         self.bain_type = found_bain_type
         #--SubNames, SubActives
         if self.is_complex_package:
-            self.subNames = sorted(subNameSet,key=str.lower)
+            self.subNames = [b for a, b in dict_sort(low_subname)] # '' first
             actives = {x for x, y in zip(self.subNames, self.subActives)
                        if (y or x == u'')}
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
