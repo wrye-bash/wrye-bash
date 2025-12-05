@@ -336,7 +336,7 @@ class PageFinish(PageInstaller):
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _('The installer script has finished, and '
                                   'will apply the following settings:'))
-        textTitle.wrap(parent.get_page_size()[0] - 10)
+        textTitle.wrap(parent.component_size[0] - 10)
         # Sub-packages
         self.listSubs = CheckListBox(self, choices=subs)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
@@ -448,7 +448,7 @@ class PageVersions(PageInstaller):
         text_warning = Label(self, _('WARNING: The following version '
                                      'requirements are not met for using '
                                      'this installer.'))
-        text_warning.wrap(parent.get_page_size()[0] - 20)
+        text_warning.wrap(parent.component_size[0] - 20)
         self.checkOk = CheckBox(self, _('Install anyway'))
         self.checkOk.on_checked.subscribe(parent.enable_forward)
         VLayout(items=[
@@ -503,6 +503,8 @@ class WryeParser(PreParser):
                            mod_infos.active_statuses.items()}
         # file exists but not active/merged/imported - dicts are ordered
         self._act_dicts[int_map[ST_INACTIVE]] = mod_infos
+        # remember if RequireVersions check has already been run
+        self.reqs_checked = False
 
     def Continue(self):
         self.page = None
@@ -799,7 +801,9 @@ class WryeParser(PreParser):
             bGEOk = True
             geHave = 'None'
         bWBOk = LooseVersion(wbHave) >= LooseVersion(wbWant)
-        if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
+        if ((not bGameOk or not bSEOk or not bGEOk or not bWBOk) and not
+            self.reqs_checked):
+            self.reqs_checked = True
             self.page = PageVersions(self._wiz_parent, bGameOk, gameHave, game,
                                      bSEOk, seHave, se, bGEOk, geHave, ge,
                                      bWBOk, wbHave, wbWant)
