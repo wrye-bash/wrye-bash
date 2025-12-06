@@ -457,17 +457,14 @@ class Installer_Duplicate(_SingleInstallable):
     @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
-        is_arch = self._selected_info.is_archive
         fn_inst = self._selected_item
-        r, e = (fn_inst.fn_body, fn_inst.fn_ext) if is_arch else (fn_inst, '')
-        newName = self._selected_info.unique_key(r, e, add_copy=True)
-        allowed_exts = {e} if is_arch else set()
+        newName = self._selected_info.unique_key(fn_inst, add_copy=True)
         msg = _('Duplicate %(target_package)s to:') % {
             'target_package': fn_inst}
-        result = self._askFilename(msg, newName, no_dir=False, ##: True? False?
-            inst_type=type(self._selected_info), disallow_overwrite=True,
-            allowed_exts=allowed_exts, use_default_ext=False)
-        if not result: return
+        if not (result := self._askFilename(msg, newName,
+                inst_type=type(self._selected_info), disallow_overwrite=True,
+                allowed_exts={fn_inst.fn_ext}, use_default_ext=False)):
+            return
         #--Duplicate
         with BusyCursor():
             self._selected_info.copy_to(bass.dirs['installers'].join(result))
@@ -1232,8 +1229,8 @@ class InstallerProject_Pack(_SingleProject):
         #--Confirm operation
         msg = _('Name the archive that %(sel_proj)s should get packed '
                 'into:') % {'sel_proj': self._selected_item}
-        archive_name = self._askFilename(msg, archive_name)
-        if not archive_name: return
+        if not (archive_name := self._askFilename(msg, archive_name)):
+            return
         installer = self._selected_info
         #--Archive configuration options
         blockSize = None
@@ -1323,8 +1320,8 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
             f'({x:08X}) - {crc_installer[x]}' for x in
             self.converter.srcCRCs)) + '\n'
         #--Ask for an output filename
-        destArchive = self._askFilename(message, filename=defaultFilename)
-        if not destArchive: return
+        if not (destArchive := self._askFilename(message, defaultFilename)):
+            return
         with balt.Progress(_('Converting to Archive…')) as progress:
             #--Perform the conversion
             msg = _('%(dest_archive)s: An error occurred while applying a '
@@ -1349,10 +1346,10 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        iname, inst = next(self.iselected_pairs()) # first selected pair
         #--Ask for an output filename
-        dest = self._askFilename(_('Output file:'), filename=iname)
-        if not dest: return
+        iname, inst = next(self.iselected_pairs()) # first selected pair
+        if not (dest := self._askFilename(_('Output file:'), iname)):
+            return
         with balt.Progress(_('Extracting BCF…')) as progress:
             destinations, converted = self.idata.applyEmbeddedBCFs(
                 [inst], [dest], progress)
@@ -1387,21 +1384,21 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             self._showWarning(_('%(arcname)s must be in the Bash Installers '
                                 'directory.') % {'arcname': destArchive})
             return
+        _7z = archives.defaultExt
         if bcf_fname.fn_body[-4:].lower() != '-bcf':
-            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{archives.defaultExt}')
+            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{_7z}')
         #--List source archives and target archive
         msg = _('Convert:') + '\n* '
         msg += '\n* '.join(sorted(f'({v.crc:08X}) - {k}' for k, v in
                                   self.iselected_pairs())) + '\n\n' + _('To:')
         msg += f'\n* ({self.idata[destArchive].crc:08X}) - {destArchive}\n'
         #--Confirm operation
-        bcf_fname = self._askFilename(msg, bcf_fname,
-                                      base_dir=converters.converters_dir,
-                                      allowed_exts={archives.defaultExt})
-        if not bcf_fname: return
+        if not (bcf_fname := self._askFilename(msg, bcf_fname,
+                base_dir=converters.converters_dir, allowed_exts={_7z})):
+            return
         #--Error checking
         if bcf_fname.fn_body[-4:].lower() != '-bcf':
-            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{archives.defaultExt}')
+            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{_7z}')
         if (conv_path := converters.converters_dir.join(bcf_fname)).exists():
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.

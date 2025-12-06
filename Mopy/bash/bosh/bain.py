@@ -199,12 +199,6 @@ class Installer(ListInfo):
     instData = None # type: InstallersData
     is_archive = is_project = is_marker = False ##: replace with inheritance if possible
 
-    @classmethod
-    def validate_filename_str(cls, name_str, allowed_exts=frozenset(),
-                              use_default_ext=False):
-        return super(Installer, cls).validate_filename_str(name_str,
-            frozenset()) # block extension check
-
     def info_status(self, *, idata):
         #--Icon
         if self.is_corrupt_package:
@@ -1499,32 +1493,6 @@ class InstallerArchive(_InstallerPackage):
             sSolid = _('Non-solid')
         return _('Size: %(package_size)s (%(package_solid)s)') % {
             'package_size': self.size_string(), 'package_solid': sSolid}
-
-    @classmethod
-    def validate_filename_str(cls, name_str, allowed_exts=archives.writeExts,
-                              use_default_ext=False, __7z=archives.defaultExt):
-        r, e = os.path.splitext(name_str)
-        if allowed_exts and e.lower() not in allowed_exts:
-            if not use_default_ext: # renaming as opposed to creating the file
-                msg = _('%(invalid_name)s does not have correct extension '
-                        '(%(allowed_extensions)s).') % {
-                    'invalid_name': name_str,
-                    'allowed_extensions': ', '.join(allowed_exts)}
-                return msg, None
-            msg = _('The %(invalid_extension)s extension is unsupported. '
-                    'Using %(default_extension)s instead.') % {
-                'invalid_extension': e, 'default_extension': __7z}
-            name_str, e = r + __7z, __7z
-        else:
-            msg = ''
-        # Skip Installer's validate_filename_str
-        name_path, root = super(Installer, cls).validate_filename_str(
-            name_str, {e})
-        if root is None:
-            return name_path, None
-        if msg: # propagate the msg for extension change
-            return name_path, (root, msg) # see Installers_Link._askFilename
-        return name_path, root
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive

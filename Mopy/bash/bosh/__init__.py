@@ -1948,6 +1948,7 @@ class ObseIniInfo(OBSEIniFile, INIInfo): pass
 class DefaultIniInfo(AINIInfo):
     """A default ini tweak - hardcoded."""
     is_default_tweak = True
+    file_exts = frozenset(['.ini']) # only extension allowed - enforce it
 
     def __init__(self, default_ini_name, settings_dict):
         super().__init__(default_ini_name)

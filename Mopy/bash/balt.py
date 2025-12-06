@@ -995,10 +995,11 @@ class UIList(PanelWin):
         return EventResult.CANCEL # clears new name from label on exception!
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
-        return [(sel_inf, args[1]) for sel_inf in selected]
+        return [(sel_inf, FName(args[1] + sel_inf.fn_key.fn_ext) if
+            sel_inf.file_exts else args[0]) for sel_inf in selected]
 
-    def _rename_args(self, evt_label, selected, **val_kwargs):
-        return *selected[0].validate_filename_str(evt_label, **val_kwargs), {}
+    def _rename_args(self, evt_label, selected):
+        return *selected[0].validate_filename_str(evt_label), {}
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1020,18 +1021,17 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, ren_args, *, forced_ext='', refresh_ui=True,
-                   fn_detail=None, check_unique=False, deselect=False,
-                   refr_saves=True, refr_data=None, **ren_kwargs):
+    def try_rename(self, ren_args, *, refresh_ui=True, fn_detail=None,
+                   check_unique=False, deselect=False, refr_saves=True,
+                   refr_data=None, **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
         ds = self.data_store
         if check_unique: # check if new and old names are ci-same
             names = set(ds)
-            ren_args = [(info, new_fn, *ddir) for info, new_root, *ddir in
-                ren_args if (new_fn := info.unique_key(new_root, forced_ext,
-                                                       names=names))]
+            ren_args = [(info, new_fn, *ddir) for info, newfn, *ddir in
+                ren_args if (new_fn := info.unique_key(newfn, names=names))]
         rdata = ds.rename_operation(ren_args, ren_parent=self, **ren_kwargs)
         if refr_data:
             rdata |= refr_data

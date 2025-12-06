@@ -30,12 +30,12 @@ from ...bosh.bain import InstallerArchive, InstallerMarker, InstallerProject
 class TestListInfo(object):
     def test_validate_filename_str(self):
         li_val = ListInfo.validate_filename_str
-        str_, rt = li_val('?', allowed_exts={})
+        str_, rt = li_val('?', allowed_exts={}) # does not matter!
         assert rt is None
-        str_, rt = li_val('78.exe', allowed_exts={'exe'})
-        assert rt is None
-        str_, rt = li_val('78.exe', allowed_exts={'.exe'})
-        assert rt == '78'
+        str_, rt = li_val('78.exe')
+        assert rt == '78.exe' == str_
+        str_, rt = li_val('78.exe', allowed_exts={'.xxx'}) # does not matter!
+        assert rt == '78.exe' == str_
         mi_val = ModInfo.validate_filename_str
         for fname_ in (f'78.{s}' for s in ('esp', 'esm')):
             str_, rt = mi_val(fname_)
@@ -47,13 +47,11 @@ class TestListInfo(object):
             str_, rt = inst_arch_val(fname_)
             assert str_ == fname_
             assert rt == '78'
-        for fname_, e in ((f'78{s}', s) for s in ['.rar', '.exe']):
-            str_, rt = inst_arch_val(fname_)
+        for fname_, b in ((f'78{s}', s == '.rar') for s in ['.rar', '.exe']):
+            str_, rt = inst_arch_val(fname_,allowed_exts={*archives.writeExts})
             assert rt is None
-            str_, rt = inst_arch_val(fname_, use_default_ext=True)
-            assert str_ == '78.7z'
-            assert rt == (
-                '78', f'The {e} extension is unsupported. Using .7z instead.')
+            str_, rt = inst_arch_val(fname_)
+            assert (str_ == fname_) if b else (rt is None)
         inst_mark_val = InstallerMarker.validate_filename_str
         for fname_ in ('?.invalid', '.valid-note-dot'):
             str_, rt = inst_mark_val(fname_)

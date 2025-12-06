@@ -122,11 +122,11 @@ class File_Duplicate(ItemLink):
     def _get_dup_filename(self, fileInfo, msg_title=_('Duplicate as:'),
                           wild=None, names=None):
         destDir = self._data_store.store_dir
-        r, e = fileInfo.fn_key.fn_body, fileInfo.fn_key.fn_ext
-        destName = fileInfo.unique_key(r, e, add_copy=True, names=names)
+        destName = fileInfo.unique_key(fn := fileInfo.fn_key, add_copy=True,
+                                       names=names)
         if len(self.selected) == 1: # ask the user for a filename
             if destPath := self._askSave(title=msg_title, defaultDir=destDir,
-                    defaultFile=destName, wildcard=wild or f'*{e}'):
+                    defaultFile=destName, wildcard=wild or f'*{fn.fn_ext}'):
                 destDir, destName = destPath.head, FName(destPath.stail)
                 destName, root = fileInfo.validate_name(destName)
                 if root is not None:
