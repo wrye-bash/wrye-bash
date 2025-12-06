@@ -111,11 +111,12 @@ class File_Duplicate(ItemLink):
         mod_previous = FNDict()
         fileInfos = self._data_store
         pairs = dict(self.iselected_pairs())
+        names = set(fileInfos)
         for to_duplicate, fileInfo in pairs.items():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
-            destName = fileInfo.unique_key(r, e, add_copy=True)
+            destName = fileInfo.unique_key(r, e, add_copy=True, names=names)
             destDir = fileInfo.info_dir
             if len(self.selected) == 1: # ask the user for a filename
                 # This directory may not exist yet (e.g. INI Tweaks)

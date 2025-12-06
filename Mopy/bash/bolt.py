@@ -1808,26 +1808,30 @@ class ListInfo:
     @staticmethod
     def _new_name(base_name, count): # only use in unique_name - count is > 0 !
         r, e = os.path.splitext(base_name)
-        return f'{r} ({count}){e}'
+        return FName(f'{r} ({count}){e}')
 
     @classmethod
-    def unique_name(cls, name_str, check_exists=False, *, __unique_counter=0):
-        base_name = name_str
+    def unique_name(cls, name_str, check_exists=False, *, __unique_counter=0,
+                    names=None):
+        base_name = name_str = FName(name_str)
         store = cls._store()
         while (store.store_dir.join(name_str).exists() if check_exists else
-               name_str in store): # must wrap a FNDict
+               name_str in (names or store)): # must wrap a FNDict
             __unique_counter += 1
             name_str = cls._new_name(base_name, __unique_counter)
-        return FName(name_str)
+        if names is not None: # we are called in a loop to produce unique names
+            names.add(name_str)
+        return name_str
 
-    def unique_key(self, new_root, ext='', add_copy=False) -> FName | None:
+    def unique_key(self, new_root, ext='', add_copy=False,
+                   names=None) -> FName | None:
         """Generate a unique name based on fn_key. When copying or renaming."""
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
         new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
         if self.named_as(new_name): # new and old names are ci-same
             return None
-        return self.unique_name(new_name)
+        return self.unique_name(new_name, names=names)
 
     def named_as(self, text_cnt: str): # check if names are ci-same
         return text_cnt == self.fn_key

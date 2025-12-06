@@ -1023,15 +1023,17 @@ class UIList(PanelWin):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
+        ds = self.data_store
         if check_unique: # check if new and old names are ci-same
+            names = set(ds)
             ren_args = [(info, new_fn, *ddir) for info, new_root, *ddir in
-                ren_args if (new_fn := info.unique_key(new_root, forced_ext))]
-        rdata = self.data_store.rename_operation(ren_args, ren_parent=self,
-                                                 **ren_kwargs)
+                ren_args if (new_fn := info.unique_key(new_root, forced_ext,
+                                                       names=names))]
+        rdata = ds.rename_operation(ren_args, ren_parent=self, **ren_kwargs)
         if refresh_ui and rdata:
             fn = next(iter(rdata.renames.values()))
             # in case the displayed item was *not* renamed
-            args_dict = {'detail_item': fn} if fn in self.data_store else {}
+            args_dict = {'detail_item': fn} if fn in ds else {}
             args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
             self.propagate_refresh(rdata, **args_dict)
             #--Reselect the renamed items

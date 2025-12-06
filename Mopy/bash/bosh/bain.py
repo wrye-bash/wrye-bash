@@ -1438,7 +1438,7 @@ class InstallerMarker(Installer):
 
     @staticmethod
     def _new_name(base_name, count):
-        return f'=={base_name.strip("=")}{f" ({count})"}=='
+        return FName( f'=={base_name.strip("=")}{f" ({count})"}==')
 
     def named_as(self, new_name):
         return f'{new_name}' == f'{self.fn_key}' # allow change of case
@@ -1696,7 +1696,7 @@ class InstallerProject(_InstallerPackage):
 
     @staticmethod
     def _new_name(base_name, count):
-        return f'{base_name} ({count})'
+        return FName(f'{base_name} ({count})')
 
     def info_status(self, *, idata):
         return f'{super().info_status(idata=idata)}.dir'

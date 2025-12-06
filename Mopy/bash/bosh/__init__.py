@@ -1579,7 +1579,7 @@ class ScreenInfo(AFileInfo):
 
 #------------------------------------------------------------------------------
 def _check_renamed(paths_per_file):
-    for inf, (rename_paths, new_name) in [*paths_per_file.items()]:
+    for inf, (rename_paths, new_name, *_inf_dir) in [*paths_per_file.items()]:
         if all(p[1].exists() for p in rename_paths):
             for p in rename_paths:
                 p[0].remove() #(241) clear paths left behind (needed?)
