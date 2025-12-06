@@ -99,7 +99,8 @@ class File_Duplicate(ItemLink):
         for to_duplicate, fileInfo in self.iselected_pairs():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
-            destDir, fn_dup = self._get_dup_filename(fileInfo, names=names)
+            destDir, fn_dup = self._get_dup_filename(fileInfo, names,
+              title=_('Duplicate as:'), wildcard=f'*{to_duplicate.fn_ext}')
             if not fn_dup: return
             # check if exists if we duplicate into the store dir
             if len(self.selected) == 1 and destDir == fileInfos.store_dir:
@@ -119,21 +120,23 @@ class File_Duplicate(ItemLink):
             self.window.try_rename(ren_args, copy_inf=True, fn_detail=fnd,
                 insert_after=mod_previous, refr_data=rd_def_ini)
 
-    def _get_dup_filename(self, fileInfo, msg_title=_('Duplicate as:'),
-                          wild=None, names=None):
+    def _get_dup_filename(self, fileInfo, names=None, **kwargs):
         destDir = self._data_store.store_dir
-        destName = fileInfo.unique_key(fn := fileInfo.fn_key, add_copy=True,
-                                       names=names)
+        destName = fileInfo.unique_key(names=names)
         if len(self.selected) == 1: # ask the user for a filename
-            if destPath := self._askSave(title=msg_title, defaultDir=destDir,
-                    defaultFile=destName, wildcard=wild or f'*{fn.fn_ext}'):
-                destDir, destName = destPath.head, FName(destPath.stail)
-                destName, root = fileInfo.validate_name(destName)
-                if root is not None:
-                    return destDir, destName
-                self._showError(destName)
-            return None, None
+            destDir, destName = self._ask_dup_filename(destDir, fileInfo,
+                filename=destName, **kwargs)
         return destDir, destName
+
+    def _ask_dup_filename(self, destDir, fileInfo, filename, **kwargs):
+        if destPath := self._askSave(**kwargs, defaultDir=destDir,
+                                     defaultFile=filename):
+            destDir, destName = destPath.head, FName(destPath.stail)
+            destName, root = fileInfo.validate_name(destName)
+            if root is not None:
+                return destDir, destName
+            self._showError(destName)
+        return None, None
 
     def _disallow_copy(self, fileInfo):
         """Method for checking if fileInfo may not be copied for some reason.

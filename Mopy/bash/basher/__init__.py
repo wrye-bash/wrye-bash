@@ -129,15 +129,16 @@ class Installers_Link(ItemLink):
         #--Error checking
         warn= False
         if inst_type.file_exts: # it's an archive, we might want to change ext
-            allowed_exts = allowed_exts or archives.writeExts
+            allowed_exts = allowed_exts or {*archives.writeExts} # we need a set
             r, e = os.path.splitext(result)
             if use_default_ext and e.lower() not in allowed_exts:
                 warn = _('The %(invalid_extension)s extension is unsupported. '
                          'Using %(default_extension)s instead.') % {
                            'invalid_extension': e, 'default_extension': __7z}
                 result = r + __7z
-        archive_path, msg = inst_type.validate_filename_str(result,
-            allowed_exts=allowed_exts or frozenset())
+        f = inst_type.validate_filename_str if isinstance(inst_type, type) \
+            else inst_type.validate_name
+        archive_path, msg = f(result, allowed_exts=allowed_exts or frozenset())
         if msg is None:
             self._showError(archive_path) # it's an error message in this case
             return

@@ -129,7 +129,7 @@ class INI_CreateNew(File_Duplicate, OneItemLink):
     def Execute(self):
         """Handle creating a new INI tweak."""
         ini_info, fn_ini = self._selected_info, self._selected_item
-        _dir, fn_tweak = self._get_dup_filename(ini_info, msg_title=self._text,
-                wild=f"{_('INI Tweak File')} (*.ini)|*.ini",)
+        _dir, fn_tweak = self._get_dup_filename(ini_info, title=self._text,
+                wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini",)
         if fn_tweak and bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
             self.refresh_sel({fn_tweak}, detail_item=fn_tweak)

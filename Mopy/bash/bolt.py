@@ -1761,7 +1761,8 @@ class ListInfo:
         they should contain valid chars. We also require to end in (a subset
         of) file_exts if this is not empty (i.e. apart from projects and
         markers). Return a tuple - if the second element is None validation
-        failed and the first element is the message to show."""
+        failed and the first element is the message to show. `allowed_exts`
+        is noop if cls.file_exts is empty else it must be a subset of those."""
         if not name_str:
             return _('Name may not be empty.'), None
         char = cls._is_filename and Path.has_invalid_chars(name_str)
@@ -1769,14 +1770,15 @@ class ListInfo:
             inv = _('%(new_name)s contains invalid character (%(bad_char)s).')
             return inv % {'new_name': name_str, 'bad_char': char}, None
         if fe := cls.file_exts:
-            allowed_exts = ({*allowed_exts} or fe) & fe # disallow unknown exts
+            allowed_exts = (allowed_exts or fe) & fe # disallow unknown exts
             if not os.path.splitext(name_str)[1].lower() in allowed_exts:
                 msg = _('%(invalid_name)s does not have correct extension '
                         '(%(allowed_extensions)s).')
                 return msg % {'invalid_name': name_str,
                     'allowed_extensions': ', '.join(allowed_exts)}, None
-        else: allowed_exts = frozenset()
-        rePattern = cls._name_re(allowed_exts)
+            exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))'
+        else: exts_re = ''
+        rePattern = cls._name_re(exts_re)
         maPattern = rePattern.match(name_str)
         if maPattern:
             ma_groups = maPattern.groups(default=u'')
@@ -1789,22 +1791,20 @@ class ListInfo:
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None
 
-    def validate_name(self, name_str):
+    def validate_name(self, name_str, **kwargs):
         """Only used in _EditableMixin.OnFileEdited and File_Duplicate.Execute.
         """
         # disallow extension change but not if no-extension info type
-        check_ext = name_str and self.__class__.file_exts
-        if check_ext and not name_str.lower().endswith(
-                self.fn_key.fn_ext.lower()):
-            fm = {'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return _('%(bad_name_str)s: Incorrect file extension (must be '
-                     '%(expected_ext)s).') % fm, None
-        return self.__class__.validate_filename_str(name_str)
+        if name_str and self.__class__.file_exts:
+            kwargs['allowed_exts'] = {self_ext := self.fn_key.fn_ext.lower()}
+            if not name_str.lower().endswith(self_ext):
+                fm = {'bad_name_str': name_str, 'expected_ext': self_ext}
+                return _('%(bad_name_str)s: Incorrect file extension (must be '
+                         '%(expected_ext)s).') % fm, None
+        return self.__class__.validate_filename_str(name_str, **kwargs)
 
     @classmethod
-    def _name_re(cls, allowed_exts):
-        exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
-            if allowed_exts else ''
+    def _name_re(cls, exts_re):
         # The reason we do the regex like this is to support names like
         # foo.ess.ess.ess etc.
         exts_prefix = r'(?=.+\.)' if exts_re else ''
@@ -1832,11 +1832,12 @@ class ListInfo:
             names.add(name_str)
         return name_str
 
-    def unique_key(self, new_root, add_copy=False, names=None) -> FName | None:
-        """Generate a unique name based on fn_key. When copying or renaming."""
+    def unique_key(self, base=None, names=None) -> FName | None:
+        """Generate a unique name based on base - duplicating or renaming."""
+        base = self.fn_key if (add_copy := base is None) else base
         if self.__class__.file_exts or (ext := ''):
-            new_root, ext = new_root.fn_body, new_root.fn_ext
-        new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
+            base, ext = base.fn_body, base.fn_ext
+        new_name = base + (f' {_("Copy")}' if add_copy else '') + ext
         if self.named_as(new_name): # new and old names are ci-same
             return None
         return self.unique_name(new_name, names=names)

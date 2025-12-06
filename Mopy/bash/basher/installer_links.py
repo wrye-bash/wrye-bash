@@ -40,6 +40,7 @@ from itertools import chain
 from . import BashFrame, INIList, Installers_Link, InstallersDetails
 from .belt import InstallerWizard, generateTweakLines
 from .dialogs import SyncFromDataEditor
+from .files_links import File_Duplicate
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
 from .. import archives, balt, bass, bolt, bosh, bush, env
@@ -445,7 +446,7 @@ class Installer_Anneal(Installer_Op, _NoMarkerLink):
     def _perform_action(self, **kwargs):
         self.idata.bain_anneal(self._installables, **kwargs)
 
-class Installer_Duplicate(_SingleInstallable):
+class Installer_Duplicate(_SingleInstallable, File_Duplicate):
     """Duplicate selected Installer."""
     _text = _dialog_title = _('Duplicate…')
 
@@ -457,18 +458,19 @@ class Installer_Duplicate(_SingleInstallable):
     @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
-        fn_inst = self._selected_item
-        newName = self._selected_info.unique_key(fn_inst, add_copy=True)
-        msg = _('Duplicate %(target_package)s to:') % {
-            'target_package': fn_inst}
-        if not (result := self._askFilename(msg, newName,
-                inst_type=type(self._selected_info), disallow_overwrite=True,
-                allowed_exts={fn_inst.fn_ext}, use_default_ext=False)):
-            return
+        inst, fn_inst = self._selected_info, self._selected_item
+        destDir, fn_dup = self._get_dup_filename(inst, message=_('Duplicate '
+                '%(target_package)s to:') % {'target_package': fn_inst})
+        if not fn_dup: return
         #--Duplicate
         with BusyCursor():
-            self._selected_info.copy_to(bass.dirs['installers'].join(result))
-        self.window.RefreshUI(detail_item=result)
+            self._selected_info.copy_to(destDir.join(fn_dup))
+        self.window.RefreshUI(detail_item=fn_dup)
+
+    def _ask_dup_filename(self, destDir, fileInfo, **kwargs):
+        # note we pass the fileInfo to block extension change
+        return destDir, self._askFilename(**kwargs, inst_type=fileInfo,
+            disallow_overwrite=True, use_default_ext=False)
 
 class Installer_Hide(_InstallerLink, UIList_Hide):
     """Installers tab version of the Hide command."""

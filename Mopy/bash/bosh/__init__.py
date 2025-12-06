@@ -1532,8 +1532,8 @@ class ScreenInfo(AFileInfo):
     @classmethod
     def _store(cls): return screen_infos
 
-    def validate_name(self, name_str):
-        file_root, num_str = super().validate_name(name_str)
+    def validate_name(self, *args, **kwargs):
+        file_root, num_str = super().validate_name(*args, **kwargs)
         return (file_root, num_str) if num_str is None else (
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
