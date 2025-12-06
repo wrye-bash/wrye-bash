@@ -1532,8 +1532,8 @@ class ScreenInfo(AFileInfo):
     @classmethod
     def _store(cls): return screen_infos
 
-    def validate_name(self, name_str, check_store=True):
-        file_root, num_str = super().validate_name(name_str, check_store)
+    def validate_name(self, name_str):
+        file_root, num_str = super().validate_name(name_str)
         return (file_root, num_str) if num_str is None else (
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
@@ -1576,6 +1576,7 @@ class DataStore(DataDict):
 
     def set_store_dir(self):
         self.store_dir = sd = dirs[self._dir_key]
+        self.store_dir.makedirs()
         return sd
 
     def _init_store(self, storedir):

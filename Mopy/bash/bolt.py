@@ -1782,7 +1782,7 @@ class ListInfo:
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None
 
-    def validate_name(self, name_str, check_store=True):
+    def validate_name(self, name_str):
         """Only used in _EditableMixin.OnFileEdited and File_Duplicate.Execute.
         """
         # disallow extension change but not if no-extension info type
@@ -1918,15 +1918,6 @@ class AFileInfo(AFile, ListInfo):
     def _valid_exts_re(cls):
         return fr'(\.(?:{"|".join(x[1:] for x in fe)}))' if (fe :=
             cls.file_exts) else ''
-
-    def validate_name(self, name_str, check_store=True):
-        super_validate = super().validate_name(name_str,
-            check_store=check_store)
-        #--Else file exists?
-        if check_store and name_str in self._store(): # use modInfos for ghosts
-            return _('File %(bad_name_str)s already exists.') % {
-                'bad_name_str': name_str}, None
-        return super_validate
 
     def set_path_keys(self, new_fn: FName, *, infodir=None):
         super().set_path_keys(new_fn)

@@ -23,6 +23,7 @@
 from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..bolt import FNDict, FName, RefrData
+from ..bosh import DefaultIniInfo
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
     FileOpenMultiple
 from ..localize import format_date
@@ -98,23 +99,15 @@ class File_Duplicate(ItemLink):
         for to_duplicate, fileInfo in self.iselected_pairs():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
-            r, e = to_duplicate.fn_body, to_duplicate.fn_ext
-            fn_dup = fileInfo.unique_key(r, e, add_copy=True, names=names)
-            destDir = fileInfos.store_dir
-            if len(self.selected) == 1: # ask the user for a filename
-                # This directory may not exist yet (e.g. INI Tweaks)
-                destDir.makedirs()
-                destPath = self._askSave(
-                    title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=fn_dup, wildcard=f'*{e}')
-                if not destPath: return
-                destDir, fn_dup = destPath.head, FName(destPath.stail)
-                fn_dup, root = fileInfo.validate_name(fn_dup,
-                    # check if exists if we duplicate into the store dir
-                    # then we just need to check if fn_dup is in the store
-                    check_store=destDir == fileInfos.store_dir)
-                if root is None:
-                    self._showError(fn_dup)
+            destDir, fn_dup = self._get_dup_filename(fileInfo, names=names)
+            if not fn_dup: return
+            # check if exists if we duplicate into the store dir
+            if len(self.selected) == 1 and destDir == fileInfos.store_dir:
+                # use the store (think ghosts)
+                if fn_dup in self._data_store and not isinstance(
+                        fileInfo, DefaultIniInfo):
+                    self._showError(_('File %(bad_name_str)s already exists.'
+                                      ) % {'bad_name_str': fn_dup})
                     return
             # we need to load_cache here - see _TabledInfo.__init__
             if inf := fileInfos.get_update_info(to_duplicate, copy_from=fileInfo,
@@ -125,6 +118,22 @@ class File_Duplicate(ItemLink):
             fnd = next(reversed(mod_previous or rd_def_ini.renames.values()))
             self.window.try_rename(ren_args, copy_inf=True, fn_detail=fnd,
                 insert_after=mod_previous, refr_data=rd_def_ini)
+
+    def _get_dup_filename(self, fileInfo, msg_title=_('Duplicate as:'),
+                          wild=None, names=None):
+        destDir = self._data_store.store_dir
+        r, e = fileInfo.fn_key.fn_body, fileInfo.fn_key.fn_ext
+        destName = fileInfo.unique_key(r, e, add_copy=True, names=names)
+        if len(self.selected) == 1: # ask the user for a filename
+            if destPath := self._askSave(title=msg_title, defaultDir=destDir,
+                    defaultFile=destName, wildcard=wild or f'*{e}'):
+                destDir, destName = destPath.head, FName(destPath.stail)
+                destName, root = fileInfo.validate_name(destName)
+                if root is not None:
+                    return destDir, destName
+                self._showError(destName)
+            return None, None
+        return destDir, destName
 
     def _disallow_copy(self, fileInfo):
         """Method for checking if fileInfo may not be copied for some reason.
