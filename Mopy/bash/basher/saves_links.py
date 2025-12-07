@@ -277,7 +277,7 @@ class Save_ImportFace(OneItemLink):
     @balt.conversation
     def Execute(self):
         #--Select source face file
-        srcDir = self._selected_info.info_dir
+        srcDir = self._data_store.store_dir
         exts = u';*'.join(bush.game.espm_extensions | {
             bush.game.Ess.ext, bush.game.Ess.ext[-1] + u'r'})
         wildcard = _('Source Files') + f' (*{exts})|*{exts}'

@@ -862,7 +862,8 @@ class ModInfo(_WithMastersInfo):
         if not rescan_merge and merge_size is not None:
             self.set_table_prop('mergeInfo', (self.abs_path.psize, canMerge))
         else:
-            modInfos.rescanMergeable([self.fn_key], sort_descending_lo=False)
+            self._store().rescanMergeable([self.fn_key],
+                                          sort_descending_lo=False)
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -1724,7 +1725,7 @@ class DataStore(DataDict):
         _('Try again?')]
     def rename_operation(self, info_new_name, *, try_once=True, set_mtime=None,
                          ren_parent=None, with_backups=False, copy_inf=False,
-                         insert_after=None) -> RefrData:
+                         insert_after=None, force_flags=None) -> RefrData:
         rd_ren = RefrData()
         if not info_new_name:
             return rd_ren
@@ -1741,6 +1742,7 @@ class DataStore(DataDict):
                     rename_paths.remove(tup)
                     # if cosave exists while its backup not, delete it on
                     # restoring - copy_inf is currently used in restore backup
+                    # will also delete the tag files when duplicating mods
                     if src_missing and copy_inf:
                         tup[1].remove() ##:(292) we should document this
             all_rename_paths.update(rename_paths)
@@ -1781,6 +1783,8 @@ class DataStore(DataDict):
                 rd_ren |= RefrData(**kws) # pop from to_del
                 if set_ghost: # do this after set_path_keys (restore backup)
                     inf.is_ghost = True # we need to mirror get_rename_paths
+        for new, flgs in (force_flags or {}).items():
+            self[new].set_plugin_flags(flgs)
         if set_mtime: # only set in self.try_set_version/restore backup
             for k, v in set_mtime.items():
                 self[k].setmtime(v)

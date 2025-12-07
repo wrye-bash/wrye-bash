@@ -1042,8 +1042,8 @@ class UIList(PanelWin):
             args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
             self.propagate_refresh(rdata, **args_dict, refr_saves=refr_saves)
             #--Reselect the renamed items
-            if added := rdata.to_add:
-                self.SelectItemsNoCallback(added, deselectOthers=deselect)
+            if nch := {*rdata.renames.values()} & rdata.new_changed():
+                self.SelectItemsNoCallback(nch, deselectOthers=deselect)
         return rdata
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
