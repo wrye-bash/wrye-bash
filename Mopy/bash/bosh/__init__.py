@@ -2092,7 +2092,7 @@ class INIInfos(_AFileInfos):
             self[k] = default_info  # type: DefaultIniInfo
             if k in rdata.to_del: # we restore default over copy
                 rdata |= RefrData({k}) # will pop it from to_del also
-                default_info.ini_st = None # force status recalculation
+                default_info.info_status(recalc_st=True, **kwargs)
             else: # booting
                 rdata.to_add.add(k)
         if not booting and ((targ := self.ini).updated or targ.do_update()):

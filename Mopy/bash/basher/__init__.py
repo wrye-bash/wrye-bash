@@ -1888,7 +1888,7 @@ class INIPanel(BashTab):
         # details panel
         target_ch = self.detailsPanel.check_new_target()
         rdata = not booting and bosh.iniInfos.refresh( # we refreshed on init
-            refresh_infos)
+            refresh_infos) ##:(701) set target_ini_settings
         super().ShowPanel(target_changed=target_ch, clean_targets=not booting)
         if rdata or target_ch: ##:(701) we need this to be more granular
             if detail_item is not self._ini_same_item:
@@ -1898,8 +1898,9 @@ class INIPanel(BashTab):
                 self.uiList.RefreshUI(focus_list=focus_list)
 
     def sb_count_str(self):
+        # use info_status - we may be called in ShowPanel before RefreshUI
         counts = Counter(ist for ini_info in self.listData.values() if
-            (ist := ini_info.ini_st) >= 0) # negative = not applicable
+            (ist := ini_info.info_status()) >= 0) # negative = not applicable
         return _('Tweaks: %(status_num)d/%(total_status_num)d') % {
             'status_num': counts[20], 'total_status_num': sum(counts.values())}
 

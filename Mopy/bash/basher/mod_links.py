@@ -2252,6 +2252,24 @@ class Mod_FullNames_Import(_Mod_Import_Link):
 class Mod_Duplicate(File_Duplicate):
     """Version of File_Duplicate that checks for BSAs and plugin-name-specific
     directories."""
+    _bsa_and_blocking_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
+        'associated plugin-name-specific directory (e.g. %(pnd_example)s), '
+        'which will not be attached to the duplicate plugin.') + '\n\n' + _(
+        'Note that the BSA may also contain a plugin-name-specific directory, '
+        'which would remain detached even if a duplicate BSA were also '
+        'created.')
+    _bsa_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s), which will '
+        'not be attached to the duplicate plugin.') + '\n\n' + _(
+        'Note that the BSA may contain a plugin-name-specific directory '
+        '(e.g. %(pnd_example)s), which would remain detached even if a '
+        'duplicate BSA were also created.')
+    _blocking_msg = _(
+        'This plugin has an associated plugin-name-specific directory (e.g. '
+        '%(pnd_example)s), which will not be attached to the duplicate '
+        'plugin.')
+
     def _disallow_copy(self, fileInfo):
         #--Mod with resources? Warn on rename if file has bsa and/or dialog
         msg = fileInfo.ask_resources_ok(

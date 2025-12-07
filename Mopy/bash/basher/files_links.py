@@ -88,24 +88,6 @@ class File_Duplicate(ItemLink):
     _text = _('Duplicate…')
     _help = _('Make a copy of the selected files.')
 
-    _bsa_and_blocking_msg = _(
-        'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
-        'associated plugin-name-specific directory (e.g. %(pnd_example)s), '
-        'which will not be attached to the duplicate plugin.') + '\n\n' + _(
-        'Note that the BSA may also contain a plugin-name-specific directory, '
-        'which would remain detached even if a duplicate BSA were also '
-        'created.')
-    _bsa_msg = _(
-        'This plugin has an associated BSA (%(assoc_bsa_name)s), which will '
-        'not be attached to the duplicate plugin.') + '\n\n' + _(
-        'Note that the BSA may contain a plugin-name-specific directory '
-        '(e.g. %(pnd_example)s), which would remain detached even if a '
-        'duplicate BSA were also created.')
-    _blocking_msg = _(
-        'This plugin has an associated plugin-name-specific directory (e.g. '
-        '%(pnd_example)s), which will not be attached to the duplicate '
-        'plugin.')
-
     @balt.conversation
     def Execute(self):
         mod_previous = FNDict()
