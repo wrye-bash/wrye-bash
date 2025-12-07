@@ -1768,6 +1768,7 @@ class DataStore(DataDict):
                     _check_renamed(paths_per_file)
                 break
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
+        inst_dupl = isinstance(insert_after, int) ##: moveArchives must be moved
         for inf, (rename_paths, new_name, infdir) in paths_per_file.items():
             set_ghost = (ap := getattr(inf, 'abs_path', None)) and \
                         all_rename_paths[ap].cext == '.ghost'
@@ -1780,6 +1781,8 @@ class DataStore(DataDict):
             if add_to_store: # add the info (or marker info) to the store
                 kws = {'redraw' if new_name in self else 'to_add': {new_name}}
                 self[new_name] = inf
+                if inst_dupl:
+                    self.moveArchives([new_name], insert_after)
                 rd_ren |= RefrData(**kws) # pop from to_del
                 if set_ghost: # do this after set_path_keys (restore backup)
                     inf.is_ghost = True # we need to mirror get_rename_paths
@@ -1792,7 +1795,7 @@ class DataStore(DataDict):
                 move_to = renames_di.pop(bush.game.master_file)
                 renames_di[next(iter(renames_di))] = move_to
         return self.refresh(rd_ren, unlock_lo=True, insert_after=insert_after,
-                            what='I')
+                            what='N' if inst_dupl else 'I')
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the

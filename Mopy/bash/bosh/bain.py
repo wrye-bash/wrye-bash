@@ -1215,16 +1215,6 @@ class _InstallerPackage(Installer, AFileInfo):
             for att in atts:
                 setattr(self, att, copy.copy(getattr(copy_from, att)))
 
-    def copy_to(self, dup_path: Path, *, set_time=None):
-        super().copy_to(dup_path, set_time=set_time)
-        # use factory -> init(load_cache=False) - then copy all attributes over
-        idata = self._store()
-        clone = idata.factory(dup_path, is_proj=self.is_project, copy_from=self)
-        idata[fn := clone.fn_key] = clone
-        clone.is_active = False # make sure we mark as inactive
-        # no need to change installers status here
-        idata.moveArchives([fn], self.order + 1, ref_norm=True)
-
     def _reset_cache(self, stat_tuple=None, *, __skips_start=tuple(
             s.replace(os_sep, '') for s in Installer._silentSkipsStart),
             __os_sep=os_sep, **kwargs):

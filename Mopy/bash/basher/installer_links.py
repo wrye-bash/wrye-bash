@@ -464,8 +464,12 @@ class Installer_Duplicate(_SingleInstallable, File_Duplicate):
         if not fn_dup: return
         #--Duplicate
         with BusyCursor():
-            self._selected_info.copy_to(destDir.join(fn_dup))
-        self.window.RefreshUI(detail_item=fn_dup)
+            # factory -> init(load_cache=False) - then copy all attributes over
+            clone = self._data_store.factory(inst.abs_path, copy_from=inst,
+                                             is_proj=inst.is_project)
+            clone.is_active = False # make sure we mark as inactive
+            self.window.try_rename([(clone, fn_dup, destDir)], copy_inf=True,
+                insert_after=inst.order + 1, fn_detail=fn_dup)
 
     def _ask_dup_filename(self, destDir, fileInfo, **kwargs):
         # note we pass the fileInfo to block extension change

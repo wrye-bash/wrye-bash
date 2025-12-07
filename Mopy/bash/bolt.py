@@ -1868,18 +1868,6 @@ class ListInfo:
     def info_status(self, **kwargs):
         raise NotImplementedError # screens, bsas
 
-    # Instance methods --------------------------------------------------------
-    def copy_to(self, dup_path: Path, *, set_time=None):
-        """Copies self to dup_path. Will overwrite! Will add the new file to
-        the data_store if copied inside the store_dir but the client is
-        responsible for calling the final refresh of the data store."""
-        # TODO(ut) : when duplicating pass the info in and load_cache=False
-        # the only use that copies into store dir
-        self.fs_copy(dup_path, set_time=set_time)
-
-    def fs_copy(self, dup_path, **kwargs):
-        raise NotImplementedError # not all ListInfos are AFiles
-
     def __str__(self):
         """Alias for self.fn_key."""
         return self.fn_key
