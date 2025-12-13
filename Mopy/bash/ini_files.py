@@ -95,7 +95,7 @@ class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     _comments_start = ('#', ';') # we read both characters as comment starters
-    reSetting = re.compile(fr'^(\w+?){_h}={_h}(.*?)({_h}[;#].*)?$')
+    reSetting = re.compile(fr'^{_h}(.+?){_h}={_h}(.*?)({_h}[;#].*)?$')
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     defaultSection = u'General'
     # The comment character to use when writing new comments into this file
@@ -190,8 +190,7 @@ class AIniInfo(ListInfo):
             if lstripped[0] in cls._comments_start:
                 if lstripped[1] == '-':
                     is_del = True
-                    lstripped = lstripped[2:].lstrip() if analyze_comments \
-                        else lstripped[2:] # del settings dont start with space
+                    lstripped = lstripped[2:].lstrip()#trim leading empty space
                 else: # a full line comment
                     lstripped = lstripped[1:].lstrip() if analyze_comments \
                         else ''

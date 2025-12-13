@@ -37,13 +37,13 @@ def test_parse_ini_line():
     res = IniFileInfo.parse_ini_line('   key     =    ')
     assert res == ('key     =', 'key', '', None, False) # value is stripped!
     res = IniFileInfo.parse_ini_line(';-   key  =   value')
-    assert res == (failed := ('', None, None, None, False))
+    assert res == ('key  =   value', 'key', 'value', None, True)
     res = IniFileInfo.parse_ini_line(';-key  =   value')
     assert res == ('key  =   value', 'key', 'value', None, True)
     res = IniFileInfo.parse_ini_line('  [    section  ]  ')
     assert res == ('[    section  ]', None, None, 'section', False)
     res = OBSEIniFile.parse_ini_line('  [    section  ]  ')
-    assert res == failed
+    assert res == ('', None, None, None, False) # failed
     res = OBSEIniFile.parse_ini_line('  set setting to value   ')
     assert res == ('set setting to value', 'setting', 'value', ']set[', False)
     res = OBSEIniFile.parse_ini_line('  setGS setting value   ')
