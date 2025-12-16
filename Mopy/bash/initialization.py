@@ -35,11 +35,9 @@ from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_personal_path, shellMakeDirs, is_case_sensitive, \
     get_case_sensitivity_advice
 from .exception import BoltError, NonExistentDriveError
-from .loot_parser import LOOTParser
+# no other Bash imports!
 
 mopy_dirs_initialized = bash_dirs_initialized = False
-#--Config Helper files (LOOT Master List, etc.)
-lootDb: LOOTParser | None = None
 
 def _get_ini_option(ini_parser, option_key) -> str | None:
     if not ini_parser:
@@ -114,10 +112,10 @@ def init_dirs(game_info, opts, init_warnings):
     as globals in module scope. It may be called two times if restoring
     settings fails."""
     if not mopy_dirs_initialized:
-        raise BoltError(u'init_dirs: Mopy dirs uninitialized')
+        raise BoltError('init_dirs: Mopy dirs uninitialized')
     personal, localAppData = opts.personalPath, opts.localAppDataPath
     #--Oblivion (Application) Directories
-    dirs[u'app'] = game_info.gamePath
+    dirs['app'] = game_info.gamePath
     dirs['exe'] = dirs['app'].join(*game_info.executable_dir)
     dirs[u'defaultPatches'] = (
         dirs[u'mopy'].join(u'Bash Patches', game_info.bash_patches_dir)
@@ -138,7 +136,7 @@ def init_dirs(game_info, opts, init_warnings):
         _('Failed to determine personal folder.'), _(
             'Personal folder does not exist: %(folder)s'))
     dirs['saveBase'] = game_info.Ess.base_saves_path(personal,
-        game_info.my_games_name)
+        game_info.my_games_name, dirs) # for Morrowind we will lookup 'app'
     deprint(f'My Games location set to {dirs[u"saveBase"]}')
     # Determine the user's AppData\Local (i.e. %LOCALAPPDATA%) folder. Attempt
     # to pull from, in order:
@@ -279,18 +277,6 @@ def init_dirs(game_info, opts, init_warnings):
         msg = _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc,
                             oblivionMods, oblivionModsSrc)
         raise BoltError(msg)
-    loot_gname = game_info.loot_dir
-    loot_folder = dirs['local_appdata'].join('LOOT')
-    # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
-    loot_path = loot_folder.join('games', loot_gname)
-    if not loot_path.is_dir():
-        # Fall back to the 'legacy' path (LOOT\<game>)
-        loot_path = loot_folder.join(loot_gname)
-    loot_master_path = loot_path.join('masterlist.yaml')
-    loot_user_path = loot_path.join('userlist.yaml')
-    loot_tag_path = dirs['taglists'].join('taglist.yaml')
-    global lootDb
-    lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     global bash_dirs_initialized
     bash_dirs_initialized = True
     return game_ini_path

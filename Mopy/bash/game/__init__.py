@@ -31,7 +31,7 @@ from enum import Enum
 from itertools import chain, product
 from os.path import join as _j
 
-from .. import bass, bolt, initialization
+from .. import bolt, initialization ##:(600) decouple from initialization
 from ..plugin_types import MergeabilityCheck, PluginFlag, AMasterFlag, \
     isPBashMergeable, is_vanilla, scale_flags
 from ..bolt import FNDict, fast_cached_property
@@ -581,8 +581,8 @@ class GameInfo(object):
         limit_fixer_plugins = []
 
         @classmethod
-        def exe_path_sc(cls):
-            exe_xse = bass.dirs['exe'].join(cls.exe)
+        def exe_path_sc(cls, bass_dirs):
+            exe_xse = bass_dirs['exe'].join(cls.exe)
             return exe_xse if exe_xse.is_file() else None
 
     class Sd(object):
@@ -738,7 +738,8 @@ class GameInfo(object):
         saves_dir = 'Saves'
 
         @classmethod
-        def base_saves_path(cls, personal: bolt.Path, my_games_name: str):
+        def base_saves_path(cls, personal: bolt.Path, my_games_name: str,
+                            bass_dirs):
             """Determines the saveBase directory for this game."""
             return personal.join('My Games', my_games_name)
 

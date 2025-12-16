@@ -25,7 +25,7 @@ from os.path import join as _j
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
-from ... import bass, bolt
+from ... import bolt
 
 _GOG_IDS = [
     1458058109, # Game
@@ -100,12 +100,12 @@ class AOblivionGameInfo(PatchGame):
         limit_fixer_plugins = [u'mod_limit_fix.dll', u'Trifle.dll']
 
         @classmethod
-        def exe_path_sc(cls):
+        def exe_path_sc(cls, bass_dirs):
             # OBSE refuses to start when its EXE is launched on a Steam
             # installation
-            if 'steam' in bass.dirs['exe'].cs:
+            if 'steam' in bass_dirs['exe'].cs:
                 return None
-            return super().exe_path_sc()
+            return super().exe_path_sc(bass_dirs)
 
     class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'

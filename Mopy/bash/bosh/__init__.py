@@ -55,6 +55,7 @@ from ..exception import BoltError, BSAError, CancelError, \
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding
 from ..load_order import LordDiff, LoadOrder
+from ..loot_parser import LOOTParser
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
     ST_MERGED, ST_IMPORTED, ST_INACTIVE, active_keys
@@ -71,6 +72,8 @@ saveInfos: SaveInfos | None = None
 iniInfos: INIInfos | None = None
 bsaInfos: BSAInfos | None = None
 screen_infos: ScreenInfos | None = None
+# LOOT database instance - must be initiliazed after bass.dirs is updated
+lootDb: LOOTParser | None = None
 
 def data_tracking_stores() -> Iterable['_AFileInfos']:
     """Return an iterable containing all data stores that keep track of the
@@ -248,8 +251,7 @@ def _process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
 
 def read_loot_tags(mod_info):
     """Wrapper around get_tags_from_loot. See that method for docs."""
-    return *map(_process_tags, initialization.lootDb.get_tags_from_loot(
-        mod_info.fn_key)),
+    return map(_process_tags, lootDb.get_tags_from_loot(mod_info.fn_key))
 
 # BashTags dir ----------------------------------------------------------------
 def read_dir_tags(mod_info, ci_bt_filenames=None):
@@ -646,10 +648,6 @@ class ModInfo(_WithMastersInfo):
     def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
         return self.fn_key in self.recurse_masters(fake_masters=fake_masters)
 
-    def get_dependents(self):
-        """Return a set of all plugins that have this plugin as a master."""
-        return modInfos.dependents[self.fn_key]
-
     def recurse_masters(self, *, fake_masters: list[FName] | None = None) \
             -> set[FName]:
         """Recursively collect all masters of this plugin, including transitive
@@ -707,44 +705,29 @@ class ModInfo(_WithMastersInfo):
         return True
 
     #--Bash Tags --------------------------------------------------------------
-    def tagsies(self, tagList): ##: join the strings once here
+    def tagsies(self, tags_list):
         # Tracks if this plugin has at least one bash tags source - which may
         # still result in no tags at the end, e.g. if source A adds a tag and
         # source B removes it
         has_tags_source = False
-        def _tags(tags_msg, tags_iter, tagsList):
-            tags_result = ', '.join(tags_iter) if tags_iter else _('No tags')
-            return f'{tagsList}  * {tags_msg} {tags_result}\n'
-        tags_desc = self.getBashTagsDesc()
-        has_tags_source |= bool(tags_desc)
-        if tags_desc:
-            tagList = _tags(_('From Plugin Description:'),
-                sorted(tags_desc), tagList)
-        loot_added, loot_removed = read_loot_tags(self)
-        has_tags_source |= bool(loot_added | loot_removed)
-        if loot_added:
-            tagList = _tags(_('From LOOT Masterlist and/or Userlist:'),
-                            sorted(loot_added), tagList)
-        if loot_removed:
-            tagList = _tags(_('Removed by LOOT Masterlist and/or '
-                              'Userlist:'), sorted(loot_removed), tagList)
-        dir_added, dir_removed = read_dir_tags(self)
-        has_tags_source |= bool(dir_added | dir_removed)
-        tags_file_fmt = {'tags_file': os.path.join(
-            bush.game.mods_dir_name, 'BashTags', f'{self.fn_key.fn_body}.txt')}
-        if dir_added:
-            tagList = _tags(_('Added by %(tags_file)s:') % tags_file_fmt,
-                sorted(dir_added), tagList)
-        if dir_removed:
-            tagList = _tags(_('Removed by %(tags_file)s:') % tags_file_fmt,
-                sorted(dir_removed), tagList)
+        tags_file_fmt = {'tags_file': os.path.join(bush.game.mods_dir_name,
+            'BashTags', f'{self.fn_key.fn_body}.txt')}
         sorted_tags = sorted(self.getBashTags())
-        if not self.mod_auto_bash_tags and sorted_tags:
-            has_tags_source = True
-            tagList = _tags(_('From Manual (overrides all other sources):'),
-                sorted_tags, tagList)
-        return (_tags(_('Result:'), sorted_tags, tagList)
-                if has_tags_source else tagList + f"    {_('No tags')}\n")
+        msgs = [_('From Plugin Description:'),
+                _('From LOOT Masterlist and/or Userlist:'),
+                _('Removed by LOOT Masterlist and/or Userlist:'),
+                _('Added by %(tags_file)s:')  % tags_file_fmt,
+                _('Removed by %(tags_file)s:') % tags_file_fmt,
+                _('From Manual (overrides all other sources):')]
+        tags = [self.getBashTagsDesc(), *read_loot_tags(self),
+            *read_dir_tags(self), not self.mod_auto_bash_tags and sorted_tags]
+        for tags_set, msg in zip(tags, msgs, strict=True):
+            if tags_set:
+                has_tags_source = True
+                tags_list.append(f'  * {msg} {", ".join(sorted(tags_set))}')
+        res = f'  * {_("Result:")} {", ".join(sorted_tags)}' \
+            if has_tags_source else f'    {_("No tags")}'
+        tags_list.append(res)
 
     def tags_path(self) -> bolt.Path:
         return bass.dirs['tag_files'].join(f'{self.fn_key.fn_body}.txt')
@@ -874,8 +857,6 @@ class ModInfo(_WithMastersInfo):
 
     def get_version(self):
         """Extract and return version number from self.header.description."""
-        if not self.header: ##: header not always present?
-            return ''
         desc_match = reVersion.search(self.header.description)
         return (desc_match and desc_match.group(2)) or ''
 
@@ -1069,9 +1050,8 @@ class ModInfo(_WithMastersInfo):
         True for a dirty vanilla plugin."""
         skipbeth = bass.settings['bash.mods.ignore_dirty_vanilla_files'] and \
                    self.fn_key in bush.game.bethDataFiles
-        if not scan_beth and skipbeth: return ''
-        if self.get_table_prop(u'ignoreDirty', False) or not \
-                initialization.lootDb.is_plugin_dirty(self.fn_key, modInfos):
+        if not scan_beth and skipbeth or self.get_table_prop('ignoreDirty',
+                False) or not lootDb.is_plugin_dirty(self.fn_key, modInfos):
             return ''
         return True if skipbeth else _('Contains dirty edits, needs cleaning.')
 
@@ -2418,7 +2398,7 @@ class ModInfos(_AFileInfos):
         order/status changed we need to recalculate cached data structures."""
         ##:(701) We could be more granular passing ldiff (and rdata) - this
         # would be a final check for ModInfos.refresh
-        # Recalculate the dependents cache. See ModInfo.get_dependents
+        # Recalculate the dependents cache
         cached_dependents = self.dependents
         cached_dependents.clear()
         # Refresh which filenames cannot be saved to plugins.txt. It seems
@@ -3129,10 +3109,9 @@ class ModInfos(_AFileInfos):
         """Return the list as wtxt of current bash tags (but don't say which
         ones are applied via a patch) - either for all mods in the data folder
         or if specified for one specific mod."""
-        tagList = f"=== {_('Current Bash Tags:')}\n"
-        tagList += _(u'Note: Sources are processed from top to bottom, '
-                     u'meaning that lower-ranking sources override '
-                     u'higher-ranking ones.') + u'\n'
+        tags_list = [f'=== {_("Current Bash Tags:")}', _(
+            'Note: Sources are processed from top to bottom, meaning that '
+            'lower-ranking sources override higher-ranking ones.')]
         if mod_list is None:
             mod_list = []
             # sort output by load order
@@ -3141,9 +3120,10 @@ class ModInfos(_AFileInfos):
                 if modInfo.getBashTags():
                     mod_list.append(modInfo)
         for modInfo in mod_list:
-            tagList += f'\n* {modInfo}\n'
-            tagList = modInfo.tagsies(tagList)
-        return tagList
+            tags_list.append(f'\n* {modInfo}')
+            modInfo.tagsies(tags_list)
+        tags_list.append('')
+        return '\n'.join(tags_list)
 
     def masterWithVersion(self, master_name):
         if master_name == 'Oblivion.esm' and (curr_ver := self.voCurrent):
@@ -3522,13 +3502,24 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 # Initialization --------------------------------------------------------------
-def initBosh(game_ini_path):
+def initBosh(game_ini_path, game_info):
     # Setup loot_parser, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
-        raise BoltError(u'initBosh: Bash dirs are not initialized')
+        raise BoltError('initBosh: Bash dirs are not initialized')
     # game ini files
     deprint(f'Looking for main game INI at {game_ini_path}')
-    global oblivionIni, gameInis
+    global oblivionIni, gameInis, lootDb
+    loot_gname = game_info.loot_dir
+    loot_folder = dirs['local_appdata'].join('LOOT')
+    # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
+    loot_path = loot_folder.join('games', loot_gname)
+    if not loot_path.is_dir():
+        # Fall back to the 'legacy' path (LOOT\<game>)
+        loot_path = loot_folder.join(loot_gname)
+    loot_master_path = loot_path.join('masterlist.yaml')
+    loot_user_path = loot_path.join('userlist.yaml')
+    loot_tag_path = dirs['taglists'].join('taglist.yaml')
+    lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
                                for x in bush.game.Ini.dropdown_inis[1:])]

@@ -767,11 +767,12 @@ class Mod_ListDependent(OneItemLink):
             {'master_name': self._selected_item})
 
     def Execute(self):
+        ordered = load_order.get_ordered(self._data_store.dependents[
+                                             self._selected_item])
         dependent = ListDependentDialog.make_highlight_entry(
             _('The following plugins are dependent on %(master_name)s, '
               'meaning they have that plugin as a master.') % {
-                'master_name': self._selected_item},
-            load_order.get_ordered(self._selected_info.get_dependents()),
+                'master_name': self._selected_item}, ordered,
         )
         ListDependentDialog(self.window,
             highlight_items=[dependent]).show_modeless()

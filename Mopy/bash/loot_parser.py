@@ -43,6 +43,7 @@ from .bolt import AFile, FName, FNDict, Path, deprint
 from .exception import BoltError, EvalError, LexerError, ParserError
 from .loot_conditions import Comparison, ConditionAnd, ConditionFunc, \
     ConditionNot, ConditionOr, _ACondition, is_regex
+# no other Bash imports - loot_conditions should also be guarded
 
 # Typing
 _RTags = tuple[set[str], set[str]] # 'returned tags'

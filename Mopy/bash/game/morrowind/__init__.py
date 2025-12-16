@@ -22,7 +22,6 @@
 # =============================================================================
 import struct as _struct
 
-from ... import bass
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
@@ -110,8 +109,9 @@ class _AMorrowindGameInfo(PatchGame):
 
     class Ess(GameInfo.Ess):
         @classmethod
-        def base_saves_path(cls, personal: bolt.Path, my_games_name: str):
-            return bass.dirs['app']
+        def base_saves_path(cls, personal: bolt.Path, my_games_name: str,
+                            bass_dirs):
+            return bass_dirs['app']
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True

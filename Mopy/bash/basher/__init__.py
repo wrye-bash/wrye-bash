@@ -69,8 +69,7 @@ from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
     LoadOrderSanitizedDialog
 from .frames import DocBrowser
 from .gui_patchers import initPatchers
-from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
-    load_order
+from .. import archives, balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
@@ -3581,7 +3580,7 @@ class BashFrame(WindowFrame):
         #--UPDATES-----------------------------------------
         self.inRefreshData = True
         #--Config helpers
-        initialization.lootDb.refreshBashTags()
+        bosh.lootDb.refreshBashTags()
         #--Check bsas, needed to detect string files in modInfos refresh...
         bosh.oblivionIni.get_ini_language(bush.game.Ini.default_game_lang,
             cached=False) # Reread INI language

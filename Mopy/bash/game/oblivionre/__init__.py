@@ -70,10 +70,10 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
         limit_fixer_plugins = []
 
         @classmethod
-        def exe_path_sc(cls):
+        def exe_path_sc(cls, bass_dirs):
             # Skip the Steam-avoiding logic in AOblivionGameInfo.Se
             ##: Revisit all this in #703
-            return super(AOblivionGameInfo.Se, cls).exe_path_sc()
+            return super(AOblivionGameInfo.Se, cls).exe_path_sc(bass_dirs)
 
     class Ge(GameInfo.Ge):
         pass

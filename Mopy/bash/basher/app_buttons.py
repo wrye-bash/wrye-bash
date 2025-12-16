@@ -478,7 +478,7 @@ class GameButton(_ExeButton):
     def app_path(self):
         # Should use the xSE launcher if it's present else the regular launcher
         return exe_xse if BashStatusBar.obseButton.button_state and (
-            exe_xse := bush.game.Se.exe_path_sc()) else super().app_path
+            exe_xse := bush.game.Se.exe_path_sc(bass.dirs)) else super().app_path
 
     @property
     def _app_version(self):
@@ -516,7 +516,7 @@ class TESCSButton(_ExeButton):
         # If the script extender for this game has CK support, the xSE loader
         # is present and xSE is enabled, use that executable and pass the
         # editor argument to it
-        exe_xse = bush.game.Se.exe_path_sc()
+        exe_xse = bush.game.Se.exe_path_sc(bass.dirs)
         is_obse_available = (self._exe_args and
                              BashStatusBar.obseButton.button_state and
                              exe_xse is not None)
@@ -555,7 +555,7 @@ class ObseButton(_StatefulButton):
 
     def allow_create(self):
         return (bool(bush.game.Se.se_abbrev) and
-                bush.game.Se.exe_path_sc() is not None)
+                bush.game.Se.exe_path_sc(bass.dirs) is not None)
 
     def sb_click(self):
         super().sb_click()

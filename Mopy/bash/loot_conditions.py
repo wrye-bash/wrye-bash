@@ -37,6 +37,7 @@ from . import bass
 from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
 from .exception import EvalError, FileError
+# no other Bash imports!
 
 # Internal helpers
 def _process_path(file_path: str) -> Path:

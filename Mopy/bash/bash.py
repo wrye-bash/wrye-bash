@@ -622,7 +622,7 @@ def _main(opts, wx_locale, wxver):
                 bush.reset_bush_globals()
                 bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
         from . import bosh
-        bosh.initBosh(game_ini_path)
+        bosh.initBosh(game_ini_path, bush_game)
         # hacky should maybe be somewhere else
         from .loot_conditions import init_loot_cond_functions
         from . import load_order
@@ -750,11 +750,10 @@ def _import_bush_and_set_game(opts):
         bass.boot_settings['Boot']['last_game'] = gname
         bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
     if init_warnings:
-        warning_msg = _('The following (non-critical) warnings were found '
-                        'during initialization:')
-        warning_msg += '\n\n'
-        warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
-        _show_boot_popup(warning_msg, is_critical=False)
+        warning_msg = [
+            _('The following (non-critical) warnings were found during '
+              'initialization:'), '', *(f'- {w}' for w in init_warnings)]
+        _show_boot_popup('\n'.join(warning_msg), is_critical=False)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
