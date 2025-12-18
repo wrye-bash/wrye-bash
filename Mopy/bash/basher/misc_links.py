@@ -200,7 +200,7 @@ class Master_ChangeTo(_Master_EditList):
         masterInfo = self._selected_info
         master_name = masterInfo.curr_name
         #--File Dialog
-        wildcard = bosh.modInfos.unhide_wildcard()
+        wildcard = bosh.modInfos.unhide_wildcard() ##: no ghosts?
         newPath = self._askOpen(title=_('Change master name to:'),
                                 defaultDir=bosh.modInfos.store_dir,
                                 defaultFile=master_name, wildcard=wildcard)
@@ -208,8 +208,8 @@ class Master_ChangeTo(_Master_EditList):
         newDir, newName = newPath.headTail
         #--Valid directory?
         if newDir != bosh.modInfos.store_dir:
-            self._showError(_('File must be selected from %(data_folder)s '
-                              'folder.') % {'data_folder': bush.game.mods_dir_name})
+            msg = _('File must be selected from %(data_folder)s folder.')
+            self._showError(msg % {'data_folder': bush.game.mods_dir_name})
             return
         # Handle ghosts: simply chop off the extension
         if newName.cext == '.ghost':

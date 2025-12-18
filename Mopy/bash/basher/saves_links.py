@@ -148,7 +148,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         #--Get file count. If > zero, verify with user.
         profileDir = bass.dirs[u'saveBase'].join(profileSaves)
         files = [save_file for save_file in profileDir.ilist() if
-                 bosh.SaveInfos.rightFileType(save_file)]
+                 bosh.SaveInfos.check_filename(save_file)]
         if files:
             message = _('Delete profile %(save_profile)s and the '
                         '%(num_contained_saves)d save files it contains?') % {
@@ -286,13 +286,13 @@ class Save_ImportFace(OneItemLink):
                                 wildcard=wildcard)
         if not srcPath: return
         fname = srcPath.tail.s
-        if bosh.SaveInfos.rightFileType(fname): # Import from a save
+        if bosh.SaveInfos.check_filename(fname): # Import from a save
             #--Get face
             with balt.Progress(fname) as progress:
                 saveFile = _saves.SaveFile(srcPath)
                 saveFile.load(progress)
             srcFaces = faces.PCFaces.save_getFaces(saveFile)
-        elif bosh.ModInfos.rightFileType(fname): # Import from a mod
+        elif bosh.ModInfos.check_filename(fname): # Import from a mod
             #--Get faces
             srcFaces = faces.PCFaces.mod_getFaces(srcPath)
             #--No faces to import?
@@ -622,7 +622,7 @@ class Save_Move(ChoiceLink):
     """Moves or copies selected files to alternate profile."""
 
     def __init__(self, copyMode=False):
-        super(Save_Move, self).__init__()
+        super().__init__()
         self.copyMode = copyMode
         self._help_str = (_('Copy the selected saves to %(save_profile)s.')
                           if copyMode else
@@ -696,10 +696,7 @@ class Save_Move(ChoiceLink):
                 #if result is true just do the job but ask next time if applicable as well
                 if not result: continue
                 ask = ask and result != 2 # so don't warn for rest of operation
-            if self.copyMode:
-                save_inf.fs_copy(destDir.join(fileName))
-            else:
-                save_inf.move_info(destDir)
+            save_inf.fs_copy(destDir.join(fileName), do_move=not self.copyMode)
             if att_dict := save_inf.get_persistent_attrs():
                 destTable.pickled_data[fileName] = att_dict
                 do_save = 1

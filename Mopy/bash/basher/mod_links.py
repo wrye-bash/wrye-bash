@@ -496,7 +496,7 @@ class _ModGroups(CsvParser):
 
     def _parse_line(self, csv_fields):
         """Imports mod groups from specified text file."""
-        if len(csv_fields) >= 2 and bosh.ModInfos.rightFileType(csv_fields[0]):
+        if len(csv_fields) >= 2 and bosh.ModInfos.check_filename(csv_fields[0]):
             mod, mod_grp = csv_fields[:2]
             self.mod_group[FName(mod)] = mod_grp
 
@@ -1367,23 +1367,22 @@ class _CopyToLink(EnabledLink):
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
-                newName = FName(f'{curName.fn_body}{self._target_ext}')
+                new_fn = FName(f'{curName.fn_body}{self._target_ext}')
                 #--Replace existing file?
                 newTime = None
-                if newName in modInfos:
-                    existing = modInfos[newName]
-                    # abs_path as existing may be ghosted
-                    if not self._askYes(
+                if new_fn in modInfos:
+                    existing = modInfos[new_fn]
+                    if not self._askYes( # abs_path as existing may be ghosted
                             _('Replace existing %(existing_plugin)s?') % {
                                 'existing_plugin': existing.abs_path.stail}):
                         continue
                     existing.makeBackup()
                     newTime = existing.ftime
                 # Copy and set flag - will use ghosted path if needed
-                minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
-                added[newName] = minfo
+                minfo.copy_to(minfo.info_dir.join(new_fn), set_time=newTime)
+                added[new_fn] = minfo
                 if newTime is None: # otherwise it has a load order already!
-                    mod_previous[newName] = curName
+                    mod_previous[new_fn] = curName
         #--Repopulate
         if added:
             rinf = RefrIn.from_tabled_infos(added, exclude=True)
@@ -1642,7 +1641,7 @@ class Mod_Face_Import(OneItemLink):
                                 wildcard=wildcard)
         if not srcPath: return
         #--Get face
-        srcInfo = bosh.saveInfos.factory(srcPath, load_cache=True)
+        srcInfo = bosh.saveInfos.get_update_info(srcPath)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
@@ -1763,8 +1762,8 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         #--Extension error check
         ext = textPath.cext
         if ext not in supportedExts:
-            plugin_exts = ', '.join(sorted(bush.game.espm_extensions
-                                           | {'.ghost'}))
+            plugin_exts = ', '.join(
+                sorted({*bush.game.espm_extensions, '.ghost'}))
             if len(supportedExts) > 1:
                 csv_err = _('Source file must be a %(csv_ext)s file or a '
                             'plugin (%(plugin_exts)s).') % {
@@ -2304,16 +2303,16 @@ class Mod_Snapshot(ItemLink):
             fileVersion = bolt.getMatch(
                 re.search(r'[ _]+v?([.\d]+)$', fileRoot), 1)
             snapVersion = bolt.getMatch(re.search(r'-[\d.]+$', destRoot))
-            fileHedr = fileInfo.header
-            if (fileVersion or snapVersion) and bosh.reVersion.search(fileHedr.description):
+            descr = fileInfo.header.description
+            if (fileVersion or snapVersion) and bosh.reVersion.search(descr):
                 if fileVersion and snapVersion:
                     newVersion = fileVersion+snapVersion
                 elif snapVersion:
                     newVersion = snapVersion[1:]
                 else:
                     newVersion = fileVersion
-                newDescription = bosh.reVersion.sub(fr'\1 {newVersion}', fileHedr.description, 1)
-                fileInfo.writeDescription(newDescription)
+                new_descr = bosh.reVersion.sub(fr'\1 {newVersion}', descr, 1)
+                fileInfo.writeDescription(new_descr)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
             fileInfo.fs_copy(destDir.join(destName))

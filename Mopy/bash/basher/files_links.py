@@ -23,7 +23,7 @@
 
 from .. import balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bolt import FNDict, RefrIn
+from ..bolt import FNDict, RefrIn, FName
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
     FileOpenMultiple
 from ..localize import format_date
@@ -66,11 +66,14 @@ class Files_Unhide(ItemLink):
                                   "directory."))
                 return
             # Validate that the file is valid and isn't already present
-            if not dstore.rightFileType(srcFileName.s):
+            if not dstore.check_filename(srcFileName.s): # True only if is_file
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'not valid.') % {'skipped_file': srcFileName})
                 continue
-            inf = dstore.factory(srcPath, load_cache=True, is_proj=False)
+            if not (inf := dstore.get_update_info(srcPath, is_proj=False)):
+                self._showWarning(_('File skipped: %(skipped_file)s. File is '
+                    'not valid.') % {'skipped_file': srcFileName})
+                continue
             if (fn_key := inf.fn_key) in dstore:
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'already present.') % {'skipped_file': srcFileName})
@@ -107,7 +110,7 @@ class File_Duplicate(ItemLink):
                     title=_(u'Duplicate as:'), defaultDir=destDir,
                     defaultFile=destName, wildcard=f'*{e}')
                 if not destPath: return
-                destDir, destName = destPath.head, bolt.FName(destPath.stail)
+                destDir, destName = destPath.head, FName(destPath.stail)
                 destName, root = fileInfo.validate_name(destName,
                     # check if exists if we duplicate into the store dir
                     # then we just need to check if destName is in the store
@@ -206,7 +209,7 @@ class _RevertBackup(RestoreInfo):
 
     @property
     def _backup_path(self):
-        return self._selected_info.backup_restore_paths(self.first)[0][0]
+        return self.__backup_paths[0][1]
 
     @property
     def link_help(self):
@@ -215,11 +218,13 @@ class _RevertBackup(RestoreInfo):
         return msg % {'file': self._selected_item}
 
     def _enable(self):
-        return super()._enable() and self._backup_path.exists()
+        if not super()._enable(): return False
+        self.__backup_paths = self._selected_info.backup_restore_paths(
+            self.first)
+        return self._backup_path.exists()
 
     def _restore(self):
-        sel_inf = self._selected_info
-        backup_paths = sel_inf.backup_restore_paths(self.first)
+        backup_paths = [(b, a) for a, b in self.__backup_paths]
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists():
                 # if cosave exists while its backup not, delete it on restoring
@@ -227,7 +232,7 @@ class _RevertBackup(RestoreInfo):
                 backup_paths.remove(tup)
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
-        sel_inf.setmtime(sel_inf.ftime)
+        self._selected_info.setmtime(self._selected_info.ftime)
 
     def _failed_msg(self):
         return self._askYes(

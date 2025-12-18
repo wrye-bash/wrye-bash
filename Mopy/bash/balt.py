@@ -1308,7 +1308,7 @@ class UIList(PanelWin):
             trash_icon=get_image('trash_can.32'))
         if not dd_ok or not dd_items: return
         try:
-            rd_del = self.data_store.delete(dd_items, recycle=dd_recycle)
+            rd_del = self.data_store.delete_op(dd_items, recycle=dd_recycle)
         except (PermissionError, CancelError, SkipError):
             rd_del = True # perform a refresh to see if items were deleted
         self.propagate_refresh(rd_del) # also cleans _gList internal dicts
@@ -1786,17 +1786,14 @@ class UIList_Delete(EnabledLink):
     _text = _('Delete')
     _keyboard_hint = 'Del'
 
-    def _filter_undeletable(self, to_delete_items):
-        """Filters out undeletable items from the specified iterable."""
-        return self._data_store.filter_essential(to_delete_items)
-
     def _enable(self):
         # Only enable if at least one deletable file is selected
-        return bool(self._filter_undeletable(self.selected))
+        return bool(self._can_delete)
 
     @property
     def link_help(self):
-        sel_filtered = list(self._filter_undeletable(self.selected))
+        sel_filtered = self._can_delete = [*self._data_store.filter_essential(
+            self.selected)]
         if sel_filtered == self.selected:
             if len(sel_filtered) == 1:
                 return _("Delete '%(filename)s'.") % {
@@ -1811,7 +1808,7 @@ class UIList_Delete(EnabledLink):
     def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
         with BusyCursor():
-            self.window.DeleteItems(items=self.selected)
+            self.window.DeleteItems(items=self._can_delete)
 
 class UIList_Rename(EnabledLink):
     """Rename selected UIList item(s)."""
@@ -1888,12 +1885,12 @@ class UIList_Hide(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one hideable file is selected
-        return bool(self._filter_unhideable(self.selected))
+        return bool(self._tohide)
 
     @property
     def link_help(self):
-        sel_filtered = list(self._filter_unhideable(self.selected))
-        if sel_filtered == self.selected:
+        self._tohide = self._filter_unhideable(self.selected)
+        if (sel_filtered := [*self._tohide]) == self.selected:
             if len(sel_filtered) == 1:
                 return _("Hide '%(filename)s' by moving it to the 'Hidden' "
                          "directory.") % {'filename': sel_filtered[0]}
@@ -1914,7 +1911,7 @@ class UIList_Hide(EnabledLink):
                           {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         to_move = []
-        for fnkey, inf in self._filter_unhideable(self.selected).items():
+        for fnkey, inf in self._tohide.items():
             destDir = inf.get_hide_dir()
             if destDir.join(fnkey).exists():
                 if not self._askYes(_('A file named %(target_file_name)s '

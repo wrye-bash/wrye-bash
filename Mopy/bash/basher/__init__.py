@@ -2710,7 +2710,7 @@ class InstallersDetails(_SashDetailsPanel):
                     # Avoid running through _remaps over and over for
                     # non-plugins (can't use 'in modInfos' since the plugins
                     # may not be installed)
-                    if bosh.modInfos.rightFileType(fn_file_dump):
+                    if bosh.modInfos.check_filename(fn_file_dump):
                         oldName = installer.getEspmName(fn_file_dump)
                         if oldName != fn_file_dump:
                             buff.append(f'{oldName} -> {fn_file_dump}')
@@ -3713,12 +3713,12 @@ class BashFrame(WindowFrame):
             existing_roots = {p.fn_body for p in tc_store}
             to_clean_dir = tc_store.bash_dir.join('Backups')
             for bk_fn in top_level_files(to_clean_dir):
-                if (not tc_store.rightFileType(bk_fn) and
-                        not tc_store.rightFileType(bk_fn.removesuffix('f'))):
+                filenames = {bk_fn, bk_fn.removesuffix('f')}
+                if not any(map(tc_store.check_filename, filenames)):
                     # This file was almost certainly not created by us, better
                     # leave it untouched
                     continue
-                if bk_fn.fn_body not in existing_roots:
+                if bk_fn.fn_body not in existing_roots:##:(292) removes cosaves?
                     to_clean_dir.join(bk_fn).remove()
 
     # Global Menu API

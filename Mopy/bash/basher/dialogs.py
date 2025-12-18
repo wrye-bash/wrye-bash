@@ -449,7 +449,7 @@ class CreateNewPlugin(DialogWindow):
         pw = self._parent_window
         pl_name = self._plugin_name.text_content + self._plugin_ext.get_value()
         mod_infos = pw.data_store
-        mod_info = mod_infos._factory_type
+        mod_info = mod_infos.factory_type
         newName, root = mod_info.validate_filename_str(pl_name)
         if root is None:
             showError(self, newName)

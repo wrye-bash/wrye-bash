@@ -398,7 +398,7 @@ def _fn_version(file_path: str, expected_ver: str, comparison: Comparison,
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    if (minfos := _bosh.modInfos).rightFileType(file_path.s):
+    if (minfos := _bosh.modInfos).check_filename(file_path.s):
         # Read version from the description
         actual_ver = LooseVersion(minfos.getVersion(file_path.stail) or '0')
     elif file_path.cext in ('.exe', '.dll'):

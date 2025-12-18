@@ -1732,11 +1732,13 @@ class AFile(object):
         """
         self.fsize, self.ftime = stat_tuple
 
-    def fs_copy(self, dup_path: Path, *, set_time=None):
-        """Duplicate file to dup_path. If set_time is None, we set the mtime
+    def fs_copy(self, dup_path: Path, *, set_time=None, do_move=False):
+        """Copy/move file to dup_path. If set_time is None, we set the mtime
         of the duplicate path to ftime. This should really be a
         _mark_not_changed internal API (what about ctime?)."""
-        self.abs_path.copyTo(dup_path, set_time=set_time or self.ftime)
+        op = self.abs_path.moveTo if do_move else partial(
+            self.abs_path.copyTo, set_time=set_time or self.ftime)
+        op(dup_path)
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.abs_path.stail}>'
@@ -1781,6 +1783,8 @@ class ListInfo:
             'ext_or_root': name_str}), None
 
     def validate_name(self, name_str, check_store=True):
+        """Only used in _EditableMixin.OnFileEdited and File_Duplicate.Execute.
+        """
         # disallow extension change but not if no-extension info type
         check_ext = name_str and self.__class__._valid_exts_re
         if check_ext and not name_str.lower().endswith(
@@ -1863,9 +1867,10 @@ class ListInfo:
         the data_store if copied inside the store_dir but the client is
         responsible for calling the final refresh of the data store."""
         # TODO(ut) : when duplicating pass the info in and load_cache=False
+        # the only use that copies into store dir
         self.fs_copy(dup_path, set_time=set_time)
 
-    def fs_copy(self, dup_path, *, set_time=None):
+    def fs_copy(self, dup_path, **kwargs):
         raise NotImplementedError # not all ListInfos are AFiles
 
     def __str__(self):
@@ -1878,23 +1883,41 @@ class ListInfo:
 #------------------------------------------------------------------------------
 class AFileInfo(AFile, ListInfo):
     """List Info representing a file."""
+    file_exts = frozenset() # subclasses that represent files must define this!
+
     def __init__(self, fullpath, **kwargs):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
         super().__init__(fullpath, **kwargs)
-
-    def delete_paths(self):
-        """Paths to delete when this item is deleted - abs_path comes first!"""
-        return self.abs_path,
-
-    def move_info(self, destDir):
-        """Hasty method used in UIList.hide(). Will overwrite! The client is
-        responsible for calling _delete_refresh of the data store."""
-        self.abs_path.moveTo(destDir.join(self.fn_key))
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
         return [(self.abs_path, (rename_dir or self.info_dir).join(new_name))]
+
+    def fs_copy(self, dup_path, *, set_time=None, do_move=False):
+        ##:(241) note all the subtleties below - moveTo/copyTo must land in env
+        dest_dir, dest_fn = dup_path.headTail
+        src_dst = iter(self.get_rename_paths(FName(dest_fn.s), dest_dir,
+                                             with_backups=False))
+        src, dst = next(src_dst) # base info path always exists
+        sys_op = src.moveTo if do_move else partial(src.copyTo,
+            set_time=set_time or self.ftime)
+        sys_op(dst)
+        # rest is for cosaves - for mods, as we pass a destDir, we only get one
+        # path back from get_rename_paths
+        for src, dst in src_dst:
+            if dst.exists(): ##: moveTo repeats this check - needed for copyTo?
+                ##: for makeBackup and Save_Move, the latter needs some thought
+                dst.remove() # remove existing file in case self has no cosave
+            if not src.exists(): continue
+            sys_op = partial(src.moveTo, check_exist=False) if do_move else \
+                src.copyTo
+            sys_op(dst)
+
+    @classproperty
+    def _valid_exts_re(cls):
+        return fr'(\.(?:{"|".join(x[1:] for x in fe)}))' if (fe :=
+            cls.file_exts) else ''
 
     def validate_name(self, name_str, check_store=True):
         super_validate = super().validate_name(name_str,
@@ -1918,13 +1941,13 @@ class AFileInfo(AFile, ListInfo):
     def get_hide_dir(self):
         return self._store().hide_dir
 
-    def __repr__(self): # bypass AFInfo - abs path is not always set
+    def __repr__(self): # bypass AFile - abs path is not always set
         return super(AFile, self).__repr__()
 
 #------------------------------------------------------------------------------
 # show your type off - it's unique, maps existing [new] infos fn_keys to tuples
 # of (info (call its do_update) [None (call init)], kwargs for the method call)
-_RIn = dict[FName, tuple[None | ListInfo, dict]]
+_RIn = dict[FName, tuple[None | AFileInfo, dict]]
 @dataclass(slots=True)
 class RefrIn:
     """WIP! requesting refresh from the data store."""

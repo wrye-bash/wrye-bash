@@ -611,9 +611,8 @@ class Installer(ListInfo):
             parent_dir, split_fn = _split_fr(file_relative)
             lower_parent = parent_dir.lower()
             lower_root = split_fn.lower()[:-len(fileExt)]
-            package_root = self.fn_key.fn_body if self._valid_exts_re else \
-                self.fn_key
-            if lower_root in package_root.lower() and not self.hasReadme:
+            pack_root = self.fn_key.fn_body if self.file_exts else self.fn_key
+            if lower_root in pack_root.lower() and not self.hasReadme:
                 # This is named similarly to the package (with a doc ext), so
                 # probably a readme
                 self.hasReadme = full
@@ -634,13 +633,13 @@ class Installer(ListInfo):
                 if not parent_dir or lower_parent == 'docs':
                     ma_cd = re_common_docs_match(lower_root)
                     if ma_cd and not (ma_cd.group(1) or ma_cd.group(2)):
-                        dest = dest_start + package_root + ' ' + split_fn
+                        dest = f'{dest_start}{pack_root} {split_fn}'
                     elif maReadMe and not (maReadMe.group(1) or
                                            maReadMe.group(3)):
-                        dest = dest_start + package_root + fileExt
+                        dest = f'{dest_start}{pack_root}{fileExt}'
             if not parent_dir:
                 if fileLower == 'package.txt':
-                    dest = docs_ + package_root + '.package.txt'
+                    dest = f'{docs_}{pack_root}.package.txt'
                     self.packageDoc = dest
                 elif fileLower in ignore_doclike:
                     self.skipDirFiles.add(full)
@@ -816,8 +815,7 @@ class Installer(ListInfo):
                         dirty_sizeCrc[filename] = sizeCrc
             self.ci_dest_sizeCrc.clear()
             return dest_src
-        archiveRoot = self.fn_key.fn_body if self._valid_exts_re else \
-            self.fn_key
+        archiveRoot = self.fn_key.fn_body if self.file_exts else self.fn_key
         docExts = self.docExts
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -1151,7 +1149,7 @@ class Installer(ListInfo):
                 if sizeCrc == ci_underrides_sizeCrc.get(filename):
                     underrides.add(filename)
             if missing: inst_status = -10
-            elif any(ModInfos.rightFileType(f) for f in mismatched):
+            elif any(ModInfos.check_filename(str(f)) for f in mismatched):
                 inst_status = 10
             elif mismatched: inst_status = 20
             else: inst_status = 30
@@ -1220,15 +1218,16 @@ class _InstallerPackage(Installer, AFileInfo):
 
     def copy_to(self, dup_path: Path, *, set_time=None):
         super().copy_to(dup_path, set_time=set_time)
-        clone = self._store().new_info(FName(dup_path.stail),
-            is_proj=self.is_project, install_order=self.order + 1,
-            do_refresh=False, # we only need to call refresh_n()
-            load_cache=False) # don't load from disc - copy all attributes over
+        # use factory -> init(load_cache=False) - then copy all attributes over
+        idata = self._store()
+        clone = idata.factory(dup_path, is_proj=self.is_project)
+        idata[fn := clone.fn_key] = clone
         atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
         for att in atts:
             setattr(clone, att, copy.copy(getattr(self, att)))
         clone.is_active = False # make sure we mark as inactive
-        self._store().refresh_n() # no need to change installer status here
+        # no need to change installers status here
+        idata.moveArchives([fn], self.order + 1, ref_norm=True)
 
     def _reset_cache(self, stat_tuple=None, *, __skips_start=tuple(
             s.replace(os_sep, '') for s in Installer._silentSkipsStart),
@@ -1483,8 +1482,8 @@ class InstallerMarker(Installer):
 class InstallerArchive(_InstallerPackage):
     """Represents an archive installer entry."""
     type_string = _('Archive')
-    _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in readExts)}))'
     is_archive = True
+    file_exts = readExts
 
     def size_info_str(self):
         if self.isSolid:
@@ -1839,7 +1838,7 @@ def _bain_op(func):
                 # those data stores
                 for store, removed_files in removed_tracked.items():
                     if removed_files:
-                        rui_data[store].del_infos |= store.delete(
+                        rui_data[store].del_infos |= store.delete_op(
                             removed_files, recycle=False, do_refr=False)
             except (CancelError, SkipError): ex = sys.exc_info()
             except:
@@ -1889,10 +1888,10 @@ class InstallersData(DataStore):
     overridden_skips: set[CIstr] = set() # populate with CIstr !
     __clean_overridden_after_load = True
     installers_dir_skips = set()
-    file_pattern = re.compile(
-        fr'\.(?:{"|".join(e[1:] for e in readExts)})$', re.I)
+    _file_exts = InstallerArchive.file_exts
     _dir_key = 'installers'
     _last_key = FName('==Last==')
+    _files_str = _('Mod Archives')
 
     def __init__(self):
         super().__init__()
@@ -1912,30 +1911,34 @@ class InstallersData(DataStore):
         self._inst_types = [InstallerArchive, InstallerProject,
                             InstallerMarker]
 
-    def _add_node(self, node, *, with_omods, skip_stat,
-                  __skip_prefixes=('bash', '--')):
-        low = node.name.lower()
-        if low.startswith(__skip_prefixes):
-            return None
-        if is_proj := node.is_dir():
-            if low in self.installers_dir_skips:
-                return None # skip Bash directories and user specified ones
-        elif node.is_file(): # (241) what we do with symlinks?
-            b, e = os.path.splitext(low)
-            if with_omods is not None and e in archives.omod_exts:
-                with_omods.append(node)
+    @classmethod
+    def check_filename(cls, fileName: FName | str, *, _inode=None,
+                       with_omods=None, skipstat=None,
+                       __skip_prefixes=('bash', '--'), **kwargs):
+        sup = super().check_filename(fileName, _inode=_inode, **kwargs)
+        if _inode is not None:
+            low = fileName.lower()
+            if low.startswith(__skip_prefixes):
                 return None
-            if e not in readExts: # will return None for omods also
-                return None
-        else: return None
-        return {'cached_stat': None if low in skip_stat else node.stat(),
-                'is_proj': is_proj}
+            if sup: # a file with correct archive extension, sup is a dict
+                next(iter(sup.values()))['is_proj'] = False
+            elif sup is False: # not a file
+                if _inode.is_dir() and not low in cls.installers_dir_skips:
+                    sup = {FName(fileName): {'is_proj': True}}
+            elif sup is None: # wrong extension - still check for omods
+                if with_omods is not None and os.path.splitext(low)[
+                            1] in archives.omod_exts:
+                        with_omods.append(FName(fileName))
+            if sup:
+                st = None if low in skipstat else _inode.stat()
+                next(iter(sup.values()))['cached_stat'] = st
+        return sup
 
     def _get_delinfos(self, inodes):
         return {self[k] for k in set(self.ipackages(self)) - inodes.keys()}
 
     def new_info(self, fileName, progress=None, *, is_proj=True, is_mark=False,
-                 install_order=None, do_refresh=True, load_cache=True):
+                 install_order=None, do_refresh=True):
         """Create, add to self and return a new _InstallerPackage.
         :param fileName: the filename of the package to create
         :param is_proj: if True create a project, otherwise an archive
@@ -1943,15 +1946,13 @@ class InstallersData(DataStore):
         :param progress: to pass to _InstallerPackage._reset_cache
         :param install_order: if given move the package to this position
         :param do_refresh: if False client should refresh Norm and status
-        :param load_cache: if True call AFile.__init__ -> _reset_cache() - only
-            set to False in _InstallerPackage.copy_to
         """
         if is_mark:
             is_proj = 2
             if install_order is None:
                 install_order = self.last_marker_order()
-        info = self[fileName] = self.factory(self.store_dir.join(fileName),
-            is_proj=is_proj, progress=progress, load_cache=load_cache)
+        info = self[fileName] = self.get_update_info(FName(fileName),
+            is_proj=is_proj, progress=progress)
         if install_order is not None:
             self.moveArchives([fileName], install_order)
         if progress and not is_mark: progress(1.0, _('Done'))
@@ -1963,11 +1964,6 @@ class InstallersData(DataStore):
         h, t = inst_path.headTail
         proj_dex = inst_path.is_dir() if is_proj is None else is_proj
         return self._inst_types[proj_dex](FName(t.s), par_dir=h, **kwargs)
-
-    @classmethod
-    def rightFileType(cls, fileName: bolt.FName | str):
-        ##: What about projects? Do we have to just return True here?
-        return cls.file_pattern.search(fileName)
 
     def refresh(self, *args, **kwargs):
         """Only used in delete/unhide - align with _AFileInfos one."""
@@ -2101,16 +2097,16 @@ class InstallersData(DataStore):
                     v.set_table_prop('installer', '%s' % name_new)
         return rd_ren
 
-    def _delete_operation(self, infos, recycle, do_refr):
+    def delete_op(self, info_keys, **kwargs):
         toDelete = []
-        markers = {inst.fn_key for inst in infos if
+        markers = {k for k, inst in self.filter_essential(info_keys).items() if
                    inst.is_marker or toDelete.append(inst)} # or None
         if rd_mark := RefrData(to_del=markers):
             for m in markers: del self[m]
             if not toDelete: # only markers - just refresh order
                 self.refreshOrder() # refresh here if we only have markers
                 return rd_mark
-        rd_mark |= super()._delete_operation(toDelete, recycle, do_refr)
+        rd_mark |= super().delete_op(toDelete, **kwargs, _filter=False)
         return rd_mark
 
     # Rest of DataStore overrides ---------------------------------------------
@@ -2119,11 +2115,6 @@ class InstallersData(DataStore):
 
     @property
     def hide_dir(self): return bass.dirs['modsBash'].join('Hidden')
-
-    @classmethod
-    def unhide_wildcard(cls, **kwargs):
-        return super().unhide_wildcard(_pl_str=_('Mod Archives'), _joined=
-            ';'.join(f'*{e}' for e in readExts))
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present

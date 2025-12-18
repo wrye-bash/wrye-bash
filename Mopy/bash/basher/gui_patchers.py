@@ -876,7 +876,7 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         if self.isEnabled:
             configs[u'ImportedMods'].update(
                 [item for item, value in self.configChecks.items() if
-                 value and bosh.ModInfos.rightFileType(item)])
+                 value and bosh.ModInfos.check_filename(item)])
         return config
 
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):

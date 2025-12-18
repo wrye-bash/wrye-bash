@@ -31,11 +31,10 @@ import re
 import sys
 import time
 from collections import defaultdict, deque, OrderedDict
-from collections.abc import Iterable, Callable
-from functools import wraps
+from collections.abc import Iterable
+from functools import wraps, partial
 from itertools import chain
 from os import DirEntry
-from typing import final
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
@@ -47,14 +46,14 @@ from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn_list, os_name, struct_error, \
-    OrderedLowerDict, attrgetter_cache, top_level_files
+    OrderedLowerDict, attrgetter_cache, top_level_files, classproperty
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
-    get_ini_type_and_encoding, supported_ini_exts
+    get_ini_type_and_encoding
 from ..load_order import LordDiff, LoadOrder
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
@@ -97,7 +96,7 @@ del __exts
 # Image extensions for BAIN and for the Screnshots tab
 _common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
 bain_image_exts = {*_common_image_exts, '.webp'}
-ss_image_exts = {*_common_image_exts, '.tga'}
+ss_image_exts = frozenset([*_common_image_exts, '.tga'])
 
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
@@ -391,9 +390,9 @@ class FileInfo(_TabledInfo, AFileInfo):
         if self not in self._store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.fs_copy(self.backup_restore_paths(False)[0][0])
+        self.fs_copy(self.backup_restore_paths(False)[0][1])
         #--First backup
-        firstBackup = self.backup_restore_paths(True)[0][0]
+        firstBackup = self.backup_restore_paths(True)[0][1]
         if not firstBackup.exists():
             self.fs_copy(firstBackup)
         self.madeBackup = True
@@ -403,22 +402,9 @@ class FileInfo(_TabledInfo, AFileInfo):
         destinations. If fname is not given returns the (first) backup
         filename corresponding to self.abs_path, else the backup filename
         for fname mapped to its restore location in data_store.store_dir."""
-        restore_path = (fname and self._store().store_dir.join(
-            fname)) or self.abs_path
-        fname = fname or self.fn_key
-        return [(self._store().bash_dir.join('Backups').join(
-            fname + 'f' * first), restore_path)]
-
-    def all_backup_paths(self, fname=None):
-        """Return the list of all possible paths a backup operation may create.
-        __path does not really matter and is not necessarily correct when fname
-        is passed in
-        """
-        return [backPath for first in (True, False) for backPath, __path in
-                self.backup_restore_paths(first, fname)]
-
-    def delete_paths(self): # will include cosave ones
-        return *super().delete_paths(), *self.all_backup_paths()
+        new_fn = FName((fname or self.fn_key) + 'f' * first)
+        return self.get_rename_paths(new_fn, self._store().bash_dir.join(
+            'Backups'), False)
 
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
@@ -426,8 +412,10 @@ class FileInfo(_TabledInfo, AFileInfo):
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
         if with_backups:
-            old_new_paths.extend(
-                zip(self.all_backup_paths(), self.all_backup_paths(new_name)))
+            __bp = self.backup_restore_paths
+            for fir in (True, False):
+                old_new_paths.extend(zip((b for a, b in __bp(fir)),
+                                         (b for a, b in __bp(fir, new_name))))
         return old_new_paths
 
 class _WithMastersInfo(FileInfo):
@@ -490,8 +478,6 @@ class ModInfo(_WithMastersInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     # Cached, since we need them so often - set by PluginFlag
     _is_master = _is_esl = _is_overlay = _is_blueprint = _is_mid = False
-    _valid_exts_re = r'(\.(?:' + u'|'.join(
-        x[1:] for x in bush.game.espm_extensions) + '))'
     _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
         'autoBashTags': 'mod_auto_bash_tags', # this one is actually used
         'bash.patch.configs': 'mod_bp_config', 'bashTags': 'mod_bash_tags',
@@ -503,6 +489,7 @@ class ModInfo(_WithMastersInfo):
     mod_auto_bash_tags: bool # autoBashTags - always set on __init__
     # we need to notify RUI to redraw redated infos without calling do_update
     redated = False
+    file_exts = frozenset(bush.game.espm_extensions)
 
     def __init__(self, fullpath, *, itsa_ghost=None, bt_contents=None,
                  load_cache=False, **kwargs):
@@ -1091,26 +1078,19 @@ class ModInfo(_WithMastersInfo):
         return self.fn_key in bush.game.modding_esm_size or \
                self.fn_key == 'Oblivion.esm'
 
-    def delete_paths(self):
-        sup = super().delete_paths()
-        if self.is_ghost:
-            return sup
-        # Add ghosts - the file may exist in both states (bug, or user mistake)
-        # in this case the file is marked as normal but let's delete the ghost
-        return *sup, self.abs_path + '.ghost' # Path.__add__!
-
-    def fs_copy(self, dup_path, *, set_time=None):
-        destDir, destName = dup_path.head, dup_path.stail
-        if destDir == (st := self._store()).store_dir and destName in st:
-            dup_path = st[destName].abs_path # used the (possibly) ghosted path
-        super().fs_copy(dup_path, set_time=set_time)
-
     def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
-        if rename_dir is None: # renames only, not the rest of rename_op uses
+        old_new_paths = super().get_rename_paths(new_name, rename_dir,
+                                                 with_backups)
+        renaming = rename_dir is None # rename, not the rest of rename_op uses
+        if renaming or rename_dir == self._store().store_dir:
+            new_ghost = old_new_paths[0][1] + '.ghost' # Path.__add__!
             if self.is_ghost: # add ghost extension to dest path
-                old_new_paths[0] = (self.abs_path, # Path.__add__!
-                                    old_new_paths[0][1] + '.ghost')
+                old_new_paths[0] = self.abs_path, new_ghost
+            elif renaming:
+                # Add ghosts - the file may exist in both states (bug, or user
+                # mistake) in this case the file is marked as normal but let's
+                # rename the ghost too - else will appear and frighten the user
+                old_new_paths.append((self.abs_path + '.ghost', new_ghost))
             old_new_paths.append((tp := self.tags_path(),
                                   tp.head.join(f'{new_name.fn_body}.txt')))
         return old_new_paths
@@ -1361,10 +1341,9 @@ class AINIInfo(_TabledInfo, AIniInfo):
 class SaveInfo(_WithMastersInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
-    _valid_exts_re = r'(\.(?:' + '|'.join(
-        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
     _key_to_attr = {'info': 'save_notes'}
     _co_saves: dict[type[cosaves.ACosave], cosaves.ACosave]
+    file_exts = frozenset([_e := bush.game.Ess.ext, _e[:-1] + 'r', '.bak'])
 
     def __init__(self, fullpath, **kwargs):
         # Dict of cosaves that may come with this save file. Need to get this
@@ -1418,20 +1397,20 @@ class SaveInfo(_WithMastersInfo):
     def do_update(self, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
+        csaves = self._co_saves
         for co_type in SaveInfo.cosave_types:
             co_path = co_type.get_cosave_path(self.abs_path)
             if co_path.is_file():
-                if co_type in self._co_saves:
+                if co_type in csaves:
                     # Existing cosave could have changed, check if it did
-                    cosaves_changed |= self._co_saves[co_type].do_update()
+                    cosaves_changed |= csaves[co_type].do_update()
                 else:
                     # New cosave attached, add it to cache
-                    self._co_saves[co_type] = self.make_cosave(co_type,
-                                                               co_path)
+                    csaves[co_type] = self.make_cosave(co_type, co_path)
                     cosaves_changed = True
-            elif co_type in self._co_saves:
+            elif co_type in csaves:
                 # Old cosave deleted, remove it from cache
-                del self._co_saves[co_type]
+                del csaves[co_type]
                 cosaves_changed = True
         # If the cosaves have changed, the cached masters can no longer be
         # trusted since they may have been retrieved from the cosaves
@@ -1468,15 +1447,15 @@ class SaveInfo(_WithMastersInfo):
                     abs(inst.abs_path.mtime - self.ftime) < 10]
         return u'\n'.join(co_ui_strings)
 
-    def backup_restore_paths(self, first, fname=None):
-        """Return as parent and in addition back up paths for the cosaves."""
-        back_to_dest = super().backup_restore_paths(first, fname)
-        # see if we have cosave backups - we must delete cosaves when restoring
-        # if the backup does not have a cosave
-        for co_type in self.cosave_types:
-            co_paths = tuple(co_type.get_cosave_path(x) for x in back_to_dest[0])
-            back_to_dest.append(co_paths)
-        return back_to_dest
+    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
+        # super call added the backup paths but not the actual cosave paths
+        # inside the store_dir - add those even if they don't exist as we must
+        # delete cosaves for backup (if the backup has no cosaves)
+        old_new_paths.extend(
+            tuple(map(co_type.get_cosave_path, old_new_paths[0])) for co_type
+            in self.cosave_types)
+        return old_new_paths
 
     @staticmethod
     def make_cosave(co_type, co_path):
@@ -1529,37 +1508,12 @@ class SaveInfo(_WithMastersInfo):
         except (AttributeError, NotImplementedError):
             self.has_inaccurate_masters = False
 
-    def delete_paths(self, *, __abs=attrgetter_cache['abs_path']):
-        # now add backups and cosaves backups
-        return *super().delete_paths(), *map(__abs, self._co_saves.values())
-
-    def move_info(self, destDir):
-        """Moves member file to destDir. Will overwrite!"""
-        super().move_info(destDir)
-        SaveInfos.co_copy_or_move(self._co_saves, destDir.join(self.fn_key),
-                                  move_cosave=True)
-
-    def fs_copy(self, dup_path, *, set_time=None):
-        """Copies savefile and associated cosaves file(s)."""
-        super().fs_copy(dup_path, set_time=set_time)
-        SaveInfos.co_copy_or_move(self._co_saves, dup_path)
-
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
-        # super call added the backup paths but not the actual rename cosave
-        # paths inside the store_dir - add those only if they exist
-        old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
-        old_new_paths.extend((co_file.abs_path, co_type.get_cosave_path(new))
-                             for co_type, co_file in self._co_saves.items())
-        return old_new_paths
-
 #------------------------------------------------------------------------------
 class ScreenInfo(AFileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
-    _valid_exts_re = r'(\.(?:' + '|'.join(
-        ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
+    file_exts = ss_image_exts
 
     def __init__(self, fullpath, **kwargs):
         super().__init__(fullpath, **kwargs)
@@ -1604,9 +1558,15 @@ class DataStore(DataDict):
     store_dir: Path # where the data sit, static except for Save/ScreenInfos
     _dir_key: str # key in dirs dict for the store_dir
     dat_loaded = False
+    factory_type: type[AFileInfo]
+    _boot_refresh_args: dict = {}
+    _files_str = '' # used to create unhide wildcard
 
     def __init__(self):
+        """Init then refresh if _boot_refresh arguments is not empty."""
         super().__init__(self._init_store(self.set_store_dir()))
+        if self._boot_refresh_args:
+            self.refresh(True, **self._boot_refresh_args)
 
     def set_store_dir(self):
         self.store_dir = sd = dirs[self._dir_key]
@@ -1645,11 +1605,15 @@ class DataStore(DataDict):
             omds = [] if extract_omods else None
             inodes = FNDict()
             with os.scandir(self.store_dir) as it:
+                sk = table_dat or set()
                 for x in it:
                     try:
-                        if kws := self._add_node(x, with_omods=omds,
-                                                 skip_stat=table_dat or set()):
-                            inodes[x.name] = kws
+                        if kws := self.check_filename(x.name, _inode=x,
+                                with_omods=omds, skipstat=sk, _inodes=inodes):
+                            fn, kws = next(iter(kws.items()))
+                            if 'cached_stat' not in kws: # for _AfileInfos
+                                kws['cached_stat'] = x.stat()
+                            inodes[fn] = kws
                     except OSError: # this should not happen
                         deprint(f'Failed to stat {x.name} in {self.store_dir}',
                                 traceback=True)
@@ -1665,21 +1629,26 @@ class DataStore(DataDict):
             if progress: # currently only installers and only on boot
                 progress(index, _('Scanning Packages…') + f'\n{new}')
                 kws['progress'] = SubProgress(progress, index, index + 1)
-            try:
-                if old_inf is None: # new file or updated corrupted
-                    self[new] = self.factory(self.store_dir.join(new),
-                        load_cache=True, do_pop=True, **kws, **kw_do_upd)
-                    rdata.to_add.add(new)
-                elif old_inf.do_update(**kws, **kw_do_upd):
-                    rdata.redraw.add(new)
-            except Exception as e:
-                self._add_to_cor(new, kws, delinfos, e)
+            if newinf := self.get_update_info(new, old_inf, _delinfos=delinfos,
+                                              **kws, **kw_do_upd):
+                if create_inf := old_inf is None:
+                    self[new] = newinf
+                (rdata.to_add if create_inf else rdata.redraw).add(new)
         if delinfos:
             rdata.to_del |= self._delete_refresh(delinfos)
         return rdata
 
-    def factory(self, info_path, **kwargs): # WIP!
-        raise NotImplementedError
+    def get_update_info(self, fname: FName | Path,
+            old_inf: AFileInfo | None = None, *, _delinfos=None,**kwargs):
+        """Get new info (for new file or updated corrupted) else check updates.
+        Will try loading from disk, only call on existing files."""
+        if old_inf is None:
+            if not isinstance(fname, Path): fname = self.store_dir.join(fname)
+            return self.factory(fname, load_cache=True, **kwargs)
+        return old_inf.do_update(**kwargs)
+
+    def factory(self, info_path, **kwargs):
+        return self.factory_type(info_path, **kwargs)
 
     def _delete_refresh(self, delinfos):
         """Only called from refresh.
@@ -1687,11 +1656,23 @@ class DataStore(DataDict):
         return {del_fn for del_inf in delinfos if
                 self.pop(del_fn := del_inf.fn_key, None)}
 
-    def _add_to_cor(self, new, kws, delinfos, e):
-        raise # see override for all but Installers
+    @classmethod
+    def check_filename(cls, fileName: FName | str, *, _allow_ext=None,
+            _inode: DirEntry | None=None, _inodes=None, **_store_kws) -> \
+                tuple[str, str] | None | False | dict:
+        """Check if the filetype is correct for subclass by checking the
+        basename (usually the extension but sometimes also the root).
+        Returns None (or False) for InstallerProject in any case."""
+        base, dot_ext = os.path.splitext(fileName)
+        right_ext = dot_ext.lower() in (_allow_ext or cls._file_exts)
+        if _inode is None: # else we are in DataStore.refresh
+            return (base, dot_ext) if right_ext else None
+        return _inode.is_file() and ( # see the Installer override
+                    (right_ext and {FName(fileName): {}}) or None)
 
-    def _add_node(self, node: DirEntry, **kw_add): # single use in refresh
-        raise NotImplementedError
+    @classproperty
+    def _file_exts(cls):
+        return cls.factory_type.file_exts
 
     def _diff_dir(self, inodes) -> RefrIn: # single use in refresh (and super)
         """Return a dict of fn keys (see overrides) of files present in data
@@ -1712,18 +1693,15 @@ class DataStore(DataDict):
     def _get_info(self, k, kws, new_or_present):
         new_or_present[k] = (self.get(k), kws)
 
-    @final
-    def delete(self, delete_keys, *, recycle=True, do_refr=True):
+    def delete_op(self, info_keys, *, recycle=True, do_refr=True, _filter=True):
         """Deletes member file(s)."""
         # for _AFileInfos k may correspond to a corrupted file - create an info
         finfos = [v or self.factory(self.store_dir.join(k)) for k, v in
-                  self.filter_essential(delete_keys).items()]
-        return self._delete_operation(finfos, recycle, do_refr)
-
-    def _delete_operation(self, finfos: list, recycle, do_refr):
-        try:
-            if abs_del_paths := [*chain.from_iterable(
-                    inf.delete_paths() for inf in finfos)]:
+            self.filter_essential(info_keys).items()] if _filter else info_keys
+        renpaths = chain.from_iterable(inf.get_rename_paths(
+            inf.fn_key, None, True) for inf in finfos)
+        try: # collect all the info/cosaves/backup paths
+            if abs_del_paths := [a for a, b in renpaths]:
                 env.shellDelete(abs_del_paths, recycle=recycle)
         finally:
             finfos = {inf for inf in finfos if not inf.abs_path.exists()}
@@ -1805,18 +1783,24 @@ class DataStore(DataDict):
         return {k: self[k] for k in fn_items}
 
     @property
-    def bash_dir(self) -> Path:
-        """Return the folder where Bash persists its data.Create it on init!"""
-        raise NotImplementedError
-
-    @property
     def hide_dir(self) -> Path:
         """Return the folder where Bash should move the file info to hide it"""
         return self.bash_dir.join(u'Hidden')
 
     @classmethod
-    def unhide_wildcard(cls, *, _pl_str, _joined):
-        return f'{bush.game.display_name} {_pl_str} (*{_joined})|*{_joined}'
+    def unhide_wildcard(cls):
+        exts = f'*{";*".join(cls._file_exts)}'
+        return f'{bush.game.display_name} {cls._files_str} ({exts})|{exts}'
+
+    def warning_args(self, multi_warnings, lo_warnings):
+        """Append the arguments for the warning message to the multi_warnings
+        and lo_warnings lists, checking the data store _known_* caches."""
+
+    # Abstract part - persistence (implemented for all but ScreenInfos)
+    @property
+    def bash_dir(self) -> Path:
+        """Return the folder where Bash persists its data.Create it on init!"""
+        raise NotImplementedError
 
     def _load_dat(self, progress=None):
         raise NotImplementedError
@@ -1826,36 +1810,17 @@ class DataStore(DataDict):
 
     def save_pickle(self): raise NotImplementedError
 
-    def warning_args(self, multi_warnings, lo_warnings):
-        """Append the arguments for the warning message to the multi_warnings
-        and lo_warnings lists, checking the data store _known_* caches."""
-
 class _AFileInfos(DataStore):
     """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
-    file_pattern = None # subclasses must define this !
-    _factory_type: type[AFile]
     # Whether these file infos track ownership in a table
     tracks_ownership = True
     _boot_refresh_args = {'booting': True}
-
-    def __init__(self, factory_type=None):
-        """Init with specified directory and specified factory type."""
-        self._factory_type = factory_type or self.__class__._factory_type
-        super().__init__()
-        if self._boot_refresh_args:
-            self.refresh(True, **self._boot_refresh_args)
 
     def _init_store(self, storedir):
         """Set up self's _data/corrupted and return the former."""
         self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         return super()._init_store(storedir)
-
-    def factory(self, info_path, do_pop=False, **kwargs):
-        new_inf = self._factory_type(info_path, **kwargs)
-        if do_pop:
-            self.corrupted.pop(info_path.tail.s, None)
-        return new_inf
 
     #--Refresh
     def refresh(self, refresh_in, *, booting=False, **kwargs):
@@ -1866,30 +1831,31 @@ class _AFileInfos(DataStore):
                 {*rdata.ren_paths}, {self[n].abs_path for n in alt})
         return rdata
 
-    def _add_to_cor(self, new, kws, delinfos, e):
-        if not isinstance(e, (FileError, UnicodeError, BoltError,
-                    NotImplementedError)): ##:701 revisit this - why NIE?
-            super()._add_to_cor(new, kws, delinfos, e)
-        # old still corrupted, or new(ly) corrupted or we landed
-        # here cause cor_path was manually un/ghosted but file remained
-        # corrupted so in any case re-add to corrupted
-        cor_path = self.store_dir.join(new)
-        if del_inf := self.pop(new, None): # effectively deleted
-            delinfos.add(del_inf)
-            cor_path = del_inf.abs_path
-        elif self is modInfos:  # modInfos needs be set here!
-            if (isg := kws.get('itsa_ghost')) is None:
-                isg = not cor_path.is_file() and os.path.isfile(
-                    f'{cor_path}.ghost')
-            if isg: cor_path = cor_path + '.ghost'  # Path __add__ !
-        er = e.message if hasattr(e, 'message') else f'{e}'
-        self.corrupted[new] = cor = _Corrupted(cor_path, er, new, **kws)
-        deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
-                traceback=True)
-
-    def _add_node(self, node, **kw_add):
-        return {'cached_stat': node.stat()} if node.is_file() and \
-            self.rightFileType(node.name) else None
+    def get_update_info(self, fn, old_inf=None, *, _delinfos=None, **kwargs):
+        try: ##:701 revisit this - why NIE?
+            info = super().get_update_info(fn, old_inf, **kwargs)
+            if _delinfos is not None:
+                self.corrupted.pop(fn, None) # effectively updated
+            return info
+        except (FileError, UnicodeError, BoltError, NotImplementedError) as e:
+            # old still corrupted, or new(ly) corrupted or we landed
+            # here cause cor_path was manually un/ghosted but file remained
+            # corrupted so in any case re-add to corrupted
+            er = e.message if hasattr(e, 'message') else f'{e}'
+        cor_path = fn if isinstance(fn, Path) else self.store_dir.join(fn)
+        if _delinfos is not None: # we are called from refresh, fn is FName
+            if del_inf := self.pop(fn, None): # effectively deleted
+                _delinfos.add(del_inf)
+                cor_path = del_inf.abs_path
+            elif self is modInfos: # modInfos needs be set here!
+                if (isg := kwargs.get('itsa_ghost')) is None:
+                    isg = not cor_path.is_file() and os.path.isfile(
+                        f'{cor_path}.ghost')
+                if isg: cor_path = cor_path + '.ghost'  # Path.__add__ !
+            self.corrupted[fn] = cor = _Corrupted(cor_path, er, fn, **kwargs)
+            cor_path = cor.abs_path
+        deprint(f'Failed to load {fn} from {cor_path}: {er}', traceback=True)
+        return False
 
     def _get_delinfos(self, inodes):
         return {inf for inf in [*self.values(), *self.corrupted.values()]
@@ -1912,14 +1878,6 @@ class _AFileInfos(DataStore):
         """Note that all of these parameters need to be absolute paths!"""
         if self._bain_notify:
             InstallersData.notify_external(del_set, altered)
-
-    #--Right File Type?
-    @classmethod
-    def rightFileType(cls, fileName: bolt.FName | str):
-        """Check if the filetype is correct for subclass by checking the
-        basename (usually the extension but sometimes also the root).
-        :rtype: _sre.SRE_Match | None"""
-        return cls.file_pattern.search(fileName)
 
     def _load_dat(self, progress=None):
         """Load pickled data for mods, saves, inis and bsas."""
@@ -1949,7 +1907,7 @@ class _AFileInfos(DataStore):
         if (inf := self.get(fnkey := FName(str(data_path)))) or not would_be:
             return inf
         return fnkey if os.path.basename(data_path) == data_path and \
-            self.rightFileType(fnkey) else None
+            self.check_filename(fnkey) else None
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
@@ -1961,8 +1919,6 @@ class _Corrupted(AFile):
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFileInfo, AINIInfo):
-    _valid_exts_re = r'(\.(?:' + '|'.join(
-        x[1:] for x in supported_ini_exts) + '))'
 
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
@@ -2011,30 +1967,16 @@ class DefaultIniInfo(AINIInfo):
         # Default tweak, so the file doesn't actually exist
         self._store().copy_to_new_tweak(self, FName(cp_dest_path.stail))
 
-# noinspection PyUnusedLocal
-def ini_info_factory(fullpath, **kwargs) -> INIInfo:
-    """INIInfos factory
-
-    :param fullpath: Full path to the INI file to wrap
-    :param kwargs: Cached ghost status information, ignored for INIs"""
-    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
-        consider_obse_inis=bush.game.Ini.has_obse_inis)
-    ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
-                     else INIInfo)
-    return ini_info_type(fullpath, detected_encoding)
-
 class INIInfos(_AFileInfos):
-    file_pattern = re.compile('|'.join(map(re.escape, supported_ini_exts)) +
-                              '$', re.I)
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
-    _factory_type: Callable[[...], INIInfo]
     _dir_key = 'ini_tweaks'
+    _file_exts = IniFileInfo.file_exts
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
                                       bush.game.default_tweaks.items())
-        super().__init__(ini_info_factory)
+        super().__init__()
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -2100,6 +2042,17 @@ class INIInfos(_AFileInfos):
             targ.updated = False
             rdata |= self._reset_all_statuses() # set the status of all infos
         return rdata
+
+    def factory(self, fullpath, **kwargs) -> INIInfo:
+        """INIInfos factory
+
+        :param fullpath: Full path to the INI file to wrap
+        :param kwargs: Cached ghost status information, ignored for INIs"""
+        inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
+            consider_obse_inis=bush.game.Ini.has_obse_inis)
+        ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
+                         else INIInfo)
+        return ini_info_type(fullpath, detected_encoding)
 
     def _reset_all_statuses(self): # only return infos that changed status
         updt = {fn for fn, ini_info in self.items() if
@@ -2299,10 +2252,10 @@ class ModInfos(_AFileInfos):
     _known_cor_mods = set()
     _known_invalid_versions = set()
     _known_older_form_versions = set()
+    factory_type = ModInfo
+    _files_str = _('Plugins')
 
     def __init__(self):
-        exts = '|'.join(map(re.escape, bush.game.espm_extensions))
-        self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
@@ -2349,7 +2302,7 @@ class ModInfos(_AFileInfos):
         modInfos = self ##: hack needed in ModInfo.readHeader
         # lo conflicts cache only used in _ModsUIList.set_item_format
         self.lo_conflicts, self.act_lo_conflicts = set(), set()
-        super().__init__(ModInfo)
+        super().__init__()
 
     # Refresh - not quite surprisingly this is super complex - therefore define
     # refresh satellite methods before even defining the DataStore overrides
@@ -2413,23 +2366,22 @@ class ModInfos(_AFileInfos):
                 v.redated and not setattr(v, 'redated', False)}
 
     # _AFileInfos overrides that are used in refresh - ghosts ahead
-    def _diff_dir(self, inodes):
-        """ModInfos.rightFileType matches ghosts - filter those out from keys
-        and pass the ghost state info to refresh."""
-        ghosts = set()
-        for ghost in [x for x in inodes if x.fn_ext == '.ghost']:
-            if (normal := ghost.fn_body) in inodes: # they exist in both states
-                ##: we need to propagate this warning once refresh dust settles
-                deprint(f'File {normal} and its ghost exist. The ghost '
-                        f'will be ignored but this may lead to undefined '
-                        f'behavior - please remove one or the other')
-            else:
-                inodes[normal] = inodes[ghost]
-                ghosts.add(normal)
-            del inodes[ghost]
-        return super()._diff_dir(FNDict(
-            (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
-            inodes.items()))
+    @classmethod
+    def check_filename(cls, fname, *, _inodes=None, **kwargs):
+        if itsa_ghost := fname[-6:].lower() == '.ghost':
+            fname = fname[:-6]
+        fname = FName(fname)
+        if _inodes and fname in _inodes:
+            ##: we need to propagate this warning once refresh dust settles
+            deprint(f'File {fname} and its ghost exist. The ghost will be '
+                    f'ignored but this may lead to undefined behavior - please '
+                    f'remove one or the other')
+            if itsa_ghost: return None # ignore the ghost
+            return {fname: {'itsa_ghost': False}} # override entry in _inodes
+        if sup := super().check_filename(fname, **kwargs):
+            if isinstance(sup, dict):
+                sup[fname]['itsa_ghost'] = itsa_ghost
+        return sup
 
     def _file_or_active_updates(self, *, __lo=load_order.cached_lo_index):
         """If any plugins have been added, updated or deleted, or the active
@@ -3074,11 +3026,6 @@ class ModInfos(_AFileInfos):
             self.__available_bsas = None
         return self.__bsa_lo, self.__bsa_cause
 
-    @classmethod
-    def unhide_wildcard(cls, **kwargs):
-        joinstar = ';*'.join(bush.game.espm_extensions)
-        return super().unhide_wildcard(_pl_str=_('Plugins'), _joined=joinstar)
-
     def getVersion(self, fileName):
         """Check we have a fileInfo for fileName and call get_version on it."""
         return self[fileName].get_version() if fileName in self else ''
@@ -3233,16 +3180,17 @@ class SaveInfos(_AFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = tracks_ownership = False
     _ess_skips = bush.game.Ess.save_skips
-    # Enabled and disabled saves, no .bak files ##: needed?
-    _exts = [bush.game.Ess.ext, bush.game.Ess.ext[:-1] + 'r']
-    file_pattern = re.compile(f'({"|".join(map(re.escape,_exts))})(f?)$', re.I)
+    # Enabled and disabled saves and .bak files
     _known_cor_saves = set()
+    factory_type = SaveInfo
+    _files_str = _('Save files')
 
     def __init__(self):
-        SaveInfo.cosave_types = cosaves.get_cosave_types(
-            bush.game.fsName, self._parse_save_path,
+        all_ext = {*(fe := SaveInfo.file_exts), *(f'{e}f' for e in fe)}
+        par = partial(self.check_filename, _allow_ext=all_ext)
+        SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game.fsName, par,
             bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
-        super().__init__(SaveInfo)
+        super().__init__()
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs['saveBase'].join('BashProfiles.dat'), load_pickle=True)
@@ -3300,11 +3248,6 @@ class SaveInfos(_AFileInfos):
                  corruptSaves - self._known_cor_saves, self))
             self._known_cor_saves |= corruptSaves
 
-    @classmethod
-    def unhide_wildcard(cls, **kwargs):
-        return super().unhide_wildcard(_pl_str=_('Save files'),
-            _joined=f'*{";*".join([*cls._exts, ".bak"])}')
-
     def get_profile_attr(self, prof_key, attr_key, default_val):
         return self.profiles.pickled_data.get(prof_key, {}).get(attr_key,
                                                                 default_val)
@@ -3321,42 +3264,21 @@ class SaveInfos(_AFileInfos):
             del pd[oldName]
 
     @classmethod
-    def rightFileType(cls, fileName: bolt.FName | str):
-        if fileName in cls._ess_skips:
-            return False
-        return all(cls._parse_save_path(fileName))
-
-    @classmethod
-    def valid_save_exts(cls):
-        """Returns a cached version of the valid extensions that a save may
-        have."""
-        try:
-            return cls._valid_save_exts
-        except AttributeError:
-            std_save_ext = bush.game.Ess.ext[1:]
-            accepted_exts = {std_save_ext, std_save_ext[:-1] + 'r', 'bak'}
-            # Add 'first backup' versions of the extensions too
-            accepted_exts.update(f'{e}f' for e in accepted_exts.copy())
-            cls._valid_save_exts = accepted_exts
-            return accepted_exts
-
-    @classmethod
-    def _parse_save_path(cls, save_name: FName | str) -> tuple[
-            str | None, str | None]:
-        """Parses the specified save name into root and extension, returning
+    def check_filename(cls, fileName, **kwargs):
+        """Parse the specified save name into root and extension and return
         them as a tuple. If the save path does not point to a valid save,
-        returns two Nones instead."""
-        save_root, save_ext = os.path.splitext(save_name)
-        save_ext_trunc = save_ext[1:]
-        if save_ext_trunc.lower() not in cls.valid_save_exts():
-            # Can't be a valid save, doesn't end in ess/esr/bak
-            return None, None
-        cs_ext = bush.game.Se.cosave_ext[1:]
-        if any(s.lower() == cs_ext for s in save_root.split('.')):
-            # Almost certainly not a valid save, had the cosave extension
-            # in one of its root parts
-            return None, None
-        return save_root, save_ext
+        return None instead."""
+        if fileName in cls._ess_skips:
+            return None
+        if sup := super().check_filename(fileName, **kwargs):
+            save_root = sup[0] if isinstance(sup, tuple) else next(
+                iter(sup)).fn_body
+            cs_ext = bush.game.Se.cosave_ext[1:]
+            if any(s.lower() == cs_ext for s in save_root.split('.')):
+                # Almost certainly not a valid save, had the cosave extension
+                # in one of its root parts
+                return None
+        return sup
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         return None # Never relative to Data folder
@@ -3369,16 +3291,6 @@ class SaveInfos(_AFileInfos):
         if not booting: # else we just called __init__
             self.set_store_dir(save_dir, do_swap, rd_out)
         return super().refresh(refresh_in, booting=booting, **kwargs)
-
-    @staticmethod
-    def co_copy_or_move(co_instances, dest_path: Path, move_cosave=False):
-        for co_type, co_file in co_instances.items():
-            newPath = co_type.get_cosave_path(dest_path)
-            if newPath.exists(): newPath.remove() ##: dont like it, investigate
-            co_apath = co_file.abs_path
-            if co_apath.exists():
-                path_func = co_apath.moveTo if move_cosave else co_apath.copyTo
-                path_func(newPath)
 
 #------------------------------------------------------------------------------
 class BSAInfos(_AFileInfos):
@@ -3398,11 +3310,9 @@ class BSAInfos(_AFileInfos):
             # Need to do this at runtime since it depends on inisettings (ugh)
             bush.game.Bsa.redate_dict[inisettings[
                 u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'
-        self.__class__.file_pattern = re.compile(
-            f'{re.escape(bush.game.Bsa.bsa_extension)}$', re.I)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
         class BSAInfo(FileInfo, _bsa_type):
-            _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
+            file_exts = frozenset([bush.game.Bsa.bsa_extension])
             def __init__(self, fullpath, **kwargs):
                 try:
                     super().__init__(fullpath, **kwargs)
@@ -3435,7 +3345,8 @@ class BSAInfos(_AFileInfos):
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
                     if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
-        super().__init__(BSAInfo)
+        self.__class__.factory_type = BSAInfo
+        super().__init__()
 
     def warning_args(self, multi_warnings, lo_warnings):
         bsa_mvers = self.mismatched_versions
@@ -3511,12 +3422,9 @@ class ScreenInfos(_AFileInfos):
     # Files that go in the main game folder (aka default screenshots folder)
     # and have screenshot extensions, but aren't screenshots and therefore
     # shouldn't be managed here - right now only ENB stuff
-    _ss_skips = {FName(s) for s in (
-        'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
-        'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
-    file_pattern = re.compile(
-        r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$', re.I)
-    _factory_type = ScreenInfo
+    _ss_skips = {*map(FName, ('enblensmask.png', 'enbpalette.bmp',
+        'enbsunsprite.bmp', 'enbsunsprite.tga', 'enbunderwaternoise.bmp'))}
+    factory_type = ScreenInfo
     _boot_refresh_args = {}
     tracks_ownership = False
     dat_loaded = True # nothing to load
@@ -3541,11 +3449,11 @@ class ScreenInfos(_AFileInfos):
         return new_store_dir
 
     @classmethod
-    def rightFileType(cls, fileName: bolt.FName):
-        if fileName in cls._ss_skips:
+    def check_filename(cls, fileName, **kwargs):
+        if FName(fileName) in cls._ss_skips:
             # Some non-screenshot file, skip it
-            return False
-        return super().rightFileType(fileName)
+            return None
+        return super().check_filename(fileName, **kwargs)
 
     def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         if not self._bain_notify:

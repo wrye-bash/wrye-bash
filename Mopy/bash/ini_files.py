@@ -40,7 +40,7 @@ from .wbtemp import TempFile
 _h = r'[^\S\r\n]*' # Perl's \h (horizontal whitespace) sorely missed
 
 # All extensions supported by this parser
-supported_ini_exts = {'.ini', '.cfg', '.toml'}
+supported_ini_exts = frozenset(['.ini', '.cfg', '.toml'])
 
 def get_ini_type_and_encoding(abs_ini_path, *, fallback_type=None,
         consider_obse_inis=False) -> tuple[type[IniFileInfo], str]:
@@ -226,6 +226,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
     """Any old ini file."""
     __empty_settings = LowerDict()
     _ci_settings_cache_linenum = __empty_settings
+    file_exts = supported_ini_exts
 
     def __init__(self, fullpath, ini_encoding):
         super(AIniInfo, self).__init__(fullpath)

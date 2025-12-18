@@ -859,7 +859,7 @@ class MorrowindSaveHeader(SaveFileHeader):
     def load_header(self, ins, load_image=False):
         # TODO(inf) A bit ugly, this is not a mod - maybe move readHeader out?
         from . import modInfos
-        save_info = modInfos.factory(self._save_info.abs_path, load_cache=True)
+        save_info = modInfos.get_update_info(self._save_info.abs_path)
         ##: Figure out where some more of these are (e.g. level)
         self.header_size = save_info.header.header.blob_size
         self.pcName = remove_newlines(save_info.header.pc_name)
