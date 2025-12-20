@@ -404,17 +404,17 @@ class FileInfo(_TabledInfo, AFileInfo):
         return self._store().bash_dir.join('Backups',
                                            self.fn_key + 'f' * is_first)
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
-        # all_backup_paths will return the backup paths for this file and its
-        # satellites (like cosaves). Passing newName in it returns the rename
-        # destinations of the backup paths. Backup paths may not exist.
+    def get_rename_paths(self, new_name, rename_dir, with_backups):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir,
+                                                 with_backups)
         if with_backups:
+            # map the backup paths for this file and its satellites (like
+            # cosaves) to their rename destinations. Backup paths may not exist
             bk_dir = self.backup_path().head
             for fir in ('f', ''): # first backup and regular backup
                 # get the backup paths for current and new names and pair them
                 fn_to_new = (self.get_rename_paths(FName(f), bk_dir, False)
-                    for f in (self.fn_key + fir, new_name + fir))
+                             for f in (self.fn_key + fir, new_name + fir))
                 old_new_paths.extend((a[1], b[1]) for a, b in zip(*fn_to_new))
         return old_new_paths
 
@@ -1078,9 +1078,8 @@ class ModInfo(_WithMastersInfo):
         return self.fn_key in bush.game.modding_esm_size or \
                self.fn_key == 'Oblivion.esm'
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir,
-                                                 with_backups)
+    def get_rename_paths(self, new_name, rename_dir, *args):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir, *args)
         renaming = rename_dir is None # rename, not the rest of rename_op uses
         mod_infos = self._store()
         if rename_dir == (st_dir := mod_infos.store_dir) or renaming:
@@ -1454,8 +1453,8 @@ class SaveInfo(_WithMastersInfo):
                     abs(inst.abs_path.mtime - self.ftime) < 10]
         return u'\n'.join(co_ui_strings)
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
+    def get_rename_paths(self, new_name, rename_dir, *args):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir, *args)
         # super call added the backup paths but not the actual cosave paths
         # inside the store_dir - add those even if they don't exist as we must
         # delete cosaves for backup (if the backup has no cosaves)
@@ -1723,7 +1722,7 @@ class DataStore(DataDict):
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
     def rename_operation(self, info_new_name, *, try_once=True, set_mtime=None,
-                         ren_parent=None, with_backups=True, copy_inf=False,
+                         ren_parent=None, with_backups=False, copy_inf=False,
                          insert_after=None) -> RefrData:
         rd_ren = RefrData()
         if not info_new_name:
@@ -3170,13 +3169,13 @@ class ModInfos(_AFileInfos):
             inf_target = [(baseInfo, move_to), (swapped_inf, master_esm)]
             # set mtimes to previous respective values
             ren_data |= self.rename_operation(inf_target, set_mtime={**mt,
-                move_to: swapped_inf.ftime}, try_once=do_swap)
+              move_to: swapped_inf.ftime}, try_once=do_swap, with_backups=True)
         except CancelError:
             pass
         finally:
             if master_esm not in self:
-                ren_data |= self.rename_operation(
-                    [(self[move_to], master_esm)], set_mtime=mt)
+                ren_data |= self.rename_operation([(self[move_to],
+                    master_esm)], set_mtime=mt, with_backups=True)
             if swapping_a_ghost: # we need to unghost the master esm
                 self[master_esm].setGhost(False)
         return ren_data

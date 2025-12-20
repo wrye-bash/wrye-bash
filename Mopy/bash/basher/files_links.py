@@ -78,7 +78,7 @@ class Files_Unhide(ItemLink):
                 continue
             srcFiles.append((inf, fn_key, st_dir))
         #--Now move everything at once  #292: we ain't handling backups
-        uil.try_rename(srcFiles, deselect=True, with_backups=False)
+        uil.try_rename(srcFiles, deselect=True)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
@@ -123,8 +123,8 @@ class File_Duplicate(ItemLink):
                 mod_previous[fn_dup] = to_duplicate
         if mod_previous or rd_def_ini:
             fnd = next(reversed(mod_previous or rd_def_ini.renames.values()))
-            self.window.try_rename(ren_args, with_backups=False, copy_inf=True,
-                insert_after=mod_previous, fn_detail=fnd, refr_data=rd_def_ini)
+            self.window.try_rename(ren_args, copy_inf=True, fn_detail=fnd,
+                insert_after=mod_previous, refr_data=rd_def_ini)
 
     def _disallow_copy(self, fileInfo):
         """Method for checking if fileInfo may not be copied for some reason.
@@ -179,7 +179,7 @@ class RestoreInfo(OneItemLink):
             # edge case - as backup is half-baked anyway let's agree for now
             # that BPs remain BPs with the same config as before - if not,
             # manually run a mergeability scan after updating the config
-            self.window.try_rename(ren_args, copy_inf=True, with_backups=False,
+            self.window.try_rename(ren_args, copy_inf=True,
                 # no refresh saves as neither active mods nor load order change
                 refr_saves=False, set_mtime={sel_inf.fn_key: sel_inf.ftime})
 

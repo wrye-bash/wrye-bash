@@ -976,7 +976,8 @@ class UIList(PanelWin):
 
     @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Should only be subscribed if _editLabels==True."""
+        """Should only be subscribed if _editLabels==True (Saves/BAIN/Screens).
+        """
         if is_edit_cancelled: return EventResult.FINISH
         selected = [*self.data_store.filter_essential(
             None or self.GetSelected()).values()]
@@ -989,7 +990,8 @@ class UIList(PanelWin):
             return EventResult.CANCEL # validate_filename would Veto
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            self.try_rename(ren_args, check_unique=True,**ren_kwargs)
+            self.try_rename(ren_args, check_unique=True, **ren_kwargs,
+                            with_backups= True) # only saves carry backups
         return EventResult.CANCEL # clears new name from label on exception!
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
@@ -1907,7 +1909,7 @@ class UIList_Hide(EnabledLink):
             return _('The selected items cannot be hidden.')
 
     @conversation
-    def Execute(self): #292: we ain't handling backups
+    def Execute(self):
         if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
@@ -1923,7 +1925,7 @@ class UIList_Hide(EnabledLink):
                     continue
             else: destDir.makedirs()
             to_move.append((inf, inf.fn_key, destDir))
-        self.window.try_rename(to_move, with_backups=False)
+        self.window.try_rename(to_move) #292: we ain't handling backups
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""

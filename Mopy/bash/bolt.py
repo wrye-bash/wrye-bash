@@ -1855,7 +1855,7 @@ class ListInfo:
         old_key, self.fn_key = self.fn_key, new_fn
         return {}
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
+    def get_rename_paths(self, new_name, rename_dir, *args):
         return [] # no rename paths for markers
 
     def info_status(self, **kwargs):
@@ -1889,7 +1889,7 @@ class AFileInfo(AFile, ListInfo):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
         super().__init__(fullpath, **kwargs)
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
+    def get_rename_paths(self, new_name, rename_dir, *args):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
         return [(self.abs_path, (rename_dir or self.info_dir).join(new_name))]
@@ -1898,7 +1898,7 @@ class AFileInfo(AFile, ListInfo):
         ##:(241) note all the subtleties below - moveTo/copyTo must land in env
         dest_dir, dest_fn = dup_path.headTail
         src_dst = iter(self.get_rename_paths(FName(dest_fn.s), dest_dir,
-                                             with_backups=False))
+                                             False))
         src, dst = next(src_dst) # base info path always exists
         sys_op = src.moveTo if do_move else partial(src.copyTo,
             set_time=set_time or self.ftime)

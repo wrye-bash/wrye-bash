@@ -1235,7 +1235,7 @@ class _EditableMixin(_DetailsMixin):
         #  updated, we need to check again todo: possibly cancel?
         renargs = [(self.file_info, new_n.fn_body)] # rename failed return None
         return self.panel_uilist.try_rename(renargs, check_unique=True,
-                                            refresh_ui=False) or None
+            with_backups=True, refresh_ui=False) or None
 
     def _extra_changes(self):
         # Although we could avoid rereading the header by passing the info in
@@ -1971,7 +1971,7 @@ class SaveList(UIList):
             return
         extension = disabled_ext if sinf.is_save_enabled() else enabled_ext
         self.try_rename([[sinf, fn_item.fn_body]], check_unique=True,
-                        forced_ext=extension)
+                        forced_ext=extension, with_backups=True)
 
     # Save profiles
     def set_local_save(self, **kwargs):
