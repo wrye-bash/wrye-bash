@@ -238,14 +238,14 @@ class Saves_Profiles(ChoiceLink):
 class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
-        lo_warn_msg, lordata = self._lo_operation()
-        self.window.propagate_refresh(True, ui_refreshes={
-            bosh.modInfos: lordata}, focus_list=False)
+        lo_warn_msg, lordata = self._lo_operation(minfs := bosh.modInfos)
+        Link.Frame.all_uilists[minfs].propagate_refresh(lordata,
+                                                        focus_list=False)
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)
 
-    def _lo_operation(self):
+    def _lo_operation(self, mod_infos):
         raise NotImplementedError
 
 class Save_ActivateMasters(_Save_ChangeLO):
@@ -254,9 +254,9 @@ class Save_ActivateMasters(_Save_ChangeLO):
     _help = _(u'Activates exactly the plugins present in the master list of '
               u'this save.')
 
-    def _lo_operation(self):
-        return bosh.modInfos.lo_activate_exact(self._selected_info.masterNames,
-                                               save_act=True)
+    def _lo_operation(self, mod_infos):
+        return mod_infos.lo_activate_exact(self._selected_info.masterNames,
+                                           save_act=True)
 
 #------------------------------------------------------------------------------
 class Save_ReorderMasters(_Save_ChangeLO):
@@ -265,9 +265,9 @@ class Save_ReorderMasters(_Save_ChangeLO):
     _help = _(u'Reorders the plugins in the current load order to match the '
               u'order of plugins in this save.')
 
-    def _lo_operation(self):
-        return bosh.modInfos.lo_reorder(self._selected_info.masterNames,
-                                        save_wip_lo=True)
+    def _lo_operation(self, mod_infos):
+        return mod_infos.lo_reorder(self._selected_info.masterNames,
+                                    save_wip_lo=True)
 
 #------------------------------------------------------------------------------
 class Save_ImportFace(OneItemLink):
