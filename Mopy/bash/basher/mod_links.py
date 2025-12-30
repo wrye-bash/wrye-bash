@@ -1359,40 +1359,35 @@ class _CopyToLink(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        modInfos, added = bosh.modInfos, {}
-        force_flags = bush.game.guess_flags(self._target_ext)
-        force_flags = bush.game.plugin_flags.check_flag_assignments(
-            force_flags)
+        add_flags = bush.game.guess_flags(self._target_ext)
+        add_flags = bush.game.plugin_flags.check_flag_assignments(add_flags)
         mod_previous = FNDict()
+        ren_args = []
+        setmtimes = {}
+        mod_flags = {}
+        ds = self._data_store
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
                 new_fn = FName(f'{curName.fn_body}{self._target_ext}')
                 #--Replace existing file?
-                newTime = None
-                if new_fn in modInfos:
-                    existing = modInfos[new_fn]
+                if existing := ds.get(new_fn):
                     if not self._askYes( # abs_path as existing may be ghosted
                             _('Replace existing %(existing_plugin)s?') % {
                                 'existing_plugin': existing.abs_path.stail}):
                         continue
                     existing.makeBackup()
-                    newTime = existing.ftime
-                # Copy and set flag - will use ghosted path if needed
-                minfo.copy_to(minfo.info_dir.join(new_fn), set_time=newTime)
-                added[new_fn] = minfo
-                if newTime is None: # otherwise it has a load order already!
-                    mod_previous[new_fn] = curName
-        #--Repopulate
-        if added:
-            rinf = RefrIn.from_tabled_infos(added, exclude=True)
-            rdata = modInfos.refresh(rinf, insert_after=mod_previous)
-            if force_flags:
-                for new in rdata.to_add:
-                    bosh.modInfos[new].set_plugin_flags(force_flags)
-            self.window.propagate_refresh(True,
-                                          detail_item=next(reversed(added)))
-            self.window.SelectItemsNoCallback(added)
+                    setmtimes[new_fn] = existing.ftime
+                if inf := ds.get_update_info(curName,
+                        exclude=bool(add_flags), copy_from=minfo):
+                    ren_args.append((inf, new_fn, ds.store_dir))
+                    mod_flags[new_fn] = add_flags
+                    if new_fn not in setmtimes: # else it is in the load order
+                        mod_previous[new_fn] = curName
+            if ren_args:
+                self.window.try_rename(ren_args, force_flags=mod_flags,
+                    set_mtime=setmtimes, with_backups=False, copy_inf=True,
+                    insert_after=mod_previous, fn_detail=ren_args[-1][1])
 
 class Mod_CopyToMenu(MenuLink):
     """Makes copies of the selected plugin(s) with changed extension."""
@@ -2324,17 +2319,10 @@ class Mod_RevertToSnapshot(RestoreInfo):
     _help = _('Revert to a previously created snapshot from the '
               'Bash/Snapshots dir.')
 
-    def _restore(self):
-        # keep load order (so mtime)
-        info_path = (sel_inf := self._selected_info).abs_path
-        self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
-
     def _failed_msg(self):
-        return self._askYes(
-            _("Failed to revert %(target_file_name)s to snapshot "
-              "%(snapshot_file_name)s. The snapshot file may be corrupt. Do "
-              "you want to restore the original file again? 'No' keeps the "
-              "reverted, possibly broken snapshot instead.") % {
+        self._showError(
+            _('Failed to revert %(target_file_name)s to snapshot '
+              '%(snapshot_file_name)s. The snapshot file may be corrupt.') % {
                 'target_file_name': self._selected_item,
                 'snapshot_file_name': self._backup_path.tail},
             title=_('Revert to Snapshot - Error'))

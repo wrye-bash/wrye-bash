@@ -189,10 +189,10 @@ class BackupSettings(object):
               "settings!"),
             _('No backup was created.')]), title=_('Unable to Create Backup!'))
 
-def is_backup(backup_path):
+def is_backup(backup_fn):
     """Return True if the specified path is a backup. Currently only
     checks if the file extension is 7z."""
-    return backup_path.fn_ext == u'.7z'
+    return backup_fn.fn_ext == '.7z'
 
 #------------------------------------------------------------------------------
 class RestoreSettings(object):

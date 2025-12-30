@@ -22,7 +22,7 @@
 # =============================================================================
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to IniList singleton."""
-
+from .files_links import File_Duplicate
 from .. import balt, bass, bosh
 from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink
 from ..bolt import dict_sort
@@ -107,7 +107,7 @@ class INI_Apply(EnabledLink):
             self.window.panel.ShowPanel()
 
 #------------------------------------------------------------------------------
-class INI_CreateNew(OneItemLink):
+class INI_CreateNew(File_Duplicate, OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
     _text = _('Create Tweak With Current Settings…')
@@ -129,16 +129,7 @@ class INI_CreateNew(OneItemLink):
     def Execute(self):
         """Handle creating a new INI tweak."""
         ini_info, fn_ini = self._selected_info, self._selected_item
-        fileName = ini_info.unique_key(fn_ini.fn_body, add_copy=True)
-        tweak_path = self._askSave(
-            title=self._text,
-            defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
-            wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini")
-        if not tweak_path:
-            return # user canceled the save dialog, abort
-        fn_tweak, root = ini_info.validate_filename_str(tweak_path.stail)
-        if root is None:
-            self._showError(fn_tweak) # it's an error message in this case
-            return
-        if bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
+        _dir, fn_tweak = self._get_dup_filename(ini_info, title=self._text,
+                wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini",)
+        if fn_tweak and bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
             self.refresh_sel({fn_tweak}, detail_item=fn_tweak)

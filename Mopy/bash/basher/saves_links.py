@@ -277,7 +277,7 @@ class Save_ImportFace(OneItemLink):
     @balt.conversation
     def Execute(self):
         #--Select source face file
-        srcDir = self._selected_info.info_dir
+        srcDir = self._data_store.store_dir
         exts = u';*'.join(bush.game.espm_extensions | {
             bush.game.Ess.ext, bush.game.Ess.ext[-1] + u'r'})
         wildcard = _('Source Files') + f' (*{exts})|*{exts}'
@@ -409,9 +409,9 @@ class Save_Renumber(EnabledLink):
             ofn_root = FName(s_groups[2]).fn_body
             nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
             if nfn_save != sinf.fn_key.fn_body:
-                ren_args.append((sinf, nfn_save))
+                ren_args.append((sinf, FName(nfn_save + sinf.fn_key.fn_ext)))
                 nfn_number += 1
-        self.window.try_rename(ren_args)
+        self.window.try_rename(ren_args, check_unique=True, with_backups=True)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):

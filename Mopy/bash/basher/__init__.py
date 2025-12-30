@@ -118,26 +118,35 @@ class Installers_Link(ItemLink):
         """:rtype: InstallersPanel"""
         return self.window.panel
 
-    def _askFilename(self, message, filename, inst_type=bosh.InstallerArchive,
-                     disallow_overwrite=False, no_dir=True, base_dir=None,
-                     allowed_exts=archives.writeExts, use_default_ext=True,
-                     check_exists=True, no_file=False):
+    def _askFilename(self, message, filename, *, base_dir=None,
+                     inst_type=bosh.InstallerArchive, disallow_overwrite=False,
+                     check_exists=True, no_file=False, use_default_ext=True,
+                     allowed_exts=None, __7z=archives.defaultExt):
         """:rtype: bolt.FName"""
-        result = self._askText(message, title=self._dialog_title,
-                               default=f'{filename}') # accept Path and str
-        if not result: return
+        if not (result := self._askText(message, title=self._dialog_title,
+                                        default=filename)):
+            return
         #--Error checking
-        archive_path, msg = inst_type.validate_filename_str(result,
-            allowed_exts=allowed_exts, use_default_ext=use_default_ext)
+        warn= False
+        if inst_type.file_exts: # it's an archive, we might want to change ext
+            allowed_exts = allowed_exts or {*archives.writeExts} # we need a set
+            r, e = os.path.splitext(result)
+            if use_default_ext and e.lower() not in allowed_exts:
+                warn = _('The %(invalid_extension)s extension is unsupported. '
+                         'Using %(default_extension)s instead.') % {
+                           'invalid_extension': e, 'default_extension': __7z}
+                result = r + __7z
+        f = inst_type.validate_filename_str if isinstance(inst_type, type) \
+            else inst_type.validate_name
+        archive_path, msg = f(result, allowed_exts=allowed_exts or frozenset())
         if msg is None:
             self._showError(archive_path) # it's an error message in this case
             return
-        if isinstance(msg, tuple):
-            _root, msg = msg
-            self._showWarning(msg) # warn on extension change
+        if warn:
+            self._showWarning(warn) # warn on extension change
         base_dir = base_dir or self.idata.store_dir
         fmt_pf = {'package_filename': archive_path}
-        if no_dir and base_dir.join(archive_path).is_dir():
+        if not disallow_overwrite and base_dir.join(archive_path).is_dir():
             self._showError(_('%(package_filename)s is a directory.') % fmt_pf)
             return
         if no_file and base_dir.join(archive_path).is_file():
@@ -1230,11 +1239,11 @@ class _EditableMixin(_DetailsMixin):
                                             detail_item=det_it)
 
     def _rename_detail_item(self, new_n):
-        # OnFileEdited checked if filename existed in validate_name
-        #  but this happened before and since maybe modinfos are
-        #  updated, we need to check again todo: possibly cancel?
-        renargs = [(self.file_info, new_n.fn_body)] # rename failed return None
-        return self.panel_uilist.try_rename(renargs, refresh_ui=False) or None
+        # OnFileEdited checked if filename existed in validate_name but this
+        # happened before and since maybe modinfos are updated, we need to
+        # check again - if rename failed return None todo: possibly cancel?
+        return self.panel_uilist.try_rename([(self.file_info, new_n)],
+            check_unique=True, with_backups=True, refresh_ui=False) or None
 
     def _extra_changes(self):
         # Although we could avoid rereading the header by passing the info in
@@ -1968,8 +1977,9 @@ class SaveList(UIList):
             u'save_ext_on': enabled_ext, u'save_ext_off': disabled_ext}
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
-        extension = disabled_ext if sinf.is_save_enabled() else enabled_ext
-        self.try_rename([[sinf, fn_item.fn_body]], forced_ext=extension)
+        newfn = FName(fn_item.fn_body + (disabled_ext if sinf.is_save_enabled()
+                      else enabled_ext))
+        self.try_rename([[sinf, newfn]], check_unique=True, with_backups=True)
 
     # Save profiles
     def set_local_save(self, **kwargs):
@@ -2226,13 +2236,9 @@ class InstallersList(UIList):
                 return None, _("Wrye Bash can't rename mixed package types.")
         return rename_type, rename_err
 
-    def _rename_args(self, evt_label, selected, **val_kwargs):
+    def _rename_args(self, evt_label, selected):
         # all selected have common type! enforced in OnBeginEditLabel
-        ren_args = super()._rename_args(evt_label, selected,
-                                        allowed_exts=archives.readExts)
-        #--Rename each installer, keeping the old extension (for archives)
-        if isinstance(ren_args[1], tuple):
-            ren_args[1] = ren_args[1][0] # drop the message for ext change
+        ren_args = super()._rename_args(evt_label, selected)
         return *ren_args[:2], {'store_refr': defaultdict(RefrData)}
 
     #--Drag and Drop-----------------------------------------------------------
@@ -3086,11 +3092,11 @@ class ScreensList(UIList):
         root, numStr, num, digits = args
         ren_args = []
         for sel_inf in selected:
-            ren_args.append((sel_inf, root + numStr))
+            ren_args.append((sel_inf, FName(root + numStr + sel_inf.fn_ext)))
             numStr = numStr and str(num := num + 1).zfill(digits)
         return ren_args
 
-    def _rename_args(self, evt_label, selected, **val_kwargs):
+    def _rename_args(self, evt_label, selected):
         root, numStr, st_ref = super()._rename_args(evt_label, selected)
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or 0)

@@ -316,7 +316,10 @@ class _TabledInfo:
     internals are for translating the legacy dict keys to proper attr names."""
     _key_to_attr = {}
 
-    def __init__(self, *args, att_val=None, **kwargs):
+    def __init__(self, *args, att_val=None, exclude=frozenset(),
+                 copy_from=None, **kwargs):
+        if copy_from: ##:(300) we need to load here - vs InstallersData.factory
+            att_val = copy_from.get_persistent_attrs(exclude=exclude)
         for k, v in (att_val or {}).items(): # set table props used in refresh
             try: ##: nightly regression storing 'installer' as FName - convert to fname actually!
                 if k == 'installer': v = str(v)
@@ -390,32 +393,29 @@ class FileInfo(_TabledInfo, AFileInfo):
         if self not in self._store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.fs_copy(self.backup_restore_paths(False)[0][1])
+        self.fs_copy(self.backup_path())
         #--First backup
-        firstBackup = self.backup_restore_paths(True)[0][1]
+        firstBackup = self.backup_path(True)
         if not firstBackup.exists():
             self.fs_copy(firstBackup)
         self.madeBackup = True
 
-    def backup_restore_paths(self, first, fname=None) -> list[tuple[Path, Path]]:
-        """Return a list of tuples, mapping backup paths to their restore
-        destinations. If fname is not given returns the (first) backup
-        filename corresponding to self.abs_path, else the backup filename
-        for fname mapped to its restore location in data_store.store_dir."""
-        new_fn = FName((fname or self.fn_key) + 'f' * first)
-        return self.get_rename_paths(new_fn, self._store().bash_dir.join(
-            'Backups'), False)
+    def backup_path(self, is_first=False) -> Path:
+        return self._store().bash_dir.join('Backups',
+                                           self.fn_key + 'f' * is_first)
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
-        # all_backup_paths will return the backup paths for this file and its
-        # satellites (like cosaves). Passing newName in it returns the rename
-        # destinations of the backup paths. Backup paths may not exist.
+    def get_rename_paths(self, new_name, rename_dir, with_backups):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir,
+                                                 with_backups)
         if with_backups:
-            __bp = self.backup_restore_paths
-            for fir in (True, False):
-                old_new_paths.extend(zip((b for a, b in __bp(fir)),
-                                         (b for a, b in __bp(fir, new_name))))
+            # map the backup paths for this file and its satellites (like
+            # cosaves) to their rename destinations. Backup paths may not exist
+            bk_dir = self.backup_path().head
+            for fir in ('f', ''): # first backup and regular backup
+                # get the backup paths for current and new names and pair them
+                fn_to_new = (self.get_rename_paths(FName(f), bk_dir, False)
+                             for f in (self.fn_key + fir, new_name + fir))
+                old_new_paths.extend((a[1], b[1]) for a, b in zip(*fn_to_new))
         return old_new_paths
 
 class _WithMastersInfo(FileInfo):
@@ -862,7 +862,8 @@ class ModInfo(_WithMastersInfo):
         if not rescan_merge and merge_size is not None:
             self.set_table_prop('mergeInfo', (self.abs_path.psize, canMerge))
         else:
-            modInfos.rescanMergeable([self.fn_key], sort_descending_lo=False)
+            self._store().rescanMergeable([self.fn_key],
+                                          sort_descending_lo=False)
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -1078,21 +1079,27 @@ class ModInfo(_WithMastersInfo):
         return self.fn_key in bush.game.modding_esm_size or \
                self.fn_key == 'Oblivion.esm'
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir,
-                                                 with_backups)
+    def get_rename_paths(self, new_name, rename_dir, *args):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir, *args)
         renaming = rename_dir is None # rename, not the rest of rename_op uses
-        if renaming or rename_dir == self._store().store_dir:
+        mod_infos = self._store()
+        if rename_dir == (st_dir := mod_infos.store_dir) or renaming:
             new_ghost = old_new_paths[0][1] + '.ghost' # Path.__add__!
-            if self.is_ghost: # add ghost extension to dest path
+            ghost_dest = (mod_inf := mod_infos.get( # restoring backup
+                self.fn_key)) and mod_inf.is_ghost
+            if self.is_ghost or ghost_dest: # add ghost extension to dest path
                 old_new_paths[0] = self.abs_path, new_ghost
             elif renaming:
                 # Add ghosts - the file may exist in both states (bug, or user
                 # mistake) in this case the file is marked as normal but let's
                 # rename the ghost too - else will appear and frighten the user
                 old_new_paths.append((self.abs_path + '.ghost', new_ghost))
-            old_new_paths.append((tp := self.tags_path(),
-                                  tp.head.join(f'{new_name.fn_body}.txt')))
+            if self.info_dir == st_dir: # renaming or duplicating in store dir
+                # Note that if duplicating over an existing mod and we haven't
+                # got a tags file, the other mods tags file will be removed in
+                # rename_operation - ##: specs?
+                old_new_paths.append((tp := self.tags_path(),
+                                      tp.head.join(f'{new_name.fn_body}.txt')))
         return old_new_paths
 
     def _masters_order_status(self, *, __lo=load_order.cached_lo_index):
@@ -1447,8 +1454,8 @@ class SaveInfo(_WithMastersInfo):
                     abs(inst.abs_path.mtime - self.ftime) < 10]
         return u'\n'.join(co_ui_strings)
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, with_backups)
+    def get_rename_paths(self, new_name, rename_dir, *args):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir, *args)
         # super call added the backup paths but not the actual cosave paths
         # inside the store_dir - add those even if they don't exist as we must
         # delete cosaves for backup (if the backup has no cosaves)
@@ -1526,8 +1533,8 @@ class ScreenInfo(AFileInfo):
     @classmethod
     def _store(cls): return screen_infos
 
-    def validate_name(self, name_str, check_store=True):
-        file_root, num_str = super().validate_name(name_str, check_store)
+    def validate_name(self, *args, **kwargs):
+        file_root, num_str = super().validate_name(*args, **kwargs)
         return (file_root, num_str) if num_str is None else (
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
@@ -1570,6 +1577,7 @@ class DataStore(DataDict):
 
     def set_store_dir(self):
         self.store_dir = sd = dirs[self._dir_key]
+        self.store_dir.makedirs()
         return sd
 
     def _init_store(self, storedir):
@@ -1716,7 +1724,8 @@ class DataStore(DataDict):
         _('Please close the other program that is accessing %(new)s.'), '', '',
         _('Try again?')]
     def rename_operation(self, info_new_name, *, try_once=True, set_mtime=None,
-                         ren_parent=None, with_backups=True) -> RefrData:
+                         ren_parent=None, with_backups=False, copy_inf=False,
+                         insert_after=None, force_flags=None) -> RefrData:
         rd_ren = RefrData()
         if not info_new_name:
             return rd_ren
@@ -1729,14 +1738,20 @@ class DataStore(DataDict):
                 # if cosaves or backups do not exist shellMove fails!
                 # if filenames are the same (for instance cosaves in disabling
                 # saves) shellMove will offer to skip and raise SkipError
-                if tup[0] == tup[1] or not tup[0].exists():
+                if (src_missing := not tup[0].exists()) or tup[0] == tup[1]:
                     rename_paths.remove(tup)
+                    # if cosave exists while its backup not, delete it on
+                    # restoring - copy_inf is currently used in restore backup
+                    # will also delete the tag files when duplicating mods
+                    if src_missing and copy_inf:
+                        tup[1].remove() ##:(292) we should document this
             all_rename_paths.update(rename_paths)
             paths_per_file[inf] = rename_paths, new_name, infdir
         if all_rename_paths:
             while try_once:
                 try:
-                    env.shellMove(all_rename_paths, ren_parent)
+                    (env.shellCopy if copy_inf else env.shellMove)(
+                        all_rename_paths, ren_parent)
                 except (CancelError, OSError) as e:
                     ##:(#241)  only for swapping Oblivion esm, duh - was
                     # PermissionError, occurred if SHFileOperation isn't called
@@ -1753,23 +1768,34 @@ class DataStore(DataDict):
                     _check_renamed(paths_per_file)
                 break
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
-        for inf, (_rename_paths, new_name, infdir) in paths_per_file.items():
+        inst_dupl = isinstance(insert_after, int) ##: moveArchives must be moved
+        for inf, (rename_paths, new_name, infdir) in paths_per_file.items():
+            set_ghost = (ap := getattr(inf, 'abs_path', None)) and \
+                        all_rename_paths[ap].cext == '.ghost'
             rd_ren |= RefrData(renames={(old_key := inf.fn_key): new_name},
-                # pop if not unhiding
-                to_del={old_key} if self.pop(old_key, None) else set(),
-                # lastly set the new info abspath
+                to_del={old_key} if not copy_inf and self.pop(
+                    old_key, None) else set(), # pop if not unhiding/restoring
+                # lastly set the new info abspath/key
                 ren_paths=inf.set_path_keys(new_name, infodir=infdir))
-            add_to_store = not _rename_paths or inf.info_dir == self.store_dir
+            add_to_store = not rename_paths or inf.info_dir == self.store_dir
             if add_to_store: # add the info (or marker info) to the store
-                self[inf.fn_key] = inf # fn_key was set to new value
-                rd_ren.to_add.add(new_name)
-        if set_mtime: # only set in self.try_set_version
+                kws = {'redraw' if new_name in self else 'to_add': {new_name}}
+                self[new_name] = inf
+                if inst_dupl:
+                    self.moveArchives([new_name], insert_after)
+                rd_ren |= RefrData(**kws) # pop from to_del
+                if set_ghost: # do this after set_path_keys (restore backup)
+                    inf.is_ghost = True # we need to mirror get_rename_paths
+        for new, flgs in (force_flags or {}).items():
+            self[new].set_plugin_flags(flgs)
+        if set_mtime: # only set in self.try_set_version/restore backup
             for k, v in set_mtime.items():
                 self[k].setmtime(v)
-            if len(renames_di := rd_ren.renames) == 2:
+            if not copy_inf and len(renames_di := rd_ren.renames) == 2:
                 move_to = renames_di.pop(bush.game.master_file)
                 renames_di[next(iter(renames_di))] = move_to
-        return self.refresh(rd_ren, unlock_lo=True, what='I')
+        return self.refresh(rd_ren, unlock_lo=True, insert_after=insert_after,
+                            what='N' if inst_dupl else 'I')
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Returns the
@@ -1929,6 +1955,7 @@ class ObseIniInfo(OBSEIniFile, INIInfo): pass
 class DefaultIniInfo(AINIInfo):
     """A default ini tweak - hardcoded."""
     is_default_tweak = True
+    file_exts = frozenset(['.ini']) # only extension allowed - enforce it
 
     def __init__(self, default_ini_name, settings_dict):
         super().__init__(default_ini_name)
@@ -1958,14 +1985,6 @@ class DefaultIniInfo(AINIInfo):
             return iter(self.lines) # do not modify return value directly
         # Add a newline at the end of the INI
         return b'\r\n'.join(li.encode('ascii') for li in self.lines) + b'\r\n'
-
-    @property
-    def info_dir(self):
-        return dirs['ini_tweaks']
-
-    def copy_to(self, cp_dest_path, **kwargs):
-        # Default tweak, so the file doesn't actually exist
-        self._store().copy_to_new_tweak(self, FName(cp_dest_path.stail))
 
 class INIInfos(_AFileInfos):
     _ini: IniFileInfo | None
@@ -2043,16 +2062,27 @@ class INIInfos(_AFileInfos):
             rdata |= self._reset_all_statuses() # set the status of all infos
         return rdata
 
-    def factory(self, fullpath, **kwargs) -> INIInfo:
-        """INIInfos factory
-
-        :param fullpath: Full path to the INI file to wrap
-        :param kwargs: Cached ghost status information, ignored for INIs"""
-        inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath,
-            consider_obse_inis=bush.game.Ini.has_obse_inis)
-        ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
-                         else INIInfo)
-        return ini_info_type(fullpath, detected_encoding)
+    def factory(self, fullpath, *, copy_from=None, dup_path=None,
+                rd_def_ini=None, **kwargs) -> INIInfo | None:
+        """INIInfos factory - copy_from/dup_path used when duplicating an ini"""
+        if isinstance(copy_from, DefaultIniInfo):
+            with open(fullpath, 'wb') as ini_file:
+                ini_file.write(copy_from.read_ini_content(as_unicode=False))
+            dup_info = INIInfo(fullpath, 'ascii')
+            dup_info.fs_copy(dup_path, do_move=True)
+            dup_info.set_path_keys(FName(dup_path.stail), infodir=dup_path.head)
+            if dup_info.info_dir == self.store_dir:
+                rd_def_ini |= RefrData(
+                    renames={copy_from.fn_key: (dup_fn := dup_info.fn_key)},
+                    **{'redraw' if dup_fn in self else 'to_add': {dup_fn}})
+                self[dup_fn] = dup_info
+            return None
+        else:
+            inferred_ini_type, detected_encoding = get_ini_type_and_encoding(
+                fullpath, consider_obse_inis=bush.game.Ini.has_obse_inis)
+            ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
+                             else INIInfo)
+        return ini_info_type(fullpath, detected_encoding, copy_from=copy_from)
 
     def _reset_all_statuses(self): # only return infos that changed status
         updt = {fn for fn, ini_info in self.items() if
@@ -2132,7 +2162,7 @@ class INIInfos(_AFileInfos):
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
 
-    def copy_to_new_tweak(self, info, fn_new_tweak: FName):
+    def copy_to_new_tweak(self, info, fn_new_tweak):
         """Duplicate tweak into fn_new_teak."""
         with open(self.store_dir.join(fn_new_tweak), 'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
@@ -2323,7 +2353,7 @@ class ModInfos(_AFileInfos):
                                 bt_contents=bt_contents)
         mods_changes = bool(rdata)
         ldiff = LordDiff()
-        if deltd := rdata.to_del:
+        if deltd := rdata.to_del: #restore first backup is_rename but no to_del
             if rdata.is_rename: # rename in load order caches and properties
                 rget = rdata.renames.get
                 for mod_inf in self.values():
@@ -3148,13 +3178,13 @@ class ModInfos(_AFileInfos):
             inf_target = [(baseInfo, move_to), (swapped_inf, master_esm)]
             # set mtimes to previous respective values
             ren_data |= self.rename_operation(inf_target, set_mtime={**mt,
-                move_to: swapped_inf.ftime}, try_once=do_swap)
+              move_to: swapped_inf.ftime}, try_once=do_swap, with_backups=True)
         except CancelError:
             pass
         finally:
             if master_esm not in self:
-                ren_data |= self.rename_operation(
-                    [(self[move_to], master_esm)], set_mtime=mt)
+                ren_data |= self.rename_operation([(self[move_to],
+                    master_esm)], set_mtime=mt, with_backups=True)
             if swapping_a_ghost: # we need to unghost the master esm
                 self[master_esm].setGhost(False)
         return ren_data

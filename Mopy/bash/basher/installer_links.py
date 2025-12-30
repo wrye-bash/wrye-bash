@@ -40,6 +40,7 @@ from itertools import chain
 from . import BashFrame, INIList, Installers_Link, InstallersDetails
 from .belt import InstallerWizard, generateTweakLines
 from .dialogs import SyncFromDataEditor
+from .files_links import File_Duplicate
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
 from .. import archives, balt, bass, bolt, bosh, bush, env
@@ -445,7 +446,7 @@ class Installer_Anneal(Installer_Op, _NoMarkerLink):
     def _perform_action(self, **kwargs):
         self.idata.bain_anneal(self._installables, **kwargs)
 
-class Installer_Duplicate(_SingleInstallable):
+class Installer_Duplicate(_SingleInstallable, File_Duplicate):
     """Duplicate selected Installer."""
     _text = _dialog_title = _('Duplicate…')
 
@@ -457,21 +458,23 @@ class Installer_Duplicate(_SingleInstallable):
     @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
-        is_arch = self._selected_info.is_archive
-        fn_inst = self._selected_item
-        r, e = (fn_inst.fn_body, fn_inst.fn_ext) if is_arch else (fn_inst, '')
-        newName = self._selected_info.unique_key(r, e, add_copy=True)
-        allowed_exts = {e} if is_arch else set()
-        msg = _('Duplicate %(target_package)s to:') % {
-            'target_package': fn_inst}
-        result = self._askFilename(msg, newName, no_dir=False, ##: True? False?
-            inst_type=type(self._selected_info), disallow_overwrite=True,
-            allowed_exts=allowed_exts, use_default_ext=False)
-        if not result: return
+        inst, fn_inst = self._selected_info, self._selected_item
+        destDir, fn_dup = self._get_dup_filename(inst, message=_('Duplicate '
+                '%(target_package)s to:') % {'target_package': fn_inst})
+        if not fn_dup: return
         #--Duplicate
         with BusyCursor():
-            self._selected_info.copy_to(bass.dirs['installers'].join(result))
-        self.window.RefreshUI(detail_item=result)
+            # factory -> init(load_cache=False) - then copy all attributes over
+            clone = self._data_store.factory(inst.abs_path, copy_from=inst,
+                                             is_proj=inst.is_project)
+            clone.is_active = False # make sure we mark as inactive
+            self.window.try_rename([(clone, fn_dup, destDir)], copy_inf=True,
+                insert_after=inst.order + 1, fn_detail=fn_dup)
+
+    def _ask_dup_filename(self, destDir, fileInfo, **kwargs):
+        # note we pass the fileInfo to block extension change
+        return destDir, self._askFilename(**kwargs, inst_type=fileInfo,
+            disallow_overwrite=True, use_default_ext=False)
 
 class Installer_Hide(_InstallerLink, UIList_Hide):
     """Installers tab version of the Hide command."""
@@ -1232,8 +1235,8 @@ class InstallerProject_Pack(_SingleProject):
         #--Confirm operation
         msg = _('Name the archive that %(sel_proj)s should get packed '
                 'into:') % {'sel_proj': self._selected_item}
-        archive_name = self._askFilename(msg, archive_name)
-        if not archive_name: return
+        if not (archive_name := self._askFilename(msg, archive_name)):
+            return
         installer = self._selected_info
         #--Archive configuration options
         blockSize = None
@@ -1323,8 +1326,8 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
             f'({x:08X}) - {crc_installer[x]}' for x in
             self.converter.srcCRCs)) + '\n'
         #--Ask for an output filename
-        destArchive = self._askFilename(message, filename=defaultFilename)
-        if not destArchive: return
+        if not (destArchive := self._askFilename(message, defaultFilename)):
+            return
         with balt.Progress(_('Converting to Archive…')) as progress:
             #--Perform the conversion
             msg = _('%(dest_archive)s: An error occurred while applying a '
@@ -1349,10 +1352,10 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        iname, inst = next(self.iselected_pairs()) # first selected pair
         #--Ask for an output filename
-        dest = self._askFilename(_('Output file:'), filename=iname)
-        if not dest: return
+        iname, inst = next(self.iselected_pairs()) # first selected pair
+        if not (dest := self._askFilename(_('Output file:'), iname)):
+            return
         with balt.Progress(_('Extracting BCF…')) as progress:
             destinations, converted = self.idata.applyEmbeddedBCFs(
                 [inst], [dest], progress)
@@ -1387,21 +1390,21 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             self._showWarning(_('%(arcname)s must be in the Bash Installers '
                                 'directory.') % {'arcname': destArchive})
             return
+        _7z = archives.defaultExt
         if bcf_fname.fn_body[-4:].lower() != '-bcf':
-            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{archives.defaultExt}')
+            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{_7z}')
         #--List source archives and target archive
         msg = _('Convert:') + '\n* '
         msg += '\n* '.join(sorted(f'({v.crc:08X}) - {k}' for k, v in
                                   self.iselected_pairs())) + '\n\n' + _('To:')
         msg += f'\n* ({self.idata[destArchive].crc:08X}) - {destArchive}\n'
         #--Confirm operation
-        bcf_fname = self._askFilename(msg, bcf_fname,
-                                      base_dir=converters.converters_dir,
-                                      allowed_exts={archives.defaultExt})
-        if not bcf_fname: return
+        if not (bcf_fname := self._askFilename(msg, bcf_fname,
+                base_dir=converters.converters_dir, allowed_exts={_7z})):
+            return
         #--Error checking
         if bcf_fname.fn_body[-4:].lower() != '-bcf':
-            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{archives.defaultExt}')
+            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{_7z}')
         if (conv_path := converters.converters_dir.join(bcf_fname)).exists():
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.

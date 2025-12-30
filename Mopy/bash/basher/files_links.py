@@ -20,14 +20,13 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-from .. import balt, bass, bolt, bosh, bush, env
+from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bolt import FNDict, RefrIn, FName
+from ..bolt import FNDict, FName, RefrData
+from ..bosh import DefaultIniInfo
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
     FileOpenMultiple
 from ..localize import format_date
-from ..wbtemp import TempFile
 
 __all__ = ['File_Backup', 'File_Duplicate', 'File_JumpToSource', 'File_Redate',
            'File_ListMasters', 'File_RevertToBackup', 'Files_Unhide',
@@ -79,9 +78,8 @@ class Files_Unhide(ItemLink):
                     'already present.') % {'skipped_file': srcFileName})
                 continue
             srcFiles.append((inf, fn_key, st_dir))
-        #--Now move everything at once
-        uil.try_rename(srcFiles, check_unique=False, deselect=True,
-                       with_backups=False) #292: we ain't handling backups
+        #--Now move everything at once  #292: we ain't handling backups
+        uil.try_rename(srcFiles, deselect=True)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
@@ -95,39 +93,50 @@ class File_Duplicate(ItemLink):
     def Execute(self):
         mod_previous = FNDict()
         fileInfos = self._data_store
-        pairs = dict(self.iselected_pairs())
         names = set(fileInfos)
-        for to_duplicate, fileInfo in pairs.items():
+        ren_args = []
+        rd_def_ini = RefrData()
+        for to_duplicate, fileInfo in self.iselected_pairs():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
-            r, e = to_duplicate.fn_body, to_duplicate.fn_ext
-            destName = fileInfo.unique_key(r, e, add_copy=True, names=names)
-            destDir = fileInfo.info_dir
-            if len(self.selected) == 1: # ask the user for a filename
-                # This directory may not exist yet (e.g. INI Tweaks)
-                destDir.makedirs()
-                destPath = self._askSave(
-                    title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName, wildcard=f'*{e}')
-                if not destPath: return
-                destDir, destName = destPath.head, FName(destPath.stail)
-                destName, root = fileInfo.validate_name(destName,
-                    # check if exists if we duplicate into the store dir
-                    # then we just need to check if destName is in the store
-                    check_store=destDir == fileInfo.info_dir)
-                if root is None:
-                    self._showError(destName)
+            destDir, fn_dup = self._get_dup_filename(fileInfo, names,
+              title=_('Duplicate as:'), wildcard=f'*{to_duplicate.fn_ext}')
+            if not fn_dup: return
+            # check if exists if we duplicate into the store dir
+            if len(self.selected) == 1 and destDir == fileInfos.store_dir:
+                # use the store (think ghosts)
+                if fn_dup in self._data_store and not isinstance(
+                        fileInfo, DefaultIniInfo):
+                    self._showError(_('File %(bad_name_str)s already exists.'
+                                      ) % {'bad_name_str': fn_dup})
                     return
-            fileInfo.copy_to(destDir.join(destName))
-            mod_previous[destName] = to_duplicate
-        if mod_previous:
-            rinf = RefrIn.from_tabled_infos(
-                {k: pairs[v] for k, v in mod_previous.items()})
-            ##:(701) we should reset-status here for lower loading mods
-            rdata = fileInfos.refresh(rinf, insert_after=mod_previous)
-            self.refresh_sel(rdata.new_changed(),
-                             detail_item=next(reversed(mod_previous)))
-            self.window.SelectItemsNoCallback(mod_previous)
+            # we need to load_cache here - see _TabledInfo.__init__
+            if inf := fileInfos.get_update_info(to_duplicate, copy_from=fileInfo,
+                    dup_path=destDir.join(fn_dup), rd_def_ini=rd_def_ini):
+                ren_args.append((inf, fn_dup, destDir))
+                mod_previous[fn_dup] = to_duplicate
+        if mod_previous or rd_def_ini:
+            fnd = next(reversed(mod_previous or rd_def_ini.renames.values()))
+            self.window.try_rename(ren_args, copy_inf=True, fn_detail=fnd,
+                insert_after=mod_previous, refr_data=rd_def_ini)
+
+    def _get_dup_filename(self, fileInfo, names=None, **kwargs):
+        destDir = self._data_store.store_dir
+        destName = fileInfo.unique_key(names=names)
+        if len(self.selected) == 1: # ask the user for a filename
+            destDir, destName = self._ask_dup_filename(destDir, fileInfo,
+                filename=destName, **kwargs)
+        return destDir, destName
+
+    def _ask_dup_filename(self, destDir, fileInfo, filename, **kwargs):
+        if destPath := self._askSave(**kwargs, defaultDir=destDir,
+                                     defaultFile=filename):
+            destDir, destName = destPath.head, FName(destPath.stail)
+            destName, root = fileInfo.validate_name(destName)
+            if root is not None:
+                return destDir, destName
+            self._showError(destName)
+        return None, None
 
     def _disallow_copy(self, fileInfo):
         """Method for checking if fileInfo may not be copied for some reason.
@@ -167,35 +176,29 @@ class RestoreInfo(OneItemLink):
     def Execute(self):
         #--Warning box
         if not self._ask_revert(): return
-        sel_file = self._selected_item
-        with BusyCursor(), TempFile(bolt_path=True) as known_good_copy:
-            info_path = (sel_inf := self._selected_info).abs_path
-            # Make a temp copy first in case reverting to backup fails
-            sel_inf.fs_copy(known_good_copy)
-            self._restore()
-            # in case the restored file is a BP: refresh below will try to
+        with BusyCursor():
+            sel_inf = self._selected_info
+            # create an info in the backup directory and try loading it - note
+            # we unlink 'bp_split_parent'!
+            if not (inf := self._data_store.get_update_info(self._backup_path,
+                    copy_from=sel_inf, exclude=True)):
+                self._failed_msg()
+                return
+            ren_args = [(inf, self._selected_item, self._data_store.store_dir)]
+            # in case the restored file is a BP: refresh in rename will try to
             # refresh info sets, but we don't back up the config so we can't
             # really detect changes in imported/merged - a (another) backup
             # edge case - as backup is half-baked anyway let's agree for now
             # that BPs remain BPs with the same config as before - if not,
             # manually run a mergeability scan after updating the config
-            self._data_store.refresh(
-                RefrIn.from_tabled_infos({sel_file: sel_inf}, exclude=True))
-            if not self._data_store.get(sel_file):
-                # Reverting to backup failed - may be corrupt
-                bolt.deprint('Failed to revert to backup', traceback=True)
-                self.window.panel.ClearDetails()
-                if self._failed_msg():
-                    # Restore the known good file again - no error check needed
-                    info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh(RefrIn.from_tabled_infos(
-                        {sel_file: sel_inf}))  # re-add all attrs
-        # don't refresh saves as neither selection state nor load order change
-        self.refresh_sel()
+            self.window.try_rename(ren_args, copy_inf=True,
+                # no refresh saves as neither active mods nor load order change
+                refr_saves=False, set_mtime={sel_inf.fn_key: sel_inf.ftime})
+
+    @property
+    def _backup_path(self): raise NotImplementedError
 
     def _ask_revert(self): raise NotImplementedError
-
-    def _restore(self): raise NotImplementedError
 
     def _failed_msg(self): raise NotImplementedError
 
@@ -209,7 +212,7 @@ class _RevertBackup(RestoreInfo):
 
     @property
     def _backup_path(self):
-        return self.__backup_paths[0][1]
+        return self._selected_info.backup_path(self.first)
 
     @property
     def link_help(self):
@@ -218,28 +221,12 @@ class _RevertBackup(RestoreInfo):
         return msg % {'file': self._selected_item}
 
     def _enable(self):
-        if not super()._enable(): return False
-        self.__backup_paths = self._selected_info.backup_restore_paths(
-            self.first)
-        return self._backup_path.exists()
-
-    def _restore(self):
-        backup_paths = [(b, a) for a, b in self.__backup_paths]
-        for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
-            if not tup[0].exists():
-                # if cosave exists while its backup not, delete it on restoring
-                tup[1].remove()
-                backup_paths.remove(tup)
-        env.shellCopy(dict(backup_paths))
-        # do not change load order for timestamp games - rest works ok
-        self._selected_info.setmtime(self._selected_info.ftime)
+        return super()._enable() and self._backup_path.exists()
 
     def _failed_msg(self):
-        return self._askYes(
+        self._showError(
             _("Failed to revert %(target_file_name)s to backup dated "
-              "%(backup_date)s. The backup file may be corrupt. Do you want "
-              "to restore the original file again? 'No' keeps the reverted, "
-              "possibly broken backup instead.") % {
+              "%(backup_date)s. The backup file may be corrupt.") % {
                 'target_file_name': self._selected_item,
                 'backup_date': format_date(self._backup_path.mtime)},
             title=_('Revert to Backup - Error'))

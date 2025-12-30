@@ -199,12 +199,6 @@ class Installer(ListInfo):
     instData = None # type: InstallersData
     is_archive = is_project = is_marker = False ##: replace with inheritance if possible
 
-    @classmethod
-    def validate_filename_str(cls, name_str, allowed_exts=frozenset(),
-                              use_default_ext=False):
-        return super(Installer, cls).validate_filename_str(name_str,
-            frozenset()) # block extension check
-
     def info_status(self, *, idata):
         #--Icon
         if self.is_corrupt_package:
@@ -1210,24 +1204,16 @@ class Installer(ListInfo):
 class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
-    def __init__(self, fn_key, *, load_cache=False, par_dir=None, **kwargs):
+    def __init__(self, fn_key, *, load_cache=False, par_dir=None,
+                 copy_from=None, **kwargs):
         super().__init__(fn_key) # will call Installer -> ListInfo __init__
         self._file_key = (par_dir or bass.dirs['installers']).join(self.fn_key)
         if load_cache: # load from disc, useful when adding a new installer
             AFile.__init__(self, self._file_key, **kwargs)
-
-    def copy_to(self, dup_path: Path, *, set_time=None):
-        super().copy_to(dup_path, set_time=set_time)
-        # use factory -> init(load_cache=False) - then copy all attributes over
-        idata = self._store()
-        clone = idata.factory(dup_path, is_proj=self.is_project)
-        idata[fn := clone.fn_key] = clone
-        atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
-        for att in atts:
-            setattr(clone, att, copy.copy(getattr(self, att)))
-        clone.is_active = False # make sure we mark as inactive
-        # no need to change installers status here
-        idata.moveArchives([fn], self.order + 1, ref_norm=True)
+        if copy_from:
+            atts = (*Installer.persistent, *Installer.volatile) # drop fn_key
+            for att in atts:
+                setattr(self, att, copy.copy(getattr(copy_from, att)))
 
     def _reset_cache(self, stat_tuple=None, *, __skips_start=tuple(
             s.replace(os_sep, '') for s in Installer._silentSkipsStart),
@@ -1497,32 +1483,6 @@ class InstallerArchive(_InstallerPackage):
             sSolid = _('Non-solid')
         return _('Size: %(package_size)s (%(package_solid)s)') % {
             'package_size': self.size_string(), 'package_solid': sSolid}
-
-    @classmethod
-    def validate_filename_str(cls, name_str, allowed_exts=archives.writeExts,
-                              use_default_ext=False, __7z=archives.defaultExt):
-        r, e = os.path.splitext(name_str)
-        if allowed_exts and e.lower() not in allowed_exts:
-            if not use_default_ext: # renaming as opposed to creating the file
-                msg = _('%(invalid_name)s does not have correct extension '
-                        '(%(allowed_extensions)s).') % {
-                    'invalid_name': name_str,
-                    'allowed_extensions': ', '.join(allowed_exts)}
-                return msg, None
-            msg = _('The %(invalid_extension)s extension is unsupported. '
-                    'Using %(default_extension)s instead.') % {
-                'invalid_extension': e, 'default_extension': __7z}
-            name_str, e = r + __7z, __7z
-        else:
-            msg = ''
-        # Skip Installer's validate_filename_str
-        name_path, root = super(Installer, cls).validate_filename_str(
-            name_str, {e})
-        if root is None:
-            return name_path, None
-        if msg: # propagate the msg for extension change
-            return name_path, (root, msg) # see Installers_Link._askFilename
-        return name_path, root
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive

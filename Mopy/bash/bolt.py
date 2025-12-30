@@ -1748,7 +1748,7 @@ class ListInfo:
     """Info object displayed in Wrye Bash list - comes last in MI (*above*
     Afile)."""
     __slots__ = ('fn_key', )
-    _valid_exts_re = ''
+    file_exts = frozenset() # subclasses that represent files must define this!
     _is_filename = True
     _has_digits = False
 
@@ -1758,18 +1758,27 @@ class ListInfo:
     @classmethod
     def validate_filename_str(cls, name_str: str, allowed_exts=frozenset()):
         """Basic validation of list item name - those are usually filenames, so
-        they should contain valid chars. We also optionally check for match
-        with an extension group (apart from projects and markers). Returns
-        a tuple - if the second element is None validation failed and the first
-        element is the message to show - if not the meaning varies per override
-        """
+        they should contain valid chars. We also require to end in (a subset
+        of) file_exts if this is not empty (i.e. apart from projects and
+        markers). Return a tuple - if the second element is None validation
+        failed and the first element is the message to show. `allowed_exts`
+        is noop if cls.file_exts is empty else it must be a subset of those."""
         if not name_str:
             return _('Name may not be empty.'), None
         char = cls._is_filename and Path.has_invalid_chars(name_str)
         if char:
             inv = _('%(new_name)s contains invalid character (%(bad_char)s).')
             return inv % {'new_name': name_str, 'bad_char': char}, None
-        rePattern = cls._name_re(allowed_exts)
+        if fe := cls.file_exts:
+            allowed_exts = (allowed_exts or fe) & fe # disallow unknown exts
+            if not os.path.splitext(name_str)[1].lower() in allowed_exts:
+                msg = _('%(invalid_name)s does not have correct extension '
+                        '(%(allowed_extensions)s).')
+                return msg % {'invalid_name': name_str,
+                    'allowed_extensions': ', '.join(allowed_exts)}, None
+            exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))'
+        else: exts_re = ''
+        rePattern = cls._name_re(exts_re)
         maPattern = rePattern.match(name_str)
         if maPattern:
             ma_groups = maPattern.groups(default=u'')
@@ -1782,22 +1791,20 @@ class ListInfo:
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None
 
-    def validate_name(self, name_str, check_store=True):
+    def validate_name(self, name_str, **kwargs):
         """Only used in _EditableMixin.OnFileEdited and File_Duplicate.Execute.
         """
         # disallow extension change but not if no-extension info type
-        check_ext = name_str and self.__class__._valid_exts_re
-        if check_ext and not name_str.lower().endswith(
-                self.fn_key.fn_ext.lower()):
-            fm = {'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return _('%(bad_name_str)s: Incorrect file extension (must be '
-                     '%(expected_ext)s).') % fm, None
-        return self.__class__.validate_filename_str(name_str)
+        if name_str and self.__class__.file_exts:
+            kwargs['allowed_exts'] = {self_ext := self.fn_key.fn_ext.lower()}
+            if not name_str.lower().endswith(self_ext):
+                fm = {'bad_name_str': name_str, 'expected_ext': self_ext}
+                return _('%(bad_name_str)s: Incorrect file extension (must be '
+                         '%(expected_ext)s).') % fm, None
+        return self.__class__.validate_filename_str(name_str, **kwargs)
 
     @classmethod
-    def _name_re(cls, allowed_exts):
-        exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
-            if allowed_exts else cls._valid_exts_re
+    def _name_re(cls, exts_re):
         # The reason we do the regex like this is to support names like
         # foo.ess.ess.ess etc.
         exts_prefix = r'(?=.+\.)' if exts_re else ''
@@ -1825,12 +1832,12 @@ class ListInfo:
             names.add(name_str)
         return name_str
 
-    def unique_key(self, new_root, ext='', add_copy=False,
-                   names=None) -> FName | None:
-        """Generate a unique name based on fn_key. When copying or renaming."""
-        if self.__class__._valid_exts_re and not ext:
-            ext = self.fn_key.fn_ext
-        new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
+    def unique_key(self, base=None, names=None) -> FName | None:
+        """Generate a unique name based on base - duplicating or renaming."""
+        base = self.fn_key if (add_copy := base is None) else base
+        if self.__class__.file_exts or (ext := ''):
+            base, ext = base.fn_body, base.fn_ext
+        new_name = base + (f' {_("Copy")}' if add_copy else '') + ext
         if self.named_as(new_name): # new and old names are ci-same
             return None
         return self.unique_name(new_name, names=names)
@@ -1843,7 +1850,7 @@ class ListInfo:
     def rename_area_idxs(cls, text_str, start=0, stop=None):
         """Return the selection span of item being renamed - usually to
         exclude the extension."""
-        if cls._valid_exts_re and not start: # start == 0
+        if cls.file_exts and not start: # start == 0
             return 0, len(GPath(text_str[:stop]).sbody)
         return 0, len(text_str) # if selection not at start reset
 
@@ -1855,23 +1862,11 @@ class ListInfo:
         old_key, self.fn_key = self.fn_key, new_fn
         return {}
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
+    def get_rename_paths(self, new_name, rename_dir, *args):
         return [] # no rename paths for markers
 
     def info_status(self, **kwargs):
         raise NotImplementedError # screens, bsas
-
-    # Instance methods --------------------------------------------------------
-    def copy_to(self, dup_path: Path, *, set_time=None):
-        """Copies self to dup_path. Will overwrite! Will add the new file to
-        the data_store if copied inside the store_dir but the client is
-        responsible for calling the final refresh of the data store."""
-        # TODO(ut) : when duplicating pass the info in and load_cache=False
-        # the only use that copies into store dir
-        self.fs_copy(dup_path, set_time=set_time)
-
-    def fs_copy(self, dup_path, **kwargs):
-        raise NotImplementedError # not all ListInfos are AFiles
 
     def __str__(self):
         """Alias for self.fn_key."""
@@ -1883,13 +1878,12 @@ class ListInfo:
 #------------------------------------------------------------------------------
 class AFileInfo(AFile, ListInfo):
     """List Info representing a file."""
-    file_exts = frozenset() # subclasses that represent files must define this!
 
     def __init__(self, fullpath, **kwargs):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
         super().__init__(fullpath, **kwargs)
 
-    def get_rename_paths(self, new_name, rename_dir, with_backups=True):
+    def get_rename_paths(self, new_name, rename_dir, *args):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
         return [(self.abs_path, (rename_dir or self.info_dir).join(new_name))]
@@ -1898,7 +1892,7 @@ class AFileInfo(AFile, ListInfo):
         ##:(241) note all the subtleties below - moveTo/copyTo must land in env
         dest_dir, dest_fn = dup_path.headTail
         src_dst = iter(self.get_rename_paths(FName(dest_fn.s), dest_dir,
-                                             with_backups=False))
+                                             False))
         src, dst = next(src_dst) # base info path always exists
         sys_op = src.moveTo if do_move else partial(src.copyTo,
             set_time=set_time or self.ftime)
@@ -1913,20 +1907,6 @@ class AFileInfo(AFile, ListInfo):
             sys_op = partial(src.moveTo, check_exist=False) if do_move else \
                 src.copyTo
             sys_op(dst)
-
-    @classproperty
-    def _valid_exts_re(cls):
-        return fr'(\.(?:{"|".join(x[1:] for x in fe)}))' if (fe :=
-            cls.file_exts) else ''
-
-    def validate_name(self, name_str, check_store=True):
-        super_validate = super().validate_name(name_str,
-            check_store=check_store)
-        #--Else file exists?
-        if check_store and name_str in self._store(): # use modInfos for ghosts
-            return _('File %(bad_name_str)s already exists.') % {
-                'bad_name_str': name_str}, None
-        return super_validate
 
     def set_path_keys(self, new_fn: FName, *, infodir=None):
         super().set_path_keys(new_fn)
@@ -2025,6 +2005,7 @@ class RefrData:
 
     @property
     def is_rename(self) -> bool:
+        """True if it's a rename operation (or duplicating in store_dir)."""
         return self.renames and all(k != v for k, v in self.renames.items())
 
 #------------------------------------------------------------------------------

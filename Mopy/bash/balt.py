@@ -976,7 +976,8 @@ class UIList(PanelWin):
 
     @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Should only be subscribed if _editLabels==True."""
+        """Should only be subscribed if _editLabels==True (Saves/BAIN/Screens).
+        """
         if is_edit_cancelled: return EventResult.FINISH
         selected = [*self.data_store.filter_essential(
             None or self.GetSelected()).values()]
@@ -989,14 +990,16 @@ class UIList(PanelWin):
             return EventResult.CANCEL # validate_filename would Veto
         ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            self.try_rename(ren_args, **ren_kwargs)
+            self.try_rename(ren_args, check_unique=True, **ren_kwargs,
+                            with_backups= True) # only saves carry backups
         return EventResult.CANCEL # clears new name from label on exception!
 
     def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
-        return [(sel_inf, args[1]) for sel_inf in selected]
+        return [(sel_inf, FName(args[1] + sel_inf.fn_key.fn_ext) if
+            sel_inf.file_exts else args[0]) for sel_inf in selected]
 
-    def _rename_args(self, evt_label, selected, **val_kwargs):
-        return *selected[0].validate_filename_str(evt_label, **val_kwargs), {}
+    def _rename_args(self, evt_label, selected):
+        return *selected[0].validate_filename_str(evt_label), {}
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1018,27 +1021,29 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, ren_args, *, forced_ext='', refresh_ui=True,
-                   check_unique=True, deselect=False, **ren_kwargs):
+    def try_rename(self, ren_args, *, refresh_ui=True, fn_detail=None,
+                   check_unique=False, deselect=False, refr_saves=True,
+                   refr_data=None, **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
         this needs to be atomic with respect to refreshes and ideally atomic
         short - store_refr is Installers only. Inis won't be added."""
         ds = self.data_store
         if check_unique: # check if new and old names are ci-same
             names = set(ds)
-            ren_args = [(info, new_fn, *ddir) for info, new_root, *ddir in
-                ren_args if (new_fn := info.unique_key(new_root, forced_ext,
-                                                       names=names))]
+            ren_args = [(info, new_fn, *ddir) for info, newfn, *ddir in
+                ren_args if (new_fn := info.unique_key(newfn, names=names))]
         rdata = ds.rename_operation(ren_args, ren_parent=self, **ren_kwargs)
+        if refr_data:
+            rdata |= refr_data
         if refresh_ui and rdata:
-            fn = next(iter(rdata.renames.values()))
+            fn_detail = fn_detail or next(iter(rdata.renames.values()))
             # in case the displayed item was *not* renamed
-            args_dict = {'detail_item': fn} if fn in ds else {}
+            args_dict = {'detail_item': fn_detail} if fn_detail in ds else {}
             args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
-            self.propagate_refresh(rdata, **args_dict)
+            self.propagate_refresh(rdata, **args_dict, refr_saves=refr_saves)
             #--Reselect the renamed items
-            if added := rdata.to_add:
-                self.SelectItemsNoCallback(added, deselectOthers=deselect)
+            if nch := {*rdata.renames.values()} & rdata.new_changed():
+                self.SelectItemsNoCallback(nch, deselectOthers=deselect)
         return rdata
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
@@ -1904,7 +1909,7 @@ class UIList_Hide(EnabledLink):
             return _('The selected items cannot be hidden.')
 
     @conversation
-    def Execute(self): #292: we ain't handling backups
+    def Execute(self):
         if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
@@ -1920,7 +1925,7 @@ class UIList_Hide(EnabledLink):
                     continue
             else: destDir.makedirs()
             to_move.append((inf, inf.fn_key, destDir))
-        self.window.try_rename(to_move, check_unique=False, with_backups=False)
+        self.window.try_rename(to_move) #292: we ain't handling backups
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""

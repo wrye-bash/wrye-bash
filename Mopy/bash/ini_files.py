@@ -227,8 +227,8 @@ class IniFileInfo(AIniInfo, AFileInfo):
     _ci_settings_cache_linenum = __empty_settings
     file_exts = supported_ini_exts
 
-    def __init__(self, fullpath, ini_encoding):
-        super(AIniInfo, self).__init__(fullpath)
+    def __init__(self, fullpath, ini_encoding, **kwargs):
+        super(AIniInfo, self).__init__(fullpath, **kwargs)
         AIniInfo.__init__(self, fullpath.stail) # calls ListInfo.__init__ again
         self.ini_encoding = ini_encoding
         self.isCorrupted = u''
