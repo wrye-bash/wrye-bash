@@ -281,7 +281,8 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
         rd_ren = minfs.try_set_version(self._version_key, do_swap=self._askYes)
         # We refresh saves although should only ever depend on Oblivion.esm,
         # not any of the modding ESMs
-        Link.Frame.all_uilists[minfs].propagate_refresh(rd_ren)
+        Link.Frame.all_uilists[minfs].propagate_refresh(rd_ren,
+            focus_list=not self.setProfile)
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
@@ -326,7 +327,7 @@ class Mods_CreateBlank(ItemLink):
     _keyboard_hint = 'Ctrl+N'
 
     def Execute(self):
-        CreateNewPlugin.display_dialog(self.window)
+        CreateNewPlugin.display_dialog(self.window, self._data_store)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):

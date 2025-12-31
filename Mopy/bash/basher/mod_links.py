@@ -1628,10 +1628,8 @@ class Mod_Face_Import(OneItemLink):
         srcDir = bosh.saveInfos.store_dir
         wildcard = (_('%(game_name)s Saves') +
                     ' (*%(save_ext_on)s;*%(save_ext_off)s)|*%(save_ext_on)s;'
-                    '*%(save_ext_off)s') % {
-            'game_name': bush.game.display_name,
-            'save_ext_on': bush.game.Ess.ext,
-            'save_ext_off': bush.game.Ess.ext[:-1] + 'r'}
+                    '*%(save_ext_off)s') % {**self._selected_info.sexts,
+            'game_name': bush.game.display_name}
         #--File dialog
         srcPath = self._askOpen(_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)
@@ -1700,17 +1698,16 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
 
 class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     noChange = _(u'No changes required.')
-    supportedExts = {u'.csv'}
     progressTitle = continueInfo = continueKey = u'OVERRIDE'
     _parser_class = _AParser
+    _parse_mods = False
 
     def _parser(self): return self.__class__._parser_class()
     @property
     def _wildcard(self):
-        if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
-        espml = u';*'.join(bush.game.espm_extensions)
-        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + u';*' \
-               + espml + u';*.ghost'
+        if not self._parse_mods: return f'*{self.__class__.csvFile}'
+        espml = f';*{";*".join(self._data_store.info_exts())}'
+        return _('Mod/Text File') + '|*' + self.__class__.csvFile + espml
 
     def _import_from(self):
         textName = self._selected_item.fn_body + self.__class__.csvFile
@@ -1751,19 +1748,18 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        supportedExts = self.__class__.supportedExts
         csv_filename = self.__class__.csvFile
         textPath = self._import_from()
         if not textPath: return
         #--Extension error check
         ext = textPath.cext
-        if ext not in supportedExts:
-            plugin_exts = ', '.join(
-                sorted({*bush.game.espm_extensions, '.ghost'}))
-            if len(supportedExts) > 1:
+        p_exts = self._data_store.info_exts() if self._parse_mods else set()
+        if ext not in {'.csv', *p_exts}:
+            if self._parse_mods:
                 csv_err = _('Source file must be a %(csv_ext)s file or a '
                             'plugin (%(plugin_exts)s).') % {
-                    'csv_ext': csv_filename, 'plugin_exts': plugin_exts}
+                              'csv_ext': csv_filename,
+                              'plugin_exts': ', '.join(sorted(p_exts))}
             else:
                 csv_err = _('Source file must be a %(csv_ext)s file.') % {
                     'csv_ext': csv_filename}
@@ -2016,7 +2012,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
                      'replace existing prices and is not reversible!')
     continueKey = u'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
-    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
+    _parse_mods = True
     _parser_class = ItemPrices
 
     def _log(self, changes, fileName):
@@ -2233,7 +2229,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     continueKey = u'bash.fullNames.import.continue'
     _text = _('Names…')
     _help = _(u'Import full names from text file or other mod')
-    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
+    _parse_mods = True
 
     def _parser(self):
         return FullNames()

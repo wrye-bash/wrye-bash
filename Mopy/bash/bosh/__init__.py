@@ -39,7 +39,7 @@ from os import DirEntry
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
 from .converters import InstallerConverter
-from .cosaves import PluggyCosave, xSECosave
+from .cosaves import PluggyCosave, xSECosave, ACosave
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings
@@ -1326,19 +1326,19 @@ class AINIInfo(_TabledInfo, AIniInfo):
 
 #------------------------------------------------------------------------------
 class SaveInfo(_WithMastersInfo):
-    cosave_types = () # cosave types for this game - set once in SaveInfos
+    cosave_types: list[type[ACosave]] = [] # set in SaveInfos.__init__
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _key_to_attr = {'info': 'save_notes'}
-    _co_saves: dict[type[cosaves.ACosave], cosaves.ACosave]
-    file_exts = frozenset([_e := bush.game.Ess.ext, _e[:-1] + 'r', '.bak'])
+    # Dict of cosaves that may come with this save file
+    _co_saves: dict[type[ACosave], ACosave] = {} # instance attr set in init
+    sexts = {'save_ext_on': bush.game.Ess.ext}
+    sexts['save_ext_off'] = sexts['save_ext_on'][:-1] + 'r'
+    file_exts = frozenset([*sexts.values(), '.bak'])
 
     def __init__(self, fullpath, **kwargs):
-        # Dict of cosaves that may come with this save file. Need to get this
-        # first, since readHeader calls _get_masters, which relies on the
-        # cosave for SSE and FO4
-        self._co_saves = {co_type: cos for co_type in SaveInfo.cosave_types if
-            (cos := SaveInfo.make_cosave(co_type, co_type.get_cosave_path(
-                fullpath)))}
+        # Need to update cosaves first, since readHeader calls _get_masters,
+        # which relies on the cosave for SSE and FO4
+        self._update_cosaves(fullpath)
         super().__init__(fullpath, **kwargs)
 
     def set_path_keys(self, *args, **kwargs):
@@ -1382,26 +1382,9 @@ class SaveInfo(_WithMastersInfo):
         super().readHeader()
 
     def do_update(self, **kwargs):
-        # Check for new and deleted cosaves and do_update old, surviving ones
-        cosaves_changed = False
-        csaves = self._co_saves
-        for co_type in SaveInfo.cosave_types:
-            co_path = co_type.get_cosave_path(self.abs_path)
-            if co_path.is_file():
-                if co_type in csaves:
-                    # Existing cosave could have changed, check if it did
-                    cosaves_changed |= csaves[co_type].do_update()
-                else:
-                    # New cosave attached, add it to cache
-                    csaves[co_type] = self.make_cosave(co_type, co_path)
-                    cosaves_changed = True
-            elif co_type in csaves:
-                # Old cosave deleted, remove it from cache
-                del csaves[co_type]
-                cosaves_changed = True
         # If the cosaves have changed, the cached masters can no longer be
         # trusted since they may have been retrieved from the cosaves
-        if cosaves_changed:
+        if cosaves_changed := self._update_cosaves():
             self._reset_masters()
         # Delegate the call first, but also take the cosaves into account
         return super().do_update(**kwargs) or cosaves_changed
@@ -1427,7 +1410,7 @@ class SaveInfo(_WithMastersInfo):
         co_ui_strings = [u'', u'']
         instances = self._co_saves
         # last string corresponds to xse plugin so used reversed
-        for j, co_typ in enumerate(reversed(self.cosave_types)):
+        for j, co_typ in enumerate(reversed(self.__class__.cosave_types)):
             inst = instances.get(co_typ, None)
             if inst and inst.abs_path.exists():
                 co_ui_strings[j] = self._cosave_ui_string[co_typ][
@@ -1441,21 +1424,28 @@ class SaveInfo(_WithMastersInfo):
         # delete cosaves for backup (if the backup has no cosaves)
         old_new_paths.extend(
             tuple(map(co_type.get_cosave_path, old_new_paths[0])) for co_type
-            in self.cosave_types)
+            in self.__class__.cosave_types)
         return old_new_paths
 
-    @staticmethod
-    def make_cosave(co_type, co_path):
-        """Attempts to create a cosave of the specified type at the specified
-        path and logs any resulting error.
-
-        :rtype: cosaves.ACosave | None"""
-        try:
-            return co_type(co_path)
-        except (OSError, FileError) as e:
-            if not isinstance(e, FileNotFoundError):
-                deprint(f'Failed to open {co_path}', traceback=True)
-            return None
+    def _update_cosaves(self, co_path=None) -> bool:
+        """Check for new and deleted cosaves and do_update old, surviving ones.
+        """
+        csaves, cosaves_changed, co_path = {}, False, co_path or self.abs_path
+        for co_type in self.__class__.cosave_types:
+            try: # Existing cosave could have changed, check if it did
+                try:
+                    if (csave := self._co_saves[co_type]).abs_path.is_dir():
+                        continue # do_update won't see that a cosave is a dir now
+                    cosaves_changed |= csave.do_update()
+                except KeyError: # New cosave attached, add it to cache
+                    csave = co_type(co_type.get_cosave_path(co_path))
+                csaves[co_type] = csave
+            except (OSError, FileError) as e:
+                if not isinstance(e, (FileNotFoundError, IsADirectoryError)):
+                    deprint(f'Failed to open {co_path}', traceback=True)
+        cosaves_changed |= csaves.keys() != self._co_saves.keys()
+        self._co_saves = csaves
+        return cosaves_changed
 
     def get_xse_cosave(self):
         """:rtype: xSECosave | None"""
@@ -1662,6 +1652,10 @@ class DataStore(DataDict):
     def _file_exts(cls):
         return cls.factory_type.file_exts
 
+    @classmethod
+    def info_exts(cls, with_ghosts=True):
+        return cls._file_exts
+
     def _diff_dir(self, inodes) -> RefrIn: # single use in refresh (and super)
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted infos."""
@@ -1794,8 +1788,8 @@ class DataStore(DataDict):
         return self.bash_dir.join(u'Hidden')
 
     @classmethod
-    def unhide_wildcard(cls):
-        exts = f'*{";*".join(cls._file_exts)}'
+    def unhide_wildcard(cls, *, with_ghosts=True) -> str:
+        exts = f'*{";*".join(cls.info_exts(with_ghosts))}'
         return f'{bush.game.display_name} {cls._files_str} ({exts})|{exts}'
 
     def warning_args(self, multi_warnings, lo_warnings):
@@ -2392,6 +2386,11 @@ class ModInfos(_AFileInfos):
             if isinstance(sup, dict):
                 sup[fname]['itsa_ghost'] = itsa_ghost
         return sup
+
+    @classmethod
+    def info_exts(cls, with_ghosts=True):
+        sup = super().info_exts()
+        return {*sup, '.ghost'} if with_ghosts else sup
 
     def _file_or_active_updates(self, *, __lo=load_order.cached_lo_index):
         """If any plugins have been added, updated or deleted, or the active

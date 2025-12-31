@@ -50,7 +50,7 @@ class Files_Unhide(ItemLink):
         hide_d = dstore.hide_dir
         # Otherwise FileOpenMultiple will open some random directory
         hide_d.makedirs()
-        wildcard = dstore.unhide_wildcard()
+        wildcard = dstore.unhide_wildcard(with_ghosts=False)
         st_dir = dstore.store_dir
         srcPaths = FileOpenMultiple.display_dialog(uil, _('Unhide files:'),
             defaultDir=hide_d, wildcard=wildcard)

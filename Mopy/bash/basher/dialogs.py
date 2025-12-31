@@ -291,12 +291,12 @@ class CreateNewPlugin(DialogWindow):
     title = _(u'New Plugin')
     _def_size = (400, 500)
 
-    def __init__(self, parent):
-        super(CreateNewPlugin, self).__init__(parent,
-            icon_bundle=balt.Resources.bashBlue, sizes_dict=bass.settings)
+    def __init__(self, parent, mod_infos):
+        super().__init__(parent, icon_bundle=balt.Resources.bashBlue,
+                         sizes_dict=bass.settings)
         self._parent_window = parent
-        self._plugin_ext = DropDown(self, value='.esp',
-            choices=sorted(bush.game.espm_extensions), dd_tooltip=_(
+        self._plugin_ext = DropDown(self, value='.esp', choices=sorted(
+            mod_infos.info_exts(with_ghosts=False)), dd_tooltip=_(
                 'Select which extension the plugin will have.'))
         self._plugin_ext.on_combo_select.subscribe(self._handle_plugin_ext)
         self._plugin_name = TextField(self, _(u'New Plugin'),

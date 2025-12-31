@@ -49,7 +49,7 @@ from ..bolt import AFile, AFileInfo, CIstr, DefaultFNDict, FName, \
     forward_compat_path_to_fn_list, round_size
 from ..exception import ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError
-from ..ini_files import OBSEIniFile, supported_ini_exts
+from ..ini_files import OBSEIniFile
 from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
 
 os_sep = os.path.sep ##: track
@@ -2496,7 +2496,7 @@ class InstallersData(DataStore):
             self.refresh_n()
 
     #--Install
-    def _createTweaks(self, destFiles, installer, tweaksCreated):
+    def _createTweaks(self, dest_files, installer, tweaksCreated):
         """Generate INI Tweaks when a CRC mismatch is detected while
         installing a mod INI (not ini tweak) in the Data/ directory.
 
@@ -2504,11 +2504,11 @@ class InstallersData(DataStore):
         installing, a tweak file will be generated. Call me *before*
         installing the new inis then call _editTweaks() to populate the tweaks.
         """
-        dest_files = (x for x in destFiles
-                if x[-4:].lower() in supported_ini_exts
-                # don't create ini tweaks for overridden ini tweaks...
-                and os.path.split(x)[0].lower() != u'ini tweaks')
+        from . import iniInfos
         for relPath in dest_files:
+            if not iniInfos.check_filename(relPath) or \
+                    os.path.split(relPath)[0].lower() == 'ini tweaks':
+                continue # don't create ini tweaks for overridden ini tweaks...
             try:
                 if self.data_sizeCrcDate[relPath][1] == \
                         installer.ci_dest_sizeCrc[relPath][1]:
