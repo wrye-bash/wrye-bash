@@ -29,10 +29,12 @@ __author__ = 'Utumno, Infernio'
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import Color, _AComponent, scaled
+from .base_components import Color, _AComponent, scaled, WithDragEvents
 from .buttons import OkButton
 from .doc_viewer import DocumentViewer
+from .events import EventResult
 from .layouts import HLayout, LayoutOptions, Stretch, VLayout, RIGHT
+from .menus import Links
 from .text_components import TextArea
 from ..bolt import deprint
 
@@ -330,7 +332,7 @@ class _APageComponent(_AComponent):
     def get_selected_page_index(self):
         return self._native_widget.GetSelection()
 
-    def set_selected_page_index(self, page_index: int) -> None:
+    def select_page_at_index(self, page_index: int) -> None:
         corrected_index = max(0, min(self.page_count - 1, page_index))
         if corrected_index != page_index:
             deprint(
@@ -349,11 +351,14 @@ class TabbedPanel(_APageComponent):
     _native_widget: _wx.Notebook
 
     def __init__(self, parent, multiline=False):
-        super(TabbedPanel, self).__init__(
-            parent, style=_wx.NB_MULTILINE if multiline else 0)
+        super().__init__(parent, style=_wx.NB_MULTILINE if multiline else 0)
         self.on_nb_page_change = self._evt_handler(
             _wx.EVT_NOTEBOOK_PAGE_CHANGED,
             lambda event: [event.GetId(), event.GetSelection()])
+
+    def stop_event(self, event_id):
+        """InstallersDetails event will propagate to the BashFrame.notebook."""
+        return event_id != self._native_widget.GetId()
 
 class ListPanel(_APageComponent):
     """A panel with a list of options that each correspond to a different
@@ -411,3 +416,87 @@ class CenteredSplash(_AComponent):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._stop_splash()
+
+class DnDNotebook(WithDragEvents, TabbedPanel): # Dragger?
+    """A wx.Notebook wrapper that enables draggable Tabs."""
+
+    def __init__(self, *args, **kwargs):
+        # CaptureMouse works badly in wxGTK/OSX - TODO(inf) Test in wx3
+        kws = {} if _wx.Platform != '__WXMSW__' else {
+            'on_drag_start': self._on_drag_start, 'on_drag': self._on_drag,
+            'on_drag_end': self._on_drag_end,
+            'on_drag_end_forced': self._on_drag_end_forced}
+        super().__init__(*args, **kws, **kwargs)
+        self.__dragX = 0
+        self.__dragging = _wx.NOT_FOUND
+        self.__justSwapped = _wx.NOT_FOUND
+        self._tab_menu = Links()
+        #--Setup Popup menu for Right Click on a Tab
+        self._on_ctxt_menu = self._evt_handler(_wx.EVT_CONTEXT_MENU,
+            lambda event: [self._native_widget.HitTest(
+                self._native_widget.ScreenToClient(event.GetPosition()))])
+        self._on_ctxt_menu.subscribe(self._do_tab_menu)
+
+    def _do_tab_menu(self, tabId):
+        if tabId != _wx.NOT_FOUND and tabId[0] != _wx.NOT_FOUND:
+            self._tab_menu.popup_menu(self, None)
+            return EventResult.FINISH
+
+    def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
+        if not self._native_widget.HasCapture(): # or blow up on CaptureMouse()
+            self.__dragging = _lb_dex_and_flags
+            if self.__dragging != _wx.NOT_FOUND:
+                self.__dragX = mouse_evnt.evt_pos[0]
+                self.__justSwapped = _wx.NOT_FOUND
+                self._native_widget.CaptureMouse()
+
+    def _on_drag_end_forced(self):
+        self.__dragging = _wx.NOT_FOUND
+        self.set_cursor()
+
+    def _on_drag_end(self, mouse_evnt):
+        if self.__dragging != _wx.NOT_FOUND:
+            self.set_cursor()
+            self.__dragging = _wx.NOT_FOUND
+            try:
+                self._native_widget.ReleaseMouse()
+            except AssertionError:
+                # PyAssertionError: C++ assertion "GetCapture() == this"
+                # failed at ..\..\src\common\wincmn.cpp(2536) in
+                # wxWindowBase::ReleaseMouse(): attempt to release mouse,
+                # but this window hasn't captured it
+                pass
+
+    def _on_drag(self, mouse_evnt, _lb_dex_and_flags):
+        if self.__dragging != _wx.NOT_FOUND:
+            pos = mouse_evnt.evt_pos
+            if abs(pos[0] - self.__dragX) > 5:
+                self.set_cursor(hand=True)
+            tabId = self._native_widget.HitTest(pos)
+            if tabId == _wx.NOT_FOUND or tabId[0] in (_wx.NOT_FOUND,self.__dragging[0]):
+                self.__justSwapped = _wx.NOT_FOUND
+            else:
+                if self.__justSwapped == tabId[0]:
+                    return
+                # We'll do the swapping by removing all pages in the way,
+                # then readding them in the right place.  Do this because
+                # it makes the tab we're dragging not have to refresh, whereas
+                # if we just removed the current page and reinserted it in the
+                # correct position, there would be refresh artifacts
+                newPos = tabId[0]
+                oldPos = self.__dragging[0]
+                self.__justSwapped = oldPos
+                self.__dragging = tabId[:]
+                if newPos < oldPos:
+                    left,right,step = newPos,oldPos,1
+                else:
+                    left,right,step = oldPos+1,newPos+1,-1
+                insert = left+step
+                addPages = [(self._native_widget.GetPage(x),self._native_widget.GetPageText(x)) for x in range(left,right)]
+                addPages.reverse()
+                num = right - left
+                for i in range(num):
+                    self._native_widget.RemovePage(left)
+                for page,title in addPages:
+                    self._native_widget.InsertPage(insert,page,title)
+                self.drag_tab(newPos)

@@ -277,7 +277,7 @@ class Master_JumpTo(OneItemLink):
         return self._sel_master in bosh.modInfos
 
     def Execute(self):
-        balt.Link.Frame.notebook.SelectPage(u'Mods', self._sel_master)
+        balt.Link.Frame.notebook.jump_to('Mods', self._sel_master)
 
 #------------------------------------------------------------------------------
 class _Column(CheckLink, EnabledLink):

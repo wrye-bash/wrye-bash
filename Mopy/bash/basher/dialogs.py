@@ -836,8 +836,7 @@ def _mk_node_class(node_tab_key: str):
         """A node depicting an item on a certain tab."""
         def on_activated(self):
             try:
-                balt.Link.Frame.notebook.SelectPage(node_tab_key,
-                    self._node_text)
+                balt.Link.Frame.notebook.jump_to(node_tab_key, self._node_text)
             except KeyError:
                 balt.showError(self._parent_tree,
                     _('%(target_item)s could not be found.') % {

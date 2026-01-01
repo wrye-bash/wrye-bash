@@ -336,93 +336,6 @@ class ListEditor(DialogWindow):
         self.cancel_modal()
 
 #------------------------------------------------------------------------------
-##: Is there even a good reason for having this as a mixin? AFAICT, the only
-# thing this accomplishes is causing pycharm to spit out tons of warnings
-class TabDragMixin(object):
-    """Mixin for the wx.Notebook class.  Enables draggable Tabs.
-       Events:
-         EVT_NB_TAB_DRAGGED: Called after a tab has been dragged
-           event.oldIdex = old tab position (of tab that was moved
-           event.newIdex = new tab position (of tab that was moved
-    """
-    # PY3: These slots cause a crash on wx4
-    #__slots__ = ('__dragX','__dragging','__justSwapped')
-
-    def __init__(self):
-        self.__dragX = 0
-        self.__dragging = wx.NOT_FOUND
-        self.__justSwapped = wx.NOT_FOUND
-        # TODO(inf) Test in wx3
-        if wx.Platform == '__WXMSW__': # CaptureMouse works badly in wxGTK/OSX
-            self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
-            self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
-            self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
-            self.Bind(wx.EVT_MOTION, self.__OnDragging)
-
-    def __OnDragStart(self, event):
-        if not self.HasCapture(): # or blow up on CaptureMouse()
-            pos = event.GetPosition()
-            self.__dragging = self.HitTest(pos)
-            if self.__dragging != wx.NOT_FOUND:
-                self.__dragX = pos[0]
-                self.__justSwapped = wx.NOT_FOUND
-                self.CaptureMouse()
-        event.Skip()
-
-    def __OnDragEndForced(self, _event):
-        self.__dragging = wx.NOT_FOUND
-        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-
-    def __OnDragEnd(self, event):
-        if self.__dragging != wx.NOT_FOUND:
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-            self.__dragging = wx.NOT_FOUND
-            try:
-                self.ReleaseMouse()
-            except AssertionError:
-                # PyAssertionError: C++ assertion "GetCapture() == this"
-                # failed at ..\..\src\common\wincmn.cpp(2536) in
-                # wxWindowBase::ReleaseMouse(): attempt to release mouse,
-                # but this window hasn't captured it
-                pass
-        event.Skip()
-
-    def __OnDragging(self, event):
-        if self.__dragging != wx.NOT_FOUND:
-            pos = event.GetPosition()
-            if abs(pos[0] - self.__dragX) > 5:
-                self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-            tabId = self.HitTest(pos)
-            if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.__dragging[0]):
-                self.__justSwapped = wx.NOT_FOUND
-            else:
-                if self.__justSwapped == tabId[0]:
-                    return
-                # We'll do the swapping by removing all pages in the way,
-                # then readding them in the right place.  Do this because
-                # it makes the tab we're dragging not have to refresh, whereas
-                # if we just removed the current page and reinserted it in the
-                # correct position, there would be refresh artifacts
-                newPos = tabId[0]
-                oldPos = self.__dragging[0]
-                self.__justSwapped = oldPos
-                self.__dragging = tabId[:]
-                if newPos < oldPos:
-                    left,right,step = newPos,oldPos,1
-                else:
-                    left,right,step = oldPos+1,newPos+1,-1
-                insert = left+step
-                addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(left,right)]
-                addPages.reverse()
-                num = right - left
-                for i in range(num):
-                    self.RemovePage(left)
-                for page,title in addPages:
-                    self.InsertPage(insert,page,title)
-                self.drag_tab(newPos)
-        event.Skip()
-
-#------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     _style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH
@@ -934,7 +847,7 @@ class UIList(PanelWin):
                 return EventResult.CONTINUE
             # Ctrl+Tab - cycle tabs to the right
             # Ctrl+Shift+Tab - cycle tabs to the left
-            Link.Frame.notebook.AdvanceSelection(not wrapped_evt.is_shift_down)
+            Link.Frame.notebook.next_tab(not wrapped_evt.is_shift_down)
         else:
             return EventResult.CONTINUE
         return EventResult.FINISH
@@ -1333,7 +1246,7 @@ class UIList(PanelWin):
         if fn_package is None:
             return False
         try:
-            Link.Frame.notebook.SelectPage('Installers', fn_package)
+            Link.Frame.notebook.jump_to('Installers', fn_package)
         except KeyError:
             # The package does not exist anymore
             ##: This points to deeper bugs in our ownership handling/updating
@@ -2076,7 +1989,7 @@ class BashStatusBar(DnDStatusBar):
         self.dragging, button_link = self._getButtonIndex(mouse_evnt)
         if wx.Platform == '__WXMSW__':
             button_link._native_widget.CaptureMouse()
-        return EventResult.FINISH # we don't skip blocks EVT_MOTION somehow
+        return EventResult.FINISH # we don't skip - blocks EVT_MOTION somehow
 
     def _on_drag_end_forced(self):
         self._reset_drag()

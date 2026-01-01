@@ -1047,7 +1047,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
         return self.target_plugin in bosh.modInfos
 
     def Execute(self):
-        balt.Link.Frame.notebook.SelectPage(u'Mods', self.target_plugin)
+        balt.Link.Frame.notebook.jump_to('Mods', self.target_plugin)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Sub-package Links ------------------------------------------

@@ -59,9 +59,6 @@ from collections.abc import Iterable
 from enum import Enum
 from functools import partial
 from itertools import chain, repeat, starmap, count
-
-import wx ##:(190) de-wx!
-
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
 from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
@@ -85,10 +82,11 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
     ListBox, Links, MultiChoicePopup, PanelWin, Picture, PureImageButton, \
     RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, TextArea, \
-    TextField, VLayout, WindowFrame, WithMouseEvents, get_shift_down, \
-    read_files_from_clipboard_cb, showError, askYes, showWarning, askWarning, \
-    showOk, BmpFromStream, init_image_resources, get_image, \
-    get_installer_color_checks, get_image_dir, copy_text_to_clipboard
+    DnDNotebook, TextField, VLayout, WindowFrame, WithMouseEvents, \
+    get_shift_down, read_files_from_clipboard_cb, showError, askYes, \
+    showWarning, askWarning, showOk, BmpFromStream, init_image_resources, \
+    get_image, get_installer_color_checks, get_image_dir, \
+    copy_text_to_clipboard
 from ..localize import format_date
 from ..plugin_types import active_keys, ST_MERGED
 from ..update_checker import LatestVersion, UCThread
@@ -483,7 +481,7 @@ class MasterList(_ModsUIList):
         sel_curr_name = self.data_store[self.mouse_index].curr_name
         if sel_curr_name not in bosh.modInfos:
             return # Master that is not installed was clicked
-        balt.Link.Frame.notebook.SelectPage(u'Mods', sel_curr_name)
+        balt.Link.Frame.notebook.jump_to('Mods', sel_curr_name)
         return EventResult.FINISH
 
     #--Set ModInfo
@@ -2571,8 +2569,7 @@ class InstallersDetails(_SashDetailsPanel):
             gPage.set_component_name(cmp_name)
             self.gNotebook.add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
-        self.gNotebook.set_selected_page_index(
-            settings[u'bash.installers.page'])
+        self.gNotebook.select_page_at_index(settings['bash.installers.page'])
         self.gNotebook.on_nb_page_change.subscribe(self.OnShowInfoPage)
         self.sp_panel, espmsPanel = self.checkListSplitter.make_panes(
             vertically=True)
@@ -2627,13 +2624,13 @@ class InstallersDetails(_SashDetailsPanel):
     def _get_sub_splitter(self):
         return Splitter(self.left, min_pane_size=50, sash_gravity=0.5)
 
-    def OnShowInfoPage(self, wx_id, selected_index):
+    def OnShowInfoPage(self, event_id, selected_index):
         """A specific info page has been selected."""
-        if wx_id == self.gNotebook.wx_id_(): # todo because of BashNotebook event??
-            # todo use the pages directly not the index
-            gPage,initialized = self.infoPages[selected_index]
-            if self.detail_fn and not initialized:
-                self.RefreshInfoPage(selected_index, self.file_info)
+        if self.gNotebook.stop_event(event_id):
+            return EventResult.FINISH
+        gPage, initialized = self.infoPages[selected_index]
+        if self.detail_fn and not initialized:
+            self.RefreshInfoPage(selected_index, self.file_info)
 
     def ClosePanel(self, destroy=False):
         """Saves details if they need saving."""
@@ -2845,7 +2842,7 @@ class InstallersDetails(_SashDetailsPanel):
         if selected_index < 0: return
         selected_name = self.get_espm(selected_index)
         if selected_name not in bosh.modInfos: return
-        balt.Link.Frame.notebook.SelectPage(u'Mods', selected_name)
+        balt.Link.Frame.notebook.jump_to('Mods', selected_name)
         return EventResult.FINISH
 
     def set_subpackage_checkmarks(self, checked):
@@ -3281,50 +3278,16 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     def _check(self): return bass.settings[u'bash.tabs.order'][self.tabKey]
 
     def Execute(self):
-        btab = _keyed_tabs[self.tabKey]
-        page_count = Link.Frame.notebook.GetPageCount()
-        if bass.settings[u'bash.tabs.order'][self.tabKey]:
-            # It was enabled, disable it.
-            pageTitle = {Link.Frame.notebook.GetPageText(i): i for i in
-                         range(page_count)}
-            iMods = pageTitle[TabInfo.MODS.tab_title] # should always exist!
-            iInstallers = pageTitle.get(TabInfo.INSTALLERS.tab_title)
-            iDelete = pageTitle[btab.tab_title]
-            if iDelete == Link.Frame.notebook.GetSelection():
-                # We're deleting the current page...
-                if ((iDelete == 0 and iInstallers == 1) or
-                        (iDelete - 1 == iInstallers)):
-                    # The auto-page change will change to the 'Installers' tab.
-                    # Change to the 'Mods' tab instead.
-                    Link.Frame.notebook.SetSelection(iMods)
-            btab.tab_panel.ClosePanel() ##: note the panel remains in memory
-            page = Link.Frame.notebook.GetPage(iDelete)
-            Link.Frame.notebook.RemovePage(iDelete)
-            page.Show(False)
-        else:
-            # It was disabled, enable it
-            insertAt = 0
-            for k, k_enabled in bass.settings[u'bash.tabs.order'].items():
-                if k == self.tabKey: break
-                insertAt += k_enabled
-            if not (pan := btab.tab_panel):
-                btab.tab_panel = pan = btab.panel_class(Link.Frame.notebook)
-            if insertAt > page_count:
-                Link.Frame.notebook.AddPage(pan._native_widget, btab.tab_title)
-            else:
-                Link.Frame.notebook.InsertPage(insertAt, pan._native_widget,
-                                               btab.tab_title)
+        Link.Frame.notebook.show_hide(self.tabKey)
         bass.settings[u'bash.tabs.order'][self.tabKey] ^= True
 
 # Bash Notebook ---------------------------------------------------------------
-class BashNotebook(wx.Notebook, balt.TabDragMixin):
+class BashNotebook(DnDNotebook):
 
     def __init__(self, parent):
-        wx.Notebook.__init__(self, parent)
-        balt.TabDragMixin.__init__(self)
+        super().__init__(parent)
         #--Pages
         iInstallers = iMods = -1
-        self._tab_menu = Links()
         # default tabs order and default enabled state, keys as in tabInfo
         tabs_enabled_ordered = {e.order_key:e.default_enabled for e in TabInfo}
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
@@ -3358,7 +3321,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             # Add the page
             try:
                 item = btab.panel_class(self)
-                self.AddPage(item._native_widget, title)
+                self.add_page(item, title)
                 btab.tab_panel = item
                 deprint(f"Panel '{title}' constructed successfully")
                 dex += 1
@@ -3373,17 +3336,50 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         pageIndex = max(min(settings['bash.page'], dex - 1), 0)
         if settings[u'bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
-        self.SetSelection(pageIndex)
-        #--Setup Popup menu for Right Click on a Tab
-        self.Bind(wx.EVT_CONTEXT_MENU, self.DoTabMenu)
+        self.select_page_at_index(pageIndex)
+
+    def show_hide(self, tab_key):
+        widg = self._native_widget
+        btab = _keyed_tabs[tab_key]
+        page_count = widg.GetPageCount()
+        if bass.settings['bash.tabs.order'][tab_key]:
+            # It was enabled, disable it.
+            pageTitle = {widg.GetPageText(i): i for i in range(page_count)}
+            iMods = pageTitle[TabInfo.MODS.tab_title]  # should always exist!
+            iInstallers = pageTitle.get(TabInfo.INSTALLERS.tab_title)
+            iDelete = pageTitle[btab.tab_title]
+            if iDelete == widg.GetSelection():
+                # We're deleting the current page...
+                if ((iDelete == 0 and iInstallers == 1) or (
+                        iDelete - 1 == iInstallers)):
+                    # The auto-page change will change to the 'Installers' tab.
+                    # Change to the 'Mods' tab instead.
+                    widg.SetSelection(iMods)
+            btab.tab_panel.ClosePanel()  ##: note the panel remains in memory
+            page = widg.GetPage(iDelete)
+            widg.RemovePage(iDelete)
+            page.Show(False)
+        else:
+            # It was disabled, enable it
+            insertAt = 0
+            for k, k_enabled in bass.settings['bash.tabs.order'].items():
+                if k == tab_key: break
+                insertAt += k_enabled
+            if not (pan := btab.tab_panel):
+                btab.tab_panel = pan = btab.panel_class(self)
+            if insertAt > page_count:
+                self.add_page(pan, btab.tab_title)
+            else:
+                widg.InsertPage(insertAt, self._resolve(pan), btab.tab_title)
 
     @property
     def currentPage(self):
         """Return the current tab panel."""
-        tab_title = self.GetPageText(self.GetSelection()) # a simpler way?
+        tab_title = self._native_widget.GetPageText( # a simpler way?
+            self.get_selected_page_index())
         return [t for t in TabInfo if t.tab_title == tab_title][0].tab_panel
 
-    def SelectPage(self, page_title, item):
+    def jump_to(self, page_title, item):
         """Jumps to the specified item on the specified tab.
 
         Note: If you call this from inside an event handler, be sure to return
@@ -3396,22 +3392,13 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 break
             ind += is_enabled
         else: raise BoltError(f'Invalid tab key: {page_title}')
-        self.SetSelection(ind)
+        self._native_widget.SetSelection(ind)
         _keyed_tabs[page_title].tab_panel.SelectUIListItem(item,
                                                            deselectOthers=True)
 
-    def DoTabMenu(self,event):
-        pos = event.GetPosition()
-        pos = self.ScreenToClient(pos)
-        tabId = self.HitTest(pos)
-        if tabId != wx.NOT_FOUND and tabId[0] != wx.NOT_FOUND:
-            self._tab_menu.popup_menu(self, None)
-        else:
-            event.Skip()
-
     def drag_tab(self, newPos):
         # Find the key
-        removeTitle = self.GetPageText(newPos)
+        removeTitle = self._native_widget.GetPageText(newPos)
         oldOrder = list(settings[u'bash.tabs.order'])
         for removeKey in oldOrder:
             if _keyed_tabs[removeKey].tab_title == removeTitle:
@@ -3419,10 +3406,10 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         oldOrder.remove(removeKey)
         if newPos == 0: # Moved to the front
             newOrder = [removeKey, *oldOrder]
-        elif newPos == self.GetPageCount() - 1: # Moved to the end
+        elif newPos == self._native_widget.GetPageCount() - 1: # Moved to the end
             newOrder = [*oldOrder, removeKey]
         else: # Moved somewhere in the middle
-            nextTabTitle = self.GetPageText(newPos+1)
+            nextTabTitle = self._native_widget.GetPageText(newPos + 1)
             for nextTabKey in oldOrder:
                 if _keyed_tabs[nextTabKey].tab_title == nextTabTitle:
                     break
@@ -3431,12 +3418,15 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         settings[u'bash.tabs.order'] = OrderedDict(
             (k, settings[u'bash.tabs.order'][k]) for k in newOrder)
 
-    def OnShowPage(self,event):
-        """Call panel's ShowPanel() and set the current panel."""
-        if event.GetId() == self.GetId(): ##: why ?
-            bolt.GPathPurge()
-            self.currentPage.ShowPanel()
-            event.Skip() ##: shouldn't this always be called ?
+    def OnShowPage(self, event_id, selected_index):
+        """Call panel's ShowPanel() on the current panel."""
+        if self.stop_event(event_id):
+            return EventResult.FINISH
+        self.currentPage.ShowPanel()
+
+    def next_tab(self, forward):
+        """Advance to next/previous tab."""
+        self._native_widget.AdvanceSelection(forward)
 
 #------------------------------------------------------------------------------
 class BashFrame(WindowFrame):
@@ -3471,7 +3461,7 @@ class BashFrame(WindowFrame):
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = u''
         self.oblivionIniMissing = self._oblivionIniMissing = False
-        self.notebook = BashNotebook(self._native_widget)
+        self.notebook = BashNotebook(self)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
 
@@ -3695,7 +3685,7 @@ class BashFrame(WindowFrame):
         self.CleanSettings()
         if Link.Frame.docBrowser: Link.Frame.docBrowser.DoSave()
         settings[u'bash.frameMax'] = self.is_maximized
-        settings[u'bash.page'] = self.notebook.GetSelection()
+        settings['bash.page'] = self.notebook.get_selected_page_index()
         # use TabInfo below, so we save settings of panels that the user closed
         for btab in TabInfo:
             if (pan := btab.tab_panel) is None: continue
@@ -3741,7 +3731,7 @@ class BashFrame(WindowFrame):
         chose."""
         # bash.global_menu == 2 -> Column Menu Only
         show_gm = bass.settings['bash.global_menu'] != 2
-        self._native_widget.SetMenuBar(self.global_menu._native_widget
+        self._native_widget.SetMenuBar(self._resolve(self.global_menu)
                                        if show_gm else None)
 
     def start_update_check(self):
@@ -3792,10 +3782,8 @@ def Init(bash_app):
     frame.show_frame()
     frame.RefreshData(booting=True)
     frame.is_maximized = settings['bash.frameMax']
-    # Moved notebook.Bind() callback here as OnShowPage() is explicitly
-    # called in RefreshData
-    frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
-                        frame.notebook.OnShowPage)
+    # Bind the callback here as ShowPanel() is explicitly called in RefreshData
+    frame.notebook.on_nb_page_change.subscribe(frame.notebook.OnShowPage)
     return frame
 
 def InitSettings(): # this must run first !
