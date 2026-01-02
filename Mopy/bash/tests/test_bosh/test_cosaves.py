@@ -76,11 +76,11 @@ class ATestACosave(object):
         """Tests if writing out all cosaves produces the same checksum."""
         def _check_writing(curr_cosave: xSECosave):
             with TempFile(bolt_path=True) as temp_cosave_path:
-                curr_cosave.write_cosave(temp_cosave_path)
-                assert curr_cosave.abs_path.crc == temp_cosave_path.crc
-                # write_cosave and write_cosave_safe should have the same
-                # behavior
+                # _write_cosave and write_cosave_safe should have the same
+                # behavior - we need to _read_cosave() so call the latter first
                 curr_cosave.write_cosave_safe(temp_cosave_path)
+                assert curr_cosave.abs_path.crc == temp_cosave_path.crc
+                curr_cosave._write_cosave(temp_cosave_path)
                 assert curr_cosave.abs_path.crc == temp_cosave_path.crc
                 # Cosave writing should not change mtime, since we use that to
                 # detect desyncs between save and cosave
@@ -129,14 +129,14 @@ class ATestACosave(object):
             # Check that writing the result out produces a bytestring
             # containing the remapped master name
             with TempFile(bolt_path=True) as temp_cosave_path:
-                curr_cosave.write_cosave(temp_cosave_path)
+                curr_cosave._write_cosave(temp_cosave_path)
                 assert curr_cosave.abs_path.crc != temp_cosave_path.crc
                 with open(temp_cosave_path, 'rb') as ins:
                     assert _impossible_master.encode('ascii') in ins.read()
                 # Check that undoing the mapping produces the original file
                 # again
                 curr_cosave.remap_plugins({_impossible_master: first_master})
-                curr_cosave.write_cosave(temp_cosave_path)
+                curr_cosave._write_cosave(temp_cosave_path)
                 assert curr_cosave.abs_path.crc == temp_cosave_path.crc
         self._do_map_cosaves(_check_remap_plugins)
 
@@ -150,7 +150,7 @@ class TestxSECosave(ATestACosave):
         """Tests if light-loading all cosaves works and only loads the first
         chunk."""
         def _check_reading_light(curr_cosave: xSECosave):
-            curr_cosave.read_cosave(light=True)
+            curr_cosave._read_cosave(light=True)
             # The first plugin chunk, which belongs to the script extender,
             # must *always* be present, otherwise the cosave is invalid
             assert len(curr_cosave.cosave_chunks) == 1
@@ -163,7 +163,7 @@ class TestxSECosave(ATestACosave):
         """Tests if full-loading all cosaves works and if the number of cosave
         chunks matches the expected number specified in the header."""
         def _check_reading_full(curr_cosave: xSECosave):
-            curr_cosave.read_cosave()
+            curr_cosave._read_cosave()
             assert (len(curr_cosave.cosave_chunks) ==
                     curr_cosave.cosave_header.num_plugin_chunks)
         self._do_map_cosaves(_check_reading_full)
@@ -173,7 +173,7 @@ class Test_xSEHeader(object):
         """Tests that the output of write_header is acceptable."""
         def _check_write_header(curr_cosave: xSECosave):
             # Check that it matches the first 20 bytes
-            curr_cosave.read_cosave(light=True)
+            curr_cosave._read_cosave(light=True)
             with curr_cosave.abs_path.open(u'rb') as ins:
                 header_bytes = ins.read(20)
             a_out = io.BytesIO()
@@ -190,7 +190,7 @@ class Test_xSEHeader(object):
         """Tests if the header attributes we read match the ones in the meta
         file."""
         def _check_header_attrs(curr_cosave: xSECosave):
-            curr_cosave.read_cosave(light=True)
+            curr_cosave._read_cosave(light=True)
             cosv_path = curr_cosave.abs_path
             meta_header = get_meta_value(cosv_path, u'cosave_header')
             for header_attr in (u'savefile_tag', u'format_version',
@@ -204,7 +204,7 @@ class Test_xSEPluginChunk(object):
     def test_chunk_length(self):
         """Tests that chunk_length is correctly implemented."""
         def _check_chunk_length(curr_cosave: xSECosave):
-            curr_cosave.read_cosave()
+            curr_cosave._read_cosave()
             for pchunk in curr_cosave.cosave_chunks:
                 assert pchunk.chunk_length() == pchunk.orig_size
         map_xse_cosaves(_check_chunk_length)
@@ -212,7 +212,7 @@ class Test_xSEPluginChunk(object):
     def test_remap_plugins(self):
         """Tests that remap_plugins is correctly implemented."""
         def _check_remap_plugins(curr_cosave: xSECosave):
-            curr_cosave.read_cosave()
+            curr_cosave._read_cosave()
             first_master = curr_cosave.get_master_list()[0]
             test_mapping = {first_master: first_master + u'1'}
             for pchunk in curr_cosave.cosave_chunks:
@@ -238,7 +238,7 @@ class ATest_xSEChunk(object):
         """Maps the specified functions over all chunks with signature
         _target_chunk_sig."""
         def _process_cosave(curr_cosave: xSECosave):
-            curr_cosave.read_cosave()
+            curr_cosave._read_cosave()
             for pchunk in curr_cosave.cosave_chunks:
                 for cchunk in pchunk.chunks:
                     if self._wants_chunk(cchunk):

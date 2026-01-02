@@ -31,16 +31,17 @@ __author__ = u'Infernio'
 
 import io
 import string
+from functools import wraps
 from typing import get_type_hints
 from zlib import crc32
 
-from ..bolt import AFile, GPath, Path, decoder, deprint, encode, pack_4s, \
-    pack_byte, pack_double, pack_float, pack_int, pack_int_signed, \
+from ..bolt import AFile, DelFile, GPath, Path, decoder, deprint, encode, \
+    pack_4s, pack_byte, pack_double, pack_float, pack_int, pack_int_signed, \
     pack_short, struct_error, struct_pack, struct_unpack, unpack_4s, \
     unpack_byte, unpack_double, unpack_float, unpack_int, unpack_int_signed, \
     unpack_short, unpack_spaced_string, unpack_str16, unpack_str32
 from ..exception import BoltError, CosaveError, InvalidCosaveError, \
-    UnsupportedCosaveError
+    UnsupportedCosaveError, FileError
 from ..wbtemp import TempFile
 
 # TODO(inf) All the chunk_length stuff needs to be reworked: first encode all
@@ -1368,7 +1369,27 @@ class _PluggyHudTBlock(_PluggyBlock):
 
 #------------------------------------------------------------------------------
 # Files
-class ACosave(_Dumpable, _Remappable, AFile):
+def _read_cos(*, light=False):
+    """Decorate methods that need to actually read the cosave file. We might
+    learn the file is invalid in which case we mark as deleted and deprint."""
+    def _jit_cosave_reader(func):
+        @wraps(func)
+        def _read_if_not_deleted(self: ACosave, *args, **kwargs):
+            if not self._deleted:
+                try:
+                    self._read_cosave(light)
+                    return func(self, *args, **kwargs)
+                except FileError: # file was not _deleted but corrupted uh, oh
+                    self._unload()
+                    # mark as _deleted but stop updating till stat changes
+                    # notify _update_cosaves that the file has changed
+                    self._deleted = self.has_changed = True
+                    deprint(f'{func.__name__}: Failed to open {self.abs_path}',
+                            traceback=True)
+        return _read_if_not_deleted
+    return _jit_cosave_reader
+
+class ACosave(_Dumpable, _Remappable, DelFile, AFile):
     """The abstract base class for all cosave files."""
     cosave_header: _AHeader
     cosave_ext = u''
@@ -1383,9 +1404,16 @@ class ACosave(_Dumpable, _Remappable, AFile):
     #  2 means the full cosave has been loaded
 
     def __init__(self, cosave_path):
-        if isinstance(cosave_path, Path) and cosave_path.is_dir():
-            raise IsADirectoryError
-        super().__init__(cosave_path, _raise_os_error=True)
+        super().__init__(cosave_path)
+        if self.abs_path.is_dir(): # highly unlikely
+            self._reset_cache(self._null_stat)
+            self.has_changed = False # do not warn in _update_cosaves
+
+    def do_update(self, **kwargs):
+        if self.abs_path.is_dir(): # highly unlikely
+            self._reset_cache(self._null_stat)
+            return self.has_changed # in case it wasn't a dir before (duh)
+        return super().do_update(**kwargs)
 
     def _reset_cache(self, stat_tuple, **kwargs):
         self._unload()
@@ -1393,17 +1421,17 @@ class ACosave(_Dumpable, _Remappable, AFile):
 
     def _unload(self):
         # Reset our loading state to 'unloaded', which will discard everything
-        # when the next request is made to the cosave (see read_cosave below)
+        # when the next request is made to the cosave (see _read_cosave below)
         self._loading_state = 0
         self.cosave_chunks = []
         self._remappable_chunks: list[_Remappable] = []
 
-    def read_cosave(self, light=False):
+    def _read_cosave(self, light=False):
         """Reads the entire cosave, including header and body. If you have to
         control the entire loading procedure, you may have to override this.
         For example, the Pluggy save format is laid out in a way that requires
         skipping to the end to skip 12 bytes - otherwise, reading it is
-        impossible.
+        impossible. Do not call directly - call the _read_cos decorated APIs.
 
         :param light: Whether or not to only load the first chunk of the file
             (and, if applicable, only the first chunk of that chunk)."""
@@ -1453,15 +1481,15 @@ class ACosave(_Dumpable, _Remappable, AFile):
         if isinstance(cosave_chunk, _Remappable):
             self._remappable_chunks.append(cosave_chunk)
 
-    def write_cosave(self, out_path):
+    def _write_cosave(self, out_path):
         """Writes this cosave to the specified path. Any changes that have been
         done to the cosave in-memory will be written out by this.
 
         :param out_path: The path to write to."""
-        # We need the entire cosave to write
-        self.read_cosave()
+        raise NotImplementedError
 
-    def write_cosave_safe(self, out_path=u''):
+    @_read_cos() # We need the entire cosave to write
+    def write_cosave_safe(self, out_path=''): # final!
         """Writes out any in-memory changes that have been made to this cosave
         to the specified path, first moving it to a temporary location to avoid
         overwriting the original file if something goes wrong.
@@ -1470,16 +1498,21 @@ class ACosave(_Dumpable, _Remappable, AFile):
             own path is used instead."""
         out_path = out_path or self.abs_path
         with TempFile(bolt_path=True) as tmp_path:
-            self.write_cosave(tmp_path)
+            self._write_cosave(tmp_path)
             out_path.replace_with_temp(tmp_path)
 
+    @_read_cos(light=True) # We only need the first chunk to read the masters
     def get_master_list(self) -> list[str]:
         """Retrieves a list of masters from this cosave. This will read an
         appropriate chunk and return a list of the masters from that chunk.
 
         :return: A list of the masters stored in this cosave."""
+        return self._masters_from_first_chunk()
 
-    def has_accurate_master_list(self) -> bool:
+    def _masters_from_first_chunk(self):
+        raise NotImplementedError
+
+    def has_accurate_master_list(self) -> bool: # decorate with _read_cos!
         """Checks whether or not this cosave contains an accurate master list -
         i.e. one that correctly represents the order of plugins as they were at
         the time that the save was taken. This is used to determine whether or
@@ -1489,14 +1522,16 @@ class ACosave(_Dumpable, _Remappable, AFile):
             accurate."""
         raise NotImplementedError
 
+    @_read_cos() # We need the entire cosave to dump
     def dump_to_log(self, log, save_masters_):
-        # We need the entire cosave to dump
-        self.read_cosave()
         self.cosave_header.dump_to_log(log, save_masters_)
+        self._dump_chunks(log, save_masters_)
 
-    def remap_plugins(self, fnmod_rename):
-        # We need the entire cosave to remap
-        self.read_cosave()
+    def _dump_chunks(self, log, _save_masters_):
+        raise NotImplementedError
+
+    @_read_cos() # We need the entire cosave to remap
+    def remap_plugins(self, fnmod_rename): # final!
         for cosave_chunk in self._remappable_chunks:
             cosave_chunk.remap_plugins(fnmod_rename)
 
@@ -1527,8 +1562,8 @@ class ACosave(_Dumpable, _Remappable, AFile):
         raise BoltError(f'Invalid save path {save_path}')
 
     def ui_str(self, save_ftime):
-        return self._ui_str[abs(self.ftime - save_ftime) < 10] if \
-            self.abs_path.exists() else ''
+        return '' if self._deleted else self._ui_str[
+            abs(self.ftime - save_ftime) < 10]
 
 class xSECosave(ACosave):
     """Represents an xSE cosave, with a .**se extension."""
@@ -1543,8 +1578,7 @@ class xSECosave(ACosave):
         for x in range(1 if light else self.cosave_header.num_plugin_chunks):
             self._add_cosave_chunk(_xSEPluginChunk(ins, light))
 
-    def write_cosave(self, out_path):
-        super(xSECosave, self).write_cosave(out_path)
+    def _write_cosave(self, out_path):
         prev_mtime = self.abs_path.mtime
         buff = io.BytesIO()
         # We have to update the number of chunks in the header here, since
@@ -1557,9 +1591,7 @@ class xSECosave(ACosave):
             out.write(buff.getvalue())
         out_path.mtime = prev_mtime
 
-    def get_master_list(self):
-        # We only need the first chunk to read the master list
-        self.read_cosave(light=True)
+    def _masters_from_first_chunk(self):
         # The first chunk is either a PLGN chunk (on SKSE64) or a MODS one
         xse_chunks = self._get_xse_plugin().chunks
         first_chunk = xse_chunks[0]
@@ -1571,15 +1603,14 @@ class xSECosave(ACosave):
         raise InvalidCosaveError(self.abs_path.tail,
             u'First chunk was not PLGN or MODS chunk.')
 
+    @_read_cos(light=True)
     def has_accurate_master_list(self):
         # Check the first chunk's signature. If and only if that signature
         # is PLGN can we accurately return a master list.
-        self.read_cosave(light=True)
         first_ch = self._get_xse_plugin().chunks[0] # type: _xSEChunk
         return first_ch.chunk_type == u'PLGN'
 
-    def dump_to_log(self, log, save_masters_):
-        super().dump_to_log(log, save_masters_)
+    def _dump_chunks(self, log, save_masters_):
         for plugin_chunk in self.cosave_chunks: # type: _xSEPluginChunk
             plugin_sig = self._get_plugin_signature(plugin_chunk)
             log.setHeader(_('Plugin: %(co_plugin_sig)s, Total chunks: '
@@ -1659,7 +1690,7 @@ class PluggyCosave(ACosave):
         super().__init__(cosave_path)
         self.save_game_ticks = 0
 
-    def read_cosave(self, light=False):
+    def _read_cosave(self, light=False):
         target_state = 1 if light else 2
         if self._loading_state < target_state:
             self._unload() # Need to reset these to avoid adding duplicates
@@ -1722,8 +1753,7 @@ class PluggyCosave(ACosave):
             raise InvalidCosaveError(self.abs_path.tail,
                 f'Unknown pluggy record block type {record_type}.')
 
-    def write_cosave(self, out_path):
-        super().write_cosave(out_path)
+    def _write_cosave(self, out_path):
         out = io.BytesIO()
         self.cosave_header.write_header(out)
         for pluggy_block in self.cosave_chunks:
@@ -1739,22 +1769,20 @@ class PluggyCosave(ACosave):
             pack_int_signed(out, crc32(final_data))
         out_path.mtime = prev_mtime
 
-    def get_master_list(self):
-        # We only need the first chunk to read the master list
-        self.read_cosave(light=True)
+    def _masters_from_first_chunk(self):
         first_block: _PluggyPluginBlock = self.cosave_chunks[0]
         if first_block.record_type != 0:
             raise InvalidCosaveError(self.abs_path.tail,
                 u'First Pluggy block is not the plugin block.')
         return [plugin.plugin_name for plugin in first_block.plugins]
 
-    def has_accurate_master_list(self):
+    @_read_cos(light=True)
+    def has_accurate_master_list(self): # never used in code - keep it that way
         # Pluggy cosaves always have an accurate list since they only exist for
         # Oblivion, which does not have ESLs.
         return True
 
-    def dump_to_log(self, log, save_masters_):
-        super(PluggyCosave, self).dump_to_log(log, save_masters_)
+    def _dump_chunks(self, log, save_masters_):
         for pluggy_block in self.cosave_chunks:
             log.setHeader(pluggy_block.unique_identifier())
             log('=' * 40)

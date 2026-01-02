@@ -1665,14 +1665,12 @@ class AFile:
     _null_stat = (-1, None)
     __slots__ = ('fsize', 'ftime', '_file_key')
 
-    def __init__(self, fullpath, *, _raise_os_error=False, cached_stat=None,
-                 **kwargs):
+    def __init__(self, fullpath, *, cached_stat=None, **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         # Set cache info (ftime, size[, ctime]) and reload/reset cache
         try:
             self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
-            if _raise_os_error: raise # deprecated - only used in ACosave
             self._reset_cache(self._null_stat)
 
     def _stat_tuple(self, cached_stat=None):

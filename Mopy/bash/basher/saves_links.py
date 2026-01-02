@@ -34,7 +34,7 @@ from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
 from ..bolt import FName, GPath, Path, RefrIn, SubProgress, RefrData
-from ..bosh import _saves, faces
+from ..bosh import _saves, faces, ACosave
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
 from ..gui import BusyCursor, FileSave, askText, showError, askYes, showOk, \
@@ -816,9 +816,9 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
     def _enable(self):
         if not super(_Save_StatCosave, self)._enable(): return False
         self._cosave = self._get_cosave()
-        return bool(self._cosave)
+        return bool(self._cosave) and not self._cosave._deleted
 
-    def _get_cosave(self):
+    def _get_cosave(self) -> ACosave:
         raise NotImplementedError
 
     def Execute(self):

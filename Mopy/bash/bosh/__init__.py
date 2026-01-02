@@ -1338,7 +1338,9 @@ class SaveInfo(_WithMastersInfo):
     def __init__(self, fullpath, **kwargs):
         # Need to update cosaves first, since readHeader calls _get_masters,
         # which relies on the cosave for SSE and FO4
-        self._update_cosaves(fullpath)
+        self._co_saves = {co_type: co_type(co_type.get_cosave_path(fullpath))
+                          for co_type in self.__class__.cosave_types}
+        self._update_cosaves()
         super().__init__(fullpath, **kwargs)
 
     def set_path_keys(self, *args, **kwargs):
@@ -1408,8 +1410,7 @@ class SaveInfo(_WithMastersInfo):
         """Return strings expressing whether cosaves exist and are correct.
         Correct means not in more that 10 seconds difference from the save."""
         # last string corresponds to xse plugin so used reversed
-        rev = (cos.ui_str(self.ftime) if (cos := self._co_saves.get(ctyp)) else
-               '' for ctyp in reversed(self.__class__.cosave_types))
+        rev = (c.ui_str(self.ftime) for c in reversed(self._co_saves.values()))
         return '\n'.join(['', '', *rev][-2:]) # must have len 2!
 
     def get_rename_paths(self, new_name, rename_dir, *args):
@@ -1417,29 +1418,24 @@ class SaveInfo(_WithMastersInfo):
         # super call added the backup paths but not the actual cosave paths
         # inside the store_dir - add those even if they don't exist as we must
         # delete cosaves for backup (if the backup has no cosaves)
-        old_new_paths.extend(
-            tuple(map(co_type.get_cosave_path, old_new_paths[0])) for co_type
-            in self.__class__.cosave_types)
+        new_p = old_new_paths[0][1]
+        old_new_paths.extend((cos.abs_path, co_type.get_cosave_path(new_p))
+            for co_type, cos in self._co_saves.items())
         return old_new_paths
 
-    def _update_cosaves(self, co_path=None) -> bool:
-        """Check for new and deleted cosaves and do_update old, surviving ones.
-        """
-        csaves, cosaves_changed, co_path = {}, False, co_path or self.abs_path
-        for co_type in self.__class__.cosave_types:
+    def _update_cosaves(self) -> bool:
+        """Let do_update check for new and deleted cosaves and update old,
+        surviving ones."""
+        cosaves_changed = False
+        for co_type, csave in self._co_saves.items():
             try: # Existing cosave could have changed, check if it did
-                try:
-                    if (csave := self._co_saves[co_type]).abs_path.is_dir():
-                        continue # do_update won't see that a cosave is a dir now
-                    cosaves_changed |= csave.do_update()
-                except KeyError: # New cosave attached, add it to cache
-                    csave = co_type(co_type.get_cosave_path(co_path))
-                csaves[co_type] = csave
-            except (OSError, FileError) as e:
-                if not isinstance(e, (FileNotFoundError, IsADirectoryError)):
-                    deprint(f'Failed to open {co_path}', traceback=True)
-        cosaves_changed |= csaves.keys() != self._co_saves.keys()
-        self._co_saves = csaves
+                cosaves_changed |= csave.do_update(raise_os_error=True) or \
+                    csave.has_changed # might be set from _read_cos (duh)
+            except OSError as e:
+                cosaves_changed |= csave.has_changed
+                if csave.has_changed and not isinstance(e, FileNotFoundError):
+                    deprint(f'Failed to open {csave.abs_path}', traceback=True)
+            csave.has_changed = False # served its purpose for this refresh round
         return cosaves_changed
 
     def get_xse_cosave(self):
@@ -1455,13 +1451,10 @@ class SaveInfo(_WithMastersInfo):
         list. For esl games this order might not reflect the actual order the
         masters are mapped to form ids, hence we try to return the correct
         order if a suitable to this end cosave is present."""
-        try:
-            xse_cosave = self.get_xse_cosave()
+        if (xse_cosave := self.get_xse_cosave()) is not None:
             # Make sure the cosave's masters are actually useful
             if xse_cosave.has_accurate_master_list():
                 return [*map(FName, xse_cosave.get_master_list())]
-        except (AttributeError, NotImplementedError):
-            pass
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
         return [*map(FName, self.header.masters)]
@@ -1477,7 +1470,7 @@ class SaveInfo(_WithMastersInfo):
             self.has_inaccurate_masters = any(self.header.scale_masters.values(
                 )) and ((xse_cosave := self.get_xse_cosave()) is None or not
             xse_cosave.has_accurate_master_list())
-        except (AttributeError, NotImplementedError):
+        except AttributeError: # no scale_masters
             self.has_inaccurate_masters = False
 
 #------------------------------------------------------------------------------
