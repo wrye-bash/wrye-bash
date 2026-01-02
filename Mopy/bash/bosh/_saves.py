@@ -33,7 +33,7 @@ from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
 from ..bolt import Flags, SubProgress, deprint, dict_sort, encode, flag, \
     pack_byte, pack_int, pack_short, sig_to_str, struct_unpack, \
-    structs_cache, unpack_int, unpack_many, unpack_short, unpack_str8
+    structs_cache, unpack_int, unpack_many, unpack_short, unpack_str8, FName
 from ..brec import FormId, ModReader, MreRecord, RecordType, \
     ShortFidWriteContext, int_unpacker, unpack_header
 from ..exception import ModError, StateError
@@ -664,9 +664,7 @@ class SaveSpells(_SaveData):
 
     def __init__(self, saveInfo):
         super().__init__(saveInfo)
-        ##: This typing doesn't seem right, looks like FormId -> MreRecord
-        #--spells[(modName,objectIndex)] = (name,type)
-        self.allSpells: dict[FormId, (str, int)] = {}
+        self.allSpells: dict[FormId | tuple[[FName, int]], MreRecord] = {}
 
     def load_data(self, progress, modinfos):
         """Load savegame and extract created spells from it and its masters."""
@@ -679,13 +677,12 @@ class SaveSpells(_SaveData):
             if master in modinfos:
                 self.importMod(modinfos[master])
         #--Extract created spells
-        allSpells = self.allSpells
         saveName = self.saveInfo.fn_key
         progress(progress.full - 1, saveName)
         for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'SPEL':
                 save_fid = FormId.from_tuple((saveName, rfid.object_dex))
-                allSpells[save_fid] = record.getTypeCopy()
+                self.allSpells[save_fid] = record.getTypeCopy()
 
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
@@ -720,10 +717,7 @@ class SaveSpells(_SaveData):
         maxMasters = len(masters_copy) - 1
         #--Get spell names to match fids
         for iref in npc.spells:
-            if (iref >> 24) == 255:
-                fid = iref
-            else:
-                fid = saveFile.fids[iref]
+            fid = iref if (iref >> 24) == 255 else saveFile.fids[iref]
             modIndex, objectIndex = fid >> 24, fid & 0x00FFFFFF
             if modIndex == 255:
                 master = self.saveInfo.fn_key
@@ -731,8 +725,8 @@ class SaveSpells(_SaveData):
                 master = masters_copy[modIndex]
             else: #--Bad fid?
                 continue
-            #--Get spell data
-            record = self.allSpells.get((master,objectIndex),None)
+            #--Get spell data (note `FormId.from_tuple(('', 0)) == ('', 0)`)
+            record = self.allSpells.get((master, objectIndex))
             if (record and record.full and record.spell_type == 0 and
                     fid != 0x136): ##: What is this FormID and why skip it?
                 pcSpells[record.full] = (iref,record)

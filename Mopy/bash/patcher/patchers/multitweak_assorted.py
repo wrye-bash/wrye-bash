@@ -900,8 +900,8 @@ class AssortedTweak_SaveSortingFix(MultiTweakItem):
     tweak_log_msg = _('Editor IDs with underscores removed: %(total_changed)d')
     default_enabled = True
 
-    def wants_record(self, record):
-        return '_' in record.eid # check the (decoded) EDID
+    def wants_record(self, record): # check the (decoded) EDID
+        return '_' in (record.eid or '') # reported None for some records
 
     def tweak_record(self, record):
         record.eid = record.eid.replace('_', '')

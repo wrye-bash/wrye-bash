@@ -43,7 +43,7 @@ from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = ['Saves_Profiles', 'Save_Renumber', 'Save_Move',
            u'Save_ActivateMasters', u'Save_DiffMasters', u'Save_Stats',
-           u'Save_StatObse', u'Save_EditPCSpells', u'Save_RenamePlayer',
+           'Save_StatObse', 'Save_RemovePCSpells', 'Save_RenamePlayer',
            u'Save_EditCreatedEnchantmentCosts', u'Save_ImportFace',
            u'Save_EditCreated', u'Save_ReweighPotions', u'Save_UpdateNPCLevels',
            u'Save_ExportScreenshot', u'Save_Unbloat', u'Save_RepairAbomb',
@@ -590,11 +590,11 @@ class Save_EditPCSpellsData(balt.ListEditorData):
         self.saveSpells.removePlayerSpells(self.removed)
 
 #------------------------------------------------------------------------------
-class Save_EditPCSpells(OneItemLink):
+class Save_RemovePCSpells(OneItemLink):
     """Save spell list editing dialog."""
     _text = _('Delete Spells…')
-    _help = _('Delete unused spells from your spell list in the selected save.'
-              ' Warning: This cannot be undone.')
+    _help = _('Delete unused spells from your spell list in the selected '
+              'save. Warning: This cannot be undone.')
 
     def Execute(self):
         pc_spell_data = Save_EditPCSpellsData(self.window, self._selected_info)

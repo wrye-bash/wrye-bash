@@ -765,7 +765,7 @@ def InitSaveLinks():
         edit_menu.links.append_link(Save_EditCreatedEnchantmentCosts())
         edit_menu.links.append_link(SeparatorLink())
         edit_menu.links.append_link(Save_EditCreated(b'SPEL'))
-        edit_menu.links.append_link(Save_EditPCSpells())
+        edit_menu.links.append_link(Save_RemovePCSpells())
         edit_menu.links.append_link(SeparatorLink())
         edit_menu.links.append_link(Save_RenamePlayer())
         edit_menu.links.append_link(Save_ImportFace())
