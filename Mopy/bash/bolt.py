@@ -1724,13 +1724,13 @@ class AFile(object):
         """
         self.fsize, self.ftime = stat_tuple
 
-    def fs_copy(self, dup_path: Path, *, set_time=None, do_move=False):
+    def fs_copy(self, dupl_path: Path, *, set_time=None, do_move=False):
         """Copy/move file to dup_path. If set_time is None, we set the mtime
         of the duplicate path to ftime. This should really be a
         _mark_not_changed internal API (what about ctime?)."""
         op = self.abs_path.moveTo if do_move else partial(
             self.abs_path.copyTo, set_time=set_time or self.ftime)
-        op(dup_path)
+        op(dupl_path)
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.abs_path.stail}>'
@@ -1880,9 +1880,9 @@ class AFileInfo(AFile, ListInfo):
         omitting some that do not exist)."""
         return [(self.abs_path, (rename_dir or self.info_dir).join(new_name))]
 
-    def fs_copy(self, dup_path, *, set_time=None, do_move=False):
+    def fs_copy(self, dupl_path, *, set_time=None, do_move=False):
         ##:(241) note all the subtleties below - moveTo/copyTo must land in env
-        dest_dir, dest_fn = dup_path.headTail
+        dest_dir, dest_fn = dupl_path.headTail
         src_dst = iter(self.get_rename_paths(FName(dest_fn.s), dest_dir,
                                              False))
         src, dst = next(src_dst) # base info path always exists

@@ -740,8 +740,8 @@ class INIList(UIList):
         # Default tweaks are tested, so no need to warn about trust and
         # crashes, etc.
         tweaks_are_trusted = all(t.is_default_tweak for t in tweak_infos)
-        if (not tweaks_are_trusted and
-                not cls._warn_tweak_game_ini(target_ini_file.abs_path.stail)):
+        if not tweaks_are_trusted and not cls._warn_tweak_game_ini(
+                target_ini_file.abs_path.stail):
             return False
         needsRefresh = False
         for ini_info in tweak_infos:

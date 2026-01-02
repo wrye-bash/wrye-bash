@@ -253,26 +253,26 @@ def read_loot_tags(mod_info):
     return map(_process_tags, lootDb.get_tags_from_loot(mod_info.fn_key))
 
 # BashTags dir ----------------------------------------------------------------
-def read_dir_tags(mod_info, ci_bt_filenames=None):
+def read_dir_tags(mod_info, bt_contents=None):
     """Retrieves a tuple containing a set of added and a set of deleted
     tags from the 'Data/BashTags/PLUGIN_NAME.txt' file, if it is
     present.
 
     :param mod_info: The plugin info to check the tag file for.
-    :param ci_bt_filenames: An optional set containing lower-case
+    :param bt_contents: An optional set containing lower-case
         versions of the names of all files currently present in the BashTags
         directory. If specified, get_tags_from_dir avoids having to stat to
         figure out if the file in question exists.
     :return: A tuple containing two sets of added and deleted tags."""
     removed, added = set(), set()
     # Check if the file even exists first, using the cache if possible
-    tag_file: bolt.Path = mod_info.tags_path()
-    has_tags = tag_file.is_file() if ci_bt_filenames is None else \
-        tag_file.stail.lower() in ci_bt_filenames
+    tag_file = None # avoid creating a path if the cache is passed
+    has_tags = (tag_file:= mod_info.tags_path()).is_file() if bt_contents is \
+        None else f'{mod_info.fn_key.fn_body}.txt'.lower() in bt_contents
     if not has_tags:
         return added, removed
     # BashTags files must be in UTF-8 (or ASCII, obviously)
-    with tag_file.open(u'r', encoding=u'utf-8') as ins:
+    with (tag_file or mod_info.tags_path()).open('r', encoding='utf-8') as ins:
         for tag_line in ins:
             # Strip out comments and skip lines that are empty as a result
             tag_line = tag_line.split(u'#')[0].strip()
