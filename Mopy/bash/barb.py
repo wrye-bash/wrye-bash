@@ -58,7 +58,7 @@ def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder_name):
     :param mg_name: bush.game.my_games_name
     :param root_prefix: bush.game.bash_root_prefix
     :param mods_folder_name: bush.game.mods_dir_name"""
-    if not initialization.bash_dirs_initialized:
+    if not bass.bash_dirs_initialized:
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
         (dirs[u'mopy'], jo(bak_name, u'Mopy')): {u'bash.ini', },

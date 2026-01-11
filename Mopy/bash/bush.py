@@ -235,6 +235,8 @@ def _detectGames(cli_path_arg: str = '') -> tuple[
       - test_path: Path to the game directory that was tested for `gamename`.
     """
     #--Find all supported games and all games installed via various sources
+    if not bass.mopy_dirs_initialized:
+        raise BoltError('_detectGames: Mopy dirs uninitialized')
     skip_new_ws = bass.inisettings['SkipWSDetection']
     # _supportedGames sets _allGames if not set
     foundGames_ = _supportedGames(skip_new_ws)
@@ -246,7 +248,7 @@ def _detectGames(cli_path_arg: str = '') -> tuple[
     if cli_path_arg:
         cli_path = GPath(cli_path_arg)
         if not cli_path.is_absolute():
-            cli_path = Path.getcwd().join(cli_path)
+            cli_path = bass.dirs['mopy'].join(cli_path)
         installPaths['cmd'] = cli_path
     #--Second: check if sOblivionPath is specified in the ini
     if ini_game_path := bass.get_path_from_ini('OblivionPath', 'mopy'):
@@ -254,7 +256,7 @@ def _detectGames(cli_path_arg: str = '') -> tuple[
     #--Third: Detect what game is installed one directory up from Mopy
     one_up_path = GPath(bass.dirs['mopy']).head
     if not one_up_path.is_absolute():
-        one_up_path = Path.getcwd().join(one_up_path)
+        one_up_path = bass.dirs['mopy'].join(one_up_path)
     installPaths['upMopy'] = one_up_path
     #--Detect
     deprint('Detecting games via the -o argument, bash.ini and relative path:')

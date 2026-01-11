@@ -79,3 +79,6 @@ def get_path_from_ini(option_key, dir_key='app'):
     from .bolt import GPath
     return value if (value := GPath(get_value)).is_absolute() else dirs[
         dir_key].join(value)
+
+# Boot stages WIP
+mopy_dirs_initialized = bash_dirs_initialized = False

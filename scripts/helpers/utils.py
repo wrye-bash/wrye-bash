@@ -193,11 +193,12 @@ def run_subprocess(command, logger, **kwargs):
         universal_newlines=True,
         **kwargs
     )
-    logger.debug(f'Running command: {" ".join(map(str, command))}')
+    cmd_line = ' '.join(map(str, command))
+    logger.debug(f'Running command: {cmd_line}')
     stdout, _stderr = sp.communicate()
     if sp.returncode != 0:
         logger.error(stdout)
-        raise subprocess.CalledProcessError(sp.returncode, ' '.join(command))
+        raise subprocess.CalledProcessError(sp.returncode, cmd_line)
     logger.debug('--- COMMAND OUTPUT START ---')
     logger.debug(stdout)
     logger.debug('---  COMMAND OUTPUT END  ---')

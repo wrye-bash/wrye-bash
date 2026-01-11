@@ -29,6 +29,7 @@ import io
 from configparser import ConfigParser, MissingSectionHeaderError
 
 # Local - make sure that all imports here are carefully done in bash.py first
+from . import bass
 from .bass import dirs, get_path_from_ini
 from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
 from .env import get_legacy_ws_game_info, get_local_app_data_path, \
@@ -36,8 +37,6 @@ from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_case_sensitivity_advice
 from .exception import BoltError, NonExistentDriveError
 # no other Bash imports!
-
-mopy_dirs_initialized = bash_dirs_initialized = False
 
 def _get_ini_option(ini_parser, option_key) -> str | None:
     if not ini_parser:
@@ -111,7 +110,7 @@ def init_dirs(game_info, opts, init_warnings):
     that need info on Bash / Game dirs should be initialized here and set
     as globals in module scope. It may be called two times if restoring
     settings fails."""
-    if not mopy_dirs_initialized:
+    if not bass.mopy_dirs_initialized:
         raise BoltError('init_dirs: Mopy dirs uninitialized')
     personal, localAppData = opts.personalPath, opts.localAppDataPath
     #--Oblivion (Application) Directories
@@ -277,8 +276,7 @@ def init_dirs(game_info, opts, init_warnings):
         msg = _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc,
                             oblivionMods, oblivionModsSrc)
         raise BoltError(msg)
-    global bash_dirs_initialized
-    bash_dirs_initialized = True
+    bass.bash_dirs_initialized = True
     return game_ini_path
 
 def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
@@ -328,7 +326,7 @@ def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
     return msg
 
 def init_dirs_mopy():
-    dirs[u'mopy'] = Path.getcwd()
+    dirs['mopy'] = Path.getcwd()
     dirs[u'bash'] = dirs[u'mopy'].join(u'bash')
     dirs[u'compiled'] = dirs[u'bash'].join(u'compiled')
     dirs[u'l10n'] = dirs[u'bash'].join(u'l10n')
@@ -338,8 +336,7 @@ def init_dirs_mopy():
     from . import archives
     if os_name == u'nt': # don't add local directory to binaries on linux
         archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
-    global mopy_dirs_initialized
-    mopy_dirs_initialized = True
+    bass.mopy_dirs_initialized = True
 
 def getLocalSaveDirs(saves_folder: str):
     """Return a list of possible local save directories, NOT including the

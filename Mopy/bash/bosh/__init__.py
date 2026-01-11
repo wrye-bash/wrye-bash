@@ -3504,7 +3504,7 @@ class InstallerProject(InstallerProject): pass
 # Initialization --------------------------------------------------------------
 def initBosh(game_ini_path, game_info):
     # Setup loot_parser, needs to be done after the dirs are initialized
-    if not initialization.bash_dirs_initialized:
+    if not bass.bash_dirs_initialized:
         raise BoltError('initBosh: Bash dirs are not initialized')
     # game ini files
     deprint(f'Looking for main game INI at {game_ini_path}')
