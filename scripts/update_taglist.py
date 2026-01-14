@@ -45,7 +45,7 @@ _GAME_DATA = {
     'SkyrimSE': 'skyrimse',
     'Starfield': 'starfield',
 }
-MASTERLIST_VERSION = '0.26'
+MASTERLIST_VERSION = '0.29'
 
 TAGLISTS_PATHS = sorted(TAGLISTS_PATH / game_name / 'taglist.yaml' for
                         game_name in _GAME_DATA)

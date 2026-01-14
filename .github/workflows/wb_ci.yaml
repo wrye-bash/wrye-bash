@@ -7,16 +7,16 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout commit
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         submodules: true
     - name: Set up Python 3.11
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
         architecture: 'x64'
     - name: Restore dependencies cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~\AppData\Local\pip\Cache
         key: ${{ runner.os }}-pip-wb_ci-${{ hashFiles('requirements*.txt') }}
@@ -42,7 +42,7 @@ jobs:
 #    - name: Create Apps folder # does not work
 #      run: mkdir Mopy/Apps
     - name: Upload Standalone Build Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ format('Wrye Bash CI {0}.{1}', github.ref_name, github.sha) }}
         path: |

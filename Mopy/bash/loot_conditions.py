@@ -329,9 +329,9 @@ def _fn_many_active(path_regex: str, _load_order_module) -> bool:
                 return True
     return False
 
+_CMP_ARG = str | Comparison
 ##: Maybe tweak the implementation to match LOOT's by adding some params to
 # env.get_file_version?
-_CMP_ARG = str| Comparison
 def _fn_product_version(file_path: str, *args: tuple[_CMP_ARG],
         msg='Product version query was requested, but the file is not an '
             'executable.') -> bool:

@@ -3035,10 +3035,9 @@ class InstallersPanel(BashTab):
                             bosh.omods.failedOmods.add(FName(omod_path.stail))
             # Move bad omods
             def _move_omods(failed: Iterable[bolt.Path]):
-                env.shellMove({
-                    omod: dirInstallersJoin('Bash', 'Failed OMODs', omod.tail)
-                    for omod in failed
-                }, parent=self)
+                env.shellMove({omod: dirInstallersJoin(
+                    'Bash', 'Failed OMODs', omod.tail) for omod in failed},
+                    parent=self)
             try:
                 env.shellMakeDirs([dirInstallersJoin('Bash', 'Failed OMODs')])
                 _move_omods(omodMoves)
