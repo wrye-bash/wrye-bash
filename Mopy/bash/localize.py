@@ -194,8 +194,13 @@ def format_date(secs: float) -> str:
 
     :param secs: Formats the specified number of seconds into a string."""
     try:
-        local = time.localtime(secs)
-    except (OSError, ValueError):
-        # local time in windows can't handle negative values
-        local = time.gmtime(secs)
-    return time.strftime(u'%c', local)
+        try:
+            local = time.localtime(secs)
+        except (OSError, ValueError):
+            # local time in windows can't handle negative values
+            local = time.gmtime(secs)
+        return time.strftime(u'%c', local)
+    except OSError:
+        bolt.deprint(f'Error formatting date/time - {locals()=}',
+                     traceback=True)
+        return f'{secs}'

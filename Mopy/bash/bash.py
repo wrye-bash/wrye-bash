@@ -387,8 +387,11 @@ def _parse_bash_ini(bash_ini_path):
     for v in ini_set.values():
         bass.inisettings.update(v)
     # if bash.ini exists update those settings from there
-    if (bi_path := bolt.GPath(bash_ini_path)) is None or not bi_path.is_file():
+    if (bi_path := bolt.GPath(os.path.abspath(bash_ini_path))) is None or \
+            not bi_path.is_file():
+        bolt.deprint(f'No ini found at {bi_path}')
         return
+    bolt.deprint(f'Loading Bash ini from {bi_path}')
     # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
     # English INI is ASCII)
     from . import ini_files

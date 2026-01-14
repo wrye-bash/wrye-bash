@@ -12,4 +12,4 @@ PyGithub==2.9.0
 # PY3.13: try upgrading again & testing if restoring from backup still crashes
 pyinstaller==6.9.0; sys_platform == 'win32'
 pyinstaller; sys_platform != 'win32' # Hack for Linux distros on py3.14
-pytest==9.0.2
+pytest==9.0.3

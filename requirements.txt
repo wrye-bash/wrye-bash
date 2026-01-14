@@ -11,7 +11,7 @@ vdf==3.4
 wxPython==4.2.5
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
-lxml==6.0.2
+lxml==6.1.0
 # For parsing download conditions when checking for updates
 packaging==26.0
 # For generating bash_default.ini section headers
