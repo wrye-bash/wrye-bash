@@ -172,18 +172,18 @@ def _setup_pyinstaller_logger(logfile):
     file_handler.setFormatter(stupid_formatter)
     logging.getLogger('PyInstaller').addHandler(file_handler)
 
-def _get_version_info(version):
+def _get_version_info(build_vers):
     """Generates version strings from the passed parameter. Returns a string
     used for the 'File Version' property of the built standalone release. For
     example, a version of 291 would with default padding would return
     '291.0.0.0'"""
     production_regex = r'\d{3,}(?:\.\d)?$'
     nightly_regex = r'(\d{3,})\.(\d{12})$'
-    version = str(version)
-    if re.match(production_regex, version) is not None:
-        file_version = f'{version}.0.0.0'
+    build_vers = str(build_vers)
+    if re.match(production_regex, build_vers) is not None:
+        file_version = f'{build_vers}.0.0.0'
     else:
-        ma_version = re.match(nightly_regex, version)
+        ma_version = re.match(nightly_regex, build_vers)
         assert ma_version is not None
         timestamp = ma_version.group(2)
         file_version = (f'{ma_version.group(1)}.{timestamp[:4]}.'
@@ -224,9 +224,9 @@ def _get_nsis_root(cmd_arg):
         os.rename(local_build_path / f'nsis-{_NSIS_VERSION}', NSIS_PATH)
     return NSIS_PATH
 
-def _pack_manual(version):
+def _pack_manual(build_vers):
     """ Packages the manual (python source) version. """
-    archive_ = DIST_PATH / f'Wrye Bash {version} - Python Source.7z'
+    archive_ = DIST_PATH / f'Wrye Bash {build_vers} - Python Source.7z'
     files_to_include = {
         ROOT_PATH / 'Readme.md':        MOPY_PATH / 'Readme.md',
         ROOT_PATH / 'requirements.txt': MOPY_PATH / 'requirements.txt',
@@ -258,12 +258,12 @@ def _build_executable():
     finally:
         rm(dest_exe)
 
-def _pack_standalone(version):
+def _pack_standalone(build_vers):
     """ Packages the standalone version. """
-    dest_7z = DIST_PATH / f'Wrye Bash {version} - Standalone Executable.7z'
+    dest_7z = DIST_PATH / f'Wrye Bash {build_vers} - Standalone Executable.7z'
     _pack_7z(dest_7z, *['-xr!' + a for a in _IGNORES_STANDALONE])
 
-def _pack_installer(nsis_path, version, file_version):
+def _pack_installer(nsis_path, build_vers, file_version):
     """ Packages the installer version. """
     script_path = SCRIPTS_PATH / 'build' / 'installer' / 'main.nsi'
     if not script_path.is_file():
@@ -274,26 +274,26 @@ def _pack_installer(nsis_path, version, file_version):
     if not nsis_path.is_file():
         raise OSError("Could not find 'makensis.exe' in NSIS folder, aborting "
                       "installer creation.")
-    run_subprocess([nsis_path, '/NOCD', f'/DWB_NAME=Wrye Bash {version}',
+    run_subprocess([nsis_path, '/NOCD', f'/DWB_NAME=Wrye Bash {build_vers}',
                     f'/DWB_OUTPUT={DIST_PATH}',
                     f'/DWB_FILEVERSION={file_version}',
                     f'/DWB_CLEAN_MOPY={MOPY_PATH}', script_path], _LOGGER)
 
 @contextmanager
-def _update_file_version(version, commit=False):
+def _update_file_version(build_vers, do_commit=False):
     bass_path = MOPY_PATH / 'bash' / 'bass.py'
     tmpdir = Path(tempfile.mkdtemp())
     bck_path = tmpdir / 'bass.py'
     cp(bass_path, bck_path)
-    _LOGGER.debug(f'Bumping bass.py version to {version}')
-    edit_bass_version(version, _LOGGER)
-    if commit:
+    _LOGGER.debug(f'Bumping bass.py version to {build_vers}')
+    edit_bass_version(build_vers, _LOGGER)
+    if do_commit:
         _LOGGER.debug('Commit of version change requested')
-        commit_changes(changed_paths=[bass_path], commit_msg=version)
+        commit_changes(changed_paths=[bass_path], commit_msg=build_vers)
     try:
         yield
     finally:
-        if not commit:
+        if not do_commit:
             cp(bck_path, bass_path)
         rm(tmpdir)
 
@@ -314,13 +314,13 @@ def _handle_apps_folder():
         else:
             rm(APPS_PATH)
 
-def _check_timestamp(build_version):
+def _check_timestamp(build_vers):
     """Checks whether the current nightly timestamp is the same as the previous
     nightly build. Returns False if it's the same, True otherwise. Happens when
     a build is triggered too quickly after the previous one."""
     nightly_re = re.compile(r'\d{3,}\.\d{12}')
     # check whether we're building a nightly
-    nightly_version = nightly_re.match(build_version)
+    nightly_version = nightly_re.match(build_vers)
     try:
         # check whether the previous build is also a nightly
         previous_version = nightly_re.search(str(next(DIST_PATH.iterdir())))
@@ -400,12 +400,13 @@ def main(args):
     rm(DIST_PATH)
     _LOGGER.info(f'Building on Python {sys.version}')
     # check nightly timestamp is different than previous
-    if not _check_timestamp(args.version):
+    vers = args.version
+    if not _check_timestamp(vers):
         raise OSError('Aborting build due to equal nightly timestamps.')
     with (_handle_apps_folder(), _compile_translations(args),
-          _update_file_version(args.version, args.commit)):
+          _update_file_version(vers, args.commit)):
         # Get repository files
-        version_info = _get_version_info(args.version)
+        version_info = _get_version_info(vers)
         # create distributable directory
         DIST_PATH.mkdir(parents=True, exist_ok=True)
         # Copy the license so it's included in the built releases
@@ -422,7 +423,7 @@ def main(args):
                     out.write(update_taglist.MASTERLIST_VERSION)
             if args.manual:
                 _LOGGER.info('Creating python source distributable...')
-                _pack_manual(args.version)
+                _pack_manual(vers)
             if _NOT_WINDOWS:
                 _LOGGER.info('Non-Windows OS detected, skipping '
                              'standalone and installer distributables.')
@@ -432,10 +433,10 @@ def main(args):
             with _build_executable():
                 if args.standalone:
                     _LOGGER.info('Creating standalone distributable...')
-                    _pack_standalone(args.version)
+                    _pack_standalone(vers)
                 if args.installer:
                     _LOGGER.info('Creating installer distributable...')
-                    _pack_installer(args.nsis, args.version, version_info)
+                    _pack_installer(args.nsis, vers, version_info)
         finally:
             # Clean up the temp copy of the license
             rm(license_temp)
