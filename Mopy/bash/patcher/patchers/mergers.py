@@ -97,8 +97,9 @@ class _AMerger(ImportPatcher):
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             for s, block in srcFile.iter_tops(self._wanted_subrecord):
                 present_sigs.add(s)
-                for rid, _record in block.iter_present_records():
-                    if rid.mod_fn not in self.patchFile.all_plugins:
+                for rid, record in block.iter_present_records():
+                    if (not record.isKeyedByEid and rid.mod_fn not in
+                        self.patchFile.all_plugins):
                         continue  # or break filter mods
                     self.touched.add(rid)
             progress.plus()
