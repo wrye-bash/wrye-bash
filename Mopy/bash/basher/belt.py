@@ -413,7 +413,7 @@ class PageVersions(PageInstaller):
     """Page for displaying what versions an installer requires/recommends and
     what you have installed for Game, *SE, *GE, and Wrye Bash."""
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
-                 seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
+                 seNeed, bGEOk, geHave, geNeed, bWBOk, wbNeed):
         PageInstaller.__init__(self, parent)
         bmps = [*map(get_image, ('error_cross.16', 'checkmark.16'))]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
@@ -439,7 +439,7 @@ class PageVersions(PageInstaller):
         # Graphics extender
         _link_row(bush.game.Ge, bush.game.Ge.ge_abbrev, geNeed, geHave, bGEOk)
         # Wrye Bash
-        _link_row(None, '', wbNeed, wbHave, bWBOk, title='Wrye Bash',
+        _link_row(None, '', wbNeed, bass.AppVersion, bWBOk, title='Wrye Bash',
                   url='https://www.nexusmods.com/site/mods/591',
                   tooltip_=_('Wrye Bash Download'))
         versions_box = HBoxedLayout(self, _('Version Requirements'),
@@ -464,14 +464,8 @@ def _need_have(need, have):
     have_fmt = '.'.join(map(str, have))
     if need == 'None':
         return [1, have_fmt]
-    need_ver = LooseVersion('.'.join(map(str, need)))
-    have_ver = LooseVersion(have_fmt)
-    if have_ver > need_ver:
-        return [1, have_fmt]
-    elif have_ver < need_ver:
-        return [-1, have_fmt]
-    else:
-        return [0, have_fmt]
+    have_ver, need_ver = map(LooseVersion, (have_fmt, '.'.join(map(str,need))))
+    return [bolt.cmp_(have_ver, need_ver), have_fmt]
 
 class WryeParser(PreParser):
     """A derived class of Parser, for handling BAIN install wizards."""
@@ -504,7 +498,7 @@ class WryeParser(PreParser):
         # file exists but not active/merged/imported - dicts are ordered
         self._act_dicts[int_map[ST_INACTIVE]] = mod_infos
         # remember if RequireVersions check has already been run
-        self.reqs_checked = False
+        self._reqs_checked = False
 
     def Continue(self):
         self.page = None
@@ -589,8 +583,7 @@ class WryeParser(PreParser):
             return 1
 
     def fnCompareWBVersion(self, wbWant):
-        wbHave = bass.AppVersion # silently accept ints/floats - debug hack
-        return bolt.cmp_(LooseVersion(wbHave), LooseVersion(str(wbWant)))
+        return bolt.cmp_(bass.get_version_tuple(), LooseVersion(str(wbWant)))
 
     def fnDataFileExists(self, *rel_paths):
         all_plugins = self._act_dicts[0] # see __init__ -> int_map
@@ -778,7 +771,6 @@ class WryeParser(PreParser):
         geWant = self._TestVersion_Want(ge)
         if geWant == 'None': ge = 'None'
         if not wbWant: wbWant = '0.0'
-        wbHave = bass.AppVersion
         need_have = _need_have(gameWant, bush.game_version())
         bGameOk = need_have[0] >= 0
         gameHave = need_have[1]
@@ -800,13 +792,13 @@ class WryeParser(PreParser):
         else:
             bGEOk = True
             geHave = 'None'
-        bWBOk = LooseVersion(wbHave) >= LooseVersion(wbWant)
+        bWBOk = bass.get_version_tuple() >= LooseVersion(wbWant)
         if ((not bGameOk or not bSEOk or not bGEOk or not bWBOk) and not
-            self.reqs_checked):
-            self.reqs_checked = True
+            self._reqs_checked):
+            self._reqs_checked = True
             self.page = PageVersions(self._wiz_parent, bGameOk, gameHave, game,
                                      bSEOk, seHave, se, bGEOk, geHave, ge,
-                                     bWBOk, wbHave, wbWant)
+                                     bWBOk, wbWant)
 
     def _TestVersion_GE(self, want):
         if isinstance(bush.game.Ge.exe, bytes):

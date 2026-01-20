@@ -1582,8 +1582,8 @@ class DataStore(DataDict):
                 table_dat = self._load_dat(progress)
             omds = [] if extract_omods else None
             inodes = FNDict()
+            sk = table_dat or set()
             with os.scandir(self.store_dir) as it:
-                sk = table_dat or set()
                 for x in it:
                     try:
                         if kws := self.check_filename(x.name, _inode=x,

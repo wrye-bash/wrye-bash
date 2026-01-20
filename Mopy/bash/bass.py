@@ -37,6 +37,15 @@ else:
 active_locale = None
 AppVersion = '315'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
+__app_version_tuple = None
+
+def get_version_tuple():
+    """Return the application version as a tuple of integers."""
+    global __app_version_tuple
+    if __app_version_tuple is None:
+        from .bolt import LooseVersion
+        __app_version_tuple = LooseVersion(AppVersion)
+    return __app_version_tuple
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()

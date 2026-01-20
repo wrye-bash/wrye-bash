@@ -29,7 +29,7 @@ from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
-from ..bolt import deprint, dict_sort, readme_url, LooseVersion, reverse_dict
+from ..bolt import deprint, dict_sort, readme_url, reverse_dict
 from ..env import is_uac, shellDelete, shellMove
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
@@ -1255,7 +1255,7 @@ class GeneralPage(_AScrollablePage):
         with BusyCursor():
             newer_version = UpdateChecker().check_for_updates(force_check=True)
         if newer_version is not None:
-            if newer_version.wb_version > LooseVersion(bass.AppVersion):
+            if newer_version.wb_version > bass.get_version_tuple():
                 UpdateNotification.display_dialog(self, newer_version)
             else:
                 showInfo(self, _('You are already using the newest version of '
