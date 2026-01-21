@@ -55,7 +55,7 @@ import update_taglist
 from helpers.utils import APPS_PATH, DIST_PATH, MOPY_PATH, NSIS_PATH, \
     ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, L10N_PATH, LooseVersion, \
     commit_changes,  edit_bass_version, cp, mv, rm, run_script, mk_logfile, \
-    run_subprocess, download_file, with_args, setup_log
+    run_subprocess, download_file, with_args, setup_log, get_commit_hash
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -110,7 +110,7 @@ def _setup_build_parser(parser):
         '--nightly',
         action='store_const',
         const=nightly_version,
-        dest='version',
+        dest='build_version',
         help="Build with the nightly release format 'VERSION.TIMESTAMP' "
              "[default].",
     )
@@ -119,8 +119,17 @@ def _setup_build_parser(parser):
         '--production',
         action='store_const',
         const=bass.AppVersion,
-        dest='version',
+        dest='build_version',
         help="Build with the production release format 'VERSION'.",
+    )
+    parser.add_argument(
+        '-t',
+        '--version_tag',
+        nargs='?', # zero or one arguments
+        const=None, # if no argument is given, use None -> commit hash
+        default='', # if not specified, don't tag
+        dest='version_tag',
+        help='Tag the version with the given string or the commit sha',
     )
     parser.add_argument(
         '-c',
@@ -160,7 +169,7 @@ def _setup_build_parser(parser):
         dest='force_tl_update',
         help='Forces an update of the bundled taglists.',
     )
-    parser.set_defaults(version=nightly_version)
+    parser.set_defaults(build_version=nightly_version)
 
 # PyInstaller thinks it's fine to setup logging on import...
 def _setup_pyinstaller_logger(logfile):
@@ -171,25 +180,6 @@ def _setup_pyinstaller_logger(logfile):
     file_handler = logging.FileHandler(logfile)
     file_handler.setFormatter(stupid_formatter)
     logging.getLogger('PyInstaller').addHandler(file_handler)
-
-_nightly_re = re.compile(r'(\d{3,})\.(\d{12})')
-def _get_version_info(build_vers):
-    """Generates version strings from the passed parameter. Returns a string
-    used for the 'File Version' property of the built standalone release. For
-    example, a version of 291 would with default padding would return
-    '291.0.0.0'"""
-    production_regex = r'(\d{3,})(\.\d)?$'
-    build_vers = str(build_vers)
-    if (p_match := re.match(production_regex, build_vers)) is not None:
-        file_version = f'{p_match.group(1)}' + (p_match.group(2) or '.0') + '.0.0'
-    else:
-        ma_version = _nightly_re.fullmatch(build_vers)
-        assert ma_version is not None
-        timestamp = ma_version.group(2)
-        file_version = (f'{ma_version.group(1)}.{timestamp[:4]}.'
-                        f'{timestamp[4:8]}.{timestamp[8:12]}')
-    _LOGGER.debug(f'Using file version: {file_version}')
-    return file_version
 
 def _pack_7z(dest_7z, *args):
     cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, 'Mopy/'] + list(args)
@@ -314,26 +304,45 @@ def _handle_apps_folder():
         else:
             rm(APPS_PATH)
 
-def _check_timestamp(build_vers):
-    """Checks whether the current nightly timestamp is the same as the previous
-    nightly build. Returns False if it's the same, True otherwise. Happens when
-    a build is triggered too quickly after the previous one."""
+def _check_version(build_vers, vers_tag) -> tuple[str, str]:
+    """Generate version strings from the passed parameters. build_vers
+    currently is the major version, optionally followed by a minor version
+    (either one digit or a twelve digits timestamp, dot separated). For
+    file_version see VIProductVersion and VIAddVersionKey "File Version"
+    in main.nsi."""
     # check whether we're building a nightly
-    if (nightly_version := _nightly_re.match(build_vers)) is None:
-        return True
+    is_nightly = re.compile(r'(\d{3,})\.(\d{12})').fullmatch(build_vers)
     try:
-        # check whether the previous build is also a nightly
-        if previous_version := _nightly_re.search(str(next(
-                DIST_PATH.iterdir()))):
-            if nightly_version.groups() == previous_version.groups():
-                answer = input('Current timestamp is equal to the previous '
-                               'build. Continue? [y/N]\n> ')
-                if not answer or not answer.lower().startswith('y'):
-                    return False
-    except (OSError, StopIteration):
-        # if no output folder exists or nothing exists in output folder
-        return True
-    return True
+        ask = '' # check whether the previous build is also a nightly/tagged
+        if vers_tag := get_commit_hash() if vers_tag is None else vers_tag:
+            # todo(675): check if vers_tag is a sha
+            if vers_tag in (prev_build := str(next(DIST_PATH.iterdir()))):
+                ask = f'{vers_tag} in build: {prev_build}. Continue? [y/N]\n> '
+            bass.version_tag = vers_tag
+        # check if the current nightly timestamp is the same as in the previous
+        # nightly build. Happens when a build is triggered too quickly after
+        # the previous one.
+        if is_nightly and build_vers in str(next(DIST_PATH.iterdir())):
+            ask = 'Current timestamp is equal to the previous build. '\
+                  'Continue? [y/N]\n> '
+        if ask and (input(ask) or 'n').lower()[0] != 'y':
+            raise ValueError(f'{ask.split(" Continue?")[0]} Aborting.')
+    except (OSError, StopIteration): # if dist folder doesn't exist or is empty
+        pass
+    production_regex = r'(\d{3,})(\.\d)?'
+    # nsis expects VIProductVersion in 4-part numeric X.X.X.X format - no tags!
+    if is_nightly:
+        timestamp = is_nightly.group(2)
+        file_version = (f'{is_nightly.group(1)}.{timestamp[:4]}.'
+                        f'{timestamp[4:8]}.{timestamp[8:12]}')
+    elif p_match := re.fullmatch(production_regex, build_vers):
+        # '291' ('291.1') will return '291.0.0.0' ('291.1.0.0')
+        file_version = f'{p_match.group(1)}{p_match.group(2) or ".0"}.0.0'
+    else:
+        raise ValueError(f'Invalid build version format: {build_vers}')
+    _LOGGER.debug(f'Using file version: {file_version}')
+    # todo(675): use a dash?
+    return f'{build_vers}.{vers_tag}' if vers_tag else build_vers, file_version
 
 def _taglists_need_update():
     """Checks if we should update the taglists. Can be overriden via CLI
@@ -395,16 +404,12 @@ def _hold_files(*files: Path):
 def main(args):
     setup_log(_LOGGER, args)
     _setup_pyinstaller_logger(args.logfile)
-    rm(DIST_PATH)
     _LOGGER.info(f'Building on Python {sys.version}')
     # check nightly timestamp is different than previous
-    vers = args.version
-    if not _check_timestamp(vers):
-        raise OSError('Aborting build due to equal nightly timestamps.')
+    vers, file_version = _check_version(args.build_version, args.version_tag)
+    rm(DIST_PATH)
     with (_handle_apps_folder(), _compile_translations(args),
           _update_file_version(vers, args.commit)):
-        # Get repository files
-        version_info = _get_version_info(vers)
         # create distributable directory
         DIST_PATH.mkdir(parents=True, exist_ok=True)
         # Copy the license so it's included in the built releases
@@ -434,7 +439,7 @@ def main(args):
                     _pack_standalone(vers)
                 if args.installer:
                     _LOGGER.info('Creating installer distributable...')
-                    _pack_installer(args.nsis, vers, version_info)
+                    _pack_installer(args.nsis, vers, file_version)
         finally:
             # Clean up the temp copy of the license
             rm(license_temp)

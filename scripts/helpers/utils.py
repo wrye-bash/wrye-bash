@@ -39,7 +39,7 @@ import pygit2
 
 # Reusable path definitions
 SCRIPTS_PATH = Path(__file__).absolute().parent.parent
-ROOT_PATH = SCRIPTS_PATH.parent
+ROOT_PATH = SCRIPTS_PATH.parent # the root of the Wrye Bash repository
 WBSA_PATH = SCRIPTS_PATH / 'build' / 'standalone'
 DIST_PATH = SCRIPTS_PATH / 'dist'
 MOPY_PATH = ROOT_PATH / 'Mopy'
@@ -233,6 +233,11 @@ def commit_changes(*, changed_paths: list[os.PathLike | str], commit_msg: str,
     tree = repo.index.write_tree()
     repo.create_commit('HEAD', user, user, commit_msg, tree, parent)
     repo.index.write()
+
+def get_commit_hash() -> str:
+    """Get the current commit hash of the WB repository."""
+    repo = pygit2.Repository(ROOT_PATH)
+    return str(repo.head.target)
 
 def out_path(dir_=OUT_PATH, name='out.txt'):
     """Returns a path joining the dir_ and name parameters. Will create the

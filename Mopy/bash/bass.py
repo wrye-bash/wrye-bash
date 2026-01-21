@@ -35,16 +35,18 @@ else:
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = '315'  # must represent a valid float
+AppVersion = '315' # an integer or float (except if written from build.py)
 is_standalone = False # whether or not we're on standalone
-__app_version_tuple = None
+__app_version_tuple = None # cache the version as a tuple (with tag stripped)
+version_tag = ''  # e.g., 'RC1' or a commit sha
 
 def get_version_tuple():
     """Return the application version as a tuple of integers."""
     global __app_version_tuple
     if __app_version_tuple is None:
         from .bolt import LooseVersion
-        __app_version_tuple = LooseVersion(AppVersion)
+        __app_version_tuple = LooseVersion(AppVersion[:-(len(version_tag) + 1)]
+            if version_tag else AppVersion) # can't use the tag in comparisons
     return __app_version_tuple
 
 #--Global dictionaries - do _not_ reassign !

@@ -34,7 +34,7 @@ jobs:
       run: |
         git config --local user.name "wryebot"
         git config --local user.email "wryebot@gmail.com"
-        python scripts/build.py --verbose
+        python scripts/build.py --verbose --version_tag
     - name: Copy executable/license files
       run: |
         cp "scripts/build/standalone/dist/Wrye Bash.exe" Mopy
