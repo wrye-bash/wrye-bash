@@ -172,18 +172,18 @@ def _setup_pyinstaller_logger(logfile):
     file_handler.setFormatter(stupid_formatter)
     logging.getLogger('PyInstaller').addHandler(file_handler)
 
+_nightly_re = re.compile(r'(\d{3,})\.(\d{12})')
 def _get_version_info(build_vers):
     """Generates version strings from the passed parameter. Returns a string
     used for the 'File Version' property of the built standalone release. For
     example, a version of 291 would with default padding would return
     '291.0.0.0'"""
-    production_regex = r'\d{3,}(?:\.\d)?$'
-    nightly_regex = r'(\d{3,})\.(\d{12})$'
+    production_regex = r'(\d{3,})(\.\d)?$'
     build_vers = str(build_vers)
-    if re.match(production_regex, build_vers) is not None:
-        file_version = f'{build_vers}.0.0.0'
+    if (p_match := re.match(production_regex, build_vers)) is not None:
+        file_version = f'{p_match.group(1)}' + (p_match.group(2) or '.0') + '.0.0'
     else:
-        ma_version = re.match(nightly_regex, build_vers)
+        ma_version = _nightly_re.fullmatch(build_vers)
         assert ma_version is not None
         timestamp = ma_version.group(2)
         file_version = (f'{ma_version.group(1)}.{timestamp[:4]}.'
@@ -318,23 +318,21 @@ def _check_timestamp(build_vers):
     """Checks whether the current nightly timestamp is the same as the previous
     nightly build. Returns False if it's the same, True otherwise. Happens when
     a build is triggered too quickly after the previous one."""
-    nightly_re = re.compile(r'\d{3,}\.\d{12}')
     # check whether we're building a nightly
-    nightly_version = nightly_re.match(build_vers)
+    if (nightly_version := _nightly_re.match(build_vers)) is None:
+        return True
     try:
         # check whether the previous build is also a nightly
-        previous_version = nightly_re.search(str(next(DIST_PATH.iterdir())))
-    except (OSError, IndexError):
+        if previous_version := _nightly_re.search(str(next(
+                DIST_PATH.iterdir()))):
+            if nightly_version.groups() == previous_version.groups():
+                answer = input('Current timestamp is equal to the previous '
+                               'build. Continue? [y/N]\n> ')
+                if not answer or not answer.lower().startswith('y'):
+                    return False
+    except (OSError, StopIteration):
         # if no output folder exists or nothing exists in output folder
-        previous_version = None
-    if None not in (nightly_version, previous_version):
-        nightly_version = nightly_version.group(0)
-        previous_version = previous_version.group(0)
-        if nightly_version == previous_version:
-            answer = input('Current timestamp is equal to the previous build. '
-                           'Continue? [y/N]\n> ')
-            if not answer or not answer.lower().startswith('y'):
-                return False
+        return True
     return True
 
 def _taglists_need_update():
