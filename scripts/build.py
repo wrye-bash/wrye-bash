@@ -100,6 +100,8 @@ _IGNORES_STANDALONE = _IGNORES_MANUAL | {
 sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
+_min_sha_len = 7 # minimum length to keep from commit hash
+
 def _setup_build_parser(parser):
     version_group = parser.add_mutually_exclusive_group()
     curr_datetime = datetime.datetime.now(datetime.UTC)
@@ -130,6 +132,14 @@ def _setup_build_parser(parser):
         default='', # if not specified, don't tag
         dest='version_tag',
         help='Tag the version with the given string or the commit sha',
+    )
+    parser.add_argument(
+        '--sha_len',
+        default=_min_sha_len,
+        dest='sha_len',
+        type=int,
+        help='Number of characters of the commit hash to use - also min len '
+             'for a str to be considered a hash tag.',
     )
     parser.add_argument(
         '-c',
@@ -182,7 +192,7 @@ def _setup_pyinstaller_logger(logfile):
     logging.getLogger('PyInstaller').addHandler(file_handler)
 
 def _pack_7z(dest_7z, *args):
-    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, 'Mopy/'] + list(args)
+    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, 'Mopy/', *args]
     run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
 
 def _get_nsis_root(cmd_arg):
@@ -304,21 +314,38 @@ def _handle_apps_folder():
         else:
             rm(APPS_PATH)
 
-def _check_version(build_vers, vers_tag) -> tuple[str, str]:
+def _check_version(args) -> tuple[str, str]:
     """Generate version strings from the passed parameters. build_vers
     currently is the major version, optionally followed by a minor version
     (either one digit or a twelve digits timestamp, dot separated). For
     file_version see VIProductVersion and VIAddVersionKey "File Version"
     in main.nsi."""
+    if (len_sha := args.sha_len) < _min_sha_len:
+        _LOGGER.warning(f'SHA length must be at least {_min_sha_len}')
+        len_sha = _min_sha_len
+    build_vers, vers_tag = args.build_version, args.version_tag
     # check whether we're building a nightly
-    is_nightly = re.compile(r'(\d{3,})\.(\d{12})').fullmatch(build_vers)
+    if is_nightly := re.fullmatch(r'(\d{3,})\.(\d{12})', build_vers):
+        timestamp = is_nightly.group(2)
+        file_version = (f'{is_nightly.group(1)}.{timestamp[:4]}.'
+                        f'{timestamp[4:8]}.{timestamp[8:12]}')
+    elif p_match := re.fullmatch(r'(\d{3,})(\.\d)?', build_vers):
+        # '291' ('291.1') will return '291.0.0.0' ('291.1.0.0')
+        file_version = f'{p_match.group(1)}{p_match.group(2) or ".0"}.0.0'
+    else:
+        raise ValueError(f'Invalid build version format: {build_vers}')
+    # nsis expects VIProductVersion in 4-part numeric X.X.X.X format - no tags!
+    _LOGGER.debug(f'Using file version: {file_version}')
+    if is_sha := vers_tag is None: # use the sha of the commit we build from
+        vers_tag = get_commit_hash()[:len_sha]
+    else:
+        is_sha = re.fullmatch(f'[0-9a-f]{{{len_sha},40}}', vers_tag)
+    bass.version_tag = vers_tag
     try:
         ask = '' # check whether the previous build is also a nightly/tagged
-        if vers_tag := get_commit_hash() if vers_tag is None else vers_tag:
-            # todo(675): check if vers_tag is a sha
+        if is_sha:
             if vers_tag in (prev_build := str(next(DIST_PATH.iterdir()))):
                 ask = f'{vers_tag} in build: {prev_build}. Continue? [y/N]\n> '
-            bass.version_tag = vers_tag
         # check if the current nightly timestamp is the same as in the previous
         # nightly build. Happens when a build is triggered too quickly after
         # the previous one.
@@ -329,20 +356,7 @@ def _check_version(build_vers, vers_tag) -> tuple[str, str]:
             raise ValueError(f'{ask.split(" Continue?")[0]} Aborting.')
     except (OSError, StopIteration): # if dist folder doesn't exist or is empty
         pass
-    production_regex = r'(\d{3,})(\.\d)?'
-    # nsis expects VIProductVersion in 4-part numeric X.X.X.X format - no tags!
-    if is_nightly:
-        timestamp = is_nightly.group(2)
-        file_version = (f'{is_nightly.group(1)}.{timestamp[:4]}.'
-                        f'{timestamp[4:8]}.{timestamp[8:12]}')
-    elif p_match := re.fullmatch(production_regex, build_vers):
-        # '291' ('291.1') will return '291.0.0.0' ('291.1.0.0')
-        file_version = f'{p_match.group(1)}{p_match.group(2) or ".0"}.0.0'
-    else:
-        raise ValueError(f'Invalid build version format: {build_vers}')
-    _LOGGER.debug(f'Using file version: {file_version}')
-    # todo(675): use a dash?
-    return f'{build_vers}.{vers_tag}' if vers_tag else build_vers, file_version
+    return f'{build_vers}-{vers_tag}' if vers_tag else build_vers, file_version
 
 def _taglists_need_update():
     """Checks if we should update the taglists. Can be overriden via CLI
@@ -405,8 +419,8 @@ def main(args):
     setup_log(_LOGGER, args)
     _setup_pyinstaller_logger(args.logfile)
     _LOGGER.info(f'Building on Python {sys.version}')
-    # check nightly timestamp is different than previous
-    vers, file_version = _check_version(args.build_version, args.version_tag)
+    # check nightly timestamp is different from previous, get version strings
+    vers, file_version = _check_version(args)
     rm(DIST_PATH)
     with (_handle_apps_folder(), _compile_translations(args),
           _update_file_version(vers, args.commit)):
