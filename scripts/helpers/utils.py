@@ -239,6 +239,21 @@ def get_commit_hash() -> str:
     repo = pygit2.Repository(ROOT_PATH)
     return str(repo.head.target)
 
+def get_tracked_files_at_commit(commitish='HEAD'):
+    repo = pygit2.Repository(ROOT_PATH)
+    commit = repo.revparse_single(commitish)
+    files = []
+    stack = [(commit.tree, '')]  # (tree, prefix)
+    while stack:
+        tree, prefix = stack.pop()
+        for entry in tree:
+            path = f'{prefix}{entry.name}'
+            if entry.type == pygit2.GIT_OBJECT_BLOB:
+                files.append(path)
+            elif entry.type == pygit2.GIT_OBJECT_TREE:
+                stack.append((repo[entry.id], path + '/'))
+    return files
+
 def out_path(dir_=OUT_PATH, name='out.txt'):
     """Returns a path joining the dir_ and name parameters. Will create the
     dirs in dir_ if not existing.

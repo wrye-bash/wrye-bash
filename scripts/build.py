@@ -54,8 +54,9 @@ import PyInstaller.__main__
 import update_taglist
 from helpers.utils import APPS_PATH, DIST_PATH, MOPY_PATH, NSIS_PATH, \
     ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, L10N_PATH, LooseVersion, \
-    commit_changes,  edit_bass_version, cp, mv, rm, run_script, mk_logfile, \
-    run_subprocess, download_file, with_args, setup_log, get_commit_hash
+    commit_changes, edit_bass_version, cp, mv, rm, run_script, mk_logfile, \
+    run_subprocess, download_file, with_args, setup_log, get_commit_hash, \
+    get_tracked_files_at_commit
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -192,7 +193,7 @@ def _setup_pyinstaller_logger(logfile):
     logging.getLogger('PyInstaller').addHandler(file_handler)
 
 def _pack_7z(dest_7z, *args):
-    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, 'Mopy/', *args]
+    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, *args]
     run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
 
 def _get_nsis_root(cmd_arg):
@@ -224,6 +225,8 @@ def _get_nsis_root(cmd_arg):
         os.rename(local_build_path / f'nsis-{_NSIS_VERSION}', NSIS_PATH)
     return NSIS_PATH
 
+_locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
+         'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
 def _pack_manual(build_vers):
     """ Packages the manual (python source) version. """
     archive_ = DIST_PATH / f'Wrye Bash {build_vers} - Python Source.7z'
@@ -232,13 +235,34 @@ def _pack_manual(build_vers):
         ROOT_PATH / 'requirements.txt': MOPY_PATH / 'requirements.txt',
         WBSA_PATH / 'bash.ico':         MOPY_PATH / 'bash.ico',
     }
+    tracked = get_tracked_files_at_commit('HEAD')
     for orig, target in files_to_include.items():
         cp(orig, target)
-    try:
-        _pack_7z(archive_, *['-xr!' + a for a in _IGNORES_MANUAL])
-    finally:
-        for path in files_to_include.values():
-            rm(path)
+    # keep the files in Mopy so 7z won't look in the parent folder
+    mopy_tr = [x for x in tracked if
+               x.startswith('Mopy/') and not x.startswith('Mopy/bash/l10n')]
+    extras = [*(str(x.relative_to(MOPY_PATH)).replace(os.sep, '/') for x in
+                files_to_include.values()),
+             *('/'.join((pa := p.parts)[pa.index('Mopy') + 1:]) for p in
+          update_taglist.TAGLISTS_PATHS), *(f'bash/l10n/{x}.mo' for x in _locs),
+        'LICENSE.md', 'Apps']
+    with tempfile.TemporaryDirectory() as tmpdir:
+        include_file = Path(tmpdir) / 'files_to_include.txt'
+        exclude_file = Path(tmpdir) / 'files_to_exclude.txt'
+        # --- INCLUDE LIST ---
+        mopy_extra = (f'Mopy/{a}' for a in extras)
+        keep = [*mopy_tr, *mopy_extra, ''] # add a newline at the end
+        with include_file.open('w', encoding='utf-8', newline='\n') as f:
+            f.write('\n'.join(keep))
+        # --- EXCLUDE LIST ---
+        with exclude_file.open('w', encoding='utf-8', newline='\n') as f:
+            for pattern in _IGNORES_MANUAL:
+                f.write(pattern + '\n')
+        try:
+            _pack_7z(archive_, f'-i@{include_file}', f'-xr@{exclude_file}')
+        finally:
+            for path in files_to_include.values():
+                rm(path)
 
 @contextmanager
 def _build_executable():
@@ -261,7 +285,7 @@ def _build_executable():
 def _pack_standalone(build_vers):
     """ Packages the standalone version. """
     dest_7z = DIST_PATH / f'Wrye Bash {build_vers} - Standalone Executable.7z'
-    _pack_7z(dest_7z, *['-xr!' + a for a in _IGNORES_STANDALONE])
+    _pack_7z(dest_7z, 'Mopy/', *['-xr!' + a for a in _IGNORES_STANDALONE])
 
 def _pack_installer(nsis_path, build_vers, file_version):
     """ Packages the installer version. """
