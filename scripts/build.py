@@ -77,19 +77,16 @@ from bash import bass
 
 _locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
          'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
-def _filter_tracked(is_stand=False, apps=('Mopy/Apps',)) -> list[str]:
+def _filter_tracked() -> list[str]:
     # filter tracked files to include in manual package and add taglists/.mo
     tracked = get_tracked_files_at_commit('HEAD')
     # keep the files in Mopy so 7z won't look in the parent folder
     mopy_tr = [x for x in tracked if x.startswith('Mopy/') and
                not x.startswith(('Mopy/bash/l10n', 'Mopy/bash/tests'))]
-    if is_stand: # we don't want python source files and any dev files
-        mopy_tr = [f for f in mopy_tr if not f.endswith(
-            ('.py', '.pyw', '.bat', '.template'))]
     yamls = ('/'.join((pa := p.parts)[pa.index('Mopy'):]) for p in
              update_taglist.TAGLISTS_PATHS)
     mos = (f'Mopy/bash/l10n/{x}.mo' for x in _locs)
-    return [*mopy_tr, *yamls, *mos, 'Mopy/LICENSE.md', *apps]
+    return [*mopy_tr, *yamls, *mos, 'Mopy/LICENSE.md']
 
 _min_sha_len = 7 # minimum length to keep from commit hash
 
@@ -187,7 +184,7 @@ def _pack_7z(dest_7z, keep):
         include_file = Path(tmpdir) / 'files_to_include.txt'
         with include_file.open('w', encoding='utf-8', newline='\n') as f:
             f.write('\n'.join(keep))
-        cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z,
+        cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', DIST_PATH / dest_7z,
                   f'-i@{include_file}']
         run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
 
@@ -220,17 +217,16 @@ def _get_nsis_root(cmd_arg):
         os.rename(local_build_path / f'nsis-{_NSIS_VERSION}', NSIS_PATH)
     return NSIS_PATH
 
-def _pack_manual(build_vers):
+def _pack_manual(build_vers, mopy_tr):
     """ Packages the manual (python source) version. """
-    archive_ = DIST_PATH / f'Wrye Bash {build_vers} - Python Source.7z'
     copied = {'Readme.md': ROOT_PATH, 'requirements.txt': ROOT_PATH,
               'bash.ico': WBSA_PATH}
-    mopy_tr = _filter_tracked()
     files_to_include = {di / fi: MOPY_PATH / fi for fi, di in copied.items()}
     try:
         for orig, target in files_to_include.items():
             cp(orig, target)
-        _pack_7z(archive_, [*mopy_tr, *(f'Mopy/{a}' for a in copied), ''])
+        _pack_7z(f'Wrye Bash {build_vers} - Python Source.7z',
+                 [*mopy_tr, 'Mopy/Apps', *(f'Mopy/{a}' for a in copied), ''])
     finally:
         for path in files_to_include.values():
             rm(path)
@@ -253,13 +249,12 @@ def _build_executable():
     finally:
         rm(dest_exe)
 
-def _pack_standalone(build_vers):
+def _pack_standalone(build_vers, mopy_tr):
     """ Packages the standalone version. """
-    mopy_tr = _filter_tracked(True)
-    dest_7z = DIST_PATH / f'Wrye Bash {build_vers} - Standalone Executable.7z'
-    _pack_7z(dest_7z, [*mopy_tr, 'Mopy/Wrye Bash.exe', ''])
+    _pack_7z(f'Wrye Bash {build_vers} - Standalone Executable.7z',
+             [*mopy_tr, 'Mopy/Apps', 'Mopy/Wrye Bash.exe', ''])
 
-def _pack_installer(nsis_path, build_vers, file_version):
+def _pack_installer(nsis_path, build_vers, file_version, mopy_tr):
     """ Packages the installer version. """
     script_path = SCRIPTS_PATH / 'build' / 'installer' / 'main.nsi'
     if not script_path.is_file():
@@ -271,9 +266,8 @@ def _pack_installer(nsis_path, build_vers, file_version):
         raise OSError("Could not find 'makensis.exe' in NSIS folder, aborting "
                       "installer creation.")
     files_macro = SCRIPTS_PATH / 'build' / 'installer' / 'InstallBashFiles.nsh'
-    tracked_files = _filter_tracked(True, apps=())
     try:
-        _write_nsis_macro(files_macro, tracked_files)
+        _write_nsis_macro(files_macro, mopy_tr)
          # Run the NSIS script to build the installer
         run_subprocess([nsis_path, '/NOCD', f'/DWB_NAME=Wrye Bash {build_vers}',
                         f'/DWB_OUTPUT={DIST_PATH}',
@@ -459,13 +453,14 @@ def _hold_files(*files: Path):
             mv(target, orig)
         rm(tmpdir)
 
-def main(args):
+def main(args, *, __pys=('.py', '.pyw')):
     setup_log(_LOGGER, args)
     _setup_pyinstaller_logger(args.logfile)
     _LOGGER.info(f'Building on Python {sys.version}')
     # check nightly timestamp is different from previous, get version strings
     vers, file_version = _check_version(args)
     rm(DIST_PATH)
+    tracked = _filter_tracked()
     with (_handle_apps_folder(), _compile_translations(args),
           _update_file_version(vers, args.commit)):
         # create distributable directory
@@ -484,20 +479,21 @@ def main(args):
                     out.write(update_taglist.MASTERLIST_VERSION)
             if args.manual:
                 _LOGGER.info('Creating python source distributable...')
-                _pack_manual(vers)
+                _pack_manual(vers, tracked)
             if _NOT_WINDOWS:
                 _LOGGER.info('Non-Windows OS detected, skipping '
                              'standalone and installer distributables.')
                 return
             if not args.standalone and not args.installer:
                 return
+            tracked = [f for f in tracked if not f.endswith(__pys)]
             with _build_executable():
                 if args.standalone:
                     _LOGGER.info('Creating standalone distributable...')
-                    _pack_standalone(vers)
+                    _pack_standalone(vers, tracked)
                 if args.installer:
                     _LOGGER.info('Creating installer distributable...')
-                    _pack_installer(args.nsis, vers, file_version)
+                    _pack_installer(args.nsis, vers, file_version, tracked)
         finally:
             # Clean up the temp copy of the license
             rm(license_temp)
