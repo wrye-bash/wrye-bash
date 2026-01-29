@@ -22,7 +22,7 @@
 #
 # =============================================================================
 """This script will compile all .po files from Mopy/bash/l10n to .mo files.
-Automatically run by build.py, but you will have to run this manually this if
+Automatically run by build.py, but you will have to run this manually if
 you want to test non-English localizations in a development environment."""
 
 __author__ = 'Infernio'

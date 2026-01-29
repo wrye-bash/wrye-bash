@@ -58,6 +58,17 @@ DEFAULT_MILESTONE_TITLE = 'Bug fixes and enhancements'
 DEFAULT_AUTHORS = 'Various community members'
 ALL_ISSUES = 'all'
 
+_PYG_REPO = None
+
+def _get_pygit_repo(repo_path=ROOT_PATH) -> pygit2.Repository:
+    """Get the pygit2 Repository instance for the Wrye Bash repository."""
+    if repo_path != ROOT_PATH:
+        return pygit2.Repository(repo_path)
+    global _PYG_REPO
+    if _PYG_REPO is None:
+        _PYG_REPO = pygit2.Repository(ROOT_PATH)
+    return _PYG_REPO
+
 class _StreamRedirector:
     """Useful for redirecting the vendored _i18n scripts' print statements to a
     proper logger."""
@@ -223,7 +234,7 @@ def commit_changes(*, changed_paths: list[os.PathLike | str], commit_msg: str,
         repo_path: os.PathLike | str = ROOT_PATH):
     """Commit changes to the specified files by creating a commit with the
     specified message."""
-    repo = pygit2.Repository(repo_path)
+    repo = _get_pygit_repo(repo_path)
     user = get_repo_sig(repo)
     parent = [repo.head.target]
     for cf in changed_paths:
@@ -236,11 +247,11 @@ def commit_changes(*, changed_paths: list[os.PathLike | str], commit_msg: str,
 
 def get_commit_hash() -> str:
     """Get the current commit hash of the WB repository."""
-    repo = pygit2.Repository(ROOT_PATH)
+    repo = _get_pygit_repo()
     return str(repo.head.target)
 
 def get_tracked_files_at_commit(commitish='HEAD'):
-    repo = pygit2.Repository(ROOT_PATH)
+    repo = _get_pygit_repo()
     commit = repo.revparse_single(commitish)
     files = []
     stack = [(commit.tree, '')]  # (tree, prefix)
