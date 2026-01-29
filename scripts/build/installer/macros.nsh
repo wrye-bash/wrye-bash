@@ -3,41 +3,7 @@
 
 
 ; Prevent redefining the macro if included multiple times
-!ifmacrondef InstallBashFiles
-    !macro InstallBashFiles GameDir RegPath
-        ; Parameters:
-        ;  GameDir - base directory for the game (one folder up from the Data directory)
-        ;  RegPath - Name of the registry string that will hold the path installing to
-
-        ; Install common files
-        SetOutPath "${GameDir}\Mopy"
-        ; Excludes have to be kept in sync with _filter_tracked(True) from
-        ; build.py
-        File /r \
-            /x "*.bat" \
-            /x "*.log" \
-            /x "*.py*" \
-            /x "bash.ini" \
-            /x "bash_default.ini" \
-            /x "Wrye Bash.exe" \
-            /x "__pycache__" \
-            /x "basher" \
-            /x "bosh" \
-            /x "brec" \
-            /x "env" \
-            /x "game" \
-            /x "gui" \
-            /x "patcher" \
-            /x "redist" \
-            /x "tests" \
-            "${WB_CLEAN_MOPY}\*.*"
-        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
-        ; Install the standalone only files
-        SetOutPath "${GameDir}\Mopy"
-        File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
-    !macroend
-
-
+!ifmacrondef RemoveRegistryEntries
     !macro RemoveRegistryEntries GameName
         ; Parameters:
         ;  GameName -  name of the game to remove registry entries for

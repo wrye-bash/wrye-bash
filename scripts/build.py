@@ -38,6 +38,7 @@ import shutil
 import sys
 import tempfile
 import textwrap
+from collections import defaultdict
 
 try:
     import winreg
@@ -76,9 +77,7 @@ from bash import bass
 
 _locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
          'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
-##: use _filter_tracked to replace excludes in macros.nsh (search for 'Excludes' in that
-# file) with a macro file generated on the fly containing the same list as here
-def _filter_tracked(is_stand=False) -> list[str]:
+def _filter_tracked(is_stand=False, apps=('Mopy/Apps',)) -> list[str]:
     # filter tracked files to include in manual package and add taglists/.mo
     tracked = get_tracked_files_at_commit('HEAD')
     # keep the files in Mopy so 7z won't look in the parent folder
@@ -90,7 +89,7 @@ def _filter_tracked(is_stand=False) -> list[str]:
     yamls = ('/'.join((pa := p.parts)[pa.index('Mopy'):]) for p in
              update_taglist.TAGLISTS_PATHS)
     mos = (f'Mopy/bash/l10n/{x}.mo' for x in _locs)
-    return [*mopy_tr, *yamls, *mos, 'Mopy/LICENSE.md', 'Mopy/Apps']
+    return [*mopy_tr, *yamls, *mos, 'Mopy/LICENSE.md', *apps]
 
 _min_sha_len = 7 # minimum length to keep from commit hash
 
@@ -271,10 +270,58 @@ def _pack_installer(nsis_path, build_vers, file_version):
     if not nsis_path.is_file():
         raise OSError("Could not find 'makensis.exe' in NSIS folder, aborting "
                       "installer creation.")
-    run_subprocess([nsis_path, '/NOCD', f'/DWB_NAME=Wrye Bash {build_vers}',
-                    f'/DWB_OUTPUT={DIST_PATH}',
-                    f'/DWB_FILEVERSION={file_version}',
-                    f'/DWB_CLEAN_MOPY={MOPY_PATH}', script_path], _LOGGER)
+    files_macro = SCRIPTS_PATH / 'build' / 'installer' / 'InstallBashFiles.nsh'
+    tracked_files = _filter_tracked(True, apps=())
+    try:
+        _write_nsis_macro(files_macro, tracked_files)
+         # Run the NSIS script to build the installer
+        run_subprocess([nsis_path, '/NOCD', f'/DWB_NAME=Wrye Bash {build_vers}',
+                        f'/DWB_OUTPUT={DIST_PATH}',
+                        f'/DWB_FILEVERSION={file_version}',
+                        f'/DWB_CLEAN_MOPY={MOPY_PATH}', script_path], _LOGGER)
+    finally:
+        files_macro.unlink(missing_ok=True)
+
+def _write_nsis_macro(files_macro, tracked_files):
+    """ Writes an NSIS macro file InstallBashFiles.nsh dynamically based on
+    tracked_files.
+
+    tracked_files: list of Posix relative paths inside Mopy/."""
+    macro_lines = [
+        '!ifmacrondef InstallBashFiles',
+        '!macro InstallBashFiles GameDir RegPath',
+        '    ; Parameters:',
+        '    ;  GameDir - base directory for the game (one folder up from '
+        'the Data directory)',
+        '    ;  RegPath - Name of the registry string that will hold the '
+        'path installing to', '', '    ; Install tracked files']
+    # Group files by folder
+    files_by_folder = defaultdict(list)
+    for p in map(Path, tracked_files):
+        files_by_folder[p.parent].append(p.name)
+    # Generate SetOutPath + File lines
+    for folder, files in sorted(files_by_folder.items()):
+        nsis_folder = '${GameDir}\\Mopy'
+        wb_clean_folder = '${WB_CLEAN_MOPY}'
+        if folder != Path('.'):
+            folder = str(folder).replace('/', '\\')[5:] # remove 'Mopy\'
+            nsis_folder = f'{nsis_folder}\\{folder}'
+            wb_clean_folder = f'{wb_clean_folder}\\{folder}'
+        macro_lines.append(f'    SetOutPath "{nsis_folder}"')
+        for fname in sorted(files):
+            macro_lines.append(f'    File "{wb_clean_folder}\\{fname}"')
+    # Standalone executable
+    macro_lines.extend([
+        '    ; Install the standalone only files',
+        '    SetOutPath "${GameDir}\\Mopy"',
+        '    File "${WB_CLEAN_MOPY}\\Wrye Bash.exe"',
+        '    CreateDirectory "${GameDir}\\Mopy\\Apps"',
+        '', '    ; Write registry key',
+        '    WriteRegStr HKLM "SOFTWARE\\Wrye Bash" "${RegPath}" "${GameDir}"',
+        '!macroend', '!endif', ''])
+    # Write macro to file
+    files_macro.write_text('\n'.join(macro_lines), encoding='utf-8')
+    _LOGGER.info(f'NSIS macro written to {files_macro}')
 
 @contextmanager
 def _update_file_version(build_vers, do_commit=False):
