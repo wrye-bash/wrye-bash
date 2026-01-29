@@ -101,6 +101,19 @@ _IGNORES_STANDALONE = _IGNORES_MANUAL | {
 sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
+_locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
+         'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
+def _filter_tracked() -> list[str]:
+    # filter tracked files to include in manual package and add taglists/.mo
+    tracked = get_tracked_files_at_commit('HEAD')
+    # keep the files in Mopy so 7z won't look in the parent folder
+    mopy_tr = [x for x in tracked if x.startswith('Mopy/') and
+               not x.startswith(('Mopy/bash/l10n', 'Mopy/bash/tests'))]
+    yamls = ('/'.join((pa := p.parts)[pa.index('Mopy'):]) for p in
+             update_taglist.TAGLISTS_PATHS)
+    mos = (f'Mopy/bash/l10n/{x}.mo' for x in _locs)
+    return [*mopy_tr, *yamls, *mos, 'Mopy/LICENSE.md', 'Mopy/Apps']
+
 _min_sha_len = 7 # minimum length to keep from commit hash
 
 def _setup_build_parser(parser):
@@ -225,41 +238,24 @@ def _get_nsis_root(cmd_arg):
         os.rename(local_build_path / f'nsis-{_NSIS_VERSION}', NSIS_PATH)
     return NSIS_PATH
 
-_locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
-         'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
 def _pack_manual(build_vers):
     """ Packages the manual (python source) version. """
     archive_ = DIST_PATH / f'Wrye Bash {build_vers} - Python Source.7z'
-    files_to_include = {
-        ROOT_PATH / 'Readme.md':        MOPY_PATH / 'Readme.md',
-        ROOT_PATH / 'requirements.txt': MOPY_PATH / 'requirements.txt',
-        WBSA_PATH / 'bash.ico':         MOPY_PATH / 'bash.ico',
-    }
-    tracked = get_tracked_files_at_commit('HEAD')
-    for orig, target in files_to_include.items():
-        cp(orig, target)
-    # keep the files in Mopy so 7z won't look in the parent folder
-    mopy_tr = [x for x in tracked if
-               x.startswith('Mopy/') and not x.startswith('Mopy/bash/l10n')]
-    extras = [*(str(x.relative_to(MOPY_PATH)).replace(os.sep, '/') for x in
-                files_to_include.values()),
-             *('/'.join((pa := p.parts)[pa.index('Mopy') + 1:]) for p in
-          update_taglist.TAGLISTS_PATHS), *(f'bash/l10n/{x}.mo' for x in _locs),
-        'LICENSE.md', 'Apps']
+    copied = {'Readme.md': ROOT_PATH, 'requirements.txt': ROOT_PATH,
+              'bash.ico': WBSA_PATH}
+    mopy_tr = _filter_tracked()
+    mopy_extra = (f'Mopy/{a}' for a in copied)
+    keep = [*mopy_tr, *mopy_extra, ''] # add a newline at the end
     with tempfile.TemporaryDirectory() as tmpdir:
         include_file = Path(tmpdir) / 'files_to_include.txt'
-        exclude_file = Path(tmpdir) / 'files_to_exclude.txt'
         # --- INCLUDE LIST ---
-        mopy_extra = (f'Mopy/{a}' for a in extras)
-        keep = [*mopy_tr, *mopy_extra, ''] # add a newline at the end
         with include_file.open('w', encoding='utf-8', newline='\n') as f:
             f.write('\n'.join(keep))
-        # --- EXCLUDE LIST ---
-        with exclude_file.open('w', encoding='utf-8', newline='\n') as f:
-            for pattern in _IGNORES_MANUAL:
-                f.write(pattern + '\n')
+        files_to_include = {di / fi: MOPY_PATH / fi for fi, di in copied.items()}
         try:
-            _pack_7z(archive_, f'-i@{include_file}', f'-xr@{exclude_file}')
+            for orig, target in files_to_include.items():
+                cp(orig, target)
+            _pack_7z(archive_, f'-i@{include_file}')
         finally:
             for path in files_to_include.values():
                 rm(path)
