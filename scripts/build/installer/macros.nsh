@@ -11,8 +11,8 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        ; Excludes have to be kept in sync with _IGNORES_STANDALONE from
-        ; build.py (i.e. also include the ones in _IGNORES_MANUAL)
+        ; Excludes have to be kept in sync with _filter_tracked(True) from
+        ; build.py
         File /r \
             /x "*.bat" \
             /x "*.log" \

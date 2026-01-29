@@ -71,44 +71,22 @@ if _NOT_WINDOWS:
 else:
     _EXE_7Z = MOPY_PATH / 'bash' / 'compiled' / '7z.exe'
 
-# These have to be kept in sync with excludes in macros.nsh (search for
-# 'Excludes' in that file)
-_IGNORES_MANUAL = {
-    '*.log',
-    '*.pyc',
-    'Mopy/bash.ini',
-    'Mopy/bash_default.ini',
-    'Mopy/bash/tests',
-    'Mopy/redist',
-}
-_IGNORES_STANDALONE = _IGNORES_MANUAL | {
-    '*.py',
-    '*.pyw',
-    '*.pyd',
-    '*.bat',
-    '*.template',
-    'Mopy/bash/__pycache__',
-    'Mopy/bash/basher',
-    'Mopy/bash/bosh',
-    'Mopy/bash/brec',
-    'Mopy/bash/env',
-    'Mopy/bash/game',
-    'Mopy/bash/gui',
-    'Mopy/bash/patcher',
-}
-
-
 sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
 _locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
          'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
-def _filter_tracked() -> list[str]:
+##: use _filter_tracked to replace excludes in macros.nsh (search for 'Excludes' in that
+# file) with a macro file generated on the fly containing the same list as here
+def _filter_tracked(is_stand=False) -> list[str]:
     # filter tracked files to include in manual package and add taglists/.mo
     tracked = get_tracked_files_at_commit('HEAD')
     # keep the files in Mopy so 7z won't look in the parent folder
     mopy_tr = [x for x in tracked if x.startswith('Mopy/') and
                not x.startswith(('Mopy/bash/l10n', 'Mopy/bash/tests'))]
+    if is_stand: # we don't want python source files and any dev files
+        mopy_tr = [f for f in mopy_tr if not f.endswith(
+            ('.py', '.pyw', '.bat', '.template'))]
     yamls = ('/'.join((pa := p.parts)[pa.index('Mopy'):]) for p in
              update_taglist.TAGLISTS_PATHS)
     mos = (f'Mopy/bash/l10n/{x}.mo' for x in _locs)
@@ -205,9 +183,14 @@ def _setup_pyinstaller_logger(logfile):
     file_handler.setFormatter(stupid_formatter)
     logging.getLogger('PyInstaller').addHandler(file_handler)
 
-def _pack_7z(dest_7z, *args):
-    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z, *args]
-    run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
+def _pack_7z(dest_7z, keep):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        include_file = Path(tmpdir) / 'files_to_include.txt'
+        with include_file.open('w', encoding='utf-8', newline='\n') as f:
+            f.write('\n'.join(keep))
+        cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z,
+                  f'-i@{include_file}']
+        run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
 
 def _get_nsis_root(cmd_arg):
     """Finds and returns the nsis root folder."""
@@ -244,21 +227,14 @@ def _pack_manual(build_vers):
     copied = {'Readme.md': ROOT_PATH, 'requirements.txt': ROOT_PATH,
               'bash.ico': WBSA_PATH}
     mopy_tr = _filter_tracked()
-    mopy_extra = (f'Mopy/{a}' for a in copied)
-    keep = [*mopy_tr, *mopy_extra, ''] # add a newline at the end
-    with tempfile.TemporaryDirectory() as tmpdir:
-        include_file = Path(tmpdir) / 'files_to_include.txt'
-        # --- INCLUDE LIST ---
-        with include_file.open('w', encoding='utf-8', newline='\n') as f:
-            f.write('\n'.join(keep))
-        files_to_include = {di / fi: MOPY_PATH / fi for fi, di in copied.items()}
-        try:
-            for orig, target in files_to_include.items():
-                cp(orig, target)
-            _pack_7z(archive_, f'-i@{include_file}')
-        finally:
-            for path in files_to_include.values():
-                rm(path)
+    files_to_include = {di / fi: MOPY_PATH / fi for fi, di in copied.items()}
+    try:
+        for orig, target in files_to_include.items():
+            cp(orig, target)
+        _pack_7z(archive_, [*mopy_tr, *(f'Mopy/{a}' for a in copied), ''])
+    finally:
+        for path in files_to_include.values():
+            rm(path)
 
 @contextmanager
 def _build_executable():
@@ -280,8 +256,9 @@ def _build_executable():
 
 def _pack_standalone(build_vers):
     """ Packages the standalone version. """
+    mopy_tr = _filter_tracked(True)
     dest_7z = DIST_PATH / f'Wrye Bash {build_vers} - Standalone Executable.7z'
-    _pack_7z(dest_7z, 'Mopy/', *['-xr!' + a for a in _IGNORES_STANDALONE])
+    _pack_7z(dest_7z, [*mopy_tr, 'Mopy/Wrye Bash.exe', ''])
 
 def _pack_installer(nsis_path, build_vers, file_version):
     """ Packages the installer version. """
