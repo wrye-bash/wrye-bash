@@ -55,9 +55,8 @@ import PyInstaller.__main__
 import update_taglist
 from helpers.utils import APPS_PATH, DIST_PATH, MOPY_PATH, NSIS_PATH, \
     ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, L10N_PATH, LooseVersion, \
-    commit_changes, edit_bass_version, cp, mv, rm, run_script, mk_logfile, \
-    run_subprocess, download_file, with_args, setup_log, get_commit_hash, \
-    get_tracked_files_at_commit
+    edit_bass_version, cp, mv, rm, run_script, mk_logfile, run_subprocess, \
+    download_file, with_args, setup_log, WBRepo
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -75,11 +74,14 @@ else:
 sys.path.insert(0, str(MOPY_PATH))
 from bash import bass
 
+# create the repo instance
+_WB_REPO = WBRepo(ROOT_PATH)
+
 _locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
          'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
 def _filter_tracked() -> list[str]:
     # filter tracked files to include in manual package and add taglists/.mo
-    tracked = get_tracked_files_at_commit('HEAD')
+    tracked = _WB_REPO.get_tracked_files_at_commit('HEAD')
     # keep the files in Mopy so 7z won't look in the parent folder
     mopy_tr = [x for x in tracked if x.startswith('Mopy/') and
                not x.startswith(('Mopy/bash/l10n', 'Mopy/bash/tests'))]
@@ -327,7 +329,7 @@ def _update_file_version(build_vers, do_commit=False):
     edit_bass_version(build_vers, _LOGGER)
     if do_commit:
         _LOGGER.debug('Commit of version change requested')
-        commit_changes(changed_paths=[bass_path], commit_msg=build_vers)
+        _WB_REPO.commit_changes(changed_paths=[bass_path], commit_msg=build_vers)
     try:
         yield
     finally:
@@ -375,7 +377,7 @@ def _check_version(args) -> tuple[str, str]:
     # nsis expects VIProductVersion in 4-part numeric X.X.X.X format - no tags!
     _LOGGER.debug(f'Using file version: {file_version}')
     if is_sha := vers_tag is None: # use the sha of the commit we build from
-        vers_tag = get_commit_hash()[:len_sha]
+        vers_tag = _WB_REPO.get_head_hash()[:len_sha]
     else:
         is_sha = re.fullmatch(f'[0-9a-f]{{{len_sha},40}}', vers_tag)
     bass.version_tag = vers_tag

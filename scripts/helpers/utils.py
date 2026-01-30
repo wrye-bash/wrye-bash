@@ -58,17 +58,6 @@ DEFAULT_MILESTONE_TITLE = 'Bug fixes and enhancements'
 DEFAULT_AUTHORS = 'Various community members'
 ALL_ISSUES = 'all'
 
-_PYG_REPO = None
-
-def _get_pygit_repo(repo_path=ROOT_PATH) -> pygit2.Repository:
-    """Get the pygit2 Repository instance for the Wrye Bash repository."""
-    if repo_path != ROOT_PATH:
-        return pygit2.Repository(repo_path)
-    global _PYG_REPO
-    if _PYG_REPO is None:
-        _PYG_REPO = pygit2.Repository(ROOT_PATH)
-    return _PYG_REPO
-
 class _StreamRedirector:
     """Useful for redirecting the vendored _i18n scripts' print statements to a
     proper logger."""
@@ -214,56 +203,56 @@ def run_subprocess(command, logger, **kwargs):
     logger.debug(stdout)
     logger.debug('---  COMMAND OUTPUT END  ---')
 
-def get_repo_sig(repo):
-    """Wrapper around pygit2 that shows a helpful error message to the user if
-    their credentials have not been configured yet."""
-    try:
-        return repo.default_signature
-    except KeyError:
-        print('\n'.join(['', # empty line before the error
-            'ERROR: You have not set up your git identity yet.',
-            'This is necessary for the git operations that the build script '
-            'uses.',
-            'You can configure them as follows:',
-            '   git config --global user.name "Your Name"',
-            '   git config --global user.email "you@example.com"']),
-            file=sys.stderr)
-        sys.exit(1)
+class WBRepo(pygit2.Repository):
+    """A Wrye Bash pygit2 Repository wrapper."""
 
-def commit_changes(*, changed_paths: list[os.PathLike | str], commit_msg: str,
-        repo_path: os.PathLike | str = ROOT_PATH):
-    """Commit changes to the specified files by creating a commit with the
-    specified message."""
-    repo = _get_pygit_repo(repo_path)
-    user = get_repo_sig(repo)
-    parent = [repo.head.target]
-    for cf in changed_paths:
-        rel_path = os.path.relpath(cf, repo.workdir).replace('\\', '/')
-        if repo.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
-            repo.index.add(rel_path)
-    tree = repo.index.write_tree()
-    repo.create_commit('HEAD', user, user, commit_msg, tree, parent)
-    repo.index.write()
+    def get_repo_sig(self):
+        """Wrapper around pygit2 that shows a helpful error message to the
+        user if their credentials have not been configured yet."""
+        try:
+            return self.default_signature
+        except KeyError:
+            print('\n'.join(['', # empty line before the error
+                'ERROR: You have not set up your git identity yet.',
+                'This is necessary for the git operations that the build script '
+                'uses.',
+                'You can configure them as follows:',
+                '   git config --global user.name "Your Name"',
+                '   git config --global user.email "you@example.com"']),
+                file=sys.stderr)
+            sys.exit(1)
 
-def get_commit_hash() -> str:
-    """Get the current commit hash of the WB repository."""
-    repo = _get_pygit_repo()
-    return str(repo.head.target)
+    def commit_changes(self, *, commit_msg: str,
+                       changed_paths: list[os.PathLike | str]):
+        """Commit changes to the specified files by creating a commit with the
+        specified message."""
+        user = self.get_repo_sig()
+        parent = [self.head.target]
+        for cf in changed_paths:
+            rel_path = os.path.relpath(cf, self.workdir).replace('\\', '/')
+            if self.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
+                self.index.add(rel_path)
+        tree = self.index.write_tree()
+        self.create_commit('HEAD', user, user, commit_msg, tree, parent)
+        self.index.write()
 
-def get_tracked_files_at_commit(commitish='HEAD'):
-    repo = _get_pygit_repo()
-    commit = repo.revparse_single(commitish)
-    files = []
-    stack = [(commit.tree, '')]  # (tree, prefix)
-    while stack:
-        tree, prefix = stack.pop()
-        for entry in tree:
-            path = f'{prefix}{entry.name}'
-            if entry.type == pygit2.GIT_OBJECT_BLOB:
-                files.append(path)
-            elif entry.type == pygit2.GIT_OBJECT_TREE:
-                stack.append((repo[entry.id], path + '/'))
-    return files
+    def get_head_hash(self) -> str:
+        """Get the current commit hash of the WB repository."""
+        return str(self.head.target)
+
+    def get_tracked_files_at_commit(self, commitish='HEAD'):
+        commit = self.revparse_single(commitish)
+        files = []
+        stack = [(commit.tree, '')]  # (tree, prefix)
+        while stack:
+            tree, prefix = stack.pop()
+            for entry in tree:
+                path = f'{prefix}{entry.name}'
+                if entry.type == pygit2.GIT_OBJECT_BLOB:
+                    files.append(path)
+                elif entry.type == pygit2.GIT_OBJECT_TREE:
+                    stack.append((self[entry.id], path + '/'))
+        return files
 
 def out_path(dir_=OUT_PATH, name='out.txt'):
     """Returns a path joining the dir_ and name parameters. Will create the
