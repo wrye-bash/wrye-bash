@@ -39,6 +39,7 @@ import sys
 import tempfile
 import textwrap
 from collections import defaultdict
+from itertools import chain
 
 try:
     import winreg
@@ -313,10 +314,100 @@ def _write_nsis_macro(files_macro, tracked_files):
         '    CreateDirectory "${GameDir}\\Mopy\\Apps"',
         '', '    ; Write registry key',
         '    WriteRegStr HKLM "SOFTWARE\\Wrye Bash" "${RegPath}" "${GameDir}"',
-        '!macroend', '!endif', ''])
+        '!macroend'])
+    # Uninstall: remove new untracked files
+    all_tracked = _WB_REPO.get_tracked_paths(None) # takes 17 secs locally
+    untracked = all_tracked - tracked_files
+    macro_lines.extend(_generate_removefiles_macro(tracked_files, untracked))
+    macro_lines.extend(['!endif', ''])
     # Write macro to file
     files_macro.write_text('\n'.join(macro_lines), encoding='utf-8')
     _LOGGER.info(f'NSIS macro written to {files_macro}')
+
+# curated legacy/dev/nightly artifacts (largely derived from the historical
+# RemoveOldFiles macro) that may not show up in tracked(all) - tracked(head)
+_MANUAL_EXACT_REMOVALS = [ # poxix paths relative to root dir
+    # Old old files to delete (from before 294, the directory restructure)
+    'Mopy/uninstall.exe',
+    # Legacy: older Standalone produced non-standard compiled python file names
+    # (when loading python files present)
+    'Mopy/bash/balto', 'Mopy/bash/bapio', 'Mopy/bash/barbo', 'Mopy/bash/bargo',
+    'Mopy/bash/bashero', 'Mopy/bash/basho', 'Mopy/bash/basso', 'Mopy/bash/belto',
+    'Mopy/bash/bolto', 'Mopy/bash/bosho', 'Mopy/bash/breco', 'Mopy/bash/busho',
+    'Mopy/bash/bwebo', 'Mopy/bash/cinto', 'Mopy/bash/libbsao',
+    'Mopy/bash/windowso',
+    # As of version 300: image files were moved to Mopy/bash/images/tools
+    'Mopy/bash/images/krita16.png', 'Mopy/bash/images/krita24.png',
+    'Mopy/bash/images/krita32.png',
+    # As of 301: the following are obsolete
+    'Mopy/bash/keywordWIZBAIN2o', 'Mopy/bash/keywordWIZBAINo',
+    'Mopy/bash/settingsModuleo', 'Mopy/bash/wizSTCo',
+    # As of 305: the following are obsolete
+    'Mopy/w9xpopen.exe',
+    # As of 307: the following are obsolete
+    'Mopy/bash/images/readme/installers-wizard-1.jpg',
+    'Mopy/bash/images/readme/installers-wizard-2.jpg',
+    'Mopy/bash/images/readme/mods-feat-add-tags.png',
+    'Mopy/bash/images/readme/mods-feat-change-mtime.png',
+    'Mopy/bash/images/readme/mods-feat-del-tags.png',
+    'Mopy/bash/images/readme/saves-2-rclick-save-5.png',
+    'Mopy/bash/images/readme/saves-2-rclick-save-6.png',
+    'Mopy/bash/images/readme/saves-2-rclick-save-7.png',
+    # As of 308: translations use the .po extension and new names
+    'Mopy/bash/l10n/Chinese (Simplified).mo',
+    'Mopy/bash/l10n/Chinese (Traditional).mo', 'Mopy/bash/l10n/Italian.mo',
+    'Mopy/bash/l10n/Japanese.mo', 'Mopy/bash/l10n/Russian.mo',
+    'Mopy/bash/l10n/de.mo', 'Mopy/bash/l10n/pt_opt.mo',
+    # The .po's for these were only temporarily on dev, then got renamed
+    'Mopy/bash/l10n/sv.mo', 'Mopy/bash/l10n/tr.mo',
+    # Manual taglist cleanup (folder naming variants included)
+    'Mopy/taglists/Fallout4VR/taglist.yaml',
+    'Mopy/taglists/SkyrimVR/taglist.yaml',
+    'Mopy/Bash Patches/Enderal/taglist.txt',
+    'Mopy/Bash Patches/Fallout3/taglist.txt',
+    'Mopy/Bash Patches/FalloutNV/taglist.txt',
+]
+# Manual globs (Delete wildcards) - poxix paths
+_MANUAL_GLOBS = ['Mopy/loot.*', 'Mopy/loot_api.*']
+# Manual recursive directory removals (RMDir /r) - poxix paths
+_MANUAL_RMDIR_RECURSIVE = ['Mopy/redist']
+# Manual empty-directory removals (RMDir) - poxix paths
+_MANUAL_RMDIR_EMPTY = []
+
+def _generate_removefiles_macro(tracked_files, untracked_files,
+        macro_name='RemoveOldFiles', path_var='${Path}'):
+    untracked_mopy = {p for p in untracked_files if p.startswith('Mopy/')}
+    delete_exact_parts = {tuple(p.split('/')) for p in chain(
+        untracked_mopy, _MANUAL_EXACT_REMOVALS)}
+    rmdir_empty = {tuple(p.split('/')) for p in _MANUAL_RMDIR_EMPTY}
+    tracked_dirs, delete_dirs = set(), set() # len is 30, 93
+    for paths, out_set in [
+            ((p.split('/') for p in tracked_files), tracked_dirs),
+            (delete_exact_parts, delete_dirs)]:
+        for parts in paths:
+            for i in range(2, len(parts)):
+                out_set.add(tuple(parts[:i]))
+    bytecode_dirs = sorted({*chain(tracked_dirs, delete_dirs, [('Mopy',)])},
+        key=lambda t: (len(t), t), reverse=True) # len 111 okayish
+    empty_dirs = sorted(set(chain(delete_dirs, rmdir_empty)) - tracked_dirs,
+                        key=lambda t: (len(t), t), reverse=True) # len 80 ok
+    bytecode_cleanup = chain.from_iterable((
+        f'Delete "{path_var}\\{d}\\*.pyc"', f'Delete "{path_var}\\{d}\\*.pyo"',
+        f'RMDir /r "{path_var}\\{d}\\__pycache__"',) for d in
+        ('\\'.join(x) for x in bytecode_dirs))
+    rmdir_recursive = (p.replace('/', '\\') for p in _MANUAL_RMDIR_RECURSIVE)
+    delete_globs_paths = sorted(p.replace('/', '\\') for p in _MANUAL_GLOBS)
+    dl = chain(('\\'.join(x) for x in sorted(delete_exact_parts,
+                    key=lambda t: (len(t), t))), delete_globs_paths)
+    out = ['', f'!macro {macro_name} Path', *chain(
+        (f'Delete "{path_var}\\{p}"' for p in dl),
+        (f'RMDir /r "{path_var}\\{d}"' for d in rmdir_recursive),
+        # (f'RMDir "{path_var}\\{d}"' for d in
+        #  ('\\'.join(x) for x in rmdir_empty)),
+        bytecode_cleanup,
+        (f'RMDir "{path_var}\\{d}"' for d in ('\\'.join(x) for x in empty_dirs
+                                              ))), '!macroend']
+    return out
 
 @contextmanager
 def _update_file_version(build_vers, do_commit=False):
@@ -488,7 +579,7 @@ def main(args, *, __pys=('.py', '.pyw')):
                 return
             if not args.standalone and not args.installer:
                 return
-            to_install = [f for f in to_install if not f.endswith(__pys)]
+            to_install = {f for f in to_install if not f.endswith(__pys)}
             with _build_executable():
                 if args.standalone:
                     _LOGGER.info('Creating standalone distributable...')

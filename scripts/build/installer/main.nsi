@@ -11,7 +11,6 @@ ManifestDPIAware true
     !include "nsDialogs.nsh"
     !include "WordFunc.nsh"
     !include "StrFunc.nsh"
-    !include "InstallBashFiles.nsh"
     !include "macros.nsh"
     ; declare used functions
     ${StrLoc}
