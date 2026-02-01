@@ -240,19 +240,39 @@ class WBRepo(pygit2.Repository):
         """Get the current commit hash of the WB repository."""
         return str(self.head.target)
 
-    def get_tracked_files_at_commit(self, commitish='HEAD'):
-        commit = self.revparse_single(commitish)
-        files = []
-        stack = [(commit.tree, '')]  # (tree, prefix)
-        while stack:
-            tree, prefix = stack.pop()
-            for entry in tree:
-                path = f'{prefix}{entry.name}'
-                if entry.type == pygit2.GIT_OBJECT_BLOB:
-                    files.append(path)
-                elif entry.type == pygit2.GIT_OBJECT_TREE:
-                    stack.append((self[entry.id], path + '/'))
-        return files
+    def get_tracked_paths(self, depth: int | None = 1, rev='HEAD') -> set[str]:
+        """Return tracked blob paths for `rev` and, optionally, its ancestors.
+        depth=1 matches the single-commit behavior; depth=None walks all
+        reachable commits. Always return a set of repo-relative posix paths."""
+        start = self.revparse_single(rev)
+        if isinstance(start, pygit2.Tag):
+            start = self[start.target]
+        if not isinstance(start, pygit2.Commit):
+            raise TypeError(f'{rev!r} did not resolve to a commit')
+        if depth is not None and depth < 1:
+            raise ValueError(f'depth must be >= 1 or None was {depth}')
+        ever: set[str] = set()
+        seen_trees: set[pygit2.Oid] = set()
+        walker = self.walk(start.id, pygit2.GIT_SORT_TOPOLOGICAL)
+        for i, c in enumerate(walker, start=1):
+            if depth is not None and i > depth: break
+            oid = c.tree.id
+            if oid not in seen_trees:
+                seen_trees.add(oid)
+                ever.update(self._iter_tree_paths(c.tree, prefix=''))
+        return ever
+
+    def _iter_tree_paths(self, tree: pygit2.Tree, prefix=''):
+        for entry in tree:
+            p = f'{prefix}{entry.name}'
+            if entry.type == pygit2.GIT_OBJECT_BLOB:
+                yield p
+            elif entry.type == pygit2.GIT_OBJECT_TREE:
+                yield from self._iter_tree_paths(self[entry.id], f'{p}/')
+            else:
+                # Conservative: treat unknown as non-file unless it's clearly a
+                # tree/blob (note submodules show up as commits)
+                continue
 
 def out_path(dir_=OUT_PATH, name='out.txt'):
     """Returns a path joining the dir_ and name parameters. Will create the

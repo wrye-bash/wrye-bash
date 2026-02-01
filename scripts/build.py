@@ -79,10 +79,9 @@ _WB_REPO = WBRepo(ROOT_PATH)
 
 _locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
          'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
-def _filter_tracked() -> list[str]:
+def _filter_tracked(tracked) -> list[str]:
     # filter tracked files to include in manual package and add taglists/.mo
-    tracked = _WB_REPO.get_tracked_files_at_commit('HEAD')
-    # keep the files in Mopy so 7z won't look in the parent folder
+    # keep the files in Mopy only
     mopy_tr = [x for x in tracked if x.startswith('Mopy/') and
                not x.startswith(('Mopy/bash/l10n', 'Mopy/bash/tests'))]
     yamls = ('/'.join((pa := p.parts)[pa.index('Mopy'):]) for p in
@@ -462,7 +461,8 @@ def main(args, *, __pys=('.py', '.pyw')):
     # check nightly timestamp is different from previous, get version strings
     vers, file_version = _check_version(args)
     rm(DIST_PATH)
-    tracked = _filter_tracked()
+    tracked = _WB_REPO.get_tracked_paths(1)
+    to_install = _filter_tracked(tracked)
     with (_handle_apps_folder(), _compile_translations(args),
           _update_file_version(vers, args.commit)):
         # create distributable directory
@@ -481,21 +481,21 @@ def main(args, *, __pys=('.py', '.pyw')):
                     out.write(update_taglist.MASTERLIST_VERSION)
             if args.manual:
                 _LOGGER.info('Creating python source distributable...')
-                _pack_manual(vers, tracked)
+                _pack_manual(vers, to_install)
             if _NOT_WINDOWS:
                 _LOGGER.info('Non-Windows OS detected, skipping '
                              'standalone and installer distributables.')
                 return
             if not args.standalone and not args.installer:
                 return
-            tracked = [f for f in tracked if not f.endswith(__pys)]
+            to_install = [f for f in to_install if not f.endswith(__pys)]
             with _build_executable():
                 if args.standalone:
                     _LOGGER.info('Creating standalone distributable...')
-                    _pack_standalone(vers, tracked)
+                    _pack_standalone(vers, to_install)
                 if args.installer:
                     _LOGGER.info('Creating installer distributable...')
-                    _pack_installer(args.nsis, vers, file_version, tracked)
+                    _pack_installer(args.nsis, vers, file_version, to_install)
         finally:
             # Clean up the temp copy of the license
             rm(license_temp)
