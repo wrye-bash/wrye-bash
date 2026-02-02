@@ -278,7 +278,7 @@ def _pack_installer(nsis_path, build_vers, file_version, mopy_tr):
     finally:
         files_macro.unlink(missing_ok=True)
 
-def _write_nsis_macro(files_macro, tracked_files):
+def _write_nsis_macro(files_macro, tracked_files, *, __pys=('.py', '.pyw')):
     """ Writes an NSIS macro file InstallBashFiles.nsh dynamically based on
     tracked_files.
 
@@ -316,9 +316,13 @@ def _write_nsis_macro(files_macro, tracked_files):
         '    WriteRegStr HKLM "SOFTWARE\\Wrye Bash" "${RegPath}" "${GameDir}"',
         '!macroend'])
     # Uninstall: remove new untracked files
-    all_tracked = _WB_REPO.get_tracked_paths(None) # takes 50/45 secs on the debugger # todo check stack version
+    all_tracked = _WB_REPO.get_tracked_paths(None) # ~15 secs on the debugger
     untracked = all_tracked - tracked_files
-    macro_lines.extend(_generate_removefiles_macro(tracked_files, untracked))
+    python_dirs = sorted({tuple(f.split('/')[1:-1]) for f in all_tracked if
+                          f.startswith('Mopy/') and f.endswith(__pys)},
+                         key=lambda t: (len(t), t))
+    macro_lines.extend(_generate_removefiles_macro(tracked_files, untracked,
+                                                   python_dirs))
     macro_lines.extend(['!endif', ''])
     # Write macro to file
     files_macro.write_text('\n'.join(macro_lines), encoding='utf-8')
@@ -366,45 +370,33 @@ _MANUAL_GLOBS = [('loot.*',), ('loot_api.*',)]
 # Manual recursive directory removals (RMDir /r) - posix path parts relative to
 # Mopy/
 _MANUAL_RMDIR_RECURSIVE = [('redist',)]
-# Manual empty-directory removals (RMDir) - posix path parts relative to Mopy/
-_MANUAL_RMDIR_EMPTY = []
 
-def _generate_removefiles_macro(tracked_files, untracked_files,
-        macro_name='RemoveOldFiles', path_var='Path'):
-    untracked_mopy = {tuple(p.split('/')[1:]) for p in untracked_files
-                      if p.startswith('Mopy/')}
-    delete_exact_parts = set(chain(untracked_mopy, _MANUAL_EXACT_REMOVALS))
-    tracked_dirs, delete_dirs = set(), set() # len is 30, 93
-    for paths, out_set in [
-            ((p.split('/')[1:] for p in tracked_files), tracked_dirs),
-            (delete_exact_parts, delete_dirs)]:
-        for parts in paths:
-            for i in range(1, len(parts)):
-                out_set.add(tuple(parts[:i]))
-    bytecode_dirs = sorted({*chain(tracked_dirs, delete_dirs, [()])},
-        key=lambda t: (len(t), t), reverse=True) # len 111 okayish
-    dirs = set(chain(delete_dirs, _MANUAL_RMDIR_EMPTY)) - tracked_dirs
-    empty_dirs = sorted(dirs, key=lambda t: (len(t), t), reverse=True) # len 80
-    mopy_root = f'${{{path_var}}}\\Mopy'
+def _generate_removefiles_macro(tracked_files, untracked_files, python_dirs,
+                                macro_name='RemoveOldFiles', path_var='Path',
+                                *, __skey=lambda t: (len(t), t)):
+    untracked_mopy = sorted({tuple(p.split('/')[1:]) for p in untracked_files
+                             if p.startswith('Mopy/')}, key=__skey)
+    delete_exact_parts = dict.fromkeys(chain(untracked_mopy,
+        _MANUAL_EXACT_REMOVALS)) # keep what remains from manual at the end
+    delete_dirs = _dir_prefixes(delete_exact_parts) # len is 93
+    tracked_dirs = _dir_prefixes(p.split('/')[1:] for p in tracked_files) # 30
+    empty_dirs = sorted(delete_dirs - tracked_dirs, key=__skey,
+                        reverse=True) # len 80 - del deeper ones first
     bytecode_cleanup = chain.from_iterable(
-        (f'Delete "{mopy_root}\\%s"' % _win_join((*d, x)) for x in
-         (f'*.pyc', f'*.pyo')) for d in bytecode_dirs)
-    py_cache_dirs = (f'RMDir /r "{mopy_root}\\%s"' % _win_join((
-        *d, f'__pycache__')) for d in bytecode_dirs)
-    dl = chain(sorted(delete_exact_parts, key=lambda t: (len(t), t)),
-               sorted(_MANUAL_GLOBS))
-    out = ['', f'!macro {macro_name} {path_var}', *chain(
-        (f'Delete "{mopy_root}\\{_win_join(p)}"' for p in dl),
-        (f'RMDir /r "{mopy_root}\\{_win_join(d)}"' for d in
-         _MANUAL_RMDIR_RECURSIVE),
-        bytecode_cleanup, py_cache_dirs,
-        # (f'RMDir "{mopy_root}\\{_win_join(d)}"' for d in _MANUAL_RMDIR_EMPTY),
-        (f'RMDir "{mopy_root}\\{_win_join(d)}"' for d in empty_dirs)),
+        ((*d, x) for x in (f'*.pyc', f'*.pyo')) for d in python_dirs)
+    py_cache_dirs = ((*d, f'__pycache__') for d in python_dirs)
+    ops = {'Delete': chain(delete_exact_parts, bytecode_cleanup,
+                           sorted(_MANUAL_GLOBS)),
+           'RMDir /r': chain(_MANUAL_RMDIR_RECURSIVE, py_cache_dirs),
+           'RMDir': empty_dirs}
+    out = ['', f'!macro {macro_name} {path_var}', *chain.from_iterable(
+        (f'{op} "${{{path_var}}}\\Mopy\\%s"' % '\\'.join(p) for p in it) for
+        op, it in ops.items()),
     '!macroend']
     return out
 
-def _win_join(x):
-    return '\\'.join(x)
+def _dir_prefixes(paths):
+    return {tuple(parts[:i]) for parts in paths for i in range(1, len(parts))}
 
 @contextmanager
 def _update_file_version(build_vers, do_commit=False):
@@ -576,14 +568,14 @@ def main(args, *, __pys=('.py', '.pyw')):
                 return
             if not args.standalone and not args.installer:
                 return
-            to_install = {f for f in to_install if not f.endswith(__pys)}
+            no_source = {f for f in to_install if not f.endswith(__pys)}
             with _build_executable():
                 if args.standalone:
                     _LOGGER.info('Creating standalone distributable...')
-                    _pack_standalone(vers, to_install)
+                    _pack_standalone(vers, no_source)
                 if args.installer:
                     _LOGGER.info('Creating installer distributable...')
-                    _pack_installer(args.nsis, vers, file_version, to_install)
+                    _pack_installer(args.nsis, vers, file_version, no_source)
         finally:
             # Clean up the temp copy of the license
             rm(license_temp)

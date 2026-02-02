@@ -263,16 +263,19 @@ class WBRepo(pygit2.Repository):
         return ever
 
     def _iter_tree_paths(self, tree: pygit2.Tree, prefix=''):
-        for entry in tree:
-            p = f'{prefix}{entry.name}'
-            if entry.type == pygit2.GIT_OBJECT_BLOB:
-                yield p
-            elif entry.type == pygit2.GIT_OBJECT_TREE:
-                yield from self._iter_tree_paths(self[entry.id], f'{p}/')
-            else:
-                # Conservative: treat unknown as non-file unless it's clearly a
-                # tree/blob (note submodules show up as commits)
-                continue
+        stack = [(tree, prefix)]
+        while stack:
+            t, pre = stack.pop()
+            for entry in t:
+                p = f'{pre}{entry.name}'
+                if entry.type == pygit2.GIT_OBJECT_BLOB:
+                    yield p
+                elif entry.type == pygit2.GIT_OBJECT_TREE:
+                    stack.append((self[entry.id], f'{p}/'))
+                else:
+                    # Conservative: treat unknown as non-file unless it's clearly a
+                    # tree/blob (note submodules show up as commits)
+                    continue
 
 def out_path(dir_=OUT_PATH, name='out.txt'):
     """Returns a path joining the dir_ and name parameters. Will create the
