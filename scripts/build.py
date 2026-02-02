@@ -55,7 +55,7 @@ import compile_l10n
 import PyInstaller.__main__
 import update_taglist
 from helpers.utils import APPS_PATH, DIST_PATH, MOPY_PATH, NSIS_PATH, \
-    ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, L10N_PATH, LooseVersion, \
+    ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, L10N_PATH, \
     edit_bass_version, cp, mv, rm, run_script, mk_logfile, run_subprocess, \
     download_file, with_args, setup_log, WBRepo
 
@@ -73,7 +73,7 @@ else:
     _EXE_7Z = MOPY_PATH / 'bash' / 'compiled' / '7z.exe'
 
 sys.path.insert(0, str(MOPY_PATH))
-from bash import bass
+from bash import bass, bolt
 
 # create the repo instance
 _WB_REPO = WBRepo(ROOT_PATH)
@@ -280,7 +280,7 @@ def _pack_installer(nsis_path, build_vers, file_version, mopy_tr):
 
 def _write_nsis_macro(files_macro, tracked_files, *, __pys=('.py', '.pyw')):
     """ Writes an NSIS macro file InstallBashFiles.nsh dynamically based on
-    tracked_files.
+    tracked_files *which all must reside inside Mopy*.
 
     tracked_files: list of Posix relative paths inside Mopy/."""
     macro_lines = [
@@ -290,30 +290,23 @@ def _write_nsis_macro(files_macro, tracked_files, *, __pys=('.py', '.pyw')):
         '    ;  GameDir - base directory for the game (one folder up from '
         'the Data directory)',
         '    ;  RegPath - Name of the registry string that will hold the '
-        'path installing to', '', '    ; Install tracked files']
+        'path installing to', '', '; Install tracked files']
     # Group files by folder
     files_by_folder = defaultdict(list)
-    for p in map(Path, tracked_files):
-        files_by_folder[p.parent].append(p.name)
+    for p in map(Path, tracked_files):  # remove 'Mopy/' and join with '\'
+        files_by_folder['\\'.join(p.parent.parts[1:])].append(p.name)
     # Generate SetOutPath + File lines
+    var_mopy, var_cl_m = r'${GameDir}\Mopy', '${WB_CLEAN_MOPY}'
     for folder, files in sorted(files_by_folder.items()):
-        nsis_folder = '${GameDir}\\Mopy'
-        wb_clean_folder = '${WB_CLEAN_MOPY}'
-        if folder != Path('.'):
-            folder = str(folder).replace('/', '\\')[5:] # remove 'Mopy\'
-            nsis_folder = f'{nsis_folder}\\{folder}'
-            wb_clean_folder = f'{wb_clean_folder}\\{folder}'
-        macro_lines.append(f'    SetOutPath "{nsis_folder}"')
+        if folder: folder = fr'\{folder}'
+        macro_lines.append(f'SetOutPath "{var_mopy}{folder}"')
         for fname in sorted(files):
-            macro_lines.append(f'    File "{wb_clean_folder}\\{fname}"')
+            macro_lines.append(fr'File "{var_cl_m}{folder}\{fname}"')
     # Standalone executable
-    macro_lines.extend([
-        '    ; Install the standalone only files',
-        '    SetOutPath "${GameDir}\\Mopy"',
-        '    File "${WB_CLEAN_MOPY}\\Wrye Bash.exe"',
-        '    CreateDirectory "${GameDir}\\Mopy\\Apps"',
-        '', '    ; Write registry key',
-        '    WriteRegStr HKLM "SOFTWARE\\Wrye Bash" "${RegPath}" "${GameDir}"',
+    macro_lines.extend(['; Install the standalone only files',
+        fr'SetOutPath "{var_mopy}"', fr'File "{var_cl_m}\Wrye Bash.exe"',
+        fr'CreateDirectory "{var_mopy}\Apps"', '', '; Write registry key',
+        r'WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"',
         '!macroend'])
     # Uninstall: remove new untracked files
     all_tracked = _WB_REPO.get_tracked_paths(None) # ~15 secs on the debugger
@@ -323,7 +316,7 @@ def _write_nsis_macro(files_macro, tracked_files, *, __pys=('.py', '.pyw')):
                          key=lambda t: (len(t), t))
     macro_lines.extend(_generate_removefiles_macro(tracked_files, untracked,
                                                    python_dirs))
-    macro_lines.extend(['!endif', ''])
+    macro_lines.extend(['!endif', '']) # add a newline at the end
     # Write macro to file
     files_macro.write_text('\n'.join(macro_lines), encoding='utf-8')
     _LOGGER.info(f'NSIS macro written to {files_macro}')
@@ -486,7 +479,7 @@ def _taglists_need_update():
             last_ml_ver = ins.read()
     except OSError: pass # we'll have to update
     latest_ml_ver = update_taglist.MASTERLIST_VERSION
-    if LooseVersion(last_ml_ver) < LooseVersion(latest_ml_ver):
+    if bolt.LooseVersion(last_ml_ver) < bolt.LooseVersion(latest_ml_ver):
         # LOOT version changed so the syntax probably changed too,
         # update them to be safe
         _LOGGER.info(f'LOOT version changed since the last taglist update (was '
