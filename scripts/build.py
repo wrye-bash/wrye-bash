@@ -316,7 +316,7 @@ def _write_nsis_macro(files_macro, tracked_files):
         '    WriteRegStr HKLM "SOFTWARE\\Wrye Bash" "${RegPath}" "${GameDir}"',
         '!macroend'])
     # Uninstall: remove new untracked files
-    all_tracked = _WB_REPO.get_tracked_paths(None) # takes 17 secs locally
+    all_tracked = _WB_REPO.get_tracked_paths(None) # takes 50/45 secs on the debugger # todo check stack version
     untracked = all_tracked - tracked_files
     macro_lines.extend(_generate_removefiles_macro(tracked_files, untracked))
     macro_lines.extend(['!endif', ''])
@@ -326,88 +326,85 @@ def _write_nsis_macro(files_macro, tracked_files):
 
 # curated legacy/dev/nightly artifacts (largely derived from the historical
 # RemoveOldFiles macro) that may not show up in tracked(all) - tracked(head)
-_MANUAL_EXACT_REMOVALS = [ # poxix paths relative to root dir
+_MANUAL_EXACT_REMOVALS = [ # posix path parts relative to Mopy/
     # Old old files to delete (from before 294, the directory restructure)
-    'Mopy/uninstall.exe',
+    ('uninstall.exe',),
     # Legacy: older Standalone produced non-standard compiled python file names
     # (when loading python files present)
-    'Mopy/bash/balto', 'Mopy/bash/bapio', 'Mopy/bash/barbo', 'Mopy/bash/bargo',
-    'Mopy/bash/bashero', 'Mopy/bash/basho', 'Mopy/bash/basso', 'Mopy/bash/belto',
-    'Mopy/bash/bolto', 'Mopy/bash/bosho', 'Mopy/bash/breco', 'Mopy/bash/busho',
-    'Mopy/bash/bwebo', 'Mopy/bash/cinto', 'Mopy/bash/libbsao',
-    'Mopy/bash/windowso',
+    *(('bash', n) for n in
+      ('balto', 'bapio', 'barbo', 'bargo', 'bashero', 'basho', 'basso',
+       'belto', 'bolto', 'bosho', 'breco', 'busho', 'bwebo', 'cinto',
+       'libbsao', 'windowso')),
     # As of version 300: image files were moved to Mopy/bash/images/tools
-    'Mopy/bash/images/krita16.png', 'Mopy/bash/images/krita24.png',
-    'Mopy/bash/images/krita32.png',
+    *(('bash', 'images', n) for n in
+      ('krita16.png', 'krita24.png', 'krita32.png')),
     # As of 301: the following are obsolete
-    'Mopy/bash/keywordWIZBAIN2o', 'Mopy/bash/keywordWIZBAINo',
-    'Mopy/bash/settingsModuleo', 'Mopy/bash/wizSTCo',
+    *(('bash', n) for n in
+      ('keywordWIZBAIN2o', 'keywordWIZBAINo', 'settingsModuleo', 'wizSTCo')),
     # As of 305: the following are obsolete
-    'Mopy/w9xpopen.exe',
+    ('w9xpopen.exe',),
     # As of 307: the following are obsolete
-    'Mopy/bash/images/readme/installers-wizard-1.jpg',
-    'Mopy/bash/images/readme/installers-wizard-2.jpg',
-    'Mopy/bash/images/readme/mods-feat-add-tags.png',
-    'Mopy/bash/images/readme/mods-feat-change-mtime.png',
-    'Mopy/bash/images/readme/mods-feat-del-tags.png',
-    'Mopy/bash/images/readme/saves-2-rclick-save-5.png',
-    'Mopy/bash/images/readme/saves-2-rclick-save-6.png',
-    'Mopy/bash/images/readme/saves-2-rclick-save-7.png',
+    *(('bash', 'images', 'readme', n) for n in
+      ('installers-wizard-1.jpg', 'installers-wizard-2.jpg',
+       'mods-feat-add-tags.png', 'mods-feat-change-mtime.png',
+       'mods-feat-del-tags.png', 'saves-2-rclick-save-5.png',
+       'saves-2-rclick-save-6.png', 'saves-2-rclick-save-7.png')),
     # As of 308: translations use the .po extension and new names
-    'Mopy/bash/l10n/Chinese (Simplified).mo',
-    'Mopy/bash/l10n/Chinese (Traditional).mo', 'Mopy/bash/l10n/Italian.mo',
-    'Mopy/bash/l10n/Japanese.mo', 'Mopy/bash/l10n/Russian.mo',
-    'Mopy/bash/l10n/de.mo', 'Mopy/bash/l10n/pt_opt.mo',
+    *(('bash', 'l10n', n) for n in
+      ('Chinese (Simplified).mo', 'Chinese (Traditional).mo', 'Italian.mo',
+       'Japanese.mo', 'Russian.mo', 'de.mo', 'pt_opt.mo')),
     # The .po's for these were only temporarily on dev, then got renamed
-    'Mopy/bash/l10n/sv.mo', 'Mopy/bash/l10n/tr.mo',
+    *(('bash', 'l10n', n) for n in ('sv.mo', 'tr.mo')),
     # Manual taglist cleanup (folder naming variants included)
-    'Mopy/taglists/Fallout4VR/taglist.yaml',
-    'Mopy/taglists/SkyrimVR/taglist.yaml',
-    'Mopy/Bash Patches/Enderal/taglist.txt',
-    'Mopy/Bash Patches/Fallout3/taglist.txt',
-    'Mopy/Bash Patches/FalloutNV/taglist.txt',
+    *(('taglists', n, 'taglist.yaml') for n in ('Fallout4VR', 'SkyrimVR')),
+    *(('Bash Patches', n, 'taglist.txt') for n in (
+        'Enderal', 'Fallout3', 'FalloutNV',
+    )),
 ]
-# Manual globs (Delete wildcards) - poxix paths
-_MANUAL_GLOBS = ['Mopy/loot.*', 'Mopy/loot_api.*']
-# Manual recursive directory removals (RMDir /r) - poxix paths
-_MANUAL_RMDIR_RECURSIVE = ['Mopy/redist']
-# Manual empty-directory removals (RMDir) - poxix paths
+# Manual globs (Delete wildcards) - posix path parts relative to Mopy/
+_MANUAL_GLOBS = [('loot.*',), ('loot_api.*',)]
+# Manual recursive directory removals (RMDir /r) - posix path parts relative to
+# Mopy/
+_MANUAL_RMDIR_RECURSIVE = [('redist',)]
+# Manual empty-directory removals (RMDir) - posix path parts relative to Mopy/
 _MANUAL_RMDIR_EMPTY = []
 
 def _generate_removefiles_macro(tracked_files, untracked_files,
-        macro_name='RemoveOldFiles', path_var='${Path}'):
-    untracked_mopy = {p for p in untracked_files if p.startswith('Mopy/')}
-    delete_exact_parts = {tuple(p.split('/')) for p in chain(
-        untracked_mopy, _MANUAL_EXACT_REMOVALS)}
-    rmdir_empty = {tuple(p.split('/')) for p in _MANUAL_RMDIR_EMPTY}
+        macro_name='RemoveOldFiles', path_var='Path'):
+    untracked_mopy = {tuple(p.split('/')[1:]) for p in untracked_files
+                      if p.startswith('Mopy/')}
+    delete_exact_parts = set(chain(untracked_mopy, _MANUAL_EXACT_REMOVALS))
     tracked_dirs, delete_dirs = set(), set() # len is 30, 93
     for paths, out_set in [
-            ((p.split('/') for p in tracked_files), tracked_dirs),
+            ((p.split('/')[1:] for p in tracked_files), tracked_dirs),
             (delete_exact_parts, delete_dirs)]:
         for parts in paths:
-            for i in range(2, len(parts)):
+            for i in range(1, len(parts)):
                 out_set.add(tuple(parts[:i]))
-    bytecode_dirs = sorted({*chain(tracked_dirs, delete_dirs, [('Mopy',)])},
+    bytecode_dirs = sorted({*chain(tracked_dirs, delete_dirs, [()])},
         key=lambda t: (len(t), t), reverse=True) # len 111 okayish
-    empty_dirs = sorted(set(chain(delete_dirs, rmdir_empty)) - tracked_dirs,
-                        key=lambda t: (len(t), t), reverse=True) # len 80 ok
-    bytecode_cleanup = chain.from_iterable((
-        f'Delete "{path_var}\\{d}\\*.pyc"', f'Delete "{path_var}\\{d}\\*.pyo"',
-        f'RMDir /r "{path_var}\\{d}\\__pycache__"',) for d in
-        ('\\'.join(x) for x in bytecode_dirs))
-    rmdir_recursive = (p.replace('/', '\\') for p in _MANUAL_RMDIR_RECURSIVE)
-    delete_globs_paths = sorted(p.replace('/', '\\') for p in _MANUAL_GLOBS)
-    dl = chain(('\\'.join(x) for x in sorted(delete_exact_parts,
-                    key=lambda t: (len(t), t))), delete_globs_paths)
-    out = ['', f'!macro {macro_name} Path', *chain(
-        (f'Delete "{path_var}\\{p}"' for p in dl),
-        (f'RMDir /r "{path_var}\\{d}"' for d in rmdir_recursive),
-        # (f'RMDir "{path_var}\\{d}"' for d in
-        #  ('\\'.join(x) for x in rmdir_empty)),
-        bytecode_cleanup,
-        (f'RMDir "{path_var}\\{d}"' for d in ('\\'.join(x) for x in empty_dirs
-                                              ))), '!macroend']
+    dirs = set(chain(delete_dirs, _MANUAL_RMDIR_EMPTY)) - tracked_dirs
+    empty_dirs = sorted(dirs, key=lambda t: (len(t), t), reverse=True) # len 80
+    mopy_root = f'${{{path_var}}}\\Mopy'
+    bytecode_cleanup = chain.from_iterable(
+        (f'Delete "{mopy_root}\\%s"' % _win_join((*d, x)) for x in
+         (f'*.pyc', f'*.pyo')) for d in bytecode_dirs)
+    py_cache_dirs = (f'RMDir /r "{mopy_root}\\%s"' % _win_join((
+        *d, f'__pycache__')) for d in bytecode_dirs)
+    dl = chain(sorted(delete_exact_parts, key=lambda t: (len(t), t)),
+               sorted(_MANUAL_GLOBS))
+    out = ['', f'!macro {macro_name} {path_var}', *chain(
+        (f'Delete "{mopy_root}\\{_win_join(p)}"' for p in dl),
+        (f'RMDir /r "{mopy_root}\\{_win_join(d)}"' for d in
+         _MANUAL_RMDIR_RECURSIVE),
+        bytecode_cleanup, py_cache_dirs,
+        # (f'RMDir "{mopy_root}\\{_win_join(d)}"' for d in _MANUAL_RMDIR_EMPTY),
+        (f'RMDir "{mopy_root}\\{_win_join(d)}"' for d in empty_dirs)),
+    '!macroend']
     return out
+
+def _win_join(x):
+    return '\\'.join(x)
 
 @contextmanager
 def _update_file_version(build_vers, do_commit=False):
