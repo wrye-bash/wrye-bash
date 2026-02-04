@@ -707,7 +707,10 @@ class _AListsMerger(ListPatcher):
         is_relev = self._re_tag in applied_tags
         is_delev = self._de_tag in applied_tags
         #--Scan
+        mod_masts = {*modFile.tes4.masters}
         for list_type_sig, new_lists in modFile.iter_tops(self._read_sigs):
+            # Ensure the block exists in the patch file - needed in buildPatch
+            self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
             for rid, new_list in new_lists.iter_present_records():
                 # FIXME(inf) This is hideous and slows everything down
@@ -718,29 +721,26 @@ class _AListsMerger(ListPatcher):
                 is_list_owner = (rid.mod_fn == sc_name)
                 #--Items, delevs and relevs sets
                 new_list.items = items = set(self._get_entries(new_list))
-                if not is_list_owner:
+                if is_list_owner:
+                    merge_srcs = []
+                else:
                     #--Relevs
                     new_list.re_records = items.copy() if is_relev else set()
                     #--Delevs: all items in masters minus current items
                     new_list.de_records = delevs = set()
                     if is_delev:
-                        id_master_items = self.masterItems.get(rid)
-                        if id_master_items:
-                            for de_master in modFile.tes4.masters:
-                                if de_master in id_master_items:
-                                    delevs |= id_master_items[de_master]
+                        if mast_items := self.masterItems.get(rid):
+                            delevs.update(*(it for m, it in mast_items.items()
+                                            if m in mod_masts))
                             # TODO(inf) Double-check that this works correctly,
                             #  this line (delevs -= items) seems a noop here
                             delevs -= items
                             new_list.items |= delevs
+                    merge_srcs = None if rid in stored_lists else [sc_name]
                 #--Cache/Merge
-                if is_list_owner:
+                if merge_srcs is not None:
                     de_list = copy.deepcopy(new_list)
-                    de_list.mergeSources = []
-                    stored_lists[rid] = de_list
-                elif rid not in stored_lists:
-                    de_list = copy.deepcopy(new_list)
-                    de_list.mergeSources = [sc_name]
+                    de_list.mergeSources = merge_srcs
                     stored_lists[rid] = de_list
                 else:
                     stored_lists[rid].mergeWith(new_list, sc_name)
@@ -777,14 +777,13 @@ class _AListsMerger(ListPatcher):
             empty_lists = []
             # Build a dict mapping leveled lists to other leveled lists that
             # they are sublists in
-            sub_supers = {x: [] for x in stored_lists} ##: defaultdict??
-            for stored_list in stored_lists.values():
-                list_fid = stored_list.fid
+            sub_supers = defaultdict(list)
+            for list_fid, stored_list in stored_lists.items():
                 if not stored_list.items:
                     empty_lists.append(list_fid)
                 else:
                     sub_lists = [x for x in stored_list.items if
-                                 x in sub_supers]
+                                 x in stored_lists]
                     for sub_list in sub_lists:
                         sub_supers[sub_list].append(list_fid)
             #--Clear empties
@@ -792,9 +791,7 @@ class _AListsMerger(ListPatcher):
             cleaned_lists = set()
             while empty_lists:
                 empty_list = empty_lists.pop()
-                if empty_list not in sub_supers: continue
-                # We have an empty list, look if it's a sublist in any other
-                # list
+                # look if the empty list is a sublist of any other list
                 for sub_super in sub_supers[empty_list]:
                     stored_list = stored_lists[sub_super]
                     # Remove the emtpy list from this sublist
@@ -849,9 +846,7 @@ class LeveledListsPatcher(_AListsMerger):
     patcher_tags = {_de_tag, _re_tag}
 
     def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
-        super(LeveledListsPatcher, self).__init__(p_name, p_file, p_sources,
-                                          remove_empty, tag_choices)
-        self.empties = set()
+        super().__init__(p_name, p_file, p_sources, remove_empty, tag_choices)
         self._overhaul_compat(self.srcs)
 
     def _check_list(self, record, log):

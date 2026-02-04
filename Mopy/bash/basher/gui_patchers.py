@@ -1321,7 +1321,7 @@ class FormIDLists(_AListsMerger):
 class ContentsChecker(_PatcherPanel):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
-    patcher_name = _(u'Contents Checker')
+    patcher_name = _('Contents Checker')
     patcher_desc = _(u'Checks contents of leveled lists, inventories and '
                      u'containers for correct types.')
     _config_key = u'ContentsChecker'
