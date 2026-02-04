@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -1005,6 +1005,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                 msg = _('Masters Activated: %(num_activated)d') % {
                     'num_activated': len(bp_masters)}
                 Link.Frame.set_status_info(msg)
+            bp_rdata |= lordiff # include the load order changes in refresh
             self.window.propagate_refresh(bp_rdata, refr_saves=lordiff)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
