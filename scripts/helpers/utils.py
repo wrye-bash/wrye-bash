@@ -143,7 +143,7 @@ def run_script(main, script_doc: str, logfile: Path, *, custom_setup=None):
     rm(parsed_args.logfile)
     main(parsed_args)
 
-def with_args(args=None, **kwargs):
+def with_args(args, **kwargs):
     """Hacky way to pass custom arguments to another script. In the future,
     scripts for which this is needed should be refactored to export an API
     instead that other scripts can use."""

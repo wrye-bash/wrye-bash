@@ -47,8 +47,8 @@ _GAME_DATA = {
 }
 MASTERLIST_VERSION = '0.26'
 
-TAGLISTS_PATHS = [TAGLISTS_PATH / game_name / 'taglist.yaml' for game_name in
-                  _GAME_DATA]
+TAGLISTS_PATHS = sorted(TAGLISTS_PATH / game_name / 'taglist.yaml' for
+                        game_name in _GAME_DATA)
 
 def _download_masterlist(repository, version, dl_path):
     url = (f'https://raw.githubusercontent.com/loot/{repository}/v{version}/'

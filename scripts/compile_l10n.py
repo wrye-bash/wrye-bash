@@ -29,6 +29,7 @@ __author__ = 'Infernio'
 
 import logging
 import os
+from pathlib import Path
 
 from helpers._i18n import msgfmt
 from helpers.utils import L10N_PATH, run_script, mk_logfile, setup_log
@@ -36,20 +37,21 @@ from helpers.utils import L10N_PATH, run_script, mk_logfile, setup_log
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
 
-def main(args):
+def main(args, po_files=()):
     setup_log(_LOGGER, args)
-    source_files = [f for f in L10N_PATH.iterdir() if f.suffix == '.po']
     _LOGGER.info('Starting compilation of localizations')
-    for i, po in enumerate(source_files, start=1):
-        _LOGGER.info(f'Compiling localization {po.stem} '
-                     f'({i}/{len(source_files)})...')
-        po_str = os.fspath(po) # msgfmt wants a string
-        mo_output = po_str[:-2] + 'mo'
+    po_files: list[Path] = [*po_files] or [f for f in L10N_PATH.iterdir() if
+                                           f.suffix == '.po']
+    mos, len_po = set(), len(po_files)
+    for i, po in enumerate(po_files, start=1):
+        _LOGGER.info(f'Compiling localization {po.stem} ({i}/{len_po})...')
+        mos.add(mo_output := po.with_suffix('.mo'))
         # msgfmt caches its messages between runs for some godforsaken reason,
         # so explicitly clear that
         msgfmt.MESSAGES = {}
-        msgfmt.make(po_str, mo_output)
+        msgfmt.make(*map(os.fspath, (po, mo_output))) # msgfmt wants a string
     _LOGGER.info('Compilation of localizations succeeded!')
+    return sorted(mos)
 
 if __name__ == '__main__':
     run_script(main, __doc__, _LOGFILE)

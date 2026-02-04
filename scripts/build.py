@@ -48,16 +48,16 @@ except ImportError:
     # the executable
     winreg = None
 import zipfile
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from pathlib import Path
 
 import compile_l10n
 import PyInstaller.__main__
 import update_taglist
 from helpers.utils import APPS_PATH, DIST_PATH, MOPY_PATH, NSIS_PATH, \
-    ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, L10N_PATH, \
-    edit_bass_version, cp, mv, rm, run_script, mk_logfile, run_subprocess, \
-    download_file, with_args, setup_log, WBRepo
+    ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, edit_bass_version, cp, rm, \
+    run_script, mk_logfile, run_subprocess, download_file, with_args, \
+    setup_log, WBRepo
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -77,18 +77,6 @@ from bash import bass, bolt
 
 # create the repo instance
 _WB_REPO = WBRepo(ROOT_PATH)
-
-_locs = {'uk_UA', 'zh_CN', 'ja_JP', 'pt_PT', 'sv_SE', 'ta', 'de_DE', 'zh_TW',
-         'pt_BR', 'es_ES', 'it_IT', 'tr_TR', 'ru_RU'} ##:get those from weblate
-def _filter_tracked(tracked) -> list[str]:
-    # filter tracked files to include in manual package and add taglists/.mo
-    # keep the files in Mopy only
-    mopy_tr = [x for x in tracked if x.startswith('Mopy/') and
-               not x.startswith(('Mopy/bash/l10n', 'Mopy/bash/tests'))]
-    yamls = ('/'.join((pa := p.parts)[pa.index('Mopy'):]) for p in
-             update_taglist.TAGLISTS_PATHS)
-    mos = (f'Mopy/bash/l10n/{x}.mo' for x in _locs)
-    return [*mopy_tr, *yamls, *mos, 'Mopy/LICENSE.md']
 
 _min_sha_len = 7 # minimum length to keep from commit hash
 
@@ -493,51 +481,21 @@ def _taglists_need_update():
     _LOGGER.debug('All taglists present, no update needed')
     return False
 
-@contextmanager
-def _compile_translations(args):
-    """Compile .po files to .mo files and hide the .po files temporarily."""
-    _LOGGER.info('Compiling localizations...')
-    compile_l10n_level = (logging.DEBUG if args.verbosity == logging.DEBUG else
-                          max(args.verbosity, logging.WARNING))
-    compile_l10n.main(with_args(args, verbosity=compile_l10n_level))
-    hidden_folder = Path(tempfile.mkdtemp())
-    for f in L10N_PATH.iterdir():
-        if f.suffix in ('.po', '.pot'):
-            mv(f, hidden_folder / f.name)
-    try:
-        yield
-    finally:
-        for f in hidden_folder.iterdir():
-            mv(f, L10N_PATH / f.name)
-        rm(hidden_folder)
-
-@contextmanager
-def _hold_files(*files: Path):
-    tmpdir = Path(tempfile.mkdtemp())
-    file_map = {}  # don't calculate paths twice
-    for path in files:
-        target = tmpdir / path.name
-        with suppress(OSError):  # skip file if missing
-            mv(path, target)
-            file_map[path] = target
-    try:
-        yield
-    finally:
-        for orig, target in file_map.items():
-            mv(target, orig)
-        rm(tmpdir)
-
-def main(args, *, __pys=('.py', '.pyw')):
+def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
     setup_log(_LOGGER, args)
     _setup_pyinstaller_logger(args.logfile)
     _LOGGER.info(f'Building on Python {sys.version}')
     # check nightly timestamp is different from previous, get version strings
     vers, file_version = _check_version(args)
     rm(DIST_PATH)
-    tracked = _WB_REPO.get_tracked_paths(1)
-    to_install = _filter_tracked(tracked)
-    with (_handle_apps_folder(), _compile_translations(args),
-          _update_file_version(vers, args.commit)):
+    head_tr = _WB_REPO.get_tracked_paths(1)
+    po_files = [t for t in head_tr if t.endswith('.po')] # tracked .po files
+    _LOGGER.info('Compiling localizations...') # compile .po files to .mo files
+    compile_l10n_level = (logging.DEBUG if args.verbosity == logging.DEBUG else
+                          max(args.verbosity, logging.WARNING))
+    mo_paths = compile_l10n.main(with_args(args, verbosity=compile_l10n_level),
+                                 map(Path, po_files))
+    with _handle_apps_folder(), _update_file_version(vers, args.commit):
         # create distributable directory
         DIST_PATH.mkdir(parents=True, exist_ok=True)
         # Copy the license so it's included in the built releases
@@ -552,6 +510,13 @@ def main(args, *, __pys=('.py', '.pyw')):
                 # Remember the last LOOT version we generated taglists for
                 with TAGINFO.open('w', encoding='utf-8') as out:
                     out.write(update_taglist.MASTERLIST_VERSION)
+            # filter tracked files to include in manual package and add
+            # taglists/.mo - keep the files in Mopy only
+            mopy_tr = [x for x in head_tr if x.startswith('Mopy/') and
+                not x.startswith('Mopy/bash/tests') and not x.endswith(__pos)]
+            yamls_mos = ('/'.join((pa := p.parts)[pa.index('Mopy'):]) for p in
+                         chain(update_taglist.TAGLISTS_PATHS, mo_paths))
+            to_install = [*sorted(mopy_tr), *yamls_mos, 'Mopy/LICENSE.md']
             if args.manual:
                 _LOGGER.info('Creating python source distributable...')
                 _pack_manual(vers, to_install)
