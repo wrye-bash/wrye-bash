@@ -37,9 +37,9 @@ from bash import bass
 
 def _setup_new_version(parser):
     parser.add_argument('new_version', type=str, nargs='?', metavar='ver',
-        default=str(int(bass.AppVersion.split('.')[0]) + 1), # major version +1
-        help='The version to bump to. Defaults to the current version plus '
-        'one.')
+        default=str(bass.get_version_tuple().version_tuple[0] + 1),
+        help='The version to bump to. Defaults to the current major version'
+             'plus one.')
 
 def main(args):
     setup_log(_LOGGER, args)
