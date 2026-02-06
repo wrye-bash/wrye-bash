@@ -2892,29 +2892,25 @@ class InstallersData(DataStore):
                 # We've used this BSA for a conflict, don't use it again
                 del remaining_bsas[b_inf]
                 if curConflicts:
+                    load_str = f'=={b_inf}=='
+                    if inst:
+                        load_str += f' [{inst}:{inst.order}]'
                     # If the origin is an INI, then active_bsas[bsa_inf] does
                     # not contain a meaningful result (will be an extremely
                     # large/small number)
                     if ini_ma := self._ini_origin.match(b_source):
-                        load_str = _('Loaded from ini: %(ini_name_key)s') % {
-                            'ini_name_key': ini_ma.group(0)}
+                        load_str += f'\n==Loaded from ini: {ini_ma.group(0)}'
                     else:
-                        load_str = _('Loaded from: %(mod)s (active index: '
-                                     '%(bsa_lo)X)') % {'mod': b_source,
-                                        'bsa_lo': active_bsas[b_inf]}
-                    if inst:
-                        load_str += (f' [source package {inst} (loading '
-                                      f'at position {inst.order})]')
-                    higher_result = {c for c, o in curConflicts.items() if
-                                     b_ord > o}
+                        load_str += (f'\n==Loaded from: {b_source} (active '
+                                     f'mod index: {active_bsas[b_inf]})')
+                    higher_result = {c for c, src_ord in curConflicts.items()
+                                     if b_ord > src_ord}
                     if showLower:
                         lower_result = curConflicts.keys() - higher_result
                         if lower_result:
-                            lower_bsa.append((load_str, b_inf,
-                                              bolt.sortFiles(lower_result)))
+                            lower_bsa.append((load_str, b_ord, lower_result))
                     if higher_result:
-                        higher_bsa.append((load_str, b_inf,
-                                           bolt.sortFiles(higher_result)))
+                        higher_bsa.append((load_str, b_ord, higher_result))
             for package, installer in li_pairs:
                 discard_bsas = installer.order == srcOrder or not (
                         showInactive or installer.is_active)
@@ -2932,10 +2928,8 @@ class InstallersData(DataStore):
             # plugin file not managed by BAIN (e.g. a DLC)
             for rem_bsa in list(remaining_bsas):
                 _process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
-            def _sort_bsa_conflicts(bsa_conflict):
-                return active_bsas[bsa_conflict[1]]
-            lower_bsa.sort(key=_sort_bsa_conflicts)
-            higher_bsa.sort(key=_sort_bsa_conflicts)
+            lower_bsa.sort(key=itemgetter(1))
+            higher_bsa.sort(key=itemgetter(1))
         # Calculate loose conflicts
         lower_loose, higher_loose = [], []
         conflicts = [(slice(srcOrder + 1, None), higher_loose)]
@@ -2997,9 +2991,9 @@ class InstallersData(DataStore):
                     (higher_bsa, _('Higher Loading BSAs'))) if c)
             for conflicts, title in c_t:
                 buff.write(f'= {title} {"=" * 40}\n')
-                for cause, bsa_inf, confl_ in conflicts:
-                    buff.write(f'=={bsa_inf}\n=={cause}\n')
-                    buff.write(u'\n'.join(confl_) + u'\n\n')
+                for cause, _ord, confls in conflicts:
+                    buff.write(f'{cause}\n')
+                    buff.write('\n'.join(bolt.sortFiles(confls)) + '\n\n')
             buff.write(f'= {_("Loose File Conflicts")} {"=" * 36}\n\n')
         # Print loose file conflicts
         def _print_loose_conflicts(conflicts, title=_(u'Lower')):
