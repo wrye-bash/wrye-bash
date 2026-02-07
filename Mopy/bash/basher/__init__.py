@@ -51,6 +51,7 @@ has its own data store)."""
 from __future__ import annotations
 
 import functools
+import io
 import os
 import sys
 import time
@@ -2762,11 +2763,11 @@ class InstallersDetails(_SashDetailsPanel):
         elif pageName == u'gMismatched':
             gPage.text_content = _dumpFiles(installer.mismatchedFiles)
         elif pageName == u'gConflicts':
-            gPage.text_content = self.file_infos.getConflictReport(
+            gPage.text_content = self._get_conflict_report(
                 installer, u'OVER', bosh.modInfos)
         elif pageName == u'gUnderrides':
-            gPage.text_content = self.file_infos.getConflictReport(
-                installer, u'UNDER', bosh.modInfos)
+            gPage.text_content = self._get_conflict_report(
+                installer, 'UNDER', bosh.modInfos)
         elif pageName == u'gDirty':
             gPage.text_content = _dumpFiles(installer.dirty_sizeCrc)
         elif pageName == u'gSkipped':
@@ -2774,6 +2775,51 @@ class InstallersDetails(_SashDetailsPanel):
                 installer.skipExtFiles, u'== ' + _(u'Skipped (Extension)')),
                                              _dumpFiles(
                 installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'))))
+
+    def _get_conflict_report(self, srcInstaller, mode, modInfos):
+        """Return report of overrides for specified package for display on
+        conflicts tab.
+
+        :param srcInstaller: The installer to find conflicts for.
+        :param mode: 'OVER': Overrides; 'UNDER': Underrides.
+        :param modInfos: bosh.modInfos
+        :return: A string containing the printable report of all conflicts."""
+        list_overrides = (mode == 'OVER')
+        if list_overrides:
+            if not srcInstaller.ci_dest_sizeCrc: return ''
+        else:
+            if not srcInstaller.underrides: return ''
+        lower_loose, higher_loose, lower_bsa, higher_bsa = \
+            self.file_infos.find_conflicts(srcInstaller, modInfos, list_overrides)
+        # Generate report
+        buff = io.StringIO()
+        # Print BSA conflicts
+        if not (lower_bsa is higher_bsa is None):
+            buff.write(f'= {_("Active BSA Conflicts")} {"=" * 40}\n\n')
+            # Print partitions - bsa loading order NOT installer order
+            c_t = ((c, t) for c, t in ((lower_bsa, _('Lower Loading BSAs')),
+                    (higher_bsa, _('Higher Loading BSAs'))) if c)
+            for conflicts, title in c_t:
+                buff.write(f'= {title} {"=" * 40}\n')
+                for cause, _ord, confls in conflicts:
+                    buff.write(f'{cause}\n')
+                    buff.write('\n'.join(bolt.sortFiles(confls)) + '\n\n')
+            buff.write(f'= {_("Loose File Conflicts")} {"=" * 36}\n\n')
+        # Print loose file conflicts
+        for conflicts, title in (t for t in ((lower_loose, _('Lower')),
+                                 (higher_loose, _('Higher'))) if t[0]):
+            buff.write(f'= {title} {"=" * 40}\n')
+            for inst_, package_, confls in conflicts:
+                buff.write(f'=={inst_.order:d}== {package_}\n')
+                for src_file in bolt.sortFiles(confls):
+                    oldName = inst_.getEspmName(src_file)
+                    buff.write(oldName)
+                    if oldName != src_file:
+                        buff.write(' -> ')
+                        buff.write(src_file)
+                    buff.write('\n')
+                buff.write('\n')
+        return buff.getvalue()
 
     #--Config
     def refreshCurrent(self,installer):
