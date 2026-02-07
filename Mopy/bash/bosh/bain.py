@@ -2844,8 +2844,10 @@ class InstallersData(DataStore):
         return [k for k in active_bsas if k.fn_key in inst.ci_dest_sizeCrc]
 
     @staticmethod
-    def _parse_error(bsa_inf, reason):
-        deprint(f'Error parsing {bsa_inf} [{reason}]', traceback=True)
+    def _parse_error(bsa_inf, inst=''):
+        ins = inst and f' from {inst} (install order {inst.order})'
+        deprint(f'Error parsing {bsa_inf} ({bsa_inf.lo_src}){ins}',
+                traceback=True)
 
     ##:(701) Maybe cache the result? Can take a bit of time to calculate
     def find_conflicts(self, src_installer, mod_infos, list_overrides):
@@ -2876,35 +2878,25 @@ class InstallersData(DataStore):
         lower_bsa, higher_bsa = None, None
         if include_bsas: ##: Add support for showing inactive
             lower_bsa, higher_bsa = [], []
-            active_bsas, bsa_cause = mod_infos.get_bsa_lo()
+            active_bsas = mod_infos.get_bsa_lo()
             # Calculate all conflicts and save them in lower_bsa and higher_bsa
             asset_to_bsa_ord = self.find_src_assets(src_installer, active_bsas)
             remaining_bsas = copy.copy(active_bsas)
-            def _process_bsa_conflicts(b_inf, b_source, inst=None):
+            def _process_bsa_conflicts(b_inf, inst=''):
                 b_ord = active_bsas[b_inf]
                 try: # conflicting assets from this installer active bsas
                     curConflicts = b_inf.assets & asset_to_bsa_ord.keys()
                     curConflicts = {c: o for c in curConflicts
                                     if (o := asset_to_bsa_ord[c]) != b_ord}
                 except BSAError:
-                    self._parse_error(b_inf, b_source)
+                    self._parse_error(b_inf)
                     return
                 # We've used this BSA for a conflict, don't use it again
                 del remaining_bsas[b_inf]
                 if curConflicts:
-                    load_str = f'=={b_inf}=='
-                    if inst:
-                        load_str += f' [{inst}:{inst.order}]'
-                    # If the origin is an INI, then active_bsas[bsa_inf] does
-                    # not contain a meaningful result (will be an extremely
-                    # large/small number)
-                    if ini_ma := self._ini_origin.match(b_source):
-                        load_str += f'\n==Loaded from ini: {ini_ma.group(0)}'
-                    else:
-                        load_str += (f'\n==Loaded from: {b_source} (active '
-                                     f'mod index: {active_bsas[b_inf]})')
                     higher_result = {c for c, src_ord in curConflicts.items()
                                      if b_ord > src_ord}
+                    load_str = b_inf.load_str(inst)
                     if showLower:
                         lower_result = curConflicts.keys() - higher_result
                         if lower_result:
@@ -2922,12 +2914,11 @@ class InstallersData(DataStore):
                         ##: Support for inactive BSA conflicts
                         del remaining_bsas[bsa_info]
                     else:
-                        _process_bsa_conflicts(bsa_info, bsa_cause[bsa_info],
-                                               inst=installer)
+                        _process_bsa_conflicts(bsa_info, inst=installer)
             # Check all left-over BSAs - they either came from an INI or from a
             # plugin file not managed by BAIN (e.g. a DLC)
             for rem_bsa in list(remaining_bsas):
-                _process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
+                _process_bsa_conflicts(rem_bsa)
             lower_bsa.sort(key=itemgetter(1))
             higher_bsa.sort(key=itemgetter(1))
         # Calculate loose conflicts
@@ -2959,13 +2950,12 @@ class InstallersData(DataStore):
             try:
                 b_assets = b.assets - asset_to_bsa_lo.keys()
             except BSAError:
-                self._parse_error(b, src_installer.fn_key)
+                self._parse_error(b, src_installer)
                 continue
             for b_asset in b_assets:
                 asset_to_bsa_lo[b_asset] = active_bsas[b] # we need the bsa lo
         return asset_to_bsa_lo
 
-    _ini_origin = re.compile(r'\w+\.ini \(\w+\)', re.I)
     def getConflictReport(self, srcInstaller, mode, modInfos):
         """Returns report of overrides for specified package for display on
         conflicts tab.
