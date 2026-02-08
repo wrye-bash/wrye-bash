@@ -2785,12 +2785,10 @@ class InstallersDetails(_SashDetailsPanel):
         :param list_overrides: only list underrides if False.
         :param act_bsas: active bsa load order or None - see find_conflicts
         :return: A string containing the printable report of all conflicts."""
-        if not srcInstaller.ci_dest_sizeCrc or not (list_overrides or
-                srcInstaller.underrides): # ci_dest_sizeCrc >= underrides
+        if not any(confs := self.file_infos.find_conflicts(srcInstaller,
+                list_overrides, act_bsas)):
             return ''
-        lower_loose, higher_loose, lower_bsa, higher_bsa = \
-            self.file_infos.find_conflicts(srcInstaller, list_overrides,
-                                           act_bsas)
+        lower_loose, higher_loose, lower_bsa, higher_bsa = confs
         # Generate report
         buff = io.StringIO()
         # Print BSA conflicts

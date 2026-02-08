@@ -2854,8 +2854,10 @@ class InstallersData(DataStore):
             lower BSA and higher BSA conflicts. If BSA conflicts are not
             enabled, the last two will be empty."""
         src_sizeCrc = src_installer.ci_dest_sizeCrc
-        if not (mismatched:= src_sizeCrc if list_overrides else {
-                x: src_sizeCrc[x] for x in src_installer.underrides}):
+        mismatched = src_sizeCrc if list_overrides else {x: src_sizeCrc[x] for
+            x in src_installer.underrides} # ci_dest_sizeCrc >= underrides
+        # empty sizeCrc means no conflicts - else see if we need to check bsas
+        if not mismatched and (list_overrides or not active_bsas):
             return [], [], [], []
         out = [lower_loose := [], higher_loose := [], lower_bsa := [],
                higher_bsa := []]
@@ -2873,10 +2875,9 @@ class InstallersData(DataStore):
             conflicts = ((p for p in li if p[1].is_active) for li in conflicts)
         for li, conflict_type in zip(conflicts, (lower_loose, higher_loose)):
             for package, inst in li:
-                curConflicts = {x for x, y in mismatched.items() if
-                                inst.ci_dest_sizeCrc.get(x, y) != y}
-                if curConflicts:
-                    conflict_type.append((package, inst, curConflicts))
+                if confls := (inst_sc := inst.ci_dest_sizeCrc) and {x for x, y
+                        in mismatched.items() if inst_sc.get(x, y) != y}:
+                    conflict_type.append((package, inst, confls))
         # Calculate bsa conflicts
         if active_bsas: ##: Add support for showing inactive BSA conflicts
             # Heuristics to assign owner installer to the bsas. First check
@@ -2918,21 +2919,19 @@ class InstallersData(DataStore):
             for b_inf, inst in bsa_owner.items(): # ordered in acscending b_ord
                 b_ord = active_bsas[b_inf]
                 try: # conflicting assets from this installer active bsas
-                    curConflicts = b_inf.assets & src_asset_to_bsa_ord.keys()
-                    curConflicts = {c: o for c in curConflicts
-                                    if (o := src_asset_to_bsa_ord[c]) != b_ord}
+                    confls = b_inf.assets & src_asset_to_bsa_ord.keys()
+                    confls = {c: o for c in confls if
+                              (o := src_asset_to_bsa_ord[c]) != b_ord}
                 except BSAError:
                     _parse_error(b_inf)
                     continue
-                if curConflicts:
-                    higher_result = {c for c, src_ord in curConflicts.items()
-                                     if b_ord > src_ord}
-                    if include_lower:
-                        lower_result = curConflicts.keys() - higher_result
-                        if lower_result:
-                            lower_bsa.append((b_inf, inst, lower_result))
-                    if higher_result:
+                if confls:
+                    if higher_result := {c for c, src_ord in confls.items() if
+                                         b_ord > src_ord}:
                         higher_bsa.append((b_inf, inst, higher_result))
+                    if include_lower:
+                        if lower_result := confls.keys() - higher_result:
+                            lower_bsa.append((b_inf, inst, lower_result))
         return out
 
     def getPackageList(self,showInactive=True):
