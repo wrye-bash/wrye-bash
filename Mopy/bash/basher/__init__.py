@@ -2704,6 +2704,8 @@ class InstallersDetails(_SashDetailsPanel):
         if initialized: return
         else: self.infoPages[index][1] = True
         pageName = gPage.get_component_name()
+        act_bsas = bosh.modInfos.get_bsa_lo() if bass.settings[
+            'bash.installers.conflictsReport.showBSAConflicts'] else None
         def _dumpFiles(files, header=u''):
             if files:
                 buff = []
@@ -2723,8 +2725,7 @@ class InstallersDetails(_SashDetailsPanel):
                 return buff.append('') or '\n'.join(buff) # add a newline
             elif header:
                 return header+u'\n'
-            else:
-                return u''
+            return ''
         if pageName == u'gGeneral':
             inf_ = ['== ' + _('Overview'), _('Type: %(package_type)s') % {
                 'package_type': installer.type_string},
@@ -2764,10 +2765,10 @@ class InstallersDetails(_SashDetailsPanel):
             gPage.text_content = _dumpFiles(installer.mismatchedFiles)
         elif pageName == u'gConflicts':
             gPage.text_content = self._get_conflict_report(
-                installer, u'OVER', bosh.modInfos)
+                installer, True, act_bsas)
         elif pageName == u'gUnderrides':
             gPage.text_content = self._get_conflict_report(
-                installer, 'UNDER', bosh.modInfos)
+                installer, False, act_bsas)
         elif pageName == u'gDirty':
             gPage.text_content = _dumpFiles(installer.dirty_sizeCrc)
         elif pageName == u'gSkipped':
@@ -2776,40 +2777,39 @@ class InstallersDetails(_SashDetailsPanel):
                                              _dumpFiles(
                 installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'))))
 
-    def _get_conflict_report(self, srcInstaller, mode, modInfos):
+    def _get_conflict_report(self, srcInstaller, list_overrides, act_bsas):
         """Return report of overrides for specified package for display on
         conflicts tab.
 
         :param srcInstaller: The installer to find conflicts for.
-        :param mode: 'OVER': Overrides; 'UNDER': Underrides.
-        :param modInfos: bosh.modInfos
+        :param list_overrides: only list underrides if False.
+        :param act_bsas: active bsa load order or None - see find_conflicts
         :return: A string containing the printable report of all conflicts."""
-        list_overrides = (mode == 'OVER')
-        if list_overrides:
-            if not srcInstaller.ci_dest_sizeCrc: return ''
-        else:
-            if not srcInstaller.underrides: return ''
+        if not srcInstaller.ci_dest_sizeCrc or not (list_overrides or
+                srcInstaller.underrides): # ci_dest_sizeCrc >= underrides
+            return ''
         lower_loose, higher_loose, lower_bsa, higher_bsa = \
-            self.file_infos.find_conflicts(srcInstaller, modInfos, list_overrides)
+            self.file_infos.find_conflicts(srcInstaller, list_overrides,
+                                           act_bsas)
         # Generate report
         buff = io.StringIO()
         # Print BSA conflicts
-        if not (lower_bsa is higher_bsa is None):
+        if act_bsas is not None:
             buff.write(f'= {_("Active BSA Conflicts")} {"=" * 40}\n\n')
             # Print partitions - bsa loading order NOT installer order
             c_t = ((c, t) for c, t in ((lower_bsa, _('Lower Loading BSAs')),
                     (higher_bsa, _('Higher Loading BSAs'))) if c)
             for conflicts, title in c_t:
                 buff.write(f'= {title} {"=" * 40}\n')
-                for cause, _ord, confls in conflicts:
-                    buff.write(f'{cause}\n')
+                for b_inf, inst, confls in conflicts:
+                    buff.write(f'{b_inf.load_str(inst)}\n')
                     buff.write('\n'.join(bolt.sortFiles(confls)) + '\n\n')
             buff.write(f'= {_("Loose File Conflicts")} {"=" * 36}\n\n')
         # Print loose file conflicts
         for conflicts, title in (t for t in ((lower_loose, _('Lower')),
                                  (higher_loose, _('Higher'))) if t[0]):
             buff.write(f'= {title} {"=" * 40}\n')
-            for inst_, package_, confls in conflicts:
+            for package_, inst_, confls in conflicts:
                 buff.write(f'=={inst_.order:d}== {package_}\n')
                 for src_file in bolt.sortFiles(confls):
                     oldName = inst_.getEspmName(src_file)

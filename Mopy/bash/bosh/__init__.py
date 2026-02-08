@@ -3042,6 +3042,7 @@ class ModInfos(_AFileInfos):
                                         self.__available_bsas, self.__bsa_lo)
             # we are called in a loop, cache on first iteration
             self.__available_bsas = None
+            self.__bsa_lo = dict(dict_sort(self.__bsa_lo, by_value=True))
         return self.__bsa_lo
 
     def getVersion(self, fileName):
