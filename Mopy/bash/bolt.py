@@ -624,7 +624,8 @@ class FName(str):
         return f'{type(self).__name__}({super().__repr__()})'
 
 class LowerDict(dict):
-    """Dictionary that transforms its keys to CIstr instances.
+    """Dictionary that transforms its keys to CIstr instances - meant to hold
+    str instances, all other types will be made into CIstr instances (or blow).
     See: https://stackoverflow.com/a/43457369/281545
     """
     __slots__ = () # no __dict__ - that would be redundant
@@ -640,40 +641,40 @@ class LowerDict(dict):
         super().__init__(self._process_args(mapping, **kwargs))
 
     def __getitem__(self, k):
-        return super().__getitem__(CIstr(k) if type(k) is str else k)
+        return super().__getitem__(k if type(k) is CIstr else CIstr(k))
 
     def __setitem__(self, k, v):
-        return super().__setitem__(CIstr(k) if type(k) is str else k, v)
+        return super().__setitem__(k if type(k) is CIstr else CIstr(k), v)
 
     def __delitem__(self, k):
-        return super().__delitem__(CIstr(k) if type(k) is str else k)
+        return super().__delitem__(k if type(k) is CIstr else CIstr(k))
 
     def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
         return type(self)(self)
 
     def get(self, k, default=None):
-        return super().get(CIstr(k) if type(k) is str else k, default)
+        return super().get(k if type(k) is CIstr else CIstr(k), default)
 
     def setdefault(self, k, default=None):
-        return super().setdefault(CIstr(k) if type(k) is str else k, default)
+        return super().setdefault(k if type(k) is CIstr else CIstr(k), default)
 
     __no_default = object()
     def pop(self, k, v=__no_default):
         if v is LowerDict.__no_default:
             # super will raise KeyError if no default and key does not exist
-            return super().pop(CIstr(k) if type(k) is str else k)
-        return super().pop(CIstr(k) if type(k) is str else k, v)
+            return super().pop(k if type(k) is CIstr else CIstr(k))
+        return super().pop(k if type(k) is CIstr else CIstr(k), v)
 
     def update(self, mapping=(), **kwargs):
         super().update(self._process_args(mapping, **kwargs))
 
     def __contains__(self, k):
-        return super().__contains__(CIstr(k) if type(k) is str else k)
+        return super().__contains__(k if type(k) is CIstr else CIstr(k))
 
     @classmethod
     def fromkeys(cls, keys, v=None):
         return super().fromkeys(
-            (CIstr(k) if type(k) is str else k for k in keys), v)
+            (k if type(k) is CIstr else CIstr(k) for k in keys), v)
 
     def __repr__(self):
         return f'{type(self).__name__}({super().__repr__()})'
