@@ -1199,6 +1199,9 @@ class Installer(ListInfo):
             compress7z(outDir.join(fn_archive), outDir.join(project), progress,
                        is_solid=isSolid, temp_list=tl, blockSize=blockSize)
 
+    def filter_installer_bsas(self, active_bsas):
+        return [k for k in active_bsas if k.fn_key in self.ci_dest_sizeCrc]
+
 class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
@@ -1404,6 +1407,25 @@ class _InstallerPackage(Installer, AFileInfo):
         return self._make_wizard_file_dir(self.has_fomod_conf, progress)
 
     def writable_archive_name(self): return self.fn_key
+
+    def map_bsa_assets(self, active_bsas):
+        """Map self's active BSAs' assets to the load order of the (highest
+        loading) BSA that contains the asset. There's generally only one for
+        Skyrim and older, one or two for SSE and any number of BSAs for FO4.
+
+        :param active_bsas: The set of active BSAs. Generally retrieved via
+                            bosh.modInfos.get_bsa_lo().
+        :return: A dict containing a mapping from asset to BSA load order."""
+        asset_to_bsa_lo = {}
+        for b in reversed(self.filter_installer_bsas(active_bsas)):
+            try:
+                b_assets = b.assets - asset_to_bsa_lo.keys()
+            except BSAError:
+                _parse_error(b, self)
+                continue
+            for b_asset in b_assets:
+                asset_to_bsa_lo[b_asset] = active_bsas[b] # we need the bsa lo
+        return asset_to_bsa_lo
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
@@ -2838,16 +2860,6 @@ class InstallersData(DataStore):
                 emptyDir.removedirs()
 
     #--Utils
-    @staticmethod
-    def _filter_installer_bsas(inst, active_bsas):
-        return [k for k in active_bsas if k.fn_key in inst.ci_dest_sizeCrc]
-
-    @staticmethod
-    def _parse_error(bsa_inf, inst=''):
-        ins = inst and f' from {inst} (install order {inst.order})'
-        deprint(f'Error parsing {bsa_inf} ({bsa_inf.lo_src}){ins}',
-                traceback=True)
-
     ##:(701) Maybe cache the result? Can take a bit of time to calculate
     def find_conflicts(self, src_installer, mod_infos, list_overrides):
         """Returns all conflicts for the specified installer, filtering them by
@@ -2879,15 +2891,15 @@ class InstallersData(DataStore):
             lower_bsa, higher_bsa = [], []
             active_bsas = mod_infos.get_bsa_lo()
             # Calculate all conflicts and save them in lower_bsa and higher_bsa
-            asset_to_bsa_ord = self.find_src_assets(src_installer, active_bsas)
+            src_asset_to_bsa_ord = src_installer.map_bsa_assets(active_bsas)
             remaining_bsas = copy.copy(active_bsas)
             bsa_confls = []
             for package, installer in li_pairs: # should we reverse?
                 # ignore bsas if from this installer or we ingnore inactive
                 discard_bsas = installer.order == srcOrder or not (
                         showInactive or installer.is_active)
-                for bsa_info in self._filter_installer_bsas(
-                        installer, remaining_bsas): # should we check for underrides?
+                for bsa_info in installer.filter_installer_bsas(
+                        remaining_bsas): # should we check for underrides?
                     # We've used this BSA for a conflict, don't use it again
                     del remaining_bsas[bsa_info]
                     if not discard_bsas:
@@ -2898,11 +2910,11 @@ class InstallersData(DataStore):
             for b_inf, inst in chain(bsa_confls, remaining):
                 b_ord = active_bsas[b_inf]
                 try: # conflicting assets from this installer active bsas
-                    curConflicts = b_inf.assets & asset_to_bsa_ord.keys()
+                    curConflicts = b_inf.assets & src_asset_to_bsa_ord.keys()
                     curConflicts = {c: o for c in curConflicts
-                                    if (o := asset_to_bsa_ord[c]) != b_ord}
+                                    if (o := src_asset_to_bsa_ord[c]) != b_ord}
                 except BSAError:
-                    self._parse_error(b_inf)
+                    _parse_error(b_inf)
                     continue
                 if curConflicts:
                     higher_result = {c for c, src_ord in curConflicts.items()
@@ -2929,27 +2941,6 @@ class InstallersData(DataStore):
                 if curConflicts:
                     conflict_type.append((installer, package, curConflicts))
         return lower_loose, higher_loose, lower_bsa, higher_bsa
-
-    def find_src_assets(self, src_installer, active_bsas):
-        """Map src_installer's active BSAs' assets to those BSAs, assigning
-        the assets to the highest loading BSA. There's generally only one for
-        Skyrim and older, one or two for SSE and any number of BSAs for FO4.
-
-        :param src_installer: The installer from which to retrieve BSA assets.
-        :param active_bsas: The set of active BSAs. Generally retrieved via
-                            bosh.modInfos.get_bsa_lo().
-        :return: A dict containing a mapping from asset to BSA load order."""
-        asset_to_bsa_lo = {}
-        for b in reversed(self._filter_installer_bsas(
-                src_installer, active_bsas)):
-            try:
-                b_assets = b.assets - asset_to_bsa_lo.keys()
-            except BSAError:
-                self._parse_error(b, src_installer)
-                continue
-            for b_asset in b_assets:
-                asset_to_bsa_lo[b_asset] = active_bsas[b] # we need the bsa lo
-        return asset_to_bsa_lo
 
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
@@ -2991,3 +2982,7 @@ class InstallersData(DataStore):
         # Refresh, so we can manipulate the InstallerProject item
         self.new_info(projectPath, progress,
                       install_order=len(self)) # install last
+
+def _parse_error(bsa_inf, inst=''):
+    ins = inst and f' from {inst} (install order {inst.order})'
+    deprint(f'Error parsing {bsa_inf} ({bsa_inf.lo_src}){ins}', traceback=True)
