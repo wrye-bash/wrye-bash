@@ -313,8 +313,8 @@ class Installer(ListInfo):
         #--Volatile: set by refreshStatus
         self.status = None
         self.underrides = set()
-        self.missingFiles = set()
-        self.mismatchedFiles = set()
+        self.missingFiles = []
+        self.mismatchedFiles = []
 
     @property
     def num_of_files(self): return len(self.fileSizeCrcs)
@@ -1108,37 +1108,34 @@ class Installer(ListInfo):
         """
         data_sizeCrc = self.ci_dest_sizeCrc
         get_cached = installersData.data_sizeCrcDate.get
-        missing = self.missingFiles
-        mismatched = self.mismatchedFiles
-        underrides = set()
         inst_status = 0
-        missing.clear()
-        mismatched.clear()
         if not self.has_recognized_structure: # markers also (bain_type = 0)
             inst_status = -20
-        elif data_sizeCrc:
-            ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
-            for filename,sizeCrc in data_sizeCrc.items():
+        to_update = (data_sizeCrc, self.dirty_sizeCrc)
+        check_match = (installersData.ci_underrides_sizeCrc, data_sizeCrc)
+        for is_dirty, (di, di_check) in enumerate(zip(to_update, check_match)):
+            missing, mismatched, in_check_list = [], [], []
+            for filename,sizeCrc in di.items():
                 sizeCrcDate = get_cached(filename)
                 if not sizeCrcDate:
-                    missing.add(filename)
-                elif sizeCrc != sizeCrcDate[:2]:
-                    mismatched.add(filename)
-                if sizeCrc == ci_underrides_sizeCrc.get(filename):
-                    underrides.add(filename)
-            if missing: inst_status = -10
-            elif any(ModInfos.check_filename(str(f)) for f in mismatched):
-                inst_status = 10
-            elif mismatched: inst_status = 20
-            else: inst_status = 30
-        #--Clean Dirty
-        dirty_sizeCrc = self.dirty_sizeCrc
-        for filename, sizeCrc in list(dirty_sizeCrc.items()):
-            sizeCrcDate = get_cached(filename)
-            if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
-                sizeCrc == data_sizeCrc.get(filename)
-                ):
-                del dirty_sizeCrc[filename]
+                    missing.append(filename)
+                elif sizeCrc[0] != sizeCrcDate[0] or sizeCrc[1] != sizeCrcDate[1]:
+                    mismatched.append(filename)
+                elif sizeCrc == di_check.get(filename):
+                    # for ci_dest_sizeCrc if missing or missmatched won't be in
+                    # underrides, and for dirty_sizeCrc we don't need to check
+                    in_check_list.append(filename)
+            if is_dirty: #--Clean Dirty
+                for ci in chain(missing, mismatched, in_check_list):
+                    del di[ci]
+            else:
+                self.missingFiles, self.mismatchedFiles = missing, mismatched
+                if missing: inst_status = -10
+                elif mismatched:
+                    inst_status = 10 if any(ModInfos.check_filename(str(f))
+                                            for f in mismatched) else 20
+                else: inst_status = 30
+                underrides = {*in_check_list}
         #--Done
         changed = self.status != inst_status or self.underrides != underrides
         self.status, self.underrides = inst_status, underrides
@@ -2723,7 +2720,7 @@ class InstallersData(DataStore):
                 progress(index, inst.fn_key)
                 destFiles = inst.ci_dest_sizeCrc.keys() - mask
                 if not override:
-                    destFiles &= inst.missingFiles
+                    destFiles &= {*inst.missingFiles}
                 if destFiles:
                     self._createTweaks(destFiles, inst, tweaksCreated)
                     sub_progress = SubProgress(progress, index, index + 1)
@@ -2877,7 +2874,7 @@ class InstallersData(DataStore):
         for installer in to_anneal:
             removes |= installer.underrides
             if installer.is_active:
-                removes |= installer.missingFiles  # re-added in __restore
+                removes |= {*installer.missingFiles}  # re-added in __restore
                 removes |= set(installer.dirty_sizeCrc)
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...

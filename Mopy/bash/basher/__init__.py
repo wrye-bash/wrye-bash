@@ -2753,8 +2753,9 @@ class InstallersDetails(_SashDetailsPanel):
                            '== ' + _('Configured Files'))])
             gPage.text_content = u'\n'.join(inf_)
         elif pageName == u'gMatched':
-            gPage.text_content = _dumpFiles(installer.ci_dest_sizeCrc.keys() -
-                installer.missingFiles - installer.mismatchedFiles)
+            mm = {*installer.missingFiles, *installer.mismatchedFiles}
+            gPage.text_content = _dumpFiles([ # avoid set ops with CIstr
+                f for f in installer.ci_dest_sizeCrc if f not in mm])
         elif pageName == u'gMissing':
             gPage.text_content = _dumpFiles(installer.missingFiles)
         elif pageName == u'gMismatched':
