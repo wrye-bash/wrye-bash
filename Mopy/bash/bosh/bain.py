@@ -1106,25 +1106,23 @@ class Installer(ListInfo):
         -10: missing files (red)
         -20: bad type (grey)
         """
-        data_sizeCrc = self.ci_dest_sizeCrc
-        get_cached = installersData.data_sizeCrcDate.get
         inst_status = 0
         if not self.has_recognized_structure: # markers also (bain_type = 0)
             inst_status = -20
-        to_update = (data_sizeCrc, self.dirty_sizeCrc)
-        check_match = (installersData.ci_underrides_sizeCrc, data_sizeCrc)
+        to_update = (data_sizeCrc := self.ci_dest_sizeCrc), self.dirty_sizeCrc
+        check_match = installersData.ci_underrides_sizeCrc, data_sizeCrc
+        get_cached = installersData.data_sizeCrcDate.get
         for is_dirty, (di, di_check) in enumerate(zip(to_update, check_match)):
             missing, mismatched, in_check_list = [], [], []
-            for filename,sizeCrc in di.items():
-                sizeCrcDate = get_cached(filename)
-                if not sizeCrcDate:
-                    missing.append(filename)
-                elif sizeCrc[0] != sizeCrcDate[0] or sizeCrc[1] != sizeCrcDate[1]:
-                    mismatched.append(filename)
-                elif sizeCrc == di_check.get(filename):
+            for ci_file, sc in di.items():
+                if not (scd := get_cached(ci_file)):
+                    missing.append(ci_file)
+                elif sc[0] != scd[0] or sc[1] != scd[1]:
+                    mismatched.append(ci_file)
+                elif sc == di_check.get(ci_file):
                     # for ci_dest_sizeCrc if missing or missmatched won't be in
                     # underrides, and for dirty_sizeCrc we don't need to check
-                    in_check_list.append(filename)
+                    in_check_list.append(ci_file)
             if is_dirty: #--Clean Dirty
                 for ci in chain(missing, mismatched, in_check_list):
                     del di[ci]
