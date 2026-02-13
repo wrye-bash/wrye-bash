@@ -28,7 +28,7 @@ from os import path
 from textwrap import fill
 from zlib import crc32
 
-from .bass import AppVersion
+from .bass import get_version_tuple
 
 def _gen_section_header(txt):
     """Use pyfiglet (if installed) to generate section headers."""
@@ -55,7 +55,8 @@ def _wrap_subsection_header(txt, header_len=78):
 
 def _generate_default_bash_ini():
     """Return the translated bash_default.ini & checksum for comparison."""
-    default_bash_ini = fr"""{_gen_section_header(f'Bash.ini {AppVersion}')}
+    major_ver = get_version_tuple().version_tuple[0]
+    default_bash_ini = fr"""{_gen_section_header(f'Bash.ini {major_ver}')}
 
 {_wrap_ini_comment(_(
     "This is the generic version of %(bash_config_file)s. You must copy or "

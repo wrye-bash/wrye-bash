@@ -1419,6 +1419,10 @@ class LooseVersion:
             return NotImplemented
         return self._parsed_version >= other._parsed_version
 
+    @property
+    def version_tuple(self):
+        return self._parsed_version
+
 def popen_common(popen_cmd, **kwargs):
     """Wrapper around subprocess.Popen with commonly needed parameters."""
     return subprocess.Popen(popen_cmd, stdin=subprocess.DEVNULL,

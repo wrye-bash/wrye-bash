@@ -73,7 +73,7 @@ from .. import archives, balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
     SeparatorLink, UIList, colors
-from ..bolt import FName, GPath, LooseVersion, RefrIn, RefrData, SubProgress, \
+from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
     forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
     to_win_newlines, top_level_files
@@ -3749,7 +3749,7 @@ class BashFrame(WindowFrame):
         """Internal callback, called from the update checking thread via custom
         event once it has completed its work."""
         if (newer_version is not None and
-                newer_version.wb_version > LooseVersion(bass.AppVersion)):
+                newer_version.wb_version > bass.get_version_tuple()):
             UpdateNotification.display_dialog(self, newer_version)
 
 # Initialization --------------------------------------------------------------

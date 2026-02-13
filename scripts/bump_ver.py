@@ -26,7 +26,7 @@ import logging
 import re
 import sys
 
-from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, \
+from helpers.utils import MOPY_PATH,  ROOT_PATH, WBRepo, edit_wb_file, \
     edit_bass_version, mk_logfile, run_script, setup_log
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,9 +37,9 @@ from bash import bass
 
 def _setup_new_version(parser):
     parser.add_argument('new_version', type=str, nargs='?', metavar='ver',
-        default=str(int(float(bass.AppVersion)) + 1),
-        help='The version to bump to. Defaults to the current version plus '
-             'one.')
+        default=str(bass.get_version_tuple().version_tuple[0] + 1),
+        help='The version to bump to. Defaults to the current major version'
+             'plus one.')
 
 def main(args):
     setup_log(_LOGGER, args)
@@ -66,7 +66,7 @@ def main(args):
             edit_callback=edit_readme, logger=_LOGGER)
         files_bumped.append(MOPY_PATH / 'Docs' / readme_name)
     _LOGGER.debug('Writing commit with changed files')
-    commit_changes(changed_paths=files_bumped,
+    WBRepo(ROOT_PATH).commit_changes(changed_paths=files_bumped,
         commit_msg=f'Bump Wrye Bash version to {new_ver}')
     _LOGGER.info(f'Version successfully bumped to {new_ver}')
 

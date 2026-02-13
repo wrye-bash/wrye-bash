@@ -39,7 +39,7 @@ import pygit2
 
 # Reusable path definitions
 SCRIPTS_PATH = Path(__file__).absolute().parent.parent
-ROOT_PATH = SCRIPTS_PATH.parent
+ROOT_PATH = SCRIPTS_PATH.parent # the root of the Wrye Bash repository
 WBSA_PATH = SCRIPTS_PATH / 'build' / 'standalone'
 DIST_PATH = SCRIPTS_PATH / 'dist'
 MOPY_PATH = ROOT_PATH / 'Mopy'
@@ -143,7 +143,7 @@ def run_script(main, script_doc: str, logfile: Path, *, custom_setup=None):
     rm(parsed_args.logfile)
     main(parsed_args)
 
-def with_args(args=None, **kwargs):
+def with_args(args, **kwargs):
     """Hacky way to pass custom arguments to another script. In the future,
     scripts for which this is needed should be refactored to export an API
     instead that other scripts can use."""
@@ -203,36 +203,79 @@ def run_subprocess(command, logger, **kwargs):
     logger.debug(stdout)
     logger.debug('---  COMMAND OUTPUT END  ---')
 
-def get_repo_sig(repo):
-    """Wrapper around pygit2 that shows a helpful error message to the user if
-    their credentials have not been configured yet."""
-    try:
-        return repo.default_signature
-    except KeyError:
-        print('\n'.join(['', # empty line before the error
-            'ERROR: You have not set up your git identity yet.',
-            'This is necessary for the git operations that the build script '
-            'uses.',
-            'You can configure them as follows:',
-            '   git config --global user.name "Your Name"',
-            '   git config --global user.email "you@example.com"']),
-            file=sys.stderr)
-        sys.exit(1)
+class WBRepo(pygit2.Repository):
+    """A Wrye Bash pygit2 Repository wrapper."""
 
-def commit_changes(*, changed_paths: list[os.PathLike | str], commit_msg: str,
-        repo_path: os.PathLike | str = ROOT_PATH):
-    """Commit changes to the specified files by creating a commit with the
-    specified message."""
-    repo = pygit2.Repository(repo_path)
-    user = get_repo_sig(repo)
-    parent = [repo.head.target]
-    for cf in changed_paths:
-        rel_path = os.path.relpath(cf, repo.workdir).replace('\\', '/')
-        if repo.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
-            repo.index.add(rel_path)
-    tree = repo.index.write_tree()
-    repo.create_commit('HEAD', user, user, commit_msg, tree, parent)
-    repo.index.write()
+    def get_repo_sig(self):
+        """Wrapper around pygit2 that shows a helpful error message to the
+        user if their credentials have not been configured yet."""
+        try:
+            return self.default_signature
+        except KeyError:
+            print('\n'.join(['', # empty line before the error
+                'ERROR: You have not set up your git identity yet.',
+                'This is necessary for the git operations that the build script '
+                'uses.',
+                'You can configure them as follows:',
+                '   git config --global user.name "Your Name"',
+                '   git config --global user.email "you@example.com"']),
+                file=sys.stderr)
+            sys.exit(1)
+
+    def commit_changes(self, *, commit_msg: str,
+                       changed_paths: list[os.PathLike | str]):
+        """Commit changes to the specified files by creating a commit with the
+        specified message."""
+        user = self.get_repo_sig()
+        parent = [self.head.target]
+        for cf in changed_paths:
+            rel_path = os.path.relpath(cf, self.workdir).replace('\\', '/')
+            if self.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
+                self.index.add(rel_path)
+        tree = self.index.write_tree()
+        self.create_commit('HEAD', user, user, commit_msg, tree, parent)
+        self.index.write()
+
+    def get_head_hash(self) -> str:
+        """Get the current commit hash of the WB repository."""
+        return str(self.head.target)
+
+    def get_tracked_paths(self, depth: int | None = 1, rev='HEAD') -> set[str]:
+        """Return tracked blob paths for `rev` and, optionally, its ancestors.
+        depth=1 matches the single-commit behavior; depth=None walks all
+        reachable commits. Always return a set of repo-relative posix paths."""
+        start = self.revparse_single(rev)
+        if isinstance(start, pygit2.Tag):
+            start = self[start.target]
+        if not isinstance(start, pygit2.Commit):
+            raise TypeError(f'{rev!r} did not resolve to a commit')
+        if depth is not None and depth < 1:
+            raise ValueError(f'depth must be >= 1 or None was {depth}')
+        ever: set[str] = set()
+        seen_trees: set[pygit2.Oid] = set()
+        walker = self.walk(start.id, pygit2.GIT_SORT_TOPOLOGICAL)
+        for i, c in enumerate(walker, start=1):
+            if depth is not None and i > depth: break
+            oid = c.tree.id
+            if oid not in seen_trees:
+                seen_trees.add(oid)
+                ever.update(self._iter_tree_paths(c.tree, prefix=''))
+        return ever
+
+    def _iter_tree_paths(self, tree: pygit2.Tree, prefix=''):
+        stack = [(tree, prefix)]
+        while stack:
+            t, pre = stack.pop()
+            for entry in t:
+                p = f'{pre}{entry.name}'
+                if entry.type == pygit2.GIT_OBJECT_BLOB:
+                    yield p
+                elif entry.type == pygit2.GIT_OBJECT_TREE:
+                    stack.append((self[entry.id], f'{p}/'))
+                else:
+                    # Conservative: treat unknown as non-file unless it's clearly a
+                    # tree/blob (note submodules show up as commits)
+                    continue
 
 def out_path(dir_=OUT_PATH, name='out.txt'):
     """Returns a path joining the dir_ and name parameters. Will create the
@@ -325,65 +368,3 @@ def cp(src: str | os.PathLike, dst: str | os.PathLike):
 def mk_logfile(dunder_file: str):
     log_fname = os.path.splitext(os.path.basename(dunder_file))[0] + '.log'
     return LOG_PATH / log_fname
-
-# Copy-pasted from bolt.py
-# We need to split every time we hit a new 'type' of component. So greedily
-# match as many of one type as possible (except dots and dashes, since those
-# are guaranteed to start a new component)
-_component_re = re.compile(r'(\.|-|\d+|[^\d.-]+)')
-_separators = frozenset({'.', '-'})
-class LooseVersion:
-    """A class for representing and comparing versions, where the term
-    'version' refers to any and every possible string. The way this class works
-    is pretty simple: there are three 'types' of components to a LooseVersion:
-
-     - separators (dots and dashes)
-     - digits
-     - everything else
-
-    Separators begin a new component to the version, but are not part of the
-    version themselves. Digits are compared numerically, so 2 < 10. Everything
-    else is compared alphabetically, so 'a' < 'm'. A whole version is compared
-    by comparing the components in it as a tuple."""
-    _parsed_version: tuple[int | str]
-
-    def __init__ (self, ver_string: str):
-        ver_components = _component_re.split(ver_string)
-        parsed_version = []
-        for ver_comp in ver_components:
-            if not ver_comp or ver_comp in _separators:
-                # Empty components and separators are not part of the version
-                continue
-            try:
-                parsed_version.append(int(ver_comp))
-            except ValueError:
-                parsed_version.append(ver_comp)
-        self._parsed_version = tuple(parsed_version)
-
-    def __repr__(self):
-        return '.'.join([str(c) for c in self._parsed_version])
-
-    def __eq__(self, other):
-        if not isinstance(other, LooseVersion):
-            return NotImplemented
-        return self._parsed_version == other._parsed_version
-
-    def __lt__(self, other):
-        if not isinstance(other, LooseVersion):
-            return NotImplemented
-        return self._parsed_version < other._parsed_version
-
-    def __le__(self, other):
-        if not isinstance(other, LooseVersion):
-            return NotImplemented
-        return self._parsed_version <= other._parsed_version
-
-    def __gt__(self, other):
-        if not isinstance(other, LooseVersion):
-            return NotImplemented
-        return self._parsed_version > other._parsed_version
-
-    def __ge__(self, other):
-        if not isinstance(other, LooseVersion):
-            return NotImplemented
-        return self._parsed_version >= other._parsed_version

@@ -47,6 +47,9 @@ _GAME_DATA = {
 }
 MASTERLIST_VERSION = '0.26'
 
+TAGLISTS_PATHS = sorted(TAGLISTS_PATH / game_name / 'taglist.yaml' for
+                        game_name in _GAME_DATA)
+
 def _download_masterlist(repository, version, dl_path):
     url = (f'https://raw.githubusercontent.com/loot/{repository}/v{version}/'
            f'masterlist.yaml')
@@ -65,11 +68,7 @@ def _setup_masterlist(argparser):
     )
 
 def all_taglists_present():
-    for game_name in _GAME_DATA:
-        taglist_path = TAGLISTS_PATH / game_name / 'taglist.yaml'
-        if not taglist_path.is_file():
-            return False
-    return True
+    return all(p.is_file() for p in TAGLISTS_PATHS)
 
 def main(args):
     setup_log(_LOGGER, args)
