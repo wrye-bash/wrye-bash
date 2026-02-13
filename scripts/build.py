@@ -169,16 +169,15 @@ def _setup_pyinstaller_logger(logfile):
     file_handler.setFormatter(stupid_formatter)
     logging.getLogger('PyInstaller').addHandler(file_handler)
 
-def _pack_7z(dest_7z, keep):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        include_file = Path(tmpdir) / 'files_to_include.txt'
-        with include_file.open('w', encoding='utf-8', newline='\n') as f:
-            f.write('\n'.join(keep))
-        cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', DIST_PATH / dest_7z,
-                  f'-i@{include_file}']
-        run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
+def _pack_7z(dest_7z, keep, tmpdir):
+    include_file = tmpdir / 'files_to_include.txt'
+    with include_file.open('w', encoding='utf-8', newline='\n') as f:
+        f.write('\n'.join(keep))
+    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', DIST_PATH / dest_7z,
+              f'-i@{include_file}']
+    run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
 
-def _get_nsis_root(cmd_arg):
+def _get_nsis_root(cmd_arg, dl_dir):
     """Finds and returns the nsis root folder."""
     if cmd_arg is not None:
         _LOGGER.debug(f'User provided NSIS path at {cmd_arg}')
@@ -195,7 +194,6 @@ def _get_nsis_root(cmd_arg):
         local_build_path = NSIS_PATH.parent
         nsis_url = (f'https://sourceforge.net/projects/nsis/files/NSIS%203/'
                     f'{_NSIS_VERSION}/nsis-{_NSIS_VERSION}.zip/download')
-        dl_dir = Path(tempfile.mkdtemp())
         nsis_zip = dl_dir / 'nsis.zip'
         _LOGGER.info(f'Downloading NSIS {_NSIS_VERSION}...')
         _LOGGER.debug(f'Download url: {nsis_url}')
@@ -203,11 +201,10 @@ def _get_nsis_root(cmd_arg):
         download_file(nsis_url, nsis_zip)
         with zipfile.ZipFile(nsis_zip) as fzip:
             fzip.extractall(local_build_path)
-        rm(dl_dir)
         os.rename(local_build_path / f'nsis-{_NSIS_VERSION}', NSIS_PATH)
     return NSIS_PATH
 
-def _pack_manual(build_vers, mopy_tr):
+def _pack_manual(build_vers, mopy_tr, tmpdir):
     """ Packages the manual (python source) version. """
     copied = {'Readme.md': ROOT_PATH, 'requirements.txt': ROOT_PATH,
               'bash.ico': WBSA_PATH}
@@ -216,7 +213,8 @@ def _pack_manual(build_vers, mopy_tr):
         for orig, target in files_to_include.items():
             cp(orig, target)
         _pack_7z(f'Wrye Bash {build_vers} - Python Source.7z',
-                 [*mopy_tr, 'Mopy/Apps', *(f'Mopy/{a}' for a in copied), ''])
+                 [*mopy_tr, 'Mopy/Apps', *(f'Mopy/{a}' for a in copied), ''],
+                 tmpdir)
     finally:
         for path in files_to_include.values():
             rm(path)
@@ -239,18 +237,18 @@ def _build_executable():
     finally:
         rm(dest_exe)
 
-def _pack_standalone(build_vers, mopy_tr):
+def _pack_standalone(build_vers, mopy_tr, tmpdir):
     """ Packages the standalone version. """
     _pack_7z(f'Wrye Bash {build_vers} - Standalone Executable.7z',
-             [*mopy_tr, 'Mopy/Apps', 'Mopy/Wrye Bash.exe', ''])
+             [*mopy_tr, 'Mopy/Apps', 'Mopy/Wrye Bash.exe', ''], tmpdir)
 
-def _pack_installer(nsis_path, build_vers, file_version, mopy_tr):
+def _pack_installer(nsis_path, build_vers, file_version, mopy_tr, tmpdir):
     """ Packages the installer version. """
     script_path = SCRIPTS_PATH / 'build' / 'installer' / 'main.nsi'
     if not script_path.is_file():
         raise OSError(f"Could not find nsis script '{script_path}', aborting "
                       f"installer creation.")
-    nsis_root = _get_nsis_root(nsis_path)
+    nsis_root = _get_nsis_root(nsis_path, tmpdir)
     nsis_path = nsis_root / 'makensis.exe'
     if not nsis_path.is_file():
         raise OSError("Could not find 'makensis.exe' in NSIS folder, aborting "
@@ -380,9 +378,8 @@ def _dir_prefixes(paths):
     return {tuple(parts[:i]) for parts in paths for i in range(1, len(parts))}
 
 @contextmanager
-def _update_file_version(build_vers, do_commit=False):
+def _update_file_version(build_vers, tmpdir, do_commit=False):
     bass_path = MOPY_PATH / 'bash' / 'bass.py'
-    tmpdir = Path(tempfile.mkdtemp())
     bck_path = tmpdir / 'bass.py'
     cp(bass_path, bck_path)
     _LOGGER.debug(f'Bumping bass.py version to {build_vers}')
@@ -395,22 +392,19 @@ def _update_file_version(build_vers, do_commit=False):
     finally:
         if not do_commit:
             cp(bck_path, bass_path)
-        rm(tmpdir)
 
 @contextmanager
-def _handle_apps_folder():
-    tmpdir = Path(tempfile.mkdtemp()) if APPS_PATH.is_dir() else None
-    if tmpdir is not None:
+def _handle_apps_folder(tmpdir):
+    if apps_dir := APPS_PATH.is_dir():
         _LOGGER.debug(f'Moving Apps folder to {tmpdir}')
         shutil.move(APPS_PATH, tmpdir)
     APPS_PATH.mkdir(parents=True)
     try:
         yield
     finally:
-        if tmpdir is not None:
+        if apps_dir:
             for lnk in (tmpdir / 'Apps').glob('*'):
                 cp(lnk, APPS_PATH / lnk.name)
-            rm(tmpdir)
         else:
             rm(APPS_PATH)
 
@@ -495,7 +489,8 @@ def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
                           max(args.verbosity, logging.WARNING))
     mo_paths = compile_l10n.main(with_args(args, verbosity=compile_l10n_level),
                                  map(Path, po_files))
-    with _handle_apps_folder(), _update_file_version(vers, args.commit):
+    with tempfile.TemporaryDirectory() as tmpdir, _handle_apps_folder(tmpdir :=
+            Path(tmpdir)), _update_file_version(vers, tmpdir, args.commit):
         # create distributable directory
         DIST_PATH.mkdir(parents=True, exist_ok=True)
         # Copy the license so it's included in the built releases
@@ -519,21 +514,22 @@ def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
             to_install = [*sorted(mopy_tr), *yamls_mos, 'Mopy/LICENSE.md']
             if args.manual:
                 _LOGGER.info('Creating python source distributable...')
-                _pack_manual(vers, to_install)
+                _pack_manual(vers, to_install, tmpdir)
+            if not args.standalone and not args.installer:
+                return
             if _NOT_WINDOWS:
                 _LOGGER.info('Non-Windows OS detected, skipping '
                              'standalone and installer distributables.')
-                return
-            if not args.standalone and not args.installer:
                 return
             no_source = {f for f in to_install if not f.endswith(__pys)}
             with _build_executable():
                 if args.standalone:
                     _LOGGER.info('Creating standalone distributable...')
-                    _pack_standalone(vers, no_source)
+                    _pack_standalone(vers, no_source, tmpdir)
                 if args.installer:
                     _LOGGER.info('Creating installer distributable...')
-                    _pack_installer(args.nsis, vers, file_version, no_source)
+                    _pack_installer(args.nsis, vers, file_version, no_source,
+                                    tmpdir)
         finally:
             # Clean up the temp copy of the license
             rm(license_temp)
