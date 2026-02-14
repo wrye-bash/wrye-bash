@@ -31,10 +31,11 @@ from collections import Counter, defaultdict
 from itertools import chain
 
 from ..base import ImportPatcher
-from ... import bush, parsers
+from ... import bush
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
 from ...brec import RecordType
 from ...exception import ModSigMismatchError
+from ...parsers import ActorFactions, FullNames, ItemStats, SpellRecords
 
 #------------------------------------------------------------------------------
 class APreserver(ImportPatcher):
@@ -283,7 +284,7 @@ class ImportActorsFactionsPatcher(APreserver):
     srcsHeader = '=== ' + _('Source Mods/Files')
     # Has FormIDs, but will be filtered in AMreActor.keep_fids
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
-    _csv_parser = parsers.ActorFactions
+    _csv_parser = ActorFactions
     patcher_tags = {'Actors.Factions'}
     _csv_key = 'Factions'
 
@@ -347,7 +348,7 @@ class ImportNamesPatcher(APreserver):
     logMsg = '\n=== ' + _('Renamed Items')
     srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = {x: ('full',) for x in bush.game.names_types}
-    _csv_parser = parsers.FullNames
+    _csv_parser = FullNames
     patcher_tags = {'Names'}
     _csv_key = 'Names'
 
@@ -376,9 +377,8 @@ class ImportSpellStatsPatcher(APreserver):
                  for x in bush.game.spell_stats_types}
     _fid_rec_attrs = {x: bush.game.spell_stats_fid_attrs
                       for x in bush.game.spell_stats_types}
-    _csv_parser = (parsers.SpellRecords
-                   if bush.game.fsName in ('Oblivion', 'OblivionRE')
-                   else None)
+    _csv_parser = SpellRecords if bush.game.fsName in (
+        'Oblivion', 'OblivionRE') else None
     patcher_tags = {'SpellStats'}
     _csv_key = 'Spells'
 
@@ -390,7 +390,7 @@ class ImportStatsPatcher(APreserver):
     srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = bush.game.stats_attrs
     _fid_rec_attrs = bush.game.stats_fid_attrs
-    _csv_parser = parsers.ItemStats
+    _csv_parser = ItemStats
     patcher_tags = {'Stats'}
     _csv_key = 'Stats'
 
