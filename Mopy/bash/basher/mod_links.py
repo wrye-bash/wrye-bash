@@ -48,7 +48,7 @@ from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     FactionRelations, FidReplacer, FullNames, IngredientDetails, ItemPrices, \
-    ItemStats, ScriptText, SigilStoneDetails, SpellRecords
+    ItemStats, ScriptText, SigilStoneDetails, SpellRecords, PluginParser
 from ..patcher.patch_files import PatchFile
 from ..plugin_types import MergeabilityCheck, PluginFlag
 
@@ -1636,7 +1636,7 @@ class Mod_Face_Import(OneItemLink):
 class _Import_Export_Link(AppendableLink):
     """Mixin for Export and Import links that handles adding them automatically
     depending on the game's record types."""
-    _parser_class: type[CsvParser | ScriptText] = None
+    _parser_class: type[PluginParser]
 
     def _parser(self): return self.__class__._parser_class()
     def _append(self, window):
@@ -1733,14 +1733,13 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         ext = textPath.cext
         p_exts = self._data_store.info_exts() if self._parse_mods else set()
         if ext not in {'.csv', *p_exts}:
+            fmt = {'csv_ext': self.csvFile}
             if self._parse_mods:
                 csv_err = _('Source file must be a %(csv_ext)s file or a '
-                            'plugin (%(plugin_exts)s).') % {
-                              'csv_ext': self.csvFile,
+                            'plugin (%(plugin_exts)s).') % {**fmt,
                               'plugin_exts': ', '.join(sorted(p_exts))}
             else:
-                csv_err = _('Source file must be a %(csv_ext)s file.') % {
-                    'csv_ext': self.csvFile}
+                csv_err = _('Source file must be a %(csv_ext)s file.') % fmt
             self._showError(csv_err)
             return
         #--Import
