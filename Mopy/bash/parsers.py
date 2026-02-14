@@ -40,7 +40,8 @@ from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
-    int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
+    int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig, \
+    classproperty
 from .brec import FormId, RecordType, attr_csv_struct, null3
 from .mod_files import LoadFactory, ModFile
 
@@ -447,10 +448,10 @@ class _AParser(_HandleAliases):
                 changed_stats[record.rec_sig] += 1
 
     # Other API
-    @property
-    def _parser_sigs(self):
+    @classproperty
+    def _parser_sigs(cls):
         """Returns a set of all record types that this parser requires."""
-        return {*self._fp_types, *self._sp_types}
+        return {*cls._fp_types, *cls._sp_types}
 
 class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
@@ -672,7 +673,12 @@ class EditorIds(_HandleAliases):
         self.questionableEidsSet = questionableEidsSet
         #--eid = eids[type][longid]
         self.old_new = {}
-        self._parser_sigs = set(RecordType.simpleTypes)
+
+    @classproperty
+    def _parser_sigs(cls):
+        # simpleTypes are not defined when parsers are imported in
+        # game/oblivion/patcher/preservers.py:30
+        return [*RecordType.simpleTypes]
 
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
@@ -764,12 +770,15 @@ class FidReplacer(_HandleAliases):
 
     def __init__(self, aliases_=None, **kwargs):
         super().__init__(aliases_, **kwargs)
-        # simpleTypes are not defined when parsers are imported in
-        # game/oblivion/patcher/preservers.py:30
-        self._parser_sigs = RecordType.simpleTypes
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
+
+    @classproperty
+    def _parser_sigs(cls):
+        # simpleTypes are not defined when parsers are imported in
+        # game/oblivion/patcher/preservers.py:30
+        return set(RecordType.simpleTypes)
 
     def _parse_line(self, csv_fields):
         oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
@@ -826,18 +835,14 @@ class FidReplacer(_HandleAliases):
 class FullNames(_HandleAliases):
     """Names for records, with functions for importing/exporting from/to
     mod/text file: id_stored_data[top_grup_sig][longid] = (eid, name)"""
+    _parser_sigs = bush.game.names_types
+    _attr_dex = {'eid': 3, 'full': 4}
     _csv_header = (_('Type'), _('Mod Name'), _('ObjectIndex'), _('Editor Id'),
                    _('Name'))
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
     _row_sorter = partial(_key_sort, fid_eid=True)
     csv_suffix = '_Names.csv'
-
-    def __init__(self, aliases_=None, **kwargs):
-        super(FullNames, self).__init__(aliases_, **kwargs)
-        self._parser_sigs = bush.game.names_types
-        self._attr_dex = {u'full': 4} if self._called_from_patcher else {
-            u'eid': 3, u'full': 4}
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         if csv_fields[-1] == 'NO NAME':
@@ -870,15 +875,12 @@ class ItemStats(_HandleAliases):
     _nested_type = lambda: defaultdict(dict)
     _row_sorter = partial(_key_sort, fid_eid=True)
     csv_suffix = '_Stats.csv'
+    sig_stats_attrs = bush.game.stats_csv_attrs
+    _skip_eid = False
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
-        self.sig_stats_attrs = bush.game.stats_csv_attrs
-        if self._called_from_patcher: # filter eid
-            self.sig_stats_attrs = {r: t for r, a in
-                                    self.sig_stats_attrs.items() if
-                                    (t := tuple(x for x in a if x != 'eid'))}
-        self._parser_sigs = set(self.sig_stats_attrs)
+    @classproperty
+    def _parser_sigs(cls):
+        return list(cls.sig_stats_attrs)
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         atts = self.sig_stats_attrs[record.rec_sig]
@@ -906,7 +908,7 @@ class ItemStats(_HandleAliases):
         longid = self._coerce_fid(modName, objectStr) # blow and exit on header
         top_grup_sig = str_to_sig(top_grup)
         attrs = self.sig_stats_attrs[top_grup_sig]
-        eid_or_next = 3 + self._called_from_patcher
+        eid_or_next = 3 + self._skip_eid
         attr_dex = {att: dex for att, dex in
                     zip(attrs, range(eid_or_next, eid_or_next + len(attrs)))}
         attr_val = self._update_from_csv(top_grup_sig, csv_fields,
@@ -1082,6 +1084,7 @@ class ScriptText(_TextParser):
 class ItemPrices(_HandleAliases):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
+    _parser_sigs = set(bush.game.pricesTypes)
     _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _key2_getter = itemgetter(0, 1)
@@ -1089,10 +1092,6 @@ class ItemPrices(_HandleAliases):
     _attr_dex = {'value': 2, 'eid': 3, 'full': 4}
     _row_sorter = partial(_key_sort, values_key=['eid', 'value'])
     csv_suffix = '_Prices.csv'
-
-    def __init__(self, aliases_=None):
-        super(ItemPrices, self).__init__(aliases_)
-        self._parser_sigs = set(bush.game.pricesTypes)
 
     _changed_type = Counter
     def _write_record(self, record, stats, changed_stats):
@@ -1199,17 +1198,14 @@ class SpellRecords(_UsesEffectsMixin):
     _attr_dex = None
     csv_suffix = '_Spells.csv'
 
-    def __init__(self, aliases_=None, detailed=False,
-                 called_from_patcher=False):
-        ##: Drop this if check now and always use the game var?
-        atts = (bush.game.spell_stats_csv_attrs if called_from_patcher
-                else self._csv_attrs)
+    def __init__(self, aliases_=None, detailed=False, **kwargs):
+        atts = list(self._csv_attrs)
         if detailed:
             extra_attrs = self.__class__._extra_attrs
-            atts += (*extra_attrs, 'effects')
+            atts.extend([*extra_attrs, 'effects'])
             self._attr_dex = dict(zip(extra_attrs, range(8, 15)))
             self._attr_dex['effects'] = (15, self._coerce_fid)
-        super().__init__(aliases_, atts, called_from_patcher=called_from_patcher)
+        super().__init__(aliases_, atts, **kwargs)
         self._csv_header = (_('Type'), *self._csv_header)
 
     def _parse_line(self, fields):
