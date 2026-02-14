@@ -210,10 +210,10 @@ class ListPatcher(APatcher):
 
     def _filter_csv_fids(self, parser_instance, loaded_csvs):
         # Filter out any entries that don't actually have data or whose
-        # record signatures do not appear in _parser_sigs - these might not
+        # record signatures do not appear in parser_sigs - these might not
         # always be a subset of read_sigs for instance CoblExhaustionPatcher
         # which reads b'FACT' but _read_sigs is b'SPEL'
-        rec_att = {*parser_instance._parser_sigs}
+        rec_att = {*parser_instance.parser_sigs}
         sig_data = parser_instance.id_stored_data
         if s := (sig_data.keys() - rec_att):
             deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
