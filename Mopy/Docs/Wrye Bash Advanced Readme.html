@@ -1996,19 +1996,19 @@ tab. The directories skipped are:
     <thead>
         <tr><th>Checkbox Colour<th>Meaning
     <tbody>
-        <tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png"><td>Good. Matches the Master Index of the the Current load order.
-        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png"><td>Good, but the Master Index is not in sync with the Current
+        <tr><td><svg class="wb-ico wb-checkbox blue on" aria-label="Blue" data-wb-use="#wb-checkbox-on"></svg><td>Good. Matches the Master Index of the the Current load order.
+        <tr><td><svg class="wb-ico wb-checkbox green on" aria-label="Green" data-wb-use="#wb-checkbox-on"></svg><td>Good, but the Master Index is not in sync with the Current
             load order.<br>
             <br>So for instance if you have a load order with active mods (in this order) [Oblivion.esm, displayed_mod.esm, yet_some-other.esp,
             some_other.esp, some_other2.esp, displayed_mod.esp], some_other.esp will display in green as its current load order is 3 while its
             master index is 2. Note that the <em>relative load order of masters</em> is the same as it is in the MI list.
-        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png"><td>The plugin loads in a different order compared to its order in
+        <tr><td><svg class="wb-ico wb-checkbox orange on" aria-label="Orange" data-wb-use="#wb-checkbox-on"></svg><td>The plugin loads in a different order compared to its order in
             the master array of displayed_mod.esp<br>
             <br>So for instance if you have a load order with active mods (in this order) [Oblivion.esm, displayed_mod.esm, some_other2.esp,
             some_other.esp, displayed_mod.esp], some_other.esp and some_other2.esp will display in orange as they load in different
             <em>relative order</em> than they are recorded in the master array of displayed_mod.esp.<br>
         <br>If a plugin has two masters that are siblings (one doesn't have the other as a master, so they can load in either order) and they are overriding the same record from an earlier master (e.g. both are overriding a record from the main game master file), then loading them in a different order will result in a different version of the overridden record being the "winner". But the plugin might depend on the winner being the one indicated by the order in which it references the masters. The plugin should be examined in xEdit (meaning any version) to see if it is best to alter the load order or if Sort Masters should be used to correct the issue.
-        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png"><td>A Master that is missing. If unintended then you should check to make
+        <tr><td><svg class="wb-ico wb-checkbox red on" aria-label="Red" data-wb-use="#wb-checkbox-on"></svg><td>A Master that is missing. If unintended then you should check to make
             sure that you have not inadvertently renamed or removed the plugin.
 </table>
 
@@ -11101,11 +11101,11 @@ noted in the description of the tweak.</p>
     </thead>
     <tbody>
         <tr>
-            <td><img alt="Purple" src="../bash/images/checkbox_purple_on.png"></td>
+            <td><svg class="wb-ico wb-checkbox purple on" aria-label="Purple" data-wb-use="#wb-checkbox-on"></svg></td>
             <td>Excellent. Exactly synced with the current load order.</td>
         </tr>
         <tr>
-            <td><img alt="Blue" src="../bash/images/checkbox_blue_on.png"></td>
+            <td><svg class="wb-ico wb-checkbox blue on" aria-label="Blue" data-wb-use="#wb-checkbox-on"></svg></td>
             <td>Good. Compatible with the current load order. However, the
                 current load order includes some plugins that are not used by
                 this save game. You can use <a href="#savesActivateMasters">
@@ -11113,13 +11113,13 @@ noted in the description of the tweak.</p>
                 save.</td>
         </tr>
         <tr>
-            <td><img alt="Green" src="../bash/images/checkbox_green_on.png"></td>
+            <td><svg class="wb-ico wb-checkbox green on" aria-label="Green" data-wb-use="#wb-checkbox-on"></svg></td>
             <td>Good, but not in sync with the current active mods. You can use
                 <a href="#savesActivateMasters">Activate Masters</a> to sync
                 active plugins to this save.</td>
         </tr>
         <tr>
-            <td><img alt="Orange" src="../bash/images/checkbox_orange_on.png"></td>
+            <td><svg class="wb-ico wb-checkbox orange on" aria-label="Orange" data-wb-use="#wb-checkbox-on"></svg></td>
             <td>Some plugins have changed order. The game and the TESCS/GECK/CK
                 will adjust for this when loaded. However, if some of the
                 plugins that you use made conflicting changes to the same item,
@@ -11128,7 +11128,7 @@ noted in the description of the tweak.</p>
                 to sync load order to this save.</td>
         </tr>
         <tr>
-            <td><img alt="Red" src="../bash/images/checkbox_red_on.png"></td>
+            <td><svg class="wb-ico wb-checkbox red on" aria-label="Red" data-wb-use="#wb-checkbox-on"></svg></td>
             <td>A master is missing. You should check to make sure that you
                 have not inadvertently renamed or removed the plugin.</td>
         </tr>
@@ -11140,10 +11140,10 @@ noted in the description of the tweak.</p>
     <thead>
         <tr><th>Checkbox Colour<th>Meaning
     <tbody>
-        <tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png"><td>Good. Matches the Master Index of the save game at the time it was saved.
-        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png"><td>Good, but the Master Index is not in sync with the Current load order.
-        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png"><td>Some plugins have changed order. The plugin still exists in the Data folder but a plugin was added or removed before of after this plugin.
-        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png"><td>A plugin is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
+        <tr><td><svg class="wb-ico wb-checkbox blue on" aria-label="Blue" data-wb-use="#wb-checkbox-on"></svg><td>Good. Matches the Master Index of the save game at the time it was saved.
+        <tr><td><svg class="wb-ico wb-checkbox green on" aria-label="Green" data-wb-use="#wb-checkbox-on"></svg><td>Good, but the Master Index is not in sync with the Current load order.
+        <tr><td><svg class="wb-ico wb-checkbox orange on" aria-label="Orange" data-wb-use="#wb-checkbox-on"></svg><td>Some plugins have changed order. The plugin still exists in the Data folder but a plugin was added or removed before of after this plugin.
+        <tr><td><svg class="wb-ico wb-checkbox red on" aria-label="Red" data-wb-use="#wb-checkbox-on"></svg><td>A plugin is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
 </table>
 
 <h3 id="saves-profiles">Save Profiles <a class="back2top" href="#contents">Back to top</a></h3>
