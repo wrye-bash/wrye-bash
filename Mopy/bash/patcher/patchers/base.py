@@ -212,8 +212,8 @@ class _PatchFidReplacer(FidReplacer):
         return RecordType.simpleTypes | {b'CELL', b'WRLD', b'REFR', b'ACHR',
                                          b'ACRE'}
 
-    def __init__(self, aliases_=None, called_from_patcher=False):
-        super().__init__(aliases_, called_from_patcher)
+    def __init__(self, aliases_=None, **kwargs):
+        super().__init__(aliases_, **kwargs)
         # we need to override self._parser_sigs from FidReplacer.__init__
         self._parser_sigs = self._read_sigs
 
