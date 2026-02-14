@@ -306,6 +306,9 @@ class ImportRacesRelationsPatcher(_AMerger):
         return subrecord_entry.faction
 
 #------------------------------------------------------------------------------
+class _FactionRelationsParser(FactionRelations):
+    _fp_types = ()
+
 class ImportRelationsPatcher(_AMerger):
     logMsg = '\n=== ' + _('Modified Factions')
     _add_tag = 'Relations.Add'
@@ -314,7 +317,7 @@ class ImportRelationsPatcher(_AMerger):
     _wanted_subrecord = {b'FACT': 'relations'}
     patcher_tags = {'Relations.Add', 'Relations.Change', 'Relations.Remove'}
     _csv_key = 'Relations'
-    _csv_parser = FactionRelations
+    _csv_parser = _FactionRelationsParser
 
     def _parse_csv_sources(self):
         filtered_dict = super()._parse_csv_sources()
