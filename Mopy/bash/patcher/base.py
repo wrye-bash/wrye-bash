@@ -229,7 +229,7 @@ class ListPatcher(APatcher):
     @property
     def _parser_instance(self):
         return self._csv_parser and self._csv_parser(
-            self.patchFile.pfile_aliases, called_from_patcher=True)
+            self.patchFile.pfile_aliases)
 
 class CsvListPatcher(_HandleAliases, ListPatcher):
     """List patcher that is-a CsvParser - we could change this to has-a,
