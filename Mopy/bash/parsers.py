@@ -39,7 +39,8 @@ from typing import get_type_hints
 from . import bush, load_order
 from .bass import dirs, inisettings
 from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
-    int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
+    int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig, \
+    classproperty
 from .brec import FormId, RecordType, attr_csv_struct, null3
 from .mod_files import LoadFactory, ModFile
 
@@ -216,13 +217,10 @@ class _HandleAliases(CsvParser):
     _nested_type = dict
     _id_data_type: defaultdict
 
-    def __init__(self, aliases_, called_from_patcher=False):
+    def __init__(self, aliases_=None):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
         # used if the Aliases Patcher has been enabled
         self.aliases = aliases_ or {} # type: dict
-        # Set to True when called by a patcher - can be used to alter stored
-        # data format when reading from a csv - could be in a subclass
-        self._called_from_patcher = called_from_patcher # avoid using this!
         # (Mostly) map record sigs to dicts that map long fids to stored info
         # May have been retrieved from mod in second pass, or from a CSV file.
         # Need __class__ access to get a function rather than a bound method
@@ -298,7 +296,7 @@ class _AParser(_HandleAliases):
     # from more than one plugin - see the class docstring
     _is_merger = False
 
-    def __init__(self, aliases_=None, **kwargs):
+    def __init__(self, aliases_=None):
         # Internal variable, keeps track of mods we've already processed during
         # the first pass to avoid repeating work
         self._fp_mods = set()
@@ -310,7 +308,7 @@ class _AParser(_HandleAliases):
         self._needs_fp_master_sort = False
         # Maps long fids to context info read during first pass
         self.id_context = {}
-        super().__init__(aliases_, **kwargs)
+        super().__init__(aliases_)
 
     def _row_sorter(self, rows):
         id_eid_ = self.id_context
@@ -450,10 +448,10 @@ class _AParser(_HandleAliases):
             changed_stats[record.rec_sig] += 1
 
     # Other API
-    @property
-    def _parser_sigs(self):
+    @classproperty
+    def _parser_sigs(cls):
         """Returns a set of all record types that this parser requires."""
-        return {*self._fp_types, *self._sp_types}
+        return {*cls._fp_types, *cls._sp_types}
 
 class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
@@ -514,8 +512,8 @@ class FactionRelations(_AParser):
     _is_merger = True # merge per (main, other) faction pair, last read wins
     csv_suffix = '_Relations.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
+    def __init__(self, aliases_=None):
+        super().__init__(aliases_)
         self._needs_fp_master_sort = True
         self._csv_header = (_('Main Eid'), _('Main Mod'), _('Main Object'),
             _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple(
@@ -572,8 +570,8 @@ class ActorLevels(_HandleAliases):
     _id_data_type: DefaultFNDict
     csv_suffix = '_NPC_Levels.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
+    def __init__(self, aliases_=None):
+        super().__init__(aliases_)
         self.gotLevels = set()
         self._skip_mods = {'none', bush.game.master_file.lower()}
 
@@ -673,13 +671,18 @@ class EditorIds(_HandleAliases):
     csv_suffix = '_Eids.csv'
 
     def __init__(self, aliases_=None, questionableEidsSet=None,
-                 badEidsList=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
+                 badEidsList=None):
+        super().__init__(aliases_)
         self.badEidsList = badEidsList
         self.questionableEidsSet = questionableEidsSet
         #--eid = eids[type][longid]
         self.old_new = {}
-        self._parser_sigs = set(RecordType.simpleTypes)
+
+    @classproperty
+    def _parser_sigs(cls):
+        # simpleTypes are not defined when parsers are imported in
+        # game/oblivion/patcher/preservers.py:30
+        return [*RecordType.simpleTypes]
 
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
@@ -769,14 +772,17 @@ class EditorIds(_HandleAliases):
 class FidReplacer(_HandleAliases):
     """Replaces one set of fids with another."""
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
-        # simpleTypes are not defined when parsers are imported in
-        # game/oblivion/patcher/preservers.py:30
-        self._parser_sigs = RecordType.simpleTypes
+    def __init__(self, aliases_=None):
+        super().__init__(aliases_)
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
+
+    @classproperty
+    def _parser_sigs(cls):
+        # simpleTypes are not defined when parsers are imported in
+        # game/oblivion/patcher/preservers.py:30
+        return set(RecordType.simpleTypes)
 
     def _parse_line(self, csv_fields):
         oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
@@ -833,18 +839,14 @@ class FidReplacer(_HandleAliases):
 class FullNames(_HandleAliases):
     """Names for records, with functions for importing/exporting from/to
     mod/text file: id_stored_data[top_grup_sig][longid] = (eid, name)"""
+    _parser_sigs = bush.game.names_types
+    _attr_dex = {'eid': 3, 'full': 4}
     _csv_header = (_('Type'), _('Mod Name'), _('ObjectIndex'), _('Editor Id'),
                    _('Name'))
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
     _row_sorter = partial(_key_sort, fid_eid=True)
     csv_suffix = '_Names.csv'
-
-    def __init__(self, aliases_=None, **kwargs):
-        super(FullNames, self).__init__(aliases_, **kwargs)
-        self._parser_sigs = bush.game.names_types
-        self._attr_dex = {u'full': 4} if self._called_from_patcher else {
-            u'eid': 3, u'full': 4}
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         if csv_fields[-1] == 'NO NAME':
@@ -877,15 +879,12 @@ class ItemStats(_HandleAliases):
     _nested_type = lambda: defaultdict(dict)
     _row_sorter = partial(_key_sort, fid_eid=True)
     csv_suffix = '_Stats.csv'
+    sig_stats_attrs = bush.game.stats_csv_attrs
+    _skip_eid = False
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
-        self.sig_stats_attrs = bush.game.stats_csv_attrs
-        if self._called_from_patcher: # filter eid
-            self.sig_stats_attrs = {r: t for r, a in
-                                    self.sig_stats_attrs.items() if
-                                    (t := tuple(x for x in a if x != 'eid'))}
-        self._parser_sigs = set(self.sig_stats_attrs)
+    @classproperty
+    def _parser_sigs(cls):
+        return list(cls.sig_stats_attrs)
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         atts = self.sig_stats_attrs[record.rec_sig]
@@ -913,7 +912,7 @@ class ItemStats(_HandleAliases):
         longid = self._coerce_fid(modName, objectStr) # blow and exit on header
         top_grup_sig = str_to_sig(top_grup)
         attrs = self.sig_stats_attrs[top_grup_sig]
-        eid_or_next = 3 + self._called_from_patcher
+        eid_or_next = 3 + self._skip_eid
         attr_dex = {att: dex for att, dex in
                     zip(attrs, range(eid_or_next, eid_or_next + len(attrs)))}
         attr_val = self._update_from_csv(top_grup_sig, csv_fields,
@@ -1086,6 +1085,7 @@ class ScriptText(_TextParser):
 class ItemPrices(_HandleAliases):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
+    _parser_sigs = set(bush.game.pricesTypes)
     _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _key2_getter = itemgetter(0, 1)
@@ -1093,10 +1093,6 @@ class ItemPrices(_HandleAliases):
     _attr_dex = {'value': 2, 'eid': 3, 'full': 4}
     _row_sorter = partial(_key_sort, values_key=['eid', 'value'])
     csv_suffix = '_Prices.csv'
-
-    def __init__(self, aliases_=None):
-        super(ItemPrices, self).__init__(aliases_)
-        self._parser_sigs = set(bush.game.pricesTypes)
 
     _changed_type = Counter
     def _write_record(self, record, stats, changed_stats):
@@ -1118,8 +1114,8 @@ class _UsesEffectsMixin(_HandleAliases):
     _key2_getter = itemgetter(0, 1)
     _row_sorter = partial(_key_sort, values_key=['eid'])
 
-    def __init__(self, aliases_, atts, **kwargs):
-        super().__init__(aliases_, **kwargs)
+    def __init__(self, aliases_, atts):
+        super().__init__(aliases_)
         self.fid_stats = {}
         self.id_stored_data = {self._parser_sigs[0]: self.fid_stats}
         # Get encoders per attribute - each encoder should return a string
@@ -1181,10 +1177,10 @@ class SigilStoneDetails(_UsesEffectsMixin):
     _parser_sigs = [b'SGST']
     csv_suffix = '_SigilStones.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
+    def __init__(self, aliases_=None):
         super().__init__(aliases_,
             [u'eid', u'full', u'model.modPath', u'model.modb', u'iconPath',
-             'script_fid', 'uses', 'value', 'weight', 'effects'], **kwargs)
+             'script_fid', 'uses', 'value', 'weight', 'effects'])
         self._attr_dex = {'eid': 2, 'full': 3, 'model.modPath': 4,
             'model.modb': 5, 'iconPath': 6, 'uses': 9, 'value': 10,
             'weight': 11, 'effects': (12, self._coerce_fid)}
@@ -1203,18 +1199,14 @@ class SpellRecords(_UsesEffectsMixin):
     _attr_dex = None
     csv_suffix = '_Spells.csv'
 
-    def __init__(self, aliases_=None, detailed=False,
-                 called_from_patcher=False):
-        ##: Drop this if check now and always use the game var?
-        atts = (bush.game.spell_stats_csv_attrs if called_from_patcher
-                else self._csv_attrs)
+    def __init__(self, aliases_=None, detailed=False):
+        atts = list(self._csv_attrs)
         if detailed:
             extra_attrs = self.__class__._extra_attrs
-            atts += (*extra_attrs, 'effects')
+            atts.extend([*extra_attrs, 'effects'])
             self._attr_dex = dict(zip(extra_attrs, range(8, 15)))
             self._attr_dex['effects'] = (15, self._coerce_fid)
-        super().__init__(aliases_, atts,
-                         called_from_patcher=called_from_patcher)
+        super().__init__(aliases_, atts)
         self._csv_header = (_('Type'), *self._csv_header)
 
     def _parse_line(self, fields):
@@ -1244,11 +1236,11 @@ class IngredientDetails(_UsesEffectsMixin):
     _parser_sigs = [b'INGR']
     csv_suffix = '_Ingredients.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
+    def __init__(self, aliases_=None):
         # same as SGST apart from 'uses'
         super().__init__(aliases_, [u'eid', u'full',
             u'model.modPath', u'model.modb', u'iconPath', u'script_fid',
-            'value', 'weight', 'effects'], **kwargs)
+            'value', 'weight', 'effects'])
         self._attr_dex = {'eid': 2, 'full': 3, 'model.modPath': 4,
                           'model.modb': 5, 'iconPath': 6, 'value': 9,
                           'weight': 10, 'effects': (11, self._coerce_fid)}
