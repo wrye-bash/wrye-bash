@@ -1642,10 +1642,8 @@ class _Import_Export_Link(AppendableLink):
     def _append(self, window):
         # Check if all record types required by this parser exist for this
         # game and are supported for loading
-        test_parser = self._parser() ##: we ideally want to use _parser_class here
-        return all(map(bush.game.mergeable_sigs.__contains__,
-                       test_parser._parser_sigs))
-
+        return all(x in bush.game.mergeable_sigs for x in
+                   self._parser_class._parser_sigs)
     @property
     def csvFile(self):
         return self._parser_class.csv_suffix
