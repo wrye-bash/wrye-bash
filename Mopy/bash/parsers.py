@@ -34,7 +34,7 @@ import re
 from collections import Counter, defaultdict
 from functools import partial
 from operator import itemgetter
-from typing import get_type_hints, Iterable
+from typing import get_type_hints
 
 from . import bush, load_order
 from .balt import Progress
@@ -52,9 +52,8 @@ def _key_sort(di, fid_eid=False, values_key=(), by_value=False):
     if fid_eid: # values_key is eid here
         key_f = lambda k: (k.mod_fn, di[k].get('eid', '').lower())
     elif values_key:
-        key_f = lambda k: tuple(
-            (di[k].get(v) or '').lower() if v == 'eid' else di[k][v] for v in
-            values_key)
+        key_f = lambda k: tuple((di[k].get('eid') or '').lower() if v == 'eid'
+                                else di[k][v] for v in values_key)
     elif by_value:
         key_f = lambda k: di[k].lower()
     else:
@@ -96,7 +95,10 @@ class _TextParser:
 class PluginParser(_TextParser):
     """Load and write plugin functionality. Keep state in id_stored_data,
     usually maps record sigs to dicts that map long fids to stored info."""
-    _parser_sigs = [] # record signatures this parser recognises
+    parser_sigs = [] # record signatures this parser recognises
+    # make sure to override if your need _write_rows and id_stored_data
+    # values don't have 'eid' or if you want to sort differently
+    _row_sorter = partial(_key_sort, fid_eid=True)
     _nested_type = dict # the type of the values of id_stored_data
     id_stored_data: defaultdict ##:(700) absorb _nested_type
     __slots__ = ('id_stored_data',)
@@ -121,9 +123,6 @@ class PluginParser(_TextParser):
     def _write_section(self, top_grup_sig, id_data, out):
         return bool(id_data) and [sig_to_str(top_grup_sig)]
 
-    def _row_sorter(self, id_data)-> Iterable[tuple[FormId, _nested_type]]:
-        raise NotImplementedError # this needs a base implementation
-
     def _row_out(self, *args, **kwargs):
         raise NotImplementedError(f'{type(self)} must implement _row_out')
 
@@ -142,7 +141,7 @@ class PluginParser(_TextParser):
         return mod_file
 
     def _load_factory(self, keepAll, target_types=None):
-        return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
+        return LoadFactory(keepAll, by_sig=target_types or self.parser_sigs)
 
     # Write plugin ------------------------------------------------------------
     _changed_type = dict # used in writeToMod to report changed records
@@ -252,7 +251,7 @@ class _HandleAliases(CsvParser, PluginParser):
         if self._grup_index is not None:
             top_grup_sig = str_to_sig(csv_fields[self._grup_index])
         else:
-            top_grup_sig = self._parser_sigs[0] # one rec type
+            top_grup_sig = self.parser_sigs[0] # one rec type
         return top_grup_sig
 
     def _key2(self, csv_fields):
@@ -261,7 +260,7 @@ class _HandleAliases(CsvParser, PluginParser):
     def readFromMod(self, mod_inf, modinfos):
         """Hasty readFromMod implementation."""
         modFile = self._load_plugin(mod_inf)
-        for top_grup_sig, typeBlock in modFile.iter_tops(self._parser_sigs):
+        for top_grup_sig, typeBlock in modFile.iter_tops(self.parser_sigs):
             id_data = self.id_stored_data[top_grup_sig]
             for rfid, record in typeBlock.iter_present_records():
                 self._read_record(record, id_data)
@@ -408,7 +407,7 @@ class _AParser(_HandleAliases):
 
         :param mod_info: The ModInfo instance to read from."""
         # Check if we need to read at all
-        if not (a_types := self._parser_sigs):
+        if not (a_types := self.parser_sigs):
             return
         # Load mod_info once and for all, then execute every needed pass
         loaded_mod = self._load_plugin(mod_info, target_types=a_types)
@@ -458,7 +457,7 @@ class _AParser(_HandleAliases):
 
     # Other API
     @classproperty
-    def _parser_sigs(cls):
+    def parser_sigs(cls):
         """Returns a set of all record types that this parser requires."""
         return {*cls._fp_types, *cls._sp_types}
 
@@ -567,11 +566,10 @@ class ActorLevels(_HandleAliases):
         _('Source Mod'), _('Actor Eid'), _('Actor Mod'), _('Actor Object'),
         _('Offset'), _('CalcMin'), _('CalcMax'), _('Old IsPCLevelOffset'),
         _('Old Offset'), _('Old CalcMin'), _('Old CalcMax'))
-    _parser_sigs = [b'NPC_']
+    parser_sigs = [b'NPC_']
     _attr_dex = {'eid': 1, 'level_offset': 4, 'calc_min_level': 5,
                  'calc_max_level': 6}
     _key2_getter = itemgetter(2, 3)
-    _row_sorter = partial(_key_sort, fid_eid=True)
     id_stored_data: DefaultFNDict
     csv_suffix = '_NPC_Levels.csv'
 
@@ -685,7 +683,7 @@ class EditorIds(_HandleAliases):
         self.old_new = {}
 
     @classproperty
-    def _parser_sigs(cls):
+    def parser_sigs(cls):
         # simpleTypes are not defined when parsers are imported in
         # game/oblivion/patcher/preservers.py:30
         return [*RecordType.simpleTypes]
@@ -786,7 +784,7 @@ class FidReplacer(_HandleAliases):
         self.new_eid = {} #--Maps new fid to new editor id
 
     @classproperty
-    def _parser_sigs(cls):
+    def parser_sigs(cls):
         # simpleTypes are not defined when parsers are imported in
         # game/oblivion/patcher/preservers.py:30
         return set(RecordType.simpleTypes)
@@ -828,7 +826,7 @@ class FidReplacer(_HandleAliases):
             else:
                 return oldId
         #--Do swap on all records
-        for _sig, top_block in modFile.iter_tops(self._parser_sigs):
+        for _sig, top_block in modFile.iter_tops(self.parser_sigs):
             for rfid, record in top_block.iter_present_records():
                 if changeBase: record.fid = swapper(rfid)
                 record.mapFids(swapper, save_fids=True)
@@ -846,13 +844,12 @@ class FidReplacer(_HandleAliases):
 class FullNames(_HandleAliases):
     """Names for records, with functions for importing/exporting from/to
     mod/text file: id_stored_data[top_grup_sig][longid] = (eid, name)"""
-    _parser_sigs = bush.game.names_types
+    parser_sigs = bush.game.names_types
     _attr_dex = {'eid': 3, 'full': 4}
     _csv_header = (_('Type'), _('Mod Name'), _('ObjectIndex'), _('Editor Id'),
                    _('Name'))
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
-    _row_sorter = partial(_key_sort, fid_eid=True)
     csv_suffix = '_Names.csv'
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
@@ -884,13 +881,12 @@ class ItemStats(_HandleAliases):
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
     _nested_type = lambda: defaultdict(dict)
-    _row_sorter = partial(_key_sort, fid_eid=True)
     csv_suffix = '_Stats.csv'
     sig_stats_attrs = bush.game.stats_csv_attrs
     _skip_eid = False
 
     @classproperty
-    def _parser_sigs(cls):
+    def parser_sigs(cls):
         return list(cls.sig_stats_attrs)
 
     def _read_record(self, record, id_data, *, __attrgetters=attrgetter_cache):
@@ -954,7 +950,7 @@ class ScriptText(PluginParser):
        common from a quick survey of Cobl's scripts).
      - Internally we store lists of strings, i.e. with the newlines chopped
        off."""
-    _parser_sigs = [b'SCPT']
+    parser_sigs = [b'SCPT']
     id_stored_data: dict
 
     def __init__(self):
@@ -1097,7 +1093,7 @@ class ScriptText(PluginParser):
 class ItemPrices(_HandleAliases):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
-    _parser_sigs = set(bush.game.pricesTypes)
+    parser_sigs = set(bush.game.pricesTypes)
     _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _key2_getter = itemgetter(0, 1)
@@ -1129,7 +1125,7 @@ class _UsesEffectsMixin(_HandleAliases):
     def __init__(self, aliases_, atts):
         super().__init__(aliases_)
         self.fid_stats = {}
-        self.id_stored_data = {self._parser_sigs[0]: self.fid_stats}
+        self.id_stored_data = {self.parser_sigs[0]: self.fid_stats}
         # Get encoders per attribute - each encoder should return a string
         # corresponding to a csv column
         self._attr_serializer = {k: attr_csv_struct[k][2] for k in atts}
@@ -1186,7 +1182,7 @@ class _UsesEffectsMixin(_HandleAliases):
 class SigilStoneDetails(_UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting
     from/to mod/text file."""
-    _parser_sigs = [b'SGST']
+    parser_sigs = [b'SGST']
     csv_suffix = '_SigilStones.csv'
 
     def __init__(self, aliases_=None):
@@ -1207,7 +1203,7 @@ class SpellRecords(_UsesEffectsMixin):
         'touch_spell_explodes_without_target'))
     _csv_attrs = ('eid', 'spell_cost', 'spell_level', 'spell_type',
                   'spell_flags')
-    _parser_sigs = [b'SPEL']
+    parser_sigs = [b'SPEL']
     _attr_dex = None
     csv_suffix = '_Spells.csv'
 
@@ -1245,7 +1241,7 @@ class SpellRecords(_UsesEffectsMixin):
 class IngredientDetails(_UsesEffectsMixin):
     """Details on Ingredients, with functions for importing/exporting
     from/to mod/text file."""
-    _parser_sigs = [b'INGR']
+    parser_sigs = [b'INGR']
     csv_suffix = '_Ingredients.csv'
 
     def __init__(self, aliases_=None):
