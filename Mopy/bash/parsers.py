@@ -284,6 +284,9 @@ class _AParser(_HandleAliases):
        this information being usually the values for certain record attributes.
      - If you want to skip either pass, just leave _fp_types / _sp_types
        empty."""
+    # The types of records to read from in the second pass. These should be
+    # strings matching the record types, *not* classes.
+    _sp_types = ()
     _nested_type = lambda: defaultdict(dict)
     _target_array = None # target record array attribute
     array_item_attrs = None # the attributes this parser needs from array elements
@@ -305,9 +308,6 @@ class _AParser(_HandleAliases):
         self._needs_fp_master_sort = False
         # Maps long fids to context info read during first pass
         self.id_context = {}
-        # The types of records to read from in the second pass. These should be
-        # strings matching the record types, *not* classes.
-        self._sp_types = ()
         super().__init__(aliases_, **kwargs)
 
     def _row_sorter(self, rows):
@@ -466,13 +466,13 @@ class ActorFactions(_AParser):
     _target_array = 'factions'
     array_item_attrs = 'rank'
     csv_suffix = '_Factions.csv'
+    _sp_types = bush.game.actor_types
 
     def __init__(self, aliases_=None, **kwargs):
         super().__init__(aliases_, **kwargs)
-        a_types = bush.game.actor_types
         # We don't need the first pass if we're used by the parser
-        if self._called_from_patcher: self._fp_types = (*a_types, b'FACT')
-        self._sp_types = a_types
+        if self._called_from_patcher:
+            self._fp_types = (*self._sp_types, b'FACT')
 
     def _read_record_fp(self, record):
         return record.eid
@@ -513,6 +513,7 @@ class ActorFactions(_AParser):
 class FactionRelations(_AParser):
     """Parses the relations between factions. Can read and write both plugins
     and CSV, and uses two passes to do so."""
+    _sp_types = (b'FACT',)
     array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
     _target_array = 'relations'
     _is_merger = True # the results of _read_record_sp will be merged
@@ -521,7 +522,6 @@ class FactionRelations(_AParser):
     def __init__(self, aliases_=None, **kwargs):
         super().__init__(aliases_, **kwargs)
         self._fp_types = () if self._called_from_patcher else (b'FACT',)
-        self._sp_types = (b'FACT',)
         self._needs_fp_master_sort = True
         self._csv_header = (_('Main Eid'), _('Main Mod'), _('Main Object'),
             _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple(
