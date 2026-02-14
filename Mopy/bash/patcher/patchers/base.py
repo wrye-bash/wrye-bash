@@ -204,7 +204,7 @@ class MergePatchesPatcher(ListPatcher):
 class _PatchFidReplacer(FidReplacer):
 
     @classproperty
-    def _parser_sigs(cls):
+    def parser_sigs(cls):
         # RecordType.simpleTypes is only set once the game imports its records
         # - this module may well be imported before that (the game specific
         # patcher configs import it in _dynamic_import_modules)

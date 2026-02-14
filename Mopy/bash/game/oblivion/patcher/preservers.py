@@ -110,7 +110,7 @@ class _CoblExhaustionPatcher(_ExSpecialList):
     _csv_key = u'Exhaust'
     _read_sigs = (b'SPEL',)
     _key2_getter = itemgetter(0, 1)
-    _parser_sigs = [b'FACT']
+    parser_sigs = [b'FACT']
     _exhaust_fid = FormId.from_tuple((cobl_main, 0x05139B))
 
     def _process_sources(self, p_sources, p_file):
@@ -188,7 +188,7 @@ class _MorphFactionsPatcher(_ExSpecialList):
     _csv_key = u'MFact'
     _read_sigs = (b'FACT',)
     _key2_getter = itemgetter(0, 1)
-    _parser_sigs = [b'FACT']
+    parser_sigs = [b'FACT']
 
     def _pLog(self, log, changes_dict):
         log.setHeader(u'= ' + self._patcher_name)
