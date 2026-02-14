@@ -28,6 +28,7 @@ import re
 import traceback
 from collections import defaultdict
 from itertools import chain
+from typing import ClassVar
 
 from .constants import settingDefaults
 from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
@@ -1636,14 +1637,14 @@ class Mod_Face_Import(OneItemLink):
 class _Import_Export_Link(AppendableLink):
     """Mixin for Export and Import links that handles adding them automatically
     depending on the game's record types."""
-    _parser_class: type[PluginParser]
+    _parser_class: ClassVar[type[PluginParser]]
 
     def _parser(self): return self.__class__._parser_class()
     def _append(self, window):
         # Check if all record types required by this parser exist for this
         # game and are supported for loading
         return all(x in bush.game.mergeable_sigs for x in
-                   self._parser_class._parser_sigs)
+                   self._parser_class.parser_sigs)
     @property
     def csvFile(self):
         return self._parser_class.csv_suffix
