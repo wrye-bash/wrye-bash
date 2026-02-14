@@ -203,13 +203,8 @@ class MergePatchesPatcher(ListPatcher):
         """No initData - don't add to patch factories."""
 
 class _PatchFidReplacer(FidReplacer):
-    _read_sigs = RecordType.simpleTypes | { # this better be initialized
-        b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}
-
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
-        # we need to override self._parser_sigs from FidReplacer.__init__
-        self._parser_sigs = self._read_sigs
+    _parser_sigs = _read_sigs = {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'
+        } | RecordType.simpleTypes # this must be initialized
 
     def _parse_line(self, csv_fields):
         oldId = self._coerce_fid(csv_fields[1], csv_fields[2]) # oldMod, oldObj
