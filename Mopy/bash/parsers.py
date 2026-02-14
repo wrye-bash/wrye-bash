@@ -218,13 +218,10 @@ class _HandleAliases(CsvParser):
     _nested_type = dict
     _id_data_type: defaultdict
 
-    def __init__(self, aliases_, called_from_patcher=False):
+    def __init__(self, aliases_):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
         # used if the Aliases Patcher has been enabled
         self.aliases = aliases_ or {} # type: dict
-        # Set to True when called by a patcher - can be used to alter stored
-        # data format when reading from a csv - could be in a subclass
-        self._called_from_patcher = called_from_patcher # avoid using this!
         # (Mostly) map record sigs to dicts that map long fids to stored info
         # May have been retrieved from mod in second pass, or from a CSV file.
         # Need __class__ access to get a function rather than a bound method
@@ -295,7 +292,7 @@ class _AParser(_HandleAliases):
     # whether to override or merge when reading a record from multiple plugins
     _is_merger = False
 
-    def __init__(self, aliases_=None, **kwargs):
+    def __init__(self, aliases_=None):
         # Internal variable, keeps track of mods we've already processed during
         # the first pass to avoid repeating work
         self._fp_mods = set()
@@ -307,7 +304,7 @@ class _AParser(_HandleAliases):
         self._needs_fp_master_sort = False
         # Maps long fids to context info read during first pass
         self.id_context = {}
-        super().__init__(aliases_, **kwargs)
+        super().__init__(aliases_)
 
     def _row_sorter(self, rows):
         id_eid_ = self.id_context
@@ -510,8 +507,8 @@ class FactionRelations(_AParser):
     _is_merger = True # the results of _read_record_sp will be merged
     csv_suffix = '_Relations.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
+    def __init__(self, aliases_=None):
+        super().__init__(aliases_)
         self._needs_fp_master_sort = True
         self._csv_header = (_('Main Eid'), _('Main Mod'), _('Main Object'),
             _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple(
@@ -566,8 +563,8 @@ class ActorLevels(_HandleAliases):
     _id_data_type: DefaultFNDict
     csv_suffix = '_NPC_Levels.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
+    def __init__(self, aliases_=None):
+        super().__init__(aliases_)
         self.gotLevels = set()
         self._skip_mods = {'none', bush.game.master_file.lower()}
 
@@ -667,8 +664,8 @@ class EditorIds(_HandleAliases):
     csv_suffix = '_Eids.csv'
 
     def __init__(self, aliases_=None, questionableEidsSet=None,
-                 badEidsList=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
+                 badEidsList=None):
+        super().__init__(aliases_)
         self.badEidsList = badEidsList
         self.questionableEidsSet = questionableEidsSet
         #--eid = eids[type][longid]
@@ -768,8 +765,8 @@ class EditorIds(_HandleAliases):
 class FidReplacer(_HandleAliases):
     """Replaces one set of fids with another."""
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
+    def __init__(self, aliases_=None):
+        super().__init__(aliases_)
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -1113,8 +1110,8 @@ class _UsesEffectsMixin(_HandleAliases):
     _key2_getter = itemgetter(0, 1)
     _row_sorter = partial(_key_sort, values_key=['eid'])
 
-    def __init__(self, aliases_, atts, **kwargs):
-        super().__init__(aliases_, **kwargs)
+    def __init__(self, aliases_, atts):
+        super().__init__(aliases_)
         self.fid_stats = {}
         self.id_stored_data = {self._parser_sigs[0]: self.fid_stats}
         # Get encoders per attribute - each encoder should return a string
@@ -1176,10 +1173,10 @@ class SigilStoneDetails(_UsesEffectsMixin):
     _parser_sigs = [b'SGST']
     csv_suffix = '_SigilStones.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
+    def __init__(self, aliases_=None):
         super().__init__(aliases_,
             [u'eid', u'full', u'model.modPath', u'model.modb', u'iconPath',
-             'script_fid', 'uses', 'value', 'weight', 'effects'], **kwargs)
+             'script_fid', 'uses', 'value', 'weight', 'effects'])
         self._attr_dex = {'eid': 2, 'full': 3, 'model.modPath': 4,
             'model.modb': 5, 'iconPath': 6, 'uses': 9, 'value': 10,
             'weight': 11, 'effects': (12, self._coerce_fid)}
@@ -1198,14 +1195,14 @@ class SpellRecords(_UsesEffectsMixin):
     _attr_dex = None
     csv_suffix = '_Spells.csv'
 
-    def __init__(self, aliases_=None, detailed=False, **kwargs):
+    def __init__(self, aliases_=None, detailed=False):
         atts = list(self._csv_attrs)
         if detailed:
             extra_attrs = self.__class__._extra_attrs
             atts.extend([*extra_attrs, 'effects'])
             self._attr_dex = dict(zip(extra_attrs, range(8, 15)))
             self._attr_dex['effects'] = (15, self._coerce_fid)
-        super().__init__(aliases_, atts, **kwargs)
+        super().__init__(aliases_, atts)
         self._csv_header = (_('Type'), *self._csv_header)
 
     def _parse_line(self, fields):
@@ -1235,11 +1232,11 @@ class IngredientDetails(_UsesEffectsMixin):
     _parser_sigs = [b'INGR']
     csv_suffix = '_Ingredients.csv'
 
-    def __init__(self, aliases_=None, **kwargs):
+    def __init__(self, aliases_=None):
         # same as SGST apart from 'uses'
         super().__init__(aliases_, [u'eid', u'full',
             u'model.modPath', u'model.modb', u'iconPath', u'script_fid',
-            'value', 'weight', 'effects'], **kwargs)
+            'value', 'weight', 'effects'])
         self._attr_dex = {'eid': 2, 'full': 3, 'model.modPath': 4,
                           'model.modb': 5, 'iconPath': 6, 'value': 9,
                           'weight': 10, 'effects': (11, self._coerce_fid)}
