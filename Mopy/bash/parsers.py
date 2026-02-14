@@ -284,9 +284,10 @@ class _AParser(_HandleAliases):
        this information being usually the values for certain record attributes.
      - If you want to skip either pass, just leave _fp_types / _sp_types
        empty."""
-    # The types of records to read from in the second pass. These should be
-    # strings matching the record types, *not* classes.
-    _sp_types = ()
+    # The types of records to read from in the first pass
+    _fp_types: tuple[bytes, ...] = ()
+    # The types of records to read from in the second pass
+    _sp_types: tuple[bytes, ...] = ()
     _nested_type = lambda: defaultdict(dict)
     _target_array = None # target record array attribute
     array_item_attrs = None # the attributes this parser needs from array elements
@@ -294,9 +295,6 @@ class _AParser(_HandleAliases):
     _is_merger = False
 
     def __init__(self, aliases_=None, **kwargs):
-        # The types of records to read from in the first pass. These should be
-        # strings matching the record types, *not* classes.
-        self._fp_types = ()
         # Internal variable, keeps track of mods we've already processed during
         # the first pass to avoid repeating work
         self._fp_mods = set()
@@ -468,12 +466,6 @@ class ActorFactions(_AParser):
     csv_suffix = '_Factions.csv'
     _sp_types = bush.game.actor_types
 
-    def __init__(self, aliases_=None, **kwargs):
-        super().__init__(aliases_, **kwargs)
-        # We don't need the first pass if we're used by the parser
-        if self._called_from_patcher:
-            self._fp_types = (*self._sp_types, b'FACT')
-
     def _read_record_fp(self, record):
         return record.eid
 
@@ -481,8 +473,6 @@ class ActorFactions(_AParser):
         return bool(record.factions)
 
     def _read_record_sp(self, record):
-        if self._called_from_patcher: # only used as a csv reader in patcher
-            raise NotImplementedError
         return {f.faction: f.rank for f in record.factions} # last mod wins
 
     @classmethod
@@ -513,7 +503,7 @@ class ActorFactions(_AParser):
 class FactionRelations(_AParser):
     """Parses the relations between factions. Can read and write both plugins
     and CSV, and uses two passes to do so."""
-    _sp_types = (b'FACT',)
+    _fp_types = _sp_types = (b'FACT',)
     array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
     _target_array = 'relations'
     _is_merger = True # the results of _read_record_sp will be merged
@@ -521,7 +511,6 @@ class FactionRelations(_AParser):
 
     def __init__(self, aliases_=None, **kwargs):
         super().__init__(aliases_, **kwargs)
-        self._fp_types = () if self._called_from_patcher else (b'FACT',)
         self._needs_fp_master_sort = True
         self._csv_header = (_('Main Eid'), _('Main Mod'), _('Main Object'),
             _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple(
