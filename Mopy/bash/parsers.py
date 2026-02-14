@@ -34,7 +34,7 @@ import re
 from collections import Counter, defaultdict
 from functools import partial
 from operator import itemgetter
-from typing import get_type_hints
+from typing import get_type_hints, Iterable
 
 from . import bush, load_order
 from .balt import Progress
@@ -66,10 +66,10 @@ def _fid_str(fid_tuple):
     return f'"{fid_tuple.mod_fn}","0x{fid_tuple.object_dex:06X}"'
 
 #------------------------------------------------------------------------------
-class _TextParser(object):
-    """Basic read/write csv functionality - ScriptText handles script files
-    not csvs though."""
+class _TextParser:
+    """Basic read/write text functionality. Usually csv except ScriptText."""
     csv_suffix: str = None  # suffix of the csv files this parser reads/writes
+    __slots__ = () # no state
 
     def _coerce_fid(self, modname, hex_fid):
         """Create a long formid from a unicode modname and a unicode
@@ -92,6 +92,40 @@ class _TextParser(object):
 
     def _header_row(self, out):
         raise NotImplementedError(f'{type(self)} must implement _header_row')
+
+class PluginParser(_TextParser):
+    """Load and write plugin functionality. Keep state in id_stored_data,
+    usually maps record sigs to dicts that map long fids to stored info."""
+    _parser_sigs = [] # record signatures this parser recognises
+    _nested_type = dict # the type of the values of id_stored_data
+    id_stored_data: defaultdict ##:(700) absorb _nested_type
+    __slots__ = ('id_stored_data',)
+
+    def __init__(self):
+        # (Mostly) map record sigs to dicts that map long fids to stored info
+        # May have been retrieved from mod in second pass, or from a CSV file.
+        # Need __class__ access to get a function rather than a bound method
+        self.id_stored_data = get_type_hints(self.__class__)['id_stored_data'](
+            self._nested_type)
+
+    def _write_rows(self, out):
+        """Writes rows to csv text file."""
+        for top_grup_sig, id_data in dict_sort(self.id_stored_data):
+            if not (section_data := self._write_section(
+                    top_grup_sig, id_data, out)): continue
+            for lfid, stored_data in self._row_sorter(id_data):
+                row = self._row_out(lfid, stored_data, *section_data)
+                if row and not row.isspace():
+                    out.write(row)
+
+    def _write_section(self, top_grup_sig, id_data, out):
+        return bool(id_data) and [sig_to_str(top_grup_sig)]
+
+    def _row_sorter(self, id_data)-> Iterable[tuple[FormId, _nested_type]]:
+        raise NotImplementedError # this needs a base implementation
+
+    def _row_out(self, *args, **kwargs):
+        raise NotImplementedError(f'{type(self)} must implement _row_out')
 
     # Load plugin -------------------------------------------------------------
     def _load_plugin(self, mod_info, keepAll=False, target_types=None,
@@ -152,26 +186,11 @@ class _TextParser(object):
 
 class CsvParser(_TextParser):
     _csv_header = ()
+    __slots__ = () # no state
 
     # Write csv functionality -------------------------------------------------
     def _header_row(self, out):
-        out.write(u'"%s"\n' % u'","'.join(self._csv_header))
-
-    def _write_rows(self, out):
-        """Writes rows to csv text file."""
-        for top_grup_sig, id_data in dict_sort(self.id_stored_data):
-            if not (section_data := self._write_section(
-                    top_grup_sig, id_data, out)): continue
-            for lfid, stored_data in self._row_sorter(id_data):
-                row = self._row_out(lfid, stored_data, *section_data)
-                if row and not row.isspace():
-                    out.write(row)
-
-    def _write_section(self, top_grup_sig, id_data, out):
-        return bool(id_data) and [sig_to_str(top_grup_sig)]
-
-    def _row_out(self, lfid, stored_data, top_grup):
-        raise NotImplementedError(f'{type(self)} must implement _row_out')
+        out.write('"%s"\n' % '","'.join(self._csv_header))
 
     # Read csv functionality --------------------------------------------------
     def read_csv(self, csv_path):
@@ -203,30 +222,19 @@ class CsvParser(_TextParser):
         :param csv_fields: A line in a CSV file, already split into fields."""
         raise NotImplementedError(f'{type(self)} must implement _parse_line')
 
-    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
-        return RecordType.sig_to_class[top_grup_sig].parse_csv_line(csv_fields,
-            index_dict or self._attr_dex, reuse=index_dict is not None)
-
-class _HandleAliases(CsvParser):
+class _HandleAliases(CsvParser, PluginParser):
     """WIP aliases handling."""
-    _parser_sigs = [] # record signatures this parser recognises
     # get (by index) the csv fields that will create the id in id_stored_data
     _key2_getter = itemgetter(0, 1)
     # the index of the csv field that contains the group record signature
     _grup_index = None
-    # the type of the values of id_stored_data
-    _nested_type = dict
-    _id_data_type: defaultdict
+    __slots__ = ('aliases', '_attr_dex')
 
     def __init__(self, aliases_):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
         # used if the Aliases Patcher has been enabled
-        self.aliases = aliases_ or {} # type: dict
-        # (Mostly) map record sigs to dicts that map long fids to stored info
-        # May have been retrieved from mod in second pass, or from a CSV file.
-        # Need __class__ access to get a function rather than a bound method
-        self.id_stored_data = get_type_hints(self.__class__)['_id_data_type'](
-            self.__class__._nested_type)
+        self.aliases: dict = aliases_ or {}
+        super().__init__()
 
     def _coerce_fid(self, modname, hex_fid):
         """Version of _coerce_fid that also checks for aliases of modname."""
@@ -258,9 +266,13 @@ class _HandleAliases(CsvParser):
             for rfid, record in typeBlock.iter_present_records():
                 self._read_record(record, id_data)
 
-    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+    def _read_record(self, record, id_data, *, __attrgetters=attrgetter_cache):
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
                                self._attr_dex}
+
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
+        return RecordType.sig_to_class[top_grup_sig].parse_csv_line(csv_fields,
+            index_dict or self._attr_dex, reuse=index_dict is not None)
 
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
@@ -560,7 +572,7 @@ class ActorLevels(_HandleAliases):
                  'calc_max_level': 6}
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, fid_eid=True)
-    _id_data_type: DefaultFNDict
+    id_stored_data: DefaultFNDict
     csv_suffix = '_NPC_Levels.csv'
 
     def __init__(self, aliases_=None):
@@ -592,6 +604,7 @@ class ActorLevels(_HandleAliases):
         if id_levels:
             # pretend we are a normal parser
             real = self.id_stored_data
+            # noinspection PyTypeChecker
             self.id_stored_data = {b'NPC_': id_levels}
             changed_stats = super().writeToMod(mod_inf)
             self.id_stored_data = real
@@ -599,7 +612,7 @@ class ActorLevels(_HandleAliases):
         return 0
 
     _changed_type = list
-    def _write_record(self, record, levels, changed_stats, __getter=itemgetter(
+    def _write_record(self, record, levels, changed_stats, *, __getter=itemgetter(
         'level_offset', 'calc_min_level', 'calc_max_level')):
         got_lo, got_min_lv, got_max_lv = __getter(levels)
         if ((record.level_offset, record.calc_min_level,
@@ -677,7 +690,7 @@ class EditorIds(_HandleAliases):
         # game/oblivion/patcher/preservers.py:30
         return [*RecordType.simpleTypes]
 
-    def _read_record(self, record, id_data):
+    def _read_record(self, record, id_data, **kwargs):
         if record.eid: id_data[record.fid] = record.eid
 
     def _additional_processing(self, changed_stats, modFile):
@@ -695,7 +708,8 @@ class EditorIds(_HandleAliases):
             record.setChanged()
             changed_stats.append((oldEid, newEid))
 
-    def changeScripts(self,modFile,old_new):
+    @staticmethod
+    def changeScripts(modFile, old_new):
         """Changes scripts in modfile according to changed."""
         changed_stats = []
         if not old_new: return changed_stats
@@ -846,7 +860,7 @@ class FullNames(_HandleAliases):
             raise ValueError # Leftover from pre-310 days, just skip it
         return super()._update_from_csv(top_grup_sig, csv_fields, index_dict)
 
-    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+    def _read_record(self, record, id_data, *, __attrgetters=attrgetter_cache):
         super()._read_record(record, id_data)
         rec_data = id_data[record.fid]
         if not rec_data['full']: # No FULL -> skip this record
@@ -879,12 +893,12 @@ class ItemStats(_HandleAliases):
     def _parser_sigs(cls):
         return list(cls.sig_stats_attrs)
 
-    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+    def _read_record(self, record, id_data, *, __attrgetters=attrgetter_cache):
         atts = self.sig_stats_attrs[record.rec_sig]
         id_data[record.fid].update((a, __attrgetters[a](record)) for a in atts)
 
     _changed_type = Counter #--changed[modName] = numChanged
-    def _write_record(self, record, itemStats, changed_stats,
+    def _write_record(self, record, itemStats, changed_stats, *,
                       __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
         change = False
@@ -930,7 +944,7 @@ class ItemStats(_HandleAliases):
             ser(attr_value[x]) for x, ser in attrs_sers))
 
 #------------------------------------------------------------------------------
-class ScriptText(_TextParser):
+class ScriptText(PluginParser):
     """Import & export functions for script text.
 
     Notes regarding line separator handling:
@@ -941,10 +955,12 @@ class ScriptText(_TextParser):
      - Internally we store lists of strings, i.e. with the newlines chopped
        off."""
     _parser_sigs = [b'SCPT']
+    id_stored_data: dict
 
     def __init__(self):
         self.eid_data = {}
-        self.id_stored_data = {b'SCPT': self.eid_data}
+        self._nested_type = {b'SCPT': self.eid_data}
+        super().__init__()
 
     def export_scripts(self, folder, progress, skip, deprefix, skipcomments):
         """Writes scripts to specified folder."""
@@ -1048,7 +1064,7 @@ class ScriptText(_TextParser):
     def read_script_folder(self, textPath, progress):
         """Reads scripts from files in specified mods' directory in bashed
         patches folder."""
-        for root_dir, dirs, files in textPath.walk():
+        for root_dir, _dirs, files in textPath.walk():
             y = len(files)
             for z, f in enumerate(files):
                 if f.cext != inisettings['ScriptFileExt']:
@@ -1133,7 +1149,7 @@ class _UsesEffectsMixin(_HandleAliases):
         attr_val[u'script_fid'] = sid
         return attr_val
 
-    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+    def _read_record(self, record, id_data, *, __attrgetters=attrgetter_cache):
         ##: Skip OBME records, do not have actorValue for one
         if record.obme_record_version is not None:
             return
@@ -1141,7 +1157,7 @@ class _UsesEffectsMixin(_HandleAliases):
                                self._attr_serializer}
 
     _changed_type = list
-    def _write_record(self, record, newStats, changed_stats,
+    def _write_record(self, record, newStats, changed_stats, *,
                       __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
         imported = False
