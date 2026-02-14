@@ -349,12 +349,15 @@ class ImportKeywordsPatcher(APreserver):
     patcher_tags = {'Keywords'}
 
 #------------------------------------------------------------------------------
+class _FullNamesParser(FullNames):
+    _attr_dex = {'full': 4}
+
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
     logMsg = '\n=== ' + _('Renamed Items')
     srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = {x: ('full',) for x in bush.game.names_types}
-    _csv_parser = FullNames
+    _csv_parser = _FullNamesParser
     patcher_tags = {'Names'}
     _csv_key = 'Names'
 
@@ -376,6 +379,9 @@ class ImportSoundsPatcher(APreserver):
     patcher_tags = {'Sound'}
 
 #------------------------------------------------------------------------------
+class _SpellRecordsParser(SpellRecords):
+    _csv_attrs = bush.game.spell_stats_csv_attrs
+
 class ImportSpellStatsPatcher(APreserver):
     """Import spell changes from mod files."""
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
@@ -383,12 +389,18 @@ class ImportSpellStatsPatcher(APreserver):
                  for x in bush.game.spell_stats_types}
     _fid_rec_attrs = {x: bush.game.spell_stats_fid_attrs
                       for x in bush.game.spell_stats_types}
-    _csv_parser = SpellRecords if bush.game.fsName in (
+    _csv_parser = _SpellRecordsParser if bush.game.fsName in (
         'Oblivion', 'OblivionRE') else None
     patcher_tags = {'SpellStats'}
     _csv_key = 'Spells'
 
 #------------------------------------------------------------------------------
+class _ItemStatsParser(ItemStats):
+    sig_stats_attrs = {r: tuple(x for x in a if x != 'eid') for r, a in
+                       ItemStats.sig_stats_attrs.items()}
+    sig_stats_attrs = {r: t for r, t in sig_stats_attrs.items() if t}
+    _skip_eid = True
+
 class ImportStatsPatcher(APreserver):
     """Import stats from mod file."""
     patcher_order = 28 # Run ahead of Bow Reach Fix ##: This seems unneeded
@@ -396,7 +408,7 @@ class ImportStatsPatcher(APreserver):
     srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = bush.game.stats_attrs
     _fid_rec_attrs = bush.game.stats_fid_attrs
-    _csv_parser = ItemStats
+    _csv_parser = _ItemStatsParser
     patcher_tags = {'Stats'}
     _csv_key = 'Stats'
 
