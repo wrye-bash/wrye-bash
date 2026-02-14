@@ -27,7 +27,7 @@ from itertools import chain
 
 from . import Installers_Link
 from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
-    MonitorExternalInstallationEditor, AImportOrderParser
+    MonitorExternalInstallationEditor, APackageOrderParser
 from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink, Installer_Op
@@ -280,7 +280,7 @@ class Installers_CreateNewProject(ItemLink):
         CreateNewProject.display_dialog(self.window)
 
 #------------------------------------------------------------------------------
-class Installers_ExportOrder(Installers_Link, AImportOrderParser):
+class Installers_ExportOrder(Installers_Link, APackageOrderParser):
     """Export order and installation status for all packages."""
     _text = _('Export Order…')
     _help = _('Export the order and installation status of all packages.')
