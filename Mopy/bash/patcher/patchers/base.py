@@ -203,7 +203,7 @@ class MergePatchesPatcher(ListPatcher):
         """No initData - don't add to patch factories."""
 
 class _PatchFidReplacer(FidReplacer):
-    _parser_sigs = _read_sigs = {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'
+    parser_sigs = _read_sigs = {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'
         } | RecordType.simpleTypes # this must be initialized
 
     def _parse_line(self, csv_fields):
