@@ -279,12 +279,18 @@ class ImportActorsFacesPatcher(APreserver):
         return super()._validate_mod(p_file, src_fn, raise_on_errors)
 
 #------------------------------------------------------------------------------
+class _ActorFactionsParser(ActorFactions):
+    _fp_types = (*ActorFactions._sp_types, b'FACT') # We need the first pass
+
+    def _read_record_sp(self, record):
+        raise NotImplementedError # only used as a csv reader in patcher
+
 class ImportActorsFactionsPatcher(APreserver):
     logMsg = '\n=== ' + _('Refactioned Actors')
     srcsHeader = '=== ' + _('Source Mods/Files')
     # Has FormIDs, but will be filtered in AMreActor.keep_fids
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
-    _csv_parser = ActorFactions
+    _csv_parser = _ActorFactionsParser
     patcher_tags = {'Actors.Factions'}
     _csv_key = 'Factions'
 
