@@ -38,7 +38,7 @@ from .bolt import sig_to_str
 from .exception import ModError
 
 # active status magic numbers
-ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = *range(3), -1
+ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = 0, 1, 2, -1
 
 def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
     """Return the key in act_dicts whose value contains item_key."""

@@ -1163,8 +1163,7 @@ def _check_displayed(func):
     """Check there is an item displayed before proceeding."""
     @functools.wraps(func)
     def _check_item(self, *args, **kwargs):
-        if not self.file_info: return
-        return func(self, *args, **kwargs)
+        return func(self, *args, **kwargs) if self.file_info else None
     return _check_item
 
 class _EditableMixin(_DetailsMixin):

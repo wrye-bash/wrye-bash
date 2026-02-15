@@ -254,10 +254,10 @@ class Installer(ListInfo):
 
     #--Initialization, etc ----------------------------------------------------
     def __init__(self, fn_key, **kwargs):
-        self.initDefault()
+        self._set_defaults()
         ListInfo.__init__(self, f'{fn_key}')
 
-    def initDefault(self):
+    def _set_defaults(self):
         """Initialize everything to default values."""
         self.fn_key = FName('')
         #--Persistent: set by _fs_refresh called by _reset_cache
@@ -1562,8 +1562,8 @@ class InstallerMarker(Installer):
             return 2, len(text_str) - 2
         return 0, len(text_str)
 
-    def initDefault(self):
-        super().initDefault()
+    def _set_defaults(self):
+        super()._set_defaults()
         self.ftime = time.time()
 
     def __reduce__(self):
@@ -1918,7 +1918,8 @@ def _bain_op(func):
             try:
                 # Delete files that no data store cares about
                 if removed_untracked:
-                    par = p.getParent() if (p := kwargs['progress']) else None
+                    par = p.getParent() if isinstance(p := kwargs['progress'],
+                                                      bolt.Progress) else None
                     env.shellDelete(self._determineEmptyDirs( # pass a copy in
                         {*removed_untracked}), parent=par)
                 # Delegate deletion of files that data stores care about to
@@ -1933,8 +1934,8 @@ def _bain_op(func):
                 raise
             finally:
                 # _externally_deleted for tracked is updated in store.refresh
-                self.notify_external(removed_untracked if not ex else (
-                    v for v in removed_untracked if not v.exists()))
+                self.notify_external(removed_untracked if not ex else {
+                    v for v in removed_untracked if not v.exists()})
             # Update relevant data stores, adding new/modified files
             for store, refr_in in rui_data.items():
                 rui_data[store] = store.refresh(refr_in, unlock_lo=True)
