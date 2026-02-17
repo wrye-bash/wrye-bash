@@ -23,7 +23,6 @@
 """BAIN backbone classes."""
 from __future__ import annotations
 
-import collections
 import copy
 import io
 import os
@@ -2848,8 +2847,8 @@ class InstallersData(DataStore):
     def _parse_error(bsa_inf, reason):
         deprint(f'Error parsing {bsa_inf} [{reason}]', traceback=True)
 
-    ##: Maybe cache the result? Can take a bit of time to calculate
-    def find_conflicts(self, src_installer, active_bsas=None, bsa_cause=None,
+    ##:(701) Maybe cache the result? Can take a bit of time to calculate
+    def find_conflicts(self, src_installer, active_bsas, bsa_cause,
                        list_overrides=True, include_inactive=False,
                        include_lower=True, include_bsas=True):
         """Returns all conflicts for the specified installer, filtering them by
@@ -2886,32 +2885,27 @@ class InstallersData(DataStore):
         lower_bsa, higher_bsa = [], []
         if include_bsas:
             # Calculate all conflicts and save them in lower_bsa and higher_bsa
-            asset_to_bsa, src_assets = self.find_src_assets(src_installer,
-                                                            active_bsas)
+            asset_to_bsa_ord = self.find_src_assets(src_installer, active_bsas)
             remaining_bsas = copy.copy(active_bsas)
             def _process_bsa_conflicts(b_inf, b_source):
+                b_ord = active_bsas[b_inf]
                 try: # conflicting assets from this installer active bsas
-                    curConflicts = b_inf.assets & src_assets
+                    curConflicts = b_inf.assets & asset_to_bsa_ord.keys()
+                    curConflicts = {c: o for c in curConflicts
+                                    if (o := asset_to_bsa_ord[c]) != b_ord}
                 except BSAError:
                     self._parse_error(b_inf, b_source)
                     return
                 # We've used this BSA for a conflict, don't use it again
                 del remaining_bsas[b_inf]
                 if curConflicts:
-                    lower_result, higher_result = set(), set()
-                    add_to_lower = lower_result.add
-                    add_to_higher = higher_result.add
-                    for conflict in curConflicts:
-                        orig_order = active_bsas[asset_to_bsa[conflict]]
-                        curr_order = active_bsas[b_inf]
-                        if curr_order == orig_order: continue
-                        elif curr_order < orig_order:
-                            if showLower: add_to_lower(conflict)
-                        else:
-                            add_to_higher(conflict)
-                    if lower_result:
-                        lower_bsa.append((b_source, b_inf,
-                                          bolt.sortFiles(lower_result)))
+                    higher_result = {c for c, o in curConflicts.items() if
+                                     b_ord > o}
+                    if showLower:
+                        lower_result = curConflicts.keys() - higher_result
+                        if lower_result:
+                            lower_bsa.append((b_source, b_inf,
+                                              bolt.sortFiles(lower_result)))
                     if higher_result:
                         higher_bsa.append((b_source, b_inf,
                                            bolt.sortFiles(higher_result)))
@@ -2960,21 +2954,18 @@ class InstallersData(DataStore):
         :param src_installer: The installer from which to retrieve BSA assets.
         :param active_bsas: The set of active BSAs. Generally retrieved via
                             bosh.modInfos.get_bsa_lo().
-        :return: An OrderedDict containing a mapping from asset to BSA and the
-                 relevant assets from the installer's BSAs in a set."""
-        asset_to_bsa, src_assets = collections.OrderedDict(), set()
+        :return: A dict containing a mapping from asset to BSA load order."""
+        asset_to_bsa_lo = {}
         for b in reversed(self._filter_installer_bsas(
                 src_installer, active_bsas)):
             try:
-                b_assets = b.assets - src_assets
+                b_assets = b.assets - asset_to_bsa_lo.keys()
             except BSAError:
                 self._parse_error(b, src_installer.fn_key)
                 continue
-            if b_assets:
-                for b_asset in b_assets:
-                    asset_to_bsa[b_asset] = b
-                src_assets |= b_assets
-        return asset_to_bsa, src_assets
+            for b_asset in b_assets:
+                asset_to_bsa_lo[b_asset] = active_bsas[b] # we need the bsa lo
+        return asset_to_bsa_lo
 
     _ini_origin = re.compile(r'(\w+\.ini) \((\w+)\)', re.I | re.U)
     def getConflictReport(self, srcInstaller, mode, modInfos):
@@ -2987,7 +2978,7 @@ class InstallersData(DataStore):
         :return: A string containing the printable report of all conflicts."""
         list_overrides = (mode == u'OVER')
         if list_overrides:
-            if not set(srcInstaller.ci_dest_sizeCrc): return u''
+            if not srcInstaller.ci_dest_sizeCrc: return ''
         else:
             if not srcInstaller.underrides: return u''
         include_inactive = bass.settings[
@@ -3008,7 +2999,7 @@ class InstallersData(DataStore):
         buff = io.StringIO()
         # Print BSA conflicts
         if include_bsas:
-            buff.write(u'= %s %s\n\n' % (_(u'Active BSA Conflicts'), u'=' * 40))
+            buff.write(f'= {_("Active BSA Conflicts")} {"=" * 40}\n\n')
             # Print partitions - bsa loading order NOT installer order
             origin_ini_match = self._ini_origin.match
             def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
@@ -3029,10 +3020,10 @@ class InstallersData(DataStore):
                 _print_bsa_conflicts(lower_bsa, _(u'Lower'))
             if higher_bsa:
                 _print_bsa_conflicts(higher_bsa, _(u'Higher'))
-            buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
+            buff.write(f'= {_("Loose File Conflicts")} {"=" * 36}\n\n')
         # Print loose file conflicts
         def _print_loose_conflicts(conflicts, title=_(u'Lower')):
-            buff.write(f'= {title} {u"=" * 40}\n')
+            buff.write(f'= {title} {"=" * 40}\n')
             for inst_, package_, confl_ in conflicts:
                 buff.write(f'=={inst_.order:d}== {package_}\n')
                 for src_file in confl_:
