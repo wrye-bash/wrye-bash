@@ -32,6 +32,7 @@ import platform
 import shutil
 import sys
 import traceback
+from argparse import Namespace
 
 # These local imports have to be carefully checked to make sure they don't pull
 # in anything unexpected, plus there has to be a good reason for them to be up
@@ -192,56 +193,48 @@ def _import_wx():
                           traceback.format_exc(), u'Exiting.'])
         _tkinter_error_dial(msg, but_kwargs)
 
+_deps = {k: k for k in ['chardet', 'vdf']}
+_deps['yaml'] = 'PyYAML'
+_deps['lz4'] = 'python-lz4'
+if bolt.os_name == 'nt': # Only a dependency on Windows
+    _deps['ifileoperation'] = 'ifileoperation'
+_opt_deps = {k: k for k in
+             ['lxml', 'packaging', 'pyfiglet', 'requests', 'websocket']}
+_opt_deps['pymupdf'] = 'PyMuPDF'
+
 def _import_deps():
     """Import other required dependencies or show an error if they're
     missing. Must only be called after _import_wx and setup_locale."""
-    deps_msg = u''
-    try:
-        import chardet
-    except ImportError:
-        deps_msg += u'- chardet\n'
-    try:
-        import lz4
-    except ImportError:
-        deps_msg += u'- python-lz4\n'
-    try:
-        import win32api
-        import win32com
-    except ImportError:
-        # Only a dependency on Windows, so skip on other operating systems
-        if bolt.os_name == u'nt':
-            deps_msg += u'- pywin32\n'
-    try:
-        import ifileoperation
-    except ImportError:
-        # Only a dependency on Windows, so skip on other operating systems
-        if bolt.os_name == 'nt':
-            deps_msg += '- ifileoperation\n'
-    try:
-        import yaml
-    except ImportError:
-        deps_msg += u'- PyYAML\n'
-    try:
-        import vdf
-    except ImportError:
-        deps_msg += '- vdf\n'
+    deps_msg = []
+    for k, v in _deps.items():
+        try:
+            __import__(k)
+        except ImportError:
+            deps_msg.append(f'- {v}')
+    # Only a dependency on Windows, so skip on other operating systems
+    if bolt.os_name == 'nt':
+        try:
+            import win32api
+            import win32com
+        except ImportError:
+            deps_msg.append('- pywin32')
     if deps_msg:
-        deps_msg += u'\n'
+        deps_msg.sort()
+        deps_msg.append('')
         if bass.is_standalone:
             # Dependencies are always present in standalone, so this probably
             # means an MSVC redist is missing
-            deps_msg += _('This most likely means you are missing a certain '
-                          'version of the Microsoft Visual C++ '
-                          'Redistributable. Try installing the latest x64 '
-                          'version.')
+            msg = _('This most likely means you are missing a certain version '
+                    'of the Microsoft Visual C++ Redistributable. Try '
+                    'installing the latest x64 version.')
         else:
-            deps_msg += _('Ensure you have installed these dependencies '
-                          'properly. Should the error still occur, check '
-                          'your installed Microsoft Visual C++ '
-                          'Redistributables and try installing the latest '
-                          'x64 version.')
+            msg = _('Ensure you have installed these dependencies properly. '
+                    'Should the error still occur, check your installed '
+                    'Microsoft Visual C++ Redistributables and try installing '
+                    'the latest x64 version.')
+        deps_msg.append(msg)
         _show_boot_popup(_('The following dependencies could not be located '
-                           'or failed to load:') + u'\n\n' + deps_msg)
+            'or failed to load:') + '\n\n' + '\n'.join(deps_msg))
 
 def _warn_missing_bash_dir():
     """Check for some vital files that *must* be present (note that most dirs
@@ -333,66 +326,25 @@ def exit_cleanup():
 def dump_environment(wxver=None):
     """Dumps information about the environment. Must only be called after
     _import_wx and _import_deps."""
+    dep_versions = {}
     # Note that we can't dump pywin32 because it doesn't contain a version
     # field in its modules
-    try:
-        import chardet
-        chardet_ver = chardet.__version__
-    except ImportError:
-        chardet_ver = 'not found'
-    try:
-        import lxml
-        lxml_ver = lxml.__version__
-    except ImportError:
-        lxml_ver = 'not found (optional)'
-    try:
-        import packaging
-        packaging_ver = packaging.__version__
-    except ImportError:
-        packaging_ver = 'not found (optional)'
-    try:
-        import pymupdf
-        pymupdf_ver = (f'{pymupdf.pymupdf_version}; bundled MuPDF version: '
-                       f'{pymupdf.mupdf_version}')
-    except ImportError:
-        pymupdf_ver = 'not found (optional)'
-    try:
-        import lz4
-        lz4_ver = (f'{lz4.version.version}; bundled LZ4 version: '
-                   f'{lz4.library_version_string()}')
-    except ImportError:
-        lz4_ver = 'not found'
-    try:
-        import yaml
-        yaml_ver = yaml.__version__
-    except ImportError:
-        yaml_ver = 'not found'
-    try:
-        import requests
-        requests_ver = requests.__version__
-    except ImportError:
-        requests_ver = 'not found (optional)'
-    try:
-        import vdf
-        vdf_ver = vdf.__version__
-    except ImportError:
-        vdf_ver = 'not found'
-    try:
-        import websocket
-        websocket_client_ver = websocket.__version__
-    except ImportError:
-        websocket_client_ver = 'not found (optional)'
-    wx_ver = wxver or 'not found'
-    try:
-        import ifileoperation
-        ifileoperation_ver = ifileoperation.__version__
-    except ImportError:
-        ifileoperation_ver = 'not found'
-    try:
-        import pyfiglet
-        pyfiglet_ver = pyfiglet.__version__
-    except ImportError:
-        pyfiglet_ver = 'not found (optional)'
+    for is_opt, deps in enumerate((_deps, _opt_deps)):
+        for k, v in deps.items():
+            try:
+                dep = __import__(k)
+                if k == 'lz4':
+                    ver = (f'{dep.version.version}; bundled LZ4 version: '
+                           f'{dep.library_version_string()}')
+                elif k == 'pymupdf':
+                    ver = (f'{dep.pymupdf_version}; bundled MuPDF version: '
+                           f'{dep.mupdf_version}')
+                else:
+                    ver = dep.__version__
+                dep_versions[v] = ver
+            except ImportError:
+                dep_versions[v] = f'not found{" (optional)" if is_opt else ""}'
+    dep_versions['wxPython'] = wxver or 'not found'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
     msg = [
@@ -402,19 +354,7 @@ def dump_environment(wxver=None):
         f'{platform.processor() or u"<unknown>"}',
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
-        f' - chardet: {chardet_ver}',
-        (f' - ifileoperation: {ifileoperation_ver}'
-         if bolt.os_name == 'nt' else None),
-        f' - lxml: {lxml_ver}',
-        f' - packaging: {packaging_ver}',
-        f' - pyfiglet: {pyfiglet_ver}',
-        f' - PyMuPDF: {pymupdf_ver}',
-        f' - python-lz4: {lz4_ver}',
-        f' - PyYAML: {yaml_ver}',
-        f' - requests: {requests_ver}',
-        f' - vdf: {vdf_ver}',
-        f' - websocket-client: {websocket_client_ver}',
-        f' - wxPython: {wx_ver}',
+        *(f' - {v}: {ver}' for v, ver in sorted(dep_versions.items())),
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute and stdin will be None
         f'Input encoding: {sys.stdin.encoding if sys.stdin else None}; '
@@ -422,7 +362,7 @@ def dump_environment(wxver=None):
         f'Filesystem encoding: {bolt.Path.sys_fs_enc}',
         f'Command line: {sys.argv}',
     ]
-    bolt.deprint(msg := '\n\t'.join([l for l in msg if l is not None]))
+    bolt.deprint(msg := '\n\t'.join(msg))
     return msg
 
 def _parse_bash_ini(bash_ini_path):
@@ -483,11 +423,10 @@ def _parse_bash_ini(bash_ini_path):
                 bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------
-def main(opts):
+def main(opts: Namespace):
     """Run the Wrye Bash main loop.
 
-    :param opts: command line arguments
-    :type opts: Namespace"""
+    :param opts: command line arguments."""
     curr_os = platform.system()
     if curr_os not in ('Linux', 'Windows') and not opts.unsupported:
         raise ImportError(f'Wrye Bash only partially supports {curr_os} at '
@@ -767,7 +706,7 @@ def _show_boot_popup(msg, is_critical=True):
         from .gui import CENTER, CancelButton, Color, LayoutOptions, \
             StartupDialogWindow, TextArea, VLayout, HLayout, OkButton
         class MessageBox(StartupDialogWindow):
-            def __init__(self, msg):
+            def __init__(self, init_txt):
                 popup_title = (_(u'Wrye Bash Error') if is_critical else
                                _(u'Wrye Bash Warning'))
                 ##: Resizing is just discarded, maybe we could save it in
@@ -777,7 +716,7 @@ def _show_boot_popup(msg, is_critical=True):
                 super().__init__(title=popup_title, sizes_dict={},
                     icon_bundle=Resources.bashRed)
                 self.component_size = (400, 300)
-                msg_text = TextArea(self, editable=False, init_text=msg,
+                msg_text = TextArea(self, editable=False, init_text=init_txt,
                                     auto_tooltip=False)
                 if is_critical:
                     bottom_btns = [CancelButton(self, btn_label=_('Quit'))]
@@ -847,17 +786,17 @@ def _select_game_popup(game_infos, last_used_game: str | None):
     class SelectGamePopup(WindowFrame):
         _def_size = (500, 400)
 
-        def __init__(self, game_infos, callback):
+        def __init__(self, gameinfos, callback):
             super().__init__(None, title=_('Select Game'),
                 icon_bundle=Resources.bashRed)
             self._callback = callback
             self._sorted_games = sorted(
-                g.unique_display_name for g in game_infos)
+                g.unique_display_name for g in gameinfos)
             self._game_to_paths = {g.unique_display_name: ps for g, ps
-                                  in game_infos.items()}
-            self._game_to_info = {g.unique_display_name: g for g in game_infos}
+                                   in gameinfos.items()}
+            self._game_to_info = {g.unique_display_name: g for g in gameinfos}
             ij = bass.dirs['images'].join # images not yet initialized
-            ico_paths = {g: ij('games', g.game_icon) for g in game_infos}
+            ico_paths = {g: ij('games', g.game_icon) for g in gameinfos}
             self._game_to_bitmap = {g.unique_display_name: GuiImage.from_path(
                 p, iconSize=32) for g, p in ico_paths.items()}
             # Construction of the actual GUI begins here

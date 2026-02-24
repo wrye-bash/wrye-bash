@@ -39,7 +39,7 @@ from ..gui.base_components import _AComponent
 __all__ = ['ObseButton', 'AutoQuitButton', 'GameButton', 'TESCSButton',
            'AppXEdit', 'AppBOSS', 'HelpButton', 'AppLOOT', 'DocBrowserButton',
            'PluginCheckerButton', 'SettingsButton', 'RestartButton',
-           'AppButton', 'LnkButton']
+           'AppButton', 'LnkButton', 'StatusBarButton']
 
 #------------------------------------------------------------------------------
 # StatusBar Buttons -----------------------------------------------------------
