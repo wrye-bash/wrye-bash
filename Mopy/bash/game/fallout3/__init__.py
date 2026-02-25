@@ -98,6 +98,8 @@ class AFallout3GameInfo(PatchGame):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
+        # Like Oblivion, accepts anything after the plugin name
+        attachment_regex = '.*'
         redate_dict = DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             'Fallout - MenuVoices.bsa': 1104530400,  # '2005-01-01',
             'Fallout - Meshes.bsa': 1104616800,      # '2005-01-02',
