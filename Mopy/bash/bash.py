@@ -185,33 +185,50 @@ def _import_wx():
         # Disable image loading errors - wxPython is missing the actual flag
         # constants for some reason, so just use 0 (no flags)
         _wx.Image.SetDefaultLoadFlags(0)
-        return _wx.version()
+        _dep_versions['wxPython'] = _wx.version()
     except Exception: ##: tighten this except
-        but_kwargs = {u'text': u"QUIT",
-                      u'fg': u'red'}  # foreground button color
+        _dep_versions['wxPython'] = 'not found'
+        but_kwargs = {'text': 'QUIT', 'fg': 'red'} # foreground button color
         msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
                           traceback.format_exc(), u'Exiting.'])
         _tkinter_error_dial(msg, but_kwargs)
 
-_deps = {k: k for k in ['chardet', 'vdf']}
-_deps['yaml'] = 'PyYAML'
-_deps['lz4'] = 'python-lz4'
-if bolt.os_name == 'nt': # Only a dependency on Windows
-    _deps['ifileoperation'] = 'ifileoperation'
-_opt_deps = {k: k for k in
-             ['lxml', 'packaging', 'pyfiglet', 'requests', 'websocket']}
-_opt_deps['pymupdf'] = 'PyMuPDF'
+# library dependensies sorted by value (case insensitively)
+_deps = {'chardet': 'chardet', **( # Only a dependency on Windows
+    {'ifileoperation': 'ifileoperation'} if bolt.os_name == 'nt' else {}),
+    'lz4': 'python-lz4', 'yaml': 'PyYAML', 'vdf': 'vdf'}
+_opt_deps = {'lxml': 'lxml', 'packaging': 'packaging', 'pyfiglet': 'pyfiglet',
+    'pymupdf': 'PyMuPDF', 'requests': 'requests', 'websocket': 'websocket'}
+# cached dependencies version strings, keyed by the display name
+_dep_versions = {}
+
+def _get_lib_version(lib, lib_name, is_opt=False):
+    try:
+        dep = __import__(lib)
+        if lib == 'lz4':
+            ver = (f'{dep.version.version}; bundled LZ4 version: '
+                   f'{dep.library_version_string()}')
+        elif lib == 'pymupdf':
+            ver = (f'{dep.pymupdf_version}; bundled MuPDF version: '
+                   f'{dep.mupdf_version}')
+        else:
+            ver = dep.__version__
+        _dep_versions[lib_name] = ver
+        return True
+    except ImportError:
+        _dep_versions[lib_name] = f'not found{" (optional)" if is_opt else ""}'
+        return False
 
 def _import_deps():
     """Import other required dependencies or show an error if they're
     missing. Must only be called after _import_wx and setup_locale."""
     deps_msg = []
     for k, v in _deps.items():
-        try:
-            __import__(k)
-        except ImportError:
+        if not _get_lib_version(k, v):
             deps_msg.append(f'- {v}')
     # Only a dependency on Windows, so skip on other operating systems
+    # Note that we can't dump pywin32 because it doesn't contain a version
+    # field in its modules
     if bolt.os_name == 'nt':
         try:
             import win32api
@@ -219,7 +236,7 @@ def _import_deps():
         except ImportError:
             deps_msg.append('- pywin32')
     if deps_msg:
-        deps_msg.sort()
+        deps_msg.sort(key=lambda x: x.lower())
         deps_msg.append('')
         if bass.is_standalone:
             # Dependencies are always present in standalone, so this probably
@@ -323,28 +340,14 @@ def exit_cleanup():
             print(file=sys.__stdout__)
             raise
 
-def dump_environment(wxver=None):
+def dump_environment():
     """Dumps information about the environment. Must only be called after
     _import_wx and _import_deps."""
-    dep_versions = {}
-    # Note that we can't dump pywin32 because it doesn't contain a version
-    # field in its modules
     for is_opt, deps in enumerate((_deps, _opt_deps)):
         for k, v in deps.items():
-            try:
-                dep = __import__(k)
-                if k == 'lz4':
-                    ver = (f'{dep.version.version}; bundled LZ4 version: '
-                           f'{dep.library_version_string()}')
-                elif k == 'pymupdf':
-                    ver = (f'{dep.pymupdf_version}; bundled MuPDF version: '
-                           f'{dep.mupdf_version}')
-                else:
-                    ver = dep.__version__
-                dep_versions[v] = ver
-            except ImportError:
-                dep_versions[v] = f'not found{" (optional)" if is_opt else ""}'
-    dep_versions['wxPython'] = wxver or 'not found'
+            if k in _dep_versions:
+                continue # don't try to import required dependencies twice
+            _get_lib_version(k, v, bool(is_opt))
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
     msg = [
@@ -354,7 +357,7 @@ def dump_environment(wxver=None):
         f'{platform.processor() or u"<unknown>"}',
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
-        *(f' - {v}: {ver}' for v, ver in sorted(dep_versions.items())),
+        *(f' - {lname}: {ver}' for lname, ver in _dep_versions.items()),
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute and stdin will be None
         f'Input encoding: {sys.stdin.encoding if sys.stdin else None}; '
@@ -439,13 +442,13 @@ def main(opts: Namespace):
     # needed for initializing locale
     _parse_boot_settings(curr_os)
     # wx is also needed to initialize locale
-    wxver = _import_wx()
+    _import_wx()
     try:
         # We're now ready to initialize locale. That way, we can show a
         # translated error message if WB crashes
         from . import localize
         wx_locale = localize.setup_locale(opts.language, _wx)
-        if not bass.is_standalone and (not _rightWxVersion(wxver) or
+        if not bass.is_standalone and (not _rightWxVersion() or
                                        not _rightPythonVersion()): return
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None: ##: we should do this before localization and wx import
@@ -466,7 +469,7 @@ def main(opts: Namespace):
         # Make sure we actually have a functional 'bash' folder to work with
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
-        _main(opts, wx_locale, wxver)
+        _main(opts, wx_locale)
     except Exception as e:
         caught_exc = traceback.format_exc()
         try:
@@ -503,7 +506,7 @@ def main(opts: Namespace):
             'ms_docs_url': 'https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057',
         })
 
-def _main(opts, wx_locale, wxver):
+def _main(opts, wx_locale):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
@@ -521,7 +524,7 @@ def _main(opts, wx_locale, wxver):
     # barg doesn't import anything else, so can be imported whenever we want
     from . import barg
     bass.sys_argv = barg.convert_to_long_options(sys.argv)
-    dump_environment(wxver)
+    dump_environment()
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
@@ -922,10 +925,10 @@ def _select_game_popup(game_infos, last_used_game: str | None):
     return retCode.get()
 
 # Version checks --------------------------------------------------------------
-def _rightWxVersion(wxver):
+def _rightWxVersion():
     """Shows a warning if the wrong wxPython version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
-    if not wxver.startswith('4.2'):
+    if not (wxver := _dep_versions['wxPython']).startswith('4.2'):
         from . import gui
         return gui.askYes(None, _(
             'Warning: you appear to be using a non-supported version of '
