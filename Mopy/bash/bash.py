@@ -50,8 +50,6 @@ from . import bass, bolt, exception, gen_ini, wbtemp
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
-# The one and only wx
-_wx = None
 # The boot settings file, tracked as a TomlFile
 _boot_settings = None
 
@@ -152,11 +150,10 @@ def _install_bugdump():
 
 # Wx --------------------------------------------------------------------------
 # locale/image calls in wx work once an App object is instantiated and in scope
-bash_app = None  ##: typing
+bash_app = None  ##:(700) typing
 def _import_wx():
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
     try:
-        global _wx
         import wx as _wx
         # Hacky fix for loading older settings that pickled classes from
         # moved/deleted wx modules
@@ -186,6 +183,7 @@ def _import_wx():
         # constants for some reason, so just use 0 (no flags)
         _wx.Image.SetDefaultLoadFlags(0)
         _dep_versions['wxPython'] = _wx.version()
+        return _wx
     except Exception: ##: tighten this except
         _dep_versions['wxPython'] = 'not found'
         but_kwargs = {'text': 'QUIT', 'fg': 'red'} # foreground button color
@@ -219,7 +217,7 @@ def _get_lib_version(lib, lib_name, is_opt=False):
         _dep_versions[lib_name] = f'not found{" (optional)" if is_opt else ""}'
         return False
 
-def _import_deps():
+def _import_deps(__wx):
     """Import other required dependencies or show an error if they're
     missing. Must only be called after _import_wx and setup_locale."""
     deps_msg = []
@@ -250,8 +248,8 @@ def _import_deps():
                     'Microsoft Visual C++ Redistributables and try installing '
                     'the latest x64 version.')
         deps_msg.append(msg)
-        _show_boot_popup(_('The following dependencies could not be located '
-            'or failed to load:') + '\n\n' + '\n'.join(deps_msg))
+        _show_boot_popup(__wx, _('The following dependencies could not be '
+            'located or failed to load:') + '\n\n' + '\n'.join(deps_msg))
 
 def _warn_missing_bash_dir():
     """Check for some vital files that *must* be present (note that most dirs
@@ -442,14 +440,15 @@ def main(opts: Namespace):
     # needed for initializing locale
     _parse_boot_settings(curr_os)
     # wx is also needed to initialize locale
-    _import_wx()
+    __wx = _import_wx()
     try:
         # We're now ready to initialize locale. That way, we can show a
         # translated error message if WB crashes
         from . import localize
-        wx_locale = localize.setup_locale(opts.language, _wx)
-        if not bass.is_standalone and (not _rightWxVersion() or
-                                       not _rightPythonVersion()): return
+        wx_locale = localize.setup_locale(opts.language, __wx)
+        if not bass.is_standalone and not (_rightPythonVersion() and
+                _rightWxVersion()):
+            return
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None: ##: we should do this before localization and wx import
             print(_("Generating HTML file from '%(gen_target)s'") % {
@@ -469,7 +468,7 @@ def main(opts: Namespace):
         # Make sure we actually have a functional 'bash' folder to work with
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
-        _main(opts, wx_locale)
+        _main(opts, wx_locale, __wx)
     except Exception as e:
         caught_exc = traceback.format_exc()
         try:
@@ -500,13 +499,13 @@ def main(opts: Namespace):
                         'official thread at %(thread_url)s or to the Wrye '
                         'Bash Discord at %(discord_url)s')
             err_msg += '\n\n' + caught_exc
-        _show_boot_popup(err_msg % {
+        _show_boot_popup(__wx, err_msg % {
             'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
             'discord_url': 'https://discord.gg/NwWvAFR',
             'ms_docs_url': 'https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057',
         })
 
-def _main(opts, wx_locale):
+def _main(opts, wx_locale, _wx):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
@@ -520,7 +519,7 @@ def _main(opts, wx_locale):
     balt.load_app_icons()
     # Check for some non-critical dependencies (e.g. lz4) and warn if
     # they're missing now that we can show nice app icons
-    _import_deps()
+    _import_deps(_wx)
     # barg doesn't import anything else, so can be imported whenever we want
     from . import barg
     bass.sys_argv = barg.convert_to_long_options(sys.argv)
@@ -544,7 +543,7 @@ def _main(opts, wx_locale):
             restore_ = None
     # The rest of backup/restore functionality depends on setting the game
     try:
-        bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
+        bush_game, game_ini_path = _detect_game(_wx, opts, bash_ini_path)
         if not bush_game: return
         if restore_:
             try:
@@ -562,7 +561,7 @@ def _main(opts, wx_locale):
                 # _detect_game -> _import_bush_and_set_game
                 from . import bush
                 bush.reset_bush_globals()
-                bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
+                bush_game, game_ini_path = _detect_game(_wx, opts, 'bash.ini')
         from . import bosh
         bosh.initBosh(game_ini_path, bush_game)
         # hacky should maybe be somewhere else
@@ -577,7 +576,7 @@ def _main(opts, wx_locale):
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
                           traceback.format_exc()])
-        _show_boot_popup(msg)
+        _show_boot_popup(_wx, msg)
         return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
     atexit.register(exit_cleanup)
     basher.InitSettings()
@@ -646,7 +645,7 @@ def _main(opts, wx_locale):
     frame.start_update_check()
     bash_app.MainLoop()
 
-def _detect_game(opts, backup_bash_ini):
+def _detect_game(__wx, opts, backup_bash_ini):
     # Generate the bash_default.ini file
     gen_ini.write_default_bash_ini()
     # Read the bash.ini file either from Mopy or from the backup location
@@ -659,10 +658,10 @@ def _detect_game(opts, backup_bash_ini):
         os.environ[u'HOMEDRIVE'] = homedrive
         os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
-    bush_game = _import_bush_and_set_game(opts)
+    bush_game = _import_bush_and_set_game(__wx, opts)
     return (bush_game, bush_game.game_ini_path) if bush_game else (None, None)
 
-def _import_bush_and_set_game(opts):
+def _import_bush_and_set_game(__wx, opts):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
     # Warnings found during game dirs initialization are added here as strings
@@ -670,7 +669,7 @@ def _import_bush_and_set_game(opts):
     game_infos = bush.detect_and_set_game(opts, init_warnings)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
-            _show_boot_popup(_(
+            _show_boot_popup(__wx, _(
                 'Wrye Bash could not find a game to manage. Make sure to '
                 'launch games you installed through Steam once and enable '
                 'mods on games you installed through the Windows '
@@ -695,16 +694,17 @@ def _import_bush_and_set_game(opts):
         warning_msg = [
             _('The following (non-critical) warnings were found during '
               'initialization:'), '', *(f'- {w}' for w in init_warnings)]
-        _show_boot_popup('\n'.join(warning_msg), is_critical=False)
+        _show_boot_popup(__wx, '\n'.join(warning_msg), is_critical=False)
     return bush.game
 
-def _show_boot_popup(msg, is_critical=True):
+def _show_boot_popup(__wx, msg, is_critical=True):
     """Shows an error message in a popup window. If is_critical, exit the
     application afterwards. Must only be called after _import_wx, setup_locale
     and gui is imported."""
-    if is_critical:
-        _close_dialog_windows()
-    try:
+    # noinspection PyBroadException
+    try: # we want to catch any exception here and fallback to tkinter
+        if is_critical:
+            _close_dialog_windows(__wx)
         from .balt import Resources
         from .gui import CENTER, CancelButton, Color, LayoutOptions, \
             StartupDialogWindow, TextArea, VLayout, HLayout, OkButton
@@ -717,7 +717,7 @@ def _show_boot_popup(msg, is_critical=True):
                 # Using Resources.bashRed here is fine - at worst it's None,
                 # which will fall back to the default icon
                 super().__init__(title=popup_title, sizes_dict={},
-                    icon_bundle=Resources.bashRed)
+                                 icon_bundle=Resources.bashRed)
                 self.component_size = (400, 300)
                 msg_text = TextArea(self, editable=False, init_text=init_txt,
                                     auto_tooltip=False)
@@ -735,9 +735,9 @@ def _show_boot_popup(msg, is_critical=True):
         msg_choice = MessageBox.display_dialog(msg)
         if is_critical or not msg_choice:
             sys.exit(1) # Critical error or user aborted
-    except Exception: ##: tighten these excepts?
+    except Exception:
         # Instantiating wx.App failed, fallback to tkinter.
-        but_kwargs = {u'text': u'QUIT' if is_critical else u'OK',
+        but_kwargs = {u'text': u'QUIT',
                       u'fg': u'red'}  # foreground button color
         _tkinter_error_dial(msg, but_kwargs)
 
@@ -756,21 +756,20 @@ def _tkinter_error_dial(msg, but_kwargs):
     root_widget.mainloop()
     sys.exit(1)
 
-def _close_dialog_windows():
+def _close_dialog_windows(_wx):
     """Close any additional windows opened by wrye bash (e.g Splash, Dialogs).
     Must only be called after _import_wx.
 
     This will not close the main bash window (BashFrame) because closing that
     results in virtual function call exceptions."""
-    import wx as _wx
-    import wx.adv as _adv
+    import wx.adv as adv # could we just use _wx.adv?
     for window in _wx.GetTopLevelWindows():
         if basher is None or not isinstance(window, basher.BashFrame):
             if isinstance(window, _wx.Dialog):
                 window.Destroy()
             ##: Skip for SplashScreen because it may hard-crash Python with
             # code -1073740771 (0xC000041D) when we call anything on it
-            if not isinstance(window, _adv.SplashScreen):
+            if not isinstance(window, adv.SplashScreen):
                 window.Close()
 
 class _AppReturnCode(object):
