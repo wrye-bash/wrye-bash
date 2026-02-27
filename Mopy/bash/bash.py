@@ -153,43 +153,36 @@ def _install_bugdump():
 bash_app = None  ##:(700) typing
 def _import_wx():
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
-    try:
-        import wx as _wx
-        # Hacky fix for loading older settings that pickled classes from
-        # moved/deleted wx modules
-        from wx import _core
-        sys.modules[u'wx._gdi'] = _core
-        class _BaseApp(_wx.App):
-            def MainLoop(self, restore_stdio=True):
-                """Not sure what RestoreStdio does so I omit the call in game
-                selection dialog.""" # TODO: check standalone also
-                rv = _wx.PyApp.MainLoop(self)
-                if restore_stdio: self.RestoreStdio()
-                return rv
-            def InitLocale(self):
-                if sys.platform.startswith('win') and sys.version_info > (3,8):
-                    locale.setlocale(locale.LC_CTYPE, 'C') # pass?
-        # Initialize the App instance once
-        global bash_app
-        bash_app = _BaseApp(bass.is_standalone)
-        if bass.is_standalone:
-            # No console on the standalone version, so we have wxPython take
-            # over. However, we don't want it to grab the stdout stream (since
-            # that's where all the boring debug printing goes that the user can
-            # view just fine in the BashBugDump)
-            sys.stdout = sys.__stdout__
-            _install_bugdump()
-        # Disable image loading errors - wxPython is missing the actual flag
-        # constants for some reason, so just use 0 (no flags)
-        _wx.Image.SetDefaultLoadFlags(0)
-        _dep_versions['wxPython'] = _wx.version()
-        return _wx
-    except Exception: ##: tighten this except
-        _dep_versions['wxPython'] = 'not found'
-        but_kwargs = {'text': 'QUIT', 'fg': 'red'} # foreground button color
-        msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
-                          traceback.format_exc(), u'Exiting.'])
-        _tkinter_error_dial(msg, but_kwargs)
+    import wx as _wx
+    # Hacky fix for loading older settings that pickled classes from
+    # moved/deleted wx modules
+    from wx import _core
+    sys.modules['wx._gdi'] = _core
+    class _BaseApp(_wx.App):
+        def MainLoop(self, restore_stdio=True):
+            """Not sure what RestoreStdio does so I omit the call in game
+            selection dialog."""  # TODO: check standalone also
+            rv = _wx.PyApp.MainLoop(self)
+            if restore_stdio: self.RestoreStdio()
+            return rv
+        def InitLocale(self):
+            if sys.platform.startswith('win') and sys.version_info > (3, 8):
+                locale.setlocale(locale.LC_CTYPE, 'C')  # pass?
+    # Initialize the App instance once
+    global bash_app
+    bash_app = _BaseApp(bass.is_standalone)
+    if bass.is_standalone:
+        # No console on the standalone version, so we have wxPython take
+        # over. However, we don't want it to grab the stdout stream (since
+        # that's where all the boring debug printing goes that the user can
+        # view just fine in the BashBugDump)
+        sys.stdout = sys.__stdout__
+        _install_bugdump()
+    # Disable image loading errors - wxPython is missing the actual flag
+    # constants for some reason, so just use 0 (no flags)
+    _wx.Image.SetDefaultLoadFlags(0)
+    _dep_versions['wxPython'] = _wx.version()
+    return _wx
 
 # library dependensies sorted by value (case insensitively)
 _deps = {'chardet': 'chardet', **( # Only a dependency on Windows
@@ -439,9 +432,10 @@ def main(opts: Namespace):
     # Parsing the boot settings needs logging to be available and, in turn, is
     # needed for initializing locale
     _parse_boot_settings(curr_os)
-    # wx is also needed to initialize locale
-    __wx = _import_wx()
+    __wx = None
     try:
+        # wx is also needed to initialize locale - move to gui?
+        __wx = _import_wx()
         # We're now ready to initialize locale. That way, we can show a
         # translated error message if WB crashes
         from . import localize
@@ -477,9 +471,13 @@ def main(opts: Namespace):
             _(_a := '') # Hide this from gettext
         except NameError:
             def _(x): return x
+        if __wx is None:
+            _dep_versions['wxPython'] = 'not found'
+            err_msg = '\n'.join([dump_environment(), '', 'Unable to load wx:',
+                                 caught_exc, 'Exiting.'])
         # No period at the end of URLs, that could cause copy-paste errors when
         # people go to copy them
-        if isinstance(e, OSError) and e.errno == 22 and bolt.os_name == 'nt':
+        elif isinstance(e, OSError) and e.errno == 22 and bolt.os_name == 'nt':
             # On Windows, OSError 22 can occur in any number of random spots
             # when we go to access data in the Documents folder while OneDrive
             # is messing with us, so catch it here
@@ -703,51 +701,49 @@ def _show_boot_popup(__wx, msg, is_critical=True):
     and gui is imported."""
     # noinspection PyBroadException
     try: # we want to catch any exception here and fallback to tkinter
-        if is_critical:
-            _close_dialog_windows(__wx)
-        from .balt import Resources
-        from .gui import CENTER, CancelButton, Color, LayoutOptions, \
-            StartupDialogWindow, TextArea, VLayout, HLayout, OkButton
-        class MessageBox(StartupDialogWindow):
-            def __init__(self, init_txt):
-                popup_title = (_(u'Wrye Bash Error') if is_critical else
-                               _(u'Wrye Bash Warning'))
-                ##: Resizing is just discarded, maybe we could save it in
-                # an early-boot file (see also #26)
-                # Using Resources.bashRed here is fine - at worst it's None,
-                # which will fall back to the default icon
-                super().__init__(title=popup_title, sizes_dict={},
-                                 icon_bundle=Resources.bashRed)
-                self.component_size = (400, 300)
-                msg_text = TextArea(self, editable=False, init_text=init_txt,
-                                    auto_tooltip=False)
-                if is_critical:
-                    bottom_btns = [CancelButton(self, btn_label=_('Quit'))]
-                else:
-                    bottom_btns = [OkButton(self, btn_label=_('Continue')),
-                                   CancelButton(self, btn_label=_('Abort'))]
-                VLayout(item_border=5, items=[
-                    (msg_text, LayoutOptions(expand=True, weight=1)),
-                    (HLayout(spacing=4, items=bottom_btns),
-                     LayoutOptions(h_align=CENTER)),
-                ]).apply_to(self)
         print(msg) # Print msg into error log.
-        msg_choice = MessageBox.display_dialog(msg)
-        if is_critical or not msg_choice:
-            sys.exit(1) # Critical error or user aborted
+        if __wx is not None:
+            if is_critical:
+                _close_dialog_windows(__wx)
+            from .balt import Resources
+            from .gui import CENTER, CancelButton, Color, LayoutOptions, \
+                StartupDialogWindow, TextArea, VLayout, HLayout, OkButton
+            class MessageBox(StartupDialogWindow):
+                def __init__(self, init_txt):
+                    popup_title = (_('Wrye Bash Error') if is_critical else
+                                   _('Wrye Bash Warning'))
+                    ##: Resizing is just discarded, maybe we could save it in
+                    # an early-boot file (see also #26)
+                    # Using Resources.bashRed here is fine - at worst it's None,
+                    # which will fall back to the default icon
+                    super().__init__(title=popup_title, sizes_dict={},
+                                     icon_bundle=Resources.bashRed)
+                    self.component_size = (400, 300)
+                    msg_text = TextArea(self, editable=False, init_text=init_txt,
+                                        auto_tooltip=False)
+                    if is_critical:
+                        bottom_btns = [CancelButton(self, btn_label=_('Quit'))]
+                    else:
+                        bottom_btns = [OkButton(self, btn_label=_('Continue')),
+                            CancelButton(self, btn_label=_('Abort'))]
+                    VLayout(item_border=5, items=[
+                        (msg_text, LayoutOptions(expand=True, weight=1)),
+                        (HLayout(spacing=4, items=bottom_btns),
+                         LayoutOptions(h_align=CENTER)),
+                    ]).apply_to(self)
+            msg_choice = MessageBox.display_dialog(msg)
+            if is_critical or not msg_choice:
+                sys.exit(1) # Critical error or user aborted
+            return
     except Exception:
-        # Instantiating wx.App failed, fallback to tkinter.
-        but_kwargs = {u'text': u'QUIT',
-                      u'fg': u'red'}  # foreground button color
-        _tkinter_error_dial(msg, but_kwargs)
-
-def _tkinter_error_dial(msg, but_kwargs):
+        pass
+    # Instantiating wx.App failed, fallback to tkinter.
     import tkinter
     root_widget = tkinter.Tk() ##: on macos this crashes
     frame = tkinter.Frame(root_widget)
     frame.pack()
     button = tkinter.Button(frame, command=root_widget.destroy, pady=15,
-                            borderwidth=5, relief=tkinter.GROOVE, **but_kwargs)
+        borderwidth=5, relief=tkinter.GROOVE, text='QUIT', fg='red')
     button.pack(fill=tkinter.BOTH, expand=1, side=tkinter.BOTTOM)
     w = tkinter.Text(frame)
     w.insert(tkinter.END, msg)
