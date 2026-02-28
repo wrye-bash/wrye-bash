@@ -153,16 +153,16 @@ def _install_bugdump():
 bash_app = None  ##:(700) typing
 def _import_wx():
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
-    import wx as _wx
+    import wx
     # Hacky fix for loading older settings that pickled classes from
     # moved/deleted wx modules
     from wx import _core
     sys.modules['wx._gdi'] = _core
-    class _BaseApp(_wx.App):
+    class _BaseApp(wx.App):
         def MainLoop(self, restore_stdio=True):
             """Not sure what RestoreStdio does so I omit the call in game
             selection dialog."""  # TODO: check standalone also
-            rv = _wx.PyApp.MainLoop(self)
+            rv = wx.PyApp.MainLoop(self)
             if restore_stdio: self.RestoreStdio()
             return rv
         def InitLocale(self):
@@ -180,9 +180,9 @@ def _import_wx():
         _install_bugdump()
     # Disable image loading errors - wxPython is missing the actual flag
     # constants for some reason, so just use 0 (no flags)
-    _wx.Image.SetDefaultLoadFlags(0)
-    _dep_versions['wxPython'] = _wx.version()
-    return _wx
+    wx.Image.SetDefaultLoadFlags(0)
+    _dep_versions['wxPython'] = wx.version()
+    return wx
 
 # library dependensies sorted by value (case insensitively)
 _deps = {'chardet': 'chardet', **( # Only a dependency on Windows
@@ -439,7 +439,9 @@ def main(opts: Namespace):
         # We're now ready to initialize locale. That way, we can show a
         # translated error message if WB crashes
         from . import localize
-        wx_locale = localize.setup_locale(opts.language, __wx)
+        target_lang = opts.language or bass.boot_settings['Boot']['locale']
+        wx_locale, loc_name = localize.setup_locale(__wx, target_lang)
+        bass.active_locale = loc_name
         if not bass.is_standalone and not (_rightPythonVersion() and
                 _rightWxVersion()):
             return
