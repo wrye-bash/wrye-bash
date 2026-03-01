@@ -106,7 +106,7 @@ class ListPatcher(APatcher):
     def __init__(self, p_name, p_file, p_sources):
         """In addition to super implementation this defines the self.srcs
         ListPatcher attribute."""
-        super(ListPatcher, self).__init__(p_name, p_file)
+        super().__init__(p_name, p_file)
         self.isActive = self._process_sources(p_sources, p_file)
 
     @classmethod
@@ -463,14 +463,10 @@ class ScanPatcher(APatcher):
     # filter records that exist in corresponding patch block
     _filter_in_patch = False
 
-    @property
-    def _keep_ids(self):
-        return None
-
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Add records from modFile."""
-        if keep_ids := self._keep_ids is not None:
-            if not (keep_ids := self._keep_ids): return # won't add to patch
+        keep_ids = self._keep_ids
+        if keep_ids is not None and not keep_ids: return # won't add to patch
         for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
             # do not create the patch block till needed
             patchBlock = self.patchFile.tops.get(top_sig)
@@ -481,17 +477,22 @@ class ScanPatcher(APatcher):
             if keep_ids:
                 rid_rec = ((rid, rec) for rid, rec in rid_rec if
                            rid in keep_ids)
-            try:
-                rid_rec = [(rid, rec) for rid, rec in rid_rec if
-                           self._add_to_patch(rid, rec, top_sig)]
-            except NotImplementedError:
-                pass
-            for rid, rec in rid_rec:
-                try:
-                    patchBlock.setRecord(rec)
-                except AttributeError:
-                    patchBlock = self.patchFile.tops[top_sig]
-                    patchBlock.setRecord(rec)
+            if rid_rec := [*rid_rec]: # exhaust the generator
+                try: # don't mind the copy, _add_to_patch will cut most records
+                    rid_rec = [(rid, rec) for rid, rec in rid_rec if
+                               self._add_to_patch(rid, rec, top_sig)]
+                except NotImplementedError:
+                    pass
+                for rid, rec in rid_rec:
+                    try:
+                        patchBlock.setRecord(rec)
+                    except AttributeError:
+                        patchBlock = self.patchFile.tops[top_sig]
+                        patchBlock.setRecord(rec)
+
+    @property
+    def _keep_ids(self):
+        return None # bypass id filtering by default
 
     def _add_to_patch(self, rid, record, top_sig):
         """Decide if this record should be added to the patch top_sig block.

@@ -60,7 +60,7 @@ class _AMerger(ImportPatcher):
         # Set of record signatures that are actually provided by sources
         self._present_sigs = set()
         super(_AMerger, self).__init__(p_name, p_file, p_sources)
-        self.id_deltas = defaultdict(list)
+        self._id_deltas = defaultdict(list)
         self.mod_id_entries = {}
         self.touched = set()
         self.inventOnlyMods = {x for x in self.srcs if
@@ -99,7 +99,7 @@ class _AMerger(ImportPatcher):
                 present_sigs.add(s)
                 for rid, record in block.iter_present_records():
                     if (not record.isKeyedByEid and rid.mod_fn not in
-                        self.patchFile.all_plugins):
+                            self.patchFile.all_plugins):
                         continue  # or break filter mods
                     self.touched.add(rid)
             progress.plus()
@@ -108,7 +108,7 @@ class _AMerger(ImportPatcher):
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
         touched = self.touched
-        id_deltas = self.id_deltas
+        id_deltas = self._id_deltas
         mod_id_entries = self.mod_id_entries
         modName = modFile.fileInfo.fn_key
         #--Master or source?
@@ -225,25 +225,23 @@ class _AMerger(ImportPatcher):
     def buildPatch(self,log,progress):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        id_deltas = self.id_deltas
+        id_deltas = self._id_deltas
         mod_count = Counter()
         en_key = self._entry_key
         for curr_sig, p_block in self.patchFile.iter_tops(self._read_sigs):
             sr_attr = self._wanted_subrecord[curr_sig]
             for rid, record in p_block.id_records.items():
-                deltas = id_deltas[rid]
-                if not deltas: continue
-                wip_entries = getattr(record, sr_attr)
-                # Use sorted to preserve duplicates, but ignore order. This is
-                # safe because order does not matter for items.
-                old_entries = sorted(wip_entries, key=en_key)
-                for delta in deltas:
-                    wip_entries = self._merge_delta(delta, wip_entries)
-                if old_entries != sorted(wip_entries, key=en_key):
-                    setattr(record, sr_attr, wip_entries)
-                    keep(rid, record)
-                    mod_count[rid.mod_fn] += 1
-        self.id_deltas.clear()
+                if deltas := id_deltas.get(rid):
+                    wip_entries = getattr(record, sr_attr)
+                    # Use sorted to preserve duplicates, but ignore order. This
+                    # is safe because order does not matter for items.
+                    old_entries = sorted(wip_entries, key=en_key)
+                    for delta in deltas:
+                        wip_entries = self._merge_delta(delta, wip_entries)
+                    if old_entries != sorted(wip_entries, key=en_key):
+                        setattr(record, sr_attr, wip_entries)
+                        keep(rid, record)
+                        mod_count[rid.mod_fn] += 1
         self._patchLog(log,mod_count)
 
 #------------------------------------------------------------------------------

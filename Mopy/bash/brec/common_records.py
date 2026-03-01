@@ -302,7 +302,7 @@ class AMreHeader(MelRecord):
             bolt.deprint(self.error_string('loading', file_offset, sub_size,
                                            sub_type))
             if isinstance(error, str):
-                raise exception.ModError(ins.inName, error)
+                raise exception.ModError(ins.inName,  f'{error!r}')
             raise exception.ModError(ins.inName, f'{error!r}') from error
         if not masters_loaded:
             augmented_masters = (*self.masters, ins.inName)

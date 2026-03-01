@@ -142,14 +142,13 @@ class _TopGroupDict(dict):
     def __missing__(self, top_grup_sig):
         """Return top block of specified topType, creating it first.
         :raise ModError"""
-        topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
+        topClass = (lf := self._mod_file.loadFactory).getTopClass(top_grup_sig)
         if topClass is None:
             raise ModError(self._mod_file.fileInfo.fn_key,
-                f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
-                f' load factory is {self._mod_file.loadFactory!r}')
-        self[top_grup_sig] = topClass.empty_mob(self._mod_file.loadFactory,
-                                                top_grup_sig)
-        return self[top_grup_sig]
+                f'Failed to retrieve top class for '
+                f'{sig_to_str(top_grup_sig)}; load factory is {lf!r}')
+        self[top_grup_sig] = block = topClass.empty_mob(lf, top_grup_sig)
+        return block
 
 class ModFile(object):
     """Plugin file representation. Will load only the top record types

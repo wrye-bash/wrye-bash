@@ -41,118 +41,6 @@ from ..mod_files import LoadFactory, ModFile
 class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""
 
-    def set_mergeable_mods(self, mergeMods):
-        """Set 'mergeSet' attribute to the srcs of MergePatchesPatcher."""
-        self.mergeSet = merge_set = set(mergeMods)
-        self.merged_or_loaded = merged_active = {*merge_set, *self.load_dict}
-        self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
-                                     load_order.get_ordered(merged_active)}
-        self.ii_mode = {m for m in merge_set if 'IIM' in self.all_tags[m]}
-
-    def _log_header(self, log, patch_name):
-        log.setHeader(f'= {patch_name} {"=" * 30}#', True)
-        log('{{CONTENTS=1}}')
-        #--Load Mods and error mods
-        log.setHeader('= ' + _('Overview'), True)
-        log.setHeader('=== ' + _('Date/Time'))
-        log('* ' + format_date(time.time()))
-        log('* ' + _('Elapsed Time: %(elapsed_time)s') % {
-            'elapsed_time': 'TIMEPLACEHOLDER'})
-        def _link(link_id):
-            return (readme_url(mopy=bass.dirs['mopy'], advanced=True) +
-                    f'#{link_id}')
-        if self.patcher_mod_skipcount:
-            log.setHeader('=== ' + _('Skipped Imports'))
-            log(_('The following import patchers skipped records because the '
-                  'imported record required a missing or inactive plugin to '
-                  'work properly. If this was not intentional, rebuild the '
-                  'patch after either deactivating the imported plugins '
-                  'listed below or activating the missing plugins.'))
-            for patcher, mod_skipcount in self.patcher_mod_skipcount.items():
-                log('* ' + _('%(patcher_n)s skipped %(num_skip)d records:') % {
-                    'patcher_n': patcher,
-                    'num_skip': sum(mod_skipcount.values())})
-                for mod, skipcount in mod_skipcount.items():
-                    log('  * ' + _('The imported plugin, %(imp_plugin)s, '
-                                   'skipped %(num_recs)d records.') % {
-                        'imp_plugin': mod, 'num_recs': skipcount})
-        if self.needs_filter_mods:
-            log.setHeader('===' + _('Plugins Needing Filter Tag'))
-            log(_("The following plugins are missing masters and have tags "
-                  "that indicate that you want to import data from them into "
-                  "the Bashed Patch. However, since they have missing masters "
-                  "and do not have a Filter tag they have been skipped. "
-                  "Consider adding a Filter tag to them or installing the "
-                  "required masters. See the '%(filtering_link)s' section of "
-                  "the readme for more information.") % {
-                'filtering_link': f"[[{_link('patch-filter')}"
-                                  f"|{_('Filtering')}]]"})
-            for mod in self.needs_filter_mods: log(f'* {mod}')
-        if self.loadErrorMods:
-            log.setHeader('=== ' + _('Load Error Plugins'))
-            log(_('The following plugins had load errors and were skipped '
-                  'while building the patch. Most likely this problem is due '
-                  'to a badly formatted plugin. For more info, generate a '
-                  '%(bashbugdump_link)s.') % {
-                'bashbugdump_link': f"[[https://github.com/wrye-bash"
-                                    f"/wrye-bash/wiki/%5Bgithub%5D-Reporting-a"
-                                    f"-bug#the-bashbugdumplog|BashBugDump]]"})
-            for (mod, e) in self.loadErrorMods: log(f'* {mod}: {e}')
-        if self.worldOrphanMods:
-            log.setHeader('=== ' + _('World Orphans'))
-            log(_("The following plugins had orphaned world groups, which "
-                  "were skipped. This is not a major problem, but you might "
-                  "want to use Wrye Bash's '%(link_rwo)s' command to repair "
-                  "the plugins.") % {
-                'link_rwo': f"[[{_link('modsRemoveWorldOrphans')}"
-                            f"|{_('Remove World Orphans')}]]"})
-            for mod in self.worldOrphanMods: log(f'* {mod}')
-        if self.compiledAllMods:
-            log.setHeader('=== ' + _('Compiled All'))
-            log(_("The following plugins have an empty compiled version of "
-                  "genericLoreScript. This is usually a sign that the plugin "
-                  "author did a %(compile_all)s while editing scripts. "
-                  "This may interfere with the behavior of other plugins that "
-                  "intentionally modify scripts from %(game_name)s (e.g. Cobl "
-                  "and Unofficial Oblivion Patch). You can use Wrye Bash's "
-                  "'%(link_decomp_all)s' command to repair the plugins.") % {
-                'compile_all': f'__{_("Compile All")}__',
-                'game_name': bush.game.master_file,
-                'link_decomp_all': f"[[{_link('modsDecompileAll')}"
-                                   f"|{_('Decompile All')}]]"})
-            for mod in self.compiledAllMods: log(f'* {mod}')
-        log.setHeader('=== ' + _('Active Plugins'), True)
-        for mname, modinfo in self.merged_or_loaded_ord.items():
-            version = modinfo.get_version()
-            try:
-                message = f'* {self.load_dict[mname]:02X} '
-            except KeyError:
-                message = '* ++ '
-            if version:
-                message += _('%(msg_plugin)s [Version %(plugin_ver)s]') % {
-                    'msg_plugin': mname, 'plugin_ver': version}
-            else:
-                message += mname
-            log(message)
-        #--Load Mods and error mods
-        if self.pfile_aliases:
-            log.setHeader('= ' + _('Plugin Aliases'))
-            for alias_target, alias_repl in dict_sort(self.pfile_aliases):
-                log(f'* {alias_target} >> {alias_repl}')
-
-    def init_patchers_data(self, patcher_instances, progress):
-        """Gives each patcher a chance to get its source data."""
-        self._patcher_instances = [p for p in patcher_instances if p.isActive]
-        if not self._patcher_instances: return
-        progress = progress.setFull(len(self._patcher_instances))
-        for index, patcher in enumerate(self._patcher_instances):
-            progress(index, _('Preparing') + f'\n{patcher.getName()}')
-            patcher.initData(SubProgress(progress, index))
-        progress(progress.full, _('Patchers prepared.'))
-        # initData may set isActive to zero - TODO(ut) track down
-        self._patcher_instances = [p for p in patcher_instances if p.isActive]
-
-    #--Instance
     def __init__(self, modInfo, mod_infos):
         """Initialization."""
         super().__init__(modInfo, None)
@@ -259,6 +147,26 @@ class PatchFile(ModFile):
             if (modName in mi_mergeable and modName not in
                     self.inactive_inm and 'NoMerge' not in alltags):
                 self.bp_mergeable.add(modName)
+
+    def set_mergeable_mods(self, mergeMods):
+        """Set 'mergeSet' attribute to the srcs of MergePatchesPatcher."""
+        self.mergeSet = merge_set = set(mergeMods)
+        self.merged_or_loaded = merged_active = {*merge_set, *self.load_dict}
+        self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
+                                     load_order.get_ordered(merged_active)}
+        self.ii_mode = {m for m in merge_set if 'IIM' in self.all_tags[m]}
+
+    def init_patchers_data(self, patcher_instances, progress):
+        """Gives each patcher a chance to get its source data."""
+        self._patcher_instances = [p for p in patcher_instances if p.isActive]
+        if not self._patcher_instances: return
+        progress = progress.setFull(len(self._patcher_instances))
+        for index, patcher in enumerate(self._patcher_instances):
+            progress(index, _('Preparing') + f'\n{patcher.getName()}')
+            patcher.initData(SubProgress(progress, index))
+        progress(progress.full, _('Patchers prepared.'))
+        # initData may set isActive to zero - TODO(ut) track down
+        self._patcher_instances = [p for p in patcher_instances if p.isActive]
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -553,3 +461,94 @@ class PatchFile(ModFile):
             if re_bp_parts.match(p_fname) and p_fname not in valid_part_fnames:
                 unneded_parts.append(p_fname)
         return unneded_parts
+
+    def _log_header(self, log, patch_name):
+        log.setHeader(f'= {patch_name} {"=" * 30}#', True)
+        log('{{CONTENTS=1}}')
+        #--Load Mods and error mods
+        log.setHeader('= ' + _('Overview'), True)
+        log.setHeader('=== ' + _('Date/Time'))
+        log('* ' + format_date(time.time()))
+        log('* ' + _('Elapsed Time: %(elapsed_time)s') % {
+            'elapsed_time': 'TIMEPLACEHOLDER'})
+        def _link(link_id):
+            return (readme_url(mopy=bass.dirs['mopy'], advanced=True) +
+                    f'#{link_id}')
+        if self.patcher_mod_skipcount:
+            log.setHeader('=== ' + _('Skipped Imports'))
+            log(_('The following import patchers skipped records because the '
+                  'imported record required a missing or inactive plugin to '
+                  'work properly. If this was not intentional, rebuild the '
+                  'patch after either deactivating the imported plugins '
+                  'listed below or activating the missing plugins.'))
+            for patcher, mod_skipcount in self.patcher_mod_skipcount.items():
+                log('* ' + _('%(patcher_n)s skipped %(num_skip)d records:') % {
+                    'patcher_n': patcher,
+                    'num_skip': sum(mod_skipcount.values())})
+                for mod, skipcount in mod_skipcount.items():
+                    log('  * ' + _('The imported plugin, %(imp_plugin)s, '
+                                   'skipped %(num_recs)d records.') % {
+                        'imp_plugin': mod, 'num_recs': skipcount})
+        if self.needs_filter_mods:
+            log.setHeader('===' + _('Plugins Needing Filter Tag'))
+            log(_("The following plugins are missing masters and have tags "
+                  "that indicate that you want to import data from them into "
+                  "the Bashed Patch. However, since they have missing masters "
+                  "and do not have a Filter tag they have been skipped. "
+                  "Consider adding a Filter tag to them or installing the "
+                  "required masters. See the '%(filtering_link)s' section of "
+                  "the readme for more information.") % {
+                'filtering_link': f"[[{_link('patch-filter')}"
+                                  f"|{_('Filtering')}]]"})
+            for mod in self.needs_filter_mods: log(f'* {mod}')
+        if self.loadErrorMods:
+            log.setHeader('=== ' + _('Load Error Plugins'))
+            log(_('The following plugins had load errors and were skipped '
+                  'while building the patch. Most likely this problem is due '
+                  'to a badly formatted plugin. For more info, generate a '
+                  '%(bashbugdump_link)s.') % {
+                'bashbugdump_link': f"[[https://github.com/wrye-bash"
+                                    f"/wrye-bash/wiki/%5Bgithub%5D-Reporting-a"
+                                    f"-bug#the-bashbugdumplog|BashBugDump]]"})
+            for (mod, e) in self.loadErrorMods: log(f'* {mod}: {e}')
+        if self.worldOrphanMods:
+            log.setHeader('=== ' + _('World Orphans'))
+            log(_("The following plugins had orphaned world groups, which "
+                  "were skipped. This is not a major problem, but you might "
+                  "want to use Wrye Bash's '%(link_rwo)s' command to repair "
+                  "the plugins.") % {
+                'link_rwo': f"[[{_link('modsRemoveWorldOrphans')}"
+                            f"|{_('Remove World Orphans')}]]"})
+            for mod in self.worldOrphanMods: log(f'* {mod}')
+        if self.compiledAllMods:
+            log.setHeader('=== ' + _('Compiled All'))
+            log(_("The following plugins have an empty compiled version of "
+                  "genericLoreScript. This is usually a sign that the plugin "
+                  "author did a %(compile_all)s while editing scripts. "
+                  "This may interfere with the behavior of other plugins that "
+                  "intentionally modify scripts from %(game_name)s (e.g. Cobl "
+                  "and Unofficial Oblivion Patch). You can use Wrye Bash's "
+                  "'%(link_decomp_all)s' command to repair the plugins.") % {
+                'compile_all': f'__{_("Compile All")}__',
+                'game_name': bush.game.master_file,
+                'link_decomp_all': f"[[{_link('modsDecompileAll')}"
+                                   f"|{_('Decompile All')}]]"})
+            for mod in self.compiledAllMods: log(f'* {mod}')
+        log.setHeader('=== ' + _('Active Plugins'), True)
+        for mname, modinfo in self.merged_or_loaded_ord.items():
+            version = modinfo.get_version()
+            try:
+                message = f'* {self.load_dict[mname]:02X} '
+            except KeyError:
+                message = '* ++ '
+            if version:
+                message += _('%(msg_plugin)s [Version %(plugin_ver)s]') % {
+                    'msg_plugin': mname, 'plugin_ver': version}
+            else:
+                message += mname
+            log(message)
+        #--Load Mods and error mods
+        if self.pfile_aliases:
+            log.setHeader('= ' + _('Plugin Aliases'))
+            for alias_target, alias_repl in dict_sort(self.pfile_aliases):
+                log(f'* {alias_target} >> {alias_repl}')
