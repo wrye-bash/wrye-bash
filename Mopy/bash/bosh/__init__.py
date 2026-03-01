@@ -41,7 +41,7 @@ from . import bsa_files, converters, cosaves
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave, ACosave
 from .save_headers import get_save_header_type
-from .. import archives, bass, bolt, bush, env, initialization, load_order
+from .. import archives, bass, bolt, bush, env, load_order
 from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
@@ -50,8 +50,8 @@ from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
-    FailedIniInferError, FileError, ModError, PluginsFullError, SaveFileError, \
-    SaveHeaderError, SkipError, SkippedMergeablePluginsError
+    FailedIniInferError, FileError, ModError, PluginsFullError, \
+    SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding
 from ..load_order import LordDiff, LoadOrder
@@ -1607,7 +1607,7 @@ class DataStore(DataDict):
             if progress: # currently only installers and only on boot
                 progress(index, _('Scanning Packages…') + f'\n{new}')
                 kws['progress'] = SubProgress(progress, index, index + 1)
-            if newinf := self.get_update_info(new, old_inf, _delinfos=delinfos,
+            if newinf := self.get_update_info(new, old_inf, _rdata=rdata,
                                               **kws, **kw_do_upd):
                 if create_inf := old_inf is None:
                     self[new] = newinf
@@ -1617,7 +1617,7 @@ class DataStore(DataDict):
         return rdata
 
     def get_update_info(self, fname: FName | Path,
-            old_inf: AFileInfo | None = None, *, _delinfos=None,**kwargs):
+            old_inf: AFileInfo | None = None, *, _rdata=None,**kwargs):
         """Get new info (for new file or updated corrupted) else check updates.
         Will try loading from disk, only call on existing files."""
         if old_inf is None:
@@ -1831,10 +1831,10 @@ class _AFileInfos(DataStore):
                 {*rdata.ren_paths}, {self[n].abs_path for n in alt})
         return rdata
 
-    def get_update_info(self, fn, old_inf=None, *, _delinfos=None, **kwargs):
+    def get_update_info(self, fn, old_inf=None, *, _rdata=None, **kwargs):
         try: ##:701 revisit this - why NIE?
             info = super().get_update_info(fn, old_inf, **kwargs)
-            if _delinfos is not None:
+            if _rdata is not None:
                 self.corrupted.pop(fn, None) # effectively updated
             return info
         except (FileError, UnicodeError, BoltError, NotImplementedError) as e:
@@ -1843,9 +1843,9 @@ class _AFileInfos(DataStore):
             # corrupted so in any case re-add to corrupted
             er = e.message if hasattr(e, 'message') else f'{e}'
             cor_path = fn if isinstance(fn, Path) else self.store_dir.join(fn)
-            if _delinfos is not None: # we are called from refresh, fn is FName
+            if _rdata is not None: # we are called from refresh, fn is FName
                 if del_inf := self.pop(fn, None): # effectively deleted
-                    _delinfos.add(del_inf)
+                    _rdata |= RefrData(to_del={fn})
                     cor_path = del_inf.abs_path
                 elif self is modInfos: # modInfos needs be set here!
                     if (isg := kwargs.get('itsa_ghost')) is None:
@@ -1868,10 +1868,10 @@ class _AFileInfos(DataStore):
             super()._get_info(k, kws, new_or_present)
 
     def _delete_refresh(self, delinfos):
-        for del_fn in (del_keys := super()._delete_refresh(delinfos)):
+        for del_fn in (inf.fn_key for inf in delinfos):
             self.corrupted.pop(del_fn, None)
         self._notify_bain({inf.abs_path for inf in delinfos})
-        return del_keys
+        return super()._delete_refresh(delinfos)
 
     def _notify_bain(self, del_set: set[Path] = frozenset(),
                      altered: set[Path] = frozenset()):
@@ -1899,15 +1899,22 @@ class _AFileInfos(DataStore):
         pd.save()
 
     # _AFileInfos specific methods --------------------------------------------
-    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+    def data_path_to_info(self, data_path: str, *, get_dest_paths=False,
+                          with_corrupted=True)-> _ListInf | tuple[Path, FName]:
         """Return the info corresponding to the specified (str, Fname or CIStr)
         path relative to the  Data folder - iff it belongs to this data store.
-        If it does not, return None, except if would_be is True whereupon
-        return the fname, if it is a valid one for self."""
-        if (inf := self.get(fnkey := FName(str(data_path)))) or not would_be:
+        If it does not, return None, except if get_dest_paths is True whereupon
+        return the pair of dest_path/fn_key, if it is a valid one for self."""
+        inf = self.get(fnkey := FName(str(data_path))) or (
+            with_corrupted and self.corrupted.get(fnkey))
+        if not get_dest_paths:
             return inf
-        return fnkey if os.path.basename(data_path) == data_path and \
-            self.check_filename(fnkey) else None
+        if not inf and not (os.path.basename(fnkey) == fnkey and #bare filename
+                            self.check_filename(fnkey)):
+            return None
+        # we may be installing a DefaultIni here (no abs_path) or inf be None
+        dest = getattr(inf, 'abs_path', None) or self.store_dir.join(fnkey)
+        return dest, fnkey
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
@@ -2088,13 +2095,13 @@ class INIInfos(_AFileInfos):
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
     # _AFileInfos overrides ---------------------------------------------------
-    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+    def data_path_to_info(self, data_path: str, **kwargs) -> _ListInf:
         parts = os.path.split(os.fspath(data_path))
         # 1. Must have a single parent folder
         # 2. That folder must be named 'ini tweaks' (case-insensitively)
         # 3. The extension must be a valid INI-like extension - super checks it
         if len(parts) == 2 and parts[0].lower() == 'ini tweaks':
-            return super().data_path_to_info(parts[1], would_be)
+            return super().data_path_to_info(parts[1], **kwargs)
         return None
 
     # Target INI handling -----------------------------------------------------
@@ -3283,7 +3290,7 @@ class SaveInfos(_AFileInfos):
     @property
     def bash_dir(self): return self.store_dir.join('Bash')
 
-    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+    def data_path_to_info(self, data_path: str, **kwargs) -> _ListInf:
         return None # Never relative to Data folder
 
     # SaveInfos Profiles ------------------------------------------------------
@@ -3465,17 +3472,17 @@ class ScreenInfos(_AFileInfos):
             return None
         return super().check_filename(fileName, **kwargs)
 
-    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+    def data_path_to_info(self, data_path: str, **kwargs) -> _ListInf:
         if not self._bain_notify:
             # Current store_dir is not relative to Data folder, so we do not
             # need to pay attention to BAIN
             return None
         *parts, filename = os.path.split(os.fspath(data_path))
         # The parent directories must match
-        if (len(parts) != len(self._ci_curr_data_prefix) or
-                [*map(str.lower, parts)] != self._ci_curr_data_prefix):
+        if len(parts) != len(self._ci_curr_data_prefix) or any(p != cp for
+            p, cp in zip(map(str.lower, parts), self._ci_curr_data_prefix)):
             return None
-        return super().data_path_to_info(filename, would_be)
+        return super().data_path_to_info(filename, **kwargs)
 
     def refresh(self, *args, **kwargs):
         self.set_store_dir()

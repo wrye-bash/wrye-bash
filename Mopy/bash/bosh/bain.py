@@ -1313,14 +1313,8 @@ class _InstallerPackage(Installer, AFileInfo):
             # Work with ghosts lopped off internally and check the destination,
             # since plugins may have been renamed
             for store in stores:
-                if fname_key := store.data_path_to_info(dest, would_be=True):
-                    try: # FName
-                        dest_path = store.store_dir.join(fname_key)
-                    except TypeError: # info is present, possibly ghosted
-                        # we may be installing a DefaultIni here (no abs_path)
-                        dest_path = ap if (ap := getattr(fname_key, 'abs_path',
-                            None)) else join_data_dir(dest)
-                        fname_key = fname_key.fn_key
+                if path_fn := store.data_path_to_info(dest, get_dest_paths=True):
+                    dest_path, fname_key = path_fn
                     dest_to_store[dest] = store, fname_key
                     break
             else:
@@ -1818,7 +1812,8 @@ def _bain_op(func):
             for ikey, owned_files in cede_ownership.items():
                 for owned_path in owned_files:
                     for store in stores:
-                        if inf := store.data_path_to_info(owned_path):
+                        if inf := store.data_path_to_info(owned_path,
+                                                          with_corrupted=None):
                             inf.set_table_prop('installer', f'{ikey}')
                             rui_data[store].redraw.add(inf.fn_key)
                             # Each file may only belong to one data store
@@ -2821,15 +2816,17 @@ class InstallersData(DataStore):
         stores = [*removed_tracked]
         store_del = defaultdict(set)
         for ci_rel_path in ci_removes:
+            store_inf = None
             for store in stores:
-                if store_inf := store.data_path_to_info(str(ci_rel_path)):
-                    store_del[store].add(store_inf)
+                if store_inf := store.data_path_to_info(ci_rel_path):
                     full_path = store_inf.abs_path
                     break
             else:
                 full_path = bass.dirs['mods'].join(ci_rel_path)
             try:
                 full_path.moveTo(destDir.join(ci_rel_path)) # will drop .ghost
+                if store_inf:
+                    store_del[store].add(store_inf)
                 self.data_sizeCrcDate.pop(ci_rel_path, None)
                 emptyDirs.add(full_path.head)
             except (StateError, OSError):

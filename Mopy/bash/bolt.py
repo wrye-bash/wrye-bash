@@ -1937,6 +1937,7 @@ _RIn = dict[FName, tuple[None | AFileInfo, dict]]
 class RefrIn:
     """WIP! requesting refresh from the data store."""
     new_or_present: _RIn = field(default_factory=dict)
+    # client is responsible for checking that the infos are actually deleted
     del_infos: set = field(default_factory=set)
 
     @classmethod
