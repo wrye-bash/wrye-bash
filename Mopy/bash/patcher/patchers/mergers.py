@@ -613,46 +613,43 @@ class _AListsMerger(ListPatcher):
     _de_re_header: str
 
     def _overhaul_compat(self, mods):
-        OOOMods = {*map(FName, (f"Oscuro's_Oblivion_Overhaul.{x}" for x in
-                                ('esm', 'esp')))}
-        FransMods = {*map(FName, (
-            'Francesco.esp', "Francesco's Leveled Creatures-Items Mod.esm"))}
-        WCMods = {FName('Oblivion Warcry.esp'),
-                  FName('Oblivion Warcry EV.esp')}
-        TIEMods = FName('TIE.esp')
-        OverhaulCompat = FName('Unofficial Oblivion Patch.esp') in mods and (
-                (OOOMods | WCMods) & mods) or (
-                                 FransMods & mods and not (TIEMods in mods))
-        if OverhaulCompat:
-            self.OverhaulUOPSkips = {*map(bush.game.master_fid, [
-                    0x03AB5D,  # VendorWeaponBlunt
-                    0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
-                    0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
-                    0x03C7F3,  # LL0LootWeapon0Magic5Elven100
-                    0x03C7F4,  # LL0LootWeapon0Magic6Glass100
-                    0x03C7F5,  # LL0LootWeapon0Magic3Silver100
-                    0x03C7F7,  # LL0LootWeapon0Magic2Steel100
-                    0x03E4D2,  # LL0NPCWeapon0MagicClaymore100
-                    0x03E4D3,  # LL0NPCWeapon0MagicClaymoreLvl100
-                    0x03E4DA,  # LL0NPCWeapon0MagicWaraxe100
-                    0x03E4DB,  # LL0NPCWeapon0MagicWaraxeLvl100
-                    0x03E4DC,  # LL0NPCWeapon0MagicWarhammer100
-                    0x03E4DD,  # LL0NPCWeapon0MagicWarhammerLvl100
-                    0x0733EA,  # ArenaLeveledHeavyShield,
-                    0x0C7615,  # FGNPCWeapon0MagicClaymoreLvl100
-                    0x181C66,  # SQ02LL0NPCWeapon0MagicClaymoreLvl100
-                    0x053877,  # LL0NPCArmor0MagicLightGauntlets100
-                    0x053878,  # LL0NPCArmor0MagicLightBoots100
-                    0x05387A,  # LL0NPCArmor0MagicLightCuirass100
-                    0x053892,  # LL0NPCArmor0MagicLightBootsLvl100
-                    0x053893,  # LL0NPCArmor0MagicLightCuirassLvl100
-                    0x053894,  # LL0NPCArmor0MagicLightGauntletsLvl100
-                    0x053D82,  # LL0LootArmor0MagicLight5Elven100
-                    0x053D83,  # LL0LootArmor0MagicLight6Glass100
-                    0x052D89,  # LL0LootArmor0MagicLight4Mithril100
-                ])}
+        if FName('Unofficial Oblivion Patch.esp') in mods:
+            OOO_WC = {*map(FName, ("Oscuro's_Oblivion_Overhaul.esm",
+                "Oscuro's_Oblivion_Overhaul.esp", 'Oblivion Warcry.esp',
+                'Oblivion Warcry EV.esp'))}
+            FransMods = {*map(FName, ('Francesco.esp',
+                "Francesco's Leveled Creatures-Items Mod.esm"))}
+            TIEMods = FName('TIE.esp')
+            if (OOO_WC & mods) or (FransMods & mods and not (TIEMods in mods)):
+                self.OverhaulUOPSkips = {*map(bush.game.master_fid, [
+                        0x03AB5D,  # VendorWeaponBlunt
+                        0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
+                        0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
+                        0x03C7F3,  # LL0LootWeapon0Magic5Elven100
+                        0x03C7F4,  # LL0LootWeapon0Magic6Glass100
+                        0x03C7F5,  # LL0LootWeapon0Magic3Silver100
+                        0x03C7F7,  # LL0LootWeapon0Magic2Steel100
+                        0x03E4D2,  # LL0NPCWeapon0MagicClaymore100
+                        0x03E4D3,  # LL0NPCWeapon0MagicClaymoreLvl100
+                        0x03E4DA,  # LL0NPCWeapon0MagicWaraxe100
+                        0x03E4DB,  # LL0NPCWeapon0MagicWaraxeLvl100
+                        0x03E4DC,  # LL0NPCWeapon0MagicWarhammer100
+                        0x03E4DD,  # LL0NPCWeapon0MagicWarhammerLvl100
+                        0x0733EA,  # ArenaLeveledHeavyShield,
+                        0x0C7615,  # FGNPCWeapon0MagicClaymoreLvl100
+                        0x181C66,  # SQ02LL0NPCWeapon0MagicClaymoreLvl100
+                        0x053877,  # LL0NPCArmor0MagicLightGauntlets100
+                        0x053878,  # LL0NPCArmor0MagicLightBoots100
+                        0x05387A,  # LL0NPCArmor0MagicLightCuirass100
+                        0x053892,  # LL0NPCArmor0MagicLightBootsLvl100
+                        0x053893,  # LL0NPCArmor0MagicLightCuirassLvl100
+                        0x053894,  # LL0NPCArmor0MagicLightGauntletsLvl100
+                        0x053D82,  # LL0LootArmor0MagicLight5Elven100
+                        0x053D83,  # LL0LootArmor0MagicLight6Glass100
+                        0x052D89,  # LL0LootArmor0MagicLight4Mithril100
+                    ])}
         else:
-            self.OverhaulUOPSkips = set()
+            self.OverhaulUOPSkips = ()
 
     def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
         """In addition to default parameters, accepts a boolean remove_empty,
@@ -698,8 +695,9 @@ class _AListsMerger(ListPatcher):
         if sc_name in self.de_masters:
             for _sig, block in modFile.iter_tops(self._read_sigs):
                 for rid, de_list in block.iter_present_records():
-                    self.masterItems[rid][sc_name] = set(
-                        self._get_entries(de_list))
+                    self.masterItems[rid][sc_name] = de_list.get_entries()
+        skips = self.OverhaulUOPSkips if sc_name == ('Unofficial Oblivion '
+                                                     'Patch.esp') else ()
         #--Relev/Delev setup
         applied_tags = self.tag_choices[sc_name]
         is_relev = self._re_tag in applied_tags
@@ -711,14 +709,18 @@ class _AListsMerger(ListPatcher):
             self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
             for rid, new_list in new_lists.iter_present_records():
-                # FIXME(inf) This is hideous and slows everything down
-                if (sc_name == u'Unofficial Oblivion Patch.esp' and
-                        rid in self.OverhaulUOPSkips):
+                # skip the list from UOP - list owner is Oblivion.esm so if we
+                # don't encounter the list again we mark last version to be
+                # kept in buildPatch (else stored_lists[rid].merge_list will
+                # be called to mark the list as mergeOverLast True) ##: or so
+                # it seems - we need better docs, including ecxpected load
+                # order of overhauls/UOP (and maybe a better solution)
+                if rid in skips:
                     stored_lists[rid].mergeOverLast = True
                     continue
                 is_list_owner = (rid.mod_fn == sc_name)
                 #--Items, delevs and relevs sets
-                new_list.items = items = set(self._get_entries(new_list))
+                new_list.items = items = new_list.get_entries()
                 if is_list_owner:
                     merge_srcs = []
                 else:
@@ -730,18 +732,14 @@ class _AListsMerger(ListPatcher):
                         if mast_items := self.masterItems.get(rid):
                             delevs.update(*(it for m, it in mast_items.items()
                                             if m in mod_masts))
-                            # TODO(inf) Double-check that this works correctly,
-                            #  this line (delevs -= items) seems a noop here
-                            delevs -= items
+                            delevs -= items # remove our items from de_records
                             new_list.items |= delevs
-                    merge_srcs = None if rid in stored_lists else [sc_name]
-                #--Cache/Merge
-                if merge_srcs is not None:
-                    de_list = copy.deepcopy(new_list)
-                    de_list.mergeSources = merge_srcs
-                    stored_lists[rid] = de_list
-                else:
-                    stored_lists[rid].mergeWith(new_list, sc_name)
+                    if stored_list := stored_lists.get(rid): # merge the lists
+                        stored_list.merge_list(new_list, sc_name)
+                        continue
+                    merge_srcs = [sc_name]
+                stored_lists[rid] = de_list = copy.deepcopy(new_list)
+                de_list.mergeSources = merge_srcs
 
     def buildPatch(self, log, progress):
         keep = self.patchFile.getKeeper()
@@ -824,11 +822,6 @@ class _AListsMerger(ListPatcher):
         """Checks if any warnings for the specified list have to be logged.
         Default implementation does nothing."""
 
-    def _get_entries(self, target_list):
-        """Retrieves a list of the items in the specified list. No default
-        implementation, every patcher needs to override this."""
-        raise NotImplementedError
-
 class LeveledListsPatcher(_AListsMerger):
     """Merges leveled lists."""
     _read_sigs = bush.game.leveled_list_types # bush.game must be set!
@@ -856,9 +849,6 @@ class LeveledListsPatcher(_AListsMerger):
                                "have been truncated - check and fix manually!")
             log(f'  * __{trunc_warn_msg}__' % {'max_ll_size': max_lvl_size})
 
-    def _get_entries(self, target_list):
-        return [list_entry.listId for list_entry in target_list.entries]
-
 #------------------------------------------------------------------------------
 class FormIDListsPatcher(_AListsMerger):
     """Merges FormID lists."""
@@ -868,9 +858,6 @@ class FormIDListsPatcher(_AListsMerger):
     _sig_to_label = {b'FLST': 'FormID'}
     _de_re_header = _('Deflsters')
     patcher_tags = {_de_tag}
-
-    def _get_entries(self, target_list):
-        return target_list.formIDInList
 
 #------------------------------------------------------------------------------
 class ImportRacesSpellsPatcher(ImportPatcher):
