@@ -462,6 +462,11 @@ class ScanPatcher(APatcher):
     """WIP class to encapsulate scanModFile common logic."""
     # filter records that exist in corresponding patch block
     _filter_in_patch = False
+    # Method to decide if a record should be added to the patch top_sig block.
+    # Records that have been copied into the BP once will automatically
+    # be updated by update_patch_records_from_mod/mergeModFile so skip if
+    # we've already copied this record or if we're not interested in it
+    _add_to_patch = None # Callable[[Self, FormId, MreRecord, bytes], bool]
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Add records from modFile."""
@@ -477,29 +482,19 @@ class ScanPatcher(APatcher):
             if keep_ids:
                 rid_rec = ((rid, rec) for rid, rec in rid_rec if
                            rid in keep_ids)
-            if rid_rec := [*rid_rec]: # exhaust the generator
-                try: # don't mind the copy, _add_to_patch will cut most records
-                    rid_rec = [(rid, rec) for rid, rec in rid_rec if
-                               self._add_to_patch(rid, rec, top_sig)]
-                except NotImplementedError:
-                    pass
-                for rid, rec in rid_rec:
-                    try:
-                        patchBlock.setRecord(rec)
-                    except AttributeError:
-                        patchBlock = self.patchFile.tops[top_sig]
-                        patchBlock.setRecord(rec)
+            if (ap := self._add_to_patch) is not None:
+                rid_rec = ((rid, rec) for rid, rec in rid_rec if
+                           ap(rid, rec, top_sig))
+            for rid, rec in rid_rec:
+                try:
+                    patchBlock.setRecord(rec)
+                except AttributeError:
+                    patchBlock = self.patchFile.tops[top_sig]
+                    patchBlock.setRecord(rec)
 
     @property
     def _keep_ids(self):
         return None # bypass id filtering by default
-
-    def _add_to_patch(self, rid, record, top_sig):
-        """Decide if this record should be added to the patch top_sig block.
-        Records that have been copied into the BP once will automatically
-        be updated by update_patch_records_from_mod/mergeModFile so skip if
-        we've already copied this record or if we're not interested in it."""
-        raise NotImplementedError
 
 # Patchers: 20 ----------------------------------------------------------------
 class ImportPatcher(ListPatcher, ScanPatcher):

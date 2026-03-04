@@ -571,7 +571,7 @@ class MelRecord(MreRecord):
             bolt.deprint(self.error_string('loading', file_offset, sub_size,
                                            sub_type, self.flags1))
             if isinstance(error, str):
-                raise exception.ModError(ins.inName, error)
+                raise exception.ModError(ins.inName, f'{error!r}')
             raise exception.ModError(ins.inName, f'{error!r}') from error
         # Sort once we're done - sorting during loading is obviously a bad idea
         self._sort_subrecords()
