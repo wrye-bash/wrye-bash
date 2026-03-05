@@ -881,6 +881,8 @@ class MreCell(AMreCell):
         publicPlace: bool = flag(5)
         handChanged: bool = flag(6)
         showSky: bool = flag(7)
+        # 3P: Community Shaders
+        sunlightShadows: bool = flag(15)
 
     class CellDataFlags2(Flags):
         useSkyLighting: bool
@@ -1804,6 +1806,9 @@ class MreLigh(MelRecord):
         light_shadow_hemisphere: bool = flag(11)
         light_shadow_omnidirectional: bool = flag(12)
         light_portal_strict: bool = flag(13)
+        # 3P: Community Shaders
+        light_inverse_square: bool = flag(14)
+        light_linear: bool = flag(15)
 
     melSet = MelSet(
         MelEdid(),
