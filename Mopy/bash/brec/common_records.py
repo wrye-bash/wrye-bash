@@ -33,15 +33,15 @@ from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
 from .basic_elements import MelBase, MelFid, MelSimpleGroups, MelFixedString, \
     MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, \
     MelStruct, MelUInt8Bool, MelUInt32, MelUInt32Flags, MelUnicode, \
-    unpackSubHeader, MelUInt32Bool
+    MelUInt32Bool
 from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelDebrData, MelDescription, MelEdid, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId, gen_coed_key
-from .. import bolt, bush, exception
-from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
-    struct_pack, structs_cache, to_unix_newlines, to_win_newlines
+from .. import bolt, bush
+from ..bolt import Flags, FName, decoder, flag, remove_newlines, struct_pack, \
+    structs_cache, to_unix_newlines, to_win_newlines
 
 #------------------------------------------------------------------------------
 # Mixins ----------------------------------------------------------------------
@@ -132,41 +132,31 @@ class AMreFlst(MelRecord):
         self.formIDInList = [f for f in self.formIDInList if
                              f.mod_fn in keep_plugins]
 
-    def mergeWith(self,other,otherMod):
+    def merge_list(self, other, otherMod):
         """Merges newLevl settings and entries with self.
         Requires that: self.items, other.de_records be defined."""
+        self_fids, other_fids = self.formIDInList, other.formIDInList
         #--Remove items based on other.removes
         if other.de_records:
             removeItems = self.items & other.de_records
-            self.formIDInList = [fi for fi in self.formIDInList
-                                 if fi not in removeItems]
+            self_fids[:] = (fi for fi in self_fids if fi not in removeItems)
             self.items |= other.de_records
         #--Add new items from other
-        newItems = set()
-        formIDInListAppend = self.formIDInList.append
-        newItemsAdd = newItems.add
-        for fi in other.formIDInList:
-            if fi not in self.items:
-                formIDInListAppend(fi)
-                newItemsAdd(fi)
+        newItems = {fi for fi in other_fids if fi not in self.items}
         if newItems:
+            self_fids.extend(newItems)
             self.items |= newItems
         #--Is merged list different from other? (And thus written to patch.)
-        if len(self.formIDInList) != len(other.formIDInList):
-            self.mergeOverLast = True
-        else:
-            for selfEntry, otherEntry in zip(self.formIDInList,
-                                              other.formIDInList):
-                if selfEntry != otherEntry:
-                    self.mergeOverLast = True
-                    break
-            else:
-                self.mergeOverLast = False
+        self.mergeOverLast = len(self_fids) != len(other_fids) or any(
+            s != o for s, o in zip(self_fids, other_fids))
         if self.mergeOverLast:
             self.mergeSources.append(otherMod)
         else:
             self.mergeSources = [otherMod]
-        self.setChanged()
+        self.setChanged() ##: maybe only if mergeOverLast?
+
+    def get_entries(self):
+        return {*self.formIDInList}
 
 #------------------------------------------------------------------------------
 class AMreGlob(MelRecord):
@@ -184,11 +174,9 @@ class AMreGlob(MelRecord):
 
 #------------------------------------------------------------------------------
 class AMreHeader(MelRecord):
-    """File header.  Base class for all 'TES4' like records"""
-    # Subrecords that can appear after the masters block - must be set per game
-    _post_masters_sigs: set[bytes]
+    """File header.  Base class for all 'TES4' like records."""
     # Set per game, the value that nextObject defaults to
-    next_object_default: int
+    next_object_default = 0x800
 
     class HeaderFlags(MelRecord.HeaderFlags):
         esm_flag: bool = flag(0)
@@ -271,43 +259,13 @@ class AMreHeader(MelRecord):
         self.author_pstr = remove_newlines(new_author)
 
     def loadData(self, ins, endPos, *, file_offset=0):
-        """Loads data from input stream - copy pasted from parent cause we need
-        to grab the masters as soon as possible due to ONAM needing FID
-        wrapping."""
-        loaders = self.__class__.melSet.loaders
-        # Load each subrecord
-        ins_at_end = ins.atEnd
-        masters_loaded = False
-        in_overlay_plugin = getattr(self.flags1, 'overlay_flag', False)
-        while not ins_at_end(endPos, self._rec_sig):
-            sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
-                                                 file_offset=file_offset)
-            if not masters_loaded and sub_type in self._post_masters_sigs:
-                masters_loaded = True
-                utils_constants.FORM_ID = FormId.from_masters(
-                    (*self.masters, ins.inName), in_overlay_plugin)
-            try:
-                loader = loaders[sub_type]
-                try:
-                    loader.load_mel(self, ins, sub_type, sub_size,
-                                    self._rec_sig, sub_type) # *debug_strs
-                    continue
-                except Exception as er:
-                    error = er
-            except KeyError: # loaders[sub_type]
-                # Wrap this error to make it more understandable
-                error = f'Unexpected subrecord: {self.rec_str}.' \
-                        f'{sig_to_str(sub_type)}'
-            file_offset += ins.tell()
-            bolt.deprint(self.error_string('loading', file_offset, sub_size,
-                                           sub_type))
-            if isinstance(error, str):
-                raise exception.ModError(ins.inName, error)
-            raise exception.ModError(ins.inName, f'{error!r}') from error
-        if not masters_loaded:
-            augmented_masters = (*self.masters, ins.inName)
+        """Loads data from input stream - we need to grab the masters as
+        soon as possible due to ONAM needing FID wrapping."""
+        super().loadData(ins, endPos, file_offset=file_offset)
+        if utils_constants.FORM_ID is None:
+            in_overlay_plugin = getattr(self.flags1, 'overlay_flag', False)
             utils_constants.FORM_ID = FormId.from_masters(
-                augmented_masters, in_overlay_plugin)
+                (*self.masters, ins.inName), in_overlay_plugin)
         self._truncate_master_sizes()
 
     def _truncate_master_sizes(self):
@@ -477,7 +435,7 @@ class AMreLeveledList(MelRecord):
         self.entries = [entry for entry in self.entries if
                         entry.listId.mod_fn in keep_plugins]
 
-    def mergeWith(self,other,otherMod):
+    def merge_list(self, other, otherMod):
         """Merges newLevl settings and entries with self.
         Requires that self.items, other.de_records and other.re_records be
         defined."""
@@ -497,25 +455,19 @@ class AMreLeveledList(MelRecord):
             removeItems = self.items & (other.de_records | other.re_records)
             self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
             self.items = (self.items | other.de_records) - other.re_records
-        hasOldItems = bool(self.items)
         #--Add new items from other
-        newItems = set()
-        entriesAppend = self.entries.append
-        newItemsAdd = newItems.add
-        for entry in other.entries:
-            if entry.listId not in self.items:
-                entriesAppend(entry)
-                newItemsAdd(entry.listId)
+        new_entries = {e for e in other.entries if e.listId not in self.items}
+        self.entries.extend(new_entries)
         # Check if merging exceeded the counter's limit and, if so, truncate it
         # and warn. Note that pre-Skyrim games do not have this limitation.
         max_lvl_size = bush.game.Esp.max_lvl_list_size
         if max_lvl_size and len(self.entries) > max_lvl_size:
             # TODO(inf) In the future, offer an option to auto-split these into
             #  multiple sub-lists instead
-            bolt.deprint(u"Merging changes from mod '%s' to leveled list %r "
-                         u'caused it to exceed %u entries. Truncating back '
-                         u'to %u, you will have to fix this manually!' %
-                         (otherMod, self, max_lvl_size, max_lvl_size))
+            bolt.deprint(f"Merging changes from mod '{otherMod}' to leveled "
+                         f"list {self!r} caused it to exceed {max_lvl_size:d} "
+                         f"entries. Truncating back to {max_lvl_size:d}, you "
+                         f"will have to fix this manually!")
             self.entries = self.entries[:max_lvl_size]
         all_entry_attrs = self.__class__._entry_copy_attrs
         coed_attrs = ('item_owner', 'item_global', 'item_condition')
@@ -524,42 +476,29 @@ class AMreLeveledList(MelRecord):
                                                 if a not in coed_attrs))
         else:
             entry_sort_key = attrgetter(*all_entry_attrs)
-        if newItems:
-            self.items |= newItems
+        if new_entries: # note we don't need to resort if we just removed items
+            self.items.update(e.listId for e in new_entries)
             self.entries.sort(key=entry_sort_key)
         #--Is merged list different from other? (And thus written to patch.)
-        if ((len(self.entries) != len(other.entries)) or
-                (self.flags != other.flags)):
-            self.mergeOverLast = True
-        else:
-            # Check copy-attributes first, break if they are different
-            for attr in self.__class__._top_copy_attrs:
-                if getattr(self, attr) != getattr(other, attr):
-                    self.mergeOverLast = True
-                    break
-            else:
-                # Then, check the sort-attributes, same story
-                otherlist = other.entries
-                otherlist.sort(key=entry_sort_key)
-                for selfEntry, otherEntry in zip(self.entries, otherlist):
-                    for attr in all_entry_attrs:
-                        if getattr(selfEntry, attr) != getattr(
-                                otherEntry, attr):
-                            break
-                    else:
-                        # attributes are identical, try next entry
-                        continue
-                    # attributes differ, no need to look at more entries
-                    self.mergeOverLast = True
-                    break
-                else:
-                    # Neither one had different attributes
-                    self.mergeOverLast = False
+        ##: what if the list is marked mergeOverLast already (see _AListsMerger.scanModFile)
+        # Check copy-attributes first, break if they are different
+        self.mergeOverLast = len(self.entries) != len(other.entries) or \
+            self.flags != other.flags or any(getattr(self, att) != getattr(
+                other, att) for att in self.__class__._top_copy_attrs)
+        if not self.mergeOverLast:
+            # Then, check if any of the sort-attributes differs for any entry
+            other.entries.sort(key=entry_sort_key) # first sort (len is equal)
+            self.mergeOverLast = any(any(
+                    getattr(e, a) != getattr(othe, a) for a in all_entry_attrs)
+                for e, othe in zip(self.entries, other.entries))
         if self.mergeOverLast:
             self.mergeSources.append(otherMod)
         else:
             self.mergeSources = [otherMod]
         self.setChanged(self.mergeOverLast)
+
+    def get_entries(self):
+        return {list_entry.listId for list_entry in self.entries}
 
 #------------------------------------------------------------------------------
 class AMreMgefTes5(AMreWithKeywords):

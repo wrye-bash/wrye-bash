@@ -52,8 +52,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrCameraPath, MelLscrNif, \
     MelLscrRotation, MelLString, MelLtexGrasses, MelLtexSnam, MelMapMarker, \
     MelMatoPropertyData, MelMattShared, MelMdob, MelMODS, MelNextPerk, \
-    MelNodeIndex, MelNull, MelOwnership, MelPartialCounter, \
-    MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, \
+    MelNodeIndex, MelNull, MelOwnership, MelPartialCounter, MelPerkData, \
+    MelPerkParamsGroups, MelPostMast, MelPostMastA, MelRace, MelRaceData, \
     MelRandomTeleports, MelReadOnly, MelRecord, MelRef3D, AMreGlob, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntryMapName, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
@@ -299,7 +299,7 @@ class MreHasEffects(MelRecord):
         return 0 # default to 0 (novice)
 
 #------------------------------------------------------------------------------
-class MelInteriorCellCount(MelUInt32):
+class MelInteriorCellCount(MelPostMast, MelUInt32):
     """Handles the TES4 subrecord INCC, which is actually a uint32 but was
     marked as an unknown byte array in TES5Edit for a long time. Handle it by
     just skipping subrecords that can't be read as a uint32."""
@@ -414,7 +414,6 @@ class _MelTes4Hedr(MelStruct):
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'SCRN', b'INTV', b'INCC', b'ONAM'}
 
     class HeaderFlags(AMreHeader.HeaderFlags):
         localized: bool = flag(7)
@@ -428,9 +427,9 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
-        MelBase(b'INTV', 'unknownINTV'),
+        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
+        MelPostMast(b'INTV', 'unknownINTV'),
         MelInteriorCellCount(),
     )
 

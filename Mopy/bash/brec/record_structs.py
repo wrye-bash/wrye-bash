@@ -556,10 +556,10 @@ class MelRecord(MreRecord):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
                                                  file_offset=file_offset)
             try:
-                loader = loaders[sub_type]
+                mel_loader = loaders[sub_type]
                 try:
-                    loader.load_mel(self, ins, sub_type, sub_size,
-                                    self._rec_sig, sub_type) # *debug_strs
+                    mel_loader.load_mel(self, ins, sub_type, sub_size,
+                                        self._rec_sig, sub_type) # *debug_strs
                     continue
                 except Exception as er:
                     error = er
@@ -571,7 +571,7 @@ class MelRecord(MreRecord):
             bolt.deprint(self.error_string('loading', file_offset, sub_size,
                                            sub_type, self.flags1))
             if isinstance(error, str):
-                raise exception.ModError(ins.inName, error)
+                raise exception.ModError(ins.inName, f'{error!r}')
             raise exception.ModError(ins.inName, f'{error!r}') from error
         # Sort once we're done - sorting during loading is obviously a bad idea
         self._sort_subrecords()
