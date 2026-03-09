@@ -805,7 +805,7 @@ class Mods_LOImportFromOBMM(AppendableLink, _AImportLOBaseLink):
             obmm_data = ins.read()
         try:
             exported_lines = decoder(obmm_data).splitlines()
-        except UnicodeDecodeError:
+        except UnicodeError:
             return _('Could not determine encoding.')
         imported_lo = []
         for ex_line in exported_lines:

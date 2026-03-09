@@ -53,7 +53,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelLscrRotation, MelLString, MelLtexGrasses, MelLtexSnam, MelMapMarker, \
     MelMatoPropertyData, MelMattShared, MelMdob, MelMODS, MelNextPerk, \
     MelNodeIndex, MelNull, MelOwnership, MelPartialCounter, MelPerkData, \
-    MelPerkParamsGroups, MelPostMast, MelPostMastA, MelRace, MelRaceData, \
+    MelPerkParamsGroups, MelPostMast, MelPostMastSA, MelRace, MelRaceData, \
     MelRandomTeleports, MelReadOnly, MelRecord, MelRef3D, AMreGlob, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntryMapName, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
@@ -427,7 +427,7 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
         MelPostMast(b'SCRN', 'screenshot'),
         MelPostMast(b'INTV', 'unknownINTV'),
         MelInteriorCellCount(),

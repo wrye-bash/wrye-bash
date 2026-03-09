@@ -29,7 +29,7 @@ from typing import BinaryIO
 
 from . import utils_constants
 from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
-    int_unpacker, null1, FormId
+    int_unpacker, null1
 from .. import bolt, bush, exception
 from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
     struct_calcsize, struct_error, structs_cache
@@ -930,11 +930,7 @@ class MelPostMast(MelBase):
     for setting FORM_ID."""
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        if utils_constants.FORM_ID is None:
-            in_overlay_plugin = bush.game.has_overlay_plugins and \
-                                record.flags1.overlay_flag
-            utils_constants.FORM_ID = FormId.from_masters(
-                (*record.masters, ins.inName), in_overlay_plugin)
+        record.set_form_id_type(ins)
         super().load_mel(record, ins, sub_type, size_, *debug_strs)
 
 class MelPostMastS(MelPostMast, MelStruct): pass

@@ -23,8 +23,9 @@
 """This module contains the Starfield record classes."""
 
 from ...bolt import flag
-from ...brec import AMreCell, AMreHeader, AMreWrld, MelFid, MelGroups, \
-    MelNull, MelPostMast, MelPostMastA, MelPostMastI, MelSet, MelStruct
+from ...brec import AMreCell, AMreHeader, AMreWrld, MelFid, MelNull, \
+    MelPostMast, MelPostMastSA, MelPostMastG, MelPostMastI, MelSet, \
+    MelSimpleArray, MelStruct, MelUInt32
 
 #------------------------------------------------------------------------------
 # Starfield Records -----------------------------------------------------------
@@ -49,12 +50,10 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(has_sizes=False),
-        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
         MelPostMast(b'SCRN', 'screenshot'),
-        MelGroups('transient_types',
-            MelPostMastA('unknownTNAM', MelFid(b'TNAM'),
-                prelude=MelPostMastI(b'TNAM', 'form_type')),
-        ),
+        MelPostMastG('transient_types', MelSimpleArray('unknownTNAM', MelFid(
+            b'TNAM'), prelude=MelUInt32(b'TNAM', 'form_type'))),
         MelPostMast(b'BNAM', 'unknown_bnam'),
         MelPostMastI(b'INTV', 'unknownINTV'),
         MelPostMastI(b'INCC', 'interior_cell_count'),

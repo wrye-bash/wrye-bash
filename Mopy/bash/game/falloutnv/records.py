@@ -27,7 +27,7 @@ from ..fallout3.records import MelDestructible, MelModel, MelRecord
 from ...bolt import Flags, flag
 from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
     MelDescription, MelEdid, MelFid, MelFloat, MelFull, MelGroups, \
-    MelIco2, MelIcon, MelIcons, MelNull, MelPostMast, MelPostMastA, \
+    MelIco2, MelIcon, MelIcons, MelNull, MelPostMast, MelPostMastSA, \
     MelScript, MelSet, MelSInt32, MelSorted, MelSoundPickupDrop, MelString, \
     MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, MelUInt32, \
     MelValueWeight, MelSimpleGroups
@@ -47,7 +47,7 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
         MelPostMast(b'SCRN', 'screenshot'),
     )
 

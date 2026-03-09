@@ -76,7 +76,7 @@ sys.path.insert(0, str(MOPY_PATH))
 from bash import bass, bolt
 
 # create the repo instance
-_WB_REPO = WBRepo(ROOT_PATH)
+_WB_REPO = WBRepo()
 
 _min_sha_len = 7 # minimum length to keep from commit hash
 

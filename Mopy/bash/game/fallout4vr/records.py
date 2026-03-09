@@ -24,8 +24,8 @@
 FO4VR."""
 
 from ...bolt import flag
-from ...brec import AMreHeader, MelFid, MelGroups, MelNull, MelPostMast, \
-    MelPostMastA, MelPostMastI, MelSet, MelStruct, MelUInt32
+from ...brec import AMreHeader, MelFid, MelNull, MelPostMast, MelPostMastSA,  \
+    MelPostMastG, MelPostMastI, MelSet, MelSimpleArray, MelStruct, MelUInt32
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
@@ -45,12 +45,10 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
         MelPostMast(b'SCRN', 'screenshot'),
-        MelGroups('transient_types',
-            MelPostMastA('unknownTNAM', MelFid(b'TNAM'),
-                prelude=MelPostMastI(b'TNAM', 'form_type')),
-        ),
+        MelPostMastG('transient_types', MelSimpleArray('unknownTNAM', MelFid(
+            b'TNAM'), prelude=MelUInt32(b'TNAM', 'form_type'))),
         MelPostMastI(b'INTV', 'unknownINTV'),
         MelPostMastI(b'INCC', 'interior_cell_count'),
     )

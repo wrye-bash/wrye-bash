@@ -23,7 +23,7 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to IniList singleton."""
 from .files_links import File_Duplicate
-from .. import balt, bass, bosh
+from .. import balt, bosh
 from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink
 from ..bolt import dict_sort
 from ..gui import copy_text_to_clipboard

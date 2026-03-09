@@ -192,7 +192,7 @@ class ChildrenGrupHeader(GrupHeader):
 
 class ExteriorGrupHeader(GrupHeader):
     """Exterior Cell Sub/Block - label is Grid Y, X (Note the reverse order)"""
-    label: (int, int)
+    label: tuple[int, int]
     __slots__ = ()
 
     def _pack_lab(self):

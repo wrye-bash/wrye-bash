@@ -107,7 +107,7 @@ def _parse_vdf(vdf_path: _StrPath, *, vdf_root: str) -> dict | None:
         # library to another location/computer and some games haven't been
         # reinstalled yet
         return None
-    except UnicodeDecodeError:
+    except UnicodeError:
         deprint(f'Failed to parse {vdf_path}: failed to determine its '
                 f'encoding', traceback=True)
         return None

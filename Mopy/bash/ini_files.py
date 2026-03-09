@@ -259,10 +259,13 @@ class IniFileInfo(AIniInfo, AFileInfo):
         try:
             with open(self.abs_path, mode='rb') as f:
                 content = f.read()
-            if not as_unicode: return content
-            decoded = str(content, self.ini_encoding)
-            return decoded.splitlines(False) # keepends=False
-        except UnicodeDecodeError:
+            return str(content, self.ini_encoding).splitlines( # keepends=False
+                False) if as_unicode else content
+        except UnicodeDecodeError as e:
+            msg = _('The INI file %(ini_full_path)s seems to have '
+                    'unencodable characters:')
+            msg = f'{msg}\n\n{e}' % {'ini_full_path': self.abs_path}
+            self.isCorrupted = msg
             deprint(f'Failed to decode {self.abs_path} using '
                     f'{self.ini_encoding}', traceback=True)
         except FileNotFoundError:
@@ -280,43 +283,37 @@ class IniFileInfo(AIniInfo, AFileInfo):
         try:
             if self._ci_settings_cache_linenum is self.__empty_settings \
                     or self.do_update(raise_os_error=True):
-                try:
-                    ci_settings = LowerDict()
-                    ci_deleted_settings = LowerDict()
-                    self.isCorrupted = ''
-                    #--Read ini file
-                    section = None
-                    for i, line in enumerate(self.read_ini_content(
-                            missing_ok=missing_ok)):
-                        _strip, setting, val, new_section, is_del = \
-                            self.parse_ini_line(line, parse_value=True)
-                        if setting: # OBSEIni has `new_section` if setting=True
-                            section = new_section or section
-                            if is_del:
-                                if not section: continue #treat it as a comment
-                                settings_dict = ci_deleted_settings
-                            else: settings_dict = ci_settings
-                            try:
-                                settings_dict[section][setting] = (val, i)
-                            except KeyError:
-                                if not section: # can't happen for OBSEIniFile
-                                    self.isCorrupted = _("Your %(tweak_ini)s "
-                                        "should begin with a section header "
-                                        "(e.g. '[General]'), but it does not."
-                                    ) % {'tweak_ini': self.abs_path}
-                                    section = self.__class__.defaultSection
-                                settings_dict[section] = LowerDict(
-                                    [(setting, (val, i))])
-                        elif new_section: # we got a section
-                            section = new_section
-                    self._ci_settings_cache_linenum, self._deleted_cache = \
-                        ci_settings, ci_deleted_settings
-                except UnicodeDecodeError as e:
-                    msg = _('The INI file %(ini_full_path)s seems to have '
-                            'unencodable characters:')
-                    msg = f'{msg}\n\n{e}' % {'ini_full_path': self.abs_path}
-                    self.isCorrupted = msg
-                    return ({}, {}) if with_deleted else {}
+                ci_settings = LowerDict()
+                ci_deleted_settings = LowerDict()
+                self.isCorrupted = ''
+                #--Read ini file
+                section = None
+                for i, line in enumerate(self.read_ini_content(
+                        missing_ok=missing_ok)):
+                    _strip, setting, val, new_section, is_del = \
+                        self.parse_ini_line(line, parse_value=True)
+                    if setting: # OBSEIni has `new_section` if setting == True
+                        section = new_section or section
+                        if is_del:
+                            if not section: continue # treat it as a comment
+                            settings_dict = ci_deleted_settings
+                        else:
+                            settings_dict = ci_settings
+                        try:
+                            settings_dict[section][setting] = (val, i)
+                        except KeyError:
+                            if not section:  # can't happen for OBSEIniFile
+                                self.isCorrupted = _("Your %(tweak_ini)s "
+                                    "should begin with a section header (e.g. "
+                                    "'[General]'), but it does not.") % {
+                                        'tweak_ini': self.abs_path}
+                                section = self.__class__.defaultSection
+                            settings_dict[section] = LowerDict(
+                                [(setting, (val, i))])
+                    elif new_section:  # we got a section
+                        section = new_section
+                self._ci_settings_cache_linenum, self._deleted_cache = \
+                    ci_settings, ci_deleted_settings
         except OSError:
             return ({}, {}) if with_deleted else {}
         if with_deleted:

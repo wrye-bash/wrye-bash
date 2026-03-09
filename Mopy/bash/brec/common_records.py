@@ -262,11 +262,15 @@ class AMreHeader(MelRecord):
         """Loads data from input stream - we need to grab the masters as
         soon as possible due to ONAM needing FID wrapping."""
         super().loadData(ins, endPos, file_offset=file_offset)
+        self.set_form_id_type(ins)
+        self._truncate_master_sizes()
+
+    def set_form_id_type(self, ins):
+        """Set the global FORM_ID type, used by FID to generate formIDs."""
         if utils_constants.FORM_ID is None:
             in_overlay_plugin = getattr(self.flags1, 'overlay_flag', False)
             utils_constants.FORM_ID = FormId.from_masters(
                 (*self.masters, ins.inName), in_overlay_plugin)
-        self._truncate_master_sizes()
 
     def _truncate_master_sizes(self):
         # Starfield (and newer, most likely) don't have DATA and so don't have

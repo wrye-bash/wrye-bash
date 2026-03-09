@@ -459,7 +459,16 @@ class MelSimpleArray(MelArray):
     def _pack_array_data(self, array_val):
         return b''.join(map(self._element.packer, array_val))
 
-class MelPostMastA(MelPostMast, MelSimpleArray): pass
+class MelPostMastSA(MelPostMast, MelSimpleArray): pass
+class _MelPostMastG(MelPostMast):
+    """A MelGroups/Array inside an AMreHeader record - do not use MelPostMast
+    elements as it will try to call set_form_id_type on MelObject instances"""
+    def load_mel(self, record, ins, *args):
+        record.set_form_id_type(ins)
+        super().load_mel(record, ins, *args)
+class MelPostMastG(_MelPostMastG, MelGroups): pass
+class MelPostMastA(_MelPostMastG, MelArray):
+    """Only used in MreTes3 when reading a save."""
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):

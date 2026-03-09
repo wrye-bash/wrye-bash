@@ -170,7 +170,7 @@ def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
     for encoding in encodingOrder:
         try: return str(byte_str, encoding)
         except UnicodeDecodeError: pass
-    raise UnicodeDecodeError(u'Text could not be decoded using any method')
+    raise UnicodeError(f'{byte_str=} could not be decoded using any method')
 
 def encode(text_str, encodings=encodingOrder, firstEncoding=None,
            returnEncoding=False):
@@ -208,8 +208,8 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
     if goodEncoding:
         if returnEncoding: return goodEncoding
         else: return goodEncoding[0]
-    raise UnicodeEncodeError(f'Text could not be encoded using any of the '
-                             f'following encodings: {encodings}')
+    raise UnicodeError(f'{text_str=!r} could not be encoded using any of the '
+                       f'following encodings: {encodings}')
 
 def encode_complex_string(string_val: str, max_size: int | None = None,
         min_size: int | None = None,

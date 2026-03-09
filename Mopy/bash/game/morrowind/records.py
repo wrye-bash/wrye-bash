@@ -25,12 +25,13 @@ and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
 from ...bolt import Flags, flag
 from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
-    FixedString, MelArray, MelBase, MelBookText, MelColorO, MelCounter, \
+    FixedString, MelBase, MelBookText, MelColorO, MelCounter, \
     MelDescription, MelEffectsTes3, MelFixedString, MelFloat, MelGroup, \
     MelGroups, MelIcons, AMelLists, MelLLChanceNoneTes3, MelLLFlagsTes3, \
-    MelNull, MelPostMast, MelPostMastS, MelRecord, MelRef3D, MelRefScale, MelSequential, \
-    MelSet, MelSInt32, MelString, MelStrings, MelStruct, MelTruncatedStruct, \
-    MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, SaveDecider, \
+    MelNull, MelPostMast, MelPostMastA, MelPostMastS, MelRecord, MelRef3D, \
+    MelRefScale, MelSequential, MelSet, MelSInt32, MelString, MelStrings, \
+    MelStruct, MelTruncatedStruct, MelUInt8, MelUInt16, MelUInt32, \
+    MelUInt32Flags, MelUnion, SaveDecider, \
     SizeDecider, color_attrs, color3_attrs, position_attrs, rotation_attrs, \
     MelReadOnly, MgefFlagsTes3
 
@@ -248,8 +249,8 @@ class MreTes3(AMreHeader):
                 'unknown4', (FixedString(64), 'curr_cell'),
                 'unknown5', (AutoFixedString(32), 'pc_name')),
             MelPostMast(b'SCRD', 'unknown_scrd'), # likely screenshot-related
-            MelArray('screenshot_data', # Yes, the correct order is bgra
-                MelPostMastS(b'SCRS', ['4B'], 'blue', 'green', 'red', 'alpha'),
+            MelPostMastA('screenshot_data', # Yes, the correct order is bgra
+                MelStruct(b'SCRS', ['4B'], 'blue', 'green', 'red', 'alpha'),
             ),
         ),
     )

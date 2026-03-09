@@ -48,7 +48,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelLString, MelLtexGrasses, MelLtexSnam, MelMatoPropertyData, \
     MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
     MelObjectTemplate, MelPartialCounter, MelPerkData, AMreGlob, \
-    MelPerkParamsGroups, MelPostMast, MelPostMastA, MelPostMastI, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
+    MelPerkParamsGroups, MelPostMast,MelPostMastG, MelPostMastI, \
+    MelPostMastSA, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, MelVoice, \
     MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, MelMustShared, \
     MelSoundActivation, MelSoundClose, MelSoundLooping, MelSoundPickupDrop, \
@@ -439,12 +440,10 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
         MelPostMast(b'SCRN', 'screenshot'),
-        MelGroups('transient_types',
-            MelPostMastA('unknownTNAM', MelFid(b'TNAM'),
-                prelude=MelPostMastI(b'TNAM', 'form_type')),
-        ),
+        MelPostMastG('transient_types', MelSimpleArray('unknownTNAM', MelFid(
+            b'TNAM'), prelude=MelUInt32(b'TNAM', 'form_type'))),
         MelPostMastI(b'INTV', 'unknownINTV'),
         MelPostMastI(b'INCC', 'interior_cell_count'),
     )

@@ -742,9 +742,9 @@ class TimestampGame(LoGame):
             # mods_it is ordered in ftime so conflicts come in chunks
             if older == (older := info.ftime):
                 # respace this and next mods in 60 sec intervals
-                for info in (info, *mods_it):
+                for inf in (info, *mods_it):
                     older += 60.0
-                    info.setmtime(older, mark_redated=True)
+                    inf.setmtime(older, mark_redated=True)
                 break
         restamp = []
         # len(lord) must be equal to len(modinfos) - collect modification times

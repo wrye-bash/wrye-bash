@@ -206,6 +206,9 @@ def run_subprocess(command, logger, **kwargs):
 class WBRepo(pygit2.Repository):
     """A Wrye Bash pygit2 Repository wrapper."""
 
+    def __init__(self, repo_path=ROOT_PATH, *args, **kwargs):
+        super().__init__(str(repo_path), *args, **kwargs)
+
     def get_repo_sig(self):
         """Wrapper around pygit2 that shows a helpful error message to the
         user if their credentials have not been configured yet."""

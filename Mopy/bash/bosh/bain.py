@@ -2624,7 +2624,7 @@ class InstallersData(DataStore):
         excludir = {bass.dirs['mods'], bass.dirs['mods'].join('Docs')}
         emptyDirs -= excludir
         while emptyDirs:
-            testDirs = set(emptyDirs)
+            testDirs: set[Path] = set(emptyDirs)
             emptyDirs.clear()
             # Sorting by length, descending, ensure we are always processing
             # the deepest directories first

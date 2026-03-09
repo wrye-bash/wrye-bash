@@ -50,15 +50,15 @@ class PCFaces(object):
         pcf_modifiers: bool
         pcf_spells: bool
 
-    class PCFace(object):
+    class PCFace:
         """Represents a face."""
-        set_from_npc = ('attributes', 'base_spell', 'eid', 'eye', 'fatigue',
+        __slots__ = ('attributes', 'base_spell', 'eid', 'eye', 'fatigue',
             'fgga_p', 'fggs_p', 'fgts_p', 'hair', 'hairBlue', 'hairGreen',
             'hairLength', 'hairRed', 'health', 'level_offset', 'npc_class',
-            'race', 'skills', 'unused2', 'unused3')
-        set_manually = ('face_masters', 'factions', 'gender', 'modifiers',
-                        'pcName', 'spells')
-        __slots__ = set_from_npc + set_manually
+            'race', 'skills', 'unused2', 'unused3', # up till here set from npc
+            'face_masters', 'factions', 'gender', 'modifiers', 'pcName',
+            'spells')
+        set_from_npc, set_manually = __slots__[:20], __slots__[20:]
 
         def __init__(self):
             self.face_masters = []

@@ -267,9 +267,8 @@ class _Tes4Fid(FormId):
 ZERO_FID = _Tes4Fid(0)
 NONE_FID = _NoneFid()
 
-# Global FormId class used to wrap all formids of currently loading mod. It
-# must be set by the mod reader context manager based on the currently loading
-# plugin
+# Global FormId class used to wrap all formids of currently loading mod. Must
+# be set by the mod reader context manager (see AMreHeader.set_form_id_type)
 FORM_ID: type[FormId] | None = None
 
 # Global short mapper function. Set by the plugin output context manager.
