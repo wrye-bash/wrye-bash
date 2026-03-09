@@ -231,7 +231,17 @@ def unpack_header(ins, *, _entering_context=False, __rh=RecordHeader,
 
 #------------------------------------------------------------------------------
 # Low-level reading/writing ---------------------------------------------------
-class ModReader(object):
+class _FormIdReadContext:
+    # with statement
+    def __enter__(self):
+        self.form_id_type = utils_constants.FORM_ID
+        if self.form_id_type is None: # else we are called in the context of another reader (DUH)
+            utils_constants.FORM_ID = FormId # keep fids in short format
+        return self
+    def __exit__(self, *args, **kwargs):
+        utils_constants.FORM_ID = self.form_id_type
+
+class ModReader(_FormIdReadContext):
     """Wrapper around a TES4 file in read mode.
     Will throw a ModReaderror if read operation fails to return correct size.
     """
@@ -250,14 +260,8 @@ class ModReader(object):
         self.hasStrings = False
         self.debug_offset = 0
 
-    # with statement
-    def __enter__(self):
-        self.form_id_type = utils_constants.FORM_ID
-        if self.form_id_type is None: # else we are called in the context of another reader (DUH)
-            utils_constants.FORM_ID = FormId # keep fids in short format
-        return self
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        utils_constants.FORM_ID = self.form_id_type
+    def __exit__(self, *args, **kwargs):
+        super().__exit__(*args, **kwargs)
         self.ins.close()
 
     def load_tes4(self, do_unpack_tes4=True):
@@ -435,7 +439,7 @@ class FormIdWriteContext:
         self.__out = self._out_path and open(self._out_path, 'wb')
         return self.__out
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, *args, **kwargs):
         utils_constants.short_mapper = None
         utils_constants.short_mapper_no_engine = None
         if self._out_path: self.__out.close()
@@ -468,11 +472,11 @@ class ShortFidWriteContext(FormIdWriteContext):
     def _get_short_mapper(self, skip_engine=False):
         return lambda formid: formid.short_fid
 
-class FastModReader(BytesIO):
+class FastModReader(_FormIdReadContext, BytesIO):
     """BytesIO-derived class that mimics ModReader, but runs at lightning
     speed."""
     def __init__(self, in_name, initial_bytes):
-        super().__init__(initial_bytes)
+        super(_FormIdReadContext, self).__init__(initial_bytes)
         # Mirror ModReader.inName - name of the input file
         self.inName = in_name
         # Mirror ModReader.size - size of the input file
@@ -481,14 +485,12 @@ class FastModReader(BytesIO):
         self.ins = self
 
     def __enter__(self):
-        self.form_id_type = utils_constants.FORM_ID
-        if self.form_id_type is None: # else we are called in the context of another reader (DUH)
-            utils_constants.FORM_ID = FormId # keep fids in short format
-        return super().__enter__()
+        super().__enter__()
+        return super(_FormIdReadContext, self).__enter__()
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        utils_constants.FORM_ID = self.form_id_type
-        super().__exit__(exc_type, exc_value, exc_traceback)
+    def __exit__(self, *args, **kwargs):
+        super().__exit__()
+        super(_FormIdReadContext, self).__exit__(*args, **kwargs)
 
     def unpack(self, struct_unpacker, size, *debug_strs):
         """Mirror ModReader.unpack."""

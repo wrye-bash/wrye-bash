@@ -1085,7 +1085,7 @@ class ItemPrices(_HandleAliases):
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _key2_getter = itemgetter(0, 1)
     _grup_index = 5
-    _attr_dex = {u'value': 2, u'eid': 3, u'full': 4}
+    _attr_dex = {'value': 2, 'eid': 3, 'full': 4}
     _row_sorter = partial(_key_sort, values_key=['eid', 'value'])
 
     def __init__(self, aliases_=None):
@@ -1101,10 +1101,10 @@ class ItemPrices(_HandleAliases):
             changed_stats[record.fid.mod_fn] += 1
             record.setChanged()
 
-    def _row_out(self, lfid, stored_data, top_grup,
+    def _row_out(self, lfid, stored_data, top_grup, *,
                  __getter=itemgetter(*_attr_dex)):
-        return '%s,"%d","%s","%s","%s"\n' % (
-            _fid_str(lfid), *__getter(stored_data), top_grup)
+        val, eid_, full_ = __getter(stored_data)
+        return f'{_fid_str(lfid)},"{val:d}","{eid_}","{full_}","{top_grup}"\n'
 
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(_HandleAliases):

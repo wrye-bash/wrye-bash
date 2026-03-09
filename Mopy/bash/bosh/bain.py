@@ -2498,7 +2498,7 @@ class InstallersData(DataStore):
 
     def update_data_SizeCrcDate(self, dest_paths: set[str], progress=None):
         """Update data_SizeCrcDate with info on given paths - paths are given
-        by refreshDataCrcDate, so they should not end in ghost.
+        by refreshSizeCrcDate, so they should not end in ghost.
         :param progress: must be zeroed - message is used in _process_data_dir
         :param dest_paths: set of paths relative to Data/ - may not exist."""
         _pjoin = os.path.join

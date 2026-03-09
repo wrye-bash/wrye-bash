@@ -30,15 +30,14 @@ from collections import defaultdict
 from typing import Self
 
 from . import utils_constants
-from .basic_elements import SubrecordBlob, unpackSubHeader, MelSequential, \
-    MelBase
+from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader, RecordHeader
 from .utils_constants import int_unpacker
 from .. import bolt, exception
 from ..bolt import decoder, flag, float_or_none, int_or_zero, sig_to_str, \
     str_or_none, struct_pack
 
-def _str_to_bool(value, __falsy=frozenset(
+def _str_to_bool(value, *, __falsy=frozenset(
     ['', 'none', 'false', 'no', '0', '0.0'])):
     return value.strip().lower() not in __falsy
 

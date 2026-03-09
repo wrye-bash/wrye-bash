@@ -72,8 +72,8 @@ try:
     # to be shown instead of an ImportError
     import ifileoperation
     from ifileoperation import FileOperationFlags, FileOperator
-except ImportError:
-    pass # We'll raise an error in bash.py
+except ImportError: # We'll raise an error in bash.py
+    ifileoperation = FileOperator = FileOperationFlags = None
 from .common import FileOperationType, _StrPath
 
 def file_operation(operation: FileOperationType,
