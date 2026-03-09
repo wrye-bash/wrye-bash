@@ -219,10 +219,13 @@ class Lazy(_AObject):
     # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs):
         """Postpone calling super.__init__ till the widget is accessed."""
-        # passed from native_init for classes that have a parent
-        self._parent = _no_parent
         self._cached_args = args
         self._cached_kwargs = kwargs
+        self.__reset()
+
+    def __reset(self):
+        # passed from native_init for classes that have a parent
+        self._parent = _no_parent
         self._cached_widget = None
         self.__native_init_called = self._bypass_native_init
 
@@ -239,9 +242,7 @@ class Lazy(_AObject):
     def native_destroy(self):
         if self._is_created():
             self._cached_widget.Destroy()
-            self._cached_widget = None
-            self._parent = _no_parent
-            self.__native_init_called = self._bypass_native_init
+            self.__reset()
 
     # Lazy API - probe into the internals of the class - special occasions only
     def _is_created(self):

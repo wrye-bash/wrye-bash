@@ -203,7 +203,7 @@ class _IcoFromPath(GuiImage):
             return super()._native_widget
         return widget
 
-class _BmpFromIcoPath(GuiImage):
+class _BmpFromIcoPath(GuiImage): ##: .ico only in InitStatusBar (Custom Apps)
     _native_widget: _wx.Bitmap
 
     @property
@@ -220,6 +220,7 @@ class _BmpFromIcoPath(GuiImage):
             scaled = native.ConvertToImage().Scale(self.iconSize,
                 self.iconSize, _wx.IMAGE_QUALITY_HIGH)
             self._cached_args = scaled,
+            self.native_destroy()
             return super()._native_widget
         return native
 
