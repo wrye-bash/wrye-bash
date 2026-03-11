@@ -23,7 +23,6 @@
 """Menu items for the _item_ menu of the mods tab - their window attribute
 points to ModList singleton."""
 
-import copy
 import io
 import re
 import traceback
@@ -35,12 +34,12 @@ from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
     ListDependentDialog, MasterErrorsDialog
 from .files_links import File_Duplicate, File_Redate, RestoreInfo
 from .frames import DocBrowser
-from .patcher_dialog import PatchDialog, all_gui_patchers
+from .patcher_dialog import PatchDialog, gpatcher_types
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
-from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
-    RefrIn, RefrData
+from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, RefrIn, \
+    RefrData
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
@@ -1110,7 +1109,6 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
                               u'of Wrye Bash.'),
                 title=_(u'Unsupported CBash Patch'))
             return
-        _gui_patchers = [copy.deepcopy(x) for x in all_gui_patchers]
         #--Log & Clipboard text
         log = bolt.LogFile()
         log.setHeader('= %s %s' % (bp_parent_info.fn_key, _('Config')))
@@ -1123,8 +1121,8 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         log(u'Python')
         clip.write(u' ** Python\n')
         temp_bp = PatchFile(bp_parent_info, bosh.modInfos)
-        for patcher in _gui_patchers:
-            patcher._bp = temp_bp
+        for ptype in gpatcher_types:
+            patcher = ptype(temp_bp)
             patcher.log_config(config, clip, log)
         #-- Show log
         copy_text_to_clipboard(clip.getvalue())

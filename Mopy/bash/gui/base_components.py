@@ -235,6 +235,9 @@ class Lazy(_AObject):
             if not self.__native_init_called:
                 raise GuiError(f'{self!r} accessing the native widget without '
                                f'calling native_init first')
+            # Lazy is needed below to call the __init__ of the class that
+            # comes just after Lazy in the mro, which will create the widget
+            # and store it in self._cached_widget
             super(Lazy, self).__init__(self._parent, *self._cached_args,
                                        **self._cached_kwargs)
         return self._cached_widget
