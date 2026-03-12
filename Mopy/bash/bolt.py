@@ -452,7 +452,7 @@ class JsonParsable:
     # Specifies special handling for any number of attributes in the parsed
     # JSON dict. Each 'parser' is a function taking the JSON dict and the
     # attribute being parsed and returning the parsed object
-    _parsers: dict[str, callable] = {}
+    _parsers: dict[str, Callable] = {}
     __slots__ = ()
 
     def __init__(self, **_kwargs): # To make PyCharm shut up

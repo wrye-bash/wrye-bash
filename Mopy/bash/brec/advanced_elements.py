@@ -1130,7 +1130,7 @@ class MelSorted(_MelWrapper):
 
     def __init__(self, sorted_mel: MelBase,
             sort_by_attrs: tuple[str, ...] | str = (),
-            sort_special: callable = None):
+            sort_special: Callable = None):
         """Creates a new MelSorted instance with the specified parameters.
 
         :param sorted_mel: The element that needs sorting.

@@ -25,6 +25,7 @@ custom code to handle."""
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 from copy import deepcopy
 from io import BytesIO
 from itertools import chain
@@ -1504,7 +1505,7 @@ class _AVmadComponent(object):
     You can override any of the methods specified below to do other things
     after or before '_processors' has been evaluated, just be sure to call
     super().{dump,load}_data(...) when appropriate."""
-    _processors: dict[str, tuple[callable, callable, int] | str] = {}
+    _processors: dict[str, tuple[Callable, Callable, int] | str] = {}
 
     def load_frag(self, record, ins, vmad_ctx: AVmadContext, *debug_strs):
         """Loads data for this fragment from the specified input stream and
@@ -1783,10 +1784,10 @@ class _AVmadHandlerV6Mixin(_AVmadComponent):
     # The processors used when loading/dumping the v6 version of this handler.
     # The pre_processors are used right before the script is handled, the
     # post_processors right after - see below
-    _v6_pre_processors: dict[str, tuple[callable, callable, int] | str]
-    _v6_post_processors: dict[str, tuple[callable, callable, int] | str]
+    _v6_pre_processors: dict[str, tuple[Callable, Callable, int] | str]
+    _v6_post_processors: dict[str, tuple[Callable, Callable, int] | str]
     # The processors used when loading/dumping the v5 version of this handler
-    _v5_processors: dict[str, tuple[callable, callable, int] | str]
+    _v5_processors: dict[str, tuple[Callable, Callable, int] | str]
 
     def __init__(self):
         self._script_loader = _Script()

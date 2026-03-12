@@ -143,17 +143,14 @@ class WindowFrame(_TopLevelWin):
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
-        self.set_background_color(self._bkg_color())
+        self.set_background_color(
+            Color.from_wx(_wx.SystemSettings.GetColour(_wx.SYS_COLOUR_MENU)))
 
     def show_frame(self, center=False):
         self._native_widget.Show()
         if center: self._native_widget.Center()
 
     def raise_frame(self): self._native_widget.Raise()
-
-    def _bkg_color(self):
-        """Returns the background color to use for this window."""
-        return Color.from_wx(_wx.SystemSettings.GetColour(_wx.SYS_COLOUR_MENU))
 
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
@@ -308,8 +305,7 @@ class Splitter(_AComponent):
                        second_pane or PanelWin(self)]
         split = self._native_widget.SplitVertically if vertically else \
             self._native_widget.SplitHorizontally
-        split(self._panes[0]._native_widget, self._panes[1]._native_widget,
-              sash_position)
+        split(*map(self._resolve, self._panes), sash_position)
         return self._panes[0], self._panes[1]
 
     def get_sash_pos(self): return self._native_widget.GetSashPosition()

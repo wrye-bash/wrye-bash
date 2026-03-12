@@ -23,6 +23,7 @@
 """This module contains the oblivion record classes."""
 import random
 import re
+from typing import ClassVar
 
 from ... import bush
 from ...bolt import Flags, LowerDict, flag, int_or_none, int_or_zero, \
@@ -576,7 +577,7 @@ class MreActi(MelRecord):
 
 #------------------------------------------------------------------------------
 class _ObIcon(MelRecord):
-    _default_icons = None
+    _default_icons: ClassVar[str]
 
     def can_set_icon(self):
         """Return True if we *can* tweak this record's icon."""
@@ -679,6 +680,7 @@ class _CommonBipedFlags(BipedFlags):
                            'rightRing', 'sideWeapon'}
 
 class _ObPlayable(_ObIcon):
+    _default_icons: ClassVar[tuple[str, ...]]
     not_playable_flag = ('biped_flags', 'notPlayable')
     maleIconPath: str
     femaleIconPath: str
