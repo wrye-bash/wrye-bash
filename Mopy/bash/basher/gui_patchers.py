@@ -265,13 +265,8 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def native_init(self, *args, **kwargs):
         if freshly_created :=  super().native_init(*args, **kwargs):
-            self.forceItemCheck = self.__class__.forceItemCheck
             self.selectCommands = self.__class__.selectCommands
-            if self.forceItemCheck:
-                self.gList = ListBox(self, isSingle=False)
-            else:
-                self.gList = CheckListBox(self)
-                self.gList.on_box_checked.subscribe(self.OnListCheck)
+            self._get_glist()
             self._item_search = SearchBar(self, hint=_('Search Sources'))
             self._item_search.on_text_changed.subscribe(
                 self._handle_item_search)
@@ -324,6 +319,10 @@ class _ListPatcherPanel(_PatcherPanel):
         # _populate_item_list in turn
         self._item_search.text_content = ''
 
+    def _get_glist(self):
+        self.gList = CheckListBox(self)
+        self.gList.on_box_checked.subscribe(self.OnListCheck)
+
     @property
     def _list_label(self):
         try:
@@ -370,24 +369,22 @@ class _ListPatcherPanel(_PatcherPanel):
             self._do_populate_item_list()
 
     def _do_populate_item_list(self):
-        forceItemCheck = self.forceItemCheck
         defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings['AutoItemCheck']
         self.gList.lb_clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherOn = False
         patcher_bold = False
         for index, item in enumerate(self._curr_items):
-            itemLabel = self.getItemLabel(item)
+            itemLabel = self.getItemLabel(item, self.configChoices)
             self.gList.lb_insert(itemLabel, index)
-            if forceItemCheck:
-                if self.configChecks.get(item) is None:
-                    patcherOn = True
+            isnew = self.configChecks.get(item) is None
+            if self.forceItemCheck:
+                patcherOn |= isnew
                 self.configChecks[item] = True
             else:
                 effectiveDefaultItemCheck = defaultItemCheck and not itemLabel.endswith(u'.csv')
-                if self.configChecks.get(item) is None:
-                    if effectiveDefaultItemCheck:
-                        patcherOn = True
+                if isnew:
+                    patcherOn |= effectiveDefaultItemCheck
                     if not isFirstLoad:
                         # Indicate that this is a new item by bolding it and
                         # its parent patcher
@@ -503,7 +500,8 @@ class _ListPatcherPanel(_PatcherPanel):
         config[u'remove_empty_sublists'] = self.remove_empty_sublists
         return config
 
-    def getItemLabel(self,item):
+    @staticmethod
+    def getItemLabel(item, conf_choices):
         """Returns label for item to be used in list"""
         return f'{item}' # Path or string - YAK
 
@@ -812,10 +810,10 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        all_tweaks = self.patcher_type.tweak_instances(self._bp)
-        self._all_tweaks = self._curr_tweaks = all_tweaks
-        for tweak in self._all_tweaks:
+        all_tweaks = self.__class__.patcher_type.tweak_instances(self._bp)
+        for tweak in all_tweaks:
             tweak.init_tweak_config(config)
+        self._all_tweaks = self._curr_tweaks = all_tweaks
         return config
 
     def saveConfig(self, configs):
@@ -889,11 +887,11 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             patcher_sources, self.remove_empty_sublists,
             defaultdict(set, self.configChoices))
 
-    def getItemLabel(self,item):
+    @staticmethod
+    def getItemLabel(item, conf_choices):
         # Note that we do *not* want to escape the & here - that puts *two*
         # ampersands in the resulting ListBox for some reason
-        choice = ''.join(
-            sorted(i[0] for i in self.configChoices.get(item, ()) if i))
+        choice = ''.join(sorted(i[0] for i in conf_choices.get(item, ()) if i))
         return f'{item}{f" [{choice}]" if choice else ""}'
 
     def _getConfig(self, configs):
@@ -948,7 +946,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
                 elif 'Auto' in choice_set:
                     _self._get_set_choice(item)
                 gui_li.lb_set_label_at_index(itemIndex, _self.getItemLabel(
-                    item))
+                    item, choices))
         links = Links()
         for index, item_label in enumerate(choice_menu):
             links.append_link(SeparatorLink() if item_label == '----' else
@@ -957,8 +955,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         links.popup_menu(gui_li, None)
 
     def _log_config(self, conf, config, clip, log):
-        self.configChoices = conf.get(u'configChoices', {})
-        for item in map(self.getItemLabel, conf.get(u'configItems', [])):
+        conf_choices = conf.get('configChoices', {})
+        for item in (self.getItemLabel(i, conf_choices) for i in conf.get(
+                'configItems', [])):
             log(f'. __{item}__')
             clip.write(f'    {item}\n')
 
@@ -1286,6 +1285,9 @@ class LeveledLists(_ListsMergerPanel):
     show_empty_sublist_checkbox = True
     # CONFIG DEFAULTS
     default_isEnabled = True
+
+    def _get_glist(self):
+        self.gList = ListBox(self, isSingle=False)
 
 class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     patcher_name = _('FormID Lists')
