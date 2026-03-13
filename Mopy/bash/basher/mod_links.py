@@ -1120,10 +1120,8 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
         log(u'Python')
         clip.write(u' ** Python\n')
-        temp_bp = PatchFile(bp_parent_info, bosh.modInfos)
         for ptype in gpatcher_types:
-            patcher = ptype(temp_bp)
-            patcher.log_config(config, clip, log)
+            ptype.log_config(config, clip, log)
         #-- Show log
         copy_text_to_clipboard(clip.getvalue())
         log_text = log.out.getvalue()

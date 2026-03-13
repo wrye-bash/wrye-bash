@@ -135,18 +135,20 @@ class _PatcherPanel(Lazy, PanelWin):
         config[u'isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
 
-    def log_config(self, config, clip, log):
-        ckey = self.__class__._config_key
+    @classmethod
+    def log_config(cls, config, clip, log):
+        ckey = cls._config_key
         # Check if the patcher is in the config and was enabled
         if ckey not in config or not (conf := config[ckey]).get('isEnabled'):
             return
-        humanName = self.__class__.patcher_name
+        humanName = cls.patcher_name
         log.setHeader(f'== {humanName}')
         clip.write('\n')
         clip.write(f'== {humanName}\n')
-        self._log_config(conf, config, clip, log)
+        cls._log_config(conf, config, clip, log)
 
-    def _log_config(self, conf, config, clip, log):
+    @classmethod
+    def _log_config(cls, conf, config, clip, log):
         items = conf.get(u'configItems', [])
         if not items:
             log(u' ')
@@ -225,7 +227,8 @@ class _AliasesPatcherPanel(_PatcherPanel):
         config[u'aliases'] = self._fn_aliases
         return config
 
-    def _log_config(self, conf, config, clip, log):
+    @classmethod
+    def _log_config(cls, conf, config, clip, log):
         aliases = config.get(u'aliases', {})
         for mod, alias in aliases.items():
             log(f'* __{mod}__ >> {alias}')
@@ -798,11 +801,16 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        all_tweaks = self.__class__.patcher_type.tweak_instances(self._bp)
+        self._all_tweaks = self._curr_tweaks = self._tweaks_config(config,
+                                                                   self._bp)
+        return config
+
+    @classmethod
+    def _tweaks_config(cls, config, bashed_patch=None):
+        all_tweaks = cls.patcher_type.tweak_instances(bashed_patch)
         for tweak in all_tweaks:
             tweak.init_tweak_config(config)
-        self._all_tweaks = self._curr_tweaks = all_tweaks
-        return config
+        return all_tweaks
 
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
@@ -811,9 +819,10 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             tweak.save_tweak_config(config)
         return config
 
-    def _log_config(self, conf, config, clip, log):
-        self._getConfig(config) # set self._all_tweaks and load their config
-        for tweak in self._all_tweaks:
+    @classmethod
+    def _log_config(cls, conf, config, clip, log):
+        all_tweaks = cls._tweaks_config(config) # load tweaks config
+        for tweak in all_tweaks:
             if tweak.tweak_key in conf:
                 enabled, value = conf.get(tweak.tweak_key, (False, u''))
                 list_label = tweak.getListLabel().replace('[[', '[').replace(
@@ -942,9 +951,10 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         #--Show/Destroy Menu
         links.popup_menu(gui_li, None)
 
-    def _log_config(self, conf, config, clip, log):
+    @classmethod
+    def _log_config(cls, conf, config, clip, log):
         conf_choices = conf.get('configChoices', {})
-        for item in (self.getItemLabel(i, conf_choices) for i in conf.get(
+        for item in (cls.getItemLabel(i, conf_choices) for i in conf.get(
                 'configItems', [])):
             log(f'. __{item}__')
             clip.write(f'    {item}\n')

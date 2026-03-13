@@ -41,10 +41,11 @@ class IndexingTweak(MultiTweakItem):
 
     def __init__(self, bashed_patch):
         super().__init__(bashed_patch)
-        bashed_patch.update_read_factories(self._index_sigs,
-            bashed_patch.merged_or_loaded_ord) ##: all_plugins?
-        self._indexed_records = defaultdict(dict)
-        self._tweak_bp = bashed_patch
+        if bashed_patch is not None: # else we want to log the config
+            bashed_patch.update_read_factories(self._index_sigs,
+                bashed_patch.merged_or_loaded_ord) ##: all_plugins?
+            self._indexed_records = defaultdict(dict)
+            self._tweak_bp = bashed_patch
 
     def prepare_for_tweaking(self, patch_file):
         for fn_plugin in patch_file.merged_or_loaded_ord: ##: all_plugins?
