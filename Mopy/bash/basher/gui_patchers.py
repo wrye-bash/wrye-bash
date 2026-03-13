@@ -263,14 +263,6 @@ class _ListPatcherPanel(_PatcherPanel):
         # Set of items that are new and hence need to remain bolded
         self._new_items: set[FName] = set()
 
-    def _sort_and_update_items(self, unsorted_items):
-        """Helper for LO-sorting items and updating the internal caches for
-        them."""
-        self.configItems = load_order.cached_sort(unsorted_items)
-        # Clear the search bar - this will _handle_item_search, which will call
-        # _populate_item_list in turn
-        self._item_search.text_content = ''
-
     def native_init(self, *args, **kwargs):
         if freshly_created :=  super().native_init(*args, **kwargs):
             self.forceItemCheck = self.__class__.forceItemCheck
@@ -323,6 +315,14 @@ class _ListPatcherPanel(_PatcherPanel):
                         self._get_select_layout(),
                     ]), LayoutOptions(expand=True, weight=1)))
         return freshly_created
+
+    def _sort_and_update_items(self, unsorted_items):
+        """Helper for LO-sorting items and updating the internal caches for
+        them."""
+        self.configItems = load_order.cached_sort(unsorted_items)
+        # Clear the search bar - this will _handle_item_search, which will call
+        # _populate_item_list in turn
+        self._item_search.text_content = ''
 
     @property
     def _list_label(self):
@@ -871,11 +871,17 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     """Mergers targeting all mods in the LO, with the option to override
     tags."""
     patcher_type: ClassVar[type[mergers.AListsMerger]]
+    choiceMenu: ClassVar[tuple[str, ...]]
     _add_dialog_title: str
     #--Config Phase -----------------------------------------------------------
     forceAuto = False
     # CONFIG DEFAULTS
     selectCommands = False
+
+    def native_init(self, *args, **kwargs):
+        if freshly_created := super().native_init(*args, **kwargs):
+            self._bind_mouse_events(self.gList)
+        return freshly_created
 
     def get_patcher_instance(self, patch_file):
         patcher_sources = self._get_list_patcher_srcs()
@@ -883,27 +889,12 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             patcher_sources, self.remove_empty_sublists,
             defaultdict(set, self.configChoices))
 
-    def _get_set_choice(self, item):
-        """Get default config choice."""
-        config_choice = self.configChoices.get(item)
-        if not isinstance(config_choice,set): config_choice = {u'Auto'}
-        if u'Auto' in config_choice:
-            tags = self._bp.all_tags.get(item, set())
-            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
-        self.configChoices[item] = config_choice
-        return config_choice
-
     def getItemLabel(self,item):
         # Note that we do *not* want to escape the & here - that puts *two*
         # ampersands in the resulting ListBox for some reason
         choice = ''.join(
             sorted(i[0] for i in self.configChoices.get(item, ()) if i))
         return f'{item}{f" [{choice}]" if choice else ""}'
-
-    def native_init(self, *args, **kwargs):
-        if freshly_created :=  super().native_init(*args, **kwargs):
-            self._bind_mouse_events(self.gList)
-        return freshly_created
 
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
@@ -939,34 +930,31 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         NOTE: Assume that configChoice returns a set of chosen items."""
         #--Item Index
         if itemIndex < 0: return
-        self.gList.lb_select_index(itemIndex)
-        choiceSet = self._get_set_choice(self._curr_items[itemIndex])
+        (gui_li := self.gList).lb_select_index(itemIndex)
+        choiceSet = self._get_set_choice((curr := self._curr_items)[itemIndex])
         #--Build Menu
+        choices, choice_menu, _self = self.configChoices, self.choiceMenu, self
         class _OnItemChoice(CheckLink):
-            def __init__(self, _text, index):
+            def __init__(self, _text, dex):
                 super(_OnItemChoice, self).__init__(_text)
-                self.index = index
+                self._index = dex
             def _check(self): return self._text in choiceSet
-            def Execute(self): _onItemChoice(self.index)
-        def _onItemChoice(dex):
-            """Handle choice menu selection."""
-            item = self._curr_items[itemIndex]
-            choice = self.choiceMenu[dex]
-            choice_set = self.configChoices[item]
-            choice_set ^= {choice}
-            if choice != u'Auto':
-                choice_set.discard('Auto')
-            elif 'Auto' in choice_set:
-                self._get_set_choice(item)
-            self.gList.lb_set_label_at_index(itemIndex, self.getItemLabel(item))
+            def Execute(self):
+                item = curr[itemIndex]
+                choice_set = choices[item]
+                choice_set ^= {choice := choice_menu[self._index]}
+                if choice != 'Auto':
+                    choice_set.discard('Auto')
+                elif 'Auto' in choice_set:
+                    _self._get_set_choice(item)
+                gui_li.lb_set_label_at_index(itemIndex, _self.getItemLabel(
+                    item))
         links = Links()
-        for index, item_label in enumerate(self.choiceMenu):
-            if item_label == '----':
-                links.append_link(SeparatorLink())
-            else:
-                links.append_link(_OnItemChoice(item_label, index))
+        for index, item_label in enumerate(choice_menu):
+            links.append_link(SeparatorLink() if item_label == '----' else
+                              _OnItemChoice(item_label, index))
         #--Show/Destroy Menu
-        links.popup_menu(self.gList, None)
+        links.popup_menu(gui_li, None)
 
     def _log_config(self, conf, config, clip, log):
         self.configChoices = conf.get(u'configChoices', {})
@@ -982,6 +970,16 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         # Never italicize these since they will run even if there are no tagged
         # source plugins
         super(_ListsMergerPanel, self)._style_patcher_label(bold=bold)
+
+    def _get_set_choice(self, item):
+        """Get default config choice."""
+        config_choice = self.configChoices.get(item)
+        if not isinstance(config_choice,set): config_choice = {u'Auto'}
+        if u'Auto' in config_choice:
+            tags = self._bp.all_tags.get(item, set())
+            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
+        self.configChoices[item] = config_choice
+        return config_choice
 
 class _GmstTweakerPanel(_TweakPatcherPanel):
     # CONFIG DEFAULTS
