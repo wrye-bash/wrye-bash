@@ -239,12 +239,10 @@ class _AliasesPatcherPanel(_PatcherPanel):
 
 #------------------------------------------------------------------------------
 ##: A lot of this belongs into _ListsMergerPanel (e.g. the whole native_init
-# split, remove empty sublists, etc.). Would also put forceAuto and
-# forceItemCheck to rest
+# split, remove empty sublists, etc.). Would also put forceAuto to rest
 class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
     forceAuto = True
-    forceItemCheck = False #--Force configChecked to True for all items
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     show_empty_sublist_checkbox = False
     # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
@@ -316,7 +314,7 @@ class _ListPatcherPanel(_PatcherPanel):
         them."""
         self.configItems = load_order.cached_sort(unsorted_items)
         # Clear the search bar - this will _handle_item_search, which will call
-        # _populate_item_list in turn
+        # _do_populate_item_list in turn
         self._item_search.text_content = ''
 
     def _get_glist(self):
@@ -337,7 +335,8 @@ class _ListPatcherPanel(_PatcherPanel):
         lower_search_str = search_str.strip().lower()
         self._curr_items = [i for i in self.configItems if
                             lower_search_str in i.lower()]
-        self._populate_item_list()
+        with self.gList.pause_drawing():
+            self._do_populate_item_list()
         if not self.forceAuto:
             self._update_manual_buttons()
 
@@ -362,46 +361,38 @@ class _ListPatcherPanel(_PatcherPanel):
         self.gDeselectAll.on_clicked.subscribe(lambda: self.mass_select(False))
         return VLayout(spacing=4, items=[self.gSelectAll, self.gDeselectAll])
 
-    def _populate_item_list(self):
+    def _do_populate_item_list(self):
         """Populate the patcher's item list based on the currently searched for
         items."""
-        with self.gList.pause_drawing():
-            self._do_populate_item_list()
-
-    def _do_populate_item_list(self):
-        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings['AutoItemCheck']
         self.gList.lb_clear()
-        isFirstLoad = self._GetIsFirstLoad()
         patcherOn = False
         patcher_bold = False
         for index, item in enumerate(self._curr_items):
             itemLabel = self.getItemLabel(item, self.configChoices)
             self.gList.lb_insert(itemLabel, index)
             isnew = self.configChecks.get(item) is None
-            if self.forceItemCheck:
-                patcherOn |= isnew
-                self.configChecks[item] = True
-            else:
-                effectiveDefaultItemCheck = defaultItemCheck and not itemLabel.endswith(u'.csv')
-                if isnew:
-                    patcherOn |= effectiveDefaultItemCheck
-                    if not isFirstLoad:
-                        # Indicate that this is a new item by bolding it and
-                        # its parent patcher
-                        self._new_items.add(item)
-                        patcher_bold = True
-                # Restore the bolded font for this item if it was new the first
-                # time we populated the list
-                if item in self._new_items:
-                    self.gList.lb_style_font_at_index(index, bold=True)
-                self.gList.lb_check_at_index(index,
-                    self.configChecks.setdefault(
-                        item, effectiveDefaultItemCheck))
+            is_on, do_bold = self._check_item(isnew, item, itemLabel, index)
+            patcherOn |= is_on
+            patcher_bold |= do_bold
         if patcherOn:
             self._enable_self()
         # Bold it if it has a new item, italicize it if it has no items
         patcher_italics = self.gList.lb_get_items_count() == 0
         self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
+
+    def _check_item(self, isnew, item, item_lbl, index):
+        effectiveDefaultItemCheck = self.__class__.canAutoItemCheck and \
+            bass.inisettings['AutoItemCheck'] and not item_lbl.endswith('.csv')
+        # Indicate that this is a new item by bolding it and its parent patcher
+        if patcher_bold := isnew and not self._GetIsFirstLoad():
+            self._new_items.add(item)
+        # Restore the bolded font for this item if it was new the first
+        # time we populated the list
+        if item in self._new_items:
+            self.gList.lb_style_font_at_index(index, bold=True)
+        self.gList.lb_check_at_index(index, self.configChecks.setdefault(item,
+            effectiveDefaultItemCheck))
+        return isnew and effectiveDefaultItemCheck, patcher_bold
 
     def OnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
@@ -481,9 +472,6 @@ class _ListPatcherPanel(_PatcherPanel):
             # population later on
             self.configChecks = {}
             self.configChoices = {}
-        if self.__class__.forceItemCheck:
-            for item in self.configItems:
-                self.configChecks[item] = True
         return config
 
     def saveConfig(self, configs):
@@ -1280,7 +1268,6 @@ class LeveledLists(_ListsMergerPanel):
     patcher_type = mergers.LeveledListsPatcher
     listLabel = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
-    forceItemCheck = True #--Force configChecked to True for all items
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
     show_empty_sublist_checkbox = True
     # CONFIG DEFAULTS
@@ -1288,6 +1275,16 @@ class LeveledLists(_ListsMergerPanel):
 
     def _get_glist(self):
         self.gList = ListBox(self, isSingle=False)
+
+    def _check_item(self, isnew, item, *args):
+        self.configChecks[item] = True
+        return isnew, False
+
+    def _getConfig(self, configs):
+        config = super()._getConfig(configs)
+        for item in self.configItems: # Force configCheck to True for all items
+            self.configChecks[item] = True
+        return config
 
 class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     patcher_name = _('FormID Lists')
