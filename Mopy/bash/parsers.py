@@ -143,6 +143,17 @@ class PluginParser(_TextParser):
     def _load_factory(self, keepAll, target_types=None):
         return LoadFactory(keepAll, by_sig=target_types or self.parser_sigs)
 
+    def readFromMod(self, mod_inf, modinfos):
+        """Hasty readFromMod implementation."""
+        modFile = self._load_plugin(mod_inf)
+        for top_grup_sig, typeBlock in modFile.iter_tops(self.parser_sigs):
+            id_data = self.id_stored_data[top_grup_sig]
+            for rfid, record in typeBlock.iter_present_records():
+                self._read_record(record, id_data)
+
+    def _read_record(self, record, id_data, *, __attrgetters=attrgetter_cache):
+        raise NotImplementedError
+
     # Write plugin ------------------------------------------------------------
     _changed_type = dict # used in writeToMod to report changed records
     def writeToMod(self, mod_inf):
@@ -256,14 +267,6 @@ class _HandleAliases(CsvParser, PluginParser):
 
     def _key2(self, csv_fields):
         return self._coerce_fid(*self._key2_getter(csv_fields))
-
-    def readFromMod(self, mod_inf, modinfos):
-        """Hasty readFromMod implementation."""
-        modFile = self._load_plugin(mod_inf)
-        for top_grup_sig, typeBlock in modFile.iter_tops(self.parser_sigs):
-            id_data = self.id_stored_data[top_grup_sig]
-            for rfid, record in typeBlock.iter_present_records():
-                self._read_record(record, id_data)
 
     def _read_record(self, record, id_data, *, __attrgetters=attrgetter_cache):
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
