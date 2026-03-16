@@ -105,7 +105,9 @@ class _AMorrowindGameInfo(PatchGame):
             if len(bsas) != len(bsalo := {v: k for k, v in bsas.items() if v}):
                 bolt.deprint(f'some BSAs in {mor_ini} are not present: '
                              f'{bsas.keys() - bsalo.values()}')
-            return bsalo, dict.fromkeys(bsalo, mor_ini.fn_key)
+                for b in bsalo:
+                    b.lo_src = f'Loaded from: {mor_ini.fn_key}'
+            return bsalo
 
     class Ess(GameInfo.Ess):
         @classmethod
@@ -122,18 +124,20 @@ class _AMorrowindGameInfo(PatchGame):
         })
 
         @classmethod
-        def attached_bsas(cls, bsa_infos, fn_body):
+        def attached_bsas(cls, av_bsas, fn_body):
             """Morrowind does not load attached BSAs at all - they all have
             to be registered via the INI."""
             return []
 
         @classmethod
-        def update_bsa_lo(cls, lo, _av_bsas, bsa_lodex, cause):
+        def update_bsa_lo(cls, lo, _av_bsas, bsa_lodex):
             """Sort Ini loaded bsas by mtime then by name - av_bsas unused."""
             binfs_sorted = sorted([bi for bi in bsa_lodex],
                                   key=lambda x: (x.ftime, x.fn_key))
             # override the FName values with the int load order
-            bsa_lodex.update((bi, i) for i, bi in enumerate(binfs_sorted))
+            for i, bi in enumerate(binfs_sorted):
+                bsa_lodex[bi] = i
+                bi.lo_src += f' (bsa load order {i})'
 
     class Xe(GameInfo.Xe):
         full_name = u'TES3Edit'

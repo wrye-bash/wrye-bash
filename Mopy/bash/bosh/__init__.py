@@ -919,7 +919,7 @@ class ModInfo(_WithMastersInfo):
         if extract:
             bsa_assets = {}
             # calculate (once per refresh cycle) and return the bsa_lo
-            bsa_lo = self._store().get_bsa_lo()[0]
+            bsa_lo = self._store().get_bsa_lo()
             # reorder bsa list as ordered by bsa_lo - what happens to patch
             # and interface here depends on what's their order in the ini
             str_bsas = sorted(self.str_bsas_sorted, key=bsa_lo.__getitem__,
@@ -2308,7 +2308,7 @@ class ModInfos(_AFileInfos):
         self._lo_wip = []
         load_order.initialize_load_order_handle(self, bush.game)
         # cache the bsa_lo for the current load order - expensive to calculate
-        self.__bsa_lo = self.__bsa_cause = self.__available_bsas = None
+        self.__bsa_lo = self.__available_bsas = None
         global modInfos
         modInfos = self ##: hack needed in ModInfo.readHeader
         # lo conflicts cache only used in _ModsUIList.set_item_format
@@ -2531,14 +2531,16 @@ class ModInfos(_AFileInfos):
         in a plain tab out/in Bash, as those are regular files. We should
         centralize data dir scanning. String files depend on inis."""
         ##:(701) depends on bsaInfos thus a bsaInfos.refresh should trigger a
-        # modInfos.refresh - see comments in get_bsa_lo
+        # modInfos.refresh - see comments in get_bsa_lo and lo_src hack below
         data_folder_path = bass.dirs['mods']
         self.plugin_inis = self.__load_plugin_inis(data_folder_path)
         # We'll be removing BSAs from here once we've given them a position
         self.__available_bsas = av_bsas = FNDict(bsaInfos.items())
+        for binf in av_bsas.values():
+            if hasattr(binf, 'lo_src'): del binf.lo_src
         # Determine BSA LO from INIs once, this gets expensive very quickly
         ##: What about SkyrimCustom.ini etc?
-        self.__bsa_lo, self.__bsa_cause = bush.game.Ini.get_bsas_from_inis(
+        self.__bsa_lo = bush.game.Ini.get_bsas_from_inis(
             av_bsas, *self.plugin_inis.values(), oblivionIni)
         if not bush.game.Esp.stringsFiles:
             return set()
@@ -3037,10 +3039,11 @@ class ModInfos(_AFileInfos):
         # bsa tab) should rerun _refresh_mod_inis_and_strings/notify modInfos
         if self.__available_bsas is not None:
             bush.game.Bsa.update_bsa_lo(load_order.cached_active_tuple(),
-                self.__available_bsas, self.__bsa_lo, self.__bsa_cause)
+                                        self.__available_bsas, self.__bsa_lo)
             # we are called in a loop, cache on first iteration
             self.__available_bsas = None
-        return self.__bsa_lo, self.__bsa_cause
+            self.__bsa_lo = dict(dict_sort(self.__bsa_lo, by_value=True))
+        return self.__bsa_lo
 
     def getVersion(self, fileName):
         """Check we have a fileInfo for fileName and call get_version on it."""
@@ -3343,6 +3346,8 @@ class BSAInfos(_AFileInfos):
                     BSAInfos.mismatched_versions.add(self.fn_key)
                 self._check_collisions(BSAInfos)
             _key_to_attr = {'info': 'bsa_notes', 'installer': 'bsa_owner_inst'}
+            # reason each bsa was loaded - access *after* assigning load order
+            lo_src: str
 
             @classmethod
             def _store(cls): return bsaInfos
@@ -3362,6 +3367,11 @@ class BSAInfos(_AFileInfos):
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
                     if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
+
+            def load_str(self, inst):
+                inst = inst and f'\n== {inst} (install order: {inst.order})'
+                return f'== {self} == {self.lo_src}{inst}'
+
         self.__class__.factory_type = BSAInfo
         super().__init__()
 

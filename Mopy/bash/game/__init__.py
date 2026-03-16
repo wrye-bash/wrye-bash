@@ -679,16 +679,16 @@ class GameInfo(object):
             """Get the load order of INI-loaded BSAs - in the vicinity of
             ±sys.maxsize. These BSAs are removed from av_bsas dict."""
             bsa_lo = {}
-            bsa_cause = {}  # Reason each BSA was loaded
             def _update_lo():
                 nonlocal ini_idx
                 if binf := av_bsas.pop(b, None):
                     bsa_lo[binf] = ini_idx
-                    bsa_cause[binf] = cause
+                    binf.lo_src = f'Loaded from: {cause}'
                     ini_idx -= ini_diff
                     return True
-                if requested := [bin for bin in bsa_lo if bin.fn_key == b]:
-                    m = f'was already loaded via {bsa_cause[requested[0]]}'
+                if requested := [binf for binf in bsa_lo if binf.fn_key == b]:
+                    m = (f'was already loaded via '
+                         f'{requested[0].lo_src.split(": ", 1)[-1]}')
                 else:
                     m = f'was not found'
                 if (b, cause, m) not in __known_missing:
@@ -713,7 +713,7 @@ class GameInfo(object):
                     cause = f'{cls.dropdown_inis[0]} ({keys[0]})'
                     for b in cls.engine_overrides:
                         _update_lo()
-            return bsa_lo, bsa_cause
+            return bsa_lo
 
     class Ess(object):
         """Information about WB's capabilities regarding save file
@@ -784,21 +784,21 @@ class GameInfo(object):
             return len(cls._str_heuristics), ini_lo
 
         @classmethod
-        def attached_bsas(cls, bsa_infos, plugin_fn):
+        def attached_bsas(cls, av_bsas, plugin_fn):
             """Return a list of all BSAs that the game will attach to
             plugin_fn."""
             bsa_pattern = (re.escape(plugin_fn.fn_body) +
-                           f'{cls.attachment_regex}\\{cls.bsa_extension}')
+                           fr'{cls.attachment_regex}\{cls.bsa_extension}')
             is_attached = re.compile(bsa_pattern, re.I).match
-            return [binf for k, binf in bsa_infos.items() if is_attached(k)]
+            return [binf for k, binf in av_bsas.items() if is_attached(k)]
 
         @classmethod
-        def update_bsa_lo(cls, lo, av_bsas, bsa_lodex, cause):
+        def update_bsa_lo(cls, lo, av_bsas, bsa_lodex):
             # BSAs loaded based on plugin name load in the middle of the pack
             for i, p in enumerate(lo):
                 for binf in cls.attached_bsas(av_bsas, p):
                     bsa_lodex[binf] = i
-                    cause[binf] = p
+                    binf.lo_src = f'Loaded from: {p} (load order: {i:02X})'
                     del av_bsas[binf.fn_key]
 
     class Psc(object):

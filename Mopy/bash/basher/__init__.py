@@ -2703,6 +2703,8 @@ class InstallersDetails(_SashDetailsPanel):
         if initialized: return
         else: self.infoPages[index][1] = True
         pageName = gPage.get_component_name()
+        act_bsas = bosh.modInfos.get_bsa_lo() if bass.settings[
+            'bash.installers.conflictsReport.showBSAConflicts'] else None
         def _dumpFiles(files, header=u''):
             if files:
                 buff = []
@@ -2722,8 +2724,7 @@ class InstallersDetails(_SashDetailsPanel):
                 return buff.append('') or '\n'.join(buff) # add a newline
             elif header:
                 return header+u'\n'
-            else:
-                return u''
+            return ''
         if pageName == u'gGeneral':
             inf_ = ['== ' + _('Overview'), _('Type: %(package_type)s') % {
                 'package_type': installer.type_string},
@@ -2762,11 +2763,9 @@ class InstallersDetails(_SashDetailsPanel):
         elif pageName == u'gMismatched':
             gPage.text_content = _dumpFiles(installer.mismatchedFiles)
         elif pageName == u'gConflicts':
-            gPage.text_content = self.file_infos.getConflictReport(
-                installer, u'OVER', bosh.modInfos)
+            gPage.text_content = installer.get_conflict_report(True, act_bsas)
         elif pageName == u'gUnderrides':
-            gPage.text_content = self.file_infos.getConflictReport(
-                installer, u'UNDER', bosh.modInfos)
+            gPage.text_content = installer.get_conflict_report(False, act_bsas)
         elif pageName == u'gDirty':
             gPage.text_content = _dumpFiles(installer.dirty_sizeCrc)
         elif pageName == u'gSkipped':
