@@ -460,7 +460,7 @@ class AMreLeveledList(MelRecord):
             self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
             self.items = (self.items | other.de_records) - other.re_records
         #--Add new items from other
-        new_entries = {e for e in other.entries if e.listId not in self.items}
+        new_entries = [e for e in other.entries if e.listId not in self.items]
         self.entries.extend(new_entries)
         # Check if merging exceeded the counter's limit and, if so, truncate it
         # and warn. Note that pre-Skyrim games do not have this limitation.

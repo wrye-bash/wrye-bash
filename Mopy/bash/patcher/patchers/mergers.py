@@ -601,7 +601,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         self._patchLog(log,mod_count)
 
 #------------------------------------------------------------------------------
-class _AListsMerger(ListPatcher):
+class AListsMerger(ListPatcher):
     """Merges lists of objects, e.g. leveled lists or FormID lists."""
     patcher_group = u'Special'
     patcher_order = 45
@@ -651,16 +651,14 @@ class _AListsMerger(ListPatcher):
         else:
             self.OverhaulUOPSkips = ()
 
-    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
+    def __init__(self, p_name, p_file, p_sources, remove_empty: bool,
+                 tag_choices: defaultdict[FName, set[str]]):
         """In addition to default parameters, accepts a boolean remove_empty,
         which determines whether or not the 'empty sublist removal' logic
         should run, and a defaultdict tag_choices, which maps each tagged
         plugin (represented as paths) to a set of the applied tags (as unicode
-        strings, e.g. u'Delev'), defaulting to an empty set.
-
-        :type remove_empty: bool
-        :type tag_choices: defaultdict[bolt.Path, set[str]]"""
-        super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
+        strings, e.g. 'Delev'), defaulting to an empty set."""
+        super().__init__(p_name, p_file, p_sources)
         self.isActive |= bool(p_file.load_dict) # Can do meaningful work even without sources
         self.type_list = {rsig: {} for rsig in self._read_sigs}
         self.masterItems = defaultdict(dict)
@@ -676,7 +674,7 @@ class _AListsMerger(ListPatcher):
             self.de_masters.update(p_file.all_plugins[leveler].masterNames)
         self.srcs = {s for s in self.srcs if s in p_file.load_dict}
         self.remove_empty_sublists = remove_empty
-        self.tag_choices = tag_choices
+        self._tag_choices = tag_choices
 
     def annotate_plugin(self, ann_plugin):
         """Returns the name of the specified plugin, with any Relev/Delev tags
@@ -684,9 +682,9 @@ class _AListsMerger(ListPatcher):
 
         :param ann_plugin: The plugin to return the name for, as a path.
         :type ann_plugin: bolt.Path"""
-        applied_tags = [t[0] for t in self.tag_choices[ann_plugin]]
-        return u'%s%s' % (ann_plugin, (u' [%s]' % u''.join(
-            sorted(applied_tags)) if applied_tags else u''))
+        applied_tags = [t[0] for t in self._tag_choices[ann_plugin]] or ''
+        applied_tags = applied_tags and f' [{"".join(sorted(applied_tags))}]'
+        return f'{ann_plugin}{applied_tags}'
 
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
@@ -699,7 +697,7 @@ class _AListsMerger(ListPatcher):
         skips = self.OverhaulUOPSkips if sc_name == ('Unofficial Oblivion '
                                                      'Patch.esp') else ()
         #--Relev/Delev setup
-        applied_tags = self.tag_choices[sc_name]
+        applied_tags = self._tag_choices[sc_name]
         is_relev = self._re_tag in applied_tags
         is_delev = self._de_tag in applied_tags
         #--Scan
@@ -822,7 +820,7 @@ class _AListsMerger(ListPatcher):
         """Checks if any warnings for the specified list have to be logged.
         Default implementation does nothing."""
 
-class LeveledListsPatcher(_AListsMerger):
+class LeveledListsPatcher(AListsMerger):
     """Merges leveled lists."""
     _read_sigs = bush.game.leveled_list_types # bush.game must be set!
     _de_tag = 'Delev'
@@ -836,8 +834,8 @@ class LeveledListsPatcher(_AListsMerger):
     _de_re_header = _('Delevelers/Relevelers')
     patcher_tags = {_de_tag, _re_tag}
 
-    def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
-        super().__init__(p_name, p_file, p_sources, remove_empty, tag_choices)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._overhaul_compat(self.srcs)
 
     def _check_list(self, record, log):
@@ -850,7 +848,7 @@ class LeveledListsPatcher(_AListsMerger):
             log(f'  * __{trunc_warn_msg}__' % {'max_ll_size': max_lvl_size})
 
 #------------------------------------------------------------------------------
-class FormIDListsPatcher(_AListsMerger):
+class FormIDListsPatcher(AListsMerger):
     """Merges FormID lists."""
     patcher_order = 46
     _read_sigs = (b'FLST',)

@@ -25,6 +25,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from itertools import chain
+from typing import ClassVar
 
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bolt, bosh, bush, load_order
@@ -51,7 +52,7 @@ class _PatcherPanel(object):
     # These are sometimes quite ugly - backwards compat leftover from when
     # those were the class names and got written directly into the configs
     _config_key: str = None
-    patcher_type: APatcher = None
+    patcher_type: ClassVar[type[APatcher]]
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
     selectCommands = True # whether this panel displays De/Select All
@@ -259,7 +260,7 @@ class _ListPatcherPanel(_PatcherPanel):
     ##: Hack, this should not use display_name
     default_remove_empty_sublists = bush.game.display_name == 'Oblivion'
     gList: ListBox | CheckListBox
-    patcher_type: ListPatcher
+    patcher_type: ClassVar[type[ListPatcher]]
 
     def __init__(self):
         super().__init__()
@@ -578,7 +579,7 @@ def _custom_label(label_text, val): # edit label text with value
 
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
-    patcher_type: MultiTweaker
+    patcher_type: ClassVar[type[MultiTweaker]]
 
     def __init__(self):
         super().__init__()
@@ -880,12 +881,21 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         return config
 
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
+    """Mergers targeting all mods in the LO, with the option to override
+    tags."""
+    patcher_type: ClassVar[type[mergers.AListsMerger]]
     _add_dialog_title: str
     #--Config Phase -----------------------------------------------------------
     forceAuto = False
     # CONFIG DEFAULTS
     default_isEnabled = True
     selectCommands = False
+
+    def get_patcher_instance(self, patch_file):
+        patcher_sources = self._get_list_patcher_srcs()
+        return self.patcher_type(self.patcher_name, patch_file,
+            patcher_sources, self.remove_empty_sublists,
+            defaultdict(set, self.configChoices))
 
     def _get_set_choice(self, item):
         """Get default config choice."""
@@ -957,11 +967,11 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             """Handle choice menu selection."""
             item = self._curr_items[itemIndex]
             choice = self.choiceMenu[dex]
-            choiceSet = self.configChoices[item]
-            choiceSet ^= {choice}
+            choice_set = self.configChoices[item]
+            choice_set ^= {choice}
             if choice != u'Auto':
-                choiceSet.discard(u'Auto')
-            elif u'Auto' in self.configChoices[item]:
+                choice_set.discard('Auto')
+            elif 'Auto' in choice_set:
                 self._get_set_choice(item)
             self.gList.lb_set_label_at_index(itemIndex, self.getItemLabel(item))
         links = Links()
@@ -1277,17 +1287,7 @@ class ReplaceFormIDs(_ListPatcherPanel):
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------
-class _AListsMerger(_ListsMergerPanel):
-    """Mergers targeting all mods in the LO, with the option to override
-    tags."""
-    def get_patcher_instance(self, patch_file):
-        patcher_sources = self._get_list_patcher_srcs()
-        return self.patcher_type(self.patcher_name, patch_file,
-                                 patcher_sources,
-                                 self.remove_empty_sublists,
-                                 defaultdict(tuple, self.configChoices))
-
-class LeveledLists(_AListsMerger):
+class LeveledLists(_ListsMergerPanel):
     patcher_name = _('Leveled Lists')
     patcher_desc = '\n\n'.join([
         _('Merges changes to leveled lists from all active and/or merged '
@@ -1302,7 +1302,7 @@ class LeveledLists(_AListsMerger):
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
     show_empty_sublist_checkbox = True
 
-class FormIDLists(_AListsMerger):
+class FormIDLists(_ListsMergerPanel):
     patcher_name = _('FormID Lists')
     patcher_desc = '\n\n'.join([
         _('Merges changes to FormID lists from all active and/or merged '
