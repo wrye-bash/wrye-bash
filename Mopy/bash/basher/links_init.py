@@ -67,7 +67,7 @@ def InitStatusBar():
         return [__fp(svg_fname, iconSize=i) for i in (16, 24, 32)]
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obse_button = ObseButton('OBSE')
-    all_links = [
+    all_links: list[StatusBarButton] = [
         obse_button,
         AutoQuitButton('AutoQuit'),
         GameButton(_svg_list(f'games/{bush.game.game_icon}'))
