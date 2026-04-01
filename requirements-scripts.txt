@@ -3,6 +3,9 @@
 # pulling in the tons of extra stuff from requirements.txt.
 # PY3.13: try removing when we update to pyinstaller 6.17.0+
 altgraph<0.17.5
+# This is necessary because the older version of altgraph needs pkg_resources,
+# which setuptools 82 drops (and 81 spams the log with deprecation warnings)
+setuptools<81
 isort==8.0.1
 pygit2==1.19.1
 PyGithub==2.9.0
