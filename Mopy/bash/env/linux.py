@@ -245,7 +245,7 @@ def getJava():
     return _GPath('/usr/bin/java')
 
 @functools.cache
-def get_file_version(filename, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
+def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
     ver_candidate = (0, 0, 0, 0)
     if not _STRINGS:
         return ver_candidate

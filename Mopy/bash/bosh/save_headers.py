@@ -55,7 +55,7 @@ from ..plugin_types import PluginFlag
 # Utilities -------------------------------------------------------------------
 def _unpack_fstr16(ins) -> bytes:
     return ins.read(16)
-def _pack_c(out, value, __pack=structs_cache['=c'].pack):
+def _pack_c(out, value, *, __pack=structs_cache['=c'].pack):
     out.write(__pack(value))
 def _pack_string(out, val: bytes):
     out.write(val)

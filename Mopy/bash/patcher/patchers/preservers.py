@@ -155,7 +155,7 @@ class APreserver(ImportPatcher):
                 mod_id_data[rfid] = {attr: getter(record) for attr, getter in
                                      ra_getters}
 
-    def initData(self, progress, __attrgetters=attrgetter_cache):
+    def initData(self, progress, *, __attrgetters=attrgetter_cache):
         if not self.isActive: return
         id_data = defaultdict(dict)
         if self.srcs:
@@ -431,7 +431,7 @@ class ImportCellsPatcher(ImportPatcher):
         self.cellData = defaultdict(dict)
         self.recAttrs = bush.game.cellRecAttrs # dict[str, tuple[str]]
 
-    def initData(self, progress, __attrgetters=attrgetter_cache):
+    def initData(self, progress, *, __attrgetters=attrgetter_cache):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
@@ -497,7 +497,7 @@ class ImportCellsPatcher(ImportPatcher):
                 if rid in self.cellData:
                     curr_pworld.set_cell(cell_rec)
 
-    def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
+    def buildPatch(self, log, progress, *, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         def handlePatchCellBlock():

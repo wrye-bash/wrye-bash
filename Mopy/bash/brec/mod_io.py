@@ -101,7 +101,7 @@ class RecHeader(RecordHeader):
         self.flags2 = arg3
         self.extra = arg4
 
-    def pack_head(self, __rh=RecordHeader):
+    def pack_head(self, *, __rh=RecordHeader):
         """Return the record header packed into a bitstream to be written to
         file."""
         pack_args = [__rh.rec_pack_format_str, self.recType, self.blob_size,
@@ -144,7 +144,7 @@ class GrupHeader(RecordHeader):
         self.stamp = arg3
         self.extra = arg4
 
-    def pack_head(self, __rh=RecordHeader):
+    def pack_head(self, *, __rh=RecordHeader):
         """Pack the record header to bytes to write to a file."""
         pack_args = __rh.pack_formats[self.groupType], b'GRUP', \
             self.group_size, *self._pack_lab(), self.groupType, self.stamp
@@ -384,7 +384,7 @@ class FormIdReadContext(ModReader):
     the file stream on __enter__."""
 
     # with statement
-    def __enter__(self, __head_unpack=unpack_header):
+    def __enter__(self, *, __head_unpack=unpack_header):
         self.form_id_type = utils_constants.FORM_ID
         if self.form_id_type is not None:
             raise StateError(f'Already in a ModReader context')
@@ -432,7 +432,7 @@ class FormIdWriteContext:
                     formid.mod_fn] << 24) | object_id
         return _short_mapper
 
-    def __enter__(self, __head_unpack=unpack_header):
+    def __enter__(self, *, __head_unpack=unpack_header):
         utils_constants.short_mapper = self._get_short_mapper()
         utils_constants.short_mapper_no_engine = self._get_short_mapper(
             skip_engine=True)
