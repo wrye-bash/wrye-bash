@@ -36,8 +36,6 @@ noSolidExts = {u'.zip'}
 reSolid = re.compile(r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(r'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile('- (.+)').match
-reListArchive = re.compile(
-    r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
 def compress7z(full_dest, srcDir, progress=None, *, is_solid=None,
                temp_list=None, blockSize=None):
@@ -159,13 +157,14 @@ def _compressionSettings(fn_archive, blockSize, isSolid):
             solid += userArgs
     return fn_archive, archiveType, solid
 
-def list_archive(archive_path, parse_archive_line, __reList=reListArchive):
+def list_archive(archive_path, parse_archive_line, *, __re_list=re.compile(
+        r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')):
     """Client is responsible for closing the file ! See uses for
     _parse_archive_line examples."""
     command = [exe7z, 'l', '-slt', '-sccUTF-8', f'{archive_path}']
     proc = popen_common(command, encoding='utf-8')
     ins, _err = proc.communicate()
-    for line in ins.splitlines(True): # keepends=True
-        maList = __reList.match(line)
+    for line in ins.splitlines(True):  # keepends=True
+        maList = __re_list.match(line)
         if maList:
             parse_archive_line(*(maList.groups()))

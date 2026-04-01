@@ -377,7 +377,7 @@ class _ARFBGGTweak(_ARaceTweak):
     # Whether to target the male or female behavior graph
     _targets_female_graph = False
 
-    def _set_cached_attrs(self, __attrget=attrgetter_cache):
+    def _set_cached_attrs(self, *, __attrget=attrgetter_cache):
         """Set the target attributes based on the selection the user made."""
         female_graph = self._targets_female_graph
         self._target_graph_getter = __attrget[self._graph_attrs[female_graph]]
