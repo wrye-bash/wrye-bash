@@ -78,7 +78,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             return _wx.DragNone
 
         def OnDragOver(self, x, y, dragResult):
-            self.window.OnDragging(x,y,dragResult)
+            self.window.OnDragging(x, y)
             return _wx.DropTarget.OnDragOver(self,x,y,dragResult)
 
     def __init__(self, parent, fnDndAllow, style=0, dndFiles=False,
@@ -114,7 +114,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         if self.GetItemCount():
             self.ScrollList(0, rows * self.GetItemRect(0).height)
 
-    def OnDragging(self,x,y,dragResult):
+    def OnDragging(self, x, y):
         # We're dragging, see if we need to scroll the list
         index, _hit_flags = self.HitTest((x, y))
         if index == _wx.NOT_FOUND:   # Didn't drop it on an item
@@ -341,7 +341,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     def lc_delete_column(self, colDex: int):
         self._native_widget.DeleteColumn(colDex)
 
-    def lc_select_item_at_index(self, index: int, select=True,
+    def lc_select_item_at_index(self, index: int, select=True, *,
                                 __select=_wx.LIST_STATE_SELECTED):
         self._native_widget.SetItemState(index, select * __select, __select)
 
