@@ -144,6 +144,7 @@ class ASkyrimGameInfo(PatchGame):
             'pbrnifpatcher', # 3P: ParallaxGen
             'pbrtexturesets', # 3P: ParallaxGen
             'platform', # 3P: Skyrim Platform
+            'prismaui', # 3P: Prisma UI
             'rmb spid references', # 3P: RMB SPIDified - Core Framework
             'scripts',
             'seasons', # 3P: Seasons of Skyrim SKSE
@@ -195,6 +196,14 @@ class ASkyrimGameInfo(PatchGame):
                 'community shaders logo'): {'.png'},
             # 3P: BodySlide and Outfit Studio
             _j('calientetools', 'bodyslide', 'res', 'images'): {'.png'},
+            # 3P: Prisma UI
+            _j('prismaui', 'inspector'): {'.html'},
+            _j('prismaui', 'inspector', 'controllers'): {'.css'},
+            _j('prismaui', 'inspector', 'debug'): {'.css', '.html'},
+            _j('prismaui', 'inspector', 'external', 'codemirror'): {'.css'},
+            _j('prismaui', 'inspector', 'images'): {'.png'},
+            _j('prismaui', 'inspector', 'views'): {'.css'},
+            _j('prismaui', 'misc'): {'.png'},
         }
         no_skip_regexes = (
             # 3P: FNIS - meshes\actors\character\animations\<mod name>\
