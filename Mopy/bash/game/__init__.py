@@ -866,6 +866,17 @@ class GameInfo(object):
         # Wrye Bash directories to install and exclude from Clean Data
         wrye_bash_data_dirs = {'bash patches', 'bashtags', 'ini tweaks'}
 
+        @classmethod
+        def mk_lod_tex_func(cls, normals, ossep):
+            """Helper for generating a skip function fitting the current game
+            and whether normal or diffuse textures are targeted."""
+            tex_gen = cls.lod_textures_dir
+            normals_ext = f'{cls.lod_textures_normals_suffix}.dds'
+            if not normals:
+                return lambda f: f.startswith(tex_gen) and not f.endswith(
+                    normals_ext)
+            return lambda f: f.startswith(tex_gen) and f.endswith(normals_ext)
+
     # Plugin format stuff
     class Esp(object):
         """Information about plugins."""

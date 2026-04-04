@@ -528,46 +528,25 @@ class Installer(ListInfo):
         # skips files starting with...
         if bass.settings[u'bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
-        if (bush.game.Bain.lod_meshes_dir and
-                bass.settings['bash.installers.skipLandscapeLODMeshes']):
-            Installer._global_start_skips.append(bush.game.Bain.lod_meshes_dir)
+        gbain = bush.game.Bain
+        if gbain.lod_meshes_dir and bass.settings[
+                'bash.installers.skipLandscapeLODMeshes']:
+            Installer._global_start_skips.append(gbain.lod_meshes_dir)
         if bass.settings[u'bash.installers.skipScreenshots']:
             Installer._global_start_skips.extend(Installer.screenshot_dirs)
         # LOD textures
-        skipLODTextures = (
-                bush.game.Bain.lod_textures_dir and
+        skipLODTextures = (gbain.lod_textures_dir and
                 bass.settings['bash.installers.skipLandscapeLODTextures']
         )
-        skipLODNormals = (
-                bush.game.Bain.lod_textures_normals_suffix and
+        skipLODNormals = (gbain.lod_textures_normals_suffix and
                 bass.settings['bash.installers.skipLandscapeLODNormals']
         )
-        skipAllTextures = skipLODTextures and skipLODNormals
-        tex_gen = bush.game.Bain.lod_textures_dir
-        normals_ext = f'{bush.game.Bain.lod_textures_normals_suffix}.dds'
-        def _mk_lod_tex_func(normals):
-            """Helper for generating a skip function fitting the current game
-            and whether normal or diffuse textures are targeted."""
-            if bush.game.fsName in ('Fallout3', 'FalloutNV'):
-                if normals:
-                    return lambda f: (f.startswith(tex_gen) and
-                                      'normals' in f.split(os_sep))
-                else:
-                    return lambda f: (f.startswith(tex_gen) and
-                                      'normals' not in f.split(os_sep))
+        if skipLODTextures or skipLODNormals:
+            if skipLODTextures and skipLODNormals: # skip all textures
+                Installer._global_start_skips.append(gbain.lod_textures_dir)
             else:
-                if normals:
-                    return lambda f: (f.startswith(tex_gen) and
-                                      f.endswith(normals_ext))
-                else:
-                    return lambda f: (f.startswith(tex_gen) and
-                                      not f.endswith(normals_ext))
-        if skipAllTextures:
-            Installer._global_start_skips.append(tex_gen)
-        elif skipLODTextures:
-            Installer._global_skips.append(_mk_lod_tex_func(normals=False))
-        elif skipLODNormals:
-            Installer._global_skips.append(_mk_lod_tex_func(normals=True))
+                Installer._global_skips.append(
+                    gbain.mk_lod_tex_func(skipLODNormals, os_sep))
         # Skipped extensions
         skipObse = not bass.settings[u'bash.installers.allowOBSEPlugins']
         if skipObse:
@@ -609,13 +588,13 @@ class Installer(ListInfo):
                 # This is named similarly to the package (with a doc ext), so
                 # probably a readme
                 self.hasReadme = full
+            gbain = bush.game.Bain
             if (not self.overrideSkips
                     and bass.settings['bash.installers.skipDocs']
-                    and fileLower not in bush.game.Bain.no_skip
-                    and fileExt not in bush.game.Bain.no_skip_dirs.get(
-                        lower_parent, [])
+                    and fileLower not in gbain.no_skip
+                    and fileExt not in gbain.no_skip_dirs.get(lower_parent, [])
                     and not any(nsr.match(fileLower) for nsr in
-                                bush.game.Bain.no_skip_regexes)):
+                                gbain.no_skip_regexes)):
                 return None # skip
             dest = file_relative
             if bass.settings['bash.installers.rename_docs']:
@@ -638,9 +617,9 @@ class Installer(ListInfo):
                     self.skipDirFiles.add(full)
                     return None # we don't want to install those files
                 elif bass.settings['bash.installers.redirect_docs']:
-                    if (fileLower not in bush.game.Bain.no_skip
+                    if (fileLower not in gbain.no_skip
                             and not any(nsr.match(fileLower) for nsr in
-                                        bush.game.Bain.no_skip_regexes)):
+                                        gbain.no_skip_regexes)):
                         # Move top-level docs to the Docs folder
                         dest = docs_ + dest
             return dest

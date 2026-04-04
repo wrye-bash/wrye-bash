@@ -146,6 +146,14 @@ class AFallout3GameInfo(PatchGame):
         }
         skip_bain_refresh = {'fo3edit backups', 'fo3edit cache'}
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
+        @classmethod
+        def mk_lod_tex_func(cls, normals, ossep):
+            tex_gen = cls.lod_textures_dir
+            if not normals:
+                return lambda f: f.startswith(tex_gen) and 'normals' not in \
+                                 f.split(ossep)
+            return lambda f: f.startswith(tex_gen) and 'normals' in f.split(
+                ossep)
 
     class Esp(GameInfo.Esp):
         canBash = True
