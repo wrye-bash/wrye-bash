@@ -611,45 +611,7 @@ class AListsMerger(ListPatcher):
     _re_tag: str | None = None
     _sig_to_label: dict[bytes, str]
     _de_re_header: str
-
-    def _overhaul_compat(self, mods):
-        if FName('Unofficial Oblivion Patch.esp') in mods:
-            OOO_WC = {*map(FName, ("Oscuro's_Oblivion_Overhaul.esm",
-                "Oscuro's_Oblivion_Overhaul.esp", 'Oblivion Warcry.esp',
-                'Oblivion Warcry EV.esp'))}
-            FransMods = {*map(FName, ('Francesco.esp',
-                "Francesco's Leveled Creatures-Items Mod.esm"))}
-            TIEMods = FName('TIE.esp')
-            if (OOO_WC & mods) or (FransMods & mods and not (TIEMods in mods)):
-                self.OverhaulUOPSkips = {*map(bush.game.master_fid, [
-                        0x03AB5D,  # VendorWeaponBlunt
-                        0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
-                        0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
-                        0x03C7F3,  # LL0LootWeapon0Magic5Elven100
-                        0x03C7F4,  # LL0LootWeapon0Magic6Glass100
-                        0x03C7F5,  # LL0LootWeapon0Magic3Silver100
-                        0x03C7F7,  # LL0LootWeapon0Magic2Steel100
-                        0x03E4D2,  # LL0NPCWeapon0MagicClaymore100
-                        0x03E4D3,  # LL0NPCWeapon0MagicClaymoreLvl100
-                        0x03E4DA,  # LL0NPCWeapon0MagicWaraxe100
-                        0x03E4DB,  # LL0NPCWeapon0MagicWaraxeLvl100
-                        0x03E4DC,  # LL0NPCWeapon0MagicWarhammer100
-                        0x03E4DD,  # LL0NPCWeapon0MagicWarhammerLvl100
-                        0x0733EA,  # ArenaLeveledHeavyShield,
-                        0x0C7615,  # FGNPCWeapon0MagicClaymoreLvl100
-                        0x181C66,  # SQ02LL0NPCWeapon0MagicClaymoreLvl100
-                        0x053877,  # LL0NPCArmor0MagicLightGauntlets100
-                        0x053878,  # LL0NPCArmor0MagicLightBoots100
-                        0x05387A,  # LL0NPCArmor0MagicLightCuirass100
-                        0x053892,  # LL0NPCArmor0MagicLightBootsLvl100
-                        0x053893,  # LL0NPCArmor0MagicLightCuirassLvl100
-                        0x053894,  # LL0NPCArmor0MagicLightGauntletsLvl100
-                        0x053D82,  # LL0LootArmor0MagicLight5Elven100
-                        0x053D83,  # LL0LootArmor0MagicLight6Glass100
-                        0x052D89,  # LL0LootArmor0MagicLight4Mithril100
-                    ])}
-        else:
-            self.OverhaulUOPSkips = ()
+    OverhaulUOPSkips = ()
 
     def __init__(self, p_name, p_file, p_sources, remove_empty: bool,
                  tag_choices: defaultdict[FName, set[str]]):
@@ -710,7 +672,7 @@ class AListsMerger(ListPatcher):
                 # skip the list from UOP - list owner is Oblivion.esm so if we
                 # don't encounter the list again we mark last version to be
                 # kept in buildPatch (else stored_lists[rid].merge_list will
-                # be called to mark the list as mergeOverLast True) ##: or so
+                # be called to mark the new list as mergeOverLast True) ##: or so
                 # it seems - we need better docs, including ecxpected load
                 # order of overhauls/UOP (and maybe a better solution)
                 if rid in skips:
@@ -836,7 +798,44 @@ class LeveledListsPatcher(AListsMerger):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._overhaul_compat(self.srcs)
+        self.__overhaul_compat(self.srcs)
+
+    def __overhaul_compat(self, mods):
+        if FName('Unofficial Oblivion Patch.esp') in mods:
+            OOO_WC = {*map(FName, ("Oscuro's_Oblivion_Overhaul.esm",
+                "Oscuro's_Oblivion_Overhaul.esp", 'Oblivion Warcry.esp',
+                'Oblivion Warcry EV.esp'))}
+            FransMods = {*map(FName, ('Francesco.esp',
+                "Francesco's Leveled Creatures-Items Mod.esm"))}
+            TIEMods = FName('TIE.esp')
+            if (OOO_WC & mods) or (FransMods & mods and not (TIEMods in mods)):
+                self.OverhaulUOPSkips = {*map(bush.game.master_fid, [
+                        0x03AB5D,  # VendorWeaponBlunt
+                        0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
+                        0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
+                        0x03C7F3,  # LL0LootWeapon0Magic5Elven100
+                        0x03C7F4,  # LL0LootWeapon0Magic6Glass100
+                        0x03C7F5,  # LL0LootWeapon0Magic3Silver100
+                        0x03C7F7,  # LL0LootWeapon0Magic2Steel100
+                        0x03E4D2,  # LL0NPCWeapon0MagicClaymore100
+                        0x03E4D3,  # LL0NPCWeapon0MagicClaymoreLvl100
+                        0x03E4DA,  # LL0NPCWeapon0MagicWaraxe100
+                        0x03E4DB,  # LL0NPCWeapon0MagicWaraxeLvl100
+                        0x03E4DC,  # LL0NPCWeapon0MagicWarhammer100
+                        0x03E4DD,  # LL0NPCWeapon0MagicWarhammerLvl100
+                        0x0733EA,  # ArenaLeveledHeavyShield,
+                        0x0C7615,  # FGNPCWeapon0MagicClaymoreLvl100
+                        0x181C66,  # SQ02LL0NPCWeapon0MagicClaymoreLvl100
+                        0x053877,  # LL0NPCArmor0MagicLightGauntlets100
+                        0x053878,  # LL0NPCArmor0MagicLightBoots100
+                        0x05387A,  # LL0NPCArmor0MagicLightCuirass100
+                        0x053892,  # LL0NPCArmor0MagicLightBootsLvl100
+                        0x053893,  # LL0NPCArmor0MagicLightCuirassLvl100
+                        0x053894,  # LL0NPCArmor0MagicLightGauntletsLvl100
+                        0x053D82,  # LL0LootArmor0MagicLight5Elven100
+                        0x053D83,  # LL0LootArmor0MagicLight6Glass100
+                        0x052D89,  # LL0LootArmor0MagicLight4Mithril100
+                    ])}
 
     def _check_list(self, record, log):
         # Emit a warning for lists that may have exceeded 255 - note that

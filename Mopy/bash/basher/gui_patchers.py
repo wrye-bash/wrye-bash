@@ -888,7 +888,6 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     #--Config Phase -----------------------------------------------------------
     forceAuto = False
     # CONFIG DEFAULTS
-    default_isEnabled = True
     selectCommands = False
 
     def get_patcher_instance(self, patch_file):
@@ -1301,8 +1300,10 @@ class LeveledLists(_ListsMergerPanel):
     forceItemCheck = True #--Force configChecked to True for all items
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
     show_empty_sublist_checkbox = True
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
-class FormIDLists(_ListsMergerPanel):
+class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     patcher_name = _('FormID Lists')
     patcher_desc = '\n\n'.join([
         _('Merges changes to FormID lists from all active and/or merged '
@@ -1314,8 +1315,6 @@ class FormIDLists(_ListsMergerPanel):
     listLabel = _('Override Deflst Tag')
     _add_dialog_title = _('Add Deflst Tag to Plugin')
     choiceMenu = ('Auto', '----', 'Deflst')
-    # CONFIG DEFAULTS
-    default_isEnabled = False
 
 # -----------------------------------------------------------------------------
 class ContentsChecker(_PatcherPanel):
