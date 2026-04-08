@@ -1436,8 +1436,8 @@ class _InstallerPackage(Installer, AFileInfo):
         for conflicts, title in (t for t in ((lower_loose, _('Lower')),
                                  (higher_loose, _('Higher'))) if t[0]):
             buff.write(f'= {title} {"=" * 40}\n')
-            for package_, inst_, confls in conflicts:
-                buff.write(f'=={inst_.order:d}== {package_}\n')
+            for inst_, confls in conflicts:
+                buff.write(f'=={inst_.order:d}== {inst_}\n')
                 for src_file in bolt.sortFiles(confls):
                     oldName = inst_.getEspmName(src_file)
                     buff.write(oldName)
@@ -1467,8 +1467,9 @@ class _InstallerPackage(Installer, AFileInfo):
         out = [lower_loose := [], higher_loose := [], lower_bsa := [],
                higher_bsa := []]
         srcOrder = self.order
-        li_pairs = [*self.instData.sorted_pairs()]  # index == installer order
-        low, hi = li_pairs[:srcOrder], li_pairs[srcOrder + 1:]
+        li_pairs = [*self.instData.sorted_values()] # index == installer order
+        low, hi = ([(dsc, v) for v in li if (dsc := v.ci_dest_sizeCrc)] for li
+                   in (li_pairs[:srcOrder], li_pairs[srcOrder + 1:]))
         # note include_lower is used for bsa load order in bsa conflicts not
         # installer order!
         include_inactive, include_lower = (list_overrides and
@@ -1479,10 +1480,10 @@ class _InstallerPackage(Installer, AFileInfo):
         if not include_inactive:
             conflicts = ((p for p in li if p[1].is_active) for li in conflicts)
         for li, conflict_type in zip(conflicts, (lower_loose, higher_loose)):
-            for package, inst in li:
-                if confls := (inst_sc := inst.ci_dest_sizeCrc) and {x for x, y
-                    in mismatched.items() if inst_sc.get(x, y) != y}:
-                    conflict_type.append((package, inst, confls))
+            for inst_sc, inst in li:
+                if confls := {x for x, y in mismatched.items() if
+                              inst_sc.get(x, y) != y}:
+                    conflict_type.append((inst, confls))
         if not active_bsas: ##: Add support for showing inactive BSA conflicts
             return out
         # Heuristics to assign owner installer to the bsas. First check
@@ -1508,7 +1509,7 @@ class _InstallerPackage(Installer, AFileInfo):
         # remaining bsas - we should rather be using crc/size as in
         # inst.ci_dest_sizeCrc[binf.fn_key] == (binf.fsize, binf.crc)
         remaining = {b for b, own in bsa_owner.items() if not own}
-        for package, inst in chain(*map(reversed, (hi, low))):
+        for _inst_sc, inst in chain(*map(reversed, (hi, low))):
             for binf in inst.__filter_installer_bsas(remaining):
                 # tentatively assign the highest loading inactive installer
                 if not inst.is_active:

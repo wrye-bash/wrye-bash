@@ -232,20 +232,19 @@ class ModFile(object):
         if not (loadStrings and getattr(self.tes4.flags1, 'localized', False)):
             ins.setStringTable(None)
             return progress
-        stringsProgress = SubProgress( # Use 10% of progress bar for strings
-            progress, 0, 0.1)
         from . import bosh
         i_lang = bosh.oblivionIni.get_ini_language(
             bush.game.Ini.default_game_lang)
-        stringsPaths = self.fileInfo.getStringsPaths(i_lang)
-        if stringsPaths: stringsProgress.setFull(len(stringsPaths))
-        for i, path in enumerate(stringsPaths):
-            self.strings.loadFile(path, SubProgress(stringsProgress, i, i + 1),
-                                  i_lang)
-            stringsProgress(i)
+        if stringsPaths := self.fileInfo.getStringsPaths(i_lang):
+            # Use 10% of progress bar for strings
+            stringsProgress = SubProgress(progress, 0, 0.1)
+            stringsProgress.setFull(len(stringsPaths))
+            for i, path in enumerate(stringsPaths):
+                self.strings.loadFile(path, SubProgress(
+                    stringsProgress, i, i + 1), i_lang)
+                stringsProgress(i)
         ins.setStringTable(self.strings)
-        subProgress = SubProgress(progress, 0.1, 1.0)
-        return subProgress
+        return SubProgress(progress, 0.1, 1.0)
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
