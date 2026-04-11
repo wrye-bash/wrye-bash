@@ -737,7 +737,8 @@ class INIList(UIList):
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
         target_ini_file = target_ini or bosh.iniInfos.ini
-        if not cls.ask_create_target_ini(target_ini_file):
+        if not cls.ask_create_target_ini(target_ini_file, _(
+                'The game INI must exist to apply a tweak to it.')):
             return False
         # Default tweaks are tested, so no need to warn about trust and
         # crashes, etc.
@@ -757,13 +758,15 @@ class INIList(UIList):
 
     @staticmethod
     @balt.conversation
-    def ask_create_target_ini(target_ini_file, msg=None):
-        """Check if target ini for operation exists - if not and the target is
-        the game ini ask if the user wants to create it by copying the default
-        ini"""
-        msg = target_ini_file.target_ini_exists(msg)
-        if msg in (True, False): return msg
+    def ask_create_target_ini(target_ini_file, msg):
+        """Check if target ini for operation exists - if not, and the target is
+        the game ini, ask if the user wants to create it by copying the default
+        ini."""
+        if not isinstance(msg := target_ini_file.target_ini_exists(msg), str):
+            return msg # it's True or False
         # Game ini does not exist - try copying the default game ini
+        msg = _('%(ini_full_path)s does not exist.') % {
+            'ini_full_path': target_ini_file.abs_path} + f'\n\n{msg}\n\n'
         default_ini = bass.dirs[u'app'].join(bush.game.Ini.default_ini_file)
         if default_ini.exists():
             msg += _('Do you want Wrye Bash to create it by copying '
@@ -1979,8 +1982,8 @@ class SaveList(UIList):
 
     # Save profiles
     def set_local_save(self, **kwargs):
-        msg = _('Setting the save profile is done by editing the game ini.')
-        if not INIList.ask_create_target_ini(bosh.oblivionIni, msg=msg):
+        if not INIList.ask_create_target_ini(bosh.oblivionIni, _(
+                'Setting the save profile is done by editing the game ini.')):
             return
         self.data_store.refresh(True, **kwargs)
         balt.Link.Frame.set_bash_frame_title()
@@ -3652,11 +3655,16 @@ class BashFrame(WindowFrame):
     def warn_game_ini(self):
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
-            self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
-            if self.oblivionIniCorrupted:
-                msg = '\n'.join([self.oblivionIniCorrupted, '', _(
-                    'Please replace the INI with a default copy and restart '
-                    'Wrye Bash.')])
+            self.oblivionIniCorrupted = isc = bosh.oblivionIni.isCorrupted
+            if isc:
+                if 'tweak_ini' in isc:
+                    msg = _("Your %(tweak_ini)s should begin with a section "
+                        "header (e.g. '[General]'), but it does not.")
+                else:
+                    msg = (_('The INI file %(ini_full_path)s seems to have '
+                        'unencodable characters:') + '\n\n%(exc)s')
+                msg = '\n'.join([msg, '', _('Please replace the INI with a '
+                    'default copy and restart Wrye Bash.')]) % isc
                 showWarning(self, msg, title=_('Corrupted Game INI'))
         elif self.oblivionIniMissing != self._oblivionIniMissing:
             self._oblivionIniMissing = self.oblivionIniMissing

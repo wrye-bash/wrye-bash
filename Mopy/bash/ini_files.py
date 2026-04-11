@@ -32,8 +32,6 @@ from typing import final
 # Keep local imports to a minimum, this module is important for booting!
 from .bolt import DefaultLowerDict, ListInfo, LowerDict, decoder, deprint, \
     getbestencoding, AFileInfo
-# We may end up getting run very early in boot, make sure _() never breaks us
-from .bolt import failsafe_underscore as _
 from .exception import FailedIniInferError
 from .wbtemp import TempFile
 
@@ -262,10 +260,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
             return str(content, self.ini_encoding).splitlines( # keepends=False
                 False) if as_unicode else content
         except UnicodeDecodeError as e:
-            msg = _('The INI file %(ini_full_path)s seems to have '
-                    'unencodable characters:')
-            msg = f'{msg}\n\n{e}' % {'ini_full_path': self.abs_path}
-            self.isCorrupted = msg
+            self.isCorrupted = {'ini_full_path': self.abs_path, 'exc': str(e)}
             deprint(f'Failed to decode {self.abs_path} using '
                     f'{self.ini_encoding}', traceback=True)
         except FileNotFoundError:
@@ -303,10 +298,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                             settings_dict[section][setting] = (val, i)
                         except KeyError:
                             if not section:  # can't happen for OBSEIniFile
-                                self.isCorrupted = _("Your %(tweak_ini)s "
-                                    "should begin with a section header (e.g. "
-                                    "'[General]'), but it does not.") % {
-                                        'tweak_ini': self.abs_path}
+                                self.isCorrupted = {'tweak_ini': self.abs_path}
                                 section = self.__class__.defaultSection
                             settings_dict[section] = LowerDict(
                                 [(setting, (val, i))])
@@ -321,7 +313,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
         return self._ci_settings_cache_linenum
 
     # Modify ini file ---------------------------------------------------------
-    def target_ini_exists(self, msg=None):
+    def target_ini_exists(self, msg):
         return self.abs_path.is_file()
 
     @final
@@ -526,12 +518,6 @@ class GameIni(IniFileInfo):
                 default_lang)
         return self._ini_language
 
-    def target_ini_exists(self, msg=None):
+    def target_ini_exists(self, msg):
         """Attempt to create the game ini in some scenarios"""
-        if msg is None:
-            msg = _(u'The game INI must exist to apply a tweak to it.')
-        target_exists = super(GameIni, self).target_ini_exists()
-        if target_exists: return True
-        msg = _('%(ini_full_path)s does not exist.') % {
-            'ini_full_path': self.abs_path} + f'\n\n{msg}\n\n'
-        return msg
+        return True if super().target_ini_exists(msg) else msg
