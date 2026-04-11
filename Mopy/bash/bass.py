@@ -66,7 +66,7 @@ boot_settings_defaults = {
 boot_settings = copy.deepcopy(boot_settings_defaults)
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
-settings: dict | None = None # bolt.Settings !
+settings: dict = None # bolt.Settings !
 
 # restarting info
 is_restarting = False # set to true so Bash is restarted via the exit hook

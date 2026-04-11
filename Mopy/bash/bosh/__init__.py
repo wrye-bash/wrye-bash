@@ -66,14 +66,14 @@ _ListInf = AFile | ListInfo | None| FName
 
 #--Singletons
 gameInis: tuple[GameIni | IniFileInfo] | None = None
-oblivionIni: GameIni | None = None
-modInfos: ModInfos | None = None
-saveInfos: SaveInfos | None = None
-iniInfos: INIInfos | None = None
-bsaInfos: BSAInfos | None = None
-screen_infos: ScreenInfos | None = None
+oblivionIni: GameIni = None
+modInfos: ModInfos = None
+saveInfos: SaveInfos = None
+iniInfos: INIInfos = None
+bsaInfos: BSAInfos = None
+screen_infos: ScreenInfos = None
 # LOOT database instance - must be initiliazed after bass.dirs is updated
-lootDb: LOOTParser | None = None
+lootDb: LOOTParser = None
 
 def data_tracking_stores() -> Iterable['_AFileInfos']:
     """Return an iterable containing all data stores that keep track of the
