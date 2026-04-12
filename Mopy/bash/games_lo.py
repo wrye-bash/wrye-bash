@@ -503,7 +503,7 @@ class LoGame:
         fix_active.act_removed = set(acti) - acti_filtered_set
         # present mods that are always active - noop for AsteriskGame as always
         # active plugins are manually added on getting the load order
-        for fn_plugin in self.pinned_plugins(self._mod_infos):
+        for fn_plugin in self.pinned_plugins(cached_minfs):
             if fn_plugin not in acti_filtered_set:
                 if fn_plugin == self._game_handle.master_file:
                     acti_filtered.insert(0, fn_plugin)
@@ -547,18 +547,13 @@ class LoGame:
             return (*is_m, fn) if by_name else is_m
         return _key
 
-    def pinned_plugins(self, mods, fixed_order=False, filter_mods=False) -> \
-            list[FName] | set[FName]:
+    def pinned_plugins(self, mods, fixed_order=False) -> list[FName]:
         """Return a list of plugins (in random order) that are always active
         or a list of plugins that must have the order they have in this list
         (the first list is always contained in the second). Both lists may only
-        contain plugins that are present in modInfos (excluding corrupted). If
-        filter_mods is True, return plugins in `mods` that are not pinned."""
+        contain plugins that are present in modInfos (excluding corrupted)."""
         mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
             self._active_if_present
-        if filter_mods:
-            return set(mods) - (set(mod_set_or_tuple) if fixed_order else
-                                mod_set_or_tuple)
         return [x for x in mod_set_or_tuple if
                 x in mods and x in self._mod_infos]
 
@@ -1004,18 +999,17 @@ class AsteriskGame(_TextFileLo):
                 ccc_file = LoFile(False, ccc_path, raise_os_error=True)
                 _act, ccc_contents = ccc_file.parse_modfile()
                 ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
-                force_active = {*(fload := self.__class__.force_load_first)}
+                fload_set = {*(fload := self.__class__.force_load_first)}
                 self.force_load_first = (*fload, *(m for m in ccc_contents if m
-                  not in force_active and m != self._game_handle.master_file))
+                  not in fload_set and m != self._game_handle.master_file))
             except FileNotFoundError:
                 deprint(f'{self._ccc_filename} does not exist')
             except OSError:
                 deprint(f'Failed to open {ccc_path}', traceback=True)
-        mbaip, fo_mods = super()._set_pinned_mods()
+        mbaip, fo_mods = super()._set_pinned_mods() # set(fo_mods) == mbaip
         # override what set in super - the game won't care, but we do. We first
         # put the static force_load_first then the ccc contents (minus the mods
-        # already in force_load_first), then whatever in the ccc_fallback that
-        # remains - note set(fo_mods) == mbaip as returned above
+        # already in force_load_first), then whatever remains in _ccc_fallback
         return mbaip, (*fo_mods, *(
             p for p in self._ccc_fallback if p not in mbaip))
 

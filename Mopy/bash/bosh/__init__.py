@@ -2741,8 +2741,9 @@ class ModInfos(_AFileInfos):
     @_lo_op
     def lo_deactivate(self, *to_deac, out_diff, _deleted=False):
         """Remove mods and their children from _active_wip."""
-        to_deac = {*to_deac} if _deleted else load_order.filter_pinned(
-            to_deac, filter_mods=True)
+        to_deac = {*to_deac}
+        if not _deleted:
+            to_deac -= {*load_order.filter_pinned(to_deac)}
         #--Unselect filenames
         set_awip = set(self._active_wip) - to_deac
         #--Unselect children

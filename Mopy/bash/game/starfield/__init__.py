@@ -331,7 +331,7 @@ class _AStarfieldGameInfo(PatchGame):
         force_load_first = tuple(map(FName, (
             'ShatteredSpace.esm', 'Constellation.esm', 'OldMars.esm',
             'SFBGS003.esm', 'SFBGS004.esm', 'SFBGS006.esm', 'SFBGS007.esm',
-            'SFBGS008.esm', # 'BlueprintShips-Starfield.esm',
+            'SFBGS008.esm', 'SFBGS00D.esm', 'SFBGS047.esm', 'SFBGS050.esm',
         )))
         # The game tries to read a Starfield.ccc already, but it's not present
         # yet. Also, official Creations are written to plugins.txt & can be
@@ -343,7 +343,7 @@ class _AStarfieldGameInfo(PatchGame):
             # than overwritte user edits (the ones we do remove are harcoded
             # and whatever the user has done with lo files does not seem to
             # matter, but Blueprint load order seems to be affected)
-            act = self._active_if_present - {FName(
+            rem = super()._rem_from_plugins_txt()[0] - {FName(
                 'BlueprintShips-Starfield.esm')}
             # we won't remove Blueprint masters from plugins.txt but we need
             # to append them in lo if present so we don't warn
@@ -351,7 +351,7 @@ class _AStarfieldGameInfo(PatchGame):
                 pf.cached_type(v) for pf in self._game_handle.master_flags)}
             blue = [t[0] for t in # sort blueprint masters ftime/mod ascending
                     sorted(blue.items(), key=lambda x: (x[1].ftime, x[0]))]
-            return act, blue
+            return rem, blue
 
         def _set_pinned_mods(self):
             """Override for making BlueprintShips.esm always active while not

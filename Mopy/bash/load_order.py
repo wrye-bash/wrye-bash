@@ -357,11 +357,10 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
                 f'*** fixed: {fstr}']))
             saved = fixed
     else: saved = __lo_unset
-    if _cached_lord is not __lo_unset:
-        lo, active = _lo_handler.request_cache_update(
+    lo, active = (None, None) if _cached_lord is __lo_unset else \
+        _lo_handler.request_cache_update(
             _cached_lord.loadOrder if cached else None,
             _cached_lord.activeOrdered if cached_active else None)
-    else: lo = active = None
     ldiff = _update_cache(lo, active)
     if saved is not __lo_unset:
         # rest of Bash should only use _cached_lord so since we eventually
@@ -416,11 +415,9 @@ def check_active_limit(mods, as_type=set):
 def swap(old_dir, new_dir):
     return _lo_handler.swap(old_dir, new_dir)
 
-def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> \
-        list[FName] | set[FName]:
+def filter_pinned(imods, *, fixed_order=False) -> list[FName]:
     """See LoGame.pinned_plugins."""
-    return _lo_handler.pinned_plugins(set(imods), fixed_order=fixed_order,
-                                      filter_mods=filter_mods)
+    return _lo_handler.pinned_plugins(set(imods), fixed_order=fixed_order)
 
 def get_lo_files() -> set[bolt.Path]:
     """Retrieve a set of all files used by this game for storing load order."""
