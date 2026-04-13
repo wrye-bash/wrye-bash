@@ -739,7 +739,7 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
             has_extra_data = unpack_byte(ins)
             self._master_info_block_size[mas] += 1
         else:
-            has_extra_data = not (load_order.filter_pinned({mas}))
+            has_extra_data = not (load_order.must_be_active({mas}))
         if has_extra_data: # 122 <= formVersion < 140
             for __ in range(3): # creationName, creationId, flags
                 self._master_info_block_size[mas] += len(unpack_str16(ins))

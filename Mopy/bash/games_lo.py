@@ -705,6 +705,28 @@ class INIGame(LoGame):
             return True # Assume order is important for the INI
         return super()._must_update_active(deleted_plugins, reord_plugins)
 
+def set_mtimes(wanted_lord, current_lord, fnkey_info: dict):
+    """Set the mtimes of the mods in current lord to match wanted_lord order.
+    set(wanted_lord) == set(current_lord) == mods is assumed."""
+    # mods's mtimes match the current lord's order - break conflicts
+    mods_it = map(fnkey_info.__getitem__, current_lord)
+    older = next(mods_it).ftime # initialize to older mod's ftime
+    for info in mods_it:
+        # mods_it is ordered in ftime so conflicts come in chunks
+        if older == (older := info.ftime):
+            # respace this and next mods in 60 sec intervals
+            for inf in (info, *mods_it):
+                older += 60.0
+                inf.setmtime(older, mark_redated=True)
+            break
+    restamp = []
+    # set(wanted_lord) == set(current_lord) - collect modification times
+    for ordered, mod in zip(wanted_lord, current_lord, strict=True):
+        if ordered != mod:
+            restamp.append((ordered, fnkey_info[mod].ftime))
+    for ordered, modification_time in restamp:
+        fnkey_info[ordered].setmtime(modification_time)
+
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
@@ -728,26 +750,8 @@ class TimestampGame(LoGame):
         return self.__calculate_mtime_order(self._mod_infos)
 
     def _persist_load_order(self, lord, active):
-        modinfos = self._mod_infos
-        current = self.__calculate_mtime_order(modinfos)
-        # break conflicts
-        mods_it = map(modinfos.__getitem__, current)
-        older = next(mods_it).ftime # initialize to game master ftime
-        for info in mods_it:
-            # mods_it is ordered in ftime so conflicts come in chunks
-            if older == (older := info.ftime):
-                # respace this and next mods in 60 sec intervals
-                for inf in (info, *mods_it):
-                    older += 60.0
-                    inf.setmtime(older, mark_redated=True)
-                break
-        restamp = []
-        # len(lord) must be equal to len(modinfos) - collect modification times
-        for ordered, mod in zip(lord, current, strict=True):
-            if ordered != mod:
-                restamp.append((ordered, modinfos[mod].ftime))
-        for ordered, modification_time in restamp:
-            modinfos[ordered].setmtime(modification_time)
+        current = self.__calculate_mtime_order(modinfos := self._mod_infos)
+        set_mtimes(lord, current, modinfos)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):

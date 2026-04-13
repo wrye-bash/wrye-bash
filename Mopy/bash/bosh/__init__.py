@@ -2716,7 +2716,7 @@ class ModInfos(_AFileInfos):
         acti_set = set(self._active_wip)
         if fileName not in acti_set: # else we are called to activate masters
             msg = load_order.check_active_limit([*self._active_wip, fileName],
-                                            as_type=str)
+                                                as_type=str)
             if msg:
                 msg = f'{fileName}: Trying to activate more than {msg}'
                 raise PluginsFullError(msg)
@@ -2743,7 +2743,7 @@ class ModInfos(_AFileInfos):
         """Remove mods and their children from _active_wip."""
         to_deac = {*to_deac}
         if not _deleted:
-            to_deac -= {*load_order.filter_pinned(to_deac)}
+            to_deac -= load_order.must_be_active(to_deac)
         #--Unselect filenames
         set_awip = set(self._active_wip) - to_deac
         #--Unselect children
@@ -2843,7 +2843,7 @@ class ModInfos(_AFileInfos):
         for present_plugin in list(wip_actives):
             if present_plugin.fn_ext != '.esu':
                 _add_masters(present_plugin)
-        wip_actives.update(load_order.filter_pinned(present_plugins))
+        wip_actives.update(load_order.must_be_active(present_plugins))
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.get_ordered(wip_actives)
         trimmed_plugins = load_order.check_active_limit(ordered_wip)
