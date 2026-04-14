@@ -415,12 +415,13 @@ def check_active_limit(mods, as_type=set):
 def swap(old_dir, new_dir):
     return _lo_handler.swap(old_dir, new_dir)
 
-def filter_pinned(imods) -> list[FName]:
-    """See LoGame.pinned_plugins."""
-    return _lo_handler.pinned_plugins(set(imods), fixed_order=True)
+def filter_pinned(mod_set) -> list[FName]:
+    """Return a list of plugins that we can't change their load order."""
+    mod_set = {*mod_set}
+    return [k for k in _lo_handler.fixed_order_plugins if k in mod_set]
 
-def must_be_active(imods):
-    return {*_lo_handler.pinned_plugins(set(imods))}
+def must_be_active(imods) -> set[FName]:
+    return {k for k in imods if _lo_handler.pin_active_state.get(k)}
 
 def get_lo_files() -> set[bolt.Path]:
     """Retrieve a set of all files used by this game for storing load order."""
