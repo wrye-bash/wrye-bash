@@ -474,7 +474,7 @@ class LoGame:
             else: # append all to the end, even esms, will be reordered below
                 lord.append(mod)
         # See if any esm files are loaded below an esp and reorder as necessary
-        lord.sort(key=self.lo_sort_key(by_name=False))
+        lord.sort(key=self.lo_sort_key())
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
@@ -538,13 +538,13 @@ class LoGame:
         return False # no changes, not saved
 
     # API: Exposed validation helpers - see load_order.py
-    def lo_sort_key(self, *, ds=None, by_name=True, by_time=False):
+    def lo_sort_key(self, *, ds=None, by_time=False):
         ds = self._mod_infos if ds is None else ds
         def _key(fn):
             is_m = self._game_handle.master_flags.sort_masters_key(ds[fn])
             if by_time:
                 is_m = *is_m, ds[fn].ftime
-            return (*is_m, fn) if by_name else is_m
+            return is_m
         return _key
 
     def pinned_plugins(self, mods, fixed_order=False) -> list[FName]:
@@ -602,6 +602,13 @@ class LoGame:
             else:
                 mods_add(mod)
         return duplicates
+
+    def calculate_mtime_order(self, mods): # excludes mods in corrupted
+        # split into master block and not master block then sort by ftime then
+        # sort by name upercase descending (for time conflicts) - see
+        # https://github.com/Ortham/libloadorder/issues/86#issuecomment-4254218481
+        return sorted(sorted(mods, key=str.upper, reverse=True),
+                      key=self.lo_sort_key(by_time=True))
 
 def _mk_ini(ini_key, star, ini_fpath):
     """Creates a new IniFile from the specified bolt.Path object."""
@@ -741,16 +748,11 @@ class TimestampGame(LoGame):
         return deleted_plugins
 
     # Abstract overrides ------------------------------------------------------
-    def __calculate_mtime_order(self, mods): # excludes mods in corrupted
-        # split into master block and not master block then sort by ftime then
-        # by name case insensitive (for time conflicts)
-        return sorted(mods, key=self.lo_sort_key(by_time=True))
-
     def _fetch_load_order(self, cached_load_order, cached_active):
-        return self.__calculate_mtime_order(self._mod_infos)
+        return self.calculate_mtime_order(self._mod_infos)
 
     def _persist_load_order(self, lord, active):
-        current = self.__calculate_mtime_order(modinfos := self._mod_infos)
+        current = self.calculate_mtime_order(modinfos := self._mod_infos)
         set_mtimes(lord, current, modinfos)
 
     def _persist_if_changed(self, active, lord, previous_active,
@@ -767,7 +769,7 @@ class TimestampGame(LoGame):
         cases."""
         super()._fix_load_order(lord, fix_lo)
         if _mtime_order and fix_lo.lo_added:
-            lord[:] = self.__calculate_mtime_order(mods=lord)
+            lord[:] = self.calculate_mtime_order(mods=lord)
 
 class _TextFileLo(LoGame):
     """Common code for games that use a text file to store the load order."""

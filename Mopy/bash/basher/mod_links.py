@@ -263,9 +263,10 @@ class Mod_OrderByName(EnabledLink):
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  title=self._text): return
         #--Do it
-        self.selected.sort(key=load_order.lo_sort_key())
-        lowest = load_order.get_ordered(self.selected)[0]
-        lordata = bosh.modInfos.lo_insert_at(lowest, self.selected,
+        sort_by_name = sorted(self.selected) # name ascending
+        sort_by_name.sort(key=load_order.master_sort())
+        lowest = load_order.get_ordered(sort_by_name)[0]
+        lordata = bosh.modInfos.lo_insert_at(lowest, sort_by_name,
                                              save_all=True)
         self.window.propagate_refresh(lordata)
 

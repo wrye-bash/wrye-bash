@@ -303,8 +303,7 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=load_order.lo_sort_key(ds=self.data_store,
-                                                  by_name=False))
+            items.sort(key=load_order.master_sort(ds=self.data_store))
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
