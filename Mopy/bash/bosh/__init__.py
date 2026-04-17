@@ -919,11 +919,13 @@ class ModInfo(_WithMastersInfo):
             bsa_assets = {}
             # calculate (once per refresh cycle) and return the bsa_lo
             bsa_lo = self._store().get_bsa_lo()
-            # reorder bsa list as ordered by bsa_lo - what happens to patch
-            # and interface here depends on what's their order in the ini
-            str_bsas = sorted(self.str_bsas_sorted, key=bsa_lo.__getitem__,
-                              reverse=True) # sort higher loading bsas first
-            for bsa_info in str_bsas: # None for non-localized mods
+            str_bsas = self.str_bsas_sorted # None for non-localized mods
+            # reorder bsa list as ordered by bsa_lo ##:(480) we need a spec!
+            str_bsas = *sorted( # sort higher loading bsas first
+                (b for b in str_bsas if b in bsa_lo),
+                key=bsa_lo.__getitem__, reverse=True), *( # append the rest
+                    b for b in str_bsas if b not in bsa_lo)
+            for bsa_info in str_bsas:
                 try:
                     found_assets = bsa_info.has_assets(extract)
                 except BSAError:

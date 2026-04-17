@@ -113,7 +113,7 @@ def isPBashMergeable(mod_inf, minfos, reasons, game_handle):
     merge_types_fact = LoadFactory(False, generic=game_handle.mergeable_sigs)
     modFile = ModFile(mod_inf, merge_types_fact)
     try:
-        modFile.load_plugin(loadStrings=False, catch_errors=False)
+        modFile.load_plugin(load_strs=False, catch_errors=False)
     except ModError as error:
         if _exit(f'{error}.'): return False
     #--Skipped over types?

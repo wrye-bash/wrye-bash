@@ -169,7 +169,7 @@ class ModFile(object):
         self.tops = _TopGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
 
-    def load_plugin(self, progress=None, loadStrings=True, catch_errors=True,
+    def load_plugin(self, progress=None, *, load_strs=True, catch_errors=True,
                     do_map_fids=True):
         ##: track uses and decide on exception handling
         """Load file."""
@@ -181,7 +181,12 @@ class ModFile(object):
                 ins.load_tes4(do_unpack_tes4=False)
             self.tes4 = ins.plugin_header
             if do_map_fids:
-                progress = self.__load_strs(ins, loadStrings, progress)
+                # Check if we need to handle strings
+                self.strings.clear() ##:(480) maybe add more load_strs=False?
+                if load_strs and getattr(self.tes4.flags1, 'localized', False):
+                    progress = self.__load_strs(ins, progress)
+                else:
+                    ins.setStringTable(None)
             #--Raw data read
             progress.setFull(ins.size)
             insAtEnd = ins.atEnd
@@ -226,12 +231,7 @@ class ModFile(object):
                 progress(insTell())
         if not do_map_fids: return
 
-    def __load_strs(self, ins, loadStrings, progress):
-        # Check if we need to handle strings
-        self.strings.clear()
-        if not (loadStrings and getattr(self.tes4.flags1, 'localized', False)):
-            ins.setStringTable(None)
-            return progress
+    def __load_strs(self, ins, progress):
         from . import bosh
         i_lang = bosh.oblivionIni.get_ini_language(bush.game)
         if stringsPaths := self.fileInfo.getStringsPaths(i_lang):
