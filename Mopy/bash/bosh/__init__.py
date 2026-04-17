@@ -2351,7 +2351,7 @@ class ModInfos(_AFileInfos):
             self._active_wip, self._lo_wip = act, wip_lo
             # warn the user on deactivated dependents?
             lordata = self.lo_deactivate(*deltd, ldiff=ldiff, save_all=True,
-                                         out_diff=dlos, _deleted=True)
+                                         out_diff=dlos, _skip_check=True)
         elif insert_after: # we should have no deletions here!
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
                                             ldiff=ldiff)
@@ -2739,10 +2739,10 @@ class ModInfos(_AFileInfos):
         return outdiff
 
     @_lo_op
-    def lo_deactivate(self, *to_deac, out_diff, _deleted=False):
+    def lo_deactivate(self, *to_deac, out_diff, _skip_check=False):
         """Remove mods and their children from _active_wip."""
         to_deac = {*to_deac}
-        if not _deleted:
+        if not _skip_check:
             to_deac -= load_order.must_be_active(to_deac)
         #--Unselect filenames
         set_awip = set(self._active_wip) - to_deac
@@ -3203,8 +3203,7 @@ class SaveInfos(_AFileInfos):
     def __init__(self):
         all_ext = {*(fe := SaveInfo.file_exts), *(f'{e}f' for e in fe)}
         par = partial(self.check_filename, _allow_ext=all_ext)
-        SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game.fsName, par,
-            bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
+        SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game, par)
         super().__init__()
         # Save Profiles database
         self.profiles = bolt.PickleDict(

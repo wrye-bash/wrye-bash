@@ -49,8 +49,7 @@ def generate_meta_cosave_xse(target_file):
               f"{target_file}'")
         sys.exit(4)
     set_game(gm_unique_dn)
-    get_cosave_types(bush.game.fsName, None, bush.game.Se.cosave_tag,
-                     bush.game.Se.cosave_ext)
+    get_cosave_types(bush.game, None)
     test_cosave = xSECosave(target_file)
     test_cosave.read_cosave()
     with open(target_file + u'.meta', u'w', encoding=u'utf-8') as out:

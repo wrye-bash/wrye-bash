@@ -46,8 +46,7 @@ def _map_cosaves(map_func, cosv_exts, cosv_type):
     for gm_folder in iter_games(u'saves'):
         gm_unique_dn = resource_to_unique_display_name[gm_folder]
         set_game(gm_unique_dn)
-        get_cosave_types(bush.game.fsName, None,
-                         bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
+        get_cosave_types(bush.game, None)
         for c in iter_cosaves(filter_by_game={gm_folder}):
             if c.endswith(cosv_exts):
                 map_func(cosv_type(c))
