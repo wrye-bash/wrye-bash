@@ -242,8 +242,8 @@ class IniFileInfo(AIniInfo, AFileInfo):
         except OSError:
             # check if we already know it's deleted (used for main game ini)
             update = not self._deleted
+            # mark as deleted to avoid updating ini statuses on each refresh
             if update:
-                # mark as deleted to avoid requesting updates on each refresh
                 self._deleted = self.updated = True
             if raise_os_error: raise
             return update

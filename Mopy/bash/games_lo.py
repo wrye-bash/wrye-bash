@@ -157,6 +157,34 @@ class LoFile(AFile):
         except OSError:
             bolt.deprint(f'Failed to back up {pl_path}', traceback=True)
 
+class _CCCFile(LoFile):
+    """CCC files can be in different locations. We also need to keep track of
+    their presence."""
+    _deleted = False # same logic as IniFileInfo - common base?
+
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
+        if stat_tuple != self._null_stat:
+            _act, ccc_contents = self.parse_modfile()
+            self.ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
+
+    def do_update(self, *, raise_os_error=False, **kwargs):
+        try:
+            # do_update will return True if the file was deleted then restored
+            update = super().do_update(raise_os_error=True)
+            if self._deleted: # restored
+                self._deleted = False
+            return update
+        except OSError as e:
+            if update := not self._deleted: # deprint the first time only
+                if isinstance(e, FileNotFoundError):
+                    deprint(f'{self.abs_path} does not exist')
+                else:
+                    deprint(f'Failed to open {self.abs_path}', traceback=True)
+                self._deleted = True
+            if raise_os_error: raise
+            return update
+
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
     def __init__(self):
