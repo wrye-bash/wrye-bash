@@ -126,6 +126,97 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
         'RaceChecker',
     }
 
+    #--------------------------------------------------------------------------
+    # Tweak Actors
+    #--------------------------------------------------------------------------
+    actor_tweaks = {
+        'AsIntendedBoarsPatcher',
+        'AsIntendedImpsPatcher',
+        'IrresponsibleCreaturesPatcher',
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Assorted
+    #--------------------------------------------------------------------------
+    assorted_tweaks = {
+        'AssortedTweak_ArmorPlayable',
+        'AssortedTweak_ArrowWeight',
+        'AssortedTweak_AttackSpeedStavesMaximum',
+        'AssortedTweak_AttackSpeedStavesMinimum',
+        'AssortedTweak_BookWeight',
+        'AssortedTweak_BowReach',
+        'AssortedTweak_ClothingPlayable',
+        'AssortedTweak_FactioncrimeGoldMultiplier',
+        'AssortedTweak_HarvestChance',
+        'AssortedTweak_IngredientWeight',
+        'AssortedTweak_PotionWeight',
+        'AssortedTweak_PotionWeightMinimum',
+        'AssortedTweak_ScriptEffectSilencer',
+        'AssortedTweak_SetCastWhenUsedEnchantmentCosts',
+        'AssortedTweak_SkyrimStyleWeapons',
+        'AssortedTweak_StaffWeight',
+        'AssortedTweak_TextlessLSCRs',
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Names
+    #--------------------------------------------------------------------------
+    names_tweaks = set()
+
+    #--------------------------------------------------------------------------
+    # Tweak Races
+    #--------------------------------------------------------------------------
+    race_tweaks = {
+        'RaceTweak_BiggerOrcsAndNords',
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Settings
+    #--------------------------------------------------------------------------
+    settings_tweaks = {
+        'GlobalsTweak_Timescale',
+        'GmstTweak_Actor_GreetingDistance',
+        'GmstTweak_Actor_MaxJumpHeight_Tes4',
+        'GmstTweak_Actor_TrainingLimit',
+        'GmstTweak_Actor_UnconsciousnessDuration',
+        'GmstTweak_AI_ConversationChance',
+        'GmstTweak_AI_ConversationChance_Interior',
+        'GmstTweak_AI_MaxActiveActors',
+        'GmstTweak_Arrow_LitterCount',
+        'GmstTweak_Arrow_Speed',
+        'GmstTweak_Bounty_Assault',
+        'GmstTweak_Bounty_HorseTheft',
+        'GmstTweak_Bounty_Jailbreak',
+        'GmstTweak_Bounty_Murder',
+        'GmstTweak_Bounty_Pickpocketing',
+        'GmstTweak_Bounty_Theft',
+        'GmstTweak_Bounty_Trespassing',
+        'GmstTweak_Combat_Alchemy',
+        'GmstTweak_Combat_MaxActors',
+        'GmstTweak_Combat_MaximumArmorRating',
+        'GmstTweak_Combat_RechargeWeapons',
+        'GmstTweak_Combat_Repair',
+        'GmstTweak_Compass_RecognitionDistance',
+        'GmstTweak_CostMultiplier_Enchantment',
+        'GmstTweak_CostMultiplier_Recharge',
+        'GmstTweak_CostMultiplier_Repair',
+        'GmstTweak_CostMultiplier_SpellMaking',
+        'GmstTweak_Crime_AlarmDistance',
+        'GmstTweak_LevelDifference_CreatureMax',
+        'GmstTweak_LevelDifference_ItemMax',
+        'GmstTweak_LevelUp_SkillCount',
+        'GmstTweak_Magic_BoltSpeed',
+        'GmstTweak_Magic_MaxNPCSummons',
+        'GmstTweak_Magic_MaxPlayerSummons',
+        'GmstTweak_Movement_FatigueFromRunningEncumbrance',
+        'GmstTweak_Player_HorseTurningSpeed',
+        'GmstTweak_Player_InventoryQuantityPrompt_Tes4',
+        'GmstTweak_Player_MaxDraggableWeight',
+        'GmstTweak_Warning_ExteriorDistanceToHostiles',
+        'GmstTweak_Warning_InteriorDistanceToHostiles',
+        'GmstTweak_World_CellRespawnTime',
+    }
+
     bethDataFiles = {
         'altardeluxe.bsa',
         'altardeluxe.esp',
