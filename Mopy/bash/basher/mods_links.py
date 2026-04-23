@@ -94,8 +94,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
         """Activate all mods."""
         lordata = True # on exception refresh all mods
         try:
-            lordata = bosh.modInfos.lo_activate_all(save_act=True,
-                activate_mergeable=self._activate_mergeable)
+            lordata = bosh.modInfos.do_activate_all(self._activate_mergeable)
         except exception.PluginsFullError:
             self._showError(_('Plugin list is full, so some plugins '
                               'were skipped.'),
@@ -108,7 +107,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
                 title=_('Too Many Plugins'))
         except (exception.BoltError, NotImplementedError) as e:
             deprint('Error while activating plugins', traceback=True)
-            self._showError(f'{e}')
+            self._showError(f'{e!r}')
         self.window.propagate_refresh(lordata)
 
 class _Mods_ActivateNonMergeable(AppendableLink, _Mods_ActivateAll):
@@ -612,7 +611,8 @@ class Mods_LOUndo(ItemLink):
     _keyboard_hint = 'Ctrl+Z'
 
     def Execute(self):
-        self.window.data_store.wip_lo_undo_redo_load_order(False)
+        self.window.propagate_refresh(
+            self.window.data_store.wip_lo_undo_redo_load_order(False))
 
 #------------------------------------------------------------------------------
 class Mods_LORedo(ItemLink):
@@ -622,7 +622,8 @@ class Mods_LORedo(ItemLink):
     _keyboard_hint = 'Ctrl+Y'
 
     def Execute(self):
-        self.window.data_store.wip_lo_undo_redo_load_order(True)
+        self.window.propagate_refresh(
+            self.window.data_store.wip_lo_undo_redo_load_order(True))
 
 #------------------------------------------------------------------------------
 class Mods_LOExport(ItemLink):
