@@ -59,7 +59,7 @@ except ImportError:
             'version')
 
 # API
-metadata_version = '0.26' # The LOOT metadata version with which this
+metadata_version = '0.29' # The LOOT metadata version with which this
                           # implementation is compatible
 
 class LOOTParser(object):
@@ -627,11 +627,10 @@ def _pop_token(tokens: deque[_Token],
         raised.
     :return: The popped token."""
     if not tokens:
-        raise ParserError(f'Attempted to pop a token '
-                          f'({expected_tag if expected_tag else "ANY"}), '
-                          f'but no tokens are left on the stack.\nMost '
-                          f'likely, a character has been misplaced or a '
-                          f'closing parenthesis is missing.')
+        msg = f'Attempted to pop a token ({expected_tag or "ANY"}), but no ' \
+              f'tokens are left on the stack.\nMost likely, a character has ' \
+              f'been misplaced or a closing parenthesis is missing.'
+        raise ParserError(msg)
     token = tokens.popleft()
     if expected_tag and token.token_tag != expected_tag:
         raise ParserError(f'Expected {expected_tag} token, but got '

@@ -84,15 +84,6 @@ def _process_path(file_path: str) -> Path:
             f"folder is {final_game_folder}.", file_path)
     return final_path
 
-def _read_binary_ver(binary_path):
-    """Reads version information from a binary at the specified path, returning
-    it as a string for LooseVersion."""
-    binary_ver = get_file_version(binary_path)
-    # Handle special case of (0, 0, 0, 0) - no version present
-    if binary_ver == (0, 0, 0, 0):
-        return '0'
-    return '.'.join(map(str, binary_ver))
-
 def _iter_dir(parent_dir):
     """Takes a path and returns an iterator of the filenames (as strings) of
     files in that folder. .ghost extensions will be chopped off."""
@@ -183,9 +174,10 @@ class ConditionFunc(_ACondition):
         - many
         - many_active
         - product_version
+        - readable
         - version"""
-    # TODO: Unlikely to be necessary, but we're missing readable, file_size,
-    # filename_version, description_contains, & is_executable
+    # TODO: Unlikely to be necessary, but we're missing description_contains,
+    #  file_size, filename_version, & is_executable
     __slots__ = ('func_name', 'func_args')
 
     def __init__(self, func_name: str, func_args: list):
@@ -196,17 +188,17 @@ class ConditionFunc(_ACondition):
         # Call the appropriate function, wrapping the error to make a nicer
         # error message if no appropriate function was found
         try:
-            wanted_func = _function_mapping[self.func_name]
+            wanted_func = _function_mapping[fname := self.func_name]
         except KeyError:
-            raise EvalError(f"Unknown function '{self.func_name}'")
+            raise EvalError(f"Unknown function '{fname}'")
         try:
             return wanted_func(*self.func_args)
         except EvalError: raise
         except Exception:
             # Reraise because we can gracefully handle this by skipping the
             # tags for this plugin
-            deprint('Error while evaluating function', traceback=True)
-            raise EvalError('Error while evaluating function')
+            deprint(f"Error while evaluating function '{fname}'", traceback=True)
+            raise EvalError(f"Error while evaluating function '{fname}'")
 
     def __repr__(self):
         fmt_args = []
@@ -339,8 +331,10 @@ def _fn_many_active(path_regex: str, _load_order_module) -> bool:
 
 ##: Maybe tweak the implementation to match LOOT's by adding some params to
 # env.get_file_version?
-def _fn_product_version(file_path: str, expected_ver: str,
-        comparison: Comparison) -> bool:
+_CMP_ARG = str| Comparison
+def _fn_product_version(file_path: str, *args: tuple[_CMP_ARG],
+        msg='Product version query was requested, but the file is not an '
+            'executable.') -> bool:
     """Takes a file path, an expected version and a comparison operator.
     Returns True iff the file path resolves to an executable (.exe or .dll) and
     its version compares successfully against the specified expected version,
@@ -357,16 +351,16 @@ def _fn_product_version(file_path: str, expected_ver: str,
     details.
 
     :param file_path: The file path to check.
-    :param expected_ver: The version to check against.
-    :param comparison: The comparison operator to use."""
+    :param args: The version to check against and the comparison operator to
+                 use, in any order."""
     file_path = _process_path(file_path)
-    if file_path.cext in ('.exe', '.dll'):
-        # Read version from executable fields
-        actual_ver = LooseVersion(_read_binary_ver(file_path.s))
-    else:
-        raise FileError(file_path, 'Product version query was requested, '
-                                   'but the file is not an executable.')
-    return comparison.compare(actual_ver, LooseVersion(expected_ver))
+    if file_path.cext not in ('.exe', '.dll'):
+        raise FileError(file_path, msg)
+    # Read version from executable fields
+    binary_ver = get_file_version(file_path.s)
+    # Handle special case of (0, 0, 0, 0) - no version present
+    ver = '0' if binary_ver == (0, 0, 0, 0) else '.'.join(map(str, binary_ver))
+    return _version_cmp(ver, args)
 
 def _fn_readable(file_path):
     """Takes a file path. Returns True iff the path exists and is a readable
@@ -383,8 +377,7 @@ def _fn_readable(file_path):
     except OSError:
         return False
 
-def _fn_version(file_path: str, expected_ver: str, comparison: Comparison,
-                _bosh) -> bool:
+def _fn_version(file_path: str, *args: tuple[_CMP_ARG], _bosh) -> bool:
     """Behaves like product_version, but extends its behavior to also allow
     plugin version checks. If the plugin's description contains a
     'Version: ...' section, then the version specified by that section is
@@ -396,19 +389,18 @@ def _fn_version(file_path: str, expected_ver: str, comparison: Comparison,
     handled by these two functions.
 
     :param file_path: The file path to check.
-    :param expected_ver: The version to check against.
-    :param comparison: The comparison operator to use."""
+    :param args: The version to check against and the comparison operator to
+                 use, in any order."""
     file_path = _process_path(file_path)
     if (minfos := _bosh.modInfos).check_filename(file_path.s):
         # Read version from the description
-        actual_ver = LooseVersion(minfos.getVersion(file_path.stail) or '0')
-    elif file_path.cext in ('.exe', '.dll'):
-        # Read version from executable fields
-        actual_ver = LooseVersion(_read_binary_ver(file_path.s))
-    else:
-        raise FileError(file_path, 'Version query was requested, but the '
-                                   'file is not a plugin or executable.')
-    return comparison.compare(actual_ver, LooseVersion(expected_ver))
+        return _version_cmp(minfos.getVersion(file_path.stail) or '0', args)
+    return _fn_product_version(file_path, *args, msg='Version query was '
+        'requested, but the file is not a plugin or executable.')
+
+def _version_cmp(actual_ver, args): # support v29 but also previous formats
+    comparison, expected_ver = sorted(args, key=lambda v: isinstance(v, str))
+    return comparison.compare(*map(LooseVersion, (actual_ver, expected_ver)))
 
 # Maps the function names used in conditions to the functions implementing them
 _function_mapping = {
