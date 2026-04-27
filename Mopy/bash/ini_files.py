@@ -512,10 +512,10 @@ class GameIni(IniFileInfo):
         ini_settings = {section:{key:value}}
         self.saveSettings(ini_settings)
 
-    def get_ini_language(self, default_lang: str, cached=True) -> str:
+    def get_ini_language(self, game_handle_, cached=True) -> str:
         if not cached or self._ini_language is None:
             self._ini_language = self.getSetting('General', 'sLanguage',
-                default_lang)
+                game_handle_.Ini.default_game_lang)
         return self._ini_language
 
     def target_ini_exists(self, msg):

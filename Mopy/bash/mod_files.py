@@ -233,8 +233,7 @@ class ModFile(object):
             ins.setStringTable(None)
             return progress
         from . import bosh
-        i_lang = bosh.oblivionIni.get_ini_language(
-            bush.game.Ini.default_game_lang)
+        i_lang = bosh.oblivionIni.get_ini_language(bush.game)
         if stringsPaths := self.fileInfo.getStringsPaths(i_lang):
             # Use 10% of progress bar for strings
             stringsProgress = SubProgress(progress, 0, 0.1)

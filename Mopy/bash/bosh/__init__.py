@@ -2556,7 +2556,7 @@ class ModInfos(_AFileInfos):
         except FileNotFoundError:
             # No loose strings folder -> all strings are in BSAs
             ci_cached_strings_paths = set()
-        i_lang = oblivionIni.get_ini_language(bush.game.Ini.default_game_lang)
+        i_lang = oblivionIni.get_ini_language(bush.game)
         # sort the ini-loaded bsas in an optimal way for detecting strings
         hi_to_lo = sorted(self.__bsa_lo, key=lambda bi:
             bush.game.Bsa.heuristic_sort_key(bi, self.__bsa_lo))

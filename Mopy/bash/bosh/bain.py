@@ -168,10 +168,9 @@ class Installer(ListInfo):
                          'version[ _]?history'}
     re_common_docs = re.compile(f'^(.*)(?:{"|".join(_common_doc_roots)})(.*)$',
                                 re.I)
-    skipExts = ['.exe', '.py', '.pyc', '.7z', '.zip', '.rar', '.db', '.ace',
-                '.tgz', '.tar', '.gz', '.bz2', '.omod', '.fomod', '.tb2',
-                '.lzma', '.manifest', '.ckm', '.vortex_backup', '.ghost']
-    skipExts = frozenset((*skipExts, *readExts))
+    skipExts = frozenset([*readExts, '.exe', '.py', '.pyc', '.db', '.ace',
+        '.tgz', '.tar', '.gz', '.bz2', '.omod', '.fomod', '.tb2', '.lzma',
+        '.manifest', '.ckm', '.vortex_backup', '.ghost'])
     commonlyEditedExts = {'.cfg', '.ini', '.modgroups', '.toml', '.txt',
                           '.xml'}
     #--Regular game directories - needs update after bush.game has been set
@@ -748,7 +747,7 @@ class Installer(ListInfo):
         return '\n\n'.join(message)
 
     def refreshDataSizeCrc(self, checkOBSE=False, *, splitExt=os.path.splitext,
-                           __skip_exts: set[str] = skipExts):
+                           __skip_exts: frozenset[str] = skipExts):
         """Update self.ci_dest_sizeCrc and related variables and return
         dest_src map for install operation. ci_dest_sizeCrc is a dict that maps
         CIstr paths _relative to the Data dir_ (the locations the files will
@@ -794,14 +793,16 @@ class Installer(ListInfo):
         unSize = 0
         bethFiles = bush.game.bethDataFiles
         skips, global_skip_ext = self._init_skips()
+        language_lower = '' # don't renameStrings if overrideSkips is on ##:?
         if self.overrideSkips:
             ##: We should split this - Override Skips & Override Redirects
-            renameStrings = False
             bethFilesSkip = False
             redirect_scripts = False
         else:
-            renameStrings = bush.game.Esp.stringsFiles and bass.settings[
-                u'bash.installers.renameStrings']
+            if bush.game.Esp.stringsFiles and bass.settings[
+                'bash.installers.renameStrings']:
+                from . import oblivionIni
+                language_lower = oblivionIni.get_ini_language(bush.game).lower()
             bethFilesSkip = not bass.settings[
                 u'bash.installers.autoRefreshBethsoft']
             # No need to redirect if these get skipped anyways
@@ -809,12 +810,6 @@ class Installer(ListInfo):
                     bush.game.Psc.source_redirects
                     and not bass.settings[u'bash.installers.skipScriptSources']
                     and bass.settings[u'bash.installers.redirect_scripts'])
-        if renameStrings:
-            from . import oblivionIni
-            language_lower = oblivionIni.get_ini_language(
-                bush.game.Ini.default_game_lang).lower()
-        else:
-            language_lower = ''
         hasExtraData = self.hasExtraData
         # exclude '' from active sub-packages
         activeSubs = (
@@ -969,9 +964,8 @@ class Installer(ListInfo):
                     continue
                 #--Remap docs, strings
                 if dest is None: dest = file_relative
-                dest = self._remap_files(
-                    dest, fileLower, rootLower, fileExt, file_relative,
-                    data_sizeCrc, archiveRoot, renameStrings, language_lower,
+                dest = self._remap_files(dest, fileLower, rootLower, fileExt,
+                    file_relative, data_sizeCrc, archiveRoot, language_lower,
                     redirect_scripts)
                 if fileExt in commonlyEditedExts:
                     ##: will track all the txt files in Docs/
@@ -1053,15 +1047,14 @@ class Installer(ListInfo):
             self.fileRootIdex = len(rootStr)
 
     def _remap_files(self, dest, fileLower, rootLower, fileExt, file_relative,
-                     data_sizeCrc, archiveRoot, renameStrings, language_lower,
-                     redirect_scripts):
+            data_sizeCrc, archiveRoot, language_lower, redirect_scripts):
         """Renames and redirects files to other destinations in the Data
         folder."""
         # Redirect docs to the Docs folder
         if rootLower in self.screenshot_dirs:
             dest = os_sep.join((u'Docs', file_relative[len(rootLower) + 1:]))
         # Rename strings files if the option is set
-        elif (renameStrings and fileExt in self._strings_extensions
+        elif (language_lower and fileExt in self._strings_extensions
               and fileLower.startswith(u'strings' + os_sep)):
             langSep = fileLower.rfind(u'_')
             extSep = fileLower.rfind(u'.')
