@@ -37,7 +37,7 @@ from itertools import chain, groupby
 from operator import attrgetter, itemgetter
 from zlib import crc32
 
-from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
+from . import DataStore, InstallerConverter, ModInfos, common_image_exts, \
     best_ini_files, data_tracking_stores
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
@@ -52,6 +52,7 @@ from ..ini_files import OBSEIniFile
 from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
 
 os_sep = os.path.sep ##: track
+_bain_image_exts = {*common_image_exts, '.webp'}
 
 _fnames = Iterable[FName] | None
 
@@ -552,8 +553,6 @@ class Installer(ListInfo):
             Installer._global_start_skips.append(
                 bush.game.Se.plugin_dir.lower())
             Installer._global_skip_extensions |= Installer._executables_ext
-        if bass.settings[u'bash.installers.skipImages']:
-            Installer._global_skip_extensions |= bain_image_exts
         Installer._init_executables_skips(ask_yes)
 
     @staticmethod
@@ -622,9 +621,20 @@ class Installer(ListInfo):
                         # Move top-level docs to the Docs folder
                         dest = docs_ + dest
             return dest
+        def _process_imgs(self, fileLower, full, fileExt, file_relative, sub):
+            gbain = bush.game.Bain
+            if (not self.overrideSkips
+                    and bass.settings['bash.installers.skipImages']
+                    and fileLower not in gbain.no_skip
+                    and fileExt not in gbain.no_skip_dirs.get(
+                        _split_fr(file_relative)[0].lower(), [])):
+                return None # skip
+            return file_relative
         attr_process = Installer._attributes_process
         for ext in Installer.docExts:
-            attr_process [ext] = _process_docs
+            attr_process[ext] = _process_docs
+        for ext in _bain_image_exts:
+            attr_process[ext] = _process_imgs
         def _process_BCF(self, fileLower, full, fileExt, file_relative, sub):
             if fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower: ##: DOCS!
                 self.hasBCF = full
@@ -941,7 +951,8 @@ class Installer(ListInfo):
                     # packages that include both a wizard and an FOMOD
                     # installer will work (as well as BCFs)
                     continue
-                if fileExt in global_skip_ext: continue # docs treated above
+                if fileExt in global_skip_ext: # docs/imgs treated above
+                    continue
                 elif fileExt in Installer._executables_process: # and handle execs
                     if Installer._executables_process[fileExt](checkOBSE,
                             fileLower, full, archiveRoot, cached_size, crc):
@@ -1079,7 +1090,7 @@ class Installer(ListInfo):
             if fileLower == u'package.jpg':
                 dest = self.packagePic = u''.join(
                     (u'Docs' + os_sep, archiveRoot, u'.package.jpg'))
-            elif fileExt in bain_image_exts:
+            elif fileExt in _bain_image_exts:
                 dest = os_sep.join(('Docs', file_relative))
         return dest
 

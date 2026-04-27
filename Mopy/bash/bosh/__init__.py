@@ -97,9 +97,8 @@ reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
                     re.I)
 del __exts
 # Image extensions for BAIN and for the Screnshots tab
-_common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
-bain_image_exts = {*_common_image_exts, '.webp'}
-ss_image_exts = frozenset([*_common_image_exts, '.tga'])
+common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
+_ss_image_exts = frozenset([*common_image_exts, '.tga'])
 
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
@@ -1490,7 +1489,7 @@ class ScreenInfo(AFileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
     _has_digits = True
-    file_exts = ss_image_exts
+    file_exts = _ss_image_exts
 
     def __init__(self, fullpath, **kwargs):
         super().__init__(fullpath, **kwargs)

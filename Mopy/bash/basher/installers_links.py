@@ -564,7 +564,7 @@ class Installers_SimpleFirst(_Installer_Sort, BoolLink):
 class _Installers_RescanningLink(Installers_Link, BoolLink):
     """An Installers link that rescans installers upon being toggled."""
     def Execute(self):
-        super(_Installers_RescanningLink, self).Execute()
+        super().Execute()
         self._pre_rescan_action()
         self._do_installers_rescan()
 
