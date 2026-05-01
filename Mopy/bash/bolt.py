@@ -1736,6 +1736,28 @@ class AFile:
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.abs_path.stail}>'
 
+class DelFile(AFile):
+    """Remember deleted/invalid status (_deleted) and whether the file was
+    updated (has_changed). Calling do_update *won't* reset the flag so you
+    must reset has_changed yourself when used (cf IniInfos). Use sparingly."""
+    __slots__ = ('_deleted', 'has_changed')
+
+    def __init__(self, *args, **kwargs):
+        self._deleted = False
+        self.has_changed = False
+        super().__init__(*args, **kwargs)
+
+    def do_update(self, **kwargs):
+        self.has_changed |= (sup := super().do_update(**kwargs))
+        return sup # notify for new updates, not the value of has_changed
+
+    def _reset_cache(self, stat_tuple, **kwargs):
+        if failed := stat_tuple == self._null_stat:
+            # True if file was previously stated or for a new non existing file
+            self.has_changed |= not self._deleted
+        self._deleted = failed
+        super()._reset_cache(stat_tuple, **kwargs)
+
 #------------------------------------------------------------------------------
 class ListInfo:
     """Info object displayed in Wrye Bash list - comes last in MI (*above*

@@ -2034,8 +2034,8 @@ class INIInfos(_AFileInfos):
                 default_info.info_status(recalc_st=True, **kwargs)
             else: # booting
                 rdata.to_add.add(k)
-        if not booting and ((targ := self.ini).updated or targ.do_update()):
-            targ.updated = False
+        if not booting and ((targ := self.ini).has_changed or targ.do_update()):
+            targ.has_changed = False
             rdata |= self._reset_all_statuses() # set the status of all infos
         return rdata
 
