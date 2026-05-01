@@ -357,11 +357,10 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
                 f'*** fixed: {fstr}']))
             saved = fixed
     else: saved = __lo_unset
-    if _cached_lord is not __lo_unset:
-        lo, active = _lo_handler.request_cache_update(
+    lo, active = (None, None) if _cached_lord is __lo_unset else \
+        _lo_handler.request_cache_update(
             _cached_lord.loadOrder if cached else None,
             _cached_lord.activeOrdered if cached_active else None)
-    else: lo = active = None
     ldiff = _update_cache(lo, active)
     if saved is not __lo_unset:
         # rest of Bash should only use _cached_lord so since we eventually
@@ -407,8 +406,8 @@ def _restore_lo(index_move):
                    __index_move=index_move, quiet=True)
 
 # _game_handle wrappers -------------------------------------------------------
-def lo_sort_key(**kws):
-    return _lo_handler.lo_sort_key(**kws)
+def master_sort(*args, **kwargs):
+    return _lo_handler.lo_sort_key(*args, **kwargs)
 
 def check_active_limit(mods, as_type=set):
     return _lo_handler.check_active_limit(mods, as_type=as_type)
@@ -416,11 +415,13 @@ def check_active_limit(mods, as_type=set):
 def swap(old_dir, new_dir):
     return _lo_handler.swap(old_dir, new_dir)
 
-def filter_pinned(imods, *, filter_mods=False, fixed_order=False) -> \
-        list[FName] | set[FName]:
-    """See LoGame.pinned_plugins."""
-    return _lo_handler.pinned_plugins(set(imods), fixed_order=fixed_order,
-                                      filter_mods=filter_mods)
+def filter_pinned(mod_set) -> list[FName]:
+    """Return a list of plugins that we can't change their load order."""
+    mod_set = {*mod_set}
+    return [k for k in _lo_handler.fixed_order_plugins if k in mod_set]
+
+def must_be_active(imods) -> set[FName]:
+    return {k for k in imods if _lo_handler.pin_active_state.get(k)}
 
 def get_lo_files() -> set[bolt.Path]:
     """Retrieve a set of all files used by this game for storing load order."""

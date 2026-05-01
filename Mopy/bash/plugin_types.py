@@ -329,7 +329,7 @@ class NoMasterFlag(PluginFlag):
     """Base class: No master flag."""
 
     @classmethod
-    def sort_masters_key(cls, minf) -> tuple[bool, ...]: # single use!
+    def sort_masters_key(cls, minf, _game) -> tuple[bool, ...]: # single use!
         """Return a key so that ESMs come first - minf can be a ModInfo or a
         MasterInfo."""
         return ()

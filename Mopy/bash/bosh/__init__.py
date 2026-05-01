@@ -2229,7 +2229,8 @@ def _lo_cache(lord_func):
     return _modinfos_cache_wrapper
 
 def _lo_op(lop_func):
-    """Decorator centralizing saving active state/load order changes."""
+    """Decorator centralizing saving active state/load order changes. Don't
+    raise exceptions in lop_func, will be swallowed in the finally block."""
     @wraps(lop_func)
     def _lo_wip_wrapper(self: ModInfos, *args, ldiff=None, save_all=False,
                         save_wip_lo=False, save_act=False, **kwargs):
@@ -2701,48 +2702,46 @@ class ModInfos(_AFileInfos):
         return load_order.undo_redo_load_order(redo)
 
     #--Lo/active wip caches management ----------------------------------------
-    @_lo_op
-    def _lo_activate(self, fileName, *, out_diff):
-        """Never passed save_***=True - kept it a _lo_op for creating the
-        LordDiff() in one place."""
-        self._do_activate(fileName, set(self), [], out_diff)
-
-    def _do_activate(self, fileName, _modSet, _children, out_diff):
+    def _do_activate(self, fileName, _children=()):
+        outdiff = LordDiff()
         # Skip .esu files, those can't be activated
         ##: This .esu handling needs to be centralized - sprinkled all over
         # actives related lo_* methods
-        if fileName.fn_ext == '.esu': return
+        if fileName.fn_ext == '.esu': return outdiff
         # Speed up lookups, since they occur for the plugin and all masters
         acti_set = set(self._active_wip)
         if fileName not in acti_set: # else we are called to activate masters
             msg = load_order.check_active_limit([*self._active_wip, fileName],
-                                            as_type=str)
+                                                as_type=str)
             if msg:
                 msg = f'{fileName}: Trying to activate more than {msg}'
                 raise PluginsFullError(msg)
-        if _children:
+        if _children := _children or []:
             if fileName in _children:
                 raise BoltError(f'Circular Masters: '
                                 f'{" >> ".join((*_children, fileName))}')
-        _children = [fileName]
+        _children.append(fileName)
         #--Check for bad masternames:
         #  Disabled for now
         ##if self[fileName].hasBadMasterNames(): return
         #--Select masters
         for master in self[fileName].masterNames:
             # Check that the master is on disk and not already activated
-            if master in _modSet and master not in acti_set:
-                self._do_activate(master, _modSet, _children, out_diff)
+            if master in self and master not in acti_set:
+                outdiff |= self._do_activate(master, _children)
+                _children.pop() # pop the master from the end of the list
         #--Select in plugins
         if fileName not in acti_set:
             self._active_wip.append(fileName)
-            out_diff.new_act.add(fileName) # manipulate out_diff attrs directly
+            outdiff.new_act.add(fileName) # manipulate out_diff attrs directly
+        return outdiff
 
     @_lo_op
     def lo_deactivate(self, *to_deac, out_diff, _deleted=False):
         """Remove mods and their children from _active_wip."""
-        to_deac = {*to_deac} if _deleted else load_order.filter_pinned(
-            to_deac, filter_mods=True)
+        to_deac = {*to_deac}
+        if not _deleted:
+            to_deac -= load_order.must_be_active(to_deac)
         #--Unselect filenames
         set_awip = set(self._active_wip) - to_deac
         #--Unselect children
@@ -2761,7 +2760,7 @@ class ModInfos(_AFileInfos):
     @_lo_op
     def lo_toggle_active(self, mods, *, do_activate=True, out_diff):
         impacted_mods = {}
-        _lo_meth, attr = (self._lo_activate, 'new_act') if do_activate \
+        _lo_meth, attr = (self._do_activate, 'new_act') if do_activate \
             else (self.lo_deactivate, 'new_inact')
         modified_attr = attrgetter_cache[attr]
         # Track illegal activations/deactivations for the return value
@@ -2775,8 +2774,10 @@ class ModInfos(_AFileInfos):
             #if fileName in self.bad_names: return
             try:
                 changes_diff = _lo_meth(fn_mod)
-            except (BoltError, PluginsFullError) as e: # only for _lo_activate
+            except (BoltError, PluginsFullError) as e: # only for _do_activate
                 act_error = e
+                if isinstance(e, BoltError):
+                    out_diff.new_act.clear() # Don't save, something went wrong
                 break
             if not changes_diff: # Can't de/activate that mod, track this
                 illegal.append(fn_mod)
@@ -2787,8 +2788,7 @@ class ModInfos(_AFileInfos):
                 impacted_mods[fn_mod] = load_order.get_ordered(impacted)
         return impacted_mods, illegal, act_error
 
-    @_lo_op
-    def lo_activate_all(self, *, activate_mergeable=True, out_diff):
+    def do_activate_all(self, activate_mergeable=True):
         """Activates all non-mergeable plugins (except ones tagged Deactivate),
         then all mergeable plugins (again, except ones tagged Deactivate).
         Raises a PluginsFullError if too many non-mergeable plugins are present
@@ -2808,19 +2808,14 @@ class ModInfos(_AFileInfos):
         # Then activate as many of the mergeable plugins as we can
         if mergeable and activate_mergeable:
             to_act.extend(p for p, v in s_plugins.items() if v in mergeable)
-        if not to_act: return
-        try:
-            try:
-                for j, p in enumerate(to_act):
-                    if p not in out_diff.new_act: # else a delinquent master(?)
-                        self._lo_activate(p, out_diff=out_diff)
-            except PluginsFullError as e:
-                if j >= first_mergeable:
-                    raise SkippedMergeablePluginsError from e
-                raise
-        except BoltError:
-            out_diff.new_act.clear() # Don't save, something went wrong
-            raise
+        (_impctd, _illgl, act_error), lordata = self.lo_toggle_active(to_act,
+            save_act=True, out_diff=(outdiff := LordDiff()))
+        if act_error:
+            if isinstance(act_error, PluginsFullError):
+                if not ({*to_act[:first_mergeable]} - outdiff.new_act):
+                    raise SkippedMergeablePluginsError from act_error
+            raise act_error
+        return lordata
 
     @_lo_op
     def lo_activate_exact(self, partial_actives: Iterable[FName], *, out_diff):
@@ -2842,7 +2837,7 @@ class ModInfos(_AFileInfos):
         for present_plugin in list(wip_actives):
             if present_plugin.fn_ext != '.esu':
                 _add_masters(present_plugin)
-        wip_actives.update(load_order.filter_pinned(present_plugins))
+        wip_actives.update(load_order.must_be_active(present_plugins))
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.get_ordered(wip_actives)
         trimmed_plugins = load_order.check_active_limit(ordered_wip)

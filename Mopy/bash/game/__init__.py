@@ -58,7 +58,7 @@ class _MasterFlag(AMasterFlag):
     ESM = ('esm_flag', '_is_master', 'm')
 
     @classmethod
-    def sort_masters_key(cls, minf) -> tuple[bool, ...]:
+    def sort_masters_key(cls, minf, _game) -> tuple[bool, ...]:
         """Return a key so that ESMs come first."""
         return not cls.ESM.cached_type(minf),
 

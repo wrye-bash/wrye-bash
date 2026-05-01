@@ -20,6 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import re
+from itertools import chain
 from os.path import join as _j
 
 from .. import GameInfo, ObjectIndexRange, _SFPluginFlag
@@ -30,6 +32,8 @@ from ...games_lo import AsteriskGame
 from ...bolt import FName, fast_cached_property
 from ...plugin_types import AMasterFlag
 
+# https://github.com/loot/loot/issues/2198#issuecomment-4243115171
+_bp_re = r'BlueprintShips-(.+)\.esm' # dragons - blueprint masters must match
 class _SFMasterFlag(AMasterFlag):
     # order matters for the ui keys
     BLUEPRINT = ('blueprint_flag', '_is_blueprint', 'b')
@@ -42,10 +46,13 @@ class _SFMasterFlag(AMasterFlag):
                                'plugins.')
 
     @classmethod
-    def sort_masters_key(cls, minf) -> tuple[bool, ...]:
-        """Return a key so that ESMs come first and blueprint masters last."""
+    def sort_masters_key(cls, minf, _game) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first, blueprint masters last and
+        invalid plugins in blocks after the masters/regular/blueprint masters
+        groups."""
         is_master = cls.ESM.cached_type(minf)
-        return is_master and cls.BLUEPRINT.cached_type(minf), not is_master
+        return is_master and cls.BLUEPRINT.cached_type(minf), not is_master, \
+            minf.fn_key in _game._shipwrecks # hacky but needed
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -331,41 +338,65 @@ class _AStarfieldGameInfo(PatchGame):
         force_load_first = tuple(map(FName, (
             'ShatteredSpace.esm', 'Constellation.esm', 'OldMars.esm',
             'SFBGS003.esm', 'SFBGS004.esm', 'SFBGS006.esm', 'SFBGS007.esm',
-            'SFBGS008.esm', # 'BlueprintShips-Starfield.esm',
+            'SFBGS008.esm', 'SFBGS00D.esm', 'SFBGS047.esm', 'SFBGS050.esm',
         )))
         # The game tries to read a Starfield.ccc already, but it's not present
         # yet. Also, official Creations are written to plugins.txt & can be
         # disabled & reordered in the LO.
         _ccc_filename = 'Starfield.ccc'
+        _ccc_dirs = 'saveBase', 'app'
 
-        def _rem_from_plugins_txt(self):
-            # don't remove blueprint masters, let the game do that rather
-            # than overwritte user edits (the ones we do remove are harcoded
-            # and whatever the user has done with lo files does not seem to
-            # matter, but Blueprint load order seems to be affected)
-            act = self._active_if_present - {FName(
-                'BlueprintShips-Starfield.esm')}
-            # we won't remove Blueprint masters from plugins.txt but we need
-            # to append them in lo if present so we don't warn
-            blue = {k: v for k, v in self._mod_infos.items() if all(
-                pf.cached_type(v) for pf in self._game_handle.master_flags)}
-            blue = [t[0] for t in # sort blueprint masters ftime/mod ascending
-                    sorted(blue.items(), key=lambda x: (x[1].ftime, x[0]))]
-            return act, blue
-
-        def _set_pinned_mods(self):
-            """Override for making BlueprintShips.esm always active while not
-            having a fixed position in the load order."""
-            mbaip, fo_mods = super()._set_pinned_mods()
-            mbaip.add(FName('BlueprintShips-Starfield.esm')) #active if present
+        def _set(self, *, active=None, **kwargs):
+            # use an override instead of passing kwargs to _set_pinned_mods to
+            # avoid calling super._set_pinned_mods
+            mbaip, fo_mods = super()._set(**kwargs)
+            stems = {p.fn_body for p in
+                     {*active, *(k for k, v in mbaip.items() if v)}}
+            for stem, bp_ship in self._blue_ships.items():
+                mbaip[bp_ship] = stem.lower() in stems
             return mbaip, fo_mods
 
-        def _get_ccc_path(self):
-            from ... import bass
-            if (mg_ccc := bass.dirs['saveBase'].join(self._ccc_filename
-                                                     )).exists():
-                return mg_ccc
-            return super()._get_ccc_path()
+        def _readd_mods(self, lo, active, sorted_rem):
+            super()._readd_mods(lo, active, sorted_rem)
+            # silently add BlueprintShips- and blueprint plugins (removed from
+            # the plugins.txt) to the load order - sort in ftime/mod descending
+            lo.extend(self.calculate_mtime_order(
+                self._shipwrecks | self._blue_masters.keys()))
+            # sort blue masters last and invalid blocks after respective valid
+            lo.sort(key=self.lo_sort_key())
+            active.extend(b for b in # only those in _blue_ships can be active
+                self._blue_ships.values() if self.pin_active_state[b])
+
+        def _set_pinned_mods(self, *, __re_ship=re.compile(_bp_re, re.I)):
+            mbaip, fo_mods = super()._set_pinned_mods()
+            modinfos = self._mod_infos
+            ship_prefix = {k: v for k, v in modinfos.items() if
+                           k.lower().startswith('blueprintships-')}
+            self._blue_ships = {re_ma.group(1): k for k in ship_prefix
+                                if ((re_ma := __re_ship.match(k)) is not None)}
+            blue = dict(t for t in modinfos.items() if
+                        _SFMasterFlag.BLUEPRINT.cached_type(t[1]))
+            esms = dict(t for t in modinfos.items() if
+                        _SFMasterFlag.ESM.cached_type(t[1]))
+            if nomaster := blue.keys() - esms.keys():
+                bolt.deprint(f'Blueprint plugins not master flagged: '
+                             f'{nomaster} - Bash will disable those')
+            if no_match := ship_prefix.keys() - self._blue_ships.values():
+                bolt.deprint(f'BlueprintShips plugins not matching {_bp_re}: '
+                             f'{no_match} - Bash will disable those')
+            if no_bp_flag := ship_prefix.keys() - blue.keys():
+                bolt.deprint(f'BlueprintShips plugins with no blueprint flag: '
+                             f'{no_bp_flag} - Bash will disable those')
+                self._blue_ships = {k: v for k, v in self._blue_ships.items()
+                                    if v not in no_bp_flag}
+            self._blue_masters = dict(t for t in blue.items() if t[0] in esms)
+            if noship := self._blue_masters.keys() - self._blue_ships.values():
+                bolt.deprint(f'Blueprint master plugins not matching '
+                             f'{_bp_re}: {noship} - Bash will disable those')
+            self._shipwrecks = {*chain(nomaster, no_match, no_bp_flag, noship)}
+            for k in self._shipwrecks:
+                mbaip[k] = False # disallow activating as advertised
+            return mbaip, fo_mods
 
     lo_handler = _LoStarfield
 

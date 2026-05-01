@@ -2662,7 +2662,7 @@ class InstallersData(DataStore):
             currSection = None
             lines = []
             for (line_text, section, setting, _val, status, _lineNo,
-                 _deleted) in data_ini.analyse_tweak(tweak_ini):
+                 _isdel) in data_ini.analyse_tweak(tweak_ini):
                 if not line_text.rstrip():
                     continue # possible empty lines at the start
                 if status in (10, -10):

@@ -303,8 +303,7 @@ class _ModsUIList(UIList):
         """Conditional sort, performs the actual 'masters-first' sorting if
         needed."""
         if self.masters_first:
-            items.sort(key=load_order.lo_sort_key(ds=self.data_store,
-                                                  by_name=False))
+            items.sort(key=load_order.master_sort(ds=self.data_store))
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -951,8 +950,7 @@ class ModList(_ModsUIList):
             msg = _(u'Reordering mods is only allowed when they are sorted '
                     u'by Load Order.')
         else:
-            pinned = load_order.filter_pinned(self.GetSelected(),
-                                              fixed_order=True)
+            pinned = load_order.filter_pinned(self.GetSelected())
             if pinned:
                 msg = (_(u"You can't reorder the following mods:") + u'\n' +
                        ', '.join(pinned))

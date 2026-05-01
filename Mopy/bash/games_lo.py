@@ -157,6 +157,34 @@ class LoFile(AFile):
         except OSError:
             bolt.deprint(f'Failed to back up {pl_path}', traceback=True)
 
+class _CCCFile(LoFile):
+    """CCC files can be in different locations. We also need to keep track of
+    their presence."""
+    _deleted = False # same logic as IniFileInfo - common base?
+
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
+        if stat_tuple != self._null_stat:
+            _act, ccc_contents = self.parse_modfile()
+            self.ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
+
+    def do_update(self, *, raise_os_error=False, **kwargs):
+        try:
+            # do_update will return True if the file was deleted then restored
+            update = super().do_update(raise_os_error=True)
+            if self._deleted: # restored
+                self._deleted = False
+            return update
+        except OSError as e:
+            if update := not self._deleted: # deprint the first time only
+                if isinstance(e, FileNotFoundError):
+                    deprint(f'{self.abs_path} does not exist')
+                else:
+                    deprint(f'Failed to open {self.abs_path}', traceback=True)
+                self._deleted = True
+            if raise_os_error: raise
+            return update
+
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
     def __init__(self):
@@ -224,7 +252,7 @@ class FixInfo(object):
 class LoGame:
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
-    force_load_first: LoTuple = ()
+    force_load_first: LoTuple = []
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
     def __init__(self, mod_infos, game_handle, plugins_txt_path: Path, *,
@@ -235,15 +263,23 @@ class LoGame:
         # TimestampGame - keep uses down to a minimum
         self._mod_infos = mod_infos
         self._game_handle = game_handle
-        self._active_if_present, self._fixed_order_plugins = \
-            self._set_pinned_mods()
+        self.__class__.force_load_first = (self._game_handle.master_file,
+                                           *self.__class__.force_load_first)
+        self.pin_active_state = self.fixed_order_plugins = None
         self._print_lo_paths()
+
+    def _set(self, *, _reset=False, **kwargs):
+        pinn = self.pin_active_state, self.fixed_order_plugins
+        if any(p is None for p in pinn) or _reset:
+            pinn = self._set_pinned_mods()
+            self.pin_active_state, self.fixed_order_plugins = pinn
+        return pinn
 
     # INITIALIZATION ----------------------------------------------------------
     def _set_pinned_mods(self):
         """Set the master file(s) that must always be active if present."""
-        fo_plugins = (self._game_handle.master_file, *self.force_load_first)
-        return set(fo_plugins), fo_plugins
+        fo = self.force_load_first = [*self._existing(self.force_load_first)]
+        return dict.fromkeys(fo, True), fo
 
     def _print_lo_paths(self):
         """Prints the paths that will be used and what they'll be used for.
@@ -473,14 +509,16 @@ class LoGame:
                 bolt.deprint(f'{master_name} inserted to Load order')
             else: # append all to the end, even esms, will be reordered below
                 lord.append(mod)
+        # we need to set the _shipwrecks for sort() - we will force activate in
+        # _fix_active_plugins - and repeat the ccc files do_update - ##: avoid?
+        self._set(active=set(), _reset=(fix_lo.lo_added | fix_lo.lo_removed))
         # See if any esm files are loaded below an esp and reorder as necessary
-        lord.sort(key=self.lo_sort_key(by_name=False))
+        lord.sort(key=self.lo_sort_key())
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
-        # set(lord) should be equal to set(modInfos) but pass it anyway
-        fo_mods = self.pinned_plugins(set(lord), fixed_order=True)
-        if lord[:len(fo_mods)] != fo_mods:
+        # loaded in _set - those ones come first
+        if lord[:len(fo_mods := self.force_load_first)] != fo_mods:
             fo_set = set(fo_mods)
             lord[:] = [*fo_mods, *(x for x in lord if x not in fo_set)]
             lo_order_changed = True
@@ -503,8 +541,8 @@ class LoGame:
         fix_active.act_removed = set(acti) - acti_filtered_set
         # present mods that are always active - noop for AsteriskGame as always
         # active plugins are manually added on getting the load order
-        for fn_plugin in self.pinned_plugins(self._mod_infos):
-            if fn_plugin not in acti_filtered_set:
+        for fn_plugin, isact in self._set(active=acti_filtered_set)[0].items():
+            if isact and fn_plugin not in acti_filtered_set:
                 if fn_plugin == self._game_handle.master_file:
                     acti_filtered.insert(0, fn_plugin)
                     acti_filtered_set.add(fn_plugin)
@@ -538,29 +576,14 @@ class LoGame:
         return False # no changes, not saved
 
     # API: Exposed validation helpers - see load_order.py
-    def lo_sort_key(self, *, ds=None, by_name=True, by_time=False):
+    def lo_sort_key(self, *, ds=None, by_time=False):
         ds = self._mod_infos if ds is None else ds
         def _key(fn):
-            is_m = self._game_handle.master_flags.sort_masters_key(ds[fn])
+            is_m = self._game_handle.master_flags.sort_masters_key(ds[fn],self)
             if by_time:
                 is_m = *is_m, ds[fn].ftime
-            return (*is_m, fn) if by_name else is_m
+            return is_m
         return _key
-
-    def pinned_plugins(self, mods, fixed_order=False, filter_mods=False) -> \
-            list[FName] | set[FName]:
-        """Return a list of plugins (in random order) that are always active
-        or a list of plugins that must have the order they have in this list
-        (the first list is always contained in the second). Both lists may only
-        contain plugins that are present in modInfos (excluding corrupted). If
-        filter_mods is True, return plugins in `mods` that are not pinned."""
-        mod_set_or_tuple = self._fixed_order_plugins if fixed_order else \
-            self._active_if_present
-        if filter_mods:
-            return set(mods) - (set(mod_set_or_tuple) if fixed_order else
-                                mod_set_or_tuple)
-        return [x for x in mod_set_or_tuple if
-                x in mods and x in self._mod_infos]
 
     def check_active_limit(self, acti_filtered, *, as_type=set):
         pl_type_active = defaultdict(list)
@@ -607,6 +630,16 @@ class LoGame:
             else:
                 mods_add(mod)
         return duplicates
+
+    def _existing(self, mods):
+        return (x for x in mods if x in self._mod_infos)
+
+    def calculate_mtime_order(self, mods): # excludes mods in corrupted
+        # split into master block and not master block then sort by ftime then
+        # sort by name upercase descending (for time conflicts) - see
+        # https://github.com/Ortham/libloadorder/issues/86#issuecomment-4254218481
+        return sorted(sorted(mods, key=str.upper, reverse=True),
+                      key=self.lo_sort_key(by_time=True))
 
 def _mk_ini(ini_key, star, ini_fpath):
     """Creates a new IniFile from the specified bolt.Path object."""
@@ -710,6 +743,28 @@ class INIGame(LoGame):
             return True # Assume order is important for the INI
         return super()._must_update_active(deleted_plugins, reord_plugins)
 
+def set_mtimes(wanted_lord, current_lord, fnkey_info: dict):
+    """Set the mtimes of the mods in current lord to match wanted_lord order.
+    set(wanted_lord) == set(current_lord) == mods is assumed."""
+    # mods's mtimes match the current lord's order - break conflicts
+    mods_it = map(fnkey_info.__getitem__, current_lord)
+    older = next(mods_it).ftime # initialize to older mod's ftime
+    for info in mods_it:
+        # mods_it is ordered in ftime so conflicts come in chunks
+        if older == (older := info.ftime):
+            # respace this and next mods in 60 sec intervals
+            for inf in (info, *mods_it):
+                older += 60.0
+                inf.setmtime(older, mark_redated=True)
+            break
+    restamp = []
+    # set(wanted_lord) == set(current_lord) - collect modification times
+    for ordered, mod in zip(wanted_lord, current_lord, strict=True):
+        if ordered != mod:
+            restamp.append((ordered, fnkey_info[mod].ftime))
+    for ordered, modification_time in restamp:
+        fnkey_info[ordered].setmtime(modification_time)
+
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
@@ -724,35 +779,12 @@ class TimestampGame(LoGame):
         return deleted_plugins
 
     # Abstract overrides ------------------------------------------------------
-    def __calculate_mtime_order(self, mods): # excludes mods in corrupted
-        # split into master block and not master block then sort by ftime then
-        # by name case insensitive (for time conflicts)
-        return sorted(mods, key=self.lo_sort_key(by_time=True))
-
     def _fetch_load_order(self, cached_load_order, cached_active):
-        return self.__calculate_mtime_order(self._mod_infos)
+        return self.calculate_mtime_order(self._mod_infos)
 
     def _persist_load_order(self, lord, active):
-        modinfos = self._mod_infos
-        current = self.__calculate_mtime_order(modinfos)
-        # break conflicts
-        mods_it = map(modinfos.__getitem__, current)
-        older = next(mods_it).ftime # initialize to game master ftime
-        for info in mods_it:
-            # mods_it is ordered in ftime so conflicts come in chunks
-            if older == (older := info.ftime):
-                # respace this and next mods in 60 sec intervals
-                for inf in (info, *mods_it):
-                    older += 60.0
-                    inf.setmtime(older, mark_redated=True)
-                break
-        restamp = []
-        # len(lord) must be equal to len(modinfos) - collect modification times
-        for ordered, mod in zip(lord, current, strict=True):
-            if ordered != mod:
-                restamp.append((ordered, modinfos[mod].ftime))
-        for ordered, modification_time in restamp:
-            modinfos[ordered].setmtime(modification_time)
+        current = self.calculate_mtime_order(modinfos := self._mod_infos)
+        set_mtimes(lord, current, modinfos)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
@@ -768,7 +800,7 @@ class TimestampGame(LoGame):
         cases."""
         super()._fix_load_order(lord, fix_lo)
         if _mtime_order and fix_lo.lo_added:
-            lord[:] = self.__calculate_mtime_order(mods=lord)
+            lord[:] = self.calculate_mtime_order(mods=lord)
 
 class _TextFileLo(LoGame):
     """Common code for games that use a text file to store the load order."""
@@ -922,6 +954,13 @@ class AsteriskGame(_TextFileLo):
     # not be read
     _ccc_fallback = ()
     _star = True
+    _ccc_dirs = 'app',
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        paths = (bass.dirs[d].join(self._ccc_filename) for d in
+                 self._ccc_dirs) if self._ccc_filename else ()
+        self.__cc_files = {p: _CCCFile(False, p) for p in paths}
 
     def request_cache_update(self, *args):
         if None in args or self._plugins_txt.do_update():
@@ -932,31 +971,18 @@ class AsteriskGame(_TextFileLo):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Discard information read if cached_* is passed in, but due
         to our caller being get_load_order *at least one* is None."""
-        rem_from_acti, blue = self._rem_from_plugins_txt()
         try:
             active, lo = self._plugins_txt.parse_modfile()
+            rem_from_acti = self._set(active=active)[0]
             if any_dropped := [x for x in lo if x in rem_from_acti]:
                 bolt.deprint(f'Removing {_pl(any_dropped)} from '
                              f'{self._plugins_txt.abs_path}')
                 # We removed plugins that don't belong here, back up first
                 lo, active = self._persist_load_order(lo, active,
-                                                      backup_act=True)
-            # Prepend all present fixed-order plugins that can't be in the
-            # plugins txt to the active and lord lists
-            sorted_rem = self.pinned_plugins(rem_from_acti, fixed_order=True)
-            if blue is not None:
-                # silently add Blueprint masters to the load order - if they
-                # were new mods we should have recorded that in modInfos
-                # refresh else they might have been removed from the
-                # plugins.txt while still present - so do not issue a warning
-                in_plugins_tx = {m for m in lo if m in blue}
-                blue = [m for m in blue if m not in in_plugins_tx] # keep order
-                lo.extend(blue)
-                if always_active_missing := [b for b in blue if
-                                             b in self._active_if_present]:
-                    active.extend(always_active_missing)
-            lo = [*sorted_rem, *lo] if ca_load_order is None else ca_load_order
-            active = [*sorted_rem, *active] if ca_active is None else ca_active
+                    backup_act=True, rem_from_acti=rem_from_acti)
+            self._readd_mods(lo, active, self.force_load_first)
+            lo = lo if ca_load_order is None else ca_load_order
+            active = active if ca_active is None else ca_active
         except FileNotFoundError:
             # Create it if it doesn't exist - we could use sorted_rem but
             # those are removed in _persist_load_order
@@ -965,8 +991,26 @@ class AsteriskGame(_TextFileLo):
             bolt.deprint(f'Created {self._plugins_txt.abs_path}')
         return lo, active
 
-    def _rem_from_plugins_txt(self):
-        return self._active_if_present, None # no blueprints
+    def _set(self, **kwargs):
+        fload_set = {*(fload := self.__class__.force_load_first)}
+        for ccc_file in self.__cc_files.values():
+            try:
+                ccc_file.do_update(raise_os_error=True)
+                fload = [*fload, *(m for m in ccc_file.ccc_contents if
+                                   m not in fload_set)]
+                break # first ccc file found
+            except OSError:
+                continue
+        if (fload := [*self._existing(fload)]) != self.force_load_first:
+            self.force_load_first = fload
+            kwargs['_reset'] = True
+        return super()._set(**kwargs)
+
+    def _readd_mods(self, lo, active, sorted_rem):
+        # Prepend all present fixed-order plugins that can't be in the
+        # plugins txt to the active and lord lists
+        lo[:] = [*sorted_rem, *lo]
+        active[:] = [*sorted_rem, *active]
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reord_plugins): return True
@@ -975,8 +1019,10 @@ class AsteriskGame(_TextFileLo):
     def _fetch_active_plugins(self) -> list[FName]:
         raise NotImplementedError # no override for AsteriskGame
 
-    def _persist_load_order(self, lord, active, *, backup_act=False):
-        rem_from_acti = self._active_if_present # remove those from plugins.txt
+    def _persist_load_order(self, lord, active, *, backup_act=False,
+                            rem_from_acti=None):
+        rem_from_acti = self._set(active=active)[0] \
+            if rem_from_acti is None else rem_from_acti
         lord = [x for x in lord if x not in rem_from_acti]
         active = [x for x in active if x not in rem_from_acti]
         self._write_plugins_txt(lord, active, backup_act=backup_act)
@@ -998,29 +1044,11 @@ class AsteriskGame(_TextFileLo):
             self._persist_load_order(lord, active)
 
     def _set_pinned_mods(self):
-        if self._ccc_filename:
-            ccc_path = self._get_ccc_path()
-            try:
-                ccc_file = LoFile(False, ccc_path, raise_os_error=True)
-                _act, ccc_contents = ccc_file.parse_modfile()
-                ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
-                force_active = {*(fload := self.__class__.force_load_first)}
-                self.force_load_first = (*fload, *(m for m in ccc_contents if m
-                  not in force_active and m != self._game_handle.master_file))
-            except FileNotFoundError:
-                deprint(f'{self._ccc_filename} does not exist')
-            except OSError:
-                deprint(f'Failed to open {ccc_path}', traceback=True)
-        mbaip, fo_mods = super()._set_pinned_mods()
-        # override what set in super - the game won't care, but we do. We first
-        # put the static force_load_first then the ccc contents (minus the mods
-        # already in force_load_first), then whatever in the ccc_fallback that
-        # remains - note set(fo_mods) == mbaip as returned above
-        return mbaip, (*fo_mods, *(
+        mbaip, fo_mods = super()._set_pinned_mods() # set(fo_mods) == mbaip
+        # first put the force_load_first then the ccc contents (minus the mods
+        # already in force_load_first), then whatever remains in _ccc_fallback
+        return mbaip, (*fo_mods, *self._existing( # still set(fo_mods) == mbaip
             p for p in self._ccc_fallback if p not in mbaip))
-
-    def _get_ccc_path(self):
-        return bass.dirs['app'].join(self._ccc_filename)
 
 # Print helpers
 def _pl(it, legend=''):
