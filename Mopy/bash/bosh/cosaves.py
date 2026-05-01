@@ -1385,7 +1385,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
     def __init__(self, cosave_path):
         if isinstance(cosave_path, Path) and cosave_path.is_dir():
             raise IsADirectoryError
-        super().__init__(cosave_path, raise_os_error=True)
+        super().__init__(cosave_path, _raise_os_error=True)
 
     def _reset_cache(self, stat_tuple, **kwargs):
         self._unload()

@@ -1913,6 +1913,7 @@ class _AFileInfos(DataStore):
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
+    __slots__ = ('fn_key', 'error_message')
 
     def __init__(self, fullpath, error_message, cor_key, **kwargs):
         self.fn_key = cor_key

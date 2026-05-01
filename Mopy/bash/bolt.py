@@ -1660,18 +1660,19 @@ class DataDict(object):
         return self._data.pop(key, default)
 
 #------------------------------------------------------------------------------
-class AFile(object):
+class AFile:
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
+    __slots__ = ('fsize', 'ftime', '_file_key')
 
-    def __init__(self, fullpath, *, raise_os_error=False, cached_stat=None,
+    def __init__(self, fullpath, *, _raise_os_error=False, cached_stat=None,
                  **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         # Set cache info (ftime, size[, ctime]) and reload/reset cache
         try:
             self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
-            if raise_os_error: raise
+            if _raise_os_error: raise # deprecated - only used in ACosave
             self._reset_cache(self._null_stat)
 
     def _stat_tuple(self, cached_stat=None):
@@ -1739,7 +1740,6 @@ class AFile(object):
 class ListInfo:
     """Info object displayed in Wrye Bash list - comes last in MI (*above*
     Afile)."""
-    __slots__ = ('fn_key', )
     file_exts = frozenset() # subclasses that represent files must define this!
     _is_filename = True
     _has_digits = False
