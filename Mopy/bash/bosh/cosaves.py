@@ -1481,11 +1481,17 @@ class ACosave(_Dumpable, _Remappable, DelFile, AFile):
         if isinstance(cosave_chunk, _Remappable):
             self._remappable_chunks.append(cosave_chunk)
 
-    def _write_cosave(self, out_path):
-        """Writes this cosave to the specified path. Any changes that have been
-        done to the cosave in-memory will be written out by this.
+    @_read_cos() # We need the entire cosave to remap
+    def remap_plugins(self, fnmod_rename): # final!
+        for cosave_chunk in self._remappable_chunks:
+            cosave_chunk.remap_plugins(fnmod_rename)
 
-        :param out_path: The path to write to."""
+    @_read_cos() # We need the entire cosave to dump
+    def dump_to_log(self, log, save_masters_):
+        self.cosave_header.dump_to_log(log, save_masters_)
+        self._dump_chunks(log, save_masters_)
+
+    def _dump_chunks(self, log, _save_masters_):
         raise NotImplementedError
 
     @_read_cos() # We need the entire cosave to write
@@ -1500,6 +1506,13 @@ class ACosave(_Dumpable, _Remappable, DelFile, AFile):
         with TempFile(bolt_path=True) as tmp_path:
             self._write_cosave(tmp_path)
             out_path.replace_with_temp(tmp_path)
+
+    def _write_cosave(self, out_path):
+        """Writes this cosave to the specified path. Any changes that have been
+        done to the cosave in-memory will be written out by this.
+
+        :param out_path: The path to write to."""
+        raise NotImplementedError
 
     @_read_cos(light=True) # We only need the first chunk to read the masters
     def get_master_list(self) -> list[str]:
@@ -1521,19 +1534,6 @@ class ACosave(_Dumpable, _Remappable, DelFile, AFile):
         :return: True if the master list retrieved by get_master_list will be
             accurate."""
         raise NotImplementedError
-
-    @_read_cos() # We need the entire cosave to dump
-    def dump_to_log(self, log, save_masters_):
-        self.cosave_header.dump_to_log(log, save_masters_)
-        self._dump_chunks(log, save_masters_)
-
-    def _dump_chunks(self, log, _save_masters_):
-        raise NotImplementedError
-
-    @_read_cos() # We need the entire cosave to remap
-    def remap_plugins(self, fnmod_rename): # final!
-        for cosave_chunk in self._remappable_chunks:
-            cosave_chunk.remap_plugins(fnmod_rename)
 
     @classmethod
     def get_cosave_path(cls, save_path: Path) -> Path:

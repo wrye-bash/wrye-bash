@@ -28,13 +28,14 @@ import os
 import re
 import shutil
 from itertools import chain
+from typing import ClassVar
 
 from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
 from ..bolt import FName, GPath, Path, RefrIn, SubProgress, RefrData
-from ..bosh import _saves, faces, ACosave
+from ..bosh import _saves, faces, ACosave, PluggyCosave, xSECosave
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
 from ..gui import BusyCursor, FileSave, askText, showError, askYes, showOk, \
@@ -813,13 +814,12 @@ class Save_Stats(OneItemLink):
 #------------------------------------------------------------------------------
 class _Save_StatCosave(AppendableLink, OneItemLink):
     """Base for xSE and pluggy cosaves stats menus"""
+    _co_type: ClassVar[type[ACosave]]
+
     def _enable(self):
         if not super(_Save_StatCosave, self)._enable(): return False
-        self._cosave = self._get_cosave()
+        self._cosave = self._selected_info.get_cosave(co_type=self._co_type)
         return bool(self._cosave) and not self._cosave._deleted
-
-    def _get_cosave(self) -> ACosave:
-        raise NotImplementedError
 
     def Execute(self):
         with BusyCursor():
@@ -835,9 +835,7 @@ class Save_StatObse(_Save_StatCosave):
         'co_ext': bush.game.Se.cosave_ext.lower()}
     _help = _('Create a report of the contents of the associated %(xse_abbr)s '
               'cosave.') % {'xse_abbr': bush.game.Se.se_abbrev}
-
-    def _get_cosave(self):
-        return self._selected_info.get_xse_cosave()
+    _co_type = xSECosave
 
     def _append(self, window): return bool(bush.game.Se.se_abbrev)
 
@@ -846,9 +844,7 @@ class Save_StatPluggy(_Save_StatCosave):
     """Dump Pluggy blocks from .pluggy files."""
     _text = _(u'Dump .pluggy Contents')
     _help = _(u'Dumps contents of associated Pluggy cosave into a log.')
-
-    def _get_cosave(self):
-        return self._selected_info.get_pluggy_cosave()
+    _co_type = PluggyCosave
 
     def _append(self, window): return bush.game.has_standalone_pluggy
 
