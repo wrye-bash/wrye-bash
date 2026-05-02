@@ -105,11 +105,17 @@ def _setup_build_parser(parser):
     parser.add_argument(
         '-t',
         '--version_tag',
-        nargs='?', # zero or one arguments
-        const=None, # if no argument is given, use None -> commit hash
         default='', # if not specified, don't tag
         dest='version_tag',
-        help='Tag the version with the given string or the commit sha',
+        help='Tag the version with the given string. If -s is also passed '
+             'we will use both the commit sha and the version tag.',
+    )
+    parser.add_argument(
+        '-s',
+        '--sha_tag',
+        action='store_true',
+        dest='sha_tag',
+        help='Tag the version with the commit sha',
     )
     parser.add_argument(
         '--sha_len',
@@ -430,9 +436,10 @@ def _check_version(args) -> tuple[str, str]:
         raise ValueError(f'Invalid build version format: {build_vers}')
     # nsis expects VIProductVersion in 4-part numeric X.X.X.X format - no tags!
     _LOGGER.debug(f'Using file version: {file_version}')
-    if is_sha := vers_tag is None: # use the sha of the commit we build from
-        vers_tag = _WB_REPO.get_head_hash()[:len_sha]
-    else:
+    if args.sha_tag: # use the sha of the commit we build from
+        is_sha = _WB_REPO.get_head_hash()[:len_sha]
+        vers_tag = f'{vers_tag}-{is_sha}' if vers_tag else is_sha
+    elif is_sha := vers_tag:
         is_sha = re.fullmatch(f'[0-9a-f]{{{len_sha},40}}', vers_tag)
     bass.version_tag = vers_tag
     try:
