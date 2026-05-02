@@ -1372,6 +1372,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
     """The abstract base class for all cosave files."""
     cosave_header: _AHeader
     cosave_ext = u''
+    _ui_str = '' # displayed in Save details
     parse_save_path = None # set in factory
     __slots__ = ('cosave_header', 'cosave_chunks', '_remappable_chunks',
                  '_loading_state',)
@@ -1525,9 +1526,14 @@ class ACosave(_Dumpable, _Remappable, AFile):
             return GPath(final_cs_path)
         raise BoltError(f'Invalid save path {save_path}')
 
+    def ui_str(self, save_ftime):
+        return self._ui_str[abs(self.ftime - save_ftime) < 10] if \
+            self.abs_path.exists() else ''
+
 class xSECosave(ACosave):
     """Represents an xSE cosave, with a .**se extension."""
     cosave_header: _xSEHeader
+    _ui_str = 'XO'
     _pluggy_signature = None # signature (aka opcodeBase) of Pluggy plugin
     _xse_signature = 0x1400 # signature (aka opcodeBase) of xSE plugin itself
     cosave_ext = u'' # set in the factory function
@@ -1640,6 +1646,7 @@ class xSECosave(ACosave):
 class PluggyCosave(ACosave):
     """Represents a Pluggy cosave, with a .pluggy extension."""
     cosave_header: _PluggyHeader
+    _ui_str = 'XP'
     cosave_ext = u'.pluggy'
     # Used to convert from block type int to block class
     # See pluggy file format specification for how these map

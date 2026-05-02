@@ -1328,7 +1328,6 @@ class AINIInfo(_TabledInfo, AIniInfo):
 #------------------------------------------------------------------------------
 class SaveInfo(_WithMastersInfo):
     cosave_types: list[type[ACosave]] = [] # set in SaveInfos.__init__
-    _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _key_to_attr = {'info': 'save_notes'}
     # Dict of cosaves that may come with this save file
     _co_saves: dict[type[ACosave], ACosave] = {} # instance attr set in init
@@ -1408,15 +1407,10 @@ class SaveInfo(_WithMastersInfo):
     def get_cosave_tags(self):
         """Return strings expressing whether cosaves exist and are correct.
         Correct means not in more that 10 seconds difference from the save."""
-        co_ui_strings = [u'', u'']
-        instances = self._co_saves
         # last string corresponds to xse plugin so used reversed
-        for j, co_typ in enumerate(reversed(self.__class__.cosave_types)):
-            inst = instances.get(co_typ, None)
-            if inst and inst.abs_path.exists():
-                co_ui_strings[j] = self._cosave_ui_string[co_typ][
-                    abs(inst.abs_path.mtime - self.ftime) < 10]
-        return u'\n'.join(co_ui_strings)
+        rev = (cos.ui_str(self.ftime) if (cos := self._co_saves.get(ctyp)) else
+               '' for ctyp in reversed(self.__class__.cosave_types))
+        return '\n'.join(['', '', *rev][-2:]) # must have len 2!
 
     def get_rename_paths(self, new_name, rename_dir, *args):
         old_new_paths = super().get_rename_paths(new_name, rename_dir, *args)
