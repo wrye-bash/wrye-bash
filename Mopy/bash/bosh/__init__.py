@@ -436,6 +436,15 @@ class _WithMastersInfo(FileInfo):
         super()._reset_cache(stat_tuple, **kwargs)
         if load_cache: self.readHeader()
 
+    def info_status(self, *, recalc_st=False, **kwargs):
+        """Returns status of this file -- which depends on status of masters:
+            - 30: Missing master(s)."""
+        #--Missing files? (if self.masterNames is empty any() returns False)
+        if recalc_st or self.master_st is None:
+            self.master_st = 30 if any((m not in modInfos)
+                for m in self.masterNames) else self._masters_order_status()
+        return self.master_st
+
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         self._reset_masters()
@@ -464,15 +473,6 @@ class _WithMastersInfo(FileInfo):
             for determining which masters to recurse into. Useful for checking
             if altering a master list would cause it to become circular."""
         raise NotImplementedError
-
-    def info_status(self, *, recalc_st=False, **kwargs):
-        """Returns status of this file -- which depends on status of masters:
-            - 30: Missing master(s)."""
-        #--Missing files? (if self.masterNames is empty any() returns False)
-        if recalc_st or self.master_st is None:
-            self.master_st = 30 if any((m not in modInfos)
-                for m in self.masterNames) else self._masters_order_status()
-        return self.master_st
 
 #------------------------------------------------------------------------------
 class ModInfo(_WithMastersInfo):
@@ -1328,7 +1328,6 @@ class AINIInfo(_TabledInfo, AIniInfo):
 #------------------------------------------------------------------------------
 class SaveInfo(_WithMastersInfo):
     cosave_types: list[type[ACosave]] = [] # set in SaveInfos.__init__
-    _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _key_to_attr = {'info': 'save_notes'}
     # Dict of cosaves that may come with this save file
     _co_saves: dict[type[ACosave], ACosave] = {} # instance attr set in init
@@ -1339,9 +1338,36 @@ class SaveInfo(_WithMastersInfo):
     def __init__(self, fullpath, **kwargs):
         # Need to update cosaves first, since readHeader calls _get_masters,
         # which relies on the cosave for SSE and FO4
-        self._update_cosaves(fullpath)
+        self._co_saves = {co_type: co_type(co_type.get_cosave_path(fullpath))
+                          for co_type in self.__class__.cosave_types}
+        self._update_cosaves()
         super().__init__(fullpath, **kwargs)
 
+    # AFile overrides - handle cosaves
+    def do_update(self, **kwargs):
+        # If the cosaves have changed, the cached masters can no longer be
+        # trusted since they may have been retrieved from the cosaves
+        if cosaves_changed := self._update_cosaves():
+            self._reset_masters()
+        # Delegate the call first, but also take the cosaves into account
+        return super().do_update(**kwargs) or cosaves_changed
+
+    def _update_cosaves(self) -> bool:
+        """Let do_update check for new and deleted cosaves and update old,
+        surviving ones."""
+        cosaves_changed = False
+        for co_type, csave in self._co_saves.items():
+            try: # Existing cosave could have changed, check if it did
+                cosaves_changed |= csave.do_update(raise_os_error=True) or \
+                    csave.has_changed # might be set from _read_cos (duh)
+            except OSError as e:
+                cosaves_changed |= csave.has_changed
+                if csave.has_changed and not isinstance(e, FileNotFoundError):
+                    deprint(f'Failed to open {csave.abs_path}', traceback=True)
+            csave.has_changed = False # served its purpose for this refresh round
+        return cosaves_changed
+
+    # ListInfo methods
     def set_path_keys(self, *args, **kwargs):
         """Update our cosave instance names/paths."""
         rpaths = super().set_path_keys(*args, **kwargs)
@@ -1351,6 +1377,39 @@ class SaveInfo(_WithMastersInfo):
 
     @classmethod
     def _store(cls): return saveInfos
+
+    def get_rename_paths(self, new_name, rename_dir, *args):
+        old_new_paths = super().get_rename_paths(new_name, rename_dir, *args)
+        # super call added the backup paths but not the actual cosave paths
+        # inside the store_dir - add those even if they don't exist as we must
+        # delete cosaves for backup (if the backup has no cosaves)
+        new_p = old_new_paths[0][1]
+        old_new_paths.extend((cos.abs_path, co_type.get_cosave_path(new_p))
+            for co_type, cos in self._co_saves.items())
+        return old_new_paths
+
+    def info_status(self, *args, **kwargs):
+        return super().info_status(*args, **kwargs), self.is_save_enabled()
+
+    # _WithMastersInfo methods
+    def readHeader(self):
+        """Read header from file and set self.header attribute."""
+        try:
+            self.header = get_save_header_type(bush.game.fsName)(self)
+        except SaveHeaderError as e:
+            raise SaveFileError(self.fn_key, e.args[0]) from e
+        super().readHeader()
+
+    def _reset_masters(self):
+        super()._reset_masters()
+        # If this save has ESL masters, and no cosave or a cosave from an
+        # older version, then the masters are unreliable and we need to warn
+        try:
+            self.has_inaccurate_masters = any(self.header.scale_masters.values(
+                )) and ((xse_cosave := self.get_cosave()) is None or not
+            xse_cosave.has_accurate_master_list())
+        except AttributeError: # no scale_masters
+            self.has_inaccurate_masters = False
 
     def _masters_order_status(self):
         mo = tuple(load_order.get_ordered(self.masterNames))
@@ -1367,28 +1426,26 @@ class SaveInfo(_WithMastersInfo):
         # That means the LO has new plugins, but not at the end -> green
         return 0
 
-    def info_status(self, *args, **kwargs):
-        return super().info_status(*args, **kwargs), self.is_save_enabled()
+    def _get_masters(self):
+        """Return the save file masters, ie the plugins listed in its plugin
+        list. For esl games this order might not reflect the actual order the
+        masters are mapped to form ids, hence we try to return the correct
+        order if a suitable to this end cosave is present."""
+        if (xse_cosave := self.get_cosave()) is not None:
+            # Make sure the cosave's masters are actually useful
+            if xse_cosave.has_accurate_master_list():
+                return [*map(FName, xse_cosave.get_master_list())]
+        # Fall back on the regular masters - either the cosave is unnecessary,
+        # doesn't exist or isn't accurate
+        return [*map(FName, self.header.masters)]
 
+    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
+        return False # Saves can't have circular masters
+
+    # UI helpers
     def is_save_enabled(self):
         """True if I am enabled."""
         return self.fn_key.fn_ext == bush.game.Ess.ext
-
-    def readHeader(self):
-        """Read header from file and set self.header attribute."""
-        try:
-            self.header = get_save_header_type(bush.game.fsName)(self)
-        except SaveHeaderError as e:
-            raise SaveFileError(self.fn_key, e.args[0]) from e
-        super().readHeader()
-
-    def do_update(self, **kwargs):
-        # If the cosaves have changed, the cached masters can no longer be
-        # trusted since they may have been retrieved from the cosaves
-        if cosaves_changed := self._update_cosaves():
-            self._reset_masters()
-        # Delegate the call first, but also take the cosaves into account
-        return super().do_update(**kwargs) or cosaves_changed
 
     def write_masters(self, master_map):
         """Rewrites masters of existing save file and cosaves."""
@@ -1408,83 +1465,12 @@ class SaveInfo(_WithMastersInfo):
     def get_cosave_tags(self):
         """Return strings expressing whether cosaves exist and are correct.
         Correct means not in more that 10 seconds difference from the save."""
-        co_ui_strings = [u'', u'']
-        instances = self._co_saves
         # last string corresponds to xse plugin so used reversed
-        for j, co_typ in enumerate(reversed(self.__class__.cosave_types)):
-            inst = instances.get(co_typ, None)
-            if inst and inst.abs_path.exists():
-                co_ui_strings[j] = self._cosave_ui_string[co_typ][
-                    abs(inst.abs_path.mtime - self.ftime) < 10]
-        return u'\n'.join(co_ui_strings)
+        rev = (c.ui_str(self.ftime) for c in reversed(self._co_saves.values()))
+        return '\n'.join(['', '', *rev][-2:]) # must have len 2!
 
-    def get_rename_paths(self, new_name, rename_dir, *args):
-        old_new_paths = super().get_rename_paths(new_name, rename_dir, *args)
-        # super call added the backup paths but not the actual cosave paths
-        # inside the store_dir - add those even if they don't exist as we must
-        # delete cosaves for backup (if the backup has no cosaves)
-        old_new_paths.extend(
-            tuple(map(co_type.get_cosave_path, old_new_paths[0])) for co_type
-            in self.__class__.cosave_types)
-        return old_new_paths
-
-    def _update_cosaves(self, co_path=None) -> bool:
-        """Check for new and deleted cosaves and do_update old, surviving ones.
-        """
-        csaves, cosaves_changed, co_path = {}, False, co_path or self.abs_path
-        for co_type in self.__class__.cosave_types:
-            try: # Existing cosave could have changed, check if it did
-                try:
-                    if (csave := self._co_saves[co_type]).abs_path.is_dir():
-                        continue # do_update won't see that a cosave is a dir now
-                    cosaves_changed |= csave.do_update()
-                except KeyError: # New cosave attached, add it to cache
-                    csave = co_type(co_type.get_cosave_path(co_path))
-                csaves[co_type] = csave
-            except (OSError, FileError) as e:
-                if not isinstance(e, (FileNotFoundError, IsADirectoryError)):
-                    deprint(f'Failed to open {co_path}', traceback=True)
-        cosaves_changed |= csaves.keys() != self._co_saves.keys()
-        self._co_saves = csaves
-        return cosaves_changed
-
-    def get_xse_cosave(self):
-        """:rtype: xSECosave | None"""
-        return self._co_saves.get(xSECosave, None)
-
-    def get_pluggy_cosave(self):
-        """:rtype: PluggyCosave | None"""
-        return self._co_saves.get(PluggyCosave, None)
-
-    def _get_masters(self):
-        """Return the save file masters, ie the plugins listed in its plugin
-        list. For esl games this order might not reflect the actual order the
-        masters are mapped to form ids, hence we try to return the correct
-        order if a suitable to this end cosave is present."""
-        try:
-            xse_cosave = self.get_xse_cosave()
-            # Make sure the cosave's masters are actually useful
-            if xse_cosave.has_accurate_master_list():
-                return [*map(FName, xse_cosave.get_master_list())]
-        except (AttributeError, NotImplementedError):
-            pass
-        # Fall back on the regular masters - either the cosave is unnecessary,
-        # doesn't exist or isn't accurate
-        return [*map(FName, self.header.masters)]
-
-    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
-        return False # Saves can't have circular masters
-
-    def _reset_masters(self):
-        super(SaveInfo, self)._reset_masters()
-        # If this save has ESL masters, and no cosave or a cosave from an
-        # older version, then the masters are unreliable and we need to warn
-        try:
-            self.has_inaccurate_masters = any(self.header.scale_masters.values(
-                )) and ((xse_cosave := self.get_xse_cosave()) is None or not
-            xse_cosave.has_accurate_master_list())
-        except (AttributeError, NotImplementedError):
-            self.has_inaccurate_masters = False
+    def get_cosave(self, *, co_type=xSECosave) -> ACosave | None:
+        return self._co_saves.get(co_type)
 
 #------------------------------------------------------------------------------
 class ScreenInfo(AFileInfo):
@@ -1919,6 +1905,7 @@ class _AFileInfos(DataStore):
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
+    __slots__ = ('fn_key', 'error_message')
 
     def __init__(self, fullpath, error_message, cor_key, **kwargs):
         self.fn_key = cor_key
@@ -2039,8 +2026,8 @@ class INIInfos(_AFileInfos):
                 default_info.info_status(recalc_st=True, **kwargs)
             else: # booting
                 rdata.to_add.add(k)
-        if not booting and ((targ := self.ini).updated or targ.do_update()):
-            targ.updated = False
+        if not booting and ((targ := self.ini).has_changed or targ.do_update()):
+            targ.has_changed = False
             rdata |= self._reset_all_statuses() # set the status of all infos
         return rdata
 
@@ -2351,7 +2338,7 @@ class ModInfos(_AFileInfos):
             self._active_wip, self._lo_wip = act, wip_lo
             # warn the user on deactivated dependents?
             lordata = self.lo_deactivate(*deltd, ldiff=ldiff, save_all=True,
-                                         out_diff=dlos, _deleted=True)
+                                         out_diff=dlos, _skip_check=True)
         elif insert_after: # we should have no deletions here!
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
                                             ldiff=ldiff)
@@ -2739,10 +2726,10 @@ class ModInfos(_AFileInfos):
         return outdiff
 
     @_lo_op
-    def lo_deactivate(self, *to_deac, out_diff, _deleted=False):
+    def lo_deactivate(self, *to_deac, out_diff, _skip_check=False):
         """Remove mods and their children from _active_wip."""
         to_deac = {*to_deac}
-        if not _deleted:
+        if not _skip_check:
             to_deac -= load_order.must_be_active(to_deac)
         #--Unselect filenames
         set_awip = set(self._active_wip) - to_deac
@@ -3203,8 +3190,7 @@ class SaveInfos(_AFileInfos):
     def __init__(self):
         all_ext = {*(fe := SaveInfo.file_exts), *(f'{e}f' for e in fe)}
         par = partial(self.check_filename, _allow_ext=all_ext)
-        SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game.fsName, par,
-            bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
+        SaveInfo.cosave_types = cosaves.get_cosave_types(bush.game, par)
         super().__init__()
         # Save Profiles database
         self.profiles = bolt.PickleDict(

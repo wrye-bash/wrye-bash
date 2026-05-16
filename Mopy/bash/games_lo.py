@@ -40,7 +40,7 @@ from functools import partial
 from itertools import chain
 
 from . import bass, bolt, env, exception
-from .bolt import AFile, FName, Path, deprint, dict_sort
+from .bolt import AFile, FName, DelFile, Path, deprint, dict_sort
 from .ini_files import get_ini_type_and_encoding
 from .plugin_types import PluginFlag
 
@@ -157,33 +157,15 @@ class LoFile(AFile):
         except OSError:
             bolt.deprint(f'Failed to back up {pl_path}', traceback=True)
 
-class _CCCFile(LoFile):
+class _CCCFile(DelFile, LoFile):
     """CCC files can be in different locations. We also need to keep track of
     their presence."""
-    _deleted = False # same logic as IniFileInfo - common base?
 
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
-        if stat_tuple != self._null_stat:
+        if not self._deleted:
             _act, ccc_contents = self.parse_modfile()
             self.ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
-
-    def do_update(self, *, raise_os_error=False, **kwargs):
-        try:
-            # do_update will return True if the file was deleted then restored
-            update = super().do_update(raise_os_error=True)
-            if self._deleted: # restored
-                self._deleted = False
-            return update
-        except OSError as e:
-            if update := not self._deleted: # deprint the first time only
-                if isinstance(e, FileNotFoundError):
-                    deprint(f'{self.abs_path} does not exist')
-                else:
-                    deprint(f'Failed to open {self.abs_path}', traceback=True)
-                self._deleted = True
-            if raise_os_error: raise
-            return update
 
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
@@ -999,8 +981,14 @@ class AsteriskGame(_TextFileLo):
                 fload = [*fload, *(m for m in ccc_file.ccc_contents if
                                    m not in fload_set)]
                 break # first ccc file found
-            except OSError:
-                continue
+            except OSError as e:
+                if ccc_file.has_changed: # freshly deleted or not found
+                    if isinstance(e, FileNotFoundError):
+                        deprint(f'{ccc_file.abs_path} does not exist')
+                    else:
+                        deprint(f'Failed to open {ccc_file.abs_path}',
+                                traceback=True)
+                    ccc_file.has_changed = False # deprint the first time only
         if (fload := [*self._existing(fload)]) != self.force_load_first:
             self.force_load_first = fload
             kwargs['_reset'] = True

@@ -49,10 +49,9 @@ def generate_meta_cosave_xse(target_file):
               f"{target_file}'")
         sys.exit(4)
     set_game(gm_unique_dn)
-    get_cosave_types(bush.game.fsName, None, bush.game.Se.cosave_tag,
-                     bush.game.Se.cosave_ext)
+    get_cosave_types(bush.game, None)
     test_cosave = xSECosave(target_file)
-    test_cosave.read_cosave()
+    cos_masterlist = test_cosave.get_master_list() # calls _read_cosave(True)
     with open(target_file + u'.meta', u'w', encoding=u'utf-8') as out:
         # xSE cosave header ---------------------------------------------------
         cosv_header = test_cosave.cosave_header # type: _xSEHeader
@@ -65,7 +64,7 @@ def generate_meta_cosave_xse(target_file):
         out.write(u'num_plugin_chunks = %u\n' % cosv_header.num_plugin_chunks)
         out.write(u'\n[cosave_body]\n')
         out.write(u'cosave_masters = [\n')
-        for m in test_cosave.get_master_list():
+        for m in cos_masterlist:
             out.write(u'    "%s",\n' % m)
         out.write(u']\n')
         accurate_masters = (not bush.game.has_esl or

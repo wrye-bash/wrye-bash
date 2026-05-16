@@ -39,6 +39,7 @@ from functools import partial
 from itertools import chain, groupby
 from operator import itemgetter
 from struct import unpack_from as _unpack_from
+from typing import ClassVar
 
 import lz4.block
 import lz4.frame
@@ -219,7 +220,7 @@ class BsaHeader(_Header):
          u'folder_records_offset', u'archive_flags', u'folder_count',
          u'file_count', u'total_folder_name_length', u'total_file_name_length',
          u'file_flags')
-    formats = [(f, struct_calcsize(f)) for f in [u'I'] * 8]
+    formats = [('I', struct_calcsize('I'))] * 8
     header_size = 36
 
     class _archive_flags(Flags):
@@ -491,8 +492,10 @@ class Ba2Folder(object):
 class ABsa(AFile):
     bsa_header: BsaHeader
     _compression_type: _BsaCompressionType = _Bsa_zlib
-    _folder_type = BSAFolder
+    _folder_type: ClassVar[type[BSAFolder]] = BSAFolder
     bsa_folders: defaultdict[str, _folder_type]
+    __slots__ = ('_bsa_name', 'bsa_header', 'bsa_folders', '_filenames',
+                 'total_names_length', '_assets')
 
     def __init__(self, fullpath, load_bsa=False, names_only=True, **kwargs):
         super().__init__(fullpath, **kwargs)

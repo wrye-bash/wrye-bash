@@ -599,7 +599,7 @@ class _DDSHeaderDXT10(object):
 class DDSFile(AFile):
     """A DDS file, currently just reads the DDS and DX10 headers, if
     present, then reads and stores the rest of the stream."""
-    __slots__ = (u'dds_header', u'dds_dxt10', u'dds_contents')
+    __slots__ = ('dds_header', 'dds_dxt10', 'dds_contents')
     def load_file(self):
         """Load the entire DDS file from the file that this DDSFile instance
         was created with."""

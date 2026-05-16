@@ -31,7 +31,7 @@ from typing import final
 
 # Keep local imports to a minimum, this module is important for booting!
 from .bolt import DefaultLowerDict, ListInfo, LowerDict, decoder, deprint, \
-    getbestencoding, AFileInfo
+    getbestencoding, AFileInfo, DelFile
 from .exception import FailedIniInferError
 from .wbtemp import TempFile
 
@@ -216,8 +216,9 @@ class AIniInfo(ListInfo):
         whitespace by default."""
         return value.strip()
 
-class IniFileInfo(AIniInfo, AFileInfo):
-    """Any old ini file."""
+class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target inis
+    """Any old ini file. We inherit from DelFile to use self.has_changed to
+    notify IniInfos which should clear this flag."""
     __empty_settings = LowerDict()
     _ci_settings_cache_linenum = __empty_settings
     file_exts = frozenset(['.ini', '.cfg', '.toml'])
@@ -227,27 +228,8 @@ class IniFileInfo(AIniInfo, AFileInfo):
         AIniInfo.__init__(self, fullpath.stail) # calls ListInfo.__init__ again
         self.ini_encoding = ini_encoding
         self.isCorrupted = u''
-        #--Settings cache
-        self._deleted = False
-        self.updated = False # notify iniInfos which should clear this flag
 
     # AFile overrides ---------------------------------------------------------
-    def do_update(self, *, raise_os_error=False, **kwargs):
-        try:
-            # do_update will return True if the file was deleted then restored
-            self.updated |= super().do_update(raise_os_error=True)
-            if self._deleted: # restored
-                self._deleted = False
-            return self.updated
-        except OSError:
-            # check if we already know it's deleted (used for main game ini)
-            update = not self._deleted
-            # mark as deleted to avoid updating ini statuses on each refresh
-            if update:
-                self._deleted = self.updated = True
-            if raise_os_error: raise
-            return update
-
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
         self._ci_settings_cache_linenum = self.__empty_settings

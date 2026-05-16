@@ -1660,18 +1660,17 @@ class DataDict(object):
         return self._data.pop(key, default)
 
 #------------------------------------------------------------------------------
-class AFile(object):
+class AFile:
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
+    __slots__ = ('fsize', 'ftime', '_file_key')
 
-    def __init__(self, fullpath, *, raise_os_error=False, cached_stat=None,
-                 **kwargs):
+    def __init__(self, fullpath, *, cached_stat=None, **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         # Set cache info (ftime, size[, ctime]) and reload/reset cache
         try:
             self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
-            if raise_os_error: raise
             self._reset_cache(self._null_stat)
 
     def _stat_tuple(self, cached_stat=None):
@@ -1735,11 +1734,32 @@ class AFile(object):
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.abs_path.stail}>'
 
+class DelFile(AFile):
+    """Remember deleted/invalid status (_deleted) and whether the file was
+    updated (has_changed). Calling do_update *won't* reset the flag so you
+    must reset has_changed yourself when used (cf IniInfos). Use sparingly."""
+    __slots__ = ('_deleted', 'has_changed')
+
+    def __init__(self, *args, **kwargs):
+        self._deleted = False
+        self.has_changed = False
+        super().__init__(*args, **kwargs)
+
+    def do_update(self, **kwargs):
+        self.has_changed |= (sup := super().do_update(**kwargs))
+        return sup # notify for new updates, not the value of has_changed
+
+    def _reset_cache(self, stat_tuple, **kwargs):
+        if failed := stat_tuple == self._null_stat:
+            # True if file was previously stated or for a new non existing file
+            self.has_changed |= not self._deleted
+        self._deleted = failed
+        super()._reset_cache(stat_tuple, **kwargs)
+
 #------------------------------------------------------------------------------
 class ListInfo:
     """Info object displayed in Wrye Bash list - comes last in MI (*above*
     Afile)."""
-    __slots__ = ('fn_key', )
     file_exts = frozenset() # subclasses that represent files must define this!
     _is_filename = True
     _has_digits = False
