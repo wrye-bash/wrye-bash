@@ -1281,16 +1281,21 @@ class UIList(PanelWin):
             glb_menu.set_categories([])
             return
         tab_categories = list(self.global_links)
-        # Check if we have to change category names
-        if not glb_menu.categories_equal(tab_categories):
+        categories_changed = not glb_menu.categories_equal(tab_categories)
+        if categories_changed:
             # Release and recreate the global menu to avoid GUI flicker
             glb_menu.release_bindings()
             glb_menu = GlobalMenu()
             glb_menu.set_categories(tab_categories)
             Link.Frame.set_global_menu(glb_menu)
         for curr_cat in tab_categories:
-            Link.Frame.global_menu.register_category_handler(curr_cat, partial(
-                self._populate_category, curr_cat))
+            populate_cat = partial(self._populate_category, curr_cat)
+            glb_menu.register_category_handler(curr_cat, populate_cat)
+            if categories_changed:
+                # If we do not populate immediately, then on wxGTK (Linux)
+                # we will show an empty menu when the global menu is first
+                # opened (or sometimes an outdated one when we switch tabs)
+                glb_menu.populate_immediately(curr_cat, populate_cat)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
