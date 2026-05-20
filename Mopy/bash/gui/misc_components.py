@@ -428,11 +428,12 @@ class GlobalMenu(_AEvtHandler):
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
     _native_widget: _wx.MenuBar
+    _label_to_menu_pos: dict[str, int]
 
     class _GMCategory(_wx.Menu):
         """wx-derived class used to differentiate between events on regular
         menus and categories and to provide the category label at runtime."""
-        def __init__(self, cat_lbl):
+        def __init__(self, cat_lbl: str):
             super().__init__()
             self.category_label = cat_lbl
 
@@ -451,12 +452,12 @@ class GlobalMenu(_AEvtHandler):
             menu_processor)
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
+        self._label_to_menu_pos = {}
 
     def categories_equal(self, new_categories: list[str]):
         """Checks if the categories currently shown in the GUI match the
         specified ones."""
-        return new_categories == [self._unescape(x[1])
-                                  for x in self._native_widget.GetMenus()]
+        return new_categories == list(self._label_to_menu_pos.keys())
 
     def register_category_handler(self, cat_label: str, cat_handler):
         """Registers the specified handler for the specified category. The
@@ -474,8 +475,18 @@ class GlobalMenu(_AEvtHandler):
         """Creates dropdowns for all specified categories, discarding existing
         ones in the process. It has to be done like this to avoid changing the
         GUI's layout while categories are added to/removed from it."""
+        self._label_to_menu_pos = {c: i for i, c in enumerate(all_categories)}
         self._native_widget.SetMenus([(self._GMCategory(c), self._escape(c))
                                       for c in all_categories])
+
+    def populate_immediately(self, menu_category: str, populate_cb):
+        """Immediately populate the menu of the given category using the given
+        callback."""
+        wx_menu = self._native_widget.GetMenu(
+            self._label_to_menu_pos[menu_category])
+        if not isinstance(wx_menu, self._GMCategory):
+            raise RuntimeError("Somehow ended up with a non-GM menu in a GM")
+        self._populate_menu(wx_menu, populate_cb)
 
     def _handle_menu_opened(self, wx_menu):
         """Internal callback, does the heavy lifting. Also handles status bar
@@ -486,6 +497,17 @@ class GlobalMenu(_AEvtHandler):
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
+        # Need to set this, otherwise help text won't be shown
+        Links.Popup = wx_menu
+        try:
+            populate_cb = self._category_handlers[wx_menu.category_label]
+        except KeyError:
+            raise RuntimeError(f"A GlobalMenu handler is missing for "
+                               f"category '{wx_menu.category_label}'.")
+        self._populate_menu(wx_menu, populate_cb)
+
+    def _populate_menu(self, wx_menu: _wx.Menu, populate_cb):
+        """Internal helper to populate a single menu."""
         # If we don't pause here, the GUI will flicker like crazy
         with self.pause_drawing():
             # Clear the menu and repopulate it. Have to do this JIT, since the
@@ -493,13 +515,7 @@ class GlobalMenu(_AEvtHandler):
             # current state of WB itself.
             for old_menu_item in wx_menu.GetMenuItems():
                 wx_menu.DestroyItem(old_menu_item)
-            # Need to set this, otherwise help text won't be shown
-            Links.Popup = wx_menu
-            try:
-                self._category_handlers[wx_menu.category_label](wx_menu)
-            except KeyError:
-                raise RuntimeError(f"A GlobalMenu handler is missing for "
-                                   f"category '{wx_menu.category_label}'.")
+            populate_cb(wx_menu)
 
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""
