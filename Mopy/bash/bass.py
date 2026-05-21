@@ -35,7 +35,7 @@ else:
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = '315' # an integer or float (except if written from build.py)
+AppVersion = '316' # an integer or float (except if written from build.py)
 is_standalone = False # whether or not we're on standalone
 __app_version_tuple = None # cache the version as a tuple (with tag stripped)
 version_tag = ''  # e.g., 'RC1' or a commit sha
