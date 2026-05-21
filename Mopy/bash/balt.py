@@ -531,6 +531,7 @@ class UIList(PanelWin):
         self.__gList.on_mouse_left_dclick.subscribe(self.OnDClick)
         self.__gList.on_item_selected.subscribe(self._handle_select)
         self.__gList.on_mouse_left_down.subscribe(self._handle_left_down)
+        self._renaming: list[FName] = [] # see OnBeginEditLabel
         #--Mouse movement
         self.mouse_index = None
         self.mouseTexts = {} # dictionary item->mouse text
@@ -902,15 +903,18 @@ class UIList(PanelWin):
             return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
+        # Clicking another item to end the edit selects it before the edit
+        # ends (on wxGTK at least) - remember what we are renaming
+        self._renaming = self.GetSelected()
         return EventResult.FINISH  ##: needed?
 
     @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Should only be subscribed if _editLabels==True (Saves/BAIN/Screens).
         """
+        renaming, self._renaming = self._renaming, []
         if is_edit_cancelled: return EventResult.FINISH
-        selected = [*self.data_store.filter_essential(
-            None or self.GetSelected()).values()]
+        selected = [*self.data_store.filter_essential(renaming).values()]
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
