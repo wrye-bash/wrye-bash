@@ -514,6 +514,7 @@ class UIList(PanelWin):
         self.__gList.on_mouse_left_dclick.subscribe(self.OnDClick)
         self.__gList.on_item_selected.subscribe(self._handle_select)
         self.__gList.on_mouse_left_down.subscribe(self._handle_left_down)
+        self._currently_being_edited: list[FName] = []
         #--Mouse movement
         self.mouse_index = None
         self.mouseTexts = {} # dictionary item->mouse text
@@ -885,6 +886,8 @@ class UIList(PanelWin):
             return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
+        self._currently_being_edited = [*self.data_store.filter_essential(
+            self.GetSelected()).values()]
         return EventResult.FINISH  ##: needed?
 
     @conversation
@@ -892,8 +895,8 @@ class UIList(PanelWin):
         """Should only be subscribed if _editLabels==True (Saves/BAIN/Screens).
         """
         if is_edit_cancelled: return EventResult.FINISH
-        selected = [*self.data_store.filter_essential(
-            None or self.GetSelected()).values()]
+        selected = self._currently_being_edited
+        self._currently_being_edited = []
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
