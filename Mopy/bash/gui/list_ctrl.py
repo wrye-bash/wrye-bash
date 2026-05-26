@@ -95,6 +95,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
         self._get_item_rect_offset: int | None = None
+        self._scroll_offset: int | None = None
 
     def GetItemRect(self, index, code=None):
         # GetItemRect adds the header's height to the y-coordinate,
@@ -111,6 +112,35 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             self._get_item_rect_offset = vertical_offset
         rect.y += vertical_offset
         return rect
+
+    def _get_scroll_offset(self) -> int:
+        offset = self._scroll_offset
+        if (offset is None) and (self.GetItemCount() > 0):
+            offset = self.GetItemRect(0).height
+            self._scroll_offset = offset
+        return offset or 0
+
+    def LineUp(self):
+        # Doesn't work on Linux, as described in https://docs.wxpython.org/wx.Window.html
+        # So use ScrollList instead.
+        # Quote from there:
+        # LineUp
+        # … Same as ScrollLines (-1).
+        # ScrollLines
+        # … This function is currently only implemented under MSW and wx.TextCtrl
+        # under wxGTK (it also works for wx.Scrolled classes under all platforms).
+        return self.ScrollList(0, -self._get_scroll_offset())
+
+    def LineDown(self):
+        # Doesn't work on Linux, as described in https://docs.wxpython.org/wx.Window.html
+        # So use ScrollList instead.
+        # Quote from there:
+        # LineDown
+        # … Same as ScrollLines (1).
+        # ScrollLines
+        # … This function is currently only implemented under MSW and wx.TextCtrl
+        # under wxGTK (it also works for wx.Scrolled classes under all platforms).
+        return self.ScrollList(0, self._get_scroll_offset())
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
