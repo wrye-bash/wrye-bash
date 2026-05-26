@@ -117,6 +117,11 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
         rect.y -= self._header_offset
         return rect
 
+    def _scroll_rows(self, rows):
+        """ScrollLines - so LineUp and LineDown - only works on Windows."""
+        if self.GetItemCount():
+            self.ScrollList(0, rows * self.GetItemRect(0).height)
+
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
         index, _hit_flags = self.HitTest((x, y))
@@ -124,10 +129,10 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
                     # Mouse is above the first item
-                    self.LineUp()
+                    self._scroll_rows(-1)
                 elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
                     # Mouse is after the last item
-                    self.LineDown()
+                    self._scroll_rows(1)
         else:
             # Screen position if item hovering over
             pos = index - self.GetScrollPos(_wx.VERTICAL)
@@ -135,10 +140,10 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
                 # Over the first item, see if it's over the top half
                 rect = self.GetItemRect(index)
                 if y < rect.y + rect.height/2:
-                    self.LineUp()
+                    self._scroll_rows(-1)
             elif pos == self.GetCountPerPage():
                 # On last item/one that's not fully visible
-                self.LineDown()
+                self._scroll_rows(1)
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
