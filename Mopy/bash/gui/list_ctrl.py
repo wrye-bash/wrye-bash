@@ -102,6 +102,20 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropFiles = fnDropFiles
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
+        self._header_offset: int | None = None # see GetItemRect
+
+    def GetItemRect(self, index, code=_wx.LIST_RECT_BOUNDS):
+        """Unlike HitTest and mouse events, wxGTK counts the header in the y of
+        the item rects - detect it by hit testing the first rect we get that
+        is in view, and take the header out."""
+        rect = super().GetItemRect(index, code)
+        if self._header_offset is None:
+            hit_index = self.HitTest((rect.x + 5, rect.y + 5))[0]
+            if hit_index == _wx.NOT_FOUND: return rect # out of view, retry
+            self._header_offset = _wx.RendererNative.Get(
+                ).GetHeaderButtonHeight(self) if hit_index > index else 0
+        rect.y -= self._header_offset
+        return rect
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
