@@ -94,6 +94,23 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropFiles = fnDropFiles
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
+        self._get_item_rect_offset: int | None = None
+
+    def GetItemRect(self, index, code=None):
+        # GetItemRect adds the header's height to the y-coordinate,
+        # but mouse events don't, so we subtract the header's height.
+        # This may be Linux-specific bug, so we first check for it using HitTest.
+        rect = super().GetItemRect(index)
+        vertical_offset = self._get_item_rect_offset
+        if vertical_offset is None:
+            vertical_offset = 0
+            hit_index = self.HitTest((rect.x + 5, rect.y + 5))[0]
+            if index < hit_index:
+                header_height = _wx.RendererNative.Get().GetHeaderButtonHeight(self)
+                vertical_offset = -header_height
+            self._get_item_rect_offset = vertical_offset
+        rect.y += vertical_offset
+        return rect
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
