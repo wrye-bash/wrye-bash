@@ -450,7 +450,7 @@ class Installer(ListInfo):
             deprint(f'{repr(self.fn_key)} in Installers.dat')
             self.fn_key = self.fn_key.decode('utf-8')
         if not isinstance(self.fn_key, FName):
-            self.fn_key = FName(u'%s' % self.fn_key)
+            self.fn_key = FName(f'{self.fn_key}')
         if self.espmNots:
             self.espmNots = forward_compat_path_to_fn_list(self.espmNots,
                                                            ret_type=set)
@@ -469,10 +469,8 @@ class Installer(ListInfo):
             # refresh projects once on booting even if skipRefresh flag is
             # on but refresh archives only if changed
             rescan |= self.is_project or self._file_changed(stat_tuple)
-            if rescan:
-                dest_scr = self._reset_cache(stat_tuple)
-            else:
-                dest_scr = self.refreshDataSizeCrc()
+            dest_scr = self._reset_cache(stat_tuple) if rescan else \
+                self.refreshDataSizeCrc()
             if self.overrideSkips:
                 InstallersData.overridden_skips.update(dest_scr)
 

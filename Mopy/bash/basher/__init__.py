@@ -1102,7 +1102,7 @@ class ModList(_ModsUIList):
             self.data_store.lo_toggle_active(mods, do_activate=activate,
                                              save_act=True)
         if act_error:
-            showError(self, act_error)
+            showError(self, f'{act_error}')
         # Show warnings to the user if they attempted to deactivate mods that
         # can't be deactivated (e.g. vanilla masters) and/or attempted to
         # activate mods that can't be activated (e.g. .esu plugins).
