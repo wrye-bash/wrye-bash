@@ -830,63 +830,57 @@ class TextfileGame(_TextFileLo):
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_active):
         """Read data from loadorder.txt file. If loadorder.txt does not
-        exist create it and try reading plugins.txt so the load order of the
-        user is preserved (note it will create the plugins.txt if not
+        exist create it and use cached/plugins.txt info so the load order of
+        the user is preserved (note it will create the plugins.txt if not
         existing). Additional mods should be added by caller who should
-        anyway call _fix_load_order. If cached_active is passed, the relative
-        order of mods will be corrected to match their relative order in
-        cached_active."""
+        anyway call _fix_load_order. The relative order of mods will be
+        corrected to match their relative order in cached_active."""
         pl_path = self._plugins_txt.abs_path
         try: #--Read file
             _acti, lo = self._loadorder_txt.parse_modfile()
         except FileNotFoundError:
-            mods = cached_active or []
-            if cached_active is not None and not pl_path.exists():
+            # only called in _cached_or_fetch, cached_active is not None
+            if not pl_path.exists():
                 self._persist_active_plugins(cached_active, cached_active)
                 bolt.deprint(f'Created {pl_path} based on cached info')
-            elif cached_active is None and pl_path.exists():
-                mods = self._fetch_active_plugins() # will add Skyrim.esm
-            self._persist_load_order(mods, mods)
+            self._persist_load_order(cached_active, cached_active)
             bolt.deprint(f'Created {self._loadorder_txt.abs_path}')
-            return mods
+            return cached_active
         # handle desync with plugins txt
-        if cached_active is not None:
-            cached_active_copy = cached_active[:]
-            cached_active_set = set(cached_active)
-            active_in_lo = [x for x in lo if x in cached_active_set]
-            lo_dex = {x: i for i, x in enumerate(lo)}
-            while active_in_lo:
-                # Use list(), we may modify cached_active_copy and active_in_lo
-                for i, (ordered, current) in list(enumerate(
-                        zip(cached_active_copy, active_in_lo))):
-                    if ordered != current:
-                        if ordered not in lo:
-                            # Mod is in plugins.txt, but not in loadorder.txt;
-                            # just drop it from the copy for now, we'll check
-                            # if it's really missing in _fix_active_plugins
-                            cached_active_copy.remove(ordered)
-                            break
-                        for j, x in enumerate(active_in_lo[i:]):
-                            if x == ordered: break
-                            # x should be above ordered
-                            to = lo_dex[ordered] + 1 + j
-                            # make room
-                            lo_dex = {x: (i if i < to else i + 1) for x, i in
-                                 lo_dex.items()}
-                            lo_dex[x] = to # bubble them up !
-                        active_in_lo.remove(ordered)
-                        cached_active_copy = cached_active_copy[i + 1:]
-                        active_in_lo = active_in_lo[i:]
-                        break
-                else: break
-            fetched_lo = lo[:]
-            lo.sort(key=lo_dex.get)
-            if lo != fetched_lo:
-                # We fixed a desync, make a backup and write the load order
-                self._backup_load_order()
-                self._persist_load_order(lo, lo)
-                bolt.deprint(f'Corrected {self._loadorder_txt.abs_path} '
-                    f'(order of mods differed from their order in {pl_path})')
+        lo_dex = {x: i for i, x in enumerate(lo)}
+        # drop mods in plugins.txt, but not in loadorder.txt; we'll check
+        # if it's really missing in _fix_active_plugins ##:(743) what about missing
+        # from lo - those would be added last (although maybe added to
+        # plugins.txt from the game and reordered already by the user)
+        cached_active_copy = [m for m in cached_active if m in lo_dex]
+        cached_active_set = set(cached_active)
+        active_in_lo = [x for x in lo if x in cached_active_set]
+        while active_in_lo:
+            # Use list(), we may modify cached_active_copy and active_in_lo
+            for i, (ordered, current) in list(enumerate(
+                    zip(cached_active_copy, active_in_lo))):
+                if ordered != current:
+                    for j, x in enumerate(active_in_lo[i:]):
+                        if x == ordered: break
+                        # x should be above ordered
+                        to = lo_dex[ordered] + 1 + j
+                        # make room
+                        lo_dex = {k: (i if i < to else i + 1) for k, i in
+                                  lo_dex.items()}
+                        lo_dex[x] = to  # bubble them up !
+                    active_in_lo.remove(ordered)
+                    cached_active_copy = cached_active_copy[i + 1:]
+                    active_in_lo = active_in_lo[i:]
+                    break
+            else: break
+        fetched_lo = lo[:]
+        lo.sort(key=lo_dex.get)
+        if lo != fetched_lo:
+            # We fixed a desync, make a backup and write the load order
+            self._backup_load_order()
+            self._persist_load_order(lo, lo)
+            bolt.deprint(f'Corrected {self._loadorder_txt.abs_path} '
+                f'(order of mods differed from their order in {pl_path})')
         return lo
 
     def _fetch_active_plugins(self):
