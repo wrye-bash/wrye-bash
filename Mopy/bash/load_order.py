@@ -181,16 +181,15 @@ class LoadOrder(object):
 
     def __init__(self, loadOrder: Iterable[FName] = __empty,
             active: Iterable[FName] = __none):
-        set_act = frozenset(active)
-        if missing := (set_act - set(loadOrder)):
-            raise exception.BoltError(
-                f'Active mods with no load order: {", ".join(missing)}')
-        self._loadOrder = tuple(loadOrder)
-        self._active = set_act
+        self._active = set_act = frozenset(active)
         self.mod_lo_index = {a: i for i, a in enumerate(loadOrder)}
-        # below would raise key error if active have no loadOrder
-        self._activeOrdered = tuple(
-            sorted(active, key=self.mod_lo_index.__getitem__))
+        try: # below will raise a key error if mods in active have no loadOrder
+            self._activeOrdered = tuple(
+                sorted(set_act, key=self.mod_lo_index.__getitem__))
+        except KeyError:
+            raise exception.BoltError(f'Active mods with no load order: '
+                f'{", ".join(set_act - self.mod_lo_index.keys())}')
+        self._loadOrder = tuple(self.mod_lo_index)
         self.mod_act_index = {a: i for i, a in enumerate(self._activeOrdered)}
 
     @property
@@ -296,42 +295,30 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
         fix_lo.lo_deprint()
     return _update_cache(lord, acti, __index_move=__index_move)
 
-def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
+def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0)->LordDiff:
     """Update module cache (_cached_lord and _saved_load_orders) and return
     the diff between the old and new load orders. If any of lord/acti_sorted
     is None, we are called from refresh_lo, and we need to get the load
     order from the game_handle. Else we are called from save_lo (with validated
     load order/active info), and we just need to update the caches."""
-    global _cached_lord
-    try:
-        if lord is None or acti_sorted is None: # really go get load order
-            fix_lo = FixInfo()
-            lord, acti_sorted = _lo_handler.get_load_order(lord, acti_sorted,
-                                                           fix_lo)
-            fix_lo.lo_deprint()
-        return _cached_lord.lo_diff(
-            (_cached_lord := LoadOrder(lord, acti_sorted)))
-    except Exception:
-        bolt.deprint('Error updating load_order cache')
-        _cached_lord = __lo_unset
-        raise
-    finally:
-        if _cached_lord is not __lo_unset:
-            global _current_list_index
-            if _current_list_index < 0 or (not __index_move and
-                _cached_lord != _saved_load_orders[_current_list_index].lord):
-                # either getting or setting, plant the new load order in
-                _current_list_index += 1
-                _new_entry()
-            elif __index_move: # attempted to undo/redo
-                _current_list_index += __index_move
-                target = _saved_load_orders[_current_list_index].lord
-                if target != _cached_lord: # we partially redid/undid
-                    # put it after (redo) or before (undo) the target
-                    _current_list_index += int(math.copysign(1, __index_move))
-                     # list[-1:-1] won't do what we want
-                    _current_list_index = max(0, _current_list_index)
-                    _new_entry()
+    global _cached_lord, _current_list_index
+    lorddiff = _cached_lord.lo_diff(
+        (_cached_lord := LoadOrder(lord, acti_sorted)))
+    if _current_list_index < 0 or (not __index_move and
+            _cached_lord != _saved_load_orders[_current_list_index].lord):
+        # either getting or setting, plant the new load order in
+        _current_list_index += 1
+        _new_entry()
+    elif __index_move:  # attempted to undo/redo
+        _current_list_index += __index_move
+        target = _saved_load_orders[_current_list_index].lord
+        if target != _cached_lord:  # we partially redid/undid
+            # put it after (redo) or before (undo) the target
+            _current_list_index += int(math.copysign(1, __index_move))
+            # list[-1:-1] won't do what we want
+            _current_list_index = max(0, _current_list_index)
+            _new_entry()
+    return lorddiff
 
 def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
     """Refresh _cached_lord, reverting if locked to the saved one. If any of
@@ -341,6 +328,7 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
     as load_order_changed returns True - that's not slow, as getting the load
     order just involves getting ftime info from modInfos cache. This last one
     **must be up to date** for correct load order/active validation."""
+    global _cached_lord
     if locked and _saved_load_orders:
         saved: LoadOrder = _saved_load_orders[_current_list_index].lord
         if _cached_lord is not __lo_unset:
@@ -361,7 +349,16 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
         _lo_handler.request_cache_update(
             _cached_lord.loadOrder if cached else None,
             _cached_lord.activeOrdered if cached_active else None)
-    ldiff = _update_cache(lo, active)
+    try:
+        if lo is None or active is None: # really go get load order
+            fix_lo = FixInfo()
+            lo, active = _lo_handler.get_load_order(lo, active, fix_lo)
+            fix_lo.lo_deprint()
+        ldiff = _update_cache(lo, active)
+    except Exception:
+        bolt.deprint('Error updating load_order cache')
+        _cached_lord = __lo_unset
+        raise
     if saved is not __lo_unset:
         # rest of Bash should only use _cached_lord so since we eventually
         # might impose saved (to move new plugins at the end for instance)
@@ -390,18 +387,15 @@ def get_active_mods_lists():
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
 
-def undo_redo_load_order(redo):
-    return _restore_lo(1 if redo else -1)
-
-def _restore_lo(index_move):
+def undo_redo_load_order(index_move):
     index = _current_list_index + index_move
-    if index < 0 or index > len(_saved_load_orders) - 1: return _cached_lord
+    if index < 0 or index > len(_saved_load_orders) - 1: return LordDiff()
     previous = _saved_load_orders[index].lord
     lord, acti = __validate(previous)
     previous = LoadOrder(lord, acti) # possibly fixed with new mods appended
     if previous == _cached_lord: # increase or decrease by 1
-        index_move += int(math.copysign(1, index_move))
-        return _restore_lo(index_move)
+        return undo_redo_load_order(
+            index_move + int(math.copysign(1, index_move)))
     return save_lo(previous.loadOrder, previous.activeOrdered,
                    __index_move=index_move, quiet=True)
 

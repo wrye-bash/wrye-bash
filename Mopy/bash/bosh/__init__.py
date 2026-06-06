@@ -2688,7 +2688,7 @@ class ModInfos(_AFileInfos):
 
     @_lo_cache
     def wip_lo_undo_redo_load_order(self, redo):
-        return load_order.undo_redo_load_order(redo)
+        return load_order.undo_redo_load_order(1 if redo else -1)
 
     #--Lo/active wip caches management ----------------------------------------
     def _do_activate(self, fileName, _children=()):
