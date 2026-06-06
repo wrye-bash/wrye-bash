@@ -57,7 +57,8 @@ class LoFile(AFile):
         self._star = star
         super().__init__(self._resolve_case_ambiguity(path), *args, **kwargs)
 
-    def parse_modfile(self, *, __re_comment=re.compile(b'^#.*')) -> _ParsedLo:
+    def parse_modfile(self, dups_set, *, __re_comment=re.compile(b'^#.*')
+                      ) -> _ParsedLo:
         """Parse loadorder.txt and plugins.txt files with or without stars.
 
         Return two lists which are identical except when _star is True,
@@ -67,23 +68,29 @@ class LoFile(AFile):
         load order (when parsing loadorder.txt)."""
         with self.abs_path.open('rb') as ins:
             #--Load Files
-            active, modnames, is_active_ = [], [], True
+            active, modnames, is_active_, existing = [], [], True, set()
             for line in ins:
                 modname = __re_comment.sub(b'', line.strip())#b' '.strip()==b''
                 if self._star and (is_active_ := modname and modname[0] == 42):
-                    modname = modname[1:] # b'*'[0] == 42
-                if not modname: continue
-                # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
-                # It wont accept filenames in any other encoding
-                try:
-                    mod_fn = FName(modname.decode(encoding='cp1252'))
-                except UnicodeError:
-                    bolt.deprint(f'{modname!r} failed to properly decode')
-                    continue
-                if mod_fn.fn_ext == '.ghost':
-                    mod_fn = mod_fn.fn_body # Vortex keeps the .ghost extension
-                modnames.append(mod_fn)
-                if is_active_: active.append(mod_fn)
+                    modname = modname[1:]  # b'*'[0] == 42
+                if modname:
+                    # Oblivion/Skyrim saves the plugins.txt file in cp1252
+                    # format. It wont accept filenames in any other encoding
+                    try:
+                        mod_fn = FName(modname.decode(encoding='cp1252'))
+                    except UnicodeError:
+                        bolt.deprint(f'{modname!r} failed to properly decode')
+                        continue
+                    if mod_fn.fn_ext == '.ghost':
+                        mod_fn = mod_fn.fn_body # Vortex keeps the .ghost ext
+                    if mod_fn in existing:
+                        ##:(743) we keep the first load order/active state
+                        # encountered - test with game
+                        dups_set.add(mod_fn)
+                        continue
+                    existing.add(mod_fn)
+                    modnames.append(mod_fn)
+                    if is_active_: active.append(mod_fn)
         self.do_update() # update the cache info
         return active, modnames
 
@@ -163,8 +170,7 @@ class _CCCFile(DelFile, LoFile):
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
         if not self._deleted:
-            _act, ccc_contents = self.parse_modfile()
-            self.ccc_contents = list(dict.fromkeys(ccc_contents)) # drop dups
+            _act, self.ccc_contents = self.parse_modfile(set()) # discard dups
 
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
@@ -265,7 +271,7 @@ class LoGame:
         if cached_load_order is not None and cached_active_ordered is not None:
             raise ValueError('get_load_order called with both cached values')
         lo, active = self._cached_or_fetch(cached_load_order,
-                                           cached_active_ordered)
+                                           cached_active_ordered, fix_lo)
         # for timestamps we use modInfos so we should not get an invalid
         # load order (except redated master). For text based games however
         # the fetched order could be in whatever state, so get this fixed
@@ -277,13 +283,13 @@ class LoGame:
         self._save_fixed_load_order(fix_lo, fixed_active, lo, active)
         return tuple(lo), tuple(active)
 
-    def _cached_or_fetch(self, cached_load_order, cached_active):
+    def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo):
         # we need to override this bit for AsteriskGame to parse the file once
         if cached_active is None: # first get active plugins
-            cached_active = self._fetch_active_plugins()
+            cached_active = self._fetch_active_plugins(fix_lo.act_duplicates)
         # we need active plugins fetched to check for desync in load order
         if cached_load_order is None:
-            cached_load_order = self._fetch_load_order(cached_active)
+            cached_load_order = self._fetch_load_order(cached_active, fix_lo)
         return list(cached_load_order), list(cached_active)
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
@@ -343,7 +349,7 @@ class LoGame:
         if quiet := fix_lo is None: fix_lo = FixInfo() # will be discarded
         if setting_lo := lord is not None:
             # fix the load order - lord is modified in place, hence test below
-            self._fix_load_order(lord, fix_lo, not quiet)
+            self._fix_load_order(lord, fix_lo, not quiet, _saving=True)
             setting_lo = previous_lord != lord
         setting_active = active is not None
         if setting_lo and not setting_active:
@@ -400,9 +406,9 @@ class LoGame:
         return self._plugins_txt.upd_on_swap(old_dir, new_dir)
 
     # Handle active plugins file (always exists)
-    def _fetch_active_plugins(self):
+    def _fetch_active_plugins(self, dups_set):
         try:
-            active, _lo = self._plugins_txt.parse_modfile()
+            active, _lo = self._plugins_txt.parse_modfile(dups_set)
             return active
         except FileNotFoundError:
             return []
@@ -418,7 +424,7 @@ class LoGame:
         pass # timestamps, no file to backup
 
     # ABSTRACT ----------------------------------------------------------------
-    def _fetch_load_order(self, cached_active: list[FName]):
+    def _fetch_load_order(self, cached_active: list[FName], fix_lo):
         raise NotImplementedError
 
     def _persist_load_order(self, lord, active):
@@ -434,7 +440,8 @@ class LoGame:
         raise NotImplementedError
 
     # VALIDATION --------------------------------------------------------------
-    def _fix_load_order(self, lord: list[FName], fix_lo, _mtime_order=True):
+    def _fix_load_order(self, lord: list[FName], fix_lo, _mtime_order=True,
+                        _saving=False):
         """Fix inconsistencies between given loadorder and actually installed
         mod files as well as impossible load orders. We need a refreshed
         bosh.modInfos reflecting the contents of Data/.
@@ -442,6 +449,8 @@ class LoGame:
         Called in get_load_order() to fix a newly fetched LO and in
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as saving load and active should be an atomic operation."""
+        if _saving: # we come from set_load_order - maybe move this check?
+            fix_lo.lo_duplicates = self._check_for_duplicates(lord)
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
@@ -484,7 +493,6 @@ class LoGame:
         lord.sort(key=self.lo_sort_key())
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
-        fix_lo.lo_duplicates = self._check_for_duplicates(lord)
         # loaded in _get_force_act - those ones come first
         if (*lord[:len(fo_mods := self.force_load_first)],) != fo_mods:
             fo_set = set(fo_mods)
@@ -497,6 +505,8 @@ class LoGame:
         """Always called with a valid load order (in set_load_order lord has
         been already fixed, if called in get_load_order we either fetched and
         validated or we are passed a valid cache)."""
+        if not on_disc: # callee is set_load_order - NOTE: this modifies acti!
+            fix_active.act_duplicates = self._check_for_duplicates(acti)
         # filter plugins not present in modInfos - this will disable
         # corrupted too! Preserve acti order
         # Throw out files that aren't on disk as well as .esu files, which must
@@ -519,8 +529,6 @@ class LoGame:
                     fix_active.missing_must_be_active.add(fn_plugin)
         # append missing mods and let _check_active_order place them
         acti_filtered.extend(fix_active.missing_must_be_active)
-        # Check for duplicates - NOTE: this modifies acti_filtered!
-        fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # order - won't trigger saving for TimestampGame - affects which mods
         # are chopped off if > 255 (the ones that load last)
         fix_active.act_order_differs_from_load_order = \
@@ -630,7 +638,7 @@ def _mk_ini(ini_key, star, ini_fpath):
             super().__init__(*args, **kwargs)
             _ini, self._section, self._key_fmt = ini_key
 
-        def parse_modfile(self, *, __re=None) -> _ParsedLo:
+        def parse_modfile(self, dups_set=frozenset(), *, __re='') -> _ParsedLo:
             """Read the section specified in self._section and return all
             its values as FName objects. Handles missing INI file and an
             absent section gracefully."""
@@ -759,7 +767,7 @@ class TimestampGame(LoGame):
         return deleted_plugins
 
     # Abstract overrides ------------------------------------------------------
-    def _fetch_load_order(self, cached_active):
+    def _fetch_load_order(self, cached_active, fix_lo):
         return self.calculate_mtime_order(self._mod_infos)
 
     def _persist_load_order(self, lord, active):
@@ -774,11 +782,11 @@ class TimestampGame(LoGame):
             self._persist_active_plugins(active, lord)
 
     # Other overrides ---------------------------------------------------------
-    def _fix_load_order(self, lord, fix_lo, _mtime_order=True):
+    def _fix_load_order(self, lord, fix_lo, _mtime_order=True, _saving=False):
         """If _mtime_order is True, the load order will be sorted by mtime -
         previous behavior (see clients) but may not be what we want in all
         cases."""
-        super()._fix_load_order(lord, fix_lo)
+        super()._fix_load_order(lord, fix_lo, _saving=_saving)
         if _mtime_order and fix_lo.lo_added:
             lord[:] = self.calculate_mtime_order(mods=lord)
 
@@ -828,7 +836,7 @@ class TextfileGame(_TextFileLo):
         return self._loadorder_txt
 
     # Abstract overrides ------------------------------------------------------
-    def _fetch_load_order(self, cached_active):
+    def _fetch_load_order(self, cached_active, fix_lo):
         """Read data from loadorder.txt file. If loadorder.txt does not
         exist create it and use cached/plugins.txt info so the load order of
         the user is preserved (note it will create the plugins.txt if not
@@ -837,7 +845,7 @@ class TextfileGame(_TextFileLo):
         corrected to match their relative order in cached_active."""
         pl_path = self._plugins_txt.abs_path
         try: #--Read file
-            _acti, lo = self._loadorder_txt.parse_modfile()
+            _acti, lo = self._loadorder_txt.parse_modfile(fix_lo.lo_duplicates)
         except FileNotFoundError:
             # only called in _cached_or_fetch, cached_active is not None
             if not pl_path.exists():
@@ -883,10 +891,10 @@ class TextfileGame(_TextFileLo):
                 f'(order of mods differed from their order in {pl_path})')
         return lo
 
-    def _fetch_active_plugins(self):
+    def _fetch_active_plugins(self, dups_set):
         """Fetch what's in the plugins.txt - if something shouldn't be there,
         remove it and rewrite the plugins.txt."""
-        act = super()._fetch_active_plugins()
+        act = super()._fetch_active_plugins(dups_set)
         if self._game_handle.master_file in act:
             if self._remove_game_master_from_plugins_txt:
                 bolt.deprint(f'Removing {self._game_handle.master_file} from '
@@ -937,12 +945,12 @@ class AsteriskGame(_TextFileLo):
             return None, None
         return args
 
-    def _cached_or_fetch(self, ca_load_order, ca_active):
+    def _cached_or_fetch(self, ca_load_order, ca_active, fix_lo):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Discard information read if cached_* is passed in, but due
         to our caller being get_load_order *at least one* is None."""
         try:
-            active, lo = self._plugins_txt.parse_modfile()
+            active, lo = self._plugins_txt.parse_modfile(fix_lo.lo_duplicates)
             rem_from_acti = self._get_force_act(active=active)
             if any_dropped := [x for x in lo if x in rem_from_acti]:
                 bolt.deprint(f'Removing {_pl(any_dropped)} from '
@@ -992,7 +1000,7 @@ class AsteriskGame(_TextFileLo):
     def _must_update_active(cls, deleted_plugins, reord_plugins): return True
 
     # Abstract overrides ------------------------------------------------------
-    def _fetch_active_plugins(self) -> list[FName]:
+    def _fetch_active_plugins(self, dups_set) -> list[FName]:
         raise NotImplementedError # no override for AsteriskGame
 
     def _persist_active_plugins(self, active, lord, *,
