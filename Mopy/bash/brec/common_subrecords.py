@@ -930,7 +930,7 @@ class MelLandShared(MelSequential):
         has_hi_res_heightfield: bool = flag(5) # since FO4
         has_mpcd: bool = flag(10) # Skyrim's version of has_hi_res_heightfield?
 
-    def __init__(self, *, with_vtex: bool = False):
+    def __init__(self, *, with_vtex=False):
         super().__init__(
             MelUInt32Flags(b'DATA', 'land_flags', self._land_flags),
             MelBase(b'VNML', 'vertex_normals'),

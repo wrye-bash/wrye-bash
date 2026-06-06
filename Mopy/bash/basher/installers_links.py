@@ -93,7 +93,7 @@ class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
                        'complete, press OK.'), _('External Installation'))
         # Refresh Data
         rd_refresh = {store: store.refresh(True, unlock_lo=True) for store in
-                      bosh.data_tracking_stores()}
+            bosh.data_tracking_stores()} # unlock_lo to avoid prints in refresh_lo
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate

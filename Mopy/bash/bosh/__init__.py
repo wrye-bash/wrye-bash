@@ -1676,7 +1676,7 @@ class DataStore(DataDict):
             finfos = {inf for inf in finfos if not inf.abs_path.exists()}
             if finfos and do_refr:
                 finfos = self.refresh(RefrIn(del_infos=finfos), what='I',
-                                      unlock_lo=True)
+                    unlock_lo=True) # unlock_lo to avoid printing in refresh_lo
         return finfos
 
     _retry_msg = [_('Wrye Bash encountered an error when renaming %(old)s to '

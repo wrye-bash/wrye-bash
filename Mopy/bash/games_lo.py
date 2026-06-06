@@ -67,15 +67,14 @@ class LoFile(AFile):
         load order (when parsing loadorder.txt)."""
         with self.abs_path.open('rb') as ins:
             #--Load Files
-            active, modnames = [], []
+            active, modnames, is_active_ = [], [], True
             for line in ins:
+                modname = __re_comment.sub(b'', line.strip())#b' '.strip()==b''
+                if self._star and (is_active_ := modname and modname[0] == 42):
+                    modname = modname[1:] # b'*'[0] == 42
+                if not modname: continue
                 # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
                 # It wont accept filenames in any other encoding
-                modname = __re_comment.sub(b'', line.strip())
-                if not modname: continue
-                # use raw strings below
-                is_active_ = not self._star or modname[0] == 42 # b'*'[0] == 42
-                if self._star and is_active_: modname = modname[1:]
                 try:
                     mod_fn = FName(modname.decode(encoding='cp1252'))
                 except UnicodeError:
@@ -142,7 +141,7 @@ class LoFile(AFile):
         except FileNotFoundError: pass # no plugins.txt to save
         # Move the new plugins.txt here for use
         move = self._resolve_case_ambiguity(new_dir.join(pl_path.stail))
-        try: # copy will not change mtime, bad
+        try: # copy will not change mtime - do_update must detect the change
             move.copyTo(pl_path, set_time=time.time())
             return True
         except FileNotFoundError:
@@ -309,8 +308,7 @@ class LoGame:
             cached_active = self._fetch_active_plugins()
         # we need active plugins fetched to check for desync in load order
         if cached_load_order is None:
-            cached_load_order = self._fetch_load_order(cached_load_order,
-                                                       cached_active)
+            cached_load_order = self._fetch_load_order(cached_active)
         return list(cached_load_order), list(cached_active)
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
@@ -431,8 +429,7 @@ class LoGame:
         pass # timestamps, no file to backup
 
     # ABSTRACT ----------------------------------------------------------------
-    def _fetch_load_order(self, cached_load_order: LoTuple | None,
-                          cached_active: LoTuple):
+    def _fetch_load_order(self, cached_active: list[FName]):
         raise NotImplementedError
 
     def _persist_load_order(self, lord, active):
@@ -761,7 +758,7 @@ class TimestampGame(LoGame):
         return deleted_plugins
 
     # Abstract overrides ------------------------------------------------------
-    def _fetch_load_order(self, cached_load_order, cached_active):
+    def _fetch_load_order(self, cached_active):
         return self.calculate_mtime_order(self._mod_infos)
 
     def _persist_load_order(self, lord, active):
@@ -830,8 +827,7 @@ class TextfileGame(_TextFileLo):
         return self._loadorder_txt
 
     # Abstract overrides ------------------------------------------------------
-    def _fetch_load_order(self, cached_load_order,
-            cached_active: tuple[FName] | list[FName]):
+    def _fetch_load_order(self, cached_active):
         """Read data from loadorder.txt file. If loadorder.txt does not
         exist create it and try reading plugins.txt so the load order of the
         user is preserved (note it will create the plugins.txt if not
