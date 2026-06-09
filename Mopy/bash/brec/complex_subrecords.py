@@ -896,18 +896,16 @@ class MelEffectsTes4ObmeFull(MelString):
 class MelMgefEdidTes4(_MelMgefCode):
     """Handles EDID for Oblivion's MGEF - we can't just use MelEdid because
     this can, of course, be a FormID thanks to OBME."""
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Always 4 bytes for the magic effect code plus a null terminator
         super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
-            mgef_code_attr='mgef_edid', emulated_attr='eid')
+            mgef_code_attr='mgef_edid', emulated_attr='eid', **kwargs)
 
-class MelMgefEdidTes4Re(_MelMgefCode):
+class MelMgefEdidTes4Re(MelMgefEdidTes4):
     """Handles EDID for Oblivion Remastered's MGEF. Same as Oblivion, but the
     null terminator is sometimes absent (e.g. in UORP)."""
     def __init__(self):
-        super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
-            mgef_code_attr='mgef_edid', emulated_attr='eid',
-            old_versions={'4s'})
+        super().__init__(old_versions={'4s'})
 
 # API - FO3 and FNV -----------------------------------------------------------
 class MelEffectsFo3(MelGroups):

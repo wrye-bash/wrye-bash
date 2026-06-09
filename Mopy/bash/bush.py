@@ -62,23 +62,25 @@ def reset_bush_globals():
               _egs_games):
         d.clear()
 
-def _print_found_games(game_dict):
+def _print_found_games(_store_results, msg):
     """Formats and prints the specified dictionary of game detections in a
     human-readable way."""
-    msgs = []
-    for found_name, found_paths in dict_sort(game_dict):
-        if len(found_paths) == 1:
-            # Single path, just print the name and path
-            msgs.append(f'   - {found_name}: {found_paths[0]}')
-        else:
+    for s, (found, skipped_msg, found_msg,
+            not_found_msg) in _store_results.items():
+        if no_games_msg := (not found and not_found_msg) or skipped_msg:
+            msg.append(f'{s}  {no_games_msg}')
+            continue
+        msg.append(f'{s}  {found_msg}')
+        for found_name, found_paths in dict_sort(found):
+            if len(found_paths) == 1:
+                # Single path, just print the name and path
+                msg.append(f'   - {found_name}: {found_paths[0]}')
+                continue
             # Multiple paths, format as a multiline list
-            msg = f'   - {found_name}: [{found_paths[0]},\n'
-            # 8 == len('   - : [')
-            space_padding = u' ' * (8 + len(found_name))
-            msg += '\n'.join(f'{space_padding}{p},' for p in found_paths[1:-1])
-            msg += f'\n{space_padding}{found_paths[-1]}]'
-            msgs.append(msg)
-    return msgs
+            msg.append(f'   - {found_name}: [{found_paths[0]},')
+            space_padding = ' ' * (8 + len(found_name)) # 8 == len('   - : [')
+            li = ',\n'.join(f'{space_padding}{p}' for p in found_paths[1:])
+            msg.append(f'{li}]')
 
 def _supportedGames(skip_ws_games=False):
     """Set games supported by Bash and return their paths from the registry."""
@@ -144,50 +146,29 @@ def _supportedGames(skip_ws_games=False):
     # Dump out info about all games that we *actually* found
     msg.append('Wrye Bash looked for installations of supported games in the '
                'following places:')
-    msg.append(' 1. Steam:')
-    if _steam_games:
-        msg.append('  The following supported games were found via Steam:')
-        msg.extend(_print_found_games(_steam_games))
-    else:
-        msg.append('  No supported games were found via Steam.')
-    msg.append(' 2. GOG (via Windows Registry):')
-    if _gog_games:
-        msg.append('  The following supported games were found via GOG:')
-        msg.extend(_print_found_games(_gog_games))
-    else:
-        msg.append('  No supported games were found via GOG.')
-    msg.append(' 3. Disc Versions (via Windows Registry):')
-    if _disc_games:
-        msg.append('  The following disc versions of supported games were '
-                   'found:')
-        msg.extend(_print_found_games(_disc_games))
-    else:
-        msg.append('  No disc versions of supported games were found.')
-    msg.append(' 4. Windows Store (Legacy):')
-    if _ws_legacy_games:
-        msg.append('  The following supported games with modding enabled were '
-                   'found via the legacy Windows Store:')
-        msg.extend(_print_found_games(_ws_legacy_games))
-    else:
-        msg.append('  No supported games with modding enabled were found via '
-                   'the legacy Windows Store.')
-    msg.append(' 5. Windows Store:')
-    if skip_ws_games:
-        msg.append('  Windows Store game detection was disabled via bash.ini.')
-    elif _ws_games:
-        msg.append('  The following supported games were found via the '
-                   'Windows Store:')
-        msg.extend(_print_found_games(_ws_games))
-    else:
-        msg.append('  No supported games were found via the Windows Store.')
-    msg.append(' 6. Epic Games Store:')
-    if _egs_games:
-        msg.append('  The following supported games were found via the Epic '
-                   'Games Store:')
-        msg.extend(_print_found_games(_egs_games))
-    else:
-        msg.append('  No supported games were found via the Epic Games '
-                   'Store.')
+    store_results = {
+        ' 1. Steam:': (_steam_games, None,
+            'The following supported games were found via Steam:',
+            'No supported games were found via Steam.'),
+        ' 2. GOG (via Windows Registry):': (_gog_games, None,
+            'The following supported games were found via GOG:',
+            'No supported games were found via GOG.'),
+        ' 3. Disc Versions (via Windows Registry):': (_disc_games, None,
+            'The following disc versions of supported games were found:',
+            'No disc versions of supported games were found.'),
+        ' 4. Windows Store (Legacy):': (_ws_legacy_games, None,
+            'The following supported games with modding enabled were found '
+            'via the legacy Windows Store:',
+            'No supported games with modding enabled were found via the legacy Windows Store.'),
+        ' 5. Windows Store:': (_ws_games,
+            'Windows Store game detection was disabled via bash.ini.' if skip_ws_games else None,
+            'The following supported games were found via the Windows Store:',
+            'No supported games were found via the Windows Store.'),
+        ' 6. Epic Games Store:': (_egs_games, None,
+            'The following supported games were found via the Epic Games Store:',
+            'No supported games were found via the Epic Games Store.'),
+    }
+    _print_found_games(store_results, msg)
     deprint('\n'.join(msg))
     # Merge the dicts of games we found from all global sources
     all_found_games = _steam_games.copy()
