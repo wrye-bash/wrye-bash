@@ -32,10 +32,8 @@ from collections import defaultdict
 
 from . import game as game_init, bass
 from .bolt import GPath, Path, deprint, dict_sort
-from .env import get_egs_game_paths, get_legacy_ws_game_info, \
-    get_legacy_ws_game_paths, get_gog_game_paths, get_ws_game_paths, \
-    get_steam_game_paths, get_file_version, get_game_version_fallback, \
-    get_disc_game_paths
+from .env import get_file_version, get_game_paths_from_stores, \
+    get_game_version_fallback, get_legacy_ws_game_info
 from .exception import BoltError
 from .game import GameInfo, patch_game
 
@@ -46,31 +44,29 @@ foundGames: dict[str, list[Path]] = {} # dict used by the Settings switch game m
 
 # Module Cache
 _allGames: dict[str, type[GameInfo]] = {}
-_steam_games: dict[str, list[Path]] = {}
-_gog_games: dict[str, list[Path]] = {}
-_disc_games: dict[str, list[Path]] = {}
-_ws_legacy_games: dict[str, list[Path]] = {}
-_ws_games: dict[str, list[Path]] = {}
-_egs_games: dict[str, list[Path]] = {}
+# we currently don't really need to cache this - I keep it just for debugging
+# store -> (game display name -> paths list)
+_game_stores: dict[str, dict[str, list[Path]]] = defaultdict(dict)
 
 def reset_bush_globals():
     global game
     global ws_info
     game = None
     ws_info = None
-    for d in (_allGames, _steam_games, _gog_games, _ws_legacy_games, _ws_games,
-              _egs_games):
+    for d in (_allGames, _game_stores):
         d.clear()
 
-def _print_found_games(_store_results, msg):
+def _print_found_games(skip_ws_games, msg):
     """Formats and prints the specified dictionary of game detections in a
     human-readable way."""
-    for s, (found, skipped_msg, found_msg,
-            not_found_msg) in _store_results.items():
-        if no_games_msg := (not found and not_found_msg) or skipped_msg:
-            msg.append(f'{s}  {no_games_msg}')
+    msg.append('Wrye Bash looked for installations of supported games in the '
+               'following places:')
+    succ_err = _store_msgs(skip_ws_games)
+    for game_st, (found_m, not_found_m) in succ_err.items():
+        if not (found := _game_stores.get(game_st)):
+            msg.append(f'{game_st}  {not_found_m}')
             continue
-        msg.append(f'{s}  {found_msg}')
+        msg.append(f'{game_st}  {found_m}')
         for found_name, found_paths in dict_sort(found):
             if len(found_paths) == 1:
                 # Single path, just print the name and path
@@ -81,6 +77,32 @@ def _print_found_games(_store_results, msg):
             space_padding = ' ' * (8 + len(found_name)) # 8 == len('   - : [')
             li = ',\n'.join(f'{space_padding}{p}' for p in found_paths[1:])
             msg.append(f'{li}]')
+
+def _store_msgs(skip_ws_games):
+    return {
+        ' 1. Steam:': (
+            'The following supported games were found via Steam:',
+            'No supported games were found via Steam.'),
+        ' 2. GOG (via Windows Registry):': (
+            'The following supported games were found via GOG:',
+            'No supported games were found via GOG.'),
+        ' 3. Disc Versions (via Windows Registry):': (
+            'The following disc versions of supported games were found:',
+            'No disc versions of supported games were found.'),
+        ' 4. Windows Store (Legacy):': (
+            'The following supported games with modding enabled were found '
+            'via the legacy Windows Store:',
+            'No supported games with modding enabled were found via the legacy '
+            'Windows Store.'),
+        ' 5. Windows Store:': (
+            'The following supported games were found via the Windows Store:',
+            'Windows Store game detection was disabled via bash.ini.' if
+            skip_ws_games else 'No supported games were found via the '
+                               'Windows Store.'),
+        ' 6. Epic Games Store:': (
+            'The following supported games were found via the Epic Games Store:',
+            'No supported games were found via the Epic Games Store.'),
+    }
 
 def _supportedGames(skip_ws_games=False):
     """Set games supported by Bash and return their paths from the registry."""
@@ -105,27 +127,7 @@ def _supportedGames(skip_ws_games=False):
             deprint(f'Error in game support module {modname}', traceback=True)
             continue
         # Get this game's install path(s)
-        for gt_display_name, game_type in game_types.items():
-            steam_paths = get_steam_game_paths(game_type)
-            if steam_paths:
-                _steam_games[gt_display_name] = steam_paths
-            gog_paths = get_gog_game_paths(game_type)
-            if gog_paths:
-                _gog_games[gt_display_name] = gog_paths
-            disc_paths = get_disc_game_paths(game_type, _steam_games.values(),
-                _gog_games.values())
-            if disc_paths:
-                _disc_games[gt_display_name] = disc_paths
-            ws_legacy_paths = get_legacy_ws_game_paths(game_type)
-            if ws_legacy_paths:
-                _ws_legacy_games[gt_display_name] = ws_legacy_paths
-            if not skip_ws_games:
-                ws_paths = get_ws_game_paths(game_type)
-                if ws_paths:
-                    _ws_games[gt_display_name] = ws_paths
-            egs_paths = get_egs_game_paths(game_type)
-            if egs_paths:
-                _egs_games[gt_display_name] = egs_paths
+        get_game_paths_from_stores(game_types, skip_ws_games, _game_stores)
         del module
     # Dump out info about all games that we *could* launch, but deduplicate for
     # games with versions from multiple store fronts
@@ -144,47 +146,13 @@ def _supportedGames(skip_ws_games=False):
         fmt_game_variants = ', '.join(sorted(game_variants))
         msg.append(f'  - {base_game_name} ({fmt_game_variants})')
     # Dump out info about all games that we *actually* found
-    msg.append('Wrye Bash looked for installations of supported games in the '
-               'following places:')
-    store_results = {
-        ' 1. Steam:': (_steam_games, None,
-            'The following supported games were found via Steam:',
-            'No supported games were found via Steam.'),
-        ' 2. GOG (via Windows Registry):': (_gog_games, None,
-            'The following supported games were found via GOG:',
-            'No supported games were found via GOG.'),
-        ' 3. Disc Versions (via Windows Registry):': (_disc_games, None,
-            'The following disc versions of supported games were found:',
-            'No disc versions of supported games were found.'),
-        ' 4. Windows Store (Legacy):': (_ws_legacy_games, None,
-            'The following supported games with modding enabled were found '
-            'via the legacy Windows Store:',
-            'No supported games with modding enabled were found via the legacy Windows Store.'),
-        ' 5. Windows Store:': (_ws_games,
-            'Windows Store game detection was disabled via bash.ini.' if skip_ws_games else None,
-            'The following supported games were found via the Windows Store:',
-            'No supported games were found via the Windows Store.'),
-        ' 6. Epic Games Store:': (_egs_games, None,
-            'The following supported games were found via the Epic Games Store:',
-            'No supported games were found via the Epic Games Store.'),
-    }
-    _print_found_games(store_results, msg)
+    _print_found_games(skip_ws_games, msg)
     deprint('\n'.join(msg))
     # Merge the dicts of games we found from all global sources
-    all_found_games = _steam_games.copy()
-    def merge_games(to_merge_games):
-        """Helper method for merging games and install paths from various
-        sources into the final all_found_games dict."""
+    all_found_games = defaultdict(list)
+    for to_merge_games in _game_stores.values():
         for found_game, found_paths in to_merge_games.items():
-            if found_game in all_found_games:
-                all_found_games[found_game].extend(found_paths)
-            else:
-                all_found_games[found_game] = found_paths
-    merge_games(_gog_games)
-    merge_games(_disc_games)
-    merge_games(_ws_legacy_games)
-    merge_games(_ws_games)
-    merge_games(_egs_games)
+            all_found_games[found_game].extend(found_paths)
     return all_found_games
 
 _succ_err = {

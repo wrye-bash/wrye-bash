@@ -47,6 +47,27 @@ match platform.system():
     case _: raise ImportError(f'Wrye Bash does not support '
                               f'{platform.system()} yet')
 
+# Game store management is environment specific -------------------------------
+def get_game_paths_from_stores(game_types, skip_ws_games, game_stores):
+    for gt_display_name, game_type in game_types.items():
+        steam_games = game_stores[' 1. Steam:']
+        if steam_paths := get_steam_game_paths(game_type):
+            steam_games[gt_display_name] = steam_paths
+        gog_games = game_stores[' 2. GOG (via Windows Registry):']
+        if gog_paths := get_gog_game_paths(game_type):
+            gog_games[gt_display_name] = gog_paths
+        if disc_paths := get_disc_game_paths(game_type, steam_games.values(),
+                                             gog_games.values()):
+            game_stores[' 3. Disc Versions (via Windows Registry):'][
+                gt_display_name] = disc_paths
+        if ws_legacy_paths := get_legacy_ws_game_paths(game_type):
+            game_stores[' 4. Windows Store (Legacy):'][
+                gt_display_name] = ws_legacy_paths
+        if ws_paths := not skip_ws_games and get_ws_game_paths(game_type):
+            game_stores[' 5. Windows Store:'][gt_display_name] = ws_paths
+        if egs_paths := get_egs_game_paths(game_type):
+            game_stores[' 6. Epic Games Store:'][gt_display_name] = egs_paths
+
 def _resolve(parent: _TShellWindow):
     """Resolve a parent window to a wx.Window for ifileoperation"""
     try:

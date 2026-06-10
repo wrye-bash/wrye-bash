@@ -272,11 +272,8 @@ def get_legacy_ws_game_paths(submod):
     app_info = get_legacy_ws_game_info(submod)
     # Select the most recently installed entry
     installed_version = app_info.get_installed_version()
-    if installed_version:
-        return _get_language_paths(submod.Ws.ws_language_dirs,
-            installed_version.mutable_location)
-    else:
-        return []
+    return _get_language_paths(submod.Ws.ws_language_dirs,
+        installed_version.mutable_location) if installed_version else []
 
 def get_egs_game_paths(submod):
     """Check the Epic Games Store manifests to find if the specified game is

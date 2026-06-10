@@ -1043,10 +1043,8 @@ def get_disc_game_paths(submod, found_steam_paths, found_gog_paths):
     disc_paths = _find_registry_games(submod, submod.disc_registry_keys)
     # The Steam and GOG versions set the same registry key as the disc version,
     # so avoid showing it twice
-    steam_paths_set = set(chain.from_iterable(found_steam_paths))
-    gog_paths_set = set(chain.from_iterable(found_gog_paths))
-    return [p for p in disc_paths
-            if p not in steam_paths_set and p not in gog_paths_set]
+    found_paths = set(chain(*found_steam_paths, *found_gog_paths))
+    return [p for p in disc_paths if p not in found_paths]
 
 def get_legacy_ws_game_info(submod):
     """Get all information about a legacy Windows Store application."""
