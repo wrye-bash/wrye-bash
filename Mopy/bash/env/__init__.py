@@ -48,25 +48,46 @@ match platform.system():
                               f'{platform.system()} yet')
 
 # Game store management is environment specific -------------------------------
-def get_game_paths_from_stores(game_types, skip_ws_games, game_stores):
+def _get_ws_game_paths(*args, skip_ws_games, **kwargs):
+    return [] if skip_ws_games else get_ws_game_paths(*args, **kwargs)
+
+_GAME_STORES = {
+        ' 1. Steam:': (get_steam_game_paths,
+            'The following supported games were found via Steam:',
+            'No supported games were found via Steam.'),
+        ' 2. GOG (via Windows Registry):': (get_gog_game_paths,
+            'The following supported games were found via GOG:',
+            'No supported games were found via GOG.'),
+        ' 3. Disc Versions (via Windows Registry):': (get_disc_game_paths,
+            'The following disc versions of supported games were found:',
+            'No disc versions of supported games were found.'),
+        ' 4. Windows Store (Legacy):': (get_legacy_ws_game_paths,
+            'The following supported games with modding enabled were found '
+            'via the legacy Windows Store:',
+            'No supported games with modding enabled were found via the legacy '
+            'Windows Store.'),
+        ' 5. Windows Store:': (_get_ws_game_paths,
+            'The following supported games were found via the Windows Store:',
+            'No supported games were found via the Windows Store.'),
+        ' 6. Epic Games Store:': (get_egs_game_paths,
+            'The following supported games were found via the Epic Games Store:',
+            'No supported games were found via the Epic Games Store.'),
+}
+
+# _GAME_STORES clients - keep them dumb
+def store_msgs(skip_ws_games):
+    res = {k: [f, nf] for k, (_func, f, nf) in _GAME_STORES.items()}
+    if skip_ws_games:
+        res[' 5. Windows Store:'][1] = 'Windows Store game detection was ' \
+                                       'disabled via bash.ini.'
+    return res
+
+def get_game_paths_from_stores(game_types, game_stores, **kwargs):
     for gt_display_name, game_type in game_types.items():
-        steam_games = game_stores[' 1. Steam:']
-        if steam_paths := get_steam_game_paths(game_type):
-            steam_games[gt_display_name] = steam_paths
-        gog_games = game_stores[' 2. GOG (via Windows Registry):']
-        if gog_paths := get_gog_game_paths(game_type):
-            gog_games[gt_display_name] = gog_paths
-        if disc_paths := get_disc_game_paths(game_type, steam_games.values(),
-                                             gog_games.values()):
-            game_stores[' 3. Disc Versions (via Windows Registry):'][
-                gt_display_name] = disc_paths
-        if ws_legacy_paths := get_legacy_ws_game_paths(game_type):
-            game_stores[' 4. Windows Store (Legacy):'][
-                gt_display_name] = ws_legacy_paths
-        if ws_paths := not skip_ws_games and get_ws_game_paths(game_type):
-            game_stores[' 5. Windows Store:'][gt_display_name] = ws_paths
-        if egs_paths := get_egs_game_paths(game_type):
-            game_stores[' 6. Epic Games Store:'][gt_display_name] = egs_paths
+        for game_st, (get_paths, _found, _not_found) in _GAME_STORES.items():
+            if game_store_paths := get_paths(game_type,
+                    game_stores=game_stores, **kwargs):
+                game_stores[game_st][gt_display_name] = game_store_paths
 
 def _resolve(parent: _TShellWindow):
     """Resolve a parent window to a wx.Window for ifileoperation"""

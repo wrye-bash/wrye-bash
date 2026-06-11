@@ -33,7 +33,7 @@ from collections import defaultdict
 from . import game as game_init, bass
 from .bolt import GPath, Path, deprint, dict_sort
 from .env import get_file_version, get_game_paths_from_stores, \
-    get_game_version_fallback, get_legacy_ws_game_info
+    get_game_version_fallback, get_legacy_ws_game_info, store_msgs
 from .exception import BoltError
 from .game import GameInfo, patch_game
 
@@ -61,7 +61,7 @@ def _print_found_games(skip_ws_games, msg):
     human-readable way."""
     msg.append('Wrye Bash looked for installations of supported games in the '
                'following places:')
-    succ_err = _store_msgs(skip_ws_games)
+    succ_err = store_msgs(skip_ws_games)
     for game_st, (found_m, not_found_m) in succ_err.items():
         if not (found := _game_stores.get(game_st)):
             msg.append(f'{game_st}  {not_found_m}')
@@ -77,32 +77,6 @@ def _print_found_games(skip_ws_games, msg):
             space_padding = ' ' * (8 + len(found_name)) # 8 == len('   - : [')
             li = ',\n'.join(f'{space_padding}{p}' for p in found_paths[1:])
             msg.append(f'{li}]')
-
-def _store_msgs(skip_ws_games):
-    return {
-        ' 1. Steam:': (
-            'The following supported games were found via Steam:',
-            'No supported games were found via Steam.'),
-        ' 2. GOG (via Windows Registry):': (
-            'The following supported games were found via GOG:',
-            'No supported games were found via GOG.'),
-        ' 3. Disc Versions (via Windows Registry):': (
-            'The following disc versions of supported games were found:',
-            'No disc versions of supported games were found.'),
-        ' 4. Windows Store (Legacy):': (
-            'The following supported games with modding enabled were found '
-            'via the legacy Windows Store:',
-            'No supported games with modding enabled were found via the legacy '
-            'Windows Store.'),
-        ' 5. Windows Store:': (
-            'The following supported games were found via the Windows Store:',
-            'Windows Store game detection was disabled via bash.ini.' if
-            skip_ws_games else 'No supported games were found via the '
-                               'Windows Store.'),
-        ' 6. Epic Games Store:': (
-            'The following supported games were found via the Epic Games Store:',
-            'No supported games were found via the Epic Games Store.'),
-    }
 
 def _supportedGames(skip_ws_games=False):
     """Set games supported by Bash and return their paths from the registry."""
@@ -127,7 +101,8 @@ def _supportedGames(skip_ws_games=False):
             deprint(f'Error in game support module {modname}', traceback=True)
             continue
         # Get this game's install path(s)
-        get_game_paths_from_stores(game_types, skip_ws_games, _game_stores)
+        get_game_paths_from_stores(game_types, _game_stores,
+                                   skip_ws_games=skip_ws_games)
         del module
     # Dump out info about all games that we *could* launch, but deduplicate for
     # games with versions from multiple store fronts

@@ -264,7 +264,7 @@ def get_game_version_fallback(test_path, ws_info):
             'General Readme for more information.'))
         return 0, 0, 0, 0
 
-def get_legacy_ws_game_paths(submod):
+def get_legacy_ws_game_paths(submod, **_kwargs):
     """Check legacy Windows Store-supplied game paths for the game detection
     file(s)."""
     # Delayed import to pull in the right version, and avoid circular imports
@@ -275,7 +275,7 @@ def get_legacy_ws_game_paths(submod):
     return _get_language_paths(submod.Ws.ws_language_dirs,
         installed_version.mutable_location) if installed_version else []
 
-def get_egs_game_paths(submod):
+def get_egs_game_paths(submod, **_kwargs):
     """Check the Epic Games Store manifests to find if the specified game is
     installed via the EGS and return its install path."""
     if egs_anames := submod.Eg.egs_app_names:
