@@ -345,15 +345,13 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
                 f'*** fixed: {fstr}']))
             saved = fixed
     else: saved = __lo_unset
-    lo, active = (None, None) if _cached_lord is __lo_unset else \
-        _lo_handler.request_cache_update(
+    lo, active = (None, None) if _cached_lord is __lo_unset else (
             _cached_lord.loadOrder if cached else None,
             _cached_lord.activeOrdered if cached_active else None)
     try:
-        if lo is None or active is None: # really go get load order
-            fix_lo = FixInfo()
-            lo, active = _lo_handler.get_load_order(lo, active, fix_lo)
-            fix_lo.lo_deprint()
+        fix_lo = FixInfo()
+        lo, active = _lo_handler.get_load_order(lo, active, fix_lo)
+        fix_lo.lo_deprint()
         ldiff = _update_cache(lo, active)
     except Exception:
         bolt.deprint('Error updating load_order cache')
