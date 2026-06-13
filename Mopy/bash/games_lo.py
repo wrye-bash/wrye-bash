@@ -258,8 +258,8 @@ class LoGame:
 
     # API: Get and helpers ----------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
-                       cached_active_ordered: LoList, fix_lo, rdata_mods) -> \
-            tuple[LoTuple, LoTuple]:
+                       cached_active_ordered: LoList, rdata_mods) -> \
+            tuple[LoTuple, LoTuple, FixInfo]:
         """Get and validate current load order and active plugins information.
 
         ***Only*** called in ModInfos.refresh to fetch load order and active
@@ -270,7 +270,7 @@ class LoGame:
         a valid cached value in, else you risk validating the other one based
         on stale data. NOTE: modInfos must be up to date for validation."""
         lo, active = self._cached_or_fetch(cached_load_order,
-            cached_active_ordered, fix_lo, rdata_mods)
+            cached_active_ordered, fix_lo := FixInfo(), rdata_mods)
         # for timestamps we use modInfos so we should not get an invalid
         # load order (except redated master). For text based games however
         # the fetched order could be in whatever state, so get this fixed
@@ -290,7 +290,7 @@ class LoGame:
                                     filter_list=(active := list(active)))
             fixed_active = old != active
         self._save_fixed_load_order(fix_lo, fixed_active, lo, active)
-        return tuple(lo), tuple(active)
+        return tuple(lo), tuple(active), fix_lo
 
     def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
                          rdata_mods):
@@ -500,16 +500,14 @@ class LoGame:
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
 
-    def _fix_active_plugins(self, acti, lord, fix_active, on_disc):
+    def _fix_active_plugins(self, acti, lord, fix_active: FixInfo, on_disc):
         """Always called with a valid load order (in set_load_order lord has
         been already fixed, if called in get_load_order we either fetched and
         validated or we are passed a valid cache)."""
         if not on_disc: # callee is set_load_order - NOTE: this modifies acti!
             fix_active.act_duplicates = self._check_for_duplicates(acti)
-        # filter plugins not present in modInfos - this will disable
-        # corrupted too! Preserve acti order
-        # Throw out files that aren't on disk as well as .esu files, which must
-        # never be active
+        # Throw out files that aren't on disk, newly 'corrupted' files as
+        # well as .esu files, which must never be active. Preserve acti order
         acti_filtered = [x for x in acti if x in self._mod_infos and
                          x.fn_ext != '.esu' or fix_active.act_removed.add(x)]
         # Use sets to avoid O(n) lookups due to lists
@@ -528,8 +526,7 @@ class LoGame:
         acti_filtered.extend(fix_active.missing_must_be_active)
         # order - won't trigger saving for TimestampGame - affects which mods
         # are chopped off if > 255 (the ones that load last)
-        fix_active.act_order_differs_from_load_order = \
-            self._check_active_order(acti_filtered, lord)
+        self._check_active_order(acti_filtered, lord, fix_active)
         # check if we have more than 256 active mods
         self.check_active_limit(acti_filtered, filter_list=acti,
                                 fix_active=fix_active)
@@ -580,15 +577,14 @@ class LoGame:
                 x for x in acti_filtered if x in filtered]
         return filtered
 
-    @staticmethod
-    def _check_active_order(acti, lord):
-        old = acti[:]
+    def _check_active_order(self, acti, lord, fix_active):
+        old = acti[:] if self._order_active else acti
         dex_dict = {mod: index for index, mod in enumerate(lord)}
         acti.sort(key=dex_dict.__getitem__)
         if acti != old: # active mods order that disagrees with lord ?
-            return [f'Reordered active plugins',
-                    f'from: ({_pl(old)})', f'to  : ({_pl(acti)})']
-        return []
+            fix_active.act_order_differs_from_load_order = [
+                f'Reordered active plugins', f'from: ({_pl(old)})',
+                f'to  : ({_pl(acti)})']
 
     # HELPERS -----------------------------------------------------------------
     @staticmethod
@@ -754,11 +750,6 @@ def set_mtimes(wanted_lord, current_lord, fnkey_info: dict):
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
-
-    @staticmethod
-    def _check_active_order(acti, lord):
-        super(TimestampGame, TimestampGame)._check_active_order(acti, lord)
-        return [] # no need to reorder plugins.txt - fix_lo.act_reordered False
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reord_plugins):

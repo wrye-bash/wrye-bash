@@ -348,8 +348,7 @@ def refresh_lo(cached: bool, rdata_mods): # only call in modInfos.refresh!
     lo, active = (None, None) if old_cache is __lo_unset else (
             old_cache.loadOrder if cached else None, old_cache.activeOrdered)
     try:
-        fix_lo = FixInfo()
-        lo, active = _lo_handler.get_load_order(lo, active, fix_lo, rdata_mods)
+        lo, active, fix_lo = _lo_handler.get_load_order(lo, active, rdata_mods)
         fix_lo.lo_deprint()
         ldiff = _update_cache(lo, active)
     except Exception:
