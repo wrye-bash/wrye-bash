@@ -279,17 +279,17 @@ class LoGame:
             if self._order_active and fix_lo.lo_added:
                 self._handle_desync(active, lo, self._plugins_txt.abs_path)
         # having a valid load order we may fix active too if we fetched them
-        act_fetched = cached_active_ordered is not active
-        if fixed_active := act_fetched or ( # sync order of plugins.txt with lo
-                self._order_active and fix_lo.lo_reordered):
-            active = active if act_fetched else list(active)
-            fixed_active = self._fix_active_plugins(active, lo, fix_lo,
-                                                    on_disc=True)
-        elif rdata_mods.redraw: # plugin flag changed? - check active limits
-            self.check_active_limit(old := active, fix_active=fix_lo,
-                                    filter_list=(active := list(active)))
-            fixed_active = old != active
-        self._save_fixed_load_order(fix_lo, fixed_active, lo, active)
+        if cached_active_ordered is not active:
+            self._fix_active_plugins(active, lo, fix_lo, False)
+        elif (self._order_active and fix_lo.lo_reordered) or rdata_mods.redraw:
+            # sync order of plugins.txt with lo
+            self._check_active_order(active := list(active), lo, fix_lo)
+            if rdata_mods.redraw: # plugin flag changed? - check active limits
+                self.check_active_limit(active, fix_active=fix_lo,
+                                        filter_list=active)
+        self._persist_if_changed(active, lo, # pass None to save
+                None if fix_lo.act_changed() else active,
+                None if fix_lo.lo_changed() else lo, backup_act=True)
         return tuple(lo), tuple(active), fix_lo
 
     def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
@@ -300,11 +300,6 @@ class LoGame:
         return cached_load_order, cached_active
 
     def _handle_desync(self, act, lo, pl_path): pass
-
-    def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
-        if fix_lo.lo_changed():
-            self._backup_load_order()
-            self._persist_load_order(lo, None) # active is not used here
 
     # Asterisk game overrides -------------------------------------------------
     def _get_force_act(self, *, _reset=False, **kwargs) -> dict[FName, bool]:
@@ -383,7 +378,7 @@ class LoGame:
                 raise ValueError(
                     u'You need to pass a load order in to set active plugins')
             test = lord if setting_lo else previous_lord
-            self._fix_active_plugins(active, test, fix_lo, on_disc=False)
+            self._fix_active_plugins(active, test, fix_lo, True)
         lord = lord if setting_lo else previous_lord
         active = active if setting_active else previous_active
         if lord is None or active is None: # sanity check
@@ -423,21 +418,21 @@ class LoGame:
         self._plugins_txt.write_modfile(lord, active)
         self._plugins_txt.do_update()
 
-    def _backup_load_order(self):
-        pass # timestamps, no file to backup
-
     # ABSTRACT ----------------------------------------------------------------
-    def _persist_load_order(self, lord, active):
+    def _persist_load_order(self, lord, active, *, backup_act=False):
         """Persist the fixed lord to disk - will break conflicts for
         timestamp games."""
         raise NotImplementedError(f'{type(self)} does not define '
                                   f'_persist_load_order')
 
     def _persist_if_changed(self, active, lord, previous_active,
-                            previous_lord):
-        # Override for fallout4 to write the file once and oblivion to save
-        # active only if needed. Both active and lord must not be None.
-        raise NotImplementedError
+                            previous_lord, **kwargs):
+        # AsteriskGame overrides to write the file once - active/lord are lists
+        if previous_lord is None or previous_lord != lord:
+            self._persist_load_order(lord, active, **kwargs)
+        if previous_active is None or ((previous_active != active)
+            if self._order_active else (set(previous_active) != set(active))):
+            self._persist_active_plugins(active, lord, **kwargs)
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord: list[FName], fix_lo, _saving=False):
@@ -500,11 +495,11 @@ class LoGame:
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
 
-    def _fix_active_plugins(self, acti, lord, fix_active: FixInfo, on_disc):
+    def _fix_active_plugins(self, acti, lord, fix_active: FixInfo, _saving):
         """Always called with a valid load order (in set_load_order lord has
         been already fixed, if called in get_load_order we either fetched and
         validated or we are passed a valid cache)."""
-        if not on_disc: # callee is set_load_order - NOTE: this modifies acti!
+        if _saving: # callee is set_load_order - NOTE: this modifies acti!
             fix_active.act_duplicates = self._check_for_duplicates(acti)
         # Throw out files that aren't on disk, newly 'corrupted' files as
         # well as .esu files, which must never be active. Preserve acti order
@@ -531,14 +526,8 @@ class LoGame:
         self.check_active_limit(acti_filtered, filter_list=acti,
                                 fix_active=fix_active)
         if fix_active.act_changed():
-            if on_disc: # used when getting active and found invalid, fix 'em!
-                # Notify user and backup previous plugins.txt
-                fix_active.act_header = 'Invalid Plugin txt corrected:'
-                self._persist_active_plugins(acti, lord, backup_act=True)
-            else: # active list we passed in when setting load order is invalid
-                fix_active.act_header = 'Invalid active plugins list corrected:'
-            return True # changes, saved if loading plugins.txt
-        return False # no changes, not saved
+            fix_active.act_header = 'Invalid active plugins list corrected:' \
+                if _saving else 'Invalid Plugin txt corrected:'
 
     # API: Exposed validation helpers - see load_order.py
     def lo_sort_key(self, *, ds=None, by_time=False):
@@ -577,7 +566,7 @@ class LoGame:
                 x for x in acti_filtered if x in filtered]
         return filtered
 
-    def _check_active_order(self, acti, lord, fix_active):
+    def _check_active_order(self, acti, lord, fix_active: FixInfo):
         old = acti[:] if self._order_active else acti
         dex_dict = {mod: index for index, mod in enumerate(lord)}
         acti.sort(key=dex_dict.__getitem__)
@@ -755,7 +744,6 @@ class TimestampGame(LoGame):
     def _must_update_active(cls, deleted_plugins, reord_plugins):
         return deleted_plugins
 
-    # Abstract overrides ------------------------------------------------------
     def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
                          rdata_mods):
         _lo, act = super()._cached_or_fetch(cached_load_order, cached_active,
@@ -764,16 +752,10 @@ class TimestampGame(LoGame):
         self._add_last(lord, rdata_mods.to_add)
         return lord, act
 
-    def _persist_load_order(self, lord, active):
+    # Abstract overrides ------------------------------------------------------
+    def _persist_load_order(self, lord, active, *, backup_act=False):
         current = self.calculate_mtime_order(modinfos := self._mod_infos)
         set_mtimes(lord, current, modinfos)
-
-    def _persist_if_changed(self, active, lord, previous_active,
-                            previous_lord):
-        if previous_lord is None or previous_lord != lord:
-            self._persist_load_order(lord, active)
-        if previous_active is None or set(previous_active) != set(active):
-            self._persist_active_plugins(active, lord)
 
     # Other overrides ---------------------------------------------------------
     def _fix_load_order(self, lord, fix_lo, _saving=False):
@@ -792,11 +774,6 @@ class TimestampGame(LoGame):
 
 class _TextFileLo(LoGame):
     """Common code for games that use a text file to store the load order."""
-
-    def _backup_load_order(self):
-        """This method should make a backup of whatever file is storing the
-        load order plugins list."""
-        self.get_lo_file().create_backup()
 
     def get_lo_file(self): # AsteriskGame - has a single lo/actives file
         return self._plugins_txt
@@ -846,10 +823,11 @@ class TextfileGame(_TextFileLo):
         try: #--Read file
             _acti, lo = self._loadorder_txt.parse_modfile(fix_lo.lo_duplicates)
         except FileNotFoundError:
-            if not pl_path.exists():
-                self._persist_active_plugins(act, act)
+            create_plugins = not pl_path.exists()
+            self._persist_if_changed(act, act, None if create_plugins else act,
+                                     None)
+            if create_plugins:
                 bolt.deprint(f'Created {pl_path} based on cached info')
-            self._persist_load_order(act, act)
             bolt.deprint(f'Created {self._loadorder_txt.abs_path}')
             return act, act
         if pl_changed:
@@ -888,8 +866,7 @@ class TextfileGame(_TextFileLo):
         lo.sort(key=lo_dex.get)
         if lo != fetched_lo:
             # We fixed a desync, make a backup and write the load order
-            self._backup_load_order()
-            self._persist_load_order(lo, lo)
+            self._persist_load_order(lo, lo, backup_act=True)
             bolt.deprint(f'Corrected {self._loadorder_txt.abs_path} '
                 f'(order of mods differed from their order in {pl_path})')
 
@@ -908,7 +885,9 @@ class TextfileGame(_TextFileLo):
         # Prepend the game master - should be present and is always active
         return [self._game_handle.master_file, *act]
 
-    def _persist_load_order(self, lord, active):
+    def _persist_load_order(self, lord, active, *, backup_act=False):
+        if backup_act:
+            self.get_lo_file().create_backup()
         self._loadorder_txt.write_modfile(lord, lord)
         self._loadorder_txt.do_update()
 
@@ -917,13 +896,6 @@ class TextfileGame(_TextFileLo):
             active = [x for x in active if x != self._game_handle.master_file]
         super()._persist_active_plugins(active, active, **kw)
         return active
-
-    def _persist_if_changed(self, active, lord, previous_active,
-                            previous_lord):
-        if previous_lord is None or previous_lord != lord:
-            self._persist_load_order(lord, active)
-        if previous_active is None or previous_active != active:
-            self._persist_active_plugins(active, lord)
 
 class AsteriskGame(_TextFileLo):
     """_TextFileLo storing also active state in the lo file - active plugins
@@ -1012,17 +984,11 @@ class AsteriskGame(_TextFileLo):
     def _persist_load_order(self, lord, active, **kwargs):
         return self._persist_active_plugins(active, lord, **kwargs)
 
-    def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
-        if fixed_active: return # plugins.txt already saved
-        if fix_lo.lo_changed():
-            self._backup_load_order()
-            self._persist_load_order(lo, active)
-
     def _persist_if_changed(self, active, lord, previous_active,
-                            previous_lord):
+                            previous_lord, **kwargs):
         if (previous_lord is None or previous_lord != lord) or (
                 previous_active is None or previous_active != active):
-            self._persist_load_order(lord, active)
+            super()._persist_if_changed(active, lord, active, None, **kwargs)
 
     def _set_pinned_mods(self):
         mbaip, fo_mods = super()._set_pinned_mods() # set(fo_mods) == mbaip
