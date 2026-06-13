@@ -2696,8 +2696,7 @@ class ModInfos(_AFileInfos):
         # Speed up lookups, since they occur for the plugin and all masters
         acti_set = set(self._active_wip)
         if fileName not in acti_set: # else we are called to activate masters
-            msg = load_order.check_active_limit([*self._active_wip, fileName],
-                                                as_type=str)
+            msg = load_order.check_active_limit([*self._active_wip, fileName])
             if msg:
                 msg = f'{fileName}: Trying to activate more than {msg}'
                 raise PluginsFullError(msg)
@@ -2825,11 +2824,10 @@ class ModInfos(_AFileInfos):
         wip_actives.update(load_order.must_be_active(present_plugins))
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.cached_sort(wip_actives)
-        trimmed_plugins = load_order.check_active_limit(ordered_wip)
-        # Trim off any excess plugins and commit
-        to_act = [p for p in ordered_wip if p not in trimmed_plugins]
-        out_diff |= self._diff_los(new_act=to_act)
-        self._active_wip = to_act
+        trimmed_plugins = load_order.check_active_limit(ordered_wip,
+            filter_list=ordered_wip)
+        out_diff |= self._diff_los(new_act=ordered_wip)
+        self._active_wip = ordered_wip
         message = ''
         if missing_plugins:
             message += _('Some plugins could not be found and were '

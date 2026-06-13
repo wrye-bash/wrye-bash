@@ -285,6 +285,10 @@ class LoGame:
             active = active if act_fetched else list(active)
             fixed_active = self._fix_active_plugins(active, lo, fix_lo,
                                                     on_disc=True)
+        elif rdata_mods.redraw: # plugin flag changed? - check active limits
+            self.check_active_limit(old := active, fix_active=fix_lo,
+                                    filter_list=(active := list(active)))
+            fixed_active = old != active
         self._save_fixed_load_order(fix_lo, fixed_active, lo, active)
         return tuple(lo), tuple(active)
 
@@ -506,12 +510,10 @@ class LoGame:
         # corrupted too! Preserve acti order
         # Throw out files that aren't on disk as well as .esu files, which must
         # never be active
-        cached_minfs = self._mod_infos
-        acti_filtered = [x for x in acti if x in cached_minfs
-                         and x.fn_ext != u'.esu']
+        acti_filtered = [x for x in acti if x in self._mod_infos and
+                         x.fn_ext != '.esu' or fix_active.act_removed.add(x)]
         # Use sets to avoid O(n) lookups due to lists
         acti_filtered_set = set(acti_filtered)
-        fix_active.act_removed = set(acti) - acti_filtered_set
         # present mods that are always active - noop for AsteriskGame as always
         # active plugins are manually added on getting the load order
         for fn_plugin, isact in self._get_force_act(active=acti_filtered_set).items():
@@ -529,13 +531,8 @@ class LoGame:
         fix_active.act_order_differs_from_load_order = \
             self._check_active_order(acti_filtered, lord)
         # check if we have more than 256 active mods
-        disable = self.check_active_limit(acti_filtered)
-        # update acti in place - this must always be done, since acti may
-        # contain files that are no longer on disk (i.e. not in acti_filtered)
-        acti[:] = [x for x in acti_filtered if x not in disable]
-        if disable: # chop off extra
-            cached_minfs.selectedExtra = fix_active.selectedExtra = [
-                x for x in acti_filtered if x in disable]
+        self.check_active_limit(acti_filtered, filter_list=acti,
+                                fix_active=fix_active)
         if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user and backup previous plugins.txt
@@ -556,12 +553,13 @@ class LoGame:
             return is_m
         return _key
 
-    def check_active_limit(self, acti_filtered, *, as_type=set):
-        pl_type_active = defaultdict(list)
+    def check_active_limit(self, acti_filtered, *, filter_list=None,
+                           fix_active=None):
+        pl_type_active, cached_minfs = defaultdict(list), self._mod_infos
         limit_flags = {pf: (pf.name.title(), mp) for pf in
             self._game_handle.plugin_flags if (mp := pf.max_plugins)}
         for m in acti_filtered:
-            mi = self._mod_infos[m]
+            mi = cached_minfs[m]
             for pflag in limit_flags:
                 if pflag.cached_type(mi):
                     pl_type_active[pflag].append(m)
@@ -571,11 +569,16 @@ class LoGame:
         limit_flags[PluginFlag] = ('regular', PluginFlag.max_plugins)
         filtered = {f'{mp:d} {type_name} plugins': drop for f, (type_name, mp)
             in limit_flags.items() if (drop := pl_type_active[f][mp:])}
-        if as_type is set:
-            return set(chain(*filtered.values()))
-        if as_type is str:
+        if filter_list is None:
             return ' and '.join(k for k in filtered)
-        raise ValueError(f'Invalid {as_type=}')
+        # update filter_list in place - this must always be done, since it may
+        # contain files that are no longer on disk (i.e. not in acti_filtered)
+        filtered = set(chain(*filtered.values()))
+        filter_list[:] = [x for x in acti_filtered if x not in filtered]
+        if fix_active is not None and filtered:  # chop off extra
+            cached_minfs.selectedExtra = fix_active.selectedExtra = [
+                x for x in acti_filtered if x in filtered]
+        return filtered
 
     @staticmethod
     def _check_active_order(acti, lord):

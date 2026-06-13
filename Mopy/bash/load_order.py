@@ -401,8 +401,8 @@ def undo_redo_load_order(index_move):
 def master_sort(*args, **kwargs):
     return _lo_handler.lo_sort_key(*args, **kwargs)
 
-def check_active_limit(mods, as_type=set):
-    return _lo_handler.check_active_limit(mods, as_type=as_type)
+def check_active_limit(*args, **kwargs):
+    return _lo_handler.check_active_limit(*args, **kwargs)
 
 def swap(old_dir, new_dir):
     return _lo_handler.swap(old_dir, new_dir)
