@@ -2344,8 +2344,8 @@ class ModInfos(_AFileInfos):
                                             ldiff=ldiff)
         else: # if refresh_infos is False but mods are added force refresh
             lordata = self.refreshLoadOrder(ldiff=ldiff,
-                forceRefresh=mods_changes or unlock_lo,
-                forceActive=False, unlock_lo=unlock_lo)
+                forceRefresh=mods_changes or unlock_lo, forceActive=False,
+                unlock_lo=unlock_lo, rdata_mods=rdata)
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
         # if load order did not change, we must perform the refreshes below
@@ -2666,11 +2666,11 @@ class ModInfos(_AFileInfos):
     # active plugins changed, those methods run a refresh on modInfos data
     @_lo_cache
     def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
-                         unlock_lo=False):
+                         unlock_lo=False, rdata_mods=None):
         # Needed for BAIN, which may have to reorder installed plugins
         with load_order.Unlock(unlock_lo):
             return load_order.refresh_lo(cached=not forceRefresh,
-                                         cached_active=not forceActive)
+                cached_active=not forceActive, rdata_mods=rdata_mods)
 
     @_lo_cache
     def _wip_lo_save(self, update_lo, update_act):

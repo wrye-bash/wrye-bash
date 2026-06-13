@@ -320,7 +320,7 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0)->LordDiff:
             _new_entry()
     return lorddiff
 
-def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
+def refresh_lo(cached: bool, cached_active: bool, rdata_mods): # one use - keep it so!
     """Refresh _cached_lord, reverting if locked to the saved one. If any of
     cached or cached_active are True, we will keep the cached values for
     those except if _game_handle.***_changed() respective methods return
@@ -350,7 +350,7 @@ def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
             _cached_lord.activeOrdered if cached_active else None)
     try:
         fix_lo = FixInfo()
-        lo, active = _lo_handler.get_load_order(lo, active, fix_lo)
+        lo, active = _lo_handler.get_load_order(lo, active, fix_lo, rdata_mods)
         fix_lo.lo_deprint()
         ldiff = _update_cache(lo, active)
     except Exception:
