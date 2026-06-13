@@ -233,7 +233,7 @@ class FixInfo(object):
 class LoGame:
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
-    force_load_first: LoTuple = []
+    force_load_first: tuple[FName, ...] = () # master_file is added in __init__
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
     def __init__(self, mod_infos, game_handle, plugins_txt_path: Path, *,
@@ -249,17 +249,21 @@ class LoGame:
         self.pin_active_state = self.fixed_order_plugins = None
         self._print_lo_paths()
 
-    def _set(self, *, _reset=False, **kwargs):
+    def _get_force_act(self, *, _reset=False, **kwargs) -> dict[FName, bool]:
+        """Get (possibly re/setting) the pinned load order/active state caches
+        and return the latter. Called in: LoGame._fix_load_order for setting
+        the caches initially and in _fix_active_plugins to force de/activate.
+        See also AsteriskGame._cached_or_fetch/_persist_load_order."""
         pinn = self.pin_active_state, self.fixed_order_plugins
         if any(p is None for p in pinn) or _reset:
-            pinn = self._set_pinned_mods()
-            self.pin_active_state, self.fixed_order_plugins = pinn
-        return pinn
+            self.pin_active_state, self.fixed_order_plugins = \
+                self._set_pinned_mods()
+        return self.pin_active_state
 
     # INITIALIZATION ----------------------------------------------------------
     def _set_pinned_mods(self):
         """Set the master file(s) that must always be active if present."""
-        fo = self.force_load_first = [*self._existing(self.force_load_first)]
+        fo = self.force_load_first = (*self._existing(self.force_load_first),)
         return dict.fromkeys(fo, True), fo
 
     def _print_lo_paths(self):
@@ -490,13 +494,13 @@ class LoGame:
                 lord.append(mod)
         # we need to set the _shipwrecks for sort() - we will force activate in
         # _fix_active_plugins - and repeat the ccc files do_update - ##: avoid?
-        self._set(active=set(), _reset=(fix_lo.lo_added | fix_lo.lo_removed))
+        self._get_force_act(_reset=bool(fix_lo.lo_added or fix_lo.lo_removed))
         # See if any esm files are loaded below an esp and reorder as necessary
         lord.sort(key=self.lo_sort_key())
         # check if any of the existing mods were moved in/out the master block
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
-        # loaded in _set - those ones come first
+        # loaded in _get_force_act - those ones come first
         if lord[:len(fo_mods := self.force_load_first)] != fo_mods:
             fo_set = set(fo_mods)
             lord[:] = [*fo_mods, *(x for x in lord if x not in fo_set)]
@@ -520,7 +524,7 @@ class LoGame:
         fix_active.act_removed = set(acti) - acti_filtered_set
         # present mods that are always active - noop for AsteriskGame as always
         # active plugins are manually added on getting the load order
-        for fn_plugin, isact in self._set(active=acti_filtered_set)[0].items():
+        for fn_plugin, isact in self._get_force_act(active=acti_filtered_set).items():
             if isact and fn_plugin not in acti_filtered_set:
                 if fn_plugin == self._game_handle.master_file:
                     acti_filtered.insert(0, fn_plugin)
@@ -951,7 +955,7 @@ class AsteriskGame(_TextFileLo):
         to our caller being get_load_order *at least one* is None."""
         try:
             active, lo = self._plugins_txt.parse_modfile()
-            rem_from_acti = self._set(active=active)[0]
+            rem_from_acti = self._get_force_act(active=active)
             if any_dropped := [x for x in lo if x in rem_from_acti]:
                 bolt.deprint(f'Removing {_pl(any_dropped)} from '
                              f'{self._plugins_txt.abs_path}')
@@ -969,13 +973,13 @@ class AsteriskGame(_TextFileLo):
             bolt.deprint(f'Created {self._plugins_txt.abs_path}')
         return lo, active
 
-    def _set(self, **kwargs):
+    def _get_force_act(self, **kwargs):
         fload_set = {*(fload := self.__class__.force_load_first)}
         for ccc_file in self.__cc_files.values():
             try:
                 ccc_file.do_update(raise_os_error=True)
-                fload = [*fload, *(m for m in ccc_file.ccc_contents if
-                                   m not in fload_set)]
+                fload = (*fload, *(m for m in ccc_file.ccc_contents if
+                                   m not in fload_set))
                 break # first ccc file found
             except OSError as e:
                 if ccc_file.has_changed: # freshly deleted or not found
@@ -985,10 +989,10 @@ class AsteriskGame(_TextFileLo):
                         deprint(f'Failed to open {ccc_file.abs_path}',
                                 traceback=True)
                     ccc_file.has_changed = False # deprint the first time only
-        if (fload := [*self._existing(fload)]) != self.force_load_first:
+        if (fload := (*self._existing(fload),)) != self.force_load_first:
             self.force_load_first = fload
             kwargs['_reset'] = True
-        return super()._set(**kwargs)
+        return super()._get_force_act(**kwargs)
 
     def _readd_mods(self, lo, active, sorted_rem):
         # Prepend all present fixed-order plugins that can't be in the
@@ -1005,7 +1009,7 @@ class AsteriskGame(_TextFileLo):
 
     def _persist_load_order(self, lord, active, *, backup_act=False,
                             rem_from_acti=None):
-        rem_from_acti = self._set(active=active)[0] \
+        rem_from_acti = self._get_force_act(active=active) \
             if rem_from_acti is None else rem_from_acti
         lord = [x for x in lord if x not in rem_from_acti]
         active = [x for x in active if x not in rem_from_acti]

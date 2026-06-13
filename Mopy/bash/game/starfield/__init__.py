@@ -346,15 +346,15 @@ class _AStarfieldGameInfo(PatchGame):
         _ccc_filename = 'Starfield.ccc'
         _ccc_dirs = 'saveBase', 'app'
 
-        def _set(self, *, active=None, **kwargs):
+        def _get_force_act(self, *, active=frozenset(), **kwargs):
             # use an override instead of passing kwargs to _set_pinned_mods to
             # avoid calling super._set_pinned_mods
-            mbaip, fo_mods = super()._set(**kwargs)
+            mbaip = super()._get_force_act(**kwargs)
             stems = {p.fn_body for p in
                      {*active, *(k for k, v in mbaip.items() if v)}}
             for stem, bp_ship in self._blue_ships.items():
                 mbaip[bp_ship] = stem.lower() in stems
-            return mbaip, fo_mods
+            return mbaip
 
         def _readd_mods(self, lo, active, sorted_rem):
             super()._readd_mods(lo, active, sorted_rem)
