@@ -381,7 +381,7 @@ class _AAppLOManager(_ExeButton):
         if self.wait:
             # Refresh to get the new load order that the manager specified. If
             # on timestamp method scan the data dir, if not loadorder.txt
-            # should have changed, refreshLoadOrder should detect that
+            # should have changed, _wip_lo_refresh should detect that
             rdata = bosh.modInfos.refresh(bush.game.mtime_lo, unlock_lo=True)
             # Refresh UI, so WB is made aware of the changes to load order
             Link.Frame.all_uilists[bosh.modInfos].propagate_refresh(rdata,

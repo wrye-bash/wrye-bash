@@ -2164,13 +2164,12 @@ def _lo_cache(lord_func):
     whenever I change (or attempt to change) the latter, and that I do
     refresh modInfos."""
     @wraps(lord_func)
-    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None,
-                                **kwargs) -> RefrData:
+    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None) -> RefrData:
         """Sync the ModInfos load order and active caches and refresh for
         load order or active changes."""
+        ldiff = LordDiff() if ldiff is None else ldiff # only set in refresh
         try:
-            ldiff = LordDiff() if ldiff is None else ldiff #only set in refresh
-            ldiff |= lord_func(self, *args, **kwargs)
+            ldiff |= lord_func(self, *args)
             if ldiff:
                 # Update all data structures that may be affected by LO change
                 ldiff.affected |= self._refresh_mod_inis_and_strings()
@@ -2313,7 +2312,7 @@ class ModInfos(_AFileInfos):
         NB: if an operation *we* performed changed the load order we do not
         want lock load order to revert our own operation. So either call
         some of the set_load_order methods, or pass unlock_lo=True
-        (refreshLoadOrder only *gets* load order)."""
+        (_wip_lo_refresh only *gets* load order)."""
         # Scan the data dir, getting info on added, deleted and modified files
         try:
             bt_contents = {*top_level_files(bass.dirs['tag_files'])}
@@ -2342,10 +2341,8 @@ class ModInfos(_AFileInfos):
         elif insert_after: # we should have no deletions here!
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
                                             ldiff=ldiff)
-        else: # if refresh_infos is False but mods are added force refresh
-            lordata = self.refreshLoadOrder(ldiff=ldiff,
-                forceRefresh=mods_changes or unlock_lo, forceActive=False,
-                unlock_lo=unlock_lo, rdata_mods=rdata)
+        else: # refresh from plugins.txt/loadorder.txt/mtimes - append new mods
+            lordata = self._wip_lo_refresh(unlock_lo, rdata, ldiff=ldiff)
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
         # if load order did not change, we must perform the refreshes below
@@ -2662,15 +2659,14 @@ class ModInfos(_AFileInfos):
         #             'game_name': bush.game.display_name, }, self.activeBad))
         #     self.activeBad = set()
 
-    # Load order API for the rest of Bash to use - if the load order or
-    # active plugins changed, those methods run a refresh on modInfos data
+    # Internal Load order API - if the load order or active plugins changed,
+    # those methods run a refresh on modInfos wip lo/active caches
     @_lo_cache
-    def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
-                         unlock_lo=False, rdata_mods=None):
+    def _wip_lo_refresh(self, unlock_lo, rdata_mods):
         # Needed for BAIN, which may have to reorder installed plugins
         with load_order.Unlock(unlock_lo):
-            return load_order.refresh_lo(cached=not forceRefresh,
-                cached_active=not forceActive, rdata_mods=rdata_mods)
+            return load_order.refresh_lo(not (unlock_lo or bool(rdata_mods)),
+                                         rdata_mods)
 
     @_lo_cache
     def _wip_lo_save(self, update_lo, update_act):

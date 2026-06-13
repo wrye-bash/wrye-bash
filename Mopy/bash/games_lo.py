@@ -241,6 +241,7 @@ class LoGame:
     load order (of all plugins) according to the game engine (in principle)."""
     force_load_first: tuple[FName, ...] = () # master_file is added in __init__
     _star = False # whether plugins.txt uses a star to denote an active plugin
+    _order_active = False # match order of active plugins with load order
 
     def __init__(self, mod_infos, game_handle, plugins_txt_path: Path, *,
                  plugins_txt_type=LoFile, **kwargs):
@@ -261,14 +262,13 @@ class LoGame:
             tuple[LoTuple, LoTuple]:
         """Get and validate current load order and active plugins information.
 
-        Meant to fetch at once both load order and active plugins
-        information as validation usually depends on both. If the load order
-        read is invalid (messed up loadorder.txt, game's master redated out
-        of order, etc) it will attempt fixing and saving them before returning.
-        The caller is responsible for passing a valid cached value in. If you
-        pass a cached value for either parameter this value will be returned
-        unchanged, possibly validating the other one based on stale data.
-        NOTE: modInfos must exist and be up to date for validation."""
+        ***Only*** called in ModInfos.refresh to fetch load order and active
+        plugins information, as validation usually depends on both. If the
+        load order/plugins.txt read are invalid (messed up loadorder.txt,
+        game's master redated out of order, etc) it will attempt fixing and
+        saving them before returning. The caller is responsible for passing
+        a valid cached value in, else you risk validating the other one based
+        on stale data. NOTE: modInfos must be up to date for validation."""
         lo, active = self._cached_or_fetch(cached_load_order,
             cached_active_ordered, fix_lo, rdata_mods)
         # for timestamps we use modInfos so we should not get an invalid
@@ -276,9 +276,15 @@ class LoGame:
         # the fetched order could be in whatever state, so get this fixed
         if cached_load_order is not lo:
             self._fix_load_order(lo, fix_lo=fix_lo)
+            if self._order_active and fix_lo.lo_added:
+                self._handle_desync(active, lo, self._plugins_txt.abs_path)
         # having a valid load order we may fix active too if we fetched them
-        fixed_active = cached_active_ordered is not active and \
-            self._fix_active_plugins(active, lo, fix_lo, on_disc=True)
+        act_fetched = cached_active_ordered is not active
+        if fixed_active := act_fetched or ( # sync order of plugins.txt with lo
+                self._order_active and fix_lo.lo_reordered):
+            active = active if act_fetched else list(active)
+            fixed_active = self._fix_active_plugins(active, lo, fix_lo,
+                                                    on_disc=True)
         self._save_fixed_load_order(fix_lo, fixed_active, lo, active)
         return tuple(lo), tuple(active)
 
@@ -288,6 +294,8 @@ class LoGame:
         if cached_active is None or self._plugins_txt.do_update():
             cached_active = self._fetch_active_plugins(fix_lo.act_duplicates)
         return cached_load_order, cached_active
+
+    def _handle_desync(self, act, lo, pl_path): pass
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fix_lo.lo_changed():
@@ -575,7 +583,7 @@ class LoGame:
         dex_dict = {mod: index for index, mod in enumerate(lord)}
         acti.sort(key=dex_dict.__getitem__)
         if acti != old: # active mods order that disagrees with lord ?
-            return [f'Reordered active plugins with fixed order',
+            return [f'Reordered active plugins',
                     f'from: ({_pl(old)})', f'to  : ({_pl(acti)})']
         return []
 
@@ -806,6 +814,7 @@ class TextfileGame(_TextFileLo):
     # If True, the game master (e.g. Skyrim.esm) must never be written to
     # plugins.txt
     _remove_game_master_from_plugins_txt = True
+    _order_active = True # Skyrim, Enderal, ORE
 
     def __init__(self, mod_infos, game_handle, plugins_txt_path,
                  loadorder_txt_path: Path, *, lo_txt_type=LoFile, **kwargs):
@@ -849,15 +858,17 @@ class TextfileGame(_TextFileLo):
             self._persist_load_order(act, act)
             bolt.deprint(f'Created {self._loadorder_txt.abs_path}')
             return act, act
-        if not pl_changed:
-            # then the desync might be intentional keep loadorder.txt order
-            return lo, act
+        if pl_changed:
+            # else the desync might be intentional keep loadorder.txt order
+            self._handle_desync(act, lo, pl_path)
+        return lo, act
+
+    def _handle_desync(self, act, lo, pl_path):
         # handle desync with plugins txt
         lo_dex = {x: i for i, x in enumerate(lo)}
         # drop mods in plugins.txt, but not in loadorder.txt; we'll check
-        # if it's really missing in _fix_active_plugins ##:(743) what about missing
-        # from lo - those would be added last (although maybe added to
-        # plugins.txt from the game and reordered already by the user)
+        # if it's really missing in _fix_active_plugins - if missing
+        # from lo we repeat the checks
         cached_active_copy = [m for m in act if m in lo_dex]
         cached_active_set = set(act)
         active_in_lo = [x for x in lo if x in cached_active_set]
@@ -887,7 +898,6 @@ class TextfileGame(_TextFileLo):
             self._persist_load_order(lo, lo)
             bolt.deprint(f'Corrected {self._loadorder_txt.abs_path} '
                 f'(order of mods differed from their order in {pl_path})')
-        return lo, act
 
     def _fetch_active_plugins(self, dups_set):
         """Fetch what's in the plugins.txt - if something shouldn't be there,

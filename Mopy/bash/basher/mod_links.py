@@ -1508,15 +1508,8 @@ class AFlipFlagLink(EnabledLink):
             set_flags = {self._plugin_flag: self._flag_value}
             for minfo in self._to_flip:
                 minfo.set_plugin_flags(set_flags)
-            ##: HACK: forcing active refresh cause mods may be reordered and
-            # we then need to sync order in skyrim's plugins.txt
-            lordata = bosh.modInfos.refreshLoadOrder(rdata_mods=RefrData())
-            # This will have changed the plugin, so let BAIN know
-            bosh.modInfos._notify_bain(
-                altered={p.abs_path for p in self.iselected_infos()})
-            # We need to RefreshUI all higher-loading plugins than the lowest
-            # plugin that was affected to update the Indices column
-            lordata.redraw.update(self.selected)
+            lordata = bosh.modInfos.refresh(RefrData({*self.selected}),
+                                            unlock_lo=True)
             self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
