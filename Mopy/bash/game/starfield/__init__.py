@@ -397,7 +397,7 @@ class _AStarfieldGameInfo(PatchGame):
             super()._readd_mods(lo, active, sorted_rem)
             # silently add BlueprintShips- and blueprint plugins (removed from
             # the plugins.txt) to the load order - sort in ftime/mod descending
-            lo.extend(self.calculate_mtime_order(
+            lo.extend(self._calculate_mtime_order(
                 self._shipwrecks | self._blue_masters.keys()))
             # sort blue masters last and invalid blocks after respective valid
             lo.sort(key=self.lo_sort_key())

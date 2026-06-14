@@ -172,7 +172,7 @@ class _CCCFile(DelFile, LoFile):
         if not self._deleted:
             _act, self.ccc_contents = self.parse_modfile(set()) # discard dups
 
-class FixInfo(object):
+class _FixInfo:
     """Encapsulate info on load order and active lists fixups."""
     def __init__(self):
         self.lo_removed = set()
@@ -241,7 +241,7 @@ class FixInfo(object):
 class LoGame:
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
-    force_load_first: tuple[FName, ...] = () # master_file is added in __init__
+    force_load_first: LoTuple = () # master_file dynamically added in __init__
     _star = False # whether plugins.txt uses a star to denote an active plugin
     _order_active = False # match order of active plugins with load order
 
@@ -261,7 +261,7 @@ class LoGame:
     # API: Get and helpers ----------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
                        cached_active_ordered: LoList, rdata_mods) -> \
-            tuple[LoTuple, LoTuple, FixInfo]:
+            tuple[LoTuple, LoTuple, _FixInfo]:
         """Get and validate current load order and active plugins information.
 
         ***Only*** called in ModInfos.refresh to fetch load order and active
@@ -272,7 +272,7 @@ class LoGame:
         a valid cached value in, else you risk validating the other one based
         on stale data. NOTE: modInfos must be up to date for validation."""
         lo, active = self._cached_or_fetch(cached_load_order,
-            cached_active_ordered, fix_lo := FixInfo(), rdata_mods)
+            cached_active_ordered, fix_lo := _FixInfo(), rdata_mods)
         # for timestamps we use modInfos so we should not get an invalid
         # load order (except redated master). For text based games however
         # the fetched order could be in whatever state, so get this fixed
@@ -326,7 +326,7 @@ class LoGame:
 
     # API: Set and helpers ----------------------------------------------------
     def set_load_order(self, lord, active, previous_lord=None,
-                       previous_active=None, fix_lo=None):
+                       previous_active=None):
         """Set the load order and/or active plugins (or just validate if
         previous_* are None). The different way each game handles this and how
         it modifies common data structures necessitate that info on previous
@@ -356,7 +356,7 @@ class LoGame:
         if lord is active is None:
             raise ValueError('Load order or active must be not None')
         dry_run = previous_lord is previous_active is None
-        if fix_lo is None: fix_lo = FixInfo() # will be discarded
+        fix_lo = _FixInfo()
         if setting_lo := lord is not None:
             # fix the load order - lord is modified in place, hence test below
             self._fix_load_order(lord, fix_lo, _saving=True)
@@ -392,7 +392,7 @@ class LoGame:
         if not dry_run: # else just return the (possibly fixed) lists
             self._persist_if_changed(active, lord, previous_active,
                                      previous_lord)
-        return lord, active # return what we set or was previously set
+        return lord, active, fix_lo # return what we set or was previously set
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reord_plugins):
@@ -501,7 +501,7 @@ class LoGame:
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
 
-    def _fix_active_plugins(self, acti, lord, fix_active: FixInfo, _saving):
+    def _fix_active_plugins(self, acti, lord, fix_active: _FixInfo, _saving):
         """Always called with a valid load order (in set_load_order lord has
         been already fixed, if called in get_load_order we either fetched and
         validated or we are passed a valid cache)."""
@@ -572,7 +572,7 @@ class LoGame:
                 x for x in acti_filtered if x in filtered]
         return filtered
 
-    def _check_active_order(self, acti, lord, fix_active: FixInfo):
+    def _check_active_order(self, acti, lord, fix_active: _FixInfo):
         old = acti[:] if self._order_active else acti
         dex_dict = {mod: index for index, mod in enumerate(lord)}
         acti.sort(key=dex_dict.__getitem__)
@@ -599,7 +599,7 @@ class LoGame:
     def _existing(self, mods):
         return (x for x in mods if x in self._mod_infos)
 
-    def calculate_mtime_order(self, mods): # excludes mods in corrupted
+    def _calculate_mtime_order(self, mods): # excludes mods in corrupted
         # split into master block and not master block then sort by ftime then
         # sort by name upercase descending (for time conflicts) - see
         # https://github.com/Ortham/libloadorder/issues/86#issuecomment-4254218481
@@ -754,13 +754,13 @@ class TimestampGame(LoGame):
                          rdata_mods):
         _lo, act = super()._cached_or_fetch(cached_load_order, cached_active,
                                             fix_lo, rdata_mods)
-        lord = self.calculate_mtime_order(self._mod_infos)
+        lord = self._calculate_mtime_order(self._mod_infos)
         self._add_last(lord, rdata_mods.to_add)
         return lord, act
 
     # Abstract overrides ------------------------------------------------------
-    def _persist_load_order(self, lord, active, *, backup_act=False):
-        current = self.calculate_mtime_order(modinfos := self._mod_infos)
+    def _persist_load_order(self, lord, active, **kwargs):
+        current = self._calculate_mtime_order(modinfos := self._mod_infos)
         set_mtimes(lord, current, modinfos)
 
     # Other overrides ---------------------------------------------------------

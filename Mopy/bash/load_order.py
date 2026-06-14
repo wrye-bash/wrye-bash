@@ -49,7 +49,7 @@ from dataclasses import dataclass, field
 
 from . import bass, bolt, exception
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
-from .games_lo import FixInfo, LoGame, LoList, LoTuple
+from .games_lo import LoGame, LoList, LoTuple
 
 # LoGame instance providing load order operations API
 _lo_handler: LoGame | None = None
@@ -282,15 +282,14 @@ def cached_sort(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
         _cached_lord.mod_lo_index.get(fn, __m), fn))
 
 # Get and set API -------------------------------------------------------------
-def save_lo(lord, acti=None, __index_move=0, quiet=False):
+def save_lo(lord, acti, *, __index_move=0, quiet=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
     as loadorder.txt, and of course rewrite it completely for AsteriskGame."""
-    args = (None if seq is None else [*seq] for seq in ( # pass lists
-        lord, acti, _cached_lord.loadOrder, _cached_lord.activeOrdered))
-    fix_lo = None if quiet else FixInfo()
-    lord, acti = _lo_handler.set_load_order(*args, fix_lo=fix_lo)
+    lord, acti, fix_lo = _lo_handler.set_load_order( # pass lists
+        *(None if seq is None else [*seq] for seq in (
+            lord, acti, _cached_lord.loadOrder, _cached_lord.activeOrdered)))
     if not quiet:
         fix_lo.lo_deprint()
     return _update_cache(lord, acti, __index_move=__index_move)
@@ -335,11 +334,11 @@ def refresh_lo(cached: bool, rdata_mods): # only call in modInfos.refresh!
         if old_cache is not __lo_unset and old_cache != saved: # sanity check
             _cached_lord = __lo_unset # should not happen - raise
             raise Exception(f'Bug: {old_cache=} differs from {saved=}')
-        # validate saved lo (remove/add deleted/added mods - new mods should
-        # be appended - note fix_lo is None)
-        lord, acti = __validate(saved)
-        fixed = LoadOrder(lord, acti)
-        if fixed != saved:
+        # validate saved lo (remove/add deleted/added mods but also active
+        # could change (think of a ccc file update) - append new mods)
+        lord, acti, fix_lo = __validate(saved)
+        if fix_lo.lo_changed() or fix_lo.act_changed():
+            fixed = LoadOrder(lord, acti)
             sstr, fstr = ', '.join(saved.loadOrder), ', '.join(fixed.loadOrder)
             ldiff_fixed = saved.lo_diff(fixed)
             bolt.deprint('\n'.join([f'Saved load order is no longer valid:',
@@ -383,7 +382,7 @@ def undo_redo_load_order(index_move):
     index = _current_list_index + index_move
     if index < 0 or index > len(_saved_load_orders) - 1: return LordDiff()
     previous = _saved_load_orders[index].lord
-    lord, acti = __validate(previous)
+    lord, acti, _fix_lo = __validate(previous)
     previous = LoadOrder(lord, acti) # possibly fixed with new mods appended
     if previous == _cached_lord: # increase or decrease by 1
         return undo_redo_load_order(
