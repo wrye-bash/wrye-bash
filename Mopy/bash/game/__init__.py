@@ -865,6 +865,7 @@ class GameInfo(object):
         wrye_bash_data_files = set()
         # Wrye Bash directories to install and exclude from Clean Data
         wrye_bash_data_dirs = {'bash patches', 'bashtags', 'ini tweaks'}
+        achlist_excludes = set() # files to exclude from achlist
 
         @classmethod
         def mk_lod_tex_func(cls, normals, ossep):

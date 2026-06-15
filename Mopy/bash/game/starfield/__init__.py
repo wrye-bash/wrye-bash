@@ -193,6 +193,7 @@ class _AStarfieldGameInfo(PatchGame):
             _j('interface', 'translations'): {'.txt'},
         }
         skip_bain_refresh = {'sf1edit backups', 'sf1edit cache'}
+        achlist_excludes = {'.psc'}
 
     class Esp(GameInfo.Esp):
         extension_forces_flags = True

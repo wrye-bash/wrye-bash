@@ -52,12 +52,12 @@ from ..exception import BSACompressionError, BSADecodingError, \
     BSADecompressionError, BSADecompressionSizeError, BSAError, BSAFlagError
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
-path_sep = u'\\'
+_bsa_path_sep = '\\'
 
 # Utilities -------------------------------------------------------------------
 def _decode_path(byte_path: bytes, bsa_name: str):
     try:
-        return byte_path.decode(_bsa_encoding).replace('/', path_sep)
+        return byte_path.decode(_bsa_encoding).replace('/', _bsa_path_sep)
     except UnicodeDecodeError:
         raise BSADecodingError(bsa_name, byte_path)
 
@@ -570,7 +570,7 @@ class ABsa(AFile):
                                 f"\n{folder}" % {'target_bsa': self._bsa_name})
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
-                target_dir = os.path.join(dest_folder, *folder.split(path_sep))
+                target_dir = os.path.join(dest_folder, *folder.split(_bsa_path_sep))
                 os.makedirs(target_dir, exist_ok=True)
                 for filename, record in file_records:
                     data_size = record.raw_data_size()
@@ -606,7 +606,7 @@ class ABsa(AFile):
         for folder_path, bsa_folder in self.bsa_folders.items():
             # The incoming folder_files_dict uses native path separators, so
             # convert the BSA separators over
-            ffd_key = folder_path.lower().replace(path_sep, os.sep)
+            ffd_key = folder_path.lower().replace(_bsa_path_sep, os.sep)
             if ffd_key not in folder_files_dict: continue
             # Has assets we need to extract. Keep order to avoid seeking
             # back and forth in the file
@@ -699,7 +699,7 @@ class BSA(ABsa):
             self._filenames = [*chain.from_iterable(
                 # Inlined from _decode_path for startup performance - no
                 # need to replace slashes though since these are file names
-                (f'{fp}{path_sep}{fname.decode(_bsa_encoding)}' for
+                (f'{fp}{_bsa_path_sep}{fname.decode(_bsa_encoding)}' for
                  fname in fnames) for fp, fnames in names_pairs)]
         except UnicodeDecodeError:
             raise BSADecodingError(self._bsa_name, file_names)
@@ -807,7 +807,7 @@ class BA2(ABsa):
                                 f"\n{folder}" % {'target_bsa': self._bsa_name})
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
-                target_dir = os.path.join(dest_folder, *folder.split(path_sep))
+                target_dir = os.path.join(dest_folder, *folder.split(_bsa_path_sep))
                 os.makedirs(target_dir, exist_ok=True)
                 for filename, f_record in file_records:
                     if is_dx10:
@@ -852,7 +852,7 @@ class BA2(ABsa):
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes(), self._bsa_name)
             file_names_block = file_names_block[name_size + 2:]
-            folder_dex = filename.rfind(path_sep)
+            folder_dex = filename.rfind(_bsa_path_sep)
             folder_name = '' if folder_dex == -1 else filename[:folder_dex]
             self.bsa_folders[folder_name].folder_assets[
                 filename[folder_dex + 1:]] = file_records[index]

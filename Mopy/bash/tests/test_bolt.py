@@ -657,7 +657,7 @@ class TestFname(object):
         assert type(GPath_no_norm(FName('Passes through!')).s) is FName ##: oopsie
 
     def test_path_join_fname(self):
-        assert type(GPath('c:\\users\\mrd').join(FName('wrye')).s) is str
+        assert type(GPath('c:/users/mrd').join(FName('wrye')).s) is str
 
     def test_containers(self):
         """Test membership of FN's vs paths and strings in various container

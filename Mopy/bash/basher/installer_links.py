@@ -688,17 +688,19 @@ class Installer_ExportAchlist(_SingleInstallable):
     def Execute(self):
         out_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
         achlist = out_dir.join(f'{self._selected_info.fn_key}.achlist')
+        pdata = '\\\\'.join((bgame := bush.game).mods_dir_path)
+        it = bolt.sortFiles(self._selected_info.ci_dest_sizeCrc)
+        it = (d.replace('\\', '\\\\') for d in it
+              # exclude top level files and docs - last one monkey patched
+              if os.path.split(d)[0] and not d.lower().startswith('docs'))
+        if exc := bgame.Bain.achlist_excludes:
+            it = (d for d in it if os.path.splitext(d)[1] not in exc)
         ##: Windows-1252 is a guess. The CK is able to decode non-ASCII
         # characters encoded with it correctly, at the very least (UTF-8/UTF-16
         # both fail), but the encoding might depend on the game language?
         with BusyCursor(), achlist.open('w', encoding='cp1252') as out:
             out.write(u'[\n\t"')
-            lines = u'",\n\t"'.join(
-                u'\\'.join((*bush.game.mods_dir_path, d)).replace(u'\\', u'\\\\')
-                for d in bolt.sortFiles(self._selected_info.ci_dest_sizeCrc)
-                # exclude top level files and docs - last one monkey patched
-                if os.path.split(d)[0] and not d.lower().startswith(u'docs'))
-            out.write(lines)
+            out.write('",\n\t"'.join(fr'{pdata}\\{d}' for d in it))
             out.write(u'"\n]')
 
 class Installer_Move(_InstallerLink):

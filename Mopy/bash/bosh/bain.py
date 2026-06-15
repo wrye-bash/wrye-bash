@@ -159,8 +159,7 @@ class Installer(ListInfo):
                '.ppt', '.pptx', '.md', '.rst', '.url'}
     reReadMe = re.compile(
         f'^.*?([^{bolt.os_sep_re}]*)(read[ _]?me|lisez[ _]?moi)'
-        f'([^{bolt.os_sep_re}]*)(' +
-        '|'.join((f'\\{e}' for e in docExts)) + ')$', re.I)
+        f'([^{bolt.os_sep_re}]*)({"|".join(map(re.escape, docExts))})$', re.I)
     # Filename roots (i.e. filenames without extensions) that are common and
     # should be renamed by BAIN to avoid conflicts if they are used as doc
     # files (e.g. 'credits' means 'Credits.txt' etc. would be caught). May be

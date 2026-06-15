@@ -249,35 +249,6 @@ class LoGame:
         self.pin_active_state = self.fixed_order_plugins = None
         self._print_lo_paths()
 
-    def _get_force_act(self, *, _reset=False, **kwargs) -> dict[FName, bool]:
-        """Get (possibly re/setting) the pinned load order/active state caches
-        and return the latter. Called in: LoGame._fix_load_order for setting
-        the caches initially and in _fix_active_plugins to force de/activate.
-        See also AsteriskGame._cached_or_fetch/_persist_load_order."""
-        pinn = self.pin_active_state, self.fixed_order_plugins
-        if any(p is None for p in pinn) or _reset:
-            self.pin_active_state, self.fixed_order_plugins = \
-                self._set_pinned_mods()
-        return self.pin_active_state
-
-    # INITIALIZATION ----------------------------------------------------------
-    def _set_pinned_mods(self):
-        """Set the master file(s) that must always be active if present."""
-        fo = self.force_load_first = (*self._existing(self.force_load_first),)
-        return dict.fromkeys(fo, True), fo
-
-    def _print_lo_paths(self):
-        """Prints the paths that will be used and what they'll be used for.
-        Useful for debugging."""
-        acti_lo = self.get_lo_files()
-        bolt.deprint('Using the following load order files:')
-        if len(acti_lo) == 2 and acti_lo[0] == acti_lo[1]:
-            bolt.deprint(f' - Load order and active plugins: {acti_lo[0]}')
-        else:
-            bolt.deprint(f' - Active plugins: {acti_lo.pop(0)}')
-            if acti_lo:
-                bolt.deprint(f' - Load order: {acti_lo.pop(0)}')
-
     # API: Get and helpers ----------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
             cached_active_ordered: LoList, fix_lo) -> tuple[LoTuple, LoTuple]:
@@ -319,6 +290,23 @@ class LoGame:
         if fix_lo.lo_changed():
             self._backup_load_order()
             self._persist_load_order(lo, None) # active is not used here
+
+    # Asterisk game overrides -------------------------------------------------
+    def _get_force_act(self, *, _reset=False, **kwargs) -> dict[FName, bool]:
+        """Get (possibly re/setting) the pinned load order/active state caches
+        and return the latter. Called in: LoGame._fix_load_order for setting
+        the caches initially and in _fix_active_plugins to force de/activate.
+        See also AsteriskGame._cached_or_fetch/_persist_load_order."""
+        pinn = self.pin_active_state, self.fixed_order_plugins
+        if any(p is None for p in pinn) or _reset:
+            self.pin_active_state, self.fixed_order_plugins = \
+                self._set_pinned_mods()
+        return self.pin_active_state
+
+    def _set_pinned_mods(self):
+        """Set the master file(s) that must always be active if present."""
+        fo = self.force_load_first = (*self._existing(self.force_load_first),)
+        return dict.fromkeys(fo, True), fo
 
     # API: Set and helpers ----------------------------------------------------
     def set_load_order(self, lord, active, previous_lord=None,
@@ -501,7 +489,7 @@ class LoGame:
         lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
         # loaded in _get_force_act - those ones come first
-        if lord[:len(fo_mods := self.force_load_first)] != fo_mods:
+        if (*lord[:len(fo_mods := self.force_load_first)],) != fo_mods:
             fo_set = set(fo_mods)
             lord[:] = [*fo_mods, *(x for x in lord if x not in fo_set)]
             lo_order_changed = True
@@ -623,6 +611,18 @@ class LoGame:
         # https://github.com/Ortham/libloadorder/issues/86#issuecomment-4254218481
         return sorted(sorted(mods, key=str.upper, reverse=True),
                       key=self.lo_sort_key(by_time=True))
+
+    def _print_lo_paths(self):
+        """Prints the paths that will be used and what they'll be used for.
+        Useful for debugging."""
+        acti_lo = self.get_lo_files()
+        bolt.deprint('Using the following load order files:')
+        if len(acti_lo) == 2 and acti_lo[0] == acti_lo[1]:
+            bolt.deprint(f' - Load order and active plugins: {acti_lo[0]}')
+        else:
+            bolt.deprint(f' - Active plugins: {acti_lo.pop(0)}')
+            if acti_lo:
+                bolt.deprint(f' - Load order: {acti_lo.pop(0)}')
 
 def _mk_ini(ini_key, star, ini_fpath):
     """Creates a new IniFile from the specified bolt.Path object."""

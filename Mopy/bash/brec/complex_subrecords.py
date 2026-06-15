@@ -841,22 +841,19 @@ class MelEffectsTes4(MelSequential):
             formElements.add(self)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        target_loaders = (self._obme_loaders
-                          if record.obme_record_version is not None
-                          else self._vanilla_loaders)
+        target_loaders = (self._vanilla_loaders
+            if record.obme_record_version is None else self._obme_loaders)
         target_loaders[sub_type].load_mel(record, ins, sub_type, size_, *debug_strs)
 
     def dumpData(self, record, out):
-        target_elements = (self._obme_elements
-                           if record.obme_record_version is not None
-                           else self._vanilla_elements)
+        target_elements = (self._vanilla_elements
+            if record.obme_record_version is None else self._obme_elements)
         for element in target_elements:
             element.dumpData(record, out)
 
     def mapFids(self, record, function, save_fids=False):
-        target_form_elements = (self._obme_form_elements
-                                if record.obme_record_version is not None
-                                else self._vanilla_form_elements)
+        target_form_elements = (self._vanilla_form_elements
+          if record.obme_record_version is None else self._obme_form_elements)
         for form_element in target_form_elements:
             form_element.mapFids(record, function, save_fids)
 
