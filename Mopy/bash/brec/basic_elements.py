@@ -302,7 +302,7 @@ class MelSequential(MelBase):
     """Represents a sequential, which is simply a way for one record element to
     delegate loading to multiple other record elements. It basically behaves
     like MelGroup, but does not assign to an attribute."""
-    def __init__(self, *elements: MelBase):
+    def __init__(self, *elements: MelBase | None):
         # Filter out None, produced by static deciders like fnv_only
         self.elements = [e for e in elements if e is not None]
         self.form_elements = set()

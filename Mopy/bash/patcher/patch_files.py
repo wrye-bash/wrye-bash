@@ -541,11 +541,10 @@ class PatchFile(ModFile):
                 message = f'* {self.load_dict[mname]:02X} '
             except KeyError:
                 message = '* ++ '
-            if version:
-                message += _('%(msg_plugin)s [Version %(plugin_ver)s]') % {
-                    'msg_plugin': mname, 'plugin_ver': version}
-            else:
-                message += mname
+            message += _('%(msg_plugin)s [Version %(plugin_ver)s]') % {
+              'msg_plugin': mname, 'plugin_ver': version} if version else mname
+            if tgs := self.all_tags.get(mname):
+                message += f' [{", ".join(tgs)}]'
             log(message)
         #--Load Mods and error mods
         if self.pfile_aliases:

@@ -740,74 +740,74 @@ class MelEffectsTes4(MelSequential):
     class se_flags(Flags):
         hostile: bool
 
-    def __init__(self):
-        # Vanilla Elements ----------------------------------------------------
-        self._vanilla_elements = [
-            # Structs put to required as we create effects/scriptEffect -
-            # maybe rework to assign attributes on the spot
-            MelGroups('effects',
-                # REHE is Restore target's Health - EFID.effect_sig
-                # must be the same as EFIT.effect_sig. No need for _MelMgefCode
-                # here because we know we don't have OBME on this record
-                MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
-                MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
+    # Vanilla Elements --------------------------------------------------------
+    _vanilla_elements = [
+        # Structs put to required as we create effects/scriptEffect -
+        # maybe rework to assign attributes on the spot
+        MelGroups('effects',
+            # REHE is Restore target's Health - EFID.effect_sig
+            # must be the same as EFIT.effect_sig. No need for _MelMgefCode
+            # here because we know we don't have OBME on this record
+            MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
+            MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
+                'magnitude', 'area', 'duration', 'recipient',
+                'actorValue', is_required=True),
+            MelGroup('scriptEffect',
+                _MelEffectsScit(b'SCIT', ['2I', '4s', 'B', '3s'],
+                    (FID, 'script_fid'), 'school', 'visual',
+                    se_fl := (se_flags, 'flags'), 'unused1',
+                    old_versions={'2I4s', 'I'}, is_required=True),
+                MelFull(),
+            ),
+        ),
+    ]
+    # OBME Elements -------------------------------------------------------
+    _obme_elements = [
+        MelGroups('effects',
+            MelObme(b'EFME', extra_format=['2B'],
+                extra_contents=['efit_param_info', 'efix_param_info'],
+                reserved_byte_count=10),
+            _MelMgefCode(b'EFID', ['4s'], ('effect_sig', b'REHE'),
+                mgef_code_attr='effect_sig'),
+            MelUnion({
+                0: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
                     'magnitude', 'area', 'duration', 'recipient',
-                    'actorValue', is_required=True),
-                MelGroup('scriptEffect',
-                    _MelEffectsScit(b'SCIT', ['2I', '4s', 'B', '3s'],
-                        (FID, 'script_fid'), 'school', 'visual',
-                        (self.se_flags, 'flags'), 'unused1',
-                        old_versions={'2I4s', 'I'}, is_required=True),
-                    MelFull(),
-                ),
-            ),
-        ]
-        # OBME Elements -------------------------------------------------------
-        self._obme_elements = [
-            MelGroups('effects',
-                MelObme(b'EFME', extra_format=['2B'],
-                    extra_contents=['efit_param_info', 'efix_param_info'],
-                    reserved_byte_count=10),
-                _MelMgefCode(b'EFID', ['4s'], ('effect_sig', b'REHE'),
-                    mgef_code_attr='effect_sig'),
+                    'efit_param'),
+                ##: Test this! Does this actually work?
+                (1, 3): MelStruct(b'EFIT', ['4s', '5I'], 'unused_name',
+                    'magnitude', 'area', 'duration', 'recipient',
+                    (FID, 'efit_param')),
+                2: _MelMgefCode(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
+                    'magnitude', 'area', 'duration', 'recipient',
+                    ('efit_param', b'REHE'), mgef_code_attr='efit_param'),
+            }, decider=AttrValDecider('efit_param_info')),
+            _MelObmeScitGroup('scriptEffect',
+                ##: Test! xEdit has all this in EFIX, but it also
+                #  hard-crashes when I try to add EFIX subrecords... this
+                #  is adapted from OBME's official docs, but those could be
+                #  wrong. Also, same note as above for case 3.
                 MelUnion({
-                    0: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
-                        'magnitude', 'area', 'duration', 'recipient',
-                        'efit_param'),
-                    ##: Test this! Does this actually work?
-                    (1, 3): MelStruct(b'EFIT', ['4s', '5I'], 'unused_name',
-                        'magnitude', 'area', 'duration', 'recipient',
-                        (FID, 'efit_param')),
-                    2: _MelMgefCode(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
-                        'magnitude', 'area', 'duration', 'recipient',
-                        ('efit_param', b'REHE'), mgef_code_attr='efit_param'),
-                }, decider=AttrValDecider('efit_param_info')),
-                _MelObmeScitGroup('scriptEffect',
-                    ##: Test! xEdit has all this in EFIX, but it also
-                    #  hard-crashes when I try to add EFIX subrecords... this
-                    #  is adapted from OBME's official docs, but those could be
-                    #  wrong. Also, same note as above for case 3.
-                    MelUnion({
-                        0: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
-                            'efix_param', 'school', 'visual',
-                            se_fl := (self.se_flags, 'flags'), 'unused1'),
-                        (1, 3): MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
-                            (FID, 'efix_param'), 'school', 'visual', se_fl,
-                            'unused1'),
-                        2: _MelMgefCode(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
-                            ('efix_param', b'REHE'), 'school', 'visual', se_fl,
-                            'unused1', mgef_code_attr='efix_param'),
-                    }, decider=AttrValDecider('efix_param_info')),
-                    MelFull(),
-                ),
-                MelString(b'EFII', 'obme_icon'),
-                ##: Again, FID here needs testing
-                MelStruct(b'EFIX', ['2I', 'f', 'i', '16s'],
-                    'efix_override_mask', 'efix_flags', 'efix_base_cost',
-                    (FID, 'resist_av'), 'efix_reserved'),
+                    0: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
+                        'efix_param', 'school', 'visual', se_fl, 'unused1'),
+                    (1, 3): MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
+                        (FID, 'efix_param'), 'school', 'visual', se_fl,
+                        'unused1'),
+                    2: _MelMgefCode(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
+                        ('efix_param', b'REHE'), 'school', 'visual', se_fl,
+                        'unused1', mgef_code_attr='efix_param'),
+                }, decider=AttrValDecider('efix_param_info')),
+                MelFull(),
             ),
-            MelBaseR(b'EFXX', 'effects_end_marker'),
-        ]
+            MelString(b'EFII', 'obme_icon'),
+            ##: Again, FID here needs testing
+            MelStruct(b'EFIX', ['2I', 'f', 'i', '16s'],
+                'efix_override_mask', 'efix_flags', 'efix_base_cost',
+                (FID, 'resist_av'), 'efix_reserved'),
+        ),
+        MelBaseR(b'EFXX', 'effects_end_marker'),
+    ]
+
+    def __init__(self):
         # Split everything by Vanilla/OBME
         self._vanilla_loaders = {}
         self._vanilla_form_elements = set()
@@ -896,18 +896,16 @@ class MelEffectsTes4ObmeFull(MelString):
 class MelMgefEdidTes4(_MelMgefCode):
     """Handles EDID for Oblivion's MGEF - we can't just use MelEdid because
     this can, of course, be a FormID thanks to OBME."""
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Always 4 bytes for the magic effect code plus a null terminator
         super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
-            mgef_code_attr='mgef_edid', emulated_attr='eid')
+            mgef_code_attr='mgef_edid', emulated_attr='eid', **kwargs)
 
-class MelMgefEdidTes4Re(_MelMgefCode):
+class MelMgefEdidTes4Re(MelMgefEdidTes4):
     """Handles EDID for Oblivion Remastered's MGEF. Same as Oblivion, but the
     null terminator is sometimes absent (e.g. in UORP)."""
     def __init__(self):
-        super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
-            mgef_code_attr='mgef_edid', emulated_attr='eid',
-            old_versions={'4s'})
+        super().__init__(old_versions={'4s'})
 
 # API - FO3 and FNV -----------------------------------------------------------
 class MelEffectsFo3(MelGroups):

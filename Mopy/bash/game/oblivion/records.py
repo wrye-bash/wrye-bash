@@ -1106,7 +1106,7 @@ class MreEfsh(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreEnch(MreHasEffects, MelRecord):
+class MreEnch(MreHasEffects):
     """Enchantment."""
     rec_sig = b'ENCH'
 
@@ -2205,7 +2205,7 @@ class MreSoun(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreSpel(MreHasEffects, MelRecord):
+class MreSpel(MreHasEffects):
     """Spell."""
     rec_sig = b'SPEL'
     _spell_type_name_num = LowerDict(

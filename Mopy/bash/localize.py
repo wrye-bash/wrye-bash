@@ -31,9 +31,12 @@ import os
 import sys
 import time
 import warnings
-
 # Minimal local imports - needs to be imported early in bash
 from . import bolt
+
+# so we can `import locale` in the intrpreter to install `_` when importing
+# from modules that use it
+gettext.NullTranslations().install()
 
 def set_c_locale():
     # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
@@ -137,9 +140,7 @@ def setup_locale(__wx, target_lang):
     target_locale = __wx.Locale(target_language)
     bolt.deprint(f"Set wxPython locale to '{target_name}'")
     # Next, set the Wrye Bash locale based on the one we grabbed from wx
-    if mo is None:
-        trans = gettext.NullTranslations() # We're using English
-    else:
+    if mo is not None: # else we're using English
         po = mo[:-2] + 'po'
         try:
             if os.path.isfile(mo):
@@ -157,6 +158,9 @@ def setup_locale(__wx, target_lang):
                     ]))
                 with open(mo, 'rb') as trans_file:
                     trans = gettext.GNUTranslations(trans_file)
+                # Everything has gone smoothly, install the translation and
+                # remember what we ended up with as the final locale
+                trans.install()
             else:
                 if os.path.isfile(po):
                     # .mo file missing, .po file exists (dev env only)
@@ -167,13 +171,8 @@ def setup_locale(__wx, target_lang):
                     bolt.deprint(f'Missing .mo file ({mo}) - this should '
                                  f'really not happen, please report this!')
                 bolt.deprint('Falling back to English (en_US)')
-                trans = gettext.NullTranslations()
         except (UnicodeError, OSError):
             bolt.deprint('Error loading translation file:', traceback=True)
-            trans = gettext.NullTranslations()
-    # Everything has gone smoothly, install the translation and remember what
-    # we ended up with as the final locale
-    trans.install()
     # adieu, user locale
     set_c_locale()
     return target_locale, target_name

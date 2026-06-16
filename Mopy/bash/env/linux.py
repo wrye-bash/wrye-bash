@@ -160,12 +160,12 @@ def find_egs_games():
 def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 
-def get_gog_game_paths(_submod):
+def get_gog_game_paths(_submod, **_kwargs):
     ##: Implement reading from Heroic Games launcher (and maybe others like
     # Lutris?)
     return []
 
-def get_disc_game_paths(_submod, _found_steam_paths, _found_gog_paths):
+def get_disc_game_paths(_submod, **_kwargs):
     # We can't detect this on Linux because there's no registry to pull from,
     # users will just have to tell us via -o/bash.ini
     return []
@@ -173,10 +173,10 @@ def get_disc_game_paths(_submod, _found_steam_paths, _found_gog_paths):
 def get_legacy_ws_game_info(_submod):
     return _LegacyWinAppInfo() # no Windows Store on Linux
 
-def get_ws_game_paths(_submod):
+def get_ws_game_paths(_submod, **_kwargs):
     return [] # no Windows Store on Linux
 
-def get_steam_game_paths(submod):
+def get_steam_game_paths(submod, **_kwargs):
     return [*map(_GPath_no_norm, _parse_steam_manifests(
         submod, _get_steam_path()))]
 

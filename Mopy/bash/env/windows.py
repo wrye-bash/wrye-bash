@@ -1034,19 +1034,19 @@ def get_registry_path(subkey, entry, test_path_callback):
             return installPath
     return None
 
-def get_gog_game_paths(submod):
+def get_gog_game_paths(submod, **_kwargs):
     """Check registry for games with GOG keys."""
     return _find_registry_games(submod, submod.gog_registry_keys)
 
-def get_disc_game_paths(submod, found_steam_paths, found_gog_paths):
+def get_disc_game_paths(submod, *, game_stores, __keys=(
+        ' 1. Steam:', ' 2. GOG (via Windows Registry):'), **_kwargs):
     """Check registry for the disc versions of older games."""
     disc_paths = _find_registry_games(submod, submod.disc_registry_keys)
     # The Steam and GOG versions set the same registry key as the disc version,
     # so avoid showing it twice
-    steam_paths_set = set(chain.from_iterable(found_steam_paths))
-    gog_paths_set = set(chain.from_iterable(found_gog_paths))
-    return [p for p in disc_paths
-            if p not in steam_paths_set and p not in gog_paths_set]
+    found_paths = chain(*(game_stores[k].values() for k in __keys))
+    found_paths = set(chain(*found_paths))
+    return [p for p in disc_paths if p not in found_paths]
 
 def get_legacy_ws_game_info(submod):
     """Get all information about a legacy Windows Store application."""
@@ -1054,7 +1054,7 @@ def get_legacy_ws_game_info(submod):
     ws_app_name = submod.Ws.win_store_name
     return _legacy_win_store_finder.get_app_info(ws_app_name, publisher_name)
 
-def get_ws_game_paths(submod):
+def get_ws_game_paths(submod, **_kwargs):
     """Check the .GamingRoot files on each drive to find if the specified game
     is installed via the Windows Store and return its install path."""
     if ws_app_name := submod.Ws.win_store_name:
@@ -1064,7 +1064,7 @@ def get_ws_game_paths(submod):
                 all_ws_games[ws_app_name])
     return []
 
-def get_steam_game_paths(submod):
+def get_steam_game_paths(submod, **_kwargs):
     """Read Steam config information to determine which Steam games are
     installed and return their install paths."""
     return [*map(_GPath_no_norm, _parse_steam_manifests(

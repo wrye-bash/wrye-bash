@@ -23,7 +23,6 @@
 """Sets up the necessary environment to run Wrye Bash tests. This whole file is
 quite hacky, but running tests for WB is going to be a bit hacky no matter
 what."""
-import gettext
 import locale
 import os
 import sys
@@ -63,15 +62,15 @@ def get_meta_value(base_file_path, meta_key):
     except KeyError:
         raise FailedTest(f"{meta_file} is missing the key '{meta_key}'")
 
-def iter_games(resource_subfolder):
+def iter_games(resource_subfolder, *, add_path=False):
     """Yields all games for which resources from the specified subfolder are
     available."""
     full_subfolder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  u'test_resources', resource_subfolder)
+                                  'test_resources', resource_subfolder)
     for game_folder in os.listdir(full_subfolder):
         # Don't return README.md as a game
-        if os.path.isdir(os.path.join(full_subfolder, game_folder)):
-            yield game_folder
+        if os.path.isdir(fp := os.path.join(full_subfolder, game_folder)):
+            yield (game_folder, fp) if add_path else game_folder
 
 def iter_resources(resource_subfolder, filter_by_game=frozenset()):
     """Yields all resources in the specified test_resources subfolder. Note
@@ -81,13 +80,10 @@ def iter_resources(resource_subfolder, filter_by_game=frozenset()):
     :param resource_subfolder: The subfolder to test_resources to iterate.
     :param filter_by_game: If nonempty, limits yielded resources to ones from
         that game's subfolder only."""
-    full_subfolder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  u'test_resources', resource_subfolder)
-    for game_folder in os.listdir(full_subfolder):
-        if filter_by_game and game_folder not in filter_by_game: continue
-        full_game_folder = os.path.join(full_subfolder, game_folder)
-        for resource_file in os.listdir(full_game_folder):
-            yield os.path.join(full_game_folder, resource_file)
+    for game_folder, fp in iter_games(resource_subfolder, add_path=True):
+        if not filter_by_game or game_folder in filter_by_game:
+            for resource_file in os.listdir(fp):
+                yield os.path.join(fp, resource_file)
 
 # Here be hacks ---------------------------------------------------------------
 # Maps the resource subfolder game names back to unique_display_names
@@ -135,12 +131,10 @@ class _BaseApp(_wx.App):
 def _emulate_startup():
     """Emulates a normal Wrye Bash startup, but without launching basher
     etc."""
-    # bush needs _() to be available, so need to do it like this
-    global bush
-    global _wx_app
+    global _wx_app, bush
     _wx_app = _BaseApp()
-    trans = gettext.NullTranslations()
-    trans.install()
+    # bush needs _() to be available, so need to do to install NullTranslations
+    from .. import localize
     from .. import bush
     # noinspection PyProtectedMember
     bush._supportedGames()

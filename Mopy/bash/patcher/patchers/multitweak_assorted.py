@@ -620,8 +620,9 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
     tweak_log_msg = _(u'Default Icons Set: %(total_changed)d')
     default_enabled = True
 
-    def wants_record(self, record):
-        return record.can_set_icon()
+    def wants_record(self, record): ##: Skip OBME records - we need to centralize this
+        return getattr(record,'obme_record_version', None) is None and \
+            record.can_set_icon()
 
     def tweak_record(self, record):
         record.set_default_icon()
