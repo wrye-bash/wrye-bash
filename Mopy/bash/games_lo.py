@@ -46,8 +46,8 @@ from .plugin_types import PluginFlag
 
 # Typing
 LoTuple = tuple[FName, ...]
-LoList = LoTuple | list[FName] | None
-_ParsedLo = tuple[list[FName], list[FName]]
+LoList = list[FName]
+ParsedLo = tuple[LoList, LoList]
 
 class LoFile(AFile):
     """A file holding load order information (plugins.txt/loadorder.txt but
@@ -58,7 +58,7 @@ class LoFile(AFile):
         super().__init__(self._resolve_case_ambiguity(path), *args, **kwargs)
 
     def parse_modfile(self, dups_set, *, __re_comment=re.compile(b'^#.*')
-                      ) -> _ParsedLo:
+                      ) -> ParsedLo:
         """Parse loadorder.txt and plugins.txt files with or without stars.
 
         Return two lists which are identical except when _star is True,
@@ -259,9 +259,9 @@ class LoGame:
         self._print_lo_paths()
 
     # API: Get and helpers ----------------------------------------------------
-    def get_load_order(self, cached_load_order: LoList,
-                       cached_active_ordered: LoList, rdata_mods) -> \
-            tuple[LoTuple, LoTuple, _FixInfo]:
+    def get_load_order(self, cached_load_order: LoTuple | None,
+                       cached_active_ordered: LoTuple | None, rdata_mods) -> \
+            tuple[LoList, LoList, _FixInfo]:
         """Get and validate current load order and active plugins information.
 
         ***Only*** called in ModInfos.refresh to fetch load order and active
@@ -296,7 +296,7 @@ class LoGame:
                                  savact, savlo, backup_file=True)
         for msg in fix_lo.do_save_lo, fix_lo.do_save_act:
             if msg: bolt.deprint(msg)
-        return tuple(lo), tuple(active), fix_lo
+        return [*lo], [*active], fix_lo
 
     def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
                          rdata_mods):
@@ -325,50 +325,43 @@ class LoGame:
         return dict.fromkeys(fo, True), fo
 
     # API: Set and helpers ----------------------------------------------------
-    def set_load_order(self, lord, active, previous_lord=None,
-                       previous_active=None):
-        """Set the load order and/or active plugins (or just validate if
-        previous_* are None). The different way each game handles this and how
-        it modifies common data structures necessitate that info on previous
-        (cached) state be passed in, usually for both active plugins and
-        load order. For instance, in the case of asterisk games, plugins.txt
-        is the common structure for defining both the global load order and
-        which plugins are active. The logic is as follows:
-        - at least one of `lord` or `active` must be not None, otherwise no
+    def set_load_order(self, lord: LoList | None, active: LoList | None,
+                       previous_cache: ParsedLo | None = None):
+        """Set the load order and/or active plugins (or just validate, if
+        previous_cache is None). The different way each game handles this and
+        how it modifies common data structures necessitate that info on
+        previous (cached) state be passed in, usually for both active
+        plugins and load order. For instance, in the case of asterisk games,
+        plugins.txt is the common structure for defining both the global
+        load order and which plugins are active. The logic is as follows:
+        1. at least one of `lord` or `active` must be not None, otherwise no
         much use in calling this function anyway - raise ValueError if not.
-        - if lord is not None pass it through _fix_load_order. That might
+        2. if any of `lord` or `active` is None, you must pass previous_cache
+        3. if lord is not None pass it through _fix_load_order. That might
         change it. If, after fixing it, it is the same as `previous_lord`
         then we won't do anything regarding it (no mtime, loadorder.txt etc).
-        - if load order is actually being set we need info on active plugins.
-        In case active is None we do need to have previous_active - otherwise
-        a ValueError is raised.
-        - otherwise we determine if active needs change (for TESIV if
-        plugins were deleted we need to rewrite plugins.txt - for asterisk
-        games we always need to rewrite the plugins.txt for any load order
-        change, as it is stored there)
-        - we then validate active plugins against lord or previous_lord - if
-        we were not setting the load order we need previous_lord here otherwise
-        a ValueError is raised.
+        4. if load order is actually being set we need info on active plugins.
+        In case active is None we do need to have previous_active - see 2.
+        We then determine if active needs change (for TESIV if plugins were
+        deleted we need to rewrite plugins.txt - for asterisk games we
+        always need to rewrite the plugins.txt for any load order change,
+        as it is stored there)
+        5. we then validate active plugins against lord or previous_lord - if
+        we were not setting the load order we need previous_lord here - see 2.
         By now we should have a lord and active lists to set, if we are not in
         dry run mode.
         :returns the (possibly fixed) lord and active lists
         """
         if lord is active is None:
             raise ValueError('Load order or active must be not None')
-        dry_run = previous_lord is previous_active is None
+        previous_lord, previous_act = (None, None) if (
+            dry_run := previous_cache is None) else previous_cache
         fix_lo = _FixInfo()
-        if setting_lo := lord is not None:
+        if lord is not None:
             # fix the load order - lord is modified in place, hence test below
             self._fix_load_order(lord, fix_lo, _saving=True)
-            setting_lo = previous_lord != lord
-        setting_active = active is not None
-        if setting_lo and not setting_active:
-            # changing load order - must test if active plugins must change too
-            if previous_active is None: # active is None
-                raise ValueError(
-                    'You must pass info on active when setting load order')
-            setting_active = previous_lord is None # we must check active
-            if not setting_active: # does active need change due to lo changes?
+            if not dry_run and previous_lord != lord and active is None:
+                # changing load order - test if active plugins must change too
                 prev = set(previous_lord)
                 new = set(lord)
                 dltd = prev - new
@@ -376,22 +369,17 @@ class LoGame:
                 reordered = any(x != y for x, y in
                                 zip((x for x in previous_lord if x in common),
                                     (x for x in lord if x in common)))
-                setting_active = self._must_update_active(dltd, reordered)
-            if setting_active: active = list(previous_active) # active was None
-        if setting_active:
+                if self._must_update_active(dltd, reordered):
+                    active = [*previous_act] # copy for _fix_active_plugins
+        else:
+            lord = previous_lord
+        if active is not None:
             # a load order is needed for all games to validate active against
-            if lord is previous_lord is None:
-                raise ValueError(
-                    u'You need to pass a load order in to set active plugins')
-            test = lord if setting_lo else previous_lord
-            self._fix_active_plugins(active, test, fix_lo, True)
-        lord = lord if setting_lo else previous_lord
-        active = active if setting_active else previous_active
-        if lord is None or active is None: # sanity check
-            raise Exception('Returned load order and active must be not None')
+            self._fix_active_plugins(active, lord, fix_lo, True)
+        else:
+            active = previous_act
         if not dry_run: # else just return the (possibly fixed) lists
-            self._persist_if_changed(active, lord, previous_active,
-                                     previous_lord)
+            self._persist_if_changed(active, lord, previous_act, previous_lord)
         return lord, active, fix_lo # return what we set or was previously set
 
     @classmethod
@@ -431,8 +419,8 @@ class LoGame:
         raise NotImplementedError(f'{type(self)} does not define '
                                   f'_persist_load_order')
 
-    def _persist_if_changed(self, active, lord, previous_active,
-                            previous_lord, **kwargs):
+    def _persist_if_changed(self, active: LoList, lord: LoList,
+                            previous_active, previous_lord, **kwargs):
         # AsteriskGame overrides to write the file once - active/lord are lists
         if previous_lord is None or previous_lord != lord:
             self._persist_load_order(lord, active, **kwargs)
@@ -441,7 +429,7 @@ class LoGame:
             self._persist_active_plugins(active, lord, **kwargs)
 
     # VALIDATION --------------------------------------------------------------
-    def _fix_load_order(self, lord: list[FName], fix_lo, _saving=False):
+    def _fix_load_order(self, lord: LoList, fix_lo, _saving=False):
         """Fix inconsistencies between given loadorder and actually installed
         mod files as well as impossible load orders. We need a refreshed
         bosh.modInfos reflecting the contents of Data/.
@@ -583,7 +571,7 @@ class LoGame:
 
     # HELPERS -----------------------------------------------------------------
     @staticmethod
-    def _check_for_duplicates(plugins_list: list[FName]):
+    def _check_for_duplicates(plugins_list: LoList):
         mods, duplicates, j = set(), set(), 0
         mods_add = mods.add
         duplicates_add = duplicates.add
@@ -623,11 +611,11 @@ def _mk_ini(ini_key, star, ini_fpath):
     # We don't support OBSE INIs here, only regular IniFile objects
     ini_type, ini_encoding = get_ini_type_and_encoding(ini_fpath)
     class _IniLoFile(LoFile, ini_type):
-        def __init__(self, ini_key, *args, **kwargs):
+        def __init__(self, ini_key_tup, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            _ini, self._section, self._key_fmt = ini_key
+            _ini, self._section, self._key_fmt = ini_key_tup
 
-        def parse_modfile(self, dups_set=frozenset(), *, __re='') -> _ParsedLo:
+        def parse_modfile(self, dups_set=frozenset(), *, __re='') -> ParsedLo:
             """Read the section specified in self._section and return all
             its values as FName objects. Handles missing INI file and an
             absent section gracefully."""

@@ -49,7 +49,7 @@ from dataclasses import dataclass, field
 
 from . import bass, bolt, exception
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
-from .games_lo import LoGame, LoList, LoTuple
+from .games_lo import LoGame, LoList, LoTuple, ParsedLo
 
 # LoGame instance providing load order operations API
 _lo_handler: LoGame | None = None
@@ -218,6 +218,9 @@ class LoadOrder(object):
         lodiff.new_act = act_state_change & other.active
         return lodiff
 
+    def as_lists(self) -> ParsedLo: # helper to provide mutable lo/active lists
+        return [*self._loadOrder], [*self._activeOrdered]
+
     def __eq__(self, other):
         return isinstance(other, LoadOrder) and self._active == other._active \
                and self._loadOrder == other._loadOrder
@@ -242,7 +245,7 @@ class LoadOrder(object):
 
     def __str__(self):
         return ', '.join([(f'*{x}' if x in self._active else x) for x in
-                          self.loadOrder])
+                          self._loadOrder])
 
 # Module level cache ----------------------------------------------------------
 __lo_unset = LoadOrder() # load order is not yet set or we failed to set it
@@ -272,7 +275,7 @@ def cached_active_index_str(mod):
 def cached_lower_loading(mod):
     return _cached_lord.loadOrder[:_cached_lord.mod_lo_index[mod]]
 
-def cached_sort(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
+def cached_sort(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> LoList:
     """Return a list containing mod_paths' elements sorted into load order.
 
     If some elements do not have a load order they are appended to the list
@@ -282,14 +285,14 @@ def cached_sort(mod_paths: Iterable[FName], *, __m=sys.maxsize) -> list[FName]:
         _cached_lord.mod_lo_index.get(fn, __m), fn))
 
 # Get and set API -------------------------------------------------------------
-def save_lo(lord, acti, *, __index_move=0, quiet=False):
+def save_lo(lord: LoList | None, acti: LoList | None, *, __index_move=0,
+            quiet=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
     as loadorder.txt, and of course rewrite it completely for AsteriskGame."""
-    lord, acti, fix_lo = _lo_handler.set_load_order( # pass lists
-        *(None if seq is None else [*seq] for seq in (
-            lord, acti, _cached_lord.loadOrder, _cached_lord.activeOrdered)))
+    lord, acti, fix_lo = _lo_handler.set_load_order(lord, acti,
+                                                    _cached_lord.as_lists())
     if not quiet:
         fix_lo.lo_deprint()
     return _update_cache(lord, acti, __index_move=__index_move)
@@ -360,13 +363,13 @@ def refresh_lo(cached: bool, rdata_mods): # only call in modInfos.refresh!
                 lock_act and ldiff_saved.act_ord_status()):
             global warn_locked
             warn_locked = True
-            save_lo(saved.loadOrder, saved.activeOrdered if lock_act else None)
+            li_lo, li_act = saved.as_lists()
+            save_lo(li_lo, li_act if lock_act else None)
             return old_cache.lo_diff(_cached_lord)
     return ldiff
 
-def __validate(saved):
-    return _lo_handler.set_load_order( # not passing cached results in dry-run
-        *map(list, (saved.loadOrder, saved.activeOrdered)))
+def __validate(saved): # not passing cached results in dry-run
+    return _lo_handler.set_load_order(*saved.as_lists())
 
 def get_active_mods_lists():
     """Get the user active mods lists from BashLoadOrder.dat, except if they
@@ -387,8 +390,7 @@ def undo_redo_load_order(index_move):
     if previous == _cached_lord: # increase or decrease by 1
         return undo_redo_load_order(
             index_move + int(math.copysign(1, index_move)))
-    return save_lo(previous.loadOrder, previous.activeOrdered,
-                   __index_move=index_move, quiet=True)
+    return save_lo(*previous.as_lists(), __index_move=index_move, quiet=True)
 
 # _game_handle wrappers -------------------------------------------------------
 def master_sort(*args, **kwargs):
@@ -400,7 +402,7 @@ def check_active_limit(*args, **kwargs):
 def swap(*args):
     return _lo_handler.swap(*args)
 
-def filter_pinned(mod_set) -> list[FName]:
+def filter_pinned(mod_set) -> LoList:
     """Return a list of plugins that we can't change their load order."""
     mod_set = {*mod_set}
     return [k for k in _lo_handler.fixed_order_plugins if k in mod_set]
