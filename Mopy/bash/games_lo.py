@@ -224,10 +224,9 @@ class _FixInfo:
                        'directory, invalid and/or corrupted:')
             msg.append(', '.join(self.act_removed))
         if self.master_not_active:
-            msg.append(f'{self.master_not_active} not present in active mods')
+            msg.append(f'{self.master_not_active} not active')
         for path in self.missing_must_be_active:
-            msg.append(f'{path} not present in active list while present in '
-                       f'Data folder')
+            msg.append(f'{path} not active while present in Data folder')
         msg.extend(self.act_order_differs_from_load_order)
         if self.selectedExtra:
             msg.append('Active list contains more plugins than allowed - the '
@@ -430,55 +429,55 @@ class LoGame:
         rethinking as saving load and active should be an atomic operation."""
         if _saving: # we come from set_load_order - maybe move this check?
             fix_lo.lo_duplicates = self._check_for_duplicates(lord)
-        old_lord = lord[:]
+        deduplicated = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
         master_name = self._game_handle.master_file
-        # Tracks if fix_lo.lo_reordered needs updating
-        lo_order_changed = any(fix_lo.lo_reordered)
         cached_minfs = self._mod_infos
         try:
             mdex = lord.index(master_name)
-            if mdex > 0:
-                bolt.deprint(f'{master_name} has index {mdex} (must be 0)')
-                lord.remove(master_name)
-                lord.insert(0, master_name)
-                lo_order_changed = True
         except ValueError:
             if master_name not in cached_minfs:
                 raise exception.BoltError(
                     f'{master_name} is missing or corrupted')
-            fix_lo.lo_added = {master_name}
+            bolt.deprint(f'{master_name} inserted to Load order')
+            lord.insert(0, master_name)
+        else:
+            if mdex > 0:
+                bolt.deprint(f'{master_name} has index {mdex} (must be 0)')
+                del lord[mdex] # remove master name
+                lord.insert(0, master_name)
+            master_name = None
         # below do not apply to timestamp method (except if we are passed in a
         # saved load order for validation or to restore)
-        loadorder_set = set(lord)
-        mods_set = set(cached_minfs)
-        fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
-        # present in text file, we are supposed to take care of that
-        fix_lo.lo_added |= mods_set - loadorder_set
-        # Remove non existent plugins from load order
-        lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
-        ol = lord[:] # take a snapshot used in checking master block reordering
-        for mod in fix_lo.lo_added: # Append new plugins to load order
-            if mod == master_name:
-                lord.insert(0, master_name)
-                bolt.deprint(f'{master_name} inserted to Load order')
+        if not (mtimelo := isinstance(self, TimestampGame)) or _saving:
+            loadorder_set = set(lord)
+            mods_set = set(cached_minfs)
+            # may remove corrupted mods present in text file
+            fix_lo.lo_removed = loadorder_set - mods_set
+            # Remove non existent plugins from load order
+            lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
+            fix_lo.lo_added |= mods_set - loadorder_set
+            if mtimelo: # _saving is True then
+                self._add_last(lord, fix_lo.lo_added)
             else: # append all to the end, even esms, will be reordered below
-                lord.append(mod)
+                lord.extend(fix_lo.lo_added)
+        if master_name is not None: fix_lo.lo_added.add(master_name)
         # we need to set the _shipwrecks for sort() - we will force activate in
         # _fix_active_plugins - and repeat the ccc files do_update - ##: avoid?
         self._get_force_act(_reset=bool(fix_lo.lo_added or fix_lo.lo_removed))
         # See if any esm files are loaded below an esp and reorder as necessary
         lord.sort(key=self.lo_sort_key())
-        # check if any of the existing mods were moved in/out the master block
-        lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         # loaded in _get_force_act - those ones come first
         if (*lord[:len(fo_mods := self.force_load_first)],) != fo_mods:
             fo_set = set(fo_mods)
             lord[:] = [*fo_mods, *(x for x in lord if x not in fo_set)]
-            lo_order_changed = True
-        if lo_order_changed:
-            fix_lo.lo_reordered = old_lord, lord
+            ord_change = True
+        else: # check if any existing mod was moved in/out the master block
+            ord_change = [x for x in deduplicated if x not in fix_lo.lo_removed
+                ] != [x for x in lord if x not in fix_lo.lo_added]
+        if ord_change:
+            fix_lo.lo_reordered = deduplicated, lord
 
     def _fix_active_plugins(self, acti, lord, fix_active: _FixInfo, _saving):
         """Always called with a valid load order (in set_load_order lord has
@@ -752,13 +751,6 @@ class TimestampGame(LoGame):
     def _persist_load_order(self, lord, backup_file):
         current = self._calculate_mtime_order(modinfos := self._mod_infos)
         set_mtimes(lord, current, modinfos)
-
-    # Other overrides ---------------------------------------------------------
-    def _fix_load_order(self, lord, fix_lo, _saving=False):
-        """If new mods are added we need to order them last - set_load_order
-        path."""
-        super()._fix_load_order(lord, fix_lo, _saving)
-        if _saving: self._add_last(lord, fix_lo.lo_added)
 
     def _add_last(self, lord, added):
         if added:
