@@ -277,11 +277,14 @@ class LoGame:
         # the fetched order could be in whatever state, so get this fixed
         if cached_load_order is not lo:
             self._fix_load_order(lo, fix_lo=fix_lo)
-            if self._order_active and fix_lo.lo_added:
-                self._handle_desync(active, lo, self._plugins_txt.abs_path,
-                                    fix_lo)
         # having a valid load order we may fix active too if we fetched them
         if cached_active_ordered is not active:
+            # since we fetched active keep plugins.txt order - else the desync
+            # might be intentional (keep loadorder.txt order). Note that we
+            # fetched lo in TextfileGame._cached_or_fetch, so lo is fixed
+            if self._order_active:
+                self._handle_desync(active, lo, self._plugins_txt.abs_path,
+                                    fix_lo)
             self._fix_active_plugins(active, lo, fix_lo, False)
         elif (self._order_active and fix_lo.lo_reordered) or rdata_mods.redraw:
             # sync order of plugins.txt with lo
@@ -312,8 +315,6 @@ class LoGame:
 
     def _filter_lo(self, lord, active, **kwargs):
         return lord, active
-
-    def _handle_desync(self, act, lo, pl_path, fix_lo): pass
 
     # Asterisk game overrides -------------------------------------------------
     def _get_force_act(self, *, _reset=False, **kwargs) -> dict[FName, bool]:
@@ -595,6 +596,39 @@ class LoGame:
         return sorted(sorted(mods, key=str.upper, reverse=True),
                       key=self.lo_sort_key(by_time=True))
 
+    def _handle_desync(self, act, lo, pl_path, fix_lo):
+        # handle desync with plugins txt - lo is fixed at this point
+        lo_dex = {x: i for i, x in enumerate(lo)}
+        # drop mods in plugins.txt, but not in loadorder.txt; they should be
+        # really missing at this point as `lo` is fixed while act is not
+        cached_active_copy = [m for m in act if m in lo_dex]
+        cached_active_set = set(act)
+        active_in_lo = [x for x in lo if x in cached_active_set]
+        while active_in_lo:
+            # Use list(), we may modify cached_active_copy and active_in_lo
+            for i, (ordered, current) in list(
+                    enumerate(zip(cached_active_copy, active_in_lo))):
+                if ordered != current:
+                    for j, x in enumerate(active_in_lo[i:]):
+                        if x == ordered: break
+                        # x should be above ordered
+                        to = lo_dex[ordered] + 1 + j
+                        # make room
+                        lo_dex = {k: (i if i < to else i + 1) for k, i in
+                                  lo_dex.items()}
+                        lo_dex[x] = to  # bubble them up !
+                    active_in_lo.remove(ordered)
+                    cached_active_copy = cached_active_copy[i + 1:]
+                    active_in_lo = active_in_lo[i:]
+                    break
+            else:
+                break
+        fetched_lo = lo[:]
+        lo.sort(key=lo_dex.get)
+        if lo != fetched_lo:
+            fix_lo.do_save_lo = (f'Corrected {self.get_lo_files()[1]} '
+                f'(order of mods differed from their order in {pl_path})')
+
     def _print_lo_paths(self):
         """Prints the paths that will be used and what they'll be used for.
         Useful for debugging."""
@@ -786,49 +820,12 @@ class TextfileGame(LoGame):
                       self._loadorder_txt.do_update())
         if not lo_changed:
             return cached_load_order, act
-        pl_path = self._plugins_txt.abs_path
         try: #--Read file
             _acti, lo = self._loadorder_txt.parse_modfile(fix_lo.lo_duplicates)
         except FileNotFoundError:
             fix_lo.do_save_lo = f'Created {self._loadorder_txt.abs_path}'
             lo = cached_load_order or [*self._get_force_act()] # must load first
-        if pl_changed:
-            # else the desync might be intentional keep loadorder.txt order
-            self._handle_desync(act, lo, pl_path, fix_lo)
         return lo, act
-
-    def _handle_desync(self, act, lo, pl_path, fix_lo):
-        # handle desync with plugins txt
-        lo_dex = {x: i for i, x in enumerate(lo)}
-        # drop mods in plugins.txt, but not in loadorder.txt; we'll check
-        # if it's really missing in _fix_active_plugins - if missing
-        # from lo we repeat the checks
-        cached_active_copy = [m for m in act if m in lo_dex]
-        cached_active_set = set(act)
-        active_in_lo = [x for x in lo if x in cached_active_set]
-        while active_in_lo:
-            # Use list(), we may modify cached_active_copy and active_in_lo
-            for i, (ordered, current) in list(enumerate(
-                    zip(cached_active_copy, active_in_lo))):
-                if ordered != current:
-                    for j, x in enumerate(active_in_lo[i:]):
-                        if x == ordered: break
-                        # x should be above ordered
-                        to = lo_dex[ordered] + 1 + j
-                        # make room
-                        lo_dex = {k: (i if i < to else i + 1) for k, i in
-                                  lo_dex.items()}
-                        lo_dex[x] = to  # bubble them up !
-                    active_in_lo.remove(ordered)
-                    cached_active_copy = cached_active_copy[i + 1:]
-                    active_in_lo = active_in_lo[i:]
-                    break
-            else: break
-        fetched_lo = lo[:]
-        lo.sort(key=lo_dex.get)
-        if lo != fetched_lo:
-            fix_lo.do_save_lo = (f'Corrected {self._loadorder_txt.abs_path} '
-                f'(order of mods differed from their order in {pl_path})')
 
     def _filter_lo(self, lord, active, *, fix_lo=None):
         if self._remove_game_master_from_plugins_txt:
