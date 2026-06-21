@@ -2663,10 +2663,7 @@ class ModInfos(_AFileInfos):
     # those methods run a refresh on modInfos wip lo/active caches
     @_lo_cache
     def _wip_lo_refresh(self, unlock_lo, rdata_mods):
-        # Needed for BAIN, which may have to reorder installed plugins
-        with load_order.Unlock(unlock_lo):
-            return load_order.refresh_lo(not (unlock_lo or bool(rdata_mods)),
-                                         rdata_mods)
+        return load_order.refresh_lo(unlock_lo, rdata_mods)
 
     @_lo_cache
     def _wip_lo_save(self, update_lo, update_act):

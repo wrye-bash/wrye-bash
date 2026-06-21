@@ -51,18 +51,9 @@ from . import bass, bolt, exception
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 from .games_lo import LoGame, LoList, LoTuple, ParsedLo
 
-# LoGame instance providing load order operations API
+# LoGame instance providing load order operations backend ---------------------
 _lo_handler: LoGame | None = None
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
-# Load order locking
-locked = False
-warn_locked = False
-_lords_pickle: bolt.PickleDict | None = None
-_LORDS_PICKLE_VERSION = 2
-# active mod lists were saved in BashSettings.dat - sentinel needed for moving
-# them to BashloadOrder.dat
-__active_mods_sentinel = {}
-_active_mods_lists = {}
 
 def initialize_load_order_files():
     global _plugins_txt_path, _loadorder_txt_path, _lord_pickle_path
@@ -76,10 +67,30 @@ def initialize_load_order_handle(modinfos, game_handle):
         _plugins_txt_path, loadorder_txt_path=_loadorder_txt_path)
     __load_pickled_load_orders()
 
+# Lock load order API ---------------------------------------------------------
+locked = False
+warn_locked = False
+
+def toggle_lock_load_order(user_warning_callback):
+    global locked
+    lock = not locked
+    if lock:
+        # Make sure the user actually wants to enable this
+        lock = user_warning_callback()
+    else:
+        bass.settings['bash.load_order.lock_active_plugins'] = False
+    bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
+
 # Saved load orders -----------------------------------------------------------
 lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
 _saved_load_orders: list[lo_entry] = []
 _current_list_index = -1
+_lords_pickle: bolt.PickleDict | None = None
+_LORDS_PICKLE_VERSION = 2
+# active mod lists were saved in BashSettings.dat - sentinel needed for moving
+# them to BashloadOrder.dat
+__active_mods_sentinel = {}
+_active_mods_lists = {}
 
 def __load_pickled_load_orders():
     global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
@@ -134,10 +145,6 @@ def _keep_max(max_to_keep, length):
         else:
             x, y = _current_list_index, max_to_keep - _current_list_index
     return x, y
-
-def _new_entry():
-    _saved_load_orders[_current_list_index:_current_list_index] = [
-        lo_entry(time.time(), _cached_lord)]
 
 @dataclass(slots=True)
 class LordDiff:
@@ -306,33 +313,34 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0)->LordDiff:
     global _cached_lord, _current_list_index
     lorddiff = _cached_lord.lo_diff(
         (_cached_lord := LoadOrder(lord, acti_sorted)))
-    if _current_list_index < 0 or (not __index_move and
+    if new_entry := _current_list_index < 0 or (not __index_move and
             _cached_lord != _saved_load_orders[_current_list_index].lord):
         # either getting or setting, plant the new load order in
         _current_list_index += 1
-        _new_entry()
     elif __index_move:  # attempted to undo/redo
         _current_list_index += __index_move
         target = _saved_load_orders[_current_list_index].lord
-        if target != _cached_lord:  # we partially redid/undid
+        if new_entry := target != _cached_lord: # we partially redid/undid
             # put it after (redo) or before (undo) the target
             _current_list_index += int(math.copysign(1, __index_move))
             # list[-1:-1] won't do what we want
             _current_list_index = max(0, _current_list_index)
-            _new_entry()
+    if new_entry:
+        _saved_load_orders[_current_list_index:_current_list_index] = [
+            lo_entry(time.time(), _cached_lord)]
     return lorddiff
 
-def refresh_lo(cached: bool, rdata_mods): # only call in modInfos.refresh!
+def refresh_lo(unlock_lo: bool, rdata_mods): # only call in modInfos.refresh!
     """Refresh _cached_lord, reverting if locked to the saved one. We pass
     the cached values to _game_handle.get_load_order (or None for load order
-    if cached is False), which will decide if those need update. In the case
-    of timestamp games, cached is effectively always False, as getting the
-    load order just involves getting ftime info from modInfos cache - that one
-    **must be up to date** for correct load order/active validation, which is
-    guaranteed as long as we call refresh_lo only inside modInfos.refresh."""
+    if we pass unlock_lo or mods changed), which decides if those need update.
+    For timestamp games we always calculate the load order, as this just
+    involves getting ftime info from modInfos cache - that one **must be up to
+    date** for correct load order/active validation, which is guaranteed
+    as long as we call refresh_lo only inside modInfos.refresh."""
     global _cached_lord
     saved, old_cache = __lo_unset, _cached_lord
-    if locked and _saved_load_orders:
+    if is_locked := not unlock_lo and locked and _saved_load_orders:
         saved: LoadOrder = _saved_load_orders[_current_list_index].lord
         if old_cache is not __lo_unset and old_cache != saved: # sanity check
             _cached_lord = __lo_unset # should not happen - raise
@@ -347,8 +355,9 @@ def refresh_lo(cached: bool, rdata_mods): # only call in modInfos.refresh!
             bolt.deprint('\n'.join([f'Saved load order is no longer valid:',
                 f'{ldiff_fixed}', f'*** saved: {sstr}', f'*** fixed: {fstr}']))
             saved = fixed
+    keep_cached = not unlock_lo and not rdata_mods
     lo, active = (None, None) if old_cache is __lo_unset else (
-            old_cache.loadOrder if cached else None, old_cache.activeOrdered)
+        old_cache.loadOrder if keep_cached else None, old_cache.activeOrdered)
     try:
         lo, active, fix_lo = _lo_handler.get_load_order(lo, active, rdata_mods)
         fix_lo.lo_deprint()
@@ -357,7 +366,7 @@ def refresh_lo(cached: bool, rdata_mods): # only call in modInfos.refresh!
         bolt.deprint('Error updating load_order cache')
         _cached_lord = __lo_unset
         raise
-    if saved is not __lo_unset: # check if _cached_lord differs from saved
+    if is_locked: # check if _cached_lord differs from saved
         lock_act = bass.settings['bash.load_order.lock_active_plugins']
         if (ldiff_saved := _cached_lord.lo_diff(saved)).reordered or (
                 lock_act and ldiff_saved.act_ord_status()):
@@ -415,29 +424,3 @@ def get_lo_files() -> list[bolt.Path]:
     # The order of these is an implementation detail, hide it ouside the game
     # implementations
     return sorted(set(_lo_handler.get_lo_files()))
-
-# Lock load order -------------------------------------------------------------
-def toggle_lock_load_order(user_warning_callback):
-    global locked
-    lock = not locked
-    if lock:
-        # Make sure the user actually wants to enable this
-        lock = user_warning_callback()
-    else:
-        bass.settings['bash.load_order.lock_active_plugins'] = False
-    bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
-
-class Unlock:
-    """Context manager to temporarily unlock the load order."""
-
-    def __init__(self, do_unlock=True):
-        self._do_unlock = do_unlock
-
-    def __enter__(self):
-        global locked
-        self.__locked = locked
-        locked = False if self._do_unlock else locked
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        global locked
-        locked = self.__locked
