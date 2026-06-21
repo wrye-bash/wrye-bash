@@ -2294,7 +2294,7 @@ class ModInfos(_AFileInfos):
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
-        load_order.initialize_load_order_handle(self, bush.game)
+        load_order.initialize_load_order_handle(self, bush.game, bass.settings)
         # cache the bsa_lo for the current load order - expensive to calculate
         self.__bsa_lo = self.__available_bsas = None
         global modInfos
@@ -2663,7 +2663,8 @@ class ModInfos(_AFileInfos):
     # those methods run a refresh on modInfos wip lo/active caches
     @_lo_cache
     def _wip_lo_refresh(self, unlock_lo, rdata_mods):
-        return load_order.refresh_lo(unlock_lo, rdata_mods)
+        return load_order.refresh_lo(unlock_lo, rdata_mods,
+            bass.settings['bash.load_order.lock_active_plugins'])
 
     @_lo_cache
     def _wip_lo_save(self, update_lo, update_act):
@@ -3514,7 +3515,7 @@ def initBosh(game_ini_path, game_info):
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
                                for x in bush.game.Ini.dropdown_inis[1:])]
-    load_order.initialize_load_order_files()
+    load_order.initialize_load_order_files(dirs)
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()

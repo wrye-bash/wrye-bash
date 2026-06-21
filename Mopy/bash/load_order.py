@@ -47,7 +47,7 @@ import time
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from . import bass, bolt, exception
+from . import bolt, exception
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 from .games_lo import LoGame, LoList, LoTuple, ParsedLo
 
@@ -55,31 +55,32 @@ from .games_lo import LoGame, LoList, LoTuple, ParsedLo
 _lo_handler: LoGame | None = None
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 
-def initialize_load_order_files():
+def initialize_load_order_files(bass_dirs):
     global _plugins_txt_path, _loadorder_txt_path, _lord_pickle_path
-    _plugins_txt_path = bass.dirs['lo'].join('plugins.txt')
-    _loadorder_txt_path = bass.dirs['lo'].join('loadorder.txt')
-    _lord_pickle_path = bass.dirs['saveBase'].join('BashLoadOrders.dat')
+    _plugins_txt_path = bass_dirs['lo'].join('plugins.txt')
+    _loadorder_txt_path = bass_dirs['lo'].join('loadorder.txt')
+    _lord_pickle_path = bass_dirs['saveBase'].join('BashLoadOrders.dat')
 
-def initialize_load_order_handle(modinfos, game_handle):
-    global _lo_handler
+def initialize_load_order_handle(modinfos, game_handle, bass_settings):
+    global _lo_handler, locked
     _lo_handler = game_handle.lo_handler(modinfos, game_handle,
         _plugins_txt_path, loadorder_txt_path=_loadorder_txt_path)
     __load_pickled_load_orders()
+    locked = bass_settings.get('bosh.modInfos.resetMTimes', False)
 
 # Lock load order API ---------------------------------------------------------
 locked = False
 warn_locked = False
 
-def toggle_lock_load_order(user_warning_callback):
+def toggle_lock_load_order(user_warning_callback, bass_settings):
     global locked
     lock = not locked
     if lock:
         # Make sure the user actually wants to enable this
         lock = user_warning_callback()
     else:
-        bass.settings['bash.load_order.lock_active_plugins'] = False
-    bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
+        bass_settings['bash.load_order.lock_active_plugins'] = False
+    bass_settings['bosh.modInfos.resetMTimes'] = locked = lock
 
 # Saved load orders -----------------------------------------------------------
 lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
@@ -93,7 +94,7 @@ __active_mods_sentinel = {}
 _active_mods_lists = {}
 
 def __load_pickled_load_orders():
-    global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
+    global _lords_pickle, _saved_load_orders, _current_list_index, \
         _active_mods_lists
     _lords_pickle = bolt.PickleDict(_lord_pickle_path)
     _lords_pickle.load()
@@ -118,7 +119,6 @@ def __load_pickled_load_orders():
                           for (date, lo) in _saved_load_orders]
     _active_mods_lists = {k: forward_compat_path_to_fn_list(v) for k, v in
                           _active_mods_lists.items()}
-    locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
 
 def persist_orders(__keep_max=256):
     _lords_pickle.vdata['_lords_pickle_version'] = _LORDS_PICKLE_VERSION
@@ -330,7 +330,7 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0)->LordDiff:
             lo_entry(time.time(), _cached_lord)]
     return lorddiff
 
-def refresh_lo(unlock_lo: bool, rdata_mods): # only call in modInfos.refresh!
+def refresh_lo(unlock_lo: bool, rdata_mods, lock_act): # modInfos.refresh only!
     """Refresh _cached_lord, reverting if locked to the saved one. We pass
     the cached values to _game_handle.get_load_order (or None for load order
     if we pass unlock_lo or mods changed), which decides if those need update.
@@ -367,7 +367,6 @@ def refresh_lo(unlock_lo: bool, rdata_mods): # only call in modInfos.refresh!
         _cached_lord = __lo_unset
         raise
     if is_locked: # check if _cached_lord differs from saved
-        lock_act = bass.settings['bash.load_order.lock_active_plugins']
         if (ldiff_saved := _cached_lord.lo_diff(saved)).reordered or (
                 lock_act and ldiff_saved.act_ord_status()):
             global warn_locked
@@ -380,12 +379,12 @@ def refresh_lo(unlock_lo: bool, rdata_mods): # only call in modInfos.refresh!
 def __validate(saved): # not passing cached results in dry-run
     return _lo_handler.set_load_order(*saved.as_lists())
 
-def get_active_mods_lists():
+def get_active_mods_lists(bass_settings):
     """Get the user active mods lists from BashLoadOrder.dat, except if they
     are still saved in BashSettings.dat"""
     global _active_mods_lists
     if _active_mods_lists is __active_mods_sentinel:
-        settings_mods_list = bass.settings.get('bash.loadLists.data',
+        settings_mods_list = bass_settings.get('bash.loadLists.data',
                                                __active_mods_sentinel)
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
