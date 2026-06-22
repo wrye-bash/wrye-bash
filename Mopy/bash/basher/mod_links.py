@@ -267,7 +267,7 @@ class Mod_OrderByName(EnabledLink):
         sort_by_name.sort(key=load_order.master_sort())
         lowest = load_order.cached_sort(sort_by_name)[0]
         lordata = bosh.modInfos.lo_insert_at(lowest, sort_by_name,
-                                             save_all=True)
+                                             save_wip_lo=True, save_act=True)
         self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ class Mod_Move(EnabledLink):
         # Clamp between 0 and max plugin index
         target_index = max(0, min(target_index, len(active_plugins) - 1))
         lordata = bosh.modInfos.lo_insert_at(active_plugins[target_index],
-            self.selected, save_all=True)
+            self.selected, save_wip_lo=True, save_act=True)
         self.window.propagate_refresh(lordata, detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------

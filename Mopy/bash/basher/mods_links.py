@@ -688,7 +688,7 @@ class _AImportLOBaseLink(ItemLink):
         # out_diff controls saving, so pass ldiff in to make sure we save if
         # lo_reorder made changes, even if lo_activate_exact was no op
         msg_acti, lordata = bosh.modInfos.lo_activate_exact(imp_acti,
-            out_diff=ldiff, save_all=True)
+            out_diff=ldiff, save_wip_lo=True, save_act=True)
         # Don't show the exact same message twice
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)

@@ -2220,26 +2220,22 @@ def _lo_op(lop_func):
     """Decorator centralizing saving active state/load order changes. Don't
     raise exceptions in lop_func, will be swallowed in the finally block."""
     @wraps(lop_func)
-    def _lo_wip_wrapper(self: ModInfos, *args, ldiff=None, save_all=False,
+    def _lo_wip_wrapper(self: ModInfos, *args, ldiff=None,
                         save_wip_lo=False, save_act=False, **kwargs):
         """Update _active_wip/_lo_wip cache and possibly save changes.
-        :param save_all: save load order and plugins.txt
+        :param ldiff: output LordDiff - only passed from ModInfos.refresh
         :param save_wip_lo: save load order when active did not change
         :param save_act: save plugins.txt - always call with a valid load order
         """
         out_diff = kwargs.setdefault('out_diff', LordDiff())
-        ldiff = LordDiff() if ldiff is None else ldiff #output: used in refresh
-        save = sum((save_act, save_wip_lo, save_all))
-        if save > 1:
-            raise ValueError(f'{save_act=}/{save_wip_lo=}/{save_all=}')
         lo_msg = None
         try:
             lo_msg = lop_func(self, *args, **kwargs)
         finally:
-            if save:
-                out_diff = self._wip_lo_save(save_wip_lo or save_all,
-                    save_act or save_all, ldiff=ldiff) if out_diff else \
-                        RefrData() # out_diff is empty
+            if save_wip_lo or save_act:
+                out_diff = self._wip_lo_save(save_wip_lo, save_act,
+                    ldiff=LordDiff() if ldiff is None else ldiff
+                ) if out_diff else RefrData() # out_diff is empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
     return _lo_wip_wrapper
 
@@ -2336,8 +2332,8 @@ class ModInfos(_AFileInfos):
             dlos = self._diff_los(new_lo=wip_lo, new_act=act)
             self._active_wip, self._lo_wip = act, wip_lo
             # warn the user on deactivated dependents?
-            lordata = self.lo_deactivate(*deltd, ldiff=ldiff, save_all=True,
-                                         out_diff=dlos, _skip_check=True)
+            lordata = self.lo_deactivate(*deltd, ldiff=ldiff, save_wip_lo=True,
+                save_act=True, out_diff=dlos, _skip_check=True)
         elif insert_after: # we should have no deletions here!
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
                                             ldiff=ldiff)
@@ -2886,8 +2882,8 @@ class ModInfos(_AFileInfos):
 
     @_lo_op
     def lo_insert_at(self, first, modlist, *, out_diff):
-        """Call with save_all True (not just save_wip_lo) to avoid bogus LO
-        warnings on games that reorder active plugins to match load order."""
+        """Call with save_act and save_wip_lo True to avoid bogus LO warnings
+        on games that reorder active plugins to match load order."""
         mod_set = set(modlist)
         # Clean out any duplicates left behind, in case we're moving forwards
         # Insert the requested plugins then append the remainder
