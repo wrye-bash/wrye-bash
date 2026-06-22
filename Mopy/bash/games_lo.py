@@ -118,12 +118,22 @@ class LoFile(AFile):
             return matching_paths[0]
         return matching_paths[0] if matching_paths else lo_file_path
 
-    def write_modfile(self, lord, active):
+    def write_modfile(self, *args, mark_unchanged=True, backup_file=False):
+        apath = self.abs_path
+        if backup_file:
+            try:
+                self.fs_copy(apath.backup)
+            except FileNotFoundError:
+                bolt.deprint(f'Tried to back up {apath}, but it did not exist')
+            except OSError:
+                bolt.deprint(f'Failed to back up {apath}', traceback=True)
         try:
-            self.__write_plugins(lord, active)
+            self.__write_plugins(*args)
         except OSError:
-            env.clear_read_only(self.abs_path)
-            self.__write_plugins(lord, active)
+            env.clear_read_only(apath)
+            self.__write_plugins(*args)
+        if mark_unchanged:
+            self.do_update()
 
     def __write_plugins(self, lord, active):
         active_lookup = frozenset(active) if self._star else ()
@@ -153,15 +163,6 @@ class LoFile(AFile):
             return True
         except FileNotFoundError:
             return False
-
-    def create_backup(self):
-        pl_path = self.abs_path
-        try:
-            self.fs_copy(pl_path.backup)
-        except FileNotFoundError:
-            bolt.deprint(f'Tried to back up {pl_path}, but it did not exist')
-        except OSError:
-            bolt.deprint(f'Failed to back up {pl_path}', traceback=True)
 
 class _CCCFile(DelFile, LoFile):
     """CCC files can be in different locations. We also need to keep track of
@@ -305,7 +306,7 @@ class LoGame:
         """Responsible for deciding if cached values are still valid."""
         plt = self._plugins_txt
         try:
-            if cached_active is None or plt.do_update():
+            if cached_active is None or plt.do_update(): # True on deletion
                 active, __lo = plt.parse_modfile(fix_lo.act_duplicates)
                 cached_active = self._filter_lo(__lo, active, fix_lo=fix_lo)[1]
         except FileNotFoundError:
@@ -414,10 +415,8 @@ class LoGame:
         if previous_active is None or ((previous_active != active) if
                 self._order_active else (set(previous_active) != set(active))):
             lord, active = self._filter_lo(lord, active)
-            if getting_lo and not fixlo.do_save_act.startswith('Created'):
-                self._plugins_txt.create_backup()
-            self._plugins_txt.write_modfile(lord, active)
-            self._plugins_txt.do_update()
+            exist = getting_lo and not fixlo.do_save_act.startswith('Created')
+            self._plugins_txt.write_modfile(lord, active, backup_file=exist)
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord: LoList, fix_lo, _saving=False):
@@ -663,14 +662,16 @@ def _mk_ini(ini_key, star, ini_fpath):
             self.do_update() # update the cached info
             return out, out
 
-        def write_modfile(self, lord, active):
+        def write_modfile(self, *args, mark_unchanged=True, **kwargs):
             """Write out the lord/active using the section/key format attrs."""
             section_contents = {self._key_fmt % {'lo_idx': i}: lo_mod for
-                                i, lo_mod in enumerate(active)}
+                                i, lo_mod in enumerate(args[1])}
             # Remove any existing section - also prevents duplicate sections
             # with different case
             self.saveSettings({self._section: section_contents},
                               skip_sections={self._section.lower()})
+            if mark_unchanged:
+                self.do_update()
 
         def upd_on_swap(self, old_dir, new_dir):
             # If there's no INI inside the old (saves) directory, copy it
@@ -681,7 +682,7 @@ def _mk_ini(ini_key, star, ini_fpath):
             move_ini = self._resolve_case_ambiguity(new_dir.join(ini_key[0]))
             if move_ini.is_file():
                 loact = _mk_ini(ini_key, self._star, move_ini).parse_modfile()
-                self.write_modfile(*loact)
+                self.write_modfile(*loact, mark_unchanged=False)
                 return True
             return False
     return _IniLoFile(ini_key, star, ini_fpath, ini_encoding)
@@ -772,7 +773,7 @@ class TimestampGame(LoGame):
     def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
                          rdata_mods):
         _lo, act = super()._cached_or_fetch(cached_load_order, cached_active,
-                                            fix_lo, rdata_mods)
+                                       fix_lo, rdata_mods)
         lord = self._calculate_mtime_order(self._mod_infos)
         self._add_last(lord, rdata_mods.to_add)
         return lord, act
@@ -814,7 +815,7 @@ class TextfileGame(LoGame):
         anyway call _fix_load_order. The relative order of mods will be
         corrected to match their relative order in active returned by super."""
         _lo, act = super()._cached_or_fetch(cached_load_order, cached_active,
-                                            fix_lo, rdata_mods)
+                                       fix_lo, rdata_mods)
         pl_changed = cached_active is not act # we fetched or requested update
         lo_changed = (pl_changed or cached_load_order is None or
                       self._loadorder_txt.do_update())
@@ -848,10 +849,7 @@ class TextfileGame(LoGame):
         return deleted_plugins or reord_plugins
 
     def _persist_load_order(self, lord, backup_file):
-        if backup_file:
-            self._loadorder_txt.create_backup()
-        self._loadorder_txt.write_modfile(lord, lord)
-        self._loadorder_txt.do_update()
+        self._loadorder_txt.write_modfile(lord, lord, backup_file=backup_file)
 
     def swap(self, old_dir, new_dir):
         swapped_pl = super().swap(old_dir, new_dir)
