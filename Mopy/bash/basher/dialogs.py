@@ -149,13 +149,19 @@ class CreateNewProject(DialogWindow):
         self._project_name = TextField(self, _('Project Name Goes Here'))
         self._project_name.on_text_changed.subscribe(
             self.OnCheckProjectsColorTextCtrl)
-        self._check_esp = CheckBox(self, _('Blank.esp'), checked=True,
-            chkbx_tooltip=_('Include a blank plugin file with only '
-                            '%(game_master)s as a master in the project.') % {
-                'game_master': bush.game.master_file})
-        self._check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
-            chkbx_tooltip=_('Include a blank plugin file without any masters '
-                            'in the project.'))
+        if bush.game.Esp.canBash:
+            check_esp = CheckBox(self, _('Blank.esp'), checked=True,
+                chkbx_tooltip=_('Include a blank plugin file with only '
+                                '%(game_master)s as a master in the project.'
+                    ) % {'game_master': bush.game.master_file})
+            check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
+                chkbx_tooltip=_('Include a blank plugin file without any '
+                                'masters in the project.'))
+            self._chck_mods = {f'Blank, {bush.game.display_name}.esp':
+                check_esp, f'Blank, {bush.game.display_name} (masterless).esp':
+                check_esp_masterless}
+        else:
+            self._chck_mods = {}
         self._check_wizard = CheckBox(self, _('Blank wizard.txt'),
             chkbx_tooltip=_('Include a blank BAIN wizard in the project.'))
         self._check_fomod = CheckBox(self, _('Blank ModuleConfig.xml'),
@@ -165,8 +171,7 @@ class CreateNewProject(DialogWindow):
                 'Include an empty Wizard Images directory in the project.'))
         self._check_docs = CheckBox(self, _('Docs Directory'),
             chkbx_tooltip=_('Include an empty Docs directory in the project.'))
-        for checkbox in (self._check_esp, self._check_esp_masterless,
-                         self._check_wizard):
+        for checkbox in *self._chck_mods.values(), self._check_wizard:
             checkbox.on_checked.subscribe(self.OnCheckBoxChange)
         # Panel Layout
         self.ok_button = OkButton(self)
@@ -179,10 +184,9 @@ class CreateNewProject(DialogWindow):
                 ]), LayoutOptions(expand=True)),
             VBoxedLayout(self, spacing=5,
                 title=_('What do you want to add to the new project?'),
-                items=[
-                    self._check_esp, self._check_esp_masterless,
-                    self._check_wizard, self._check_fomod,
-                    self._check_wizard_images, self._check_docs,
+                items=[*self._chck_mods.values(), self._check_wizard,
+                       self._check_fomod, self._check_wizard_images,
+                       self._check_docs,
                 ]),
             Stretch(),
             (HLayout(spacing=5, items=[self.ok_button, CancelButton(self)]),
@@ -207,7 +211,7 @@ class CreateNewProject(DialogWindow):
     def OnCheckBoxChange(self, _is_checked=None):
         """Change the DialogWindow icon to represent what the project status
         will be when created. """
-        if self._check_esp.is_checked or self._check_esp_masterless.is_checked:
+        if any(chkbx.is_checked for chkbx in self._chck_mods.values()):
             img_key = 'off.red.dir' + (
                 '.wiz' if self._check_wizard.is_checked else '')
         else:
@@ -231,14 +235,10 @@ class CreateNewProject(DialogWindow):
             # Create the directory first, otherwise some of the file creation
             # calls below may race and cause undebuggable issues otherwise
             tmp_project.makedirs()
-            blank_esp_name = f'Blank, {bush.game.display_name}.esp'
-            if self._check_esp.is_checked:
-                bosh.modInfos.create_new_mod(blank_esp_name,
-                    dir_path=tmp_project)
-            blank_ml_name = f'Blank, {bush.game.display_name} (masterless).esp'
-            if self._check_esp_masterless.is_checked:
-                bosh.modInfos.create_new_mod(blank_ml_name,
-                    dir_path=tmp_project, wanted_masters=[])
+            for no_ma, (blank, checkbox) in enumerate(self._chck_mods.items()):
+                if checkbox.is_checked:
+                    bosh.modInfos.create_new_mod(blank, dir_path=tmp_project,
+                        wanted_masters=[] if no_ma else None)
             if self._check_wizard.is_checked:
                 wizardPath = tmp_project.join('wizard.txt')
                 with wizardPath.open('w', encoding='utf-8') as out:
@@ -246,10 +246,9 @@ class CreateNewProject(DialogWindow):
                               f'Script\n')
                     out.write(f'; Created by Wrye Bash v{bass.AppVersion}\n')
                     # Put an example SelectPlugin statement in if possible
-                    if self._check_esp.is_checked:
-                        out.write(f'SelectPlugin "{blank_esp_name}"\n')
-                    if self._check_esp_masterless.is_checked:
-                        out.write(f'SelectPlugin "{blank_ml_name}"\n')
+                    for blank, checkbox in self._chck_mods.items():
+                        if checkbox.is_checked:
+                            out.write(f'SelectPlugin "{blank}"\n')
             if self._check_fomod.is_checked:
                 fomod_path = tmp_project.join('fomod')
                 fomod_path.makedirs()

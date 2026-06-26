@@ -119,7 +119,7 @@ class LoFile(AFile):
             self.__write_plugins(lord, active)
 
     def __write_plugins(self, lord, active):
-        active_set = frozenset(active)
+        active_lookup = frozenset(active) if self._star else ()
         with self.abs_path.open('wb') as out:
             for mod in (self._star and lord) or active:
                 # Ok, this seems to work for Oblivion, but not for Skyrim,
@@ -127,7 +127,7 @@ class LoFile(AFile):
                 # plugins.txt. Even activating through the SkyrimLauncher
                 # doesn't work.
                 try:
-                    star = '*' if self._star and mod in active_set else ''
+                    star = '*' if mod in active_lookup else ''
                     out.write(f'{star}{mod}\r\n'.encode('cp1252'))
                 except UnicodeEncodeError:
                     bolt.deprint(f'{mod} failed to properly encode and was '
@@ -409,9 +409,6 @@ class LoGame:
 
     def _persist_active_plugins(self, active, lord, *, backup_act=False):
         """Write out whatever file stores the active plugins list."""
-        self._write_plugins_txt(active, active, backup_act=backup_act)
-
-    def _write_plugins_txt(self, lord, active, *, backup_act=False): ##: two uses - remove!
         if backup_act:
             self._plugins_txt.create_backup()
         self._plugins_txt.write_modfile(lord, active)
@@ -649,7 +646,7 @@ def _mk_ini(ini_key, star, ini_fpath):
         def write_modfile(self, lord, active):
             """Write out the lord/active using the section/key format attrs."""
             section_contents = {self._key_fmt % {'lo_idx': i}: lo_mod for
-                                i, lo_mod in enumerate(lord)}
+                                i, lo_mod in enumerate(active)}
             # Remove any existing section - also prevents duplicate sections
             # with different case
             self.saveSettings({self._section: section_contents},
@@ -912,13 +909,10 @@ class TextfileGame(_TextFileLo):
         self._loadorder_txt.do_update()
 
     def _persist_active_plugins(self, active, lord, **kw):
-        active_filtered = (
-            [x for x in active if x != self._game_handle.master_file]
-            if self._remove_game_master_from_plugins_txt
-            else active
-        )
-        super()._persist_active_plugins(active_filtered, active_filtered, **kw)
-        return active_filtered
+        if self._remove_game_master_from_plugins_txt:
+            active = [x for x in active if x != self._game_handle.master_file]
+        super()._persist_active_plugins(active, active, **kw)
+        return active
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
@@ -1007,17 +1001,17 @@ class AsteriskGame(_TextFileLo):
     def _fetch_active_plugins(self) -> list[FName]:
         raise NotImplementedError # no override for AsteriskGame
 
-    def _persist_load_order(self, lord, active, *, backup_act=False,
-                            rem_from_acti=None):
+    def _persist_active_plugins(self, active, lord, *,
+                                rem_from_acti=None, **kwargs):
         rem_from_acti = self._get_force_act(active=active) \
             if rem_from_acti is None else rem_from_acti
         lord = [x for x in lord if x not in rem_from_acti]
         active = [x for x in active if x not in rem_from_acti]
-        self._write_plugins_txt(lord, active, backup_act=backup_act)
+        super()._persist_active_plugins(active, lord, **kwargs)
         return lord, active
 
-    def _persist_active_plugins(self, active, lord, *, backup_act=False):
-        return self._persist_load_order(lord, active, backup_act=backup_act)
+    def _persist_load_order(self, lord, active, **kwargs):
+        return self._persist_active_plugins(active, lord, **kwargs)
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fixed_active: return # plugins.txt already saved
