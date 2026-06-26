@@ -270,8 +270,9 @@ class LoGame:
         saving them before returning. The caller is responsible for passing
         a valid cached value in, else you risk validating the other one based
         on stale data. NOTE: modInfos must be up to date for validation."""
-        active, lo = self._cached_or_fetch(cached_load_order,
-            cached_active_ordered, fix_lo := _FixInfo(), rdata_mods)
+        active, lo = self._cached_or_fetch(cached_active_ordered,
+            cached_load_order, fix_lo=(fix_lo := _FixInfo()),
+            rdata_mods=rdata_mods)
         # for timestamps we use modInfos so we should not get an invalid
         # load order (except redated master). For text based games however
         # the fetched order could be in whatever state, so get this fixed
@@ -300,19 +301,15 @@ class LoGame:
             if msg: bolt.deprint(msg)
         return [*lo], [*active], fix_lo
 
-    def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
-                         rdata_mods, _force=False):
+    def _cached_or_fetch(self, cached_active, cached_load_order, *, fix_lo,
+                         rdata_mods=None, dups=None):
         """Responsible for deciding if cached values are still valid."""
-        plt = self._plugins_txt
-        try:
-            if _force or cached_active is None or plt.do_update(): # True on deletion
-                dup = fix_lo.lo_duplicates if _force else fix_lo.act_duplicates
-                return self._filter_plugins_txt(*plt.parse_modfile(dup),
-                                                fix_lo=fix_lo)
-        except FileNotFoundError:
-            fix_lo.do_save_act = f'Created {plt.abs_path} based on cached info'
-            return self._filter_plugins_txt(cached_active, cached_load_order,
-                                            fix_lo=self._creating)
+        if (dups is not None or cached_active is None or
+                self._plugins_txt.do_update()): # returns True also on deletion
+            parsed, fix_lo = self._try_read(fix_lo, dups=dups)
+            if parsed is None:
+                parsed = cached_active, cached_load_order
+            return self._filter_plugins_txt(*parsed, fix_lo=fix_lo)
         return cached_active,
 
     def _filter_plugins_txt(self, active, *args, fix_lo=None):
@@ -598,6 +595,16 @@ class LoGame:
         return sorted(sorted(mods, key=str.upper, reverse=True),
                       key=self.lo_sort_key(by_time=True))
 
+    def _try_read(self, fix_lo, lo_file=None, dups=None):
+        lo_file = self._plugins_txt if (is_plug:= lo_file is None) else lo_file
+        dups = fix_lo.act_duplicates if dups is None else dups
+        try:
+            return lo_file.parse_modfile(dups), fix_lo
+        except FileNotFoundError:
+            create = f'Created {lo_file.abs_path} based on cached info'
+            setattr(fix_lo, 'do_save_act' if is_plug else 'do_save_lo', create)
+            return None, self._creating
+
     def _handle_desync(self, act, lo, pl_path, fix_lo):
         # handle desync with plugins txt - lo is fixed at this point
         lo_dex = {x: i for i, x in enumerate(lo)}
@@ -773,10 +780,8 @@ class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
 
-    def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
-                         rdata_mods, _force=False):
-        act, = super()._cached_or_fetch(cached_load_order, cached_active,
-                                       fix_lo, rdata_mods)
+    def _cached_or_fetch(self, *args, rdata_mods, **kwargs):
+        act, = super()._cached_or_fetch(*args, **kwargs)
         lord = self._calculate_mtime_order(self._mod_infos)
         self._add_last(lord, rdata_mods.to_add)
         return act, lord
@@ -809,28 +814,26 @@ class TextfileGame(LoGame):
         self._loadorder_txt = lo_txt_type(self._star, loadorder_txt_path)
         super().__init__(mod_infos, game_handle, plugins_txt_path, **kwargs)
 
-    def _cached_or_fetch(self, cached_load_order, cached_active, fix_lo,
-                         rdata_mods, _force=False):
+    def _cached_or_fetch(self, cached_active, cached_load_order, *, fix_lo,
+                         **kwargs):
         """Read data from loadorder.txt file. If loadorder.txt does not exist
         request creating it and use cached/plugins.txt info so the load order
         of the user is preserved (note super will request creating plugins.txt
         if not existing). Additional mods should be added by caller who should
         anyway call _fix_load_order. The relative order of mods will be
         corrected to match their relative order in active returned by super."""
-        act, = super()._cached_or_fetch(cached_load_order, cached_active,
-                                       fix_lo, rdata_mods)
+        act, = super()._cached_or_fetch(cached_active, cached_load_order,
+                                        fix_lo=fix_lo, **kwargs)
         pl_changed = cached_active is not act # we fetched or requested update
         lo_changed = (pl_changed or cached_load_order is None or
                       self._loadorder_txt.do_update())
         if not lo_changed:
             return act, cached_load_order # note act is the cached one here too
-        try: #--Read file
-            return act, *self._loadorder_txt.parse_modfile(
-                fix_lo.lo_duplicates)
-        except FileNotFoundError:
-            fix_lo.do_save_lo = f'Created {self._loadorder_txt.abs_path}'
-            return act, *self._filter_plugins_txt(cached_load_order,
-                                                  fix_lo=self._creating)
+        parsed, fix_lo = self._try_read(fix_lo, self._loadorder_txt,
+                                        dups=fix_lo.lo_duplicates)
+        if parsed is None:
+            parsed = self._filter_plugins_txt(cached_load_order, fix_lo=fix_lo)
+        return act, *parsed
 
     def _filter_plugins_txt(self, active, *args, fix_lo=None):
         if fix_lo is self._creating: # pinn_active_state == fixed_order_plugins
@@ -881,15 +884,13 @@ class AsteriskGame(LoGame):
                  self._ccc_dirs) if self._ccc_filename else ()
         self.__cc_files = {p: _CCCFile(False, p) for p in paths}
 
-    def _cached_or_fetch(self, ca_load_order, ca_active, fix_lo, rdata_mods,
-                         _force=False):
+    def _cached_or_fetch(self, *chs, fix_lo, **kwargs):
         """Read data from plugins.txt file once. If plugins.txt does not exist
         create it. Will *always* fetch both load order and active."""
-        chs = ca_active, ca_load_order
         if not (any(a is None for a in chs) or self._plugins_txt.do_update()):
             return chs
-        return super()._cached_or_fetch(ca_load_order, ca_active, fix_lo,
-                                        rdata_mods, _force=True)
+        return super()._cached_or_fetch(*chs, dups=fix_lo.lo_duplicates,
+                                        fix_lo=fix_lo, **kwargs)
 
     def _filter_plugins_txt(self, active, lord, *, fix_lo=None):
         rem_from_acti = self._get_force_act(active=active)
