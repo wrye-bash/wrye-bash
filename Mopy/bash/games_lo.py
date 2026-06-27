@@ -295,8 +295,7 @@ class LoGame:
                                         filter_list=active)
         savact = None if fix_lo.act_changed() or fix_lo.do_save_act else active
         savlo = None if fix_lo.lo_changed() or fix_lo.do_save_lo else lo
-        self._persist_if_changed(active, lo,  # pass None to save - do backups
-                                 savact, savlo, fixlo=fix_lo)
+        self._persist_if_changed(lo, savlo, active, savact, fixlo=fix_lo)
         for msg in fix_lo.do_save_lo, fix_lo.do_save_act:
             if msg: bolt.deprint(msg)
         return [*lo], [*active], fix_lo
@@ -374,14 +373,7 @@ class LoGame:
             self._fix_load_order(lord, fix_lo, _saving=True)
             if not dry_run and previous_lord != lord and active is None:
                 # changing load order - test if active plugins must change too
-                prev = set(previous_lord)
-                new = set(lord)
-                dltd = prev - new
-                common = prev & new
-                reordered = any(x != y for x, y in
-                                zip((x for x in previous_lord if x in common),
-                                    (x for x in lord if x in common)))
-                if self._must_update_active(dltd, reordered):
+                if self._must_update_active(lord, previous_lord):
                     active = [*previous_act] # copy for _fix_active_plugins
         else:
             lord = previous_lord
@@ -391,31 +383,26 @@ class LoGame:
         else:
             active = previous_act
         if not dry_run: # else just return the (possibly fixed) lists
-            self._persist_if_changed(active, lord, previous_act, previous_lord)
+            self._persist_if_changed(lord, previous_lord, active, previous_act)
         return lord, active, fix_lo # return what we set or was previously set
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reord_plugins):
-        raise NotImplementedError
+    def _must_update_active(cls, lord, previous_lord):
+        if (prev := set(previous_lord)) - (new := set(lord)):
+            return True # files were deleted
+        if not cls._order_active:
+            return False
+        common = prev & new
+        return any(x != y for x, y in zip((x for x in lord if x in common),
+            (x for x in previous_lord if x in common))) # reordered
 
-    # ABSTRACT ----------------------------------------------------------------
-    def _persist_load_order(self, lord, backup_file):
-        """Persist the fixed lord to disk - will break conflicts for
-        timestamp games."""
-        raise NotImplementedError(f'{type(self)} does not define '
-                                  f'_persist_load_order')
-
-    def _persist_if_changed(self, active: LoList, lord: LoList,
-                            previous_active, previous_lord, fixlo=None):
-        # AsteriskGame overrides to write the file once - active/lord are lists
-        getting_lo = fixlo is not None
-        if previous_lord is None or previous_lord != lord:
-            self._persist_load_order(lord, getting_lo and not
-                fixlo.do_save_lo.startswith('Created'))
+    def _persist_if_changed(self, lord: LoList, previous_lord, active: LoList,
+                            previous_active, fixlo=None):
+        # Write plugins.txt - all but AsteriskGame override to write load order
         if previous_active is None or ((previous_active != active) if
                 self._order_active else (set(previous_active) != set(active))):
             self._plugins_txt.write_modfile(*self._filter_plugins_txt(
-                active, lord), backup_file=getting_lo and not
+                active, lord), backup_file=fixlo is not None and not
                     fixlo.do_save_act.startswith('Created'))
 
     # VALIDATION --------------------------------------------------------------
@@ -747,12 +734,11 @@ class INIGame(LoGame):
         game path."""
         return bass.dirs[u'app']
 
-    # Misc overrides
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reord_plugins):
+    def _must_update_active(cls, *args):
         if cls.ini_key_actives is not None:
             return True # Assume order is important for the INI
-        return super()._must_update_active(deleted_plugins, reord_plugins)
+        return super()._must_update_active(*args)
 
 def set_mtimes(wanted_lord, current_lord, fnkey_info: dict):
     """Set the mtimes of the mods in current lord to match wanted_lord order.
@@ -786,14 +772,11 @@ class TimestampGame(LoGame):
         self._add_last(lord, rdata_mods.to_add)
         return act, lord
 
-    # Abstract overrides ------------------------------------------------------
-    @classmethod
-    def _must_update_active(cls, deleted_plugins, reord_plugins):
-        return deleted_plugins
-
-    def _persist_load_order(self, lord, backup_file):
-        current = self._calculate_mtime_order(modinfos := self._mod_infos)
-        set_mtimes(lord, current, modinfos)
+    def _persist_if_changed(self, lord, previous_lord, *args, **kwargs):
+        if previous_lord is None or previous_lord != lord:
+            current = self._calculate_mtime_order(modinfos := self._mod_infos)
+            set_mtimes(lord, current, modinfos)
+        super()._persist_if_changed(lord, previous_lord, *args, **kwargs)
 
     def _add_last(self, lord, added):
         if added:
@@ -852,13 +835,11 @@ class TextfileGame(LoGame):
                     active = [self._game_handle.master_file, *active]
         return active,
 
-    # Abstract overrides ------------------------------------------------------
-    @classmethod
-    def _must_update_active(cls, deleted_plugins, reord_plugins):
-        return deleted_plugins or reord_plugins
-
-    def _persist_load_order(self, lord, backup_file):
-        self._loadorder_txt.write_modfile(lord, backup_file=backup_file)
+    def _persist_if_changed(self, lord, previous_lord, *args, fixlo=None):
+        if previous_lord is None or previous_lord != lord:
+            self._loadorder_txt.write_modfile(lord, backup_file=fixlo is not
+                None and not fixlo.do_save_lo.startswith('Created'))
+        super()._persist_if_changed(lord, previous_lord, *args, fixlo=fixlo)
 
     def swap(self, old_dir, new_dir):
         swapped_pl = super().swap(old_dir, new_dir)
@@ -943,13 +924,14 @@ class AsteriskGame(LoGame):
         active[:] = [*sorted_rem, *active]
 
     @classmethod
-    def _must_update_active(cls, deleted_plugins, reord_plugins): return True
+    def _must_update_active(cls, *args): return True
 
-    def _persist_if_changed(self, active, lord, previous_active,
-                            previous_lord, **kwargs):
-        if (previous_lord is None or previous_lord != lord) or (
-                previous_active is None or previous_active != active):
-            super()._persist_if_changed(active, lord, None, lord, **kwargs)
+    def _persist_if_changed(self, lord, previous_lord, active, previous_active,
+                            **kwargs):
+        if previous_lord is None or previous_lord != lord:
+            previous_active = None # force write the plugins.txt
+        super()._persist_if_changed(lord, previous_lord, active,
+                                    previous_active, **kwargs)
 
     def get_lo_files(self):
         return [*super().get_lo_files()] * 2
