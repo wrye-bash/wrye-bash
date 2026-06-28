@@ -323,7 +323,7 @@ class _AParser(_HandleAliases):
         # Process the mod's masters first, but see if we need to sort them
         master_names = loaded_mod.tes4.masters
         if self._needs_fp_master_sort:
-            master_names = load_order.get_ordered(master_names)
+            master_names = load_order.cached_sort(master_names)
         for mod_name in master_names:
             if mod_name in self._fp_mods: continue
             _fp_loop(self._load_plugin(modinfos[mod_name],

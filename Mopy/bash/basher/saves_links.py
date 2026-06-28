@@ -377,11 +377,11 @@ class Save_DiffMasters(EnabledLink):
             message = u''
             if missing:
                 message += '=== ' + _('Removed Masters') + f' ({oldName}):\n* '
-                message += u'\n* '.join(load_order.get_ordered(missing))
+                message += '\n* '.join(load_order.cached_sort(missing))
                 if added: message += u'\n\n'
             if added:
                 message += u'=== ' + _(u'Added Masters') + f' ({newName}):\n* '
-                message += u'\n* '.join(load_order.get_ordered(added))
+                message += '\n* '.join(load_order.cached_sort(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------

@@ -317,7 +317,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
         log.setHeader(f'= {self._patcher_name}')
         self._log_srcs(log)
         log('\n=== ' + _('Records Patched'))
-        for srcMod in load_order.get_ordered(count):
+        for srcMod in load_order.cached_sort(count):
             log(f'* {srcMod}: {count[srcMod]:d}')
 
 #------------------------------------------------------------------------------

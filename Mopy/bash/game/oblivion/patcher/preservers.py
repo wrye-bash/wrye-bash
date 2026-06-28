@@ -134,7 +134,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         log.setHeader(u'= ' + self._patcher_name)
         log('* ' + _('Powers Tweaked: %(total_changed)d') % {
             'total_changed': sum(count.values())})
-        for srcMod in load_order.get_ordered(count):
+        for srcMod in load_order.cached_sort(count):
             log(f'  * {srcMod}: {count[srcMod]:d}')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
@@ -198,7 +198,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         log.setHeader(u'= ' + self._patcher_name)
         self._log_srcs(log)
         log(u'\n=== ' + _(u'Morphable Factions'))
-        for mod in load_order.get_ordered(changes_dict):
+        for mod in load_order.cached_sort(changes_dict):
             log(f'* {mod}: {changes_dict[mod]:d}')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):

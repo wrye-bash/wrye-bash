@@ -350,7 +350,7 @@ class MultiTweakItem:
         """Logs the total changes and details for each plugin."""
         self._tweak_make_log_header(log)
         log('* ' + self.tweak_log_msg % {'total_changed': sum(count.values())})
-        for src_plugin in load_order.get_ordered(count):
+        for src_plugin in load_order.cached_sort(count):
             log(f'  * {src_plugin}: {count[src_plugin]}')
 
     def _tweak_make_log_header(self, log):

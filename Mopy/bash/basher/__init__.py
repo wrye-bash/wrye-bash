@@ -548,7 +548,7 @@ class MasterList(_ModsUIList):
 
     #--Relist
     def _reList(self, repopulate=True):
-        file_order_names = load_order.get_ordered(
+        file_order_names = load_order.cached_sort(
             [v.curr_name for v in self.data_store.values()])
         self._curr_lo_index = {p: i for i, p in enumerate(file_order_names)}
         self._curr_real_index = {p: bosh.modInfos.real_indices[p][0] for p in

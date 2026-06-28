@@ -105,8 +105,8 @@ class _AMorrowindGameInfo(PatchGame):
             if len(bsas) != len(bsalo := {v: k for k, v in bsas.items() if v}):
                 bolt.deprint(f'some BSAs in {mor_ini} are not present: '
                              f'{bsas.keys() - bsalo.values()}')
-                for b in bsalo:
-                    b.lo_src = f'Loaded from: {mor_ini.fn_key}'
+            for b in bsalo:
+                b.lo_src = f'Loaded from: {mor_ini.fn_key}'
             return bsalo
 
     class Ess(GameInfo.Ess):

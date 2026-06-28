@@ -153,7 +153,7 @@ class PatchFile(ModFile):
         self.mergeSet = merge_set = set(mergeMods)
         self.merged_or_loaded = merged_active = {*merge_set, *self.load_dict}
         self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
-                                     load_order.get_ordered(merged_active)}
+                                     load_order.cached_sort(merged_active)}
         self.ii_mode = {m for m in merge_set if 'IIM' in self.all_tags[m]}
 
     def init_patchers_data(self, patcher_instances, progress):
@@ -359,7 +359,7 @@ class PatchFile(ModFile):
 
     def set_attributes(self, *, was_split=False, split_part=0):
         """Create the description, set appropriate flags, etc."""
-        self.tes4.masters = load_order.get_ordered(self.used_masters())
+        self.tes4.masters = load_order.cached_sort(self.used_masters())
         # Build the description
         num_records = sum(x.get_num_records() for x in self.tops.values())
         self.tes4.description = (_('Updated: %(update_time)s') % {

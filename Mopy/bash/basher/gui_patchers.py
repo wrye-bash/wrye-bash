@@ -275,7 +275,7 @@ class _ListPatcherPanel(_PatcherPanel):
     def _sort_and_update_items(self, unsorted_items):
         """Helper for LO-sorting items and updating the internal caches for
         them."""
-        self.configItems = load_order.get_ordered(unsorted_items)
+        self.configItems = load_order.cached_sort(unsorted_items)
         # Clear the search bar - this will _handle_item_search, which will call
         # _populate_item_list in turn
         self._item_search.text_content = ''

@@ -265,7 +265,7 @@ class Mod_OrderByName(EnabledLink):
         #--Do it
         sort_by_name = sorted(self.selected) # name ascending
         sort_by_name.sort(key=load_order.master_sort())
-        lowest = load_order.get_ordered(sort_by_name)[0]
+        lowest = load_order.cached_sort(sort_by_name)[0]
         lordata = bosh.modInfos.lo_insert_at(lowest, sort_by_name,
                                              save_all=True)
         self.window.propagate_refresh(lordata)
@@ -316,7 +316,7 @@ class Mod_Redate(File_Redate):
     """Mods tab version of the Redate command."""
     def _infos_to_redate(self):
         return [self._data_store[to_redate] for to_redate
-                in load_order.get_ordered(self.selected)]
+                in load_order.cached_sort(self.selected)]
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
@@ -768,7 +768,7 @@ class Mod_ListDependent(OneItemLink):
             {'master_name': self._selected_item})
 
     def Execute(self):
-        ordered = load_order.get_ordered(self._data_store.dependents[
+        ordered = load_order.cached_sort(self._data_store.dependents[
                                              self._selected_item])
         dependent = ListDependentDialog.make_highlight_entry(
             _('The following plugins are dependent on %(master_name)s, '

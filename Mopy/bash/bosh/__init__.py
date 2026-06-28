@@ -1089,7 +1089,7 @@ class ModInfo(_WithMastersInfo):
             - 10: Out of order master(s)
             - 20: Loads before its master(s)
             - 21: 10 + 20"""
-        mo = tuple(load_order.get_ordered(self.masterNames)) # masterOrder
+        mo = tuple(load_order.cached_sort(self.masterNames)) # masterOrder
         loads_before_its_masters = mo and __lo(mo[-1]) > __lo(self.fn_key)
         if (inordered := mo != self.masterNames) and loads_before_its_masters:
             return 21
@@ -1412,7 +1412,7 @@ class SaveInfo(_WithMastersInfo):
             self.has_inaccurate_masters = False
 
     def _masters_order_status(self):
-        mo = tuple(load_order.get_ordered(self.masterNames))
+        mo = tuple(load_order.cached_sort(self.masterNames))
         if mo != self.masterNames:
             return 20 # Reordered masters are far more important in saves
         active_tuple = load_order.cached_active_tuple()
@@ -2774,7 +2774,7 @@ class ModInfos(_AFileInfos):
             out_diff |= changes_diff
             (impacted := modified_attr(changes_diff)).discard(fn_mod)
             if impacted: # deactivated dependents or activated masters
-                impacted_mods[fn_mod] = load_order.get_ordered(impacted)
+                impacted_mods[fn_mod] = load_order.cached_sort(impacted)
         return impacted_mods, illegal, act_error
 
     def do_activate_all(self, activate_mergeable=True):
@@ -2790,7 +2790,7 @@ class ModInfos(_AFileInfos):
                     and 'Deactivate' not in modInfos[p].getBashTags())
         mergeable = MergeabilityCheck.MERGE.cached_types(modInfos)[0]
         s_plugins = {p: self[p] for p in
-                     load_order.get_ordered(filter(_activatable, self))}
+                     load_order.cached_sort(filter(_activatable, self))}
         # First, activate non-mergeable plugins not tagged Deactivate
         to_act = [p for p, v in s_plugins.items() if v not in mergeable]
         first_mergeable = len(to_act)
@@ -2828,7 +2828,7 @@ class ModInfos(_AFileInfos):
                 _add_masters(present_plugin)
         wip_actives.update(load_order.must_be_active(present_plugins))
         # Sort the result and check if we would hit an actives limit
-        ordered_wip = load_order.get_ordered(wip_actives)
+        ordered_wip = load_order.cached_sort(wip_actives)
         trimmed_plugins = load_order.check_active_limit(ordered_wip)
         # Trim off any excess plugins and commit
         to_act = [p for p in ordered_wip if p not in trimmed_plugins]
@@ -2838,13 +2838,13 @@ class ModInfos(_AFileInfos):
         if missing_plugins:
             message += _('Some plugins could not be found and were '
                          'skipped:') + '\n* '
-            message += '\n* '.join(load_order.get_ordered(missing_plugins))
+            message += '\n* '.join(load_order.cached_sort(missing_plugins))
         if trimmed_plugins:
             if missing_plugins:
                 message += '\n'
             message += _('Plugin list is full, so some plugins were '
                          'skipped:') + '\n* '
-            message += '\n* '.join(load_order.get_ordered(trimmed_plugins))
+            message += '\n* '.join(load_order.cached_sort(trimmed_plugins))
         return message
 
     @_lo_op
@@ -2992,7 +2992,7 @@ class ModInfos(_AFileInfos):
             pl_flag.set_mod_flag(newFile.tes4.flags1, flag_val, bush.game)
         newFile.safeSave()
         if dir_path is None:
-            last_selected = (load_order.get_ordered(selected) if selected
+            last_selected = (load_order.cached_sort(selected) if selected
                              else self._lo_wip)[-1]
             new = FNDict([(mod_fn := FName(mod_fn), last_selected)])
             rdata = self.refresh(RefrIn.from_added([mod_fn]), insert_after=new)
@@ -3069,7 +3069,7 @@ class ModInfos(_AFileInfos):
             statuses = self.active_statuses
             all_mods = {*chain.from_iterable(statuses.values())}
             masters_set, merged = statuses[ST_ACTIVE], statuses[ST_MERGED]
-        all_mods = load_order.get_ordered(all_mods)
+        all_mods = load_order.cached_sort(all_mods)
         #--List
         modIndex = 0
         for mname in all_mods:
@@ -3092,7 +3092,7 @@ class ModInfos(_AFileInfos):
                 for master2 in self[mname].masterNames:
                     if master2 not in self:
                         log(sMissing % {'m_master': master2})
-                    elif load_order.get_ordered(
+                    elif load_order.cached_sort(
                             (mname, master2))[1] == master2:
                         log(sDelinquent % {'d_master': master2})
         return log.out.getvalue()
