@@ -2164,13 +2164,12 @@ def _lo_cache(lord_func):
     whenever I change (or attempt to change) the latter, and that I do
     refresh modInfos."""
     @wraps(lord_func)
-    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None,
-                                **kwargs) -> RefrData:
+    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None) -> RefrData:
         """Sync the ModInfos load order and active caches and refresh for
         load order or active changes."""
+        ldiff = LordDiff() if ldiff is None else ldiff # only set in refresh
         try:
-            ldiff = LordDiff() if ldiff is None else ldiff #only set in refresh
-            ldiff |= lord_func(self, *args, **kwargs)
+            ldiff |= lord_func(self, *args)
             if ldiff:
                 # Update all data structures that may be affected by LO change
                 ldiff.affected |= self._refresh_mod_inis_and_strings()
@@ -2221,26 +2220,22 @@ def _lo_op(lop_func):
     """Decorator centralizing saving active state/load order changes. Don't
     raise exceptions in lop_func, will be swallowed in the finally block."""
     @wraps(lop_func)
-    def _lo_wip_wrapper(self: ModInfos, *args, ldiff=None, save_all=False,
+    def _lo_wip_wrapper(self: ModInfos, *args, ldiff=None,
                         save_wip_lo=False, save_act=False, **kwargs):
         """Update _active_wip/_lo_wip cache and possibly save changes.
-        :param save_all: save load order and plugins.txt
+        :param ldiff: output LordDiff - only passed from ModInfos.refresh
         :param save_wip_lo: save load order when active did not change
         :param save_act: save plugins.txt - always call with a valid load order
         """
         out_diff = kwargs.setdefault('out_diff', LordDiff())
-        ldiff = LordDiff() if ldiff is None else ldiff #output: used in refresh
-        save = sum((save_act, save_wip_lo, save_all))
-        if save > 1:
-            raise ValueError(f'{save_act=}/{save_wip_lo=}/{save_all=}')
         lo_msg = None
         try:
             lo_msg = lop_func(self, *args, **kwargs)
         finally:
-            if save:
-                out_diff = self._wip_lo_save(save_wip_lo or save_all,
-                    save_act or save_all, ldiff=ldiff) if out_diff else \
-                        RefrData() # out_diff is empty
+            if save_wip_lo or save_act:
+                out_diff = self._wip_lo_save(save_wip_lo, save_act,
+                    ldiff=LordDiff() if ldiff is None else ldiff
+                ) if out_diff else RefrData() # out_diff is empty
             return out_diff if lo_msg is None else (lo_msg, out_diff)
     return _lo_wip_wrapper
 
@@ -2295,7 +2290,7 @@ class ModInfos(_AFileInfos):
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
-        load_order.initialize_load_order_handle(self, bush.game)
+        load_order.initialize_load_order_handle(self, bush.game, bass.settings)
         # cache the bsa_lo for the current load order - expensive to calculate
         self.__bsa_lo = self.__available_bsas = None
         global modInfos
@@ -2313,7 +2308,7 @@ class ModInfos(_AFileInfos):
         NB: if an operation *we* performed changed the load order we do not
         want lock load order to revert our own operation. So either call
         some of the set_load_order methods, or pass unlock_lo=True
-        (refreshLoadOrder only *gets* load order)."""
+        (_wip_lo_refresh only *gets* load order)."""
         # Scan the data dir, getting info on added, deleted and modified files
         try:
             bt_contents = {*top_level_files(bass.dirs['tag_files'])}
@@ -2337,15 +2332,13 @@ class ModInfos(_AFileInfos):
             dlos = self._diff_los(new_lo=wip_lo, new_act=act)
             self._active_wip, self._lo_wip = act, wip_lo
             # warn the user on deactivated dependents?
-            lordata = self.lo_deactivate(*deltd, ldiff=ldiff, save_all=True,
-                                         out_diff=dlos, _skip_check=True)
+            lordata = self.lo_deactivate(*deltd, ldiff=ldiff, save_wip_lo=True,
+                save_act=True, out_diff=dlos, _skip_check=True)
         elif insert_after: # we should have no deletions here!
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
                                             ldiff=ldiff)
-        else: # if refresh_infos is False but mods are added force refresh
-            lordata = self.refreshLoadOrder(ldiff=ldiff,
-                forceRefresh=mods_changes or unlock_lo,
-                forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+        else: # refresh from plugins.txt/loadorder.txt/mtimes - append new mods
+            lordata = self._wip_lo_refresh(unlock_lo, rdata, ldiff=ldiff)
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
         # if load order did not change, we must perform the refreshes below
@@ -2662,15 +2655,12 @@ class ModInfos(_AFileInfos):
         #             'game_name': bush.game.display_name, }, self.activeBad))
         #     self.activeBad = set()
 
-    # Load order API for the rest of Bash to use - if the load order or
-    # active plugins changed, those methods run a refresh on modInfos data
+    # Internal Load order API - if the load order or active plugins changed,
+    # those methods run a refresh on modInfos wip lo/active caches
     @_lo_cache
-    def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
-                         unlock_lo=False):
-        # Needed for BAIN, which may have to reorder installed plugins
-        with load_order.Unlock(unlock_lo):
-            return load_order.refresh_lo(cached=not forceRefresh,
-                                         cached_active=not forceActive)
+    def _wip_lo_refresh(self, unlock_lo, rdata_mods):
+        return load_order.refresh_lo(unlock_lo, rdata_mods,
+            bass.settings['bash.load_order.lock_active_plugins'])
 
     @_lo_cache
     def _wip_lo_save(self, update_lo, update_act):
@@ -2688,7 +2678,7 @@ class ModInfos(_AFileInfos):
 
     @_lo_cache
     def wip_lo_undo_redo_load_order(self, redo):
-        return load_order.undo_redo_load_order(redo)
+        return load_order.undo_redo_load_order(1 if redo else -1)
 
     #--Lo/active wip caches management ----------------------------------------
     def _do_activate(self, fileName, _children=()):
@@ -2700,8 +2690,7 @@ class ModInfos(_AFileInfos):
         # Speed up lookups, since they occur for the plugin and all masters
         acti_set = set(self._active_wip)
         if fileName not in acti_set: # else we are called to activate masters
-            msg = load_order.check_active_limit([*self._active_wip, fileName],
-                                                as_type=str)
+            msg = load_order.check_active_limit([*self._active_wip, fileName])
             if msg:
                 msg = f'{fileName}: Trying to activate more than {msg}'
                 raise PluginsFullError(msg)
@@ -2829,11 +2818,10 @@ class ModInfos(_AFileInfos):
         wip_actives.update(load_order.must_be_active(present_plugins))
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.cached_sort(wip_actives)
-        trimmed_plugins = load_order.check_active_limit(ordered_wip)
-        # Trim off any excess plugins and commit
-        to_act = [p for p in ordered_wip if p not in trimmed_plugins]
-        out_diff |= self._diff_los(new_act=to_act)
-        self._active_wip = to_act
+        trimmed_plugins = load_order.check_active_limit(ordered_wip,
+            filter_list=ordered_wip)
+        out_diff |= self._diff_los(new_act=ordered_wip)
+        self._active_wip = ordered_wip
         message = ''
         if missing_plugins:
             message += _('Some plugins could not be found and were '
@@ -2894,8 +2882,8 @@ class ModInfos(_AFileInfos):
 
     @_lo_op
     def lo_insert_at(self, first, modlist, *, out_diff):
-        """Call with save_all True (not just save_wip_lo) to avoid bogus LO
-        warnings on games that reorder active plugins to match load order."""
+        """Call with save_act and save_wip_lo True to avoid bogus LO warnings
+        on games that reorder active plugins to match load order."""
         mod_set = set(modlist)
         # Clean out any duplicates left behind, in case we're moving forwards
         # Insert the requested plugins then append the remainder
@@ -3523,7 +3511,7 @@ def initBosh(game_ini_path, game_info):
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
                                for x in bush.game.Ini.dropdown_inis[1:])]
-    load_order.initialize_load_order_files()
+    load_order.initialize_load_order_files(dirs)
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()

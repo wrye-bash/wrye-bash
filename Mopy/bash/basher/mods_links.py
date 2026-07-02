@@ -212,7 +212,7 @@ class Mods_ActivePlugins(MenuLink):
     def load_lists(self):
         """Get the load lists, since those come from BashLoadOrders.dat we must
         wait for this being initialized in ModInfos.__init__."""
-        active_lists = load_order.get_active_mods_lists()
+        active_lists = load_order.get_active_mods_lists(bass.settings)
         vanilla_list = (FName(x) for x in bush.game.bethDataFiles)
         # Note the 'and' - avoids activating modding esms for Oblivion
         active_lists['Vanilla'] = [x for x in vanilla_list if
@@ -440,7 +440,7 @@ class Mods_LockLoadOrder(CheckLink):
                         'made outside Wrye Bash.')
             return self._askContinue(message, 'bash.load_order.lock.continue',
                                      title=_('Lock Load Order'))
-        load_order.toggle_lock_load_order(_show_lo_lock_warning)
+        load_order.toggle_lock_load_order(_show_lo_lock_warning, bass.settings)
 
 class Mods_LockActivePlugins(BoolLink, EnabledLink):
     """Turn on Lock Active Plugins, needs Lock Load Order to be on first."""
@@ -600,8 +600,7 @@ class _Mods_OpenLOFile(ItemLink):
 class Mods_OpenLOFileMenu(MultiLink):
     """Shows one or more links for opening LO management files."""
     def _links(self):
-        return [_Mods_OpenLOFile(lo_f) for lo_f
-                in sorted(load_order.get_lo_files())]
+        return [_Mods_OpenLOFile(lo_f) for lo_f in load_order.get_lo_files()]
 
 #------------------------------------------------------------------------------
 class Mods_LOUndo(ItemLink):
@@ -689,7 +688,7 @@ class _AImportLOBaseLink(ItemLink):
         # out_diff controls saving, so pass ldiff in to make sure we save if
         # lo_reorder made changes, even if lo_activate_exact was no op
         msg_acti, lordata = bosh.modInfos.lo_activate_exact(imp_acti,
-            out_diff=ldiff, save_all=True)
+            out_diff=ldiff, save_wip_lo=True, save_act=True)
         # Don't show the exact same message twice
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)

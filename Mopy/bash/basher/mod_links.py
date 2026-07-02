@@ -267,7 +267,7 @@ class Mod_OrderByName(EnabledLink):
         sort_by_name.sort(key=load_order.master_sort())
         lowest = load_order.cached_sort(sort_by_name)[0]
         lordata = bosh.modInfos.lo_insert_at(lowest, sort_by_name,
-                                             save_all=True)
+                                             save_wip_lo=True, save_act=True)
         self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ class Mod_Move(EnabledLink):
         # Clamp between 0 and max plugin index
         target_index = max(0, min(target_index, len(active_plugins) - 1))
         lordata = bosh.modInfos.lo_insert_at(active_plugins[target_index],
-            self.selected, save_all=True)
+            self.selected, save_wip_lo=True, save_act=True)
         self.window.propagate_refresh(lordata, detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
@@ -1508,15 +1508,8 @@ class AFlipFlagLink(EnabledLink):
             set_flags = {self._plugin_flag: self._flag_value}
             for minfo in self._to_flip:
                 minfo.set_plugin_flags(set_flags)
-            ##: HACK: forcing active refresh cause mods may be reordered and
-            # we then need to sync order in skyrim's plugins.txt
-            lordata = bosh.modInfos.refreshLoadOrder()
-            # This will have changed the plugin, so let BAIN know
-            bosh.modInfos._notify_bain(
-                altered={p.abs_path for p in self.iselected_infos()})
-            # We need to RefreshUI all higher-loading plugins than the lowest
-            # plugin that was affected to update the Indices column
-            lordata.redraw.update(self.selected)
+            lordata = bosh.modInfos.refresh(RefrData({*self.selected}),
+                                            unlock_lo=True)
             self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
