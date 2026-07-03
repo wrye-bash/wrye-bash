@@ -3508,7 +3508,7 @@ def initBosh(game_ini_path, game_info):
         archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()
 
-def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
+def initSettings(ask_yes=None, readOnly=False, _dat='BashSettings.dat',
                  _bak='BashSettings.dat.bak'):
     """Init user settings from files and load the defaults (also in basher)."""
     def _load(dat_file=_dat):
@@ -3539,8 +3539,8 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
             "second to last time that you used Wrye Bash)?") % {
             'settings_err': repr(err),
             'settings_file_name': 'BashSettings.dat'}
-        usebck = ask_yes(None, msg, _('Settings Load Error'))
-        if usebck:
+        yes = ask_yes is None
+        if yes or ask_yes(None, msg, _('Settings Load Error')):
             try:
                 bass.settings = _loadBakOrEmpty()
             except pickle.UnpicklingError as err:
@@ -3551,7 +3551,7 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                     "the corrupted settings and load Wrye Bash without your "
                     "saved settings (choosing 'No' will cause Wrye Bash to "
                     "exit)?") % {'settings_err': repr(err)}
-                delete = ask_yes(None, msg, _('Settings Load Error'))
+                delete = yes or ask_yes(None, msg, _('Settings Load Error'))
                 if delete:
                     bass.settings = _loadBakOrEmpty(delBackup=True)
                 else:
@@ -3561,7 +3561,7 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                 "Do you want to delete the corrupted settings and load Wrye "
                 "Bash without your saved settings (choosing 'No' will cause "
                 "Wrye Bash to exit)?")
-            delete = ask_yes(None, msg, _('Settings Load Error'))
+            delete = yes or ask_yes(None, msg, _('Settings Load Error'))
             if delete: # Ignore bak but don't delete, overwrite on exit instead
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else:

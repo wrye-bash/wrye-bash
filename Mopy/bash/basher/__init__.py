@@ -3783,7 +3783,6 @@ def Init(bash_app):
 
 def InitSettings(): # this must run first !
     """Initializes settings dictionary for bosh and basher."""
-    bosh.initSettings(askYes)
     global settings
     balt._settings = bass.settings
     settings = bass.settings
