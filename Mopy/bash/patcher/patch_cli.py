@@ -41,16 +41,12 @@ class HeadlessProgress(bolt.Progress):
             self._last_progress = progress_entry
             bolt.deprint(f'{self._title}: {progress_entry[0]} {message}')
 
-def _raise_prompt(_parent, message, _title=''):
-    raise BoltError(message)
-
 def _initialize_backend(bush_game):
     from .. import bosh, load_order
     from ..loot_conditions import init_loot_cond_functions
     bosh.initBosh(bush_game)
     init_loot_cond_functions(load_order, bosh, bush_game)
-    bosh.initSettings(_raise_prompt)
-    bosh.init_backend_settings(bush_game)
+    bosh.initSettings(bush_game)
     return bosh.init_stores(HeadlessProgress('Wrye Bash'))
 
 def _get_target_patch(mod_infos, patch_name):
