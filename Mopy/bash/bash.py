@@ -634,6 +634,7 @@ def _main(opts, localize, detected, restore_):
     env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
     global basher # share this instance with _close_dialog_windows
     from . import basher
+    bosh.initSettings(bush_game, basher.askYes)
     atexit.register(exit_cleanup)
     basher.InitSettings()
     # Status bar buttons (initialized in InitStatusBar) use images
