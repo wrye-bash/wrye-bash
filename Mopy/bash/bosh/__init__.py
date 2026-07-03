@@ -3531,13 +3531,13 @@ def initBosh(game_info):
     from ..patcher.config_patchers import init_patcher_types
     init_patcher_types(game_info)
 
-def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
+def initSettings(bush_game, ask_yes=None, *, _dat='BashSettings.dat',
                  _bak='BashSettings.dat.bak'):
     """Init user settings from files and load the defaults (also in basher)."""
     def _load(dat_file=_dat):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
         return bolt.Settings( # calls PickleDict.load() and copies loaded data
-            bolt.PickleDict(dirs[u'saveBase'].join(dat_file), readOnly))
+            bolt.PickleDict(dirs[u'saveBase'].join(dat_file)))
     _dat = dirs[u'saveBase'].join(_dat)
     _bak = dirs[u'saveBase'].join(_bak)
     def _loadBakOrEmpty(delBackup=False, ignoreBackup=False):
@@ -3562,8 +3562,9 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
             "second to last time that you used Wrye Bash)?") % {
             'settings_err': repr(err),
             'settings_file_name': 'BashSettings.dat'}
-        usebck = ask_yes(None, msg, _('Settings Load Error'))
-        if usebck:
+        if ask_yes is None: # headless mode
+            raise BoltError(msg)
+        if ask_yes(None, msg, _('Settings Load Error')):
             try:
                 bass.settings = _loadBakOrEmpty()
             except pickle.UnpicklingError as err:
@@ -3589,9 +3590,6 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else:
                 raise
-
-def init_backend_settings(bush_game):
-    """Initialize settings used by the data model and patchers."""
     from ..settings_defaults import get_default_settings, DEFAULT_COLORS
     def_settings = get_default_settings(bush_game)
     bass.settings.loadDefaults(def_settings)

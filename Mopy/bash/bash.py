@@ -615,6 +615,7 @@ def _main(opts, localize, game_infos, init_warnings, restore_):
         env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
         global basher # share this instance with _close_dialog_windows
         from . import basher
+        bosh.initSettings(bush_game, basher.askYes)
     except (exception.BoltError, ImportError, OSError, NotImplementedError):
         raise exception.BootError('\n'.join([_(
             'Error! Unable to start Wrye Bash.'), '\n', _(
