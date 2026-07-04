@@ -241,16 +241,9 @@ class _AliasesPatcherPanel(_PatcherPanel):
         return self.patcher_type(self.patcher_name, patch_file)
 
 #------------------------------------------------------------------------------
-##: A lot of this belongs into _ListsMergerPanel (e.g. the whole native_init
-# split, remove empty sublists, etc.). Would also put forceAuto to rest
 class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
-    forceAuto = True
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
-    show_empty_sublist_checkbox = False
-    # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
-    ##: Hack, this should not use display_name
-    default_remove_empty_sublists = bush.game.display_name == 'Oblivion'
     gList: ListBox | CheckListBox
     patcher_type: ClassVar[type[ListPatcher]]
 
@@ -272,34 +265,7 @@ class _ListPatcherPanel(_PatcherPanel):
             self._item_search.on_text_changed.subscribe(
                 self._handle_item_search)
             #--Manual controls
-            if self.forceAuto:
-                side_button_layout = None
-                self._sort_and_update_items(self._get_auto_items())
-            else:
-                right_side_components = []
-                if self.show_empty_sublist_checkbox:
-                    self.g_remove_empty = CheckBox(self, _(
-                        'Remove Empty Sublists'),
-                        checked=self.remove_empty_sublists)
-                    self.g_remove_empty.on_checked.subscribe(
-                        self._on_remove_empty_checked)
-                    right_side_components.append(self.g_remove_empty)
-                self.gAuto = CheckBox(self, _('Automatic'),
-                                      checked=self.autoIsChecked)
-                self.gAuto.on_checked.subscribe(self.OnAutomatic)
-                self.gAdd = Button(self, _('Add'))
-                self.gAdd.on_clicked.subscribe(self.OnAdd)
-                self.gRemove = Button(self, _('Remove'))
-                self.gRemove.on_clicked.subscribe(self.OnRemove)
-                right_side_components.extend([self.gAuto, Spacer(4), self.gAdd,
-                                              self.gRemove])
-                self.OnAutomatic(self.autoIsChecked)
-                if not self.autoIsChecked:
-                    # Populating the list when autoIsChecked is handled by
-                    # OnAutomatic above
-                    self._sort_and_update_items(self.configItems)
-                side_button_layout = VLayout(
-                    spacing=4, items=right_side_components)
+            side_button_layout = self._auto_layout()
             self.main_layout.add(
                 (HBoxedLayout(self, title=self._list_label,
                               item_expand=True, spacing=4, items=[
@@ -311,6 +277,10 @@ class _ListPatcherPanel(_PatcherPanel):
                         self._get_select_layout(),
                     ]), LayoutOptions(expand=True, weight=1)))
         return freshly_created
+
+    def _auto_layout(self, right_side_components=None):
+        self._sort_and_update_items(self._get_auto_items())
+        return None
 
     def _sort_and_update_items(self, unsorted_items):
         """Helper for LO-sorting items and updating the internal caches for
@@ -340,19 +310,6 @@ class _ListPatcherPanel(_PatcherPanel):
                             lower_search_str in i.lower()]
         with self.gList.pause_drawing():
             self._do_populate_item_list()
-        if not self.forceAuto:
-            self._update_manual_buttons()
-
-    def _update_manual_buttons(self):
-        """Helper that enables or disables the add/remove buttons based on
-        internal state."""
-        btns_enabled = not self.autoIsChecked and not bool(
-            self._item_search.text_content)
-        self.gAdd.enabled = btns_enabled
-        self.gRemove.enabled = btns_enabled
-
-    def _on_remove_empty_checked(self, is_checked):
-        self.remove_empty_sublists = is_checked
 
     def _get_select_layout(self):
         if not self.selectCommands: return None
@@ -403,19 +360,6 @@ class _ListPatcherPanel(_PatcherPanel):
             self.configChecks[item] = self.gList.lb_is_checked_at_index(i)
         self._enable_self(any(self.configChecks.values()))
 
-    def OnAutomatic(self, is_checked):
-        """Automatic checkbox changed."""
-        self.autoIsChecked = is_checked
-        if self.autoIsChecked:
-            self._sort_and_update_items(self._get_auto_items())
-        else:
-            # In autoIsChecked case, this is called by _handle_item_search
-            self._update_manual_buttons()
-
-    def OnAdd(self):
-        """Add button clicked - _ListsMergerPanel only."""
-        raise NotImplementedError
-
     def OnRemove(self):
         """Remove button clicked."""
         selections = self.gList.lb_get_selections()
@@ -435,9 +379,6 @@ class _ListPatcherPanel(_PatcherPanel):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        self.autoIsChecked = self.forceAuto or config.get('autoIsChecked',True)
-        self.remove_empty_sublists = config.get('remove_empty_sublists',
-            self.__class__.default_remove_empty_sublists)
         # Merge entries from the config with existing ones - if we're loading
         # the first config, the existing ones will be empty. Otherwise, we're
         # restoring a config into an existing state, so don't delete the
@@ -487,8 +428,6 @@ class _ListPatcherPanel(_PatcherPanel):
         config['configChoices'] = {k: v for k, v in self.configChoices.items()
                                    if k in listSet}
         config[u'configItems'] = self.configItems
-        config[u'autoIsChecked'] = self.autoIsChecked
-        config[u'remove_empty_sublists'] = self.remove_empty_sublists
         return config
 
     @staticmethod
@@ -868,21 +807,51 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     patcher_type: ClassVar[type[mergers.AListsMerger]]
     choiceMenu: ClassVar[tuple[str, ...]]
     _add_dialog_title: str
-    #--Config Phase -----------------------------------------------------------
-    forceAuto = False
     # CONFIG DEFAULTS
     selectCommands = False
+    _config_atts = ('autoIsChecked', True),
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
             self._bind_mouse_events(self.gList)
         return freshly_created
 
-    def get_patcher_instance(self, patch_file):
+    def _auto_layout(self, right_side_components=None):
+        right_side_components = right_side_components or []
+        self.gAuto = CheckBox(self, _('Automatic'), checked=self.autoIsChecked)
+        self.gAuto.on_checked.subscribe(self._on_auto_check)
+        self.gAdd = Button(self, _('Add'))
+        self.gAdd.on_clicked.subscribe(self.OnAdd)
+        self.gRemove = Button(self, _('Remove'))
+        self.gRemove.on_clicked.subscribe(self.OnRemove)
+        right_side_components.extend(
+            [self.gAuto, Spacer(4), self.gAdd, self.gRemove])
+        self._sort_and_update_items( # will also call _update_manual_buttons
+            self._get_auto_items() if self.autoIsChecked else self.configItems)
+        return VLayout(spacing=4, items=right_side_components)
+
+    def _on_auto_check(self, is_checked):
+        """Automatic checkbox changed."""
+        self.autoIsChecked = is_checked
+        if self.autoIsChecked:
+            self._sort_and_update_items(self._get_auto_items())
+        else: # In autoIsChecked case, this is called by _handle_item_search
+            self._update_manual_buttons(not self._item_search.text_content)
+
+    def _handle_item_search(self, search_str):
+        super()._handle_item_search(search_str)
+        self._update_manual_buttons(
+            not (self.autoIsChecked or self._item_search.text_content))
+
+    def _update_manual_buttons(self, btns_enabled):
+        """Helper that enables or disables the add/remove buttons based on
+        internal state."""
+        for butt in self.gAdd, self.gRemove: butt.enabled = btns_enabled
+
+    def get_patcher_instance(self, patch_file, rem_emp=False):
         patcher_sources = self._get_list_patcher_srcs()
         return self.patcher_type(self.patcher_name, patch_file,
-            patcher_sources, self.remove_empty_sublists,
-            defaultdict(set, self.configChoices))
+            patcher_sources, rem_emp, defaultdict(set, self.configChoices))
 
     @staticmethod
     def getItemLabel(item, conf_choices):
@@ -894,9 +863,16 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
+        for att, def_val in self._config_atts:
+            setattr(self, att, config.get(att, def_val))
         #--Make sure configChoices are set (as choiceMenu exists).
         for item in self.configItems:
             self._get_set_choice(item)
+        return config
+
+    def saveConfig(self, configs):
+        config = super().saveConfig(configs)
+        for att, _dflt in self._config_atts: config[att] = getattr(self, att)
         return config
 
     def _get_auto_items(self):
@@ -1279,9 +1255,19 @@ class LeveledLists(_ListsMergerPanel):
     listLabel = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
-    show_empty_sublist_checkbox = True
     # CONFIG DEFAULTS
     default_isEnabled = True
+    _config_atts = *_ListsMergerPanel._config_atts, ('remove_empty_sublists',
+        bush.game.display_name == 'Oblivion')##: Hack, this should not use display_name
+
+    def _auto_layout(self, right_side_components=None):
+        self.g_remove_empty = CheckBox(self, _('Remove Empty Sublists'),
+                                       checked=self.remove_empty_sublists)
+        self.g_remove_empty.on_checked.subscribe(self._on_remove_empty_checked)
+        return super()._auto_layout([self.g_remove_empty])
+
+    def _on_remove_empty_checked(self, is_checked):
+        self.remove_empty_sublists = is_checked
 
     def _get_glist(self):
         self.gList = ListBox(self, isSingle=False)
@@ -1295,6 +1281,10 @@ class LeveledLists(_ListsMergerPanel):
         for item in self.configItems: # Force configCheck to True for all items
             self.configChecks[item] = True
         return config
+
+    def get_patcher_instance(self, patch_file, rem_emp=False):
+        return super().get_patcher_instance(patch_file,
+                                            self.remove_empty_sublists)
 
 class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     patcher_name = _('FormID Lists')
