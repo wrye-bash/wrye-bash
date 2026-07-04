@@ -77,10 +77,8 @@ class DocBrowser(WindowFrame):
         self._rename_btn = Button(main_window, _('Rename Doc…'),
             btn_tooltip=_('Renames the document.'), on_click=self._do_rename)
         self._edit_box = CheckBox(main_window, _('Allow Editing'),
-                                  chkbx_tooltip=_('Enables or disables '
-                                                  'editing in the text field '
-                                                  'below.'))
-        self._edit_box.on_checked.subscribe(self._do_edit)
+            chkbx_tooltip=_('Enables or disables editing in the text field '
+                            'below.'), on_check=self._do_edit)
         self._open_btn = Button(main_window, _('Open Doc…'),
             btn_tooltip=_('Opens the document in your default viewer/editor.'),
             on_click=self._do_open)
@@ -448,8 +446,7 @@ class PluginChecker(WindowFrame):
         def _f(key, make_checkbox, caption_, setting_key=None,
                setting_value=None, callback=self.CheckMods, setting_tip=u''):
             if make_checkbox:
-                btn = CheckBox(self, caption_)
-                btn.on_checked.subscribe(callback)
+                btn = CheckBox(self, caption_, on_check=callback)
             else:
                 btn = Button(self, caption_, on_click=callback)
             btn.tooltip = setting_tip

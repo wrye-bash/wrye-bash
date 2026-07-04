@@ -149,12 +149,13 @@ class CreateNewProject(DialogWindow):
         self._project_name = TextField(self, _('Project Name Goes Here'))
         self._project_name.on_text_changed.subscribe(
             self.OnCheckProjectsColorTextCtrl)
+        chk = lambda *a, **k: CheckBox(*a, **k, on_check=self.OnCheckBoxChange)
         if bush.game.Esp.canBash:
-            check_esp = CheckBox(self, _('Blank.esp'), checked=True,
+            check_esp = chk(self, _('Blank.esp'), checked=True,
                 chkbx_tooltip=_('Include a blank plugin file with only '
                                 '%(game_master)s as a master in the project.'
                     ) % {'game_master': bush.game.master_file})
-            check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
+            check_esp_masterless = chk(self, _('Blank Masterless.esp'),
                 chkbx_tooltip=_('Include a blank plugin file without any '
                                 'masters in the project.'))
             self._chck_mods = {f'Blank, {bush.game.display_name}.esp':
@@ -162,7 +163,7 @@ class CreateNewProject(DialogWindow):
                 check_esp_masterless}
         else:
             self._chck_mods = {}
-        self._check_wizard = CheckBox(self, _('Blank wizard.txt'),
+        self._check_wizard = chk(self, _('Blank wizard.txt'),
             chkbx_tooltip=_('Include a blank BAIN wizard in the project.'))
         self._check_fomod = CheckBox(self, _('Blank ModuleConfig.xml'),
             chkbx_tooltip=_('Include a blank FOMOD config in the project.'))
@@ -171,8 +172,6 @@ class CreateNewProject(DialogWindow):
                 'Include an empty Wizard Images directory in the project.'))
         self._check_docs = CheckBox(self, _('Docs Directory'),
             chkbx_tooltip=_('Include an empty Docs directory in the project.'))
-        for checkbox in *self._chck_mods.values(), self._check_wizard:
-            checkbox.on_checked.subscribe(self.OnCheckBoxChange)
         # Panel Layout
         self.ok_button = OkButton(self, on_click=self.OnClose)
         VLayout(border=5, spacing=5, items=[
@@ -309,8 +308,8 @@ class CreateNewPlugin(DialogWindow):
         self._flags_chkboxes = {}
         for en in bush.game.all_flags:
             for member, kwargs in en.checkboxes().items():
-                self._flags_chkboxes[member] = chkbx = CheckBox(self, **kwargs)
-                chkbx.on_checked.subscribe(self._handle_flag_checked)
+                self._flags_chkboxes[member] = CheckBox(self, **kwargs,
+                    on_check=self._handle_flag_checked)
         self._master_search = SearchBar(self, hint=_('Search Masters'))
         self._master_search.on_text_changed.subscribe(self._handle_search)
         self._masters_box = CheckListBox(self)

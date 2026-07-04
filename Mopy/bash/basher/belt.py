@@ -357,12 +357,10 @@ class PageFinish(PageInstaller):
         self._wiz_parent.ret.ini_edits = wrye_parser.iniedits
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _('Apply these selections'),
-                                   checked=wrye_parser.bAuto)
-        self.checkApply.on_checked.subscribe(parent.enable_forward)
+            checked=wrye_parser.bAuto, on_check=parent.enable_forward)
         auto = bass.settings['bash.installers.autoWizard']
         self.checkInstall = CheckBox(self, _('Install this package'),
-                                     checked=auto)
-        self.checkInstall.on_checked.subscribe(self.OnCheckInstall)
+            checked=auto, on_check=self.OnCheckInstall)
         self._wiz_parent.ret.should_install = auto
         # Layout
         layout = VLayout(item_expand=True, spacing=4, items=[
@@ -449,8 +447,8 @@ class PageVersions(PageInstaller):
                                      'requirements are not met for using '
                                      'this installer.'))
         text_warning.wrap(parent.component_size[0] - 20)
-        self.checkOk = CheckBox(self, _('Install anyway'))
-        self.checkOk.on_checked.subscribe(parent.enable_forward)
+        self.checkOk = CheckBox(self, _('Install anyway'),
+                                on_check=parent.enable_forward)
         VLayout(items=[
             Stretch(1), (text_warning, LayoutOptions(h_align=CENTER)),
             Stretch(1), (versions_box, LayoutOptions(expand=True, weight=1)),
