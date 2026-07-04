@@ -61,10 +61,10 @@ def initialize_load_order_files(bass_dirs):
     _loadorder_txt_path = bass_dirs['lo'].join('loadorder.txt')
     _lord_pickle_path = bass_dirs['saveBase'].join('BashLoadOrders.dat')
 
-def initialize_load_order_handle(modinfos, game_handle, bass_settings):
+def initialize_load_order_handle(game_handle, bass_settings, *args):
     global _lo_handler, locked
-    _lo_handler = game_handle.lo_handler(modinfos, game_handle,
-        _plugins_txt_path, loadorder_txt_path=_loadorder_txt_path)
+    _lo_handler = game_handle.lo_handler(_plugins_txt_path, game_handle, *args,
+        loadorder_txt_path=_loadorder_txt_path)
     __load_pickled_load_orders()
     locked = bass_settings.get('bosh.modInfos.resetMTimes', False)
 
@@ -330,7 +330,8 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0)->LordDiff:
             lo_entry(time.time(), _cached_lord)]
     return lorddiff
 
-def refresh_lo(unlock_lo: bool, rdata_mods, lock_act): # modInfos.refresh only!
+# modInfos.refresh only!
+def refresh_lo(unlock_lo: bool, rdata_mods, lock_act, *, booting=False):
     """Refresh _cached_lord, reverting if locked to the saved one. We pass
     the cached values to _game_handle.get_load_order (or None for load order
     if we pass unlock_lo or mods changed), which decides if those need update.
@@ -356,16 +357,18 @@ def refresh_lo(unlock_lo: bool, rdata_mods, lock_act): # modInfos.refresh only!
                 f'{ldiff_fixed}', f'*** saved: {sstr}', f'*** fixed: {fstr}']))
             saved = fixed
     keep_cached = not unlock_lo and not rdata_mods
-    lo, active = (None, None) if old_cache is __lo_unset else (
+    lo, act = (None, None) if old_cache is __lo_unset else (
         old_cache.loadOrder if keep_cached else None, old_cache.activeOrdered)
     try:
-        lo, active, fix_lo = _lo_handler.get_load_order(lo, active, rdata_mods)
-        fix_lo.lo_deprint()
-        ldiff = _update_cache(lo, active)
-    except Exception:
-        bolt.deprint('Error updating load_order cache')
+        lo, act = _lo_handler.get_load_order(lo, act, rdata_mods, booting)
+        ldiff = _update_cache(lo, act)
+    except Exception as e:
+        # LoadOrderBootError is known and fatal, we will be exiting, logging
+        # and warning the user anyway; no need to deprint here
+        if not isinstance(e, exception.LoadOrderBootError):
+            bolt.deprint('Error updating load_order cache')
         _cached_lord = __lo_unset
-        raise
+        raise e
     if is_locked: # check if _cached_lord differs from saved
         if (ldiff_saved := _cached_lord.lo_diff(saved)).reordered or (
                 lock_act and ldiff_saved.act_ord_status()):
