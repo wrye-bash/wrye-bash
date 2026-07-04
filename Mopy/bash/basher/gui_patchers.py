@@ -809,12 +809,11 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
 
     def _auto_layout(self, right_side_components=None):
         right_side_components = right_side_components or []
-        self.gAuto = CheckBox(self, _('Automatic'), checked=self.autoIsChecked)
-        self.gAuto.on_checked.subscribe(self._on_auto_check)
         self._add_rem_bt = [Button(self, _('Add'), on_click=self._on_add),
                             Button(self, _('Remove'), on_click=self._on_rem)]
-        right_side_components.extend(
-            [self.gAuto, Spacer(4), *self._add_rem_bt])
+        right_side_components.extend([CheckBox(self, _('Automatic'),
+            checked=self.autoIsChecked, on_check=self._on_auto_check),
+            Spacer(4), *self._add_rem_bt])
         self._sort_and_update_items( # will also call _update_manual_buttons
             self._get_auto_items() if self.autoIsChecked else self.configItems)
         return VLayout(spacing=4, items=right_side_components)
@@ -1257,10 +1256,9 @@ class LeveledLists(_ListsMergerPanel):
         bush.game.display_name == 'Oblivion')##: Hack, this should not use display_name
 
     def _auto_layout(self, right_side_components=None):
-        self.g_remove_empty = CheckBox(self, _('Remove Empty Sublists'),
-                                       checked=self.remove_empty_sublists)
-        self.g_remove_empty.on_checked.subscribe(self._on_remove_empty_checked)
-        return super()._auto_layout([self.g_remove_empty])
+        return super()._auto_layout([CheckBox(self, _('Remove Empty Sublists'),
+            checked=self.remove_empty_sublists,
+            on_check=self._on_remove_empty_checked)])
 
     def _on_remove_empty_checked(self, is_checked):
         self.remove_empty_sublists = is_checked

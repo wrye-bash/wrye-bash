@@ -515,14 +515,14 @@ class MiscAppearancePage(_AFixedPage):
             _('Use Alternate Wrye Bash Name'),
             chkbx_tooltip=_('Use an alternate display name for Wrye Bash '
                             'based on the game it is managing.'),
-            checked=bass.settings['bash.useAltName'])
-        self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
+            checked=bass.settings['bash.useAltName'],
+            on_check=self._on_alt_name)
+        tt = _('Replace black icons used by Wrye Bash with white ones. '
+               'Useful if you are using an OS theme that makes those '
+               'icons hard to see.')
         self._reverse_icons_checkbox = CheckBox(self, _('Reverse Icon Colors'),
-            chkbx_tooltip=_('Replace black icons used by Wrye Bash with white '
-                            'ones. Useful if you are using an OS theme that '
-                            'makes those icons hard to see.'),
-            checked=bass.settings['bash.use_reverse_icons'])
-        self._reverse_icons_checkbox.on_checked.subscribe(self._on_rev_icons)
+            chkbx_tooltip=tt, checked=bass.settings['bash.use_reverse_icons'],
+            on_check=self._on_rev_icons)
         VLayout(border=6, spacing=4, item_expand=True, items=[
             self._page_desc_label,
             HorizontalLine(self),
@@ -564,8 +564,8 @@ class StatusBarPage(_AScrollablePage):
         self._show_app_ver_chk = CheckBox(self, _(u'Show App Version'),
             chkbx_tooltip=_(u'Show/hide version numbers for buttons on the '
                             u'status bar.'),
-            checked=bass.settings[u'bash.statusbar.showversion'])
-        self._show_app_ver_chk.on_checked.subscribe(self._handle_app_ver)
+            checked=bass.settings['bash.statusbar.showversion'],
+            on_check=self._handle_app_ver)
         self._icon_size_dropdown = DropDown(self,
             value=str(bass.settings['bash.statusbar.iconSize']),
             choices=['16', '24', '32'], dd_tooltip=_(
@@ -970,8 +970,8 @@ class ConfirmationsPage(_AFixedPage):
         self._show_keys_checkbox = CheckBox(self, _(u'Show Internal Keys'),
             chkbx_tooltip=_(u'If checked, show the internal key Wrye Bash '
                             u'uses to store these settings as well.'),
-            checked=bass.settings[u'bash.show_internal_keys'])
-        self._show_keys_checkbox.on_checked.subscribe(self._on_show_keys)
+            checked=bass.settings['bash.show_internal_keys'],
+            on_check=self._on_show_keys)
         self._confirmation_list = CheckListBox(self, isHScroll=True)
         self._confirmation_list.on_box_checked.subscribe(self._on_check_conf)
         self._file_drop_dropdown = DropDown(self, value=self._saved_action,
@@ -1120,8 +1120,8 @@ class GeneralPage(_AScrollablePage):
         self._update_check_enable = CheckBox(self, _('Check on Startup'),
             chkbx_tooltip=_('Whether or not Wrye Bash should check to see if '
                             'a newer version is available when it is '
-                            'launched.'), checked=update_check_on)
-        self._update_check_enable.on_checked.subscribe(self._on_update_checked)
+                            'launched.'), checked=update_check_on,
+            on_check=self._on_update_checked)
         self._update_check_enable.enabled = can_check_updates
         self._update_check_cooldown = Spinner(self,
             spin_tip=_('Do not check for updates again until this many hours '
@@ -1154,13 +1154,12 @@ class GeneralPage(_AScrollablePage):
                             "startup. May cause a moderate slowdown in "
                             "Wrye Bash's boot process if you have a very "
                             "large number of plugins/saves/etc."),
-            checked=bass.settings[u'bash.restore_scroll_positions'])
-        self._restore_scroll_checkbox.on_checked.subscribe(self._on_res_scroll)
+            checked=bass.settings['bash.restore_scroll_positions'],
+            on_check=self._on_res_scroll)
         ##: Doesn't really belong here, but couldn't think of a better place
         self._uac_restart_checkbox = CheckBox(self, _(u'Administrator Mode'),
             chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
-                            u'privileges.'))
-        self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
+                            'privileges.'), on_check=self._on_uac_restart)
         self._uac_restart_checkbox.visible = is_uac()
         ##: This should be on its own page for configuring all kinds of paths,
         # see #572

@@ -266,8 +266,7 @@ class DeletionDialog(DialogWindow):
         self._recycle_checkbox = CheckBox(self, _('Recycle'),
             checked=default_recycle, chkbx_tooltip=_(
                 'Whether to move deleted items to the recycling bin or '
-                'permanently delete them.'))
-        self._recycle_checkbox.on_checked.subscribe(self._on_recycle_checked)
+                'permanently delete them.'), on_check=self._on_recycle_checked)
         self._question_label = WrappingLabel(self, self._get_question_msg())
         uncheck_label = WrappingLabel(self, _('Uncheck items to skip deleting '
                                               'them if desired.'))
