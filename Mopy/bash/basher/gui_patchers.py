@@ -809,6 +809,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     _add_dialog_title: str
     # CONFIG DEFAULTS
     selectCommands = False
+    _config_atts = ('autoIsChecked', True),
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -862,7 +863,8 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        self.autoIsChecked = config.get('autoIsChecked', True)
+        for att, def_val in self._config_atts:
+            setattr(self, att, config.get(att, def_val))
         #--Make sure configChoices are set (as choiceMenu exists).
         for item in self.configItems:
             self._get_set_choice(item)
@@ -870,7 +872,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
 
     def saveConfig(self, configs):
         config = super().saveConfig(configs)
-        config['autoIsChecked'] = self.autoIsChecked
+        for att, _dflt in self._config_atts: config[att] = getattr(self, att)
         return config
 
     def _get_auto_items(self):
@@ -1253,11 +1255,10 @@ class LeveledLists(_ListsMergerPanel):
     listLabel = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
-    # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
-    ##: Hack, this should not use display_name
-    default_remove_empty_sublists = bush.game.display_name == 'Oblivion'
     # CONFIG DEFAULTS
     default_isEnabled = True
+    _config_atts = *_ListsMergerPanel._config_atts, ('remove_empty_sublists',
+        bush.game.display_name == 'Oblivion')##: Hack, this should not use display_name
 
     def _auto_layout(self, right_side_components=None):
         self.g_remove_empty = CheckBox(self, _('Remove Empty Sublists'),
@@ -1279,13 +1280,6 @@ class LeveledLists(_ListsMergerPanel):
         config = super()._getConfig(configs)
         for item in self.configItems: # Force configCheck to True for all items
             self.configChecks[item] = True
-        self.remove_empty_sublists = config.get('remove_empty_sublists',
-            self.__class__.default_remove_empty_sublists)
-        return config
-
-    def saveConfig(self, configs):
-        config = super().saveConfig(configs)
-        config['remove_empty_sublists'] = self.remove_empty_sublists
         return config
 
     def get_patcher_instance(self, patch_file, rem_emp=False):
