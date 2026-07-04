@@ -244,8 +244,8 @@ class LoGame:
     _order_active = False # match order of active plugins with load order
     _creating = _FixInfo() # sentinel - creating a LoFile (_filter_plugins_txt)
 
-    def __init__(self, mod_infos, game_handle, plugins_txt_path: Path, *,
-                 plugins_txt_type=LoFile, **kwargs):
+    def __init__(self, plugins_txt_path: Path, game_handle, mod_infos,
+                 exit_on_boot=False, *, plugins_txt_type=LoFile, **kwargs):
         """:type mod_infos: bosh.ModInfos"""
         self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
         # this is bosh.modInfos, must be up to date. Heavily used in
@@ -256,11 +256,12 @@ class LoGame:
                                            *self.__class__.force_load_first)
         self.pin_active_state = self.fixed_order_plugins = None
         self._print_lo_paths()
+        self._exit_on_boot_error = exit_on_boot
 
     # API: Get and helpers ----------------------------------------------------
     def get_load_order(self, cached_load_order: LoTuple | None,
-                       cached_active_ordered: LoTuple | None, rdata_mods) -> \
-            tuple[LoList, LoList, _FixInfo]:
+                       cached_active_ordered: LoTuple | None, rdata_mods,
+                       booting) -> ParsedLo:
         """Get and validate current load order and active plugins information.
 
         ***Only*** called in ModInfos.refresh to fetch load order and active
@@ -270,6 +271,7 @@ class LoGame:
         saving them before returning. The caller is responsible for passing
         a valid cached value in, else you risk validating the other one based
         on stale data. NOTE: modInfos must be up to date for validation."""
+        self._exit_on_boot_error = self._exit_on_boot_error and booting
         active, lo = self._cached_or_fetch(cached_active_ordered,
             cached_load_order, fix_lo=(fix_lo := _FixInfo()),
             rdata_mods=rdata_mods)
@@ -291,14 +293,15 @@ class LoGame:
             # sync order of plugins.txt with lo
             self._check_active_order(active := list(active), lo, fix_lo)
             if rdata_mods.redraw: # plugin flag changed? - check active limits
-                self.check_active_limit(active, fix_active=fix_lo,
-                                        filter_list=active)
+                self.check_active_limit(active, filter_list=active,
+                                        fix_active=fix_lo)
         savact = None if fix_lo.act_changed() or fix_lo.do_save_act else active
         savlo = None if fix_lo.lo_changed() or fix_lo.do_save_lo else lo
         self._persist_if_changed(lo, savlo, active, savact, fixlo=fix_lo)
         for msg in fix_lo.do_save_lo, fix_lo.do_save_act:
             if msg: bolt.deprint(msg)
-        return [*lo], [*active], fix_lo
+        fix_lo.lo_deprint()
+        return [*lo], [*active]
 
     def _cached_or_fetch(self, cached_active, cached_load_order, *, fix_lo,
                          rdata_mods=None, dups=None):
@@ -510,8 +513,8 @@ class LoGame:
     def check_active_limit(self, acti_filtered, *, filter_list=None,
                            fix_active=None):
         pl_type_active, cached_minfs = defaultdict(list), self._mod_infos
-        limit_flags = {pf: (pf.name.title(), mp) for pf in
-            self._game_handle.plugin_flags if (mp := pf.max_plugins)}
+        limit_flags = {pf: (pf.name.title(), max_num) for pf in
+            self._game_handle.plugin_flags if (max_num := pf.max_plugins)}
         for m in acti_filtered:
             mi = cached_minfs[m]
             for pflag in limit_flags:
@@ -521,10 +524,14 @@ class LoGame:
             else:
                 pl_type_active[PluginFlag].append(m)
         limit_flags[PluginFlag] = ('regular', PluginFlag.max_plugins)
-        filtered = {f'{mp:d} {type_name} plugins': drop for f, (type_name, mp)
-            in limit_flags.items() if (drop := pl_type_active[f][mp:])}
-        if filter_list is None:
-            return ' and '.join(k for k in filtered)
+        filtered = {f'{max_num:d} {type_name} plugins': to_disable
+            for f, (type_name, max_num) in limit_flags.items() if (
+                to_disable := pl_type_active[f][max_num:])}
+        if (abort := self._exit_on_boot_error) or filter_list is None:
+            if (msg := ' and '.join(k for k in filtered)) and abort:
+                raise exception.LoadOrderBootError(f'More than {msg} are '
+                    f'active. Disable some and restart')
+            if filter_list is None: return msg
         # update filter_list in place - this must always be done, since it may
         # contain files that are no longer on disk (i.e. not in acti_filtered)
         filtered = set(chain(*filtered.values()))
@@ -705,7 +712,7 @@ class INIGame(LoGame):
     ini_key_actives = None
     ini_key_lo = None
 
-    def __init__(self, mod_infos, game_handle, plugins_txt_path, **kwargs):
+    def __init__(self, plugins_txt_path, *args, **kwargs):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
         if self.__class__.ini_key_actives:
@@ -716,7 +723,7 @@ class INIGame(LoGame):
             kwargs.update({ # we must come just before TextfileGame in the MRO
                 'loadorder_txt_path': self.ini_dir_lo.join(self.ini_key_lo[0]),
                 'lo_txt_type': partial(_mk_ini, self.ini_key_lo)})
-        super().__init__(mod_infos, game_handle, plugins_txt_path, **kwargs)
+        super().__init__(plugins_txt_path, *args, **kwargs)
 
     # INI directories, override if needed
     @property
@@ -792,10 +799,10 @@ class TextfileGame(LoGame):
     _remove_game_master_from_plugins_txt = True
     _order_active = True # Skyrim, Enderal, ORE
 
-    def __init__(self, mod_infos, game_handle, plugins_txt_path,
-                 loadorder_txt_path: Path, *, lo_txt_type=LoFile, **kwargs):
+    def __init__(self, *args, loadorder_txt_path: Path, lo_txt_type=LoFile,
+                 **kwargs):
         self._loadorder_txt = lo_txt_type(self._star, loadorder_txt_path)
-        super().__init__(mod_infos, game_handle, plugins_txt_path, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _cached_or_fetch(self, cached_active, cached_load_order, *, fix_lo,
                          **kwargs):

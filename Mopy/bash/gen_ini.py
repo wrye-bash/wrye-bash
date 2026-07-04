@@ -182,6 +182,15 @@ def _generate_default_bash_ini():
 {_gen_section_header('Settings')}
 
 {_wrap_ini_comment(_(
+    "%(exit_on_lo_error)s: whether or not Wrye Bash should immediately exit "
+    "with an error if a load order problem is detected (currently too many "
+    "active plugins), rather than just fixing it (by disabling the last N "
+    "plugins). Default is %(default)s.") % {
+        'exit_on_lo_error': 'bExitOnLOBootError', 'default': 'False'})}
+;bExitOnLOBootError=False
+
+
+{_wrap_ini_comment(_(
     "%(reset_bsa_timestamps)s: whether or not Wrye Bash should automatically "
     "set BSA timestamps. If enabled, BSAs will be set to %(redate_date)s "
     "automatically. It is intended to prevent files in BSAs from overriding "
@@ -296,7 +305,11 @@ def _generate_default_bash_ini():
 
 {_wrap_ini_comment(_(
     "%(warn_too_many_files)s: use this to enable or disable the warning on "
-    "too many mods/BSAs on startup. Default is %(default)s.") % {
+    "too many mods/BSAs on startup. This warns if more than 325 combined "
+    "plugins and BSAs are present in the Data folder. Only applies to Fallout "
+    "3/NV and Oblivion. Automatically disabled if a tool that fixes this "
+    "problem is installed (like OBL Mod Limit Fix). Default is "
+    "%(default)s.") % {
         'warn_too_many_files': 'bWarnTooManyFiles', 'default': 'True'})}
 ;bWarnTooManyFiles=False
 

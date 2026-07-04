@@ -371,8 +371,9 @@ def _parse_bash_ini(bash_ini_path):
             **dict.fromkeys(['AutoItemCheck', 'EnableSplashScreen',
                 'EnsurePatchExists', 'PromptActivateBashedPatch',
                 'ResetBSATimestamps', 'WarnTooManyFiles'], True),
-            **dict.fromkeys(['ShowDevTools', 'SkipHideConfirmation',
-                'SkipResetTimeNotifications', 'SkipWSDetection'], False),
+            **dict.fromkeys(['ExitOnLOBootError', 'ShowDevTools',
+                'SkipHideConfirmation', 'SkipResetTimeNotifications',
+                'SkipWSDetection'], False),
             **dict.fromkeys(['7zExtraCompressionArguments',
                 'SkippedBashInstallersDirs', 'SoundError', 'SoundSuccess',
                 'xEditCommandLineArguments'], '')
@@ -642,7 +643,14 @@ def _main(opts, wx_locale, _wx):
                               title=_('Unable to create backup!')):
                     return  # Quit
     #--Start application
-    frame = basher.Init(bash_app)  # Link.Frame is set here !
+    try:
+        frame = basher.Init(bash_app)  # Link.Frame is set here !
+    except Exception as e:
+        if problems := _detect_known_boot_problems(e):
+            msg = [_('The following problems were found during boot:'), '',
+                   *(f'- {e}' for e in problems)]
+            _show_boot_popup(_wx, '\n'.join(msg))
+        raise e
     frame.ensureDisplayed()
     frame.bind_refresh()
     # Start the update check in the background and pass control to wx's event
@@ -774,6 +782,21 @@ def _close_dialog_windows(_wx):
             # code -1073740771 (0xC000041D) when we call anything on it
             if not isinstance(window, adv.SplashScreen):
                 window.Close()
+
+def _detect_known_boot_problems(e: Exception) -> list[str]:
+    """Inspect the given exception and determine if we know its cause. This
+    means it's a special kind of exception designed to communicate to this
+    method that something in particular went wrong during boot and we should
+    show a user-readable message because the user may be able to fix the
+    problem."""
+    problems = []
+    if isinstance(e, exception.LoadOrderBootError):
+        problems.append(_(
+            'One or more problems with the load order were found during boot '
+            'and Wrye Bash was instructed to exit rather than fix them via '
+            '%(lo_exit_setting)s:') % {'lo_exit_setting': 'bExitOnLOBootError'}
+        + f'\n\n- {e}')
+    return problems
 
 class _AppReturnCode(object):
     def __init__(self): self.value = None

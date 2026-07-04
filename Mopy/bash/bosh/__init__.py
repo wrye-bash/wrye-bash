@@ -2152,12 +2152,13 @@ def _lo_cache(lord_func):
     whenever I change (or attempt to change) the latter, and that I do
     refresh modInfos."""
     @wraps(lord_func)
-    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None) -> RefrData:
+    def _modinfos_cache_wrapper(self: ModInfos, *args, ldiff=None,
+            **kwargs) -> RefrData:
         """Sync the ModInfos load order and active caches and refresh for
         load order or active changes."""
         ldiff = LordDiff() if ldiff is None else ldiff # only set in refresh
         try:
-            ldiff |= lord_func(self, *args)
+            ldiff |= lord_func(self, *args, **kwargs)
             if ldiff:
                 # Update all data structures that may be affected by LO change
                 ldiff.affected |= self._refresh_mod_inis_and_strings()
@@ -2278,7 +2279,8 @@ class ModInfos(_AFileInfos):
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
-        load_order.initialize_load_order_handle(self, bush.game, bass.settings)
+        load_order.initialize_load_order_handle(bush.game, bass.settings, self,
+            inisettings['ExitOnLOBootError'])
         # cache the bsa_lo for the current load order - expensive to calculate
         self.__bsa_lo = self.__available_bsas = None
         global modInfos
@@ -2326,7 +2328,8 @@ class ModInfos(_AFileInfos):
             lordata = self._lo_insert_after(insert_after, save_wip_lo=True,
                                             ldiff=ldiff)
         else: # refresh from plugins.txt/loadorder.txt/mtimes - append new mods
-            lordata = self._wip_lo_refresh(unlock_lo, rdata, ldiff=ldiff)
+            lordata = self._wip_lo_refresh(unlock_lo, rdata, ldiff=ldiff,
+                booting=booting)
             if not unlock_lo and ldiff.missing: # unlock_lo=True in delete/BAIN
                 self.warn_missing_lo_act.update(ldiff.missing)
         # if load order did not change, we must perform the refreshes below
@@ -2646,9 +2649,10 @@ class ModInfos(_AFileInfos):
     # Internal Load order API - if the load order or active plugins changed,
     # those methods run a refresh on modInfos wip lo/active caches
     @_lo_cache
-    def _wip_lo_refresh(self, unlock_lo, rdata_mods):
+    def _wip_lo_refresh(self, unlock_lo, rdata_mods, *, booting=False):
         return load_order.refresh_lo(unlock_lo, rdata_mods,
-            bass.settings['bash.load_order.lock_active_plugins'])
+            bass.settings['bash.load_order.lock_active_plugins'],
+            booting=booting)
 
     @_lo_cache
     def _wip_lo_save(self, update_lo, update_act):
