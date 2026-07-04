@@ -36,7 +36,7 @@ class Button(_AComponent):
     (e.g. OkButton or CancelButton).
 
     Events:
-     - on_clicked(): Posted when the button is clicked.
+     - _on_clicked(): Posted when the button is clicked.
      - on_right_clicked(): Posted when the button is right-clicked."""
     _native_widget: _wx.Button
     # The ID that will be passed to wx. Controls some OS-specific behavior,
@@ -46,7 +46,7 @@ class Button(_AComponent):
     _default_label = u''
 
     def __init__(self, parent, btn_label='', btn_tooltip='', default=False,
-            exact_fit=False, no_border=False):
+            exact_fit=False, no_border=False, on_click=None):
         """Creates a new Button with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -60,7 +60,8 @@ class Button(_AComponent):
         :param exact_fit: If set to True, will fit the size of this button
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
-                          hidden."""
+                          hidden.
+        :param on_click: A function to call when this button is clicked."""
         if not btn_label and self.__class__._default_label:
             btn_label = self.__class__._default_label
         btn_style = 0
@@ -75,8 +76,10 @@ class Button(_AComponent):
         if btn_tooltip:
             self.tooltip = btn_tooltip
         # Events
-        self.on_clicked = self._evt_handler(_wx.EVT_BUTTON)
+        self._on_clicked = self._evt_handler(_wx.EVT_BUTTON)
         self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
+        if on_click is not None:
+            self._on_clicked.subscribe(on_click)
 
     @property
     def button_label(self) -> str:
@@ -201,7 +204,7 @@ class ImageButton(Button):
         Button for documentation on all other keyword arguments.
 
         :param gui_bitmap: The bitmap shown on this button."""
-        super(ImageButton, self).__init__(parent, **kwargs)
+        super().__init__(parent, **kwargs)
         if gui_bitmap is not None: self._set_button_image(gui_bitmap)
 
     def _set_button_image(self, gui_image):
@@ -215,7 +218,7 @@ class PureImageButton(ImageButton):
     See Button for documentation on button events.
 
     See also ClickableImage."""
-    def __init__(self, parent, gui_bitmap=None, *, btn_tooltip: str):
+    def __init__(self, parent, gui_bitmap=None, *, btn_tooltip: str, **kwargs):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -225,7 +228,7 @@ class PureImageButton(ImageButton):
             button. Required for accessibility purposes - without it users
             would have to guess based on the image."""
         super().__init__(parent, gui_bitmap, btn_tooltip=btn_tooltip,
-                         exact_fit=True)
+                         exact_fit=True, **kwargs)
 
 class ClickableImage(ImageButton):
     """An image that acts like a button. Has no text and no borders.
@@ -233,7 +236,9 @@ class ClickableImage(ImageButton):
     See Button for documentation on button events.
 
     See also PureImageButton."""
-    def __init__(self, parent, gui_bitmap=None, *, btn_tooltip: str = ''):
+
+    def __init__(self, parent, gui_bitmap=None, *, btn_tooltip: str = '',
+                 **kwargs):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -243,4 +248,4 @@ class ClickableImage(ImageButton):
             button. Required for accessibility purposes - without it users
             would have to guess based on the image."""
         super().__init__(parent, gui_bitmap, btn_tooltip=btn_tooltip,
-                         exact_fit=True, no_border=True)
+                         exact_fit=True, no_border=True, **kwargs)

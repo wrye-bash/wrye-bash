@@ -314,11 +314,11 @@ class _ListPatcherPanel(_PatcherPanel):
     def _get_select_layout(self):
         if not self.selectCommands: return None
         self.gSelectAll = SelectAllButton(self, btn_tooltip=_(
-            'Activate all currently visible sources.'))
-        self.gSelectAll.on_clicked.subscribe(lambda: self.mass_select(True))
+            'Activate all currently visible sources.'),
+            on_click=lambda: self.mass_select(True))
         self.gDeselectAll = DeselectAllButton(self, btn_tooltip=_(
-            'Deactivate all currently visible sources.'))
-        self.gDeselectAll.on_clicked.subscribe(lambda: self.mass_select(False))
+            'Deactivate all currently visible sources.'),
+            on_click=lambda: self.mass_select(False))
         return VLayout(spacing=4, items=[self.gSelectAll, self.gDeselectAll])
 
     def _do_populate_item_list(self):
@@ -359,13 +359,6 @@ class _ListPatcherPanel(_PatcherPanel):
         for i, item in enumerate(self._curr_items):
             self.configChecks[item] = self.gList.lb_is_checked_at_index(i)
         self._enable_self(any(self.configChecks.values()))
-
-    def OnRemove(self):
-        """Remove button clicked."""
-        selections = self.gList.lb_get_selections()
-        newItems = [item for index, item in enumerate(self.configItems)
-                    if index not in selections]
-        self._sort_and_update_items(newItems)
 
     def mass_select(self, select=True):
         try:
@@ -532,13 +525,11 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def _get_tweak_select_layout(self):
         if self.selectCommands:
             self.gTweakSelectAll = SelectAllButton(self, btn_tooltip=_(
-                'Activate all currently visible tweaks.'))
-            self.gTweakSelectAll.on_clicked.subscribe(
-                lambda: self.mass_select(True))
+                'Activate all currently visible tweaks.'),
+                on_click=lambda: self.mass_select(True))
             self.gTweakDeselectAll = DeselectAllButton(self, btn_tooltip=_(
-                'Deactivate all currently visible tweaks.'))
-            self.gTweakDeselectAll.on_clicked.subscribe(
-                lambda: self.mass_select(False))
+                'Deactivate all currently visible tweaks.'),
+                on_click=lambda: self.mass_select(False))
             tweak_select_layout = VLayout(spacing=4, items=[
                 self.gTweakSelectAll, self.gTweakDeselectAll])
         else: tweak_select_layout = None
@@ -820,12 +811,10 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         right_side_components = right_side_components or []
         self.gAuto = CheckBox(self, _('Automatic'), checked=self.autoIsChecked)
         self.gAuto.on_checked.subscribe(self._on_auto_check)
-        self.gAdd = Button(self, _('Add'))
-        self.gAdd.on_clicked.subscribe(self.OnAdd)
-        self.gRemove = Button(self, _('Remove'))
-        self.gRemove.on_clicked.subscribe(self.OnRemove)
+        self._add_rem_bt = [Button(self, _('Add'), on_click=self._on_add),
+                            Button(self, _('Remove'), on_click=self._on_rem)]
         right_side_components.extend(
-            [self.gAuto, Spacer(4), self.gAdd, self.gRemove])
+            [self.gAuto, Spacer(4), *self._add_rem_bt])
         self._sort_and_update_items( # will also call _update_manual_buttons
             self._get_auto_items() if self.autoIsChecked else self.configItems)
         return VLayout(spacing=4, items=right_side_components)
@@ -846,7 +835,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     def _update_manual_buttons(self, btns_enabled):
         """Helper that enables or disables the add/remove buttons based on
         internal state."""
-        for butt in self.gAdd, self.gRemove: butt.enabled = btns_enabled
+        for butt in self._add_rem_bt: butt.enabled = btns_enabled
 
     def get_patcher_instance(self, patch_file, rem_emp=False):
         patcher_sources = self._get_list_patcher_srcs()
@@ -880,7 +869,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             self._get_set_choice(mod)
         return super()._get_auto_items()
 
-    def OnAdd(self):
+    def _on_add(self):
         ds = bosh.modInfos
         srcDir = ds.store_dir
         wildcard = ds.unhide_wildcard()
@@ -895,6 +884,13 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
                 if (fn := FName(''.join(body_ext))) not in self.configItems:
                     self.configItems.append(fn)
         self._sort_and_update_items(self.configItems)
+
+    def _on_rem(self):
+        """Remove button clicked."""
+        selections = self.gList.lb_get_selections()
+        newItems = [item for index, item in enumerate(self.configItems)
+                    if index not in selections]
+        self._sort_and_update_items(newItems)
 
     def ShowChoiceMenu(self, itemIndex):
         """Displays a popup choice menu if applicable.

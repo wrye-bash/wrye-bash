@@ -68,10 +68,9 @@ class ValidatorPopup(DialogWindow):
             title=_('FOMOD Validation Failed - %(fomod_title)s') % {
                 'fomod_title': fm_name},
             sizes_dict=bass.settings)
-        copy_log_btn = Button(self, _('Copy Log'))
+        copy_log_btn = Button(self, _('Copy Log'), on_click=self._handle_copy)
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
                                  'clipboard.')
-        copy_log_btn.on_clicked.subscribe(self._handle_copy)
         self._error_log = TextArea(self,
             self._warning_msg + '\n'.join(error_lines), auto_tooltip=False,
             editable=False)
@@ -341,7 +340,7 @@ class PageSelect(PageInstaller):
                 # options before checking an unusable one. We should find a way
                 # to catch 'valid' user interactions and update the frozen
                 # states at that point. Simply subscribing to all non-blocked
-                # on_clicked events does not work because they fire too early
+                # _on_clicked events does not work because they fire too early
                 # (e.g. radio buttons won't have run their logic for unchecking
                 # the other button yet).
                 block_chk.block_user(self._handle_block_user)

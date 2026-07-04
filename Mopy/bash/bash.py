@@ -814,12 +814,11 @@ def _select_game_popup(game_infos, last_used_game: str | None):
             self._game_path = TextField(self, editable=False)
             class _ImgCancelButton(CancelButton, ImageButton): pass
             quit_img = GuiImage.from_path(ij('quit.svg'), iconSize=32)
-            quit_button = _ImgCancelButton(self, quit_img, btn_label=_('Quit'))
-            quit_button.on_clicked.subscribe(self._handle_quit)
+            quit_button = _ImgCancelButton(self, quit_img, btn_label=_('Quit'),
+                                           on_click=self._handle_quit)
             launch_img = GuiImage.from_path(ij('bash.svg'), iconSize=32)
             self._launch_button = ImageButton(self, launch_img,
-                btn_label=_('Launch'))
-            self._launch_button.on_clicked.subscribe(self._handle_launch)
+                btn_label=_('Launch'), on_click=self._handle_launch)
             # Start out with an empty search and the last-used game selected,
             # if any - otherwise, use the one that comes first alphabetically
             initial_choice = None

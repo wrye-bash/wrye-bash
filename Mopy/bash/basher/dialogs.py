@@ -81,8 +81,8 @@ class ImportFaceDialog(DialogWindow):
         self.statsText = Label(self, '')
         self.classText = Label(self, '')
         #--Other
-        importButton = OkButton(self, btn_label=_('Import'))
-        importButton.on_clicked.subscribe(self.DoImport)
+        importButton = OkButton(self, btn_label=_('Import'),
+                                on_click=self.DoImport)
         self.picture = Picture(self, 350, 210, scaling=2) ##: unused
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
@@ -174,8 +174,7 @@ class CreateNewProject(DialogWindow):
         for checkbox in *self._chck_mods.values(), self._check_wizard:
             checkbox.on_checked.subscribe(self.OnCheckBoxChange)
         # Panel Layout
-        self.ok_button = OkButton(self)
-        self.ok_button.on_clicked.subscribe(self.OnClose)
+        self.ok_button = OkButton(self, on_click=self.OnClose)
         VLayout(border=5, spacing=5, items=[
             (VBoxedLayout(self,
                 title=_(u'What do you want to name the new project?'),
@@ -323,16 +322,13 @@ class CreateNewPlugin(DialogWindow):
         self._masters_box.on_box_checked.subscribe(self._handle_master_checked)
         select_all_btn = SelectAllButton(self,
             btn_tooltip=_(u'Select all plugins that are visible with the '
-                          u'current search term.'))
-        select_all_btn.on_clicked.subscribe(
-            lambda: self._handle_mass_select(mark_active=True))
+                          u'current search term.'),
+            on_click=lambda: self._handle_mass_select(mark_active=True))
         deselect_all_btn = DeselectAllButton(self,
             btn_tooltip=_(u'Deselect all plugins that are visible with the '
-                          u'current search term.'))
-        deselect_all_btn.on_clicked.subscribe(
-            lambda: self._handle_mass_select(mark_active=False))
-        self._ok_btn = OkButton(self)
-        self._ok_btn.on_clicked.subscribe(self._handle_ok)
+                          u'current search term.'),
+            on_click=lambda: self._handle_mass_select(mark_active=False))
+        self._ok_btn = OkButton(self, on_click=self._handle_ok)
         self._too_many_masters = Label(self, u'')
         self._too_many_masters.set_foreground_color(colors[u'default.warn'])
         self._too_many_masters.visible = False
@@ -497,8 +493,7 @@ class ExportScriptsDialog(DialogWindow):
                 'cob to save script cobDenockInit as DenockInit.txt rather '
                 'than as cobDenockInit.txt (case-insensitive, leave blank to '
                 'not remove any prefix):')
-        ok_button = OkButton(self)
-        ok_button.on_clicked.subscribe(self._on_ok)
+        ok_button = OkButton(self, on_click=self._on_ok)
         VLayout(border=6, spacing=4, items=[
             Label(self, _('Skip prefix (leave blank to not skip any), '
                           'case-insensitive):')),
@@ -776,8 +771,8 @@ class UpdateNotification(DialogWindow):
                                'report this to the Wrye Bash maintainers.')
         quit_btn = OkButton(self, _('Quit and Download'),
             btn_tooltip=_('Close Wrye Bash and open the selected download '
-                          'option in your default web browser.'))
-        quit_btn.on_clicked.subscribe(self._on_quit_and_download)
+                          'option in your default web browser.'),
+            on_click=self._on_quit_and_download)
         VLayout(border=4, spacing=6, item_expand=True, items=[
             ##: Make this a WrappingLabel, depends on inf-190-bye-listboxes
             (Label(self, new_ver_msg), LayoutOptions(h_align=CENTER)),
@@ -995,8 +990,8 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
         self._import_target_field = TextField(self, hint=_('CSV to import'))
         browse_file_btn = ImageButton(self, get_image('folder.16'),
             btn_tooltip=_('Open a file dialog to interactively choose the '
-                          'saved package order to import.'))
-        browse_file_btn.on_clicked.subscribe(self._handle_browse)
+                          'saved package order to import.'),
+            on_click=self._handle_browse)
         self._import_what = DropDown(self,
             value=self._key_to_import[
                 bass.settings['bash.installers.import_order.what']],
@@ -1009,8 +1004,7 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
             chkbx_tooltip=_("If checked, markers (i.e. entries beginning and "
                             "ending with '==') that don't exist will be "
                             "created upon import."))
-        ok_btn = OkButton(self)
-        ok_btn.on_clicked.subscribe(self._handle_ok)
+        ok_btn = OkButton(self, on_click=self._handle_ok)
         VLayout(border=6, spacing=4, item_expand=True, items=[
             HBoxedLayout(self, title=_('File'), spacing=4, items=[
                 (self._import_target_field,

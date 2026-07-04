@@ -60,10 +60,10 @@ class CopyOrMovePopup(DialogWindow):
             icon_bundle=icon_bundle)
         self._ret_action = u''
         self._gCheckBox = CheckBox(self, _(u"Don't show this in the future."))
-        move_button = Button(self, btn_label=_(u'Move'))
-        move_button.on_clicked.subscribe(lambda: self._return_action(u'MOVE'))
-        copy_button = Button(self, btn_label=_(u'Copy'), default=True)
-        copy_button.on_clicked.subscribe(lambda: self._return_action(u'COPY'))
+        move_button = Button(self, btn_label=_('Move'),
+                             on_click=lambda: self._return_action('MOVE'))
+        copy_button = Button(self, btn_label=_('Copy'), default=True,
+                             on_click=lambda: self._return_action('COPY'))
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, item_border=6, items=[
                 (StaticBmp(self), LayoutOptions(v_align=CENTER)),
@@ -129,11 +129,9 @@ class MultiChoicePopup(_TransientPopup):
         self._choice_box = CheckListBox(self)
         self._choice_box.on_box_checked.subscribe(self._handle_item_checked)
         select_all_btn = SelectAllButton(self, _(u'Add All'),
-                                         btn_tooltip=aa_btn_tooltip)
-        select_all_btn.on_clicked.subscribe(self._select_all_choices)
+            btn_tooltip=aa_btn_tooltip, on_click=self._select_all_choices)
         deselect_all_btn = DeselectAllButton(self, _(u'Remove All'),
-                                             btn_tooltip=ra_btn_tooltip)
-        deselect_all_btn.on_clicked.subscribe(self._deselect_all_choices)
+            btn_tooltip=ra_btn_tooltip, on_click=self._deselect_all_choices)
         # Start with everything shown -> empty search string
         self._search_choices(search_str=u'')
         help_label = Label(self, help_text, alignment=TextAlignment.CENTER)
@@ -483,14 +481,12 @@ class AMultiListEditor(DialogWindow):
             # Put the check/uncheck buttons right before the search bar
             search_layout = HLayout(item_expand=True, spacing=4)
             check_all_btn = PureImageButton(self, check_uncheck_bitmaps[0],
-                btn_tooltip=_('Check all currently visible items.'))
-            check_all_btn.on_clicked.subscribe(partial(
-                self._handle_mass_check, i, True))
+                btn_tooltip=_('Check all currently visible items.'),
+                on_click=partial(self._handle_mass_check, i, True))
             search_layout.add(check_all_btn)
             uncheck_all_btn = PureImageButton(self, check_uncheck_bitmaps[1],
-                btn_tooltip=_('Uncheck all currently visible items.'))
-            uncheck_all_btn.on_clicked.subscribe(partial(
-                self._handle_mass_check, i, False))
+                btn_tooltip=_('Uncheck all currently visible items.'),
+                on_click=partial(self._handle_mass_check, i, False))
             search_layout.add(uncheck_all_btn)
             mle_sb = SearchBar(self)
             mle_sb.on_text_changed.subscribe(partial(

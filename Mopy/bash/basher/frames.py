@@ -69,26 +69,21 @@ class DocBrowser(WindowFrame):
                                  onSelect=self._do_select_existing)
         # Buttons
         self._set_btn = Button(main_window, _('Set Doc…'),
-                               btn_tooltip=_('Associates this plugin file '
-                                             'with a document.'))
-        self._set_btn.on_clicked.subscribe(self._do_set)
+            btn_tooltip=_('Associates this plugin file with a document.'),
+            on_click=self._do_set)
         self._forget_btn = Button(main_window, _('Forget Doc'),
-                                  btn_tooltip=_('Removes the link between '
-                                                'this plugin file and the '
-                                                'matching document.'))
-        self._forget_btn.on_clicked.subscribe(self._do_forget)
+            btn_tooltip=_('Removes the link between this plugin file and '
+                          'the matching document.'), on_click=self._do_forget)
         self._rename_btn = Button(main_window, _('Rename Doc…'),
-                                  btn_tooltip=_('Renames the document.'))
-        self._rename_btn.on_clicked.subscribe(self._do_rename)
+            btn_tooltip=_('Renames the document.'), on_click=self._do_rename)
         self._edit_box = CheckBox(main_window, _('Allow Editing'),
                                   chkbx_tooltip=_('Enables or disables '
                                                   'editing in the text field '
                                                   'below.'))
         self._edit_box.on_checked.subscribe(self._do_edit)
         self._open_btn = Button(main_window, _('Open Doc…'),
-                                btn_tooltip=_('Opens the document in your '
-                                              'default viewer/editor.'))
-        self._open_btn.on_clicked.subscribe(self._do_open)
+            btn_tooltip=_('Opens the document in your default viewer/editor.'),
+            on_click=self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
         self._doc_ctrl = DocumentViewer(main_window, balt.get_dv_bitmaps())
         self._prev_btn, self._next_btn, self._reload_btn = \
@@ -456,8 +451,7 @@ class PluginChecker(WindowFrame):
                 btn = CheckBox(self, caption_)
                 btn.on_checked.subscribe(callback)
             else:
-                btn = Button(self, caption_)
-                btn.on_clicked.subscribe(callback)
+                btn = Button(self, caption_, on_click=callback)
             btn.tooltip = setting_tip
             if make_checkbox and setting_key is not None:
                 new_value = _get_mod_checker_setting(setting_key,
@@ -589,10 +583,8 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         #--Layout
         def _no_fill_text(txt):
             return Label(self, txt), LayoutOptions(expand=False)
-        save_button = SaveButton(self, default=True)
-        save_button.on_clicked.subscribe(self.DoSave)
-        cancel_button = CancelButton(self)
-        cancel_button.on_clicked.subscribe(self.on_closing)
+        save_button = SaveButton(self, default=True, on_click=self.DoSave)
+        cancel_button = CancelButton(self, on_click=self.on_closing)
         VLayout(item_expand=True, spacing=4, border=4, items=[
             GridLayout(h_spacing=4, v_spacing=4, stretch_cols=[1],
                        item_expand=True, items=[
