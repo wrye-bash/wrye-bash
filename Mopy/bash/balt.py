@@ -241,12 +241,8 @@ class ListEditor(DialogWindow):
         for k, v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
-            def _btn(btn_label, btn_callback):
-                new_button = Button(self, btn_label)
-                new_button.on_clicked.subscribe(btn_callback)
-                return new_button
-            new_buttons = [_btn(defLabel, func) for def_flag, defLabel, func
-                           in buttonSet if def_flag]
+            new_buttons = [Button(self, btn_label, on_click=func) for
+                           def_flag, btn_label, func in buttonSet if def_flag]
             le_buttons = VLayout(spacing=4, items=new_buttons)
         else:
             le_buttons = None

@@ -86,7 +86,7 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
         if created:
             self._set_img_and_tip()
             # DnD doesn't work with the EVT_BUTTON so we call sb_click directly
-            # self.on_clicked.subscribe(self.sb_click)
+            # self._on_clicked.subscribe(self.sb_click)
             self.on_right_clicked.subscribe(self.DoPopupMenu)
         elif self._is_created(): # we are called from UnhideButton
             self.tooltip = self.sb_button_tip # reset the tooltip just in case

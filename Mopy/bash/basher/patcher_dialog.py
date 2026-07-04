@@ -74,32 +74,29 @@ class PatchDialog(DialogWindow):
             sizes_dict=bass.settings)
         patcherNames = [patcher.patcher_name for patcher in gpatcher_types]
         #--GUI elements
-        self.gExecute = OkButton(self, btn_label=_(u'Build Patch'))
-        self.gExecute.on_clicked.subscribe(self.PatchExecute)
+        self.gExecute = OkButton(self, btn_label=_('Build Patch'),
+                                 on_click=self.PatchExecute)
         # TODO(nycz): somehow move setUAC further into env?
         # Note: for this to work correctly, it needs to be run BEFORE
         # appending a menu item to a menu (and so, needs to be enabled/
         # disabled prior to that as well.
         # TODO(nycz): DEWX - Button.GetHandle
         env.setUAC(self.gExecute._native_widget.GetHandle(), True)
-        self.gSelectAll = SelectAllButton(self)
-        self.gSelectAll.on_clicked.subscribe(
+        self.gSelectAll = SelectAllButton(self, on_click=
             lambda: self._mass_select_recursive(True))
-        self.gDeselectAll = DeselectAllButton(self)
-        self.gDeselectAll.on_clicked.subscribe(
+        self.gDeselectAll = DeselectAllButton(self, on_click=
             lambda: self._mass_select_recursive(False))
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect)
         self.gPatchers.on_box_checked.subscribe(self.OnCheck)
-        self.gExportConfig = SaveAsButton(self, btn_label=_(u'Export'))
-        self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
-        self.gImportConfig = OpenButton(self, btn_label=_(u'Import'))
-        self.gImportConfig.on_clicked.subscribe(self.ImportConfig)
-        self.gRevertConfig = RevertToSavedButton(self)
-        self.gRevertConfig.on_clicked.subscribe(self.RevertConfig)
-        self.gRevertToDefault = RevertButton(self,
-                                             btn_label=_(u'Revert To Default'))
-        self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
+        self.gExportConfig = SaveAsButton(self, btn_label=_('Export'),
+                                          on_click=self.ExportConfig)
+        self.gImportConfig = OpenButton(self, btn_label=_('Import'),
+                                        on_click=self.ImportConfig)
+        self.gRevertConfig = RevertToSavedButton(self,
+                                                 on_click=self.RevertConfig)
+        self.gRevertToDefault = RevertButton(self, btn_label=_(
+            'Revert To Default'), on_click=self.DefaultConfig)
         self.defaultTipText = _(u'Items that are new since the last time this '
                                 u'patch was built are displayed in bold.')
         self.gTipText = Label(self,self.defaultTipText)
@@ -265,7 +262,7 @@ class PatchDialog(DialogWindow):
                     }
                     env.shellMove(readme_moves, parent=self)
                     readme = bass.dirs['saveBase'].join(readme.stail)
-            readme_html = readme.root + u'.html'
+            readme_html = readme.root + '.html' # Path __add__!
             shown_log = readme_html if balt.web_viewer_available() else readme
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
             balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,

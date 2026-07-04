@@ -241,8 +241,7 @@ class _LogWin(_TopLevelWin):
         self.set_min_size(200, 200)
         layout_kw = {'border': 2}
         #--Buttons
-        ok_butt = OkButton(self)
-        ok_butt.on_clicked.subscribe(self.close_win)
+        ok_butt = OkButton(self, on_click=self.close_win)
         if wrye_log:
             #--Text
             self._html_ctrl = DocumentViewer(self, dv_bitmaps)
