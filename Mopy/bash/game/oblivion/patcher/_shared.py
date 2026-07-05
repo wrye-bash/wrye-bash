@@ -33,9 +33,6 @@ class ExSpecial(ScanPatcher):
     sense as they did not use scan_more."""
     patcher_group = u'Special'
     patcher_order = 40
-    patcher_name = u'UNDEFINED'
-    patcher_desc = u'UNDEFINED'
-    _config_key: str = None
 
     @classmethod
     def gui_cls_vars(cls):
