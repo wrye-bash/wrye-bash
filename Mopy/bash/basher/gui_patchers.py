@@ -221,7 +221,7 @@ class AliasesPatcherConfig(PatcherConfig):
             patch_file.pfile_aliases = self._fn_aliases
         return self.patcher_type(self.patcher_name, patch_file)
 
-class _AliasesPatcherPanel(_PatcherPanel):
+class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
 
     def native_init(self, *args, **kwargs):
         if freshly_created :=  super().native_init(*args, **kwargs):
@@ -327,7 +327,7 @@ class ListPatcherConfig(PatcherConfig):
     def _get_list_patcher_srcs(self):
         return [x for x in self.configItems if self.configChecks[x]]
 
-class _ListPatcherPanel(_PatcherPanel):
+class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
     """Patcher panel with option to select source elements."""
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     gList: ListBox | CheckListBox
@@ -547,7 +547,7 @@ class TweakPatcherConfig(PatcherConfig):
         enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]
         return self.patcher_type(self.patcher_name, patch_file, enabledTweaks)
 
-class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
+class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
 
     def __init__(self, *args, **kwargs):
@@ -846,7 +846,7 @@ class _ListMergerConfig(ListPatcherConfig):
         self.configChoices[item] = config_choice
         return config_choice
 
-class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
+class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
     """Mergers targeting all mods in the LO, with the option to override
     tags."""
     choiceMenu: ClassVar[tuple[str, ...]]
@@ -1280,7 +1280,7 @@ class LeveledListsConfig(_ListMergerConfig):
         return super().get_patcher_instance(patch_file,
                                             self.remove_empty_sublists)
 
-class LeveledLists(_ListsMergerPanel):
+class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
     listLabel = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
@@ -1314,7 +1314,7 @@ class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     choiceMenu = ('Auto', '----', 'Deflst')
 
 # -----------------------------------------------------------------------------
-class ContentsChecker(_PatcherPanel):
+class ContentsChecker(PatcherConfig, _PatcherPanel):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
     patcher_name = _('Contents Checker')
@@ -1325,7 +1325,7 @@ class ContentsChecker(_PatcherPanel):
     default_isEnabled = True
 
 # -----------------------------------------------------------------------------
-class RaceChecker(_PatcherPanel):
+class RaceChecker(PatcherConfig, _PatcherPanel):
     """Sorts hairs and eyes."""
     patcher_name = _(u'Race Checker')
     patcher_desc = _(u'Sorts race hairs and eyes.')
@@ -1334,7 +1334,7 @@ class RaceChecker(_PatcherPanel):
     default_isEnabled = True
 
 #------------------------------------------------------------------------------
-class NpcChecker(_PatcherPanel):
+class NpcChecker(PatcherConfig, _PatcherPanel):
     """Assigns missing hair and eyes."""
     patcher_name = _(u'NPC Checker')
     patcher_desc = _(u'This will randomly assign hairs and eyes to NPCs that '
@@ -1344,7 +1344,7 @@ class NpcChecker(_PatcherPanel):
     default_isEnabled = True
 
 #------------------------------------------------------------------------------
-class TimescaleChecker(_PatcherPanel):
+class TimescaleChecker(PatcherConfig, _PatcherPanel):
     """Adjusts the wave period of grass match changes in the timescale."""
     patcher_name = _(u'Timescale Checker')
     patcher_desc = u'\n'.join([
@@ -1364,7 +1364,7 @@ class TimescaleChecker(_PatcherPanel):
 #------------------------------------------------------------------------------
 # Patchers with no options
 for gsp_name, gsp_class in bush.game.gameSpecificPatchers.items():
-    globals()[gsp_name] = type(gsp_name, (_PatcherPanel,),
+    globals()[gsp_name] = type(gsp_name, (PatcherConfig, _PatcherPanel,),
         gsp_class.gui_cls_vars())
 # Simple list patchers
 for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.items():

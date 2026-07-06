@@ -37,5 +37,5 @@ class ExSpecial(ScanPatcher):
     @classmethod
     def gui_cls_vars(cls):
         """Class variables for gui patcher classes created dynamically."""
-        return {'patcher_type': cls, 'patcher_desc': cls.patcher_desc,
-            'patcher_name': cls.patcher_name, '_config_key': cls._config_key}
+        return {'patcher_type': cls, **{att: getattr(cls, att) for att in
+                    ('patcher_desc', 'patcher_name', '_config_key')}}
