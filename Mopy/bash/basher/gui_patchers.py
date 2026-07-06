@@ -75,10 +75,14 @@ class PatcherConfig:
         self._was_present = self.__class__._config_key in configs
         config = (configs[self.__class__._config_key]
                   if self._was_present else {})
-        self.isEnabled = config.get(u'isEnabled',
-                                    self.__class__.default_isEnabled)
+        for att, def_val in self._config_attrs():
+            setattr(self, att, config.get(att, def_val))
         # return the config dict for this patcher to read additional values
         return config
+
+    @classmethod
+    def _config_attrs(cls):
+        return ('isEnabled', cls.default_isEnabled),
 
     def saveConfig(self, configs):
         """Save config to configs dictionary.
@@ -87,7 +91,8 @@ class PatcherConfig:
         _ListPatcherPanel subclasses - which save their choices - and the
         AliasPluginNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
-        config[u'isEnabled'] = self.isEnabled
+        for att, _dflt in self._config_attrs():
+            config[att] = getattr(self, att)
         return config # return the config dict for this patcher to further edit
 
     @classmethod
@@ -198,15 +203,12 @@ class AliasesPatcherConfig(PatcherConfig):
         config = super()._getConfig(configs)
         #--Update old configs to use Paths instead of strings.
         # call str twice in case v._s was a str subtype
-        self._fn_aliases = forward_compat_path_to_fn(config.get('aliases', {}),
-                                                     fn_value=True)
+        self.aliases = forward_compat_path_to_fn(self.aliases, fn_value=True)
         return config
 
-    def saveConfig(self, configs):
-        """Save config to configs dictionary."""
-        config = super().saveConfig(configs)
-        config[u'aliases'] = self._fn_aliases
-        return config
+    @classmethod
+    def _config_attrs(cls):
+        return *super()._config_attrs(), ('aliases', {})
 
     @classmethod
     def _log_config(cls, conf, config, clip, log):
@@ -218,7 +220,7 @@ class AliasesPatcherConfig(PatcherConfig):
     def get_patcher_instance(self, patch_file):
         """Set patch_file aliases dict"""
         if self.isEnabled:
-            patch_file.pfile_aliases = self._fn_aliases
+            patch_file.pfile_aliases = self.aliases
         return self.patcher_type(self.patcher_name, patch_file)
 
 class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
@@ -239,15 +241,15 @@ class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
             f'{alias_target} >> {alias_repl}'
-            for alias_target, alias_repl in dict_sort(self._fn_aliases)])
+            for alias_target, alias_repl in dict_sort(self.aliases)])
 
     def OnEditAliases(self):
         aliases_text = self.gAliases.text_content
-        self._fn_aliases.clear()
+        self.aliases.clear()
         for line in aliases_text.split(u'\n'):
             fields = [s.strip() for s in line.split(u'>>')]
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
-            self._fn_aliases[fields[0]] = FName(fields[1])
+            self.aliases[fields[0]] = FName(fields[1])
         self.SetAliasText()
 
 #------------------------------------------------------------------------------
@@ -814,22 +816,18 @@ class _ImporterPatcherPanel(_ImporterPatcherConfig, _ListPatcherPanel): pass
 
 class _ListMergerConfig(ListPatcherConfig):
     patcher_type: ClassVar[type[mergers.AListsMerger]]
-    _config_atts = ('autoIsChecked', True),
 
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        for att, def_val in self._config_atts:
-            setattr(self, att, config.get(att, def_val))
         #--Make sure configChoices are set (as choiceMenu exists).
         for item in self.configItems:
             self._get_set_choice(item)
         return config
 
-    def saveConfig(self, configs):
-        config = super().saveConfig(configs)
-        for att, _dflt in self._config_atts: config[att] = getattr(self, att)
-        return config
+    @classmethod
+    def _config_attrs(cls):
+        return *super()._config_attrs(), ('autoIsChecked', True)
 
     def _get_auto_items(self):
         for mod in self._bp.all_plugins:
@@ -1266,8 +1264,6 @@ class LeveledListsConfig(_ListMergerConfig):
           'or inactive) using the list below.')])
     _config_key = 'ListsMerger'
     patcher_type = mergers.LeveledListsPatcher
-    _config_atts = *_ListMergerConfig._config_atts, ('remove_empty_sublists',
-        bush.game.display_name == 'Oblivion')##: Hack, this should not use display_name
     default_isEnabled = True
 
     def _getConfig(self, configs):
@@ -1279,6 +1275,11 @@ class LeveledListsConfig(_ListMergerConfig):
     def get_patcher_instance(self, patch_file, rem_emp=False):
         return super().get_patcher_instance(patch_file,
                                             self.remove_empty_sublists)
+
+    @classmethod
+    def _config_attrs(cls): ##: Hack, this should not use display_name
+        return *super()._config_attrs(), ('remove_empty_sublists',
+                                          bush.game.display_name == 'Oblivion')
 
 class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
     listLabel = _('Override Delev/Relev Tags')
