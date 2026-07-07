@@ -47,12 +47,11 @@ __all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
 # "Active Plugins" submenu ----------------------------------------------------
 class _Mods_ActivePluginsData(balt.ListEditorData):
     """Data capsule for load list editing dialog."""
+    showRename = showRemove = True
+
     def __init__(self, parent, loadListsDict):
         self._active_lists = loadListsDict
-        #--GUI
-        balt.ListEditorData.__init__(self,parent)
-        self.showRename = True
-        self.showRemove = True
+        super().__init__(parent)
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
@@ -61,7 +60,7 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
         #--Right length?
-        if len(newName) == 0 or len(newName) > 64:
+        if not newName or len(newName) > 64:
             showError(self.parent, _('Name must be between 1 and 64 '
                                      'characters long.'))
             return False

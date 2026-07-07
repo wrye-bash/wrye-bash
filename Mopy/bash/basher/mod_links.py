@@ -321,6 +321,7 @@ class Mod_Redate(File_Redate):
 #--Common ---------------------------------------------------------------------
 class _Mod_LabelsData(balt.ListEditorData):
     """Data capsule for label editing dialog."""
+    showAdd = showRename = showRemove = True
 
     def __init__(self, parent, modLabels):
         #--Strings
@@ -329,11 +330,7 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.addPrompt = modLabels.addPrompt
         #--Key/type
         self.mod_labels = bass.settings[self.setKey]
-        #--GUI
-        balt.ListEditorData.__init__(self,parent)
-        self.showAdd = True
-        self.showRename = True
-        self.showRemove = True
+        super().__init__(parent)
 
     def getItemList(self):
         """Returns load list keys in alpha order."""

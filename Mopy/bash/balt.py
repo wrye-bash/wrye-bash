@@ -157,20 +157,14 @@ def playSound(parent,sound):
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-class ListEditorData(object):
-    """Data capsule for ListEditor. [Abstract]
-    DEPRECATED: nest into ListEditor"""
+class ListEditorData:
+    """[Abstract] Data capsule for ListEditor."""
+    showAdd = showRename = showRemove = showSave = showCancel = showInfo =False
+    infoWeight = 1  #--Controls width of info pane
+    infoReadOnly = True  #--Controls whether info pane is editable
+
     def __init__(self,parent):
         self.parent = parent #--Parent window.
-        self.showAdd = False
-        self.showRename = False
-        self.showRemove = False
-        self.showSave = False
-        self.showCancel = False
-        #--Editable?
-        self.showInfo = False
-        self.infoWeight = 1 #--Controls width of info pane
-        self.infoReadOnly = True #--Controls whether info pane is editable
 
     #--List
     def getItemList(self):
@@ -206,10 +200,9 @@ class ListEditor(DialogWindow):
         """A gui list, with buttons that act on the list items.
 
         Added kwargs to provide extra buttons - this class is built around a
-        ListEditorData instance which needlessly complicates things - mainly
-        a bunch of booleans to enable buttons but also the list of data that
-        corresponds to (read is duplicated by) ListEditor._list_items.
-        ListEditorData should be nested here.
+        ListEditorData instance - mainly a bunch of booleans to enable buttons
+        but also the list of data that corresponds to (read is duplicated by)
+        ListEditor._list_items.
         :param orderedDict: orderedDict['ButtonLabel']=buttonAction
         """
         #--Data
