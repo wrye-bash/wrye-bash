@@ -48,7 +48,7 @@ __all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
 class _Mods_ActivePluginsData(balt.ListEditorData):
     """Data capsule for load list editing dialog."""
     def __init__(self, parent, loadListsDict):
-        self.loadListDict = loadListsDict
+        self._active_lists = loadListsDict
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -56,7 +56,7 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        return sorted(self.loadListDict, key=lambda a: a.lower())
+        return sorted(self._active_lists, key=lambda a: a.lower())
 
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
@@ -66,13 +66,13 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
                                      'characters long.'))
             return False
         #--Rename
-        self.loadListDict[newName] = self.loadListDict[oldName]
-        del self.loadListDict[oldName]
+        self._active_lists[newName] = self._active_lists[oldName]
+        del self._active_lists[oldName]
         return newName
 
     def remove(self,item):
         """Removes load list."""
-        del self.loadListDict[item]
+        del self._active_lists[item]
         return True
 
 # Basic Active Plugins links - mass activate/deactivate
@@ -134,47 +134,53 @@ class _Mods_ActivateOnlySelected(_AMods_ActivePlugins):
         self._select_exact(self.window.GetSelected())
 
 # List-based Active Plugins links - save or edit lists
-class _AMods_ActivePluginsContext(_AMods_ActivePlugins):
-    """Base class for Active Plugins links that need the parent link for
-    context."""
-    def __init__(self, ap_parent_link):
-        super().__init__()
-        self._ap_parent_link = ap_parent_link
+class _AMods_ActivePluginsLists(_AMods_ActivePlugins):
+    """Base class for Active Plugins links that display/edit the user active
+    plugins lists."""
 
-class _Mods_EditActivePluginsLists(_AMods_ActivePluginsContext):
+    @fast_cached_property
+    def _load_lists(self):
+        """Get the load lists, since those come from BashLoadOrders.dat we must
+        wait for this being initialized in ModInfos.__init__."""
+        active_lists = load_order.active_mods_lists
+        vanilla_list = map(FName, bush.game.bethDataFiles)
+        # Note the 'and' - avoids activating modding esms for Oblivion
+        active_lists['Vanilla'] = [x for x in vanilla_list if
+            x.fn_ext == '.esm' and x not in bush.game.modding_esm_size]
+        return active_lists
+
+class _Mods_EditActivePluginsLists(_AMods_ActivePluginsLists):
     _text = _('Edit Active Plugins Lists…')
     _help = _('Display a dialog to rename/remove active plugins '
               'lists.')
 
     def Execute(self):
-        ap_editor_data = _Mods_ActivePluginsData(self.window,
-            self._ap_parent_link.load_lists)
+        ap_editor_data = _Mods_ActivePluginsData(self.window, self._load_lists)
         balt.ListEditor.display_dialog(self.window, _('Active Plugins Lists'),
             ap_editor_data)
 
-class _Mods_SaveActivePluginsList(_AMods_ActivePluginsContext):
+class _Mods_SaveActivePluginsList(_AMods_ActivePluginsLists):
     _text = _('Save Active Plugins List…')
     _help = _('Save the currently active plugins to a new active '
               'plugins list.')
 
     def Execute(self):
-        new_actives_name = self._askText(_('Save currently active plugins '
-                                           'list as:'))
-        if not new_actives_name: return
-        if len(new_actives_name) > 64:
-            return self._showError(_('Active plugins list name must be '
-                                     'between 1 and 64 characters long.'))
-        self._ap_parent_link.load_lists[new_actives_name] = list(
-            load_order.cached_active_tuple())
+        if new_actives_name:= self._askText(
+                _('Save currently active plugins list as:')):
+            if len(new_actives_name) > 64:
+                self._showError(_('Active plugins list name must be '
+                                  'between 1 and 64 characters long.'))
+            else:
+                self._load_lists[new_actives_name] = [
+                    *load_order.cached_active_tuple()]
 
-class _Mods_ActivateApList(_AMods_ActivePluginsContext):
+class _Mods_ActivateApList(_AMods_ActivePluginsLists):
     """Activate one specific saved active plugins list."""
-    def __init__(self, ap_parent_link, lo_list_name):
-        super().__init__(ap_parent_link)
-        self._text = lo_list_name
+    def __init__(self, lo_list_name):
+        super().__init__(_text=lo_list_name)
 
     def Execute(self):
-        wanted_aps = set(self._ap_parent_link.load_lists[self._text])
+        wanted_aps = set(self._load_lists[self._text])
         self._select_exact([p for p in self._data_store if p in wanted_aps])
 
     @property
@@ -182,15 +188,13 @@ class _Mods_ActivateApList(_AMods_ActivePluginsContext):
         return _('Activate plugins in the %(list_name)s list.') % {
             'list_name': self._text}
 
-class _Mods_ApLists(MultiLink, _AMods_ActivePluginsContext):
+class _Mods_ApLists(MultiLink, _AMods_ActivePluginsLists):
     """MultiLink that resolves to a number of _Mods_ActivateApList instances.
     Necessary because we have to delay instantiating them until after
     __load_pickled_load_orders has run."""
     def _links(self):
-        sorted_lists = sorted(self._ap_parent_link.load_lists,
-            key=lambda a: a.lower())
-        return [_Mods_ActivateApList(self._ap_parent_link, l)
-                for l in sorted_lists]
+        return [_Mods_ActivateApList(lname) for lname in sorted(
+            self._load_lists, key=str.lower)]
 
 class Mods_ActivePlugins(MenuLink):
     """The Active Plugins submenu."""
@@ -203,22 +207,10 @@ class Mods_ActivePlugins(MenuLink):
         self.append(_Mods_ActivateOnlySelected())
         self.append(_Mods_DeactivateAll())
         self.append(SeparatorLink())
-        self.append(_Mods_SaveActivePluginsList(self))
-        self.append(_Mods_EditActivePluginsLists(self))
+        self.append(_Mods_SaveActivePluginsList())
+        self.append(_Mods_EditActivePluginsLists())
         self.append(SeparatorLink())
-        self.append(_Mods_ApLists(self))
-
-    @fast_cached_property
-    def load_lists(self):
-        """Get the load lists, since those come from BashLoadOrders.dat we must
-        wait for this being initialized in ModInfos.__init__."""
-        active_lists = load_order.get_active_mods_lists(bass.settings)
-        vanilla_list = (FName(x) for x in bush.game.bethDataFiles)
-        # Note the 'and' - avoids activating modding esms for Oblivion
-        active_lists['Vanilla'] = [x for x in vanilla_list if
-                                   x.fn_ext == '.esm' and
-                                   x not in bush.game.modding_esm_size]
-        return active_lists
+        self.append(_Mods_ApLists())
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_MastersFirst(AppendableLink, CheckLink, EnabledLink):
