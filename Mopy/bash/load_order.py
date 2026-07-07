@@ -65,7 +65,7 @@ def initialize_load_order_handle(game_handle, bass_settings, *args):
     global _lo_handler, locked
     _lo_handler = game_handle.lo_handler(_plugins_txt_path, game_handle, *args,
         loadorder_txt_path=_loadorder_txt_path)
-    __load_pickled_load_orders()
+    __load_pickled_load_orders(bass_settings)
     locked = bass_settings.get('bosh.modInfos.resetMTimes', False)
 
 # Lock load order API ---------------------------------------------------------
@@ -88,37 +88,31 @@ _saved_load_orders: list[lo_entry] = []
 _current_list_index = -1
 _lords_pickle: bolt.PickleDict | None = None
 _LORDS_PICKLE_VERSION = 2
-# active mod lists were saved in BashSettings.dat - sentinel needed for moving
-# them to BashloadOrder.dat
-__active_mods_sentinel = {}
-_active_mods_lists = {}
+active_mods_lists = {}
 
-def __load_pickled_load_orders():
+def __load_pickled_load_orders(bass_settings):
     global _lords_pickle, _saved_load_orders, _current_list_index, \
-        _active_mods_lists
+        active_mods_lists
     _lords_pickle = bolt.PickleDict(_lord_pickle_path)
     _lords_pickle.load()
-    if _lords_pickle.vdata.get('_lords_pickle_version',
-                               1) < _LORDS_PICKLE_VERSION:
-        # used to load active lists from settings
-        active_mods_list = __active_mods_sentinel
-    else:
-        active_mods_list = {}
     _get = lambda x, d: _lords_pickle.pickled_data.get(
         x, d) or _lords_pickle.pickled_data.get(x.encode('ascii'), d)
+    # Get the user active mods lists from BashLoadOrder.dat, except if they
+    # are still saved in BashSettings.dat
+    active_mods_list = bass_settings.get('bash.loadLists.data', {})
+    if _lords_pickle.vdata.get('_lords_pickle_version', 1) >= 2:
+        active_mods_list = _get('_active_mods_lists', active_mods_list)
+    active_mods_lists = {k.decode('utf-8') if isinstance(k, bytes) else k:
+        forward_compat_path_to_fn_list(v) for k, v in active_mods_list.items()}
+    if 'Bethesda ESMs' in active_mods_list: ##:(734) backwards compat
+        del active_mods_list['Bethesda ESMs']
     _saved_load_orders = _get('_saved_load_orders', [])
     _current_list_index = _get('_current_list_index', -1)
-    _active_mods_lists = _get('_active_mods_lists', active_mods_list)
-    if b'Bethesda ESMs' in _active_mods_lists: ##:(734) backwards compat
-        _active_mods_lists['Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
-        del _active_mods_lists[b'Bethesda ESMs']
     # transform load orders to FName
     _saved_load_orders = [lo_entry(date, LoadOrder(
         forward_compat_path_to_fn_list(lo.loadOrder),
         forward_compat_path_to_fn_list(lo.active, ret_type=set)))
                           for (date, lo) in _saved_load_orders]
-    _active_mods_lists = {k: forward_compat_path_to_fn_list(v) for k, v in
-                          _active_mods_lists.items()}
 
 def persist_orders(__keep_max=256):
     _lords_pickle.vdata['_lords_pickle_version'] = _LORDS_PICKLE_VERSION
@@ -131,7 +125,7 @@ def persist_orders(__keep_max=256):
     else:
         _lords_pickle.pickled_data['_saved_load_orders'] = _saved_load_orders
         _lords_pickle.pickled_data['_current_list_index'] = _current_list_index
-    _lords_pickle.pickled_data['_active_mods_lists'] = _active_mods_lists
+    _lords_pickle.pickled_data['_active_mods_lists'] = active_mods_lists
     _lords_pickle.save()
 
 def _keep_max(max_to_keep, length):
@@ -381,16 +375,6 @@ def refresh_lo(unlock_lo: bool, rdata_mods, lock_act, *, booting=False):
 
 def __validate(saved): # not passing cached results in dry-run
     return _lo_handler.set_load_order(*saved.as_lists())
-
-def get_active_mods_lists(bass_settings):
-    """Get the user active mods lists from BashLoadOrder.dat, except if they
-    are still saved in BashSettings.dat"""
-    global _active_mods_lists
-    if _active_mods_lists is __active_mods_sentinel:
-        settings_mods_list = bass_settings.get('bash.loadLists.data',
-                                               __active_mods_sentinel)
-        _active_mods_lists = settings_mods_list
-    return _active_mods_lists
 
 def undo_redo_load_order(index_move):
     index = _current_list_index + index_move

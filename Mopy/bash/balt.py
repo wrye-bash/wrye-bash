@@ -1314,9 +1314,9 @@ class Link(object):
     # BashFrame singleton, set once and for all in BashFrame()
     Frame = None
     # Menu label (may depend on UI state when the menu is shown)
-    _text = u''
+    _text = ''
 
-    def __init__(self, _text=None):
+    def __init__(self, _text: str = ''):
         """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
