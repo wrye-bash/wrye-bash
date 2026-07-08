@@ -826,9 +826,9 @@ class _ListMergerConfig(ListPatcherConfig):
         return *super()._config_attrs(), ('autoIsChecked', True)
 
     def _get_auto_items(self):
-        for mod in self._bp.all_plugins:
+        for mod in (sup := super()._get_auto_items()):
             self._get_set_choice(mod)
-        return super()._get_auto_items()
+        return sup
 
     def _get_set_choice(self, item):
         """Get default config choice."""
