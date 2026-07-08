@@ -124,7 +124,7 @@ class PatcherConfig:
                 clip.write(f'    {item}\n')
 
     def import_config(self, patchConfigs, set_first_load=False):
-        self.is_first_load = set_first_load
+        self._is_first_load = set_first_load
         self._getConfig(patchConfigs) # set isEnabled and load additional config
         self._import_config(set_first_load)
 
@@ -156,10 +156,10 @@ class _PatcherPanel(Lazy, PanelWin):
                      LayoutOptions(weight=0))])
             self.main_layout.apply_to(self)
             self._parent.config_layout.add(self)
-            self.is_first_load = 0 == len(patch_configs)
+            self._is_first_load = 0 == len(patch_configs)
             self._getConfig(patch_configs) # set isEnabled and load additional config
             # Bold the patcher if it's new, but the patch itself isn't new
-            if not self._was_present and not self._GetIsFirstLoad():
+            if not self._was_present and not self._is_first_load:
                 self._style_patcher_label(bold=True)
         return freshly_created
 
@@ -183,9 +183,6 @@ class _PatcherPanel(Lazy, PanelWin):
         """Enables or disables this patcher and notifies the patcher dialog."""
         self.isEnabled = self_enabled
         self._parent.check_patcher(self, self_enabled)
-
-    def _GetIsFirstLoad(self):
-        return getattr(self, u'is_first_load', False)
 
     def _set_focus(self): # TODO(ut) check if set_focus is enough
         self._parent.gPatchers.set_focus_from_kb()
@@ -428,7 +425,7 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         effectiveDefaultItemCheck = self.__class__.canAutoItemCheck and \
             bass.inisettings['AutoItemCheck'] and not item_lbl.endswith('.csv')
         # Indicate that this is a new item by bolding it and its parent patcher
-        if patcher_bold := isnew and not self._GetIsFirstLoad():
+        if patcher_bold := isnew and not self._is_first_load:
             self._new_items.add(item)
         # Restore the bolded font for this item if it was new the first
         # time we populated the list
@@ -605,7 +602,6 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
 
     def _do_populate_tweak_list(self):
         self.gTweakList.lb_clear()
-        isFirstLoad = self._GetIsFirstLoad()
         patcher_bold = False
         for index, tweak in enumerate(self._curr_tweaks):
             item_label = tweak.getListLabel()
@@ -614,7 +610,7 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
                 item_label = _custom_label(item_label, tweak.choiceValues[tweak.chosen][0])
             self.gTweakList.lb_insert(item_label, index)
             self.gTweakList.lb_check_at_index(index, tweak.isEnabled)
-            if not isFirstLoad and tweak.isNew():
+            if not self._is_first_load and tweak.isNew():
                 # Indicate that this is a new item by bolding it and its parent
                 # patcher
                 self.gTweakList.lb_style_font_at_index(index, bold=True)
