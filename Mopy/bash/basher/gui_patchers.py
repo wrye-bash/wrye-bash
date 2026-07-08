@@ -123,12 +123,9 @@ class PatcherConfig:
                 log(f'. ~~{item}~~')
                 clip.write(f'    {item}\n')
 
-    def import_config(self, patchConfigs, set_first_load=False):
+    def import_config(self, patchConfigs, set_first_load):
         self._is_first_load = set_first_load
         self._getConfig(patchConfigs) # set isEnabled and load additional config
-        self._import_config(set_first_load)
-
-    def _import_config(self, default=False): pass
 
     def get_patcher_instance(self, patch_file):
         """Instantiate and return an instance of self.__class__.patcher_type,
@@ -148,7 +145,7 @@ class _PatcherPanel(Lazy, PanelWin):
         self._is_italicized = False
 
     def native_init(self, *args, patch_configs=None, **kwargs):
-        if freshly_created :=  super().native_init(*args, **kwargs):
+        if freshly_created := super().native_init(*args, **kwargs):
             self.visible = False # needed else all pathcers appear at once
             self.main_layout = VLayout(
                 item_expand=True, item_weight=1, spacing=4, items=[
@@ -259,60 +256,37 @@ class ListPatcherConfig(PatcherConfig):
         self.configItems: list[FName] = []
         self.configChecks: dict[FName, bool] = {}
         self.configChoices: dict[FName, set[str]] = {}
+        self._item_config: dict[FName, bool] = {}
 
     def _getConfig(self, configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super()._getConfig(configs)
-        # Merge entries from the config with existing ones - if we're loading
-        # the first config, the existing ones will be empty. Otherwise, we're
-        # restoring a config into an existing state, so don't delete the
-        # already present items
-        existing_config_items = set(self.configItems)
-        for cfg_item in forward_compat_path_to_fn_list(
-                config.get('configItems', [])):
-            if cfg_item not in existing_config_items:
-                self.configItems.append(cfg_item)
+        """Merge entries from the config with existing ones - if we're loading
+        the first config, the existing ones will be empty. Otherwise, we're
+        restoring a config into an existing state, so don't delete the already
+        present items and keep the checked/choices state for those."""
+        conf_copy = dict(self._item_config)
+        config = super()._getConfig(configs) # loads self.configItems and co
+        conf_items = forward_compat_path_to_fn_list(self.configItems)
+        conf_items.extend(it for it in conf_copy.keys() - {*conf_items})
         #--Verify file existence
-        self.configItems = self.patcher_type.get_sources(self._bp,
-                                                         self.configItems)
-        if self._was_present:
-            present_config_items = set(self.configItems)
-            # We first have to reset the checked/choices state for each newer
-            # item (on first load there are no newer items, so this is a
-            # noop)...
-            for fn_item in list(self.configChecks):
-                self.configChecks[fn_item] = False
-            for fn_item in list(self.configChoices):
-                self.configChoices[fn_item] = set()
-            # ...and then we can restore the old checked/choices state (if the
-            # items in question are actually still present in the Data folder)
-            for fn_item, item_checked in forward_compat_path_to_fn(
-                    config.get('configChecks', {})).items():
-                if fn_item in present_config_items:
-                    self.configChecks[fn_item] = item_checked
-            for fn_item, choices_set in forward_compat_path_to_fn(
-                    config.get('configChoices', {})).items():
-                if fn_item in present_config_items:
-                    self.configChoices[fn_item] = choices_set
-        else:
-            # There was no config for us, so simply reset these two to their
-            # default values so they get filled with defaults during list
-            # population later on
-            self.configChecks = {}
-            self.configChoices = {}
+        conf_items = self.patcher_type.get_sources(self._bp, conf_items)
+        # Restore the old checked/choices state (if the items in question
+        # are actually still present in the Data folder)
+        self._item_config = self._merge_configs(conf_copy, set(conf_items))
         return config
+
+    @classmethod
+    def _config_attrs(cls):
+        return *super()._config_attrs(), ('configItems', []), (
+            'configChecks', {}), ('configChoices', {})
 
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
-        config = super().saveConfig(configs)
-        #--Toss outdated configCheck data.
-        listSet = set(self.configItems)
-        config['configChecks'] = {k: v for k, v in self.configChecks.items()
-                                  if k in listSet}
-        config['configChoices'] = {k: v for k, v in self.configChoices.items()
-                                   if k in listSet}
-        config[u'configItems'] = self.configItems
-        return config
+        ic = self._item_config
+        self.configChecks = {k: isinstance(v, set) or v for k, v in ic.items()}
+        self.configChoices = {k: v if isinstance(v, set) else set() for k, v in
+                              ic.items()}
+        self.configItems = [*ic]
+        return super().saveConfig(configs)
 
     def _get_auto_items(self):
         """Returns list of items to be used for automatic configuration."""
@@ -323,8 +297,13 @@ class ListPatcherConfig(PatcherConfig):
         return self.patcher_type(self.patcher_name, patch_file,
                                  patcher_sources)
 
+    def _merge_configs(self, conf_checks, present_config_items):
+        return {k: v for k, v in {**conf_checks, **forward_compat_path_to_fn(
+            self.configChecks)}.items() if k in present_config_items}
+
     def _get_list_patcher_srcs(self):
-        return [x for x in self.configItems if self.configChecks[x]]
+        # ListsMerger instances get all the listed sources
+        return [k for k, v in self._item_config.items() if v is not False]
 
 class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
     """Patcher panel with option to select source elements."""
@@ -339,7 +318,7 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         self._new_items: set[FName] = set()
 
     def native_init(self, *args, **kwargs):
-        if freshly_created :=  super().native_init(*args, **kwargs):
+        if freshly_created := super().native_init(*args, **kwargs):
             self.selectCommands = self.__class__.selectCommands
             self._get_glist()
             self._item_search = SearchBar(self, hint=_('Search Sources'))
@@ -360,13 +339,15 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         return freshly_created
 
     def _auto_layout(self, right_side_components=None):
-        self._sort_and_update_items(self._get_auto_items())
+        self._sort_and_update_items()
         return None
 
-    def _sort_and_update_items(self, unsorted_items):
+    def _sort_and_update_items(self, is_auto=True, do_sort=True):
         """Helper for LO-sorting items and updating the internal caches for
         them."""
-        self.configItems = load_order.cached_sort(unsorted_items)
+        unsort = self._get_auto_items() if is_auto else self._item_config
+        unsort = load_order.cached_sort(unsort) if do_sort else unsort
+        self._item_config = {k: self._item_config.get(k) for k in unsort}
         # Clear the search bar - this will _handle_item_search, which will call
         # _do_populate_item_list in turn
         self._item_search.text_content = ''
@@ -387,7 +368,7 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         """Internal callback used to repopulate the item list whenever the
         text in the search bar changes."""
         lower_search_str = search_str.strip().lower()
-        self._curr_items = [i for i in self.configItems if
+        self._curr_items = [i for i in self._item_config if
                             lower_search_str in i.lower()]
         with self.gList.pause_drawing():
             self._do_populate_item_list()
@@ -409,9 +390,9 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         patcherOn = False
         patcher_bold = False
         for index, item in enumerate(self._curr_items):
-            itemLabel = self.getItemLabel(item, self.configChoices)
+            itemLabel = self.getItemLabel(item, self._item_config)
             self.gList.lb_insert(itemLabel, index)
-            isnew = self.configChecks.get(item) is None
+            isnew = self._item_config.get(item) is None
             is_on, do_bold = self._check_item(isnew, item, itemLabel, index)
             patcherOn |= is_on
             patcher_bold |= do_bold
@@ -431,15 +412,16 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         # time we populated the list
         if item in self._new_items:
             self.gList.lb_style_font_at_index(index, bold=True)
-        self.gList.lb_check_at_index(index, self.configChecks.setdefault(item,
-            effectiveDefaultItemCheck))
+        if (checkmark := self._item_config.get(item)) is None:
+            checkmark = self._item_config[item] = effectiveDefaultItemCheck
+        self.gList.lb_check_at_index(index, checkmark)
         return isnew and effectiveDefaultItemCheck, patcher_bold
 
     def OnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
         for i, item in enumerate(self._curr_items):
-            self.configChecks[item] = self.gList.lb_is_checked_at_index(i)
-        self._enable_self(any(self.configChecks.values()))
+            self._item_config[item] = self.gList.lb_is_checked_at_index(i)
+        self._enable_self(any(self._item_config.values()))
 
     def mass_select(self, select=True):
         try:
@@ -455,20 +437,18 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         return f'{item}' # Path or string - YAK
 
     # Config Phase Overrides
-    def _import_config(self, default=False):
-        super()._import_config(default)
-        if default:
-            self._sort_and_update_items(self._get_auto_items())
+    def import_config(self, patchConfigs, set_first_load):
+        super().import_config(patchConfigs, set_first_load)
+        if set_first_load:
+            self._sort_and_update_items()
             return
         # Reset the search bar, this will call _handle_item_search
         self._item_search.text_content = ''
-        for index, item in enumerate(self._curr_items):
+        for index, (item, checkmark) in enumerate(self._item_config.items()):
             try:
-                self.gList.lb_check_at_index(index, self.configChecks[item])
-            except KeyError: # keys should be all bolt.Paths
+                self.gList.lb_check_at_index(index, checkmark)
+            except KeyError:
                 pass
-                # bolt.deprint(u'item %s not in saved configs [%s]' % (
-                #     item, u', '.join([repr(c) for c in self.configChecks])))
 
 #------------------------------------------------------------------------------
 class _ChoiceMenuMixin(object):
@@ -557,7 +537,7 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
         self._curr_tweaks: list[MultiTweakItem] = []
 
     def native_init(self, *args, **kwargs):
-        if freshly_created :=  super().native_init(*args, **kwargs):
+        if freshly_created := super().native_init(*args, **kwargs):
             self.gTweakList = CheckListBox(self)
             self.gTweakList.on_box_checked.subscribe(self.TweakOnListCheck)
             self._tweak_search = SearchBar(self, hint=_('Search Tweaks'))
@@ -784,8 +764,8 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
         super().mass_select(select)
 
     # Config phase overrides
-    def _import_config(self, default=False):
-        super(_TweakPatcherPanel, self)._import_config(default)
+    def import_config(self, *args):
+        super().import_config(*args)
         # Reset the search bar, this will call _handle_tweak_search
         self._tweak_search.text_content = ''
         for index, tweakie in enumerate(self._all_tweaks):
@@ -804,7 +784,7 @@ class _ImporterPatcherConfig(ListPatcherConfig):
         config = super().saveConfig(configs)
         if self.isEnabled:
             configs[u'ImportedMods'].update(
-                [item for item, value in self.configChecks.items() if
+                [item for item, value in self._item_config.items() if
                  value and bosh.ModInfos.check_filename(item)])
         return config
 
@@ -817,9 +797,13 @@ class _ListMergerConfig(ListPatcherConfig):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
         #--Make sure configChoices are set (as choiceMenu exists).
-        for item in self.configItems:
+        for item in self._item_config:
             self._get_set_choice(item)
         return config
+
+    def _merge_configs(self, conf_checks, present_config_items):
+        return {k: v for k, v in {**conf_checks, **forward_compat_path_to_fn(
+            self.configChoices)}.items() if k in present_config_items}
 
     @classmethod
     def _config_attrs(cls):
@@ -832,12 +816,12 @@ class _ListMergerConfig(ListPatcherConfig):
 
     def _get_set_choice(self, item):
         """Get default config choice."""
-        config_choice = self.configChoices.get(item)
-        if not isinstance(config_choice,set): config_choice = {u'Auto'}
+        if not isinstance(config_choice := self._item_config.get(item), set):
+            config_choice = {'Auto'}
         if u'Auto' in config_choice:
             tags = self._bp.all_tags.get(item, set())
             config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
-        self.configChoices[item] = config_choice
+        self._item_config[item] = config_choice
         return config_choice
 
 class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
@@ -847,6 +831,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
     _add_dialog_title: str
     # CONFIG DEFAULTS
     selectCommands = False
+    _item_config: dict[FName, set[str]]
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -861,14 +846,14 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
             checked=self.autoIsChecked, on_check=self._on_auto_check),
             Spacer(4), *self._add_rem_bt])
         self._sort_and_update_items( # will also call _update_manual_buttons
-            self._get_auto_items() if self.autoIsChecked else self.configItems)
+            self.autoIsChecked)
         return VLayout(spacing=4, items=right_side_components)
 
     def _on_auto_check(self, is_checked):
         """Automatic checkbox changed."""
         self.autoIsChecked = is_checked
         if self.autoIsChecked:
-            self._sort_and_update_items(self._get_auto_items())
+            self._sort_and_update_items()
         else: # In autoIsChecked case, this is called by _handle_item_search
             self._update_manual_buttons(not self._item_search.text_content)
 
@@ -885,7 +870,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
     def get_patcher_instance(self, patch_file, rem_emp=False):
         patcher_sources = self._get_list_patcher_srcs()
         return self.patcher_type(self.patcher_name, patch_file,
-            patcher_sources, rem_emp, defaultdict(set, self.configChoices))
+            patcher_sources, rem_emp, defaultdict(set, self._item_config))
 
     @staticmethod
     def getItemLabel(item, conf_choices):
@@ -906,16 +891,16 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         for srcPath in srcPaths:
             if srcPath.head == srcDir and (
                     body_ext := ds.check_filename(srcPath.stail)):
-                if (fn := FName(''.join(body_ext))) not in self.configItems:
-                    self.configItems.append(fn)
-        self._sort_and_update_items(self.configItems)
+                if (fn := FName(''.join(body_ext))) not in self._item_config:
+                    self._item_config[fn] = self._get_set_choice(fn)
+        self._sort_and_update_items(is_auto=False)
 
     def _on_rem(self):
         """Remove button clicked."""
         selections = self.gList.lb_get_selections()
-        newItems = [item for index, item in enumerate(self.configItems)
-                    if index not in selections]
-        self._sort_and_update_items(newItems)
+        self._item_config = dict(item for index, item in enumerate(
+            self._item_config.items()) if index not in selections)
+        self._sort_and_update_items(is_auto=False, do_sort=False)
 
     def ShowChoiceMenu(self, itemIndex):
         """Displays a popup choice menu if applicable.
@@ -925,7 +910,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         (gui_li := self.gList).lb_select_index(itemIndex)
         choiceSet = self._get_set_choice((curr := self._curr_items)[itemIndex])
         #--Build Menu
-        choices, choice_menu, _self = self.configChoices, self.choiceMenu, self
+        choices, choice_menu, _self = self._item_config, self.choiceMenu, self
         class _OnItemChoice(CheckLink):
             def __init__(self, _text, dex):
                 super(_OnItemChoice, self).__init__(_text)
@@ -957,9 +942,9 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
             log(f'. __{item}__')
             clip.write(f'    {item}\n')
 
-    def _import_config(self, default=False): # TODO(ut):non default not handled
-        if default:
-            super(_ListsMergerPanel, self)._import_config(default)
+    def import_config(self, *args):
+        super(_ListPatcherPanel, self).import_config(*args) # bypass super!
+        self._on_auto_check(self.autoIsChecked)
 
     def _style_patcher_label(self, bold=False, italics=False):
         # Never italicize these since they will run even if there are no tagged
@@ -1262,12 +1247,6 @@ class LeveledListsConfig(_ListMergerConfig):
     patcher_type = mergers.LeveledListsPatcher
     default_isEnabled = True
 
-    def _getConfig(self, configs):
-        config = super()._getConfig(configs)
-        for item in self.configItems: # Force configCheck to True for all items
-            self.configChecks[item] = True
-        return config
-
     def get_patcher_instance(self, patch_file, rem_emp=False):
         return super().get_patcher_instance(patch_file,
                                             self.remove_empty_sublists)
@@ -1294,7 +1273,6 @@ class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
         self.gList = ListBox(self, isSingle=False)
 
     def _check_item(self, isnew, item, *args):
-        self.configChecks[item] = True
         return isnew, False
 
 class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
