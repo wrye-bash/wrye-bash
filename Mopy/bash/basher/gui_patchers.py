@@ -392,8 +392,8 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         for index, item in enumerate(self._curr_items):
             itemLabel = self.getItemLabel(item, self._item_config)
             self.gList.lb_insert(itemLabel, index)
-            isnew = self._item_config.get(item) is None
-            is_on, do_bold = self._check_item(isnew, item, itemLabel, index)
+            is_on, do_bold = self._check_item(self._item_config.get(item),
+                                              item, itemLabel, index)
             patcherOn |= is_on
             patcher_bold |= do_bold
         if patcherOn:
@@ -402,20 +402,19 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         patcher_italics = self.gList.lb_get_items_count() == 0
         self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
 
-    def _check_item(self, isnew, item, item_lbl, index):
-        effectiveDefaultItemCheck = self.__class__.canAutoItemCheck and \
-            bass.inisettings['AutoItemCheck'] and not item_lbl.endswith('.csv')
+    def _check_item(self, val, item, item_lbl, index):
         # Indicate that this is a new item by bolding it and its parent patcher
-        if patcher_bold := isnew and not self._is_first_load:
-            self._new_items.add(item)
+        if patcher_bold := val is None:
+            if patcher_bold := not self._is_first_load:
+                self._new_items.add(item)
+            self._item_config[item] = val = self.canAutoItemCheck and not \
+                item_lbl.endswith('.csv') and bass.inisettings['AutoItemCheck']
         # Restore the bolded font for this item if it was new the first
         # time we populated the list
         if item in self._new_items:
             self.gList.lb_style_font_at_index(index, bold=True)
-        if (checkmark := self._item_config.get(item)) is None:
-            checkmark = self._item_config[item] = effectiveDefaultItemCheck
-        self.gList.lb_check_at_index(index, checkmark)
-        return isnew and effectiveDefaultItemCheck, patcher_bold
+        self.gList.lb_check_at_index(index, val)
+        return val, patcher_bold
 
     def OnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
@@ -1272,8 +1271,8 @@ class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
     def _get_glist(self):
         self.gList = ListBox(self, isSingle=False)
 
-    def _check_item(self, isnew, item, *args):
-        return isnew, False
+    def _check_item(self, val, item, *args):
+        return val is None, False
 
 class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     patcher_name = _('FormID Lists')
