@@ -167,8 +167,8 @@ class _PatcherPanel(Lazy, PanelWin):
                                    italics=self._is_italicized)
 
     def mass_select(self, select=True):
-        self._enable_self(select)
-        self._set_focus()
+        self._enable_self(select) # TODO(ut) check if set_focus is enough
+        self._parent.gPatchers.set_focus_from_kb()
 
     @property
     def patcher_tip(self):
@@ -180,9 +180,6 @@ class _PatcherPanel(Lazy, PanelWin):
         """Enables or disables this patcher and notifies the patcher dialog."""
         self.isEnabled = self_enabled
         self._parent.check_patcher(self, self_enabled)
-
-    def _set_focus(self): # TODO(ut) check if set_focus is enough
-        self._parent.gPatchers.set_focus_from_kb()
 
 #------------------------------------------------------------------------------
 class AliasesPatcherConfig(PatcherConfig):
@@ -220,31 +217,31 @@ class AliasesPatcherConfig(PatcherConfig):
 class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
 
     def native_init(self, *args, **kwargs):
-        if freshly_created :=  super().native_init(*args, **kwargs):
+        if freshly_created := super().native_init(*args, **kwargs):
             #--Aliases Text
             # gExample = Label(self, _("ExampleMod1.esp >> ExampleMod1.2.esp"))
             self.gAliases = TextArea(self)
-            self.gAliases.on_focus_lost.subscribe(self.OnEditAliases)
-            self.SetAliasText()
+            self.gAliases.on_focus_lost.subscribe(self._on_edit_aliases)
+            self._set_alias_text()
             #--Sizing
             self.main_layout.add((self.gAliases, LayoutOptions(
                 expand=True, weight=1)))
         return freshly_created
 
-    def SetAliasText(self):
+    def _set_alias_text(self):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
             f'{alias_target} >> {alias_repl}'
             for alias_target, alias_repl in dict_sort(self.aliases)])
 
-    def OnEditAliases(self):
+    def _on_edit_aliases(self):
         aliases_text = self.gAliases.text_content
         self.aliases.clear()
         for line in aliases_text.split(u'\n'):
             fields = [s.strip() for s in line.split(u'>>')]
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
             self.aliases[fields[0]] = FName(fields[1])
-        self.SetAliasText()
+        self._set_alias_text()
 
 #------------------------------------------------------------------------------
 class ListPatcherConfig(PatcherConfig):
@@ -487,13 +484,6 @@ class TweakPatcherConfig(PatcherConfig):
                                                                    self._bp)
         return config
 
-    @classmethod
-    def _tweaks_config(cls, config, bashed_patch=None):
-        all_tweaks = cls.patcher_type.tweak_instances(bashed_patch)
-        for tweak in all_tweaks:
-            tweak.init_tweak_config(config)
-        return all_tweaks
-
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
         config = super().saveConfig(configs)
@@ -519,6 +509,13 @@ class TweakPatcherConfig(PatcherConfig):
     def get_patcher_instance(self, patch_file):
         enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]
         return self.patcher_type(self.patcher_name, patch_file, enabledTweaks)
+
+    @classmethod
+    def _tweaks_config(cls, config, bashed_patch=None):
+        all_tweaks = cls.patcher_type.tweak_instances(bashed_patch)
+        for tweak in all_tweaks:
+            tweak.init_tweak_config(config)
+        return all_tweaks
 
 class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
@@ -786,14 +783,11 @@ class _ImporterPatcherPanel(_ImporterPatcherConfig, _ListPatcherPanel): pass
 
 class _ListMergerConfig(ListPatcherConfig):
     patcher_type: ClassVar[type[mergers.AListsMerger]]
+    _item_config: dict[FName, set[str]]
 
     def _merge_configs(self, conf_checks, present_config_items):
         return {k: v for k, v in {**conf_checks, **forward_compat_path_to_fn(
             self.configChoices)}.items() if k in present_config_items}
-
-    @classmethod
-    def _config_attrs(cls):
-        return *super()._config_attrs(), ('autoIsChecked', True)
 
     @classmethod
     def _log_config(cls, conf, config, clip, log):
@@ -802,6 +796,11 @@ class _ListMergerConfig(ListPatcherConfig):
                 'configItems', [])):
             log(f'. __{item}__')
             clip.write(f'    {item}\n')
+
+    def get_patcher_instance(self, patch_file, rem_emp=False):
+        patcher_sources = self._get_list_patcher_srcs()
+        return self.patcher_type(self.patcher_name, patch_file,
+            patcher_sources, rem_emp, defaultdict(set, self._item_config))
 
     @classmethod
     def _mod_label(cls, item, conf_choices):
@@ -814,12 +813,16 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
     _add_dialog_title: str
     # CONFIG DEFAULTS
     selectCommands = False
-    _item_config: dict[FName, set[str]]
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
             self._bind_mouse_events(self.gList)
         return freshly_created
+
+    def _style_patcher_label(self, bold=False, italics=False):
+        # Never italicize these since they will run even if there are no tagged
+        # source plugins # TODO(ut): no?
+        super()._style_patcher_label(bold=bold)
 
     def _auto_layout(self, right_side_components=None):
         right_side_components = right_side_components or []
@@ -831,6 +834,11 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         self._sort_and_update_items( # will also call _update_manual_buttons
             self.autoIsChecked)
         return VLayout(spacing=4, items=right_side_components)
+
+    def _handle_item_search(self, search_str):
+        super()._handle_item_search(search_str)
+        self._update_manual_buttons(
+            not (self.autoIsChecked or self._item_search.text_content))
 
     def _set_choice(self, item):
         """Refresh mods that have an Auto choice set. We need to do this when
@@ -853,20 +861,10 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         else: # In autoIsChecked case, this is called by _handle_item_search
             self._update_manual_buttons(not self._item_search.text_content)
 
-    def _handle_item_search(self, search_str):
-        super()._handle_item_search(search_str)
-        self._update_manual_buttons(
-            not (self.autoIsChecked or self._item_search.text_content))
-
     def _update_manual_buttons(self, btns_enabled):
         """Helper that enables or disables the add/remove buttons based on
         internal state."""
         for butt in self._add_rem_bt: butt.enabled = btns_enabled
-
-    def get_patcher_instance(self, patch_file, rem_emp=False):
-        patcher_sources = self._get_list_patcher_srcs()
-        return self.patcher_type(self.patcher_name, patch_file,
-            patcher_sources, rem_emp, defaultdict(set, self._item_config))
 
     def _on_add(self):
         ds = bosh.modInfos
@@ -930,14 +928,13 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
             self._set_choice(item) # see docs in self._set_choice
         return config
 
+    @classmethod
+    def _config_attrs(cls):
+        return *super()._config_attrs(), ('autoIsChecked', True)
+
     def import_config(self, *args):
         super(_ListPatcherPanel, self).import_config(*args) # bypass super!
         self._on_auto_check(self.autoIsChecked)
-
-    def _style_patcher_label(self, bold=False, italics=False):
-        # Never italicize these since they will run even if there are no tagged
-        # source plugins
-        super(_ListsMergerPanel, self)._style_patcher_label(bold=bold)
 
 #------------------------------------------------------------------------------
 # GUI Patcher classes
