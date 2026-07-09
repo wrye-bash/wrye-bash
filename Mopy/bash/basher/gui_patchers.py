@@ -310,6 +310,7 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
     """Patcher panel with option to select source elements."""
     _autocheck_new = True #--GUI: Whether new items are checked by default
     gList: ListBox | CheckListBox
+    _list_label = ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -327,8 +328,10 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
                 self._handle_item_search)
             #--Manual controls
             side_button_layout = self._auto_layout()
+            list_label = self._list_label or (_('Source Plugins/Files') if
+                self.patcher_type._csv_key else _('Source Plugins'))
             self.main_layout.add(
-                (HBoxedLayout(self, title=self._list_label,
+                (HBoxedLayout(self, title=list_label,
                               item_expand=True, spacing=4, items=[
                         (VLayout(spacing=4, item_expand=True, items=[
                             self._item_search,
@@ -369,14 +372,6 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
     def _get_glist(self):
         self.gList = CheckListBox(self)
         self.gList.on_box_checked.subscribe(self.OnListCheck)
-
-    @property
-    def _list_label(self):
-        try:
-            return self.__class__.listLabel
-        except AttributeError:
-            return _('Source Plugins/Files') if self.patcher_type._csv_key \
-                else _('Source Plugins')
 
     def _handle_item_search(self, search_str):
         """Internal callback used to repopulate the item list whenever the
@@ -953,7 +948,7 @@ class AliasPluginNames(_AliasesPatcherPanel): pass
 
 class MergePatches(_ListPatcherPanel):
     """Merges specified patches into Bashed Patch."""
-    listLabel = _('Mergeable Plugins')
+    _list_label = _('Mergeable Plugins')
     patcher_name = _(u'Merge Patches')
     patcher_desc = _('Merge patch plugins into the Bashed Patch.')
     _config_key = u'PatchMerger'
@@ -1250,7 +1245,7 @@ class LeveledListsConfig(_ListMergerConfig):
                                           bush.game.display_name == 'Oblivion')
 
 class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
-    listLabel = _('Override Delev/Relev Tags')
+    _list_label = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
 
@@ -1277,7 +1272,7 @@ class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
           'inactive) using the list below.')])
     _config_key = 'FidListsMerger'
     patcher_type = mergers.FormIDListsPatcher
-    listLabel = _('Override Deflst Tag')
+    _list_label = _('Override Deflst Tag')
     _add_dialog_title = _('Add Deflst Tag to Plugin')
     choiceMenu = ('Auto', '----', 'Deflst')
 
