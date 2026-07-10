@@ -288,10 +288,6 @@ class ListPatcherConfig(PatcherConfig):
         self.configItems = [*ic]
         return super().saveConfig(configs)
 
-    def _get_auto_items(self):
-        """Returns list of items to be used for automatic configuration."""
-        return self.__class__.patcher_type.get_sources(self._bp)
-
     def get_patcher_instance(self, patch_file):
         patcher_sources = self._get_list_patcher_srcs()
         return self.patcher_type(self.patcher_name, patch_file,
@@ -307,7 +303,7 @@ class ListPatcherConfig(PatcherConfig):
 
 class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
     """Patcher panel with option to select source elements."""
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default
+    _autocheck_new = True #--GUI: Whether new items are checked by default
     gList: ListBox | CheckListBox
 
     def __init__(self, *args, **kwargs):
@@ -316,6 +312,7 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         self._curr_items: list[FName] = []
         # Set of items that are new and hence need to remain bolded
         self._new_items: set[FName] = set()
+        self._check = self._autocheck_new and bass.inisettings['AutoItemCheck']
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -345,12 +342,25 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
     def _sort_and_update_items(self, is_auto=True, do_sort=True):
         """Helper for LO-sorting items and updating the internal caches for
         them."""
-        unsort = self._get_auto_items() if is_auto else self._item_config
+        if is_auto:
+            for mod in (unsort := self.__class__.patcher_type.get_sources(
+                    self._bp)):
+                self._set_choice(mod)
+        else:
+            unsort = self._item_config
         unsort = load_order.cached_sort(unsort) if do_sort else unsort
-        self._item_config = {k: self._item_config.get(k) for k in unsort}
+        self._item_config = {k: self._item_config[k] for k in unsort}
         # Clear the search bar - this will _handle_item_search, which will call
         # _do_populate_item_list in turn
         self._item_search.text_content = ''
+
+    def _set_choice(self, item):
+        """Only called when loading automatically for _ListPatcherPanel."""
+        if self._item_config.get(item) is None:
+            if not self._is_first_load:
+                self._new_items.add(item)
+            self._item_config[item] = self._check and not item.lower(
+                ).endswith('.csv')
 
     def _get_glist(self):
         self.gList = CheckListBox(self)
@@ -392,9 +402,10 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         for index, item in enumerate(self._curr_items):
             itemLabel = self.getItemLabel(item, self._item_config)
             self.gList.lb_insert(itemLabel, index)
-            is_on, do_bold = self._check_item(self._item_config.get(item),
-                                              item, itemLabel, index)
-            patcherOn |= is_on
+            # Indicate that this is a new item by bolding it and its parent patcher
+            if do_bold := item in self._new_items:
+                self.gList.lb_style_font_at_index(index, bold=True)
+            patcherOn |= self._check_item(item, index)
             patcher_bold |= do_bold
         if patcherOn:
             self._enable_self()
@@ -402,19 +413,9 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         patcher_italics = self.gList.lb_get_items_count() == 0
         self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
 
-    def _check_item(self, val, item, item_lbl, index):
-        # Indicate that this is a new item by bolding it and its parent patcher
-        if patcher_bold := val is None:
-            if patcher_bold := not self._is_first_load:
-                self._new_items.add(item)
-            self._item_config[item] = val = self.canAutoItemCheck and not \
-                item_lbl.endswith('.csv') and bass.inisettings['AutoItemCheck']
-        # Restore the bolded font for this item if it was new the first
-        # time we populated the list
-        if item in self._new_items:
-            self.gList.lb_style_font_at_index(index, bold=True)
-        self.gList.lb_check_at_index(index, val)
-        return val, patcher_bold
+    def _check_item(self, item, index):
+        self.gList.lb_check_at_index(index, val := self._item_config[item])
+        return val
 
     def OnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
@@ -792,14 +793,6 @@ class _ImporterPatcherPanel(_ImporterPatcherConfig, _ListPatcherPanel): pass
 class _ListMergerConfig(ListPatcherConfig):
     patcher_type: ClassVar[type[mergers.AListsMerger]]
 
-    def _getConfig(self, configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super()._getConfig(configs)
-        #--Make sure configChoices are set (as choiceMenu exists).
-        for item in self._item_config:
-            self._get_set_choice(item)
-        return config
-
     def _merge_configs(self, conf_checks, present_config_items):
         return {k: v for k, v in {**conf_checks, **forward_compat_path_to_fn(
             self.configChoices)}.items() if k in present_config_items}
@@ -807,21 +800,6 @@ class _ListMergerConfig(ListPatcherConfig):
     @classmethod
     def _config_attrs(cls):
         return *super()._config_attrs(), ('autoIsChecked', True)
-
-    def _get_auto_items(self):
-        for mod in (sup := super()._get_auto_items()):
-            self._get_set_choice(mod)
-        return sup
-
-    def _get_set_choice(self, item):
-        """Get default config choice."""
-        if not isinstance(config_choice := self._item_config.get(item), set):
-            config_choice = {'Auto'}
-        if u'Auto' in config_choice:
-            tags = self._bp.all_tags.get(item, set())
-            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
-        self._item_config[item] = config_choice
-        return config_choice
 
 class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
     """Mergers targeting all mods in the LO, with the option to override
@@ -847,6 +825,19 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         self._sort_and_update_items( # will also call _update_manual_buttons
             self.autoIsChecked)
         return VLayout(spacing=4, items=right_side_components)
+
+    def _set_choice(self, item):
+        """Refresh mods that have an Auto choice set. We need to do this when
+        we load a config, unlike super, as tags may have changed)."""
+        if (config_choice := self._item_config.get(item)) is None:
+            if not self._is_first_load:
+                self._new_items.add(item)
+            config_choice = {'Auto'}
+        if 'Auto' in config_choice:
+            tags = self._bp.all_tags.get(item, set())
+            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
+        self._item_config[item] = config_choice
+        return config_choice
 
     def _on_auto_check(self, is_checked):
         """Automatic checkbox changed."""
@@ -890,8 +881,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         for srcPath in srcPaths:
             if srcPath.head == srcDir and (
                     body_ext := ds.check_filename(srcPath.stail)):
-                if (fn := FName(''.join(body_ext))) not in self._item_config:
-                    self._item_config[fn] = self._get_set_choice(fn)
+                self._set_choice(FName(''.join(body_ext)))
         self._sort_and_update_items(is_auto=False)
 
     def _on_rem(self):
@@ -907,7 +897,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         #--Item Index
         if itemIndex < 0: return
         (gui_li := self.gList).lb_select_index(itemIndex)
-        choiceSet = self._get_set_choice((curr := self._curr_items)[itemIndex])
+        choiceSet = self._item_config[(curr := self._curr_items)[itemIndex]]
         #--Build Menu
         choices, choice_menu, _self = self._item_config, self.choiceMenu, self
         class _OnItemChoice(CheckLink):
@@ -922,7 +912,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
                 if choice != 'Auto':
                     choice_set.discard('Auto')
                 elif 'Auto' in choice_set:
-                    _self._get_set_choice(item)
+                    _self._set_choice(item)
                 gui_li.lb_set_label_at_index(itemIndex, _self.getItemLabel(
                     item, choices))
         links = Links()
@@ -933,6 +923,12 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         links.popup_menu(gui_li, None)
 
     # Config Phase Overrides
+    def _getConfig(self, configs):
+        config = super()._getConfig(configs)
+        for item in self._item_config:
+            self._set_choice(item) # see docs in self._set_choice
+        return config
+
     @classmethod
     def _log_config(cls, conf, config, clip, log):
         conf_choices = conf.get('configChoices', {})
@@ -1232,7 +1228,7 @@ class ReplaceFormIDs(_ListPatcherPanel):
                      u'Bashed Patch.')
     _config_key = u'UpdateReferences'
     patcher_type = ReplaceFormIDsPatcher
-    canAutoItemCheck = False #--GUI: Whether new items are checked by default.
+    _autocheck_new = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------
 class LeveledListsConfig(_ListMergerConfig):
@@ -1271,8 +1267,8 @@ class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
     def _get_glist(self):
         self.gList = ListBox(self, isSingle=False)
 
-    def _check_item(self, val, item, *args):
-        return val is None, False
+    def _check_item(self, item, index):
+        return False
 
 class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     patcher_name = _('FormID Lists')
