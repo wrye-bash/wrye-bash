@@ -106,7 +106,7 @@ class _ExSpecialList(CsvListPatcher, ExSpecial):
     @classmethod
     def gui_cls_vars(cls):
         cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
-        return cls_vars.update({'canAutoItemCheck': False}) or cls_vars
+        return cls_vars.update({'_autocheck_new': False}) or cls_vars
 
 class CoblExhaustionPatcher(_ExSpecialList):
     """Modifies most Greater powers to work with Cobl's power exhaustion
