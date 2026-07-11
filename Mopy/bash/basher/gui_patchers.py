@@ -297,6 +297,11 @@ class ListPatcherConfig(PatcherConfig):
         return {k: v for k, v in {**conf_checks, **forward_compat_path_to_fn(
             self.configChecks)}.items() if k in present_config_items}
 
+    @classmethod
+    def _mod_label(cls, item: FName, conf_choices):
+        """Returns label for item to be used in GUI list and in logging."""
+        return item
+
     def _get_list_patcher_srcs(self):
         # ListsMerger instances get all the listed sources
         return [k for k, v in self._item_config.items() if v is not False]
@@ -316,7 +321,6 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
-            self.selectCommands = self.__class__.selectCommands
             self._get_glist()
             self._item_search = SearchBar(self, hint=_('Search Sources'))
             self._item_search.on_text_changed.subscribe(
@@ -400,7 +404,7 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         patcherOn = False
         patcher_bold = False
         for index, item in enumerate(self._curr_items):
-            itemLabel = self.getItemLabel(item, self._item_config)
+            itemLabel = self._mod_label(item, self._item_config)
             self.gList.lb_insert(itemLabel, index)
             # Indicate that this is a new item by bolding it and its parent patcher
             if do_bold := item in self._new_items:
@@ -430,11 +434,6 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         except AttributeError:
             pass #ListBox instead of CheckListBox
         super().mass_select(select)
-
-    @staticmethod
-    def getItemLabel(item, conf_choices):
-        """Returns label for item to be used in list"""
-        return f'{item}' # Path or string - YAK
 
     # Config Phase Overrides
     def import_config(self, patchConfigs, set_first_load):
@@ -801,6 +800,18 @@ class _ListMergerConfig(ListPatcherConfig):
     def _config_attrs(cls):
         return *super()._config_attrs(), ('autoIsChecked', True)
 
+    @classmethod
+    def _log_config(cls, conf, config, clip, log):
+        conf_choices = conf.get('configChoices', {})
+        for item in (cls._mod_label(i, conf_choices) for i in conf.get(
+                'configItems', [])):
+            log(f'. __{item}__')
+            clip.write(f'    {item}\n')
+
+    @classmethod
+    def _mod_label(cls, item, conf_choices):
+        return cls.patcher_type.annotate_plugin(item, conf_choices)
+
 class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
     """Mergers targeting all mods in the LO, with the option to override
     tags."""
@@ -862,13 +873,6 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         return self.patcher_type(self.patcher_name, patch_file,
             patcher_sources, rem_emp, defaultdict(set, self._item_config))
 
-    @staticmethod
-    def getItemLabel(item, conf_choices):
-        # Note that we do *not* want to escape the & here - that puts *two*
-        # ampersands in the resulting ListBox for some reason
-        choice = ''.join(sorted(i[0] for i in conf_choices.get(item, ()) if i))
-        return f'{item}{f" [{choice}]" if choice else ""}'
-
     def _on_add(self):
         ds = bosh.modInfos
         srcDir = ds.store_dir
@@ -879,8 +883,8 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         if not srcPaths: return
         #--Get new items
         for srcPath in srcPaths:
-            if srcPath.head == srcDir and (
-                    body_ext := ds.check_filename(srcPath.stail)):
+            if srcPath.head == srcDir and (body_ext := ds.check_filename(
+                    srcPath.stail)):
                 self._set_choice(FName(''.join(body_ext)))
         self._sort_and_update_items(is_auto=False)
 
@@ -913,7 +917,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
                     choice_set.discard('Auto')
                 elif 'Auto' in choice_set:
                     _self._set_choice(item)
-                gui_li.lb_set_label_at_index(itemIndex, _self.getItemLabel(
+                gui_li.lb_set_label_at_index(itemIndex, _self._mod_label(
                     item, choices))
         links = Links()
         for index, item_label in enumerate(choice_menu):
@@ -928,14 +932,6 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         for item in self._item_config:
             self._set_choice(item) # see docs in self._set_choice
         return config
-
-    @classmethod
-    def _log_config(cls, conf, config, clip, log):
-        conf_choices = conf.get('configChoices', {})
-        for item in (cls.getItemLabel(i, conf_choices) for i in conf.get(
-                'configItems', [])):
-            log(f'. __{item}__')
-            clip.write(f'    {item}\n')
 
     def import_config(self, *args):
         super(_ListPatcherPanel, self).import_config(*args) # bypass super!
