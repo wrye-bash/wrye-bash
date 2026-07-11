@@ -638,16 +638,6 @@ class AListsMerger(ListPatcher):
         self.remove_empty_sublists = remove_empty
         self._tag_choices = tag_choices
 
-    def annotate_plugin(self, ann_plugin):
-        """Returns the name of the specified plugin, with any Relev/Delev tags
-        appended as [ADR], similar to how the patcher GUI displays it.
-
-        :param ann_plugin: The plugin to return the name for, as a path.
-        :type ann_plugin: bolt.Path"""
-        applied_tags = [t[0] for t in self._tag_choices[ann_plugin]] or ''
-        applied_tags = applied_tags and f' [{"".join(sorted(applied_tags))}]'
-        return f'{ann_plugin}{applied_tags}'
-
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
         sc_name = modFile.fileInfo.fn_key
@@ -703,11 +693,12 @@ class AListsMerger(ListPatcher):
 
     def buildPatch(self, log, progress):
         keep = self.patchFile.getKeeper()
+        tags = self._tag_choices
         # Relevs/Delevs List
         log.setHeader(f'= {self._patcher_name}', True)
         log.setHeader(f'=== {self._de_re_header}')
         for leveler in self.levelers:
-            log(u'* ' + self.annotate_plugin(leveler))
+            log(f'* {self.annotate_plugin(leveler, tags)}')
         # Save to patch file
         sig_label = {k: v for k, v in self._sig_to_label.items() if
                      k in self._read_sigs}
@@ -724,7 +715,7 @@ class AListsMerger(ListPatcher):
                         stored_lists[list_fid], do_copy=False)
                     log(f'* {stored_list.eid}')
                     for merge_source in stored_list.mergeSources:
-                        log(f'  * {self.annotate_plugin(merge_source)}')
+                        log(f'  * {self.annotate_plugin(merge_source, tags)}')
                 self._check_list(stored_list, log)
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
@@ -776,6 +767,16 @@ class AListsMerger(ListPatcher):
                 'll_label': sig_label[list_type_sig]})
             for list_eid in sorted(cleaned_lists, key=str.lower):
                 log('* ' + list_eid)
+
+    @staticmethod
+    def annotate_plugin(item, conf_choices) -> str:
+        """Returns the name of the specified plugin, with any Relev/Delev tags
+        appended as [ADR], similar to how the patcher GUI displays it.
+        :param item: The plugin to return the name for.
+        :param conf_choices: dict mapping plugins to their tags or when used
+            from the GUI patchers their configuration choices."""
+        choice = ''.join(sorted(i[0] for i in conf_choices.get(item, ()) if i))
+        return f'{item}{f" [{choice}]" if choice else ""}'
 
     # Methods for patchers to override
     def _check_list(self, record, log):
