@@ -337,7 +337,7 @@ class _TabledInfo:
                         v = cached_size, canMerge
                     except (TypeError, ValueError, AttributeError):
                         # Convert older settings (had a bool in canMerge)
-                        v = -1, {}
+                        continue # skip - handled in _file_or_active_updates
                 elif k == 'bashTags': # don't drop tags from later WB versions
                     v = _process_tags(v, drop_unknown=False)
                 self.set_table_prop(k, v)
@@ -1604,7 +1604,7 @@ class DataStore(DataDict):
         return rdata
 
     def get_update_info(self, fname: FName | Path,
-            old_inf: AFileInfo | None = None, *, _rdata=None,**kwargs):
+                        old_inf: AFileInfo | None = None, **kwargs):
         """Get new info (for new file or updated corrupted) else check updates.
         Will try loading from disk, only call on existing files."""
         if old_inf is None:
@@ -2315,7 +2315,7 @@ class ModInfos(_AFileInfos):
         except FileNotFoundError:
             bt_contents = set()  # No BashTags folder -> no BashTags files
         rdata = super().refresh(refresh_in, booting=booting,
-                                bt_contents=bt_contents)
+                                bt_contents=bt_contents, **kwargs)
         mods_changes = bool(rdata)
         ldiff = LordDiff()
         if deltd := rdata.to_del: #restore first backup is_rename but no to_del

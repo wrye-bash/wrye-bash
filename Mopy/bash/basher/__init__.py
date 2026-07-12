@@ -1226,7 +1226,7 @@ class _EditableMixin(_DetailsMixin):
         if refr_kw := self._extra_changes():
             ref_saves |= refr_kw.get('unlock_lo', ref_saves)
             store = self.panel_uilist.data_store
-            ren_data |= store.refresh(**refr_kw)
+            ren_data |= store.refresh(**refr_kw, force_update=True)
             if not store.get(det_it): ##:(701) rework saving logic - see RestoreInfo.Execute
                 showError(self, _('File corrupted on save!') +
                           f'\n{store.corrupted[det_it].error_message}')
@@ -1242,11 +1242,11 @@ class _EditableMixin(_DetailsMixin):
         return self.panel_uilist.try_rename([(self.file_info, new_n)],
             check_unique=True, with_backups=True, refresh_ui=False) or None
 
-    def _extra_changes(self):
-        # Although we could avoid rereading the header by passing the info in
-        # I leave it here as an extra error check - error handling is WIP
-        return {'refresh_in': RefrIn.from_tabled_infos(
-            {self.detail_fn: self.file_info})}
+    def _extra_changes(self, *, has_ghosts=False):
+        # Although we could avoid rereading the header I leave it here as an
+        # extra error check - error handling is WIP
+        return {'refresh_in': RefrIn.from_tabled_infos(fn_info_dict={
+            self.detail_fn: self.file_info}, ghosts=has_ghosts)}
 
     @_check_displayed
     def OnFileEdited(self):
@@ -1546,10 +1546,7 @@ class ModDetails(_ModsSavesDetails):
                            self.descriptionStr == mod_inf.header.description):
             self.SetFile()
 
-    __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
-        'Windows-1252. %(game_name)s may not be able to activate this '
-        'plugin because of this. Do you want to rename the plugin anyway?')
-    def _extra_changes(self):
+    def _extra_changes(self, **kwargs):
         mod_inf = self.file_info
         #--Change hedr/masters?
         if change_hdr := self.uilist.edited or (
@@ -1571,9 +1568,12 @@ class ModDetails(_ModsSavesDetails):
             if not change_hdr: # trigger the refresh for mtime change
                 return {'refresh_in': RefrData({self.detail_fn}),
                         'unlock_lo': unlock_lo}
-        return {**super()._extra_changes(), 'unlock_lo': unlock_lo} \
-            if change_hdr else {}
+        return {**super()._extra_changes(has_ghosts=True),
+                'unlock_lo': unlock_lo} if change_hdr else {}
 
+    __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
+        'Windows-1252. %(game_name)s may not be able to activate this '
+        'plugin because of this. Do you want to rename the plugin anyway?')
     def _rename_detail_item(self, new_n):
         #--Warn on rename if file has BSA and/or dialog
         msg = self.file_info.ask_resources_ok(
@@ -2125,7 +2125,7 @@ class SaveDetails(_ModsSavesDetails):
         if not self.file_info or self.file_info.named_as(self.fileStr):
             self.SetFile()
 
-    def _extra_changes(self):
+    def _extra_changes(self, **kwargs):
         saveinf = self.file_info
         #--Change masters?
         if self.uilist.edited:

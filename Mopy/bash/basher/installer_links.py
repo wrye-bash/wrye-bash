@@ -379,9 +379,8 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
                       **kwargs):
         from ..bosh import iniInfos
         for iniFile, wizardEdits in ret.ini_edits.items():
-            basen = os.path.basename(os.path.splitext(iniFile)[0])
-            outFile = bass.dirs[u'ini_tweaks'].join(
-                f'{installer} - Wizard Tweak [{basen}].ini')
+            outFile = bass.dirs['ini_tweaks'].join(f'{installer} - Wizard '
+              f'Tweak [{os.path.basename(os.path.splitext(iniFile)[0])}].ini')
             # Use UTF-8 since this came from a wizard.txt which could have
             # characters in it that are unencodable in cp1252 - plus this is
             # just a tweak, won't be read by the game
@@ -390,7 +389,7 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
                 out.write(u'\n')
             rui_data[iniInfos] |= RefrIn.from_tabled_infos(extra_attrs={(
                 ini_name := FName(outFile.stail)): {
-                    'installer': str(installer.fn_key)}})
+                    'installer': str(installer.fn_key)}}, store=iniInfos)
             target_to_ini[iniFile].append((ini_name, installer, ret))
 
     def __apply_tweaks(self, target_to_ini):

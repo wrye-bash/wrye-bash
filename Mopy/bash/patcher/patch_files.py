@@ -544,7 +544,7 @@ class PatchFile(ModFile):
             message += _('%(msg_plugin)s [Version %(plugin_ver)s]') % {
               'msg_plugin': mname, 'plugin_ver': version} if version else mname
             if tgs := self.all_tags.get(mname):
-                message += f' [{", ".join(tgs)}]'
+                message += f' [{", ".join(sorted(tgs))}]'
             log(message)
         #--Load Mods and error mods
         if self.pfile_aliases:

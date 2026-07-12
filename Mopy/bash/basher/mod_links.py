@@ -368,12 +368,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.mod_labels.append(newName)
         self.mod_labels.sort()
         #--Edit table entries.
-        renamed = []
+        renamed = set()
         for fn, mod_inf in bosh.modInfos.items():
             if mod_inf.get_table_prop(self.column) == oldName:
                 mod_inf.set_table_prop(self.column, newName)
-                renamed.append(fn)
-        self.parent.RefreshUI(RefrData(set(renamed)))
+                renamed.add(fn)
+        self.parent.RefreshUI(RefrData(renamed))
         #--Done
         return newName
 
@@ -381,12 +381,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         """Removes group."""
         self.mod_labels.remove(item)
         #--Edit table entries.
-        deletd = []
+        ungrouped = set()
         for fn, mod_inf in bosh.modInfos.items():
             if mod_inf.get_table_prop(self.column) == item:
                 mod_inf.set_table_prop(self.column, None)
-                deletd.append(fn)
-        self.parent.RefreshUI(RefrData(to_del=set(deletd)))
+                ungrouped.add(fn)
+        self.parent.RefreshUI(RefrData(ungrouped))
         #--Done
         return True
 

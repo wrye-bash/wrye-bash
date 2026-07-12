@@ -1948,23 +1948,27 @@ class RefrIn:
     del_infos: set = field(default_factory=set)
 
     @classmethod
-    def from_tabled_infos(cls, fn_info_dict=None, *, extra_attrs=None,
-                          exclude: frozenset | True = frozenset(), store=None):
-        """Copy persistent attributes from info objects (or dict) - info
-        objects are discarded, so we request refresh for *adding* infos."""
-        if store: # fish the infos so we copy table attributes over
-            fn_info_dict = {k: v for k in extra_attrs if (v := store.get(k))}
+    def from_tabled_infos(cls, *, fn_info_dict=None, extra_attrs=None,
+            exclude: frozenset | set = frozenset(), store=None, ghosts=False):
+        """Set persistent attributes to info objects, modified in place if
+        available in the store, else we are *adding* infos, so we pass the
+        att_val _TabledInfo.__init__ parameter, keep uses low."""
+        # one use of fn_info_dict where we have no extra_attrs ##: remove it!
+        fn_info_dict = {k: (v, {}) for k, v in (fn_info_dict or {}).items()}
+        fn_info_dict.update({k: (store.get(k) if store else None, v) for k, v
+                             in (extra_attrs or {}).items()})
         try:
-            rinf = {k: (None, {'att_val': v.get_persistent_attrs(
-                exclude=exclude)}) for k, v in fn_info_dict.items()}
-        except AttributeError: # ScreenInfos or fn_info_dict is None
-            rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}
-        for k, v in (extra_attrs or {}).items():
-            try:
-                rinf[k][1]['att_val'].update(v)
-            except KeyError:
-                rinf[k] = None, {'att_val': v}
-        return cls(rinf)
+            for k, (inf, kws) in fn_info_dict.items():
+                if inf is None: # pass extra_attrs to the info object __init__
+                    fn_info_dict[k] = (None, {'att_val': kws})
+                else: # set excluded to None and extra_attrs on the info object
+                    for att, val in {**dict.fromkeys(exclude), **kws}.items():
+                        inf.set_table_prop(att, val)
+                    fn_info_dict[k] = (inf, {
+                        'itsa_ghost': inf.is_ghost if ghosts else None})
+        except AttributeError: # ScreenInfos
+            pass
+        return cls(fn_info_dict)
 
     @classmethod
     def from_added(cls, added_fns):
@@ -1982,7 +1986,7 @@ class RefrIn:
                 if isinstance(v, dict):
                     attrs.setdefault(k, {}).update(v)
                 else: attrs[k] = v
-            nps[fn] = npo[fn][0], attrs  # first assignment ever needed?
+            nps[fn] = npo[fn][0], attrs  # assignment might flip None <-> info
         for fn in npo.keys() - nps.keys():
             nps[fn] = npo[fn]
         for fn in (nps.keys() & {v.fn_key for v in self.del_infos}):

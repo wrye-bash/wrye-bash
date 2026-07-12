@@ -1117,8 +1117,8 @@ class Installer(ListInfo):
                 sizeCrcDate = get_cached(filename)
                 if not sizeCrcDate:
                     missing.add(filename)
-                elif sizeCrc != sizeCrcDate[:2]:
-                    mismatched.add(filename)
+                elif sizeCrc[0] != sizeCrcDate[0] or sizeCrc[1] != sizeCrcDate[
+                    1]: mismatched.add(filename)
                 if sizeCrc == ci_underrides_sizeCrc.get(filename):
                     underrides.add(filename)
             if missing: inst_status = -10
@@ -1323,11 +1323,13 @@ class _InstallerPackage(Installer, AFileInfo):
         for dest, (s, c, dest_path) in data_sizeCrcDate_update.items():
             d = dest_path.mtime # update mtime after copy/move ##:(241) needed or use cached value?
             if st_fn := dest_to_store.get(dest):
-                at = {'installer': str(self.fn_key)}
+                rin: dict = {'extra_attrs': {st_fn[1]: (
+                    at := {'installer': str(self.fn_key)})}}
                 if (st := st_fn[0]) is modInfos:
+                    rin['ghosts'] = True
+                    rin['exclude'] = {'mergeInfo'} # rescan mergeability
                     at.update({'crc': c, 'crc_mtime': d, 'crc_size': s})
-                rui_data[st] |= RefrIn.from_tabled_infos(exclude=True,
-                    extra_attrs={st_fn[1]: at}, store=st)
+                rui_data[st] |= RefrIn.from_tabled_infos(**rin, store=st)
             idata_data_scd[dest] = (s, c, d)
 
     def _install_source_args(self, dest_src, progress):
@@ -1917,9 +1919,10 @@ def _bain_op(func):
                 # _externally_deleted for tracked is updated in store.refresh
                 self.notify_external(removed_untracked if not ex else {
                     v for v in removed_untracked if not v.exists()})
-            # Update relevant data stores, adding new/modified files
+            # Update relevant data stores, adding new/refreshing modified files
             for store, refr_in in rui_data.items():
-                rui_data[store] = store.refresh(refr_in, unlock_lo=True)
+                rui_data[store] = store.refresh(refr_in, unlock_lo=True,
+                                                force_update=True)
             self.refreshTracked() # after we notify BAIN in refresh
             # Set the 'installer' column for files that track their owner
             stores = [s for s in removed_tracked if s.tracks_ownership]

@@ -285,12 +285,12 @@ class PatchDialog(DialogWindow):
                 # No need to link the parent to itself, of course
                'bp_split_parent': str(patch_name)} for bp in it}}
             # add the config on master patch so it is read afterwards
-            rinf = RefrIn.from_tabled_infos({patch_name: self.patchInfo},
-                                            exclude=True, extra_attrs=attrs)
+            rinf = RefrIn.from_tabled_infos(extra_attrs=attrs, exclude={
+                'crc', 'mergeInfo'}, store=minfos, ghosts=True)
             self._bps.extend(attrs)
             # We have to parse the new infos first since the masters may differ
             # note this won't activate the new masters, the caller has to do it
-            self._bp_rdata |= minfos.refresh(rinf)
+            self._bp_rdata |= minfos.refresh(rinf, force_update=True)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
