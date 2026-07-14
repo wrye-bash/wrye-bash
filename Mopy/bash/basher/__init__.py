@@ -1547,17 +1547,16 @@ class ModDetails(_ModsSavesDetails):
     def _extra_changes(self, **kwargs):
         mod_inf = self.file_info
         #--Change hedr/masters?
-        if change_hdr := self.uilist.edited or (
-                self.authorStr != mod_inf.header.author or
-                self.descriptionStr != mod_inf.header.description):
-            #--Backup
-            mod_inf.makeBackup()
-            mod_inf.header.author = self.authorStr.strip()
-            mod_inf.header.description = self.descriptionStr.strip()
-            old_mi_masters = mod_inf.header.masters
-            mod_inf.header.masters = self.uilist.GetNewMasters()
-            mod_inf.header.setChanged()
-            mod_inf.writeHeader(old_mi_masters)
+        change_hdr = {}
+        if (auth := self.authorStr.strip()) != (hdr := mod_inf.header).author:
+            change_hdr['mod_author'] = auth
+        if (desc := self.descriptionStr.strip()) != hdr.description:
+            change_hdr['new_desc'] = desc
+        if self.uilist.edited:
+            change_hdr['old_masters'] = hdr.masters
+            hdr.masters = self.uilist.GetNewMasters()
+        if change_hdr:
+            mod_inf.write_header(**change_hdr, do_backup=True)
         #--Change date?
         if unlock_lo := (self.modifiedStr != format_date(mod_inf.ftime)):
             unlock_lo = bush.game.mtime_lo
@@ -2125,14 +2124,12 @@ class SaveDetails(_ModsSavesDetails):
         saveinf = self.file_info
         #--Change masters?
         if self.uilist.edited:
-            prevMTime = saveinf.ftime
             saveinf.makeBackup()
             prev_masters = saveinf.masterNames
             curr_masters = self.uilist.GetNewMasters()
             master_remaps = {m1: m2 for m1, m2
                              in zip(prev_masters, curr_masters) if m1 != m2}
             saveinf.write_masters(master_remaps)
-            saveinf.setmtime(prevMTime)
             return super()._extra_changes()
         return {}
 
