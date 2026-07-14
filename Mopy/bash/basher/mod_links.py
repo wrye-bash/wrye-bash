@@ -1548,14 +1548,10 @@ class Mod_SetVersion(OneItemLink):
                 int(10 * self._selected_info.header.version) != 8)
 
     def Execute(self):
-        if not self._askContinue(self.message, 'bash.setModVersion.continue',
-                title=self._text):
-            return
-        self._selected_info.makeBackup()
-        self._selected_info.header.version = 0.8
-        self._selected_info.header.setChanged()
-        self._selected_info.writeHeader()
-        self.refresh_sel()
+        if self._askContinue(self.message, 'bash.setModVersion.continue',
+                             title=self._text):
+            self._selected_info.writeHeader(mod_version=0.8, do_backup=True)
+            self.refresh_sel()
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------
@@ -2242,7 +2238,7 @@ class Mod_Snapshot(ItemLink):
                 else:
                     newVersion = fileVersion
                 new_descr = bosh.reVersion.sub(fr'\1 {newVersion}', descr, 1)
-                fileInfo.writeDescription(new_descr)
+                fileInfo.writeHeader(new_desc=new_descr)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
             fileInfo.fs_copy(destDir.join(destName))
