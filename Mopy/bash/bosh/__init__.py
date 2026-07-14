@@ -724,17 +724,14 @@ class ModInfo(_WithMastersInfo):
         """Sets bash keys as specified."""
         keys = set(keys) #--Make sure it's a set.
         if keys == self.getBashTagsDesc(): return
-        if keys:
-            strKeys = u'{{BASH:'+(u','.join(sorted(keys)))+u'}}\n'
+        s_tags = '{{BASH:' + ','.join(sorted(keys)) + '}}\n' if keys else ''
+        if descr := self.header.description:
+            descr = __re_bash_tags.sub(s_tags, descr) if __re_bash_tags.search(
+                descr) else f'{descr}\n{s_tags}'
         else:
-            strKeys = u''
-        desc_ = self.header.description
-        if __re_bash_tags.search(desc_):
-            desc_ = __re_bash_tags.sub(strKeys, desc_)
-        else:
-            desc_ = desc_ + u'\n' + strKeys
-        if len(desc_) > 511: return False
-        self.writeDescription(desc_)
+            descr = s_tags
+        if len(descr) > 511: return False
+        self.writeHeader(new_desc=descr)
         return True
 
     def getBashTags(self) -> set[str]:
@@ -802,15 +799,28 @@ class ModInfo(_WithMastersInfo):
         self.set_plugin_flags(flags_dict, save_flags=False) # set _is_esl etc
 
     def writeHeader(self, old_masters: list[FName] | None = None, *,
-                    rescan_merge=False):
+                    rescan_merge=False, new_desc='', mod_author='',
+                    mod_version=None, do_backup=False):
         """Write Header. Actually have to rewrite entire file."""
+        if do_backup:
+            self.makeBackup()
+        mod_hedr = self.header
+        if new_desc: # 511 + 1 for null = 512
+            new_desc = new_desc[:511] if len(new_desc) > 511 else new_desc
+            mod_hedr.description = new_desc
+        if mod_author:
+            mod_hedr.author = mod_author
+        if mod_version is not None:
+            mod_hedr.version = mod_version
+        mod_hedr.setChanged(
+            any([old_masters, new_desc, mod_author, mod_version]))
         with TempFile() as tmp_plugin:
             with FormIdReadContext.from_info(self) as ins:
                 # If we need to remap masters, construct a remapping write
                 # context. Otherwise we need a regular write context due to
                 # ONAM fids
-                aug_masters = [*self.header.masters, self.fn_key]
-                ctx_args = [tmp_plugin, aug_masters, self.header.version]
+                aug_masters = [*mod_hedr.masters, self.fn_key]
+                ctx_args = [tmp_plugin, aug_masters, mod_hedr.version]
                 if old_masters is not None:
                     write_ctx = RemapWriteContext(old_masters, *ctx_args)
                 else:
@@ -820,8 +830,8 @@ class ModInfo(_WithMastersInfo):
                         # We already read the file header (in
                         # FormIdReadContext), so just write out the new one and
                         # copy the rest over
-                        self.header.getSize()
-                        self.header.dump(out)
+                        mod_hedr.getSize()
+                        mod_hedr.dump(out)
                         out.write(ins.read(ins.size - ins.tell()))
                     except struct_error as rex:
                         raise ModError(self.fn_key, f'Struct.error: {rex}')
@@ -834,13 +844,6 @@ class ModInfo(_WithMastersInfo):
         else:
             self._store().rescanMergeable([self.fn_key],
                                           sort_descending_lo=False)
-
-    def writeDescription(self, new_desc):
-        """Sets description to specified text and then writes hedr."""
-        new_desc = new_desc[:min(511,len(new_desc))] # 511 + 1 for null = 512
-        self.header.description = new_desc
-        self.header.setChanged()
-        self.writeHeader()
 
     def get_version(self):
         """Extract and return version number from self.header.description."""
@@ -1439,6 +1442,7 @@ class SaveInfo(_WithMastersInfo):
         """Rewrites masters of existing save file and cosaves."""
         if not self.abs_path.exists():
             raise SaveFileError(self.abs_path.head, u'File does not exist.')
+        prevMTime = self.ftime
         self.header.remap_masters(master_map)
         with TempFile() as tmp_plugin:
             with self.abs_path.open('rb') as ins:
@@ -1449,6 +1453,7 @@ class SaveInfo(_WithMastersInfo):
             for co_file in self._co_saves.values():
                 co_file.remap_plugins(master_map)
                 co_file.write_cosave_safe()
+        self.setmtime(prevMTime)
 
     def get_cosave_tags(self):
         """Return strings expressing whether cosaves exist and are correct.
