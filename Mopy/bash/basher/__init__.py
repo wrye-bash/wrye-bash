@@ -59,6 +59,8 @@ from collections.abc import Iterable
 from enum import Enum
 from functools import partial
 from itertools import chain, repeat, starmap, count
+from typing import Any
+
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
 from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
@@ -1221,7 +1223,9 @@ class _EditableMixin(_DetailsMixin):
         else: # we renamed - set detail_fn so we can retrieve self.file_info
             self.detail_fn = det_it = next(iter(ren_data.renames.values()))
         ref_saves = bool(ren_data) # does not matter for save list
-        if refr_kw := self._extra_changes():
+        if change_hdr := self._header_checks():
+            self.file_info.header_out(**change_hdr, do_backup=True)
+        if refr_kw := self._refr_args(change_hdr):
             ref_saves |= refr_kw.get('unlock_lo', ref_saves)
             store = self.panel_uilist.data_store
             ren_data |= store.refresh(**refr_kw, force_update=True)
@@ -1233,6 +1237,9 @@ class _EditableMixin(_DetailsMixin):
         self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
                                             detail_item=det_it)
 
+    def _header_checks(self):
+        raise NotImplementedError
+
     def _rename_detail_item(self, new_n):
         # OnFileEdited checked if filename existed in validate_name but this
         # happened before and since maybe modinfos are updated, we need to
@@ -1240,7 +1247,7 @@ class _EditableMixin(_DetailsMixin):
         return self.panel_uilist.try_rename([(self.file_info, new_n)],
             check_unique=True, with_backups=True, refresh_ui=False) or None
 
-    def _extra_changes(self, *, has_ghosts=False):
+    def _refr_args(self, change_hdr, *, has_ghosts=False):
         # Although we could avoid rereading the header I leave it here as an
         # extra error check - error handling is WIP
         return {'refresh_in': RefrIn.from_tabled_infos( # crc is recalculated
@@ -1317,6 +1324,12 @@ class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
         ]).apply_to(self.masterPanel)
         VLayout(item_expand=True, item_weight=1,
                 items=[self.subSplitter]).apply_to(self.right)
+
+    def _header_checks(self):
+        #--Change masters?
+        if self.uilist.edited:
+            return {'new_masters': self.uilist.GetNewMasters()}
+        return {}
 
     def ShowPanel(self, **kwargs):
         super(_ModsSavesDetails, self).ShowPanel(**kwargs)
@@ -1544,28 +1557,27 @@ class ModDetails(_ModsSavesDetails):
                            self.descriptionStr == mod_inf.header.description):
             self.SetFile()
 
-    def _extra_changes(self, **kwargs):
-        mod_inf = self.file_info
+    def _header_checks(self):
         #--Change hedr/masters?
-        change_hdr = {}
-        if (auth := self.authorStr.strip()) != (hdr := mod_inf.header).author:
+        change_hdr: dict[str, Any] = super()._header_checks()
+        hdr = self.file_info.header
+        if (auth := self.authorStr.strip()) != hdr.author:
             change_hdr['mod_author'] = auth
         if (desc := self.descriptionStr.strip()) != hdr.description:
             change_hdr['new_desc'] = desc
-        if self.uilist.edited:
-            change_hdr['old_masters'] = hdr.masters
-            hdr.masters = self.uilist.GetNewMasters()
-        if change_hdr:
-            mod_inf.write_header(**change_hdr, do_backup=True)
+        return change_hdr
+
+    def _refr_args(self, change_hdr, **kwargs):
+        mod_inf = self.file_info
         #--Change date?
         if unlock_lo := (self.modifiedStr != format_date(mod_inf.ftime)):
             unlock_lo = bush.game.mtime_lo
             mod_inf.setmtime(time.mktime(time.strptime(self.modifiedStr)),
-                             mark_redated=True) # refresh will add it to redraw
+                          mark_redated=True) # refresh will add it to redraw
             if not change_hdr: # trigger the refresh for mtime change
                 return {'refresh_in': RefrData({self.detail_fn}),
                         'unlock_lo': unlock_lo}
-        return {**super()._extra_changes(has_ghosts=True),
+        return {**super()._refr_args(change_hdr, has_ghosts=True),
                 'unlock_lo': unlock_lo} if change_hdr else {}
 
     __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
@@ -2119,19 +2131,6 @@ class SaveDetails(_ModsSavesDetails):
     def testChanges(self): # used by the master list when editing is disabled
         if not self.file_info or self.file_info.named_as(self.fileStr):
             self.SetFile()
-
-    def _extra_changes(self, **kwargs):
-        saveinf = self.file_info
-        #--Change masters?
-        if self.uilist.edited:
-            saveinf.makeBackup()
-            prev_masters = saveinf.masterNames
-            curr_masters = self.uilist.GetNewMasters()
-            master_remaps = {m1: m2 for m1, m2
-                             in zip(prev_masters, curr_masters) if m1 != m2}
-            saveinf.write_masters(master_remaps)
-            return super()._extra_changes()
-        return {}
 
     def RefreshUIColors(self):
         self._update_masters_warning()

@@ -1549,7 +1549,7 @@ class Mod_SetVersion(OneItemLink):
     def Execute(self):
         if self._askContinue(self.message, 'bash.setModVersion.continue',
                              title=self._text):
-            self._selected_info.writeHeader(mod_version=0.8, do_backup=True)
+            self._selected_info.header_out(mod_version=0.8, do_backup=True)
             self.refresh_sel()
 
 #------------------------------------------------------------------------------
@@ -1609,9 +1609,9 @@ class Mod_Face_Import(OneItemLink):
                     '*%(save_ext_off)s') % {**self._selected_info.sexts,
             'game_name': bush.game.display_name}
         #--File dialog
-        srcPath = self._askOpen(_('Face Source:'), defaultDir=srcDir,
-                                wildcard=wildcard)
-        if not srcPath: return
+        if not (srcPath := self._askOpen(_('Face Source:'), defaultDir=srcDir,
+                                         wildcard=wildcard)):
+            return
         #--Get face
         srcInfo = bosh.saveInfos.get_update_info(srcPath)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
@@ -2282,7 +2282,7 @@ class Mod_Snapshot(ItemLink):
                 else:
                     newVersion = fileVersion
                 new_descr = bosh.reVersion.sub(fr'\1 {newVersion}', descr, 1)
-                fileInfo.writeHeader(new_desc=new_descr)
+                fileInfo.header_out(new_desc=new_descr)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
             fileInfo.fs_copy(destDir.join(destName))
