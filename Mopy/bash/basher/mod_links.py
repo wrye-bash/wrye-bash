@@ -954,23 +954,20 @@ class _Mod_BP_Link(OneItemLink):
 
     def _find_parent_bp(self):
         """Find the correct Bashed Patch to use for working on this BP file.
-        Handles both regular BPs and BP parts correctly."""
+        Handles both regular BPs and BP parts. Show an error message for
+        when a BP part could not find its parent."""
         bp_parent_str = self._selected_info.get_table_prop('bp_split_parent')
         if bp_parent_str is None:
             return self._selected_info # Not a part
         if bp_parent := bosh.modInfos.get(bp_parent_str):
             return bp_parent # Is a part, found parent
-        return None # Is a part, did not find parent
-
-    def _error_no_parent_bp(self):
-        """Show an error message for when a BP part could not find its
-        parent."""
         self._showError(
             _('This is part of a split Bashed Patch, but Wrye Bash failed '
               'to determine its parent. If you renamed or deleted the '
               'parent, this part may have become detached. In that case, '
               'just delete it and use the main BP to rebuild.'),
             title=_('Detached Bashed Patch Part'))
+        return None # Is a part, did not find parent
 
 class Mod_RebuildPatch(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -1013,9 +1010,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         Link.Frame.SaveSettings() ##: just modInfos ?
 
     def _execute_bp(self, mod_infos, bp_rdata):
-        patch_info = self._find_parent_bp()
-        if patch_info is None:
-            self._error_no_parent_bp()
+        if (patch_info := self._find_parent_bp()) is None:
             return False
         # Clean up some memory
         bolt.GPathPurge()
@@ -1105,9 +1100,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
 
     def Execute(self):
         #--Config
-        bp_parent_info = self._find_parent_bp()
-        if bp_parent_info is None:
-            self._error_no_parent_bp()
+        if (bp_parent_info := self._find_parent_bp()) is None:
             return
         config = bp_parent_info.get_table_prop('bash.patch.configs', {})
         # Detect and warn about patch mode

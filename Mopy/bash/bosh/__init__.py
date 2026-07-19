@@ -595,12 +595,10 @@ class ModInfo(_WithMastersInfo):
 
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
-        cached_crc = self.get_table_prop(u'crc')
-        recalculate = recalculate or cached_crc is None or \
-            self.ftime != self.get_table_prop('crc_mtime') or \
-            self.fsize != self.get_table_prop(u'crc_size')
-        path_crc = cached_crc
-        if recalculate:
+        path_crc = cached_crc = self.get_table_prop('crc')
+        if recalculate or cached_crc is None or self.get_table_prop(
+                'crc_mtime') != self.ftime or self.get_table_prop(
+                'crc_size') != self.fsize:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
                 self.set_table_prop(u'crc', path_crc)

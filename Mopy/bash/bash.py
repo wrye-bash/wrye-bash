@@ -572,6 +572,8 @@ def _main(opts, wx_locale, _wx):
         from . import load_order
         init_loot_cond_functions(load_order, bosh, bush_game)
         from . import env
+        if env.in_mo2_vfs():
+            bolt.deprint('Wrye Bash appears to be running through MO2')
         env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
         global basher # share this instance with _close_dialog_windows
         from . import basher

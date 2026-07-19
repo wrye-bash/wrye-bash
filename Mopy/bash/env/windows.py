@@ -1691,7 +1691,5 @@ class LnkLauncher(AppLauncher):
 def in_mo2_vfs() -> bool:
     """Test if Wrye Bash appears be running with MO2's virtual filesystem
     hooked in."""
-    for dll in ('hook.dll', 'usvfs_x64.dll'):
-        if ctypes.windll.kernel32.GetModuleHandleW(dll): # dll handle
-            return True
-    return False
+    return any(ctypes.windll.kernel32.GetModuleHandleW( # dll handle
+        dll) for dll in ('hook.dll', 'usvfs_x64.dll'))
