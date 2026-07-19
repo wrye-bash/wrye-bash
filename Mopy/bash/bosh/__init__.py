@@ -448,6 +448,11 @@ class _WithMastersInfo(FileInfo):
         """Read header from file and set self.header attribute."""
         self._reset_masters()
 
+    def header_out(self, *, do_backup=False, **kwargs):
+        """Write Header. Actually have to rewrite entire file."""
+        if do_backup:
+            self.makeBackup()
+
     def _reset_masters(self):
         #--Master Names/Order
         self.masterNames = tuple(self._get_masters())
@@ -556,7 +561,7 @@ class ModInfo(_WithMastersInfo):
             pl_flag.set_mod_flag(self, flag_val, bush.game)
             if flag_val is not None and pl_flag is bush.game.master_flag:
                 self._update_onam(pl_flag) # recalculate ONAM info if necessary
-        if save_flags: self.writeHeader(rescan_merge=True)
+        if save_flags: self.header_out(rescan_merge=True)
 
     def _scan_fids(self, fid_cond):
         with ModReader.from_info(self) as ins:
@@ -731,7 +736,7 @@ class ModInfo(_WithMastersInfo):
         else:
             descr = s_tags
         if len(descr) > 511: return False
-        self.writeHeader(new_desc=descr)
+        self.header_out(new_desc=descr)
         return True
 
     def getBashTags(self) -> set[str]:
@@ -798,12 +803,11 @@ class ModInfo(_WithMastersInfo):
         flags_dict = dict.fromkeys(chain(*bush.game.all_flags)) # values = None
         self.set_plugin_flags(flags_dict, save_flags=False) # set _is_esl etc
 
-    def writeHeader(self, old_masters: list[FName] | None = None, *,
-                    rescan_merge=False, new_desc='', mod_author='',
-                    mod_version=None, do_backup=False):
+    def header_out(self, *, new_masters: list[FName] | None = None,
+                   rescan_merge=False, new_desc='', mod_author='',
+                   mod_version=None, **kwargs):
         """Write Header. Actually have to rewrite entire file."""
-        if do_backup:
-            self.makeBackup()
+        super().header_out(**kwargs)
         mod_hedr = self.header
         if new_desc: # 511 + 1 for null = 512
             new_desc = new_desc[:511] if len(new_desc) > 511 else new_desc
@@ -813,15 +817,16 @@ class ModInfo(_WithMastersInfo):
         if mod_version is not None:
             mod_hedr.version = mod_version
         mod_hedr.setChanged(
-            any([old_masters, new_desc, mod_author, mod_version]))
+            any([new_masters, new_desc, mod_author, mod_version]))
         with TempFile() as tmp_plugin:
             with FormIdReadContext.from_info(self) as ins:
                 # If we need to remap masters, construct a remapping write
                 # context. Otherwise we need a regular write context due to
                 # ONAM fids
-                aug_masters = [*mod_hedr.masters, self.fn_key]
+                aug_masters = [*(old_masters :=mod_hedr.masters), self.fn_key]
                 ctx_args = [tmp_plugin, aug_masters, mod_hedr.version]
-                if old_masters is not None:
+                if new_masters is not None:
+                    mod_hedr.masters = new_masters
                     write_ctx = RemapWriteContext(old_masters, *ctx_args)
                 else:
                     write_ctx = FormIdWriteContext(*ctx_args)
@@ -1438,11 +1443,15 @@ class SaveInfo(_WithMastersInfo):
         """True if I am enabled."""
         return self.fn_key.fn_ext == bush.game.Ess.ext
 
-    def write_masters(self, master_map):
+    def header_out(self, *, new_masters, **kwargs):
         """Rewrites masters of existing save file and cosaves."""
         if not self.abs_path.exists():
             raise SaveFileError(self.abs_path.head, u'File does not exist.')
+        super().header_out(**kwargs) # do_backup
         prevMTime = self.ftime
+        prev_masters = self.masterNames
+        master_map = {m1: m2 for m1, m2 in zip(prev_masters, new_masters) if
+                      m1 != m2}
         self.header.remap_masters(master_map)
         with TempFile() as tmp_plugin:
             with self.abs_path.open('rb') as ins:
