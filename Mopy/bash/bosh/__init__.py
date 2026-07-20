@@ -452,6 +452,17 @@ class _WithMastersInfo(FileInfo):
         """Write Header. Actually have to rewrite entire file."""
         if do_backup:
             self.makeBackup()
+        with TempFile() as tmp_plugin:
+            kws = self._dump_info(tmp_plugin, **kwargs)
+            self._init_info(tmp_plugin, **kws)
+
+    def _dump_info(self, tmp_plugin, **kwargs) -> dict:
+        raise NotImplementedError
+
+    def _init_info(self, tmp_plugin, **kwargs):
+        prevMTime = self.ftime
+        self.abs_path.replace_with_temp(tmp_plugin)
+        self.setmtime(prevMTime, crc_changed=True)
 
     def _reset_masters(self):
         #--Master Names/Order
@@ -803,11 +814,8 @@ class ModInfo(_WithMastersInfo):
         flags_dict = dict.fromkeys(chain(*bush.game.all_flags)) # values = None
         self.set_plugin_flags(flags_dict, save_flags=False) # set _is_esl etc
 
-    def header_out(self, *, new_masters: list[FName] | None = None,
-                   rescan_merge=False, new_desc='', mod_author='',
-                   mod_version=None, **kwargs):
-        """Write Header. Actually have to rewrite entire file."""
-        super().header_out(**kwargs)
+    def _dump_info(self, tmp_plugin, *, new_masters: list[FName] | None = None,
+            new_desc='', mod_author='', mod_version=None, rescan_merge=False):
         mod_hedr = self.header
         if new_desc: # 511 + 1 for null = 512
             new_desc = new_desc[:511] if len(new_desc) > 511 else new_desc
@@ -818,30 +826,29 @@ class ModInfo(_WithMastersInfo):
             mod_hedr.version = mod_version
         mod_hedr.setChanged(
             any([new_masters, new_desc, mod_author, mod_version]))
-        with TempFile() as tmp_plugin:
-            with FormIdReadContext.from_info(self) as ins:
-                # If we need to remap masters, construct a remapping write
-                # context. Otherwise we need a regular write context due to
-                # ONAM fids
-                aug_masters = [*(old_masters :=mod_hedr.masters), self.fn_key]
-                ctx_args = [tmp_plugin, aug_masters, mod_hedr.version]
-                if new_masters is not None:
-                    mod_hedr.masters = new_masters
-                    write_ctx = RemapWriteContext(old_masters, *ctx_args)
-                else:
-                    write_ctx = FormIdWriteContext(*ctx_args)
-                with write_ctx as out:
-                    try:
-                        # We already read the file header (in
-                        # FormIdReadContext), so just write out the new one and
-                        # copy the rest over
-                        mod_hedr.getSize()
-                        mod_hedr.dump(out)
-                        out.write(ins.read(ins.size - ins.tell()))
-                    except struct_error as rex:
-                        raise ModError(self.fn_key, f'Struct.error: {rex}')
-            self.abs_path.replace_with_temp(tmp_plugin)
-        self.setmtime(crc_changed=True)
+        with FormIdReadContext.from_info(self) as ins:
+            # If we need to remap masters, construct a remapping write context.
+            # Otherwise we need a regular write context due to ONAM fids
+            aug_masters = [*(old_masters := mod_hedr.masters), self.fn_key]
+            ctx_args = [tmp_plugin, aug_masters, mod_hedr.version]
+            if new_masters is not None:
+                mod_hedr.masters = new_masters
+                write_ctx = RemapWriteContext(old_masters, *ctx_args)
+            else:
+                write_ctx = FormIdWriteContext(*ctx_args)
+            with write_ctx as out:
+                try:
+                    # We already read the file header (in FormIdReadContext),
+                    # so just write out the new one and copy the rest over
+                    mod_hedr.getSize()
+                    mod_hedr.dump(out)
+                    out.write(ins.read(ins.size - ins.tell()))
+                except struct_error as rex:
+                    raise ModError(self.fn_key, f'Struct.error: {rex}')
+        return {'rescan_merge': rescan_merge}
+
+    def _init_info(self, tmp_plugin, *, rescan_merge=False):
+        super()._init_info(tmp_plugin)
         #--Merge info
         merge_size, canMerge = self.get_table_prop('mergeInfo', (None, {}))
         if not rescan_merge and merge_size is not None:
@@ -1443,26 +1450,25 @@ class SaveInfo(_WithMastersInfo):
         """True if I am enabled."""
         return self.fn_key.fn_ext == bush.game.Ess.ext
 
-    def header_out(self, *, new_masters, **kwargs):
+    def _dump_info(self, tmp_plugin, *, new_masters=None):
         """Rewrites masters of existing save file and cosaves."""
         if not self.abs_path.exists():
             raise SaveFileError(self.abs_path.head, u'File does not exist.')
-        super().header_out(**kwargs) # do_backup
-        prevMTime = self.ftime
         prev_masters = self.masterNames
         master_map = {m1: m2 for m1, m2 in zip(prev_masters, new_masters) if
                       m1 != m2}
         self.header.remap_masters(master_map)
-        with TempFile() as tmp_plugin:
-            with self.abs_path.open('rb') as ins:
-                with open(tmp_plugin, 'wb') as out:
-                    self.header.write_header(ins, out)
-            self.abs_path.replace_with_temp(tmp_plugin)
+        with self.abs_path.open('rb') as ins:
+            with open(tmp_plugin, 'wb') as out:
+                self.header.write_header(ins, out)
+        return {'master_map': master_map}
+
+    def _init_info(self, tmp_plugin, *, master_map=None):
+        super()._init_info(tmp_plugin)
         if master_map:
             for co_file in self._co_saves.values():
                 co_file.remap_plugins(master_map)
                 co_file.write_cosave_safe()
-        self.setmtime(prevMTime)
 
     def get_cosave_tags(self):
         """Return strings expressing whether cosaves exist and are correct.
