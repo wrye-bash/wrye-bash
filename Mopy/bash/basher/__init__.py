@@ -457,9 +457,8 @@ class MasterList(_ModsUIList):
     @property
     def allowEdit(self): return bass.settings.get(self._allowEditKey, False)
     @allowEdit.setter
-    def allowEdit(self, val):
-        if val and (not self.parent_details.allowDetailsEdit or not
-            balt.askContinue(self, _(
+    def allowEdit(self, val): # only accessed in Master_AllowEdit.Execute
+        if val and (not balt.askContinue(self, _(
                 'Edit/update the masters list? Note that the update process '
                 'may automatically rename some files. Be sure to review the '
                 'changes before saving.'), f'{self.keyPrefix}.update.continue',
@@ -470,7 +469,8 @@ class MasterList(_ModsUIList):
             self.InitEdit()
         else:
             self.SetFileInfo(self.fileInfo)
-            self.parent_details.testChanges() # disable buttons if no other edits
+            if (det_panel := self.parent_details).no_changes():
+                det_panel.SetFile() # disable buttons if no other edits
 
     def _handle_select(self, item_key): pass
     def _handle_key_up(self, wrapped_evt): pass
@@ -1223,7 +1223,7 @@ class _EditableMixin(_DetailsMixin):
         else: # we renamed - set detail_fn so we can retrieve self.file_info
             self.detail_fn = det_it = next(iter(ren_data.renames.values()))
         ref_saves = bool(ren_data) # does not matter for save list
-        if change_hdr := self._header_checks():
+        if change_hdr := self._header_checks(_strip_strings=True):
             self.file_info.header_out(**change_hdr, do_backup=True)
         if refr_kw := self._refr_args(change_hdr):
             ref_saves |= refr_kw.get('unlock_lo', ref_saves)
@@ -1237,7 +1237,7 @@ class _EditableMixin(_DetailsMixin):
         self.panel_uilist.propagate_refresh(ren_data, refr_saves=ref_saves,
                                             detail_item=det_it)
 
-    def _header_checks(self):
+    def _header_checks(self, *, _strip_strings) -> dict[str, Any]:
         raise NotImplementedError
 
     def _rename_detail_item(self, new_n):
@@ -1259,9 +1259,10 @@ class _EditableMixin(_DetailsMixin):
         """Event: Finished editing file name."""
         #--Changed?
         text_cnt = self._fname_ctrl.text_content
-        if self.file_info.named_as(text_cnt):
+        if self.file_info.named_as(text_cnt): ##(190): why we reset _fname_ctrl.text_content?
             self._fname_ctrl.text_content = self.fileStr = text_cnt
-            self.testChanges()
+            if self.no_changes():
+                self.SetFile()
             return
         #--Validate the filename
         name_path, root = self.file_info.validate_name(text_cnt)
@@ -1273,7 +1274,9 @@ class _EditableMixin(_DetailsMixin):
             self.fileStr = text_cnt
             self.SetEdited()
 
-    def testChanges(self): raise NotImplementedError
+    def no_changes(self): # used by the master list when editing is disabled
+        return not self.file_info or (self.file_info.named_as(
+            self.fileStr) and not self._header_checks(_strip_strings=False))
 
     @_check_displayed
     def OnFileEdit(self, new_text):
@@ -1325,9 +1328,9 @@ class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
         VLayout(item_expand=True, item_weight=1,
                 items=[self.subSplitter]).apply_to(self.right)
 
-    def _header_checks(self):
+    def _header_checks(self, *, _strip_strings):
         #--Change masters?
-        if self.uilist.edited:
+        if _strip_strings and self.uilist.edited:
             return {'new_masters': self.uilist.GetNewMasters()}
         return {}
 
@@ -1549,22 +1552,19 @@ class ModDetails(_ModsSavesDetails):
         '%(pnd_example)s), which will become detached when the plugin is '
         'renamed.')
 
-    def testChanges(self): # used by the master list when editing is disabled
-        mod_inf = self.file_info
-        if not mod_inf or (mod_inf.named_as(self.fileStr) and
-                           self.modifiedStr == format_date(mod_inf.ftime) and
-                           self.authorStr == mod_inf.header.author and
-                           self.descriptionStr == mod_inf.header.description):
-            self.SetFile()
+    def no_changes(self):
+        return super().no_changes() and (not (mod_inf := self.file_info) or
+            self.modifiedStr == format_date(mod_inf.ftime))
 
-    def _header_checks(self):
+    def _header_checks(self, *, _strip_strings):
         #--Change hedr/masters?
-        change_hdr: dict[str, Any] = super()._header_checks()
+        change_hdr = super()._header_checks(_strip_strings=_strip_strings)
         hdr = self.file_info.header
-        if (auth := self.authorStr.strip()) != hdr.author:
+        auth, des = self.authorStr, self.descriptionStr
+        if (auth := auth.strip() if _strip_strings else auth) != hdr.author:
             change_hdr['mod_author'] = auth
-        if (desc := self.descriptionStr.strip()) != hdr.description:
-            change_hdr['new_desc'] = desc
+        if (des := des.strip() if _strip_strings else des) != hdr.description:
+            change_hdr['new_desc'] = des
         return change_hdr
 
     def _refr_args(self, change_hdr, **kwargs):
@@ -2127,10 +2127,6 @@ class SaveDetails(_ModsSavesDetails):
         """Info field was edited."""
         if self.gInfo.modified:
             self.file_info.set_table_prop('info', new_text)
-
-    def testChanges(self): # used by the master list when editing is disabled
-        if not self.file_info or self.file_info.named_as(self.fileStr):
-            self.SetFile()
 
     def RefreshUIColors(self):
         self._update_masters_warning()
