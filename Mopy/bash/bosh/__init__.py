@@ -358,7 +358,6 @@ class _TabledInfo:
         else: setattr(self, self.__class__._key_to_attr[prop_key], val)
 
     def get_persistent_attrs(self, *, exclude=frozenset()):
-        if exclude is True: exclude = frozenset()
         return {pickle_key: val for pickle_key in self.__class__._key_to_attr
                 if (val := self.get_table_prop(pickle_key)) is not None and
                 pickle_key not in exclude}
@@ -541,15 +540,6 @@ class ModInfo(_WithMastersInfo):
             if groupDir.is_dir():
                 return groupDir
         return hide_d
-
-    def get_persistent_attrs(self, *, exclude=frozenset()):
-        if exclude is True:
-            exclude = frozenset([ #'allowGhosting', 'bash.patch.configs',
-                # 'doc', 'docEdit', 'group', 'installer', 'rating',
-                'bp_split_parent', # 'autoBashTags', 'bashTags',
-                # ignore mergeInfo/crc cache so we recalculate (resets ignoreDirty - ?)
-                'crc', 'crc_mtime', 'crc_size', 'ignoreDirty', 'mergeInfo'])
-        return super().get_persistent_attrs(exclude=exclude)
 
     @classmethod
     def _store(cls): return modInfos

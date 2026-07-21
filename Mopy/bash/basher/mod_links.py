@@ -1381,8 +1381,9 @@ class _CopyToLink(EnabledLink):
                         continue
                     existing.makeBackup()
                     setmtimes[new_fn] = existing.ftime
-                if inf := ds.get_update_info(curName,
-                        exclude=bool(add_flags), copy_from=minfo):
+                excl = {'crc', 'mergeInfo'} if add_flags else {}
+                if inf := ds.get_update_info(curName, exclude={*excl,
+                        'bp_split_parent', 'installer'}, copy_from=minfo):
                     ren_args.append((inf, new_fn, ds.store_dir))
                     mod_flags[new_fn] = add_flags
                     if new_fn not in setmtimes: # else it is in the load order

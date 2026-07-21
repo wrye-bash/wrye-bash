@@ -178,10 +178,9 @@ class RestoreInfo(OneItemLink):
         if not self._ask_revert(): return
         with BusyCursor():
             sel_inf = self._selected_info
-            # create an info in the backup directory and try loading it - note
-            # we unlink 'bp_split_parent'!
+            # create an info in the backup directory and try loading it
             if not (inf := self._data_store.get_update_info(self._backup_path,
-                    copy_from=sel_inf, exclude=True)):
+                    copy_from=sel_inf, exclude={'crc', 'mergeInfo'})):
                 self._failed_msg()
                 return
             ren_args = [(inf, self._selected_item, self._data_store.store_dir)]
