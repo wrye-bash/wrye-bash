@@ -1866,7 +1866,7 @@ class _AFileInfos(DataStore):
     def _merge_dat(self, refresh_in, table_dat):
         table_dat = {k: v for k, v in table_dat.items() if
                      k in refresh_in.new_or_present}
-        refresh_in |= RefrIn.from_tabled_infos(extra_attrs=table_dat)
+        refresh_in |= RefrIn.from_tabled_infos(self, table_dat)
 
     def save_pickle(self):
         pd = bolt.DataTable(self.bash_dir.join('Table.dat')) # don't load!

@@ -1948,21 +1948,18 @@ class RefrIn:
     del_infos: set = field(default_factory=set)
 
     @classmethod
-    def from_tabled_infos(cls, *, fn_info_dict=None, extra_attrs=None,
-            exclude: frozenset | set = frozenset(), store=None, ghosts=False):
+    def from_tabled_infos(cls, store, extra_attrs, *, ghosts=False):
         """Set persistent attributes to info objects, modified in place if
         available in the store, else we are *adding* infos, so we pass the
         att_val _TabledInfo.__init__ parameter, keep uses low."""
-        # one use of fn_info_dict where we have no extra_attrs ##: remove it!
-        fn_info_dict = {k: (v, {}) for k, v in (fn_info_dict or {}).items()}
-        fn_info_dict.update({k: (store.get(k) if store else None, v) for k, v
-                             in (extra_attrs or {}).items()})
+        fn_info_dict= {k: (store.get(k) if store else None, v) for k, v in
+                       extra_attrs.items()}
         try:
             for k, (inf, kws) in fn_info_dict.items():
                 if inf is None: # pass extra_attrs to the info object __init__
                     fn_info_dict[k] = (None, {'att_val': kws})
-                else: # set excluded to None and extra_attrs on the info object
-                    for att, val in {**dict.fromkeys(exclude), **kws}.items():
+                else: # set extra_attrs on the info object
+                    for att, val in kws.items():
                         inf.set_table_prop(att, val)
                     fn_info_dict[k] = (inf, {
                         'itsa_ghost': inf.is_ghost if ghosts else None})

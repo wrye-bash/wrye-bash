@@ -1327,9 +1327,9 @@ class _InstallerPackage(Installer, AFileInfo):
                     at := {'installer': str(self.fn_key)})}}
                 if (st := st_fn[0]) is modInfos:
                     rin['ghosts'] = True
-                    rin['exclude'] = {'mergeInfo'} # rescan mergeability
-                    at.update({'crc': c, 'crc_mtime': d, 'crc_size': s})
-                rui_data[st] |= RefrIn.from_tabled_infos(**rin, store=st)
+                    at.update({'crc': c, 'crc_mtime': d, 'crc_size': s,
+                               'mergeInfo': None})
+                rui_data[st] |= RefrIn.from_tabled_infos(st, **rin)
             idata_data_scd[dest] = (s, c, d)
 
     def _install_source_args(self, dest_src, progress):

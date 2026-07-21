@@ -279,14 +279,15 @@ class PatchDialog(DialogWindow):
             # differ. Most people probably don't keep BAIN packages of BPs,
             # but *I* do, so...
             it = (bp_file.fileInfo.fn_key for bp_file in bp_files_to_save)
-            attrs = {patch_name: {'doc': readme_html}, **{bp: {'doc':readme_html,
-                # Store a raw string here to avoid the FName.__reduce__
-                # stuff - new setting, so no backwards compat concerns
-                # No need to link the parent to itself, of course
-               'bp_split_parent': str(patch_name)} for bp in it}}
+            att_vals = {'doc': readme_html, 'crc': None, 'mergeInfo': None,
+                        'bp_split_parent': None}
+            attrs = {next(it): att_vals}
+            # Store a raw string here to avoid the FName.__reduce__ stuff - new
+            # setting, so no backwards compat concerns
+            att_vals = {**att_vals, 'bp_split_parent': str(patch_name)}
+            attrs.update((bp, att_vals) for bp in it)
             # add the config on master patch so it is read afterwards
-            rinf = RefrIn.from_tabled_infos(extra_attrs=attrs, exclude={
-                'crc', 'mergeInfo'}, store=minfos, ghosts=True)
+            rinf = RefrIn.from_tabled_infos(minfos, attrs, ghosts=True)
             self._bps.extend(attrs)
             # We have to parse the new infos first since the masters may differ
             # note this won't activate the new masters, the caller has to do it

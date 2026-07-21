@@ -1245,8 +1245,9 @@ class _EditableMixin(_DetailsMixin):
     def _extra_changes(self, *, has_ghosts=False):
         # Although we could avoid rereading the header I leave it here as an
         # extra error check - error handling is WIP
-        return {'refresh_in': RefrIn.from_tabled_infos(fn_info_dict={
-            self.detail_fn: self.file_info}, ghosts=has_ghosts)}
+        return {'refresh_in': RefrIn.from_tabled_infos( # crc is recalculated
+            self.panel_uilist.data_store, {self.detail_fn: {}},
+            ghosts=has_ghosts)}
 
     @_check_displayed
     def OnFileEdited(self):

@@ -387,9 +387,9 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
             with outFile.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
-            rui_data[iniInfos] |= RefrIn.from_tabled_infos(extra_attrs={(
-                ini_name := FName(outFile.stail)): {
-                    'installer': str(installer.fn_key)}}, store=iniInfos)
+            rui_data[iniInfos] |= RefrIn.from_tabled_infos(iniInfos, {
+                (ini_name := FName(outFile.stail)): {
+                    'installer': str(installer.fn_key)}})
             target_to_ini[iniFile].append((ini_name, installer, ret))
 
     def __apply_tweaks(self, target_to_ini):
