@@ -26,6 +26,7 @@
 installed and API keys set on your machine."""
 import contextlib
 import logging
+import subprocess
 import sys
 import time
 
@@ -53,7 +54,8 @@ _WEBLATE_OUT_BRANCH = 'weblate-out'
 # The name of the branch on which all development happens
 _DEFAULT_BRANCH = 'dev'
 # We need exactly one remote whose URL includes this URL fragment
-_REMOTE_BRANCH_URL = 'github.com/wrye-bash/wrye-bash'
+_REMOTE_URL_FRAGS = ('github.com/wrye-bash/wrye-bash',
+                     'github.com:wrye-bash/wrye-bash') # git protocol
 
 def main(args):
     setup_log(_LOGGER, args)
@@ -74,8 +76,8 @@ def main(args):
                           'or commit them before running '
                           'merge_weblate_changes.')
             sys.exit(1)
-        origin_remotes = [r for r in repo.remotes
-                          if _REMOTE_BRANCH_URL in r.url]
+        origin_remotes = [r for r in repo.remotes if
+                          any((fr in r.url) for fr in _REMOTE_URL_FRAGS)]
         if len(origin_remotes) != 1:
             _LOGGER.error('In order for merge_weblate_changes to work, you '
                           'need to have a remote with the WB URL (only *one* '
@@ -83,17 +85,24 @@ def main(args):
                           '"origin".')
             sys.exit(2)
         origin_remote = origin_remotes[0]
-        _LOGGER.debug(f'Found fitting remote named {origin_remote.name} with '
-                      f'URL {origin_remote.url}')
+        rem_name, rem_url = map(str, [origin_remote.name, origin_remote.url])
+        _LOGGER.debug(f'Found fitting remote named {rem_name} with URL '
+                      f'{rem_url}')
         _LOGGER.info('Running initial fetch to update repository...')
-        origin_remote.fetch(prune=pygit2.enums.FetchPrune.NO_PRUNE)
+        try:
+            origin_remote.fetch(prune=pygit2.enums.FetchPrune.NO_PRUNE)
+        except pygit2.GitError:
+            try:
+                subprocess.run(['git', 'fetch', rem_name], check=True)
+            except subprocess.CalledProcessError as e:
+                _LOGGER.error(f'Can not fetch from {rem_url}:\n{e}')
+                sys.exit(3)
         if _DEFAULT_BRANCH not in repo.branches.local:
             _LOGGER.error(f'You have not checked out {_DEFAULT_BRANCH} yet. '
                           f'Do that before running merge_weblate_changes')
-            sys.exit(3)
+            sys.exit(4)
         local_def_commit = f'{repo.lookup_branch(_DEFAULT_BRANCH).target}'
-        remote_def_commit = repo.lookup_branch(
-            f'{origin_remote.name}/{_DEFAULT_BRANCH}',
+        remote_def_commit = repo.lookup_branch(f'{rem_name}/{_DEFAULT_BRANCH}',
             pygit2.enums.BranchType.REMOTE).target
         if local_def_commit != (remote_def_commit := f'{remote_def_commit}'):
             _LOGGER.error(f'Your {_DEFAULT_BRANCH} does not match the remote '
@@ -101,7 +110,7 @@ def main(args):
                           f'the latest remote commit is {remote_def_commit}). '
                           f'Either pull or push before running '
                           f'merge_weblate_changes.')
-            sys.exit(4)
+            sys.exit(5)
         # 1. Lock the component so no one can possibly lose their changes
         with lock_component(wb_component):
             _LOGGER.info(f'Fetching latest version of {_WEBLATE_OUT_BRANCH} '
@@ -150,7 +159,14 @@ def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote):
     match origin, and return the SHA of the commit that is now at the HEAD of
     this branch."""
     branch_ref_name = f'refs/heads/{_WEBLATE_OUT_BRANCH}'
-    remote.fetch(prune=pygit2.enums.FetchPrune.NO_PRUNE)
+    try:
+        remote.fetch(prune=pygit2.enums.FetchPrune.NO_PRUNE)
+    except pygit2.GitError:
+        try:
+            subprocess.run(['git', 'fetch', f'{remote.name}'], check=True)
+        except subprocess.CalledProcessError as e:
+            _LOGGER.error(f'Can not fetch from {remote.url}:\n{e}')
+            sys.exit(3)
     remote_branch = f'{remote.name}/{_WEBLATE_OUT_BRANCH}'
     remote_commit, remote_ref = repo.resolve_refish(remote_branch)
     if _WEBLATE_OUT_BRANCH not in repo.branches.local:
