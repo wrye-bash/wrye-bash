@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from functools import partial
 from itertools import chain
 from typing import ClassVar
 
@@ -72,11 +73,11 @@ class PatcherConfig:
         config for this patch loaded via get_table_prop('bash.patch.configs').
         Fallback to default_XXX class vars for missing config entries."""
         # Remember whether we were present in the config for bolding later
-        self._was_present = self.__class__._config_key in configs
-        config = (configs[self.__class__._config_key]
-                  if self._was_present else {})
-        for att, def_val in self._config_attrs():
-            setattr(self, att, config.get(att, def_val))
+        self._was_present = (cls := self.__class__)._config_key in configs
+        config = configs[cls._config_key] if self._was_present else {}
+        for att, def_val, *funct in cls._config_attrs():
+            val = config.get(att, def_val)
+            setattr(self, att, funct[0](val) if funct else val)
         # return the config dict for this patcher to read additional values
         return config
 
@@ -91,7 +92,7 @@ class PatcherConfig:
         _ListPatcherPanel subclasses - which save their choices - and the
         AliasPluginNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
-        for att, _dflt in self._config_attrs():
+        for att, *_rest in self._config_attrs():
             config[att] = getattr(self, att)
         return config # return the config dict for this patcher to further edit
 
@@ -189,17 +190,11 @@ class AliasesPatcherConfig(PatcherConfig):
     _config_key = 'AliasesPatcher'
     patcher_type = AliasPluginNamesPatcher
 
-    def _getConfig(self, configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super()._getConfig(configs)
-        #--Update old configs to use Paths instead of strings.
-        # call str twice in case v._s was a str subtype
-        self.aliases = forward_compat_path_to_fn(self.aliases, fn_value=True)
-        return config
-
     @classmethod
     def _config_attrs(cls):
-        return *super()._config_attrs(), ('aliases', {})
+        return *super()._config_attrs(), ('aliases', {}, partial(
+            # call str twice in case v._s was a str subtype
+            forward_compat_path_to_fn, fn_value=True))
 
     @classmethod
     def _log_config(cls, conf, config, clip, log):
@@ -262,8 +257,8 @@ class ListPatcherConfig(PatcherConfig):
         present items and keep the checked/choices state for those."""
         conf_copy = dict(self._item_config)
         config = super()._getConfig(configs) # loads self.configItems and co
-        conf_items = forward_compat_path_to_fn_list(self.configItems)
-        conf_items.extend(it for it in conf_copy.keys() - {*conf_items})
+        (conf_items := self.configItems).extend(
+            it for it in conf_copy.keys() - {*conf_items})
         #--Verify file existence
         conf_items = self.patcher_type.get_sources(self._bp, conf_items)
         # Restore the old checked/choices state (if the items in question
@@ -273,8 +268,10 @@ class ListPatcherConfig(PatcherConfig):
 
     @classmethod
     def _config_attrs(cls):
-        return *super()._config_attrs(), ('configItems', []), (
-            'configChecks', {}), ('configChoices', {})
+        return (*super()._config_attrs(),
+                ('configItems', [], forward_compat_path_to_fn_list),
+                ('configChecks', {}, forward_compat_path_to_fn),
+                ('configChoices', {}, forward_compat_path_to_fn))
 
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
@@ -290,9 +287,9 @@ class ListPatcherConfig(PatcherConfig):
         return self.patcher_type(self.patcher_name, patch_file,
                                  patcher_sources)
 
-    def _merge_configs(self, conf_checks, present_config_items):
-        return {k: v for k, v in {**conf_checks, **forward_compat_path_to_fn(
-            self.configChecks)}.items() if k in present_config_items}
+    def _merge_configs(self, curr_conf, present_config_items):
+        checks = {**curr_conf, **self.configChecks} # latter is freshly loaded
+        return {k: v for k, v in checks.items() if k in present_config_items}
 
     @classmethod
     def _mod_label(cls, item: FName, conf_choices):
@@ -785,9 +782,9 @@ class _ListMergerConfig(ListPatcherConfig):
     patcher_type: ClassVar[type[mergers.AListsMerger]]
     _item_config: dict[FName, set[str]]
 
-    def _merge_configs(self, conf_checks, present_config_items):
-        return {k: v for k, v in {**conf_checks, **forward_compat_path_to_fn(
-            self.configChoices)}.items() if k in present_config_items}
+    def _merge_configs(self, curr_conf, present_config_items):
+        choices = {**curr_conf, **self.configChoices}
+        return {k: v for k, v in choices.items() if k in present_config_items}
 
     @classmethod
     def _log_config(cls, conf, config, clip, log):
