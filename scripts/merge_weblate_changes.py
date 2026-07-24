@@ -89,28 +89,8 @@ def main(args):
         _LOGGER.debug(f'Found fitting remote named {rem_name} with URL '
                       f'{rem_url}')
         _LOGGER.info('Running initial fetch to update repository...')
-        try:
-            origin_remote.fetch(prune=pygit2.enums.FetchPrune.NO_PRUNE)
-        except pygit2.GitError:
-            try:
-                subprocess.run(['git', 'fetch', rem_name], check=True)
-            except subprocess.CalledProcessError as e:
-                _LOGGER.error(f'Can not fetch from {rem_url}:\n{e}')
-                sys.exit(3)
-        if _DEFAULT_BRANCH not in repo.branches.local:
-            _LOGGER.error(f'You have not checked out {_DEFAULT_BRANCH} yet. '
-                          f'Do that before running merge_weblate_changes')
-            sys.exit(4)
-        local_def_commit = f'{repo.lookup_branch(_DEFAULT_BRANCH).target}'
-        remote_def_commit = repo.lookup_branch(f'{rem_name}/{_DEFAULT_BRANCH}',
-            pygit2.enums.BranchType.REMOTE).target
-        if local_def_commit != (remote_def_commit := f'{remote_def_commit}'):
-            _LOGGER.error(f'Your {_DEFAULT_BRANCH} does not match the remote '
-                          f'(your latest commit is {local_def_commit}, but '
-                          f'the latest remote commit is {remote_def_commit}). '
-                          f'Either pull or push before running '
-                          f'merge_weblate_changes.')
-            sys.exit(5)
+        fetch_and_set_changes(repo, origin_remote, branch=_DEFAULT_BRANCH,
+                              is_default=True)
         # 1. Lock the component so no one can possibly lose their changes
         with lock_component(wb_component):
             _LOGGER.info(f'Fetching latest version of {_WEBLATE_OUT_BRANCH} '
@@ -152,13 +132,15 @@ def main(args):
             _LOGGER.info('Thank you :)')
             # 7. TODO
 
-def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote):
+def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote,*,
+        branch=_WEBLATE_OUT_BRANCH, is_default=False) -> pygit2.Oid | str:
     """Helper to fetch changes from the specified remote, check out the
     branch (using logic similar to git's default checkout logic, i.e. creating
     it from the remote if it doesn't exist locally), hard-reset the branch to
-    match origin, and return the SHA of the commit that is now at the HEAD of
-    this branch."""
-    branch_ref_name = f'refs/heads/{_WEBLATE_OUT_BRANCH}'
+    match origin, and return the commit that is now at the HEAD of this branch.
+    If is_default is True, the function will check that the local branch exists
+    and matches the remote."""
+    branch_ref_name = f'refs/heads/{branch}'
     try:
         remote.fetch(prune=pygit2.enums.FetchPrune.NO_PRUNE)
     except pygit2.GitError:
@@ -167,23 +149,32 @@ def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote):
         except subprocess.CalledProcessError as e:
             _LOGGER.error(f'Can not fetch from {remote.url}:\n{e}')
             sys.exit(3)
-    remote_branch = f'{remote.name}/{_WEBLATE_OUT_BRANCH}'
+    remote_branch = f'{remote.name}/{branch}'
     remote_commit, remote_ref = repo.resolve_refish(remote_branch)
-    if _WEBLATE_OUT_BRANCH not in repo.branches.local:
+    rem_head = remote_commit.id
+    if branch not in repo.branches.local:
         # We need to set up a local branch and make it track the remote
         if remote_branch not in repo.branches.remote:
-            _LOGGER.error(f'Branch {_WEBLATE_OUT_BRANCH} not found in '
-                          f'local or remote branches, does it exist?')
-            sys.exit(20)
-        repo.create_reference(branch_ref_name, remote_commit.id)
+            _LOGGER.error(f'Branch {branch} not found in local or remote '
+                          f'branches, does it exist?')
+            sys.exit(4)
+        repo.create_reference(branch_ref_name, rem_head)
         _LOGGER.debug('Created local branch from remote branch')
     branch_reference = repo.lookup_reference(branch_ref_name)
-    # ~= git checkout <branch>
-    repo.checkout(branch_reference)
-    _LOGGER.debug(f'Checked out {_WEBLATE_OUT_BRANCH} branch')
-    # ~= git reset --hard origin/<branch>
-    repo.reset(remote_ref.target, pygit2.enums.ResetMode.HARD)
-    return branch_reference.target
+    branch_head = branch_reference.target
+    if is_default:
+        if branch_head != rem_head:
+            _LOGGER.error(f'Your {branch} does not match the remote (your '
+                          f'latest commit is {branch_head}, but the latest '
+                          f'remote commit is {rem_head}). Either pull '
+                          f'or push before running merge_weblate_changes.')
+            sys.exit(5)
+    else: # ~= git checkout <branch>
+        repo.checkout(branch_reference)
+        _LOGGER.debug(f'Checked out {branch} branch')
+        # ~= git reset --hard origin/<branch>
+        repo.reset(remote_ref.target, pygit2.enums.ResetMode.HARD)
+    return rem_head
 
 @contextlib.contextmanager
 def lock_component(weblate_component: wlc.Component):
@@ -192,10 +183,10 @@ def lock_component(weblate_component: wlc.Component):
     component_name = getattr(weblate_component, "name", "<unknown name>")
     try:
         _LOGGER.info(f'Locking component "{component_name}"...')
-        # weblate_component.lock()
+        weblate_component.lock()
         yield
         _LOGGER.info(f'Unlocking component "{component_name}"...')
-        # weblate_component.unlock()
+        weblate_component.unlock()
     except:
         _LOGGER.error(f'Unexpected error, leaving Weblate component '
                       f'"{component_name}" locked just in case')
