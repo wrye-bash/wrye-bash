@@ -26,9 +26,11 @@
 installed and API keys set on your machine."""
 import contextlib
 import logging
+import re
 import subprocess
 import sys
 import time
+from typing import NamedTuple
 
 from helpers.utils import ROOT_PATH, dependency_missing, mk_logfile, \
     run_script, setup_log
@@ -89,8 +91,8 @@ def main(args):
         _LOGGER.debug(f'Found fitting remote named {rem_name} with URL '
                       f'{rem_url}')
         _LOGGER.info('Running initial fetch to update repository...')
-        fetch_and_set_changes(repo, origin_remote, branch=_DEFAULT_BRANCH,
-                              is_default=True)
+        dev_head = fetch_and_set_changes(repo, origin_remote,
+            branch=_DEFAULT_BRANCH, is_default=True)
         # 1. Lock the component so no one can possibly lose their changes
         with lock_component(wb_component):
             _LOGGER.info(f'Fetching latest version of {_WEBLATE_OUT_BRANCH} '
@@ -112,18 +114,19 @@ def main(args):
             while next_commit_sha == prev_commit_sha:
                 next_commit_sha = fetch_and_set_changes(repo, origin_remote)
                 time.sleep(wait_for := wait_for + 0.1)
-            # 5. Extract author info and edit readme, commit that
-            # TODO
+            # 5. Prepare the rebase by squashing and rewriting authors
+            _prepare_rebase(repo, next_commit_sha, dev_head)
             # 6. Here comes the manual part
             _LOGGER.info('=> This is where the manual part begins.')
             _LOGGER.info('Please clean up the branch now. Tasks to do:')
+            _LOGGER.info('  - Perform `git rebase -i --autosquash dev`')
             _LOGGER.info(" - Edit each commit's author and co-authors as you "
                          "see fit.")
             _LOGGER.info('  - You may want to remove the weblate author from '
                          'regular human translations, for example.')
-            _LOGGER.info(" - Squash all the translation 'updates' where no "
-                         "human was involved, just the msgmerge hook.")
-            _LOGGER.info(' - Squash all the template.pot updates.')
+            _LOGGER.info(' - Verify the rebased branch matches the remote')
+            _LOGGER.info(' - Add any manual commits needed (e.g. README '
+                         'updates, etc.)')
             _LOGGER.info("Once you're done, type 'continue' here to keep "
                          "going.")
             curr_input = ''
@@ -133,7 +136,7 @@ def main(args):
             # 7. TODO
 
 def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote,*,
-        branch=_WEBLATE_OUT_BRANCH, is_default=False) -> pygit2.Oid | str:
+        branch=_WEBLATE_OUT_BRANCH, is_default=False) -> pygit2.Oid:
     """Helper to fetch changes from the specified remote, check out the
     branch (using logic similar to git's default checkout logic, i.e. creating
     it from the remote if it doesn't exist locally), hard-reset the branch to
@@ -176,6 +179,55 @@ def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote,*,
         repo.reset(remote_ref.target, pygit2.enums.ResetMode.HARD)
     return rem_head
 
+_HOSTED = 'hosted@weblate.org'
+_RE_COAUTHOR = re.compile(r'^Co-authored-by:\s*(.*?)\s*<(.*?)>$', re.M)
+class ReplayCommit(NamedTuple):
+    tree_id: pygit2.Oid
+    author: pygit2.Signature
+    message: str
+
+_keep_lines = ('Translate-URL:', 'Co-authored-by:', 'Translation:',
+               'Translate', 'Add translation')
+_auto_title = 'Update translation files'
+def _prepare_rebase(repo: pygit2.Repository, webl_out_head: pygit2.Oid,
+                    rebase_head: pygit2.Oid):
+    """Prepare the weblate-out branch to rebase:
+         - mark for squash all the translation 'updates' where no human was
+           involved, just the msgmerge hook
+         - squash all the template.pot updates
+         - rewrite authors for non-automated commits."""
+    replay = [webl_in := repo.revparse_single('origin/weblate-in')]
+    walker = repo.walk(webl_out_head, pygit2.enums.SortMode.REVERSE)
+    walker.hide(webl_in.id)
+    auto_commit = None
+    for com in walker:
+        msg = com.message.rstrip()
+        coauthors = _RE_COAUTHOR.findall(msg)
+        if humans := [(n, e) for n, e in coauthors if e != _HOSTED]:
+            author = pygit2.Signature(*humans[0], com.author.time,
+                                      com.author.offset)
+            lines, skip = [], False
+            for li in msg.splitlines():
+                if not (skip := li.startswith(_auto_title) or (
+                        skip and not li.startswith(_keep_lines))):
+                    if (m := _RE_COAUTHOR.match(li)) is None or m.groups() != \
+                            humans[0]: # skip the main author
+                        lines.append(li)
+            msg = '\n'.join(lines).strip()
+        else:
+            author = com.author
+            if auto_commit is None:
+                auto_commit = com
+                msg = _auto_title if (dex := msg.rfind(_auto_title)) == -1 \
+                    else msg[dex:]
+            else:
+                msg = f'squash! {_auto_title}'
+        replay.append(ReplayCommit(com.tree_id, author, msg))
+    for c in replay:
+        rebase_head = repo.create_commit(None, c.author,
+            repo.default_signature, c.message, c.tree_id, [rebase_head])
+    repo.lookup_branch(_WEBLATE_OUT_BRANCH).set_target(rebase_head)
+
 @contextlib.contextmanager
 def lock_component(weblate_component: wlc.Component):
     """Small helper to safely perform operations on a Weblate component by
@@ -191,7 +243,6 @@ def lock_component(weblate_component: wlc.Component):
         _LOGGER.error(f'Unexpected error, leaving Weblate component '
                       f'"{component_name}" locked just in case')
         raise
-
 
 if __name__ == '__main__':
     run_script(main, __doc__, _LOGFILE)
