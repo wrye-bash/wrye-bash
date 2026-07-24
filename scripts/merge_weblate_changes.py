@@ -126,7 +126,6 @@ def main(args):
             # 6. Here comes the manual part
             _LOGGER.info('=> This is where the manual part begins.')
             _LOGGER.info('Please clean up the branch now. Tasks to do:')
-            _LOGGER.info('  - Perform `git rebase -i --autosquash dev`')
             _LOGGER.info(" - Edit each commit's author and co-authors as you "
                          "see fit.")
             _LOGGER.info('  - You may want to remove the weblate author from '
@@ -134,13 +133,45 @@ def main(args):
             _LOGGER.info(' - Verify the rebased branch matches the remote')
             _LOGGER.info(' - Add any manual commits needed (e.g. README '
                          'updates, etc.)')
-            _LOGGER.info("Once you're done, type 'continue' here to keep "
-                         "going.")
-            curr_input = ''
-            while curr_input != 'continue':
-                curr_input = input("Enter 'continue' once done >>> ")
+            rebase = f'git rebase -i --autosquash {_DEFAULT_BRANCH}'
+            _LOGGER.info("Once you're done, type 'continue' here to perform "
+                         f"`{rebase}`")
+            _pause()
+            try:
+                subprocess.run(rebase.split(), check=True)
+            except subprocess.CalledProcessError as e:
+                _LOGGER.error(f'Rebase on dev failed:\n{e}')
+                sys.exit(6)
+            _LOGGER.info("Please inspect the rebase then type 'continue' here "
+                         f"to merge with {_DEFAULT_BRANCH}")
+            _pause()
+            repo.checkout(repo.lookup_reference(f'refs/heads/{_DEFAULT_BRANCH}'))
+            try:
+                subprocess.run(f'git merge --no-ff {_WEBLATE_OUT_BRANCH} -e',
+                               check=True)
+            except subprocess.CalledProcessError as e:
+                _LOGGER.error(f'Merge on dev failed:\n{e}')
+                sys.exit(7)
+            _LOGGER.info("Please inspect the merge then type 'continue' here "
+                         f"to push the weblate-in branch to {_DEFAULT_BRANCH}")
+            _pause()
+            try:
+                cmd = (f'git checkout weblate-in && '
+                       f'git reset --hard {_DEFAULT_BRANCH} && git push -f')
+                subprocess.run(cmd, check=True)
+            except subprocess.CalledProcessError as e:
+                _LOGGER.error(f'Push weblate-in failed:\n{e}')
+                sys.exit(8)
+            _LOGGER.info(f"Please push {_DEFAULT_BRANCH} then type 'continue' "
+                         f"here to run weblate reset and unlock")
+            _pause()
+            wb_component.reset()
             _LOGGER.info('Thank you :)')
-            # 7. TODO
+
+def _pause():
+    curr_input = ''
+    while curr_input != 'continue':
+        curr_input = input("Enter 'continue' once done >>> ")
 
 def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote,*,
         branch=_WEBLATE_OUT_BRANCH, is_default=False) -> pygit2.Oid:
