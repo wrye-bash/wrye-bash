@@ -58,6 +58,8 @@ _DEFAULT_BRANCH = 'dev'
 # We need exactly one remote whose URL includes this URL fragment
 _REMOTE_URL_FRAGS = ('github.com/wrye-bash/wrye-bash',
                      'github.com:wrye-bash/wrye-bash') # git protocol
+_MAX_WAIT = 20.0 # when polling for weblate changes
+_WAIT_FOR = 2.0 # poll interval
 
 def main(args):
     setup_log(_LOGGER, args)
@@ -108,12 +110,17 @@ def main(args):
             wb_component.push()
             # 4. Fetch those new commits - we may have to try a couple times,
             # so include a sleep in between to not hammer the remote
-            next_commit_sha = prev_commit_sha
-            wait_for = 0
             _LOGGER.info('Fetching Weblate-pushed changes...')
-            while next_commit_sha == prev_commit_sha:
+            deadline = time.monotonic() + _MAX_WAIT
+            while time.monotonic() < deadline:
                 next_commit_sha = fetch_and_set_changes(repo, origin_remote)
-                time.sleep(wait_for := wait_for + 0.1)
+                if next_commit_sha != prev_commit_sha:
+                    _LOGGER.info("Detected new Weblate commit.")
+                    break
+                time.sleep(_WAIT_FOR)
+            else:
+                _LOGGER.info('No new commits appeared after %.0f seconds; '
+                    'assuming Weblate had nothing new to push.', _MAX_WAIT)
             # 5. Prepare the rebase by squashing and rewriting authors
             _prepare_rebase(repo, next_commit_sha, dev_head)
             # 6. Here comes the manual part
