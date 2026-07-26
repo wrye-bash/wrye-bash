@@ -54,13 +54,19 @@ _WEBLATE_COMPONENT = 'wrye-bash/wrye-bash'
 # The name of the branch onto which Weblate pushes its output
 _WEBLATE_OUT_BRANCH = 'weblate-out'
 # The name of the branch on which all development happens
-_DEFAULT_BRANCH = 'dev'
+_DEV_BRANCH = 'dev'
 # We need exactly one remote whose URL includes this URL fragment
 _REMOTE_URL_FRAGS = ('github.com/wrye-bash/wrye-bash',
                      'github.com:wrye-bash/wrye-bash') # git protocol
 _MAX_WAIT = 20.0 # when polling for weblate changes
 _WAIT_FOR = 2.0 # poll interval
 
+_manual_msg = f"""=> This is where the manual part begins.
+Please clean up the rewritten {_WEBLATE_OUT_BRANCH} branch now. Tasks to do:
+ - check each commit's message and author/co-authors
+ - verify the rebased branch matches the remote.
+ - add any manual commits needed (e.g. README updates, etc.)
+Then"""
 def main(args):
     setup_log(_LOGGER, args)
     wlc_config = wlc.config.WeblateConfig()
@@ -94,7 +100,7 @@ def main(args):
                       f'{rem_url}')
         _LOGGER.info('Running initial fetch to update repository...')
         dev_head = fetch_and_set_changes(repo, origin_remote,
-            branch=_DEFAULT_BRANCH, is_default=True)
+                                         branch=_DEV_BRANCH, is_default=True)
         # 1. Lock the component so no one can possibly lose their changes
         with lock_component(wb_component):
             _LOGGER.info(f'Fetching latest version of {_WEBLATE_OUT_BRANCH} '
@@ -124,54 +130,31 @@ def main(args):
             # 5. Prepare the rebase by squashing and rewriting authors
             _prepare_rebase(repo, next_commit_sha, dev_head)
             # 6. Here comes the manual part
-            _LOGGER.info('=> This is where the manual part begins.')
-            _LOGGER.info('Please clean up the branch now. Tasks to do:')
-            _LOGGER.info(" - Edit each commit's author and co-authors as you "
-                         "see fit.")
-            _LOGGER.info('  - You may want to remove the weblate author from '
-                         'regular human translations, for example.')
-            _LOGGER.info(' - Verify the rebased branch matches the remote')
-            _LOGGER.info(' - Add any manual commits needed (e.g. README '
-                         'updates, etc.)')
-            rebase = f'git rebase -i --autosquash {_DEFAULT_BRANCH}'
-            _LOGGER.info("Once you're done, type 'continue' here to perform "
-                         f"`{rebase}`")
-            _pause()
-            try:
-                subprocess.run(rebase.split(), check=True)
-            except subprocess.CalledProcessError as e:
-                _LOGGER.error(f'Rebase on dev failed:\n{e}')
-                sys.exit(6)
-            _LOGGER.info("Please inspect the rebase then type 'continue' here "
-                         f"to merge with {_DEFAULT_BRANCH}")
-            _pause()
-            repo.checkout(repo.lookup_reference(f'refs/heads/{_DEFAULT_BRANCH}'))
-            try:
-                subprocess.run(f'git merge --no-ff {_WEBLATE_OUT_BRANCH} -e',
-                               check=True)
-            except subprocess.CalledProcessError as e:
-                _LOGGER.error(f'Merge on dev failed:\n{e}')
-                sys.exit(7)
-            _LOGGER.info("Please inspect the merge then type 'continue' here "
-                         f"to push the weblate-in branch to {_DEFAULT_BRANCH}")
-            _pause()
-            try:
-                cmd = (f'git checkout weblate-in && '
-                       f'git reset --hard {_DEFAULT_BRANCH} && git push -f')
-                subprocess.run(cmd, check=True)
-            except subprocess.CalledProcessError as e:
-                _LOGGER.error(f'Push weblate-in failed:\n{e}')
-                sys.exit(8)
-            _LOGGER.info(f"Please push {_DEFAULT_BRANCH} then type 'continue' "
-                         f"here to run weblate reset and unlock")
-            _pause()
+            _pause(_manual_msg, 6, f'git rebase -i --autosquash {_DEV_BRANCH}')
+            _pause('Please inspect the rebase then', 7, f'git checkout '
+              f'{_DEV_BRANCH}', f'git merge --no-ff {_WEBLATE_OUT_BRANCH} -e')
+            cmds = ('git checkout weblate-in', f'git reset --hard '
+                    f'{_DEV_BRANCH}', f'git push {rem_name} -f')
+            _pause('Please inspect the merge then', 8, *cmds)
+            _pause(f'Please manually push {_DEV_BRANCH} then', -1,
+                   cmd_msg='wlc reset/unlock')
             wb_component.reset()
-            _LOGGER.info('Thank you :)')
+        _LOGGER.info('Thank you :)')
 
-def _pause():
+def _pause(msg, err_code, *cmds, cmd_msg=''):
+    cmd_msg = cmd_msg or '\n'.join(cmds)
+    _LOGGER.info(f"{msg} type 'continue' here to run `{cmd_msg}`")
     curr_input = ''
     while curr_input != 'continue':
         curr_input = input("Enter 'continue' once done >>> ")
+    try:
+        for cmd in cmds:
+            subprocess.run(cmd.split(), check=True, text=True,
+                           capture_output=True)
+    except subprocess.CalledProcessError as e:
+        # Command 'cmd' returned non-zero exit status 1.\nerror: ...
+        _LOGGER.error(f'{e}\n{e.stderr}')
+        sys.exit(err_code)
 
 def fetch_and_set_changes(repo: pygit2.Repository, remote: pygit2.Remote,*,
         branch=_WEBLATE_OUT_BRANCH, is_default=False) -> pygit2.Oid:
