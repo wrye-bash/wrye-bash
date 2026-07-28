@@ -541,12 +541,11 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
-        super(_AFalloutNVGameInfo, cls)._dynamic_import_modules(package_name)
+        super()._dynamic_import_modules(package_name)
         from .patcher import preservers
-        cls.game_specific_import_patchers = {
+        cls.game_specific_patchers = {'_ListPatcherPanel': {
             'ImportWeaponModifications':
-                preservers.ImportWeaponModificationsPatcher,
-        }
+                preservers.ImportWeaponModificationsPatcher}}
 
     top_groups = [
         b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT', b'HAIR',

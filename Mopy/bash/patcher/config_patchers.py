@@ -27,14 +27,19 @@ from __future__ import annotations
 
 from collections import defaultdict
 from functools import partial
+from itertools import chain
 from typing import ClassVar
 
-from .. import bosh, bush
+from .base import APatcher, ListPatcher
+from .patchers import checkers, mergers, multitweak_actors, \
+    multitweak_assorted, multitweak_clothes, multitweak_names, \
+    multitweak_races, multitweak_settings, preservers
+from .patchers.base import AliasPluginNamesPatcher, MultiTweaker, \
+    MergePatchesPatcher, ReplaceFormIDsPatcher
+from .. import bosh
 from ..bolt import forward_compat_path_to_fn, FName, \
     forward_compat_path_to_fn_list
-from .base import APatcher, ListPatcher
-from .patchers import mergers
-from .patchers.base import AliasPluginNamesPatcher, MultiTweaker
+from ..plugin_types import MergeabilityCheck
 
 class PatcherConfig:
     """Mixin to add configuration API to the patchers."""
@@ -46,8 +51,8 @@ class PatcherConfig:
     patcher_type: ClassVar[type[APatcher]]
     patcher_desc: ClassVar[str] # only used in the GUI - keep it so
     # CONFIG DEFAULTS
-    default_isEnabled = False # is the patcher enabled on a new bashed patch ?
-    _override = ('patcher_name', '_config_key', 'patcher_type')
+    isEnabled = False # is the patcher enabled on a new bashed patch ?
+    _override = ('patcher_name', '_config_key', 'patcher_type', 'patcher_desc')
 
     def __init__(self, bp_file, *args, **kwargs):
         c = self.__class__
@@ -75,7 +80,7 @@ class PatcherConfig:
 
     @classmethod
     def _config_attrs(cls):
-        return ('isEnabled', cls.default_isEnabled),
+        return ('isEnabled', cls.isEnabled),
 
     def saveConfig(self, configs):
         """Save config to configs dictionary.
@@ -123,33 +128,6 @@ class PatcherConfig:
     def get_patcher_instance(self, patch_file):
         """Instantiate and return an instance of self.__class__.patcher_type,
         initialized with the config options from the Gui"""
-        return self.patcher_type(self.patcher_name, patch_file)
-
-#------------------------------------------------------------------------------
-class AliasesPatcherConfig(PatcherConfig):
-    """Patcher config for AliasPluginNamesPatcher."""
-    patcher_name = _('Alias Plugin Names')
-    patcher_desc = _('Specify plugin aliases for reading CSV source files.')
-    _config_key = 'AliasesPatcher'
-    patcher_type = AliasPluginNamesPatcher
-
-    @classmethod
-    def _config_attrs(cls):
-        return *super()._config_attrs(), ('aliases', {}, partial(
-            # call str twice in case v._s was a str subtype
-            forward_compat_path_to_fn, fn_value=True))
-
-    @classmethod
-    def _log_config(cls, conf, config, clip, log):
-        fn_aliases = config.get(u'aliases', {})
-        for mod, alias in fn_aliases.items():
-            log(f'* __{mod}__ >> {alias}')
-            clip.write(f'  {mod} >> {alias}\n')
-
-    def get_patcher_instance(self, patch_file):
-        """Set patch_file aliases dict"""
-        if self.isEnabled:
-            patch_file.pfile_aliases = self.aliases
         return self.patcher_type(self.patcher_name, patch_file)
 
 #------------------------------------------------------------------------------
@@ -215,6 +193,271 @@ class ListPatcherConfig(PatcherConfig):
         return [k for k, v in self._item_config.items() if v is not False]
 
 #------------------------------------------------------------------------------
+# Config Patcher classes
+# Do _not_ change the _config_key attr or you will break existing BP configs
+#------------------------------------------------------------------------------
+# Patchers 10 -----------------------------------------------------------------
+class AliasPluginNames(PatcherConfig):
+    """Patcher config for AliasPluginNamesPatcher."""
+    patcher_name = _('Alias Plugin Names')
+    patcher_desc = _('Specify plugin aliases for reading CSV source files.')
+    _config_key = 'AliasesPatcher'
+    patcher_type = AliasPluginNamesPatcher
+
+    @classmethod
+    def _config_attrs(cls):
+        return *super()._config_attrs(), ('aliases', {}, partial(
+            # call str twice in case v._s was a str subtype
+            forward_compat_path_to_fn, fn_value=True))
+
+    @classmethod
+    def _log_config(cls, conf, config, clip, log):
+        fn_aliases = config.get('aliases', {})
+        for mod, alias in fn_aliases.items():
+            log(f'* __{mod}__ >> {alias}')
+            clip.write(f'  {mod} >> {alias}\n')
+
+    def get_patcher_instance(self, patch_file):
+        """Set patch_file aliases dict"""
+        if self.isEnabled:
+            patch_file.pfile_aliases = self.aliases
+        return self.patcher_type(self.patcher_name, patch_file)
+
+#------------------------------------------------------------------------------
+class MergePatches(ListPatcherConfig):
+    """Merges specified patches into Bashed Patch."""
+    _list_label = _('Mergeable Plugins')
+    patcher_name = _('Merge Patches')
+    patcher_desc = _('Merge patch plugins into the Bashed Patch.')
+    _config_key = 'PatchMerger'
+    patcher_type = MergePatchesPatcher
+
+# Patchers 20 -----------------------------------------------------------------
+class ImporterPatcherConfig(ListPatcherConfig):
+
+    def saveConfig(self, configs):
+        """Save config to configs dictionary."""
+        config = super().saveConfig(configs)
+        if self.isEnabled:
+            configs['ImportedMods'].update(
+                [item for item, value in self._item_config.items() if
+                 value and bosh.ModInfos.check_filename(item)])
+        return config
+
+#------------------------------------------------------------------------------
+class ImportGraphics(ImporterPatcherConfig):
+    """Merges changes to graphics (models and icons)."""
+    patcher_name = _('Import Graphics')
+    patcher_desc = _('Import graphics (models, icons, etc.) from source '
+                     'plugins.')
+    _config_key = 'GraphicsPatcher'
+    patcher_type = preservers.ImportGraphicsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportActorsAIPackages(ImporterPatcherConfig):
+    """Merges changes to the AI Packages of Actors."""
+    patcher_name = _('Import Actors: AI Packages')
+    patcher_desc = _('Import actor AI Package links from source plugins.')
+    _config_key = 'NPCAIPackagePatcher'
+    patcher_type = mergers.ImportActorsAIPackagesPatcher
+
+# -----------------------------------------------------------------------------
+class ImportActors(ImporterPatcherConfig):
+    """Merges changes to actors."""
+    patcher_name = _('Import Actors')
+    patcher_desc = _('Import various actor attributes from source plugins.')
+    _config_key = 'ActorImporter'
+    patcher_type = preservers.ImportActorsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportActorsPerks(ImporterPatcherConfig):
+    """Merges changes to actor perks."""
+    patcher_name = _('Import Actors: Perks')
+    patcher_desc = _('Import actor perks from source plugins.')
+    _config_key = 'ImportActorsPerks'
+    patcher_type = mergers.ImportActorsPerksPatcher
+
+# -----------------------------------------------------------------------------
+class ImportCells(ImporterPatcherConfig):
+    """Merges changes to cells (climate, lighting, and water.)"""
+    patcher_name = _('Import Cells')
+    patcher_desc = _('Import cells (climate, lighting, and water) from '
+                     'source plugins.')
+    _config_key = 'CellImporter'
+    patcher_type = preservers.ImportCellsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportActorsFactions(ImporterPatcherConfig):
+    """Import factions to creatures and NPCs."""
+    patcher_name = _('Import Actors: Factions')
+    patcher_desc = _('Import actor factions from source plugins/files.')
+    _config_key = 'ImportFactions'
+    patcher_type = preservers.ImportActorsFactionsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportRelations(ImporterPatcherConfig):
+    """Import faction relations to factions."""
+    patcher_name = _('Import Relations')
+    patcher_desc = _('Import relations from source plugins/files.')
+    _config_key = 'ImportRelations'
+    patcher_type = mergers.ImportRelationsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportInventory(ImporterPatcherConfig):
+    """Merge changes to actor inventories."""
+    patcher_name = _('Import Inventory')
+    patcher_desc = _('Merges changes to items in various inventories.')
+    _config_key = 'ImportInventory'
+    patcher_type = mergers.ImportInventoryPatcher
+
+# -----------------------------------------------------------------------------
+class ImportOutfits(ImporterPatcherConfig):
+    """Merge changes to outfits."""
+    patcher_name = _('Import Outfits')
+    patcher_desc = _('Merges changes to NPC outfits.')
+    _config_key = 'ImportOutfits'
+    patcher_type = mergers.ImportOutfitsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportActorsSpells(ImporterPatcherConfig):
+    """Merges changes to the spells lists of Actors."""
+    patcher_name = _('Import Actors: Spells')
+    patcher_desc = _('Merges changes to actor spell / effect lists.')
+    _config_key = 'ImportActorsSpells'
+    patcher_type = mergers.ImportActorsSpellsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportNames(ImporterPatcherConfig):
+    """Import names from sources."""
+    patcher_name = _('Import Names')
+    patcher_desc = _('Import names from source plugins/files.')
+    _config_key = 'NamesPatcher'
+    patcher_type = preservers.ImportNamesPatcher
+
+# -----------------------------------------------------------------------------
+class ImportActorsFaces(ImporterPatcherConfig):
+    """NPC Faces patcher, for use with TNR or similar plugins."""
+    patcher_name = _('Import Actors: Faces')
+    patcher_desc = _('Import NPC face/eyes/hair from source plugins. For use '
+                     'with TNR and similar mods.')
+    _config_key = 'NpcFacePatcher'
+    patcher_type = preservers.ImportActorsFacesPatcher
+
+# -----------------------------------------------------------------------------
+class ImportSounds(ImporterPatcherConfig):
+    """Imports sounds from source plugins into patch."""
+    patcher_name = _('Import Sounds')
+    patcher_desc = _('Import sounds (from Magic Effects, Containers, '
+                     'Activators, Lights, Weathers and Doors) from source '
+                     'plugins.')
+    _config_key = 'SoundPatcher'
+    patcher_type = preservers.ImportSoundsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportStats(ImporterPatcherConfig):
+    """Import stats from mod file."""
+    patcher_name = _('Import Stats')
+    patcher_desc = _('Import stats from any pickupable items from source '
+                     'plugins/files.')
+    _config_key = 'StatsPatcher'
+    patcher_type = preservers.ImportStatsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportScripts(ImporterPatcherConfig):
+    """Imports attached scripts on objects."""
+    patcher_name = _('Import Scripts')
+    patcher_desc = _('Import scripts on various objects (e.g. containers, '
+                     'weapons, etc.) from source plugins.')
+    _config_key = 'ImportScripts'
+    patcher_type = preservers.ImportScriptsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportRaces(ImporterPatcherConfig):
+    """Imports race-related data."""
+    patcher_name = _('Import Races')
+    patcher_desc = _('Import race eyes, hair, body, voice, etc. from source '
+                     'plugins.')
+    _config_key = 'ImportRaces'
+    patcher_type = preservers.ImportRacesPatcher
+
+# -----------------------------------------------------------------------------
+class ImportRacesRelations(ImporterPatcherConfig):
+    """Imports race-faction relations."""
+    patcher_name = _('Import Races: Relations')
+    patcher_desc = _('Import race-faction relations from source plugins.')
+    _config_key = 'ImportRacesRelations'
+    patcher_type = mergers.ImportRacesRelationsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportRacesSpells(ImporterPatcherConfig):
+    """Imports race spells/abilities."""
+    patcher_name = _('Import Races: Spells')
+    patcher_desc = _('Import race abilities and spells from source plugins.')
+    _config_key = 'ImportRacesSpells'
+    patcher_type = mergers.ImportRacesSpellsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportSpellStats(ImporterPatcherConfig):
+    """Import spell changes from mod files."""
+    patcher_name = _('Import Spell Stats')
+    patcher_desc = _('Import stats from spells from source plugins/files.')
+    _config_key = 'SpellsPatcher'
+    patcher_type = preservers.ImportSpellStatsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportDestructible(ImporterPatcherConfig):
+    patcher_name = _('Import Destructible')
+    patcher_desc = _('Preserves changes to destructible records.')
+    _config_key = 'DestructiblePatcher'
+    patcher_type = preservers.ImportDestructiblePatcher
+
+# -----------------------------------------------------------------------------
+class ImportKeywords(ImporterPatcherConfig):
+    patcher_name = _('Import Keywords')
+    patcher_desc = _('Import keyword changes from source plugins.')
+    _config_key = 'KeywordsImporter'
+    patcher_type = preservers.ImportKeywordsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportText(ImporterPatcherConfig):
+    patcher_name = _('Import Text')
+    patcher_desc = _('Import various types of long-form text like book '
+                     'texts, effect descriptions, etc. from source plugins.')
+    _config_key = 'TextImporter'
+    patcher_type = preservers.ImportTextPatcher
+
+# -----------------------------------------------------------------------------
+class ImportObjectBounds(ImporterPatcherConfig):
+    patcher_name = _('Import Object Bounds')
+    patcher_desc = _('Import object bounds for various actors, items and '
+                     'objects.')
+    _config_key = 'ObjectBoundsImporter'
+    patcher_type = preservers.ImportObjectBoundsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportEnchantmentStats(ImporterPatcherConfig):
+    patcher_name = _('Import Enchantment Stats')
+    patcher_desc = _('Import stats from enchantments from source plugins.')
+    _config_key = 'ImportEnchantmentStats'
+    patcher_type = preservers.ImportEnchantmentStatsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportEffectStats(ImporterPatcherConfig):
+    patcher_name = _('Import Effect Stats')
+    patcher_desc = _('Import stats from magic/base effects from source '
+                     'plugins.')
+    _config_key = 'ImportEffectsStats'
+    patcher_type = preservers.ImportEffectStatsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportEnchantments(ImporterPatcherConfig):
+    patcher_name = _('Import Enchantments')
+    patcher_desc = _('Import enchantments from armor, weapons, etc. from '
+                     'source plugins.')
+    _config_key = 'ImportEnchantments'
+    patcher_type = preservers.ImportEnchantmentsPatcher
+
+# Patchers 30 -----------------------------------------------------------------
 class TweakPatcherConfig(PatcherConfig):
     patcher_type: ClassVar[type[MultiTweaker]]
 
@@ -259,19 +502,63 @@ class TweakPatcherConfig(PatcherConfig):
         return all_tweaks
 
 #------------------------------------------------------------------------------
-class _ImporterPatcherConfig(ListPatcherConfig):
+class TweakAssorted(TweakPatcherConfig):
+    patcher_name = _('Tweak Assorted')
+    patcher_desc = _('Tweak various records in miscellaneous ways.')
+    _config_key = 'AssortedTweaker'
+    patcher_type = multitweak_assorted.TweakAssortedPatcher
+    isEnabled = True
 
-    def saveConfig(self, configs):
-        """Save config to configs dictionary."""
-        config = super().saveConfig(configs)
-        if self.isEnabled:
-            configs[u'ImportedMods'].update(
-                [item for item, value in self._item_config.items() if
-                 value and bosh.ModInfos.check_filename(item)])
-        return config
+# -----------------------------------------------------------------------------
+class TweakClothes(TweakPatcherConfig):
+    patcher_name = _('Tweak Clothes')
+    patcher_desc = _('Tweak clothing weight and blocking.')
+    _config_key = 'ClothesTweaker'
+    patcher_type = multitweak_clothes.TweakClothesPatcher
+
+# -----------------------------------------------------------------------------
+class TweakSettings(TweakPatcherConfig):
+    patcher_name = _('Tweak Settings')
+    patcher_desc = _('Tweak game settings.')
+    _config_key = 'GmstTweaker'
+    patcher_type = multitweak_settings.TweakSettingsPatcher
+    # CONFIG DEFAULTS
+    isEnabled = True
+
+# -----------------------------------------------------------------------------
+class TweakNames(TweakPatcherConfig):
+    patcher_name = _('Tweak Names')
+    patcher_desc = _('Tweak object names to sort them by type/stats or to '
+                     'improve things like lore friendliness.')
+    _config_key = 'NamesTweaker'
+    patcher_type = multitweak_names.TweakNamesPatcher
+
+# -----------------------------------------------------------------------------
+class TweakActors(TweakPatcherConfig):
+    patcher_name = _('Tweak Actors')
+    patcher_desc = _('Tweak NPC and Creatures records in specified ways.')
+    _config_key = 'TweakActors'
+    patcher_type = multitweak_actors.TweakActorsPatcher
+
+# -----------------------------------------------------------------------------
+class TweakRaces(TweakPatcherConfig):
+    patcher_name = _('Tweak Races')
+    patcher_desc = _('Tweak race records in specified ways.')
+    _config_key = 'TweakRaces'
+    patcher_type = multitweak_races.TweakRacesPatcher
+
+# Patchers 40 -----------------------------------------------------------------
+class ReplaceFormIDs(ListPatcherConfig):
+    """Imports Form Id replacers into the Bashed Patch."""
+    patcher_name = _('Replace Form IDs')
+    patcher_desc = _('Imports Form Id replacers from csv files into the '
+                     'Bashed Patch.')
+    _config_key = 'UpdateReferences'
+    patcher_type = ReplaceFormIDsPatcher
+    _autocheck_new = False #--GUI: Whether new items are checked by default.
 
 #------------------------------------------------------------------------------
-class _ListMergerConfig(ListPatcherConfig):
+class ListMergerConfig(ListPatcherConfig):
     patcher_type: ClassVar[type[mergers.AListsMerger]]
     _item_config: dict[FName, set[str]]
 
@@ -296,7 +583,7 @@ class _ListMergerConfig(ListPatcherConfig):
     def _mod_label(cls, item, conf_choices):
         return cls.patcher_type.annotate_plugin(item, conf_choices)
 
-class LeveledListsConfig(_ListMergerConfig):
+class LeveledLists(ListMergerConfig):
     patcher_name = _('Leveled Lists')
     patcher_desc = '\n\n'.join([
         _('Merges changes to leveled lists from all active and/or merged '
@@ -305,13 +592,127 @@ class LeveledListsConfig(_ListMergerConfig):
           'or inactive) using the list below.')])
     _config_key = 'ListsMerger'
     patcher_type = mergers.LeveledListsPatcher
-    default_isEnabled = True
+    isEnabled = True # GUI default value
+    _remove_empty = False # GUI default value
 
     def get_patcher_instance(self, patch_file, rem_emp=False):
         return super().get_patcher_instance(patch_file,
                                             self.remove_empty_sublists)
 
     @classmethod
-    def _config_attrs(cls): ##: Hack, this should not use display_name
+    def _config_attrs(cls):
         return *super()._config_attrs(), ('remove_empty_sublists',
-                                          bush.game.display_name == 'Oblivion')
+                                          cls._remove_empty)
+
+# -----------------------------------------------------------------------------
+class FormIDLists(ListMergerConfig): #497: Fallout3/FalloutNV only - ALPHA!
+    patcher_name = _('FormID Lists')
+    patcher_desc = '\n\n'.join([_('Merges changes to FormID lists from all '
+        'active and/or merged plugins.'), _('Advanced users may override '
+        'Deflst tags for any mod (active or inactive) using the list below.')])
+    _config_key = 'FidListsMerger'
+    patcher_type = mergers.FormIDListsPatcher
+    _list_label = _('Override Deflst Tag')
+    _add_dialog_title = _('Add Deflst Tag to Plugin')
+    choiceMenu = ('Auto', '----', 'Deflst')
+
+# -----------------------------------------------------------------------------
+class ContentsChecker(PatcherConfig):
+    """Checks contents of leveled lists, inventories and containers for
+    correct content types."""
+    patcher_name = _('Contents Checker')
+    patcher_desc = _('Checks contents of leveled lists, inventories and '
+                     'containers for correct types.')
+    _config_key = 'ContentsChecker'
+    patcher_type = checkers.ContentsCheckerPatcher
+    isEnabled = True
+
+# -----------------------------------------------------------------------------
+class RaceChecker(PatcherConfig):
+    """Sorts hairs and eyes."""
+    patcher_name = _('Race Checker')
+    patcher_desc = _('Sorts race hairs and eyes.')
+    _config_key = 'RaceChecker'
+    patcher_type = checkers.RaceCheckerPatcher
+    isEnabled = True
+
+#------------------------------------------------------------------------------
+class NpcChecker(PatcherConfig):
+    """Assigns missing hair and eyes."""
+    patcher_name = _('NPC Checker')
+    patcher_desc = _('This will randomly assign hairs and eyes to NPCs that '
+                     'are otherwise missing them.')
+    _config_key = 'NpcChecker'
+    patcher_type = checkers.NpcCheckerPatcher
+    isEnabled = True
+
+#------------------------------------------------------------------------------
+class TimescaleChecker(PatcherConfig):
+    """Adjusts the wave period of grass match changes in the timescale."""
+    patcher_name = _('Timescale Checker')
+    patcher_desc = '\n'.join([
+        _('Adjusts the wave period of grasses to match changes in the '
+          'timescale.'),
+        _('Does nothing if you are not using a nonstandard timescale.'), '',
+        _('Incompatible with plugins that change grass wave periods to match '
+          'a different timescale. Uninstall such plugins before using this.'),
+    ])
+    _config_key = 'TimescaleChecker'
+    patcher_type = checkers.TimescaleCheckerPatcher
+    isEnabled = True
+
+#------------------------------------------------------------------------------
+# Collect the Game specific Config Patchers -----------------------------------
+#------------------------------------------------------------------------------
+game_patcher_config_types = defaultdict(dict) # map panel types to config types
+# all patcher config classes for this game (globals or game_specific_patchers)
+all_patcher_types: list[type[PatcherConfig]] = []
+_gui_to_class = { # map GUI classes to globals in order to filter game pathcers
+    '_PatcherPanel': {'ContentsChecker', 'NpcChecker', 'RaceChecker',
+                      'TimescaleChecker'},
+    '_AliasesPatcherPanel': {'AliasPluginNames'},
+    '_ListPatcherPanel': {'MergePatches', 'ReplaceFormIDs', # importers follow
+        'ImportGraphics', 'ImportActorsAIPackages',
+        'ImportActors', 'ImportActorsPerks', 'ImportCells',
+        'ImportActorsFactions', 'ImportRelations', 'ImportInventory',
+        'ImportOutfits', 'ImportActorsSpells', 'ImportNames',
+        'ImportActorsFaces', 'ImportSounds', 'ImportStats', 'ImportScripts',
+        'ImportRaces', 'ImportRacesRelations', 'ImportRacesSpells',
+        'ImportSpellStats', 'ImportDestructible', 'ImportKeywords',
+        'ImportText', 'ImportObjectBounds', 'ImportEnchantmentStats',
+        'ImportEffectStats', 'ImportEnchantments'},
+    '_TweakPatcherPanel': {'TweakAssorted', 'TweakClothes', 'TweakSettings',
+                           'TweakNames', 'TweakActors', 'TweakRaces'},
+    '_ListsMergerPanel': {'FormIDLists'},
+    '_LeveledListsPanel': {'LeveledLists'},
+}
+
+def init_patcher_types(game_handle):
+    """Select PatcherConfig subtypes from globals and game_specific_patchers.
+    Also check if MergePatchers should be included and set allTags by
+    collecting patcher_tags."""
+    game_patcher_config_types.clear()
+    for gui_type, patcher_types in _gui_to_class.items():
+         for p in patcher_types & game_handle.patchers:
+             game_patcher_config_types[gui_type][p] = globals()[p]
+    # Add game specific patchers
+    for gui_type, patcher_types in game_handle.game_specific_patchers.items():
+        game_patcher_config_types[gui_type].update(patcher_types)
+    group_order = {p_grp: i for i, p_grp in enumerate(
+        ('General', 'Importers', 'Tweakers', 'Special'))}
+    # If we want to merge patches into the BP, we need the patch merger
+    if MergeabilityCheck.MERGE in game_handle.mergeability_checks:
+        game_patcher_config_types['_ListPatcherPanel']['MergePatches'] = \
+            MergePatches
+        # And the NoMerge tag needs to get added too
+        game_handle.allTags.add('NoMerge')
+    all_patcher_types.clear()
+    all_patcher_types.extend(chain.from_iterable(
+        v.values() for v in game_patcher_config_types.values()))
+    # Sort by group to make patchers instantiate in the right order,
+    # then alphabetically to display in the GUi
+    all_patcher_types.sort(key=lambda a: (
+        group_order[a.patcher_type.patcher_group], a.patcher_name))
+    # Update the set of all tags for this game based on the available patchers
+    game_handle.allTags.update(chain.from_iterable(getattr(
+        p.patcher_type, 'patcher_tags', ()) for p in all_patcher_types))

@@ -24,23 +24,18 @@ import re
 from collections import Counter
 from operator import itemgetter
 
-from ._shared import ExSpecial, cobl_main
+from . import cobl_main, ExSpecial
 from .... import load_order
 from ....brec import FormId, null4
 from ....patcher.base import CsvListPatcher, ImportPatcher, ListPatcher
+from ....patcher.config_patchers import ListPatcherConfig,ImporterPatcherConfig
 
-class ImportRoadsPatcher(ImportPatcher, ExSpecial):
-    """Imports roads."""
-    patcher_name = _(u'Import Roads')
-    patcher_desc = _(u"Import roads from source mods.")
-    patcher_tags = {'Roads'}
-    _config_key = u'RoadImporter'
-
+class _ImportRoadsPatcher(ImportPatcher, ExSpecial):
     logMsg = '\n=== ' + _('Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD', b'ROAD') ##: do we need cell??
 
     def __init__(self, p_name, p_file, p_sources):
-        super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
+        super().__init__(p_name, p_file, p_sources)
         self.world_road = {}
 
     def _update_patcher_factories(self, p_file):
@@ -91,32 +86,28 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
 
+class ImportRoadsPatcher(ImporterPatcherConfig):
+    """Imports roads."""
+    patcher_name = _('Import Roads')
+    patcher_desc = _("Import roads from source mods.")
+    patcher_tags = {'Roads'}
+    _config_key = 'RoadImporter'
+    patcher_type = _ImportRoadsPatcher
+
 #------------------------------------------------------------------------------
 class _ExSpecialList(CsvListPatcher, ExSpecial):
     _csv_key = u'OVERRIDE'
 
     def __init__(self, p_name, p_file, p_sources):
-        super(_ExSpecialList, self).__init__(p_file.pfile_aliases)
+        super().__init__(p_file.pfile_aliases)
         ListPatcher.__init__(self, p_name, p_file, p_sources)
 
     @property
     def _keep_ids(self):
         return self.id_stored_data[b'FACT']
 
-    @classmethod
-    def gui_cls_vars(cls):
-        cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
-        return cls_vars.update({'_autocheck_new': False}) or cls_vars
-
-class CoblExhaustionPatcher(_ExSpecialList):
-    """Modifies most Greater powers to work with Cobl's power exhaustion
-    feature."""
-    patcher_name = _(u'Cobl Exhaustion')
-    patcher_desc = u'\n\n'.join(
-        [_(u"Modify greater powers to use Cobl's Power Exhaustion feature."),
-         _(u'Will only run if Cobl Main v1.66 (or higher) is active.')])
+class _CoblExhaustionPatcher(_ExSpecialList):
     _csv_key = u'Exhaust'
-    _config_key = u'CoblExhaustion'
     _read_sigs = (b'SPEL',)
     _key2_getter = itemgetter(0, 1)
     _parser_sigs = [b'FACT']
@@ -180,16 +171,20 @@ class CoblExhaustionPatcher(_ExSpecialList):
         #--Log
         self._pLog(log, count)
 
+class CoblExhaustionPatcher(ListPatcherConfig):
+    """Modifies most Greater powers to work with Cobl's power exhaustion
+    feature."""
+    patcher_name = _('Cobl Exhaustion')
+    patcher_desc = '\n\n'.join(
+        [_("Modify greater powers to use Cobl's Power Exhaustion feature."),
+         _('Will only run if Cobl Main v1.66 (or higher) is active.')])
+    _config_key = 'CoblExhaustion'
+    patcher_type = _CoblExhaustionPatcher
+
 #------------------------------------------------------------------------------
-class MorphFactionsPatcher(_ExSpecialList):
-    """Mark factions that player can acquire while morphing."""
-    patcher_name = _(u'Morph Factions')
-    patcher_desc = u'\n\n'.join(
-        [_(u"Mark factions that player can acquire while morphing."),
-         _(u"Requires Cobl 1.28 and Wrye Morph or similar.")])
+class _MorphFactionsPatcher(_ExSpecialList):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     _csv_key = u'MFact'
-    _config_key = u'MFactMarker'
     _read_sigs = (b'FACT',)
     _key2_getter = itemgetter(0, 1)
     _parser_sigs = [b'FACT']
@@ -209,7 +204,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         return morphName, rankName
 
     def __init__(self, p_name, p_file, p_sources):
-        super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
+        super().__init__(p_name, p_file, p_sources)
         # self.id_info #--Morphable factions keyed by fid
         self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
 
@@ -272,3 +267,13 @@ class MorphFactionsPatcher(_ExSpecialList):
                 relations.append(relation)
             keep(mFactLong, record)
         self._pLog(log, changes_counts)
+
+class MorphFactionsPatcher(ListPatcherConfig):
+    """Mark factions that player can acquire while morphing."""
+    patcher_name = _('Morph Factions')
+    patcher_desc = '\n\n'.join(
+        [_('Mark factions that player can acquire while morphing.'),
+         _('Requires Cobl 1.28 and Wrye Morph or similar.')])
+    _config_key = 'MFactMarker'
+    patcher_type = _MorphFactionsPatcher
+    _autocheck_new = False # GUI class variable

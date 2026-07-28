@@ -23,33 +23,28 @@
 from __future__ import annotations
 
 import re
-from itertools import chain
 from typing import ClassVar
 
 from .patcher_dialog import gpatcher_types
-from .. import bass, bolt, bosh, bush, load_order
+from .. import bass, bolt, bosh, load_order
 from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, text_wrap
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, Lazy, \
     ListBox, Links, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, \
     VLayout, askText, showError, askNumber
+from ..gui.base_components import AObject
 from ..patcher.base import MultiTweakItem
-from ..patcher.config_patchers import PatcherConfig, AliasesPatcherConfig, \
-    ListPatcherConfig, TweakPatcherConfig, _ImporterPatcherConfig, \
-    _ListMergerConfig, LeveledListsConfig
-from ..patcher.patchers import checkers, mergers, multitweak_actors, \
-    multitweak_assorted, multitweak_clothes, multitweak_names, \
-    multitweak_races, multitweak_settings, preservers
-from ..patcher.patchers.base import MergePatchesPatcher, ReplaceFormIDsPatcher
-from ..plugin_types import MergeabilityCheck
+from ..patcher.config_patchers import all_patcher_types, \
+    game_patcher_config_types, ListMergerConfig, ListPatcherConfig, \
+    PatcherConfig, TweakPatcherConfig
 
-class _PatcherPanel(Lazy, PanelWin):
+class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
     """Basic patcher panel with no options."""
     selectCommands = True # whether this panel displays De/Select All
-    _override = *PatcherConfig._override, 'patcher_desc'
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(AObject, self).__init__(*args, **kwargs)
         super().__init__(no_border=False)
         # Used to keep track of the state of the patcher label
         self._is_bolded = False
@@ -93,7 +88,7 @@ class _PatcherPanel(Lazy, PanelWin):
         self._parent.check_patcher(self, self_enabled)
 
 #------------------------------------------------------------------------------
-class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
+class _AliasesPatcherPanel(_PatcherPanel):
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -123,7 +118,7 @@ class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
         self._set_alias_text()
 
 #------------------------------------------------------------------------------
-class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
+class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
     """Patcher panel with option to select source elements."""
     _autocheck_new = True #--GUI: Whether new items are checked by default
     gList: ListBox | CheckListBox
@@ -295,7 +290,7 @@ _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
 def _custom_label(label_text, val): # edit label text with value
     return f'{label_text}: {_label_formats[type(val)] % val}'
 
-class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
+class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
     """Patcher panel with list of checkable, configurable tweaks."""
 
     def __init__(self, *args, **kwargs):
@@ -546,9 +541,7 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
                                  f'Item {tweakie} skipped.', traceback=True)
 
 #------------------------------------------------------------------------------
-class _ImporterPatcherPanel(_ImporterPatcherConfig, _ListPatcherPanel): pass
-
-class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
+class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
     """Mergers targeting all mods in the LO, with the option to override
     tags."""
     choiceMenu: ClassVar[tuple[str, ...]]
@@ -679,291 +672,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         self._on_auto_check(self.autoIsChecked)
 
 #------------------------------------------------------------------------------
-# GUI Patcher classes
-# Do _not_ change the _config_key attr or you will break existing BP configs
-#------------------------------------------------------------------------------
-# Patchers 10 -----------------------------------------------------------------
-class AliasPluginNames(_AliasesPatcherPanel): pass
-
-class MergePatches(_ListPatcherPanel):
-    """Merges specified patches into Bashed Patch."""
-    _list_label = _('Mergeable Plugins')
-    patcher_name = _(u'Merge Patches')
-    patcher_desc = _('Merge patch plugins into the Bashed Patch.')
-    _config_key = u'PatchMerger'
-    patcher_type = MergePatchesPatcher
-
-# Patchers 20 -----------------------------------------------------------------
-class ImportGraphics(_ImporterPatcherPanel):
-    """Merges changes to graphics (models and icons)."""
-    patcher_name = _(u'Import Graphics')
-    patcher_desc = _('Import graphics (models, icons, etc.) from source '
-                     'plugins.')
-    _config_key = u'GraphicsPatcher'
-    patcher_type = preservers.ImportGraphicsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsAIPackages(_ImporterPatcherPanel):
-    """Merges changes to the AI Packages of Actors."""
-    patcher_name = _(u'Import Actors: AI Packages')
-    patcher_desc = _('Import actor AI Package links from source plugins.')
-    _config_key = u'NPCAIPackagePatcher'
-    patcher_type = mergers.ImportActorsAIPackagesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActors(_ImporterPatcherPanel):
-    """Merges changes to actors."""
-    patcher_name = _(u'Import Actors')
-    patcher_desc = _('Import various actor attributes from source plugins.')
-    _config_key = u'ActorImporter'
-    patcher_type = preservers.ImportActorsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsPerks(_ImporterPatcherPanel):
-    """Merges changes to actor perks."""
-    patcher_name = _(u'Import Actors: Perks')
-    patcher_desc = _('Import actor perks from source plugins.')
-    _config_key = u'ImportActorsPerks'
-    patcher_type = mergers.ImportActorsPerksPatcher
-
-# -----------------------------------------------------------------------------
-class ImportCells(_ImporterPatcherPanel):
-    """Merges changes to cells (climate, lighting, and water.)"""
-    patcher_name = _(u'Import Cells')
-    patcher_desc = _('Import cells (climate, lighting, and water) from '
-                     'source plugins.')
-    _config_key = u'CellImporter'
-    patcher_type = preservers.ImportCellsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsFactions(_ImporterPatcherPanel):
-    """Import factions to creatures and NPCs."""
-    patcher_name = _(u'Import Actors: Factions')
-    patcher_desc = _('Import actor factions from source plugins/files.')
-    _config_key = u'ImportFactions'
-    patcher_type = preservers.ImportActorsFactionsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRelations(_ImporterPatcherPanel):
-    """Import faction relations to factions."""
-    patcher_name = _(u'Import Relations')
-    patcher_desc = _('Import relations from source plugins/files.')
-    _config_key = u'ImportRelations'
-    patcher_type = mergers.ImportRelationsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportInventory(_ImporterPatcherPanel):
-    """Merge changes to actor inventories."""
-    patcher_name = _('Import Inventory')
-    patcher_desc = _('Merges changes to items in various inventories.')
-    _config_key = 'ImportInventory'
-    patcher_type = mergers.ImportInventoryPatcher
-
-# -----------------------------------------------------------------------------
-class ImportOutfits(_ImporterPatcherPanel):
-    """Merge changes to outfits."""
-    patcher_name = _(u'Import Outfits')
-    patcher_desc = _(u'Merges changes to NPC outfits.')
-    _config_key = u'ImportOutfits'
-    patcher_type = mergers.ImportOutfitsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsSpells(_ImporterPatcherPanel):
-    """Merges changes to the spells lists of Actors."""
-    patcher_name = _(u'Import Actors: Spells')
-    patcher_desc = _(u'Merges changes to actor spell / effect lists.')
-    _config_key = u'ImportActorsSpells'
-    patcher_type = mergers.ImportActorsSpellsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportNames(_ImporterPatcherPanel):
-    """Import names from sources."""
-    patcher_name = _(u'Import Names')
-    patcher_desc = _('Import names from source plugins/files.')
-    _config_key = u'NamesPatcher'
-    patcher_type = preservers.ImportNamesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsFaces(_ImporterPatcherPanel):
-    """NPC Faces patcher, for use with TNR or similar plugins."""
-    patcher_name = _(u'Import Actors: Faces')
-    patcher_desc = _('Import NPC face/eyes/hair from source plugins. For use '
-                     'with TNR and similar mods.')
-    _config_key = u'NpcFacePatcher'
-    patcher_type = preservers.ImportActorsFacesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportSounds(_ImporterPatcherPanel):
-    """Imports sounds from source plugins into patch."""
-    patcher_name = _(u'Import Sounds')
-    patcher_desc = _('Import sounds (from Magic Effects, Containers, '
-                     'Activators, Lights, Weathers and Doors) from source '
-                     'plugins.')
-    _config_key = u'SoundPatcher'
-    patcher_type = preservers.ImportSoundsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportStats(_ImporterPatcherPanel):
-    """Import stats from mod file."""
-    patcher_name = _(u'Import Stats')
-    patcher_desc = _('Import stats from any pickupable items from source '
-                     'plugins/files.')
-    _config_key = u'StatsPatcher'
-    patcher_type = preservers.ImportStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportScripts(_ImporterPatcherPanel):
-    """Imports attached scripts on objects."""
-    patcher_name = _(u'Import Scripts')
-    patcher_desc = _('Import scripts on various objects (e.g. containers, '
-                     'weapons, etc.) from source plugins.')
-    _config_key = u'ImportScripts'
-    patcher_type = preservers.ImportScriptsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRaces(_ImporterPatcherPanel):
-    """Imports race-related data."""
-    patcher_name = _(u'Import Races')
-    patcher_desc = _('Import race eyes, hair, body, voice, etc. from source '
-                     'plugins.')
-    _config_key = u'ImportRaces'
-    patcher_type = preservers.ImportRacesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRacesRelations(_ImporterPatcherPanel):
-    """Imports race-faction relations."""
-    patcher_name = _(u'Import Races: Relations')
-    patcher_desc = _('Import race-faction relations from source plugins.')
-    _config_key = u'ImportRacesRelations'
-    patcher_type = mergers.ImportRacesRelationsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRacesSpells(_ImporterPatcherPanel):
-    """Imports race spells/abilities."""
-    patcher_name = _(u'Import Races: Spells')
-    patcher_desc = _('Import race abilities and spells from source plugins.')
-    _config_key = u'ImportRacesSpells'
-    patcher_type = mergers.ImportRacesSpellsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportSpellStats(_ImporterPatcherPanel):
-    """Import spell changes from mod files."""
-    patcher_name = _(u'Import Spell Stats')
-    patcher_desc = _('Import stats from spells from source plugins/files.')
-    _config_key = u'SpellsPatcher'
-    patcher_type = preservers.ImportSpellStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportDestructible(_ImporterPatcherPanel):
-    patcher_name = _('Import Destructible')
-    patcher_desc = _('Preserves changes to destructible records.')
-    _config_key = 'DestructiblePatcher'
-    patcher_type = preservers.ImportDestructiblePatcher
-
-# -----------------------------------------------------------------------------
-class ImportKeywords(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Keywords')
-    patcher_desc = _('Import keyword changes from source plugins.')
-    _config_key = u'KeywordsImporter'
-    patcher_type = preservers.ImportKeywordsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportText(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Text')
-    patcher_desc = _('Import various types of long-form text like book '
-                     'texts, effect descriptions, etc. from source plugins.')
-    _config_key = u'TextImporter'
-    patcher_type = preservers.ImportTextPatcher
-
-# -----------------------------------------------------------------------------
-class ImportObjectBounds(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Object Bounds')
-    patcher_desc = _(u'Import object bounds for various actors, items and '
-                     u'objects.')
-    _config_key = u'ObjectBoundsImporter'
-    patcher_type = preservers.ImportObjectBoundsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportEnchantmentStats(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Enchantment Stats')
-    patcher_desc = _('Import stats from enchantments from source plugins.')
-    _config_key = u'ImportEnchantmentStats'
-    patcher_type = preservers.ImportEnchantmentStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportEffectStats(_ImporterPatcherPanel):
-    patcher_name = _('Import Effect Stats')
-    patcher_desc = _('Import stats from magic/base effects from source '
-                     'plugins.')
-    _config_key = 'ImportEffectsStats'
-    patcher_type = preservers.ImportEffectStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportEnchantments(_ImporterPatcherPanel):
-    patcher_name = _('Import Enchantments')
-    patcher_desc = _('Import enchantments from armor, weapons, etc. from '
-                     'source plugins.')
-    _config_key = 'ImportEnchantments'
-    patcher_type = preservers.ImportEnchantmentsPatcher
-
-# Patchers 30 -----------------------------------------------------------------
-class TweakAssorted(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Assorted')
-    patcher_desc = _(u'Tweak various records in miscellaneous ways.')
-    _config_key = u'AssortedTweaker'
-    patcher_type = multitweak_assorted.TweakAssortedPatcher
-    default_isEnabled = True
-
-# -----------------------------------------------------------------------------
-class TweakClothes(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Clothes')
-    patcher_desc = _(u'Tweak clothing weight and blocking.')
-    _config_key = u'ClothesTweaker'
-    patcher_type = multitweak_clothes.TweakClothesPatcher
-
-# -----------------------------------------------------------------------------
-class TweakSettings(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Settings')
-    patcher_desc = _(u'Tweak game settings.')
-    _config_key = u'GmstTweaker'
-    patcher_type = multitweak_settings.TweakSettingsPatcher
-    # CONFIG DEFAULTS
-    default_isEnabled = True
-
-# -----------------------------------------------------------------------------
-class TweakNames(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Names')
-    patcher_desc = _(u'Tweak object names to sort them by type/stats or to '
-                     u'improve things like lore friendliness.')
-    _config_key = u'NamesTweaker'
-    patcher_type = multitweak_names.TweakNamesPatcher
-
-# -----------------------------------------------------------------------------
-class TweakActors(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Actors')
-    patcher_desc = _(u'Tweak NPC and Creatures records in specified ways.')
-    _config_key = u'TweakActors'
-    patcher_type = multitweak_actors.TweakActorsPatcher
-
-# -----------------------------------------------------------------------------
-class TweakRaces(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Races')
-    patcher_desc = _(u'Tweak race records in specified ways.')
-    _config_key = u'TweakRaces'
-    patcher_type = multitweak_races.TweakRacesPatcher
-
-# Patchers 40 -----------------------------------------------------------------
-class ReplaceFormIDs(_ListPatcherPanel):
-    """Imports Form Id replacers into the Bashed Patch."""
-    patcher_name = _(u'Replace Form IDs')
-    patcher_desc = _(u'Imports Form Id replacers from csv files into the '
-                     u'Bashed Patch.')
-    _config_key = u'UpdateReferences'
-    patcher_type = ReplaceFormIDsPatcher
-    _autocheck_new = False #--GUI: Whether new items are checked by default.
-
-# -----------------------------------------------------------------------------
-class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
+class _LeveledListsPanel(_ListsMergerPanel):
     _list_label = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
@@ -982,97 +691,15 @@ class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
     def _check_item(self, item, index):
         return False
 
-class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
-    patcher_name = _('FormID Lists')
-    patcher_desc = '\n\n'.join([
-        _('Merges changes to FormID lists from all active and/or merged '
-          'plugins.'),
-        _('Advanced users may override Deflst tags for any mod (active or '
-          'inactive) using the list below.')])
-    _config_key = 'FidListsMerger'
-    patcher_type = mergers.FormIDListsPatcher
-    _list_label = _('Override Deflst Tag')
-    _add_dialog_title = _('Add Deflst Tag to Plugin')
-    choiceMenu = ('Auto', '----', 'Deflst')
-
-# -----------------------------------------------------------------------------
-class ContentsChecker(PatcherConfig, _PatcherPanel):
-    """Checks contents of leveled lists, inventories and containers for
-    correct content types."""
-    patcher_name = _('Contents Checker')
-    patcher_desc = _(u'Checks contents of leveled lists, inventories and '
-                     u'containers for correct types.')
-    _config_key = u'ContentsChecker'
-    patcher_type = checkers.ContentsCheckerPatcher
-    default_isEnabled = True
-
-# -----------------------------------------------------------------------------
-class RaceChecker(PatcherConfig, _PatcherPanel):
-    """Sorts hairs and eyes."""
-    patcher_name = _(u'Race Checker')
-    patcher_desc = _(u'Sorts race hairs and eyes.')
-    _config_key = u'RaceChecker'
-    patcher_type = checkers.RaceCheckerPatcher
-    default_isEnabled = True
-
-#------------------------------------------------------------------------------
-class NpcChecker(PatcherConfig, _PatcherPanel):
-    """Assigns missing hair and eyes."""
-    patcher_name = _(u'NPC Checker')
-    patcher_desc = _(u'This will randomly assign hairs and eyes to NPCs that '
-                     u'are otherwise missing them.')
-    _config_key = u'NpcChecker'
-    patcher_type = checkers.NpcCheckerPatcher
-    default_isEnabled = True
-
-#------------------------------------------------------------------------------
-class TimescaleChecker(PatcherConfig, _PatcherPanel):
-    """Adjusts the wave period of grass match changes in the timescale."""
-    patcher_name = _(u'Timescale Checker')
-    patcher_desc = u'\n'.join([
-        _(u'Adjusts the wave period of grasses to match changes in the '
-          u'timescale.'),
-        _(u'Does nothing if you are not using a nonstandard timescale.'),
-        u'',
-        _(u'Incompatible with plugins that change grass wave periods to match '
-          u'a different timescale. Uninstall such plugins before using this.'),
-    ])
-    _config_key = u'TimescaleChecker'
-    patcher_type = checkers.TimescaleCheckerPatcher
-    default_isEnabled = True
-
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
 #------------------------------------------------------------------------------
-# Patchers with no options
-for gsp_name, gsp_class in bush.game.gameSpecificPatchers.items():
-    globals()[gsp_name] = type(gsp_name, (PatcherConfig, _PatcherPanel,),
-                               gsp_class.gui_cls_vars())
-# Simple list patchers
-for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.items():
-    gsp_bases = (_ListPatcherPanel,)
-    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_class.gui_cls_vars())
-# Import patchers
-for gsp_name, gsp_class in bush.game.game_specific_import_patchers.items():
-    gsp_bases = (_ImporterPatcherPanel,)
-    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_class.gui_cls_vars())
-
 def initPatchers():
-    group_order = {p_grp: i for i, p_grp in enumerate(
-        ('General', 'Importers', 'Tweakers', 'Special'))}
-    # If we want to merge patches into the BP, we need the patch merger
-    final_patchers = bush.game.patchers.copy()
-    if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
-        final_patchers.add('MergePatches')
-        # And the NoMerge tag needs to get added too
-        bush.game.allTags.add('NoMerge')
-    patcher_classes = [globals()[p] for p in final_patchers]
-    # Sort alphabetically first for aesthetic reasons
-    patcher_classes.sort(key=lambda a: a.patcher_name)
-    # After that, sort by group to make patchers instantiate in the right order
-    patcher_classes.sort(
-        key=lambda a: group_order[a.patcher_type.patcher_group])
-    gpatcher_types.extend(patcher_classes)
-    # Update the set of all tags for this game based on the available patchers
-    bush.game.allTags.update(chain.from_iterable(
-        getattr(p.patcher_type, 'patcher_tags', ()) for p in gpatcher_types))
+    gpatcher_types.clear()
+    skey = {p: j for j, p in enumerate(all_patcher_types)}
+    for k, v in game_patcher_config_types.items():
+        pan = globals()[k]
+        for cls_name, conf_cls in v.items():
+            gpatcher_types.append(typ := type(cls_name, (pan, conf_cls,), {}))
+            skey[typ] = skey[conf_cls]
+    gpatcher_types.sort(key=skey.__getitem__)

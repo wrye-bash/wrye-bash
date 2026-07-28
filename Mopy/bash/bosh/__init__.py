@@ -3522,11 +3522,13 @@ def initBosh(game_ini_path, game_info):
     lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
-                               for x in bush.game.Ini.dropdown_inis[1:])]
+                               for x in game_info.Ini.dropdown_inis[1:])]
     load_order.initialize_load_order_files(dirs)
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()
+    from ..patcher.config_patchers import init_patcher_types
+    init_patcher_types(game_info)
 
 def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                  _bak='BashSettings.dat.bak'):
