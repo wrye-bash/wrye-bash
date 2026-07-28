@@ -119,7 +119,7 @@ class _ACFrozen:
 
 # Base Elements ---------------------------------------------------------------
 _no_parent = _wx.Object() # signals that this native component has no parent
-class _AObject:
+class AObject:
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over. We mimic wx hierarchy as we need to wrap
     components on all levels."""
@@ -165,7 +165,7 @@ class _AObject:
         :param obj: The object to resolve.
         :return: The resolved wx object.
         """
-        if isinstance(obj, _AObject):
+        if isinstance(obj, AObject):
             return obj._native_widget
         elif isinstance(obj, _wx.Object) or obj is None:
             return obj
@@ -178,7 +178,7 @@ class _AObject:
         all possible."""
         self._native_widget.Destroy()
 
-class _AEvtHandler(_AObject):
+class _AEvtHandler(AObject):
     """Wrap an EvtHandler instance."""
     _native_widget: _wx.EvtHandler
 
@@ -208,7 +208,7 @@ class _AEvtHandler(_AObject):
         to this component while in the with statement."""
         return _ACFrozen(self._native_widget)
 
-class Lazy(_AObject):
+class Lazy(AObject):
     """Lazily create the native widget on first accessing self._native_widget.
     _AObject needs to know about us - think of Lazy on the same level as it."""
     # allow creating the native widget by directly accessing the _native_widget

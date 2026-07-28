@@ -124,9 +124,8 @@ class _ANehrimGameInfo(AOblivionGameInfo):
         super(AOblivionGameInfo, cls)._dynamic_import_modules(package_name)
         # Only Import Roads is of any interest
         from ..oblivion.patcher import preservers
-        cls.game_specific_import_patchers = {
-            'ImportRoads': preservers.ImportRoadsPatcher,
-        }
+        cls.game_specific_patchers = {'_ListPatcherPanel': {
+            'ImportRoads': preservers.ImportRoadsPatcher}}
 
     @classmethod
     def init(cls, _package_name=None):
