@@ -21,3 +21,17 @@
 #
 # =============================================================================
 """This package contains the Oblivion specific patchers."""
+from ....bolt import FName
+from ....patcher.base import ScanPatcher
+from ....patcher.config_patchers import LeveledLists
+
+cobl_main = FName('Cobl Main.esm')
+
+class ExSpecial(ScanPatcher):
+    """Those used to be subclasses of SpecialPatcher that did not make much
+    sense as they did not use scan_more."""
+    patcher_group = 'Special'
+    patcher_order = 40
+
+class LeveledLists(LeveledLists):
+    _remove_empty = True # by default remove empty leveled lists

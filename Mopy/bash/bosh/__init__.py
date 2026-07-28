@@ -3519,6 +3519,8 @@ def initBosh(game_ini_path, game_info):
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()
+    from ..patcher.config_patchers import init_patcher_types
+    init_patcher_types(game_info)
 
 def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                  _bak='BashSettings.dat.bak'):

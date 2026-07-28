@@ -281,6 +281,13 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
+    @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        super()._dynamic_import_modules(package_name)
+        # Removing empty sublists by default is for Oblivion only (years of
+        # users expecting it) - Remastered keeps the generic LeveledLists
+        del cls.game_specific_patchers['_LeveledListsPanel']
+
 class SteamOblivionReGameInfo(SteamMixin, _AOblivionReGameInfo):
     class St(_AOblivionReGameInfo.St):
         steam_ids = [2623190]
