@@ -27,7 +27,7 @@ from operator import attrgetter
 
 from ..base import APatcher, ListPatcher, MultiTweakItem, ScanPatcher
 from ... import load_order
-from ...bolt import deprint
+from ...bolt import classproperty, deprint
 from ...brec import RecordType
 from ...exception import BPConfigError
 from ...parsers import FidReplacer
@@ -203,8 +203,14 @@ class MergePatchesPatcher(ListPatcher):
         """No initData - don't add to patch factories."""
 
 class _PatchFidReplacer(FidReplacer):
-    _read_sigs = RecordType.simpleTypes | { # this better be initialized
-        b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}
+
+    @classproperty
+    def _read_sigs(cls):
+        # RecordType.simpleTypes is only set once the game imports its records
+        # - this module may well be imported before that (the game specific
+        # patcher configs import it in _dynamic_import_modules)
+        return RecordType.simpleTypes | {b'CELL', b'WRLD', b'REFR', b'ACHR',
+                                         b'ACRE'}
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super().__init__(aliases_, called_from_patcher)
@@ -220,9 +226,12 @@ class ReplaceFormIDsPatcher(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = 'General'
     patcher_order = 15
-    _read_sigs = _PatchFidReplacer._read_sigs
     _csv_parser = _PatchFidReplacer
     _csv_key = 'Formids'
+
+    @classproperty
+    def _read_sigs(cls): # lazy, see _PatchFidReplacer
+        return _PatchFidReplacer._read_sigs
 
     def _filter_csv_fids(self, parser_instance, loaded_csvs):
         earlier_loading = self.patchFile.all_plugins
