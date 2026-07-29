@@ -37,7 +37,8 @@ from ..gui.base_components import AObject
 from ..patcher.base import MultiTweakItem
 from ..patcher.config_patchers import all_patcher_types, \
     game_patcher_config_types, ListMergerConfig, ListPatcherConfig, \
-    PatcherConfig, TweakPatcherConfig
+    PatcherConfig, TweakPatcherConfig, AliasPluginNames as _APConfig, \
+    LeveledLists as _LLConfig
 
 class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
     """Basic patcher panel with no options."""
@@ -88,7 +89,7 @@ class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
         self._parent.check_patcher(self, self_enabled)
 
 #------------------------------------------------------------------------------
-class _AliasesPatcherPanel(_PatcherPanel):
+class AliasPluginNames(_PatcherPanel, _APConfig):
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -121,7 +122,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
 class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
     """Patcher panel with option to select source elements."""
     _autocheck_new = True #--GUI: Whether new items are checked by default
-    gList: ListBox | CheckListBox
+    gList: CheckListBox
     _list_label = ''
 
     def __init__(self, *args, **kwargs):
@@ -284,7 +285,7 @@ class _ChoiceMenuMixin(object):
         else:
             self.mouse_pos = None
 
-    def ShowChoiceMenu(self, lb_selection_dex): raise NotImplementedError
+    def ShowChoiceMenu(self, lb_index): raise NotImplementedError
 
 _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
 def _custom_label(label_text, val): # edit label text with value
@@ -397,33 +398,33 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
                              or lower_search_str in t.tweak_tip.lower()]
         self._populate_tweak_list()
 
-    def ShowChoiceMenu(self, tweakIndex):
+    def ShowChoiceMenu(self, lb_index):
         """Displays a popup choice menu if applicable."""
-        if tweakIndex >= len(self._curr_tweaks): return
-        tweak = self._curr_tweaks[tweakIndex]
+        if lb_index >= len(self._curr_tweaks): return
+        tweak = self._curr_tweaks[lb_index]
         choiceLabels = tweak.choiceLabels
         if len(choiceLabels) <= 1: return
-        self.gTweakList.lb_select_index(tweakIndex)
+        self.gTweakList.lb_select_index(lb_index)
         #--Build Menu
         links = Links()
         _self = self # ugly, tweak_custom_choice is too big to make it local though
         class _ValueLink(CheckLink):
-            def __init__(self, _text, index):
+            def __init__(self, _text):
                 super(_ValueLink, self).__init__(_text)
                 self.index = index
             def _check(self): return self.index == tweak.chosen
-            def Execute(self): _self.tweak_choice(self.index, tweakIndex)
+            def Execute(self): _self.tweak_choice(self.index, lb_index)
         class _ValueLinkCustom(_ValueLink):
             def Execute(self):
-                _self.tweak_custom_choice(self.index, tweakIndex)
+                _self.tweak_custom_choice(self.index, lb_index)
         for index, itm_txt in enumerate(choiceLabels):
             if itm_txt == '----':
                 links.append_link(SeparatorLink())
             elif itm_txt == tweak.custom_choice:
                 itm_txt = _custom_label(itm_txt, tweak.choiceValues[index][0])
-                links.append_link(_ValueLinkCustom(itm_txt, index))
+                links.append_link(_ValueLinkCustom(itm_txt))
             else:
-                links.append_link(_ValueLink(itm_txt, index))
+                links.append_link(_ValueLink(itm_txt))
         #--Show/Destroy Menu
         links.popup_menu(self.gTweakList, None)
 
@@ -438,7 +439,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
 
     def tweak_custom_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
-        tweak = self._curr_tweaks[tweakIndex]
+        tweak: MultiTweakItem = self._curr_tweaks[tweakIndex]
         values = []
         new = None
         # Check the default values since the type of values accepted by the
@@ -548,6 +549,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
     _add_dialog_title: str
     # CONFIG DEFAULTS
     selectCommands = False
+    gList: ListBox
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -625,13 +627,13 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
             self._item_config.items()) if index not in selections)
         self._sort_and_update_items(is_auto=False, do_sort=False)
 
-    def ShowChoiceMenu(self, itemIndex):
+    def ShowChoiceMenu(self, lb_index):
         """Displays a popup choice menu if applicable.
         NOTE: Assume that configChoice returns a set of chosen items."""
         #--Item Index
-        if itemIndex < 0: return
-        (gui_li := self.gList).lb_select_index(itemIndex)
-        choiceSet = self._item_config[(curr := self._curr_items)[itemIndex]]
+        if lb_index < 0: return
+        (gui_li := self.gList).lb_select_index(lb_index)
+        choiceSet = self._item_config[(curr := self._curr_items)[lb_index]]
         #--Build Menu
         choices, choice_menu, _self = self._item_config, self.choiceMenu, self
         class _OnItemChoice(CheckLink):
@@ -640,14 +642,14 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
                 self._index = dex
             def _check(self): return self._text in choiceSet
             def Execute(self):
-                item = curr[itemIndex]
+                item = curr[lb_index]
                 choice_set = choices[item]
                 choice_set ^= {choice := choice_menu[self._index]}
                 if choice != 'Auto':
                     choice_set.discard('Auto')
                 elif 'Auto' in choice_set:
                     _self._set_choice(item)
-                gui_li.lb_set_label_at_index(itemIndex, _self._mod_label(
+                gui_li.lb_set_label_at_index(lb_index, _self._mod_label(
                     item, choices))
         links = Links()
         for index, item_label in enumerate(choice_menu):
@@ -672,7 +674,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
         self._on_auto_check(self.autoIsChecked)
 
 #------------------------------------------------------------------------------
-class _LeveledListsPanel(_ListsMergerPanel):
+class LeveledLists(_ListsMergerPanel, _LLConfig):
     _list_label = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
@@ -694,12 +696,14 @@ class _LeveledListsPanel(_ListsMergerPanel):
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
 #------------------------------------------------------------------------------
-def initPatchers():
+def init_gui_patchers():
     gpatcher_types.clear()
     skey = {p: j for j, p in enumerate(all_patcher_types)}
     for k, v in game_patcher_config_types.items():
         pan = globals()[k]
         for cls_name, conf_cls in v.items():
-            gpatcher_types.append(typ := type(cls_name, (pan, conf_cls,), {}))
-            skey[typ] = skey[conf_cls]
+            pconf_type = pan if cls_name == k else type(
+                cls_name, (pan, conf_cls,), {})
+            gpatcher_types.append(pconf_type)
+            skey[pconf_type] = skey[conf_cls]
     gpatcher_types.sort(key=skey.__getitem__)

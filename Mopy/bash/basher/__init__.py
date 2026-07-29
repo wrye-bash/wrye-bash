@@ -67,7 +67,7 @@ from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
     DependentsAffectedDialog, MastersAffectedDialog, MultiWarningDialog, \
     LoadOrderSanitizedDialog
 from .frames import DocBrowser
-from .gui_patchers import initPatchers
+from .gui_patchers import init_gui_patchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
@@ -3800,7 +3800,7 @@ def InitSettings(): # this must run first !
     bosh.bain.Installer.init_attributes_process()
     # Plugin encoding used to decode mod string fields
     bolt.pluginEncoding = bass.settings[u'bash.pluginEncoding']
-    initPatchers()
+    init_gui_patchers()
 
 def InitImages():
     """Initialize color and image collections."""

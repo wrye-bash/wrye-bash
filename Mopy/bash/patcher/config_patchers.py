@@ -37,7 +37,7 @@ from .patchers import checkers, mergers, multitweak_actors, \
 from .patchers.base import AliasPluginNamesPatcher, MultiTweaker, \
     MergePatchesPatcher, ReplaceFormIDsPatcher
 from .. import bosh
-from ..bolt import forward_compat_path_to_fn, FName, \
+from ..bolt import forward_compat_path_to_fn, FName, FNDict, \
     forward_compat_path_to_fn_list
 from ..plugin_types import MergeabilityCheck
 
@@ -203,6 +203,7 @@ class AliasPluginNames(PatcherConfig):
     patcher_desc = _('Specify plugin aliases for reading CSV source files.')
     _config_key = 'AliasesPatcher'
     patcher_type = AliasPluginNamesPatcher
+    aliases: FNDict  # AliasPluginNames uses forward_compat_path_to_fn
 
     @classmethod
     def _config_attrs(cls):
@@ -670,7 +671,7 @@ all_patcher_types: list[type[PatcherConfig]] = []
 _gui_to_class = { # map GUI classes to globals in order to filter game pathcers
     '_PatcherPanel': {'ContentsChecker', 'NpcChecker', 'RaceChecker',
                       'TimescaleChecker'},
-    '_AliasesPatcherPanel': {'AliasPluginNames'},
+    'AliasPluginNames': {'AliasPluginNames'},
     '_ListPatcherPanel': {'MergePatches', 'ReplaceFormIDs', # importers follow
         'ImportGraphics', 'ImportActorsAIPackages',
         'ImportActors', 'ImportActorsPerks', 'ImportCells',
@@ -684,7 +685,7 @@ _gui_to_class = { # map GUI classes to globals in order to filter game pathcers
     '_TweakPatcherPanel': {'TweakAssorted', 'TweakClothes', 'TweakSettings',
                            'TweakNames', 'TweakActors', 'TweakRaces'},
     '_ListsMergerPanel': {'FormIDLists'},
-    '_LeveledListsPanel': {'LeveledLists'},
+    'LeveledLists': {'LeveledLists'},
 }
 
 def init_patcher_types(game_handle):
