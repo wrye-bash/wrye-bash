@@ -1217,7 +1217,7 @@ class AOblivionGameInfo(PatchGame):
                 'CoblExhaustion': preservers.CoblExhaustionPatcher,
                 'MorphFactions': preservers.MorphFactionsPatcher,
                 'ImportRoads': preservers.ImportRoadsPatcher},
-            '_LeveledListsPanel': {'LeveledLists': LeveledLists}
+            'LeveledLists': {'LeveledLists': LeveledLists}
         }
 
     @classmethod
