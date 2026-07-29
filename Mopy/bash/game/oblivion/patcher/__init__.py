@@ -33,5 +33,5 @@ class ExSpecial(ScanPatcher):
     patcher_group = 'Special'
     patcher_order = 40
 
-class LeveledLists(LeveledLists):
+class OblivionLeveledLists(LeveledLists):
     _remove_empty = True # by default remove empty leveled lists

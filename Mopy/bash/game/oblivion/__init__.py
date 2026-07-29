@@ -1209,7 +1209,7 @@ class AOblivionGameInfo(PatchGame):
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         super()._dynamic_import_modules(package_name)
-        from .patcher import checkers, preservers, LeveledLists
+        from .patcher import checkers, preservers, OblivionLeveledLists
         cls.game_specific_patchers = {
             '_PatcherPanel': {'CoblCatalogs': checkers.CoblCatalogsPatcher,
                               'SEWorldTests': checkers.SEWorldTestsPatcher},
@@ -1217,7 +1217,7 @@ class AOblivionGameInfo(PatchGame):
                 'CoblExhaustion': preservers.CoblExhaustionPatcher,
                 'MorphFactions': preservers.MorphFactionsPatcher,
                 'ImportRoads': preservers.ImportRoadsPatcher},
-            '_LeveledListsPanel': {'LeveledLists': LeveledLists}
+            'LeveledLists': {'LeveledLists': OblivionLeveledLists}
         }
 
     @classmethod
