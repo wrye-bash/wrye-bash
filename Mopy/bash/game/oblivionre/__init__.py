@@ -286,7 +286,7 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
         super()._dynamic_import_modules(package_name)
         # Removing empty sublists by default is for Oblivion only (years of
         # users expecting it) - Remastered keeps the generic LeveledLists
-        del cls.game_specific_patchers['_LeveledListsPanel']
+        del cls.game_specific_patchers['LeveledLists']
 
 class SteamOblivionReGameInfo(SteamMixin, _AOblivionReGameInfo):
     class St(_AOblivionReGameInfo.St):
