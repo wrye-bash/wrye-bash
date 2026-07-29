@@ -30,7 +30,7 @@ from functools import partial
 from itertools import chain
 from typing import ClassVar
 
-from .base import APatcher, ListPatcher
+from .base import APatcher, ListPatcher, MultiTweakItem
 from .patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
@@ -496,7 +496,7 @@ class TweakPatcherConfig(PatcherConfig):
         return self.patcher_type(self.patcher_name, patch_file, enabledTweaks)
 
     @classmethod
-    def _tweaks_config(cls, config, bashed_patch=None):
+    def _tweaks_config(cls, config, bashed_patch=None) -> list[MultiTweakItem]:
         all_tweaks = cls.patcher_type.tweak_instances(bashed_patch)
         for tweak in all_tweaks:
             tweak.init_tweak_config(config)
