@@ -61,31 +61,15 @@ _wb_conf_dir_name = {
     'Windows': 'WryeBash',
 }
 
-def _early_setup():
-    """Executes (very) early setup by changing working directory and installing
-    the BashBugDump hooks."""
-    # Install a hook to handle unraisable error messages (at least when a tty
-    # is attached)
-    def unraisable_hook(unraisable):
-        def _print(s):
-            print(s, file=sys.__stderr__)
-        _print(f'An unraisable exception occurred: {unraisable.exc_value!r}')
-        _print(f'Affected object: {unraisable.object!r}')
-        if unraisable.exc_traceback:
-            _print('Traceback:')
-            for tb_line in traceback.format_tb(unraisable.exc_traceback):
-                _print(tb_line.rstrip()) # Drop newlines, print will add them
-    sys.unraisablehook = unraisable_hook
-    # ensure we are in the correct directory so relative paths will work
-    # properly
-    pathToProg = os.path.dirname(
-        sys.executable if bass.is_standalone else sys.argv[0])
-    if pathToProg:
-        os.chdir(pathToProg)
-    global _bugdump_handle
-    _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
-        buffering=1, encoding='utf-8')
-    _install_bugdump()
+def _unraisable_hook(unraisable):
+    def _print(s):
+        print(s, file=sys.__stderr__)
+    _print(f'An unraisable exception occurred: {unraisable.exc_value!r}')
+    _print(f'Affected object: {unraisable.object!r}')
+    if unraisable.exc_traceback:
+        _print('Traceback:')
+        for tb_line in traceback.format_tb(unraisable.exc_traceback):
+            _print(tb_line.rstrip())  # Drop newlines, print will add them
 
 def _parse_boot_settings(curr_os: str):
     """Parse the per-user config file boot-settings.toml, which is used to
@@ -421,6 +405,11 @@ def _parse_bash_ini(bash_ini_path):
                 bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------
+_help_urls = {
+ 'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
+ 'discord_url': 'https://discord.gg/NwWvAFR',
+ 'ms_docs_url': 'https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057',
+}
 def main(opts: Namespace):
     """Run the Wrye Bash main loop.
 
@@ -431,18 +420,28 @@ def main(opts: Namespace):
                           f"the moment. If you know what you're doing, use "
                           f"the --unsupported switch to bypass this raise "
                           f"statement.")
-    # Change working dir and setup logging
-    _early_setup()
+    # Install a hook to handle unraisable error messages (at least when a tty
+    # is attached)
+    sys.unraisablehook = _unraisable_hook
+    # ensure we are in the correct directory so relative paths will work
+    # properly
+    if pathToProg := os.path.dirname(
+            sys.executable if bass.is_standalone else sys.argv[0]):
+        os.chdir(pathToProg)
+    global _bugdump_handle # setup logging
+    _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
+        buffering=1, encoding='utf-8')
+    _install_bugdump() # install the BashBugDump hooks
     # Parsing the boot settings needs logging to be available and, in turn, is
     # needed for initializing locale
     _parse_boot_settings(curr_os)
+    from . import localize # will setup NullTranslations so the _() function
     __wx = None
     try:
         # wx is also needed to initialize locale - move to gui?
         __wx = _import_wx()
         # We're now ready to initialize locale. That way, we can show a
         # translated error message if WB crashes
-        from . import localize
         target_lang = opts.language or bass.boot_settings['Boot']['locale']
         wx_locale, loc_name = localize.setup_locale(__wx, target_lang)
         bass.active_locale = loc_name
@@ -471,12 +470,6 @@ def main(opts: Namespace):
         _main(opts, wx_locale, __wx)
     except Exception as e:
         caught_exc = traceback.format_exc()
-        try:
-            # Check if localize succeeded in setting up translations, otherwise
-            # monkey patch in a noop underscore
-            _(_a := '') # Hide this from gettext
-        except NameError:
-            def _(x): return x
         if __wx is None:
             _dep_versions['wxPython'] = 'not found'
             err_msg = '\n'.join([dump_environment(), '', 'Unable to load wx:',
@@ -503,11 +496,7 @@ def main(opts: Namespace):
                         'official thread at %(thread_url)s or to the Wrye '
                         'Bash Discord at %(discord_url)s')
             err_msg += '\n\n' + caught_exc
-        _show_boot_popup(__wx, err_msg % {
-            'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
-            'discord_url': 'https://discord.gg/NwWvAFR',
-            'ms_docs_url': 'https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057',
-        })
+        _show_boot_popup(__wx, err_msg % _help_urls)
 
 def _main(opts, wx_locale, _wx):
     """Run the Wrye Bash main loop.
