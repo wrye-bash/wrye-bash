@@ -47,6 +47,8 @@ from collections import defaultdict
 #  - gen_ini: needed to generate bash_default.ini without adding hundreds of
 #             lines to bash
 from . import bass, bolt, exception, gen_ini, wbtemp
+# define accepted python versions
+_MIN_PYTHON, _MAX_PYTHON = (3, 11), (4,)
 
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
@@ -138,7 +140,12 @@ def _install_bugdump():
 bash_app = None  ##:(700) typing
 def _import_wx(opts, localize):
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
-    import wx
+    try:
+        import wx
+    except Exception as e: # not in main, earlier errors are not wx's
+        _dep_versions['wxPython'] = 'not found'
+        raise exception.BootError('\n'.join([dump_environment(), '',
+            'Unable to load wx:', traceback.format_exc(), 'Exiting.'])) from e
     # Hacky fix for loading older settings that pickled classes from
     # moved/deleted wx modules
     from wx import _core
@@ -246,7 +253,7 @@ def _warn_missing_bash_dir():
                  'so that all files are installed.') + '\n\n' +
                _('Correct installation will create a filled %(wb_folder)s '
                  'folder.') % {'wb_folder': os.path.join('Mopy', 'bash')})
-        raise RuntimeError(msg)
+        raise exception.BootError(msg)
 
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
@@ -408,12 +415,7 @@ def main(opts: Namespace):
     """Run the Wrye Bash main loop.
 
     :param opts: command line arguments."""
-    curr_os = platform.system()
-    if curr_os not in ('Linux', 'Windows') and not opts.unsupported:
-        raise ImportError(f'Wrye Bash only partially supports {curr_os} at '
-                          f"the moment. If you know what you're doing, use "
-                          f"the --unsupported switch to bypass this raise "
-                          f"statement.")
+    global _bugdump_handle
     # Install a hook to handle unraisable error messages (at least when a tty
     # is attached)
     sys.unraisablehook = _unraisable_hook
@@ -422,16 +424,30 @@ def main(opts: Namespace):
     if pathToProg := os.path.dirname(
             sys.executable if bass.is_standalone else sys.argv[0]):
         os.chdir(pathToProg)
-    global _bugdump_handle # setup logging
-    _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
-        buffering=1, encoding='utf-8')
-    _install_bugdump() # install the BashBugDump hooks
-    # Parsing the boot settings needs logging to be available and, in turn, is
-    # needed for initializing locale
-    _parse_boot_settings(curr_os)
     from . import localize # will setup NullTranslations so the _() function
     __wx = None
     try:
+        if (curr_os := platform.system()) not in ('Linux', 'Windows') and \
+                not opts.unsupported:
+            raise exception.BootError(f'Wrye Bash only partially supports '
+                f"{curr_os} at the moment. If you know what you're doing, use "
+                f'the --unsupported switch to bypass this check.')
+        # setup logging - Mopy may not be writable, e.g. under Program Files
+        _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'),
+                               'w', buffering=1, encoding='utf-8')
+        _install_bugdump() # install the BashBugDump hooks
+        # Parsing the boot settings needs logging to be available and, in
+        # turn, is needed for initializing locale
+        _parse_boot_settings(curr_os)
+        # check if the correct Python version is installed on a Python install
+        if not bass.is_standalone and not (
+                _MIN_PYTHON <= (sysver := sys.version_info[:3]) < _MAX_PYTHON):
+            min_py_ver, curr_py_ver, max_py_ver = ('.'.join(map(str, v)) for v
+                in [_MIN_PYTHON, sysver, _MAX_PYTHON])
+            msg = (f"Only Python {min_py_ver} and newer up to {max_py_ver} is "
+                f"supported ({curr_py_ver} detected). If you know what you're "
+                f"doing, edit this warning out. Wrye Bash will now exit.")
+            raise exception.BootError(msg)
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
             print(f"Generating HTML file from '{opts.genHtml}'")
@@ -441,8 +457,7 @@ def main(opts: Namespace):
             return
         # wx is also needed to initialize locale - move to gui?
         __wx, wx_locale = _import_wx(opts, localize)
-        if not bass.is_standalone and not (_rightPythonVersion() and
-                _rightWxVersion()):
+        if not bass.is_standalone and not _rightWxVersion():
             return
         # Both of these must come early, before we begin showing wx-based GUI
         from . import env
@@ -458,10 +473,8 @@ def main(opts: Namespace):
         _main(opts, wx_locale, __wx)
     except Exception as e:
         caught_exc = traceback.format_exc()
-        if __wx is None:
-            _dep_versions['wxPython'] = 'not found'
-            err_msg = '\n'.join([dump_environment(), '', 'Unable to load wx:',
-                                 caught_exc, 'Exiting.'])
+        if isinstance(e, exception.BootError):
+            err_msg = f'{e}'
         # No period at the end of URLs, that could cause copy-paste errors when
         # people go to copy them
         elif isinstance(e, OSError) and e.errno == 22 and bolt.os_name == 'nt':
@@ -661,16 +674,14 @@ def _import_bush_and_set_game(__wx, opts):
     game_infos = bush.detect_and_set_game(opts, init_warnings)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
-            _show_boot_popup(__wx, _(
+            raise exception.BootError('\n\n'.join([_(
                 'Wrye Bash could not find a game to manage. Make sure to '
                 'launch games you installed through Steam once and enable '
-                'mods on games you installed through the Windows '
-                'Store.') + '\n\n' + _(
+                'mods on games you installed through the Windows Store.'), _(
                 'You can also use the %(cli_game_detect)s command line '
                 'argument or %(bash_config_file)s to specify the path '
-                'manually.') % {'cli_game_detect': '-o',
-                                'bash_config_file': 'bash.ini'})
-            return None
+                'manually.')]) % {'cli_game_detect': '-o',
+                                  'bash_config_file': 'bash.ini'})
         retCode = _select_game_popup(game_infos,
             last_used_game=bass.boot_settings['Boot']['last_game'])
         if not retCode:
@@ -940,20 +951,4 @@ def _rightWxVersion():
             'you still want to run Wrye Bash?') % {
             'curr_wx_ver': wxver, 'supported_wx_series': '4.2.x'},
             title=_('Unsupported wxPython Version Detected'))
-    return True
-
-def _rightPythonVersion():
-    """Shows an error if the wrong Python version is installed. Must only be
-    called after _import_wx, setup_locale and balt is imported."""
-    sysVersion = sys.version_info[:3]
-    if sysVersion < (3, 11) or sysVersion >= (4,):
-        from . import gui
-        gui.showError(None, _(
-            "Only Python %(min_py_ver)s and newer is supported "
-            "(%(curr_py_ver)s detected). If you know what you're doing, "
-            "install the Python version of Wrye Bash and edit this warning "
-            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.11',
-                                                'curr_py_ver': sysVersion},
-            title=_('Unsupported Python Version Detected'))
-        return False
     return True
