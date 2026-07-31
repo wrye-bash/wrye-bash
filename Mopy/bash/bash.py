@@ -135,7 +135,7 @@ def _install_bugdump():
 # Wx --------------------------------------------------------------------------
 # locale/image calls in wx work once an App object is instantiated and in scope
 bash_app = None  ##:(700) typing
-def _import_wx():
+def _import_wx(opts, localize):
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
     import wx
     # Hacky fix for loading older settings that pickled classes from
@@ -166,7 +166,12 @@ def _import_wx():
     # constants for some reason, so just use 0 (no flags)
     wx.Image.SetDefaultLoadFlags(0)
     _dep_versions['wxPython'] = wx.version()
-    return wx
+    # We're now ready to initialize locale. That way, we can show a
+    # translated error message if WB crashes
+    target_lang = opts.language or bass.boot_settings['Boot']['locale']
+    wx_locale, loc_name = localize.setup_locale(wx, target_lang)
+    bass.active_locale = loc_name
+    return wx, wx_locale
 
 # library dependensies sorted by value (case insensitively)
 _deps = {'chardet': 'chardet', **( # Only a dependency on Windows
@@ -438,23 +443,17 @@ def main(opts: Namespace):
     from . import localize # will setup NullTranslations so the _() function
     __wx = None
     try:
-        # wx is also needed to initialize locale - move to gui?
-        __wx = _import_wx()
-        # We're now ready to initialize locale. That way, we can show a
-        # translated error message if WB crashes
-        target_lang = opts.language or bass.boot_settings['Boot']['locale']
-        wx_locale, loc_name = localize.setup_locale(__wx, target_lang)
-        bass.active_locale = loc_name
-        if not bass.is_standalone and not (_rightPythonVersion() and
-                _rightWxVersion()):
-            return
         # if HTML file generation was requested, just do it and quit
-        if opts.genHtml is not None: ##: we should do this before localization and wx import
-            print(_("Generating HTML file from '%(gen_target)s'") % {
-                'gen_target': opts.genHtml})
+        if opts.genHtml is not None:
+            print(f"Generating HTML file from '{opts.genHtml}'")
             from . import wrye_text
             wrye_text.genHtml(opts.genHtml)
-            print(_('Done'))
+            print('Done')
+            return
+        # wx is also needed to initialize locale - move to gui?
+        __wx, wx_locale = _import_wx(opts, localize)
+        if not bass.is_standalone and not (_rightPythonVersion() and
+                _rightWxVersion()):
             return
         # Both of these must come early, before we begin showing wx-based GUI
         from . import env
