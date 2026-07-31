@@ -34,7 +34,10 @@ class BoltError(Exception):
         return self.message
 
 # Boot exceptions -------------------------------------------------------
-class LoadOrderBootError(Exception):
+class BootError(Exception):
+    """Only raised during (early) boot control flow."""
+
+class LoadOrderBootError(BootError):
     """A problem with the load order was detected during boot, and WB was
     instructed to terminate rather than deprint."""
 
