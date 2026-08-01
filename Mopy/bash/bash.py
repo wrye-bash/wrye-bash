@@ -454,6 +454,11 @@ def main(opts: Namespace):
                 f"supported ({curr_py_ver} detected). If you know what you're "
                 f"doing, edit this warning out. Wrye Bash will now exit.")
             raise exception.BootError(msg)
+        # Now we set the working directory, set the rest of Mopy-based
+        # directories - initialization imports env, so do this in the try to
+        # get a usable error message (and a BashBugDump) if the import fails
+        from . import initialization
+        initialization.init_dirs_mopy(os.getcwd())
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
             print(f"Generating HTML file from '{opts.genHtml}'")
@@ -469,10 +474,6 @@ def main(opts: Namespace):
         from . import env
         env.mark_high_dpi_aware()
         env.fixup_taskbar_icon()
-        # The rest of boot relies on Mopy-based directories being set, so those
-        # come next
-        from . import initialization
-        initialization.init_dirs_mopy()
         # Make sure we actually have a functional 'bash' folder to work with
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
