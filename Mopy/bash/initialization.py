@@ -325,18 +325,19 @@ def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
         msg += u'\n'.join([f'{x}' for x in relativePathError])
     return msg
 
-def init_dirs_mopy():
-    dirs['mopy'] = Path.getcwd()
-    dirs[u'bash'] = dirs[u'mopy'].join(u'bash')
+def init_dirs_mopy(working_dir):
+    dirs['mopy'] = mopy_dir = GPath(working_dir)
+    dirs['bash'] = mopy_dir.join('bash')
     dirs[u'compiled'] = dirs[u'bash'].join(u'compiled')
     dirs[u'l10n'] = dirs[u'bash'].join(u'l10n')
     dirs[u'db'] = dirs[u'bash'].join(u'db')
-    dirs[u'templates'] = dirs[u'mopy'].join(u'templates')
+    dirs['templates'] = mopy_dir.join('templates')
     dirs[u'images'] = dirs[u'bash'].join(u'images')
     from . import archives
     if os_name == u'nt': # don't add local directory to binaries on linux
         archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
     bass.mopy_dirs_initialized = True
+    return mopy_dir
 
 def getLocalSaveDirs(saves_folder: str):
     """Return a list of possible local save directories, NOT including the
