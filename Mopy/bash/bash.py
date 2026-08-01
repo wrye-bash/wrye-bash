@@ -167,12 +167,26 @@ def _import_wx(opts, localize):
     # Disable image loading errors - wxPython is missing the actual flag
     # constants for some reason, so just use 0 (no flags)
     wx.Image.SetDefaultLoadFlags(0)
-    _dep_versions['wxPython'] = wx.version()
+    _dep_versions['wxPython'] = wxver = wx.version()
     # We're now ready to initialize locale. That way, we can show a
     # translated error message if WB crashes
     target_lang = opts.language or bass.boot_settings['Boot']['locale']
     wx_locale, loc_name = localize.setup_locale(wx, target_lang)
     bass.active_locale = loc_name
+    from . import gui
+    if not bass.is_standalone and not wxver.startswith('4.2'):
+        titl = _('Unsupported wxPython Version Detected')
+        warn = _('Warning: you appear to be using a non-supported version of '
+                 'wxPython (%(curr_wx_ver)s). This will cause problems! It is '
+                 'highly recommended you use a %(supported_wx_series)s '
+                 'version. Do you still want to run Wrye Bash?')
+        if not gui.askYes(None, warn % {'curr_wx_ver': wxver,
+                'supported_wx_series': '4.2.x'}, title=titl):
+            raise exception.BootError(titl)
+    # Both of these must come early, before we begin showing wx-based GUI
+    from . import env
+    env.mark_high_dpi_aware()
+    env.fixup_taskbar_icon()
     return wx, wx_locale
 
 # library dependensies sorted by value (case insensitively)
@@ -466,12 +480,6 @@ def main(opts: Namespace):
             return
         # wx is also needed to initialize locale - move to gui?
         __wx, wx_locale = _import_wx(opts, localize)
-        if not bass.is_standalone and not _rightWxVersion():
-            return
-        # Both of these must come early, before we begin showing wx-based GUI
-        from . import env
-        env.mark_high_dpi_aware()
-        env.fixup_taskbar_icon()
         # Make sure we actually have a functional 'bash' folder to work with
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
@@ -944,18 +952,3 @@ def _select_game_popup(game_infos, last_used_game: str | None):
     frame.show_frame(center=True)
     bash_app.MainLoop(restore_stdio=False)
     return retCode.get()
-
-# Version checks --------------------------------------------------------------
-def _rightWxVersion():
-    """Shows a warning if the wrong wxPython version is installed. Must only be
-    called after _import_wx, setup_locale and balt is imported."""
-    if not (wxver := _dep_versions['wxPython']).startswith('4.2'):
-        from . import gui
-        return gui.askYes(None, _(
-            'Warning: you appear to be using a non-supported version of '
-            'wxPython (%(curr_wx_ver)s). This will cause problems! It is '
-            'highly recommended you use a %(supported_wx_series)s version. Do '
-            'you still want to run Wrye Bash?') % {
-            'curr_wx_ver': wxver, 'supported_wx_series': '4.2.x'},
-            title=_('Unsupported wxPython Version Detected'))
-    return True
