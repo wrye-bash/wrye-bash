@@ -139,7 +139,12 @@ def _install_bugdump():
 bash_app = None  ##:(700) typing
 def _import_wx(opts, localize):
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
-    import wx
+    try:
+        import wx
+    except Exception as e: # not in main, earlier errors are not wx's
+        _dep_versions['wxPython'] = 'not found'
+        raise exception.BootError('\n'.join([dump_environment(), '',
+            'Unable to load wx:', traceback.format_exc(), 'Exiting.'])) from e
     # Hacky fix for loading older settings that pickled classes from
     # moved/deleted wx modules
     from wx import _core
@@ -454,6 +459,11 @@ def main(opts: Namespace):
                 f"supported ({curr_py_ver} detected). If you know what you're "
                 f"doing, edit this warning out. Wrye Bash will now exit.")
             raise exception.BootError(msg)
+        # Now we set the working directory, set the rest of Mopy-based
+        # directories - initialization imports env, so do this in the try to
+        # get a usable error message (and a BashBugDump) if the import fails
+        from . import initialization
+        initialization.init_dirs_mopy(os.getcwd())
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
             print(f"Generating HTML file from '{opts.genHtml}'")
@@ -469,10 +479,6 @@ def main(opts: Namespace):
         from . import env
         env.mark_high_dpi_aware()
         env.fixup_taskbar_icon()
-        # The rest of boot relies on Mopy-based directories being set, so those
-        # come next
-        from . import initialization
-        initialization.init_dirs_mopy()
         # Make sure we actually have a functional 'bash' folder to work with
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
@@ -481,10 +487,6 @@ def main(opts: Namespace):
         caught_exc = traceback.format_exc()
         if isinstance(e, exception.BootError):
             err_msg = f'{e}'
-        elif __wx is None:
-            _dep_versions['wxPython'] = 'not found'
-            err_msg = '\n'.join([dump_environment(), '', 'Unable to load wx:',
-                                 caught_exc, 'Exiting.'])
         # No period at the end of URLs, that could cause copy-paste errors when
         # people go to copy them
         elif isinstance(e, OSError) and e.errno == 22 and bolt.os_name == 'nt':
