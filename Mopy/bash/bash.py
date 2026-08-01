@@ -435,9 +435,12 @@ def main(opts: Namespace):
     if pathToProg := os.path.dirname(
             sys.executable if bass.is_standalone else sys.argv[0]):
         os.chdir(pathToProg)
+    # Now we set the working directory, set the rest of Mopy-based directories
+    from . import initialization
+    mopy_dir = initialization.init_dirs_mopy(pathToProg)
     global _bugdump_handle # setup logging
-    _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
-        buffering=1, encoding='utf-8')
+    _bugdump_handle = open(mopy_dir.join('BashBugDump.log'), 'w', buffering=1,
+                           encoding='utf-8')
     _install_bugdump() # install the BashBugDump hooks
     # Parsing the boot settings needs logging to be available and, in turn, is
     # needed for initializing locale
@@ -469,10 +472,6 @@ def main(opts: Namespace):
         from . import env
         env.mark_high_dpi_aware()
         env.fixup_taskbar_icon()
-        # The rest of boot relies on Mopy-based directories being set, so those
-        # come next
-        from . import initialization
-        initialization.init_dirs_mopy()
         # Make sure we actually have a functional 'bash' folder to work with
         _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
