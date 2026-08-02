@@ -221,7 +221,7 @@ def _get_lib_version(lib, lib_name, is_opt=False):
         return False
 
 def _import_deps():
-    """Import other required dependencies or show an error if they're
+    """Import required dependencies (except wx) or show an error if they're
     missing. Must only be called after _import_wx and setup_locale."""
     deps_msg = []
     for k, v in _deps.items():
@@ -236,23 +236,20 @@ def _import_deps():
             import win32com
         except ImportError:
             deps_msg.append('- pywin32')
-    if deps_msg:
-        deps_msg.sort(key=lambda x: x.lower())
-        deps_msg.append('')
-        if bass.is_standalone:
-            # Dependencies are always present in standalone, so this probably
-            # means an MSVC redist is missing
-            msg = _('This most likely means you are missing a certain version '
-                    'of the Microsoft Visual C++ Redistributable. Try '
-                    'installing the latest x64 version.')
-        else:
-            msg = _('Ensure you have installed these dependencies properly. '
-                    'Should the error still occur, check your installed '
-                    'Microsoft Visual C++ Redistributables and try installing '
-                    'the latest x64 version.')
-        deps_msg.append(msg)
-        _show_boot_popup(_('The following dependencies could not be located '
-            'or failed to load:') + '\n\n' + '\n'.join(deps_msg))
+    if not deps_msg:
+        return
+    deps_msg.sort(key=lambda x: x.lower())
+    deps_msg.append('')
+    # Dependencies are always present in standalone, so this probably means an
+    # MSVC redist is missing
+    deps_msg.append(_('This most likely means you are missing a certain '
+        'version of the Microsoft Visual C++ Redistributable. Try installing '
+        'the latest x64 version.') if bass.is_standalone else _(
+        'Ensure you have installed these dependencies properly. Should '
+        'the error still occur, check your installed Microsoft Visual '
+        'C++ Redistributables and try installing the latest x64 version.'))
+    raise exception.BootError(_('The following dependencies could not be '
+        'located or failed to load:') + '\n\n' + '\n'.join(deps_msg))
 
 def _warn_missing_bash_dir():
     """Check for some vital files that *must* be present (note that most dirs
@@ -315,7 +312,7 @@ def exit_cleanup():
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
         try:
-            if u'--uac' in bass.sys_argv: ##: mostly untested - needs revamp
+            if '--uac' in cli: ##: mostly untested - needs revamp
                 import win32api
                 if bass.is_standalone:
                     exe = cli[0]
@@ -369,7 +366,7 @@ def dump_environment():
     bolt.deprint(msg := '\n\t'.join(msg))
     return msg
 
-def _parse_bash_ini(bash_ini_path):
+def _parse_bash_ini(bash_ini_path, opts):
     """Set default values for all valid INI settings then update from ini."""
     ini_set = { # sections are case-sensitive
         'General': dict.fromkeys(
@@ -429,6 +426,12 @@ def _parse_bash_ini(bash_ini_path):
                 # Stash all settings in here in case they match tool path keys.
                 # Those are queried in lower case
                 bass.inisettings[ini_dict_key_lo] = value
+    # if userPath is None, then get the UserPath from the ini file
+    ##: not sure why this must be set first
+    if user_path := opts.userPath or bass.inisettings['UserPath']:
+        homedrive, homepath = os.path.splitdrive(user_path)
+        os.environ['HOMEDRIVE'] = homedrive
+        os.environ['HOMEPATH'] = homepath
 
 # Main ------------------------------------------------------------------------
 _help_urls = {
@@ -482,6 +485,10 @@ def main(opts: Namespace):
             wrye_text.genHtml(opts.genHtml)
             print('Done')
             return
+        from . import barg # long options needed in _import_bush_and_set_game
+        bass.sys_argv = barg.convert_to_long_options(sys.argv)
+        # Generate the bash_default.ini file
+        gen_ini.write_default_bash_ini(bass.get_version_tuple())
         # Early setup is done, delegate to the main init method
         _main(opts, localize)
     except Exception as e:
@@ -531,9 +538,6 @@ def _main(opts, localize):
     # Check for some non-critical dependencies (e.g. lz4) and warn if
     # they're missing now that we can show nice app icons
     _import_deps()
-    # barg doesn't import anything else, so can be imported whenever we want
-    from . import barg
-    bass.sys_argv = barg.convert_to_long_options(sys.argv)
     dump_environment()
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
@@ -586,10 +590,10 @@ def _main(opts, localize):
         global basher # share this instance with _close_dialog_windows
         from . import basher
     except (exception.BoltError, ImportError, OSError, NotImplementedError):
-        msg = [_('Error! Unable to start Wrye Bash.'), '\n', _('Please ensure '
-            'Wrye Bash is correctly installed.'), '\n', traceback.format_exc()]
-        _show_boot_popup('\n'.join(msg))
-        return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
+        raise exception.BootError('\n'.join([_(
+            'Error! Unable to start Wrye Bash.'), '\n', _(
+            'Please ensure Wrye Bash is correctly installed.'), '\n',
+            traceback.format_exc()]))
     atexit.register(exit_cleanup)
     basher.InitSettings()
     # Status bar buttons (initialized in InitStatusBar) use images
@@ -664,20 +668,10 @@ def _main(opts, localize):
     bash_app.MainLoop()
 
 def _detect_game(opts, backup_bash_ini):
-    # Generate the bash_default.ini file
-    gen_ini.write_default_bash_ini()
     # Read the bash.ini file either from Mopy or from the backup location
-    _parse_bash_ini(backup_bash_ini)
-    # if uArg is None, then get the UserPath from the ini file
-    ##: not sure why this must be set first
-    user_path = opts.userPath or bass.inisettings['UserPath']
-    if user_path:
-        homedrive, homepath = os.path.splitdrive(user_path)
-        os.environ[u'HOMEDRIVE'] = homedrive
-        os.environ[u'HOMEPATH'] = homepath
+    _parse_bash_ini(backup_bash_ini, opts)
     # Detect the game we're running for ---------------------------------------
-    bush_game = _import_bush_and_set_game(opts)
-    return (bush_game, bush_game.game_ini_path) if bush_game else (None, None)
+    return _import_bush_and_set_game(opts)
 
 def _import_bush_and_set_game(opts):
     from . import bush
@@ -699,7 +693,7 @@ def _import_bush_and_set_game(opts):
             last_used_game=bass.boot_settings['Boot']['last_game'])
         if not retCode:
             bolt.deprint(u'No games were found or selected. Aborting.')
-            return None
+            return None, None
         # Add the game to the command line, so we use it if we restart. Also,
         # default to this game the next time we launch the game select popup
         gname, gm_path = retCode
@@ -711,7 +705,7 @@ def _import_bush_and_set_game(opts):
             _('The following (non-critical) warnings were found during '
               'initialization:'), '', *(f'- {w}' for w in init_warnings)]
         _show_boot_popup('\n'.join(warning_msg), is_critical=False)
-    return bush.game
+    return bush.game, bush.game.game_ini_path
 
 def _show_boot_popup(msg, is_critical=True):
     """Shows an error message in a popup window. If is_critical, exit the

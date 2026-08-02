@@ -822,7 +822,7 @@ class BackupsPage(_AFixedPage):
                 _('Click OK to restart now.')]
             showInfo(self, '\n'.join(m), _('Wrye Bash Settings Extracted'))
             try: # we currently disallow backup and restore on the same boot
-                bass.sys_argv.remove(u'--backup')
+                bass.sys_argv.remove('--backup')
             except ValueError:
                 pass
             Link.Frame.Restart([u'--restore'], [u'--filename', backup_dir.s])
