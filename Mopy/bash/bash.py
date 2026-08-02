@@ -312,8 +312,8 @@ def _release_instance_lock():
     _instance_lock = None
 
 def exit_cleanup():
-    # The _()s are safe because the exit_cleanup is only registered in _main,
-    # at which point locale has already been set up
+    # The _()s are safe because the exit_cleanup is only registered after main
+    # has set up locale
     bs_comments = defaultdict(dict, {'Boot': {
         'locale': _('The locale to set when launching Wrye Bash.'),
         'last_game': _("The display name of the last game that was launched "
@@ -506,6 +506,20 @@ def main(opts: Namespace, help_urls):
         if opts.userPath: bolt.deprint('Ignoring the deprecated --userPath')
         bash_ini_path, restore_ = _init_restore(opts)
         detected = _bush_detect(opts, bash_ini_path)
+        if opts.buildBashedPatch: # None == success
+            game_infos, init_warnings = detected
+            if game_infos is not None:
+                if len(game_infos) == 0:
+                    raise exception.BootError(_(
+                        'Wrye Bash could not find a game to manage. Use -o or '
+                        'bash.ini to specify the game path.'))
+                raise exception.BootError(_(
+                    'Wrye Bash found multiple games and cannot ask which one to '
+                    'manage in headless mode. Use -o or bash.ini to specify the '
+                    'game path.'))
+            _boot_warn(init_warnings)
+            from . import bush
+            _run_bashed_patch_cli(opts, bush.game)
         # Early setup is done, delegate to the main init method
         _main(opts, detected, restore_)
     except Exception as e:
@@ -555,6 +569,34 @@ def main(opts: Namespace, help_urls):
             err_tail += '\n\n' + _('The BashBugDump is at %(bugdump_path)s'
                                    ) % {'bugdump_path': bugdump}
         _show_boot_popup(f'{err_msg}\n\n{err_tail}', bugdump=bugdump)
+
+def _run_bashed_patch_cli(opts, bush_game):
+    """Build a Bashed Patch without importing the GUI and exit."""
+    try:
+        atexit.register(exit_cleanup)
+        from .patcher.patch_cli import build_bashed_patch_cli
+        build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), bush_game)
+    except exception.BPConfigError as e:
+        bolt.deprint('Bashed Patch configuration error:', traceback=True)
+        print(_('The configuration of the Bashed Patch is incorrect.') +
+              f'\n\n{e}')
+        exit_code = 3
+    except PermissionError as e:
+        bolt.deprint('Bashed Patch save error:', traceback=True)
+        print(e)
+        exit_code = 4
+    except (exception.BoltError, exception.BootError, OSError,
+            NotImplementedError) as e:
+        bolt.deprint('Bashed Patch build failed:', traceback=True)
+        print(e)
+        exit_code = 2
+    except Exception as e:
+        bolt.deprint('Unexpected Bashed Patch build error:', traceback=True)
+        print(e)
+        exit_code = 1
+    else:
+        exit_code = 0
+    sys.exit(exit_code)
 
 _boot_excs = (exception.BoltError, OSError, NotImplementedError)
 def _main(opts, detected, restore_):
@@ -708,14 +750,20 @@ def _set_game_ask(opts, game_infos, init_warnings):
         bass.boot_settings['Boot']['last_game'] = gname
         # init_warnings is empty - it is only filled once the game is set
         bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
-    if init_warnings: # into the BashBugDump too, censored
-        bolt.deprint(msg := '\n'.join([_('The following (non-fatal) '
-            'warnings were found during initialization:'), '',
-            *(f'- {w}' for w in init_warnings)]))
+    if msg := _boot_warn(init_warnings):
         from .balt import StartupDialogWindow
         if not StartupDialogWindow.display_dialog(msg, is_warning=True):
             sys.exit(1) # the user aborted
     return bush.game
+
+def _boot_warn(init_warnings):
+    """Log the warnings, into the BashBugDump too, censored, and return the
+    message, if any."""
+    if init_warnings:
+        bolt.deprint(msg := '\n'.join([_('The following (non-fatal) '
+            'warnings were found during initialization:'), '',
+            *(f'- {w}' for w in init_warnings)]))
+        return msg
 
 def _show_boot_popup(msg, *, bugdump=None):
     """Shows an error message in a popup window and exits. Offers to open
