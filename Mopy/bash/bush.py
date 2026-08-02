@@ -51,8 +51,7 @@ _game_stores: dict[str, dict[str, list[Path]]] = defaultdict(dict)
 def reset_bush_globals():
     global game
     global ws_info
-    game = None
-    ws_info = None
+    game = ws_info = None
     for d in (_allGames, _game_stores):
         d.clear()
 
