@@ -150,9 +150,9 @@ _short_to_long = {
     '-u': '--userPath',
 }
 
-def convert_to_long_options(sys_argv):
-    sys_argv = list(sys_argv)
-    for j, arg in enumerate(sys_argv):
+def convert_to_long_options(sysargv):
+    sysargv = list(sysargv)
+    for j, arg in enumerate(sysargv):
         if arg in _short_to_long:
-            sys_argv[j] = _short_to_long[arg]
-    return sys_argv
+            sysargv[j] = _short_to_long[arg]
+    return sysargv

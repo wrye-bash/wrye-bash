@@ -27,8 +27,7 @@ __author__ = 'sibir'
 from os import path
 from textwrap import fill
 from zlib import crc32
-
-from .bass import get_version_tuple
+# No Bash imports! needs to run in early boot
 
 def _gen_section_header(txt):
     """Use pyfiglet (if installed) to generate section headers."""
@@ -53,9 +52,9 @@ def _wrap_subsection_header(txt, header_len=78):
             f"{'=' * max((header_len - wid + 1)//2, 0)};"
     return '\n'.join([bord, title, bord])
 
-def _generate_default_bash_ini():
+def _generate_default_bash_ini(ver_tup):
     """Return the translated bash_default.ini & checksum for comparison."""
-    major_ver = get_version_tuple().version_tuple[0]
+    major_ver = ver_tup.version_tuple[0]
     default_bash_ini = fr"""{_gen_section_header(f'Bash.ini {major_ver}')}
 
 {_wrap_ini_comment(_(
@@ -566,9 +565,9 @@ def _generate_default_bash_ini():
 
     return default_bash_ini, crc32(default_bash_ini.encode())
 
-def write_default_bash_ini():
+def write_default_bash_ini(ver_tup):
     """Write bash_default.ini if missing or changed."""
-    default_bash_ini, default_ini_crc = _generate_default_bash_ini()
+    default_bash_ini, default_ini_crc = _generate_default_bash_ini(ver_tup)
     if path.exists('bash_default.ini'):
         with open('bash_default.ini', 'r') as f:
             curr_default_ini_crc = crc32(f.read().encode())
