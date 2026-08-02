@@ -97,6 +97,19 @@ def parse():
     arg(backupGroup, '-q', '--quiet-quit', dest='quietquit',
         action='store_true', dflt=False)
 
+    ### Bashed Patch Group ###
+    patchGroup = parser.add_argument_group('Bashed Patch Arguments',
+        'These arguments build a Bashed Patch without opening the '
+        'main Wrye Bash window.')
+    h = 'Build a Bashed Patch and exit without opening the main window.'
+    parser.add_argument('--build-bashed-patch', action='store_true',
+                        dest='buildBashedPatch', default=False, help=h)
+    h = ('Name of the Bashed Patch plugin to build. Defaults to '
+         "'Bashed Patch, 0.esp'.")
+    parser.add_argument('--bashed-patch-name', action='store',
+                        dest='bashedPatchName',
+                        default='Bashed Patch, 0.esp', help=h)
+
     #### Individual Arguments ####
     parser.add_argument('-d', '--debug',
                         action='store_true',
@@ -133,6 +146,9 @@ def parse():
         parser.error('You specified both backup and restore')
     elif (args.backup or args.restore) and not args.filename:
         parser.error('You must specify a filename for use with backup/restore')
+    elif args.buildBashedPatch and (args.backup or args.restore):
+        parser.error('Cannot build a Bashed Patch while backing up or '
+                     'restoring settings')
     return args
 
 _short_to_long = {
