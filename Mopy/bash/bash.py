@@ -482,6 +482,19 @@ def main(opts: Namespace):
         # The rest of backup/restore functionality depends on setting the game
         from . import bush
         game_infos, init_warnings = _bush_detect(opts, bush)
+        if opts.buildBashedPatch: # None == success
+            if game_infos is not None:
+                if len(game_infos) == 0:
+                    raise exception.BootError(_(
+                        'Wrye Bash could not find a game to manage. Use -o or '
+                        'bash.ini to specify the game path.'))
+                raise exception.BootError(_(
+                    'Wrye Bash found multiple games and cannot ask which one to '
+                    'manage in headless mode. Use -o or bash.ini to specify the '
+                    'game path.'))
+            if warning_msg := _boot_warn(init_warnings):
+                bolt.deprint(warning_msg)
+            _run_bashed_patch_cli(opts, localize, bush.game)
         # Early setup is done, delegate to the main init method
         _main(opts, localize, game_infos, init_warnings, restore_)
     except Exception as e:
@@ -518,6 +531,39 @@ def main(opts: Namespace):
         # Only the templates above go through %-formatting - the BootError
         # messages and the tracebacks/environment dump may well contain a '%'
         _show_boot_popup(err_msg)
+
+def _run_bashed_patch_cli(opts, localize, bush_game):
+    """Build a Bashed Patch without importing the GUI and exit."""
+    try:
+        target_lang = opts.language or bass.boot_settings['Boot']['locale']
+        _unused_locale, bass.active_locale = localize.setup_locale(
+            None, target_lang)
+        dump_environment()
+        atexit.register(exit_cleanup)
+        _warn_missing_bash_dir()
+        from .patcher.patch_cli import build_bashed_patch_cli
+        build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), bush_game)
+    except exception.BPConfigError as e:
+        bolt.deprint('Bashed Patch configuration error:', traceback=True)
+        print(_('The configuration of the Bashed Patch is incorrect.') +
+              f'\n\n{e}')
+        exit_code = 3
+    except PermissionError as e:
+        bolt.deprint('Bashed Patch save error:', traceback=True)
+        print(e)
+        exit_code = 4
+    except (exception.BoltError, exception.BootError, OSError,
+            NotImplementedError) as e:
+        bolt.deprint('Bashed Patch build failed:', traceback=True)
+        print(e)
+        exit_code = 2
+    except Exception as e:
+        bolt.deprint('Unexpected Bashed Patch build error:', traceback=True)
+        print(e)
+        exit_code = 1
+    else:
+        exit_code = 0
+    sys.exit(exit_code)
 
 def _main(opts, localize, game_infos, init_warnings, restore_):
     """Run the Wrye Bash main loop.
