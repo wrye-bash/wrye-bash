@@ -21,20 +21,19 @@
 #
 # =============================================================================
 """Patch dialog"""
-import re
-import time
-from datetime import timedelta
-
 from .dialogs import DeleteBPPartsEditor
 from .. import balt, bass, bolt, bush, env, wrye_text
 from ..balt import Resources
-from ..bolt import GPath_no_norm, RefrIn, SubProgress
+from ..bolt import GPath_no_norm
 from ..exception import BoltError, BPConfigError, CancelError, SkipError
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     DialogWindow, EventResult, FileOpen, HLayout, HorizontalLine, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
     showWarning, FileSave
+from ..patcher.patch_builder import BPTooManyMastersError, BPSplitError, \
+    build_bashed_patch, finalize_patch_log, prepare_patch_files, \
+    refresh_patch_files, save_patcher_configs
 from ..patcher.patch_files import PatchFile
 from ..wbtemp import TempDir
 
@@ -154,12 +153,6 @@ class PatchDialog(DialogWindow):
         patcher.update_layout()
         self.currentPatcher = patcher
 
-    _congrats = _('Congratulations on managing to get a single top group to '
-        '>%(max_num_masters)d masters (you got %(curr_num_masters)d in top '
-        'grup %(top_group_sig)s)! Please post to the Wrye Bash Discord '
-        '(including your BashBugDump), we seriously did not think anyone would'
-        ' manage this. This error is fatal by the way, Wrye Bash currently '
-        'does not support splitting the Bashed Patch within a top group.')
     @balt.conversation
     def PatchExecute(self):
         """Do the patch."""
@@ -168,50 +161,18 @@ class PatchDialog(DialogWindow):
         try:
             patch_name = self.patchInfo.fn_key
             progress = balt.Progress(patch_name, abort=True)
-            timer1 = time.time_ns()
-            #--Save configs
-            config = self.__config()
-            self.patchInfo.set_table_prop('bash.patch.configs', config)
-            #--Do it
-            log = bolt.LogFile()
             patchFile = self.bashed_patch
-            enabled_patchers = [p.get_patcher_instance(patchFile) for p in
-                                self._gui_patchers if p.isEnabled] ##: what happens if empty
-            patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!
-            patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
-            patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
-            patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
-            progress(1.0, _('Compiled.'))
-            # Convert masters to short fids
-            master_dict = patchFile.used_masters_by_top()
-            all_bp_masters = set()
-            mlimit = bush.game.Esp.master_limit
-            for t_sig, t_masters in master_dict.items():
-                if len(t_masters) > mlimit:
-                    fmt = {'max_num_masters': mlimit,
-                           'curr_num_masters': len(t_masters),
-                           'top_group_sig': bolt.sig_to_str(t_sig)}
-                    showError(self, self._congrats % fmt,
-                              title=_('Achievement Unlocked: Modaholic!'))
-                    return # Abort, we can't fix this right now
-                all_bp_masters |= t_masters
-            if len(all_bp_masters) <= mlimit:
-                # Everything is OK, just need to set masters and attributes
-                patchFile.set_attributes()
-                bp_files_to_save = [patchFile]
-            else:
-                # We have to split the BP, then clean up the unneeded parts
-                bp_files_to_save = patchFile.split_patch()
-                if bp_files_to_save is None:
-                    showError(self, _(
-                        'Failed to split the Bashed Patch. The simple '
-                        'algorithm used for splitting it right now cannot '
-                        'handle the situation we have encountered here. '
-                        'Please post to the Wrye Bash Discord (including your '
-                        'BashBugDump).'))
-                    return # Abort, we can't fix this right now
-                for i, bp_file in enumerate(bp_files_to_save):
-                    bp_file.set_attributes(was_split=True, split_part=i)
+            log, timer1 = build_bashed_patch(
+                patchFile, self._gui_patchers, progress)
+            try:
+                bp_files_to_save = prepare_patch_files(patchFile)
+            except BPTooManyMastersError as e:
+                showError(self, f'{e}',
+                    title=_('Achievement Unlocked: Modaholic!'))
+                return
+            except BPSplitError as e:
+                showError(self, f'{e}')
+                return
             parts_to_del = patchFile.find_unneded_parts(bp_files_to_save)
             minfos = patchFile.p_file_minfos
             if parts_to_del:
@@ -227,16 +188,8 @@ class PatchDialog(DialogWindow):
             #--Done
             progress.Destroy()
             progress = None
-            timer2 = time.time_ns()
             #--Readme and log
-            log.setHeader(None)
-            log(u'{{CSS:wtxt_sand_small.css}}')
-            logValue = log.out.getvalue()
-            # Determine the elapsed nanoseconds, convert to seconds and round
-            # to 3 decimal digits
-            delta_seconds = round((timer2 - timer1) / 1_000_000_000, 3)
-            timerString = str(timedelta(seconds=delta_seconds)).rstrip('0')
-            logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
+            logValue = finalize_patch_log(log, timer1)
             data_docs_dir = minfos.store_dir.join('Docs')
             readme = data_docs_dir.join(patch_name.fn_body + '.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
@@ -267,23 +220,12 @@ class PatchDialog(DialogWindow):
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
             balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,
                           asDialog=True)
-            # We have to parse the new infos first, since the masters may
-            # differ. Most people probably don't keep BAIN packages of BPs,
-            # but *I* do, so...
-            it = (bp_file.fileInfo.fn_key for bp_file in bp_files_to_save)
-            att_vals = {'doc': readme_html, 'crc': None, 'mergeInfo': None,
-                        'bp_split_parent': None}
-            attrs = {next(it): att_vals}
-            # Store a raw string here to avoid the FName.__reduce__ stuff - new
-            # setting, so no backwards compat concerns
-            att_vals = {**att_vals, 'bp_split_parent': str(patch_name)}
-            attrs.update((bp, att_vals) for bp in it)
-            # add the config on master patch so it is read afterwards
-            rinf = RefrIn.from_tabled_infos(minfos, attrs, ghosts=True)
-            self._bps.extend(attrs)
+            patch_names, refreshed = refresh_patch_files(
+                patchFile, bp_files_to_save, readme_html)
+            self._bps.extend(patch_names)
             # We have to parse the new infos first since the masters may differ
             # note this won't activate the new masters, the caller has to do it
-            self._bp_rdata |= minfos.refresh(rinf, force_update=True)
+            self._bp_rdata |= refreshed
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
@@ -332,9 +274,7 @@ class PatchDialog(DialogWindow):
                 raise # will raise the SkipError which is correctly processed
 
     def __config(self):
-        config = {u'ImportedMods': set()}
-        for p in self._gui_patchers: p.saveConfig(config)
-        return config
+        return save_patcher_configs(self._gui_patchers)
 
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
