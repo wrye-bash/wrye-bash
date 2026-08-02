@@ -25,7 +25,7 @@ import webbrowser
 from collections import defaultdict
 
 from . import TabInfo
-from .constants import colorInfo, settingDefaults
+from .constants import colorInfo
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
@@ -40,6 +40,7 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
     get_image, HyperlinkLabel
+from ..settings_defaults import DEFAULT_COLORS
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -294,7 +295,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                 color = self.changes[col_key]
             else:
                 color = col_value
-            default = color == Color(*settingDefaults[u'bash.colors'][col_key])
+            default = color == Color(*DEFAULT_COLORS[col_key])
             if not default:
                 allDefault = False
                 break
@@ -304,7 +305,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
             color = self.changes[col_key]
         else:
             color = colors[col_key]
-        default = color == Color(*settingDefaults[u'bash.colors'][col_key])
+        default = color == Color(*DEFAULT_COLORS[col_key])
         # Update the Buttons, DropDown, and ColorPicker
         if self._mark_changed:
             # If _mark_changed is None, then we're still in the construction
@@ -318,13 +319,13 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def OnDefault(self):
         color_key = self.GetColorKey()
-        newColor = Color(*settingDefaults[u'bash.colors'][color_key])
+        newColor = Color(*DEFAULT_COLORS[color_key])
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
     def OnDefaultAll(self):
         for col_key, col_value in colors.items():
-            default = Color(*settingDefaults['bash.colors'][col_key])
+            default = Color(*DEFAULT_COLORS[col_key])
             if col_value != default:
                 self.changes[col_key] = default
         self.UpdateUIButtons()

@@ -45,8 +45,9 @@ from .. import archives, bass, bolt, bush, env, load_order
 from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
-    forward_compat_path_to_fn_list, os_name, struct_error, \
-    OrderedLowerDict, attrgetter_cache, top_level_files, classproperty
+    forward_compat_path_to_fn, forward_compat_path_to_fn_list, os_name, \
+    struct_error, OrderedLowerDict, attrgetter_cache, top_level_files, \
+    classproperty
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
@@ -3568,6 +3569,28 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else:
                 raise
+
+def init_backend_settings(bush_game):
+    """Initialize settings used by the data model and patchers."""
+    from ..settings_defaults import get_default_settings, DEFAULT_COLORS
+    def_settings = get_default_settings(bush_game)
+    bass.settings.loadDefaults(def_settings)
+    bass.settings['bash.mods.renames'] = forward_compat_path_to_fn(
+        bass.settings['bash.mods.renames'], fn_value=True)
+    # The colors dictionary only gets copied into settings if it is missing
+    # entirely, copy new entries if needed
+    for color_key, color_val in DEFAULT_COLORS.items():
+        bass.settings['bash.colors'].setdefault(color_key, color_val)
+    # Import/Export DLL permissions was broken and stored DLLs with a ':'
+    # appended, simply drop those here (worst case some people will have to
+    # re-confirm that they want to install a DLL). Note we have to do this
+    # before Installer.init_global_skips - which basher.InitSettings calls
+    # right after us - bakes them into Installer._{bad,good}Dlls
+    for key_suffix in ('goodDlls', 'badDlls'):
+        dict_key = f'bash.installers.{key_suffix}'
+        bass.settings[dict_key] = {k: v for k, v in bass.settings[
+            dict_key].items() if not k.endswith(':')}
+    bolt.pluginEncoding = bass.settings['bash.pluginEncoding']
 
 def init_stores(progress):
     """Initialize the data stores. Bsas first - used in warnTooManyModsBsas

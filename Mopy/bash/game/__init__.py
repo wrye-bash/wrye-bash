@@ -467,6 +467,20 @@ class GameInfo(object):
         return self.Esp.extension_forces_flags and self.guess_flags(
             mod_info.get_extension()).get(pflag, False)
 
+    def update_settings(self, default_setts):
+        """Update the default settings with game specific settings/values."""
+        default_setts.update({
+            'bash.ini.allowNewLines': self.Ini.allow_new_lines,
+            # No need to store defaults for all the xEdits for all games
+            f'{self.Xe.xe_key_prefix}.iKnowWhatImDoing': False,
+            f'{self.Xe.xe_key_prefix}.skip_bsas': False,
+        })
+        # Enable Index columns by default for ESL and newer games
+        if any(self.plugin_flags):
+            default_setts['bash.mods.cols'].insert(2, 'Indices')
+            default_setts['bash.masters.cols'].extend(
+                ['Indices', 'Current Index'])
+
     # Master esm form ids factory
     __master_fids = {}
     @classmethod
