@@ -321,3 +321,9 @@ class EndorsedWithoutDownloadError(EndorsementError):
 class EndorsedTooSoonError(EndorsementError):
     """Exception raised when a mod is endorsed or disendorsed without enough
     time having elapsed since it was downloaded."""
+
+class BPTooManyMastersError(BoltError):
+    """Raised when one top group exceeds the game's master limit."""
+
+class BPSplitError(BoltError):
+    """Raised when a Bashed Patch cannot be split within the master limit."""
