@@ -60,7 +60,7 @@ from enum import Enum
 from functools import partial
 from itertools import chain, repeat, starmap, count
 # basher-local imports - maybe work towards dropping (some of) these?
-from .constants import colorInfo, dark_colors, settingDefaults
+from .constants import colorInfo, dark_colors
 from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
     DependentsAffectedDialog, MastersAffectedDialog, MultiWarningDialog, \
     LoadOrderSanitizedDialog
@@ -72,8 +72,7 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
     SeparatorLink, UIList, colors
 from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, \
     attrgetter_cache, deprint, dict_sort, fast_cached_property, \
-    forward_compat_path_to_fn, round_size, str_to_sig, to_unix_newlines, \
-    to_win_newlines, top_level_files
+    round_size, str_to_sig, to_unix_newlines, to_win_newlines, top_level_files
 from ..bosh import DataStore, ModInfo, omods, read_dir_tags, read_loot_tags, \
     save_tags_to_dir
 from ..exception import BoltError, CancelError, SkipError, UnknownListener
@@ -89,6 +88,7 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     copy_text_to_clipboard, is_dark_mode
 from ..localize import format_date
 from ..plugin_types import active_keys, ST_MERGED
+from ..settings_defaults import DEFAULT_COLORS
 from ..update_checker import LatestVersion, UCThread
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
@@ -3811,34 +3811,15 @@ def InitSettings(): # this must run first !
     global settings
     balt._settings = bass.settings
     settings = bass.settings
-    settings.loadDefaults(settingDefaults)
-    bass.settings['bash.mods.renames'] = forward_compat_path_to_fn(
-        bass.settings['bash.mods.renames'], fn_value=True)
-    # The colors dictionary only gets copied into settings if it is missing
-    # entirely, copy new entries if needed
-    for color_key, color_val in settingDefaults[u'bash.colors'].items():
-        if color_key not in settings[u'bash.colors']:
-            settings[u'bash.colors'][color_key] = color_val
-    # Import/Export DLL permissions was broken and stored DLLs with a ':'
-    # appended, simply drop those here (worst case some people will have to
-    # re-confirm that they want to install a DLL). Note we have to do this here
-    # because init_global_skips below bakes them into Installer._{bad,good}Dlls
-    for key_suffix in (u'goodDlls', u'badDlls'):
-        dict_key = u'bash.installers.' + key_suffix
-        bass.settings[dict_key] = {k: v for k, v
-                                   in bass.settings[dict_key].items()
-                                   if not k.endswith(u':')}
-    bosh.bain.Installer.init_global_skips(askYes) # must be after loadDefaults - grr #178
+    bosh.init_backend_settings(bush.game)
+    bosh.bain.Installer.init_global_skips(askYes) # must be after loadDefaults
     bosh.bain.Installer.init_attributes_process()
-    # Plugin encoding used to decode mod string fields
-    bolt.pluginEncoding = bass.settings[u'bash.pluginEncoding']
     init_gui_patchers()
 
 def dark_color(key, rgb):
     """The colour shown for key when rgb is saved - in dark mode a stock
     colour shows as its dark version, the saved settings keep it stock."""
-    if key in dark_colors and is_dark_mode() and rgb == settingDefaults[
-            'bash.colors'][key]:
+    if key in dark_colors and is_dark_mode() and rgb == DEFAULT_COLORS[key]:
         dark = dark_colors[key]
         return Color.from_system(dark).to_rgb_tuple() if isinstance(
             dark, str) else dark

@@ -26,7 +26,7 @@ import webbrowser
 from collections import defaultdict
 
 from . import TabInfo, dark_color
-from .constants import colorInfo, settingDefaults
+from .constants import colorInfo
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
@@ -43,6 +43,7 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
     get_image, HyperlinkLabel, FilePicker, ImageListBox, popups, \
     DirPicker, GridLayout
+from ..settings_defaults import DEFAULT_COLORS
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -290,7 +291,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         for col_key, rgb in list(self.changes.items()):
             if rgb == bass.settings['bash.colors'][col_key]:
                 del self.changes[col_key]
-        stock = settingDefaults['bash.colors']
+        stock = DEFAULT_COLORS
         allDefault = all(self._saved_rgb(k) == stock[k] for k in colors)
         # Apply and Default
         col_key = self.GetColorKey()
@@ -308,12 +309,12 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def OnDefault(self):
         color_key = self.GetColorKey()
-        self.changes[color_key] = settingDefaults['bash.colors'][color_key]
+        self.changes[color_key] = DEFAULT_COLORS[color_key]
         self.UpdateUIButtons()
 
     def OnDefaultAll(self):
         # UpdateUIButtons drops the colors that are stock already
-        self.changes.update(settingDefaults['bash.colors'])
+        self.changes.update(DEFAULT_COLORS)
         self.UpdateUIButtons()
 
     def on_apply(self):
@@ -388,7 +389,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     def OnColorPicker(self):
         color_key = self.GetColorKey()
         rgb = self.picker.get_color().to_rgb_tuple()
-        stock = settingDefaults['bash.colors'][color_key]
+        stock = DEFAULT_COLORS[color_key]
         # picking the dark version of a stock color picks the stock one
         self.changes[color_key] = stock if rgb == dark_color(
             color_key, stock) else rgb
