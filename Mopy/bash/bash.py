@@ -388,9 +388,10 @@ def _parse_bash_ini(bash_ini_path):
     bass.inisettings.clear() #ini might be reinitialized due to restore failing
     for v in ini_set.values():
         bass.inisettings.update(v)
-    # if bash.ini exists update those settings from there
-    if (bi_path := bolt.GPath(os.path.abspath(bash_ini_path))) is None or \
-            not bi_path.is_file():
+    # if bash.ini exists update those settings from there - bash_ini_path is
+    # None if we are restoring a backup that has no bash.ini
+    if (bi_path := bolt.GPath(bash_ini_path and os.path.abspath(
+            bash_ini_path))) is None or not bi_path.is_file():
         bolt.deprint(f'No ini found at {bi_path}')
         return
     bolt.deprint(f'Loading Bash ini from {bi_path}')
@@ -532,30 +533,16 @@ def _main(opts, localize):
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
-    # We need the Mopy dirs to initialize restore settings instance
-    bash_ini_path, restore_ = u'bash.ini', None
     # import barb, which does not import from bosh/bush
     from . import barb
-    if opts.restore:
-        try:
-            restore_ = barb.RestoreSettings(opts.filename)
-            restore_.extract_backup()
-            # get the bash.ini from the backup, or None - use in _detect_game
-            bash_ini_path = restore_.backup_ini_path()
-        except (exception.BoltError, exception.StateError, OSError,
-                NotImplementedError):
-            bolt.deprint(u'Failed to restore backup', traceback=True)
-            restore_ = None
+    bash_ini_path, restore_ = _init_restore(opts, barb)
     # The rest of backup/restore functionality depends on setting the game
     try:
         bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
         if not bush_game: return
         if restore_:
             try:
-                restore_.restore_settings(
-                    bush_game.bak_game_name, bush_game.my_games_name,
-                    bush_game.bash_root_prefix, bush_game.mods_dir_name,
-                    bush_game.Ess.saves_dir)
+                restore_.restore_settings(bush_game)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
             except (exception.BoltError, OSError, shutil.Error,
@@ -567,6 +554,7 @@ def _main(opts, localize):
                 from . import bush
                 bush.reset_bush_globals()
                 bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
+                if not bush_game: return # no game chosen
         from . import bosh
         bosh.initBosh(game_ini_path, bush_game)
         # hacky should maybe be somewhere else
@@ -658,6 +646,21 @@ def _main(opts, localize):
     # loop so that the daemon can send its event to the main thread
     frame.start_update_check()
     bash_app.MainLoop()
+
+def _init_restore(opts, barb):
+    # We need the Mopy dirs to initialize restore settings instance
+    bash_ini_path, restore_ = 'bash.ini', None
+    if opts.restore:
+        try:
+            restore_ = barb.RestoreSettings(opts.filename)
+            restore_.extract_backup()
+            # get the bash.ini from the backup, or None - use in _detect_game
+            bash_ini_path = restore_.backup_ini_path()
+        except (exception.BoltError, exception.StateError, OSError,
+                NotImplementedError):
+            bolt.deprint('Failed to restore backup', traceback=True)
+            restore_ = None
+    return bash_ini_path, restore_
 
 def _detect_game(opts, backup_bash_ini):
     # Read the bash.ini file either from Mopy or from the backup location
