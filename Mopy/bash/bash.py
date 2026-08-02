@@ -496,6 +496,21 @@ def main(opts: Namespace):
         from . import barb
         bash_ini_path, restore_ = _init_restore(opts, barb)
         detected = _bush_detect(opts, bash_ini_path)
+        if opts.buildBashedPatch: # None == success
+            game_infos, init_warnings = detected
+            if game_infos is not None:
+                if len(game_infos) == 0:
+                    raise exception.BootError(_(
+                        'Wrye Bash could not find a game to manage. Use -o or '
+                        'bash.ini to specify the game path.'))
+                raise exception.BootError(_(
+                    'Wrye Bash found multiple games and cannot ask which one to '
+                    'manage in headless mode. Use -o or bash.ini to specify the '
+                    'game path.'))
+            if warning_msg := _boot_warn(init_warnings):
+                bolt.deprint(warning_msg)
+            from . import bush
+            _run_bashed_patch_cli(opts, bush.game)
         # Early setup is done, delegate to the main init method
         _main(opts, localize, detected, restore_)
     except Exception as e:
@@ -534,6 +549,36 @@ def main(opts: Namespace):
                         'Bash Discord at %(discord_url)s') % _help_urls
             err_tail = caught_exc
         _show_boot_popup(f'{err_msg}\n\n{err_tail}')
+
+def _run_bashed_patch_cli(opts, bush_game):
+    """Build a Bashed Patch without importing the GUI and exit."""
+    try:
+        dump_environment()
+        atexit.register(exit_cleanup)
+        _warn_missing_bash_dir()
+        from .patcher.patch_cli import build_bashed_patch_cli
+        build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), bush_game)
+    except exception.BPConfigError as e:
+        bolt.deprint('Bashed Patch configuration error:', traceback=True)
+        print(_('The configuration of the Bashed Patch is incorrect.') +
+              f'\n\n{e}')
+        exit_code = 3
+    except PermissionError as e:
+        bolt.deprint('Bashed Patch save error:', traceback=True)
+        print(e)
+        exit_code = 4
+    except (exception.BoltError, exception.BootError, OSError,
+            NotImplementedError) as e:
+        bolt.deprint('Bashed Patch build failed:', traceback=True)
+        print(e)
+        exit_code = 2
+    except Exception as e:
+        bolt.deprint('Unexpected Bashed Patch build error:', traceback=True)
+        print(e)
+        exit_code = 1
+    else:
+        exit_code = 0
+    sys.exit(exit_code)
 
 _boot_excs = (exception.BoltError, OSError, NotImplementedError)
 def _main(opts, localize, detected, restore_):
@@ -696,12 +741,14 @@ def _set_game_ask(opts, bush, game_infos, init_warnings):
         bass.boot_settings['Boot']['last_game'] = gname
         # init_warnings is empty - it is only filled once the game is set
         bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
-    if init_warnings:
-        warning_msg = [
-            _('The following (non-critical) warnings were found during '
-              'initialization:'), '', *(f'- {w}' for w in init_warnings)]
-        _show_boot_popup('\n'.join(warning_msg), is_critical=False)
+    if warning_msg := _boot_warn(init_warnings):
+        _show_boot_popup(warning_msg, is_critical=False)
     return bush.game
+
+def _boot_warn(init_warnings):
+    return '\n'.join([_('The following (non-critical) warnings were found '
+        'during initialization:'), '', *(f'- {w}' for w in init_warnings)]
+                     ) if init_warnings else ''
 
 def _show_boot_popup(msg, is_critical=True):
     """Shows an error message in a popup window. If is_critical, exit the
