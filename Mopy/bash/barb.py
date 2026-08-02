@@ -244,20 +244,21 @@ class RestoreSettings(object):
                     return self._bash_ini_path
         else: self._bash_ini_path = None
 
-    def restore_settings(self, bak_name, mg_name, root_prefix,
-            mods_folder_name, saves_folder):
+    def restore_settings(self, bush_game):
         if self._bash_ini_path is self.__unset: raise BoltError(
             u'restore_settings: you must handle bash ini first')
         if self._extract_dir is self.__unset: raise BoltError(
             u'restore_settings: you must extract the settings file first')
         try:
-            self._restore_settings(bak_name, mg_name, root_prefix,
-                mods_folder_name, saves_folder)
+            self._restore_settings(bush_game)
         finally:
             self.remove_extract_dir(self._extract_dir)
 
-    def _restore_settings(self, bak_name, mg_name, root_prefix,
-            mods_folder_name, saves_folder):
+    def _restore_settings(self, bush_game):
+        bak_name, mg_name, root_prefix, mods_folder_name, saves_folder = (
+            bush_game.bak_game_name, bush_game.my_games_name,
+            bush_game.bash_root_prefix, bush_game.mods_dir_name,
+            bush_game.Ess.saves_dir)
         deprint(u'')
         deprint(f'RESTORE BASH SETTINGS: {self._settings_file}')
         # backup previous Bash ini if it exists
