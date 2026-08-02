@@ -37,7 +37,6 @@ from operator import itemgetter
 from typing import get_type_hints
 
 from . import bush, load_order
-from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
     int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
@@ -1000,6 +999,8 @@ class ScriptText(_TextParser):
 
     def readFromMod(self, mod_inf):
         """Reads scripts from specified mod."""
+        # Keep the GUI import local so importing patchers does not load wx.
+        from .balt import Progress
         eid_data = self.eid_data
         modFile = self._load_plugin(mod_inf)
         with Progress(_('Export Scripts')) as progress:

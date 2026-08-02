@@ -45,8 +45,9 @@ from .. import archives, bass, bolt, bush, env, load_order
 from ..bass import dirs, inisettings
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, RefrIn, RefrData, SubProgress, deprint, dict_sort, \
-    forward_compat_path_to_fn_list, os_name, struct_error, \
-    OrderedLowerDict, attrgetter_cache, top_level_files, classproperty
+    forward_compat_path_to_fn, forward_compat_path_to_fn_list, os_name, \
+    struct_error, OrderedLowerDict, attrgetter_cache, top_level_files, \
+    classproperty
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
@@ -3588,6 +3589,24 @@ def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else:
                 raise
+
+def init_backend_settings(ask_yes):
+    """Initialize settings used by the data model and patchers."""
+    from ..settings_defaults import settingDefaults
+    bass.settings.loadDefaults(settingDefaults)
+    bass.settings['bash.mods.renames'] = forward_compat_path_to_fn(
+        bass.settings['bash.mods.renames'], fn_value=True)
+    for color_key, color_val in settingDefaults[u'bash.colors'].items():
+        if color_key not in bass.settings[u'bash.colors']:
+            bass.settings[u'bash.colors'][color_key] = color_val
+    for key_suffix in (u'goodDlls', u'badDlls'):
+        dict_key = u'bash.installers.' + key_suffix
+        bass.settings[dict_key] = {k: v for k, v in
+                                   bass.settings[dict_key].items()
+                                   if not k.endswith(u':')}
+    Installer.init_global_skips(ask_yes)
+    Installer.init_attributes_process()
+    bolt.pluginEncoding = bass.settings[u'bash.pluginEncoding']
 
 def init_stores(progress):
     """Initialize the data stores. Bsas first - used in warnTooManyModsBsas
