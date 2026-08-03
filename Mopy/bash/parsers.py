@@ -997,13 +997,12 @@ class ScriptText(_TextParser):
         scpt_lines, _longid, _eid = self._writing_state
         out.write('\n'.join(scpt_lines) + '\n')
 
-    def readFromMod(self, mod_inf):
+    def readFromMod(self, mod_inf, balt_progress):
         """Reads scripts from specified mod."""
         # Keep the GUI import local so importing patchers does not load wx.
-        from .balt import Progress
         eid_data = self.eid_data
         modFile = self._load_plugin(mod_inf)
-        with Progress(_('Export Scripts')) as progress:
+        with balt_progress(_('Export Scripts')) as progress:
             present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(present_recs)
             for z, (rfid, record) in enumerate(present_recs):

@@ -3778,7 +3778,9 @@ def InitSettings(): # this must run first !
     global settings
     balt._settings = bass.settings
     settings = bass.settings
-    bosh.init_backend_settings(askYes)
+    bosh.init_backend_settings(bush.game)
+    bosh.bain.Installer.init_global_skips(askYes) # must be after loadDefaults
+    bosh.bain.Installer.init_attributes_process()
     init_gui_patchers()
 
 def InitImages():

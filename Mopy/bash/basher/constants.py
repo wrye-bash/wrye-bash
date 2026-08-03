@@ -25,7 +25,6 @@
 from .. import bush
 from ..bolt import GPath
 from ..plugin_types import MergeabilityCheck
-from ..settings_defaults import settingDefaults
 
 # some repetitive strings
 _mod_tab = _('Tabs: Mods') + '\n\n'

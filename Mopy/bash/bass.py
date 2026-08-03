@@ -40,6 +40,10 @@ is_standalone = False # whether or not we're on standalone
 __app_version_tuple = None # cache the version as a tuple (with tag stripped)
 version_tag = ''  # e.g., 'RC1' or a commit sha
 
+# Special constant defining a window as having whatever position the underlying
+# GUI implementation picks for it by default.
+DEFAULT_POSITION = (-1, -1)
+
 def get_version_tuple():
     """Return the application version as a tuple of integers."""
     global __app_version_tuple

@@ -29,7 +29,6 @@ import traceback
 from collections import defaultdict
 from itertools import chain
 
-from .constants import settingDefaults
 from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
     ListDependentDialog, MasterErrorsDialog
 from .files_links import File_Duplicate, File_Redate, RestoreInfo
@@ -51,6 +50,7 @@ from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     ItemStats, ScriptText, SigilStoneDetails, SpellRecords, _AParser
 from ..patcher.patch_files import PatchFile
 from ..plugin_types import MergeabilityCheck, PluginFlag
+from ..settings_defaults import DEFAULT_GROUPS
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
@@ -600,7 +600,7 @@ class Mod_Groups(_Mod_Labels):
         if not balt.askContinue(self.listEditor, msg,
                                 'bash.groups.reset.continue',
                                 _('Reset Groups')): return
-        self.SetItemsTo(list(settingDefaults['bash.mods.groups']))
+        self.SetItemsTo(list(DEFAULT_GROUPS))
 
     def SetItemsTo(self, items):
         led = self.listEditor._listEditorData
@@ -1877,7 +1877,7 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
         #--Export
         #try:
         scriptText = self._parser()
-        scriptText.readFromMod(fileInfo)
+        scriptText.readFromMod(fileInfo, balt.Progress)
         with balt.Progress(_(u'Export Scripts')) as progress:
             exportedScripts = scriptText.export_scripts(textDir, progress,
                 bass.settings[u'bash.mods.export.skip'],

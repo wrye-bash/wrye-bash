@@ -36,11 +36,8 @@ from .events import EventResult
 from .layouts import HLayout, LayoutOptions, Stretch, VLayout, RIGHT
 from .menus import Links
 from .text_components import TextArea
+from ..bass import DEFAULT_POSITION
 from ..bolt import deprint
-
-# Special constant defining a window as having whatever position the underlying
-# GUI implementation picks for it by default.
-DEFAULT_POSITION = (-1, -1)
 
 class _TopLevelWin(_AComponent):
     """Methods mixin for top level windows
