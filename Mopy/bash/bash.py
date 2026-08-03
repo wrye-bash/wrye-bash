@@ -474,7 +474,7 @@ def main(opts: Namespace):
             wrye_text.genHtml(opts.genHtml)
             print('Done')
             return
-        from . import barg # long options needed in _import_bush_and_set_game
+        from . import barg # long options needed in _set_game
         bass.sys_argv = barg.convert_to_long_options(sys.argv)
         # Generate the bash_default.ini file
         gen_ini.write_default_bash_ini(bass.get_version_tuple())
@@ -535,23 +535,25 @@ def _main(opts, localize):
     from . import barb
     bash_ini_path, restore_ = _init_restore(opts, barb)
     # The rest of backup/restore functionality depends on setting the game
+    # Read the bash.ini file either from Mopy or from the backup location
+    _parse_bash_ini(bash_ini_path, opts)
+    from . import bush
+    bush_game, game_ini_path = _set_game(opts, bush)
+    if not bush_game: return
+    if restore_:
+        try:
+            restore_.restore_settings(bush_game)
+            # we currently disallow backup and restore on the same boot
+            if opts.quietquit: return
+        except (exception.BoltError, OSError, shutil.Error,
+                NotImplementedError):
+            bolt.deprint('Failed to restore backup', traceback=True)
+            # reset the game and ini
+            restore_.restore_ini()
+            bush.reset_bush_globals()
+            _parse_bash_ini('bash.ini', opts)
+            bush_game, game_ini_path = _set_game(opts, bush)
     try:
-        bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
-        if not bush_game: return
-        if restore_:
-            try:
-                restore_.restore_settings(bush_game)
-                # we currently disallow backup and restore on the same boot
-                if opts.quietquit: return
-            except (exception.BoltError, OSError, shutil.Error,
-                    NotImplementedError):
-                bolt.deprint(u'Failed to restore backup', traceback=True)
-                restore_.restore_ini()
-                # reset the game and ini - bush was already imported by
-                # _detect_game -> _import_bush_and_set_game
-                from . import bush
-                bush.reset_bush_globals()
-                bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
         from . import bosh
         bosh.initBosh(game_ini_path, bush_game)
         # hacky should maybe be somewhere else
@@ -649,7 +651,7 @@ def _init_restore(opts, barb):
         try:
             restore_ = barb.RestoreSettings(opts.filename)
             restore_.extract_backup()
-            # get the bash.ini from the backup, or None - use in _detect_game
+            # get the bash.ini from the backup, or None
             bash_ini_path = restore_.backup_ini_path()
         except (exception.BoltError, exception.StateError, OSError,
                 NotImplementedError):
@@ -657,14 +659,8 @@ def _init_restore(opts, barb):
             restore_ = None
     return bash_ini_path, restore_
 
-def _detect_game(opts, backup_bash_ini):
-    # Read the bash.ini file either from Mopy or from the backup location
-    _parse_bash_ini(backup_bash_ini, opts)
+def _set_game(opts, bush):
     # Detect the game we're running for ---------------------------------------
-    return _import_bush_and_set_game(opts)
-
-def _import_bush_and_set_game(opts):
-    from . import bush
     bolt.deprint(u'Searching for game to manage:')
     # Warnings found during game dirs initialization are added here as strings
     init_warnings = []
