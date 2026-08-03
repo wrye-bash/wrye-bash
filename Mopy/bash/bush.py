@@ -54,6 +54,7 @@ def reset_bush_globals():
     game = ws_info = None
     for d in (_allGames, _game_stores):
         d.clear()
+    bass.bash_dirs_initialized = False # it is set in GameInfo.__init__
 
 def _print_found_games(skip_ws_games, msg):
     """Formats and prints the specified dictionary of game detections in a
@@ -140,7 +141,7 @@ _succ_err = {
                'Mopy: ',
                'No known game in parent directory of Mopy: %(path)s')}
 
-def _detectGames(cli_path_arg: str = '') -> tuple[
+def _detectGames(cli_path_arg: str) -> tuple[
         dict[str, list[Path]], str | None, Path | None]:
     """Detect which supported games are installed.
 

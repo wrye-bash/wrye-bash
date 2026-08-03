@@ -462,10 +462,10 @@ def main(opts: Namespace):
         if not bass.is_standalone and not (
                 _MIN_PYTHON <= (sysver := sys.version_info[:3]) < _MAX_PYTHON):
             min_py_ver, curr_py_ver, max_py_ver = ('.'.join(map(str, v)) for v
-                in [_MIN_PYTHON, sysver, _MAX_PYTHON])
+                                                   in [_MIN_PYTHON, sysver, _MAX_PYTHON])
             msg = (f"Only Python {min_py_ver} and newer up to {max_py_ver} is "
-                f"supported ({curr_py_ver} detected). If you know what you're "
-                f"doing, edit this warning out. Wrye Bash will now exit.")
+                   f"supported ({curr_py_ver} detected). If you know what you're "
+                   f"doing, edit this warning out. Wrye Bash will now exit.")
             raise exception.BootError(msg)
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
@@ -474,14 +474,33 @@ def main(opts: Namespace):
             wrye_text.genHtml(opts.genHtml)
             print('Done')
             return
-        from . import barg # long options needed in _set_game
+        from . import barg # long options needed in _set_game_ask
         bass.sys_argv = barg.convert_to_long_options(sys.argv)
         # Generate the bash_default.ini file
         gen_ini.write_default_bash_ini(bass.get_version_tuple())
-        if opts.buildBashedPatch:
-            _run_bashed_patch_cli(opts, localize)
+        # import barb, which does not import from bosh/bush
+        from . import barb
+        bash_ini_path, restore_ = _init_restore(opts, barb)
+        # Read the bash.ini file either from Mopy or from the backup location
+        _parse_bash_ini(bash_ini_path, opts)
+        # The rest of backup/restore functionality depends on setting the game
+        from . import bush
+        game_infos, init_warnings = _bush_detect(opts, bush)
+        if opts.buildBashedPatch: # None == success
+            if game_infos is not None:
+                if len(game_infos) == 0:
+                    raise exception.BootError(_(
+                        'Wrye Bash could not find a game to manage. Use -o or '
+                        'bash.ini to specify the game path.'))
+                raise exception.BootError(_(
+                    'Wrye Bash found multiple games and cannot ask which one to '
+                    'manage in headless mode. Use -o or bash.ini to specify the '
+                    'game path.'))
+            if warning_msg := _boot_warn(init_warnings):
+                bolt.deprint(warning_msg)
+            _run_bashed_patch_cli(opts, localize, bush.game)
         # Early setup is done, delegate to the main init method
-        _main(opts, localize)
+        _main(opts, localize, game_infos, init_warnings, restore_)
     except Exception as e:
         caught_exc = traceback.format_exc()
         if isinstance(e, exception.BootError):
@@ -514,7 +533,7 @@ def main(opts: Namespace):
             err_msg += '\n\n' + caught_exc
         _show_boot_popup(err_msg % _help_urls)
 
-def _run_bashed_patch_cli(opts, localize):
+def _run_bashed_patch_cli(opts, localize, bush_game):
     """Build a Bashed Patch without importing the GUI and exit."""
     try:
         target_lang = opts.language or bass.boot_settings['Boot']['locale']
@@ -524,7 +543,7 @@ def _run_bashed_patch_cli(opts, localize):
         atexit.register(exit_cleanup)
         _warn_missing_bash_dir()
         from .patcher.patch_cli import build_bashed_patch_cli
-        build_bashed_patch_cli(opts, _set_game)
+        build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), bush_game)
     except exception.BPConfigError as e:
         bolt.deprint('Bashed Patch configuration error:', traceback=True)
         print(_('The configuration of the Bashed Patch is incorrect.') +
@@ -547,7 +566,7 @@ def _run_bashed_patch_cli(opts, localize):
         exit_code = 0
     sys.exit(exit_code)
 
-def _main(opts, localize):
+def _main(opts, localize, game_infos, init_warnings, restore_):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
@@ -566,15 +585,9 @@ def _main(opts, localize):
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
-    # import barb, which does not import from bosh/bush
-    from . import barb
-    bash_ini_path, restore_ = _init_restore(opts, barb)
-    # The rest of backup/restore functionality depends on setting the game
-    # Read the bash.ini file either from Mopy or from the backup location
-    _parse_bash_ini(bash_ini_path, opts)
-    from . import bush
-    bush_game, game_ini_path = _set_game(opts, bush)
-    if not bush_game: return
+    from . import barb, bush # already imported in main
+    if not (bush_game := _set_game_ask(opts, bush, game_infos, init_warnings)):
+        return
     if restore_:
         try:
             restore_.restore_settings(bush_game)
@@ -587,10 +600,11 @@ def _main(opts, localize):
             restore_.restore_ini()
             bush.reset_bush_globals()
             _parse_bash_ini('bash.ini', opts)
-            bush_game, game_ini_path = _set_game(opts, bush)
+            game_infos, init_warnings = _bush_detect(opts, bush)
+            bush_game = _set_game_ask(opts, bush, game_infos, init_warnings)
     try:
         from . import bosh
-        bosh.initBosh(game_ini_path, bush_game)
+        bosh.initBosh(bush_game)
         # hacky should maybe be somewhere else
         from .loot_conditions import init_loot_cond_functions
         from . import load_order
@@ -694,22 +708,15 @@ def _init_restore(opts, barb):
             restore_ = None
     return bash_ini_path, restore_
 
-def _set_game(opts, bush):
+def _bush_detect(opts, bush):
     # Detect the game we're running for ---------------------------------------
     bolt.deprint(u'Searching for game to manage:')
     # Warnings found during game dirs initialization are added here as strings
-    init_warnings = []
-    game_infos = bush.detect_and_set_game(opts, init_warnings)
+    game_infos = bush.detect_and_set_game(opts, init_warnings := [])
+    return game_infos, init_warnings
+
+def _set_game_ask(opts, bush, game_infos, init_warnings):
     if game_infos is not None:  # None == success
-        if opts.buildBashedPatch:
-            if len(game_infos) == 0:
-                raise exception.BootError(_(
-                    'Wrye Bash could not find a game to manage. Use -o or '
-                    'bash.ini to specify the game path.'))
-            raise exception.BootError(_(
-                'Wrye Bash found multiple games and cannot ask which one to '
-                'manage in headless mode. Use -o or bash.ini to specify the '
-                'game path.'))
         if len(game_infos) == 0:
             raise exception.BootError('\n\n'.join([_(
                 'Wrye Bash could not find a game to manage. Make sure to '
@@ -723,22 +730,22 @@ def _set_game(opts, bush):
             last_used_game=bass.boot_settings['Boot']['last_game'])
         if not retCode:
             bolt.deprint(u'No games were found or selected. Aborting.')
-            return None, None
+            return None
         # Add the game to the command line, so we use it if we restart. Also,
         # default to this game the next time we launch the game select popup
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
         bass.boot_settings['Boot']['last_game'] = gname
+        # init_warnings is empty as it is only filled if game_infos is not None
         bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
-    if init_warnings:
-        warning_msg = [
-            _('The following (non-critical) warnings were found during '
-              'initialization:'), '', *(f'- {w}' for w in init_warnings)]
-        if opts.buildBashedPatch:
-            bolt.deprint('\n'.join(warning_msg))
-            return bush.game, bush.game.game_ini_path
-        _show_boot_popup('\n'.join(warning_msg), is_critical=False)
-    return bush.game, bush.game.game_ini_path
+    if warning_msg := _boot_warn(init_warnings):
+        _show_boot_popup(warning_msg, is_critical=False)
+    return bush.game
+
+def _boot_warn(init_warnings):
+    return '\n'.join([_('The following (non-critical) warnings were found '
+        'during initialization:'), '', *(f'- {w}' for w in init_warnings)]
+                     ) if init_warnings else ''
 
 def _show_boot_popup(msg, is_critical=True):
     """Shows an error message in a popup window. If is_critical, exit the

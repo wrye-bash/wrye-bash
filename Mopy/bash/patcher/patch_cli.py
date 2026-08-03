@@ -23,15 +23,9 @@
 """Command line support for building a Bashed Patch."""
 from __future__ import annotations
 
-from argparse import Namespace
-from collections.abc import Callable
-
-from .. import bass, bolt, bush, wrye_text
-from ..bolt import FName
+from .. import bass, bolt, wrye_text
 from ..exception import BoltError
 from ..wbtemp import TempDir, TempFile
-
-DetectGame = Callable[[Namespace, str], tuple[object, bolt.Path]]
 
 class HeadlessProgress(bolt.Progress):
     """Report Bashed Patch progress without a GUI dependency."""
@@ -50,17 +44,10 @@ class HeadlessProgress(bolt.Progress):
 def _raise_prompt(_parent, message, _title=''):
     raise BoltError(message)
 
-def _initialize_backend(opts, detect_game):
-    bush_game, game_ini_path = detect_game(opts, bush)
-    if not bush_game:
-        raise BoltError(_('No game could be selected for the headless Bashed '
-                          'Patch build. Use -o or bash.ini to specify one.'))
-    if not bush.game.Esp.canBash:
-        raise BoltError(_('%(game_name)s does not support Bashed Patches.') % {
-            'game_name': bush.game.display_name})
+def _initialize_backend(bush_game):
     from .. import bosh, load_order
     from ..loot_conditions import init_loot_cond_functions
-    bosh.initBosh(game_ini_path, bush_game)
+    bosh.initBosh(bush_game)
     init_loot_cond_functions(load_order, bosh, bush_game)
     bosh.initSettings(_raise_prompt)
     bosh.init_backend_settings(bush_game)
@@ -100,10 +87,15 @@ def _write_readme(log_value, patch_name, mod_infos):
         (temp_readme.root + '.html').moveTo(readme_html)
     return readme_html
 
-def build_bashed_patch_cli(opts: Namespace, detect_game: DetectGame):
+def build_bashed_patch_cli(patch_name, bush_game):
     """Build a Bashed Patch and persist the resulting state."""
-    patch_name = FName(opts.bashedPatchName)
-    mod_infos = _initialize_backend(opts, detect_game)
+    if not bush_game:
+        raise BoltError(_('No game could be selected for the headless Bashed '
+                          'Patch build. Use -o or bash.ini to specify one.'))
+    if not bush_game.Esp.canBash:
+        raise BoltError(_('%(game_name)s does not support Bashed Patches.') % {
+            'game_name': bush_game.display_name})
+    mod_infos = _initialize_backend(bush_game)
     from .patch_builder import build_bashed_patch, finalize_patch_log, \
         load_patcher_configs, prepare_patch_files, refresh_patch_files
     from .patch_files import PatchFile

@@ -3503,12 +3503,12 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 # Initialization --------------------------------------------------------------
-def initBosh(game_ini_path, game_info):
+def initBosh(game_info):
     # Setup loot_parser, needs to be done after the dirs are initialized
     if not bass.bash_dirs_initialized:
         raise BoltError('initBosh: Bash dirs are not initialized')
     # game ini files
-    deprint(f'Looking for main game INI at {game_ini_path}')
+    deprint(f'Looking for main game INI at {(ip := game_info.game_ini_path)}')
     global oblivionIni, gameInis, lootDb
     loot_gname = game_info.loot_dir
     loot_folder = dirs['local_appdata'].join('LOOT')
@@ -3521,7 +3521,7 @@ def initBosh(game_ini_path, game_info):
     loot_user_path = loot_path.join('userlist.yaml')
     loot_tag_path = dirs['taglists'].join('taglist.yaml')
     lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
-    oblivionIni = GameIni(game_ini_path, 'cp1252')
+    oblivionIni = GameIni(ip, 'cp1252')
     gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
                                for x in game_info.Ini.dropdown_inis[1:])]
     load_order.initialize_load_order_files(dirs)
