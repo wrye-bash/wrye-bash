@@ -2131,12 +2131,12 @@ class PickleDict(object):
 class Settings(DataDict):
     """Settings/configuration dictionary with persistent storage.
 
-    Default setting for configurations are either set in bulk (by the
-    loadDefaults function) or are set as needed in the code (e.g., various
-    auto-continue settings for bash). Only settings that have been changed from
-    the default values are saved in persistent storage."""
+    Default setting for configurations are either set in bulk in __init__,
+    or are set as needed in the code (e.g., various auto-continue settings
+    for bash). Only settings that have been changed from the default values
+    are saved in persistent storage."""
 
-    def __init__(self, dictFile):
+    def __init__(self, dictFile, def_settings):
         """Initialize. Read settings from dictFile."""
         self.dictFile = dictFile
         if self.dictFile:
@@ -2146,25 +2146,27 @@ class Settings(DataDict):
         else:
             self.vdata = {}
             super().__init__({})
-        self._default_settings = {}
-
-    def loadDefaults(self, default_settings):
-        """Add default settings to dictionary."""
-        self._default_settings = default_settings
+        # Make a copy of default settings to make sure we won't modify them
+        self._default_settings = copy.deepcopy(def_settings)
         #--Clean colors dictionary
+        default_colors = def_settings['bash.colors']
         if (color_dict := self.get(u'bash.colors', None)) is not None:
-            currentColors = set(color_dict)
-            defaultColors = set(default_settings[u'bash.colors'])
-            invalidColors = currentColors - defaultColors
-            missingColors = defaultColors - currentColors
-            for key in invalidColors:
+            for key in color_dict.keys() - default_colors.keys(): # deleted
                 del self[u'bash.colors'][key]
-            for key in missingColors:
-                self[u'bash.colors'][key] = default_settings[u'bash.colors'][key]
-        # fill up missing settings from defaults, making sure we do not
-        # modify the latter
-        self._data = collections.ChainMap(self._data, copy.deepcopy(
-            self._default_settings))
+            for key in default_colors.keys() - color_dict.keys(): # missing
+                self['bash.colors'][key] = default_colors[key]
+        # fill up missing settings from defaults and let those be modified
+        self._data = collections.ChainMap(self._data, def_settings)
+        self['bash.mods.renames'] = forward_compat_path_to_fn(
+            self['bash.mods.renames'], fn_value=True)
+        # Import/Export DLL permissions was broken and stored DLLs with a ':'
+        # appended, simply drop those here (worst case some people will have to
+        # re-confirm that they want to install a DLL). We have to do this now
+        # because init_global_skips bakes them into Installer._{bad,good}Dlls
+        for key_suffix in ('goodDlls', 'badDlls'):
+            dict_key = f'bash.installers.{key_suffix}'
+            self[dict_key] = {k: v for k, v in self[dict_key].items() if
+                              not k.endswith(':')}
 
     def save(self):
         """Save to pickle file. Only key/values differing from defaults are
