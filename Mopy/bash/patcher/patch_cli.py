@@ -41,14 +41,6 @@ class HeadlessProgress(bolt.Progress):
             self._last_progress = progress_entry
             bolt.deprint(f'{self._title}: {progress_entry[0]} {message}')
 
-def _initialize_backend(bush_game):
-    from .. import bosh, load_order
-    from ..loot_conditions import init_loot_cond_functions
-    bosh.initBosh(bush_game)
-    init_loot_cond_functions(load_order, bosh, bush_game)
-    bosh.initSettings(bush_game)
-    return bosh.init_stores(HeadlessProgress('Wrye Bash'))
-
 def _get_target_patch(mod_infos, patch_name):
     if patch_name in mod_infos:
         return mod_infos[patch_name]
@@ -91,7 +83,10 @@ def build_bashed_patch_cli(patch_name, bush_game):
     if not bush_game.Esp.canBash:
         raise BoltError(_('%(game_name)s does not support Bashed Patches.') % {
             'game_name': bush_game.display_name})
-    mod_infos = _initialize_backend(bush_game)
+    from .. import bosh
+    bosh.initBosh(bush_game, bosh)
+    bosh.initSettings(bush_game)
+    mod_infos = bosh.init_stores(HeadlessProgress('Wrye Bash'))
     from .patch_builder import build_bashed_patch, finalize_patch_log, \
         load_patcher_configs, prepare_patch_files, refresh_patch_files
     from .patch_files import PatchFile
