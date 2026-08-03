@@ -630,11 +630,7 @@ def _main(opts, detected, restore_):
             bush_game = _set_game_ask(opts, *_bush_detect(opts, 'bash.ini'))
             if not bush_game: return # no game chosen
     from . import bosh
-    bosh.initBosh(bush_game)
-    # hacky should maybe be somewhere else
-    from .loot_conditions import init_loot_cond_functions
-    from . import load_order
-    init_loot_cond_functions(load_order, bosh, bush_game)
+    bosh.initBosh(bush_game, bosh)
     from . import env
     if env.in_mo2_vfs():
         bolt.deprint('Wrye Bash appears to be running through MO2')

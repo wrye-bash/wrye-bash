@@ -412,8 +412,8 @@ _function_mapping = {
 }
 
 def init_loot_cond_functions(load_order_module, bosh, game_handle):
-    """Pass handles to liblo, bosh and the game to some of the condition
-    functions - WIP!"""
+    """Pass handles to liblo, bosh (for modInfos) and the game to some of the
+    condition functions - WIP!"""
     _function_mapping.update({
         'active': partial(_fn_active, _load_order_module=load_order_module),
         'is_master': partial(_fn_is_master, _bosh=bosh,
