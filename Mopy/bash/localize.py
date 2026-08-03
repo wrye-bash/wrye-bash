@@ -49,45 +49,31 @@ def set_c_locale():
 # Locale Detection & Setup
 _WEBLATE_URL = 'https://hosted.weblate.org/engage/wrye-bash/'
 
-def setup_locale(__wx, target_lang):
-    """Set up wx Locale and Wrye Bash translations. If cli_lang is given,
-    will validate it is a supported wx language code, otherwise will fallback
-    to user default locale. Then will try to find a matching translation file
-    in the 'Mopy/bash/l10n' folder. If a translation file was found (even for
-    a similar language) we will try to install the gettext translation
-    otherwise we will still try to set the locale to the user specified/default
-    Finally  remembers the locale we end up with as bass.active_locale.
+def setup_locale(target_lang):
+    """Install the Wrye Bash translations for target_lang - the language the
+    user specified on the command line or we got from bass.boot_settings - or
+    for the user's default locale if None: find a matching translation file
+    in the 'Mopy/bash/l10n' folder, else fall back to English. No wx needed -
+    set_wx_locale sets its locale to the one we end up with.
 
     bolt.deprint must be set up and ready to use and the working directory must
     be correct (otherwise detection of translation files will not work and this
     method will always set locale to English).
 
-    :param target_lang: The language the user specified on the command line, we
-        got from bass.boot_settings, or None.
-    :return: The wx.Locale object we ended up using."""
-    # Set the wx language - otherwise we will crash when loading any images
-    chosen_wx_lang = target_lang and __wx.Locale.FindLanguageInfo(target_lang)
-    if chosen_wx_lang:
-        # The user specified a language that wx recognizes
-        target_name = chosen_wx_lang.CanonicalName
-    else:
-        # Fall back on the default language
+    :return: The name of the locale we ended up with."""
+    if not target_lang: # Fall back on the default language
         try:
             with warnings.catch_warnings():
                 # Work around https://github.com/python/cpython/issues/82986
                 warnings.simplefilter('ignore', category=DeprecationWarning)
-                language_code, enc = locale.getdefaultlocale()
+                target_lang, enc = locale.getdefaultlocale()
         except AttributeError:
             bolt.deprint('getdefaultlocale no longer exists, this will '
                          'probably break on Windows now')
-            language_code, enc = locale.getlocale()
-        bolt.deprint(f'{target_lang=} - falling back to ({language_code}, '
-                    f'{enc}) from default locale')
-        lang_info = __wx.Locale.FindLanguageInfo(language_code)
-        target_name = lang_info and lang_info.CanonicalName
-        bolt.deprint(f'wx gave back {target_name}')
-    # We now have a language that wx supports, but we don't know if WB supports
-    # it - so check that next
+            target_lang, enc = locale.getlocale()
+        bolt.deprint(f'falling back to ({target_lang}, {enc}) from default '
+                     f'locale')
+    target_name = target_lang and target_lang.replace('-', '_')
     trans_path = __get_translations_dir()
     def _advertise_weblate(base_msg: str):
         """Small helper for advertising our weblate to users who may end up
@@ -113,33 +99,25 @@ def setup_locale(__wx, target_lang):
         matches = [f for f in supported_l10ns if
                    target_name == f or f.split('_', 1)[0] == wanted_prefix]
         # first check exact target then similar languages
-        for f in sorted(matches, key=lambda x: x != target_name):
-            # Try switching wx to this locale as well
-            lang_info = __wx.Locale.FindLanguageInfo(f)
-            if lang_info:
-                if target_name == f:
-                    bolt.deprint(f"Found translation file for language "
-                                 f"'{target_name}'")
-                else:  # Note we pick the first(!) similar we run across
-                    _advertise_weblate(f"No translation file for language "
-                                       f"'{target_name}', using similar "
-                                       f"language with translation file '{f}' "
-                                       f"instead")
-                    target_name = f
-                mo = os.path.join(trans_path, target_name + '.mo')
-                break
+        if matches := sorted(matches, key=lambda x: x != target_name):
+            if target_name == (f := matches[0]):
+                bolt.deprint(f"Found translation file for language "
+                             f"'{target_name}'")
+            else:  # Note we pick the first(!) similar we run across
+                _advertise_weblate(f"No translation file for language "
+                                   f"'{target_name}', using similar "
+                                   f"language with translation file '{f}' "
+                                   f"instead")
+                target_name = f
+            mo = os.path.join(trans_path, target_name + '.mo')
         else:
             # We don't have a translation file for this any language in this
             # family, fall back to English (and ask the user to contribute :))
             target_name = 'en_US'
-            _advertise_weblate(f"wxPython does not support the language "
+            _advertise_weblate(f"No translation file for the language "
                                f"family '{wanted_prefix}', will fall back "
                                f"to '{target_name}'")
-    lang_info = __wx.Locale.FindLanguageInfo(target_name)
-    target_language = lang_info.Language
-    target_locale = __wx.Locale(target_language)
-    bolt.deprint(f"Set wxPython locale to '{target_name}'")
-    # Next, set the Wrye Bash locale based on the one we grabbed from wx
+    # Next, install the Wrye Bash translations
     if mo is not None: # else we're using English
         po = mo[:-2] + 'po'
         try:
@@ -175,7 +153,18 @@ def setup_locale(__wx, target_lang):
             bolt.deprint('Error loading translation file:', traceback=True)
     # adieu, user locale
     set_c_locale()
-    return target_locale, target_name
+    return target_name
+
+def set_wx_locale(__wx, locale_name):
+    """Set the wx locale to locale_name, as setup_locale returned it, or to
+    the default language if wx does not know it - wx crashes loading images
+    otherwise. Returns the wx.Locale, which must stay alive."""
+    lang_info = __wx.Locale.FindLanguageInfo(locale_name)
+    wx_locale = __wx.Locale(lang_info.Language if lang_info else
+                            __wx.LANGUAGE_DEFAULT)
+    bolt.deprint(f"Set wxPython locale to '{locale_name}'")
+    set_c_locale() # adieu again
+    return wx_locale
 
 def __get_translations_dir():
     trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')

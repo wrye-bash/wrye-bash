@@ -29,7 +29,6 @@ import atexit
 import locale
 import os
 import platform
-import shutil
 import sys
 import traceback
 from argparse import Namespace
@@ -130,7 +129,7 @@ def _install_bugdump():
 # locale/image calls in wx work once an App object is instantiated and in scope
 bash_app = None  ##:(700) typing
 _wx = None # the one and only wx - keep uses outside _import_wx low!
-def _import_wx(opts, localize):
+def _import_wx():
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
     global _wx
     try:
@@ -167,11 +166,10 @@ def _import_wx(opts, localize):
     # constants for some reason, so just use 0 (no flags)
     _wx.Image.SetDefaultLoadFlags(0)
     _dep_versions['wxPython'] = wxver = _wx.version()
-    # We're now ready to initialize locale. That way, we can show a
-    # translated error message if WB crashes
-    target_lang = opts.language or bass.boot_settings['Boot']['locale']
-    wx_locale, loc_name = localize.setup_locale(_wx, target_lang)
-    bass.active_locale = loc_name
+    # main installed the translations - set the wx locale to their language,
+    # the object must stay alive so let's reference it on the App
+    from . import localize
+    bash_app.locale = localize.set_wx_locale(_wx, bass.active_locale)
     # Both of these must come early, before we begin showing wx-based GUI
     from . import env
     env.mark_high_dpi_aware()
@@ -189,7 +187,7 @@ def _import_wx(opts, localize):
             raise exception.BootError(titl)
     # load the window icon resources now that we have an app instance
     balt.load_app_icons()
-    return wx_locale, gui, balt
+    return gui, balt
 
 # library dependensies sorted by value (case insensitively)
 _deps = {'chardet': 'chardet', **( # Only a dependency on Windows
@@ -218,8 +216,8 @@ def _get_lib_version(lib, lib_name, is_opt=False):
         return False
 
 def _import_deps():
-    """Import required dependencies (except wx) or show an error if they're
-    missing. Must only be called after _import_wx and setup_locale."""
+    """Import required dependencies (except wx) or raise a BootError if they're
+    missing. Must only be called after setup_locale."""
     deps_msg = []
     for k, v in _deps.items():
         if not _get_lib_version(k, v):
@@ -432,7 +430,7 @@ def main(opts: Namespace):
     if pathToProg := os.path.dirname(
             sys.executable if bass.is_standalone else sys.argv[0]):
         os.chdir(pathToProg)
-    from . import localize # will setup NullTranslations so the _() function
+    from . import localize # sets up NullTranslations, so that _() works
     try:
         # setup logging - Mopy may not be writable, e.g. under Program Files
         _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'),
@@ -455,11 +453,25 @@ def main(opts: Namespace):
                 f"supported ({curr_py_ver} detected). If you know what you're "
                 f"doing, edit this warning out. Wrye Bash will now exit.")
             raise exception.BootError(msg)
-        # Now we set the working directory, set the rest of Mopy-based
-        # directories - initialization imports env, so do this in the try to
-        # get a usable error message (and a BashBugDump) if the import fails
+        # Setting the game imports modules with translated class attributes
+        # (e.g. the patcher names), so install the translations now - wx gets
+        # its locale once its App is created
+        target_lang = opts.language or bass.boot_settings['Boot']['locale']
+        bass.active_locale = localize.setup_locale(target_lang)
+        try: # after setup_locale, as its comments are translated
+            gen_ini.write_default_bash_ini()
+        except OSError: # Mopy may be read-only, e.g. a package (#758)
+            bolt.deprint('Could not write bash_default.ini', traceback=True)
+        # Check our dependencies before anything imports them - env imports
+        # pywin32 when initializing the Mopy dirs, game detection needs vdf
+        _import_deps()
+        # Set the Mopy-based directories - initialization imports env, so do
+        # this in the try to get a usable error message (and a BashBugDump) if
+        # the import fails
         from . import initialization
         initialization.init_dirs_mopy(os.getcwd())
+        # Make sure we actually have a functional 'bash' folder to work with
+        _warn_missing_bash_dir()
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
             print(f"Generating HTML file from '{opts.genHtml}'")
@@ -467,10 +479,13 @@ def main(opts: Namespace):
             wrye_text.genHtml(opts.genHtml)
             print('Done')
             return
-        from . import barg # long options needed in _set_game
+        from . import barg # long options needed in _set_game_ask
         bass.sys_argv = barg.convert_to_long_options(sys.argv)
+        # A restore needs the game of the backup's bash.ini, which _main
+        # extracts once it knows that no other instance is running
+        detected = None if opts.restore else _bush_detect(opts, 'bash.ini')
         # Early setup is done, delegate to the main init method
-        _main(opts, localize)
+        _main(opts, detected)
     except Exception as e:
         caught_exc = traceback.format_exc()
         if isinstance(e, exception.BootError):
@@ -492,6 +507,11 @@ def main(opts: Namespace):
                                   'at %(discord_url)s')
             err_msg %= _help_urls
             print(caught_exc) # Print the real error only into the debug dump
+        elif isinstance(e, (exception.BoltError, ImportError, OSError,
+                            NotImplementedError)):
+            err_msg = '\n'.join([_('Error! Unable to start Wrye Bash.'), '\n',
+                _('Please ensure Wrye Bash is correctly installed.'), '\n',
+                caught_exc])
         else:
             err_msg = _('Wrye Bash encountered an error. Please post the '
                         'information below as well as your BashBugDump to the '
@@ -502,68 +522,53 @@ def main(opts: Namespace):
         # messages and the tracebacks/environment dump may well contain a '%'
         _show_boot_popup(err_msg)
 
-def _main(opts, localize):
+def _main(opts, detected):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
     block. Call main() from the outside.
 
     :param opts: command line arguments
-    :param localize: localize.py module"""
-    # wx is also needed to initialize locale - move to gui?
-    wx_locale, gui, balt = _import_wx(opts, localize)
-    # Make sure we actually have a functional 'bash' folder to work with
-    _warn_missing_bash_dir()
-    # Generate the bash_default.ini file - its comments are translated, so
-    # this must come after setup_locale
-    gen_ini.write_default_bash_ini()
-    # Check for some non-critical dependencies (e.g. lz4) and warn if
-    # they're missing now that we can show nice app icons
-    _import_deps()
+    :param detected: what _bush_detect returned, None if restoring"""
+    gui, balt = _import_wx()
     dump_environment()
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
     # import barb, which does not import from bosh/bush
-    from . import barb
+    from . import barb, bush
     bash_ini_path, restore_ = _init_restore(opts, barb)
-    # The rest of backup/restore functionality depends on setting the game
-    try:
-        from . import bush
-        bush_game, game_ini_path = _set_game(opts, bush, bash_ini_path)
-        if not bush_game: return
-        if restore_:
-            try:
-                restore_.restore_settings(bush_game)
-                # we currently disallow backup and restore on the same boot
-                if opts.quietquit: return
-            except (exception.BoltError, OSError, shutil.Error,
-                    NotImplementedError):
-                bolt.deprint('Failed to restore backup', traceback=True)
-                # reset the game and ini
-                restore_.restore_ini()
-                bush.reset_bush_globals()
-                bush_game, game_ini_path = _set_game(opts, bush, 'bash.ini')
-                if not bush_game: return # no game chosen
-        from . import bosh
-        bosh.initBosh(game_ini_path, bush_game)
-        # hacky should maybe be somewhere else
-        from .loot_conditions import init_loot_cond_functions
-        from . import load_order
-        init_loot_cond_functions(load_order, bosh, bush_game)
-        from . import env
-        if env.in_mo2_vfs():
-            bolt.deprint('Wrye Bash appears to be running through MO2')
-        if env.on_wine():
-            bolt.deprint('Wrye Bash appears to be running on Wine')
-        env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
-        global basher # share this instance with _close_dialog_windows
-        from . import basher
-    except (exception.BoltError, ImportError, OSError, NotImplementedError):
-        raise exception.BootError('\n'.join([_(
-            'Error! Unable to start Wrye Bash.'), '\n', _(
-            'Please ensure Wrye Bash is correctly installed.'), '\n',
-            traceback.format_exc()]))
+    if detected is None: # main left detecting the game to us
+        detected = _bush_detect(opts, bash_ini_path)
+    if not (bush_game := _set_game_ask(opts, bush, *detected)):
+        return
+    if restore_:
+        try:
+            restore_.restore_settings(bush_game)
+            # we currently disallow backup and restore on the same boot
+            if opts.quietquit: return
+        except (exception.BoltError, OSError, NotImplementedError):
+            bolt.deprint('Failed to restore backup', traceback=True)
+            # reset the game and ini
+            restore_.restore_ini()
+            bush.reset_bush_globals()
+            bush_game = _set_game_ask(opts, bush,
+                                      *_bush_detect(opts, 'bash.ini'))
+            if not bush_game: return # no game chosen
+    from . import bosh
+    bosh.initBosh(bush_game)
+    # hacky should maybe be somewhere else
+    from .loot_conditions import init_loot_cond_functions
+    from . import load_order
+    init_loot_cond_functions(load_order, bosh, bush_game)
+    from . import env
+    if env.in_mo2_vfs():
+        bolt.deprint('Wrye Bash appears to be running through MO2')
+    if env.on_wine():
+        bolt.deprint('Wrye Bash appears to be running on Wine')
+    env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
+    global basher # share this instance with _close_dialog_windows
+    from . import basher
     atexit.register(exit_cleanup)
     basher.InitSettings()
     # Status bar buttons (initialized in InitStatusBar) use images
@@ -572,8 +577,6 @@ def _main(opts, localize):
     basher.InitLinks()
     # Set the window title for stdout/stderr messages
     bash_app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
-    # Need to reference the locale object somewhere, so let's do it on the App
-    bash_app.locale = wx_locale
     if env.is_uac():
         uacRestart = opts.uac
         if not opts.noUac and not uacRestart:
@@ -646,14 +649,13 @@ def _init_restore(opts, barb):
             restore_.extract_backup()
             # get the bash.ini from the backup, or None
             bash_ini_path = restore_.backup_ini_path()
-        except (exception.BoltError, exception.StateError, OSError,
-                NotImplementedError):
+        except (exception.BoltError, OSError, NotImplementedError):
             bolt.deprint('Failed to restore backup', traceback=True)
             restore_ = None
     return bash_ini_path, restore_
 
-def _set_game(opts, bush, bash_ini_path):
-    # Read the bash.ini file either from Mopy or from the backup location
+def _bush_detect(opts, bash_ini_path):
+    """Read bash.ini - Mopy's or the backup's - and detect the game."""
     _parse_bash_ini(bash_ini_path)
     # if uArg is None, then get the UserPath from the ini file
     ##: not sure why this must be set first
@@ -663,10 +665,13 @@ def _set_game(opts, bush, bash_ini_path):
         os.environ[u'HOMEDRIVE'] = homedrive
         os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
+    from . import bush
     bolt.deprint(u'Searching for game to manage:')
     # Warnings found during game dirs initialization are added here as strings
-    init_warnings = []
-    game_infos = bush.detect_and_set_game(opts, init_warnings)
+    game_infos = bush.detect_and_set_game(opts, init_warnings := [])
+    return game_infos, init_warnings
+
+def _set_game_ask(opts, bush, game_infos, init_warnings):
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             raise exception.BootError('\n\n'.join([_(
@@ -681,19 +686,20 @@ def _set_game(opts, bush, bash_ini_path):
             last_used_game=bass.boot_settings['Boot']['last_game'])
         if not retCode:
             bolt.deprint(u'No games were found or selected. Aborting.')
-            return None, None
+            return None
         # Add the game to the command line, so we use it if we restart. Also,
         # default to this game the next time we launch the game select popup
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
         bass.boot_settings['Boot']['last_game'] = gname
+        # init_warnings is empty - it is only filled once the game is set
         bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
     if init_warnings:
         warning_msg = [
             _('The following (non-critical) warnings were found during '
               'initialization:'), '', *(f'- {w}' for w in init_warnings)]
         _show_boot_popup('\n'.join(warning_msg), is_critical=False)
-    return bush.game, bush.game.game_ini_path
+    return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
     """Shows an error message in a popup window. If is_critical, exit the
