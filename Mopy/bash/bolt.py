@@ -125,6 +125,8 @@ def getbestencoding(bitstream):
         # inference can be made (chardet returns None, which breaks when passed
         # to decode())
         return 'utf8', 1.0
+    if chardet is None: # we detect the game before bash._import_deps runs
+        return None, 0.0 # decoder will fall back to trial and error
     # If we're fed a really big stream, go through it 16 KB at a time so as to
     # not time out (really only here so we don't freeze on boot when we get
     # malformed data fed in, no bytestring we pass in under normal

@@ -77,3 +77,9 @@ class TestLocalize:
         """Test setting locale to fr_CM - failure on wx.ArtProvider not
         reproducible in the CI environment."""
         self._test_locale('fr_CM', capsys)
+
+    def test_setlocale_headless(self):
+        """Test setting a command line locale without wx."""
+        wx_locale, loc_name = setup_locale(None, 'en-US')
+        assert wx_locale is None
+        assert loc_name == 'en_US'

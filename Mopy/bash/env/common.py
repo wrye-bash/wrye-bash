@@ -96,6 +96,8 @@ def _find_legendary_games():
 def _parse_vdf(vdf_path: _StrPath, *, vdf_root: str) -> dict | None:
     """Parse the specified KeyValues file (.vdf or .acf extension, so generally
     just called 'VDF') and return its root node."""
+    if vdf is None: # we detect the game before bash._import_deps runs
+        return None
     try:
         with open(vdf_path, 'rb') as ins:
             # Checked all the VDFs shipped by Steam. Some are ASCII, some are
