@@ -62,26 +62,30 @@ except ImportError:
 metadata_version = '0.29' # The LOOT metadata version with which this
                           # implementation is compatible
 
-class LOOTParser(object):
+class LOOTParser:
     """The main frontend for interacting with LOOT's masterlists. Provides
     methods to parse masterlists and to retrieve information from them."""
     __slots__ = ('_cached_masterlist', '_cached_regexes', '_cached_merges',
                  '_masterlist', '_userlist', '_taglist', '_tagCache')
 
-    def __init__(self, masterlist_path: Path, userlist_path: Path,
-            taglist_path: Path):
+    def __init__(self, game_info, bass_dirs):
         """Initialize a LOOTParser instance with the three specified
         masterlist paths. These will be cached via AFile and updated when
         refreshBashTags is called. Note that the order in which we read them
         is masterlist (+ userlist if present), then taglist if masterlist is
-        not present.
-
-        :param masterlist_path: The path to the LOOT masterlist that should be
-            parsed.
-        :param userlist_path: Optional, the path to the LOOT userlist that
-            should be parsed and merged with the masterlist.
-        :param taglist_path: the path to Bash's own cached masterlists - those
-            must always exist."""
+        not present."""
+        # the path to Bash's own cached masterlists - those must always exist
+        taglist_path = bass_dirs['taglists'].join('taglist.yaml')
+        # Setup loot_parser, needs to be done after the dirs are initialized
+        loot_gname = game_info.loot_dir
+        loot_folder = bass_dirs['local_appdata'].join('LOOT')
+        # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
+        loot_path = loot_folder.join('games', loot_gname)
+        if not loot_path.is_dir():
+            # Fall back to the 'legacy' path (LOOT\<game>)
+            loot_path = loot_folder.join(loot_gname)
+        masterlist_path = loot_path.join('masterlist.yaml')
+        userlist_path = loot_path.join('userlist.yaml')
         self._cached_masterlist: dict[FName, _PluginEntry] = FNDict()
         self._cached_regexes = {}
         self._cached_merges = {}

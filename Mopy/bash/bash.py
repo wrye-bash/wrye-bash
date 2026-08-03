@@ -604,11 +604,7 @@ def _main(opts, localize, game_infos, init_warnings, restore_):
             bush_game = _set_game_ask(opts, bush, game_infos, init_warnings)
     try:
         from . import bosh
-        bosh.initBosh(bush_game)
-        # hacky should maybe be somewhere else
-        from .loot_conditions import init_loot_cond_functions
-        from . import load_order
-        init_loot_cond_functions(load_order, bosh, bush_game)
+        bosh.initBosh(bush_game, bosh)
         from . import env
         if env.in_mo2_vfs():
             bolt.deprint('Wrye Bash appears to be running through MO2')

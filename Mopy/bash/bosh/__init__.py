@@ -56,6 +56,7 @@ from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding
 from ..load_order import LordDiff, LoadOrder
 from ..loot_parser import LOOTParser
+from ..loot_conditions import init_loot_cond_functions
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
     ST_MERGED, ST_IMPORTED, ST_INACTIVE, active_keys
@@ -3503,33 +3504,23 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 # Initialization --------------------------------------------------------------
-def initBosh(game_info):
-    # Setup loot_parser, needs to be done after the dirs are initialized
+def initBosh(game_info, bosh): # a bit hacky, but bosh globals are here to stay
     if not bass.bash_dirs_initialized:
         raise BoltError('initBosh: Bash dirs are not initialized')
+    load_order.initialize_load_order_files(dirs)
     # game ini files
     deprint(f'Looking for main game INI at {(ip := game_info.game_ini_path)}')
     global oblivionIni, gameInis, lootDb
-    loot_gname = game_info.loot_dir
-    loot_folder = dirs['local_appdata'].join('LOOT')
-    # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
-    loot_path = loot_folder.join('games', loot_gname)
-    if not loot_path.is_dir():
-        # Fall back to the 'legacy' path (LOOT\<game>)
-        loot_path = loot_folder.join(loot_gname)
-    loot_master_path = loot_path.join('masterlist.yaml')
-    loot_user_path = loot_path.join('userlist.yaml')
-    loot_tag_path = dirs['taglists'].join('taglist.yaml')
-    lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     oblivionIni = GameIni(ip, 'cp1252')
     gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
                                for x in game_info.Ini.dropdown_inis[1:])]
-    load_order.initialize_load_order_files(dirs)
+    from ..patcher.config_patchers import init_patcher_types
+    init_patcher_types(game_info)
+    lootDb = LOOTParser(game_info, dirs)
+    init_loot_cond_functions(load_order, bosh, game_info)
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()
-    from ..patcher.config_patchers import init_patcher_types
-    init_patcher_types(game_info)
 
 def initSettings(bush_game, ask_yes=None, *, _dat='BashSettings.dat',
                  _bak='BashSettings.dat.bak'):
