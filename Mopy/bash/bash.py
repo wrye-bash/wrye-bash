@@ -551,9 +551,9 @@ def _run_bashed_patch_cli(opts, localize, bush_game):
             raise exception.BoltError(
                 _('%(game_name)s does not support Bashed Patches.') % {
                     'game_name': bush_game.display_name})
-        from . import bosh
+        from . import bosh, settings_defaults
         bosh.initBosh(bush_game, bosh)
-        bosh.initSettings(bush_game)
+        settings_defaults.initSettings(bush_game)
         mod_infos = bosh.init_stores(bolt.HeadlessProgress('Wrye Bash'))
         build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), mod_infos)
     except exception.BPConfigError as e:
@@ -615,15 +615,15 @@ def _main(opts, localize, game_infos, init_warnings, restore_):
             game_infos, init_warnings = _bush_detect(opts, bush)
             bush_game = _set_game_ask(opts, bush, game_infos, init_warnings)
     try:
-        from . import bosh
-        bosh.initBosh(bush_game, bosh)
         from . import env
         if env.in_mo2_vfs():
             bolt.deprint('Wrye Bash appears to be running through MO2')
         env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
         global basher # share this instance with _close_dialog_windows
         from . import basher
-        bosh.initSettings(bush_game, basher.askYes)
+        from . import bosh, settings_defaults
+        bosh.initBosh(bush_game, bosh)
+        settings_defaults.initSettings(bush_game, basher.askYes)
     except (exception.BoltError, ImportError, OSError, NotImplementedError):
         raise exception.BootError('\n'.join([_(
             'Error! Unable to start Wrye Bash.'), '\n', _(
@@ -671,10 +671,7 @@ def _main(opts, localize, game_infos, init_warnings, restore_):
                 defaultDir=base_dir, wildcard='*.7z', defaultFile=bkf)
         if settings_file:
             with gui.BusyCursor():
-                bkp_setts = barb.BackupSettings(
-                    settings_file, bush_game.bak_game_name,
-                    bush_game.my_games_name, bush_game.bash_root_prefix,
-                    bush_game.mods_dir_name, bush_game.Ess.saves_dir)
+                bkp_setts = barb.BackupSettings(settings_file, bush_game)
             try:
                 with gui.BusyCursor():
                     bkp_setts.backup_settings(balt)

@@ -21,7 +21,14 @@
 #
 # =============================================================================
 """Default settings shared by GUI and headless startup."""
-from .bass import DEFAULT_POSITION
+from __future__ import annotations
+
+import pickle
+
+from . import bass, bolt
+from .bass import DEFAULT_POSITION, dirs
+from .bolt import GPath
+from .exception import BoltError
 # no other Bash imports!
 
 DEFAULT_COLORS = {
@@ -65,7 +72,7 @@ DEFAULT_COLORS = {
 DEFAULT_GROUPS = ['Root', 'Library', 'Cosmetic', 'Clothing', 'Weapon', 'Tweak',
     'Overhaul', 'Misc.', 'Magic', 'NPC', 'Home', 'Place', 'Quest', 'Last']
 
-def get_default_settings(bush_game):
+def _get_default_settings(bush_game):
     def_setts = { # keep current naming format till refactored
         #--Basics
         'bash.version': 0,
@@ -288,3 +295,62 @@ def get_default_settings(bush_game):
     }
     bush_game.update_settings(def_setts)
     return def_setts
+
+def initSettings(bush_game, ask_yes=None, *, _dat='BashSettings.dat',
+                 _bak='BashSettings.dat.bak'):
+    """Init user settings from files and load the defaults."""
+    def _load(dat_file=_dat):
+    # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
+        return bolt.Settings( # calls PickleDict.load() and copies loaded data
+            bolt.PickleDict(dirs['saveBase'].join(dat_file)), def_settings)
+    _dat = dirs['saveBase'].join(_dat)
+    _bak = dirs['saveBase'].join(_bak)
+    def _loadBakOrEmpty(delBackup=False, ignoreBackup=False):
+        _dat.remove()
+        if delBackup: _bak.remove()
+        # bolt machinery will automatically load the backup - bypass it if
+        # user did, by temporarily renaming the .bak file
+        if ignoreBackup: _bak.moveTo(f'{_bak}.ignore')
+        # load the .bak file, or an empty settings dict saved to disc at exit
+        loaded = _load()
+        if ignoreBackup: GPath(f'{_bak}.ignore').moveTo(_bak)
+        return loaded
+    #--Set bass.settings ------------------------------------------------------
+    def_settings = _get_default_settings(bush_game)
+    try:
+        bass.settings = _load()
+    except pickle.UnpicklingError as err:
+        msg = _("Error reading the Wrye Bash Settings database (the error is "
+            "'%(settings_err)s'). This is probably not recoverable with the "
+            "current file. Do you want to try the backup "
+            "%(settings_file_name)s (it will have all your settings from the "
+            "second to last time that you used Wrye Bash)?") % {
+                'settings_err': repr(err),
+                'settings_file_name': 'BashSettings.dat'}
+        if ask_yes is None: # headless mode
+            raise BoltError(msg)
+        if ask_yes(None, msg, _('Settings Load Error')):
+            try:
+                bass.settings = _loadBakOrEmpty()
+            except pickle.UnpicklingError as err:
+                msg = _("Error reading the backup Wrye Bash Settings database "
+                    "(the error is '%(settings_err)s'). This is probably not "
+                    "recoverable with the current file. Do you want to delete "
+                    "the corrupted settings and load Wrye Bash without your "
+                    "saved settings (choosing 'No' will cause Wrye Bash to "
+                    "exit)?") % {'settings_err': repr(err)}
+                delete = ask_yes(None, msg, _('Settings Load Error'))
+                if delete:
+                    bass.settings = _loadBakOrEmpty(delBackup=True)
+                else:
+                    raise
+        else:
+            msg = _("Do you want to delete the corrupted settings and load "
+                    "Wrye Bash without your saved settings (choosing 'No' "
+                    "will cause Wrye Bash to exit)?")
+            delete = ask_yes(None, msg, _('Settings Load Error'))
+            if delete: # Ignore bak but don't delete, overwrite on exit instead
+                bass.settings = _loadBakOrEmpty(ignoreBackup=True)
+            else:
+                raise
+    bolt.pluginEncoding = bass.settings['bash.pluginEncoding']

@@ -48,16 +48,13 @@ from .bolt import GPath, GPath_no_norm, deprint, top_level_files, empty_path
 from .exception import BoltError, StateError
 from .wbtemp import TempDir
 
-def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder_name):
+def _init_settings_files(mg_name, bush_game):
     """Construct a dict mapping directory paths to setting files. Keys are
     tuples of absolute paths to directories, paired with the relative paths
     in the backup file. Values are sets of setting files in those paths,
-    or empty, meaning we have to list those paths and backup everything.
-
-    :param bak_name: bush.game.bak_game_name
-    :param mg_name: bush.game.my_games_name
-    :param root_prefix: bush.game.bash_root_prefix
-    :param mods_folder_name: bush.game.mods_dir_name"""
+    or empty, meaning we have to list those paths and backup everything."""
+    bak_name, root_prefix, mods_folder_name = bush_game.bak_game_name, \
+        bush_game.bash_root_prefix, bush_game.mods_dir_name
     if not bass.bash_dirs_initialized:
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
@@ -101,12 +98,12 @@ class BackupSettings(object):
     settings we backup (bass.settings[u'bash.version']). Creates a backup.dat
     file that stores those versions."""
 
-    def __init__(self, settings_file, bak_name, mg_name, root_prefix,
-                 mods_folder_name, saves_folder):
+    def __init__(self, settings_file, bush_game):
         self._backup_dest_file = GPath(settings_file) # absolute path to dest 7z file
         self.files = {}
-        for (bash_dir, tmpdir), setting_files in _init_settings_files(
-                bak_name, mg_name, root_prefix, mods_folder_name).items():
+        saves_dir, mg_name = bush_game.Ess.saves_dir, bush_game.my_games_name
+        for (bash_dir, tmpdir), setting_files in _init_settings_files(mg_name,
+                bush_game).items():
             tjoin = GPath(tmpdir).join
             if not setting_files: # we have to backup everything in there
                 self.files.update(
@@ -118,12 +115,12 @@ class BackupSettings(object):
                     (fpath := bash_dir.join(fname)).exists())
         # backup save profile settings
         rel_save_dir = GPath(u'My Games').join(mg_name)
-        save_dirs = ['', *initialization.getLocalSaveDirs(saves_folder)]
+        save_dirs = ['', *initialization.getLocalSaveDirs(saves_dir)]
         for savedir in save_dirs:
             for txt in (['plugins.txt'], ['loadorder.txt'],
                         ['Bash', 'Table.dat']):
-                tpath = rel_save_dir.join(saves_folder, savedir, *txt)
-                fpath = dirs['saveBase'].join(saves_folder, savedir, *txt)
+                tpath = rel_save_dir.join(saves_dir, savedir, *txt)
+                fpath = dirs['saveBase'].join(saves_dir, savedir, *txt)
                 if fpath.exists(): self.files[tpath] = fpath
             # for 'Table.dat' check also the bak file
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
@@ -255,10 +252,7 @@ class RestoreSettings(object):
             self.remove_extract_dir(self._extract_dir)
 
     def _restore_settings(self, bush_game):
-        bak_name, mg_name, root_prefix, mods_folder_name, saves_folder = (
-            bush_game.bak_game_name, bush_game.my_games_name,
-            bush_game.bash_root_prefix, bush_game.mods_dir_name,
-            bush_game.Ess.saves_dir)
+        saves_dir, mg_name = bush_game.Ess.saves_dir, bush_game.my_games_name
         deprint(u'')
         deprint(f'RESTORE BASH SETTINGS: {self._settings_file}')
         # backup previous Bash ini if it exists
@@ -274,15 +268,13 @@ class RestoreSettings(object):
             dest = dest_dir_.join(*end_path)
             deprint(f'{back_path_.join(*end_path)} --> {dest}')
             full_back_path.join(*end_path).copyTo(dest)
-        restore_paths = list(_init_settings_files(
-            bak_name, mg_name, root_prefix, mods_folder_name))
-        for destdir, back_path in restore_paths:
+        for destdir, back_path in _init_settings_files(mg_name, bush_game):
             full_back_path = self._extract_dir.join(back_path)
             for fname in top_level_files(full_back_path):
                 _restore_file(destdir, GPath(back_path), fname)
         # restore savegame profile settings
-        back_path = GPath('My Games').join(mg_name, saves_folder)
-        sav_path = dirs['saveBase'].join(saves_folder)
+        back_path = GPath('My Games').join(mg_name, saves_dir)
+        sav_path = dirs['saveBase'].join(saves_dir)
         full_back_path = self._extract_dir.join(back_path)
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(
