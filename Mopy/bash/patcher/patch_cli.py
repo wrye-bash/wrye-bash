@@ -27,20 +27,6 @@ from .. import bass, bolt, wrye_text
 from ..exception import BoltError
 from ..wbtemp import TempDir, TempFile
 
-class HeadlessProgress(bolt.Progress):
-    """Report Bashed Patch progress without a GUI dependency."""
-
-    def __init__(self, title):
-        super().__init__()
-        self._title = title
-        self._last_progress = None
-
-    def _do_progress(self, state, message):
-        progress_entry = f'{state:.0%}', message
-        if message and progress_entry != self._last_progress:
-            self._last_progress = progress_entry
-            bolt.deprint(f'{self._title}: {progress_entry[0]} {message}')
-
 def _get_target_patch(mod_infos, patch_name):
     if patch_name in mod_infos:
         return mod_infos[patch_name]
@@ -75,18 +61,8 @@ def _write_readme(log_value, patch_name, mod_infos):
         (temp_readme.root + '.html').moveTo(readme_html)
     return readme_html
 
-def build_bashed_patch_cli(patch_name, bush_game):
+def build_bashed_patch_cli(patch_name, mod_infos):
     """Build a Bashed Patch and persist the resulting state."""
-    if not bush_game:
-        raise BoltError(_('No game could be selected for the headless Bashed '
-                          'Patch build. Use -o or bash.ini to specify one.'))
-    if not bush_game.Esp.canBash:
-        raise BoltError(_('%(game_name)s does not support Bashed Patches.') % {
-            'game_name': bush_game.display_name})
-    from .. import bosh
-    bosh.initBosh(bush_game, bosh)
-    bosh.initSettings(bush_game)
-    mod_infos = bosh.init_stores(HeadlessProgress('Wrye Bash'))
     from .patch_builder import build_bashed_patch, finalize_patch_log, \
         load_patcher_configs, prepare_patch_files, refresh_patch_files
     from .patch_files import PatchFile
@@ -94,7 +70,7 @@ def build_bashed_patch_cli(patch_name, bush_game):
     bashed_patch = PatchFile(patch_info, mod_infos)
     patch_configs = patch_info.get_table_prop('bash.patch.configs', {})
     config_patchers = load_patcher_configs(bashed_patch, patch_configs)
-    progress = HeadlessProgress(patch_name)
+    progress = bolt.HeadlessProgress(patch_name)
     patch_log, build_start = build_bashed_patch(
         bashed_patch, config_patchers, progress)
     patch_files = prepare_patch_files(bashed_patch)
