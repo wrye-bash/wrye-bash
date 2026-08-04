@@ -543,7 +543,19 @@ def _run_bashed_patch_cli(opts, localize, bush_game):
         atexit.register(exit_cleanup)
         _warn_missing_bash_dir()
         from .patcher.patch_cli import build_bashed_patch_cli
-        build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), bush_game)
+        if not bush_game:
+            raise exception.BoltError(
+                _('No game could be selected for the headless Bashed '
+                  'Patch build. Use -o or bash.ini to specify one.'))
+        if not bush_game.Esp.canBash:
+            raise exception.BoltError(
+                _('%(game_name)s does not support Bashed Patches.') % {
+                    'game_name': bush_game.display_name})
+        from . import bosh
+        bosh.initBosh(bush_game, bosh)
+        bosh.initSettings(bush_game)
+        mod_infos = bosh.init_stores(bolt.HeadlessProgress('Wrye Bash'))
+        build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), mod_infos)
     except exception.BPConfigError as e:
         bolt.deprint('Bashed Patch configuration error:', traceback=True)
         print(_('The configuration of the Bashed Patch is incorrect.') +

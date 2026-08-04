@@ -2506,6 +2506,21 @@ class SubProgress(Progress):
         self.state = state
 
 #------------------------------------------------------------------------------
+class HeadlessProgress(Progress):
+    """Report Bashed Patch progress without a GUI dependency."""
+
+    def __init__(self, title):
+        super().__init__()
+        self._title = title
+        self._last_progress = None
+
+    def _do_progress(self, state, message):
+        progress_entry = f'{state:.0%}', message
+        if message and progress_entry != self._last_progress:
+            self._last_progress = progress_entry
+            deprint(f'{self._title}: {progress_entry[0]} {message}')
+
+#------------------------------------------------------------------------------
 def readCString(ins, file_path):
     """Read null terminated string, dropping the final null byte."""
     byte_list = []

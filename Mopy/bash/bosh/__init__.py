@@ -3546,22 +3546,20 @@ def initSettings(bush_game, ask_yes=None, *, _dat='BashSettings.dat',
     try:
         bass.settings = _load()
     except pickle.UnpicklingError as err:
-        msg = _(
-            "Error reading the Wrye Bash Settings database (the error is "
+        msg = _("Error reading the Wrye Bash Settings database (the error is "
             "'%(settings_err)s'). This is probably not recoverable with the "
             "current file. Do you want to try the backup "
             "%(settings_file_name)s (it will have all your settings from the "
             "second to last time that you used Wrye Bash)?") % {
-            'settings_err': repr(err),
-            'settings_file_name': 'BashSettings.dat'}
+                'settings_err': repr(err),
+                'settings_file_name': 'BashSettings.dat'}
         if ask_yes is None: # headless mode
             raise BoltError(msg)
         if ask_yes(None, msg, _('Settings Load Error')):
             try:
                 bass.settings = _loadBakOrEmpty()
             except pickle.UnpicklingError as err:
-                msg = _(
-                    "Error reading the backup Wrye Bash Settings database "
+                msg = _("Error reading the backup Wrye Bash Settings database "
                     "(the error is '%(settings_err)s'). This is probably not "
                     "recoverable with the current file. Do you want to delete "
                     "the corrupted settings and load Wrye Bash without your "
@@ -3573,10 +3571,9 @@ def initSettings(bush_game, ask_yes=None, *, _dat='BashSettings.dat',
                 else:
                     raise
         else:
-            msg = _(
-                "Do you want to delete the corrupted settings and load Wrye "
-                "Bash without your saved settings (choosing 'No' will cause "
-                "Wrye Bash to exit)?")
+            msg = _("Do you want to delete the corrupted settings and load "
+                    "Wrye Bash without your saved settings (choosing 'No' "
+                    "will cause Wrye Bash to exit)?")
             delete = ask_yes(None, msg, _('Settings Load Error'))
             if delete: # Ignore bak but don't delete, overwrite on exit instead
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
