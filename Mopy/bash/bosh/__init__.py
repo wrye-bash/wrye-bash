@@ -26,7 +26,6 @@ stores. bush.game must be set, to properly instantiate the data stores."""
 from __future__ import annotations
 
 import os
-import pickle
 import re
 import sys
 import time
@@ -60,7 +59,6 @@ from ..loot_conditions import init_loot_cond_functions
 from ..mod_files import ModFile, ModHeaderReader
 from ..plugin_types import MergeabilityCheck, PluginFlag, ST_ACTIVE, \
     ST_MERGED, ST_IMPORTED, ST_INACTIVE, active_keys
-from ..settings_defaults import get_default_settings
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -3521,65 +3519,6 @@ def initBosh(game_info, bosh): # a bit hacky, but bosh globals are here to stay
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()
-
-def initSettings(bush_game, ask_yes=None, *, _dat='BashSettings.dat',
-                 _bak='BashSettings.dat.bak'):
-    """Init user settings from files and load the defaults (also in basher)."""
-    def _load(dat_file=_dat):
-    # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
-        return bolt.Settings( # calls PickleDict.load() and copies loaded data
-            bolt.PickleDict(dirs[u'saveBase'].join(dat_file)), def_settings)
-    _dat = dirs[u'saveBase'].join(_dat)
-    _bak = dirs[u'saveBase'].join(_bak)
-    def _loadBakOrEmpty(delBackup=False, ignoreBackup=False):
-        _dat.remove()
-        if delBackup: _bak.remove()
-        # bolt machinery will automatically load the backup - bypass it if
-        # user did, by temporarily renaming the .bak file
-        if ignoreBackup: _bak.moveTo(f'{_bak}.ignore')
-        # load the .bak file, or an empty settings dict saved to disc at exit
-        loaded = _load()
-        if ignoreBackup: GPath(f'{_bak}.ignore').moveTo(_bak)
-        return loaded
-    #--Set bass.settings ------------------------------------------------------
-    def_settings = get_default_settings(bush_game)
-    try:
-        bass.settings = _load()
-    except pickle.UnpicklingError as err:
-        msg = _("Error reading the Wrye Bash Settings database (the error is "
-            "'%(settings_err)s'). This is probably not recoverable with the "
-            "current file. Do you want to try the backup "
-            "%(settings_file_name)s (it will have all your settings from the "
-            "second to last time that you used Wrye Bash)?") % {
-                'settings_err': repr(err),
-                'settings_file_name': 'BashSettings.dat'}
-        if ask_yes is None: # headless mode
-            raise BoltError(msg)
-        if ask_yes(None, msg, _('Settings Load Error')):
-            try:
-                bass.settings = _loadBakOrEmpty()
-            except pickle.UnpicklingError as err:
-                msg = _("Error reading the backup Wrye Bash Settings database "
-                    "(the error is '%(settings_err)s'). This is probably not "
-                    "recoverable with the current file. Do you want to delete "
-                    "the corrupted settings and load Wrye Bash without your "
-                    "saved settings (choosing 'No' will cause Wrye Bash to "
-                    "exit)?") % {'settings_err': repr(err)}
-                delete = ask_yes(None, msg, _('Settings Load Error'))
-                if delete:
-                    bass.settings = _loadBakOrEmpty(delBackup=True)
-                else:
-                    raise
-        else:
-            msg = _("Do you want to delete the corrupted settings and load "
-                    "Wrye Bash without your saved settings (choosing 'No' "
-                    "will cause Wrye Bash to exit)?")
-            delete = ask_yes(None, msg, _('Settings Load Error'))
-            if delete: # Ignore bak but don't delete, overwrite on exit instead
-                bass.settings = _loadBakOrEmpty(ignoreBackup=True)
-            else:
-                raise
-    bolt.pluginEncoding = bass.settings['bash.pluginEncoding']
 
 def init_stores(progress):
     """Initialize the data stores. Bsas first - used in warnTooManyModsBsas
