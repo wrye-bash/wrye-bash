@@ -43,11 +43,11 @@ The layout is still fluid - there may be a links package, or a package per tab.
 A central global variable is balt.Link.Frame, the BashFrame singleton.
 
 Non-GUI objects and functions are provided by the bosh module. Of those, the
-primary objects used are the plugins, modInfos and saveInfos singletons -- each
-representing external data structures (the plugins.txt file and the Data and
-Saves directories respectively). Persistent storage for the app is primarily
-provided through the settings singleton (however the modInfos singleton also
-has its own data store)."""
+primary objects used are the modInfos and saveInfos singletons -- each
+representing external data structures (the Data and Saves directories
+respectively). Persistent storage for the app is primarily provided through
+the settings singleton (however the modInfos singleton also has its own data
+store)."""
 from __future__ import annotations
 
 import functools
