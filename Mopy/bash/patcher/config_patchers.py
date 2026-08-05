@@ -36,7 +36,7 @@ from .patchers import checkers, mergers, multitweak_actors, \
     multitweak_races, multitweak_settings, preservers
 from .patchers.base import AliasPluginNamesPatcher, MultiTweaker, \
     MergePatchesPatcher, ReplaceFormIDsPatcher
-from .. import bosh
+from .. import bass, bosh, load_order
 from ..bolt import forward_compat_path_to_fn, FName, FNDict, \
     forward_compat_path_to_fn_list
 from ..plugin_types import MergeabilityCheck
@@ -125,6 +125,9 @@ class PatcherConfig:
         self._is_first_load = set_first_load
         self._getConfig(patchConfigs) # set isEnabled and load additional config
 
+    def initialize_config(self):
+        """Finish configuration that depends on the current load order."""
+
     def get_patcher_instance(self, patch_file):
         """Instantiate and return an instance of self.__class__.patcher_type,
         initialized with the config options from the Gui"""
@@ -134,6 +137,7 @@ class PatcherConfig:
 class ListPatcherConfig(PatcherConfig):
     """Patcher config for ListPatcherConfig."""
     patcher_type: ClassVar[type[ListPatcher]]
+    _autocheck_new = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -191,6 +195,17 @@ class ListPatcherConfig(PatcherConfig):
     def _get_list_patcher_srcs(self):
         # ListsMerger instances get all the listed sources
         return [k for k, v in self._item_config.items() if v is not False]
+
+    def initialize_config(self):
+        check_new = (self._autocheck_new and
+                     bass.inisettings['AutoItemCheck'])
+        for source in self.patcher_type.get_sources(self._bp):
+            if self._item_config.get(source) is None:
+                self._item_config[source] = (
+                    check_new and not source.lower().endswith('.csv'))
+        ordered_sources = load_order.cached_sort(self._item_config)
+        self._item_config = {
+            source: self._item_config[source] for source in ordered_sources}
 
 #------------------------------------------------------------------------------
 # Config Patcher classes
@@ -562,10 +577,39 @@ class ReplaceFormIDs(ListPatcherConfig):
 class ListMergerConfig(ListPatcherConfig):
     patcher_type: ClassVar[type[mergers.AListsMerger]]
     _item_config: dict[FName, set[str]]
+    autoIsChecked = True
+
+    def _getConfig(self, configs):
+        config = super()._getConfig(configs)
+        for item in self._item_config:
+            self._set_choice(item)
+        return config
+
+    @classmethod
+    def _config_attrs(cls):
+        return *super()._config_attrs(), ('autoIsChecked', True)
 
     def _merge_configs(self, curr_conf, present_config_items):
         choices = {**curr_conf, **self.configChoices}
         return {k: v for k, v in choices.items() if k in present_config_items}
+
+    def _set_choice(self, item):
+        config_choice = self._item_config.get(item)
+        if config_choice is None:
+            config_choice = {'Auto'}
+        if 'Auto' in config_choice:
+            tags = self._bp.all_tags.get(item, set())
+            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
+        self._item_config[item] = config_choice
+        return config_choice
+
+    def initialize_config(self):
+        if self.autoIsChecked:
+            for source in self.patcher_type.get_sources(self._bp):
+                self._set_choice(source)
+        ordered_sources = load_order.cached_sort(self._item_config)
+        self._item_config = {
+            source: self._item_config[source] for source in ordered_sources}
 
     @classmethod
     def _log_config(cls, conf, config, clip, log):

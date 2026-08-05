@@ -121,7 +121,6 @@ class AliasPluginNames(_PatcherPanel, _APConfig):
 #------------------------------------------------------------------------------
 class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
     """Patcher panel with option to select source elements."""
-    _autocheck_new = True #--GUI: Whether new items are checked by default
     gList: CheckListBox
     _list_label = ''
 
@@ -580,14 +579,10 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
     def _set_choice(self, item):
         """Refresh mods that have an Auto choice set. We need to do this when
         we load a config, unlike super, as tags may have changed)."""
-        if (config_choice := self._item_config.get(item)) is None:
-            if not self._is_first_load:
-                self._new_items.add(item)
-            config_choice = {'Auto'}
-        if 'Auto' in config_choice:
-            tags = self._bp.all_tags.get(item, set())
-            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
-        self._item_config[item] = config_choice
+        is_new = self._item_config.get(item) is None
+        config_choice = ListMergerConfig._set_choice(self, item)
+        if is_new and not self._is_first_load:
+            self._new_items.add(item)
         return config_choice
 
     def _on_auto_check(self, is_checked):
@@ -657,17 +652,6 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
                               _OnItemChoice(item_label, index))
         #--Show/Destroy Menu
         links.popup_menu(gui_li, None)
-
-    # Config Phase Overrides
-    def _getConfig(self, configs):
-        config = super()._getConfig(configs)
-        for item in self._item_config:
-            self._set_choice(item) # see docs in self._set_choice
-        return config
-
-    @classmethod
-    def _config_attrs(cls):
-        return *super()._config_attrs(), ('autoIsChecked', True)
 
     def import_config(self, *args):
         super(_ListPatcherPanel, self).import_config(*args) # bypass super!
