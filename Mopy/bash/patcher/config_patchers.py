@@ -69,6 +69,7 @@ class PatcherConfig:
         dialog is shown, to update the patch options based on the previous
         config for this patch loaded via get_table_prop('bash.patch.configs').
         Fallback to default_XXX class vars for missing config entries."""
+        self._is_first_load = not configs
         # Remember whether we were present in the config for bolding later
         self._was_present = (cls := self.__class__)._config_key in configs
         config = configs[cls._config_key] if self._was_present else {}
@@ -121,12 +122,8 @@ class PatcherConfig:
                 log(f'. ~~{item}~~')
                 clip.write(f'    {item}\n')
 
-    def import_config(self, patchConfigs, set_first_load):
-        self._is_first_load = set_first_load
+    def import_config(self, patchConfigs, **kwargs):
         self._getConfig(patchConfigs) # set isEnabled and load additional config
-
-    def initialize_config(self):
-        """Finish configuration that depends on the current load order."""
 
     def get_patcher_instance(self, patch_file):
         """Instantiate and return an instance of self.__class__.patcher_type,
@@ -145,6 +142,7 @@ class ListPatcherConfig(PatcherConfig):
         self.configChecks: dict[FName, bool] = {}
         self.configChoices: dict[FName, set[str]] = {}
         self._item_config: dict[FName, bool] = {}
+        self._check = self._autocheck_new and bass.inisettings['AutoItemCheck']
 
     def _getConfig(self, configs):
         """Merge entries from the config with existing ones - if we're loading
@@ -183,6 +181,27 @@ class ListPatcherConfig(PatcherConfig):
         return self.patcher_type(self.patcher_name, patch_file,
                                  patcher_sources)
 
+    def import_config(self, patchConfigs, **kwargs):
+        super().import_config(patchConfigs)
+        kwargs.setdefault('is_auto', self._is_first_load)
+        self._sort_and_update_items(**kwargs)
+
+    def _sort_and_update_items(self, is_auto=True, do_sort=True):
+        if is_auto:
+            for mod in (unsort := self.__class__.patcher_type.get_sources(
+                    self._bp)):
+                self._set_choice(mod)
+        else:
+            unsort = self._item_config
+        unsort = load_order.cached_sort(unsort) if do_sort else unsort
+        self._item_config = {k: self._item_config[k] for k in unsort}
+
+    def _set_choice(self, item):
+        """Check or uncheck new items."""
+        if self._item_config.get(item) is None:
+            self._item_config[item] = self._check and not item.lower(
+                ).endswith('.csv')
+
     def _merge_configs(self, curr_conf, present_config_items):
         checks = {**curr_conf, **self.configChecks} # latter is freshly loaded
         return {k: v for k, v in checks.items() if k in present_config_items}
@@ -195,17 +214,6 @@ class ListPatcherConfig(PatcherConfig):
     def _get_list_patcher_srcs(self):
         # ListsMerger instances get all the listed sources
         return [k for k, v in self._item_config.items() if v is not False]
-
-    def initialize_config(self):
-        check_new = (self._autocheck_new and
-                     bass.inisettings['AutoItemCheck'])
-        for source in self.patcher_type.get_sources(self._bp):
-            if self._item_config.get(source) is None:
-                self._item_config[source] = (
-                    check_new and not source.lower().endswith('.csv'))
-        ordered_sources = load_order.cached_sort(self._item_config)
-        self._item_config = {
-            source: self._item_config[source] for source in ordered_sources}
 
 #------------------------------------------------------------------------------
 # Config Patcher classes
@@ -594,8 +602,7 @@ class ListMergerConfig(ListPatcherConfig):
         return {k: v for k, v in choices.items() if k in present_config_items}
 
     def _set_choice(self, item):
-        config_choice = self._item_config.get(item)
-        if config_choice is None:
+        if (config_choice := self._item_config.get(item)) is None:
             config_choice = {'Auto'}
         if 'Auto' in config_choice:
             tags = self._bp.all_tags.get(item, set())
@@ -603,13 +610,8 @@ class ListMergerConfig(ListPatcherConfig):
         self._item_config[item] = config_choice
         return config_choice
 
-    def initialize_config(self):
-        if self.autoIsChecked:
-            for source in self.patcher_type.get_sources(self._bp):
-                self._set_choice(source)
-        ordered_sources = load_order.cached_sort(self._item_config)
-        self._item_config = {
-            source: self._item_config[source] for source in ordered_sources}
+    def import_config(self, *args, **kwargs):
+        return super().import_config(*args, is_auto=self.autoIsChecked)
 
     @classmethod
     def _log_config(cls, conf, config, clip, log):

@@ -60,7 +60,6 @@ class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
                      LayoutOptions(weight=0))])
             self.main_layout.apply_to(self)
             self._parent.config_layout.add(self)
-            self._is_first_load = 0 == len(patch_configs)
             self._getConfig(patch_configs) # set isEnabled and load additional config
             # Bold the patcher if it's new, but the patch itself isn't new
             if not self._was_present and not self._is_first_load:
@@ -130,7 +129,6 @@ class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
         self._curr_items: list[FName] = []
         # Set of items that are new and hence need to remain bolded
         self._new_items: set[FName] = set()
-        self._check = self._autocheck_new and bass.inisettings['AutoItemCheck']
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -170,25 +168,16 @@ class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
     def _sort_and_update_items(self, is_auto=True, do_sort=True):
         """Helper for LO-sorting items and updating the internal caches for
         them."""
-        if is_auto:
-            for mod in (unsort := self.__class__.patcher_type.get_sources(
-                    self._bp)):
-                self._set_choice(mod)
-        else:
-            unsort = self._item_config
-        unsort = load_order.cached_sort(unsort) if do_sort else unsort
-        self._item_config = {k: self._item_config[k] for k in unsort}
+        super()._sort_and_update_items(is_auto, do_sort)
         # Clear the search bar - this will _handle_item_search, which will call
         # _do_populate_item_list in turn
         self._item_search.text_content = ''
 
     def _set_choice(self, item):
         """Only called when loading automatically for _ListPatcherPanel."""
-        if self._item_config.get(item) is None:
-            if not self._is_first_load:
-                self._new_items.add(item)
-            self._item_config[item] = self._check and not item.lower(
-                ).endswith('.csv')
+        if not self._is_first_load and self._item_config.get(item) is None:
+            self._new_items.add(item)
+        super()._set_choice(item)
 
     def _get_glist(self):
         self.gList = CheckListBox(self)
@@ -242,20 +231,6 @@ class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
         for i, item in enumerate(self._curr_items):
             self._item_config[item] = self.gList.lb_is_checked_at_index(i)
         self._enable_self(any(self._item_config.values()))
-
-    # Config Phase Overrides
-    def import_config(self, patchConfigs, set_first_load):
-        super().import_config(patchConfigs, set_first_load)
-        if set_first_load:
-            self._sort_and_update_items()
-            return
-        # Reset the search bar, this will call _handle_item_search
-        self._item_search.text_content = ''
-        for index, (item, checkmark) in enumerate(self._item_config.items()):
-            try:
-                self.gList.lb_check_at_index(index, checkmark)
-            except KeyError:
-                pass
 
 #------------------------------------------------------------------------------
 class _ChoiceMenuMixin(object):
@@ -528,17 +503,10 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
         super().mass_select(select)
 
     # Config phase overrides
-    def import_config(self, *args):
-        super().import_config(*args)
+    def import_config(self, patchConfigs, **kwargs):
+        super().import_config(patchConfigs, **kwargs)
         # Reset the search bar, this will call _handle_tweak_search
         self._tweak_search.text_content = ''
-        for index, tweakie in enumerate(self._all_tweaks):
-            try:
-                self.gTweakList.lb_check_at_index(index, tweakie.isEnabled)
-                self.gTweakList.lb_set_label_at_index(index, tweakie.getListLabel())
-            except KeyError: pass # no such key don't spam the log
-            except: bolt.deprint('Error importing Bashed Patch configuration. '
-                                 f'Item {tweakie} skipped.', traceback=True)
 
 #------------------------------------------------------------------------------
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
@@ -576,19 +544,10 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
         self._update_manual_buttons(
             not (self.autoIsChecked or self._item_search.text_content))
 
-    def _set_choice(self, item):
-        """Refresh mods that have an Auto choice set. We need to do this when
-        we load a config, unlike super, as tags may have changed)."""
-        is_new = self._item_config.get(item) is None
-        config_choice = ListMergerConfig._set_choice(self, item)
-        if is_new and not self._is_first_load:
-            self._new_items.add(item)
-        return config_choice
-
     def _on_auto_check(self, is_checked):
         """Automatic checkbox changed."""
         self.autoIsChecked = is_checked
-        if self.autoIsChecked:
+        if is_checked:
             self._sort_and_update_items()
         else: # In autoIsChecked case, this is called by _handle_item_search
             self._update_manual_buttons(not self._item_search.text_content)
@@ -652,10 +611,6 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
                               _OnItemChoice(item_label, index))
         #--Show/Destroy Menu
         links.popup_menu(gui_li, None)
-
-    def import_config(self, *args):
-        super(_ListPatcherPanel, self).import_config(*args) # bypass super!
-        self._on_auto_check(self.autoIsChecked)
 
 #------------------------------------------------------------------------------
 class LeveledLists(_ListsMergerPanel, _LLConfig):

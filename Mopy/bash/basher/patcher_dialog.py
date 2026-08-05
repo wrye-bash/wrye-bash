@@ -378,9 +378,9 @@ class PatchDialog(DialogWindow):
             return
         self._load_config(patchConfigs)
 
-    def _load_config(self, patchConfigs, set_first_load=False):
+    def _load_config(self, patchConfigs):
         for index, patcher in enumerate(self._gui_patchers):
-            patcher.import_config(patchConfigs, set_first_load)
+            patcher.import_config(patchConfigs)
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self._update_ok_btn()
 
@@ -390,7 +390,7 @@ class PatchDialog(DialogWindow):
 
     def DefaultConfig(self):
         """Revert configuration back to default"""
-        self._load_config({}, set_first_load=True)
+        self._load_config({})
 
     def _mass_select_recursive(self, select=True):
         """Select or deselect all patchers and entries in patchers with child
