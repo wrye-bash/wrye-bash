@@ -118,10 +118,34 @@ class AliasPluginNames(_PatcherPanel, _APConfig):
         self._set_alias_text()
 
 #------------------------------------------------------------------------------
-class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
+class _ListPanel(_PatcherPanel):
+    _list_label = ''
+
+    def native_init(self, *args, **kwargs):
+        if freshly_created := super().native_init(*args, **kwargs):
+            self._get_glist()
+            self._item_search = SearchBar(self, hint=_('Search Sources'))
+            self._item_search.on_text_changed.subscribe(
+                self._handle_item_search)
+            #--Manual controls
+            side_button_layout = self._auto_layout()
+            list_label = self._list_label or (_('Source Plugins/Files') if
+                self.patcher_type._csv_key else _('Source Plugins'))
+            self.main_layout.add(
+                (HBoxedLayout(self, title=list_label,
+                              item_expand=True, spacing=4, items=[
+                        (VLayout(spacing=4, item_expand=True, items=[
+                            self._item_search,
+                            (self.gList, LayoutOptions(weight=1)),
+                        ]), LayoutOptions(weight=1)),
+                        (side_button_layout, LayoutOptions(v_align=TOP)),
+                        self._get_select_layout(),
+                    ]), LayoutOptions(expand=True, weight=1)))
+        return freshly_created
+
+class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
     """Patcher panel with option to select source elements."""
     gList: CheckListBox
-    _list_label = ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -277,22 +301,22 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
-            self.gTweakList = CheckListBox(self)
-            self.gTweakList.on_box_checked.subscribe(self.TweakOnListCheck)
+            self.gList = CheckListBox(self)
+            self.gList.on_box_checked.subscribe(self.TweakOnListCheck)
             self._tweak_search = SearchBar(self, hint=_('Search Tweaks'))
             self._tweak_search.on_text_changed.subscribe(
                 self._handle_tweak_search)
             #--Events
-            self._bind_mouse_events(self.gTweakList)
-            self.gTweakList.on_mouse_leaving.subscribe(self._mouse_leaving)
+            self._bind_mouse_events(self.gList)
+            self.gList.on_mouse_leaving.subscribe(self._mouse_leaving)
             self.mouse_dex = -1
             #--Layout
             self.main_layout.add(
                 (HBoxedLayout(self, title=_('Tweaks'), item_expand=True,
                     spacing=4, items=[
-                        (VLayout(item_expand=True, spacing=4, items=[
+                        (VLayout(spacing=4, item_expand=True, items=[
                             self._tweak_search,
-                            (self.gTweakList, LayoutOptions(weight=1)),
+                            (self.gList, LayoutOptions(weight=1)),
                         ]), LayoutOptions(weight=1)),
                         self._get_tweak_select_layout()
                 ]), LayoutOptions(expand=True, weight=1)))
@@ -316,32 +340,32 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
     def _populate_tweak_list(self):
         """Populate the patcher's tweak list based on the currently searched
         for tweaks."""
-        with self.gTweakList.pause_drawing():
+        with self.gList.pause_drawing():
             self._do_populate_tweak_list()
 
     def _do_populate_tweak_list(self):
-        self.gTweakList.lb_clear()
+        self.gList.lb_clear()
         patcher_bold = False
         for index, tweak in enumerate(self._curr_tweaks):
             item_label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[
                 tweak.chosen] == tweak.custom_choice:
                 item_label = _custom_label(item_label, tweak.choiceValues[tweak.chosen][0])
-            self.gTweakList.lb_insert(item_label, index)
-            self.gTweakList.lb_check_at_index(index, tweak.isEnabled)
+            self.gList.lb_insert(item_label, index)
+            self.gList.lb_check_at_index(index, tweak.isEnabled)
             if not self._is_first_load and tweak.isNew():
                 # Indicate that this is a new item by bolding it and its parent
                 # patcher
-                self.gTweakList.lb_style_font_at_index(index, bold=True)
+                self.gList.lb_style_font_at_index(index, bold=True)
                 patcher_bold = True
         # Bold it if it has a new item, italicize it if it has no items
-        patcher_italics = self.gTweakList.lb_get_items_count() == 0
+        patcher_italics = self.gList.lb_get_items_count() == 0
         self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
 
     def TweakOnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all check states."""
         for index, tweak in enumerate(self._curr_tweaks):
-            tweak.isEnabled = self.gTweakList.lb_is_checked_at_index(index)
+            tweak.isEnabled = self.gList.lb_is_checked_at_index(index)
         self._enable_self(any(t.isEnabled for t in self._all_tweaks))
 
     def _mouse_leaving(self):
@@ -378,7 +402,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
         tweak = self._curr_tweaks[lb_index]
         choiceLabels = tweak.choiceLabels
         if len(choiceLabels) <= 1: return
-        self.gTweakList.lb_select_index(lb_index)
+        self.gList.lb_select_index(lb_index)
         #--Build Menu
         links = Links()
         _self = self # ugly, tweak_custom_choice is too big to make it local though
@@ -400,14 +424,14 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
             else:
                 links.append_link(_ValueLink(itm_txt))
         #--Show/Destroy Menu
-        links.popup_menu(self.gTweakList, None)
+        links.popup_menu(self.gList, None)
 
     def tweak_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
         self._curr_tweaks[tweakIndex].chosen = index
-        self.gTweakList.lb_set_label_at_index(
+        self.gList.lb_set_label_at_index(
             tweakIndex, self._curr_tweaks[tweakIndex].getListLabel())
-        self.gTweakList.lb_check_at_index(tweakIndex, True)
+        self.gList.lb_check_at_index(tweakIndex, True)
         # wx.EVT_CHECKLISTBOX is NOT fired so this line is needed (?)
         self.TweakOnListCheck()
 
@@ -486,8 +510,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
             tweak.choiceValues[index] = values
             tweak.chosen = index
             custom_label = _custom_label(tweak.getListLabel(), values[0])
-            self.gTweakList.lb_set_label_at_index(tweakIndex, custom_label)
-            self.gTweakList.lb_check_at_index(tweakIndex, True)
+            self.gList.lb_set_label_at_index(tweakIndex, custom_label)
+            self.gList.lb_check_at_index(tweakIndex, True)
             self.TweakOnListCheck() # fired so this line is needed (?)
         else:
             # The tweak doesn't like the values the user chose, let them know
@@ -498,7 +522,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
     def mass_select(self, select=True):
         """'Select All' or 'Deselect All' button was pressed, update all
         configChecks states."""
-        self.gTweakList.set_all_checkmarks(checked=select)
+        self.gList.set_all_checkmarks(checked=select)
         self.TweakOnListCheck()
         super().mass_select(select)
 
