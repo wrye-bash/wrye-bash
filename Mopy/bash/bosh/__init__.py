@@ -3110,7 +3110,7 @@ class ModInfos(_AFileInfos):
         can_set = (set_version and curr_ver and set_version != curr_ver and
                    set_version in self._voAvailable and not (
                         move_to in self or move_to in self.corrupted))
-        if not do_swap: return can_set # we can/can't swap
+        if not do_swap: return bool(can_set) # we can/can't swap
         ren_data = RefrData()
         if not can_set:
             return ren_data

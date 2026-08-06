@@ -503,12 +503,9 @@ class LoGame:
     # API: Exposed validation helpers - see load_order.py
     def lo_sort_key(self, *, ds=None, by_time=False):
         ds = self._mod_infos if ds is None else ds
-        def _key(fn):
-            is_m = self._game_handle.master_flags.sort_masters_key(ds[fn],self)
-            if by_time:
-                is_m = *is_m, ds[fn].ftime
-            return is_m
-        return _key
+        smk = self._game_handle.master_flags.sort_masters_key
+        return (lambda fn: (*smk(ds[fn], self), ds[fn].ftime)) if by_time \
+            else lambda fn: smk(ds[fn], self)
 
     def check_active_limit(self, acti_filtered, *, filter_list=None,
                            fix_active=None):
@@ -740,28 +737,6 @@ class INIGame(LoGame):
             return True # Assume order is important for the INI
         return super()._must_update_active(*args)
 
-def set_mtimes(wanted_lord, current_lord, fnkey_info: dict):
-    """Set the mtimes of the mods in current lord to match wanted_lord order.
-    set(wanted_lord) == set(current_lord) == mods is assumed."""
-    # mods's mtimes match the current lord's order - break conflicts
-    mods_it = map(fnkey_info.__getitem__, current_lord)
-    older = next(mods_it).ftime # initialize to older mod's ftime
-    for info in mods_it:
-        # mods_it is ordered in ftime so conflicts come in chunks
-        if older == (older := info.ftime):
-            # respace this and next mods in 60 sec intervals
-            for inf in (info, *mods_it):
-                older += 60.0
-                inf.setmtime(older, mark_redated=True)
-            break
-    restamp = []
-    # set(wanted_lord) == set(current_lord) - collect modification times
-    for ordered, mod in zip(wanted_lord, current_lord, strict=True):
-        if ordered != mod:
-            restamp.append((ordered, fnkey_info[mod].ftime))
-    for ordered, modification_time in restamp:
-        fnkey_info[ordered].setmtime(modification_time)
-
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times."""
@@ -774,17 +749,42 @@ class TimestampGame(LoGame):
 
     def _persist_if_changed(self, lord, previous_lord, *args, **kwargs):
         if previous_lord is None or previous_lord != lord:
-            current = self._calculate_mtime_order(modinfos := self._mod_infos)
-            set_mtimes(lord, current, modinfos)
+            self._set_mtimes(lord)
         super()._persist_if_changed(lord, previous_lord, *args, **kwargs)
 
     def _add_last(self, lord, added):
         if added:
-            lo_added = []
-            lo_new = [m for m in lord if m not in added or lo_added.append(m)]
-            lo_new = sorted([*lo_new, *lo_added], key=self.lo_sort_key())
-            set_mtimes(lo_new, lord, self._mod_infos)
+            lo_new = [] # if added mods are present in lord keep relative order
+            # rdata.to_add are already present in lord, fix_lo.lo_added are not
+            old = (m for m in lord if m not in added or ( # on boot to_add=lord
+                    lo_new.append(m) or added.remove(m)))
+            lo_new = [*old, *lo_new, *self._calculate_mtime_order(added)]
+            lo_new.sort(key=self.lo_sort_key()) # sort added master files first
+            self._set_mtimes(lo_new)
             lord[:] = lo_new
+
+    def _set_mtimes(self, wanted_lord):
+        """Set the mtimes of the mods in self._mod_infos to match wanted_lord
+        order. If set(wanted_lord) != set(modInfos) a ValueError is raised."""
+        current_lord = self._calculate_mtime_order(modinfos := self._mod_infos)
+        # mods's mtimes match the current lord's order - break conflicts
+        mods_it = map(modinfos.__getitem__, current_lord)
+        older = next(mods_it).ftime # initialize to older mod's ftime
+        for info in mods_it:
+            # mods_it is ordered in ftime so conflicts come in chunks
+            if older == (older := info.ftime):
+                # respace this and next mods in 60 sec intervals
+                for inf in (info, *mods_it):
+                    older += 60.0
+                    inf.setmtime(older, mark_redated=True)
+                break
+        restamp = []
+        # set(wanted_lord) == set(current_lord) - collect modification times
+        for ordered, mod in zip(wanted_lord, current_lord, strict=True):
+            if ordered != mod:
+                restamp.append((ordered, modinfos[mod].ftime))
+        for ordered, modification_time in restamp:
+            modinfos[ordered].setmtime(modification_time)
 
 class TextfileGame(LoGame):
     # If True, the game master (e.g. Skyrim.esm) must never be written to

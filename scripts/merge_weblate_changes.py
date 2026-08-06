@@ -66,6 +66,8 @@ Please clean up the rewritten {_WEBLATE_OUT_BRANCH} branch now. Tasks to do:
  - check each commit's message and author/co-authors
  - verify the rebased branch matches the remote.
  - add any manual commits needed (e.g. README updates, etc.)
+ - run the template updating script if you made any changes to any Python
+   file *with translations* on the rewritten branch
 Then"""
 def main(args):
     setup_log(_LOGGER, args)

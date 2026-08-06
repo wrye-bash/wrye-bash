@@ -1651,7 +1651,7 @@ class EnabledLink(ItemLink):
     a class attribute.
     """
 
-    def _enable(self):
+    def _enable(self) -> bool:
         """Override as needed to enable or disable the menu item (enabled
         by default)."""
         return True
