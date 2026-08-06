@@ -137,7 +137,7 @@ class ListPatcherConfig(PatcherConfig):
     # GUI DEFAULTS - the panels must not define those, they come first in the
     # MRO of the GUI patcher classes and would hide the config's
     _autocheck_new = True # whether new items are checked by default
-    _list_label = '' # title of the sources list, see _ListPatcherPanel
+    _list_label = '' # title of the sources list, see _ListPanel
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
