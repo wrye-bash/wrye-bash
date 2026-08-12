@@ -351,10 +351,8 @@ class Mods_CleanDummyMasters(EnabledLink):
     _help = _("Clean up after using a 'Create Dummy Masters…' command")
 
     def _enable(self):
-        for fileInfo in bosh.modInfos.values():
-            if fileInfo.header.author == u'BASHED DUMMY':
-                return True
-        return False
+        return any(fileInfo.header.author == 'BASHED DUMMY' for fileInfo in
+                   bosh.modInfos.values())
 
     def Execute(self):
         to_remove = []
