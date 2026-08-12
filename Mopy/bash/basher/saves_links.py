@@ -61,18 +61,14 @@ def _win_join(saves_subdir):
 
 class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
+    showAdd = showRename = showRemove = showInfo = True
+    infoWeight = 2
+    infoReadOnly = False
+
     def __init__(self,parent):
         """Initialize."""
         self.baseSaves = bass.dirs['saveBase'].join(bush.game.Ess.saves_dir)
-        #--GUI
         super().__init__(parent)
-        self._parent_list = parent
-        self.showAdd    = True
-        self.showRename = True
-        self.showRemove = True
-        self.showInfo   = True
-        self.infoWeight = 2
-        self.infoReadOnly = False
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
@@ -112,7 +108,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         if bosh.saveInfos.localSave == oldSaves:
             # this will clear and refresh SaveInfos - we could be smarter as
             # only the abs_path of the infos changes - not worth the complexity
-            self._parent_list.set_local_save(save_dir=newSaves)
+            self.parent.set_local_save(save_dir=newSaves)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
@@ -418,6 +414,8 @@ class Save_Renumber(EnabledLink):
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
     """Data capsule for custom item editing dialog."""
+    showRename = showCancel = showSave = showInfo = True
+
     def __init__(self, parent, saveFile, types_set):
         self._changed = False
         self.saveFile = saveFile
@@ -437,12 +435,7 @@ class Save_EditCreatedData(balt.ListEditorData):
                     if record_full not in name_nameRecords:
                         name_nameRecords[record_full] = (record_full, [])
                     name_nameRecords[record_full][1].append(record)
-        #--GUI
-        balt.ListEditorData.__init__(self,parent)
-        self.showRename = True
-        self.showInfo = True
-        self.showSave = True
-        self.showCancel = True
+        super().__init__(parent)
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
@@ -555,6 +548,8 @@ class Save_EditCreated(OneItemLink):
 #------------------------------------------------------------------------------
 class Save_EditPCSpellsData(balt.ListEditorData):
     """Data capsule for pc spell editing dialog."""
+    showRemove = showInfo = showSave = showCancel = True
+
     def __init__(self,parent,saveInfo):
         """Initialize."""
         self.saveSpells = _saves.SaveSpells(saveInfo)
@@ -562,12 +557,7 @@ class Save_EditPCSpellsData(balt.ListEditorData):
             self.saveSpells.load_data(progress, bosh.modInfos)
         self.player_spells = self.saveSpells.getPlayerSpells()
         self.removed = set()
-        #--GUI
-        balt.ListEditorData.__init__(self,parent)
-        self.showRemove = True
-        self.showInfo = True
-        self.showSave = True
-        self.showCancel = True
+        super().__init__(parent)
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
