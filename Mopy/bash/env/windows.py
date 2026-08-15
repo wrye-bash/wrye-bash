@@ -213,39 +213,37 @@ def _get_default_app_icon(idex, target):
     try:
         if target.is_dir():
             global __folderIcon
-            if not __folderIcon:
+            if __folderIcon:
+                filedata = __folderIcon
+            else:
                 # Special handling of the Folder icon
-                folderkey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, u'Folder')
-                iconkey = winreg.OpenKey(folderkey, u'DefaultIcon')
+                folderkey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, 'Folder')
+                iconkey = winreg.OpenKey(folderkey, 'DefaultIcon')
                 filedata = winreg.EnumValue(iconkey, 0)
-                # filedata == ('', u'%SystemRoot%\\System32\\shell32.dll,3', 2)
+                # filedata == ('', '%SystemRoot%\\System32\\shell32.dll,3', 2)
                 filedata = filedata[1]
                 __folderIcon = filedata
-            else:
-                filedata = __folderIcon
         else:
             file_association = winreg.QueryValue(winreg.HKEY_CLASSES_ROOT,
                                                  target.cext)
-            pathKey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
+            pathKey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, # raises FNFE
                                      f'{file_association}\\DefaultIcon')
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
-        if os.path.isabs(filedata) and os.path.isfile(filedata):
-            icon_path = _GPath(filedata)
-        else:
-            icon_path, idex = filedata.split(',')
-            icon_path = _GPath(os.path.expandvars(icon_path))
-        if not os.path.isabs(icon_path):
-            # Get the correct path to the dll
-            for dir_ in os.environ[u'PATH'].split(u';'):
-                test = os.path.join(dir_, icon_path)
-                if os.path.exists(test):
-                    icon_path = _GPath(test)
-                    break
-    except: # TODO(ut) comment the code above - what exception can I get here?
-        _deprint(f'Error finding icon for {target}:', traceback=True)
-        icon_path = undefinedPath
-    return icon_path, idex
+        if not os.path.isabs(filedata) or not os.path.isfile(filedata):
+            filedata, idex = filedata.split(',')
+            filedata = os.path.expandvars(filedata)
+            if not os.path.isabs(filedata):
+                # Get the correct path to the dll
+                for dir_ in os.environ['PATH'].split(';'):
+                    test = os.path.join(dir_, filedata)
+                    if os.path.exists(test):
+                        filedata = test
+                        break
+    except FileNotFoundError:
+        _deprint(f'Error finding icon for {target}')
+        return undefinedPath, idex
+    return _GPath(filedata), idex
 
 def _query_string_field_version(file_name, version_prefix):
     """
@@ -441,12 +439,10 @@ class _LegacyWindowsStoreFinder(object):
             package_index = self._get_package_index(full_name)
             if package_index is None:
                 continue # Installation is not using the legacy method
-            install_location, mutable_location = \
-                self._get_package_locations(package_index)
+            install_location, mutable_location = map(_GPath,
+                self._get_package_locations(package_index))
             if install_location is None or mutable_location is None:
                 continue # Installation is not using the legacy method
-            install_location = _GPath(install_location)
-            mutable_location = _GPath(mutable_location)
             install_time = self._get_package_install_time(package_name,
                                                           full_name)
             version, entry_point = self._get_manifest_info(mutable_location,
@@ -1104,10 +1100,8 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
         pass  # win32client is None
     for path, (target, win_icon_location, shortcut_descr) in shortcuts.items():
         # msi shortcuts: dc0c8de
-        if target.lower().find(r'installer\{') != -1:
-            target = path
-        else:
-            target = _GPath(target)
+        target = path if target.lower().find(r'installer\{') != -1 else _GPath(
+            target)
         if not target.exists(): continue
         # Target exists - extract path, icon and shortcut_descr
         # First try a custom icon - undocumented! let it stay so as we will
