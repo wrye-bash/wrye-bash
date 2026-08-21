@@ -1037,9 +1037,9 @@ class Path(os.PathLike):
             return self._cext
 
     def replace_with_temp(self, temp_path: str | os.PathLike):
-        """Replace this file with a temporary version created via TempFile or
-        new_temp_file, optionally making a backup of this file first. Note that
-        this *does not work for directories!* It is only intended for files.
+        """Replace this file with a temporary version created via TempFile,
+        optionally making a backup of this file first. Note that this *does
+        not work for directories!* It is only intended for files.
 
         This also does not remove the temporary file from the internal caches
         so as to work with TempFile."""
@@ -1048,8 +1048,8 @@ class Path(os.PathLike):
         except PermissionError:
             self.clearRO()
             shutil.move(temp_path, self._s)
-        # Do *not* call cleanup_temp_file here! This method needs to work with
-        # TempFile, which will already call cleanup_temp_file for us
+        # Do *not* cleanup the temp file here! This method needs to work with
+        # TempFile, which will cleanup the file for us
 
     @property
     def backup(self):
