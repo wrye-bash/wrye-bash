@@ -41,7 +41,7 @@ from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     showError, showOk, ImageList
 from ..parsers import CsvParser
 from ..update_checker import LatestVersion
-from ..wbtemp import TempDir, cleanup_temp_file, new_temp_file
+from ..wbtemp import TempDir, TempFile
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -729,10 +729,6 @@ class UpdateNotification(DialogWindow):
             'new_wb_ver': new_version.wb_version,
             'curr_wb_ver': bass.AppVersion,
         }
-        # Write the changelog into a temp file, we'll clean it up when we close
-        # the notification
-        self._temp_html = new_temp_file(temp_prefix='wb_changes',
-            temp_suffix='.html')
         with open(self._temp_html, 'w', encoding='utf-8') as out:
             out.write(wrye_text.html_start % (self.title, _uc_css))
             out.write(new_version.wb_changes)
@@ -801,10 +797,11 @@ class UpdateNotification(DialogWindow):
         self._do_quit = True
 
     def show_modal(self):
-        super().show_modal()
-        # Clean up the temp file we used to store the HTML and quit WB if the
-        # Quit and Download button was pressed
-        cleanup_temp_file(self._temp_html)
+        # Write the changelog into a temp file
+        with TempFile(temp_prefix='wb_changes',
+                      temp_suffix='.html') as self._temp_html:
+            super().show_modal()
+        # Quit WB if the Quit and Download button was pressed
         if self._do_quit:
             balt.Link.Frame.exit_wb()
 
