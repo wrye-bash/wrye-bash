@@ -488,8 +488,8 @@ class TweakPatcherConfig(PatcherConfig):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        self._all_tweaks = self._curr_tweaks = self._tweaks_config(config,
-                                                                   self._bp)
+        self._all_tweaks = self._curr_items = self._tweaks_config(config,
+                                                                  self._bp)
         return config
 
     def saveConfig(self, configs):
