@@ -27,9 +27,8 @@ Generally, you want to use TempDir or TempFile in a context handler. That way
 you guarantee that the temporary files will get cleaned up, no matter how
 complicated your flow of logic might get or even if an exception occurs.
 
-If you need more control, use new_temp_dir and new_temp_file to create
-temporary directories and files and clean them up manually with
-cleanup_temp_dir and cleanup_temp_file.
+If you need more control, use new_temp_dir to create temporary directories
+and clean them up manually with cleanup_temp_dir.
 
 If worst comes to worst, Wrye Bash's atexit hook should clean up all leftover
 temp files when Wrye Bash closes. Sometimes this is unavoidable (see e.g.
@@ -187,45 +186,6 @@ class TempDir:
         cleanup_temp_dir(self._temp_dir)
 
 # API - Temporary Files -------------------------------------------------------
-def new_temp_file(*, temp_prefix='', temp_suffix='.dat', base_dir='',
-                 bolt_path=False) -> str | os.PathLike:
-    """Create a new, unique, temporary file. The caller is responsible for
-    cleaning it up via cleanup_temp_file once done.
-
-    Use only when absolutely needed, TempFile is almost always a better
-    choice."""
-    ntf_fd, ntf = tempfile.mkstemp(dir=base_dir or _get_global_dir(),
-        prefix=f'{temp_prefix}_' if temp_prefix else '', suffix=temp_suffix)
-    _our_temp_files.add(PPath(ntf))
-    os.close(ntf_fd)
-    from .bolt import GPath_no_norm
-    return GPath_no_norm(ntf) if bolt_path else ntf
-
-def cleanup_temp_file(temp_file: str | os.PathLike) -> None:
-    """Clean up a temporary file created via new_temp_file. Will raise an error
-    if called on a file that wasn't created via new_temp_file or if it is
-    called twice on the same file.
-
-    Use only when absolutely needed, TempFile is almost always a better
-    choice."""
-    fixed_path = PPath(temp_file)
-    try:
-        _our_temp_files.remove(fixed_path)
-    except KeyError:
-        # 'from None' to drop the unhelpful KeyError traceback
-        if not fixed_path.is_file():
-            raise RuntimeError(
-                f'cleanup_temp_file may have been called twice on the same '
-                f'file or on a directory (offending path: '
-                f'{temp_file})') from None
-        raise RuntimeError(
-            f"Refusing to delete file that wasn't created by this instance's "
-            f"new_temp_file (offending path: {temp_file})") from None
-    try:
-        os.remove(fixed_path)
-    except FileNotFoundError:
-        pass # Already cleaned up (e.g. by moving it somewhere else)
-
 class TempFile:
     """Convenient and error-resistant way to create and clean up a unique
     temporary file with a context handler."""
@@ -237,13 +197,33 @@ class TempFile:
         self._bolt_path = bolt_path
 
     def __enter__(self):
-        self._temp_file = new_temp_file(temp_prefix=self._temp_prefix,
-            temp_suffix=self._temp_suffix, base_dir=self._base_dir,
-            bolt_path=self._bolt_path)
+        """Create a new, unique, temporary file."""
+        ntf_fd, ntf = tempfile.mkstemp(dir=self._base_dir or _get_global_dir(),
+            prefix=f'{self._temp_prefix}_' if self._temp_prefix else '',
+            suffix=self._temp_suffix)
+        _our_temp_files.add(PPath(ntf))
+        os.close(ntf_fd)
+        from .bolt import GPath_no_norm
+        self._temp_file = GPath_no_norm(ntf) if self._bolt_path else ntf
         return self._temp_file
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        cleanup_temp_file(self._temp_file)
+        """Clean up a temporary file created via __enter__. Will raise an error
+        if called on a file that wasn't created via __enter__ or if it is
+        called twice on the same file."""
+        fixed_path = PPath(self._temp_file)
+        try:
+            _our_temp_files.remove(fixed_path)
+        except KeyError:
+            msg = f'{self._temp_file} is not a file' if not fixed_path.is_file(
+                ) else f"Refusing to delete file that wasn't created by " \
+                       f"this instance (offending path: {self._temp_file})"
+            # 'from None' to drop the unhelpful KeyError traceback
+            raise RuntimeError(msg) from None
+        try:
+            os.remove(fixed_path)
+        except FileNotFoundError:
+            pass # Already cleaned up (e.g. by moving it somewhere else)
 
 # API - Misc ------------------------------------------------------------------
 def default_global_temp_dir() -> str:
