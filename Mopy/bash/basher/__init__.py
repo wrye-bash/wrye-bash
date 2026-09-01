@@ -1281,6 +1281,7 @@ class _SashDetailsPanel(_DetailsMixin, SashPanel):
         lambda self: self.subSplitter.get_sash_pos(),
         lambda self, sashPos: self.subSplitter.set_sash_pos(sashPos))
     }
+    _min_subpane_size = 80 # self.subSplitter min_pane_size
 
     def __init__(self, parent):
         super().__init__(parent, isVertical=False)
@@ -1288,7 +1289,7 @@ class _SashDetailsPanel(_DetailsMixin, SashPanel):
         self.subSplitter = self._get_sub_splitter()
 
     def _get_sub_splitter(self):
-        return Splitter(self.right, min_pane_size=64)
+        return Splitter(self.right, min_pane_size=self._min_subpane_size)
 
 class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
     """Mod and Saves details panel, feature a master's list.
@@ -1325,6 +1326,7 @@ class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
     keyPrefix = u'bash.mods.details' # used in sash/scroll position, sorting
     _master_list_type = MasterList
+    _min_subpane_size = 128
 
     @property
     def file_infos(self): return bosh.modInfos
@@ -1401,9 +1403,6 @@ class ModDetails(_ModsSavesDetails):
         # If the game has no tags, then there is no point in enabling the Bash
         # Tags field
         self._bottom_low_panel.enabled = bool(bush.game.allTags)
-
-    def _get_sub_splitter(self):
-        return Splitter(self.right, min_pane_size=128)
 
     def _resetDetails(self):
         super()._resetDetails()
@@ -2526,6 +2525,7 @@ class InstallersDetails(_SashDetailsPanel):
         lambda self: self.checkListSplitter.get_sash_pos(),
         lambda self, sashPos: self.checkListSplitter.set_sash_pos(sashPos))
     }
+    _min_subpane_size = 50
 
     @property
     def file_infos(self): return self.installersPanel.listData
@@ -2617,7 +2617,8 @@ class InstallersDetails(_SashDetailsPanel):
         ]).apply_to(bottom)
 
     def _get_sub_splitter(self):
-        return Splitter(self.left, min_pane_size=50, sash_gravity=0.5)
+        return Splitter(self.left, min_pane_size=self._min_subpane_size,
+                        sash_gravity=0.5)
 
     def OnShowInfoPage(self, event_id, selected_index):
         """A specific info page has been selected."""
