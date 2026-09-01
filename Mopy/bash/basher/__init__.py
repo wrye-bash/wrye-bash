@@ -3317,7 +3317,7 @@ class BashNotebook(DnDNotebook):
                     raise
                 deprint(f"Error constructing '{title}' panel.",
                         traceback=True)
-                settings['bash.tabs.order'][page] = False
+                # settings['bash.tabs.order'][page] = False
         #--Selection
         pageIndex = max(min(settings['bash.page'], dex - 1), 0)
         if settings[u'bash.installers.fastStart'] and pageIndex == iInstallers:
