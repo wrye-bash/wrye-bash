@@ -126,6 +126,7 @@ class _ListPanel(_PatcherPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._all_items: list[FName | MultiTweakItem] = []
         # List of items that are currently visible (according to the search)
         self._curr_items = []
 
@@ -173,6 +174,17 @@ class _ListPanel(_PatcherPanel):
         with self.gList.pause_drawing():
             self._do_populate_item_list()
 
+    def _handle_item_search(self, search_str):
+        """Repopulate the list when the search text changes."""
+        lower_search_str = search_str.strip().lower()
+        self._curr_items = [i for i in self._all_items if any(
+            lower_search_str in s.lower()
+            for s in self._get_item_search_strings(i))]
+        self._populate_item_list()
+
+    def _get_item_search_strings(self, list_item):
+        return (list_item,)
+
     def mass_select(self, select=True):
         try:
             self.gList.set_all_checkmarks(checked=select)
@@ -199,6 +211,7 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
         """Helper for LO-sorting items and updating the internal caches for
         them."""
         super()._sort_and_update_items(is_auto, do_sort)
+        self._all_items = list(self._item_config)
         # Clear the search bar - this will _handle_item_search, which will call
         # _do_populate_item_list in turn
         self._item_search.text_content = ''
@@ -208,14 +221,6 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
         if not self._is_first_load and self._item_config.get(item) is None:
             self._new_items.add(item)
         super()._set_choice(item)
-
-    def _handle_item_search(self, search_str):
-        """Internal callback used to repopulate the item list whenever the
-        text in the search bar changes."""
-        lower_search_str = search_str.strip().lower()
-        self._curr_items = [i for i in self._item_config if
-                            lower_search_str in i.lower()]
-        self._populate_item_list()
 
     def _do_populate_item_list(self):
         """Populate the patcher's item list based on the currently searched for
@@ -287,11 +292,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
     _select_all_tooltip = _('Activate all currently visible tweaks.')
     _deselect_all_tooltip = _('Deactivate all currently visible tweaks.')
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # List of all tweaks that this tweaker can house
-        self._all_tweaks: list[MultiTweakItem] = []
-
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
             #--Events
@@ -323,7 +323,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
         """One of list items was checked. Update all check states."""
         for index, tweak in enumerate(self._curr_items):
             tweak.isEnabled = self.gList.lb_is_checked_at_index(index)
-        self._enable_self(any(t.isEnabled for t in self._all_tweaks))
+        self._enable_self(any(t.isEnabled for t in self._all_items))
 
     def _mouse_leaving(self):
         self._parent.gTipText.label_text = ''
@@ -344,14 +344,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
             super(_TweakPatcherPanel, self)._handle_mouse_motion(wrapped_evt,
                                                                  lb_dex)
 
-    def _handle_item_search(self, search_str):
-        """Internal callback used to repopulate the tweak list whenever the
-        text in the search bar changes."""
-        lower_search_str = search_str.strip().lower()
-        self._curr_items = [t for t in self._all_tweaks
-                            if lower_search_str in t.tweak_name.lower()
-                            or lower_search_str in t.tweak_tip.lower()]
-        self._populate_item_list()
+    def _get_item_search_strings(self, list_item):
+        return list_item.tweak_name, list_item.tweak_tip
 
     def ShowChoiceMenu(self, lb_index):
         """Displays a popup choice menu if applicable."""

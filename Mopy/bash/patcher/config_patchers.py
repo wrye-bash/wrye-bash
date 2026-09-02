@@ -488,14 +488,14 @@ class TweakPatcherConfig(PatcherConfig):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        self._all_tweaks = self._curr_items = self._tweaks_config(config,
-                                                                  self._bp)
+        self._all_items = self._curr_items = self._tweaks_config(config,
+                                                               self._bp)
         return config
 
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
         config = super().saveConfig(configs)
-        for tweak in self._all_tweaks:
+        for tweak in self._all_items:
             tweak.save_tweak_config(config)
         return config
 
@@ -515,7 +515,7 @@ class TweakPatcherConfig(PatcherConfig):
                     clip.write(f'    {list_label}\n')
 
     def get_patcher_instance(self, patch_file):
-        enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]
+        enabledTweaks = [t for t in self._all_items if t.isEnabled]
         return self.patcher_type(self.patcher_name, patch_file, enabledTweaks)
 
     @classmethod
