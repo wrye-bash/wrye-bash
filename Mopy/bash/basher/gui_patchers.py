@@ -120,6 +120,7 @@ class AliasPluginNames(_PatcherPanel, _APConfig):
 #------------------------------------------------------------------------------
 class _ListPanel(_PatcherPanel):
     _list_label = ''
+    _auto_enable_on_populate = False
     _search_hint = _('Search Sources')
     _select_all_tooltip = _('Activate all currently visible sources.')
     _deselect_all_tooltip = _('Deactivate all currently visible sources.')
@@ -174,6 +175,37 @@ class _ListPanel(_PatcherPanel):
         with self.gList.pause_drawing():
             self._do_populate_item_list()
 
+    def _do_populate_item_list(self):
+        """Populate and style the currently visible entries."""
+        self.gList.lb_clear()
+        patcher_on = False
+        patcher_bold = False
+        for index, list_item in enumerate(self._curr_items):
+            self.gList.lb_insert(self._get_item_label(list_item), index)
+            if do_bold := self._is_item_new(list_item):
+                self.gList.lb_style_font_at_index(index, bold=True)
+            patcher_on |= self._check_item(list_item, index)
+            patcher_bold |= do_bold
+        if patcher_on and self._auto_enable_on_populate:
+            self._enable_self()
+        # Bold it if it has a new item, italicize it if it has no items.
+        self._style_patcher_label(bold=patcher_bold,
+            italics=self.gList.lb_get_items_count() == 0)
+
+    def _check_item(self, list_item, index):
+        checked = self._is_item_checked(list_item)
+        self.gList.lb_check_at_index(index, checked)
+        return checked
+
+    def _get_item_label(self, list_item):
+        raise NotImplementedError
+
+    def _is_item_checked(self, list_item):
+        raise NotImplementedError
+
+    def _is_item_new(self, list_item):
+        raise NotImplementedError
+
     def _handle_item_search(self, search_str):
         """Repopulate the list when the search text changes."""
         lower_search_str = search_str.strip().lower()
@@ -196,6 +228,8 @@ class _ListPanel(_PatcherPanel):
 class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
     """Patcher panel with option to select source elements."""
     gList: CheckListBox
+    # Unlike tweak panels, checked sources enable the panel when populated.
+    _auto_enable_on_populate = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -222,29 +256,14 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
             self._new_items.add(item)
         super()._set_choice(item)
 
-    def _do_populate_item_list(self):
-        """Populate the patcher's item list based on the currently searched for
-        items."""
-        self.gList.lb_clear()
-        patcherOn = False
-        patcher_bold = False
-        for index, item in enumerate(self._curr_items):
-            itemLabel = self._mod_label(item, self._item_config)
-            self.gList.lb_insert(itemLabel, index)
-            # Indicate that this is a new item by bolding it and its parent patcher
-            if do_bold := item in self._new_items:
-                self.gList.lb_style_font_at_index(index, bold=True)
-            patcherOn |= self._check_item(item, index)
-            patcher_bold |= do_bold
-        if patcherOn:
-            self._enable_self()
-        # Bold it if it has a new item, italicize it if it has no items
-        patcher_italics = self.gList.lb_get_items_count() == 0
-        self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
+    def _get_item_label(self, list_item):
+        return self._mod_label(list_item, self._item_config)
 
-    def _check_item(self, item, index):
-        self.gList.lb_check_at_index(index, val := self._item_config[item])
-        return val
+    def _is_item_checked(self, list_item):
+        return self._item_config[list_item]
+
+    def _is_item_new(self, list_item):
+        return list_item in self._new_items
 
     def _on_list_check(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
@@ -300,24 +319,19 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
             self.mouse_dex = -1
         return freshly_created
 
-    def _do_populate_item_list(self):
-        self.gList.lb_clear()
-        patcher_bold = False
-        for index, tweak in enumerate(self._curr_items):
-            item_label = tweak.getListLabel()
-            if tweak.choiceLabels and tweak.choiceLabels[
-                tweak.chosen] == tweak.custom_choice:
-                item_label = _custom_label(item_label, tweak.choiceValues[tweak.chosen][0])
-            self.gList.lb_insert(item_label, index)
-            self.gList.lb_check_at_index(index, tweak.isEnabled)
-            if not self._is_first_load and tweak.isNew():
-                # Indicate that this is a new item by bolding it and its parent
-                # patcher
-                self.gList.lb_style_font_at_index(index, bold=True)
-                patcher_bold = True
-        # Bold it if it has a new item, italicize it if it has no items
-        patcher_italics = self.gList.lb_get_items_count() == 0
-        self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
+    def _get_item_label(self, list_item):
+        item_label = list_item.getListLabel()
+        if list_item.choiceLabels and list_item.choiceLabels[
+                list_item.chosen] == list_item.custom_choice:
+            item_label = _custom_label(item_label,
+                list_item.choiceValues[list_item.chosen][0])
+        return item_label
+
+    def _is_item_checked(self, list_item):
+        return list_item.isEnabled
+
+    def _is_item_new(self, list_item):
+        return not self._is_first_load and list_item.isNew()
 
     def _on_list_check(self, _lb_selection_dex=None):
         """One of list items was checked. Update all check states."""
