@@ -26,7 +26,7 @@ import re
 from typing import ClassVar
 
 from .patcher_dialog import gpatcher_types
-from .. import bass, bolt, bosh, load_order
+from .. import bosh
 from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, text_wrap
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
