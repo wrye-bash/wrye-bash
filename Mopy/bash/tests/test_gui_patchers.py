@@ -119,6 +119,8 @@ def test_tweak_config_keeps_filtered_out_items(panels):
 def _population_panel(panel_type, current_items):
     panel = panel_type.__new__(panel_type)
     panel._curr_items = current_items
+    # Mocks record GUI updates so we can check their arguments without
+    # creating native controls or the containing patch dialog.
     panel.gList = Mock()
     panel.gList.lb_get_items_count.return_value = len(current_items)
     panel._style_patcher_label = Mock()
@@ -207,6 +209,7 @@ def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
 
     frame = wx.Frame(None) # Never shown; no game files are touched.
     frame.config_layout = VLayout()
+    # Only the surrounding dialog is mocked; the panel's controls are real.
     frame.style_patcher = Mock()
     frame.check_patcher = Mock()
     frame.gPatchers = Mock()
@@ -216,6 +219,8 @@ def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
         assert not panel.native_init(frame, patch_configs={}, recreate=False)
         assert panel.gList.lb_get_items_count() == 1
         assert panel.gList.lb_is_checked_at_index(0)
+        # Yield after each search edit to process pending GUI events before
+        # checking the resulting list; this test does not run wx.MainLoop().
         panel._item_search.text_content = 'missing'
         wx.Yield()
         assert panel.gList.lb_get_items_count() == 0
