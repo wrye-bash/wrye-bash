@@ -153,6 +153,12 @@ class _ListPanel(_PatcherPanel):
                     ]), LayoutOptions(expand=True, weight=1)))
         return freshly_created
 
+    def _on_list_check(self, _lb_selection_dex=None):
+        """One of list items was un/checked."""
+        for i, item in enumerate(self._curr_items):
+            self._set_item_checked(item, self.gList.lb_is_checked_at_index(i))
+        self._enable_self(any(map(self._is_item_checked, self._curr_items)))
+
     def _get_glist(self):
         self.gList = CheckListBox(self)
         self.gList.on_box_checked.subscribe(self._on_list_check)
@@ -201,6 +207,9 @@ class _ListPanel(_PatcherPanel):
         raise NotImplementedError
 
     def _is_item_checked(self, list_item):
+        raise NotImplementedError
+
+    def _set_item_checked(self, item, param):
         raise NotImplementedError
 
     def _is_item_new(self, list_item):
@@ -262,17 +271,19 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
     def _is_item_checked(self, list_item):
         return self._item_config[list_item]
 
+    def _set_item_checked(self, item, param):
+        self._item_config[item] = param
+
     def _is_item_new(self, list_item):
         return list_item in self._new_items
 
-    def _on_list_check(self, _lb_selection_dex=None):
-        """One of list items was checked. Update all configChecks states."""
-        for i, item in enumerate(self._curr_items):
-            self._item_config[item] = self.gList.lb_is_checked_at_index(i)
-        self._enable_self(any(self._item_config.values()))
-
 #------------------------------------------------------------------------------
-class _ChoiceMenuMixin(object):
+class _ChoiceMenuMixin(_ListPanel):
+
+    def native_init(self, *args, **kwargs):
+        if freshly_created := super().native_init(*args, **kwargs):
+            self._bind_mouse_events(self.gList)
+        return freshly_created
 
     def _bind_mouse_events(self, right_click_list: ListBox | CheckListBox):
         right_click_list.on_mouse_motion.subscribe(self._handle_mouse_motion)
@@ -304,7 +315,7 @@ _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
 def _custom_label(label_text, val): # edit label text with value
     return f'{label_text}: {_label_formats[type(val)] % val}'
 
-class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
+class _TweakPatcherPanel(_ChoiceMenuMixin, TweakPatcherConfig):
     """Patcher panel with list of checkable, configurable tweaks."""
     _list_label = _('Tweaks')
     _search_hint = _('Search Tweaks')
@@ -313,8 +324,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
-            #--Events
-            self._bind_mouse_events(self.gList)
             self.gList.on_mouse_leaving.subscribe(self._mouse_leaving)
             self.mouse_dex = -1
         return freshly_created
@@ -333,11 +342,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
     def _is_item_new(self, list_item):
         return not self._is_first_load and list_item.isNew()
 
-    def _on_list_check(self, _lb_selection_dex=None):
-        """One of list items was checked. Update all check states."""
-        for index, tweak in enumerate(self._curr_items):
-            tweak.isEnabled = self.gList.lb_is_checked_at_index(index)
-        self._enable_self(any(t.isEnabled for t in self._all_items))
+    def _set_item_checked(self, item, param):
+        item.isEnabled = param
 
     def _mouse_leaving(self):
         self._parent.gTipText.label_text = ''
@@ -355,8 +361,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
                     self._curr_items[lb_dex].tweak_tip
                     if 0 <= lb_dex < len(self._curr_items) else '')
         else:
-            super(_TweakPatcherPanel, self)._handle_mouse_motion(wrapped_evt,
-                                                                 lb_dex)
+            super()._handle_mouse_motion(wrapped_evt, lb_dex)
 
     def _get_item_search_strings(self, list_item):
         return list_item.tweak_name, list_item.tweak_tip
@@ -400,7 +405,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _ListPanel, TweakPatcherConfig):
         # wx.EVT_CHECKLISTBOX is NOT fired so this line is needed (?)
         self._on_list_check()
 
-    def tweak_custom_choice(self, index, tweakIndex):
+    def tweak_custom_choice(self, index, tweakIndex: int):
         """Handle choice menu selection."""
         tweak: MultiTweakItem = self._curr_items[tweakIndex]
         values = []
@@ -500,11 +505,6 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
     selectCommands = False
     gList: ListBox
 
-    def native_init(self, *args, **kwargs):
-        if freshly_created := super().native_init(*args, **kwargs):
-            self._bind_mouse_events(self.gList)
-        return freshly_created
-
     def _style_patcher_label(self, bold=False, italics=False):
         # Never italicize these since they will run even if there are no tagged
         # source plugins # TODO(ut): no?
@@ -523,8 +523,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
 
     def _handle_item_search(self, search_str):
         super()._handle_item_search(search_str)
-        self._update_manual_buttons(
-            not (self.autoIsChecked or self._item_search.text_content))
+        self._update_manual_buttons(not self.autoIsChecked)
 
     def _on_auto_check(self, is_checked):
         """Automatic checkbox changed."""
@@ -532,11 +531,12 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
         if is_checked:
             self._sort_and_update_items()
         else: # In autoIsChecked case, this is called by _handle_item_search
-            self._update_manual_buttons(not self._item_search.text_content)
+            self._update_manual_buttons()
 
-    def _update_manual_buttons(self, btns_enabled):
+    def _update_manual_buttons(self, btns_enabled=True):
         """Helper that enables or disables the add/remove buttons based on
         internal state."""
+        btns_enabled = btns_enabled and not self._item_search.text_content
         for butt in self._add_rem_bt: butt.enabled = btns_enabled
 
     def _on_add(self):
@@ -611,7 +611,7 @@ class LeveledLists(_ListsMergerPanel, _LLConfig):
     def _get_glist(self):
         self.gList = ListBox(self, isSingle=False)
 
-    def _check_item(self, item, index):
+    def _check_item(self, list_item, index):
         return False
 
 #------------------------------------------------------------------------------
