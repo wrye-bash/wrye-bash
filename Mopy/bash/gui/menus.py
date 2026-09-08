@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import wx as _wx
 
-from .base_components import _AComponent, Lazy
+from .base_components import Lazy
 
 class Links(Lazy):
     """List of menu or button links."""
@@ -44,11 +44,7 @@ class Links(Lazy):
         for link in self._link_list:
             link.AppendToMenu(to_popup, parent, selection)
         Links.Popup = to_popup
-        if isinstance(parent, _AComponent):
-            parent.show_popup_menu(to_popup)
-        else:
-            # TODO de-wx! Only use in BashNotebook
-            parent.PopupMenu(to_popup)
+        self._resolve(parent).PopupMenu(to_popup)
         self.native_destroy()
         Links.Popup = None # do not leak the menu reference
 
