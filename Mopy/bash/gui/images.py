@@ -328,10 +328,10 @@ class ImageList(Lazy):
     def native_init(self, *args, **kwargs):
         kwargs.setdefault('recreate', False)
         freshly_created = super().native_init(*args, **kwargs)
-        ##: Accessing these like this feels wrong - maybe store the scaled size
-        # somewhere and retrieve it here?
-        scaled_sb_size = self._cached_args[0:2]
         if freshly_created: # ONCE! we don't support adding more images
+            ##: Accessing these like this feels wrong - maybe store the scaled size
+            # somewhere and retrieve it here?
+            scaled_sb_size = self._cached_args[0:2]
             self._indices = {}
             for k, im in self._images:
                 nat_img = self._resolve(im)

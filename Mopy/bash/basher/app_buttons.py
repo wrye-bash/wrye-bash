@@ -80,17 +80,16 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
     def native_init(self, parent, recreate=True, on_drag_start=None,
                     on_drag_end=None, on_drag_end_forced=None, on_drag=None):
         """Create and return gui button."""
-        created = super().native_init(parent, recreate=recreate,
-            on_drag_start=on_drag_start, on_drag_end=on_drag_end,
-            on_drag_end_forced=on_drag_end_forced, on_drag=on_drag)
-        if created:
+        if freshly_created := super().native_init(parent, recreate=recreate,
+                on_drag_start=on_drag_start, on_drag_end=on_drag_end,
+                on_drag_end_forced=on_drag_end_forced, on_drag=on_drag):
             self._set_img_and_tip()
             # DnD doesn't work with the EVT_BUTTON so we call sb_click directly
             # self._on_clicked.subscribe(self.sb_click)
             self.on_right_clicked.subscribe(self.DoPopupMenu)
         elif self._is_created(): # we are called from UnhideButton
             self.tooltip = self.sb_button_tip # reset the tooltip just in case
-        return created
+        return freshly_created
 
     @property
     def sb_button_tip(self): return self._tip
