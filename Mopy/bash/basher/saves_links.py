@@ -776,13 +776,11 @@ class Save_ReweighPotions(OneItemLink):
                     count += 1
             if count:
                 saveFile.safeSave(SubProgress(progress,0.6,1.0))
-                progress.Destroy()
-                self._showOk(_('Potions reweighed: %(num_reweighed)d.') % {
-                    'num_reweighed': count}, title=_('Reweigh Potions'))
+                msg = _('Potions reweighed: %(num_reweighed)d.') % {
+                    'num_reweighed': count}
             else:
-                progress.Destroy()
-                self._showOk(_('No potions to reweigh!'),
-                    title=_('Reweigh Potions'))
+                msg = _('No potions to reweigh!')
+        self._showOk(msg, title=_('Reweigh Potions'))
 
 #------------------------------------------------------------------------------
 class Save_Stats(OneItemLink):
@@ -797,9 +795,8 @@ class Save_Stats(OneItemLink):
             log = bolt.LogFile()
             progress(0.9,_(u'Calculating statistics.'))
             saveFile.logStats(log)
-            progress.Destroy()
             statslog = log.out.getvalue()
-            self._showLog(statslog, title=self._selected_item)
+        self._showLog(statslog, title=self._selected_item)
 
 #------------------------------------------------------------------------------
 class _Save_StatCosave(AppendableLink, OneItemLink):
