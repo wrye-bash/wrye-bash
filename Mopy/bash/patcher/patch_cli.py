@@ -63,13 +63,15 @@ def _write_readme(log_value, patch_name, mod_infos):
 
 def build_bashed_patch_cli(patch_name, mod_infos):
     """Build a Bashed Patch and persist the resulting state."""
+    from .config_patchers import all_patcher_types
     from .patch_builder import build_bashed_patch, finalize_patch_log, \
         load_patcher_configs, prepare_patch_files, refresh_patch_files
     from .patch_files import PatchFile
     patch_info = _get_target_patch(mod_infos, patch_name)
     bashed_patch = PatchFile(patch_info, mod_infos)
     patch_configs = patch_info.get_table_prop('bash.patch.configs', {})
-    config_patchers = load_patcher_configs(bashed_patch, patch_configs)
+    config_patchers = [p_type(bashed_patch) for p_type in all_patcher_types]
+    load_patcher_configs(config_patchers, patch_configs)
     progress = bolt.HeadlessProgress(patch_name)
     patch_log, build_start = build_bashed_patch(
         bashed_patch, config_patchers, progress)
