@@ -32,7 +32,8 @@ from ..bolt import FName, dict_sort, text_wrap
 from ..gui import TOP, AObject, Button, CheckBox, CheckListBox, \
     DeselectAllButton, EventResult, FileOpenMultiple, HBoxedLayout, Label, \
     LayoutOptions, Lazy, ListBox, Links, PanelWin, SearchBar, \
-    SelectAllButton, Spacer, TextArea, VLayout, askText, showError, askNumber
+    SelectAllButton, Spacer, TextArea, VLayout, askNumber, askText, \
+    on_create, showError
 from ..patcher.base import MultiTweakItem
 from ..patcher.config_patchers import all_patcher_types, \
     game_patcher_config_types, ListMergerConfig, ListPatcherConfig, \
@@ -50,20 +51,23 @@ class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
         self._is_bolded = False
         self._is_italicized = False
 
-    def native_init(self, *args, patch_configs=None, **kwargs):
-        if freshly_created := super().native_init(*args, **kwargs):
-            self.visible = False # needed else all patchers appear at once
-            self.main_layout = VLayout(
-                item_expand=True, item_weight=1, spacing=4, items=[
-                    (Label(self, text_wrap(self.patcher_desc, 70)),
-                     LayoutOptions(weight=0))])
-            self.main_layout.apply_to(self)
-            self._parent.config_layout.add(self)
-            self._getConfig(patch_configs) # set isEnabled and load additional config
-            # Bold the patcher if it's new, but the patch itself isn't new
-            if not self._was_present and not self._is_first_load:
-                self._style_patcher_label(bold=True)
-        return freshly_created
+    @on_create
+    def native_init(self, *args, **kwargs):
+        self.visible = False # needed else all patchers appear at once
+        self.main_layout = VLayout(
+            item_expand=True, item_weight=1, spacing=4, items=[
+                (Label(self, text_wrap(self.patcher_desc, 70)),
+                 LayoutOptions(weight=0))])
+        self.main_layout.apply_to(self)
+        self._parent.config_layout.add(self)
+
+    # Config phase - runs after native_init, see PatchDialog#__init__
+    def get_config(self, configs):
+        config = super().get_config(configs)
+        # Bold the patcher if it's new, but the patch itself isn't new
+        if not self._was_present and not self._is_first_load:
+            self._style_patcher_label(bold=True)
+        return config
 
     def _style_patcher_label(self, bold=False, italics=False):
         self._is_bolded |= bold
@@ -89,17 +93,20 @@ class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
 #------------------------------------------------------------------------------
 class AliasPluginNames(_PatcherPanel, _APConfig):
 
+    @on_create
     def native_init(self, *args, **kwargs):
-        if freshly_created := super().native_init(*args, **kwargs):
-            #--Aliases Text
-            # gExample = Label(self, _("ExampleMod1.esp >> ExampleMod1.2.esp"))
-            self.gAliases = TextArea(self)
-            self.gAliases.on_focus_lost.subscribe(self._on_edit_aliases)
-            self._set_alias_text()
-            #--Sizing
-            self.main_layout.add((self.gAliases, LayoutOptions(
-                expand=True, weight=1)))
-        return freshly_created
+        #--Aliases Text
+        # gExample = Label(self, _("ExampleMod1.esp >> ExampleMod1.2.esp"))
+        self.gAliases = TextArea(self)
+        self.gAliases.on_focus_lost.subscribe(self._on_edit_aliases)
+        #--Sizing
+        self.main_layout.add((self.gAliases, LayoutOptions(
+            expand=True, weight=1)))
+
+    def get_config(self, configs):
+        config = super().get_config(configs)
+        self._set_alias_text()
+        return config
 
     def _set_alias_text(self):
         """Sets alias text according to current aliases."""
@@ -130,27 +137,38 @@ class _ListPanel(_PatcherPanel):
         # List of items that are currently visible (according to the search)
         self._curr_items = []
 
+    @on_create
     def native_init(self, *args, **kwargs):
-        if freshly_created := super().native_init(*args, **kwargs):
-            self._get_glist()
-            self._item_search = SearchBar(self, hint=self._search_hint)
-            self._item_search.on_text_changed.subscribe(
-                self._handle_item_search)
-            #--Manual controls
-            side_button_layout = self._auto_layout()
-            list_label = self._list_label or (_('Source Plugins/Files') if
-                self.patcher_type._csv_key else _('Source Plugins'))
-            self.main_layout.add(
-                (HBoxedLayout(self, title=list_label,
-                              item_expand=True, spacing=4, items=[
-                        (VLayout(spacing=4, item_expand=True, items=[
-                            self._item_search,
-                            (self.gList, LayoutOptions(weight=1)),
-                        ]), LayoutOptions(weight=1)),
-                        (side_button_layout, LayoutOptions(v_align=TOP)),
-                        self._get_select_layout(),
-                    ]), LayoutOptions(expand=True, weight=1)))
-        return freshly_created
+        self._get_glist()
+        self._item_search = SearchBar(self, hint=self._search_hint)
+        self._item_search.on_text_changed.subscribe(self._handle_item_search)
+        #--Manual controls
+        side_button_layout = self._auto_layout()
+        list_label = self._list_label or (_('Source Plugins/Files') if
+            self.patcher_type._csv_key else _('Source Plugins'))
+        self.main_layout.add(
+            (HBoxedLayout(self, title=list_label,
+                          item_expand=True, spacing=4, items=[
+                    (VLayout(spacing=4, item_expand=True, items=[
+                        self._item_search,
+                        (self.gList, LayoutOptions(weight=1)),
+                    ]), LayoutOptions(weight=1)),
+                    (side_button_layout, LayoutOptions(v_align=TOP)),
+                    self._get_select_layout(),
+                ]), LayoutOptions(expand=True, weight=1)))
+
+    def _sort_and_update_items(self, is_auto=None, do_sort=True):
+        """Refresh the displayed items whenever the config changes."""
+        super()._sort_and_update_items(is_auto, do_sort)
+        self._all_items = self._get_all_items()
+        # Clear the search bar - this will _handle_item_search, which will
+        # call _do_populate_item_list in turn
+        self._item_search.text_content = ''
+
+    def _get_all_items(self):
+        """Return the items to display - by default the ones get_config
+        loaded (see TweakPatcherConfig.get_config)."""
+        return self._all_items
 
     def _on_list_check(self, _lb_selection_dex=None):
         """One of list items was un/checked."""
@@ -163,7 +181,8 @@ class _ListPanel(_PatcherPanel):
         self.gList.on_box_checked.subscribe(self._on_list_check)
 
     def _auto_layout(self, right_side_components=None):
-        self._populate_item_list()
+        """Return the layout for the buttons to the right of the item list -
+        must not depend on the config, which is loaded after native_init."""
         return None
 
     def _get_select_layout(self):
@@ -243,6 +262,8 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
     # Unlike tweak panels, a source we just added and auto-checked enables
     # the panel when populated.
     _auto_enable_on_populate = True
+    # The GUI displays the new sources (in bold), so always look for them
+    _auto_new_sources = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -250,18 +271,8 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
         self._new_items: set[FName] = set()
 
     # List Panel implementation -----------------------------------------------
-    def _auto_layout(self, right_side_components=None):
-        self._sort_and_update_items()
-        return None
-
-    def _sort_and_update_items(self, is_auto=True, do_sort=True):
-        """Helper for LO-sorting items and updating the internal caches for
-        them."""
-        super()._sort_and_update_items(is_auto, do_sort)
-        self._all_items = list(self._item_config)
-        # Clear the search bar - this will _handle_item_search, which will call
-        # _do_populate_item_list in turn
-        self._item_search.text_content = ''
+    def _get_all_items(self):
+        return [*self._item_config]
 
     def _set_choice(self, item):
         """Only called when loading automatically for _ListPatcherPanel."""
@@ -284,15 +295,11 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
 #------------------------------------------------------------------------------
 class _ChoiceMenuMixin(_ListPanel):
 
+    @on_create
     def native_init(self, *args, **kwargs):
-        if freshly_created := super().native_init(*args, **kwargs):
-            self._bind_mouse_events(self.gList)
-        return freshly_created
-
-    def _bind_mouse_events(self, right_click_list: ListBox | CheckListBox):
-        right_click_list.on_mouse_motion.subscribe(self._handle_mouse_motion)
-        right_click_list.on_mouse_right_down.subscribe(self._right_mouse_click)
-        right_click_list.on_mouse_right_up.subscribe(self._right_mouse_up)
+        (li := self.gList).on_mouse_motion.subscribe(self._handle_mouse_motion)
+        li.on_mouse_right_down.subscribe(self._right_mouse_click)
+        li.on_mouse_right_up.subscribe(self._right_mouse_up)
         self.mouse_pos = None
 
     def _right_mouse_click(self, pos): self.mouse_pos = pos
@@ -301,7 +308,6 @@ class _ChoiceMenuMixin(_ListPanel):
         # wx reports -1 for a click below the last item
         if self.mouse_pos and 0 <= lb_selection_dex < len(self._curr_items):
             self.ShowChoiceMenu(lb_selection_dex)
-        # return
 
     def _handle_mouse_motion(self, wrapped_evt, lb_dex: int):
         """Check mouse motion to detect right click event."""
@@ -328,11 +334,10 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, TweakPatcherConfig):
     _select_all_tooltip = _('Activate all currently visible tweaks.')
     _deselect_all_tooltip = _('Deactivate all currently visible tweaks.')
 
+    @on_create
     def native_init(self, *args, **kwargs):
-        if freshly_created := super().native_init(*args, **kwargs):
-            self.gList.on_mouse_leaving.subscribe(self._mouse_leaving)
-            self.mouse_dex = -1
-        return freshly_created
+        self.gList.on_mouse_leaving.subscribe(self._mouse_leaving)
+        self.mouse_dex = -1
 
     def _get_item_label(self, list_item):
         item_label = list_item.getListLabel()
@@ -495,12 +500,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, TweakPatcherConfig):
             showError(self, error_header + validation_error, title=_(
                 '%(tweak_title)s - Error') % {'tweak_title': tweak.tweak_name})
 
-    # Config phase overrides
-    def import_config(self, patchConfigs):
-        super().import_config(patchConfigs)
-        # Reset the search bar, this will call _handle_item_search
-        self._item_search.text_content = ''
-
 #------------------------------------------------------------------------------
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
     """Mergers targeting all mods in the LO, with the option to override
@@ -529,12 +528,16 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
         self._add_rem_bt = [Button(self, _('Add'), on_click=self._on_add),
                             Button(self, _('Remove'), on_click=self._on_rem)]
         self._auto_check = CheckBox(self, _('Automatic'),
-            checked=self.autoIsChecked, on_check=self._on_auto_check)
+                                    on_check=self._on_auto_check)
         right_side_components.extend([self._auto_check, Spacer(4),
                                       *self._add_rem_bt])
-        self._sort_and_update_items( # will also call _update_manual_buttons
-            self.autoIsChecked)
         return VLayout(spacing=4, items=right_side_components)
+
+    def get_config(self, configs):
+        config = super().get_config(configs)
+        # _sort_and_update_items will also call _update_manual_buttons
+        self._auto_check.is_checked = self.autoIsChecked
+        return config
 
     def _handle_item_search(self, search_str):
         super()._handle_item_search(search_str)
@@ -610,11 +613,6 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
         #--Show/Destroy Menu
         links.popup_menu(gui_li, None)
 
-    def import_config(self, patchConfigs, **kwargs):
-        super().import_config(patchConfigs, **kwargs)
-        # the imported config may have flipped the Automatic checkbox
-        self._auto_check.is_checked = self.autoIsChecked
-
 #------------------------------------------------------------------------------
 class LeveledLists(_ListsMergerPanel, _LLConfig):
     _list_label = _('Override Delev/Relev Tags')
@@ -623,13 +621,13 @@ class LeveledLists(_ListsMergerPanel, _LLConfig):
 
     def _auto_layout(self, right_side_components=None):
         self._rem_empty_check = CheckBox(self, _('Remove Empty Sublists'),
-            checked=self.remove_empty_sublists,
             on_check=self._on_remove_empty_checked)
         return super()._auto_layout([self._rem_empty_check])
 
-    def import_config(self, patchConfigs, **kwargs):
-        super().import_config(patchConfigs, **kwargs)
+    def get_config(self, configs):
+        config = super().get_config(configs)
         self._rem_empty_check.is_checked = self.remove_empty_sublists
+        return config
 
     def _on_remove_empty_checked(self, is_checked):
         self.remove_empty_sublists = is_checked

@@ -208,6 +208,22 @@ class _AEvtHandler(AObject):
         to this component while in the with statement."""
         return _ACFrozen(self._native_widget)
 
+def on_create(native_init):
+    """Decorator for the native_init overrides of Lazy subclasses - forwards
+    the call to super().native_init and runs the decorated method only if the
+    native widget was actually (re)created, returning whether it was."""
+    @functools.wraps(native_init)
+    def _native_init(lazy_comp, *args, **kwargs):
+        # zero arg super() only works inside a class body, so look up the class
+        # this override is defined in to get to the next native_init in the mro
+        owner = next(c for c in type(lazy_comp).__mro__
+                     if c.__dict__.get('native_init') is _native_init)
+        sup_init = super(owner, lazy_comp).native_init
+        if freshly_created := sup_init(*args, **kwargs):
+            native_init(lazy_comp, *args, **kwargs)
+        return freshly_created
+    return _native_init
+
 class Lazy(AObject):
     """Lazily create the native widget on first accessing self._native_widget.
     AObject needs to know about us - think of Lazy on the same level as it."""
