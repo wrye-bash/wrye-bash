@@ -122,7 +122,7 @@ class PatcherConfig:
                 log(f'. ~~{item}~~')
                 clip.write(f'    {item}\n')
 
-    def import_config(self, patchConfigs, **kwargs):
+    def import_config(self, patchConfigs):
         self._getConfig(patchConfigs) # set isEnabled and load additional config
 
     def get_patcher_instance(self, patch_file):
@@ -182,10 +182,10 @@ class ListPatcherConfig(PatcherConfig):
         return self.patcher_type(self.patcher_name, patch_file,
                                  self._item_config)
 
-    def import_config(self, patchConfigs, **kwargs):
+    def import_config(self, patchConfigs):
         super().import_config(patchConfigs)
-        kwargs.setdefault('is_auto', self._is_first_load)
-        self._sort_and_update_items(**kwargs)
+        self._sort_and_update_items(is_auto=getattr(self, 'autoIsChecked',
+                                                    self._is_first_load))
 
     def _sort_and_update_items(self, is_auto=True, do_sort=True):
         if is_auto:
@@ -605,9 +605,6 @@ class ListMergerConfig(ListPatcherConfig):
             config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
         self._item_config[item] = config_choice
         return config_choice
-
-    def import_config(self, *args, **kwargs):
-        return super().import_config(*args, is_auto=self.autoIsChecked)
 
     @classmethod
     def _log_config(cls, conf, config, clip, log):

@@ -493,8 +493,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, TweakPatcherConfig):
                 '%(tweak_title)s - Error') % {'tweak_title': tweak.tweak_name})
 
     # Config phase overrides
-    def import_config(self, patchConfigs, **kwargs):
-        super().import_config(patchConfigs, **kwargs)
+    def import_config(self, patchConfigs):
+        super().import_config(patchConfigs)
         # Reset the search bar, this will call _handle_item_search
         self._item_search.text_content = ''
 
