@@ -24,7 +24,10 @@
 which ones to mixin with the _PatcherPanel types."""
 from __future__ import annotations
 
+import re
+import time
 from collections import defaultdict
+from datetime import timedelta
 from functools import partial
 from itertools import chain
 from typing import ClassVar
@@ -35,10 +38,12 @@ from .patchers import checkers, mergers, multitweak_actors, \
     multitweak_races, multitweak_settings, preservers
 from .patchers.base import AliasPluginNamesPatcher, MultiTweaker, \
     MergePatchesPatcher, ReplaceFormIDsPatcher
-from .. import bass, bosh, load_order
-from ..bolt import forward_compat_path_to_fn, FName, FNDict, \
-    forward_compat_path_to_fn_list
+from .. import bass, bolt, bosh, bush, load_order, wrye_text
+from ..bolt import forward_compat_path_to_fn, FName, FNDict, RefrIn, \
+    SubProgress, forward_compat_path_to_fn_list
+from ..exception import BoltError, BPSplitError, BPTooManyMastersError
 from ..plugin_types import MergeabilityCheck
+from ..wbtemp import TempDir, TempFile
 
 class PatcherConfig:
     """Mixin to add configuration API to the patchers."""
@@ -64,7 +69,7 @@ class PatcherConfig:
     def get_config(self, configs):
         """Get config from configs dictionary and/or set to default.
 
-        Called via patch_builder.load_patcher_configs to update the patch
+        Called via PatchBuilder.load_patcher_configs to update the patch
         options based on the previous config for this patch, loaded via
         get_table_prop('bash.patch.configs'). Fallback to the class attribute
         defaults for missing config entries."""
@@ -772,3 +777,234 @@ def init_patcher_types(game_handle):
     # Update the set of all tags for this game based on the available patchers
     game_handle.allTags.update(chain.from_iterable(getattr(
         p.patcher_type, 'patcher_tags', ()) for p in all_patcher_types))
+
+#------------------------------------------------------------------------------
+# Bashed Patch building -------------------------------------------------------
+#------------------------------------------------------------------------------
+_congrats = _('Congratulations on managing to get a single top group to '
+              '>%(max_num_masters)d masters (you got %(curr_num_masters)d '
+              'in top grup %(top_group_sig)s)! Please post to the Wrye '
+              'Bash Discord (including your BashBugDump), we seriously '
+              'did not think anyone would manage this. This error is '
+              'fatal by the way, Wrye Bash currently does not support '
+              'splitting the Bashed Patch within a top group.')
+
+class PatchBuilder:
+    """Build a Bashed Patch out of the configured patchers.
+
+    This is the command line flavor - it reports to the log and never asks
+    anything. basher.patcher_dialog.PatchDialog mixes it in and overrides the
+    steps that need to interact with the user."""
+
+    def __init__(self, bashed_patch, config_patchers):
+        self.bashed_patch = bashed_patch
+        self._config_patchers = config_patchers
+
+    @property
+    def _bp_name(self):
+        """The file name of the Bashed Patch we are building."""
+        return self.bashed_patch.fileInfo.fn_key
+
+    # Config phase ------------------------------------------------------------
+    def load_patcher_configs(self, patch_configs):
+        """Load the saved settings into the patcher configs - for the gui
+        patchers these must have been native_init'ed already."""
+        for config_patcher in self._config_patchers:
+            # set isEnabled and load the additional config for this patcher
+            config_patcher.get_config(patch_configs)
+            config_patcher._sort_and_update_items()
+
+    def _save_patcher_configs(self):
+        """Return the persistent Bashed Patch configuration."""
+        patch_configs = {'ImportedMods': set()}
+        for config_patcher in self._config_patchers:
+            config_patcher.saveConfig(patch_configs)
+        return patch_configs
+
+    # Build phase -------------------------------------------------------------
+    def build_patch(self):
+        """Build the patch, save its parts and refresh the mod infos."""
+        bp_file = self.bashed_patch
+        with self._get_progress() as prog:
+            #--Run the enabled patchers
+            build_start = time.time_ns()
+            bp_file.fileInfo.set_table_prop('bash.patch.configs',
+                                            self._save_patcher_configs())
+            patch_log = bolt.LogFile()
+            enabled_patchers = [p.get_patcher_instance(bp_file) for p in
+                                self._config_patchers if p.isEnabled]
+            bp_file.init_patchers_data(enabled_patchers,
+                                       SubProgress(prog, 0, 0.1))
+            bp_file.initFactories(SubProgress(prog, 0.1, 0.2))
+            bp_file.scanLoadMods(SubProgress(prog, 0.2, 0.8))
+            bp_file.buildPatch(patch_log, SubProgress(prog, 0.8, 0.9))
+            prog(1.0, _('Compiled.'))
+            #--Save the patch parts
+            patch_files = self._prepare_patch_files()
+            if to_del := bp_file.find_unneded_parts(patch_files):
+                self._handle_unneeded_parts(to_del)
+            self._start_saving(prog)
+            for patch_file in patch_files:
+                self._save_patch_file(patch_file)
+            #--Finalize the patch log, inserting the elapsed build time
+            patch_log.setHeader(None)
+            patch_log('{{CSS:wtxt_sand_small.css}}')
+            elapsed_seconds = round(
+                (time.time_ns() - build_start) / 1_000_000_000, 3)
+            elapsed = str(timedelta(seconds=elapsed_seconds)).rstrip('0')
+            log_value = re.sub('TIMEPLACEHOLDER', elapsed,
+                               patch_log.out.getvalue(), 1)
+        #--Write the log as the patch readme - the progress dialog is gone now
+        readme = bp_file.p_file_minfos.store_dir.join(
+            'Docs', self._bp_name.fn_body + '.txt')
+        with TempDir(temp_prefix='Docs', bolt_path=True) as temp_readme_dir:
+            temp_readme = temp_readme_dir.join(readme.stail)
+            with temp_readme.open_bom('w') as readme_file:
+                readme_file.write(log_value)
+            #--Convert log/readme to wtxt
+            wrye_text.genHtml(temp_readme, None,
+                              bass.dirs['mopy'].join('Docs'))
+            readme = self._move_readme(temp_readme_dir, temp_readme, readme)
+        self._show_readme(readme)
+        #--Refresh the infos of the saved parts, tabling the readme for them
+        patch_names = (p_file.fileInfo.fn_key for p_file in patch_files)
+        patch_attrs = {'doc': readme.root + '.html', # Path __add__!
+                       'crc': None, 'mergeInfo': None,
+                       'bp_split_parent': None}
+        attrs = {next(patch_names): patch_attrs}
+        split_attrs = {**patch_attrs, 'bp_split_parent': str(self._bp_name)}
+        attrs.update((part_name, split_attrs) for part_name in patch_names)
+        minfos = bp_file.p_file_minfos
+        refresh_in = RefrIn.from_tabled_infos(minfos, attrs, ghosts=True)
+        self._patch_built(list(attrs),
+                          minfos.refresh(refresh_in, force_update=True))
+
+    def _prepare_patch_files(self):
+        """Set patch attributes, splitting the patch if the master limit
+        requires it."""
+        master_limit = bush.game.Esp.master_limit
+        all_bp_masters = set()
+        bp_file = self.bashed_patch
+        for top_sig, top_masters in bp_file.used_masters_by_top().items():
+            if len(top_masters) > master_limit:
+                raise BPTooManyMastersError(_congrats % {
+                        'max_num_masters': master_limit,
+                        'curr_num_masters': len(top_masters),
+                        'top_group_sig': bolt.sig_to_str(top_sig)})
+            all_bp_masters |= top_masters
+        if len(all_bp_masters) <= master_limit:
+            bp_file.set_attributes()
+            return [bp_file]
+        patch_files = bp_file.split_patch()
+        if patch_files is None:
+            raise BPSplitError(_(
+                'Failed to split the Bashed Patch. The simple algorithm used '
+                'for splitting it right now cannot handle the situation we '
+                'have encountered here. Please post to the Wrye Bash Discord '
+                '(including your BashBugDump).'))
+        for part_index, patch_file in enumerate(patch_files):
+            patch_file.set_attributes(was_split=True, split_part=part_index)
+        return patch_files
+
+    def _get_progress(self):
+        """The progress the build reports to - a dialog for the GUI."""
+        return bolt.HeadlessProgress(self._bp_name)
+
+    def _handle_unneeded_parts(self, parts_to_del):
+        """Parts of a previous build that this one does not need - the GUI
+        offers to delete them."""
+        bolt.deprint('Obsolete Bashed Patch parts were left in place: '
+                     f'{", ".join(map(str, parts_to_del))}')
+
+    def _start_saving(self, prog):
+        prog(0.9, _('Saving...'))
+
+    def _save_patch_file(self, patch_file):
+        patch_file.fileInfo.makeBackup()
+        with TempFile(bolt_path=True) as temp_plugin:
+            patch_file.save(temp_plugin)
+            if patch_file.fileInfo.ftime is not None:
+                temp_plugin.mtime = patch_file.fileInfo.ftime
+            patch_file.fileInfo.abs_path.replace_with_temp(temp_plugin)
+        patch_file.fileInfo.extras.clear()
+
+    def _move_readme(self, temp_readme_dir, temp_readme, readme):
+        """Move the readme out of the temp dir - return its final path."""
+        readme.head.makedirs()
+        temp_readme.moveTo(readme)
+        (temp_readme.root + '.html').moveTo(readme.root + '.html')
+        return readme
+
+    def _show_readme(self, readme):
+        """Hook for the GUI to show the build log to the user."""
+
+    def _patch_built(self, patch_names, refreshed):
+        """The patch is built and saved - persist the resulting state, the
+        GUI hands it over to the caller of the dialog instead."""
+        minfos = self.bashed_patch.p_file_minfos
+        minfos.save_pickle()
+        bass.settings.save()
+        # Activate the parts of an active patch, as the GUI does
+        if len(patch_names) > 1 and load_order.cached_is_active(
+                patch_names[0]):
+            (_mas, _illegal, act_err), _ldiff = minfos.lo_toggle_active(
+                patch_names[1:], save_act=True)
+            if act_err:
+                raise BoltError(_('Unable to activate plugin') +
+                                f':\n{act_err}')
+
+    # Command line ------------------------------------------------------------
+    @classmethod
+    def build_patch_cli(cls, patch_name, mod_infos):
+        """Build a Bashed Patch and persist the resulting state."""
+        from .patch_files import PatchFile
+        is_new = patch_name not in mod_infos
+        patch_info = cls._get_target_patch(mod_infos, patch_name)
+        bp_file = PatchFile(patch_info, mod_infos)
+        try:
+            cls._check_masters(bp_file)
+        except BoltError:
+            # don't leave behind the empty patch we just created
+            if is_new: mod_infos.delete_op([patch_name], recycle=False)
+            raise
+        patch_builder = cls(bp_file, [p_type(bp_file) for p_type in
+                                      all_patcher_types])
+        patch_builder.load_patcher_configs(
+            patch_info.get_table_prop('bash.patch.configs', {}))
+        patch_builder.build_patch()
+
+    @staticmethod
+    def _get_target_patch(mod_infos, patch_name):
+        if patch_name in mod_infos:
+            if not (patch_info := mod_infos[patch_name]).isBP():
+                raise BoltError(_('%(patch_name)s is not a Bashed Patch.') % {
+                    'patch_name': patch_name})
+            return patch_info
+        # the refresh in create_new_mod would take a file of any extension
+        created = mod_infos.check_filename(patch_name) and \
+            mod_infos.create_new_mod(patch_name, selected=(),
+                wanted_masters=[], author_str='BASHED PATCH')
+        if created is None:
+            raise BoltError(_('Failed to create %(patch_name)s.') % {
+                'patch_name': patch_name})
+        return created
+
+    @staticmethod
+    def _check_masters(bp_file):
+        """Refuse to build if active plugins have missing or delinquent masters
+        - the GUI shows a MasterErrorsDialog instead."""
+        err_msgs = []
+        for bad_plugins, err_msg in (
+                (bp_file.active_mm, _(
+                    'The following plugins have missing masters and are '
+                    'active. This will cause the game to crash. Please '
+                    'disable them.')),
+                (bp_file.delinquent, _(
+                    'These mods have delinquent masters, which means they '
+                    'load before their masters. This is undefined behavior. '
+                    'Please adjust your load order to fix this.'))):
+            if bad_plugins:
+                err_msgs.extend([err_msg, *(f' - {p}: {", ".join(m)}' for
+                                            p, m in bad_plugins.items()), ''])
+        if err_msgs:
+            raise BoltError('\n'.join(err_msgs))

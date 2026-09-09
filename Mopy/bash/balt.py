@@ -344,8 +344,11 @@ class Progress(bolt.Progress):
         self.prevState = -1
         self.prevTime = 0
 
-    # __enter__ and __exit__ for use with the 'with' statement
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.Destroy()
+    # __exit__ for use with the 'with' statement
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if self.dialog: # self._do_progress(self.full, _('Done'))
+            self.dialog.Destroy()
+            self.dialog = None
 
     def getParent(self): return self.dialog.GetParent()
 
@@ -389,17 +392,8 @@ class Progress(bolt.Progress):
 
         :param message: The message to ellipsize.
         :return: The ellipsized message."""
-        if len(message) > 50:
-            first = message[:24]
-            second = message[-26:]
-            return f'{first}…{second}'
-        return message
-
-    def Destroy(self):
-        if self.dialog:
-            # self._do_progress(self.full, _(u'Done'))
-            self.dialog.Destroy()
-            self.dialog = None
+        return f'{message[:24]}…{message[-26:]}' if len(message) > 50 else \
+            message
 
 #------------------------------------------------------------------------------
 _depth = 0

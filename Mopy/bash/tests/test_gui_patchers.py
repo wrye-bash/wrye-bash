@@ -90,8 +90,7 @@ def test_source_search_after_source_changes(panels):
     assert panel._curr_items == [FName('New.esp'), FName('Other.esp')]
 
 def test_tweak_config_keeps_filtered_out_items(panels):
-    from ..patcher.config_patchers import TweakPatcherConfig
-    from ..patcher.patch_builder import load_patcher_configs
+    from ..patcher.config_patchers import PatchBuilder, TweakPatcherConfig
     visible_tweak = SimpleNamespace(isEnabled=False, save_tweak_config=Mock())
     hidden_tweak = SimpleNamespace(isEnabled=True, save_tweak_config=Mock())
 
@@ -105,7 +104,7 @@ def test_tweak_config_keeps_filtered_out_items(panels):
             return [visible_tweak, hidden_tweak]
 
     config = _TestConfig(None)
-    load_patcher_configs([config], {})
+    PatchBuilder(None, [config]).load_patcher_configs({})
     assert config._all_items == config._curr_items
     config._curr_items = [visible_tweak]
     saved_configs = {}
@@ -216,7 +215,7 @@ def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
 
     from .. import load_order
     from ..gui import VLayout
-    from ..patcher.patch_builder import load_patcher_configs
+    from ..patcher.config_patchers import PatchBuilder
 
     monkeypatch.setitem(bass.inisettings, 'AutoItemCheck', True)
     monkeypatch.setattr(load_order, 'cached_sort', list)
@@ -249,7 +248,7 @@ def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
         assert not panel.native_init(frame, recreate=False)
         # The panels are laid out first, then the config is loaded into them
         assert panel.gList.lb_get_items_count() == 0
-        load_patcher_configs([panel], {})
+        PatchBuilder(None, [panel]).load_patcher_configs({})
         assert panel.gList.lb_get_items_count() == 1
         assert panel.gList.lb_is_checked_at_index(0)
         # Yield after each search edit to process pending GUI events before
