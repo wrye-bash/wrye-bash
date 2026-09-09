@@ -33,7 +33,8 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
     showWarning, FileSave
 from ..patcher.patch_builder import build_bashed_patch, finalize_patch_log, \
-    prepare_patch_files, refresh_patch_files, save_patcher_configs
+    load_patcher_configs, prepare_patch_files, refresh_patch_files, \
+    save_patcher_configs
 from ..patcher.patch_files import PatchFile
 from ..wbtemp import TempDir
 
@@ -123,15 +124,13 @@ class PatchDialog(DialogWindow):
             ]),
         ]).apply_to(self)
         #--Patcher panels
-        self._gui_patchers = []
-        # load the config
         self.patchConfigs = patchConfigs
         with BusyCursor(): # Constructs all the patcher panels, so takes a bit
-            for dex, ptype in enumerate(gpatcher_types):
-                self._gui_patchers.append(patcher_panel := ptype(bashed_patch))
-                patcher_panel.native_init(self, patch_configs=patchConfigs)
-                self.gPatchers.lb_check_at_index(dex, patcher_panel.isEnabled)
-        self._update_ok_btn()
+            self._gui_patchers = [ptype(bashed_patch) for ptype in
+                                  gpatcher_types]
+            for patcher_panel in self._gui_patchers:
+                patcher_panel.native_init(self) # must not need the config
+            self._load_config(patchConfigs)
         self.currentPatcher = None
         initial_select = min(len(self._gui_patchers) - 1, 1)
         if initial_select >= 0:
@@ -319,8 +318,10 @@ class PatchDialog(DialogWindow):
         self._load_config(patchConfigs)
 
     def _load_config(self, patchConfigs):
+        """Load patchConfigs into the patcher panels - used for the initial
+        load and whenever the user imports or reverts the config."""
+        load_patcher_configs(self._gui_patchers, patchConfigs)
         for index, patcher in enumerate(self._gui_patchers):
-            patcher.import_config(patchConfigs)
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self._update_ok_btn()
 
