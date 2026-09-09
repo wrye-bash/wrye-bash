@@ -22,7 +22,7 @@
 # =============================================================================
 """Patch dialog"""
 from .dialogs import DeleteBPPartsEditor
-from .. import balt, bass, bolt, bush, env, wrye_text
+from .. import balt, bass, bolt, bush, env
 from ..balt import Resources
 from ..bolt import GPath_no_norm
 from ..exception import BoltError, BPConfigError, CancelError, SkipError, \
@@ -32,32 +32,16 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
     showWarning, FileSave
-from ..patcher.patch_builder import build_bashed_patch, finalize_patch_log, \
-    load_patcher_configs, prepare_patch_files, refresh_patch_files, \
-    save_patcher_configs
+from ..patcher.config_patchers import PatchBuilder
 from ..patcher.patch_files import PatchFile
-from ..wbtemp import TempDir
 
 # Final list of gui patcher classes, populated in InitPatchers based on game
 gpatcher_types = [] #--All gui patchers classes for this game
 
-def _export_config(patch_name, config, win, outDir):
-    outFile = f'{patch_name}_Configuration.dat'
-    outDir.makedirs()
-    #--File dialog
-    outPath = FileSave.display_dialog(win,
-        title=_('Export Bashed Patch configuration to:'),
-        defaultDir=outDir, defaultFile=outFile, wildcard='*_Configuration.dat')
-    if outPath:
-        pd = bolt.PickleDict(outPath)
-        gkey = bolt.GPath_no_norm('Saved Bashed Patch Configuration (Python)')
-        pd.pickled_data[gkey] = {'bash.patch.configs': config}
-        pd.save()
-
-class PatchDialog(DialogWindow):
+class PatchDialog(DialogWindow, PatchBuilder):
     """Bash Patch update dialog.
 
-    :type _gui_patchers: list[basher.gui_patchers._PatcherPanel]
+    :type _config_patchers: list[basher.gui_patchers._PatcherPanel]
     """
     _def_size = (600, 600)
     _min_size = (400, 300)
@@ -67,7 +51,6 @@ class PatchDialog(DialogWindow):
         self._bp_rdata = bp_rdata
         self._bps = bashed_patches_out
         self.parent = parent
-        self.bashed_patch = bashed_patch
         self.patchInfo = bashed_patch.fileInfo
         title = _('Update %(bp_name)s') % {'bp_name': f'{self.patchInfo}'}
         super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
@@ -126,21 +109,22 @@ class PatchDialog(DialogWindow):
         #--Patcher panels
         self.patchConfigs = patchConfigs
         with BusyCursor(): # Constructs all the patcher panels, so takes a bit
-            self._gui_patchers = [ptype(bashed_patch) for ptype in
-                                  gpatcher_types]
-            for patcher_panel in self._gui_patchers:
+            PatchBuilder.__init__(self, bashed_patch,
+                [ptype(bashed_patch) for ptype in gpatcher_types])
+            for patcher_panel in self._config_patchers:
                 patcher_panel.native_init(self) # must not need the config
-            self._load_config(patchConfigs)
+            self.load_patcher_configs(patchConfigs)
         self.currentPatcher = None
-        initial_select = min(len(self._gui_patchers) - 1, 1)
+        initial_select = min(len(self._config_patchers) - 1, 1)
         if initial_select >= 0:
-            self.gPatchers.lb_select_index(initial_select) # callback not fired
-            self.ShowPatcher(self._gui_patchers[initial_select]) # so this is needed
+            # lb_select_index does not fire the callback, so show it ourselves
+            self.gPatchers.lb_select_index(initial_select)
+            self.ShowPatcher(self._config_patchers[initial_select])
 
     #--Core -------------------------------
     def _update_ok_btn(self):
         """Enable Build Patch button if at least one patcher is enabled."""
-        self.gExecute.enabled = any(p.isEnabled for p in self._gui_patchers)
+        self.gExecute.enabled = any(p.isEnabled for p in self._config_patchers)
 
     def ShowPatcher(self,patcher):
         """Show patcher panel."""
@@ -156,75 +140,8 @@ class PatchDialog(DialogWindow):
     def PatchExecute(self):
         """Do the patch."""
         self.accept_modal()
-        progress = None
         try:
-            patch_name = self.patchInfo.fn_key
-            progress = balt.Progress(patch_name, abort=True)
-            patchFile = self.bashed_patch
-            log, timer1 = build_bashed_patch(
-                patchFile, self._gui_patchers, progress)
-            try:
-                bp_files_to_save = prepare_patch_files(patchFile)
-            except BPTooManyMastersError as e:
-                showError(self, f'{e}',
-                    title=_('Achievement Unlocked: Modaholic!'))
-                return
-            except BPSplitError as e:
-                showError(self, f'{e}')
-                return
-            parts_to_del = patchFile.find_unneded_parts(bp_files_to_save)
-            minfos = patchFile.p_file_minfos
-            if parts_to_del:
-                ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
-                    self, unneeded_parts=parts_to_del)
-                if ed_ok and ed_parts:
-                    self._bp_rdata |= minfos.delete_op(ed_parts)
-            #--Save
-            progress.setCancel(False, f"{patch_name}\n{_('Saving…')}")
-            progress(0.9)
-            for bp_file in bp_files_to_save:
-                self._save_pbash(bp_file, patch_name)
-            #--Done
-            progress.Destroy()
-            progress = None
-            #--Readme and log
-            logValue = finalize_patch_log(log, timer1)
-            data_docs_dir = minfos.store_dir.join('Docs')
-            readme = data_docs_dir.join(patch_name.fn_body + '.txt')
-            docsDir = bass.dirs[u'mopy'].join(u'Docs')
-            with TempDir(temp_prefix='Docs', bolt_path=True) as tmp_readme_dir:
-                temp_readme = tmp_readme_dir.join(patch_name.fn_body + '.txt')
-                #--Write log/readme to temp dir first
-                with temp_readme.open_bom('w') as file:
-                    file.write(logValue)
-                #--Convert log/readme to wtxt
-                wrye_text.genHtml(temp_readme, None, docsDir)
-                #--Try moving temp log/readme to Docs dir
-                try:
-                    env.shellMove({tmp_readme_dir: data_docs_dir},
-                        parent=self)
-                except (CancelError, SkipError):
-                    # User didn't allow UAC, move to My Games directory instead
-                    temp_readme_html = temp_readme.root + '.html'
-                    readme_moves = {
-                        temp_readme: bass.dirs['saveBase'].join(
-                            temp_readme.stail),
-                        temp_readme_html: bass.dirs['saveBase'].join(
-                            temp_readme_html.stail)
-                    }
-                    env.shellMove(readme_moves, parent=self)
-                    readme = bass.dirs['saveBase'].join(readme.stail)
-            readme_html = readme.root + '.html' # Path __add__!
-            shown_log = readme_html if balt.web_viewer_available() else readme
-            balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
-            balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,
-                          asDialog=True)
-            patch_names, refreshed = refresh_patch_files(
-                patchFile, bp_files_to_save, readme_html)
-            self._bps.extend(patch_names)
-            # We have to parse the new infos first since the masters may differ
-            # note this won't activate the new masters, the caller has to do it
-            self._bp_rdata |= refreshed
+            self.build_patch()
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
@@ -236,21 +153,45 @@ class PatchDialog(DialogWindow):
         except Exception as e: # Fatal error
             self._error(f'{e}')
             raise
-        finally:
-            if progress: progress.Destroy()
 
     def _error(self, e_msg):
         balt.playSound(self.parent, bass.inisettings['SoundError'])
         bolt.deprint('Exception during Bashed Patch building:', traceback=True)
         showError(self, e_msg, _('Bashed Patch Error'))
 
-    def _save_pbash(self, patchFile, patch_name):
+    # PatchBuilder overrides - these are the steps that talk to the user ------
+    def _get_progress(self):
+        return balt.Progress(self._bp_name, abort=True)
+
+    def _prepare_patch_files(self):
+        try:
+            return super()._prepare_patch_files()
+        except BPTooManyMastersError as e:
+            showError(self, f'{e}',
+                title=_('Achievement Unlocked: Modaholic!'))
+        except BPSplitError as e:
+            showError(self, f'{e}')
+        raise CancelError # we reported the error, just abort the build
+
+    def _handle_unneeded_parts(self, parts_to_del):
+        """Let the user choose which obsolete parts to delete."""
+        ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
+            self, unneeded_parts=parts_to_del)
+        if ed_ok and ed_parts:
+            self._bp_rdata |= self.bashed_patch.p_file_minfos.delete_op(
+                ed_parts)
+
+    def _start_saving(self, prog):
+        prog.setCancel(False, f"{self._bp_name}\n{_('Saving…')}")
+        prog(0.9)
+
+    def _save_patch_file(self, patch_file):
         while True:
             try:
                 # FIXME will keep displaying a bogus UAC prompt if file is
                 # locked - aborting bogus UAC dialog raises SkipError() in
                 # shellMove, not sure if ever a Windows or Cancel are raised
-                patchFile.safeSave()
+                patch_file.safeSave()
                 return
             except (CancelError, SkipError, PermissionError):
                 ##: Ugly warts below (see also FIXME above)
@@ -266,20 +207,57 @@ class PatchDialog(DialogWindow):
                        'if prompted to do so.'),
                      '', '',
                      _('Try again?')]
-                msg = '\n'.join(m) % {'patch_name': patch_name,
+                msg = '\n'.join(m) % {'patch_name': self._bp_name,
                                       'xedit_name': bush.game.Xe.full_name}
                 if askYes(self, msg, _('Bashed Patch - Save Error')):
                     continue
                 raise # will raise the SkipError which is correctly processed
 
-    def __config(self):
-        return save_patcher_configs(self._gui_patchers)
+    def _move_readme(self, temp_readme_dir, temp_readme, readme):
+        #--Try moving temp log/readme to Docs dir
+        try:
+            env.shellMove({temp_readme_dir: readme.head}, parent=self)
+        except (CancelError, SkipError):
+            # User didn't allow UAC, move to My Games directory instead
+            temp_readme_html = temp_readme.root + '.html'
+            readme_moves = {
+                temp_readme: bass.dirs['saveBase'].join(temp_readme.stail),
+                temp_readme_html: bass.dirs['saveBase'].join(
+                    temp_readme_html.stail)
+            }
+            env.shellMove(readme_moves, parent=self)
+            readme = bass.dirs['saveBase'].join(readme.stail)
+        return readme
+
+    def _show_readme(self, readme):
+        shown_log = (readme.root + '.html') if balt.web_viewer_available(
+            ) else readme
+        balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
+        balt.show_log(self.parent, shown_log, self._bp_name, wrye_log=True,
+                      asDialog=True)
+
+    def _patch_built(self, patch_names, refreshed):
+        self._bps.extend(patch_names)
+        # We have to parse the new infos first since the masters may differ
+        # note this won't activate the new masters, the caller has to do it
+        self._bp_rdata |= refreshed
 
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
-        config = self.__config()
-        _export_config(patch_name=self.patchInfo.fn_key, config=config,
-                       win=self.parent, outDir=bass.dirs['patches'])
+        config = self._save_patcher_configs()
+        out_dir = bass.dirs['patches']
+        outFile = f'{self.patchInfo.fn_key}_Configuration.dat'
+        out_dir.makedirs()
+        #--File dialog
+        outPath = FileSave.display_dialog(self.parent,
+            title=_('Export Bashed Patch configuration to:'),
+            defaultDir=out_dir, defaultFile=outFile,
+            wildcard='*_Configuration.dat')
+        if outPath:
+            pd = bolt.PickleDict(outPath)
+            gkey = GPath_no_norm('Saved Bashed Patch Configuration (Python)')
+            pd.pickled_data[gkey] = {'bash.patch.configs': config}
+            pd.save()
 
     __old_key = u'Saved Bashed Patch Configuration'
     __new_key = u'Saved Bashed Patch Configuration (%s)'
@@ -315,42 +293,42 @@ class PatchDialog(DialogWindow):
                 'version.') % {'bp_config_path': textPath}
             showError(self, msg, title=_('Config Too Old'))
             return
-        self._load_config(patchConfigs)
+        self.load_patcher_configs(patchConfigs)
 
-    def _load_config(self, patchConfigs):
+    def load_patcher_configs(self, patch_configs):
         """Load patchConfigs into the patcher panels - used for the initial
         load and whenever the user imports or reverts the config."""
-        load_patcher_configs(self._gui_patchers, patchConfigs)
-        for index, patcher in enumerate(self._gui_patchers):
+        super().load_patcher_configs(patch_configs)
+        for index, patcher in enumerate(self._config_patchers):
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self._update_ok_btn()
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
-        self._load_config(self.patchConfigs)
+        self.load_patcher_configs(self.patchConfigs)
 
     def DefaultConfig(self):
         """Revert configuration back to default"""
-        self._load_config({})
+        self.load_patcher_configs({})
 
     def _mass_select_recursive(self, select=True):
         """Select or deselect all patchers and entries in patchers with child
         entries."""
         self.gPatchers.set_all_checkmarks(checked=select)
-        for patcher in self._gui_patchers:
+        for patcher in self._config_patchers:
             patcher.mass_select(select=select)
         self._update_ok_btn()
 
     #--GUI --------------------------------
     def OnSelect(self, lb_selection_dex, _lb_selection_str):
         """Responds to patchers list selection."""
-        self.ShowPatcher(self._gui_patchers[lb_selection_dex])
+        self.ShowPatcher(self._config_patchers[lb_selection_dex])
         self.gPatchers.lb_select_index(lb_selection_dex)
 
     def check_patcher(self, patcher, enable_patcher=True):
         """Enable or disable a patcher."""
         self.gPatchers.lb_check_at_index(
-            self._gui_patchers.index(patcher), enable_patcher)
+            self._config_patchers.index(patcher), enable_patcher)
         self._update_ok_btn()
 
     def style_patcher(self, patcher, bold=False, italics=False):
@@ -358,11 +336,11 @@ class PatchDialog(DialogWindow):
         patcher when it's new or detects that it has something new in its
         list."""
         self.gPatchers.lb_style_font_at_index(
-            self._gui_patchers.index(patcher), bold=bold, italics=italics)
+            self._config_patchers.index(patcher), bold=bold, italics=italics)
 
     def OnCheck(self, lb_selection_dex):
         """Toggle patcher activity state."""
-        patcher = self._gui_patchers[lb_selection_dex]
+        patcher = self._config_patchers[lb_selection_dex]
         patcher.isEnabled = self.gPatchers.lb_is_checked_at_index(lb_selection_dex)
         self.gPatchers.lb_select_index(lb_selection_dex)
         self.ShowPatcher(patcher) # SetSelection does not fire the callback
@@ -378,8 +356,8 @@ class PatchDialog(DialogWindow):
         self._set_tip_text(lb_dex)
 
     def _set_tip_text(self, mouseItem):
-        if 0 <= mouseItem < len(self._gui_patchers):
-            gui_patcher = self._gui_patchers[mouseItem]
+        if 0 <= mouseItem < len(self._config_patchers):
+            gui_patcher = self._config_patchers[mouseItem]
             self.gTipText.label_text = gui_patcher.patcher_tip
         else:
             self.gTipText.label_text = self.defaultTipText
