@@ -149,14 +149,6 @@ def _generate_default_bash_ini(ver_tup):
     "user directory fails."), ';    ')}
 
 
-{_wrap_ini_comment(_(
-    "%(user_path)s is the user profile path. May help if HOMEDRIVE and/or "
-    "HOMEPATH are missing from the user's environment.") % {
-        'user_path': 'sUserPath'})}
-;sUserPath=C:\Documents and Settings\Wrye
-;sUserPath=C:\Users\Wrye
-
-
 {_wrap_ini_comment(_("%(personal_path)s is the user's personal directory "
     '("%(documents)s"). Should be used in conjunction with either the '
     "%(cli_lad_path)s command line argument or setting %(lad_path)s.") % {

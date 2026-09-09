@@ -29,14 +29,13 @@ import datetime
 import functools
 import json
 import os
-import re
 import shlex
 import sys
 import webbrowser
 import winreg
 from collections.abc import Iterable
-from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, \
-    c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
+from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, c_int, \
+    c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
 from itertools import chain
@@ -63,7 +62,7 @@ from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import unpack_int as _unpack_int
-from ..exception import BoltError, CancelError, SkipError
+from ..exception import CancelError, SkipError
 
 # File operations -------------------------------------------------------------
 try:
@@ -184,29 +183,6 @@ BTN_NO                          = 5104
 GOOD_EXITS                      = (BTN_OK, BTN_YES)
 
 # Internals ===================================================================
-_re_env = re.compile(r'%(\w+)%', re.U)
-
-def _subEnv(ma_env):
-    env_var = ma_env.group(1).upper()
-    try:
-        return os.environ[env_var]
-    except KeyError as e:
-        raise BoltError("Can't find user directories in windows registry.\n>> "
-                        "See \"If Bash Won't Start\" in bash docs for "
-                        "help.") from e
-
-def _getShellPath(folderKey):
-    regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-      r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders')
-    try:
-        path = winreg.QueryValueEx(regKey, folderKey)[0]
-    except WindowsError:
-        raise BoltError("Can't find user directories in windows registry.\n>> "
-                        'See "If Bash Won\'t Start" in bash docs for help.')
-    regKey.Close()
-    path = _re_env.sub(_subEnv, path)
-    return path
-
 __folderIcon = None # cached here
 def _get_default_app_icon(idex, target):
     # Use the default icon for that file type

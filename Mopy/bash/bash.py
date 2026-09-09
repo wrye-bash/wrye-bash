@@ -360,7 +360,7 @@ def _parse_bash_ini(bash_ini_path):
     ini_set = { # sections are case-sensitive
         'General': dict.fromkeys(
             ['BashModData', 'InstallersData', 'LocalAppDataPath',
-             'OblivionMods', 'OblivionPath', 'PersonalPath', 'UserPath'], ''),
+             'OblivionMods', 'OblivionPath', 'PersonalPath'], ''),
         'Settings': {
             'OblivionTexturesBSAName': 'Oblivion - Textures - Compressed.bsa',
             'Command7z': '7z', 'ScriptFileExt': '.txt',
@@ -473,6 +473,7 @@ def main(opts: Namespace):
             return
         from . import barg # long options needed in _set_game_ask
         bass.sys_argv = barg.convert_to_long_options(sys.argv)
+        if opts.userPath: bolt.deprint('Ignoring the deprecated --userPath')
         # import barb, which does not import from bosh/bush
         from . import barb
         bash_ini_path, restore_ = _init_restore(opts, barb)
@@ -664,13 +665,6 @@ def _init_restore(opts, barb):
     return bash_ini_path, restore_
 
 def _bush_detect(opts, bush):
-    # if uArg is None, then get the UserPath from the ini file
-    ##: not sure why this must be set first
-    user_path = opts.userPath or bass.inisettings['UserPath']
-    if user_path:
-        homedrive, homepath = os.path.splitdrive(user_path)
-        os.environ[u'HOMEDRIVE'] = homedrive
-        os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
     bolt.deprint(u'Searching for game to manage:')
     # Warnings found during game dirs initialization are added here as strings
