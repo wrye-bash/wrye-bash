@@ -53,17 +53,12 @@ def parse():
     userPathGroup = parser.add_argument_group('User Directory Arguments',
         'These arguments allow you to specify your user directories in '
         'several ways. These are only useful if the regular procedure for '
-        'getting the user directory fails. And even in that case, the user '
-        'is probably better off installing win32com.')
+        'getting the user directory fails.')
     # personalPath #
     h = (r"Specify the user's personal directory. (Like \"C:\Documents and "
          r'Settings\Wrye\My Documents") If you need to set this then you '
          r'probably need to set -l too.')
     arg(userPathGroup, '-p', '--personalPath', dest='personalPath')
-    # userPath #
-    h = ('Specify the user profile path. May help if HOMEDRIVE and/or '
-         u"HOMEPATH are missing from the user's environment.")
-    arg(userPathGroup, '-u', '--userPath', dest='userPath')
     # localAppDataPath #
     h = ("Specify the user's local application data directory. If you need "
          'to set this then you probably need to set -p too.')
@@ -124,6 +119,9 @@ def parse():
                         action='store_true',
                         help='Allow Wrye Bash to run on unsupported operating '
                              'systems [EXPERIMENTAL].')
+    # Deprecated, ignored - only kept so old shortcuts still start Bash
+    parser.add_argument('-u', '--userPath', dest='userPath',
+                        help=argparse.SUPPRESS)
     # Deprecated alias for --unsupported
     parser.add_argument('--unix', action='store_true', dest='unsupported',
                         help=argparse.SUPPRESS)
