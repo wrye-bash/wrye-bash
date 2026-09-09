@@ -61,14 +61,13 @@ class PatcherConfig:
         # executing bashed patch file, use only for info on active mod arrays
         self._bp = bp_file
 
-    def _getConfig(self, configs):
+    def get_config(self, configs):
         """Get config from configs dictionary and/or set to default.
 
-        Called in basher.patcher_dialog.PatchDialog#__init__, before the
-        dialog is shown, to update the patch options based on the previous
-        config for this patch loaded via get_table_prop('bash.patch.configs').
-        Fallback to the class attribute defaults for missing config
-        entries."""
+        Called via patch_builder.load_patcher_configs to update the patch
+        options based on the previous config for this patch, loaded via
+        get_table_prop('bash.patch.configs'). Fallback to the class attribute
+        defaults for missing config entries."""
         self._is_first_load = not configs
         # Remember whether we were present in the config for bolding later
         self._was_present = (cls := self.__class__)._config_key in configs
@@ -122,8 +121,9 @@ class PatcherConfig:
                 log(f'. ~~{item}~~')
                 clip.write(f'    {item}\n')
 
-    def import_config(self, patchConfigs):
-        self._getConfig(patchConfigs) # set isEnabled and load additional config
+    def _sort_and_update_items(self, is_auto=None, do_sort=True):
+        """Update the item list of the patchers that have one - the patchers
+        below have no items, so nothing to do here."""
 
     def get_patcher_instance(self, patch_file):
         """Instantiate and return an instance of self.__class__.patcher_type,
@@ -138,6 +138,10 @@ class ListPatcherConfig(PatcherConfig):
     # MRO of the GUI patcher classes and would hide the config's
     _autocheck_new = True # whether new items are checked by default
     _list_label = '' # title of the sources list, see _ListPanel
+    # Whether to look for new sources even when a config was saved before -
+    # the GUI panels do, to display (and bold) them, the CLI sticks to the
+    # sources the config was built with
+    _auto_new_sources = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -147,7 +151,7 @@ class ListPatcherConfig(PatcherConfig):
         self._item_config: dict[FName, bool] = {}
         self._check = self._autocheck_new and bass.inisettings['AutoItemCheck']
 
-    def _getConfig(self, configs):
+    def get_config(self, configs):
         """Merge entries from the config with existing ones - if we're loading
         the first config, the existing ones will be empty. Otherwise, we're
         restoring a config into an existing state, so don't delete the already
@@ -155,7 +159,7 @@ class ListPatcherConfig(PatcherConfig):
         # Revert To Default (or a brand new patch) passes an empty config -
         # start over instead of keeping the state that is on screen
         conf_copy = dict(self._item_config) if configs else {}
-        config = super()._getConfig(configs) # loads self.configItems and co
+        config = super().get_config(configs) # loads self.configItems and co
         (conf_items := self.configItems).extend(
             it for it in conf_copy.keys() - {*conf_items})
         #--Verify file existence
@@ -185,12 +189,14 @@ class ListPatcherConfig(PatcherConfig):
         return self.patcher_type(self.patcher_name, patch_file,
                                  self._item_config)
 
-    def import_config(self, patchConfigs):
-        super().import_config(patchConfigs)
-        self._sort_and_update_items(is_auto=getattr(self, 'autoIsChecked',
-                                                    self._is_first_load))
-
-    def _sort_and_update_items(self, is_auto=True, do_sort=True):
+    def _sort_and_update_items(self, is_auto=None, do_sort=True):
+        """Sort the items by load order and update the internal caches. If
+        is_auto is None decide based on the config we just loaded - mergers
+        follow their Automatic checkbox, the rest only pick up new sources for
+        a brand new patch (or if _auto_new_sources is set)."""
+        if is_auto is None:
+            is_auto = getattr(self, 'autoIsChecked',
+                              self._auto_new_sources or self._is_first_load)
         if is_auto:
             for mod in (unsort := self.patcher_type.valid_srcs(self._bp)):
                 self._set_choice(mod)
@@ -491,9 +497,9 @@ class ImportEnchantments(ImporterPatcherConfig):
 class TweakPatcherConfig(PatcherConfig):
     patcher_type: ClassVar[type[MultiTweaker]]
 
-    def _getConfig(self, configs):
+    def get_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
-        config = super()._getConfig(configs)
+        config = super().get_config(configs)
         self._all_items = self._curr_items = self._tweaks_config(config,
                                                                self._bp)
         return config
@@ -593,8 +599,8 @@ class ListMergerConfig(ListPatcherConfig):
     _item_config: dict[FName, set[str]]
     autoIsChecked = True
 
-    def _getConfig(self, configs):
-        config = super()._getConfig(configs)
+    def get_config(self, configs):
+        config = super().get_config(configs)
         for item in self._item_config:
             self._set_choice(item)
         return config

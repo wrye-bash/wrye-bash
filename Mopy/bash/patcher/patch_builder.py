@@ -27,17 +27,17 @@ import re
 import time
 from datetime import timedelta
 
-from .config_patchers import all_patcher_types
 from .. import bolt, bush
 from ..bolt import RefrIn, SubProgress
 from ..exception import BPTooManyMastersError, BPSplitError
 
-def load_patcher_configs(bashed_patch, patch_configs):
-    """Instantiate the available patcher configs and load saved settings."""
-    config_patchers = [p_type(bashed_patch) for p_type in all_patcher_types]
-    for config_patcher in config_patchers:
-        config_patcher.import_config(patch_configs)
-    return config_patchers
+def load_patcher_configs(patcher_instances, patch_configs):
+    """Load the saved settings into the passed in patcher configs - for the
+    gui patchers these must have been native_init'ed already."""
+    for config_patcher in patcher_instances:
+        # set isEnabled and load the additional config for this patcher
+        config_patcher.get_config(patch_configs)
+        config_patcher._sort_and_update_items()
 
 def save_patcher_configs(config_patchers):
     """Return the persistent Bashed Patch configuration."""
