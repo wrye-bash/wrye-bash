@@ -44,12 +44,14 @@ class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
     """Basic patcher panel with no options."""
     selectCommands = True # whether this panel displays De/Select All
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, parent_dialog=None, **kwargs):
         super(AObject, self).__init__(*args, **kwargs)
         super().__init__(no_border=False)
         # Used to keep track of the state of the patcher label
         self._is_bolded = False
         self._is_italicized = False
+        if parent_dialog is not None:
+            self.native_init(parent_dialog) # must not need the config
 
     @on_create
     def native_init(self, *args, **kwargs):
@@ -132,10 +134,10 @@ class _ListPanel(_PatcherPanel):
     _deselect_all_tooltip = _('Deactivate all currently visible sources.')
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self._all_items: list[FName | MultiTweakItem] = []
         # List of items that are currently visible (according to the search)
         self._curr_items = []
+        super().__init__(*args, **kwargs) # may native_init - keep it last
 
     @on_create
     def native_init(self, *args, **kwargs):
@@ -265,9 +267,9 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
     _auto_new_sources = True
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         # Set of items that are new and hence need to remain bolded
         self._new_items: set[FName] = set()
+        super().__init__(*args, **kwargs) # may native_init - keep it last
 
     # List Panel implementation -----------------------------------------------
     def _get_all_items(self):

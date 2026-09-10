@@ -37,6 +37,13 @@ def panels(monkeypatch, tmp_path):
     from ..basher import gui_patchers
     return gui_patchers
 
+def _load_patcher_configs(config_patchers, patch_configs):
+    """Load patch_configs into config_patchers the way PatchBuilder does."""
+    from ..patcher.config_patchers import PatchBuilder
+    patch_builder = PatchBuilder(None, None)
+    patch_builder._config_patchers = config_patchers
+    patch_builder._load_patcher_configs(patch_configs)
+
 def _search_panel(panel_type, all_items):
     # Exercise the actual panel methods without creating native controls.
     panel = panel_type.__new__(panel_type)
@@ -90,7 +97,7 @@ def test_source_search_after_source_changes(panels):
     assert panel._curr_items == [FName('New.esp'), FName('Other.esp')]
 
 def test_tweak_config_keeps_filtered_out_items(panels):
-    from ..patcher.config_patchers import PatchBuilder, TweakPatcherConfig
+    from ..patcher.config_patchers import TweakPatcherConfig
     visible_tweak = SimpleNamespace(isEnabled=False, save_tweak_config=Mock())
     hidden_tweak = SimpleNamespace(isEnabled=True, save_tweak_config=Mock())
 
@@ -104,7 +111,7 @@ def test_tweak_config_keeps_filtered_out_items(panels):
             return [visible_tweak, hidden_tweak]
 
     config = _TestConfig(None)
-    PatchBuilder(None, [config]).load_patcher_configs({})
+    _load_patcher_configs([config], {})
     assert config._all_items == config._curr_items
     config._curr_items = [visible_tweak]
     saved_configs = {}
@@ -187,7 +194,6 @@ def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
 
     from .. import load_order
     from ..gui import VLayout
-    from ..patcher.config_patchers import PatchBuilder
 
     monkeypatch.setitem(bass.inisettings, 'AutoItemCheck', True)
     monkeypatch.setattr(load_order, 'cached_sort', list)
@@ -220,7 +226,7 @@ def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
         assert not panel.native_init(frame, recreate=False)
         # The panels are laid out first, then the config is loaded into them
         assert panel.gList.lb_get_items_count() == 0
-        PatchBuilder(None, [panel]).load_patcher_configs({})
+        _load_patcher_configs([panel], {})
         assert panel.gList.lb_get_items_count() == 1
         assert panel.gList.lb_is_checked_at_index(0)
         # Yield after each search edit to process pending GUI events before

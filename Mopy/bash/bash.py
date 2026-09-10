@@ -555,8 +555,7 @@ def _run_bashed_patch_cli(opts, localize, bush_game):
         settings_defaults.initSettings(bush_game)
         mod_infos = bosh.init_stores(bolt.HeadlessProgress('Wrye Bash'))
         from .patcher.config_patchers import PatchBuilder
-        PatchBuilder.build_patch_cli(bolt.FName(opts.bashedPatchName),
-                                     mod_infos)
+        PatchBuilder(mod_infos, bolt.FName(opts.bashedPatchName)).build_patch()
     except exception.BPConfigError as e:
         bolt.deprint('Bashed Patch configuration error:', traceback=True)
         print(_('The configuration of the Bashed Patch is incorrect.') +

@@ -34,6 +34,7 @@ from itertools import chain
 from typing import ClassVar
 
 from .base import APatcher, ListPatcher, MultiTweakItem
+from .patch_files import PatchFile
 from .patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
@@ -70,7 +71,7 @@ class PatcherConfig:
     def get_config(self, configs):
         """Get config from configs dictionary and/or set to default.
 
-        Called via PatchBuilder.load_patcher_configs to update the patch
+        Called via PatchBuilder._load_patcher_configs to update the patch
         options based on the previous config for this patch, loaded via
         get_table_prop('bash.patch.configs'). Fallback to default_XXX class
         vars for missing config entries."""
@@ -782,9 +783,11 @@ class PatchBuilder:
     anything. basher.patcher_dialog.PatchDialog mixes it in and overrides the
     steps that need to interact with the user."""
 
-    def __init__(self, bashed_patch, config_patchers):
-        self.bashed_patch = bashed_patch
-        self._config_patchers = config_patchers
+    def __init__(self, mod_infos, patch_name):
+        """We build patch_name, creating the plugin if it is not there yet -
+        PatchDialog sets the patch and its panels up itself."""
+        self._minfos = mod_infos
+        self._patch_name = patch_name
 
     @property
     def _bp_name(self):
@@ -792,7 +795,7 @@ class PatchBuilder:
         return self.bashed_patch.fileInfo.fn_key
 
     # Config phase ------------------------------------------------------------
-    def load_patcher_configs(self, patch_configs):
+    def _load_patcher_configs(self, patch_configs):
         """Load the saved settings into the patcher configs - for the gui
         patchers these must have been native_init'ed already."""
         for config_patcher in self._config_patchers:
@@ -810,7 +813,7 @@ class PatchBuilder:
     # Build phase -------------------------------------------------------------
     def build_patch(self):
         """Build the patch, save its parts and refresh the mod infos."""
-        bp_file = self.bashed_patch
+        bp_file = self._get_target_patch()
         with self._get_progress() as prog:
             #--Run the enabled patchers
             build_start = time.time_ns()
@@ -864,6 +867,25 @@ class PatchBuilder:
         refresh_in = RefrIn.from_tabled_infos(minfos, attrs, ghosts=True)
         self._patch_built(list(attrs),
                           minfos.refresh(refresh_in, force_update=True))
+
+    def _get_target_patch(self):
+        """The patch file to build, with its patchers configured - the GUI
+        hands us the one its panels were set up for."""
+        minfos, patch_name = self._minfos, self._patch_name
+        if patch_name in minfos:
+            patch_info = minfos[patch_name]
+        else:
+            patch_info = minfos.create_new_mod(patch_name, selected=(),
+                wanted_masters=[], author_str='BASHED PATCH')
+            if patch_info is None:
+                raise BoltError(_('Failed to create %(patch_name)s.') % {
+                    'patch_name': patch_name})
+        self.bashed_patch = PatchFile(patch_info, minfos)
+        self._config_patchers = [p_type(self.bashed_patch) for p_type in
+                                 all_patcher_types]
+        self._load_patcher_configs(
+            patch_info.get_table_prop('bash.patch.configs', {}))
+        return self.bashed_patch
 
     def _prepare_patch_files(self):
         """Set patch attributes, splitting the patch if the master limit
@@ -929,27 +951,3 @@ class PatchBuilder:
         GUI hands it over to the caller of the dialog instead."""
         self.bashed_patch.p_file_minfos.save_pickle()
         bass.settings.save()
-
-    # Command line ------------------------------------------------------------
-    @classmethod
-    def build_patch_cli(cls, patch_name, mod_infos):
-        """Build a Bashed Patch and persist the resulting state."""
-        from .patch_files import PatchFile
-        patch_info = cls._get_target_patch(mod_infos, patch_name)
-        bp_file = PatchFile(patch_info, mod_infos)
-        patch_builder = cls(bp_file, [p_type(bp_file) for p_type in
-                                      all_patcher_types])
-        patch_builder.load_patcher_configs(
-            patch_info.get_table_prop('bash.patch.configs', {}))
-        patch_builder.build_patch()
-
-    @staticmethod
-    def _get_target_patch(mod_infos, patch_name):
-        if patch_name in mod_infos:
-            return mod_infos[patch_name]
-        created = mod_infos.create_new_mod(patch_name, selected=(),
-            wanted_masters=[], author_str='BASHED PATCH')
-        if created is None:
-            raise BoltError(_('Failed to create %(patch_name)s.') % {
-                'patch_name': patch_name})
-        return created
