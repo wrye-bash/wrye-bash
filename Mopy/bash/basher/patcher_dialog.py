@@ -51,8 +51,8 @@ class PatchDialog(DialogWindow, PatchBuilder):
         self._bp_rdata = bp_rdata
         self._bps = bashed_patches_out
         self.parent = parent
-        self.patchInfo = bashed_patch.fileInfo
-        title = _('Update %(bp_name)s') % {'bp_name': f'{self.patchInfo}'}
+        title = _('Update %(bp_name)s') % {
+            'bp_name': f'{bashed_patch.fileInfo}'}
         super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
             sizes_dict=bass.settings)
         patcherNames = [patcher.patcher_name for patcher in gpatcher_types]
@@ -72,14 +72,14 @@ class PatchDialog(DialogWindow, PatchBuilder):
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect)
         self.gPatchers.on_box_checked.subscribe(self.OnCheck)
-        self.gExportConfig = SaveAsButton(self, btn_label=_('Export'),
-                                          on_click=self.ExportConfig)
-        self.gImportConfig = OpenButton(self, btn_label=_('Import'),
-                                        on_click=self.ImportConfig)
-        self.gRevertConfig = RevertToSavedButton(self,
-                                                 on_click=self.RevertConfig)
-        self.gRevertToDefault = RevertButton(self, btn_label=_(
-            'Revert To Default'), on_click=self.DefaultConfig)
+        conf_buttons = [
+            SaveAsButton(self, btn_label=_('Export'),
+                         on_click=self._export_conf),
+            OpenButton(self, btn_label=_('Import'),
+                       on_click=self._import_conf),
+            RevertToSavedButton(self, on_click=self._revert_conf),
+            RevertButton(self, btn_label=_('Revert To Default'),
+                         on_click=self._reset_conf)]
         self.defaultTipText = _(u'Items that are new since the last time this '
                                 u'patch was built are displayed in bold.')
         self.gTipText = Label(self,self.defaultTipText)
@@ -97,23 +97,19 @@ class PatchDialog(DialogWindow, PatchBuilder):
              ]), LayoutOptions(weight=1)),
             self.gTipText,
             HorizontalLine(self),
-            HLayout(spacing=4, items=[
-                Stretch(), self.gExportConfig, self.gImportConfig,
-                self.gRevertConfig, self.gRevertToDefault,
-            ]),
+            HLayout(spacing=4, items=[Stretch(), *conf_buttons]),
             HLayout(spacing=4, items=[
                 Stretch(), self.gExecute, self.gSelectAll, self.gDeselectAll,
                 CancelButton(self),
             ]),
         ]).apply_to(self)
         #--Patcher panels
-        self.patchConfigs = patchConfigs
+        self._patch_configs = patchConfigs
         with BusyCursor(): # Constructs all the patcher panels, so takes a bit
-            PatchBuilder.__init__(self, bashed_patch,
-                [ptype(bashed_patch) for ptype in gpatcher_types])
-            for patcher_panel in self._config_patchers:
-                patcher_panel.native_init(self) # must not need the config
-            self.load_patcher_configs(patchConfigs)
+            self.bashed_patch = bashed_patch
+            self._config_patchers = [ptype(bashed_patch, parent_dialog=self)
+                                     for ptype in gpatcher_types]
+            self._load_patcher_configs(patchConfigs)
         self.currentPatcher = None
         initial_select = min(len(self._config_patchers) - 1, 1)
         if initial_select >= 0:
@@ -160,6 +156,9 @@ class PatchDialog(DialogWindow, PatchBuilder):
         showError(self, e_msg, _('Bashed Patch Error'))
 
     # PatchBuilder overrides - these are the steps that talk to the user ------
+    def _get_target_patch(self):
+        return self.bashed_patch # set up with its panels in __init__
+
     def _get_progress(self):
         return balt.Progress(self._bp_name, abort=True)
 
@@ -242,11 +241,20 @@ class PatchDialog(DialogWindow, PatchBuilder):
         # note this won't activate the new masters, the caller has to do it
         self._bp_rdata |= refreshed
 
-    def ExportConfig(self):
+    # Config Phase overrides and import/export/revert config callbacks
+    def _load_patcher_configs(self, patch_configs):
+        """Load patchConfigs into the patcher panels - used for the initial
+        load and whenever the user imports or reverts the config."""
+        super()._load_patcher_configs(patch_configs)
+        for index, patcher in enumerate(self._config_patchers):
+            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
+        self._update_ok_btn()
+
+    def _export_conf(self):
         """Export the configuration to a user selected dat file."""
         config = self._save_patcher_configs()
         out_dir = bass.dirs['patches']
-        outFile = f'{self.patchInfo.fn_key}_Configuration.dat'
+        outFile = f'{self._bp_name}_Configuration.dat'
         out_dir.makedirs()
         #--File dialog
         outPath = FileSave.display_dialog(self.parent,
@@ -261,9 +269,9 @@ class PatchDialog(DialogWindow, PatchBuilder):
 
     __old_key = u'Saved Bashed Patch Configuration'
     __new_key = u'Saved Bashed Patch Configuration (%s)'
-    def ImportConfig(self):
+    def _import_conf(self):
         """Import the configuration from a user selected dat file."""
-        config_dat = f'{self.patchInfo.fn_key}_Configuration.dat'
+        config_dat = f'{self._bp_name}_Configuration.dat'
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog
@@ -293,23 +301,15 @@ class PatchDialog(DialogWindow, PatchBuilder):
                 'version.') % {'bp_config_path': textPath}
             showError(self, msg, title=_('Config Too Old'))
             return
-        self.load_patcher_configs(patchConfigs)
+        self._load_patcher_configs(patchConfigs)
 
-    def load_patcher_configs(self, patch_configs):
-        """Load patchConfigs into the patcher panels - used for the initial
-        load and whenever the user imports or reverts the config."""
-        super().load_patcher_configs(patch_configs)
-        for index, patcher in enumerate(self._config_patchers):
-            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
-        self._update_ok_btn()
-
-    def RevertConfig(self):
+    def _revert_conf(self):
         """Revert configuration back to saved"""
-        self.load_patcher_configs(self.patchConfigs)
+        self._load_patcher_configs(self._patch_configs)
 
-    def DefaultConfig(self):
+    def _reset_conf(self):
         """Revert configuration back to default"""
-        self.load_patcher_configs({})
+        self._load_patcher_configs({})
 
     def _mass_select_recursive(self, select=True):
         """Select or deselect all patchers and entries in patchers with child
