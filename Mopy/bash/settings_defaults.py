@@ -86,7 +86,7 @@ def get_default_settings(bush_game):
         'bash.useAltName': True,
         'bash.use_reverse_icons': False,
         #--Colors
-        'bash.colors': DEFAULT_COLORS,
+        'bash.colors': dict(DEFAULT_COLORS),
         #--BSA Redirection
         'bash.bsaRedirection': True,
         # Wrye Bash: Localization
@@ -100,7 +100,7 @@ def get_default_settings(bush_game):
         'bash.statusbar.order': [],
         'bash.statusbar.showversion': False,
         #--Wrye Bash: Group and Rating
-        'bash.mods.groups': DEFAULT_GROUPS,
+        'bash.mods.groups': [*DEFAULT_GROUPS],
         'bash.mods.ratings': ['+', '1', '2', '3', '4', '5', '=', '~'],
         #--Wrye Bash: Col (Sort) Names
         'bash.colNames': {
