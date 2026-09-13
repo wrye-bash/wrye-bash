@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -160,12 +160,12 @@ def find_egs_games():
 def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 
-def get_gog_game_paths(_submod):
+def get_gog_game_paths(_submod, **_kwargs):
     ##: Implement reading from Heroic Games launcher (and maybe others like
     # Lutris?)
     return []
 
-def get_disc_game_paths(_submod, _found_steam_paths, _found_gog_paths):
+def get_disc_game_paths(_submod, **_kwargs):
     # We can't detect this on Linux because there's no registry to pull from,
     # users will just have to tell us via -o/bash.ini
     return []
@@ -173,10 +173,10 @@ def get_disc_game_paths(_submod, _found_steam_paths, _found_gog_paths):
 def get_legacy_ws_game_info(_submod):
     return _LegacyWinAppInfo() # no Windows Store on Linux
 
-def get_ws_game_paths(_submod):
+def get_ws_game_paths(_submod, **_kwargs):
     return [] # no Windows Store on Linux
 
-def get_steam_game_paths(submod):
+def get_steam_game_paths(submod, **_kwargs):
     return [*map(_GPath_no_norm, _parse_steam_manifests(
         submod, _get_steam_path()))]
 
@@ -274,14 +274,16 @@ def mark_high_dpi_aware():
     pass # Windows only
 
 def convert_separators(p):
-    return p.replace(u'\\', u'/')
+    return p.replace('\\', '/')
 
 ##: A more performant implementation would maybe cache folder contents or
 # something similar, as it stands this is not usable for fixing BAIN on Linux
-def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: _Path | str) -> _Path | None:
     if os.path.exists(ci_path):
-        # Fast path, but GPath it as we haven't normpathed it yet
-        return _GPath(ci_path)
+        # ci_path could either be a str or a Path, but _GPath_no_norm wants a
+        # string, so check first
+        return (ci_path if isinstance(ci_path, _Path) else
+                _GPath_no_norm(ci_path))
     # Find the longest prefix that exists in the filesystem - *some* prefix
     # must exist, even if it's only root
     path_prefix, ci_rem_part = os.path.split(os.path.normpath(ci_path))

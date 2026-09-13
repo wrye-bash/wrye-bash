@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -37,7 +37,7 @@ from .. import bolt, exception
 from ..bolt import decoder, flag, float_or_none, int_or_zero, sig_to_str, \
     str_or_none, struct_pack
 
-def _str_to_bool(value, __falsy=frozenset(
+def _str_to_bool(value, *, __falsy=frozenset(
     ['', 'none', 'false', 'no', '0', '0.0'])):
     return value.strip().lower() not in __falsy
 
@@ -63,7 +63,7 @@ attr_csv_struct = {
     'dt': [float_or_none, _('Damage Threshold')],
     'duration': [int_or_zero, _('Duration')],
     'eid': [str_or_none, _('Editor Id')],
-    'enchantPoints': [int_or_zero, _('Enchantment Points')],
+    'enchantment_charge': [int_or_zero, _('Enchantment Points')],
     'fireRate': [float_or_none, _('Fire Rate')],
     'flags': [int_or_zero, _('Flags')],
     'full': [str_or_none, _('Name')],
@@ -138,7 +138,7 @@ for _k, _v in attr_csv_struct.items():
     else: # also covers floats which should be wrapped in Rounder (see __str__)
         _v.append(lambda x: '"%s"' % x)
 del _k, _v
-attr_csv_struct[u'enchantPoints'][2] = lambda x: ( # can be None
+attr_csv_struct['enchantment_charge'][2] = lambda x: ( # can be None
     '"None"' if x is None else f'"{x:d}"')
 
 #------------------------------------------------------------------------------
@@ -172,20 +172,25 @@ class MelSet(object):
         return list({s for element in self.elements
                      for s in element.getSlotsUsed()})
 
-    def check_duplicate_attrs(self, curr_rec_sig):
+    def check_duplicate_attrs(self, curr_rec_sig: bytes,
+            allowed_duplicate_attrs: set[str]):
         """This will raise a SyntaxError if any record attributes occur in more
         than one element. However, this is sometimes intended behavior (e.g.
         Oblivion's MreSoun uses it to upgrade an old subrecord to a newer one).
-        In such cases, set the MreRecord class variable _has_duplicate_attrs to
-        True for that record type (after carefully checking that there are no
-        unwanted duplicate attributes)."""
+        In such cases, set the MreRecord class variable
+        _allowed_duplicate_attrs to a set of attribute names that are allowed
+        to be duplicated for that record type."""
         all_slots = set()
         for element in self.elements:
             element_slots = set(element.getSlotsUsed())
-            if duplicate_slots := (all_slots & element_slots):
+            internal_duplicates = element.find_duplicate_slots()
+            bad_duplicates = internal_duplicates - allowed_duplicate_attrs
+            duplicate_slots = all_slots & element_slots
+            bad_duplicates |= duplicate_slots - allowed_duplicate_attrs
+            if bad_duplicates:
                 raise SyntaxError(
                     f'Duplicate element attributes in record type '
-                    f'{curr_rec_sig}: {sorted(duplicate_slots)}. This '
+                    f'{curr_rec_sig}: {sorted(bad_duplicates)}. This '
                     f'most likely points at an attribute collision, '
                     f'make sure to choose unique attribute names!')
             all_slots.update(element_slots)
@@ -266,8 +271,13 @@ class RecordType(type):
 
     def __new__(cls, name, bases, classdict):
         slots = classdict.get('__slots__', ())
-        classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
+        slots = (*slots, *melSet.getSlotsUsed()) if (
             melSet := classdict.get('melSet', ())) else slots
+        invalid_slots = [s for s in slots if not s.isidentifier()]
+        if invalid_slots:
+            raise SyntaxError(f'Invalid attribute names: {invalid_slots}. '
+                              f'They must be valid Python identifiers.')
+        classdict['__slots__'] = slots
         new = super(RecordType, cls).__new__(cls, name, bases, classdict)
         if rsig := getattr(new, 'rec_sig', None):
             cls.sig_to_class[rsig] = new
@@ -502,9 +512,9 @@ class MelRecord(MreRecord):
     #--Subclasses must define as MelSet(*mels)
     melSet: MelSet = None
     rec_sig: bytes = None
-    # If set to False, skip the check for duplicate attributes for this
-    # subrecord. See MelSet.check_duplicate_attrs for more information.
-    _has_duplicate_attrs = False
+    # A set of attributes that are allowed to occur more than once in the
+    # record. See MelSet.check_duplicate_attrs for more information.
+    _allowed_duplicate_attrs: set[str] = set()
     # The record attribute and flag name needed to find out if a piece of armor
     # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
     not_playable_flag = ('flags1', 'not_playable')
@@ -527,8 +537,8 @@ class MelRecord(MreRecord):
     @classmethod
     def validate_record_syntax(cls):
         """Performs validations on this record's definition."""
-        if not cls._has_duplicate_attrs:
-            cls.melSet.check_duplicate_attrs(cls.rec_sig)
+        cls.melSet.check_duplicate_attrs(cls.rec_sig,
+            cls._allowed_duplicate_attrs)
 
     @classmethod
     def getDefault(cls, attr):
@@ -545,10 +555,10 @@ class MelRecord(MreRecord):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
                                                  file_offset=file_offset)
             try:
-                loader = loaders[sub_type]
+                mel_loader = loaders[sub_type]
                 try:
-                    loader.load_mel(self, ins, sub_type, sub_size,
-                                    self._rec_sig, sub_type) # *debug_strs
+                    mel_loader.load_mel(self, ins, sub_type, sub_size,
+                                        self._rec_sig, sub_type) # *debug_strs
                     continue
                 except Exception as er:
                     error = er
@@ -560,7 +570,7 @@ class MelRecord(MreRecord):
             bolt.deprint(self.error_string('loading', file_offset, sub_size,
                                            sub_type, self.flags1))
             if isinstance(error, str):
-                raise exception.ModError(ins.inName, error)
+                raise exception.ModError(ins.inName, f'{error!r}')
             raise exception.ModError(ins.inName, f'{error!r}') from error
         # Sort once we're done - sorting during loading is obviously a bad idea
         self._sort_subrecords()

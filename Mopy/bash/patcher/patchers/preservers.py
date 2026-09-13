@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -31,7 +31,7 @@ from collections import Counter, defaultdict
 from itertools import chain
 
 from ..base import ImportPatcher
-from ... import bush, load_order, parsers
+from ... import bush, parsers
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
 from ...brec import RecordType
 from ...exception import ModSigMismatchError
@@ -376,8 +376,9 @@ class ImportSpellStatsPatcher(APreserver):
                  for x in bush.game.spell_stats_types}
     _fid_rec_attrs = {x: bush.game.spell_stats_fid_attrs
                       for x in bush.game.spell_stats_types}
-    _csv_parser = parsers.SpellRecords if bush.game.fsName == 'Oblivion' \
-        else None
+    _csv_parser = (parsers.SpellRecords
+                   if bush.game.fsName in ('Oblivion', 'OblivionRE')
+                   else None)
     patcher_tags = {'SpellStats'}
     _csv_key = 'Spells'
 
@@ -425,8 +426,7 @@ class ImportCellsPatcher(ImportPatcher):
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
             srcInfo = self.patchFile.all_plugins[srcMod]
-            bashTags = self.patchFile.all_tags[srcMod]
-            tags = bashTags & set(self.recAttrs)
+            tags = self.patchFile.all_tags[srcMod] & self.recAttrs.keys()
             if not tags: continue
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             attrs = set(chain.from_iterable(

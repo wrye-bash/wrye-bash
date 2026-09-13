@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,18 +24,18 @@
 """Menu items for the main and item menus of the saves tab - their window
 attribute points to SaveList singleton."""
 
-import io
 import os
 import re
 import shutil
+from itertools import chain
+from typing import ClassVar
 
 from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
-from ..bass import Store
 from ..bolt import FName, GPath, Path, RefrIn, SubProgress, RefrData
-from ..bosh import _saves, faces
+from ..bosh import _saves, faces, ACosave, PluggyCosave, xSECosave
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
 from ..gui import BusyCursor, FileSave, askText, showError, askYes, showOk, \
@@ -44,7 +44,7 @@ from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = ['Saves_Profiles', 'Save_Renumber', 'Save_Move',
            u'Save_ActivateMasters', u'Save_DiffMasters', u'Save_Stats',
-           u'Save_StatObse', u'Save_EditPCSpells', u'Save_RenamePlayer',
+           'Save_StatObse', 'Save_RemovePCSpells', 'Save_RenamePlayer',
            u'Save_EditCreatedEnchantmentCosts', u'Save_ImportFace',
            u'Save_EditCreated', u'Save_ReweighPotions', u'Save_UpdateNPCLevels',
            u'Save_ExportScreenshot', u'Save_Unbloat', u'Save_RepairAbomb',
@@ -63,7 +63,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
         """Initialize."""
-        self.baseSaves = bass.dirs[u'saveBase'].join(u'Saves')
+        self.baseSaves = bass.dirs['saveBase'].join(bush.game.Ess.saves_dir)
         #--GUI
         super().__init__(parent)
         self._parent_list = parent
@@ -77,7 +77,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def getItemList(self):
         """Returns load list keys in alpha order."""
         #--Get list of directories in Hidden, but do not include default.
-        return initialization.getLocalSaveDirs()
+        return initialization.getLocalSaveDirs(bush.game.Ess.saves_dir)
 
     #--Info box
     def getInfo(self,item):
@@ -112,7 +112,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         if bosh.saveInfos.localSave == oldSaves:
             # this will clear and refresh SaveInfos - we could be smarter as
             # only the abs_path of the infos changes - not worth the complexity
-            self._parent_list.set_local_save(newSaves)
+            self._parent_list.set_local_save(save_dir=newSaves)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
@@ -150,7 +150,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         #--Get file count. If > zero, verify with user.
         profileDir = bass.dirs[u'saveBase'].join(profileSaves)
         files = [save_file for save_file in profileDir.ilist() if
-                 bosh.SaveInfos.rightFileType(save_file)]
+                 bosh.SaveInfos.check_filename(save_file)]
         if files:
             message = _('Delete profile %(save_profile)s and the '
                         '%(num_contained_saves)d save files it contains?') % {
@@ -158,9 +158,12 @@ class Saves_ProfilesData(balt.ListEditorData):
             if not askYes(self.parent, message, _('Delete Profile')):
                 return False
         #--Remove directory
-        if GPath(bush.game.my_games_name).join(u'Saves').s not in profileDir.s:
+        saves_folder = bush.game.Ess.saves_dir
+        my_games_saves = GPath(bush.game.my_games_name).join(saves_folder)
+        if my_games_saves.s not in profileDir.s:
             raise BoltError(f'Sanity check failed: No '
-                f'"{bush.game.my_games_name}\\Saves" in {profileDir}.')
+                            f'"{bush.game.my_games_name}\\{saves_folder}" in '
+                            f'{profileDir}.')
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.rename_profile(profileSaves, None)
         return True
@@ -174,7 +177,8 @@ class Saves_Profiles(ChoiceLink):
     _my_games = GPath(_my_games)
 
     @property
-    def _choices(self): return initialization.getLocalSaveDirs()
+    def _choices(self):
+        return initialization.getLocalSaveDirs(bush.game.Ess.saves_dir)
 
     class _ProfileLink(CheckLink, EnabledLink):
         @property
@@ -196,10 +200,12 @@ class Saves_Profiles(ChoiceLink):
         def Execute(self):
             new_dir = self.relativePath
             with BusyCursor():
-                self.window.set_local_save(new_dir, do_swap=self._askYes)
+                rd_out = RefrData()
+                self.window.set_local_save(save_dir=new_dir,
+                                           do_swap=self._askYes, rd_out=rd_out)
                 self.window.DeleteAll() # let call below repopulate
-                self.window.propagate_refresh(True, Store.MODS.DO(),
-                                              detail_item=None)
+                self.window.propagate_refresh(True, # True is ok, we repopulate
+                    ui_refreshes={bosh.modInfos: rd_out}, detail_item=None)
                 self.window.panel.ShowPanel()
 
     choiceLinkType = _ProfileLink
@@ -233,14 +239,14 @@ class Saves_Profiles(ChoiceLink):
 class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
-        lo_warn_msg, lordata = self._lo_operation()
-        refresh_others = {Store.MODS: lordata}
-        self.window.propagate_refresh(True, refresh_others, focus_list=False)
+        lo_warn_msg, lordata = self._lo_operation(minfs := bosh.modInfos)
+        Link.Frame.all_uilists[minfs].propagate_refresh(lordata,
+                                                        focus_list=False)
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)
 
-    def _lo_operation(self):
+    def _lo_operation(self, mod_infos):
         raise NotImplementedError
 
 class Save_ActivateMasters(_Save_ChangeLO):
@@ -249,9 +255,9 @@ class Save_ActivateMasters(_Save_ChangeLO):
     _help = _(u'Activates exactly the plugins present in the master list of '
               u'this save.')
 
-    def _lo_operation(self):
-        return bosh.modInfos.lo_activate_exact(self._selected_info.masterNames,
-                                               save_act=True)
+    def _lo_operation(self, mod_infos):
+        return mod_infos.lo_activate_exact(self._selected_info.masterNames,
+                                           save_act=True)
 
 #------------------------------------------------------------------------------
 class Save_ReorderMasters(_Save_ChangeLO):
@@ -260,9 +266,9 @@ class Save_ReorderMasters(_Save_ChangeLO):
     _help = _(u'Reorders the plugins in the current load order to match the '
               u'order of plugins in this save.')
 
-    def _lo_operation(self):
-        return bosh.modInfos.lo_reorder(self._selected_info.masterNames,
-                                        save_wip_lo=True)
+    def _lo_operation(self, mod_infos):
+        return mod_infos.lo_reorder(self._selected_info.masterNames,
+                                    save_wip_lo=True)
 
 #------------------------------------------------------------------------------
 class Save_ImportFace(OneItemLink):
@@ -273,31 +279,28 @@ class Save_ImportFace(OneItemLink):
     @balt.conversation
     def Execute(self):
         #--Select source face file
-        srcDir = self._selected_info.info_dir
-        exts = u';*'.join(bush.game.espm_extensions | {
-            bush.game.Ess.ext, bush.game.Ess.ext[-1] + u'r'})
+        srcDir = self._data_store.store_dir
+        st = (minfos := bosh.ModInfos, save_infos := bosh.SaveInfos)
+        exts = ';*'.join(chain(*(infs.factory_type.file_exts for infs in st)))
         wildcard = _('Source Files') + f' (*{exts})|*{exts}'
         #--File dialog
         srcPath = self._askOpen(title=_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)
         if not srcPath: return
         fname = srcPath.tail.s
-        if bosh.SaveInfos.rightFileType(fname): # Import from a save
+        if save_infos.check_filename(fname): # Import from a save
             #--Get face
-            srcInfo = bosh.SaveInfo(srcPath)
             with balt.Progress(fname) as progress:
-                saveFile = _saves.SaveFile(srcInfo)
+                saveFile = _saves.SaveFile(srcPath)
                 saveFile.load(progress)
             srcFaces = faces.PCFaces.save_getFaces(saveFile)
-        elif bosh.ModInfos.rightFileType(fname): # Import from a mod
+        elif minfos.check_filename(fname): # Import from a mod
             #--Get faces
-            srcInfo = bosh.ModInfo(srcPath)
-            srcFaces = faces.PCFaces.mod_getFaces(srcInfo)
+            srcFaces = faces.PCFaces.mod_getFaces(srcPath)
             #--No faces to import?
             if not srcFaces:
-                self._showOk(_('No player faces found in '
-                               '%(face_import_target)s.') % {
-                    'face_import_target': fname}, fname)
+                msg = _('No player faces found in %(face_import_target)s.')
+                self._showOk(msg % {'face_import_target': fname}, fname)
                 return
         else: return
         #--Dialog
@@ -320,14 +323,17 @@ class Save_RenamePlayer(ItemLink):
         for save_inf in self.iselected_infos():
             savedPlayer = _saves.Save_NPCEdits(save_inf)
             savedPlayer.renamePlayer(newName)
-        bosh.saveInfos.refresh()
+        bosh.saveInfos.refresh(True)
         self.refresh_sel()
 
 #------------------------------------------------------------------------------
-class Save_ExportScreenshot(OneItemLink):
+class Save_ExportScreenshot(AppendableLink, OneItemLink):
     """Exports the saved screenshot from a save game."""
     _text = _('Export Screenshot…')
     _help = _(u'Export the saved screenshot from a save game')
+
+    def _append(self, window):
+        return bush.game.Ess.has_screenshots
 
     def Execute(self):
         imagePath = FileSave.display_dialog(Link.Frame,
@@ -371,11 +377,11 @@ class Save_DiffMasters(EnabledLink):
             message = u''
             if missing:
                 message += '=== ' + _('Removed Masters') + f' ({oldName}):\n* '
-                message += u'\n* '.join(load_order.get_ordered(missing))
+                message += '\n* '.join(load_order.cached_sort(missing))
                 if added: message += u'\n\n'
             if added:
                 message += u'=== ' + _(u'Added Masters') + f' ({newName}):\n* '
-                message += u'\n* '.join(load_order.get_ordered(added))
+                message += '\n* '.join(load_order.cached_sort(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------
@@ -399,18 +405,15 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'), title=_('Renumber Saves'), initial_num=1,
             min_num=1, max_num=10000)
         if nfn_number is None: return
-        rdata = RefrData()
+        ren_args = []
         for s_groups, sinf in self._matches:
             # We have to pass the root, so strip off the extension
             ofn_root = FName(s_groups[2]).fn_body
             nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
             if nfn_save != sinf.fn_key.fn_body:
-                try:
-                    rdata |= self.window.try_rename(sinf, nfn_save)
-                except TypeError:
-                    break
+                ren_args.append((sinf, FName(nfn_save + sinf.fn_key.fn_ext)))
                 nfn_number += 1
-        self.window.refresh_renames(self._matches[0][1].fn_key, rdata)
+        self.window.try_rename(ren_args, check_unique=True, with_backups=True)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
@@ -588,11 +591,11 @@ class Save_EditPCSpellsData(balt.ListEditorData):
         self.saveSpells.removePlayerSpells(self.removed)
 
 #------------------------------------------------------------------------------
-class Save_EditPCSpells(OneItemLink):
+class Save_RemovePCSpells(OneItemLink):
     """Save spell list editing dialog."""
     _text = _('Delete Spells…')
-    _help = _('Delete unused spells from your spell list in the selected save.'
-              ' Warning: This cannot be undone.')
+    _help = _('Delete unused spells from your spell list in the selected '
+              'save. Warning: This cannot be undone.')
 
     def Execute(self):
         pc_spell_data = Save_EditPCSpellsData(self.window, self._selected_info)
@@ -621,25 +624,26 @@ class Save_Move(ChoiceLink):
     """Moves or copies selected files to alternate profile."""
 
     def __init__(self, copyMode=False):
-        super(Save_Move, self).__init__()
+        super().__init__()
         self.copyMode = copyMode
         self._help_str = (_('Copy the selected saves to %(save_profile)s.')
                           if copyMode else
                           _('Copy the selected saves to %(save_profile)s.'))
 
     @property
-    def _choices(self): return initialization.getLocalSaveDirs()
+    def _choices(self):
+        return initialization.getLocalSaveDirs(bush.game.Ess.saves_dir)
 
     def _initData(self, window, selection):
         super(Save_Move, self)._initData(window, selection)
-        saves_dir = bosh.saveInfos.localSave
+        sav_dir = bosh.saveInfos.localSave
         _self = self
         class _Default(EnabledLink):
             _text = _('Default')
             _help = _self._help_str % {
                 'save_profile': bush.game.Ini.save_prefix}
             def _enable(self):
-                return saves_dir != bush.game.Ini.save_prefix
+                return sav_dir != bush.game.Ini.save_prefix
             def Execute(self): _self.MoveFiles(profile=None)
         class _SaveProfileLink(EnabledLink):
             @property
@@ -648,13 +652,13 @@ class Save_Move(ChoiceLink):
                     'save_profile': os.path.join(
                         bush.game.Ini.save_prefix, self._text)}
             def _enable(self):
-                return saves_dir != _win_join(self._text)
+                return sav_dir != _win_join(self._text)
             def Execute(self): _self.MoveFiles(profile=self._text)
         self.__class__.choiceLinkType = _SaveProfileLink
         self.extraItems = [_Default()]
 
     def MoveFiles(self, profile: str | None):
-        destDir = bass.dirs['saveBase'].join('Saves')
+        destDir = bass.dirs['saveBase'].join(bush.game.Ess.saves_dir)
         if profile is not None:
             destDir = destDir.join(profile)
         if destDir == bosh.saveInfos.store_dir:
@@ -663,11 +667,10 @@ class Save_Move(ChoiceLink):
         try:
             count = self._move_saves(destDir, profile)
         finally:
-            if not self.copyMode: # files moved to other profile, refresh
-                if moved := bosh.saveInfos.check_existence(
-                        self.iselected_infos()):
-                    bosh.saveInfos.refresh(RefrIn(del_infos=moved))
-                self.window.RefreshUI(RefrData(to_del=moved))
+            if not self.copyMode and (moved := {inf for inf in
+                    self.iselected_infos() if not inf.abs_path.exists()}):
+                rdata = bosh.saveInfos.refresh(RefrIn(del_infos=moved))
+                self.window.RefreshUI(rdata)
         profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
         msg = (_('%(num_save_files)d files copied to %(save_profile)s.')
                if self.copyMode else
@@ -695,11 +698,8 @@ class Save_Move(ChoiceLink):
                 #if result is true just do the job but ask next time if applicable as well
                 if not result: continue
                 ask = ask and result != 2 # so don't warn for rest of operation
-            if self.copyMode:
-                save_inf.fs_copy(destDir.join(fileName))
-            else:
-                save_inf.move_info(destDir)
-            if att_dict := save_inf.get_persistent_attrs(frozenset()):
+            save_inf.fs_copy(destDir.join(fileName), do_move=not self.copyMode)
+            if att_dict := save_inf.get_persistent_attrs():
                 destTable.pickled_data[fileName] = att_dict
                 do_save = 1
             count += 1
@@ -804,7 +804,7 @@ class Save_Stats(OneItemLink):
         saveFile = _saves.SaveFile(self._selected_info)
         with balt.Progress(_(u'Statistics')) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
-            log = bolt.LogFile(io.StringIO())
+            log = bolt.LogFile()
             progress(0.9,_(u'Calculating statistics.'))
             saveFile.logStats(log)
             progress.Destroy()
@@ -814,17 +814,16 @@ class Save_Stats(OneItemLink):
 #------------------------------------------------------------------------------
 class _Save_StatCosave(AppendableLink, OneItemLink):
     """Base for xSE and pluggy cosaves stats menus"""
+    _co_type: ClassVar[type[ACosave]]
+
     def _enable(self):
         if not super(_Save_StatCosave, self)._enable(): return False
-        self._cosave = self._get_cosave()
-        return bool(self._cosave)
-
-    def _get_cosave(self):
-        raise NotImplementedError
+        self._cosave = self._selected_info.get_cosave(co_type=self._co_type)
+        return bool(self._cosave) and not self._cosave._deleted
 
     def Execute(self):
         with BusyCursor():
-            log = bolt.LogFile(io.StringIO())
+            log = bolt.LogFile()
             self._cosave.dump_to_log(log, self._selected_info.header.masters)
             logtxt = log.out.getvalue()
         self._showLog(logtxt, title=self._cosave.abs_path.tail)
@@ -836,9 +835,7 @@ class Save_StatObse(_Save_StatCosave):
         'co_ext': bush.game.Se.cosave_ext.lower()}
     _help = _('Create a report of the contents of the associated %(xse_abbr)s '
               'cosave.') % {'xse_abbr': bush.game.Se.se_abbrev}
-
-    def _get_cosave(self):
-        return self._selected_info.get_xse_cosave()
+    _co_type = xSECosave
 
     def _append(self, window): return bool(bush.game.Se.se_abbrev)
 
@@ -847,9 +844,7 @@ class Save_StatPluggy(_Save_StatCosave):
     """Dump Pluggy blocks from .pluggy files."""
     _text = _(u'Dump .pluggy Contents')
     _help = _(u'Dumps contents of associated Pluggy cosave into a log.')
-
-    def _get_cosave(self):
-        return self._selected_info.get_pluggy_cosave()
+    _co_type = PluggyCosave
 
     def _append(self, window): return bush.game.has_standalone_pluggy
 
@@ -899,12 +894,10 @@ class Save_Unbloat(OneItemLink):
         self.refresh_sel()
 
 #------------------------------------------------------------------------------
-class Save_UpdateNPCLevels(EnabledLink):
+class Save_UpdateNPCLevels(ItemLink):
     """Update NPC levels from active mods."""
     _text = _('Update NPC Levels…')
     _help = _(u'Update NPC levels from active mods')
-
-    def _enable(self): return bool(load_order.cached_active_tuple())
 
     def Execute(self):
         msg = _('This will relevel the NPCs in the selected saves according '

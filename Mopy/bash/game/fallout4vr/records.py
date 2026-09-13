@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,36 +24,31 @@
 FO4VR."""
 
 from ...bolt import flag
-from ...brec import AMreHeader, MelBase, MelFid, MelGroups, MelNull, MelSet, \
-    MelSimpleArray, MelStruct, MelUInt32
+from ...brec import AMreHeader, MelFid, MelNull, MelPostMast, MelPostMastSA,  \
+    MelPostMastG, MelPostMastI, MelSet, MelSimpleArray, MelStruct, MelUInt32
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
-    next_object_default = 0x800
 
     class HeaderFlags(AMreHeader.HeaderFlags):
-        optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(9)
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.95), 'numRecords',
-                  ('nextObject', next_object_default), is_required=True),
+            ('nextObject', AMreHeader.next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
-        MelGroups('transient_types',
-            MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
-                prelude=MelUInt32(b'TNAM', 'form_type')),
-        ),
-        MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'interior_cell_count'),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
+        MelPostMastG('transient_types', MelSimpleArray('unknownTNAM', MelFid(
+            b'TNAM'), prelude=MelUInt32(b'TNAM', 'form_type'))),
+        MelPostMastI(b'INTV', 'unknownINTV'),
+        MelPostMastI(b'INCC', 'interior_cell_count'),
     )

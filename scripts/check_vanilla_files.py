@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -79,7 +79,7 @@ def main():
     game_info.init()
     vanilla_files = {Path(x) for x in game_info.vanilla_files}
 
-    test_path = game_path.join(game_info.mods_dir)
+    test_path = game_path.join(*game_info.mods_dir_path)
     all_files = get_file_list(test_path.join())
 
     print(f'Files present in {test_path} that are not in vanilla_files:')

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,19 +27,15 @@ from __future__ import annotations
 import os
 import re
 from collections import Counter
+from typing import final
 
 # Keep local imports to a minimum, this module is important for booting!
 from .bolt import DefaultLowerDict, ListInfo, LowerDict, decoder, deprint, \
-    getbestencoding, AFileInfo
-# We may end up getting run very early in boot, make sure _() never breaks us
-from .bolt import failsafe_underscore as _
+    getbestencoding, AFileInfo, DelFile
 from .exception import FailedIniInferError
 from .wbtemp import TempFile
 
 _h = r'[^\S\r\n]*' # Perl's \h (horizontal whitespace) sorely missed
-
-# All extensions supported by this parser
-supported_ini_exts = {'.ini', '.cfg', '.toml'}
 
 def get_ini_type_and_encoding(abs_ini_path, *, fallback_type=None,
         consider_obse_inis=False) -> tuple[type[IniFileInfo], str]:
@@ -94,7 +90,7 @@ class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     _comments_start = ('#', ';') # we read both characters as comment starters
-    reSetting = re.compile(fr'^(\w+?){_h}={_h}(.*?)({_h}[;#].*)?$')
+    reSetting = re.compile(fr'^{_h}(.+?){_h}={_h}(.*?)({_h}[;#].*)?$')
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     defaultSection = u'General'
     # The comment character to use when writing new comments into this file
@@ -180,7 +176,7 @@ class AIniInfo(ListInfo):
         return lines
 
     @classmethod
-    def parse_ini_line(cls, whole_line, *, inline_comments=False,
+    def parse_ini_line(cls, whole_line, *, parse_comments=False,
                        parse_value=False, analyze_comments=False):
         lstripped = whole_line.lstrip()
         # deleted settings are comments with a dash after the comment character
@@ -189,14 +185,13 @@ class AIniInfo(ListInfo):
             if lstripped[0] in cls._comments_start:
                 if lstripped[1] == '-':
                     is_del = True
-                    lstripped = lstripped[2:].lstrip() if analyze_comments \
-                        else lstripped[2:] # del settings dont start with space
+                    lstripped = lstripped[2:].lstrip()#trim leading empty space
                 else: # a full line comment
                     lstripped = lstripped[1:].lstrip() if analyze_comments \
                         else ''
         except IndexError: # empty or a single comment character
             lstripped = ''
-        return cls._parse_setting(lstripped, is_del, inline_comments,
+        return cls._parse_setting(lstripped, is_del, parse_comments,
                                   parse_value)
 
     @classmethod
@@ -221,37 +216,20 @@ class AIniInfo(ListInfo):
         whitespace by default."""
         return value.strip()
 
-class IniFileInfo(AIniInfo, AFileInfo):
-    """Any old ini file."""
+class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target inis
+    """Any old ini file. We inherit from DelFile to use self.has_changed to
+    notify IniInfos which should clear this flag."""
     __empty_settings = LowerDict()
     _ci_settings_cache_linenum = __empty_settings
+    file_exts = frozenset(['.ini', '.cfg', '.toml'])
 
-    def __init__(self, fullpath, ini_encoding):
-        super(AIniInfo, self).__init__(fullpath)
+    def __init__(self, fullpath, ini_encoding, **kwargs):
+        super(AIniInfo, self).__init__(fullpath, **kwargs)
         AIniInfo.__init__(self, fullpath.stail) # calls ListInfo.__init__ again
         self.ini_encoding = ini_encoding
         self.isCorrupted = u''
-        #--Settings cache
-        self._deleted = False
-        self.updated = False # notify iniInfos which should clear this flag
 
     # AFile overrides ---------------------------------------------------------
-    def do_update(self, *, raise_on_error=False, **kwargs):
-        try:
-            # do_update will return True if the file was deleted then restored
-            self.updated |= super().do_update(raise_on_error=True)
-            if self._deleted: # restored
-                self._deleted = False
-            return self.updated
-        except OSError:
-            # check if we already know it's deleted (used for main game ini)
-            update = not self._deleted
-            if update:
-                # mark as deleted to avoid requesting updates on each refresh
-                self._deleted = self.updated = True
-            if raise_on_error: raise
-            return update
-
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)
         self._ci_settings_cache_linenum = self.__empty_settings
@@ -261,10 +239,10 @@ class IniFileInfo(AIniInfo, AFileInfo):
         try:
             with open(self.abs_path, mode='rb') as f:
                 content = f.read()
-            if not as_unicode: return content
-            decoded = str(content, self.ini_encoding)
-            return decoded.splitlines(False) # keepends=False
-        except UnicodeDecodeError:
+            return str(content, self.ini_encoding).splitlines( # keepends=False
+                False) if as_unicode else content
+        except UnicodeDecodeError as e:
+            self.isCorrupted = {'ini_full_path': self.abs_path, 'exc': str(e)}
             deprint(f'Failed to decode {self.abs_path} using '
                     f'{self.ini_encoding}', traceback=True)
         except FileNotFoundError:
@@ -281,44 +259,35 @@ class IniFileInfo(AIniInfo, AFileInfo):
         whitespace. If you modify them do a copy first !"""
         try:
             if self._ci_settings_cache_linenum is self.__empty_settings \
-                    or self.do_update(raise_on_error=True):
-                try:
-                    ci_settings = LowerDict()
-                    ci_deleted_settings = LowerDict()
-                    self.isCorrupted = ''
-                    #--Read ini file
-                    section = None
-                    for i, line in enumerate(self.read_ini_content(
-                            missing_ok=missing_ok)):
-                        _strip, setting, val, new_section, is_del = \
-                            self.parse_ini_line(line, parse_value=True)
-                        if setting: # OBSEIni has `new_section` if setting=True
-                            section = new_section or section
-                            if is_del:
-                                if not section: continue #treat it as a comment
-                                settings_dict = ci_deleted_settings
-                            else: settings_dict = ci_settings
-                            try:
-                                settings_dict[section][setting] = (val, i)
-                            except KeyError:
-                                if not section: # can't happen for OBSEIniFile
-                                    self.isCorrupted = _("Your %(tweak_ini)s "
-                                        "should begin with a section header "
-                                        "(e.g. '[General]'), but it does not."
-                                    ) % {'tweak_ini': self.abs_path}
-                                    section = self.__class__.defaultSection
-                                settings_dict[section] = LowerDict(
-                                    [(setting, (val, i))])
-                        elif new_section: # we got a section
-                            section = new_section
-                    self._ci_settings_cache_linenum, self._deleted_cache = \
-                        ci_settings, ci_deleted_settings
-                except UnicodeDecodeError as e:
-                    msg = _('The INI file %(ini_full_path)s seems to have '
-                            'unencodable characters:')
-                    msg = f'{msg}\n\n{e}' % {'ini_full_path': self.abs_path}
-                    self.isCorrupted = msg
-                    return ({}, {}) if with_deleted else {}
+                    or self.do_update(raise_os_error=True):
+                ci_settings = LowerDict()
+                ci_deleted_settings = LowerDict()
+                self.isCorrupted = ''
+                #--Read ini file
+                section = None
+                for i, line in enumerate(self.read_ini_content(
+                        missing_ok=missing_ok)):
+                    _strip, setting, val, new_section, is_del = \
+                        self.parse_ini_line(line, parse_value=True)
+                    if setting: # OBSEIni has `new_section` if setting == True
+                        section = new_section or section
+                        if is_del:
+                            if not section: continue # treat it as a comment
+                            settings_dict = ci_deleted_settings
+                        else:
+                            settings_dict = ci_settings
+                        try:
+                            settings_dict[section][setting] = (val, i)
+                        except KeyError:
+                            if not section:  # can't happen for OBSEIniFile
+                                self.isCorrupted = {'tweak_ini': self.abs_path}
+                                section = self.__class__.defaultSection
+                            settings_dict[section] = LowerDict(
+                                [(setting, (val, i))])
+                    elif new_section:  # we got a section
+                        section = new_section
+                self._ci_settings_cache_linenum, self._deleted_cache = \
+                    ci_settings, ci_deleted_settings
         except OSError:
             return ({}, {}) if with_deleted else {}
         if with_deleted:
@@ -326,16 +295,10 @@ class IniFileInfo(AIniInfo, AFileInfo):
         return self._ci_settings_cache_linenum
 
     # Modify ini file ---------------------------------------------------------
-    def _open_for_writing(self, temp_path): # preserve windows EOL
-        """Write to ourselves respecting windows newlines and out_encoding.
-        Note content to be writen (if coming from ini tweaks) must be encodable
-        to out_encoding. temp_path must point to some temporary file created
-        via TempFile or similar API."""
-        return open(temp_path, 'w', encoding=self.out_encoding)
-
-    def target_ini_exists(self, msg=None):
+    def target_ini_exists(self, msg):
         return self.abs_path.is_file()
 
+    @final
     def saveSettings(self, ini_settings, deleted_settings=None, *,
                      skip_sections=frozenset(), line_fmt=False):
         """Apply dictionary of settings to ini file. Leaf values in settings
@@ -347,8 +310,12 @@ class IniFileInfo(AIniInfo, AFileInfo):
         deleted_settings = LowerDict((x, y) for x, y in
                                      (deleted_settings or {}).items())
         section = None
-        with TempFile() as tmp_ini_path:
-            with self._open_for_writing(tmp_ini_path) as tmp_ini:
+        with TempFile() as tmp_inipath:
+            # Write to ourselves respecting windows newlines and out_encoding.
+            # Note content to be writen (if coming from ini tweaks) must be
+            # encodable to out_encoding. temp_path must point to some temporary
+            # file created via TempFile or similar API.
+            with open(tmp_inipath, 'w', encoding=self.out_encoding) as tmp_ini:
                 def _add_remaining_new_items(section_setts=None):
                     section_setts = ini_settings.pop(section, {}) \
                         if section_setts is None else section_setts
@@ -359,7 +326,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                 # We may have to create the file
                 for line in self.read_ini_content(missing_ok=True):
                     stripped, setting, val, new_section, is_del = \
-                        self.parse_ini_line(line, inline_comments=True)
+                        self.parse_ini_line(line, parse_comments=True)
                     if setting and not skip: # modify? we need be in a section
                         sect = new_section or section
                         try: # Check if we have a value for this setting
@@ -391,7 +358,7 @@ class IniFileInfo(AIniInfo, AFileInfo):
                     if sectionSettings and not isinstance(self, OBSEIniFile):
                         tmp_ini.write(f'[{sect}]\n')
                     _add_remaining_new_items(sectionSettings)
-            self.abs_path.replace_with_temp(tmp_ini_path)
+            self.abs_path.replace_with_temp(tmp_inipath)
 
     @classmethod
     def fmt_setting(cls, setting, value, section=None, comment=''):
@@ -503,6 +470,7 @@ class OBSEIniFile(IniFileInfo):
             if ma_obse := regex.match(stripped):
                 val = cls._parse_value(ma_obse.group(2)) if parse_value else \
                     ma_obse.group(2)
+                val = (val, None) if parse_comments else val
                 return stripped, ma_obse.group(1), val, sectionKey, is_del
         return '', None, None, None, False
 
@@ -526,18 +494,12 @@ class GameIni(IniFileInfo):
         ini_settings = {section:{key:value}}
         self.saveSettings(ini_settings)
 
-    def get_ini_language(self, default_lang: str, cached=True) -> str:
+    def get_ini_language(self, game_handle_, cached=True) -> str:
         if not cached or self._ini_language is None:
             self._ini_language = self.getSetting('General', 'sLanguage',
-                default_lang)
+                game_handle_.Ini.default_game_lang)
         return self._ini_language
 
-    def target_ini_exists(self, msg=None):
+    def target_ini_exists(self, msg):
         """Attempt to create the game ini in some scenarios"""
-        if msg is None:
-            msg = _(u'The game INI must exist to apply a tweak to it.')
-        target_exists = super(GameIni, self).target_ini_exists()
-        if target_exists: return True
-        msg = _('%(ini_full_path)s does not exist.') % {
-            'ini_full_path': self.abs_path} + f'\n\n{msg}\n\n'
-        return msg
+        return True if super().target_ini_exists(msg) else msg

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -125,7 +125,6 @@ class ModSigMismatchError(ModError):
                        f'different type. This is undefined behavior and ' \
                        f'could lead to crashes.'
         super(ModSigMismatchError, self).__init__(in_name, message_form)
-
 
 # BSA exceptions --------------------------------------------------------------
 class BSAError(FileError): pass
@@ -268,6 +267,11 @@ class BPConfigError(Exception):
     """The configuration of the Bashed Patch is invalid in some way. Note that
     the error messages raised by this will be shown to the user in the GUI and
     so should be translated."""
+
+class NonExistentDriveError(OSError):
+    def __init__(self, failed_paths, *args):
+        self.failed_paths = failed_paths
+        super().__init__(*args)
 
 # gui package exceptions ------------------------------------------------------
 class GuiError(Exception):

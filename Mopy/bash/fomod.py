@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -43,6 +43,7 @@ xml attributes/text are available via instance attributes."""
 __author__ = u'Ganda'
 
 import functools
+import os
 import sys
 from collections import defaultdict
 from enum import Enum
@@ -268,9 +269,9 @@ class _FomodFileInfo(object):
             list belongs to is anything but NotUsable."""
         fm_infos_con = []
         fm_infos_req = []
-        md_lower = bush.game.mods_dir.lower()
-        md_lower_slash = tuple(md_lower + s for s in (u'/', u'\\'))
-        md_lower_strip = len(md_lower) + 1 # for the (back)slash
+        md_lower = [c.lower() for c in bush.game.mods_dir_path]
+        md_lower_reverse = reversed(md_lower)
+        md_lower_components = [(c + '/', c + '\\') for c in md_lower]
         for file_object in files_elem.findall(u'*'):
             # Note that we have to convert separators, since these are going to
             # assume one OS-specific separator
@@ -292,16 +293,22 @@ class _FomodFileInfo(object):
                 else:
                     # Destination still needs normalizing
                     file_dest = GPath(file_dest)
-            # Be forgiving of FOMODs that specify redundant 'Data' folders in
-            # the destination
+            # Be forgiving of FOMODs that specify redundant parts of the Data
+            # folder path in the destination
             file_dest_s = file_dest.s
             dest_lower = file_dest_s.lower()
-            if dest_lower == md_lower:
-                file_dest_s = u''
+            wip_md_folder = []
+            for md_part in md_lower_reverse:
+                wip_md_folder.insert(0, md_part)
+                # dest_lower has OS separators, so os.path.join is fine here
+                if dest_lower == os.path.join(*wip_md_folder):
+                    file_dest_s = ''
+                    break
             else:
-                while dest_lower.startswith(md_lower_slash):
-                    file_dest_s = file_dest_s[md_lower_strip:]
-                    dest_lower = file_dest_s.lower()
+                for md_lower_slash in md_lower_components:
+                    while dest_lower.startswith(md_lower_slash):
+                        file_dest_s = file_dest_s[len(md_lower_slash[0]):]
+                        dest_lower = file_dest_s.lower()
             if file_dest_s != file_dest.s:
                 file_dest = GPath_no_norm(file_dest_s)
             file_prty = int(file_object.get(u'priority', u'0'))
@@ -612,7 +619,7 @@ class FomodInstaller(object):
         target_ver = LooseVersion(condition.get('version'))
         ver_path = None
         for ver_file in bush.game.Se.ver_files:
-            ver_path = bass.dirs['app'].join(ver_file)
+            ver_path = bass.dirs['exe'].join(ver_file)
             if ver_path.exists(): break
         if ver_path is None:
             raise FailedCondition(_('%(se_name)s version %(ver_want)s or '

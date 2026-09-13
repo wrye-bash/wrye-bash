@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,8 +24,6 @@
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
 import copy
-from collections import defaultdict
-from enum import Enum
 from typing import TYPE_CHECKING, NewType
 
 if TYPE_CHECKING:
@@ -37,8 +35,19 @@ else:
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = '314'  # must represent a valid float
+AppVersion = '315' # an integer or float (except if written from build.py)
 is_standalone = False # whether or not we're on standalone
+__app_version_tuple = None # cache the version as a tuple (with tag stripped)
+version_tag = ''  # e.g., 'RC1' or a commit sha
+
+def get_version_tuple():
+    """Return the application version as a tuple of integers."""
+    global __app_version_tuple
+    if __app_version_tuple is None:
+        from .bolt import LooseVersion
+        __app_version_tuple = LooseVersion(AppVersion[:-(len(version_tag) + 1)]
+            if version_tag else AppVersion) # can't use the tag in comparisons
+    return __app_version_tuple
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
@@ -57,7 +66,7 @@ boot_settings_defaults = {
 boot_settings = copy.deepcopy(boot_settings_defaults)
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
-settings = None # bolt.Settings !
+settings: dict = None # bolt.Settings !
 
 # restarting info
 is_restarting = False # set to true so Bash is restarted via the exit hook
@@ -82,19 +91,5 @@ def get_path_from_ini(option_key, dir_key='app'):
     return value if (value := GPath(get_value)).is_absolute() else dirs[
         dir_key].join(value)
 
-class Store(Enum):
-    """Inter panel communication - member values are the tab keys in tabInfo
-    and default enabled state, members order is the default tabs order."""
-    INSTALLERS = ('Installers', True)
-    MODS = ('Mods', True)
-    SAVES = ('Saves', True)
-    BSAS = ('BSAs', False)
-    INIS = ('INI Edits', True)
-    SCREENSHOTS = ('Screenshots', True)
-
-    def DO(self):
-        """Unconditionally refresh the respective UIList."""
-        return defaultdict(bool, {self: True})
-
-    def __repr__(self):
-        return self.name
+# Boot stages WIP
+mopy_dirs_initialized = bash_dirs_initialized = False

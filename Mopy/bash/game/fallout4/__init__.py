@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -134,6 +134,8 @@ class AFallout4GameInfo(PatchGame):
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
             _j('interface', 'translations'): {'.txt'},
+            # 3P: BodySlide and Outfit Studio
+            _j('calientetools', 'bodyslide', 'res', 'images'): {'.png'},
         }
         no_skip_regexes = (
             # 3P: xSE PluginPreloader F4
@@ -817,8 +819,8 @@ class AFallout4GameInfo(PatchGame):
     # Import Destructible
     #--------------------------------------------------------------------------
     destructible_types = {
-        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'CONT', b'DOOR', b'FLOR', b'FURN',
-        b'INGR', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ',
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'FLOR',
+        b'FURN', b'INGR', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ',
     }
 
     #--------------------------------------------------------------------------

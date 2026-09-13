@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -31,6 +31,14 @@ default_tweaks = {
         'General': {'bBorderRegionsEnabled': '0'}},
     'Border Regions, ~Enabled [Oblivion].ini': {
         'General': {'bBorderRegionsEnabled': '1'}},
+    'Dialogue Zoom, High [Oblivion].ini': {
+        'Interface': {'fDlgFocus': '1.7500'}},
+    'Dialogue Zoom, ~Default [Oblivion].ini': {
+        'Interface': {'fDlgFocus': '2.1000'}},
+    'Dialogue Zoom, Low [Oblivion].ini': {
+        'Interface': {'fDlgFocus': '6.0000'}},
+    'Dialogue Zoom, Disabled [Oblivion].ini': {
+        'Interface': {'fDlgFocus': '15.0000'}},
     'Fonts 1, ~Default [Oblivion].ini': {
         'Fonts': {'SFontFile_1': r'Data\Fonts\Kingthings_Regular.fnt'}},
     'Fonts, ~Default [Oblivion].ini': {
@@ -39,6 +47,8 @@ default_tweaks = {
                   'SFontFile_1': r'Data\Fonts\Kingthings_Regular.fnt',
                   'SFontFile_2': r'Data\Fonts\Kingthings_Shadowed.fnt',
                   'SFontFile_3': r'Data\Fonts\Tahoma_Bold_Small.fnt'}},
+    'Full Screen, Disabled [Oblivion].ini': {'Display': {'bFull Screen': '0'}},
+    'Full Screen, ~Enabled [Oblivion].ini': {'Display': {'bFull Screen': '1'}},
     'Grass, Fade 4k-5k [Oblivion].ini': {'Grass': {
         'iMinGrassSize': '120', 'fGrassStartFadeDistance': '4000.0000',
         'fGrassEndDistance': '5000.0000'}},

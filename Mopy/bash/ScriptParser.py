@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -286,12 +286,12 @@ class Parser(object):
             if numArgs < self.minArgs:
                 args = self.Type, self.callable_name, numArgs
                 if self.maxArgs == KEY.NO_MAX:
-                    _err_too_few_args(*args, f'>= {self.minArgs}')
+                    msg = f'>= {self.minArgs}'
                 elif self.minArgs == self.maxArgs:
-                    _err_too_few_args(*args, self.minArgs)
+                    msg = self.minArgs
                 else:
-                    _err_too_few_args(*args,
-                        f'>= {self.minArgs} && <= {self.maxArgs}')
+                    msg = f'>= {self.minArgs} && <= {self.maxArgs}'
+                _err_too_few_args(*args, msg)
             return self.function(*args)
 
     class Operator(Callable):
@@ -1529,7 +1529,7 @@ class PreParser(Parser):
         self.ExecCount = 0
         self._wizard_dir = wizard_dir
         try:
-            with wizard_file.open('r', encoding='utf-8-sig') as wiz_script:
+            with wizard_file.open_bom() as wiz_script:
                 # Ensure \n line endings for the script parser
                 self.lines = [bolt.to_unix_newlines(x)
                               for x in wiz_script.readlines()]

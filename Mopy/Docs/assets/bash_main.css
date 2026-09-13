@@ -648,3 +648,25 @@ blockquote {
   /** Toggle off **/
   display: none;
 }
+
+/* wb checkbox/diamond svg support --------------------------------------- */
+
+svg.wb-ico {
+  vertical-align: middle;
+  width: 16px;
+  height: 16px;
+}
+
+svg.wb-16 { width: 16px; height: 16px; }
+svg.wb-32 { width: 32px; height: 32px; }
+
+svg.wb-ico.blue   { --primary_color: #B3D9FF; --secondary_color: #003D7A; }
+svg.wb-ico.green  { --primary_color: #C1FFC1; --secondary_color: #005700; }
+svg.wb-ico.grey   { --primary_color: #C0C0C0; --secondary_color: #000000; }
+svg.wb-ico.orange { --primary_color: #FFD5AA; --secondary_color: #663300; }
+svg.wb-ico.purple { --primary_color: #FAB0FF; --secondary_color: #413252; }
+svg.wb-ico.red    { --primary_color: #FF9494; --secondary_color: #570000; }
+svg.wb-ico.white  { --primary_color: #F4F4F4; --secondary_color: #000000; }
+svg.wb-ico.yellow { --primary_color: #FFFFBF; --secondary_color: #575700; }
+
+/* end wb checkbox/diamond svg support ----------------------------------- */

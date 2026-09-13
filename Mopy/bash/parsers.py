@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -43,10 +43,6 @@ from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
     int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
 from .brec import FormId, RecordType, attr_csv_struct, null3
 from .mod_files import LoadFactory, ModFile
-
-##: In 311+, all of the BOM garbage (utf-8-sig) should go - that means adding
-# backwards compatibility code. See TrustedBinariesPage._import_lists, we could
-# break that out into a bolt tool for reading an 'optional-BOM UTF-8' file
 
 # Utils
 def _key_sort(di, fid_eid=False, values_key=(), by_value=False):
@@ -85,7 +81,7 @@ class _TextParser(object):
     def write_text_file(self, textPath):
         """Export ____ to specified text file. You must override _write_rows.
         """
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
+        with textPath.open_bom('w') as out:
             self._header_row(out)
             self._write_rows(out)
 
@@ -178,9 +174,9 @@ class CsvParser(_TextParser):
         work. ScriptText is a special case.
 
         :param csv_path: The path to the CSV file that should be read."""
-        with open(csv_path, encoding='utf-8-sig') as ins:
+        with csv_path.open_bom() as ins:
             first_line = ins.readline()
-            ##: drop 'excel-tab' format and delimiter = ';'? backwards compat?
+            ##:(734) drop 'excel-tab' format and delimiter = ';'? backwards compat?
             excel_fmt = 'excel-tab' if '\t' in first_line else 'excel'
             ins.seek(0)
             if excel_fmt == 'excel':
@@ -251,7 +247,7 @@ class _HandleAliases(CsvParser):
     def _key2(self, csv_fields):
         return self._coerce_fid(*self._key2_getter(csv_fields))
 
-    def readFromMod(self, mod_inf):
+    def readFromMod(self, mod_inf, modinfos):
         """Hasty readFromMod implementation."""
         modFile = self._load_plugin(mod_inf)
         for top_grup_sig, typeBlock in modFile.iter_tops(self._parser_sigs):
@@ -293,11 +289,6 @@ class _AParser(_HandleAliases):
         # Internal variable, keeps track of mods we've already processed during
         # the first pass to avoid repeating work
         self._fp_mods = set()
-        # The name of the mod that is currently being loaded. Some parsers need
-        # this to change their behavior when loading a mod file. This is a
-        # unicode string matching the name of the mod being loaded, or None if
-        # no mod is being loaded.
-        self._current_mod = None
         # True if id_context needs another round of processing during the
         # second pass
         self._context_needs_followup = False
@@ -316,21 +307,12 @@ class _AParser(_HandleAliases):
         for k in sorted(rows, key=lambda k_: (id_eid_.get(k_) or '').lower()):
             yield k, (rows[k], id_eid_[k])
 
-    # Plugin-related utilities
-    def _mod_has_tag(self, tag_name):
-        """Returns True if the current mod has a Bash Tag with the specified
-        name."""
-        from . import bosh
-        return self._current_mod and tag_name in bosh.modInfos[
-            self._current_mod].getBashTags()
-
     # Reading from plugin - first pass
-    def _read_plugin_fp(self, loaded_mod):
+    def _read_plugin_fp(self, loaded_mod, modinfos):
         """Performs a first pass of reading on the specified plugin and its
         masters. Results are stored in id_context.
 
         :param loaded_mod: The loaded mod to read from."""
-        from . import bosh
         def _fp_loop(mod_to_read):
             """Central loop of _read_plugin_fp, factored out into a method so
             that it can easily be used twice."""
@@ -341,10 +323,10 @@ class _AParser(_HandleAliases):
         # Process the mod's masters first, but see if we need to sort them
         master_names = loaded_mod.tes4.masters
         if self._needs_fp_master_sort:
-            master_names = load_order.get_ordered(master_names)
+            master_names = load_order.cached_sort(master_names)
         for mod_name in master_names:
             if mod_name in self._fp_mods: continue
-            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
+            _fp_loop(self._load_plugin(modinfos[mod_name],
                                        target_types=self._fp_types))
         # Finally, process the mod itself
         if loaded_mod.fileInfo.fn_key in self._fp_mods: return
@@ -399,28 +381,22 @@ class _AParser(_HandleAliases):
         raise NotImplementedError
 
     # Note the non-PEP8 names - those point to refactored pseudo-API methods
-    def readFromMod(self, mod_info):
+    def readFromMod(self, mod_info, modinfos):
         """Asks this parser to read information from the specified ModInfo
         instance. Executes the needed passes and stores extracted information
         in id_context and / or id_stored_data. Note that this does not
         automatically clear id_stored_data to allow combining multiple sources.
 
         :param mod_info: The ModInfo instance to read from."""
-        self._current_mod = mod_info.fn_key
         # Check if we need to read at all
-        a_types = self.all_types
-        if not a_types:
-            # We need to unset _current_mod since we're no longer loading a mod
-            self._current_mod = None
+        if not (a_types := self.all_types):
             return
         # Load mod_info once and for all, then execute every needed pass
         loaded_mod = self._load_plugin(mod_info, target_types=a_types)
         if self._fp_types:
-            self._read_plugin_fp(loaded_mod)
+            self._read_plugin_fp(loaded_mod, modinfos)
         if self._sp_types:
             self._read_plugin_sp(loaded_mod)
-        # We need to unset _current_mod since we're no longer loading a mod
-        self._current_mod = None
 
     # Writing to plugins
     @classmethod
@@ -545,15 +521,13 @@ class ActorLevels(_HandleAliases):
         self.gotLevels = set()
         self._skip_mods = {'none', bush.game.master_file.lower()}
 
-    def readFromMod(self, mod_inf):
+    def readFromMod(self, mod_inf, modinfos):
         """Imports actor level data from the specified mod and its masters."""
-        from . import bosh
         mod_id_levels, gotLevels = self.id_stored_data, self.gotLevels
         load_f = self._load_factory(keepAll=False)
         for modName in (*mod_inf.masterNames, mod_inf.fn_key):
             if modName in gotLevels: continue
-            modFile = self._load_plugin(bosh.modInfos[modName],
-                                        load_fact=load_f)
+            modFile = self._load_plugin(modinfos[modName], load_fact=load_f)
             for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
                 items = zip(
                     ('eid', 'npc_flags.pc_level_offset', 'level_offset',
@@ -1088,7 +1062,7 @@ class ScriptText(_TextParser):
         return bool(self.eid_data)
 
     def _read_script(self, textPath):
-        with textPath.open(u'r', encoding=u'utf-8-sig') as ins:
+        with textPath.open_bom() as ins:
             all_lines = ins.read().splitlines()
             if len(all_lines) > 3:
                 # First three lines are the header - strip off the comment
@@ -1111,7 +1085,7 @@ class ItemPrices(_HandleAliases):
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _key2_getter = itemgetter(0, 1)
     _grup_index = 5
-    _attr_dex = {u'value': 2, u'eid': 3, u'full': 4}
+    _attr_dex = {'value': 2, 'eid': 3, 'full': 4}
     _row_sorter = partial(_key_sort, values_key=['eid', 'value'])
 
     def __init__(self, aliases_=None):
@@ -1127,10 +1101,10 @@ class ItemPrices(_HandleAliases):
             changed_stats[record.fid.mod_fn] += 1
             record.setChanged()
 
-    def _row_out(self, lfid, stored_data, top_grup,
+    def _row_out(self, lfid, stored_data, top_grup, *,
                  __getter=itemgetter(*_attr_dex)):
-        return '%s,"%d","%s","%s","%s"\n' % (
-            _fid_str(lfid), *__getter(stored_data), top_grup)
+        val, eid_, full_ = __getter(stored_data)
+        return f'{_fid_str(lfid)},"{val:d}","{eid_}","{full_}","{top_grup}"\n'
 
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(_HandleAliases):

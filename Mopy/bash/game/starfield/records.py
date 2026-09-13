@@ -16,15 +16,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the Starfield record classes."""
 
 from ...bolt import flag
-from ...brec import AMreCell, AMreHeader, MelBase, MelFid, MelGroups, \
-    MelNull, MelSet, MelSimpleArray, MelStruct, MelUInt32, AMreWrld
+from ...brec import AMreCell, AMreHeader, AMreWrld, MelFid, MelNull, \
+    MelPostMast, MelPostMastSA, MelPostMastG, MelPostMastI, MelSet, \
+    MelSimpleArray, MelStruct, MelUInt32
 
 #------------------------------------------------------------------------------
 # Starfield Records -----------------------------------------------------------
@@ -32,12 +33,9 @@ from ...brec import AMreCell, AMreHeader, MelBase, MelFid, MelGroups, \
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'BNAM', b'INTV', b'INCC',
-                          b'CHGL'}
     next_object_default = 0x001
 
     class HeaderFlags(AMreHeader.HeaderFlags):
-        optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(8)
         overlay_flag: bool = flag(9)
@@ -52,16 +50,14 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(has_sizes=False),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
-        MelGroups('transient_types',
-            MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
-                prelude=MelUInt32(b'TNAM', 'form_type')),
-        ),
-        MelBase(b'BNAM', 'unknown_bnam'),
-        MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'interior_cell_count'),
-        MelBase(b'CHGL', 'unknown_chgl'), # TODO(SF) fill out once decoded
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
+        MelPostMastG('transient_types', MelSimpleArray('unknownTNAM', MelFid(
+            b'TNAM'), prelude=MelUInt32(b'TNAM', 'form_type'))),
+        MelPostMast(b'BNAM', 'unknown_bnam'),
+        MelPostMastI(b'INTV', 'unknownINTV'),
+        MelPostMastI(b'INCC', 'interior_cell_count'),
+        MelPostMast(b'CHGL', 'unknown_chgl'), # TODO(SF) fill out once decoded
     )
 
 #------------------------------------------------------------------------------

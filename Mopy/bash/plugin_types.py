@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,9 +24,9 @@
 as flags but file extension may play a role. The PluginFlag enum is used to
 define the various flags a plugin can have, while the MergeabilityCheck enum
 is used to define the various mergeability checks that a game can have. We
-might need game specific information (check the game_handle argument) but these
-classes are above GameInfo - keep this module top level. PF was created after
-MC as plugin types started proliferating - their contract is still WIP."""
+might need game specific information but these classes are above GameInfo -
+keep this module top level. PF was created after MC as plugin types started
+proliferating - their contract is still WIP."""
 import os
 import sys
 from collections import Counter, defaultdict
@@ -36,6 +36,16 @@ from typing import final
 # we are imported early (in game/__init__), so only import from library modules
 from .bolt import sig_to_str
 from .exception import ModError
+
+# active status magic numbers
+ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE = 0, 1, 2, -1
+
+def active_keys(item_key, act_dicts, unactive_val=ST_INACTIVE):
+    """Return the key in act_dicts whose value contains item_key."""
+    for k, v in act_dicts.items():
+        if item_key in v:
+            return k
+    return unactive_val
 
 # global holding the scale flags mapped to their offsets see _init_plugin_types
 # ESL, MID in this order - avoid using it, it's for caching function parameters
@@ -54,9 +64,6 @@ def _pbash_mergeable_no_load(mod_inf, minfos, reasons, game_handle):
     if is_vanilla(mod_inf, reasons, game_handle):
         return False # don't do further checks even in verbose mode
     _exit = __exit if reasons is None else reasons.append # append returns None
-    if game_handle.master_flag.has_flagged(mod_inf) and _exit(_(
-            'This plugin has the ESM flag.')):
-        return False
     #--Bashed Patch
     if mod_inf.isBP() and _exit(_('This plugin is a Bashed Patch.')):
         return False
@@ -81,7 +88,7 @@ def _pbash_mergeable_no_load(mod_inf, minfos, reasons, game_handle):
     if mod_inf.fn_key in minfos.missing_strings:
         if reasons is None: return False
         from . import oblivionIni
-        i_lang = oblivionIni.get_ini_language(game_handle.Ini.default_game_lang)
+        i_lang = oblivionIni.get_ini_language(game_handle)
         strings_example = (f'{os.path.join("Strings", mod_inf.fn_key.fn_body)}'
                            f'_{i_lang}.STRINGS')
         reasons.append(_('Missing string translation files '
@@ -106,7 +113,7 @@ def isPBashMergeable(mod_inf, minfos, reasons, game_handle):
     merge_types_fact = LoadFactory(False, generic=game_handle.mergeable_sigs)
     modFile = ModFile(mod_inf, merge_types_fact)
     try:
-        modFile.load_plugin(loadStrings=False, catch_errors=False)
+        modFile.load_plugin(load_strs=False, catch_errors=False)
     except ModError as error:
         if _exit(f'{error}.'): return False
     #--Skipped over types?
@@ -180,7 +187,7 @@ class MergeabilityCheck(Enum):
                     _('The following plugins could be %(FLAG)s-flagged.') % n)
         return [p for p in mod_infos.values() if self in p.merge_types()], h, m
 
-    def display_info(self, minf, checkMark):
+    def display_info(self, minf, is_merged):
         """Return a UI settings key and a mouse text for the mod list UI."""
         if self not in minf.merge_types(): return '', ''
         match self:
@@ -188,7 +195,7 @@ class MergeabilityCheck(Enum):
                 if 'NoMerge' in minf.getBashTags():
                     return 'mods.text.noMerge', _('Technically mergeable, '
                                                   'but has NoMerge tag.')
-                if checkMark == 2: # Merged plugins won't be in master lists
+                if is_merged: # Merged plugins won't be in master lists
                     mtext = _('Merged into Bashed Patch.')
                 else:
                     mtext = _('Can be merged into Bashed Patch.')
@@ -248,28 +255,18 @@ class PluginFlag(Enum):
             else: # just init
                 set_flag = self.has_flagged(mod_info)
             if not set_flag: # if we are not flagged check the file extension
-                set_flag = self._force_ext_flags(mod_info, game_handle,
-                                                 mod_info.get_extension())
+                set_flag = game_handle.force_ext_flags(mod_info, self)
             setattr(mod_info, self._mod_info_attr, set_flag)
         except AttributeError: # mod_info is a ModInfo.header.flags1 instance
             setattr(mod_info, self._flag_attr, set_flag)
-
-    def _force_ext_flags(self, mod_info, game_handle, mext):
-        return False
 
     @classmethod
     def check_flag_assignments(cls, flag_dict, raise_on_invalid=True):
         return flag_dict
 
-    @classmethod
-    def guess_flags(cls, mod_fn_ext, game_handle, masters_supplied=()):
-        """Guess the flags of a mod/master info from its filename extension.
-        Also used to force the plugin type (for .esm/esl) in set_mod_flag."""
-        return {game_handle.master_flag: True} if mod_fn_ext == '.esm' else {}
-
     # FIDs and mod index handling
     @classmethod
-    def format_fid(cls, whole_lo_fid: int, _fid_orig_plugin, mod_infos):
+    def format_fid(cls, whole_lo_fid: int, _fid_orig_plugin, modinfos):
         """For non-ESL games simple hexadecimal formatting will do."""
         return f'{whole_lo_fid:08X}'
 
@@ -328,7 +325,16 @@ PluginFlag.count_str = _('Mods: %(status_num)d/%(total_status_num)d')
 PluginFlag.max_plugins = 255
 PluginFlag.error_msgs = {}
 
-class AMasterFlag(PluginFlag):
+class NoMasterFlag(PluginFlag):
+    """Base class: No master flag."""
+
+    @classmethod
+    def sort_masters_key(cls, minf, _game) -> tuple[bool, ...]: # single use!
+        """Return a key so that ESMs come first - minf can be a ModInfo or a
+        MasterInfo."""
+        return ()
+
+class AMasterFlag(NoMasterFlag, PluginFlag):
     """Master flags - affect load order - mutually compatible and compatible
     with scale flags."""
 
@@ -339,26 +345,8 @@ class AMasterFlag(PluginFlag):
             self.help_flip = _('Flip the ESM flag on the selected plugins, '
                 'turning masters into regular plugins and vice versa.')
 
-    def _force_ext_flags(self, mod_info, game_handle, mext):
-        if self is not self.ESM: # only check extension for esms
-            return False
-        if game_handle.fsName == 'Morrowind':
-            ##: This is wrong, but works for now. We need game-specific
-            # record headers to parse the ESM flag for MW correctly - #480!
-            return mext == '.esm'
-        elif game_handle.Esp.extension_forces_flags:
-            # For games since FO4/SSE, .esm and .esl files set the master flag
-            # in memory even if not set on the file on disk. For .esp files we
-            # must check for the flag explicitly.
-            return self in game_handle.plugin_flags.guess_flags(mext, game_handle)
-
     @classmethod
     def checkboxes(cls):
         return {cls.ESM: {'cb_label': _('ESM Flag'), 'chkbx_tooltip': _(
             'Whether or not the the resulting plugin will be a master, i.e. '
             'have the ESM flag.')}}
-
-    @classmethod
-    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
-        """Return a key so that ESMs come first."""
-        return not cls.ESM.cached_type(mod_inf),

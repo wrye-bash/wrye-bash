@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -67,7 +67,7 @@ def InitStatusBar():
         return [__fp(svg_fname, iconSize=i) for i in (16, 24, 32)]
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obse_button = ObseButton('OBSE')
-    all_links = [
+    all_links: list[StatusBarButton] = [
         obse_button,
         AutoQuitButton('AutoQuit'),
         GameButton(_svg_list(f'games/{bush.game.game_icon}'))
@@ -552,8 +552,9 @@ def InitModLinks():
         ModList.context_links.append_link(SeparatorLink())
         for pflag in chain(*reversed(bush.game.all_flags)):
             ModList.context_links.append_link(AFlipFlagLink(pflag))
-        ModList.context_links.append_link(Mod_FlipMasters())
-        ModList.context_links.append_link(Mod_CreateDummyMasters())
+        if mf := bush.game.master_flag:
+            ModList.context_links.append_link(Mod_FlipMasters(mf))
+        ModList.context_links.append_link(Mod_CreateDummyMasters(mf))
     ModList.context_links.append_link(SeparatorLink())
     if True: #--Plugin
         plugin_menu = MenuLink(_('Plugin..'))
@@ -578,8 +579,6 @@ def InitModLinks():
                 cleanMenu.links.append_link(SeparatorLink())
                 cleanMenu.links.append_link(Mod_ScanDirty())
                 cleanMenu.links.append_link(Mod_RemoveWorldOrphans())
-                if _is_oblivion:
-                    cleanMenu.links.append_link(Mod_FogFixer())
                 plugin_menu.links.append_link(cleanMenu)
         ModList.context_links.append_link(plugin_menu)
     if bush.game.Esp.canBash: #--Advanced
@@ -715,7 +714,7 @@ def InitSaveLinks():
         files_menu.links.append_link(Files_Unhide(_('Unhides hidden saves.')))
     SaveList.column_links.append_link(files_menu)
     SaveList.column_links.append_link(SeparatorLink())
-    if True: #--Profile
+    if bush.game.Ini.save_profiles_key: #--Profile
         subDirMenu = MenuLink(_('Profile..'))
         subDirMenu.links.append_link(Saves_Profiles())
         SaveList.column_links.append_link(subDirMenu)
@@ -734,11 +733,11 @@ def InitSaveLinks():
         file_menu.links.append_link(File_Backup())
         file_menu.links.append_link(File_RevertToBackup())
         SaveList.context_links.append_link(file_menu)
-    if True: #--Move To
+    if bush.game.Ini.save_profiles_key: #--Move To
         moveMenu = MenuLink(_('Move To..'))
         moveMenu.links.append_link(Save_Move())
         SaveList.context_links.append_link(moveMenu)
-    if True: #--Copy To
+    if bush.game.Ini.save_profiles_key: #--Copy To
         copyMenu = MenuLink(_('Copy To..'))
         copyMenu.links.append_link(Save_Move(copyMode=True))
         SaveList.context_links.append_link(copyMenu)
@@ -766,7 +765,7 @@ def InitSaveLinks():
         edit_menu.links.append_link(Save_EditCreatedEnchantmentCosts())
         edit_menu.links.append_link(SeparatorLink())
         edit_menu.links.append_link(Save_EditCreated(b'SPEL'))
-        edit_menu.links.append_link(Save_EditPCSpells())
+        edit_menu.links.append_link(Save_RemovePCSpells())
         edit_menu.links.append_link(SeparatorLink())
         edit_menu.links.append_link(Save_RenamePlayer())
         edit_menu.links.append_link(Save_ImportFace())

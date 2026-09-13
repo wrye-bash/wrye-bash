@@ -16,15 +16,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to IniList singleton."""
-
-from .. import balt, bass, bosh
+from .files_links import File_Duplicate
+from .. import balt, bosh
 from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink
+from ..bolt import dict_sort
 from ..gui import copy_text_to_clipboard
 
 __all__ = ['INI_ValidTweaksFirst', 'INI_AllowNewLines', 'INI_ListINIs',
@@ -59,7 +60,9 @@ class INI_ListINIs(ItemLink):
 
     def Execute(self):
         """Handle printing out the errors."""
-        tweak_list = self.window.ListTweaks()
+        tweaklist = [_('Active INI Tweaks:'), *(tweak for tweak, info in
+                     dict_sort(self._data_store) if not info.ini_st == 20), '']
+        tweak_list = '\n'.join(tweaklist)
         copy_text_to_clipboard(tweak_list)
         self._showLog(tweak_list, title=_('Active INIs'))
 
@@ -71,7 +74,7 @@ class INI_ListErrors(EnabledLink):
 
     def _enable(self):
         self._erroneous = [inf for inf in self.iselected_infos()
-                           if inf.info_status() < 0]
+                           if inf.ini_st < 0]
         return bool(self._erroneous)
 
     def Execute(self):
@@ -104,7 +107,7 @@ class INI_Apply(EnabledLink):
             self.window.panel.ShowPanel()
 
 #------------------------------------------------------------------------------
-class INI_CreateNew(OneItemLink):
+class INI_CreateNew(File_Duplicate, OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
     _text = _('Create Tweak With Current Settings…')
@@ -120,22 +123,13 @@ class INI_CreateNew(OneItemLink):
         }
 
     def _enable(self):
-        return super()._enable() and self._selected_info.info_status() >= 0
+        return super()._enable() and self._selected_info.ini_st >= 0
 
     @balt.conversation
     def Execute(self):
         """Handle creating a new INI tweak."""
         ini_info, fn_ini = self._selected_info, self._selected_item
-        fileName = ini_info.unique_key(fn_ini.fn_body, add_copy=True)
-        tweak_path = self._askSave(
-            title=self._text,
-            defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
-            wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini")
-        if not tweak_path:
-            return # user canceled the save dialog, abort
-        fn_tweak, root = ini_info.validate_filename_str(tweak_path.stail)
-        if root is None:
-            self._showError(fn_tweak) # it's an error message in this case
-            return
-        if bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
+        _dir, fn_tweak = self._get_dup_filename(ini_info, title=self._text,
+                wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini",)
+        if fn_tweak and bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
             self.refresh_sel({fn_tweak}, detail_item=fn_tweak)

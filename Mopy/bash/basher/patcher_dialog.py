@@ -16,19 +16,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Patch dialog"""
 import copy
-import io
 import re
 import time
 from datetime import timedelta
 
 from .dialogs import DeleteBPPartsEditor
-from .. import balt, bass, bolt, bosh, bush, env, wrye_text
+from .. import balt, bass, bolt, bush, env, wrye_text
 from ..balt import Resources
 from ..bolt import GPath_no_norm, RefrIn, SubProgress
 from ..exception import BoltError, BPConfigError, CancelError, SkipError
@@ -163,6 +162,12 @@ class PatchDialog(DialogWindow):
         patcher.Layout()
         self.currentPatcher = patcher
 
+    _congrats = _('Congratulations on managing to get a single top group to '
+        '>%(max_num_masters)d masters (you got %(curr_num_masters)d in top '
+        'grup %(top_group_sig)s)! Please post to the Wrye Bash Discord '
+        '(including your BashBugDump), we seriously did not think anyone would'
+        ' manage this. This error is fatal by the way, Wrye Bash currently '
+        'does not support splitting the Bashed Patch within a top group.')
     @balt.conversation
     def PatchExecute(self):
         """Do the patch."""
@@ -176,7 +181,7 @@ class PatchDialog(DialogWindow):
             config = self.__config()
             self.patchInfo.set_table_prop('bash.patch.configs', config)
             #--Do it
-            log = bolt.LogFile(io.StringIO())
+            log = bolt.LogFile()
             patchFile = self.bashed_patch
             enabled_patchers = [p.get_patcher_instance(patchFile) for p in
                                 self._gui_patchers if p.isEnabled] ##: what happens if empty
@@ -191,19 +196,11 @@ class PatchDialog(DialogWindow):
             mlimit = bush.game.Esp.master_limit
             for t_sig, t_masters in master_dict.items():
                 if len(t_masters) > mlimit:
-                    showError(self, _(
-                        'Congratulations on managing to get a single top '
-                        'group to >%(max_num_masters)d masters (you got '
-                        '%(curr_num_masters)d in top grup %(top_group_sig)s)! '
-                        'Please post to the Wrye Bash Discord (including your '
-                        'BashBugDump), we seriously did not think anyone '
-                        'would manage this. This error is fatal by the way, '
-                        'Wrye Bash currently does not support splitting the '
-                        'Bashed Patch within a top group.') % {
-                        'max_num_masters': mlimit,
-                        'curr_num_masters': len(t_masters),
-                        'top_group_sig': bolt.sig_to_str(t_sig)},
-                        title=_('Achievement Unlocked: Modaholic!'))
+                    fmt = {'max_num_masters': mlimit,
+                           'curr_num_masters': len(t_masters),
+                           'top_group_sig': bolt.sig_to_str(t_sig)}
+                    showError(self, self._congrats % fmt,
+                              title=_('Achievement Unlocked: Modaholic!'))
                     return # Abort, we can't fix this right now
                 all_bp_masters |= t_masters
             if len(all_bp_masters) <= mlimit:
@@ -224,11 +221,12 @@ class PatchDialog(DialogWindow):
                 for i, bp_file in enumerate(bp_files_to_save):
                     bp_file.set_attributes(was_split=True, split_part=i)
             parts_to_del = patchFile.find_unneded_parts(bp_files_to_save)
+            minfos = patchFile.p_file_minfos
             if parts_to_del:
                 ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
                     self, unneeded_parts=parts_to_del)
                 if ed_ok and ed_parts:
-                    patchFile.p_file_minfos.delete(ed_parts)
+                    self._bp_rdata |= minfos.delete_op(ed_parts)
             #--Save
             progress.setCancel(False, f"{patch_name}\n{_('Saving…')}")
             progress(0.9)
@@ -247,20 +245,19 @@ class PatchDialog(DialogWindow):
             delta_seconds = round((timer2 - timer1) / 1_000_000_000, 3)
             timerString = str(timedelta(seconds=delta_seconds)).rstrip('0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-            data_docs_dir = bosh.modInfos.store_dir.join('Docs')
+            data_docs_dir = minfos.store_dir.join('Docs')
             readme = data_docs_dir.join(patch_name.fn_body + '.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
-            with TempDir(temp_prefix='Docs') as trd:
-                temp_readme_dir = GPath_no_norm(trd)
-                temp_readme = temp_readme_dir.join(patch_name.fn_body + '.txt')
+            with TempDir(temp_prefix='Docs', bolt_path=True) as tmp_readme_dir:
+                temp_readme = tmp_readme_dir.join(patch_name.fn_body + '.txt')
                 #--Write log/readme to temp dir first
-                with temp_readme.open(u'w', encoding=u'utf-8-sig') as file:
+                with temp_readme.open_bom('w') as file:
                     file.write(logValue)
                 #--Convert log/readme to wtxt
                 wrye_text.genHtml(temp_readme, None, docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    env.shellMove({temp_readme_dir: data_docs_dir},
+                    env.shellMove({tmp_readme_dir: data_docs_dir},
                         parent=self)
                 except (CancelError, SkipError):
                     # User didn't allow UAC, move to My Games directory instead
@@ -282,18 +279,19 @@ class PatchDialog(DialogWindow):
             # differ. Most people probably don't keep BAIN packages of BPs,
             # but *I* do, so...
             it = (bp_file.fileInfo.fn_key for bp_file in bp_files_to_save)
-            attrs = {patch_name: {'doc': readme_html}, **{bp: {'doc':readme_html,
-                # Store a raw string here to avoid the FName.__reduce__
-                # stuff - new setting, so no backwards compat concerns
-                # No need to link the parent to itself, of course
-               'bp_split_parent': str(patch_name)} for bp in it}}
+            att_vals = {'doc': readme_html, 'crc': None, 'mergeInfo': None,
+                        'bp_split_parent': None}
+            attrs = {next(it): att_vals}
+            # Store a raw string here to avoid the FName.__reduce__ stuff - new
+            # setting, so no backwards compat concerns
+            att_vals = {**att_vals, 'bp_split_parent': str(patch_name)}
+            attrs.update((bp, att_vals) for bp in it)
             # add the config on master patch so it is read afterwards
-            rinf = RefrIn.from_tabled_infos({patch_name: self.patchInfo},
-                                            exclude=True, extra_attrs=attrs)
+            rinf = RefrIn.from_tabled_infos(minfos, attrs, ghosts=True)
             self._bps.extend(attrs)
             # We have to parse the new infos first since the masters may differ
             # note this won't activate the new masters, the caller has to do it
-            self._bp_rdata |= patchFile.p_file_minfos.refresh(rinf)
+            self._bp_rdata |= minfos.refresh(rinf, force_update=True)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly

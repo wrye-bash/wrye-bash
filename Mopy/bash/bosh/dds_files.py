@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -599,7 +599,7 @@ class _DDSHeaderDXT10(object):
 class DDSFile(AFile):
     """A DDS file, currently just reads the DDS and DX10 headers, if
     present, then reads and stores the rest of the stream."""
-    __slots__ = (u'dds_header', u'dds_dxt10', u'dds_contents')
+    __slots__ = ('dds_header', 'dds_dxt10', 'dds_contents')
     def load_file(self):
         """Load the entire DDS file from the file that this DDSFile instance
         was created with."""

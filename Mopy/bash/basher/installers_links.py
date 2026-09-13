@@ -16,14 +16,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
-from collections import defaultdict
 from itertools import chain
 
 from . import Installers_Link
@@ -69,12 +68,12 @@ class Installers_AddMarker(ItemLink):
         self.window.addMarker()
 
 #------------------------------------------------------------------------------
-class Installers_MonitorExternalInstallation(Installers_Link):
+class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
     """Monitors Data folder for external installation."""
     _text = _dialog_title = _('Monitor External Installation…')
     _help = _('Monitors the %(data_folder)s folder to capture changes made '
               'manually or via 3rd party tools.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
 
     @balt.conversation
     def Execute(self):
@@ -82,7 +81,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
                 'installing a mod via an external application or manual '
                 'install. This will require two refreshes of the '
                 '%(data_folder)s folder and may take some time. Continue?') % {
-            'data_folder': bush.game.mods_dir}
+            'data_folder': bush.game.mods_dir_name}
         if not self._askYes(msg, _('External Installation')):
             return
         # Refresh Data
@@ -93,10 +92,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         self._showOk(_('You may now install your mod. When installation is '
                        'complete, press OK.'), _('External Installation'))
         # Refresh Data
-        ui_refresh = defaultdict(bool)
-        for store in bosh.data_tracking_stores():
-            ui_refresh[store.unique_store_key] = bool(
-                store.refresh(unlock_lo=True))
+        rd_refresh = {store: store.refresh(True, unlock_lo=True) for store in
+            bosh.data_tracking_stores()} # unlock_lo to avoid prints in refresh_lo
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
@@ -108,9 +105,11 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         touchedFiles = {file_ for file_ in sameFiles if
                         scd_before_install[file_][2] != curData[file_][2]}
         touchedFiles -= changedFiles
+        touchedFiles -= bush.game.Bain.wrye_bash_data_files
+        changedFiles -= bush.game.Bain.wrye_bash_data_files
         if not (newFiles or changedFiles or touchedFiles or delFiles):
             self._showOk(_('No changes were detected in the %(data_folder)s '
-                           'folder.') % {'data_folder': bush.game.mods_dir},
+                           'folder.') % {'data_folder': bush.game.mods_dir_name},
                 title=_('Monitor External Installation - No Changes'))
             return
         # Show results, select which files to include
@@ -130,17 +129,17 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             check_exists=False) # we will use unique_name
         if not projectName:
             return
-        pr_path = bosh.InstallerProject.unique_name(projectName)
+        self.__pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
         with balt.Progress(_('Creating Project…')) as prog: # will order last
-            self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
+            self.idata.createFromData(self.__pr_path, include, prog, bosh.modInfos)
         # createFromData placed the new project last in install order - install
-        try:
-            self.idata.bain_install([pr_path], ui_refresh, override=False)
-        finally:
-            self.window.propagate_refresh(True, ui_refresh)
+        super().Execute(rd_refresh=rd_refresh)
         # Select new installer
         self.window.SelectLast()
+
+    def _perform_action(self, **kwargs):
+        self.idata.bain_install([self.__pr_path], override=False, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_ListPackages(Installers_Link):
@@ -167,12 +166,12 @@ class Installers_AnnealAll(Installer_Op, Installers_Link):
     _help = _('Install any missing files (for active packages) and update '
               'the contents of the %(data_folder)s folder to account for all '
               'install order and configuration changes.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
     _prog_args = _('Annealing…'),
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         """Anneal all packages."""
-        self.idata.bain_anneal(None, ui_refresh_, progress=progress)
+        self.idata.bain_anneal(None, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_UninstallAllPackages(Installer_Op, Installers_Link):
@@ -187,9 +186,9 @@ class Installers_UninstallAllPackages(Installer_Op, Installers_Link):
         if not self._askYes(_('Really uninstall all packages?')): return
         super().Execute()
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         """Uninstall all present packages."""
-        self.idata.bain_uninstall(None, ui_refresh_, progress)
+        self.idata.bain_uninstall(None, **kwargs)
 
 #------------------------------------------------------------------------------
 class _AInstallers_Refresh(AppendableLink, Installers_Link):
@@ -222,7 +221,7 @@ class Installers_FullRefresh(_AInstallers_Refresh):
 class Installers_RefreshData(_AInstallers_Refresh):
     _text = _('Refresh Data')
     _help = _('Rescan the %(data_folder)s folder and all project '
-              'directories.') % {'data_folder': bush.game.mods_dir}
+              'directories.') % {'data_folder': bush.game.mods_dir_name}
 
 #------------------------------------------------------------------------------
 class Installers_CleanData(Installer_Op, Installers_Link):
@@ -232,14 +231,14 @@ class Installers_CleanData(Installer_Op, Installers_Link):
     _text = _('Clean Data…')
     _help = _('Move all files that are not linked to an active installer '
               'out of the %(data_folder)s folder.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
     _full_msg = (_('Clean %(data_folder)s folder?') % {
-        'data_folder': bush.game.mods_dir} + f' {_help}\n\n' + _(
+        'data_folder': bush.game.mods_dir_name} + f' {_help}\n\n' + _(
         "This includes files that were installed manually or by another "
         "program. Files will be moved to the '%(dfc_path)s' folder instead "
         "of being deleted so you can retrieve them later if necessary.") % {
         'dfc_path': bass.dirs['bainData'].join(
-            f'{bush.game.mods_dir} Folder Contents <date>')} + '\n\n' + _(
+            f'{bush.game.mods_dir_name} Folder Contents <date>')} + '\n\n' + _(
         'Note that you will first be shown a list of files that this '
         'operation would remove and will have a chance to change the '
         'selection.'))
@@ -247,7 +246,7 @@ class Installers_CleanData(Installer_Op, Installers_Link):
     @balt.conversation
     def Execute(self):
         if not self._askYes(self._full_msg): return
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         all_unknown_files = sorted(self.idata.get_clean_data_dir_list())
         if not all_unknown_files:
             self._showOk(_('There are no untracked files in the '
@@ -263,11 +262,11 @@ class Installers_CleanData(Installer_Op, Installers_Link):
     @property
     def _prog_args(self):
         return _('Cleaning %(data_folder)s contents…') % {
-            'data_folder': bush.game.mods_dir}, f'\n{" " * 65}'
+            'data_folder': bush.game.mods_dir_name}, f'\n{" " * 65}'
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         """Clean the data directory."""
-        self.idata.clean_data_dir(self.__ed_unknown, ui_refresh_)
+        self.idata.bain_clean_data_dir(self.__ed_unknown, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
@@ -527,7 +526,7 @@ class Installers_RemoveEmptyDirs(BoolLink):
     _text = _('Remove Empty Directories')
     _help = _('Toggles whether or not Wrye Bash will remove empty directories '
               'when scanning the %(data_folder)s folder.') % {
-        'data_folder': bush.game.mods_dir}
+        'data_folder': bush.game.mods_dir_name}
     _bl_key = 'bash.installers.removeEmptyDirs'
 
 #------------------------------------------------------------------------------
@@ -565,7 +564,7 @@ class Installers_SimpleFirst(_Installer_Sort, BoolLink):
 class _Installers_RescanningLink(Installers_Link, BoolLink):
     """An Installers link that rescans installers upon being toggled."""
     def Execute(self):
-        super(_Installers_RescanningLink, self).Execute()
+        super().Execute()
         self._pre_rescan_action()
         self._do_installers_rescan()
 
@@ -643,25 +642,34 @@ class _Installers_SkipDistantLOD(AppendableLink, _Installers_Skip):
         return 'distantlod' in bush.game.Bain.data_dirs
 
 #------------------------------------------------------------------------------
-class _Installers_SkipLandscapeLODMeshes(_Installers_Skip):
+class _Installers_SkipLandscapeLODMeshes(AppendableLink, _Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
     _text = _('Skip LOD Meshes')
     _help = _('Skips the installation of LOD meshes.')
     _bl_key = 'bash.installers.skipLandscapeLODMeshes'
 
+    def _append(self, window):
+        return bool(bush.game.Bain.lod_meshes_dir)
+
 #------------------------------------------------------------------------------
-class _Installers_SkipLandscapeLODTextures(_Installers_Skip):
+class _Installers_SkipLandscapeLODTextures(AppendableLink, _Installers_Skip):
     """Toggle skipLandscapeLODTextures setting and update."""
     _text = _('Skip LOD Textures')
     _help = _('Skips the installation of LOD textures (except normals).')
     _bl_key = 'bash.installers.skipLandscapeLODTextures'
 
+    def _append(self, window):
+        return bool(bush.game.Bain.lod_textures_dir)
+
 #------------------------------------------------------------------------------
-class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
+class _Installers_SkipLandscapeLODNormals(AppendableLink, _Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
     _text = _('Skip LOD Normals')
     _help = _('Skips the installation of LOD normals.')
     _bl_key = 'bash.installers.skipLandscapeLODNormals'
+
+    def _append(self, window):
+        return bool(bush.game.Bain.lod_textures_normals_suffix)
 
 #------------------------------------------------------------------------------
 class _Installers_SkipBsl(AppendableLink, _Installers_Skip):

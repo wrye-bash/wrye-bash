@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -33,14 +33,14 @@ from itertools import chain
 from .constants import settingDefaults
 from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
     ListDependentDialog, MasterErrorsDialog
-from .files_links import File_Duplicate, File_Redate
+from .files_links import File_Duplicate, File_Redate, RestoreInfo
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str, FNDict, \
-    GPath_no_norm, RefrIn, RefrData
+    RefrIn, RefrData
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
@@ -52,7 +52,6 @@ from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     ItemStats, ScriptText, SigilStoneDetails, SpellRecords, _AParser
 from ..patcher.patch_files import PatchFile
 from ..plugin_types import MergeabilityCheck, PluginFlag
-from ..wbtemp import TempFile
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
@@ -70,11 +69,11 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Scripts_Import', u'Mod_SigilStoneDetails_Import',
            u'Mod_SpellRecords_Import', u'Mod_Face_Import', u'Mod_Fids_Replace',
            u'Mod_SkipDirtyCheck', u'Mod_ScanDirty', u'Mod_RemoveWorldOrphans',
-           u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
-           'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
-           'Mod_Move', 'Mod_RecalcRecordCounts', 'Mod_Duplicate',
-           'Mod_DumpSubrecords', 'Mod_DumpRecordTypeNames', 'Mod_Snapshot',
-           'Mod_RevertToSnapshot', 'AFlipFlagLink']
+           'Mod_CopyToMenu', 'Mod_DecompileAll', 'Mod_FlipMasters',
+           'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
+           'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords',
+           'Mod_DumpRecordTypeNames', 'Mod_Snapshot', 'Mod_RevertToSnapshot',
+           'AFlipFlagLink']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -190,7 +189,11 @@ class Mod_CreateDummyMasters(OneItemLink):
     }
 
     def _enable(self): # enable if there are missing masters
-        return super()._enable() and self._selected_info.info_status() == 30
+        return super()._enable() and self._selected_info.master_st == 30
+
+    def __init__(self, mf):
+        super().__init__()
+        self.__mf = (lambda x: False) if mf is None else mf.cached_type
 
     def Execute(self):
         """Create Dummy Masters"""
@@ -205,10 +208,14 @@ class Mod_CreateDummyMasters(OneItemLink):
         mod_previous = FNDict() # previous master for each master
         mods_ds = self._data_store
         # creates esp files - so place them correctly after the last esm
-        previous_master = load_order.cached_lo_last_esm(mods_ds, bgame)
+        previous_master, *lo_tuple = load_order.cached_lo_tuple() # game master
+        for mod in lo_tuple:
+            if not self.__mf(mods_ds[mod]):
+                break
+            previous_master = mod
         for master in self._selected_info.masterNames:
             if master in mods_ds:
-                if not bgame.master_flag.cached_type(mods_ds[master]):
+                if not self.__mf(mods_ds[master]):
                     # if previous master is an esp put this one after it
                     previous_master = master
                 continue
@@ -216,7 +223,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
-            force_flags = bgame.plugin_flags.guess_flags(master.fn_ext, bgame)
+            force_flags = bgame.guess_flags(master.fn_ext)
             mods_ds.create_new_mod(master, author_str='BASHED DUMMY',
                 flags_dict=force_flags,
                 wanted_masters=[], # previous behavior - correct?
@@ -224,8 +231,8 @@ class Mod_CreateDummyMasters(OneItemLink):
                 dir_path=mods_ds.store_dir)
             mod_previous[master] = previous_master
             previous_master = master
-        rdata= mods_ds.refresh(RefrIn.from_added(mod_previous),
-                               insert_after=mod_previous)
+        rdata = mods_ds.refresh(RefrIn.from_added([*mod_previous]),
+                                insert_after=mod_previous)
         self.window.propagate_refresh(rdata,
                                       detail_item=next(reversed(mod_previous)))
         self.window.SelectItemsNoCallback(mod_previous)
@@ -240,12 +247,12 @@ class Mod_OrderByName(EnabledLink):
     def _enable(self):
         # Can't be used if at least one of the selected mods is pinned
         return len(self.selected) > 1 and not load_order.filter_pinned(
-            self.selected, fixed_order=True)
+            self.selected)
 
     @balt.conversation
     def Execute(self):
         message = _('Reorder selected plugins in alphabetical order starting '
-            'at the lowest ordered?') if bush.game.using_txt_file else _(
+            'at the lowest ordered?') if not bush.game.mtime_lo else _(
             'Reorder selected plugins in alphabetical order? The first plugin '
             'will be given the date/time of the current earliest plugin in '
             'the group, with consecutive files following at 1 minute '
@@ -256,11 +263,11 @@ class Mod_OrderByName(EnabledLink):
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  title=self._text): return
         #--Do it
-        self.selected.sort(key=lambda m: ( # sort masters first
-            *bush.game.master_flags.sort_masters_key(bosh.modInfos[m]), m))
-        lowest = load_order.get_ordered(self.selected)[0]
-        lordata = bosh.modInfos.lo_insert_at(lowest, self.selected,
-                                             save_all=True)
+        sort_by_name = sorted(self.selected) # name ascending
+        sort_by_name.sort(key=load_order.master_sort())
+        lowest = load_order.cached_sort(sort_by_name)[0]
+        lordata = bosh.modInfos.lo_insert_at(lowest, sort_by_name,
+                                             save_wip_lo=True, save_act=True)
         self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
@@ -272,7 +279,7 @@ class Mod_Move(EnabledLink):
 
     def _enable(self):
         # Can't be used if at least one of the selected mods is pinned
-        return not load_order.filter_pinned(self.selected, fixed_order=True)
+        return not load_order.filter_pinned(self.selected)
 
     def Execute(self):
         entered_text = u''
@@ -301,7 +308,7 @@ class Mod_Move(EnabledLink):
         # Clamp between 0 and max plugin index
         target_index = max(0, min(target_index, len(active_plugins) - 1))
         lordata = bosh.modInfos.lo_insert_at(active_plugins[target_index],
-            self.selected, save_all=True)
+            self.selected, save_wip_lo=True, save_act=True)
         self.window.propagate_refresh(lordata, detail_item=self.selected[0])
 
 #------------------------------------------------------------------------------
@@ -309,7 +316,7 @@ class Mod_Redate(File_Redate):
     """Mods tab version of the Redate command."""
     def _infos_to_redate(self):
         return [self._data_store[to_redate] for to_redate
-                in load_order.get_ordered(self.selected)]
+                in load_order.cached_sort(self.selected)]
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
@@ -361,12 +368,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.mod_labels.append(newName)
         self.mod_labels.sort()
         #--Edit table entries.
-        renamed = []
+        renamed = set()
         for fn, mod_inf in bosh.modInfos.items():
             if mod_inf.get_table_prop(self.column) == oldName:
                 mod_inf.set_table_prop(self.column, newName)
-                renamed.append(fn)
-        Link.refresh_sel(self.parent, renamed)
+                renamed.add(fn)
+        self.parent.RefreshUI(RefrData(renamed))
         #--Done
         return newName
 
@@ -374,12 +381,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         """Removes group."""
         self.mod_labels.remove(item)
         #--Edit table entries.
-        deletd = []
+        ungrouped = set()
         for fn, mod_inf in bosh.modInfos.items():
             if mod_inf.get_table_prop(self.column) == item:
                 mod_inf.set_table_prop(self.column, None)
-                deletd.append(fn)
-        Link.refresh_sel(self.parent, deletd)
+                ungrouped.add(fn)
+        self.parent.RefreshUI(RefrData(ungrouped))
         #--Done
         return True
 
@@ -490,7 +497,7 @@ class _ModGroups(CsvParser):
 
     def _parse_line(self, csv_fields):
         """Imports mod groups from specified text file."""
-        if len(csv_fields) >= 2 and bosh.ModInfos.rightFileType(csv_fields[0]):
+        if len(csv_fields) >= 2 and bosh.ModInfos.check_filename(csv_fields[0]):
             mod, mod_grp = csv_fields[:2]
             self.mod_group[FName(mod)] = mod_grp
 
@@ -745,8 +752,6 @@ class Mod_CopyModInfo(ItemLink):
                     'plugin_ver': vers})
             info_txt.append('\n'.join(mod_text))
         info_txt = '\n\n'.join(info_txt) # add a blank line in between mods
-        if len(self.selected) > 5:
-            info_txt = f'[spoiler]\n{info_txt}\n[/spoiler]'
         # Show results + copy to clipboard
         copy_text_to_clipboard(info_txt)
         self._showLog(info_txt, title=_('Plugin Info Report'))
@@ -763,11 +768,12 @@ class Mod_ListDependent(OneItemLink):
             {'master_name': self._selected_item})
 
     def Execute(self):
+        ordered = load_order.cached_sort(self._data_store.dependents[
+                                             self._selected_item])
         dependent = ListDependentDialog.make_highlight_entry(
             _('The following plugins are dependent on %(master_name)s, '
               'meaning they have that plugin as a master.') % {
-                'master_name': self._selected_item},
-            load_order.get_ordered(self._selected_info.get_dependents()),
+                'master_name': self._selected_item}, ordered,
         )
         ListDependentDialog(self.window,
             highlight_items=[dependent]).show_modeless()
@@ -948,23 +954,20 @@ class _Mod_BP_Link(OneItemLink):
 
     def _find_parent_bp(self):
         """Find the correct Bashed Patch to use for working on this BP file.
-        Handles both regular BPs and BP parts correctly."""
+        Handles both regular BPs and BP parts. Show an error message for
+        when a BP part could not find its parent."""
         bp_parent_str = self._selected_info.get_table_prop('bp_split_parent')
         if bp_parent_str is None:
             return self._selected_info # Not a part
         if bp_parent := bosh.modInfos.get(bp_parent_str):
             return bp_parent # Is a part, found parent
-        return None # Is a part, did not find parent
-
-    def _error_no_parent_bp(self):
-        """Show an error message for when a BP part could not find its
-        parent."""
         self._showError(
             _('This is part of a split Bashed Patch, but Wrye Bash failed '
               'to determine its parent. If you renamed or deleted the '
               'parent, this part may have become detached. In that case, '
               'just delete it and use the main BP to rebuild.'),
             title=_('Detached Bashed Patch Part'))
+        return None # Is a part, did not find parent
 
 class Mod_RebuildPatch(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -1000,20 +1003,19 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                 msg = _('Masters Activated: %(num_activated)d') % {
                     'num_activated': len(bp_masters)}
                 Link.Frame.set_status_info(msg)
+            bp_rdata |= lordiff # include the load order changes in refresh
             self.window.propagate_refresh(bp_rdata, refr_saves=lordiff)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
 
     def _execute_bp(self, mod_infos, bp_rdata):
-        patch_info = self._find_parent_bp()
-        if patch_info is None:
-            self._error_no_parent_bp()
+        if (patch_info := self._find_parent_bp()) is None:
             return False
         # Clean up some memory
         bolt.GPathPurge()
         # We need active mods
-        if not load_order.cached_active_tuple():
+        if len(load_order.cached_active_tuple()) == 1: # game esm always active
             self._showWarning(
                 _('That which does not exist cannot be patched.') + '\n' +
                 _('Load some plugins and try again.'),
@@ -1036,7 +1038,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         #--Check if we should be deactivating some plugins
         if self._ask_deactivate_mergeable(bashed_patch):
             # we might have de-activated plugins so recalculate active sets
-            bashed_patch.set_active_arrays(bosh.modInfos)
+            bashed_patch.set_active_arrays()
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
         bp_master_errors = []
         if missing:
@@ -1098,9 +1100,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
 
     def Execute(self):
         #--Config
-        bp_parent_info = self._find_parent_bp()
-        if bp_parent_info is None:
-            self._error_no_parent_bp()
+        if (bp_parent_info := self._find_parent_bp()) is None:
             return
         config = bp_parent_info.get_table_prop('bash.patch.configs', {})
         # Detect and warn about patch mode
@@ -1112,13 +1112,12 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             return
         _gui_patchers = [copy.deepcopy(x) for x in all_gui_patchers]
         #--Log & Clipboard text
-        log = bolt.LogFile(io.StringIO())
+        log = bolt.LogFile()
         log.setHeader('= %s %s' % (bp_parent_info.fn_key, _('Config')))
         log(_('This is the current configuration of this Bashed Patch. This '
               'report has also been copied into your clipboard.') + '\n')
         clip = io.StringIO()
         clip.write('%s %s:\n' % (bp_parent_info.fn_key, _('Config')))
-        clip.write(u'[spoiler]\n')
         log.setHeader(u'== '+_(u'Patch Mode'))
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
         log(u'Python')
@@ -1128,7 +1127,6 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             patcher._bp = temp_bp
             patcher.log_config(config, clip, log)
         #-- Show log
-        clip.write(u'[/spoiler]')
         copy_text_to_clipboard(clip.getvalue())
         log_text = log.out.getvalue()
         self._showWryeLog(log_text, title=_(u'Bashed Patch Configuration'))
@@ -1246,7 +1244,7 @@ class Mod_ScanDirty(ItemLink):
                                     add_deleted_rec(r_header.fid)
         except CancelError:
             return
-        log = bolt.LogFile(io.StringIO())
+        log = bolt.LogFile()
         log.setHeader(u'= '+_(u'Deleted Records'))
         log(_('This is a report of deleted records that were found in the '
               'selected plugins.') + u'\n')
@@ -1341,39 +1339,6 @@ class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
             else:
                 self._showOk(_('No changes required.'), fileName)
 
-#------------------------------------------------------------------------------
-class Mod_FogFixer(ItemLink):
-    """Fix fog on selected cells."""
-    _text = _('Nvidia Fog Fix')
-    _help = _('Modify fog values in interior cells to avoid the Nvidia black '
-              'screen bug')
-
-    def Execute(self):
-        message = _('Apply Nvidia fog fix. This modifies fog values in '
-                    'interior cells to avoid the Nvidia black screen bug.')
-        if not self._askContinue(message, u'bash.cleanMod.continue',
-                                 _(u'Nvidia Fog Fix')): return
-        fixed = {}
-        with balt.Progress(_(u'Nvidia Fog Fix')) as progress:
-            progress.setFull(len(self.selected))
-            for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
-                if fileName == bush.game.master_file: continue
-                progress(index, _('Scanning %(scanning_plugin)s') % {
-                    'scanning_plugin': fileName})
-                fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
-                fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
-                if fog_fixer.fixedCells:
-                    fixed[fileName] = fog_fixer.fixedCells
-        if fixed:
-            message = '===' + _('Cells Fixed:') + '\n' + '\n'.join([
-                f'* {fixed_pname}: {len(cells_fixed)}'
-                for fixed_pname, cells_fixed in fixed.items()])
-            self._showWryeLog(message)
-            self.refresh_sel(fixed)
-        else:
-            message = _(u'No changes required.')
-            self._showOk(message)
-
 # Rest of menu Links ----------------------------------------------------------
 #------------------------------------------------------------------------------
 class _CopyToLink(EnabledLink):
@@ -1390,41 +1355,36 @@ class _CopyToLink(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        modInfos, added = bosh.modInfos, {}
-        pflags = bush.game.plugin_flags
-        force_flags = pflags.guess_flags(self._target_ext, bush.game)
-        force_flags = pflags.check_flag_assignments(force_flags)
+        add_flags = bush.game.guess_flags(self._target_ext)
+        add_flags = bush.game.plugin_flags.check_flag_assignments(add_flags)
         mod_previous = FNDict()
+        ren_args = []
+        setmtimes = {}
+        mod_flags = {}
+        ds = self._data_store
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 if self._target_ext == curName.fn_ext: continue
-                newName = FName(f'{curName.fn_body}{self._target_ext}')
+                new_fn = FName(f'{curName.fn_body}{self._target_ext}')
                 #--Replace existing file?
-                newTime = None
-                if newName in modInfos:
-                    existing = modInfos[newName]
-                    # abs_path as existing may be ghosted
-                    if not self._askYes(
+                if existing := ds.get(new_fn):
+                    if not self._askYes( # abs_path as existing may be ghosted
                             _('Replace existing %(existing_plugin)s?') % {
                                 'existing_plugin': existing.abs_path.stail}):
                         continue
                     existing.makeBackup()
-                    newTime = existing.ftime
-                # Copy and set flag - will use ghosted path if needed
-                minfo.copy_to(minfo.info_dir.join(newName), set_time=newTime)
-                added[newName] = minfo
-                if newTime is None: # otherwise it has a load order already!
-                    mod_previous[newName] = curName
-        #--Repopulate
-        if added:
-            rinf = RefrIn.from_tabled_infos(added, exclude=True)
-            rdata = modInfos.refresh(rinf, insert_after=mod_previous)
-            if force_flags:
-                for new in rdata.to_add:
-                    bosh.modInfos[new].set_plugin_flags(force_flags)
-            self.window.propagate_refresh(True,
-                                          detail_item=next(reversed(added)))
-            self.window.SelectItemsNoCallback(added)
+                    setmtimes[new_fn] = existing.ftime
+                excl = {'crc', 'mergeInfo'} if add_flags else {}
+                if inf := ds.get_update_info(curName, exclude={*excl,
+                        'bp_split_parent', 'installer'}, copy_from=minfo):
+                    ren_args.append((inf, new_fn, ds.store_dir))
+                    mod_flags[new_fn] = add_flags
+                    if new_fn not in setmtimes: # else it is in the load order
+                        mod_previous[new_fn] = curName
+            if ren_args:
+                self.window.try_rename(ren_args, force_flags=mod_flags,
+                    set_mtime=setmtimes, with_backups=False, copy_inf=True,
+                    insert_after=mod_previous, fn_detail=ren_args[-1][1])
 
 class Mod_CopyToMenu(MenuLink):
     """Makes copies of the selected plugin(s) with changed extension."""
@@ -1503,7 +1463,7 @@ class AFlipFlagLink(EnabledLink):
     """Base class for links that enable or disable a flag in the plugin
     header."""
 
-    def __init__(self, plugin_flag: PluginFlag | None = None):
+    def __init__(self, plugin_flag: PluginFlag):
         super().__init__()
         self._plugin_flag: PluginFlag = plugin_flag
         self._allowed_ext = plugin_flag.convert_exts
@@ -1542,15 +1502,8 @@ class AFlipFlagLink(EnabledLink):
             set_flags = {self._plugin_flag: self._flag_value}
             for minfo in self._to_flip:
                 minfo.set_plugin_flags(set_flags)
-            ##: HACK: forcing active refresh cause mods may be reordered and
-            # we then need to sync order in skyrim's plugins.txt
-            lordata = bosh.modInfos.refreshLoadOrder()
-            # This will have changed the plugin, so let BAIN know
-            bosh.modInfos._notify_bain(
-                altered={p.abs_path for p in self.iselected_infos()})
-            # We need to RefreshUI all higher-loading plugins than the lowest
-            # plugin that was affected to update the Indices column
-            lordata.redraw.update(self.selected)
+            lordata = bosh.modInfos.refresh(RefrData({*self.selected}),
+                                            unlock_lo=True)
             self.window.propagate_refresh(lordata)
 
 #------------------------------------------------------------------------------
@@ -1564,10 +1517,6 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
         'loading ESP-mastered mods in the %(ck_name)s.') % {
             'ck_name': bush.game.Ck.long_name}, 'bash.flipMasters.continue')
 
-    def __init__(self):
-        super(AFlipFlagLink, self).__init__()
-        self._plugin_flag = bush.game.master_flag
-
     def _initData(self, window, selection):
         super(AFlipFlagLink, self)._initData(window, selection)
         present_mods = window.data_store
@@ -1580,7 +1529,7 @@ class Mod_FlipMasters(OneItemLink, AFlipFlagLink):
         else:
             self._to_flip = []
         # all elements in _to_flip have an .esp extension - check the esm flag
-        self._flag_value = not any(map(bush.game.master_flag.has_flagged,
+        self._flag_value = not any(map(self._plugin_flag.has_flagged,
                                        self._to_flip))
 
     @property
@@ -1668,16 +1617,14 @@ class Mod_Face_Import(OneItemLink):
         srcDir = bosh.saveInfos.store_dir
         wildcard = (_('%(game_name)s Saves') +
                     ' (*%(save_ext_on)s;*%(save_ext_off)s)|*%(save_ext_on)s;'
-                    '*%(save_ext_off)s') % {
-            'game_name': bush.game.display_name,
-            'save_ext_on': bush.game.Ess.ext,
-            'save_ext_off': bush.game.Ess.ext[:-1] + 'r'}
+                    '*%(save_ext_off)s') % {**self._selected_info.sexts,
+            'game_name': bush.game.display_name}
         #--File dialog
         srcPath = self._askOpen(_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)
         if not srcPath: return
         #--Get face
-        srcInfo = bosh.SaveInfo(srcPath, load_cache=True)
+        srcInfo = bosh.saveInfos.get_update_info(srcPath)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
@@ -1730,7 +1677,7 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
                     return
                 readProgress(index, _('Reading %(reading_plugin)s.') % {
                     'reading_plugin': fileName})
-                parser.readFromMod(fileInfo)
+                parser.readFromMod(fileInfo, self._data_store)
             progress(0.8, _('Exporting to %(exporting_file)s.') % {
                 'exporting_file': textPath.stail})
             parser.write_text_file(textPath)
@@ -1740,17 +1687,16 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
 
 class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     noChange = _(u'No changes required.')
-    supportedExts = {u'.csv'}
     progressTitle = continueInfo = continueKey = u'OVERRIDE'
     _parser_class = _AParser
+    _parse_mods = False
 
     def _parser(self): return self.__class__._parser_class()
     @property
     def _wildcard(self):
-        if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
-        espml = u';*'.join(bush.game.espm_extensions)
-        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + u';*' \
-               + espml + u';*.ghost'
+        if not self._parse_mods: return f'*{self.__class__.csvFile}'
+        espml = f';*{";*".join(self._data_store.info_exts())}'
+        return _('Mod/Text File') + '|*' + self.__class__.csvFile + espml
 
     def _import_from(self):
         textName = self._selected_item.fn_body + self.__class__.csvFile
@@ -1768,8 +1714,8 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             if ext == u'.csv':
                 parser.read_csv(textPath)
             else:
-                srcInfo = bosh.ModInfo(textPath)
-                parser.readFromMod(srcInfo)
+                srcInfo = bosh.modInfos.factory(textPath)
+                parser.readFromMod(srcInfo, self._data_store)
             progress(0.2, _('Applying to %(applying_plugin)s.') % {
                 'applying_plugin': self._selected_item})
             changes = parser.writeToMod(self._selected_info)
@@ -1791,19 +1737,18 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        supportedExts = self.__class__.supportedExts
         csv_filename = self.__class__.csvFile
         textPath = self._import_from()
         if not textPath: return
         #--Extension error check
         ext = textPath.cext
-        if ext not in supportedExts:
-            plugin_exts = ', '.join(sorted(bush.game.espm_extensions
-                                           | {'.ghost'}))
-            if len(supportedExts) > 1:
+        p_exts = self._data_store.info_exts() if self._parse_mods else set()
+        if ext not in {'.csv', *p_exts}:
+            if self._parse_mods:
                 csv_err = _('Source file must be a %(csv_ext)s file or a '
                             'plugin (%(plugin_exts)s).') % {
-                    'csv_ext': csv_filename, 'plugin_exts': plugin_exts}
+                              'csv_ext': csv_filename,
+                              'plugin_exts': ', '.join(sorted(p_exts))}
             else:
                 csv_err = _('Source file must be a %(csv_ext)s file.') % {
                     'csv_ext': csv_filename}
@@ -1950,12 +1895,11 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
                 bass.settings[u'bash.mods.export.deprefix'],
                 bass.settings[u'bash.mods.export.skipcomments'])
         #finally:
-        msg = (_('Exported %(num_exported_scripts)d scripts from '
-                 '%(script_export_target)s:')) % {
-            'num_exported_scripts': len(exportedScripts),
-            'script_export_target': fileInfo}
-        msg +='\n' + '\n'.join(exportedScripts)
-        self._showLog(msg, title=_(u'Export Scripts'), asDialog=True)
+        fmt = {'num_exported_scripts': len(exportedScripts),
+               'script_export_target': fileInfo}
+        msg = [_('Exported %(num_exported_scripts)d scripts from '
+                 '%(script_export_target)s:') % fmt, *exportedScripts]
+        self._showLog('\n'.join(msg), title=_('Export Scripts'), asDialog=True)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file."""
@@ -2057,7 +2001,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
                      'replace existing prices and is not reversible!')
     continueKey = u'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
-    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
+    _parse_mods = True
     _parser_class = ItemPrices
 
     def _log(self, changes, fileName):
@@ -2274,7 +2218,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     continueKey = u'bash.fullNames.import.continue'
     _text = _('Names…')
     _help = _(u'Import full names from text file or other mod')
-    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
+    _parse_mods = True
 
     def _parser(self):
         return FullNames()
@@ -2288,6 +2232,24 @@ class Mod_FullNames_Import(_Mod_Import_Link):
 class Mod_Duplicate(File_Duplicate):
     """Version of File_Duplicate that checks for BSAs and plugin-name-specific
     directories."""
+    _bsa_and_blocking_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
+        'associated plugin-name-specific directory (e.g. %(pnd_example)s), '
+        'which will not be attached to the duplicate plugin.') + '\n\n' + _(
+        'Note that the BSA may also contain a plugin-name-specific directory, '
+        'which would remain detached even if a duplicate BSA were also '
+        'created.')
+    _bsa_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s), which will '
+        'not be attached to the duplicate plugin.') + '\n\n' + _(
+        'Note that the BSA may contain a plugin-name-specific directory '
+        '(e.g. %(pnd_example)s), which would remain detached even if a '
+        'duplicate BSA were also created.')
+    _blocking_msg = _(
+        'This plugin has an associated plugin-name-specific directory (e.g. '
+        '%(pnd_example)s), which will not be attached to the duplicate '
+        'plugin.')
+
     def _disallow_copy(self, fileInfo):
         #--Mod with resources? Warn on rename if file has bsa and/or dialog
         msg = fileInfo.ask_resources_ok(
@@ -2322,58 +2284,34 @@ class Mod_Snapshot(ItemLink):
             fileVersion = bolt.getMatch(
                 re.search(r'[ _]+v?([.\d]+)$', fileRoot), 1)
             snapVersion = bolt.getMatch(re.search(r'-[\d.]+$', destRoot))
-            fileHedr = fileInfo.header
-            if (fileVersion or snapVersion) and bosh.reVersion.search(fileHedr.description):
+            descr = fileInfo.header.description
+            if (fileVersion or snapVersion) and bosh.reVersion.search(descr):
                 if fileVersion and snapVersion:
                     newVersion = fileVersion+snapVersion
                 elif snapVersion:
                     newVersion = snapVersion[1:]
                 else:
                     newVersion = fileVersion
-                newDescription = bosh.reVersion.sub(fr'\1 {newVersion}', fileHedr.description, 1)
-                fileInfo.writeDescription(newDescription)
+                new_descr = bosh.reVersion.sub(fr'\1 {newVersion}', descr, 1)
+                fileInfo.writeDescription(new_descr)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
             fileInfo.fs_copy(destDir.join(destName))
 
 #------------------------------------------------------------------------------
-class Mod_RevertToSnapshot(OneItemLink):
+class Mod_RevertToSnapshot(RestoreInfo):
     """Revert to Snapshot."""
     _text = _('Revert to Snapshot…')
     _help = _('Revert to a previously created snapshot from the '
               'Bash/Snapshots dir.')
 
-    @balt.conversation
-    def Execute(self):
-        """Revert to Snapshot."""
-        if not self._ask_revert(): return
-        sel_file = self._selected_item
-        with BusyCursor(), TempFile() as known_good_copy:
-            info_path = (sel_inf := self._selected_info).abs_path
-            # Make a temp copy first in case reverting to snapshot fails
-            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
-            # keep load order (so mtime)
-            self._backup_path.copyTo(info_path, set_time=sel_inf.ftime)
-            self._data_store.refresh(RefrIn.from_tabled_infos({
-                sel_file: sel_inf}, exclude=True))
-            if not self._data_store.get(sel_file):
-                # Reverting to snapshot failed - may be corrupt
-                bolt.deprint('Failed to revert to snapshot', traceback=True)
-                self.window.panel.ClearDetails()
-                if self._askYes(
-                    _("Failed to revert %(target_file_name)s to snapshot "
-                      "%(snapshot_file_name)s. The snapshot file may be "
-                      "corrupt. Do you want to restore the original file "
-                      "again? 'No' keeps the reverted, possibly broken "
-                      "snapshot instead.") % {'target_file_name': sel_file,
-                            'snapshot_file_name': self._backup_path.tail},
-                        title=_('Revert to Snapshot - Error')):
-                    # Restore the known good file again - no error check needed
-                    info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh(RefrIn.from_tabled_infos({
-                        sel_file: sel_inf}))
-        # don't refresh saves as neither selection state nor load order change
-        self.refresh_sel()
+    def _failed_msg(self):
+        self._showError(
+            _('Failed to revert %(target_file_name)s to snapshot '
+              '%(snapshot_file_name)s. The snapshot file may be corrupt.') % {
+                'target_file_name': self._selected_item,
+                'snapshot_file_name': self._backup_path.tail},
+            title=_('Revert to Snapshot - Error'))
 
     @property
     def _backup_path(self):

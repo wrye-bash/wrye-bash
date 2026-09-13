@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -90,7 +90,7 @@ class GuiImage(Lazy):
             raise ArgumentError('You must specify iconSize to '
                                 'rasterize an SVG to a bitmap!')
         if not os.path.isabs(img_path):
-            img_path = os.path.join(get_image_dir(), img_path)
+            img_path = get_image_dir().join(img_path).s
         if cls is not GuiImage:
             return cls(img_path, iconSize, img_type, quality)
         if img_type == _wx.BITMAP_TYPE_ICO:
@@ -131,8 +131,9 @@ class _SvgFromPath(GuiImage):
         """Create a composite SVG image, by combining elements from the given
         layers, with the first layer being the lowest layer.
         """
-        svg_paths = [p if os.path.isabs(p) else os.path.join(
-            get_image_dir(), p) for p in (base_svg, *layer_svgs)]
+        im_dir_join = get_image_dir().join
+        svg_paths = [p if os.path.isabs(p) else im_dir_join(p).s for p in
+                     (base_svg, *layer_svgs)]
         for (ldex, layer) in enumerate(map(ET.parse, svg_paths)):
             layer_svg_root = layer.getroot()
             if layer_svg_root is None:
@@ -202,7 +203,7 @@ class _IcoFromPath(GuiImage):
             return super()._native_widget
         return widget
 
-class _BmpFromIcoPath(GuiImage):
+class _BmpFromIcoPath(GuiImage): ##: .ico only in InitStatusBar (Custom Apps)
     _native_widget: _wx.Bitmap
 
     @property
@@ -219,6 +220,7 @@ class _BmpFromIcoPath(GuiImage):
             scaled = native.ConvertToImage().Scale(self.iconSize,
                 self.iconSize, _wx.IMAGE_QUALITY_HIGH)
             self._cached_args = scaled,
+            self.native_destroy()
             return super()._native_widget
         return native
 

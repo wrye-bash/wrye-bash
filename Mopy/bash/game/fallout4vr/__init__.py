@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -41,7 +41,6 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
     game_detect_excludes = set()
     version_detect_file = u'Fallout4VR.exe'
     master_file = bolt.FName(u'Fallout4.esm')
-    taglist_dir = 'Fallout4VR'
     loot_dir = u'Fallout4VR'
     loot_game_name = 'Fallout4VR'
 

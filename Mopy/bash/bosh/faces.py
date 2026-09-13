@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -50,15 +50,15 @@ class PCFaces(object):
         pcf_modifiers: bool
         pcf_spells: bool
 
-    class PCFace(object):
+    class PCFace:
         """Represents a face."""
-        set_from_npc = ('attributes', 'base_spell', 'eid', 'eye', 'fatigue',
+        __slots__ = ('attributes', 'base_spell', 'eid', 'eye', 'fatigue',
             'fgga_p', 'fggs_p', 'fgts_p', 'hair', 'hairBlue', 'hairGreen',
             'hairLength', 'hairRed', 'health', 'level_offset', 'npc_class',
-            'race', 'skills', 'unused2', 'unused3')
-        set_manually = ('face_masters', 'factions', 'gender', 'modifiers',
-                        'pcName', 'spells')
-        __slots__ = set_from_npc + set_manually
+            'race', 'skills', 'unused2', 'unused3', # up till here set from npc
+            'face_masters', 'factions', 'gender', 'modifiers', 'pcName',
+            'spells')
+        set_from_npc, set_manually = __slots__[:20], __slots__[20:]
 
         def __init__(self):
             self.face_masters = []
@@ -368,18 +368,11 @@ class PCFaces(object):
         return True
     # MODS --------------------------------------------------------------------
     @staticmethod
-    def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
-        lf = LoadFactory(keepAll=keepAll, by_sig=by_sig)
-        modFile = ModFile(modInfo, lf)
-        if (not keepAll) or modInfo.abs_path.exists(): # read -> keepAll=False
-            modFile.load_plugin()
-        return modFile
-
-    @staticmethod
-    def mod_getFaces(modInfo):
+    def mod_getFaces(mod_path):
         """Returns an array of PCFaces from a mod file."""
         #--Mod File
-        modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'NPC_'])
+        modFile = ModFile(mod_path, LoadFactory(False, by_sig=[b'NPC_']))
+        modFile.load_plugin()
         faces = {}
         for _rid, npc in modFile.tops[b'NPC_'].iter_present_records():
             face = PCFaces.PCFace()
@@ -395,24 +388,11 @@ class PCFaces(object):
         return faces
 
     @staticmethod
-    def mod_getRaceFaces(modInfo):
-        """Returns an array of Race Faces from a mod file."""
-        modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'RACE'])
-        faces = {}
-        for _rid, race in modFile.tops[b'RACE'].iter_present_records():
-            face = PCFaces.PCFace()
-            face.face_masters = []
-            for field in (u'eid',u'fggs_p',u'fgga_p',u'fgts_p'):
-                setattr(face,field,getattr(race,field))
-            faces[face.eid] = face
-        return faces
-
-    @staticmethod
     def mod_addFace(modInfo,face):
         """Writes a pcFace to a mod file."""
         #--Mod File
-        modFile = PCFaces._mod_load_fact(modInfo, keepAll=True,
-                                         by_sig=[b'NPC_'])
+        modFile = ModFile(modInfo, LoadFactory(True, by_sig=[b'NPC_']))
+        modFile.load_plugin()
         #--Tes4
         tes4 = modFile.tes4
         if not tes4.author:

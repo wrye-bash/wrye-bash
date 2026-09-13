@@ -179,6 +179,12 @@
             <td></td>
         </tr>
         <tr>
+            <td>Oblivion Remastered</td>
+            <td>Steam</td>
+            <td>WIP, Saves don't work at all and Installers can only handle
+                ESPs</td>
+        </tr>
+        <tr>
             <td>Skyrim</td>
             <td>Steam</td>
             <td></td>
@@ -376,7 +382,7 @@
 <p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Installation:
 <ol>
-    <li>Download and install the <a href="https://aka.ms/vs/16/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
+    <li>Download and install the <a href="https://aka.ms/vs/17/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
     <li>You now have a choice:</li>
     <ul>
         <li>Extract the downloaded Wrye Bash archive into any folder.</li>
@@ -393,7 +399,7 @@
         See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install-components">Python Components</a> section of the Advanced readme
         for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
         you may not need to install them again.
-    <li>Download and install the <a href="https://aka.ms/vs/16/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
+    <li>Download and install the <a href="https://aka.ms/vs/17/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
     <li>Extract the downloaded Wrye Bash archive into your game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
     directory appears by the game executable. See the
     <a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
@@ -456,7 +462,7 @@ After that, the information refresh performed when the Installers tab is opened 
 
 <p>Packages need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
     created on the same level as your game directory (that is, if your game exe is located in "C:\GAMES\TESIV\Oblivion", then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
-    directory on first run), but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
+    directory on first run), but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>--oblivionMods</code> command line argument or the <code>sOblivionMods</code> ini setting. Do
     <em>not</em> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance deterioration, mods thrashing.
 <p>To add an installer to Wrye Bash Installers, you can either manually copy and paste the zip to the Bash Installers Directory, or just drag and drop the zip onto the Installers tab.
 <p>Bash will scan the Bash Installers directory and pick up all subfolders and all archives - except for:
@@ -551,7 +557,7 @@ be restructured.</p>
             <td>Oblivion</td>
             <td>_tejon, baseobjectswapper, config, distantlod,
                 enhanced economy, facegen, fonts, knights - revelation music,
-                menus, obse, pluggy, scripts, shaders,
+                mapmarkers, menus, obse, pluggy, scripts, shaders,
                 spellfactionitemdistributor, streamline, trees</td>
         </tr>
         <tr>
@@ -568,12 +574,13 @@ be restructured.</p>
         <tr>
             <td>Skyrim</td>
             <td>asi, autobody, calientetools, dialogueviews,
-                dragonbornvoiceover, dyndolod, flm, grass, interface, kreate,
-                lightplacer, lodsettings, mapmarkers, mapweathers, mcm, mlq,
-                nemesis_engine, netscriptframework, osa, pbrmaterialobjects,
-                pbrnifpatcher, pbrtexturesets, platform, scripts, seasons, seq,
-                shaders, shadersfx, skse, skyproc patchers, slanims, strings,
-                tools</td>
+                dragonbornvoiceover, dyndolod, flm, grass, interface, kiloader, 
+                kreate, lightplacer, lodsettings, mapmarkers, mapweathers, mcm,
+                mlq, nemesis_engine, netscriptframework, object manipulation
+                overhaul, osa, ostim, pandora_engine, pbrmaterialobjects,
+                pbrnifpatcher, pbrtexturesets, platform, rmb spid references,
+                scripts, seasons, seq, shaders, shadersfx, skse, skyproc
+                patchers, slanims, strings, tools</td>
         </tr>
         <tr>
             <td>Fallout 4</td>
@@ -779,12 +786,12 @@ from other packages previously overridden by the uninstalled package's
 
 <h3 id="bain-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <p>BAIN uses the colours of packages in the package list and the state of their checkboxes to convey information about their status to the user. A checkbox state may be combined with any checkbox or text colour, and the possible states and colours are described in the tables below.
-<p><strong>Note:</strong> Installed packages are marked with a plus, e.g. <img alt="Green Plus" src="../bash/images/checkbox_green_inc.png" width="16" height="16">. Corrupt or incomplete packages are marked with a cross, e.g. <img alt="Red X" src="../bash/images/red_x.svg" width="16" height="16" role="img">. Packages that begin and end with <q>==</q>, e.g. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
+<p><strong>Note:</strong> Installed packages are marked with a plus, e.g. <svg class="wb-ico wb-checkbox green inc" aria-label="Green Plus" data-wb-use="#wb-checkbox-inc"></svg>. Corrupt or incomplete packages are marked with a cross, e.g. <img alt="Red X" src="../bash/images/red_x.svg" width="16" height="16" role="img">. Packages that begin and end with <q>==</q>, e.g. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
 <table>
     <thead><tr><th>Checkbox Shape<th>Meaning
     <tbody>
-        <tr><td><img alt="diamond" src="../bash/images/diamond_white_off.png" width="16" height="16"><td>The package is a Project, i.e. a directory rather than an archive.
-        <tr><td><img alt="square" src="../bash/images/checkbox_white_off.png" width="16" height="16"><td>The package is an archive.
+        <tr><td><svg class="wb-ico wb-diamond white off" aria-label="diamond" data-wb-use="#wb-diamond-off"></svg><td>The package is a Project, i.e. a directory rather than an archive.
+        <tr><td><svg class="wb-ico wb-checkbox white off" aria-label="square" data-wb-use="#wb-checkbox-off"></svg><td>The package is an archive.
 </table>
 <table>
     <thead>
@@ -795,23 +802,23 @@ from other packages previously overridden by the uninstalled package's
     </thead>
     <tbody>
         <tr>
-            <td><img alt="green" src="../bash/images/checkbox_green_off.png" width="16" height="16"></td>
+            <td><svg class="wb-ico wb-checkbox green off" aria-label="green" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>All the files in the package are installed as configured.</td>
         </tr>
         <tr>
-            <td><img alt="red" src="../bash/images/checkbox_red_off.png" width="16" height="16"></td>
+            <td><svg class="wb-ico wb-checkbox red off" aria-label="red" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>Some or all of the files in the package are not installed as
                 configured.</td>
         </tr>
         <tr>
-            <td><img alt="orange" src="../bash/images/checkbox_orange_off.png" width="16" height="16"></td>
+            <td><svg class="wb-ico wb-checkbox orange off" aria-label="orange" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>All the package files are installed, but the plugins are not
                 identical (e.g. one package installed <code>mymod.esp</code>,
                 another package installed a cleaned version of that
                 plugin).</td>
         </tr>
         <tr>
-            <td><img alt="yellow" src="../bash/images/checkbox_yellow_off.png" width="16" height="16"></td>
+            <td><svg class="wb-ico wb-checkbox yellow off" aria-label="yellow" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>All the package files are installed, but some resource files
                 (i.e. anything but plugins) are not identical (e.g. one
                 package installed <code>textures/mytexture.dds</code>, another
@@ -819,14 +826,14 @@ from other packages previously overridden by the uninstalled package's
                 texture).</td>
         </tr>
         <tr>
-            <td><img alt="white" src="../bash/images/checkbox_white_off.png" width="16" height="16"></td>
+            <td><svg class="wb-ico wb-checkbox white off" aria-label="white" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>The package, as configured, has no files to install. This can
                 happen for complex packages where none of the sub-packages are
                 selected for installation. Will also happen for scattered
                 packages that need to have their guided installation run.</td>
         </tr>
         <tr>
-            <td><img alt="grey" src="../bash/images/checkbox_grey_off.png" width="16" height="16"></td>
+            <td><svg class="wb-ico wb-checkbox grey off" aria-label="grey" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>BAIN does not recognise the structure of this package and so
                 cannot install it.</td>
         <tr>
@@ -1169,19 +1176,19 @@ from other packages previously overridden by the uninstalled package's
 <table>
     <thead><tr><th>Checkbox Type<th>Meaning
     <tbody>
-        <tr><td><img alt="Checkmark" src="../bash/images/checkbox_green_on.png" width="16" height="16"><td>Plugin is active.
-        <tr><td><img alt="Plus" src="../bash/images/checkbox_green_inc.png" width="16" height="16"><td>Plugin is merged into an active <a href="#patch">Bashed Patch</a>.
-        <tr><td><img alt="Dot" src="../bash/images/checkbox_green_imp.png" width="16" height="16"><td>Plugin is imported into an active <a href="#patch">Bashed Patch</a>.
-        <tr><td><img alt="Empty" src="../bash/images/checkbox_green_off.png" width="16" height="16"><td>Plugin is not active, merged or imported.
+        <tr><td><svg class="wb-ico wb-checkbox green on" aria-label="Checkmark" data-wb-use="#wb-checkbox-on"></svg><td>Plugin is active.
+        <tr><td><svg class="wb-ico wb-checkbox green inc" aria-label="Plus" data-wb-use="#wb-checkbox-inc"></svg><td>Plugin is merged into an active <a href="#patch">Bashed Patch</a>.
+        <tr><td><svg class="wb-ico wb-checkbox green imp" aria-label="Dot" data-wb-use="#wb-checkbox-imp"></svg><td>Plugin is imported into an active <a href="#patch">Bashed Patch</a>.
+        <tr><td><svg class="wb-ico wb-checkbox green off" aria-label="Empty" data-wb-use="#wb-checkbox-off"></svg><td>Plugin is not active, merged or imported.
 </table>
 <table>
     <thead><tr><th>Checkbox Colours<th>Meaning
     <tbody>
-<tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png" width="16" height="16"></td><td>The plugin's masters are all in exactly the same order as is specified in the plugin.</td></tr>
-        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png" width="16" height="16"></td><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (i.e. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
-        <tr><td><img alt="Yellow" src="../bash/images/checkbox_yellow_on.png" width="16" height="16"></td><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will be handled automatically by the game, but may hint at an incorrect load order on either your or the mod author's end.</td></tr>
-        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png" width="16" height="16"></td><td>This plugin loads before one or more of its masters. This will either cause the game to crash or cause mods to load in unexpected ways and must be corrected.</td>
-        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png" width="16" height="16"></td><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.</td>
+        <tr><td><svg class="wb-ico wb-checkbox blue on" aria-label="Blue" data-wb-use="#wb-checkbox-on"></svg></td><td>The plugin's masters are all in exactly the same order as is specified in the plugin.</td></tr>
+        <tr><td><svg class="wb-ico wb-checkbox green on" aria-label="Green" data-wb-use="#wb-checkbox-on"></svg></td><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (i.e. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
+        <tr><td><svg class="wb-ico wb-checkbox yellow on" aria-label="Yellow" data-wb-use="#wb-checkbox-on"></svg></td><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will be handled automatically by the game, but may hint at an incorrect load order on either your or the mod author's end.</td></tr>
+        <tr><td><svg class="wb-ico wb-checkbox orange on" aria-label="Orange" data-wb-use="#wb-checkbox-on"></svg></td><td>This plugin loads before one or more of its masters. This will either cause the game to crash or cause mods to load in unexpected ways and must be corrected.</td>
+        <tr><td><svg class="wb-ico wb-checkbox red on" aria-label="Red" data-wb-use="#wb-checkbox-on"></svg></td><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.</td>
 </table>
 <table>
     <thead><tr><th>Text Formatting</th><th>Meaning</th></tr></thead>
@@ -1643,15 +1650,18 @@ from other packages previously overridden by the uninstalled package's
         <tr>
             <td id="patchTweakAssorted">Tweak Assorted</td>
             <td>Contains a set of miscellaneous tweaks to the game.</td>
-            <td>In Oblivion, the <strong>Bow Reach Fix</strong> and
-                <strong>Nvidia Fog Fix</strong> are recommended for all users,
-                as they fix bugs that may be uncovered by mods. Also in
-                Oblivion, the <strong>DarNified Books</strong> option is
-                recommended for users of DarNified UI. In Skyrim and games
+            <td>In Oblivion, the <strong>Bow Reach Fix</strong> is recommended
+                for all users, as it fixes bugs that may be uncovered by mods.
+                Also in Oblivion, the <strong>DarNified Books</strong> option
+                is recommended for users of DarNified UI. In Skyrim and games
                 based on it, the <strong>Magic: Summoning Absorption
                     Fix</strong> is recommended for all users as it fixes an
-                issue that affects many mods. Beyond that, the decision is
-                entirely based on user preference.</td>
+                issue that affects many mods. In Skyrim&colon; Special Edition
+                and games based on it, the <strong>Save Sorting Fix</strong> is
+                recommended for all users as it fixes an issue with saves in
+                some mod-added cells not getting sorted to the correct
+                character. Beyond that, the decision is entirely based on user
+                preference.</td>
             <td>All games but Fallout 4</td>
         </tr>
         <tr>
@@ -1832,11 +1842,11 @@ from other packages previously overridden by the uninstalled package's
 <table>
     <thead><tr><th>Checkbox Style<th>Meaning
     <tbody>
-        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_off.png"><td>Some or all the variables the tweak sets do not exist in the current ini file.
-        <tr><td><img alt="Green" src="../bash/images/checkbox_green_off.png"><td>The variable values in the current ini file do not match the values set by the tweak.
-        <tr><td><img alt="Yellow with Dot" src="../bash/images/checkbox_yellow_imp.png"><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak.
-        <tr><td><img alt="Green with Dot" src="../bash/images/checkbox_green_imp.png"><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak. The values that don't match another tweak from the same installer.
-        <tr><td><img alt="Green with Check" src="../bash/images/checkbox_green_on.png"><td>Tweak is applied.
+        <tr><td><svg class="wb-ico wb-checkbox orange off" aria-label="Orange" data-wb-use="#wb-checkbox-off"></svg><td>Some or all the variables the tweak sets do not exist in the current ini file.
+        <tr><td><svg class="wb-ico wb-checkbox green off" aria-label="Green" data-wb-use="#wb-checkbox-off"></svg><td>The variable values in the current ini file do not match the values set by the tweak.
+        <tr><td><svg class="wb-ico wb-checkbox yellow imp" aria-label="Yellow with Dot" data-wb-use="#wb-checkbox-imp"></svg><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak.
+        <tr><td><svg class="wb-ico wb-checkbox green imp" aria-label="Green with Dot" data-wb-use="#wb-checkbox-imp"></svg><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak. The values that don't match another tweak from the same installer.
+        <tr><td><svg class="wb-ico wb-checkbox green on" aria-label="Green with Check" data-wb-use="#wb-checkbox-on"></svg><td>Tweak is applied.
 </table>
 <table>
     <thead>
@@ -2077,16 +2087,16 @@ from other packages previously overridden by the uninstalled package's
     </thead>
     <tbody>
         <tr>
-            <td><img alt="checked green checkbox" src="../bash/images/checkbox_green_on_32.png" width="32" height="32"></td>
-            <td><img alt="unchecked green checkbox" src="../bash/images/checkbox_green_off_32.png" width="32" height="32"></td>
+            <td><svg class="wb-ico wb-checkbox green on wb-32" aria-label="checked green checkbox" data-wb-use="#wb-checkbox-on"></svg></td>
+            <td><svg class="wb-ico wb-checkbox green off wb-32" aria-label="unchecked green checkbox" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>Script Extender</td>
             <td>If checked, Wrye Bash will launch the game's Script Extender
                 when either the game or the game's editor (Construction Set or
                 Creation Kit) is launched via the status bar launchers.</td>
         </tr>
         <tr>
-            <td><img alt="checked red checkbox" src="../bash/images/checkbox_red_on_32.png" width="32" height="32"></td>
-            <td><img alt="unchecked red checkbox" src="../bash/images/checkbox_red_off_32.png" width="32" height="32"></td>
+            <td><svg class="wb-ico wb-checkbox red on wb-32" aria-label="checked red checkbox" data-wb-use="#wb-checkbox-on"></svg></td>
+            <td><svg class="wb-ico wb-checkbox red off wb-32" aria-label="unchecked red checkbox" data-wb-use="#wb-checkbox-off"></svg></td>
             <td>Auto-Quit</td>
             <td>If checked, Wrye Bash will quit when the game is launched via
                 the status bar launcher. This is useful if you're concerned
@@ -2105,73 +2115,73 @@ from other packages previously overridden by the uninstalled package's
     </thead>
     <tbody>
         <tr>
-            <td><img alt="Enderal Icon" src="../bash/images/games/enderal_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Enderal Icon" src="../bash/images/games/enderal.svg" width="32" height="32"></td>
             <td>Enderal&colon; Forgotten Stories</td>
             <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"></td>
             <td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Enderal Icon" src="../bash/images/games/enderalse_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Enderal Icon" src="../bash/images/games/enderalse.svg" width="32" height="32"></td>
             <td>Enderal&colon; Forgotten Stories&colon; Special Edition</td>
             <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"></td>
             <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Fallout 3 Icon" src="../bash/images/games/fallout3_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Fallout 3 Icon" src="../bash/images/games/fallout3.svg" width="32" height="32"></td>
             <td>Fallout 3</td>
             <td><img alt="Fallout 3 GECK Icon" src="../bash/images/tools/geck32.png" width="32" height="32"></td>
             <td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Fallout 4 Icon" src="../bash/images/games/fallout4_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Fallout 4 Icon" src="../bash/images/games/fallout4.svg" width="32" height="32"></td>
             <td>Fallout 4</td>
             <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"></td>
             <td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Fallout 4 VR Icon" src="../bash/images/games/fallout4vr_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Fallout 4 VR Icon" src="../bash/images/games/fallout4vr.svg" width="32" height="32"></td>
             <td>Fallout 4 VR</td>
             <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"></td>
             <td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/games/falloutnv_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Fallout&colon; New Vegas Icon" src="../bash/images/games/falloutnv.svg" width="32" height="32"></td>
             <td>Fallout&colon; New Vegas</td>
             <td><img alt="Fallout&colon; New Vegas GECK Icon" src="../bash/images/tools/geck32.png" width="32" height="32"></td>
             <td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Morrowind Icon" src="../bash/images/games/morrowind_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Morrowind Icon" src="../bash/images/games/morrowind.svg" width="32" height="32"></td>
             <td>Morrowind</td>
             <td><img alt="Morrowind CS Icon" src="../bash/images/tools/tescs32.png" width="32"></td>
             <td><a href="https://en.uesp.net/wiki/Morrowind_Mod:Construction_Set">Morrowind Construction Set</a></td>
         </tr>
         <tr>
-            <td><img alt="Nehrim Icon" src="../bash/images/games/nehrim_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Nehrim Icon" src="../bash/images/games/nehrim.svg" width="32" height="32"></td>
             <td>Nehrim&colon; At Fate's Edge</td>
             <td><img alt="Oblivion CS Icon" src="../bash/images/tools/tescs32.png" width="32" height="32"></td><td>
             <a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">Oblivion Construction Set</a></td>
         </tr>
         <tr>
-            <td><img alt="Oblivion Icon" src="../bash/images/games/oblivion_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Oblivion Icon" src="../bash/images/games/oblivion.svg" width="32" height="32"></td>
             <td>Oblivion</td>
             <td><img alt="Oblivion CS Icon" src="../bash/images/tools/tescs32.png" width="32" height="32"></td>
             <td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">Oblivion Construction Set</a></td>
         </tr>
         <tr>
-            <td><img alt="Skyrim Icon" src="../bash/images/games/skyrim_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Skyrim Icon" src="../bash/images/games/skyrim.svg" width="32" height="32"></td>
             <td>Skyrim</td>
             <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"></td>
             <td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/games/skyrimse_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Skyrim&colon; Special Edition Icon" src="../bash/images/games/skyrimse.svg" width="32" height="32"></td>
             <td>Skyrim&colon; Special Edition</td>
             <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"></td>
             <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Skyrim VR Icon" src="../bash/images/games/skyrimvr_32.png" width="32" height="32"></td>
+            <td><img class="wb-icon wb-32" alt="Skyrim VR Icon" src="../bash/images/games/skyrimvr.svg" width="32" height="32"></td>
             <td>Skyrim VR</td>
             <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"></td>
             <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
@@ -2728,6 +2738,18 @@ Respect developer's time - keep discussions there short, sweet and technical. No
             </li>
             <li>
                 <h4>
+                    <img class="smallcred" alt="Flag of Portugal" src="../bash/images/flags/portugal.svg">
+                    Portuguese:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="Silvério Santos' Icon" src="../bash/images/people/sisaavi32.png">
+                        <span><a href="https://github.com/SantosSi">Silvério Santos</a></span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
                     <img class="smallcred" alt="Flag of Brazil" src="../bash/images/flags/brazil.svg">
                     Brazilian Portuguese:
                 </h4>
@@ -2767,6 +2789,26 @@ Respect developer's time - keep discussions there short, sweet and technical. No
                     <li>
                         <img class="smallcred" alt="xsSplater's Icon" src="../bash/images/people/xsspavi32.png">
                         <span><a href="https://github.com/xsSplater">xsSplater</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="Yurt Page's Icon" src="../bash/images/bash.svg">
+                        <span>Yurt Page</span>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <h4>
+                    <img class="smallcred" alt="Flag of Spain" src="../bash/images/flags/spain.svg" role="img">
+                    Spanish:
+                </h4>
+                <ul>
+                    <li>
+                        <img class="smallcred" alt="SolitaireRocket's Icon" src="../bash/images/people/soroavi32.png">
+                        <span><a href="https://github.com/SolitaireRocket">SolitaireRocket</a></span>
+                    </li>
+                    <li>
+                        <img class="smallcred" alt="Yajziel's Icon" src="../bash/images/people/yajzavi32.png">
+                        <span><a href="https://github.com/Yajziel">Yajziel</a></span>
                     </li>
                 </ul>
             </li>
@@ -3029,7 +3071,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v314</div>
+    <div id="version">Wrye Bash v315</div>
     General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

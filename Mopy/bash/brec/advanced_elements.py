@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -34,7 +34,7 @@ from itertools import chain
 from typing import Any, BinaryIO
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
-    MelSequential, MelStruct, MelGroups
+    MelSequential, MelStruct, MelGroups, MelPostMast
 from .. import bush
 from ..bolt import attrgetter_cache, deprint, structs_cache, \
     flatten_multikey_dict
@@ -418,6 +418,18 @@ class MelArray(MelBase):
             [self._element.pack_subrecord_data(arr_entry) for arr_entry in
              array_val])
 
+    def find_duplicate_slots(self) -> set[str]:
+        found_duplicates = set()
+        if self._prelude:
+            element_slots = set(self._element.getSlotsUsed())
+            prelude_slots = set(self._prelude.getSlotsUsed())
+            if dup := element_slots & prelude_slots:
+                found_duplicates |= dup
+        found_duplicates |= self._element.find_duplicate_slots()
+        if self._prelude:
+            found_duplicates |= self._prelude.find_duplicate_slots()
+        return found_duplicates
+
 #------------------------------------------------------------------------------
 class MelSimpleArray(MelArray):
     """A MelArray of simple elements (currently MelNum) - override loading and
@@ -446,6 +458,17 @@ class MelSimpleArray(MelArray):
 
     def _pack_array_data(self, array_val):
         return b''.join(map(self._element.packer, array_val))
+
+class MelPostMastSA(MelPostMast, MelSimpleArray): pass
+class _MelPostMastG(MelPostMast):
+    """A MelGroups/Array inside an AMreHeader record - do not use MelPostMast
+    elements as it will try to call set_form_id_type on MelObject instances"""
+    def load_mel(self, record, ins, *args):
+        record.set_form_id_type(ins)
+        super().load_mel(record, ins, *args)
+class MelPostMastG(_MelPostMastG, MelGroups): pass
+class MelPostMastA(_MelPostMastG, MelArray):
+    """Only used in MreTes3 when reading a save."""
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):
@@ -477,7 +500,7 @@ class MelTruncatedStruct(MelStruct):
             target_unpacker = self._all_unpackers[size_]
         except KeyError:
             raise ModSizeError(ins.inName, debug_strs,
-                               tuple(self._all_unpackers), size_)
+                               tuple(self._all_unpackers), size_) from None
         # Actually unpack the struct and pad it with defaults if it's an older,
         # truncated version
         unpacked_val = ins.unpack(target_unpacker, size_, *debug_strs)
@@ -504,7 +527,7 @@ class MelTruncatedStruct(MelStruct):
         return super(MelTruncatedStruct, self).static_size
 
 #------------------------------------------------------------------------------
-class MelLists(MelStruct):
+class AMelLists(MelStruct):
     """Convenience subclass to collect unpacked attributes to lists.
     'actions' is discarded"""
     # map attribute names to slices/indexes of the tuple of unpacked elements
@@ -514,12 +537,12 @@ class MelLists(MelStruct):
         if len(struct_formats) != len(elements):
             raise SyntaxError(f'MelLists: struct_formats ({struct_formats}) '
                               f'do not match elements ({elements})')
-        super(MelLists, self).__init__(mel_sig, struct_formats, *elements)
+        super().__init__(mel_sig, struct_formats, *elements)
 
     @staticmethod
     def _expand_formats(elements, expanded_fmts):
         # This is fine because we enforce the precondition
-        # len(struct_formats) == len(elements) in MelLists.__init__
+        # len(struct_formats) == len(elements) in AMelLists.__init__
         return [int(f[:-1] or 1) if f[-1] == 's' else 0 for f in expanded_fmts]
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -928,6 +951,15 @@ class MelUnion(MelBase):
         if element in self._sort_elements:
             element.sort_subrecord(record)
 
+    def find_duplicate_slots(self) -> set[str]:
+        # Duplicates between different union entries are perfectly valid (e.g.
+        # the same 'value' attribute with different types for GMST), but each
+        # element may still have duplicates within it
+        found_duplicates = set()
+        for element in self.element_mapping.values():
+            found_duplicates |= element.find_duplicate_slots()
+        return found_duplicates
+
     @property
     def signatures(self):
         return self._possible_sigs
@@ -985,6 +1017,9 @@ class _MelWrapper(MelBase):
 
     def sort_subrecord(self, record):
         self._wrapped_mel.sort_subrecord(record)
+
+    def find_duplicate_slots(self) -> set[str]:
+        return self._wrapped_mel.find_duplicate_slots()
 
     @property
     def signatures(self):
@@ -1093,8 +1128,9 @@ class MelSorted(_MelWrapper):
     """Wraps a MelBase-derived element with a list as its single attribute and
     sorts that list right after loading and right before dumping."""
 
-    def __init__(self, sorted_mel: MelBase, sort_by_attrs=(),
-                 sort_special: callable = None):
+    def __init__(self, sorted_mel: MelBase,
+            sort_by_attrs: tuple[str, ...] | str = (),
+            sort_special: Callable = None):
         """Creates a new MelSorted instance with the specified parameters.
 
         :param sorted_mel: The element that needs sorting.

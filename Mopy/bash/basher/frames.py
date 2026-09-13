@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,8 +28,8 @@ from collections import OrderedDict
 
 from .. import balt, bass, bolt, bosh, bush, load_order, wrye_text
 from ..balt import Link, Resources
-from ..bolt import FName, FNDict
-from ..bosh import empty_path, mods_metadata, omods
+from ..bolt import FName, FNDict, empty_path
+from ..bosh import mods_metadata, omods
 from ..env import canonize_ci_path
 from ..exception import StateError, CancelError
 from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
@@ -37,6 +37,7 @@ from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
     SaveButton, SearchBar, Spacer, Splitter, Stretch, TextArea, TextField, \
     VerticalLine, VLayout, WindowFrame, bell, copy_text_to_clipboard, \
     web_viewer_available, showWarning
+from ..plugin_types import ST_MERGED, ST_IMPORTED
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -170,7 +171,7 @@ class DocBrowser(WindowFrame):
     def _get_is_wtxt(doc_path, *, __rx=re.compile(r'^=.+=#\s*$')):
         """Determines whether specified path is a wtxt file."""
         try:
-            with doc_path.open(u'r', encoding=u'utf-8-sig') as text_file:
+            with doc_path.open_bom() as text_file:
                 match_text = __rx.match(text_file.readline())
             return match_text is not None
         except (OSError, UnicodeDecodeError):
@@ -274,7 +275,8 @@ class DocBrowser(WindowFrame):
         dest_path.remove()
         old_path.moveTo(dest_path)
         if self._doc_is_wtxt:
-            old_html, new_html = (x.root+u'.html' for x in (old_path,dest_path))
+            old_html, new_html = (x.root + '.html' for x in # Path.__add__!
+                                  (old_path, dest_path))
             try: old_html.moveTo(new_html)
             except StateError: new_html.remove()
         #--Remember change
@@ -298,7 +300,7 @@ class DocBrowser(WindowFrame):
         if not doc_path: return  # nothing to save if no file is loaded
         if not self._doc_ctrl.is_text_modified(): return
         self._doc_ctrl.set_text_modified(False)
-        with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
+        with doc_path.open_bom('w') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
             wrye_text.genHtml(doc_path, None, self._doc_dir)
@@ -352,13 +354,15 @@ class DocBrowser(WindowFrame):
                 # came from the Data folder, we may be able to find it
                 doc_parents = doc_path.head
                 wip_doc = doc_path.stail
-                data_lower = bush.game.mods_dir.lower()
-                while doc_parents:
-                    wip_doc = os.path.join(doc_parents.sbody, wip_doc)
-                    dp_head = doc_parents.head
-                    if dp_head.stail.lower() == data_lower:
-                        break
-                    doc_parents = dp_head
+                data_lower = os.path.join(*bush.game.mods_dir_path).lower()
+                if data_lower in doc_path.cs:
+                    data_rightmost = bush.game.mods_dir_path[-1].lower()
+                    while doc_parents:
+                        wip_doc = os.path.join(doc_parents.sbody, wip_doc)
+                        dp_head = doc_parents.head
+                        if dp_head.stail.lower() == data_rightmost:
+                            break
+                        doc_parents = dp_head
                 else:
                     # Could not find a parent Data folder, this may have been
                     # some random doc path outside the Data folder. Best we can
@@ -496,7 +500,7 @@ class PluginChecker(WindowFrame):
 
     def OnCopyText(self):
         """Copies text of report to clipboard."""
-        mods_txt = f'[spoiler]\n{self.check_mods_text}[/spoiler]'
+        mods_txt = self.check_mods_text
         mods_txt = re.sub(r'\[\[.+?\|\s*(.+?)\]\]', r'\1', mods_txt)
         mods_txt = re.sub(r'(__|\*\*|~~)', '', mods_txt)
         mods_txt = re.sub('&bull; &bull;', '**', mods_txt)
@@ -517,8 +521,8 @@ class PluginChecker(WindowFrame):
                                      self._controls[ctrl_id].is_checked)
         #--Cache info from modinfos to support auto-update.
         self.orderedActive = load_order.cached_active_tuple()
-        self.__merged = bosh.modInfos.merged.copy()
-        self.__imported = bosh.modInfos.imported.copy()
+        self.__merged = bosh.modInfos.active_statuses[ST_MERGED].copy()
+        self.__imported = bosh.modInfos.active_statuses[ST_IMPORTED].copy()
         #--Do it
         with balt.Progress(_('Checking Plugins…'), parent=self,
                            abort=True) as prog:
@@ -541,8 +545,8 @@ class PluginChecker(WindowFrame):
         """Handle window activate/deactivate. Use for auto-updating list."""
         if (evt_active and (
                 self.orderedActive != load_order.cached_active_tuple() or
-                self.__merged != bosh.modInfos.merged or
-                self.__imported != bosh.modInfos.imported)
+                self.__merged != bosh.modInfos.active_statuses[ST_MERGED] or
+                self.__imported != bosh.modInfos.active_statuses[ST_IMPORTED])
             ):
             self.CheckMods()
 

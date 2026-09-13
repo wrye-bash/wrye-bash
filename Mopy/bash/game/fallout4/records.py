@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -48,7 +48,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelLString, MelLtexGrasses, MelLtexSnam, MelMatoPropertyData, \
     MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
     MelObjectTemplate, MelPartialCounter, MelPerkData, AMreGlob, \
-    MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
+    MelPerkParamsGroups, MelPostMast,MelPostMastG, MelPostMastI, \
+    MelPostMastSA, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, MelVoice, \
     MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, MelMustShared, \
     MelSoundActivation, MelSoundClose, MelSoundLooping, MelSoundPickupDrop, \
@@ -425,11 +426,9 @@ class MelVmad(AMelVmad):
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
     next_object_default = 0x001
 
     class HeaderFlags(AMreHeader.HeaderFlags):
-        optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(9)
 
@@ -441,14 +440,12 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
-        MelGroups('transient_types',
-            MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
-                prelude=MelUInt32(b'TNAM', 'form_type')),
-        ),
-        MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'interior_cell_count'),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
+        MelPostMastG('transient_types', MelSimpleArray('unknownTNAM', MelFid(
+            b'TNAM'), prelude=MelUInt32(b'TNAM', 'form_type'))),
+        MelPostMastI(b'INTV', 'unknownINTV'),
+        MelPostMastI(b'INCC', 'interior_cell_count'),
     )
 
 #------------------------------------------------------------------------------
@@ -623,7 +620,8 @@ class MreAmmo(AMreWithKeywords):
         MelSoundPickupDrop(),
         MelDescription(),
         MelKeywords(),
-        MelValueWeight(),
+        MelTruncatedStruct(b'DATA', ['I', 'f'], 'value', 'weight',
+            old_versions={'I'}),
         MelStruct(b'DNAM', ['I', 'B', '3s', 'f', 'I'], (FID, 'projectile'),
             (_ammo_flags, 'flags'), 'unused_dnam', 'damage', 'health'),
         MelShortName(),
@@ -718,7 +716,7 @@ class MreArmo(AMreWithKeywords):
         MelStruct(b'DATA', ['i', 'f', 'I'], 'value', 'weight', 'health'),
         MelTruncatedStruct(b'FNAM', ['2H', 'B', '3s'], 'armorRating',
             'base_addon_index', 'stagger_rating', 'unknown_fnam',
-            old_versions={'2HB'}),
+            old_versions={'H', '2HB'}),
         MelResistances(b'DAMA'),
         MelTemplateArmor(),
         MelAppr(),
@@ -824,6 +822,7 @@ class MreBook(AMreWithKeywords):
         MelModel(),
         MelIcons(),
         MelBookText(),
+        MelDestructible(),
         MelSoundPickupDrop(),
         MelKeywords(),
         MelFid(b'FIMD', 'featured_item_message'),
@@ -854,8 +853,8 @@ class MreBptd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        ##: This sort_by_attrs might need a sort_special to handle part_node
-        # being None, keep an eye out for TypeError tracebacks
+        ##: This sort_by_attrs might need to be a sort_special to handle
+        # part_node being None, keep an eye out for TypeError tracebacks
         MelSorted(MelUnorderedGroups('body_part_list',
             MelLString(b'BPTN', 'part_name'),
             MelString(b'BPNN', 'part_node'),
@@ -1397,7 +1396,7 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    class _expl_flags(Flags):
+    class _ExplFlags(Flags):
         always_uses_world_orientation: bool = flag(1)
         knock_down_always: bool = flag(2)
         knock_down_by_formula: bool = flag(3)
@@ -1431,7 +1430,7 @@ class MreExpl(MelRecord):
             (FID, 'expl_impact_dataset'), (FID, 'placed_object'),
             (FID, 'spawn_object'), 'expl_force', 'expl_damage', 'inner_radius',
             'outer_radius', 'is_radius', 'vertical_offset_mult',
-            (_expl_flags, 'expl_flags'), 'expl_sound_level',
+            (_ExplFlags, 'expl_flags'), 'expl_sound_level',
             'placed_object_autofade_delay', 'expl_stagger', 'expl_spawn_x',
             'expl_spawn_y', 'expl_spawn_z', 'expl_spawn_spread_degrees',
             'expl_spawn_count', old_versions={'6I6f2IfI', '6I5f2IfI',
@@ -1475,7 +1474,8 @@ class MreFact(MelRecord):
 class MreFlor(AMreWithKeywords, _AMreWithProperties):
     """Flora."""
     rec_sig = b'FLOR'
-    _has_duplicate_attrs = True # RNAM is an older version of ATTX
+    # RNAM is an older version of ATTX
+    _allowed_duplicate_attrs = {'activate_text_override'}
 
     melSet = MelSet(
         MelEdid(),
@@ -1616,7 +1616,7 @@ class MreFurn(AMreWithItems, AMreWithKeywords, _AMreWithProperties):
         MelConditions(),
         MelItems(),
         MelUInt32Flags(b'MNAM', 'active_markers_flags', _active_markers_flags),
-        MelTruncatedStruct(b'WBDT', ['B', 'b'], 'bench_type', 'uses_skill',
+        MelTruncatedStruct(b'WBDT', ['B', 's'], 'bench_type', 'unused1',
             old_versions={'B'}),
         MelFid(b'NAM1', 'associated_form'),
         MelFurnMarkerData(),
@@ -1764,17 +1764,20 @@ class MreImad(AMreImad): # see AMreImad for details
 class MreImgs(MelRecord):
     """Image Space."""
     rec_sig = b'IMGS'
-    _has_duplicate_attrs = True # ENAM is an older version of HNAM/CNAM/TNAM
+    _enam_attrs = [
+        'hdr_eye_adapt_speed', 'hdr_tonemap_e', 'hdr_bloom_threshold',
+        'hdr_bloom_scale', 'hdr_auto_exposure_min_max', 'hdr_sunlight_scale',
+        'hdr_sky_scale', 'cinematic_saturation', 'cinematic_brightness',
+        'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'),
+    ]
+    # ENAM is an older version of HNAM/CNAM/TNAM
+    _allowed_duplicate_attrs = set(_enam_attrs)
 
     melSet = MelSet(
         MelEdid(),
         # Only found in one record (DefaultImageSpaceExterior [IMGS:00000161]),
         # skip for everything else
-        MelReadOnly(MelStruct(b'ENAM', ['14f'], 'hdr_eye_adapt_speed',
-            'hdr_tonemap_e', 'hdr_bloom_threshold', 'hdr_bloom_scale',
-            'hdr_auto_exposure_min_max', 'hdr_sunlight_scale', 'hdr_sky_scale',
-            'cinematic_saturation', 'cinematic_brightness',
-            'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'))),
+        MelReadOnly(MelStruct(b'ENAM', ['14f'], *_enam_attrs)),
         ##: Do we need to specify defaults for hdr_auto_exposure_max,
         # hdr_auto_exposure_min and hdr_middle_gray so that we can upgrade ENAM
         # to HNAM?
@@ -1875,6 +1878,7 @@ class MreIngr(AMreWithKeywords):
         MelEdid(),
         MelVmad(),
         MelBounds(),
+        MelPreviewTransform(),
         MelFull(),
         MelKeywords(),
         MelModel(),
@@ -1983,7 +1987,7 @@ class MreKssm(MelRecord):
 class MreKywd(MelRecord):
     """Keyword."""
     rec_sig = b'KYWD'
-    _has_duplicate_attrs = True # NNAM is an older version of FULL
+    _allowed_duplicate_attrs = {'full'} # NNAM is an older version of FULL
 
     class HeaderFlags(MelRecord.HeaderFlags):
         restricted: bool = flag(15)
@@ -2130,12 +2134,12 @@ class MreLigh(AMreWithKeywords, _AMreWithProperties):
             'light_fe_intensity_amplitude', 'light_fe_movement_amplitude',
             'light_constant', 'light_scalar', 'light_exponent',
             'light_god_rays_near_clip', 'value', 'weight', old_versions={
-                'iI3BsI10fI', 'iI3BsI8f',
+                'iI3BsI10fI', 'iI3BsI10f', 'iI3BsI8f',
             }),
         MelLighFade(),
         MelString(b'NAM0', 'light_gobo'),
-        MelLighLensFlare(),
         MelSound(),
+        MelLighLensFlare(),
         MelGodRays(),
     )
 
@@ -2248,7 +2252,7 @@ class MreMato(MelRecord):
             'projection_vector_x', 'projection_vector_y',
             'projection_vector_z', 'normal_dampener',
             *color3_attrs('single_pass_color'), 'is_single_pass',
-            old_versions={'8f', '7f'}),
+            old_versions={'11f', '8f', '7f'}, is_required=True),
     )
 
 #------------------------------------------------------------------------------

@@ -17,19 +17,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Bump the various version numbers in Wrye Bash."""
 import logging
-import os
 import re
 import sys
 
-import pyfiglet
-from helpers.utils import MOPY_PATH, commit_changes, edit_wb_file, \
-    open_wb_file, edit_bass_version, mk_logfile, run_script, setup_log
+from helpers.utils import MOPY_PATH, WBRepo, edit_wb_file, edit_bass_version, \
+    mk_logfile, run_script, setup_log
 
 _LOGGER = logging.getLogger(__name__)
 _LOGFILE = mk_logfile(__file__)
@@ -39,9 +37,9 @@ from bash import bass
 
 def _setup_new_version(parser):
     parser.add_argument('new_version', type=str, nargs='?', metavar='ver',
-        default=str(int(float(bass.AppVersion)) + 1),
-        help='The version to bump to. Defaults to the current version plus '
-             'one.')
+        default=str(bass.get_version_tuple().version_tuple[0] + 1),
+        help='The version to bump to. Defaults to the current major version'
+             'plus one.')
 
 def main(args):
     setup_log(_LOGGER, args)
@@ -67,23 +65,8 @@ def main(args):
                                      r'v\d+(?:\.\d+)?</div>'),
             edit_callback=edit_readme, logger=_LOGGER)
         files_bumped.append(MOPY_PATH / 'Docs' / readme_name)
-    # bash_default.ini and bash_default_russian.ini: Use pyfiglet to generate a
-    # new header
-    fmt_header = [f';#  {l}' for l in pyfiglet.figlet_format(
-        f'Bash.ini {new_ver}', font='big').rstrip().splitlines()]
-    _LOGGER.info('Editing version in default INIs')
-    for b_ini_name in ('bash_default.ini',
-                       'bash_default_Russian.ini'):
-        _LOGGER.debug(f'Editing version in default INIs: {b_ini_name}')
-        with open_wb_file(b_ini_name, logger=_LOGGER) as bd_ini:
-            # Skip the first 6 lines (the header)
-            ini_rest = bd_ini.read().splitlines()[6:]
-            bd_ini.seek(0, os.SEEK_SET)
-            bd_ini.truncate(0)
-            bd_ini.write('\n'.join(fmt_header + ini_rest) + '\n')
-        files_bumped.append(MOPY_PATH / b_ini_name)
     _LOGGER.debug('Writing commit with changed files')
-    commit_changes(changed_paths=files_bumped,
+    WBRepo().commit_changes(changed_paths=files_bumped,
         commit_msg=f'Bump Wrye Bash version to {new_ver}')
     _LOGGER.info(f'Version successfully bumped to {new_ver}')
 

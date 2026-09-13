@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import re
+from itertools import chain
 from os.path import join as _j
 
 from .. import GameInfo, ObjectIndexRange, _SFPluginFlag
@@ -30,6 +32,8 @@ from ...games_lo import AsteriskGame
 from ...bolt import FName, fast_cached_property
 from ...plugin_types import AMasterFlag
 
+# https://github.com/loot/loot/issues/2198#issuecomment-4243115171
+_bp_re = r'BlueprintShips-(.+)\.esm' # dragons - blueprint masters must match
 class _SFMasterFlag(AMasterFlag):
     # order matters for the ui keys
     BLUEPRINT = ('blueprint_flag', '_is_blueprint', 'b')
@@ -42,10 +46,13 @@ class _SFMasterFlag(AMasterFlag):
                                'plugins.')
 
     @classmethod
-    def sort_masters_key(cls, mod_inf) -> tuple[bool, ...]:
-        """Return a key so that ESMs come first and blueprint masters last."""
-        is_master = cls.ESM.cached_type(mod_inf)
-        return is_master and cls.BLUEPRINT.cached_type(mod_inf), not is_master
+    def sort_masters_key(cls, minf, _game) -> tuple[bool, ...]:
+        """Return a key so that ESMs come first, blueprint masters last and
+        invalid plugins in blocks after the masters/regular/blueprint masters
+        groups."""
+        is_master = cls.ESM.cached_type(minf)
+        return is_master and cls.BLUEPRINT.cached_type(minf), not is_master, \
+            minf.fn_key in _game._shipwrecks # hacky but needed
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -74,6 +81,18 @@ class _AStarfieldGameInfo(PatchGame):
         _j('textures', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
     ]
+
+    def guess_flags(self, mod_fn_ext, masters_supplied=()):
+        sup = super().guess_flags(mod_fn_ext)
+        return sup if masters_supplied else {self.plugin_flags.OVERLAY: False,
+                                             **sup}
+
+    def force_ext_flags(self, mod_info, pflag):
+        # .esl extension does not matter for overlay flagged plugins
+        # check the flag attribute directly we may be called in
+        # ESL.set_mod_flag(None), before OVERLAY.set_mod_flag(None)
+        return not self.plugin_flags.OVERLAY.has_flagged(mod_info) and super(
+            ).force_ext_flags(mod_info, pflag)
 
     @staticmethod
     def get_fid_class(augmented_masters, in_overlay_plugin):
@@ -144,7 +163,7 @@ class _AStarfieldGameInfo(PatchGame):
 
     class Xe(GameInfo.Xe):
         full_name = 'SF1Edit'
-        xe_key_prefix = 'sf1View' # TODO(SF) verify
+        xe_key_prefix = 'sf1View'
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
@@ -174,6 +193,7 @@ class _AStarfieldGameInfo(PatchGame):
             _j('interface', 'translations'): {'.txt'},
         }
         skip_bain_refresh = {'sf1edit backups', 'sf1edit cache'}
+        achlist_excludes = {'.psc'}
 
     class Esp(GameInfo.Esp):
         extension_forces_flags = True
@@ -187,6 +207,7 @@ class _AStarfieldGameInfo(PatchGame):
     allTags = set()
 
     bethDataFiles = {
+        'blueprintships-sfbgs050.esm',
         'blueprintships-starfield - localization.ba2',
         'blueprintships-starfield.esm',
         'constellation - localization.ba2',
@@ -219,10 +240,33 @@ class _AStarfieldGameInfo(PatchGame):
         'sfbgs007.esm',
         'sfbgs008 - main.ba2',
         'sfbgs008.esm',
+        'sfbgs00d - main.ba2',
+        'sfbgs00d - textures.ba2',
+        'sfbgs00d - voices_de.ba2',
+        'sfbgs00d - voices_en.ba2',
+        'sfbgs00d - voices_es.ba2',
+        'sfbgs00d - voices_fr.ba2',
+        'sfbgs00d - voices_ja.ba2',
+        'sfbgs00d.esm',
+        'sfbgs047 - main.ba2',
+        'sfbgs047 - textures.ba2',
+        'sfbgs047.esm',
+        'sfbgs050 - main.ba2',
+        'sfbgs050 - textures.ba2',
+        'sfbgs050 - voices_de.ba2',
+        'sfbgs050 - voices_en.ba2',
+        'sfbgs050 - voices_es.ba2',
+        'sfbgs050 - voices_fr.ba2',
+        'sfbgs050 - voices_ja.ba2',
+        'sfbgs050.esm',
         'shatteredspace - main01.ba2',
         'shatteredspace - main02.ba2',
         'shatteredspace - textures.ba2',
+        'shatteredspace - voices_de.ba2',
         'shatteredspace - voices_en.ba2',
+        'shatteredspace - voices_es.ba2',
+        'shatteredspace - voices_fr.ba2',
+        'shatteredspace - voices_ja.ba2',
         'shatteredspace.esm',
         'starfield - animations.ba2',
         'starfield - densitymaps.ba2',
@@ -234,12 +278,12 @@ class _AStarfieldGameInfo(PatchGame):
         'starfield - facemeshes.ba2',
         'starfield - generatedtextures.ba2',
         'starfield - interface.ba2',
+        'starfield - localization.ba2',
         'starfield - lodmeshes.ba2',
         'starfield - lodmeshespatch.ba2',
         'starfield - lodtextures.ba2',
         'starfield - lodtextures01.ba2',
         'starfield - lodtextures02.ba2',
-        'starfield - localization.ba2',
         'starfield - materials.ba2',
         'starfield - meshes01.ba2',
         'starfield - meshes02.ba2',
@@ -266,10 +310,23 @@ class _AStarfieldGameInfo(PatchGame):
         'starfield - textures09.ba2',
         'starfield - textures10.ba2',
         'starfield - textures11.ba2',
-        'starfield - texturespatch.ba2',
+        'starfield - texturespatch01.ba2',
+        'starfield - texturespatch02.ba2',
         'starfield - voices01.ba2',
         'starfield - voices02.ba2',
         'starfield - voicespatch.ba2',
+        'starfield - voices_de01.ba2',
+        'starfield - voices_de02.ba2',
+        'starfield - voices_de_patch.ba2',
+        'starfield - voices_es01.ba2',
+        'starfield - voices_es02.ba2',
+        'starfield - voices_es_patch.ba2',
+        'starfield - voices_fr01.ba2',
+        'starfield - voices_fr02.ba2',
+        'starfield - voices_fr_patch.ba2',
+        'starfield - voices_ja01.ba2',
+        'starfield - voices_ja02.ba2',
+        'starfield - voices_ja_patch.ba2',
         'starfield - wwisesounds01.ba2',
         'starfield - wwisesounds02.ba2',
         'starfield - wwisesounds03.ba2',
@@ -318,41 +375,65 @@ class _AStarfieldGameInfo(PatchGame):
         force_load_first = tuple(map(FName, (
             'ShatteredSpace.esm', 'Constellation.esm', 'OldMars.esm',
             'SFBGS003.esm', 'SFBGS004.esm', 'SFBGS006.esm', 'SFBGS007.esm',
-            'SFBGS008.esm', # 'BlueprintShips-Starfield.esm',
+            'SFBGS008.esm', 'SFBGS00D.esm', 'SFBGS047.esm', 'SFBGS050.esm',
         )))
         # The game tries to read a Starfield.ccc already, but it's not present
         # yet. Also, official Creations are written to plugins.txt & can be
         # disabled & reordered in the LO.
         _ccc_filename = 'Starfield.ccc'
+        _ccc_dirs = 'saveBase', 'app'
 
-        def _rem_from_plugins_txt(self):
-            # don't remove blueprint masters, let the game do that rather
-            # than overwritte user edits (the ones we do remove are harcoded
-            # and whatever the user has done with lo files does not seem to
-            # matter, but Blueprint load order seems to be affected)
-            act = self._active_if_present - {FName(
-                'BlueprintShips-Starfield.esm')}
-            # we won't remove Blueprint masters from plugins.txt but we need
-            # to append them in lo if present so we don't warn
-            blue = {k: v for k, v in self.mod_infos.items() if all(
-                pf.cached_type(v) for pf in self._game_handle.master_flags)}
-            blue = [t[0] for t in # sort blueprint masters ftime/mod ascending
-                    sorted(blue.items(), key=lambda x: (x[1].ftime, x[0]))]
-            return act, blue
+        def _get_force_act(self, *, active=frozenset(), **kwargs):
+            # use an override instead of passing kwargs to _set_pinned_mods to
+            # avoid calling super._set_pinned_mods
+            mbaip = super()._get_force_act(**kwargs)
+            stems = {p.fn_body for p in
+                     {*active, *(k for k, v in mbaip.items() if v)}}
+            for stem, bp_ship in self._blue_ships.items():
+                mbaip[bp_ship] = stem.lower() in stems
+            return mbaip
 
-        def _set_pinned_mods(self):
-            """Override for making BlueprintShips.esm always active while not
-            having a fixed position in the load order."""
+        def _readd_mods(self, lo, active, sorted_rem):
+            super()._readd_mods(lo, active, sorted_rem)
+            # silently add BlueprintShips- and blueprint plugins (removed from
+            # the plugins.txt) to the load order - sort in ftime/mod descending
+            lo.extend(self._calculate_mtime_order(
+                self._shipwrecks | self._blue_masters.keys()))
+            # sort blue masters last and invalid blocks after respective valid
+            lo.sort(key=self.lo_sort_key())
+            active.extend(b for b in # only those in _blue_ships can be active
+                self._blue_ships.values() if self.pin_active_state[b])
+
+        def _set_pinned_mods(self, *, __re_ship=re.compile(_bp_re, re.I)):
             mbaip, fo_mods = super()._set_pinned_mods()
-            mbaip.add(FName('BlueprintShips-Starfield.esm')) #active if present
+            modinfos = self._mod_infos
+            ship_prefix = {k: v for k, v in modinfos.items() if
+                           k.lower().startswith('blueprintships-')}
+            self._blue_ships = {re_ma.group(1): k for k in ship_prefix
+                                if ((re_ma := __re_ship.match(k)) is not None)}
+            blue = dict(t for t in modinfos.items() if
+                        _SFMasterFlag.BLUEPRINT.cached_type(t[1]))
+            esms = dict(t for t in modinfos.items() if
+                        _SFMasterFlag.ESM.cached_type(t[1]))
+            if nomaster := blue.keys() - esms.keys():
+                bolt.deprint(f'Blueprint plugins not master flagged: '
+                             f'{nomaster} - Bash will disable those')
+            if no_match := ship_prefix.keys() - self._blue_ships.values():
+                bolt.deprint(f'BlueprintShips plugins not matching {_bp_re}: '
+                             f'{no_match} - Bash will disable those')
+            if no_bp_flag := ship_prefix.keys() - blue.keys():
+                bolt.deprint(f'BlueprintShips plugins with no blueprint flag: '
+                             f'{no_bp_flag} - Bash will disable those')
+                self._blue_ships = {k: v for k, v in self._blue_ships.items()
+                                    if v not in no_bp_flag}
+            self._blue_masters = dict(t for t in blue.items() if t[0] in esms)
+            if noship := self._blue_masters.keys() - self._blue_ships.values():
+                bolt.deprint(f'Blueprint master plugins not matching '
+                             f'{_bp_re}: {noship} - Bash will disable those')
+            self._shipwrecks = {*chain(nomaster, no_match, no_bp_flag, noship)}
+            for k in self._shipwrecks:
+                mbaip[k] = False # disallow activating as advertised
             return mbaip, fo_mods
-
-        def _get_ccc_path(self):
-            from ... import bass
-            if (mg_ccc := bass.dirs['saveBase'].join(self._ccc_filename
-                                                     )).exists():
-                return mg_ccc
-            return super()._get_ccc_path()
 
     lo_handler = _LoStarfield
 

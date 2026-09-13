@@ -1,6 +1,7 @@
 # -*- mode: python -*-
 
 from PyInstaller import HOMEPATH
+from PyInstaller.utils.hooks import collect_data_files
 
 import fnmatch
 import os
@@ -73,7 +74,8 @@ if os.name == 'nt':
 a = Analysis([entry_point],
              pathex=[TOOL_PATH, ROOT_PATH],
              binaries=included_binaries,
-             datas=[],
+             # Import pyfiglet's fonts
+             datas=collect_data_files('pyfiglet'),
              hiddenimports=hiddenimports,
              hookspath=[],
              runtime_hooks=[],

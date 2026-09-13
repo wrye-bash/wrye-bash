@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,7 +25,7 @@ from os.path import join as _j
 from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
-from ... import bass, bolt
+from ... import bolt
 
 _GOG_IDS = [
     1458058109, # Game
@@ -60,7 +60,7 @@ class AOblivionGameInfo(PatchGame):
     nexusName = u'Oblivion Nexus'
     nexusKey = u'bash.installers.openOblivionNexus.continue'
 
-    using_txt_file = False
+    mtime_lo = True
     has_standalone_pluggy = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'faces'),
@@ -100,12 +100,12 @@ class AOblivionGameInfo(PatchGame):
         limit_fixer_plugins = [u'mod_limit_fix.dll', u'Trifle.dll']
 
         @classmethod
-        def exe_path_sc(cls):
+        def exe_path_sc(cls, bass_dirs):
             # OBSE refuses to start when its EXE is launched on a Steam
             # installation
-            if 'steam' in bass.dirs['app'].cs:
+            if 'steam' in bass_dirs['exe'].cs:
                 return None
-            return super().exe_path_sc()
+            return super().exe_path_sc(bass_dirs)
 
     class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'
@@ -157,6 +157,7 @@ class AOblivionGameInfo(PatchGame):
             'facegen',
             'fonts',
             'knights - revelation music', # 3P: KotN Revelation
+            'mapmarkers', # 3P: Map Marker Extension Framework
             'menus',
             'obse', # 3P: OBSE
             'pluggy', # 3P: Pluggy
@@ -483,10 +484,11 @@ class AOblivionGameInfo(PatchGame):
         362:  ('GetPlayerHasLastRiddenHorse', 0, 0),
         365:  ('GetPlayerInSEWorld', 0, 0),
         # Extended by (x)OBSE
-        1107: ('IsAmmo', 1, 0),
+        1107: ('IsAmmo', 2, 0),
         1122: ('HasSpell', 2, 0),
         1124: ('IsClassSkill', 1, 2),
-        1884: ('GetPCTrainingSessionsUsed', 2, 0),
+        1254: ('GetActorLightAmount', 0, 0),
+        1884: ('GetPCTrainingSessionsUsed', 0, 0),
         2213: ('GetPackageOffersServices', 2, 0),
         2214: ('GetPackageMustReachLocation', 2, 0),
         2215: ('GetPackageMustComplete', 2, 0),
@@ -509,7 +511,9 @@ class AOblivionGameInfo(PatchGame):
         2232: ('GetPackageUseHorse', 2, 0),
         2233: ('GetPackageNoIdleAnims', 2, 0),
         2571: ('GetBaseAV3', 1, 0),
+        2572: ('GetBaseAV3C', 1, 0),
         2573: ('IsNaked', 1, 0),
+        2577: ('IsMajorRef', 1, 0),
         2578: ('IsDiseased', 0, 0),
     }
 
@@ -565,11 +569,11 @@ class AOblivionGameInfo(PatchGame):
     stats_csv_attrs = {
         b'ALCH': ('eid', 'weight', 'value'),
         b'AMMO': ('eid', 'weight', 'value', 'damage', 'speed',
-                  'enchantPoints'),
+                  'enchantment_charge'),
         b'APPA': ('eid', 'weight', 'value', 'quality'),
         b'ARMO': ('eid', 'weight', 'value', 'health', 'strength'),
-        b'BOOK': ('eid', 'weight', 'value', 'enchantPoints'),
-        b'CLOT': ('eid', 'weight', 'value', 'enchantPoints'),
+        b'BOOK': ('eid', 'weight', 'value', 'enchantment_charge'),
+        b'CLOT': ('eid', 'weight', 'value', 'enchantment_charge'),
         b'EYES': ('eid', 'flags'),
         b'HAIR': ('eid', 'flags'),
         b'INGR': ('eid', 'weight', 'value'),
@@ -579,7 +583,7 @@ class AOblivionGameInfo(PatchGame):
         b'SGST': ('eid', 'weight', 'value', 'uses'),
         b'SLGM': ('eid', 'weight', 'value'),
         b'WEAP': ('eid', 'weight', 'value', 'health', 'damage', 'speed',
-                  'reach', 'enchantPoints'),
+                  'reach', 'enchantment_charge'),
     }
     stats_attrs = {r: tuple(x for x in a if x != 'eid')
                    for r, a in stats_csv_attrs.items()}
@@ -1095,7 +1099,6 @@ class AOblivionGameInfo(PatchGame):
         'AssortedTweak_BowReach',
         'AssortedTweak_ConsistentRings',
         'AssortedTweak_DarnBooks',
-        'AssortedTweak_FogFix',
         'AssortedTweak_NoLightFlicker',
         'AssortedTweak_PotionWeight',
         'AssortedTweak_PotionWeightMinimum',
@@ -1118,6 +1121,9 @@ class AOblivionGameInfo(PatchGame):
         'AssortedTweak_BookWeight',
         'AssortedTweak_AttackSpeedStavesMinimum',
         'AssortedTweak_AttackSpeedStavesMaximum',
+        'AssortedTweak_SetLightRadii',
+        'AssortedTweak_NoAmbientCellLighting',
+        'AssortedTweak_HarvestChanceMult',
     }
     staff_condition = ('weaponType', 4)
     static_attenuation_rec_type = b'SOUN'

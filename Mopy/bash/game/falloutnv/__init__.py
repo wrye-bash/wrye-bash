@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -527,8 +527,10 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
     #--------------------------------------------------------------------------
     # Tweak Settings
     #--------------------------------------------------------------------------
-    settings_tweaks = AFallout3GameInfo.settings_tweaks | {
-        'GmstTweak_Actor_StrengthEncumbranceMultiplier'}
+    settings_tweaks = ((AFallout3GameInfo.settings_tweaks |
+                       {'GmstTweak_Actor_StrengthEncumbranceMultiplier',
+                        'GmstTweak_Player_HealthLevelMult_Fnv',}) -
+                       {'GmstTweak_Player_HealthLevelMult'})
 
     #--------------------------------------------------------------------------
     # Tweak Names
@@ -553,13 +555,13 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         b'INGR', b'LIGH', b'MISC', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
         b'TREE', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'CREA', b'LVLC', b'LVLN',
         b'KEYM', b'ALCH', b'IDLM', b'NOTE', b'COBJ', b'PROJ', b'LVLI', b'WTHR',
-        b'CLMT', b'REGN', b'NAVI', b'DIAL', b'QUST', b'IDLE', b'PACK', b'CSTY',
-        b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS', b'IMAD',
-        b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS', b'CAMS', b'CPTH',
-        b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG', b'RGDL', b'DOBJ',
-        b'LGTM', b'MUSC', b'IMOD', b'REPU', b'RCPE', b'RCCT', b'CHIP', b'CSNO',
-        b'LSCT', b'MSET', b'ALOC', b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK',
-        b'DEHY', b'HUNG', b'SLPD', b'CELL', b'WRLD',
+        b'CLMT', b'REGN', b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
+        b'PACK', b'CSTY', b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR',
+        b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
+        b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG',
+        b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'IMOD', b'REPU', b'RCPE', b'RCCT',
+        b'CHIP', b'CSNO', b'LSCT', b'MSET', b'ALOC', b'CHAL', b'AMEF', b'CCRD',
+        b'CMNY', b'CDCK', b'DEHY', b'HUNG', b'SLPD'
     ]
 
     @classmethod

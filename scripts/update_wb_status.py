@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,7 +27,7 @@ import json
 import logging
 import pprint
 
-from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, commit_changes, \
+from helpers.utils import CHANGELOGS_PATH, WB_STATUS_PATH, WBRepo, \
     fatal_error, mk_logfile, run_script, setup_log
 
 _LOGGER = logging.getLogger(__name__)
@@ -67,8 +67,8 @@ def main(args):
     _LOGGER.debug('Writing JSON output:' + '\n' + pprint.pformat(latest_new))
     with open(latest_json_path, 'w', encoding='utf-8') as out:
         out.write(json.dumps(latest_new, indent=4) + '\n')
-    commit_changes(changed_paths=[latest_json_path],
-        commit_msg=f'Update to Wrye Bash v{new_ver}', repo_path=WB_STATUS_PATH)
+    WBRepo(WB_STATUS_PATH).commit_changes(changed_paths=[latest_json_path],
+        commit_msg=f'Update to Wrye Bash v{new_ver}')
     _LOGGER.info(f'Sucessfully updated wb_status repo for v{new_ver}.')
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -45,6 +45,9 @@ def parse():
          'Use this argument if Wrye Bash is located outside of the game '
          'directory, and automatic detection failed to find it.')
     arg(pathGroup, '-o', '--oblivionPath', dest='oblivionPath')
+    # oblivionMods #
+    h = 'Specifies the Game Mods (Bash root) directory.'
+    arg(pathGroup, '-m', '--oblivionMods', dest='oblivionMods')
 
     ### User Path Group ###
     userPathGroup = parser.add_argument_group('User Directory Arguments',
@@ -138,6 +141,7 @@ _short_to_long = {
     '-f': '--filename',
     '-L': '--Language',
     '-l': '--localAppDataPath',
+    '-m': '--oblivionMods',
     '-n': '--unsupported',
     '-o': '--oblivionPath',
     '-p': '--personalPath',

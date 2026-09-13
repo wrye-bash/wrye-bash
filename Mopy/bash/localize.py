@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -31,9 +31,12 @@ import os
 import sys
 import time
 import warnings
-
 # Minimal local imports - needs to be imported early in bash
-from . import bass, bolt
+from . import bolt
+
+# so we can `import locale` in the intrpreter to install `_` when importing
+# from modules that use it
+gettext.NullTranslations().install()
 
 def set_c_locale():
     # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
@@ -46,7 +49,7 @@ def set_c_locale():
 # Locale Detection & Setup
 _WEBLATE_URL = 'https://hosted.weblate.org/engage/wrye-bash/'
 
-def setup_locale(cli_lang, _wx):
+def setup_locale(__wx, target_lang):
     """Set up wx Locale and Wrye Bash translations. If cli_lang is given,
     will validate it is a supported wx language code, otherwise will fallback
     to user default locale. Then will try to find a matching translation file
@@ -59,12 +62,11 @@ def setup_locale(cli_lang, _wx):
     be correct (otherwise detection of translation files will not work and this
     method will always set locale to English).
 
-    :param cli_lang: The language the user specified on the command line, or
-        None.
+    :param target_lang: The language the user specified on the command line, we
+        got from bass.boot_settings, or None.
     :return: The wx.Locale object we ended up using."""
-    target_lang = cli_lang or bass.boot_settings['Boot']['locale']
     # Set the wx language - otherwise we will crash when loading any images
-    chosen_wx_lang = target_lang and _wx.Locale.FindLanguageInfo(target_lang)
+    chosen_wx_lang = target_lang and __wx.Locale.FindLanguageInfo(target_lang)
     if chosen_wx_lang:
         # The user specified a language that wx recognizes
         target_name = chosen_wx_lang.CanonicalName
@@ -79,9 +81,9 @@ def setup_locale(cli_lang, _wx):
             bolt.deprint('getdefaultlocale no longer exists, this will '
                          'probably break on Windows now')
             language_code, enc = locale.getlocale()
-        bolt.deprint(f'{cli_lang=} - {target_lang=} - falling back to '
-                     f'({language_code}, {enc}) from default locale')
-        lang_info = _wx.Locale.FindLanguageInfo(language_code)
+        bolt.deprint(f'{target_lang=} - falling back to ({language_code}, '
+                    f'{enc}) from default locale')
+        lang_info = __wx.Locale.FindLanguageInfo(language_code)
         target_name = lang_info and lang_info.CanonicalName
         bolt.deprint(f'wx gave back {target_name}')
     # We now have a language that wx supports, but we don't know if WB supports
@@ -113,7 +115,7 @@ def setup_locale(cli_lang, _wx):
         # first check exact target then similar languages
         for f in sorted(matches, key=lambda x: x != target_name):
             # Try switching wx to this locale as well
-            lang_info = _wx.Locale.FindLanguageInfo(f)
+            lang_info = __wx.Locale.FindLanguageInfo(f)
             if lang_info:
                 if target_name == f:
                     bolt.deprint(f"Found translation file for language "
@@ -133,14 +135,12 @@ def setup_locale(cli_lang, _wx):
             _advertise_weblate(f"wxPython does not support the language "
                                f"family '{wanted_prefix}', will fall back "
                                f"to '{target_name}'")
-    lang_info = _wx.Locale.FindLanguageInfo(target_name)
+    lang_info = __wx.Locale.FindLanguageInfo(target_name)
     target_language = lang_info.Language
-    target_locale = _wx.Locale(target_language)
+    target_locale = __wx.Locale(target_language)
     bolt.deprint(f"Set wxPython locale to '{target_name}'")
     # Next, set the Wrye Bash locale based on the one we grabbed from wx
-    if mo is None:
-        trans = gettext.NullTranslations() # We're using English
-    else:
+    if mo is not None: # else we're using English
         po = mo[:-2] + 'po'
         try:
             if os.path.isfile(mo):
@@ -158,6 +158,9 @@ def setup_locale(cli_lang, _wx):
                     ]))
                 with open(mo, 'rb') as trans_file:
                     trans = gettext.GNUTranslations(trans_file)
+                # Everything has gone smoothly, install the translation and
+                # remember what we ended up with as the final locale
+                trans.install()
             else:
                 if os.path.isfile(po):
                     # .mo file missing, .po file exists (dev env only)
@@ -168,17 +171,11 @@ def setup_locale(cli_lang, _wx):
                     bolt.deprint(f'Missing .mo file ({mo}) - this should '
                                  f'really not happen, please report this!')
                 bolt.deprint('Falling back to English (en_US)')
-                trans = gettext.NullTranslations()
         except (UnicodeError, OSError):
             bolt.deprint('Error loading translation file:', traceback=True)
-            trans = gettext.NullTranslations()
-    # Everything has gone smoothly, install the translation and remember what
-    # we ended up with as the final locale
-    trans.install()
-    bass.active_locale = target_name
     # adieu, user locale
     set_c_locale()
-    return target_locale
+    return target_locale, target_name
 
 def __get_translations_dir():
     trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
@@ -196,8 +193,13 @@ def format_date(secs: float) -> str:
 
     :param secs: Formats the specified number of seconds into a string."""
     try:
-        local = time.localtime(secs)
-    except (OSError, ValueError):
-        # local time in windows can't handle negative values
-        local = time.gmtime(secs)
-    return time.strftime(u'%c', local)
+        try:
+            local = time.localtime(secs)
+        except (OSError, ValueError):
+            # local time in windows can't handle negative values
+            local = time.gmtime(secs)
+        return time.strftime(u'%c', local)
+    except OSError:
+        bolt.deprint(f'Error formatting date/time - {locals()=}',
+                     traceback=True)
+        return f'{secs}'

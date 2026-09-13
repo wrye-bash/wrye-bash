@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -55,7 +55,7 @@ class AFallout3GameInfo(PatchGame):
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus.continue'
 
-    using_txt_file = False
+    mtime_lo = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'characters', 'bodymods'),
         _j('textures', 'characters', 'facemods'),
@@ -98,6 +98,8 @@ class AFallout3GameInfo(PatchGame):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
+        # Like Oblivion, accepts anything after the plugin name
+        attachment_regex = '.*'
         redate_dict = DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             'Fallout - MenuVoices.bsa': 1104530400,  # '2005-01-01',
             'Fallout - Meshes.bsa': 1104616800,      # '2005-01-02',
@@ -144,6 +146,14 @@ class AFallout3GameInfo(PatchGame):
         }
         skip_bain_refresh = {'fo3edit backups', 'fo3edit cache'}
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
+        @classmethod
+        def mk_lod_tex_func(cls, normals, ossep):
+            tex_gen = cls.lod_textures_dir
+            if not normals:
+                return lambda f: f.startswith(tex_gen) and 'normals' not in \
+                                 f.split(ossep)
+            return lambda f: f.startswith(tex_gen) and 'normals' in f.split(
+                ossep)
 
     class Esp(GameInfo.Esp):
         canBash = True
@@ -1059,16 +1069,16 @@ class AFallout3GameInfo(PatchGame):
         'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
         'GmstTweak_Warning_ExteriorDistanceToHostiles',
         'GmstTweak_Warning_InteriorDistanceToHostiles',
+        'GmstTweak_Player_HealthEnduranceMult',
+        'GmstTweak_Player_HealthLevelMult',
     }
 
     #--------------------------------------------------------------------------
     # Tweak Assorted
     #--------------------------------------------------------------------------
     ##: Mostly mirrored from valda's version - some of these seem to make no sense
-    # (e.g. I can't find anything regarding FO3/FNV suffering from the fog bug).
     assorted_tweaks = {
         'AssortedTweak_ArmorPlayable',
-        'AssortedTweak_FogFix',
         'AssortedTweak_NoLightFlicker',
         'AssortedTweak_WindSpeed',
         'AssortedTweak_SetSoundAttenuationLevels',
@@ -1078,6 +1088,7 @@ class AFallout3GameInfo(PatchGame):
         'AssortedTweak_UniformGroundcover',
         'AssortedTweak_GunsUseISAnimation',
         'AssortedTweak_BookWeight',
+        'AssortedTweak_SetLightRadii',
     }
     static_attenuation_rec_type = b'SOUN'
 
@@ -1215,8 +1226,8 @@ class AFallout3GameInfo(PatchGame):
         b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO', b'BOOK', b'CONT', b'DOOR',
         b'INGR', b'LIGH', b'MISC', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
         b'TREE', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'CREA', b'LVLC', b'LVLN',
-        b'KEYM', b'ALCH', b'IDLM', b'NOTE', b'PROJ', b'LVLI', b'WTHR', b'CLMT',
-        b'COBJ', b'REGN', b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
+        b'KEYM', b'ALCH', b'IDLM', b'NOTE', b'COBJ', b'PROJ', b'LVLI', b'WTHR',
+        b'CLMT', b'REGN', b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
         b'PACK', b'CSTY', b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR',
         b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
         b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG',

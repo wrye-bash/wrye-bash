@@ -16,13 +16,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 from __future__ import annotations
 
-import builtins
 import collections
 import copy
 import datetime
@@ -170,7 +169,7 @@ def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
     for encoding in encodingOrder:
         try: return str(byte_str, encoding)
         except UnicodeDecodeError: pass
-    raise UnicodeDecodeError(u'Text could not be decoded using any method')
+    raise UnicodeError(f'{byte_str=} could not be decoded using any method')
 
 def encode(text_str, encodings=encodingOrder, firstEncoding=None,
            returnEncoding=False):
@@ -208,8 +207,8 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
     if goodEncoding:
         if returnEncoding: return goodEncoding
         else: return goodEncoding[0]
-    raise UnicodeEncodeError(f'Text could not be encoded using any of the '
-                             f'following encodings: {encodings}')
+    raise UnicodeError(f'{text_str=!r} could not be encoded using any of the '
+                       f'following encodings: {encodings}')
 
 def encode_complex_string(string_val: str, max_size: int | None = None,
         min_size: int | None = None,
@@ -236,18 +235,6 @@ def encode_complex_string(string_val: str, max_size: int | None = None,
     if min_size is not None and (num_nulls := min_size - len(bytes_val)) > 0:
         bytes_val += b'\x00' * num_nulls
     return bytes_val
-
-def failsafe_underscore(s: str):
-    """A version of _() that doesn't fail when gettext has not been set up yet.
-    Use as "from bolt import failsafe_underscore as _".
-
-    Used by e.g. ini_files, which has to be used very early during boot for
-    correct case sensitivity handling in INIs, so the gettext translation
-    function may not be set up yet."""
-    try:
-        return builtins._(s)
-    except AttributeError:
-        return s # We're being invoked very early in boot
 
 class Tee:
     """Similar to the Unix utility tee, this class redirects writes etc. to two
@@ -285,7 +272,8 @@ def remove_newlines(s: str) -> str:
 # The current OS's path seperator, escaped for use in regexes
 os_sep_re = re.escape(os.path.sep)
 
-def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
+def _conv_obj(o, conv_enc='utf-8', *,
+              __list_types=frozenset((list, set, tuple))):
     """Converts an object containing bytestrings to an equivalent object that
     contains decoded versions of those bytestrings instead. Decoding is done
     by trying the specified encoding first, then falling back on the regular
@@ -293,11 +281,11 @@ def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
     if isinstance(o, dict):
         new_dict = o.copy()
         new_dict.clear()
-        new_dict.update(((conv_obj(k, conv_enc), conv_obj(v, conv_enc))
-                         for k, v in o.items()))
+        new_dict.update(((_conv_obj(k, conv_enc), _conv_obj(v, conv_enc)) for
+                         k, v in o.items()))
         return new_dict
     elif type(o) in __list_types:
-        return type(o)(conv_obj(e, conv_enc) for e in o)
+        return type(o)(_conv_obj(e, conv_enc) for e in o)
     elif isinstance(o, bytes):
         return decoder(o, encoding=conv_enc)
     else:
@@ -344,7 +332,7 @@ _str_to_sig = StrToSig()
 str_to_sig = _str_to_sig.__getitem__
 
 # Helpers ---------------------------------------------------------------------
-def sortFiles(files, __split=os.path.split):
+def sortFiles(files, *, __split=os.path.split):
     """Utility function. Sorts files by directory, then file name."""
     return sorted(files, key=lambda x: __split(x.lower()))
 
@@ -464,7 +452,7 @@ class JsonParsable:
     # Specifies special handling for any number of attributes in the parsed
     # JSON dict. Each 'parser' is a function taking the JSON dict and the
     # attribute being parsed and returning the parsed object
-    _parsers: dict[str, callable] = {}
+    _parsers: dict[str, Callable] = {}
     __slots__ = ()
 
     def __init__(self, **_kwargs): # To make PyCharm shut up
@@ -743,21 +731,23 @@ class FNDict(dict):
     def __repr__(self):
         return f'{type(self).__name__}({super().__repr__()})'
 
-    def __reduce__(self): #[backwards compat]we 'd rather not save custom types
-        return dict, (dict(self),) # you need the dict here - recursion!
+    def __reduce__(self): #734: we 'd rather not save custom types
+        return dict, (dict(self),) # you need the dict here - recursion
 
 # Forward compat functions - as we only want to pickle std types those stay
-def forward_compat_path_to_fn(di, value_type=lambda x: x):
-    try:
-        return FNDict((f'{k}', value_type(v)) for k, v in di.items())
+def forward_compat_path_to_fn(di, fn_value=False): ##:(734) drop f'{k} in try
+    try: # str**2 in case of a Path that wraps a CIstr in its _s attribute
+        return FNDict(((f'{k}', FName(str(f'{v}'))) for k, v in di.items())
+            if fn_value else ((f'{k}', v) for k, v in di.items()))
     except ValueError:
-        return FNDict((str(f'{k}'), value_type(v)) for k, v in di.items())
+        return FNDict(((str(f'{k}'), FName(str(f'{v}'))) for k, v in di.items()
+            )  if fn_value else ((str(f'{k}'), v) for k, v in di.items()))
 
 def forward_compat_path_to_fn_list(li, ret_type=list):
     try:
         return ret_type(map(FName, map(str, li)))
     except ValueError: # tried to FName(str(path)) where type(path.s) == CIstr
-        return ret_type(map(FName, map(str,  map(str, li))))
+        return ret_type(map(FName, map(str, map(str, li))))
 
 class DefaultLowerDict(LowerDict, collections.defaultdict):
     """LowerDict that inherits from defaultdict."""
@@ -846,18 +836,16 @@ def GPath(str_or_uni: str | os.PathLike[str]) -> Path: ...
 def GPath(str_or_uni: str | os.PathLike[str] | None) -> Path | None:
     """Path factory and cache."""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
-    if not str_or_uni: return Path('') # needed, os.path.normpath('') = '.'!
+    if not str_or_uni: return empty_path # needed, os.path.normpath('') = '.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
 
 ##: generally points at file names, masters etc. using Paths, which they should
 # not - hunt down and just use strings
-def GPath_no_norm(str_or_uni):
+def GPath_no_norm(str_or_uni: str) -> Path:
     """Alternative to GPath that does not call normpath. It is up to the caller
     to ensure that the precondition name == os.path.normpath(name) holds for
-    all values passed into this method. Only str instances accepted!
-
-    :rtype: Path"""
+    all values passed into this method. Only str instances accepted!"""
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(str_or_uni))
 
@@ -903,7 +891,7 @@ class Path(os.PathLike):
 
     @staticmethod
     def getcwd():
-        return Path(os.getcwd())
+        return GPath_no_norm(os.getcwd())
 
     @staticmethod
     def has_invalid_chars(path_str):
@@ -967,15 +955,15 @@ class Path(os.PathLike):
     #--String/unicode versions.
     @property
     def s(self):
-        """Path as string."""
+        """Returns this path as a string."""
         return self._s
     @property
     def cs(self):
-        """Path as string in normalized case."""
+        """Returns this path as a string in lowercase."""
         return self._cs
     @property
     def sroot(self):
-        """Root as string."""
+        """For alpha/beta.gamma returns alpha/beta as a string."""
         try:
             return self._sroot
         except AttributeError:
@@ -983,7 +971,7 @@ class Path(os.PathLike):
             return self._sroot
     @property
     def shead(self):
-        """Head as string."""
+        """For alpha/beta.gamma, returns alpha as a string."""
         try:
             return self._shead
         except AttributeError:
@@ -991,7 +979,7 @@ class Path(os.PathLike):
             return self._shead
     @property
     def stail(self):
-        """Tail as string."""
+        """For alpha/beta.gamma, returns beta.gamma as a string."""
         try:
             return self._stail
         except AttributeError:
@@ -999,7 +987,7 @@ class Path(os.PathLike):
             return self._stail
     @property
     def sbody(self):
-        """For alpha\beta.gamma returns beta as string."""
+        """For alpha/beta.gamma returns beta as a string."""
         try:
             return self._sbody
         except AttributeError:
@@ -1009,29 +997,30 @@ class Path(os.PathLike):
     #--Head, tail
     @property
     def headTail(self):
-        """For alpha\beta.gamma returns (alpha,beta.gamma)"""
-        return [GPath(self.shead), GPath(self.stail)]
+        """For alpha/beta.gamma, returns (alpha, beta.gamma)"""
+        return GPath(self.shead), GPath(self.stail)
     @property
     def head(self):
-        """For alpha\beta.gamma, returns alpha."""
+        """For alpha/beta.gamma, returns alpha."""
         return GPath(self.shead)
     @property
     def tail(self):
-        """For alpha\beta.gamma, returns beta.gamma."""
+        """For alpha/beta.gamma, returns beta.gamma."""
         return GPath_no_norm(self.stail)
     @property
     def body(self):
-        """For alpha\beta.gamma, returns beta."""
+        """For alpha/beta.gamma, returns beta."""
         return GPath_no_norm(self.sbody)
 
     #--Root, ext
     @property
     def root(self):
-        """For alpha\beta.gamma returns alpha\beta"""
+        """For alpha/beta.gamma, returns alpha/beta."""
         return GPath(self.sroot)
     @property
     def ext(self):
-        """Extension (including leading period, e.g. '.txt')."""
+        """For alpha/beta.gamma, returns .gamma as a string (including leading
+        period, e.g. '.txt')."""
         try:
             return self._ext
         except AttributeError:
@@ -1039,7 +1028,8 @@ class Path(os.PathLike):
             return self._ext
     @property
     def cext(self):
-        """Extension in normalized case."""
+        """For alpha/beta.gamma, returns .gamma as a lowercase string (e.g.
+        foo.TxT becomes '.txt')."""
         try:
             return self._cext
         except AttributeError:
@@ -1063,8 +1053,8 @@ class Path(os.PathLike):
 
     @property
     def backup(self):
-        """Backup file path."""
-        return self+u'.bak'
+        """Returns a copy of this path with .bak appended to the end."""
+        return self + '.bak' # Path.__add__ !
 
     #--size, atime
     @property
@@ -1136,16 +1126,14 @@ class Path(os.PathLike):
     def walk(self, topdown=True, onerror=None, *, relative=False):
         """Like os.walk."""
         if relative:
-            start = len(self._s)
+            start = len(self._s) + 1 # + 1 for the os.sep
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
-                yield (GPath(root_dir[start:]),
-                       [GPath_no_norm(x) for x in dirs],
-                       [GPath_no_norm(x) for x in files])
+                yield (GPath(root_dir[start:]), [*map(GPath_no_norm, dirs)],
+                       [*map(GPath_no_norm, files)])
         else:
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
                 yield (GPath(root_dir), ##: leaves the leading path separator?
-                       [GPath_no_norm(x) for x in dirs],
-                       [GPath_no_norm(x) for x in files])
+                    [*map(GPath_no_norm, dirs)], [*map(GPath_no_norm, files)])
 
     def relpath(self,path): # os.path.relpath(p,[s]): AttributeError if s==None
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
@@ -1181,9 +1169,7 @@ class Path(os.PathLike):
         else:
             clearReadOnly(self)
 
-    ##: Deprecated, replace with regular open() where possible to help erode
-    # Path dependencies all over WB
-    def open(self,*args,**kwdargs):
+    def open(self, *args, **kwdargs): # use regular open() where possible
         try:
             return open(self._s, *args, **kwdargs)
         except FileNotFoundError:
@@ -1193,6 +1179,16 @@ class Path(os.PathLike):
                 os.makedirs(self.shead)
                 return open(self._s, *args, **kwdargs)
             raise
+
+    def open_bom(self, mode='r', **kwargs):
+        if mode == 'w':
+            return self.open(mode, encoding='utf-8-sig', **kwargs)
+        with self.open('rb') as ins:
+            contents = ins.read()
+        # WB versions before 309 wrote a BOM into some files - drop it
+        if contents.startswith(b'\xef\xbb\xbf'):
+            contents = contents[3:]
+        return io.StringIO(contents.decode('utf-8'))
 
     def makedirs(self):
         os.makedirs(self._s, exist_ok=True)
@@ -1347,6 +1343,7 @@ class Path(os.PathLike):
         return self # immutable
 
 undefinedPath = GPath(r'C:\not\a\valid\path.exe')
+empty_path = GPath_no_norm('') # evaluates to False in boolean expressions
 
 # We need to split every time we hit a new 'type' of component. So greedily
 # match as many of one type as possible (except dots and dashes, since those
@@ -1408,6 +1405,10 @@ class LooseVersion:
         if not isinstance(other, LooseVersion):
             return NotImplemented
         return self._parsed_version >= other._parsed_version
+
+    @property
+    def version_tuple(self):
+        return self._parsed_version
 
 def popen_common(popen_cmd, **kwargs):
     """Wrapper around subprocess.Popen with commonly needed parameters."""
@@ -1659,18 +1660,17 @@ class DataDict(object):
         return self._data.pop(key, default)
 
 #------------------------------------------------------------------------------
-class AFile(object):
+class AFile:
     """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
+    __slots__ = ('fsize', 'ftime', '_file_key')
 
-    def __init__(self, fullpath, *, raise_on_error=False, cached_stat=None,
-                 **kwargs):
+    def __init__(self, fullpath, *, cached_stat=None, **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         # Set cache info (ftime, size[, ctime]) and reload/reset cache
         try:
             self._reset_cache(self._stat_tuple(cached_stat), **kwargs)
         except OSError:
-            if raise_on_error: raise
             self._reset_cache(self._null_stat)
 
     def _stat_tuple(self, cached_stat=None):
@@ -1683,15 +1683,15 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, *, raise_on_error=False, force_update=False,
+    def do_update(self, *, raise_os_error=False, force_update=False,
                   cached_stat=None, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
-        consider the file deleted and return True except if raise_on_error is
-        True, whereupon raise the OSError we got in stat(). If raise_on_error
+        consider the file deleted and return True except if raise_os_error is
+        True, whereupon raise the OSError we got in stat(). If raise_os_error
         is False user must check if file exists.
 
-        :param raise_on_error: If True, raise on errors instead of just
+        :param raise_os_error: If True, raise on errors instead of just
             resetting the cache and returning.
         :param **kwargs: various:
             - itsa_ghost: In ModInfos, if we have the ghosting info available,
@@ -1703,7 +1703,7 @@ class AFile(object):
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
             self._reset_cache(self._null_stat, **kwargs)
-            if raise_on_error: raise
+            if raise_os_error: raise
             return file_was_stated # file previously existed, we need to update
         if force_update or self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True, **kwargs)
@@ -1723,21 +1723,44 @@ class AFile(object):
         """
         self.fsize, self.ftime = stat_tuple
 
-    def fs_copy(self, dup_path: Path, *, set_time=None):
-        """Duplicate file to dup_path. If set_time is None, we set the mtime
+    def fs_copy(self, dupl_path: Path, *, set_time=None, do_move=False):
+        """Copy/move file to dup_path. If set_time is None, we set the mtime
         of the duplicate path to ftime. This should really be a
         _mark_not_changed internal API (what about ctime?)."""
-        self.abs_path.copyTo(dup_path, set_time=set_time or self.ftime)
+        op = self.abs_path.moveTo if do_move else partial(
+            self.abs_path.copyTo, set_time=set_time or self.ftime)
+        op(dupl_path)
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.abs_path.stail}>'
+
+class DelFile(AFile):
+    """Remember deleted/invalid status (_deleted) and whether the file was
+    updated (has_changed). Calling do_update *won't* reset the flag so you
+    must reset has_changed yourself when used (cf IniInfos). Use sparingly."""
+    __slots__ = ('_deleted', 'has_changed')
+
+    def __init__(self, *args, **kwargs):
+        self._deleted = False
+        self.has_changed = False
+        super().__init__(*args, **kwargs)
+
+    def do_update(self, **kwargs):
+        self.has_changed |= (sup := super().do_update(**kwargs))
+        return sup # notify for new updates, not the value of has_changed
+
+    def _reset_cache(self, stat_tuple, **kwargs):
+        if failed := stat_tuple == self._null_stat:
+            # True if file was previously stated or for a new non existing file
+            self.has_changed |= not self._deleted
+        self._deleted = failed
+        super()._reset_cache(stat_tuple, **kwargs)
 
 #------------------------------------------------------------------------------
 class ListInfo:
     """Info object displayed in Wrye Bash list - comes last in MI (*above*
     Afile)."""
-    __slots__ = ('fn_key', )
-    _valid_exts_re = ''
+    file_exts = frozenset() # subclasses that represent files must define this!
     _is_filename = True
     _has_digits = False
 
@@ -1747,18 +1770,27 @@ class ListInfo:
     @classmethod
     def validate_filename_str(cls, name_str: str, allowed_exts=frozenset()):
         """Basic validation of list item name - those are usually filenames, so
-        they should contain valid chars. We also optionally check for match
-        with an extension group (apart from projects and markers). Returns
-        a tuple - if the second element is None validation failed and the first
-        element is the message to show - if not the meaning varies per override
-        """
+        they should contain valid chars. We also require to end in (a subset
+        of) file_exts if this is not empty (i.e. apart from projects and
+        markers). Return a tuple - if the second element is None validation
+        failed and the first element is the message to show. `allowed_exts`
+        is noop if cls.file_exts is empty else it must be a subset of those."""
         if not name_str:
             return _('Name may not be empty.'), None
         char = cls._is_filename and Path.has_invalid_chars(name_str)
         if char:
             inv = _('%(new_name)s contains invalid character (%(bad_char)s).')
             return inv % {'new_name': name_str, 'bad_char': char}, None
-        rePattern = cls._name_re(allowed_exts)
+        if fe := cls.file_exts:
+            allowed_exts = (allowed_exts or fe) & fe # disallow unknown exts
+            if not os.path.splitext(name_str)[1].lower() in allowed_exts:
+                msg = _('%(invalid_name)s does not have correct extension '
+                        '(%(allowed_extensions)s).')
+                return msg % {'invalid_name': name_str,
+                    'allowed_extensions': ', '.join(allowed_exts)}, None
+            exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))'
+        else: exts_re = ''
+        rePattern = cls._name_re(exts_re)
         maPattern = rePattern.match(name_str)
         if maPattern:
             ma_groups = maPattern.groups(default=u'')
@@ -1771,20 +1803,20 @@ class ListInfo:
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None
 
-    def validate_name(self, name_str, check_store=True):
+    def validate_name(self, name_str, **kwargs):
+        """Only used in _EditableMixin.OnFileEdited and File_Duplicate.Execute.
+        """
         # disallow extension change but not if no-extension info type
-        check_ext = name_str and self.__class__._valid_exts_re
-        if check_ext and not name_str.lower().endswith(
-                self.fn_key.fn_ext.lower()):
-            fm = {'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return _('%(bad_name_str)s: Incorrect file extension (must be '
-                     '%(expected_ext)s).') % fm, None
-        return self.__class__.validate_filename_str(name_str)
+        if name_str and self.__class__.file_exts:
+            kwargs['allowed_exts'] = {self_ext := self.fn_key.fn_ext.lower()}
+            if not name_str.lower().endswith(self_ext):
+                fm = {'bad_name_str': name_str, 'expected_ext': self_ext}
+                return _('%(bad_name_str)s: Incorrect file extension (must be '
+                         '%(expected_ext)s).') % fm, None
+        return self.__class__.validate_filename_str(name_str, **kwargs)
 
     @classmethod
-    def _name_re(cls, allowed_exts):
-        exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
-            if allowed_exts else cls._valid_exts_re
+    def _name_re(cls, exts_re):
         # The reason we do the regex like this is to support names like
         # foo.ess.ess.ess etc.
         exts_prefix = r'(?=.+\.)' if exts_re else ''
@@ -1797,26 +1829,30 @@ class ListInfo:
     @staticmethod
     def _new_name(base_name, count): # only use in unique_name - count is > 0 !
         r, e = os.path.splitext(base_name)
-        return f'{r} ({count}){e}'
+        return FName(f'{r} ({count}){e}')
 
     @classmethod
-    def unique_name(cls, name_str, check_exists=False, *, __unique_counter=0):
-        base_name = name_str
+    def unique_name(cls, name_str, check_exists=False, *, __unique_counter=0,
+                    names=None):
+        base_name = name_str = FName(name_str)
         store = cls._store()
         while (store.store_dir.join(name_str).exists() if check_exists else
-               name_str in store): # must wrap a FNDict
+               name_str in (names or store)): # must wrap a FNDict
             __unique_counter += 1
             name_str = cls._new_name(base_name, __unique_counter)
-        return FName(name_str)
+        if names is not None: # we are called in a loop to produce unique names
+            names.add(name_str)
+        return name_str
 
-    def unique_key(self, new_root, ext='', add_copy=False):
-        """Generate a unique name based on fn_key. When copying or renaming."""
-        if self.__class__._valid_exts_re and not ext:
-            ext = self.fn_key.fn_ext
-        new_name = new_root + (f" {_('Copy')}" if add_copy else '') + ext
+    def unique_key(self, base=None, names=None) -> FName | None:
+        """Generate a unique name based on base - duplicating or renaming."""
+        base = self.fn_key if (add_copy := base is None) else base
+        if self.__class__.file_exts or (ext := ''):
+            base, ext = base.fn_body, base.fn_ext
+        new_name = base + (f' {_("Copy")}' if add_copy else '') + ext
         if self.named_as(new_name): # new and old names are ci-same
             return None
-        return self.unique_name(new_name)
+        return self.unique_name(new_name, names=names)
 
     def named_as(self, text_cnt: str): # check if names are ci-same
         return text_cnt == self.fn_key
@@ -1826,7 +1862,7 @@ class ListInfo:
     def rename_area_idxs(cls, text_str, start=0, stop=None):
         """Return the selection span of item being renamed - usually to
         exclude the extension."""
-        if cls._valid_exts_re and not start: # start == 0
+        if cls.file_exts and not start: # start == 0
             return 0, len(GPath(text_str[:stop]).sbody)
         return 0, len(text_str) # if selection not at start reset
 
@@ -1834,19 +1870,15 @@ class ListInfo:
     def _store(cls): # use sparingly
         raise NotImplementedError(f'{cls} does not provide a data store')
 
+    def set_path_keys(self, new_fn: FName, *, infodir=None):
+        old_key, self.fn_key = self.fn_key, new_fn
+        return {}
+
+    def get_rename_paths(self, new_name, rename_dir, *args):
+        return [] # no rename paths for markers
+
     def info_status(self, **kwargs):
         raise NotImplementedError # screens, bsas
-
-    # Instance methods --------------------------------------------------------
-    def copy_to(self, dup_path: Path, *, set_time=None):
-        """Copies self to dup_path. Will overwrite! Will add the new file to
-        the data_store if copied inside the store_dir but the client is
-        responsible for calling the final refresh of the data store."""
-        # TODO(ut) : when duplicating pass the info in and load_cache=False
-        self.fs_copy(dup_path, set_time=set_time)
-
-    def fs_copy(self, dup_path, *, set_time=None):
-        raise NotImplementedError # not all ListInfos are AFiles
 
     def __str__(self):
         """Alias for self.fn_key."""
@@ -1858,70 +1890,105 @@ class ListInfo:
 #------------------------------------------------------------------------------
 class AFileInfo(AFile, ListInfo):
     """List Info representing a file."""
+
     def __init__(self, fullpath, **kwargs):
         ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
         super().__init__(fullpath, **kwargs)
 
-    def delete_paths(self):
-        """Paths to delete when this item is deleted - abs_path comes first!"""
-        return self.abs_path,
-
-    def move_info(self, destDir):
-        """Hasty method used in UIList.hide(). Will overwrite! The client is
-        responsible for calling _delete_refresh of the data store."""
-        self.abs_path.moveTo(destDir.join(self.fn_key))
-
-    def get_rename_paths(self, newName):
+    def get_rename_paths(self, new_name, rename_dir, *args):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
-        return [(self.abs_path, self._store().store_dir.join(newName))]
+        return [(self.abs_path, (rename_dir or self.info_dir).join(new_name))]
 
-    def validate_name(self, name_str, check_store=True):
-        super_validate = super().validate_name(name_str,
-            check_store=check_store)
-        #--Else file exists?
-        if check_store and name_str in self._store(): # use modInfos for ghosts
-            return _('File %(bad_name_str)s already exists.') % {
-                'bad_name_str': name_str}, None
-        return super_validate
+    def fs_copy(self, dupl_path, *, set_time=None, do_move=False):
+        ##:(241) note all the subtleties below - moveTo/copyTo must land in env
+        dest_dir, dest_fn = dupl_path.headTail
+        src_dst = iter(self.get_rename_paths(FName(dest_fn.s), dest_dir,
+                                             False))
+        src, dst = next(src_dst) # base info path always exists
+        sys_op = src.moveTo if do_move else partial(src.copyTo,
+            set_time=set_time or self.ftime)
+        sys_op(dst)
+        # rest is for cosaves - for mods, as we pass a destDir, we only get one
+        # path back from get_rename_paths
+        for src, dst in src_dst:
+            if dst.exists(): ##: moveTo repeats this check - needed for copyTo?
+                ##: for makeBackup and Save_Move, the latter needs some thought
+                dst.remove() # remove existing file in case self has no cosave
+            if not src.exists(): continue
+            sys_op = partial(src.moveTo, check_exist=False) if do_move else \
+                src.copyTo
+            sys_op(dst)
+
+    def set_path_keys(self, new_fn: FName, *, infodir=None):
+        super().set_path_keys(new_fn)
+        new_path = (infodir or self.info_dir).join(new_fn)
+        old_path, self.abs_path = self.abs_path, new_path
+        return {old_path: self.abs_path} # use abs_path here for ghosts
 
     @property
     def info_dir(self):
         return self.abs_path.head
 
-    def __repr__(self): # bypass AFInfo - abs path is not always set
+    def get_hide_dir(self):
+        return self._store().hide_dir
+
+    def __repr__(self): # bypass AFile - abs path is not always set
         return super(AFile, self).__repr__()
 
 #------------------------------------------------------------------------------
 # show your type off - it's unique, maps existing [new] infos fn_keys to tuples
 # of (info (call its do_update) [None (call init)], kwargs for the method call)
-_RIn = dict[FName, tuple[None | ListInfo, dict]]
+_RIn = dict[FName, tuple[None | AFileInfo, dict]]
 @dataclass(slots=True)
 class RefrIn:
     """WIP! requesting refresh from the data store."""
     new_or_present: _RIn = field(default_factory=dict)
+    # client is responsible for checking that the infos are actually deleted
     del_infos: set = field(default_factory=set)
 
     @classmethod
-    def from_tabled_infos(cls, fn_info_dict=None, *, extra_attrs=None,
-                          exclude: frozenset | True = frozenset()):
-        """Copy persistent attributes from info objects (or dict) - info
-        objects are discarded, so we request refresh for *adding* infos."""
+    def from_tabled_infos(cls, store, extra_attrs, *, ghosts=False):
+        """Set persistent attributes to info objects, modified in place if
+        available in the store, else we are *adding* infos, so we pass the
+        att_val _TabledInfo.__init__ parameter, keep uses low."""
+        fn_info_dict= {k: (store.get(k) if store else None, v) for k, v in
+                       extra_attrs.items()}
         try:
-            rinf = {k: (None, {'att_val': v.get_persistent_attrs(exclude)})
-                    for k, v in fn_info_dict.items()}
-        except AttributeError: # ScreenInfos or fn_info_dict is None
-            rinf = {k: (None, {}) for k, v in (fn_info_dict or {}).items()}
-        for k, v in (extra_attrs or {}).items():
-            try:
-                rinf[k][1]['att_val'].update(v)
-            except KeyError:
-                rinf[k] = None, {'att_val': v}
-        return cls(rinf)
+            for k, (inf, kws) in fn_info_dict.items():
+                if inf is None: # pass extra_attrs to the info object __init__
+                    fn_info_dict[k] = (None, {'att_val': kws})
+                else: # set extra_attrs on the info object
+                    for att, val in kws.items():
+                        inf.set_table_prop(att, val)
+                    fn_info_dict[k] = (inf, {
+                        'itsa_ghost': inf.is_ghost if ghosts else None})
+        except AttributeError: # ScreenInfos
+            pass
+        return cls(fn_info_dict)
 
     @classmethod
     def from_added(cls, added_fns):
+        if isinstance(added_fns, dict):
+            return cls({k: (None, v) for k, v in added_fns.items()})
         return cls({k: (None, {}) for k in added_fns})
+
+    def __ior__(self, other, *, __np=attrgetter_cache['new_or_present']):
+        nps, npo = __np(self), __np(other)
+        self.del_infos.update(other.del_infos)
+        self.del_infos = {v for v in self.del_infos if v.fn_key not in npo}
+        for fn in nps.keys() & npo:
+            attrs = nps[fn][1]
+            for k, v in npo[fn][1].items():
+                if isinstance(v, dict):
+                    attrs.setdefault(k, {}).update(v)
+                else: attrs[k] = v
+            nps[fn] = npo[fn][0], attrs  # assignment might flip None <-> info
+        for fn in npo.keys() - nps.keys():
+            nps[fn] = npo[fn]
+        for fn in (nps.keys() & {v.fn_key for v in self.del_infos}):
+            del nps[fn]
+        return self
 
 #------------------------------------------------------------------------------
 @dataclass(slots=True)
@@ -1938,9 +2005,22 @@ class RefrData:
         return bool(self.to_add or self.to_del or self.redraw)
 
     def __ior__(self, other):
-        for att in self.__slots__:
-            getattr(self, att).update(getattr(other, att)) # sets and dicts
+        # we suppose `other` is more up to date so deleted infos might reappear
+        self.to_del -= other.new_changed()
+        self.to_del |= other.to_del
+        for att in ('redraw', 'to_add'):
+            (attr := getattr(self, att)).update(getattr(other, att))
+            attr.difference_update(other.to_del)
+        for att in ('renames', 'ren_paths'):
+            getattr(self, att).update(getattr(other, att))
         return self
+
+    def new_changed(self): return self.to_add | self.redraw
+
+    @property
+    def is_rename(self) -> bool:
+        """True if it's a rename operation (or duplicating in store_dir)."""
+        return self.renames and all(k != v for k, v in self.renames.items())
 
 #------------------------------------------------------------------------------
 class PickleDict(object):
@@ -2006,8 +2086,8 @@ class PickleDict(object):
                     elif firstPickle == b'VDATA2':
                         # old format, load and convert
                         _perform_load()
-                        self.vdata = conv_obj(self.vdata)
-                        self.pickled_data = conv_obj(self.pickled_data)
+                        self.vdata = _conv_obj(self.vdata)
+                        self.pickled_data = _conv_obj(self.pickled_data)
                         deprint(f'Converted {path} to VDATA3 format')
                         resave = True
                     else:
@@ -2107,63 +2187,63 @@ class _StructsCache(dict):
         return self.setdefault(key, struct.Struct(key))
 
 structs_cache = _StructsCache()
-def unpack_str16(ins, __unpack=structs_cache[u'H'].unpack) -> bytes:
+def unpack_str16(ins, *, __unpack=structs_cache['H'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(2))[0])
-def unpack_str32(ins, __unpack=structs_cache[u'I'].unpack) -> bytes:
+def unpack_str32(ins, *, __unpack=structs_cache['I'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(4))[0])
-def unpack_int(ins, __unpack=structs_cache[u'I'].unpack) -> int:
+def unpack_int(ins, *, __unpack=structs_cache['I'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int(out, value: int, __pack=structs_cache[u'=I'].pack):
+def pack_int(out, value: int, *, __pack=structs_cache['=I'].pack):
     out.write(__pack(value))
-def unpack_int64(ins, __unpack=structs_cache['Q'].unpack) -> int:
+def unpack_int64(ins, *, __unpack=structs_cache['Q'].unpack) -> int:
     return __unpack(ins.read(8))[0]
-def unpack_short(ins, __unpack=structs_cache[u'H'].unpack) -> int:
+def unpack_short(ins, *, __unpack=structs_cache['H'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def pack_short(out, val: int, __pack=structs_cache[u'=H'].pack):
+def pack_short(out, val: int, *, __pack=structs_cache['=H'].pack):
     out.write(__pack(val))
-def unpack_float(ins, __unpack=structs_cache[u'f'].unpack) -> float:
+def unpack_float(ins, *, __unpack=structs_cache['f'].unpack) -> float:
     return __unpack(ins.read(4))[0]
-def pack_float(out, val: float, __pack=structs_cache[u'=f'].pack):
+def pack_float(out, val: float, *, __pack=structs_cache['=f'].pack):
     out.write(__pack(val))
-def unpack_double(ins, __unpack=structs_cache[u'd'].unpack) -> float:
+def unpack_double(ins, *, __unpack=structs_cache['d'].unpack) -> float:
     return __unpack(ins.read(8))[0]
-def pack_double(out, val: float, __pack=structs_cache[u'=d'].pack):
+def pack_double(out, val: float, *, __pack=structs_cache['=d'].pack):
     out.write(__pack(val))
-def unpack_byte(ins, __unpack=structs_cache[u'B'].unpack) -> int:
+def unpack_byte(ins, *, __unpack=structs_cache['B'].unpack) -> int:
     return __unpack(ins.read(1))[0]
-def pack_byte(out, val: int, __pack=structs_cache[u'=B'].pack):
+def pack_byte(out, val: int, *, __pack=structs_cache['=B'].pack):
     out.write(__pack(val))
-def unpack_int_signed(ins, __unpack=structs_cache[u'i'].unpack) -> int:
+def unpack_int_signed(ins, *, __unpack=structs_cache['i'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int_signed(out, val: int, __pack=structs_cache[u'=i'].pack):
+def pack_int_signed(out, val: int, *, __pack=structs_cache['=i'].pack):
     out.write(__pack(val))
-def unpack_int64_signed(ins, __unpack=structs_cache[u'q'].unpack) -> int:
+def unpack_int64_signed(ins, *, __unpack=structs_cache['q'].unpack) -> int:
     return __unpack(ins.read(8))[0]
-def unpack_4s(ins, __unpack=structs_cache[u'4s'].unpack) -> bytes:
+def unpack_4s(ins, *, __unpack=structs_cache['4s'].unpack) -> bytes:
     return __unpack(ins.read(4))[0]
-def pack_4s(out, val: bytes, __pack=structs_cache[u'=4s'].pack):
+def pack_4s(out, val: bytes, *, __pack=structs_cache['=4s'].pack):
     out.write(__pack(val))
-def unpack_str16_delim(ins, __unpack=structs_cache[u'Hc'].unpack) -> bytes:
+def unpack_str16_delim(ins, *, __unpack=structs_cache['Hc'].unpack) -> bytes:
     str_len = __unpack(ins.read(3))[0]
     # The actual string (including terminator) isn't stored for empty strings
     if not str_len: return b''
     str_value = ins.read(str_len)
     ins.seek(1, 1) # discard string terminator
     return str_value
-def unpack_str_int_delim(ins, __unpack=structs_cache[u'Ic'].unpack) -> int:
+def unpack_str_int_delim(ins, *, __unpack=structs_cache['Ic'].unpack) -> int:
     return __unpack(ins.read(5))[0]
-def unpack_str_byte_delim(ins, __unpack=structs_cache[u'Bc'].unpack) -> int:
+def unpack_str_byte_delim(ins, *, __unpack=structs_cache['Bc'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def unpack_str8(ins, __unpack=structs_cache[u'B'].unpack) -> bytes:
+def unpack_str8(ins, *, __unpack=structs_cache['B'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(1))[0])
-def pack_str8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
+def pack_str8(out, val: bytes, *, __pack=structs_cache['=B'].pack):
     pack_byte(out, len(val))
     out.write(val)
-def pack_bzstr8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
+def pack_bzstr8(out, val: bytes, *, __pack=structs_cache['=B'].pack):
     pack_byte(out, len(val) + 1)
     out.write(val)
     out.write(b'\x00')
-def pack_byte_signed(out, value: int, __pack=structs_cache[u'b'].pack):
+def pack_byte_signed(out, value: int, *, __pack=structs_cache['b'].pack):
     out.write(__pack(value))
 
 def unpack_many(ins, fmt: str):
@@ -2320,9 +2400,8 @@ def getMatch(reMatch,group=0):
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Log(object):
-    """Log Callable. This is the abstract/null version. Useful version should
-    override write functions.
+class LogFile:
+    """Log Callable wrapping an io.StringIO instance.
 
     Log is divided into sections with headers. Header text is assigned (through
     setHeader), but isn't written until a message is written under it. I.e.,
@@ -2330,7 +2409,7 @@ class Log(object):
     never written."""
 
     def __init__(self):
-        """Initialize."""
+        self.out = io.StringIO()
         self.log_header = None
         self.prevHeader = None
 
@@ -2338,7 +2417,7 @@ class Log(object):
         """Sets the header."""
         self.log_header = header
         if self.prevHeader:
-            self.prevHeader += u'x'
+            self.prevHeader += 'x'
         self.doFooter = doFooter
         if writeNow: self()
 
@@ -2352,33 +2431,15 @@ class Log(object):
             self.prevHeader = self.log_header
         if message: self.writeMessage(message,appendNewline)
 
-    #--Abstract/null writing functions...
     def writeLogHeader(self, header):
-        """Write header. Abstract/null version."""
-        pass
-    def writeFooter(self):
-        """Write mess. Abstract/null version."""
-        pass
-    def writeMessage(self,message,appendNewline):
-        """Write message to log. Abstract/null version."""
-        pass
-
-#------------------------------------------------------------------------------
-class LogFile(Log):
-    """Log that writes messages to file."""
-    def __init__(self,out):
-        self.out = out
-        Log.__init__(self)
-
-    def writeLogHeader(self, header):
-        self.out.write(header+u'\n')
+        self.out.write(header + '\n')
 
     def writeFooter(self):
-        self.out.write(u'\n')
+        self.out.write('\n')
 
     def writeMessage(self,message,appendNewline):
         self.out.write(message)
-        if appendNewline: self.out.write(u'\n')
+        if appendNewline: self.out.write('\n')
 
 #------------------------------------------------------------------------------
 class Progress(object):

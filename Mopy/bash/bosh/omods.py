@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,7 @@ import subprocess
 from .. import archives, bass, bolt, env
 from ..bolt import Path, decoder, encode, pack_byte, pack_byte_signed, \
     pack_int_signed, popen_common, startupinfo, unpack_byte, \
-    unpack_int64_signed, unpack_int_signed, unpack_short, GPath_no_norm
+    unpack_int64_signed, unpack_int_signed, unpack_short
 from ..exception import StateError
 from ..wbtemp import TempDir, TempFile
 
@@ -133,9 +133,9 @@ class OmodFile(object):
         """Extract the contents of the OMOD to a project, with OMOD conversion
         data."""
         progress = progress if progress else bolt.Progress()
-        with TempDir() as ed_temp, TempDir() as stage_base_dir:
-            extract_dir = GPath_no_norm(ed_temp)
-            stage_dir = GPath_no_norm(stage_base_dir).join(outDir.stail)
+        with TempDir(bolt_path=True) as extract_dir, TempDir(
+                bolt_path=True) as stage_base_dir:
+            stage_dir = stage_base_dir.join(outDir.stail)
             try:
                 stail_fmt = f'{self.omod_path.stail}\n'
                 progress(0, f"{stail_fmt}{_('Extracting…')}")

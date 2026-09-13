@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -290,9 +290,6 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         'ccvsvsse004-beafarmer.esl',
     }
 
-    assorted_tweaks = ASkyrimGameInfo.assorted_tweaks | {
-        'AssortedTweak_ArrowWeight'}
-
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
@@ -303,6 +300,12 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
     stats_attrs = ASkyrimGameInfo.stats_attrs | {
         b'AMMO': ('value', 'damage', 'weight'),
     }
+
+    #--------------------------------------------------------------------------
+    # Tweak Assorted
+    #--------------------------------------------------------------------------
+    assorted_tweaks = ASkyrimGameInfo.assorted_tweaks | {
+        'AssortedTweak_ArrowWeight', 'AssortedTweak_SaveSortingFix'}
 
     #--------------------------------------------------------------------------
     # Tweak Names
@@ -324,8 +327,8 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         b'VTYP', b'MATT', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'LCTN', b'MESG',
         b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN',
         b'SMEN', b'DLBR', b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA',
-        b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'VOLI', b'MOVT', b'SNDR',
-        b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS',
+        b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
+        b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI',
     ]
 
     class LoSkyrimSE(AsteriskGame):

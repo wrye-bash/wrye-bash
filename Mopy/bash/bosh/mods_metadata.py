@@ -16,166 +16,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 from __future__ import annotations
 
-import io
 from collections import Counter, defaultdict
 
-from .. import bass, bolt, bush, load_order, initialization
-from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
-from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
-    SubrecordBlob, unpack_header
+from .. import bolt, bush, load_order
+from ..bolt import SubProgress, dict_sort, sig_to_str
+from ..brec import RecordHeader, RecordType
 from ..exception import CancelError
-from ..plugin_types import MergeabilityCheck
 from ..mod_files import ModHeaderReader
-from ..wbtemp import TempFile
-
-# Deprecated/Obsolete Bash Tags -----------------------------------------------
-# Tags that have been removed from Wrye Bash and should be dropped from pickle
-# files
-_removed_tags = {'Merge', 'ScriptContents'}
-# Indefinite backwards-compatibility aliases for deprecated tags
-_tag_aliases = {
-    'Actors.Perks.Add': {'NPC.Perks.Add'},
-    'Actors.Perks.Change': {'NPC.Perks.Change'},
-    'Actors.Perks.Remove': {'NPC.Perks.Remove'},
-    'Body-F': {'R.Body-F'},
-    'Body-M': {'R.Body-M'},
-    'Body-Size-F': {'R.Body-Size-F'},
-    'Body-Size-M': {'R.Body-Size-M'},
-    'C.GridFlags': {'C.ForceHideLand'},
-    'Derel': {'Relations.Remove'},
-    'Eyes': {'R.Eyes'},
-    'Eyes-D': {'R.Eyes'},
-    'Eyes-E': {'R.Eyes'},
-    'Eyes-R': {'R.Eyes'},
-    'Factions': {'Actors.Factions'},
-    'Hair': {'R.Hair'},
-    'Invent': {'Invent.Add', 'Invent.Remove'},
-    'InventOnly': {'IIM', 'Invent.Add', 'Invent.Remove'},
-    'Npc.EyesOnly': {'NPC.Eyes'},
-    'Npc.HairOnly': {'NPC.Hair'},
-    'NpcFaces': {'NPC.Eyes', 'NPC.Hair', 'NPC.FaceGen'},
-    'R.Relations': {'R.Relations.Add', 'R.Relations.Change',
-                    'R.Relations.Remove'},
-    'Relations': {'Relations.Add', 'Relations.Change'},
-    'Voice-F': {'R.Voice-F'},
-    'Voice-M': {'R.Voice-M'},
-}
-
-def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
-    """Removes obsolete tags from and resolves any tag aliases in the
-    specified set of tags. See the comments above for more information. If
-    drop_unknown is True, also removes any unknown tags (tags that are not
-    currently used, obsolete or aliases)."""
-    if not tag_set: return tag_set # fast path - nothing to process
-    ret_tags = tag_set.copy()
-    ret_tags -= _removed_tags
-    for old_tag, replacement_tags in _tag_aliases.items():
-        if old_tag in tag_set:
-            ret_tags.discard(old_tag)
-            ret_tags.update(replacement_tags)
-    if drop_unknown:
-        ret_tags &= bush.game.allTags
-    return ret_tags
-
-# Some wrappers to decouple other files from process_tags
-def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
-    """Wrapper around get_tags_from_dir. See that method for docs."""
-    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
-        ci_cached_bt_contents=ci_cached_bt_contents)
-    return process_tags(added_tags), process_tags(deleted_tags)
-
-def read_loot_tags(plugin_name):
-    """Wrapper around get_tags_from_loot. See that method for docs."""
-    added_tags, deleted_tags = initialization.lootDb.get_tags_from_loot(
-        plugin_name)
-    return process_tags(added_tags), process_tags(deleted_tags)
-
-# BashTags dir ----------------------------------------------------------------
-def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
-    """Retrieves a tuple containing a set of added and a set of deleted
-    tags from the 'Data/BashTags/PLUGIN_NAME.txt' file, if it is
-    present.
-
-    :param plugin_name: The name of the plugin to check the tag file for.
-    :param ci_cached_bt_contents: An optional set containing lower-case
-        versions of the names of all files currently present in the BashTags
-        directory. If specified, get_tags_from_dir avoids having to stat to
-        figure out if the file in question exists.
-    :return: A tuple containing two sets of added and deleted tags."""
-    tag_file = None
-    # Check if the file even exists first, using the cache if possible
-    bt_file_name = f'{plugin_name.fn_body}.txt'
-    if ci_cached_bt_contents is not None:
-        if bt_file_name.lower() not in ci_cached_bt_contents:
-            return set(), set()
-    else:
-        tag_file = bass.dirs['tag_files'].join(bt_file_name)
-        if not tag_file.is_file():
-            return set(), set()
-    if tag_file is None: # If we hit the cache, we need to set tag_file here
-        tag_file = bass.dirs['tag_files'].join(bt_file_name)
-    removed, added = set(), set()
-    add_removed = removed.add
-    add_added = added.add
-    # BashTags files must be in UTF-8 (or ASCII, obviously)
-    with tag_file.open(u'r', encoding=u'utf-8') as ins:
-        for tag_line in ins:
-            # Strip out comments and skip lines that are empty as a result
-            tag_line = tag_line.split(u'#')[0].strip()
-            if not tag_line: continue
-            for tag_entry in tag_line.split(u','):
-                # Guard against things (e.g. typos) like 'TagA,,TagB'
-                if not tag_entry: continue
-                tag_entry = tag_entry.strip()
-                # If it starts with a minus, it's removing a tag
-                if tag_entry[0] == u'-':
-                    # Guard against a typo like '- C.Water'
-                    add_removed(tag_entry[1:].strip())
-                else:
-                    add_added(tag_entry)
-    return added, removed
-
-def save_tags_to_dir(plugin_name, plugin_tag_diff):
-    """Compares plugin_tags to plugin_old_tags and saves the diff to
-    Data/BashTags/PLUGIN_NAME.txt.
-
-    :param plugin_name: The name of the plugin to modify the tag file for.
-    :param plugin_tag_diff: A tuple of two sets, as returned by diff_tags,
-        representing a diff of all bash tags currently applied to the
-        plugin in question vs. all bash tags applied to the plugin
-        by its description and the LOOT masterlist / userlist.."""
-    tag_files_dir = bass.dirs['tag_files']
-    tag_files_dir.makedirs()
-    tag_file = tag_files_dir.join(f'{plugin_name.fn_body}.txt')
-    # Calculate the diff and ignore the minus when sorting the result
-    tag_diff_add, tag_diff_del = plugin_tag_diff
-    processed_diff = sorted(tag_diff_add | {f'-{t}' for t in tag_diff_del},
-                            key=lambda t: t[1:] if t[0] == '-' else t)
-    # While all our tags are ASCII, the comment at the top can be localized, so
-    # use UTF-8
-    with tag_file.open('w', encoding='utf-8') as out:
-        # Stick a header in there to indicate that it's machine-generated
-        # Also print the version, which could be helpful
-        out.write(f"# {_('Generated by Wrye Bash %(wb_version)s')}\n" % {
-            'wb_version': bass.AppVersion})
-        out.write(', '.join(processed_diff) + '\n')
-
-def diff_tags(plugin_new_tags, plugin_old_tags):
-    """Returns two sets, the first containing all added tags and the second all
-    removed tags."""
-    return plugin_new_tags - plugin_old_tags, plugin_old_tags - plugin_new_tags
+from ..plugin_types import MergeabilityCheck, ST_IMPORTED, ST_MERGED
 
 #--Plugin Checker -------------------------------------------------------------
 _cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
                       u'-error-checking.html|Tome of xEdit]]')
 
-def checkMods(progress, modInfos, showModList=False, showCRC=False,
+def checkMods(progress, modinfos, showModList=False, showCRC=False,
               showVersion=True, scan_plugins=True):
     """Checks currently loaded mods for certain errors / warnings."""
     if not bush.game.Esp.canBash:
@@ -186,11 +46,11 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     full_lo = load_order.cached_lo_tuple()
     plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
     all_present_plugins = set(full_lo)
-    all_present_minfs = {x: modInfos[x] for x in full_lo} #ascending load order
+    all_present_minfs = {x: modinfos[x] for x in full_lo} #ascending load order
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
-    log = bolt.LogFile(io.StringIO())
+    log = bolt.LogFile()
     # -------------------------------------------------------------------------
     # The header we'll be showing at the start of the log. Separate so that we
     # can check if the log is empty
@@ -199,7 +59,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                     u'identify in your currently installed plugins.')
     # -------------------------------------------------------------------------
     # Check for corrupt plugins
-    all_corrupted = modInfos.corrupted
+    all_corrupted = modinfos.corrupted
     # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
@@ -207,7 +67,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     pflags = bush.game.plugin_flags
     if flag_errors := {k: {h_msg: set() for h_msg in v} for k, v in
                        pflags.error_msgs.items()}:
-        for m, modinf in modInfos.items():
+        for m, modinf in modinfos.items():
             for pflag in flag_errors:
                 if pflag.cached_type(modinf):
                     pflag.validate_type(modinf, flag_errors[pflag].values())
@@ -218,7 +78,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     should_activate = []
     for plugin_fn, p_minf in all_present_minfs.items():
         p_active = plugin_fn in all_active_plugins
-        p_imported = plugin_fn in modInfos.imported
+        p_imported = p_minf.act_st == ST_IMPORTED
         p_tags = p_minf.getBashTags()
         if u'Deactivate' in p_tags and p_active:
             should_deactivate.append(plugin_fn)
@@ -260,11 +120,11 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     valid_vers = bush.game.Esp.validHeaderVersions
     invalid_tes4_versions = {
         p: f'{p_ver}' for p in all_active_plugins
-        if (p_ver := modInfos[p].header.version) not in valid_vers}
+        if (p_ver := modinfos[p].header.version) not in valid_vers}
     # -------------------------------------------------------------------------
     # Check for older form versions, which may point to improperly converted
     # plugins
-    old_fvers = modInfos.older_form_versions
+    old_fvers = modinfos.older_form_versions
     # -------------------------------------------------------------------------
     # Check for cleaning information from LOOT.
     cleaning_messages = {}
@@ -351,7 +211,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                 add_old_weapon = old_weapon_records[plugin_fn].append
                 add_hitme = all_hitmes[plugin_fn].append
                 add_null_fid = null_formid_records[plugin_fn].append
-                p_masters = (*modInfos[plugin_fn].masterNames, plugin_fn)
+                p_masters = (*modinfos[plugin_fn].masterNames, plugin_fn)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.items():
                     for r_header, r_eid in d:
@@ -598,7 +458,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""
         # FormIDs must be in long format at this point
-        proper_fid = format_fid(coll_fid, coll_plugin, modInfos)
+        proper_fid = format_fid(coll_fid, coll_plugin, modinfos)
         if coll_inj:
             log('* ' + _('%(injected_formid)s injected into '
                          '%(injection_target)s, colliding versions:') % {
@@ -633,7 +493,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log_plugin_messages(all_corrupted) ##: Just _log_plugins?
     for pflag in pflags:
         if pflag.merge_check is not None:
-            minfos_cache, head, msg = pflag.merge_check.cached_types(modInfos)
+            minfos_cache, head, msg = pflag.merge_check.cached_types(modinfos)
             if minfos_cache:
                 _log_plugins(head, msg, [minf.fn_key for minf in minfos_cache])
         for (head, msg), pl_set in flag_errors.get(pflag, {}).items():
@@ -643,9 +503,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
     # already been merged into a BP
     if (merge := MergeabilityCheck.MERGE) in bush.game.mergeability_checks:
-        minfos_cache, head, msg = merge.cached_types(modInfos)
-        can_merge = {m for inf in minfos_cache if (m := inf.fn_key) not in
-                     modInfos.merged and 'NoMerge' not in inf.getBashTags()}
+        minfos_cache, head, msg = merge.cached_types(modinfos)
+        can_merge = {inf.fn_key for inf in minfos_cache if not (
+                inf.act_st == ST_MERGED or 'NoMerge' in inf.getBashTags())}
         if can_merge:
             _log_plugins(head, msg, can_merge)
     if should_deactivate:
@@ -820,7 +680,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             for orig_plugin, dupe_count in duplicates_counter.items():
                 log('* ' + _('%(full_fid)s in %(orig_plugin)s: '
                              'occurs %(num_duplicates)d times') % {
-                    'full_fid': format_fid(orig_fid, orig_plugin, modInfos),
+                    'full_fid': format_fid(orig_fid, orig_plugin, modinfos),
                     'orig_plugin': orig_plugin,
                     'num_duplicates': dupe_count,
                 })
@@ -867,57 +727,6 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # We already logged missing or delinquent masters up above, so don't
     # duplicate that info in the mod list
     if showModList:
-        log(u'\n' + modInfos.getModList(showCRC, showVersion, wtxt=True,
+        log(u'\n' + modinfos.getModList(showCRC, showVersion, wtxt=True,
                                         log_problems=False).strip())
     return log_header + u'\n\n' + log.out.getvalue()
-
-#------------------------------------------------------------------------------
-class NvidiaFogFixer(object):
-    """Fixes cells to avoid nvidia fog problem."""
-    def __init__(self,modInfo):
-        self.modInfo = modInfo
-        self.fixedCells = set()
-
-    def fix_fog(self, progress, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
-                __packer=structs_cache[u'12s2f2l2f'].pack):
-        """Duplicates file, then walks through and edits file as necessary."""
-        progress.setFull(self.modInfo.fsize)
-        fixedCells = self.fixedCells
-        fixedCells.clear()
-        #--File stream
-        #--Scan/Edit
-        with TempFile() as out_path:
-            with ModReader.from_info(self.modInfo) as ins:
-                with ShortFidWriteContext(out_path) as out:
-                    while not ins.atEnd():
-                        progress(ins.tell())
-                        header = unpack_header(ins)
-                        _rsig = header.recType
-                        # Copy the GRUP/record header
-                        out.write(header.pack_head())
-                        # Treat CELL block subgroups record by record - analyze
-                        # CELLs but just copy cell-children records over. If
-                        # _rsig == GRUP no need to do anything (copied above)
-                        if ((header.is_top_group_header and
-                             header.label != b'CELL') or
-                                _rsig != b'GRUP' and _rsig != b'CELL'):
-                            buff = ins.read(header.blob_size)
-                            out.write(buff)
-                        #--Handle cells
-                        elif _rsig == b'CELL':
-                            next_header = ins.tell() + header.blob_size
-                            while ins.tell() < next_header:
-                                subrec = SubrecordBlob(ins, _rsig)
-                                if subrec.mel_sig == b'XCLL':
-                                    color, near, far, rotXY, rotZ, fade, \
-                                        clip = __unpacker(subrec.mel_data)
-                                    if not (near or far or clip):
-                                        near = 0.0001
-                                        subrec.mel_data = __packer(color, near,
-                                            far, rotXY, rotZ, fade, clip)
-                                        fixedCells.add(header.fid)
-                                subrec.packSub(out, subrec.mel_data)
-            if fixedCells:
-                self.modInfo.makeBackup()
-                self.modInfo.abs_path.replace_with_temp(out_path)
-                self.modInfo.setmtime(crc_changed=True) # fog fixes

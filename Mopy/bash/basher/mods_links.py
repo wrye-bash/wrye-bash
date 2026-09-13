@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -94,8 +94,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
         """Activate all mods."""
         lordata = True # on exception refresh all mods
         try:
-            lordata = bosh.modInfos.lo_activate_all(save_act=True,
-                activate_mergeable=self._activate_mergeable)
+            lordata = bosh.modInfos.do_activate_all(self._activate_mergeable)
         except exception.PluginsFullError:
             self._showError(_('Plugin list is full, so some plugins '
                               'were skipped.'),
@@ -108,7 +107,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
                 title=_('Too Many Plugins'))
         except (exception.BoltError, NotImplementedError) as e:
             deprint('Error while activating plugins', traceback=True)
-            self._showError(f'{e}')
+            self._showError(f'{e!r}')
         self.window.propagate_refresh(lordata)
 
 class _Mods_ActivateNonMergeable(AppendableLink, _Mods_ActivateAll):
@@ -153,13 +152,10 @@ class _Mods_EditActivePluginsLists(_AMods_ActivePluginsContext):
         balt.ListEditor.display_dialog(self.window, _('Active Plugins Lists'),
             ap_editor_data)
 
-class _Mods_SaveActivePluginsList(EnabledLink, _AMods_ActivePluginsContext):
+class _Mods_SaveActivePluginsList(_AMods_ActivePluginsContext):
     _text = _('Save Active Plugins List…')
     _help = _('Save the currently active plugins to a new active '
               'plugins list.')
-
-    def _enable(self):
-        return bool(load_order.cached_active_tuple())
 
     def Execute(self):
         new_actives_name = self._askText(_('Save currently active plugins '
@@ -216,7 +212,7 @@ class Mods_ActivePlugins(MenuLink):
     def load_lists(self):
         """Get the load lists, since those come from BashLoadOrders.dat we must
         wait for this being initialized in ModInfos.__init__."""
-        active_lists = load_order.get_active_mods_lists()
+        active_lists = load_order.get_active_mods_lists(bass.settings)
         vanilla_list = (FName(x) for x in bush.game.bethDataFiles)
         # Note the 'and' - avoids activating modding esms for Oblivion
         active_lists['Vanilla'] = [x for x in vanilla_list if
@@ -225,13 +221,14 @@ class Mods_ActivePlugins(MenuLink):
         return active_lists
 
 # "Sort by" submenu -----------------------------------------------------------
-class Mods_MastersFirst(CheckLink, EnabledLink):
+class Mods_MastersFirst(AppendableLink, CheckLink, EnabledLink):
     """Sort masters to the top."""
     _text = _('Masters First')
     _help = _('Sort masters by type. Always on if current sort is Load Order.')
 
     def _enable(self): return not self.window.masters_first_required
     def _check(self): return self.window.masters_first
+    def _append(self, window): return bool(bush.game.master_flag)
 
     def Execute(self):
         self.window.masters_first = not self.window.masters_first
@@ -251,12 +248,14 @@ class Mods_ActiveFirst(CheckLink):
 
 # "Oblivion.esm" submenu ------------------------------------------------------
 class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
-    """Single link for setting an Oblivion.esm version."""
+    """Single link for setting an Oblivion.esm version - shared between
+    SaveList and ModList."""
     _version_key: str # must not be None!
 
     def __init__(self, version_key, setProfile=False):
         super().__init__()
         self._version_key = self._text = version_key
+        # true for the saves tab where we also set the profile version
         self.setProfile = setProfile
 
     @property
@@ -267,14 +266,22 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
     def _enable(self):
-        return bosh.modInfos.try_set_version(self._version_key)
+        # for ModList only check to see if version can be set, for SaveList
+        # enable also if our ob.esm version differs from modInfos
+        can_set = bosh.modInfos.try_set_version(self._version_key)
+        if can_set or not self.setProfile:
+            return can_set
+        return self._check() and bosh.saveInfos.get_profile_attr(
+            bosh.saveInfos.localSave, 'vOblivion', None) != self._version_key
 
     def Execute(self):
-        # we will repeat the checks here - should not be needed but won't harm
-        bosh.modInfos.try_set_version(self._version_key, do_swap=self._askYes)
+        # we will repeat the checks here - needed for saves
+        minfs = bosh.modInfos
+        rd_ren = minfs.try_set_version(self._version_key, do_swap=self._askYes)
         # We refresh saves although should only ever depend on Oblivion.esm,
         # not any of the modding ESMs
-        self.window.propagate_refresh(True)
+        Link.Frame.all_uilists[minfs].propagate_refresh(rd_ren,
+            focus_list=not self.setProfile)
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
@@ -319,7 +326,7 @@ class Mods_CreateBlank(ItemLink):
     _keyboard_hint = 'Ctrl+N'
 
     def Execute(self):
-        CreateNewPlugin.display_dialog(self.window)
+        CreateNewPlugin.display_dialog(self.window, self._data_store)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
@@ -363,7 +370,7 @@ class Mods_CleanDummyMasters(EnabledLink):
         for fileName, fileInfo in bosh.modInfos.items():
             if fileInfo.header.author == u'BASHED DUMMY':
                 to_remove.append(fileName)
-        to_remove = load_order.get_ordered(to_remove)
+        to_remove = load_order.cached_sort(to_remove)
         self.window.DeleteItems(items=to_remove, order=False,
                                 dialogTitle=_(u'Delete Dummy Masters'))
 
@@ -433,7 +440,7 @@ class Mods_LockLoadOrder(CheckLink):
                         'made outside Wrye Bash.')
             return self._askContinue(message, 'bash.load_order.lock.continue',
                                      title=_('Lock Load Order'))
-        load_order.toggle_lock_load_order(_show_lo_lock_warning)
+        load_order.toggle_lock_load_order(_show_lo_lock_warning, bass.settings)
 
 class Mods_LockActivePlugins(BoolLink, EnabledLink):
     """Turn on Lock Active Plugins, needs Lock Load Order to be on first."""
@@ -503,9 +510,8 @@ class Mods_ExportBashTags(_AMods_BashTags):
 
     def _write_rows(self, out):
         for pl_name, p in dict_sort(bosh.modInfos):
-            curr_tags = p.getBashTags()
-            if curr_tags:
-                out.write(f'"{pl_name}","{u", ".join(sorted(curr_tags))}"\n')
+            if curr_tags := p.getBashTags():
+                out.write(f'"{pl_name}","{", ".join(sorted(curr_tags))}"\n')
                 self.plugins_exported += 1
 
 #------------------------------------------------------------------------------
@@ -547,16 +553,13 @@ class Mods_ImportBashTags(_AMods_BashTags):
             if len(csv_fields) != 2:
                 raise exception.BoltError(f'Header error: {csv_fields}')
             return
-        pl_name, curr_tags = csv_fields
-        if (pl_name := FName(pl_name)) in bosh.modInfos:
-            target_tags = {t.strip() for t in curr_tags.split(u',')}
-            target_pl = bosh.modInfos[pl_name]
+        fn_pl, curr_tags = csv_fields
+        if (fn_pl := FName(fn_pl)) in bosh.modInfos:
+            tags = {t.strip() for t in curr_tags.split(',')}
             # Only import if doing this would actually change anything and mark
             # as non-automatic (otherwise they'll just get deleted immediately)
-            if target_pl.getBashTags() != target_tags:
-                self.plugins_imported.append(pl_name)
-                target_pl.setBashTags(target_tags)
-                target_pl.set_auto_tagged(False)
+            if bosh.modInfos[fn_pl].set_auto_tagged(False, override_tags=tags):
+                self.plugins_imported.append(fn_pl)
 
 #------------------------------------------------------------------------------
 class Mods_ClearManualBashTags(ItemLink):
@@ -573,12 +576,8 @@ class Mods_ClearManualBashTags(ItemLink):
                 _('Are you sure you want to proceed?'),
                 title=_('Clear Manual Bash Tags - Warning')):
             return
-        pl_reset = []
-        for pl_name, p in bosh.modInfos.items():
-            if not p.is_auto_tagged():
-                pl_reset.append(pl_name)
-                p.set_auto_tagged(True)
-                p.reloadBashTags()
+        pl_reset = [pl_name for pl_name, p in bosh.modInfos.items() if
+                    p.set_auto_tagged(True)]
         self.refresh_sel(pl_reset)
         self._showInfo(_('Cleared tags from %(total_cleared)d plugins.') % {
             'total_cleared': len(pl_reset)},
@@ -601,8 +600,7 @@ class _Mods_OpenLOFile(ItemLink):
 class Mods_OpenLOFileMenu(MultiLink):
     """Shows one or more links for opening LO management files."""
     def _links(self):
-        return [_Mods_OpenLOFile(lo_f) for lo_f
-                in sorted(load_order.get_lo_files())]
+        return [_Mods_OpenLOFile(lo_f) for lo_f in load_order.get_lo_files()]
 
 #------------------------------------------------------------------------------
 class Mods_LOUndo(ItemLink):
@@ -612,7 +610,8 @@ class Mods_LOUndo(ItemLink):
     _keyboard_hint = 'Ctrl+Z'
 
     def Execute(self):
-        self.window.lo_undo()
+        self.window.propagate_refresh(
+            self.window.data_store.wip_lo_undo_redo_load_order(False))
 
 #------------------------------------------------------------------------------
 class Mods_LORedo(ItemLink):
@@ -622,7 +621,8 @@ class Mods_LORedo(ItemLink):
     _keyboard_hint = 'Ctrl+Y'
 
     def Execute(self):
-        self.window.lo_redo()
+        self.window.propagate_refresh(
+            self.window.data_store.wip_lo_undo_redo_load_order(True))
 
 #------------------------------------------------------------------------------
 class Mods_LOExport(ItemLink):
@@ -688,7 +688,7 @@ class _AImportLOBaseLink(ItemLink):
         # out_diff controls saving, so pass ldiff in to make sure we save if
         # lo_reorder made changes, even if lo_activate_exact was no op
         msg_acti, lordata = bosh.modInfos.lo_activate_exact(imp_acti,
-            out_diff=ldiff, save_all=True)
+            out_diff=ldiff, save_wip_lo=True, save_act=True)
         # Don't show the exact same message twice
         for msg in dict.fromkeys([msg_lo, msg_acti]):
             if msg: self._showWarning(msg, title=self._warning_title)
@@ -805,7 +805,7 @@ class Mods_LOImportFromOBMM(AppendableLink, _AImportLOBaseLink):
             obmm_data = ins.read()
         try:
             exported_lines = decoder(obmm_data).splitlines()
-        except UnicodeDecodeError:
+        except UnicodeError:
             return _('Could not determine encoding.')
         imported_lo = []
         for ex_line in exported_lines:

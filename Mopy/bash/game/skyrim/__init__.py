@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -129,6 +129,7 @@ class ASkyrimGameInfo(PatchGame):
             'grass',
             'interface',
             'kreate', # 3P: KreatE
+            'kiloader', # 3P: kiloader
             'lightplacer', # 3P: LightPlacer
             'lodsettings',
             'mapmarkers', # 3P: Common Marker Addon Project
@@ -137,11 +138,14 @@ class ASkyrimGameInfo(PatchGame):
             'mlq', # 3P: Lawbringer
             'nemesis_engine', # 3P: Nemesis Unlimited Behavior Engine
             'netscriptframework', # 3P: .NET Script Framework
+            'object manipulation overhaul', # 3P: Object Manipulation Overhaul
             'osa', # 3P: OSA Animation Framework
             'pbrmaterialobjects', # 3P: ParallaxGen
             'pbrnifpatcher', # 3P: ParallaxGen
             'pbrtexturesets', # 3P: ParallaxGen
             'platform', # 3P: Skyrim Platform
+            'prismaui', # 3P: Prisma UI
+            'rmb spid references', # 3P: RMB SPIDified - Core Framework
             'scripts',
             'seasons', # 3P: Seasons of Skyrim SKSE
             'seq',
@@ -153,6 +157,8 @@ class ASkyrimGameInfo(PatchGame):
             'source', # see Psc.source_redirects above
             'strings',
             'tools', # 3P: FNIS
+            'ostim', # 3P: OSTIM
+            'pandora_engine', # 3P: Pandora Behavior Engine
         }
         keep_data_dirs = {'lsdata'}
         no_skip = GameInfo.Bain.no_skip | {*(_j('interface', x) for x in (
@@ -181,6 +187,23 @@ class ASkyrimGameInfo(PatchGame):
             _j('interface', 'translations'): {'.txt'},
             # 3P: .NET Script Framework
             _j('netscriptframework', 'plugins'): {'.txt'},
+            # 3P: Community Shaders
+            _j('interface', 'communityshaders', 'icons', 'action icons'):
+                {'.png'},
+            _j('interface', 'communityshaders', 'icons', 'categories'):
+                {'.png'},
+            _j('interface', 'communityshaders', 'icons',
+                'community shaders logo'): {'.png'},
+            # 3P: BodySlide and Outfit Studio
+            _j('calientetools', 'bodyslide', 'res', 'images'): {'.png'},
+            # 3P: Prisma UI
+            _j('prismaui', 'inspector'): {'.html'},
+            _j('prismaui', 'inspector', 'controllers'): {'.css'},
+            _j('prismaui', 'inspector', 'debug'): {'.css', '.html'},
+            _j('prismaui', 'inspector', 'external', 'codemirror'): {'.css'},
+            _j('prismaui', 'inspector', 'images'): {'.png'},
+            _j('prismaui', 'inspector', 'views'): {'.css'},
+            _j('prismaui', 'misc'): {'.png'},
         }
         no_skip_regexes = (
             # 3P: FNIS - meshes\actors\character\animations\<mod name>\
@@ -762,13 +785,13 @@ class ASkyrimGameInfo(PatchGame):
         # criticalEffect at the end since it's a FormID, to mirror how
         # APreserver will join the tuples
         b'WEAP': ('eid', 'weight', 'value', 'damage', 'speed', 'reach',
-                  'enchantPoints', 'stagger', 'criticalDamage',
+                  'enchantment_charge', 'stagger', 'criticalDamage',
                   'criticalMultiplier', 'criticalEffect'),
     }
     stats_attrs = {r: tuple(x for x in a if x != 'eid')
                    for r, a in stats_csv_attrs.items()} | {
         b'WEAP': ('weight', 'value', 'damage', 'speed', 'reach',
-                  'enchantPoints', 'stagger', 'criticalDamage',
+                  'enchantment_charge', 'stagger', 'criticalDamage',
                   'criticalMultiplier'),
     }
     stats_fid_attrs = {
@@ -965,7 +988,11 @@ class ASkyrimGameInfo(PatchGame):
                   'light_falloff', 'light_fov', 'light_near_clip',
                   'light_fe_period', 'light_fe_intensity_amplitude',
                   'light_fe_movement_amplitude', 'light_fade'),
-        b'LSCR': ('iconPath',),
+        b'LSCR': ('lscr_nif', 'lscr_initial_scale', 'lscr_rotation_grid_x',
+                  'lscr_rotation_grid_y', 'lscr_rotation_grid_z',
+                  'lscr_rotation_min', 'lscr_rotation_max',
+                  'lscr_translation_grid_x', 'lscr_translation_grid_y',
+                  'lscr_translation_grid_z', 'lscr_camera_path'),
         b'MGEF': ('dual_casting_scale',),
         b'MISC': ('iconPath', 'model'),
         b'PERK': ('iconPath',),
@@ -983,7 +1010,7 @@ class ASkyrimGameInfo(PatchGame):
                   'decal_depth', 'decal_shininess', 'decal_parallax_scale',
                   'decal_parallax_passes', 'decal_flags', 'decal_color_red',
                   'decal_color_green', 'decal_color_blue', 'txst_flags'),
-        b'WEAP': ('model', 'model2', 'iconPath'),
+        b'WEAP': ('model', 'scopeModel', 'iconPath'),
         b'WTHR': ('wthrAmbientColors',),
     }
     graphicsFidTypes = {
@@ -1000,9 +1027,9 @@ class ASkyrimGameInfo(PatchGame):
                   'proj_decal_data'),
         b'SCRL': ('menu_display_object',),
         b'SPEL': ('menu_display_object',),
-        b'WEAP': ('firstPersonModelObject',),
+        b'WEAP': ('scopeEffect', 'firstPersonModelObject'),
     }
-    graphicsModelAttrs = {'model', 'model2', 'male_model', 'female_model',
+    graphicsModelAttrs = {'model', 'scopeModel', 'male_model', 'female_model',
                           'male_model_1st', 'female_model_1st', 'maleWorld',
                           'femaleWorld'}
 
@@ -1192,7 +1219,6 @@ class ASkyrimGameInfo(PatchGame):
         'AssortedTweak_IngredientWeight',
         'AssortedTweak_PotionWeightMinimum',
         'AssortedTweak_StaffWeight',
-        'AssortedTweak_HarvestChance',
         'AssortedTweak_WindSpeed',
         'AssortedTweak_UniformGroundcover',
         'AssortedTweak_SetSoundAttenuationLevels',
@@ -1204,6 +1230,8 @@ class ASkyrimGameInfo(PatchGame):
         'AssortedTweak_BookWeight',
         'AssortedTweak_AttackSpeedStavesMinimum',
         'AssortedTweak_AttackSpeedStavesMaximum',
+        'AssortedTweak_SetLightRadii',
+        'AssortedTweak_RemoveLoadScreenModels',
     }
     staff_condition = ('animationType', 8)
 

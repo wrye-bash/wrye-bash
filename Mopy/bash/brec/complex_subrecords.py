@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,6 +25,7 @@ custom code to handle."""
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 from copy import deepcopy
 from io import BytesIO
 from itertools import chain
@@ -590,6 +591,12 @@ class MelOmodData(MelPartialCounter):
         for od_property in record.od_properties:
             od_property.map_property_fids(function, save_fids)
 
+    def needs_sorting(self):
+        return True
+
+    def sort_subrecord(self, record):
+        record.od_properties.sort(key=lambda p: p.op_property)
+
 #------------------------------------------------------------------------------
 # OBME - Oblivion Magic Extender
 #------------------------------------------------------------------------------
@@ -655,16 +662,17 @@ class _MelEffectsScit(MelTruncatedStruct):
                 unpacked_val = (0,) # Discard bogus MS40TestSpell fid
         return super()._pre_process_unpacked(unpacked_val)
 
-class _MelMgefCode(MelStruct):
+class _MelMgefCode(MelTruncatedStruct):
     """Handles the nonsense that is MGEF codes in Oblivion. This is necessary
     because we use the code, which is actually a FourCC and so really should be
     treated as 4 bytes, as a string all over the codebase. On top of that, OBME
     means that this stupid thing can be a FormID too, depending on its value as
     an integer."""
     def __init__(self, mel_sig: bytes, struct_formats: list[str], *elements,
-            mgef_code_attr: str, emulated_attr: str | None = None):
-        """"""
-        super().__init__(mel_sig, struct_formats, *elements)
+            mgef_code_attr: str, emulated_attr: str | None = None,
+            old_versions: set[str] | None = None):
+        super().__init__(mel_sig, struct_formats, *elements,
+            old_versions=old_versions or set())
         self._mgef_code_attr = mgef_code_attr
         self._mgef_int_attr = f'_{mgef_code_attr}_as_int'
         self._emulated_attr = emulated_attr
@@ -732,74 +740,74 @@ class MelEffectsTes4(MelSequential):
     class se_flags(Flags):
         hostile: bool
 
-    def __init__(self):
-        # Vanilla Elements ----------------------------------------------------
-        self._vanilla_elements = [
-            # Structs put to required as we create effects/scriptEffect -
-            # maybe rework to assign attributes on the spot
-            MelGroups('effects',
-                # REHE is Restore target's Health - EFID.effect_sig
-                # must be the same as EFIT.effect_sig. No need for _MelMgefCode
-                # here because we know we don't have OBME on this record
-                MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
-                MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
+    # Vanilla Elements --------------------------------------------------------
+    _vanilla_elements = [
+        # Structs put to required as we create effects/scriptEffect -
+        # maybe rework to assign attributes on the spot
+        MelGroups('effects',
+            # REHE is Restore target's Health - EFID.effect_sig
+            # must be the same as EFIT.effect_sig. No need for _MelMgefCode
+            # here because we know we don't have OBME on this record
+            MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
+            MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
+                'magnitude', 'area', 'duration', 'recipient',
+                'actorValue', is_required=True),
+            MelGroup('scriptEffect',
+                _MelEffectsScit(b'SCIT', ['2I', '4s', 'B', '3s'],
+                    (FID, 'script_fid'), 'school', 'visual',
+                    se_fl := (se_flags, 'flags'), 'unused1',
+                    old_versions={'2I4s', 'I'}, is_required=True),
+                MelFull(),
+            ),
+        ),
+    ]
+    # OBME Elements -------------------------------------------------------
+    _obme_elements = [
+        MelGroups('effects',
+            MelObme(b'EFME', extra_format=['2B'],
+                extra_contents=['efit_param_info', 'efix_param_info'],
+                reserved_byte_count=10),
+            _MelMgefCode(b'EFID', ['4s'], ('effect_sig', b'REHE'),
+                mgef_code_attr='effect_sig'),
+            MelUnion({
+                0: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
                     'magnitude', 'area', 'duration', 'recipient',
-                    'actorValue', is_required=True),
-                MelGroup('scriptEffect',
-                    _MelEffectsScit(b'SCIT', ['2I', '4s', 'B', '3s'],
-                        (FID, 'script_fid'), 'school', 'visual',
-                        (self.se_flags, 'flags'), 'unused1',
-                        old_versions={'2I4s', 'I'}, is_required=True),
-                    MelFull(),
-                ),
-            ),
-        ]
-        # OBME Elements -------------------------------------------------------
-        self._obme_elements = [
-            MelGroups('effects',
-                MelObme(b'EFME', extra_format=['2B'],
-                    extra_contents=['efit_param_info', 'efix_param_info'],
-                    reserved_byte_count=10),
-                _MelMgefCode(b'EFID', ['4s'], ('effect_sig', b'REHE'),
-                    mgef_code_attr='effect_sig'),
+                    'efit_param'),
+                ##: Test this! Does this actually work?
+                (1, 3): MelStruct(b'EFIT', ['4s', '5I'], 'unused_name',
+                    'magnitude', 'area', 'duration', 'recipient',
+                    (FID, 'efit_param')),
+                2: _MelMgefCode(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
+                    'magnitude', 'area', 'duration', 'recipient',
+                    ('efit_param', b'REHE'), mgef_code_attr='efit_param'),
+            }, decider=AttrValDecider('efit_param_info')),
+            _MelObmeScitGroup('scriptEffect',
+                ##: Test! xEdit has all this in EFIX, but it also
+                #  hard-crashes when I try to add EFIX subrecords... this
+                #  is adapted from OBME's official docs, but those could be
+                #  wrong. Also, same note as above for case 3.
                 MelUnion({
-                    0: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
-                        'magnitude', 'area', 'duration', 'recipient',
-                        'efit_param'),
-                    ##: Test this! Does this actually work?
-                    (1, 3): MelStruct(b'EFIT', ['4s', '5I'], 'unused_name',
-                        'magnitude', 'area', 'duration', 'recipient',
-                        (FID, 'efit_param')),
-                    2: _MelMgefCode(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
-                        'magnitude', 'area', 'duration', 'recipient',
-                        ('efit_param', b'REHE'), mgef_code_attr='efit_param'),
-                }, decider=AttrValDecider('efit_param_info')),
-                _MelObmeScitGroup('scriptEffect',
-                    ##: Test! xEdit has all this in EFIX, but it also
-                    #  hard-crashes when I try to add EFIX subrecords... this
-                    #  is adapted from OBME's official docs, but those could be
-                    #  wrong. Also, same note as above for case 3.
-                    MelUnion({
-                        0: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
-                            'efix_param', 'school', 'visual',
-                            se_fl := (self.se_flags, 'flags'), 'unused1'),
-                        (1, 3): MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
-                            (FID, 'efix_param'), 'school', 'visual', se_fl,
-                            'unused1'),
-                        2: _MelMgefCode(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
-                            ('efix_param', b'REHE'), 'school', 'visual', se_fl,
-                            'unused1', mgef_code_attr='efix_param'),
-                    }, decider=AttrValDecider('efix_param_info')),
-                    MelFull(),
-                ),
-                MelString(b'EFII', 'obme_icon'),
-                ##: Again, FID here needs testing
-                MelStruct(b'EFIX', ['2I', 'f', 'i', '16s'],
-                    'efix_override_mask', 'efix_flags', 'efix_base_cost',
-                    (FID, 'resist_av'), 'efix_reserved'),
+                    0: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
+                        'efix_param', 'school', 'visual', se_fl, 'unused1'),
+                    (1, 3): MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
+                        (FID, 'efix_param'), 'school', 'visual', se_fl,
+                        'unused1'),
+                    2: _MelMgefCode(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
+                        ('efix_param', b'REHE'), 'school', 'visual', se_fl,
+                        'unused1', mgef_code_attr='efix_param'),
+                }, decider=AttrValDecider('efix_param_info')),
+                MelFull(),
             ),
-            MelBaseR(b'EFXX', 'effects_end_marker'),
-        ]
+            MelString(b'EFII', 'obme_icon'),
+            ##: Again, FID here needs testing
+            MelStruct(b'EFIX', ['2I', 'f', 'i', '16s'],
+                'efix_override_mask', 'efix_flags', 'efix_base_cost',
+                (FID, 'resist_av'), 'efix_reserved'),
+        ),
+        MelBaseR(b'EFXX', 'effects_end_marker'),
+    ]
+
+    def __init__(self):
         # Split everything by Vanilla/OBME
         self._vanilla_loaders = {}
         self._vanilla_form_elements = set()
@@ -833,24 +841,44 @@ class MelEffectsTes4(MelSequential):
             formElements.add(self)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        target_loaders = (self._obme_loaders
-                          if record.obme_record_version is not None
-                          else self._vanilla_loaders)
+        target_loaders = (self._vanilla_loaders
+            if record.obme_record_version is None else self._obme_loaders)
         target_loaders[sub_type].load_mel(record, ins, sub_type, size_, *debug_strs)
 
     def dumpData(self, record, out):
-        target_elements = (self._obme_elements
-                           if record.obme_record_version is not None
-                           else self._vanilla_elements)
+        target_elements = (self._vanilla_elements
+            if record.obme_record_version is None else self._obme_elements)
         for element in target_elements:
             element.dumpData(record, out)
 
     def mapFids(self, record, function, save_fids=False):
-        target_form_elements = (self._obme_form_elements
-                                if record.obme_record_version is not None
-                                else self._vanilla_form_elements)
+        target_form_elements = (self._vanilla_form_elements
+          if record.obme_record_version is None else self._obme_form_elements)
         for form_element in target_form_elements:
             form_element.mapFids(record, function, save_fids)
+
+    def find_duplicate_slots(self) -> set[str]:
+        found_duplicates = set()
+        # Validate each side separately, because overlap between the two is of
+        # course expected and fine
+        vanilla_slots = set()
+        for vanilla_element in self._vanilla_elements:
+            found_duplicates |= vanilla_element.find_duplicate_slots()
+            element_slots = set(vanilla_element.getSlotsUsed())
+            if dup := element_slots & vanilla_slots:
+                found_duplicates |= dup
+            vanilla_slots |= element_slots
+        # We expect effect_sig to be duplicate, see comment about
+        # EFID.effect_sig and EFIT.effect_sig in __init__
+        found_duplicates.remove('effect_sig')
+        obme_slots = set()
+        for obme_element in self._obme_elements:
+            found_duplicates |= obme_element.find_duplicate_slots()
+            element_slots = set(obme_element.getSlotsUsed())
+            if dup := element_slots & obme_slots:
+                found_duplicates |= dup
+            obme_slots |= element_slots
+        return found_duplicates
 
 class MelEffectsTes4ObmeFull(MelString):
     """Hacky class for handling the extra FULL that OBME includes after the
@@ -865,10 +893,16 @@ class MelEffectsTes4ObmeFull(MelString):
 class MelMgefEdidTes4(_MelMgefCode):
     """Handles EDID for Oblivion's MGEF - we can't just use MelEdid because
     this can, of course, be a FormID thanks to OBME."""
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Always 4 bytes for the magic effect code plus a null terminator
         super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
-            mgef_code_attr='mgef_edid', emulated_attr='eid')
+            mgef_code_attr='mgef_edid', emulated_attr='eid', **kwargs)
+
+class MelMgefEdidTes4Re(MelMgefEdidTes4):
+    """Handles EDID for Oblivion Remastered's MGEF. Same as Oblivion, but the
+    null terminator is sometimes absent (e.g. in UORP)."""
+    def __init__(self):
+        super().__init__(old_versions={'4s'})
 
 # API - FO3 and FNV -----------------------------------------------------------
 class MelEffectsFo3(MelGroups):
@@ -1345,6 +1379,9 @@ class _MelObts(MelPartialCounter):
             obts_property.dump_property(out)
         return out.getvalue()
 
+    def hasFids(self, formElements):
+        formElements.add(self)
+
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
         result_kwds = [function(obts_kwd) for obts_kwd in record.obts_keywords]
@@ -1463,7 +1500,7 @@ class _AVmadComponent(object):
     You can override any of the methods specified below to do other things
     after or before '_processors' has been evaluated, just be sure to call
     super().{dump,load}_data(...) when appropriate."""
-    _processors: dict[str, tuple[callable, callable, int] | str] = {}
+    _processors: dict[str, tuple[Callable, Callable, int] | str] = {}
 
     def load_frag(self, record, ins, vmad_ctx: AVmadContext, *debug_strs):
         """Loads data for this fragment from the specified input stream and
@@ -1742,10 +1779,10 @@ class _AVmadHandlerV6Mixin(_AVmadComponent):
     # The processors used when loading/dumping the v6 version of this handler.
     # The pre_processors are used right before the script is handled, the
     # post_processors right after - see below
-    _v6_pre_processors: dict[str, tuple[callable, callable, int] | str]
-    _v6_post_processors: dict[str, tuple[callable, callable, int] | str]
+    _v6_pre_processors: dict[str, tuple[Callable, Callable, int] | str]
+    _v6_post_processors: dict[str, tuple[Callable, Callable, int] | str]
     # The processors used when loading/dumping the v5 version of this handler
-    _v5_processors: dict[str, tuple[callable, callable, int] | str]
+    _v5_processors: dict[str, tuple[Callable, Callable, int] | str]
 
     def __init__(self):
         self._script_loader = _Script()

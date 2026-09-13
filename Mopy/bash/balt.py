@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,7 +27,6 @@ from __future__ import annotations
 import threading
 import time
 from collections import defaultdict
-from dataclasses import dataclass
 from functools import partial, wraps
 from itertools import islice
 from typing import final
@@ -37,20 +36,19 @@ import wx.adv
 
 from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
-from .bass import Store
 from .bolt import FName, Path, RefrIn, deprint, readme_url, \
     fast_cached_property, RefrData
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
-    DirOpen, EventResult, FileOpen, FileOpenMultiple, FileSave, Font, \
-    GlobalMenu, HLayout, LayoutOptions, ListBox, Links, LogDialog, LogFrame, \
-    PanelWin, TextArea, UIListCtrl, VLayout, bell, copy_files_to_clipboard, \
-    DeletionDialog, web_viewer_available, AutoSize, get_shift_down, \
-    ContinueDialog, askText, askNumber, askYes, askWarning, showOk, showError, \
-    showWarning, showInfo, TreeNodeFormat, DnDStatusBar, get_image, \
-    get_color_checks, ImageList
+    DirOpen, EventResult, FileOpen, FileSave, GlobalMenu, HLayout, \
+    LayoutOptions, ListBox, Links, LogDialog, LogFrame, PanelWin, TextArea, \
+    UIListCtrl, VLayout, bell, copy_files_to_clipboard, DeletionDialog, \
+    web_viewer_available, AutoSize, get_shift_down, ContinueDialog, askText, \
+    askNumber, askYes, askWarning, showOk, showError, showWarning, showInfo, \
+    TreeNodeFormat, DnDStatusBar, get_image, get_color_checks, ImageList
 from .gui.base_components import _AComponent
+from .gui.list_ctrl import ListItemFormat
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -96,7 +94,7 @@ class ColorChecks(ImageList):
         elif status <= -10: color_key = 'blue'
         elif status <= 0: color_key = 'green'
         elif status <= 10: color_key = 'yellow'
-        elif status <= 20: color_key = 'orange'
+        elif 20 <= status < 30: color_key = 'orange' # 20 or 21 for modList
         else: color_key = 'red'
         return self._indices[f'{self._int_to_state[on]}.{color_key}']
 
@@ -338,93 +336,6 @@ class ListEditor(DialogWindow):
         self.cancel_modal()
 
 #------------------------------------------------------------------------------
-##: Is there even a good reason for having this as a mixin? AFAICT, the only
-# thing this accomplishes is causing pycharm to spit out tons of warnings
-class TabDragMixin(object):
-    """Mixin for the wx.Notebook class.  Enables draggable Tabs.
-       Events:
-         EVT_NB_TAB_DRAGGED: Called after a tab has been dragged
-           event.oldIdex = old tab position (of tab that was moved
-           event.newIdex = new tab position (of tab that was moved
-    """
-    # PY3: These slots cause a crash on wx4
-    #__slots__ = ('__dragX','__dragging','__justSwapped')
-
-    def __init__(self):
-        self.__dragX = 0
-        self.__dragging = wx.NOT_FOUND
-        self.__justSwapped = wx.NOT_FOUND
-        # TODO(inf) Test in wx3
-        if wx.Platform == '__WXMSW__': # CaptureMouse works badly in wxGTK/OSX
-            self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
-            self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
-            self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
-            self.Bind(wx.EVT_MOTION, self.__OnDragging)
-
-    def __OnDragStart(self, event):
-        if not self.HasCapture(): # or blow up on CaptureMouse()
-            pos = event.GetPosition()
-            self.__dragging = self.HitTest(pos)
-            if self.__dragging != wx.NOT_FOUND:
-                self.__dragX = pos[0]
-                self.__justSwapped = wx.NOT_FOUND
-                self.CaptureMouse()
-        event.Skip()
-
-    def __OnDragEndForced(self, _event):
-        self.__dragging = wx.NOT_FOUND
-        self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-
-    def __OnDragEnd(self, event):
-        if self.__dragging != wx.NOT_FOUND:
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-            self.__dragging = wx.NOT_FOUND
-            try:
-                self.ReleaseMouse()
-            except AssertionError:
-                # PyAssertionError: C++ assertion "GetCapture() == this"
-                # failed at ..\..\src\common\wincmn.cpp(2536) in
-                # wxWindowBase::ReleaseMouse(): attempt to release mouse,
-                # but this window hasn't captured it
-                pass
-        event.Skip()
-
-    def __OnDragging(self, event):
-        if self.__dragging != wx.NOT_FOUND:
-            pos = event.GetPosition()
-            if abs(pos[0] - self.__dragX) > 5:
-                self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-            tabId = self.HitTest(pos)
-            if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.__dragging[0]):
-                self.__justSwapped = wx.NOT_FOUND
-            else:
-                if self.__justSwapped == tabId[0]:
-                    return
-                # We'll do the swapping by removing all pages in the way,
-                # then readding them in the right place.  Do this because
-                # it makes the tab we're dragging not have to refresh, whereas
-                # if we just removed the current page and reinserted it in the
-                # correct position, there would be refresh artifacts
-                newPos = tabId[0]
-                oldPos = self.__dragging[0]
-                self.__justSwapped = oldPos
-                self.__dragging = tabId[:]
-                if newPos < oldPos:
-                    left,right,step = newPos,oldPos,1
-                else:
-                    left,right,step = oldPos+1,newPos+1,-1
-                insert = left+step
-                addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(left,right)]
-                addPages.reverse()
-                num = right - left
-                for i in range(num):
-                    self.RemovePage(left)
-                for page,title in addPages:
-                    self.InsertPage(insert,page,title)
-                self.drag_tab(newPos)
-        event.Skip()
-
-#------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     _style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH
@@ -521,42 +432,6 @@ def conversation(func):
     return _conversation_wrapper
 
 #------------------------------------------------------------------------------
-@dataclass(slots=True)
-class _ListItemFormat:
-    _parent_uil: UIList
-    icon_dex: int | None = None
-    bold: bool = False
-    italics: bool = False
-    underline: bool = False
-    _text_key: str = 'default.text'
-    _back_key: str = 'default.bkgd'
-
-    def to_tree_node_format(self):
-        """Convert this list item format to an equivalent tree node format,
-        relative to the specified parent UIList."""
-        return TreeNodeFormat(icon_idx=self.icon_dex,
-            back_color=self._parent_uil.lookup_back_key(self.back_key),
-            text_color=self._parent_uil.lookup_text_key(self.text_key),
-            bold=self.bold, italics=self.italics, underline=self.underline)
-
-    @property
-    def back_key(self) -> str:
-        return self._back_key
-
-    @back_key.setter
-    def back_key(self, val: str):
-        self._back_key = max(val, self._back_key,
-            key=self._parent_uil.back_key_priority.__getitem__)
-
-    @property
-    def text_key(self) -> str:
-        return self._text_key
-
-    @text_key.setter
-    def text_key(self, val: str):
-        self._text_key = max(val, self._text_key,
-            key=self._parent_uil.text_key_priority.__getitem__)
-
 DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
     list[tuple[FName, TreeNodeFormat | None]]]]
 
@@ -584,38 +459,40 @@ class UIList(PanelWin):
     _singleCell = False # allow only single selections (no ctrl/shift+click)
     #--Sorting
     nonReversibleCols = {u'Load Order', u'Current Order'}
-    _default_sort_col = u'File' # override as needed
-    _sort_keys = {} # sort_keys[col] provides the sort key for this col
+    # maps columns to sorting functions - must not be empty!
+    _sort_keys = {} # first entry is the default_sort_column
     _extra_sortings = [] #extra self.methods for fancy sortings - order matters
     # Labels, map the (permanent) order of columns to the label generating code
     labels = {}
     #--DnD
     _dndFiles = _dndList = False
     _dndColumns = ()
-    _target_ini = False # pass the target_ini settings on PopulateItem
     _copy_paths = False # enable the Ctrl+C shortcut
+    _back_key_priority = {'default.bkgd': 0} # maps background keys to priority
+    _text_key_priority = {'default.text': 0} # maps text colour to priority
 
-    def __init__(self, parent, keyPrefix, listData=None, panel=None):
+    def __init__(self, parent, keyPrefix, *, ui_settings, ui_colors,
+                 listData=None, panel=None):
         super().__init__(parent, wants_chars=True, no_border=False)
-        self.data_store = listData # never use as local variable name !
+        # never use as local variable name !
+        self.data_store = {} if listData is None else listData
         try:
-            Link.Frame.all_uilists[self.data_store.unique_store_key] = self
-        except AttributeError:
+            Link.Frame.all_uilists[self.data_store] = self
+        except TypeError: # TypeError: unhashable type: 'dict'
             pass # not one of the singleton DataStores
+        self._ui_settings = ui_settings
         self.panel = panel
         #--Settings key
         self.keyPrefix = keyPrefix
         #--Columns
-        self.__class__.persistent_columns = {self._default_sort_col}
         self._col_index = {} # used in setting column sort indicator
         #--gList
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
-                                  self.__class__._sunkenBorder,
-                                  self.__class__._singleCell, self.dndAllow,
-                                  dndFiles=self.__class__._dndFiles,
-                                  dndList=self.__class__._dndList,
-                                  fnDropFiles=self.OnDropFiles,
-                                  fnDropIndexes=self.OnDropIndexes)
+            self.__class__._sunkenBorder, self.__class__._singleCell,
+            ui_colors, self._back_key_priority, self._text_key_priority,
+            self.dndAllow, dndFiles=self.__class__._dndFiles,
+            dndList=self.__class__._dndList, fnDropFiles=self.OnDropFiles,
+            fnDropIndexes=self.OnDropIndexes)
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
         self.icons.native_init(recreate=False)
@@ -650,8 +527,6 @@ class UIList(PanelWin):
         self._clean_column_settings()
         self.PopulateColumns()
         #--Items
-        self._defaultTextBackground = Color.from_wx(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
     @fast_cached_property
@@ -665,108 +540,88 @@ class UIList(PanelWin):
     def all_allowed_cols(self):
         return [c for c in self.allCols if c not in self.banned_columns]
     @property
-    def colWidths(self): return _settings[f'{self.keyPrefix}.colWidths']
+    def colWidths(self): return self._ui_settings[f'{self.keyPrefix}.colWidths']
     @property
     def colReverse(self):
         """Dictionary column->isReversed."""
-        return _settings[f'{self.keyPrefix}.colReverse']
+        return self._ui_settings[f'{self.keyPrefix}.colReverse']
     @property
-    def cols(self): return _settings[f'{self.keyPrefix}.cols']
+    def cols(self): return self._ui_settings[f'{self.keyPrefix}.cols']
     @property
     def allowed_cols(self):
         """Version of cols that filters out banned_columns."""
         return [c for c in self.cols if c not in self.banned_columns]
     @property
     def auto_col_widths(self):
-        return _settings.get(f'{self.keyPrefix}.auto_size_columns',
+        return self._ui_settings.get(f'{self.keyPrefix}.auto_size_columns',
             AutoSize.FIT_MANUAL)
     @auto_col_widths.setter
     def auto_col_widths(self, val):
-        _settings[f'{self.keyPrefix}.auto_size_columns'] = val
+        self._ui_settings[f'{self.keyPrefix}.auto_size_columns'] = val
     # the current sort column
     @property
     def sort_column(self):
-        return _settings.get(f'{self.keyPrefix}.sort', self._default_sort_col)
+        return self._ui_settings.get(f'{self.keyPrefix}.sort', self.default_sort_col)
     @sort_column.setter
-    def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
+    def sort_column(self, val): self._ui_settings[f'{self.keyPrefix}.sort'] = val
+    @property
+    def default_sort_col(self): return next(iter(self._sort_keys))
 
     def _handle_select(self, item_key):
         self._select(item_key)
-    def _select(self, item): self.panel.SetDetails(item)
+    def _select(self, item): self.panel.SetDetails(FName(item))
 
     # properties to encapsulate access to the list control
     @property
     def item_count(self): return self.__gList.lc_item_count()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None, target_ini_setts=None):
+    def PopulateItem(self, item_dex, item=None, allow_cols=None, **ui_kwargs):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
 
-        :param itemDex: the index of the item in the list - must be given if
-        item is None
+        :param item_dex: the index of the item in the list or None if item is
+            specified and not present in the list
         :param item: an FName or an int (Masters), the key in self.data
-        :param target_ini_setts: Cached information about the INI settings.
-            Used on the INI Edits tab"""
-        insert = False
-        allow_cols = self.allowed_cols # property, calculate once
-        if not allow_cols:
-            return # No visible columns, nothing to do
-        if item is not None:
-            try:
-                itemDex = self._get_uil_index(item)
-            except KeyError: # item is not present, so inserting
-                itemDex = self.item_count # insert at the end
-                insert = True
-        else: # no way we're inserting with a None item
-            item = self.GetItem(itemDex)
-        str_label = self.labels[allow_cols[0]](self, item)
-        if insert:
-            # We're inserting a new item, so we need special handling for the
-            # first SetItem call - see InsertListCtrlItem
-            self.__gList.InsertListCtrlItem(
-                itemDex, str_label, item,
-                decorate_cb=partial(self.__setUI, item, target_ini_setts))
+        :param ui_kwargs: Cached information to use on item formatting."""
+        allow_cols = allow_cols or self.allowed_cols # property, calculate once
+        if item is None: # no way we're inserting with a None item
+            item = self.GetItem(item_dex)
         else:
-            # The item is already in the UIList, so we only need to redecorate
-            # and set text for all labels
-            gItem = self.__gList.get_item_data(itemDex)
-            self.__setUI(item, target_ini_setts, gItem)
-            # Piggyback off the SetItem call we need for __setUI to also set
-            # the first column's text
-            gItem.SetText(str_label)
-            self.__gList.set_item_data(gItem)
-        for col_dex, col in enumerate(allow_cols[1:], start=1):
-            self.__gList.set_item_data(itemDex, col_dex,
-                                       self.labels[col](self, item))
+            try:
+                item_dex = self._get_uil_index(item)
+            except KeyError: # item is not present, so inserting
+                item_dex = None
+        _inf, df = self.set_item_format(item, **ui_kwargs)
+        self.__gList.insert_update_item(df, item_dex, item, allow_cols)
 
     def populate_items(self):
         """Sort items and populate entire list."""
-        # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
+        # Make sure to freeze/thaw, all the insert_update_item calls make the
         # GUI lag
+        cols = self.allowed_cols # property, calculate once
         with self.pause_drawing():
             self.mouseTexts.clear()
             items = set(self.data_store)
-            if self.__class__._target_ini:
-                # hack for avoiding the syscall in get_ci_settings
-                t_setts = self.data_store.ini.get_ci_settings()
-            else:
-                t_setts = None
+            ui_kwargs = self._cache_rui_structs()
             #--Update existing items.
             index = 0
             while index < self.item_count:
                 item = self.GetItem(index)
                 if item not in items: self.__gList.RemoveItemAt(index)
                 else:
-                    self.PopulateItem(itemDex=index, target_ini_setts=t_setts)
+                    self.PopulateItem(index, allow_cols=cols, **ui_kwargs)
                     items.remove(item)
                     index += 1
             #--Add remaining new items
             for item in items:
-                self.PopulateItem(item=item, target_ini_setts=t_setts)
+                self.PopulateItem(None, item, allow_cols=cols, **ui_kwargs)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
+
+    def _cache_rui_structs(self):
+        return {}
 
     _same_item = object()
     @final
@@ -782,15 +637,18 @@ class UIList(PanelWin):
         if rdata is None:
             self.populate_items()
         else: # a RefrData instance
-            # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
+            ui_kwargs = self._cache_rui_structs()
+            cols = self.allowed_cols # property, calculate once
+            # Make sure to freeze/thaw, all the insert_update_item calls make
             # the GUI lag
             with self.pause_drawing():
                 for d in rdata.to_del:
                     self.__gList.RemoveItemAt(self._get_uil_index(d))
-                for upd in rdata.redraw | rdata.to_add:
-                    self.PopulateItem(item=upd)
+                for upd in (modified := rdata.new_changed()):
+                    self.PopulateItem(None, upd, allow_cols=cols, **ui_kwargs)
                 #--Sort
-                self.SortItems()
+                if modified: # if we only deleted items sorting does not change
+                    self.SortItems()
                 self.autosizeColumns()
         # refresh details
         if detail_item is None:
@@ -806,9 +664,8 @@ class UIList(PanelWin):
             Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
 
-    _ui_in = dict[Store, (_rin := bool | RefrData) | dict[str, _rin]] | None
-    def propagate_refresh(self, rdata, ui_refreshes: _ui_in = None, *,
-                          refr_saves=True, booting=False, **kwargs):
+    def propagate_refresh(self, rdata, *, ui_refreshes=None, refr_saves=True,
+                          booting=False, **kwargs):
         """Refresh this UIList and propagate the refresh to other tabs.
         :param ui_refreshes: A dict mapping unique data store keys (see
             bass.Store) to RefreshUI kwargs."""
@@ -816,101 +673,54 @@ class UIList(PanelWin):
         if rdata:
             kwargs['rdata'] = rdata if isinstance(rdata, RefrData) else None
             kwargs.setdefault('focus_list', True)
-            ui_refreshes[self.data_store.unique_store_key] = kwargs
-        # if a RefreshUI is requested for ModList we should also refresh Saves
-        # TODO(353): we need to be more granular here which needs caching
-        #  info_status - we need similar logic in _refresh_mod_inis_and_strings
-        #  (bsas vs mods) - return dicts[Store, RefrIn] from refresh?
-        if refr_saves and Store.MODS in ui_refreshes:
-            ui_refreshes[Store.SAVES] = True
-        Link.Frame.refresh_and_warn(ui_refreshes, booting)
+            ui_refreshes[self.data_store] = kwargs
+        for st, ref_args in [*ui_refreshes.items()]:
+            if ref_args:
+                if not isinstance(ref_args, dict): # True or RefrData
+                    ref_args = {'rdata': ref_args} if isinstance(ref_args,
+                        RefrData) else {}
+                ref_args.setdefault('focus_list', False)
+                ui_refreshes[st] = ref_args
+            else:
+                del ui_refreshes[st]
+        Link.Frame.refresh_and_warn(ui_refreshes, booting, refr_saves)
 
     def Focus(self):
         self.__gList.set_focus()
 
     #--Decorating -------------------------------------------------------------
-    @fast_cached_property
-    def back_key_priority(self):
-        return {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
-            'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
-            # INIs ------------------------------------------------------------
-            'ini.bkgd.invalid',
-            # Installers ------------------------------------------------------
-            'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
-            'installers.bkgd.dirty'])}
-
-    @fast_cached_property
-    def text_key_priority(self):
-        from . import bush
-        return {k: j for j, k in enumerate([
-            # Plugins ---------------------------------------------------------
-            'default.text', *dict.fromkeys(bush.game.mod_keys.values()),
-            # Installers ------------------------------------------------------
-            'installers.text.invalid', 'installers.text.marker',
-            'installers.text.complex',
-        ])}
-
-    def set_item_format(self, item, item_format, target_ini_setts):
+    def set_item_format(self, item, **ui_kwargs):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
         data_store is a FileInfo subclass) for calling info_status to update
         respective info's status."""
+        item_format = ListItemFormat(self.__gList)
+        # Only run set_item_format when the item is actually present, otherwise
+        # just use the default settings (we do still have to use those since
+        # the default text/background colors may have been changed from the OS
+        # default)
+        if not (inf := self.data_store.get(item)):
+            return None, item_format
         try:
-            inf = self.data_store[item]
-            icon_key = self._set_icon_text(inf, item_format, item,
-                target_ini_settings=target_ini_setts)
+            icon_key = self._set_icon_text(inf, item_format, item, **ui_kwargs)
             item_format.icon_dex = self.icons.img_dex(*icon_key)
         except NotImplementedError:
-            return # screens, bsas
-        return inf # used in overrides
+            return inf, item_format # screens, bsas
+        return inf, item_format # used in overrides
 
-    def _set_icon_text(self, inf, item_format, item_key, **kwargs):
+    def _set_icon_text(self, inf, item_format, item_key, **kwargs): # one use!
         """Base method just returns the status - always override to return the
         icon key tuple - populate mouse text, item_format attrs, etc."""
         return inf.info_status(**kwargs)
 
-    def __setUI(self, fileName, target_ini_setts, gItem):
-        """Set font, status icon, background text etc."""
-        df = _ListItemFormat(self)
-        self.set_item_format(fileName, df, target_ini_setts)
-        if (icon_index := df.icon_dex) is not None:
-            gItem.SetImage(icon_index)
-        gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
-        gItem.SetBackgroundColour(
-            self.lookup_back_key(df.back_key).to_rgba_tuple())
-        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
-                                 slant=df.italics, underline=df.underline))
-
-    def lookup_text_key(self, target_text_color: str):
-        """Helper method to look up a text color from a list item format."""
-        if target_text_color:
-            return colors[target_text_color]
-        else:
-            return self.__gList.get_text_color()
-
-    def lookup_back_key(self, target_back_color: str):
-        """Helper method to look up a background color from a list item
-        format."""
-        if target_back_color:
-            return colors[target_back_color]
-        else:
-            return self._defaultTextBackground
-
-    def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]],
-                           target_ini_setts=None) -> DecoratedTreeDict:
+    def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]]
+                           ) -> DecoratedTreeDict:
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
+        ui_kwargs = self._cache_rui_structs()
         def _decorate(i):
-            lif = _ListItemFormat(self)
-            # Only run set_item_format when the item is actually present,
-            # otherwise just use the default settings (we do still have to use
-            # those since the default text/background colors may have been
-            # changed from the OS default)
-            if i in self.data_store:
-                self.set_item_format(i, lif, target_ini_setts)
-            return lif.to_tree_node_format()
+            _inf, lif = self.set_item_format(i, **ui_kwargs)
+            return lif.to_tree_node_format(TreeNodeFormat)
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
 
@@ -928,7 +738,7 @@ class UIList(PanelWin):
         return (self.column_links and not # column menu must be set
             self.__gList.ec_rename_prompt_opened() and # See DoItemMenu below
             # bash.global_menu == 1 -> Global Menu Only
-            (self._bypass_gm_setting or _settings['bash.global_menu'] != 1))
+            (self._bypass_gm_setting or self._ui_settings['bash.global_menu'] != 1))
 
     def DoItemMenu(self):
         """Show item menu."""
@@ -1037,7 +847,7 @@ class UIList(PanelWin):
                 return EventResult.CONTINUE
             # Ctrl+Tab - cycle tabs to the right
             # Ctrl+Shift+Tab - cycle tabs to the left
-            Link.Frame.notebook.AdvanceSelection(not wrapped_evt.is_shift_down)
+            Link.Frame.notebook.next_tab(not wrapped_evt.is_shift_down)
         else:
             return EventResult.CONTINUE
         return EventResult.FINISH
@@ -1079,40 +889,30 @@ class UIList(PanelWin):
 
     @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
-        """Should only be subscribed if _editLabels==True."""
+        """Should only be subscribed if _editLabels==True (Saves/BAIN/Screens).
+        """
         if is_edit_cancelled: return EventResult.FINISH
-        selected = self.get_selected_infos_filtered()
+        selected = [*self.data_store.filter_essential(
+            None or self.GetSelected()).values()]
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
-        newName, root, *args = self._rename_args(evt_label, selected)
-        if root is None:
-            showError(self, newName)
+        *args, ren_kwargs = self._rename_args(evt_label, selected)
+        if args[1] is None:
+            showError(self, args[0])
             return EventResult.CANCEL # validate_filename would Veto
-        item_edited = self.panel.detailsPanel.displayed_item
+        ren_args = self._info_to_name(selected, *args)
         with BusyCursor():
-            rdata = RefrData()
-            for sel_inf in selected:
-                try:
-                    rdata |= self.try_rename(sel_inf, root, *args)
-                except TypeError: # try_rename returned None
-                    break
-            self.refresh_renames(item_edited, rdata, *args)
-        return EventResult.CANCEL # needed! clears new name from label on exception
+            self.try_rename(ren_args, check_unique=True, **ren_kwargs,
+                            with_backups= True) # only saves carry backups
+        return EventResult.CANCEL # clears new name from label on exception!
+
+    def _info_to_name(self, selected, *args): ##:(580) *args should be some RenStruct
+        return [(sel_inf, FName(args[1] + sel_inf.fn_key.fn_ext) if
+            sel_inf.file_exts else args[0]) for sel_inf in selected]
 
     def _rename_args(self, evt_label, selected):
-        return selected[0].validate_filename_str(evt_label)
-
-    def refresh_renames(self, item_edited, rdata, ui_refreshes=None):
-        if rdata:
-            args_dict = {'detail_item': rdata.renames.get(item_edited,
-                item_edited)} # in case the displayed item was *not* renamed
-            if ui_refreshes is not None:
-                self.propagate_refresh(rdata, ui_refreshes, **args_dict)
-            else:
-                self.RefreshUI(rdata, **args_dict)
-            #--Reselect the renamed items
-            self.SelectItemsNoCallback(rdata.redraw)
+        return *selected[0].validate_filename_str(evt_label), {}
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1134,32 +934,30 @@ class UIList(PanelWin):
 
     @final
     @conversation
-    def try_rename(self, info, new_root, store_refr=None, *, force_ext=False):
+    def try_rename(self, ren_args, *, refresh_ui=True, fn_detail=None,
+                   check_unique=False, deselect=False, refr_saves=True,
+                   refr_data=None, **ren_kwargs):
         """Rename Mods/BSAs/Screens/Installers/Saves - note the @conversation,
-         this needs to be atomic with respect to refreshes and ideally
-         atomic short - store_refr is Installers only. Inis won't be added."""
-        newName = info.unique_key(new_root, force_ext)
-        if newName is None: # new and old names are ci-same
-            return RefrData()
-        try:
-            return self.data_store.rename_operation(info, newName,
-                store_refr=store_refr) # a RefrData instance
-        except (CancelError, OSError):
-            deprint(f'Renaming {info} to {newName} failed', traceback=True)
-            # When using moveTo I would get "WindowsError:[Error 32]The process
-            # cannot access ..." -  the code below was reverting the changes.
-            # With shellMove I mostly get CancelError so below not needed -
-            # except if a save is locked and user presses Skip - so cosaves are
-            # renamed! Error handling is still a WIP
-            for old, new in info.get_rename_paths(newName):
-                if old == new: continue
-                if (nex := new.exists()) and not (oex := old.exists()):
-                    # some cosave move failed, restore files
-                    new.moveTo(old, check_exist=False) # we just checked
-                elif nex and oex:
-                    # move copies then deletes, so the delete part failed
-                    new.remove()  # return None # break
-            return None # maybe a msg if really really needed
+        this needs to be atomic with respect to refreshes and ideally atomic
+        short - store_refr is Installers only. Inis won't be added."""
+        ds = self.data_store
+        if check_unique: # check if new and old names are ci-same
+            names = set(ds)
+            ren_args = [(info, new_fn, *ddir) for info, newfn, *ddir in
+                ren_args if (new_fn := info.unique_key(newfn, names=names))]
+        rdata = ds.rename_operation(ren_args, ren_parent=self, **ren_kwargs)
+        if refr_data:
+            rdata |= refr_data
+        if refresh_ui and rdata:
+            fn_detail = fn_detail or next(iter(rdata.renames.values()))
+            # in case the displayed item was *not* renamed
+            args_dict = {'detail_item': fn_detail} if fn_detail in ds else {}
+            args_dict['ui_refreshes'] = ren_kwargs.get('store_refr')
+            self.propagate_refresh(rdata, **args_dict, refr_saves=refr_saves)
+            #--Reselect the renamed items
+            if nch := {*rdata.renames.values()} & rdata.new_changed():
+                self.SelectItemsNoCallback(nch, deselectOthers=deselect)
+        return rdata
 
     def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags
@@ -1189,11 +987,6 @@ class UIList(PanelWin):
     def GetSelectedInfos(self, selected=None):
         """Return list of infos selected (highlighted) in the interface."""
         return [self.data_store[k] for k in (selected or self.GetSelected())]
-
-    def get_selected_infos_filtered(self, selected=None):
-        """Version of GetSelectedInfos that filters out essential infos."""
-        return [*self.data_store.filter_essential(
-            selected or self.GetSelected()).values()]
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self._get_uil_index(item)
@@ -1305,8 +1098,8 @@ class UIList(PanelWin):
         def _mk_key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return bolt.natural_key() if k is None else partial(k, self)
-        defaultKey = _mk_key(self._default_sort_col)
-        defSort = col == self._default_sort_col
+        defaultKey = _mk_key(self.default_sort_col)
+        defSort = col == self.default_sort_col
         # always apply default sort
         items = sorted(self.data_store if items is None else items,
                        key=defaultKey, reverse=defSort and reverse)
@@ -1330,7 +1123,7 @@ class UIList(PanelWin):
         valid_columns = set(self.allCols)
         # Clean the widths/reverse dictionaries
         for dict_key in ('.colWidths', '.colReverse'):
-            stored_dict = _settings[f'{self.keyPrefix}{dict_key}']
+            stored_dict = self._ui_settings[f'{self.keyPrefix}{dict_key}']
             invalid_columns = set(stored_dict) - valid_columns
             for c in invalid_columns:
                 del stored_dict[c]
@@ -1342,19 +1135,20 @@ class UIList(PanelWin):
                 stored_cols.remove(c)
         # Finally, reset the sort column to the default if it's invalid now
         if self.sort_column not in valid_columns:
-            self.sort_column = self._default_sort_col
+            self.sort_column = self.default_sort_col
 
     def PopulateColumns(self):
         """Create/name columns in ListCtrl."""
         # this may have been updated in ColumnsMenu.Execute()
         allow_cols = self.allowed_cols
         numCols = len(allow_cols)
-        names = {_settings[u'bash.colNames'].get(key) for key in allow_cols}
+        col_names = self._ui_settings['bash.colNames']
+        names = {col_names.get(key) for key in allow_cols}
         self._col_index.clear()
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
             colKey = allow_cols[colDex]
-            colName = _settings[u'bash.colNames'].get(colKey, colKey)
+            colName = col_names.get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.lc_get_columns_count(): # Make a new column
                 listCtrl.lc_insert_column(colDex, colName)
@@ -1388,14 +1182,14 @@ class UIList(PanelWin):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[f'{self.keyPrefix}.scrollPos'] = self.__gList.get_scroll_pos(
-            isVertical)
+        self._ui_settings[f'{self.keyPrefix}.scrollPos'] = \
+            self.__gList.get_scroll_pos(isVertical)
 
     def SetScrollPosition(self):
-        if _settings['bash.restore_scroll_positions']:
+        if self._ui_settings['bash.restore_scroll_positions']:
             with self.__gList.pause_drawing():
                 self.__gList.set_scroll_pos(
-                    _settings.get(f'{self.keyPrefix}.scrollPos', 0))
+                    self._ui_settings.get(f'{self.keyPrefix}.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
@@ -1428,14 +1222,14 @@ class UIList(PanelWin):
         # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             title=dialogTitle, items_to_delete=items, default_recycle=recycle,
-            sizes_dict=_settings, icon_bundle=Resources.bashBlue,
+            sizes_dict=self._ui_settings, icon_bundle=Resources.bashBlue,
             trash_icon=get_image('trash_can.32'))
         if not dd_ok or not dd_items: return
         try:
-            self.data_store.delete(dd_items, recycle=dd_recycle)
-        except (PermissionError, CancelError, SkipError): pass
-        # Also cleans _gList internal dicts
-        self.propagate_refresh(True)
+            rd_del = self.data_store.delete_op(dd_items, recycle=dd_recycle)
+        except (PermissionError, CancelError, SkipError):
+            rd_del = True # perform a refresh to see if items were deleted
+        self.propagate_refresh(rd_del) # also cleans _gList internal dicts
 
     def open_data_store(self):
         try:
@@ -1446,42 +1240,13 @@ class UIList(PanelWin):
             sd.makedirs()
         sd.start()
 
-    def hide(self, items: dict[FName, ...]):
-        """Hides the items in the specified iterable."""
-        moved_infos = set()
-        for fnkey, inf in items.items():
-            destDir = inf.get_hide_dir()
-            if destDir.join(fnkey).exists():
-                message = (_('A file named %(target_file_name)s already '
-                             'exists in the hidden files directory. Overwrite '
-                             'it?') % {'target_file_name': fnkey})
-                if not askYes(self, message, _('Hide Files')): continue
-            #--Do it
-            with BusyCursor():
-                inf.move_info(destDir)
-                moved_infos.add(inf)
-        # no need to check existence, we just moved them
-        self.data_store.refresh(RefrIn(del_infos=moved_infos))
-
-    @staticmethod
-    def _unhide_wildcard(): raise NotImplementedError
-    def unhide(self):
-        srcDir = self.data_store.hide_dir
-        # Otherwise the unhide command will open some random directory
-        srcDir.makedirs()
-        wildcard = self._unhide_wildcard()
-        destDir = self.data_store.store_dir
-        srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
-            defaultDir=srcDir, wildcard=wildcard)
-        return destDir, srcDir, srcPaths
-
     def jump_to_source(self, uil_item: FName) -> bool:
         """Jumps to the installer associated with the specified UIList item."""
         fn_package = self.get_source(uil_item)
         if fn_package is None:
             return False
         try:
-            Link.Frame.notebook.SelectPage('Installers', fn_package)
+            Link.Frame.notebook.jump_to('Installers', fn_package)
         except KeyError:
             # The package does not exist anymore
             ##: This points to deeper bugs in our ownership handling/updating
@@ -1495,7 +1260,7 @@ class UIList(PanelWin):
         enabled but not constructed (i.e. hidden) or the item does not have an
         associated package."""
         if (not Link.Frame.iPanel or
-                not _settings['bash.installers.enabled']):
+                not self._ui_settings['bash.installers.enabled']):
             return None # Installers disabled or not initialized
         return FName(self.data_store[uil_item].get_table_prop('installer'))
 
@@ -1863,8 +1628,7 @@ class AppendableLink(Link):
 
     def AppendToMenu(self, menu, window, selection):
         if not self._append(window): return
-        return super(AppendableLink, self).AppendToMenu(menu, window,
-                                                        selection)
+        return super().AppendToMenu(menu, window, selection)
 
 class MultiLink(Link):
     """A link that resolves to several links when appended."""
@@ -1887,7 +1651,7 @@ class EnabledLink(ItemLink):
     a class attribute.
     """
 
-    def _enable(self):
+    def _enable(self) -> bool:
         """Override as needed to enable or disable the menu item (enabled
         by default)."""
         return True
@@ -1940,17 +1704,14 @@ class UIList_Delete(EnabledLink):
     _text = _('Delete')
     _keyboard_hint = 'Del'
 
-    def _filter_undeletable(self, to_delete_items):
-        """Filters out undeletable items from the specified iterable."""
-        return self._data_store.filter_essential(to_delete_items)
-
     def _enable(self):
         # Only enable if at least one deletable file is selected
-        return bool(self._filter_undeletable(self.selected))
+        return bool(self._can_delete)
 
     @property
     def link_help(self):
-        sel_filtered = list(self._filter_undeletable(self.selected))
+        sel_filtered = self._can_delete = [*self._data_store.filter_essential(
+            self.selected)]
         if sel_filtered == self.selected:
             if len(sel_filtered) == 1:
                 return _("Delete '%(filename)s'.") % {
@@ -1965,7 +1726,7 @@ class UIList_Delete(EnabledLink):
     def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
         with BusyCursor():
-            self.window.DeleteItems(items=self.selected)
+            self.window.DeleteItems(items=self._can_delete)
 
 class UIList_Rename(EnabledLink):
     """Rename selected UIList item(s)."""
@@ -2042,12 +1803,12 @@ class UIList_Hide(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one hideable file is selected
-        return bool(self._filter_unhideable(self.selected))
+        return bool(self._tohide)
 
     @property
     def link_help(self):
-        sel_filtered = list(self._filter_unhideable(self.selected))
-        if sel_filtered == self.selected:
+        self._tohide = self._filter_unhideable(self.selected)
+        if (sel_filtered := [*self._tohide]) == self.selected:
             if len(sel_filtered) == 1:
                 return _("Hide '%(filename)s' by moving it to the 'Hidden' "
                          "directory.") % {'filename': sel_filtered[0]}
@@ -2067,26 +1828,40 @@ class UIList_Hide(EnabledLink):
                         u'moved to the %(hdir)s directory.') % (
                           {'hdir': self._data_store.hide_dir})
             if not self._askYes(message, _(u'Hide Files')): return
-        self.window.hide(self._filter_unhideable(self.selected))
-        self.window.propagate_refresh(True)
+        to_move = []
+        for fnkey, inf in self._tohide.items():
+            destDir = inf.get_hide_dir()
+            if destDir.join(fnkey).exists():
+                if not self._askYes(_('A file named %(target_file_name)s '
+                    'already exists in the hidden files directory. Overwrite '
+                    'it?') % {'target_file_name': fnkey}, _('Hide Files')):
+                    continue
+            else: destDir.makedirs()
+            to_move.append((inf, inf.fn_key, destDir))
+        self.window.try_rename(to_move) #292: we ain't handling backups
 
 class Installer_Op(ItemLink):
     """Common refresh logic for BAIN operations."""
     _prog_args = ()
 
     @conversation
-    def Execute(self):
-        ui_refresh = defaultdict(bool)
+    def Execute(self, *, rd_refresh=None):
+        rin = defaultdict(RefrIn)
         try:
             with (Progress(*self._prog_args) if self._prog_args else
                   bolt.Progress() as progress):
-                return self._perform_action(ui_refresh, progress)
+                return self._perform_action(progress=progress, rui_data=rin)
         except (CancelError, SkipError):
             return None
         finally:
-            self.window.propagate_refresh(True, ui_refresh)
+            if rd_refresh is None:
+                rd_refresh = rin
+            else: # Installers_MonitorExternalInstallation
+                for k, v in rin.items(): # merge giving priority to rin
+                    rd_refresh[k] |= v
+            self.window.propagate_refresh(True, ui_refreshes=rd_refresh)
 
-    def _perform_action(self, ui_refresh_, progress):
+    def _perform_action(self, **kwargs):
         raise NotImplementedError
 
 # wx Wrappers -----------------------------------------------------------------
@@ -2214,7 +1989,7 @@ class BashStatusBar(DnDStatusBar):
         self.dragging, button_link = self._getButtonIndex(mouse_evnt)
         if wx.Platform == '__WXMSW__':
             button_link._native_widget.CaptureMouse()
-        return EventResult.FINISH # we don't skip blocks EVT_MOTION somehow
+        return EventResult.FINISH # we don't skip - blocks EVT_MOTION somehow
 
     def _on_drag_end_forced(self):
         self._reset_drag()

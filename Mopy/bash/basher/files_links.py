@@ -16,20 +16,21 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-from .. import balt, bass, bolt, bosh, bush
+from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
-from ..bolt import FNDict, GPath_no_norm, RefrIn
-from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
+from ..bolt import FNDict, FName, RefrData
+from ..bosh import DefaultIniInfo
+from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard, \
+    FileOpenMultiple
 from ..localize import format_date
-from ..wbtemp import TempFile
 
 __all__ = ['File_Backup', 'File_Duplicate', 'File_JumpToSource', 'File_Redate',
-           'File_ListMasters', 'File_RevertToBackup', 'Files_Unhide']
+           'File_ListMasters', 'File_RevertToBackup', 'Files_Unhide',
+           'RestoreInfo']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -44,39 +45,41 @@ class Files_Unhide(ItemLink):
 
     @balt.conversation
     def Execute(self):
+        uil, dstore = self.window, self._data_store
         #--File dialog
-        destDir, srcDir, srcPaths = self.window.unhide()
+        hide_d = dstore.hide_dir
+        # Otherwise FileOpenMultiple will open some random directory
+        hide_d.makedirs()
+        wildcard = dstore.unhide_wildcard(with_ghosts=False)
+        st_dir = dstore.store_dir
+        srcPaths = FileOpenMultiple.display_dialog(uil, _('Unhide files:'),
+            defaultDir=hide_d, wildcard=wildcard)
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
-        destFiles = []
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
-            if newSrcDir == destDir:
+            if newSrcDir == st_dir:
                 self._showError(_("You can't unhide files from this "
                                   "directory."))
                 return
             # Validate that the file is valid and isn't already present
-            if not self._data_store.rightFileType(srcFileName.s):
+            if not dstore.check_filename(srcFileName.s): # True only if is_file
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'not valid.') % {'skipped_file': srcFileName})
                 continue
-            destPath = destDir.join(srcFileName)
-            if destPath.exists() or (destPath + u'.ghost').exists():
+            if not (inf := dstore.get_update_info(srcPath, is_proj=False)):
+                self._showWarning(_('File skipped: %(skipped_file)s. File is '
+                    'not valid.') % {'skipped_file': srcFileName})
+                continue
+            if (fn_key := inf.fn_key) in dstore:
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'already present.') % {'skipped_file': srcFileName})
                 continue
-            # File
-            srcFiles.append(srcPath)
-            destFiles.append(destPath)
-        #--Now move everything at once
-        if not srcFiles:
-            return
-        moved = self._data_store.move_infos(srcFiles, destFiles, self.window)
-        if moved: # pick one at random to show details for
-            self.window.propagate_refresh(True, detail_item=next(iter(moved)))
-            self.window.SelectItemsNoCallback(moved, deselectOthers=True)
+            srcFiles.append((inf, fn_key, st_dir))
+        #--Now move everything at once  #292: we ain't handling backups
+        uil.try_rename(srcFiles, deselect=True)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
@@ -86,59 +89,54 @@ class File_Duplicate(ItemLink):
     _text = _('Duplicate…')
     _help = _('Make a copy of the selected files.')
 
-    _bsa_and_blocking_msg = _(
-        'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
-        'associated plugin-name-specific directory (e.g. %(pnd_example)s), '
-        'which will not be attached to the duplicate plugin.') + '\n\n' + _(
-        'Note that the BSA may also contain a plugin-name-specific directory, '
-        'which would remain detached even if a duplicate BSA were also '
-        'created.')
-    _bsa_msg = _(
-        'This plugin has an associated BSA (%(assoc_bsa_name)s), which will '
-        'not be attached to the duplicate plugin.') + '\n\n' + _(
-        'Note that the BSA may contain a plugin-name-specific directory '
-        '(e.g. %(pnd_example)s), which would remain detached even if a '
-        'duplicate BSA were also created.')
-    _blocking_msg = _(
-        'This plugin has an associated plugin-name-specific directory (e.g. '
-        '%(pnd_example)s), which will not be attached to the duplicate '
-        'plugin.')
-
     @balt.conversation
     def Execute(self):
         mod_previous = FNDict()
         fileInfos = self._data_store
-        pairs = dict(self.iselected_pairs())
-        for to_duplicate, fileInfo in pairs.items():
+        names = set(fileInfos)
+        ren_args = []
+        rd_def_ini = RefrData()
+        for to_duplicate, fileInfo in self.iselected_pairs():
             if self._disallow_copy(fileInfo):
                 continue # We can't copy this one for some reason, skip
-            r, e = to_duplicate.fn_body, to_duplicate.fn_ext
-            destName = fileInfo.unique_key(r, e, add_copy=True)
-            destDir = fileInfo.info_dir
-            if len(self.selected) == 1: # ask the user for a filename
-                # This directory may not exist yet (e.g. INI Tweaks)
-                destDir.makedirs()
-                destPath = self._askSave(
-                    title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName, wildcard=f'*{e}')
-                if not destPath: return
-                destDir, destName = destPath.head, bolt.FName(destPath.stail)
-                destName, root = fileInfo.validate_name(destName,
-                    # check if exists if we duplicate into the store dir
-                    # then we just need to check if destName is in the store
-                    check_store=destDir == fileInfo.info_dir)
-                if root is None:
-                    self._showError(destName)
+            destDir, fn_dup = self._get_dup_filename(fileInfo, names,
+              title=_('Duplicate as:'), wildcard=f'*{to_duplicate.fn_ext}')
+            if not fn_dup: return
+            # check if exists if we duplicate into the store dir
+            if len(self.selected) == 1 and destDir == fileInfos.store_dir:
+                # use the store (think ghosts)
+                if fn_dup in self._data_store and not isinstance(
+                        fileInfo, DefaultIniInfo):
+                    self._showError(_('File %(bad_name_str)s already exists.'
+                                      ) % {'bad_name_str': fn_dup})
                     return
-            fileInfo.copy_to(destDir.join(destName))
-            mod_previous[destName] = to_duplicate
-        if mod_previous:
-            rinf = RefrIn.from_tabled_infos(
-                {k: pairs[v] for k, v in mod_previous.items()})
-            fileInfos.refresh(rinf, insert_after=mod_previous)
-            self.refresh_sel(mod_previous,
-                             detail_item=next(reversed(mod_previous)))
-            self.window.SelectItemsNoCallback(mod_previous)
+            # we need to load_cache here - see _TabledInfo.__init__
+            if inf := fileInfos.get_update_info(to_duplicate, copy_from=fileInfo,
+                    dup_path=destDir.join(fn_dup), rd_def_ini=rd_def_ini):
+                ren_args.append((inf, fn_dup, destDir))
+                mod_previous[fn_dup] = to_duplicate
+        if mod_previous or rd_def_ini:
+            fnd = next(reversed(mod_previous or rd_def_ini.renames.values()))
+            self.window.try_rename(ren_args, copy_inf=True, fn_detail=fnd,
+                insert_after=mod_previous, refr_data=rd_def_ini)
+
+    def _get_dup_filename(self, fileInfo, names=None, **kwargs):
+        destDir = self._data_store.store_dir
+        destName = fileInfo.unique_key(names=names)
+        if len(self.selected) == 1: # ask the user for a filename
+            destDir, destName = self._ask_dup_filename(destDir, fileInfo,
+                filename=destName, **kwargs)
+        return destDir, destName
+
+    def _ask_dup_filename(self, destDir, fileInfo, filename, **kwargs):
+        if destPath := self._askSave(**kwargs, defaultDir=destDir,
+                                     defaultFile=filename):
+            destDir, destName = destPath.head, FName(destPath.stail)
+            destName, root = fileInfo.validate_name(destName)
+            if root is not None:
+                return destDir, destName
+            self._showError(destName)
+        return None, None
 
     def _disallow_copy(self, fileInfo):
         """Method for checking if fileInfo may not be copied for some reason.
@@ -171,7 +169,39 @@ class File_Backup(ItemLink):
             fileInfo.makeBackup(forceBackup=True)
 
 #------------------------------------------------------------------------------
-class _RevertBackup(OneItemLink):
+class RestoreInfo(OneItemLink):
+    """Restore backups/snapshots"""
+
+    @balt.conversation
+    def Execute(self):
+        #--Warning box
+        if not self._ask_revert(): return
+        with BusyCursor():
+            sel_inf = self._selected_info
+            # create an info in the backup directory and try loading it
+            if not (inf := self._data_store.get_update_info(self._backup_path,
+                    copy_from=sel_inf, exclude={'crc', 'mergeInfo'})):
+                self._failed_msg()
+                return
+            ren_args = [(inf, self._selected_item, self._data_store.store_dir)]
+            # in case the restored file is a BP: refresh in rename will try to
+            # refresh info sets, but we don't back up the config so we can't
+            # really detect changes in imported/merged - a (another) backup
+            # edge case - as backup is half-baked anyway let's agree for now
+            # that BPs remain BPs with the same config as before - if not,
+            # manually run a mergeability scan after updating the config
+            self.window.try_rename(ren_args, copy_inf=True,
+                # no refresh saves as neither active mods nor load order change
+                refr_saves=False, set_mtime={sel_inf.fn_key: sel_inf.ftime})
+
+    @property
+    def _backup_path(self): raise NotImplementedError
+
+    def _ask_revert(self): raise NotImplementedError
+
+    def _failed_msg(self): raise NotImplementedError
+
+class _RevertBackup(RestoreInfo):
 
     def __init__(self, first=False):
         super().__init__()
@@ -181,46 +211,24 @@ class _RevertBackup(OneItemLink):
 
     @property
     def _backup_path(self):
-        return self._selected_info.backup_restore_paths(self.first)[0][0]
+        return self._selected_info.backup_path(self.first)
 
     @property
     def link_help(self):
-        return (_('Revert %(file)s to its first backup') if self.first else _(
-            'Revert %(file)s to its last backup')) % {
-            'file': self._selected_item}
+        msg = _('Revert %(file)s to its first backup') if self.first else _(
+            'Revert %(file)s to its last backup')
+        return msg % {'file': self._selected_item}
 
     def _enable(self):
         return super()._enable() and self._backup_path.exists()
 
-    @balt.conversation
-    def Execute(self):
-        #--Warning box
-        if not self._ask_revert(): return
-        sel_file = self._selected_item
-        with BusyCursor(), TempFile() as known_good_copy:
-            sel_inf = self._selected_info
-            # Make a temp copy first in case reverting to backup fails
-            info_path = sel_inf.abs_path
-            sel_inf.fs_copy(GPath_no_norm(known_good_copy))
-            sel_inf.revert_backup(self.first)
-            if not self._data_store.get(sel_file):
-                # Reverting to backup failed - may be corrupt
-                bolt.deprint('Failed to revert to backup', traceback=True)
-                self.window.panel.ClearDetails()
-                if self._askYes(_(
-                        "Failed to revert %(target_file_name)s to backup "
-                        "dated %(backup_date)s. The backup file may be "
-                        "corrupt. Do you want to restore the original file "
-                        "again? 'No' keeps the reverted, possibly broken "
-                        "backup instead.") % {'target_file_name': sel_file,
-                          'backup_date': format_date(self._backup_path.mtime)},
-                                title=_('Revert to Backup - Error')):
-                    # Restore the known good file again - no error check needed
-                    info_path.replace_with_temp(known_good_copy)
-                    self._data_store.refresh(RefrIn.from_tabled_infos({
-                        sel_file: sel_inf})) # re-add all attrs
-        # don't refresh saves as neither selection state nor load order change
-        self.refresh_sel()
+    def _failed_msg(self):
+        self._showError(
+            _("Failed to revert %(target_file_name)s to backup dated "
+              "%(backup_date)s. The backup file may be corrupt.") % {
+                'target_file_name': self._selected_item,
+                'backup_date': format_date(self._backup_path.mtime)},
+            title=_('Revert to Backup - Error'))
 
     def _ask_revert(self):
         msg = _('Revert %(target_file_name)s to backup dated %(backup_date)s?')
@@ -248,11 +256,10 @@ class File_Redate(ItemLink):
         # Perform the redate process and refresh
         user_timestamp = user_datetime.timestamp()
         for to_redate in self._infos_to_redate():
-            to_redate.setmtime(user_timestamp)
+            to_redate.setmtime(user_timestamp, mark_redated=True)
             user_timestamp += 60.0
-        self._data_store.refresh(refresh_infos=False,
-                                 unlock_lo=not bush.game.using_txt_file)
-        self.window.propagate_refresh(True)
+        rdata = self._data_store.refresh(False, unlock_lo=bush.game.mtime_lo)
+        self.window.propagate_refresh(rdata)
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):

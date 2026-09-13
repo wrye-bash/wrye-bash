@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -139,11 +139,15 @@ class MelActivateParents(MelGroup):
 #------------------------------------------------------------------------------
 class MelAddnDnam(MelStruct):
     """Handles the ADDN subrecord DNAM (Data)."""
+    class _AddonFlags(Flags):
+        master_particle_system: bool = flag(1)
+        always_loaded: bool = flag(3)
+
     def __init__(self):
         # addon_flags is 2 unknown bytes in FO3/FNV, but decoding it as a short
         # can't hurt and is much simpler
         super().__init__(b'DNAM', ['2H'], 'master_particle_system_cap',
-            'addon_flags') # not really flags, behaves more like an enum
+            (self._AddonFlags, 'addon_flags'))
 
 #------------------------------------------------------------------------------
 class MelAIPackages(MelSimpleGroups):
@@ -362,7 +366,10 @@ class MelCpthShared(MelSequential):
     games' CPTH records."""
     def __init__(self):
         super().__init__(
-            MelSimpleArray('related_camera_paths', MelFid(b'ANAM')),
+            MelArray('related_camera_paths',
+                MelStruct(b'ANAM', ['2I'], (FID, 'parent_path'),
+                    (FID, 'previous_path')),
+            ),
             MelUInt8(b'DATA', 'camera_zoom'),
             MelSimpleGroups('camera_shots', MelFid(b'SNAM')),
         )
@@ -463,9 +470,15 @@ class MelEnableParent(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelEnchantment(MelFid):
-    """Represents the common enchantment/object effect subrecord."""
+    """Represents the common enchantment/object effect subrecord EITM."""
     def __init__(self, ench_sig=b'EITM'):
         super().__init__(ench_sig, 'enchantment')
+
+#------------------------------------------------------------------------------
+class MelEnchantmentCharge(MelUInt16):
+    """Represents the common enchantment/object effect subrecord EAMT."""
+    def __init__(self, ench_sig=b'EAMT'):
+        super().__init__(ench_sig, 'enchantment_charge')
 
 #------------------------------------------------------------------------------
 class MelEquipmentType(MelFid):
@@ -624,10 +637,10 @@ class MelGrasData(MelStruct):
     def __init__(self):
         super().__init__(b'DATA', ['3B', 's', 'H', '2s', 'I', '4f', 'B', '3s'],
             'gras_density', 'gras_min_slope', 'gras_max_slope',
-            'gras_unknown1', 'units_from_water', 'gras_unknown2',
+            'gras_unused1', 'units_from_water', 'gras_unused2',
             'units_from_water_type', 'position_range', 'height_range',
             'color_range', 'wave_period', (self._gras_flags, 'gras_flags'),
-            'gras_unknown3')
+            'gras_unused3')
 
 #------------------------------------------------------------------------------
 class MelHairFlags(MelUInt8Flags):
@@ -917,7 +930,7 @@ class MelLandShared(MelSequential):
         has_hi_res_heightfield: bool = flag(5) # since FO4
         has_mpcd: bool = flag(10) # Skyrim's version of has_hi_res_heightfield?
 
-    def __init__(self, *, with_vtex: bool = False):
+    def __init__(self, *, with_vtex=False):
         super().__init__(
             MelUInt32Flags(b'DATA', 'land_flags', self._land_flags),
             MelBase(b'VNML', 'vertex_normals'),

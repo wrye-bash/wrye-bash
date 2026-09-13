@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -43,6 +43,7 @@ from .bolt import AFile, FName, FNDict, Path, deprint
 from .exception import BoltError, EvalError, LexerError, ParserError
 from .loot_conditions import Comparison, ConditionAnd, ConditionFunc, \
     ConditionNot, ConditionOr, _ACondition, is_regex
+# no other Bash imports - loot_conditions should also be guarded
 
 # Typing
 _RTags = tuple[set[str], set[str]] # 'returned tags'
@@ -58,7 +59,7 @@ except ImportError:
             'version')
 
 # API
-metadata_version = '0.21' # The LOOT metadata version with which this
+metadata_version = '0.29' # The LOOT metadata version with which this
                           # implementation is compatible
 
 class LOOTParser(object):
@@ -100,7 +101,7 @@ class LOOTParser(object):
     def _refresh_tags_cache(self, _force=False):
         try:
             # keep _force last to update AFile's caches
-            if self._masterlist.do_update(raise_on_error=True) or \
+            if self._masterlist.do_update(raise_os_error=True) or \
                     self._userlist.do_update() or _force:
                 args = [self._masterlist.abs_path]
                 if self._userlist.abs_path.exists(): args.append(
@@ -110,7 +111,7 @@ class LOOTParser(object):
         except (OSError, yaml.YAMLError):
             # No masterlist or an error occurred while reading it
             try: # use the taglist
-                if self._taglist.do_update(raise_on_error=True) or _force:
+                if self._taglist.do_update(raise_os_error=True) or _force:
                     self.load_lists(self._taglist.abs_path)
                 return True
             except OSError:
@@ -202,7 +203,7 @@ class LOOTParser(object):
         return check_dirty(self._perform_merge(plugin_name))
 
     def _perform_merge(self, plugin_s: FName) -> _PluginEntry:
-        """Checks the masterlist and all regexes for a match with the spcified
+        """Checks the masterlist and all regexes for a match with the specified
         plugin name string, then merges the resulting entries, stores the final
         entry in _cached_merges and returns it."""
         all_entries = []
@@ -235,7 +236,7 @@ class LOOTParser(object):
             self._tagCache = {}
 
     ##: move cache into loot_parser, then build more sophisticated invalidation
-    # mechanism to handle CRCs, active status, etc. - ref #353
+    # mechanism to handle CRCs, active status, etc. - ref #701
     def get_tags_from_loot(self, modName: FName) -> _RTags:
         """Gets bash tag info from the cache, or from loot_parser if it is not
         cached."""
@@ -626,11 +627,10 @@ def _pop_token(tokens: deque[_Token],
         raised.
     :return: The popped token."""
     if not tokens:
-        raise ParserError(f'Attempted to pop a token '
-                          f'({expected_tag if expected_tag else "ANY"}), '
-                          f'but no tokens are left on the stack.\nMost '
-                          f'likely, a character has been misplaced or a '
-                          f'closing parenthesis is missing.')
+        msg = f'Attempted to pop a token ({expected_tag or "ANY"}), but no ' \
+              f'tokens are left on the stack.\nMost likely, a character has ' \
+              f'been misplaced or a closing parenthesis is missing.'
+        raise ParserError(msg)
     token = tokens.popleft()
     if expected_tag and token.token_tag != expected_tag:
         raise ParserError(f'Expected {expected_tag} token, but got '

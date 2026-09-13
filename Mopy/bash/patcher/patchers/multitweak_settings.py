@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -193,7 +193,8 @@ class _AGmstTweak(_ASettingsTweak):
         return lower_eid # fallback, should never happen
 
     def validate_values(self, chosen_values: tuple) -> str | None:
-        if bush.game.fsName == 'Oblivion': ##: add a comment why TES4 only!
+        ##: add a comment why TES4 only!
+        if bush.game.fsName in ('Oblivion', 'OblivionRE'):
             for target_value in chosen_values:
                 if not isinstance(target_value, str) and target_value < 0:
                     return _("Oblivion GMST values can't be negative")
@@ -1511,17 +1512,18 @@ class GmstTweak_Magic_MaxSummons(_AGmstCCTweak):
 
 #------------------------------------------------------------------------------
 class GmstTweak_Actor_VerticalObjectDetection(_AGmstCCTweak):
-    tweak_name = _(u'Actor: Vertical Object Detection')
-    tweak_tip = _(u'Changes the vertical range in which NPCs detect objects. '
-                  u'The first value must be >= 0 and the second one must be '
-                  u'<= 0.')
-    tweak_key = (u'fSandboxCylinderTop', u'fSandboxCylinderBottom')
-    tweak_choices = [(u'x1', 150.0, -100.0),
-                     (u'x2', 300.0, -200.0),
-                     (u'x3', 450.0, -300.0),
-                     (u'x4', 600.0, -400.0),
-                     (u'x5', 750.0, -500.0)]
-    default_choice = u'x1'
+    tweak_name = _('Actor: Vertical Object Detection')
+    tweak_tip = _('Changes the vertical range in which NPCs detect objects. '
+                  'The first value, the top, must be >= 0 and the second one, '
+                  'the bottom, must be <= 0. It is recommened to sync them.')
+    tweak_key = ('fSandboxCylinderTop', 'fSandboxCylinderBottom')
+    tweak_choices = [(_('Default'), 150.0, -100.0),
+                     (_('x1 Top'), 150.0, -150.0),
+                     (_('x2 Top'), 300.0, -300.0),
+                     (_('x3 Top'), 450.0, -450.0),
+                     (_('x4 Top'), 600.0, -600.0),
+                     (_('x5 Top'), 750.0, -750.0)]
+    default_choice = _('Default')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Player_FastTravelTimeMultiplier(_AGmstCCTweak):
@@ -1999,7 +2001,7 @@ class GmstTweak_Actor_MasterCostMultiplier(_AGmstCCTweak):
     default_choice = 'x5'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_BlockTimeAverage(_AGmstCCTweak):
+class GmstTweak_Combat_BlockTimeAverage(_AGmstCCSecondsTweak):
     tweak_name = _('Combat: Block Time (Average)')
     tweak_tip = _('The average time for which NPCs will keep their shield '
                   'raised or block with their weapon during combat.')
@@ -2030,7 +2032,7 @@ class GmstTweak_Combat_BlockTimeMaximum_Tes5(
     default_choice = _('Unlimited') # Nice one, Bethesda
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCTweak):
+class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCSecondsTweak):
     tweak_name = _('Combat: Block Time (Minimum)')
     tweak_tip = _('The minimum time for which NPCs will keep their shield '
                   'raised or block with their weapon during combat.')
@@ -2041,6 +2043,36 @@ class GmstTweak_Combat_BlockTimeMinimum(_AGmstCCTweak):
                      (_('8 Seconds'),   8.0),
                      (_('12 Seconds'), 12.0)]
     default_choice = _('4 Seconds')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_HealthEnduranceMult(_AGmstCCTweak):
+    tweak_name = _('Player: Health Endurance Multiplier')
+    tweak_tip = _('The amount of health per endurance point added to the '
+                  "player's total.")
+    tweak_key = ('fAVDHealthEnduranceMult',)
+    tweak_choices = [('5.0',   5.0),
+                     ('10.0', 10.0),
+                     ('20.0', 20.0),
+                     ('30.0', 30.0),
+                     ('40.0', 40.0)]
+    default_choice = '20.0'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_HealthLevelMult(_AGmstCCTweak):
+    tweak_name = _('Player: Health Level Multiplier')
+    tweak_tip = _('The amount of health per level (after the first) added to '
+                  "the player's total.")
+    tweak_key = ('fAVDHealthLevelMult',)
+    tweak_choices = [('5.0',   5.0),
+                     ('10.0', 10.0),
+                     ('20.0', 20.0),
+                     ('30.0', 30.0),
+                     ('40.0', 40.0)]
+    default_choice = '10.0'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Player_HealthLevelMult_Fnv(GmstTweak_Player_HealthLevelMult):
+    default_choice = '5.0'
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

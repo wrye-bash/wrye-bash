@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -33,7 +33,8 @@ from itertools import chain
 from .. import archives, bolt
 from ..archives import defaultExt, readExts
 from ..bolt import DataDict, Path, PickleDict, SubProgress, \
-    forward_compat_path_to_fn_list, top_level_files, GPath_no_norm
+    forward_compat_path_to_fn_list, top_level_files
+from ..env import convert_separators
 from ..exception import ArgumentError, StateError
 from ..wbtemp import TempDir, TempFile
 
@@ -327,7 +328,8 @@ class InstallerConverter(object):
         else:
             srcCRCs = realCRCs = self.srcCRCs
         nextStep = step = 0.4 / len(srcCRCs)
-        with TempDir() as tmp_extract, TempDir() as tmp_dest:
+        with TempDir(bolt_path=True) as tmp_extract, TempDir(
+                bolt_path=True) as tmp_dest:
             # Don't pass progress in as we haven't got the count of BCF's files
             archives.extract7z(self.fullPath, tmp_extract)
             for srcCRC, realCRC in zip(srcCRCs, realCRCs):
@@ -346,8 +348,8 @@ class InstallerConverter(object):
             #--Move files around and pack them
             self._arrangeFiles(tmp_extract, tmp_dest,
                 progress=SubProgress(progress, lastStep, 0.7))
-            archives.compress7z(installers_dir.join(destArchive),
-                GPath_no_norm(tmp_dest), SubProgress(progress, 0.7, 1.0),
+            archives.compress7z(installers_dir.join(destArchive), tmp_dest,
+                SubProgress(progress, 0.7, 1.0),
                 is_solid=self.isSolid, blockSize=self.blockSize)
             # Lastly, we need to apply the settings. That is done by the
             # calling code, since it requires an InstallerArchive object to
@@ -361,7 +363,7 @@ class InstallerConverter(object):
                 v = forward_compat_path_to_fn_list(v, ret_type=set)
             setattr(destInstaller, a, v)
 
-    def _arrangeFiles(self, src_temp: str, dst_temp: str, *, progress):
+    def _arrangeFiles(self, src_temp: Path, dst_temp: Path, *, progress):
         """Copy and/or move extracted files into their proper arrangement.
         Needs two temporary directories as arguments: a source directory
         containing the files to be arranged and a destination directory where
@@ -369,36 +371,36 @@ class InstallerConverter(object):
         progress(0, _('Moving files…'))
         progress.setFull(1 + len(self.convertedFiles))
         dupes = self.dupeCount.copy()
-        tempJoin = GPath_no_norm(src_temp).join
-        destJoin = GPath_no_norm(dst_temp).join
         #--Move every file
-        for index, (crcValue, srcDir_File, destFile) in enumerate(
+        for index, (crc_value, raw_src_dir_file, raw_dest_file) in enumerate(
                 self.convertedFiles):
-            srcDir, srcFile = srcDir_File
-            #--srcDir is either 'BCF-Missing', or crc read from 7z l -slt
-            srcDir = f'{srcDir:08X}' if isinstance(srcDir, int) else srcDir
-            src_rel = os.path.join(srcDir, srcFile)
-            src_full = tempJoin(src_rel)
+            src_dir, raw_src_file = raw_src_dir_file
+            actual_src_file = convert_separators(raw_src_file)
+            #--src_dir is either 'BCF-Missing', or crc read from 7z l -slt
+            src_dir = f'{src_dir:08X}' if isinstance(src_dir, int) else src_dir
+            src_rel = os.path.join(src_dir, actual_src_file)
+            src_full = src_temp.join(src_rel)
             if not src_full.exists():
                 raise StateError(_('%(bcf_rel)s: Missing source file:') % {
                     'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
-            if destFile is None:
+            if raw_dest_file is None:
                 raise StateError(_('%(bcf_rel)s: Unable to determine file '
                                    'destination for:') % {
                     'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
-            numDupes = dupes[crcValue]
+            actual_dest_file = convert_separators(raw_dest_file)
+            numDupes = dupes[crc_value]
             #--Keep track of how many times the file is referenced by
             # convertedFiles
             #--This allows files to be moved whenever possible, speeding
             # file operations up
-            dest_full = destJoin(destFile)
+            dest_full = dst_temp.join(actual_dest_file)
             if numDupes > 1:
-                progress(index, _('Copying file…') + f'\n{destFile}')
+                progress(index, _('Copying file…') + f'\n{actual_dest_file}')
                 # Decrement so that the last usage can be a move
-                dupes[crcValue] = numDupes - 1
+                dupes[crc_value] = numDupes - 1
                 src_full.copyTo(dest_full)
             else:
-                progress(index, _('Moving file…') + f'\n{destFile}')
+                progress(index, _('Moving file…') + f'\n{actual_dest_file}')
                 src_full.moveTo(dest_full)
 
     def build(self, srcArchives, idata, destArchive, bcf_archive, blockSize,
@@ -447,7 +449,7 @@ class InstallerConverter(object):
                 #--Note all extracted files
                 for crc in combined_temp_dir.ilist():
                     fpath = combined_temp_dir.join(crc)
-                    for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
+                    for root_dir, y, files in fpath.walk():
                         for file in files:
                             file = root_dir.join(file)
                             # crc is an FName, but we want to store strings
@@ -493,7 +495,7 @@ class InstallerConverter(object):
             convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
             sProgress(index, sprog_msg + fileName)
         #--Build the BCF
-        with TempDir() as conv_out:
+        with TempDir(bolt_path=True) as conv_out:
             if self.bcf_missing_files:
                 # We have missing files that we need to extract
                 unpack_dir = destInstaller.unpackToTemp(self.bcf_missing_files,
@@ -505,15 +507,15 @@ class InstallerConverter(object):
             #--BCF's need to be non-Solid since they have to have BCF.dat
             # extracted and read from during runtime
             self.isSolid = False
-            archives.compress7z(converters_dir.join(bcf_archive),
-                GPath_no_norm(conv_out), SubProgress(progress, lastStep, 1.0),
+            archives.compress7z(converters_dir.join(bcf_archive), conv_out,
+                SubProgress(progress, lastStep, 1.0),
                 is_solid=self.isSolid, blockSize=self.blockSize)
         ##: Why are we setting isSolid to False, then immediately overwriting
         # it here? The comment above claims that they "need to be non-Solid",
         # but this could mark them solid???
         self.isSolid = destInstaller.isSolid
 
-    def _unpack(self, srcInstaller, fileNames, temp_dir: str, *, progress=None,
+    def _unpack(self, srcInstaller, fileNames, temp_dir: Path, *, progress=None,
                 __read_ext=tuple(readExts)):
         """Recursive function: completely extracts the source installer to
         a temporary directory. Each archive and sub-archive is extracted to its
@@ -522,7 +524,8 @@ class InstallerConverter(object):
         #--Sanity check
         if not fileNames: raise ArgumentError(
             f'No files to extract for {srcInstaller}.')
-        with TempFile(temp_prefix='temp_list', temp_suffix='.txt') as tl:
+        with TempFile(temp_prefix='temp_list', temp_suffix='.txt',
+                      bolt_path=True) as tl:
             #--Dump file list
             try:
                 with open(tl, 'w', encoding='utf-8') as out:
@@ -534,7 +537,7 @@ class InstallerConverter(object):
             installerCRC = srcInstaller.crc
             apath = srcInstaller if isinstance(
                 srcInstaller, Path) else srcInstaller.abs_path
-            tmp_sub = GPath_no_norm(temp_dir).join(f'{installerCRC:08X}')
+            tmp_sub = temp_dir.join(f'{installerCRC:08X}')
             if progress:
                 progress(0, f"{apath}\n{_('Extracting files…')}")
                 progress.setFull(1 + len(fileNames))

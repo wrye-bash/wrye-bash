@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,7 +30,7 @@ from zlib import error as zlib_error
 
 from . import bolt, bush, env
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
-    struct_error, GPath_no_norm, FName, unpack_int
+    struct_error, FName, unpack_int
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
@@ -142,19 +142,22 @@ class _TopGroupDict(dict):
     def __missing__(self, top_grup_sig):
         """Return top block of specified topType, creating it first.
         :raise ModError"""
-        topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
+        topClass = (lf := self._mod_file.loadFactory).getTopClass(top_grup_sig)
         if topClass is None:
             raise ModError(self._mod_file.fileInfo.fn_key,
-                f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
-                f' load factory is {self._mod_file.loadFactory!r}')
-        self[top_grup_sig] = topClass.empty_mob(self._mod_file.loadFactory,
-                                                top_grup_sig)
-        return self[top_grup_sig]
+                f'Failed to retrieve top class for '
+                f'{sig_to_str(top_grup_sig)}; load factory is {lf!r}')
+        self[top_grup_sig] = block = topClass.empty_mob(lf, top_grup_sig)
+        return block
 
 class ModFile(object):
     """Plugin file representation. Will load only the top record types
     specified in its LoadFactory."""
-    def __init__(self, fileInfo,loadFactory=None):
+
+    def __init__(self, fileInfo, loadFactory=None):
+        if isinstance(fileInfo, bolt.Path): # create an info but don't load it!
+            from .bosh import modInfos
+            fileInfo = modInfos.factory(fileInfo)
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load
@@ -166,7 +169,7 @@ class ModFile(object):
         self.tops = _TopGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
 
-    def load_plugin(self, progress=None, loadStrings=True, catch_errors=True,
+    def load_plugin(self, progress=None, *, load_strs=True, catch_errors=True,
                     do_map_fids=True):
         ##: track uses and decide on exception handling
         """Load file."""
@@ -178,7 +181,12 @@ class ModFile(object):
                 ins.load_tes4(do_unpack_tes4=False)
             self.tes4 = ins.plugin_header
             if do_map_fids:
-                progress = self.__load_strs(ins, loadStrings, progress)
+                # Check if we need to handle strings
+                self.strings.clear() ##:(480) maybe add more load_strs=False?
+                if load_strs and getattr(self.tes4.flags1, 'localized', False):
+                    progress = self.__load_strs(ins, progress)
+                else:
+                    ins.setStringTable(None)
             #--Raw data read
             progress.setFull(ins.size)
             insAtEnd = ins.atEnd
@@ -223,35 +231,28 @@ class ModFile(object):
                 progress(insTell())
         if not do_map_fids: return
 
-    def __load_strs(self, ins, loadStrings, progress):
-        # Check if we need to handle strings
-        self.strings.clear()
-        if not (loadStrings and getattr(self.tes4.flags1, 'localized', False)):
-            ins.setStringTable(None)
-            return progress
-        stringsProgress = SubProgress( # Use 10% of progress bar for strings
-            progress, 0, 0.1)
+    def __load_strs(self, ins, progress):
         from . import bosh
-        i_lang = bosh.oblivionIni.get_ini_language(
-            bush.game.Ini.default_game_lang)
-        stringsPaths = self.fileInfo.getStringsPaths(i_lang)
-        if stringsPaths: stringsProgress.setFull(len(stringsPaths))
-        for i, path in enumerate(stringsPaths):
-            self.strings.loadFile(path, SubProgress(stringsProgress, i, i + 1),
-                                  i_lang)
-            stringsProgress(i)
+        i_lang = bosh.oblivionIni.get_ini_language(bush.game)
+        if stringsPaths := self.fileInfo.getStringsPaths(i_lang):
+            # Use 10% of progress bar for strings
+            stringsProgress = SubProgress(progress, 0, 0.1)
+            stringsProgress.setFull(len(stringsPaths))
+            for i, path in enumerate(stringsPaths):
+                self.strings.loadFile(path, SubProgress(
+                    stringsProgress, i, i + 1), i_lang)
+                stringsProgress(i)
         ins.setStringTable(self.strings)
-        subProgress = SubProgress(progress, 0.1, 1.0)
-        return subProgress
+        return SubProgress(progress, 0.1, 1.0)
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
         self.fileInfo.makeBackup()
-        with TempFile() as tmp_plugin:
+        with TempFile(bolt_path=True) as tmp_plugin:
             self.save(tmp_plugin)
             # fileInfo created before the file
             if self.fileInfo.ftime is not None:
-                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.ftime ##: ugh
+                tmp_plugin.mtime = self.fileInfo.ftime
             # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
             #  permissions dialog is displayed (should display file in use)
             env.shellMove({tmp_plugin: self.fileInfo.abs_path})

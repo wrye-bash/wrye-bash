@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,10 +27,9 @@ from typing import Iterable
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
     wrye_text
 from ..balt import DecoratedTreeDict, colors, Link
-from ..bass import Store
-from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
-    reverse_dict, RefrData
-from ..bosh import ModInfo, faces
+from ..bolt import CIstr, FName, GPath, RefrData, text_wrap, \
+    top_level_dirs, reverse_dict
+from ..bosh import faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     CheckBox, CheckListBox, DeselectAllButton, DialogWindow, DocumentViewer, \
@@ -48,16 +47,16 @@ class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
     _min_size = (550, 300)
 
-    def __init__(self, parent, title, fileInfo, faces):
+    def __init__(self, parent, title, fileInfo, src_faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and not isinstance(next(iter(faces)), str):
+        if src_faces and not isinstance(next(iter(src_faces)), str):
             # Keys are FormIDs, convert them to human-readable strings
             self.fdata = {f'{key_fid} {val_face.pcName}': val_face for
-                          key_fid, val_face in faces.items()}
+                          key_fid, val_face in src_faces.items()}
         else:
             # Keys are EditorIDs, good to go
-            self.fdata = faces
+            self.fdata = src_faces
         self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI
         super().__init__(parent, title=title, sizes_dict=bass.settings)
@@ -66,7 +65,7 @@ class ImportFaceDialog(DialogWindow):
                                onSelect=self.EvtListBox)
         self.listBox.set_min_size(175, 150)
         #--Name,Race,Gender Checkboxes
-        fi_flgs = bosh.faces.PCFaces.pcf_flags(
+        fi_flgs = faces.PCFaces.pcf_flags(
             bass.settings.get('bash.faceImport.flags', 0x4))
         self.nameCheck = CheckBox(self, _('Name'), checked=fi_flgs.pcf_name)
         self.raceCheck = CheckBox(self, _('Race'), checked=fi_flgs.pcf_race)
@@ -123,7 +122,7 @@ class ImportFaceDialog(DialogWindow):
         itemDex = selections[0]
         item = self.list_items[itemDex]
         #--Do import
-        pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
+        pc_flags = faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
         pc_flags.pcf_hair = pc_flags.pcf_eye = True
         pc_flags.pcf_name = self.nameCheck.is_checked
         pc_flags.pcf_race = self.raceCheck.is_checked
@@ -132,8 +131,7 @@ class ImportFaceDialog(DialogWindow):
         pc_flags.pcf_class = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
-        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
-                                        pc_flags)
+        faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item], pc_flags)
         showOk(self, _('Face imported.'), self.fileInfo.fn_key)
         self.accept_modal()
 
@@ -151,13 +149,19 @@ class CreateNewProject(DialogWindow):
         self._project_name = TextField(self, _('Project Name Goes Here'))
         self._project_name.on_text_changed.subscribe(
             self.OnCheckProjectsColorTextCtrl)
-        self._check_esp = CheckBox(self, _('Blank.esp'), checked=True,
-            chkbx_tooltip=_('Include a blank plugin file with only '
-                            '%(game_master)s as a master in the project.') % {
-                'game_master': bush.game.master_file})
-        self._check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
-            chkbx_tooltip=_('Include a blank plugin file without any masters '
-                            'in the project.'))
+        if bush.game.Esp.canBash:
+            check_esp = CheckBox(self, _('Blank.esp'), checked=True,
+                chkbx_tooltip=_('Include a blank plugin file with only '
+                                '%(game_master)s as a master in the project.'
+                    ) % {'game_master': bush.game.master_file})
+            check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
+                chkbx_tooltip=_('Include a blank plugin file without any '
+                                'masters in the project.'))
+            self._chck_mods = {f'Blank, {bush.game.display_name}.esp':
+                check_esp, f'Blank, {bush.game.display_name} (masterless).esp':
+                check_esp_masterless}
+        else:
+            self._chck_mods = {}
         self._check_wizard = CheckBox(self, _('Blank wizard.txt'),
             chkbx_tooltip=_('Include a blank BAIN wizard in the project.'))
         self._check_fomod = CheckBox(self, _('Blank ModuleConfig.xml'),
@@ -167,8 +171,7 @@ class CreateNewProject(DialogWindow):
                 'Include an empty Wizard Images directory in the project.'))
         self._check_docs = CheckBox(self, _('Docs Directory'),
             chkbx_tooltip=_('Include an empty Docs directory in the project.'))
-        for checkbox in (self._check_esp, self._check_esp_masterless,
-                         self._check_wizard):
+        for checkbox in *self._chck_mods.values(), self._check_wizard:
             checkbox.on_checked.subscribe(self.OnCheckBoxChange)
         # Panel Layout
         self.ok_button = OkButton(self)
@@ -181,10 +184,9 @@ class CreateNewProject(DialogWindow):
                 ]), LayoutOptions(expand=True)),
             VBoxedLayout(self, spacing=5,
                 title=_('What do you want to add to the new project?'),
-                items=[
-                    self._check_esp, self._check_esp_masterless,
-                    self._check_wizard, self._check_fomod,
-                    self._check_wizard_images, self._check_docs,
+                items=[*self._chck_mods.values(), self._check_wizard,
+                       self._check_fomod, self._check_wizard_images,
+                       self._check_docs,
                 ]),
             Stretch(),
             (HLayout(spacing=5, items=[self.ok_button, CancelButton(self)]),
@@ -209,7 +211,7 @@ class CreateNewProject(DialogWindow):
     def OnCheckBoxChange(self, _is_checked=None):
         """Change the DialogWindow icon to represent what the project status
         will be when created. """
-        if self._check_esp.is_checked or self._check_esp_masterless.is_checked:
+        if any(chkbx.is_checked for chkbx in self._chck_mods.values()):
             img_key = 'off.red.dir' + (
                 '.wiz' if self._check_wizard.is_checked else '')
         else:
@@ -228,19 +230,15 @@ class CreateNewProject(DialogWindow):
             return
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
-        with TempDir() as tmp_dir:
-            tmp_project = GPath_no_norm(tmp_dir).join(projectName)
+        with TempDir(bolt_path=True) as tmp_dir:
+            tmp_project = tmp_dir.join(projectName)
             # Create the directory first, otherwise some of the file creation
             # calls below may race and cause undebuggable issues otherwise
             tmp_project.makedirs()
-            blank_esp_name = f'Blank, {bush.game.display_name}.esp'
-            if self._check_esp.is_checked:
-                bosh.modInfos.create_new_mod(blank_esp_name,
-                    dir_path=tmp_project)
-            blank_ml_name = f'Blank, {bush.game.display_name} (masterless).esp'
-            if self._check_esp_masterless.is_checked:
-                bosh.modInfos.create_new_mod(blank_ml_name,
-                    dir_path=tmp_project, wanted_masters=[])
+            for no_ma, (blank, checkbox) in enumerate(self._chck_mods.items()):
+                if checkbox.is_checked:
+                    bosh.modInfos.create_new_mod(blank, dir_path=tmp_project,
+                        wanted_masters=[] if no_ma else None)
             if self._check_wizard.is_checked:
                 wizardPath = tmp_project.join('wizard.txt')
                 with wizardPath.open('w', encoding='utf-8') as out:
@@ -248,10 +246,9 @@ class CreateNewProject(DialogWindow):
                               f'Script\n')
                     out.write(f'; Created by Wrye Bash v{bass.AppVersion}\n')
                     # Put an example SelectPlugin statement in if possible
-                    if self._check_esp.is_checked:
-                        out.write(f'SelectPlugin "{blank_esp_name}"\n')
-                    if self._check_esp_masterless.is_checked:
-                        out.write(f'SelectPlugin "{blank_ml_name}"\n')
+                    for blank, checkbox in self._chck_mods.items():
+                        if checkbox.is_checked:
+                            out.write(f'SelectPlugin "{blank}"\n')
             if self._check_fomod.is_checked:
                 fomod_path = tmp_project.join('fomod')
                 fomod_path.makedirs()
@@ -293,12 +290,12 @@ class CreateNewPlugin(DialogWindow):
     title = _(u'New Plugin')
     _def_size = (400, 500)
 
-    def __init__(self, parent):
-        super(CreateNewPlugin, self).__init__(parent,
-            icon_bundle=balt.Resources.bashBlue, sizes_dict=bass.settings)
+    def __init__(self, parent, mod_infos):
+        super().__init__(parent, icon_bundle=balt.Resources.bashBlue,
+                         sizes_dict=bass.settings)
         self._parent_window = parent
-        self._plugin_ext = DropDown(self, value='.esp',
-            choices=sorted(bush.game.espm_extensions), dd_tooltip=_(
+        self._plugin_ext = DropDown(self, value='.esp', choices=sorted(
+            mod_infos.info_exts(with_ghosts=False)), dd_tooltip=_(
                 'Select which extension the plugin will have.'))
         self._plugin_ext.on_combo_select.subscribe(self._handle_plugin_ext)
         self._plugin_name = TextField(self, _(u'New Plugin'),
@@ -397,15 +394,13 @@ class CreateNewPlugin(DialogWindow):
         curr_p_ext = self._plugin_ext.get_value()
         # For .esl files force-check the ESM/ESL flags, for .esm the ESM flag
         # and force disable the OVERLAY flag if no masters are present
-        pflags = bush.game.plugin_flags
-        force_flags = pflags.guess_flags(curr_p_ext, bush.game,
-                                         self._chosen_masters)
+        force_flags = bush.game.guess_flags(curr_p_ext, self._chosen_masters)
         for pflag, chkbox in self._flags_chkboxes.items():
             chkbox.is_checked = force_flags.get(pflag, chkbox.is_checked)
             chkbox.enabled = pflag not in force_flags
         checks = {pflag: chkbox.is_checked for pflag, chkbox in
                   self._flags_chkboxes.items()}
-        checks = pflags.check_flag_assignments(
+        checks = bush.game.plugin_flags.check_flag_assignments(
             checks, raise_on_invalid=False)
         for pflag, is_checked in checks.items():
             self._flags_chkboxes[pflag].is_checked = is_checked
@@ -452,28 +447,30 @@ class CreateNewPlugin(DialogWindow):
         """Internal callback to handle the OK button."""
         pw = self._parent_window
         pl_name = self._plugin_name.text_content + self._plugin_ext.get_value()
-        newName, root = ModInfo.validate_filename_str(pl_name)
+        mod_infos = pw.data_store
+        mod_info = mod_infos.factory_type
+        newName, root = mod_info.validate_filename_str(pl_name)
         if root is None:
             showError(self, newName)
             self._plugin_name.set_focus()
             self._plugin_name.select_all_text()
             return EventResult.FINISH # leave the dialog open
-        chosen_name = ModInfo.unique_name(newName)
-        created_plugin = pw.data_store.create_new_mod(chosen_name,
+        chosen_name = mod_info.unique_name(newName)
+        created_plugin = mod_infos.create_new_mod(chosen_name,
             windowSelected := pw.GetSelected(), flags_dict={k: v for k, v in
                 self._flags_chkboxes.items() if v.is_checked},
             wanted_masters=[*map(FName, self._chosen_masters)])
         # Check if we made a plugin with circular masters - we need the ModInfo
         # object itself to check this. A bit ugly from a UX perspective, but OK
-        # because it's a  rare scenario anyways
+        # because it's a rare scenario anyways
         if created_plugin.has_circular_masters():
-            showError(self, _('Creating a plugin named %(chosen_plugin_name)s '
-                              'with the chosen masters will cause it to '
-                              'have circular masters, i.e. depend on '
-                              'itself.') % {'chosen_plugin_name': chosen_name})
+            msg = _('Creating a plugin named %(chosen_plugin_name)s with the '
+                    'chosen masters will cause it to have circular masters, '
+                    'i.e. depend on itself.')
+            showError(self, msg % {'chosen_plugin_name': chosen_name})
             return EventResult.FINISH # leave the dialog open
         if windowSelected:  # assign it the group of the first selected mod
-            if grp := pw.data_store[windowSelected[0]].get_table_prop('group'):
+            if grp := mod_infos[windowSelected[0]].get_table_prop('group'):
                 created_plugin.set_table_prop('group', grp)
         pw.ClearSelected(clear_details=True)
         pw.RefreshUI(RefrData({chosen_name}), detail_item=chosen_name)
@@ -543,8 +540,7 @@ class _ABainMLE(_AWBMLE):
     def show_modal(self):
         # Add the CIstrs we removed in __init__ (see map(str)'s below) back in
         result = super().show_modal()
-        final_lists = [list(map(CIstr, l)) for l in result[1:]]
-        return result[0], *final_lists
+        return next(it := iter(result)), *([*map(CIstr, li)] for li in it)
 
 #------------------------------------------------------------------------------
 class SyncFromDataEditor(_ABainMLE):
@@ -569,7 +565,7 @@ class SyncFromDataEditor(_ABainMLE):
             mlel_items=list(map(str, pkg_mismatched)))
         sync_desc = _('Update %(target_package)s according to '
                       '%(data_folder)s folder?') % {
-            'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
+            'target_package': pkg_name, 'data_folder': bush.game.mods_dir_name}
         sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
         super().__init__(parent, data_desc=sync_desc,
             list_data=[del_data, upd_data], ok_label=_('Update'))
@@ -581,7 +577,7 @@ class CleanDataEditor(_ABainMLE):
     _def_size = (450, 500)
 
     def __init__(self, parent, *, unknown_files: list[CIstr]):
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         to_move_data = MLEList(
             mlel_title=_('Files To Move (%(to_move_count)d):') % {
                 'to_move_count': len(unknown_files)},
@@ -601,7 +597,7 @@ class MonitorExternalInstallationEditor(_ABainMLE):
     def __init__(self, parent, *, new_files: list[CIstr],
             changed_files: list[CIstr], touched_files: list[CIstr],
             deleted_files: list[CIstr]):
-        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir_name}
         newf_data = MLEList(
             mlel_title=_('New Files (%(new_file_cnt)d):') % {
                 'new_file_cnt': len(new_files)},
@@ -839,8 +835,7 @@ def _mk_node_class(node_tab_key: str):
         """A node depicting an item on a certain tab."""
         def on_activated(self):
             try:
-                balt.Link.Frame.notebook.SelectPage(node_tab_key,
-                    self._node_text)
+                balt.Link.Frame.notebook.jump_to(node_tab_key, self._node_text)
             except KeyError:
                 balt.showError(self._parent_tree,
                     _('%(target_item)s could not be found.') % {
@@ -901,8 +896,9 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
     @classmethod
     def make_highlight_entry(cls, highlight_desc: str,
             highlighted_items: Iterable[FName] | dict[FName, list[FName]],
-            data_key=Store.MODS):
+            data_key=None):
         """Create a _HighlightData object for highlighting dialogs."""
+        data_key = data_key or bosh.modInfos
         target_uil = Link.Frame.all_uilists[data_key]
         if target_uil is not None:
             tree_dict = highlighted_items if isinstance(highlighted_items,
@@ -914,9 +910,11 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
             warning_dec_items = {i: (None, []) for i in
                 sorted(highlighted_items)}
             uil_images = None
+        ##:(600) HACK - this mapping belongs to a proper Store class
+        hack = {bosh.modInfos: 'Mods', bosh.saveInfos: 'Saves', bosh.bsaInfos: 'BSAs'}
         return _HighlightData(uil_image_list=uil_images,
             highlight_desc=highlight_desc, highlighted_items=warning_dec_items,
-            parent_tab_key=data_key.value[0])
+            parent_tab_key=hack[data_key])
 
 # Note: we sometimes use 'unnecessary' subclasses here for the separate
 # bass.settings['bash.window.sizes'] key provided by the unique class name
@@ -1059,7 +1057,7 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
         self.first_line = True
         self._partial_package_order = []
         try:
-            self.read_csv(imp_path)
+            self.read_csv(GPath(imp_path))
         except (exception.BoltError, NotImplementedError):
             balt.showError(self, _('The selected file is not a valid package '
                                    'order CSV export.'),

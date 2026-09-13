@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -39,11 +39,11 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelIcon, MelIcons, MelIcons2, MelIdleAnimationCountOld, MelMesgButtons, \
     MelIdleAnimations, MelIdleRelatedAnims, MelIdleTimerSetting, \
     MelImageSpaceMod, MelImpactDataset, MelInfoResponsesFo3, \
-    MelIpctSounds, MelIpctTextureSets, MelLandShared, MelLighFade, MelLists, \
+    MelIpctSounds, MelIpctTextureSets, MelLandShared, MelLighFade, AMelLists, \
     MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrLocations, MelNoteType, \
     MelLtexGrasses, MelLtexSnam, MelMapMarker, MelMODS, MelNodeIndex, \
     MelNull, MelObject, MelOwnership, MelPartialCounter, MelMesgSharedFo3, \
-    MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, MelRaceParts, \
+    MelPerkData, MelPerkParamsGroups, MelPostMastSA, MelPostMast, MelRace, MelRaceData, MelRaceParts, \
     MelRaceVoices, MelReadOnly, MelRef3D, MelReferences, MelMgefEsce, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
     MelRelations, MelScript, MelScriptVars, MelSequential, MelSet, MelVoice, \
@@ -63,7 +63,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
     MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane, \
-    MelSimpleGroups, AMreEyes, MelEyesFlags
+    MelSimpleGroups, AMreEyes, MelEyesFlags, AMgefFlagsTes4
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -93,19 +93,19 @@ class MelRecord(_AMelRecord):
 #------------------------------------------------------------------------------
 # Common Flags
 class ServiceFlags(Flags):
-    weapons: bool = flag(0)
-    armor: bool = flag(1)
-    clothing: bool = flag(2)
-    books: bool = flag(3)
-    foods: bool = flag(4)
-    chems: bool = flag(5)
-    stimpacks: bool = flag(6)
-    lights: bool = flag(7)
-    miscItems: bool = flag(10)
-    potions: bool = flag(13)
-    training: bool = flag(14)
-    recharge: bool = flag(16)
-    repair: bool = flag(17)
+    service_weapons: bool = flag(0)
+    service_armor: bool = flag(1)
+    service_clothing: bool = flag(2)
+    service_books: bool = flag(3)
+    service_foods: bool = flag(4)
+    service_chems: bool = flag(5)
+    service_stimpacks: bool = flag(6)
+    service_lights: bool = flag(7)
+    service_misc_items: bool = flag(10)
+    service_potions: bool = flag(13)
+    service_training: bool = flag(14)
+    service_recharge: bool = flag(16)
+    service_repair: bool = flag(17)
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -372,22 +372,20 @@ class MelSoundRandomLooping(MelFid):
 class MreTes4(MelRecord, AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN'}
-    next_object_default = 0x800
 
     class HeaderFlags(MelRecord.HeaderFlags, AMreHeader.HeaderFlags):
         pass
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.94), 'numRecords',
-                  ('nextObject', next_object_default), is_required=True),
+            ('nextObject', AMreHeader.next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
+        MelPostMastSA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
     )
 
 #------------------------------------------------------------------------------
@@ -752,7 +750,9 @@ class MreBptd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelUnorderedGroups('body_part_list',
+        ##: This sort_by_attrs might need to be a sort_special to handle
+        # part_node being None, keep an eye out for TypeError tracebacks
+        MelSorted(MelUnorderedGroups('body_part_list',
             MelString(b'BPTN', 'part_name'),
             MelString(b'BPNN', 'part_node'),
             MelString(b'BPNT', 'vats_target'),
@@ -779,7 +779,7 @@ class MreBptd(MelRecord):
             MelString(b'NAM1', 'limb_replacement_model'),
             MelString(b'NAM4', 'gore_effects_target_bone'),
             MelBase(b'NAM5', 'texture_hashes'),
-        ),
+        ), sort_by_attrs='part_node'),
         MelFid(b'RAGA', 'ragdoll'),
     )
 
@@ -1261,7 +1261,7 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    class _expl_flags(Flags):
+    class _ExplFlags(TrimmedFlags):
         always_uses_world_orientation: bool = flag(1)
         knock_down_always: bool = flag(2)
         knock_down_by_formula: bool = flag(3)
@@ -1278,7 +1278,7 @@ class MreExpl(MelRecord):
         MelImageSpaceMod(),
         MelStruct(b'DATA', ['3f', '3I', 'f', '2I', '3f', 'I'], 'expl_force',
             'expl_damage', 'expl_radius', (FID, 'expl_light'),
-            (FID, 'expl_sound1'), (_expl_flags, 'expl_flags'), 'is_radius',
+            (FID, 'expl_sound1'), (_ExplFlags, 'expl_flags'), 'is_radius',
             (FID, 'expl_impact_dataset'), (FID, 'expl_sound2'),
             'radiation_level', 'radiation_time', 'radiation_radius',
             'expl_sound_level'),
@@ -1690,8 +1690,6 @@ class MreLscr(MelRecord):
         MelEdid(),
         MelIcon(),
         MelDescription(),
-        # Marked as an unused byte array in FO3Edit, but has the exact same
-        # size so just treat it the same as TES4/FNV
         MelLscrLocations(),
         fnv_only(MelFid(b'WMI1', 'lscr_type')),
     )
@@ -1791,11 +1789,12 @@ class MreMgef(MelRecord):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
-    class _flags(Flags):
+    class _MgefFlags(AMgefFlagsTes4):
         gory_visuals: bool = flag(12)
         display_name_only: bool = flag(13)
         radio_broadcast: bool = flag(15)
         painless: bool = flag(24)
+        no_death_dispel: bool = flag(28)
 
     melSet = MelSet(
         MelEdid(),
@@ -1805,7 +1804,7 @@ class MreMgef(MelRecord):
         MelModel(),
         MelMgefData(MelStruct(b'DATA',
             ['I', 'f', 'I', '2i', 'H', '2s', 'I', 'f', '6I', '2f', 'I', 'i'],
-            (_flags, 'flags'), 'base_cost', (FID, 'associated_item'), 'school',
+            (_MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'), 'school',
             'resist_value', 'counter_effect_count', 'unused1', (FID, 'light'),
             'projectileSpeed', (FID, 'effectShader'), (FID, 'enchantEffect'),
             (FID, 'castingSound'), (FID, 'boltSound'), (FID, 'hitSound'),
@@ -1947,7 +1946,7 @@ class MreNote(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class _MelNpcData(MelLists):
+class _MelNpcData(AMelLists):
     """Convert npc stats into health, attributes."""
     _attr_indexes = {'health': 0, 'attributes': slice(1, None)}
 
@@ -1983,7 +1982,7 @@ class MreNpc_(_AMreActorFo3):
         crea_not_pushable: bool = flag(27)
         crea_no_rotating_head_track: bool = flag(30)
 
-    class MelNpcDnam(MelLists):
+    class MelNpcDnam(AMelLists):
         """Convert npc stats into skills."""
         _attr_indexes = {'skillValues': slice(14),
                          'skillOffsets': slice(14, None)}
@@ -2412,16 +2411,15 @@ class MreQust(MelRecord):
     """Quest."""
     rec_sig = b'QUST'
 
-    class _questFlags(Flags):
-        startGameEnabled: bool
-        repeatedTopics: bool = flag(2)
-        repeatedStages: bool
+    class _QuestFlags(Flags):
+        start_game_enabled: bool = flag(0)
+        allow_repeated_conversation_topics: bool = flag(2)
+        allow_repeated_stages: bool = flag(3)
+        default_script_processing_delay: bool = flag(4)
 
-    class stageFlags(Flags):
-        complete: bool
-
-    class targetFlags(Flags):
-        ignoresLocks: bool
+    class _StageEntryFlags(Flags):
+        complete_quest: bool
+        fail_quest: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -2429,13 +2427,13 @@ class MreQust(MelRecord):
         MelFull(),
         MelIcon(),
         MelTruncatedStruct(b'DATA', ['2B', '2s', 'f'],
-            (_questFlags, 'questFlags'), 'priority', 'unused2', 'questDelay',
+            (_QuestFlags, 'questFlags'), 'priority', 'unused2', 'questDelay',
             old_versions={'2B', '2B2s'}),
         MelConditionsFo3(),
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
-                MelUInt8Flags(b'QSDT', u'flags', stageFlags),
+                MelUInt8Flags(b'QSDT', 'stage_entry_flags', _StageEntryFlags),
                 MelConditionsFo3(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
@@ -2446,7 +2444,9 @@ class MreQust(MelRecord):
             MelSInt32(b'QOBJ', 'index'),
             MelString(b'NNAM', 'display_text'),
             MelGroups('targets',
-                MelStruct(b'QSTA', [u'I', u'B', u'3s'],(FID,'package_target_value'),(targetFlags,'flags'),'unused1'),
+                MelStruct(b'QSTA', ['I', 'B', '3s'],
+                    (FID, 'package_target_value'),
+                    'compass_marker_ignores_locks', 'unused1'),
                 MelConditionsFo3(),
             ),
         ),
@@ -2791,7 +2791,12 @@ class MreScpt(MelRecord):
 class MreSoun(MelRecord):
     """Sound."""
     rec_sig = b'SOUN'
-    _has_duplicate_attrs = True # SNDX, ANAM, GNAM and HNAM upgrade to SNDD
+    # SNDX, ANAM, GNAM and HNAM upgrade to SNDD
+    _allowed_duplicate_attrs = {
+        'minDist', 'maxDist', 'freqAdj', 'unusedSndd', 'flags',
+        'static_attenuation', 'stopTime', 'startTime', 'point0', 'point1',
+        'point2', 'point3', 'point4', 'reverb', 'priority',
+    }
 
     class _flags(Flags):
         randomFrequencyShift: bool = flag(0)
@@ -2994,7 +2999,35 @@ class MreVtyp(MelRecord):
 class MreWatr(MelRecord):
     """Water."""
     rec_sig = b'WATR'
-    _has_duplicate_attrs = True # DATA is an older version of DNAM + DATA
+
+    _els = [('windVelocity', 0.1), ('windDirection', 90), ('waveAmp', 0.5),
+        ('waveFreq', 1), ('sunPower', 50), ('reflectAmt', 0.5),
+        ('fresnelAmt', 0.025), 'unknown1', ('fogNear', 27852.8),
+        ('fogFar', 163840), 'shallowRed', ('shallowGreen', 128),
+        ('shallowBlue', 128), 'unused1', 'deepRed', 'deepGreen',
+        ('deepBlue', 25), 'unused2', ('reflRed', 255),
+        ('reflGreen', 255), ('reflBlue', 255), 'unused3', 'unknown2',
+        ('rainForce', 0.1), ('rainVelocity', 0.6), ('rainFalloff', 0.9850),
+        ('rainDampner', 2), ('rainSize', 0.01), ('dispForce', 0.4),
+        ('dispVelocity', 0.6), ('dispFalloff', 0.9850), ('dispDampner', 10),
+        ('dispSize', 0.05), ('noiseNormalsScale', 1.8),
+        'noiseLayer1WindDirection',
+        ('noiseLayer2WindDirection', -431602080.05),
+        ('noiseLayer3WindDirection', -431602080.05), 'noiseLayer1WindVelocity',
+        ('noiseLayer2WindVelocity', -431602080.05),
+        ('noiseLayer3WindVelocity', -431602080.05),
+        'noiseNormalsDepthFalloffStart', ('noiseNormalsDepthFalloffEnd', 0.10),
+        ('fogAboveWaterAmount', 1), ('noiseNormalsUvScale', 500),
+        ('fogUnderWaterAmount', 1), 'fogUnderWaterNear',
+        ('fogUnderWaterFar', 1000), ('distortionAmount', 250),
+        ('shininess', 100), ('reflectHdrMult', 1), ('lightRadius', 10000),
+        ('lightBrightness', 1), ('noiseLayer1UvScale', 100),
+        ('noiseLayer2UvScale', 100), ('noiseLayer3UvScale', 100)]
+    _fmts = ['10f', '3B', 's', '3B', 's', '3B', 's', 'I',]
+
+    # DATA is an older version of DNAM + DATA
+    _allowed_duplicate_attrs = {e[0] if isinstance(e, tuple) else e
+                                for e in _els}
 
     class _flags(Flags):
         causesDmg: bool
@@ -3024,31 +3057,6 @@ class MreWatr(MelRecord):
             if len(unpacked_val) == 55:
                 unpacked_val = unpacked_val[:-1]
             return super()._pre_process_unpacked(unpacked_val)
-
-    _els = [('windVelocity', 0.1), ('windDirection', 90), ('waveAmp', 0.5),
-        ('waveFreq', 1), ('sunPower', 50), ('reflectAmt', 0.5),
-        ('fresnelAmt', 0.025), 'unknown1', ('fogNear', 27852.8),
-        ('fogFar', 163840), 'shallowRed', ('shallowGreen', 128),
-        ('shallowBlue', 128), 'unused1', 'deepRed', 'deepGreen',
-        ('deepBlue', 25), 'unused2', ('reflRed', 255),
-        ('reflGreen', 255), ('reflBlue', 255), 'unused3', 'unknown2',
-        ('rainForce', 0.1), ('rainVelocity', 0.6), ('rainFalloff', 0.9850),
-        ('rainDampner', 2), ('rainSize', 0.01), ('dispForce', 0.4),
-        ('dispVelocity', 0.6), ('dispFalloff', 0.9850), ('dispDampner', 10),
-        ('dispSize', 0.05), ('noiseNormalsScale', 1.8),
-        'noiseLayer1WindDirection',
-        ('noiseLayer2WindDirection', -431602080.05),
-        ('noiseLayer3WindDirection', -431602080.05), 'noiseLayer1WindVelocity',
-        ('noiseLayer2WindVelocity', -431602080.05),
-        ('noiseLayer3WindVelocity', -431602080.05),
-        'noiseNormalsDepthFalloffStart', ('noiseNormalsDepthFalloffEnd', 0.10),
-        ('fogAboveWaterAmount', 1), ('noiseNormalsUvScale', 500),
-        ('fogUnderWaterAmount', 1), 'fogUnderWaterNear',
-        ('fogUnderWaterFar', 1000), ('distortionAmount', 250),
-        ('shininess', 100), ('reflectHdrMult', 1), ('lightRadius', 10000),
-        ('lightBrightness', 1), ('noiseLayer1UvScale', 100),
-        ('noiseLayer2UvScale', 100), ('noiseLayer3UvScale', 100)]
-    _fmts = [u'10f', u'3B', u's', u'3B', u's', u'3B', u's', u'I',]
 
     melSet = MelSet(
         MelEdid(),
@@ -3137,7 +3145,7 @@ class MreWeap(MelRecord):
         MelSoundPickupDrop(),
         MelModel(b'MOD2', 'shellCasingModel'),
         MelModel(b'MOD3', 'scopeModel', with_facegen_flags=False),
-        MelFid(b'EFSD','scopeEffect'),
+        MelFid(b'EFSD', 'scopeEffect'),
         MelModel(b'MOD4', 'worldModel'),
         fnv_only(MelGroup('modelWithMods',
             MelString(b'MWD1', 'mod1Path'),

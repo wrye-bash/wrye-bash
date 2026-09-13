@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -40,7 +40,7 @@ class TestLocalize:
         with capsys.disabled():
             print(f'\n\n******* Testing {loc=} *******')
             print(f'getlocale: {locale.getlocale()}')
-            wx_locale = setup_locale(loc, _wx)
+            wx_locale, loc_name = setup_locale(_wx, loc)
             # getlocale = locale.getlocale()
             # print(getlocale)
             # assert getlocale
@@ -59,7 +59,7 @@ class TestLocalize:
 
     def test_setlocale_nocli(self, capsys):
         """Test setting locale to default."""
-        self._test_locale('', capsys)
+        self._test_locale(None, capsys)
 
     def test_setlocale_pl_dash_PL(self, capsys):
         """Test setting locale to pl-PL - seems it's not recognised by wx."""

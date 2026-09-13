@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -32,7 +32,8 @@ from typing import Any
 # First import the shared API
 from .common import *
 from .common import file_operation as _default_file_operation
-from ..bolt import os_name, GPath_no_norm, Path, GPath, deprint
+from ..bolt import os_name, Path, deprint, empty_path
+from ..exception import NonExistentDriveError
 from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
@@ -46,6 +47,48 @@ match platform.system():
     case _: raise ImportError(f'Wrye Bash does not support '
                               f'{platform.system()} yet')
 
+# Game store management is environment specific -------------------------------
+def _get_ws_game_paths(*args, skip_ws_games, **kwargs):
+    return [] if skip_ws_games else get_ws_game_paths(*args, **kwargs)
+
+_GAME_STORES = {
+        ' 1. Steam:': (get_steam_game_paths,
+            'The following supported games were found via Steam:',
+            'No supported games were found via Steam.'),
+        ' 2. GOG (via Windows Registry):': (get_gog_game_paths,
+            'The following supported games were found via GOG:',
+            'No supported games were found via GOG.'),
+        ' 3. Disc Versions (via Windows Registry):': (get_disc_game_paths,
+            'The following disc versions of supported games were found:',
+            'No disc versions of supported games were found.'),
+        ' 4. Windows Store (Legacy):': (get_legacy_ws_game_paths,
+            'The following supported games with modding enabled were found '
+            'via the legacy Windows Store:',
+            'No supported games with modding enabled were found via the legacy '
+            'Windows Store.'),
+        ' 5. Windows Store:': (_get_ws_game_paths,
+            'The following supported games were found via the Windows Store:',
+            'No supported games were found via the Windows Store.'),
+        ' 6. Epic Games Store:': (get_egs_game_paths,
+            'The following supported games were found via the Epic Games Store:',
+            'No supported games were found via the Epic Games Store.'),
+}
+
+# _GAME_STORES clients - keep them dumb
+def store_msgs(skip_ws_games):
+    res = {k: [f, nf] for k, (_func, f, nf) in _GAME_STORES.items()}
+    if skip_ws_games:
+        res[' 5. Windows Store:'][1] = 'Windows Store game detection was ' \
+                                       'disabled via bash.ini.'
+    return res
+
+def get_game_paths_from_stores(game_types, game_stores, **kwargs):
+    for gt_display_name, game_type in game_types.items():
+        for game_st, (get_paths, _found, _not_found) in _GAME_STORES.items():
+            if game_store_paths := get_paths(game_type,
+                    game_stores=game_stores, **kwargs):
+                game_stores[game_st][gt_display_name] = game_store_paths
+
 def _resolve(parent: _TShellWindow):
     """Resolve a parent window to a wx.Window for ifileoperation"""
     try:
@@ -54,17 +97,17 @@ def _resolve(parent: _TShellWindow):
         return parent   # type: ignore
 
 # Higher level APIs using imported OS-specific ones ---------------------------
-def to_os_path(questionable_path: os.PathLike | str) -> Path | None:
+def to_os_path(questionable_path: Path) -> Path | None:
     """Convenience method for converting a path of unknown origin to a path
     compatible with this OS/FS. See canonize_ci_path and convert_separators
     for more information."""
-    return canonize_ci_path(convert_separators(os.fspath(questionable_path)))
+    return canonize_ci_path(convert_separators(questionable_path.s))
 
 def shellDelete(files: Iterable[Path], parent: _TShellWindow = None, *,
                 ask_confirm: _ConfirmationPrompt=None, recycle=False,
                 __shell=True):
     operate = file_operation if __shell else _default_file_operation
-    srcs_dsts = dict.fromkeys(files, GPath(''))
+    srcs_dsts = dict.fromkeys(files, empty_path)
     try:
         return operate(FileOperationType.DELETE, srcs_dsts, allow_undo=recycle,
             ask_confirm=ask_confirm, silent=False, parent=_resolve(parent))
@@ -105,7 +148,7 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
     #  supposed to be on doesn't exist)
     errorPaths = [d for d in dirs if not drive_exists(d)]
     if errorPaths:
-        raise NotADirectoryError(errorPaths)
+        raise NonExistentDriveError(errorPaths)
     if os_name == 'posix':
         return # drive_exists creates the directories on posix
     #--Checks complete, start working
@@ -119,7 +162,7 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
                 folder.makedirs()
             except: ##: tighten
                 # Failed, try the UAC workaround
-                tmpDir = GPath_no_norm(new_temp_dir())
+                tmpDir = new_temp_dir(bolt_path=True)
                 tempDirs.append(tmpDir)
                 toMake = []
                 while not folder.exists() and folder != folder.head:

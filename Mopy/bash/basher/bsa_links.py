@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -96,11 +96,10 @@ class BSA_ListContents(ItemLink):
               u'clipboard.')
 
     def Execute(self):
-        full_text = ['=== Selected BSA Contents:', '[spoiler]']
+        full_text = ['=== Selected BSA Contents:']
         for bsa_inf in self.iselected_infos():
             full_text.append(f'\n* {bsa_inf.fn_key}:')
             full_text.extend(sorted(bsa_inf.assets))
-        full_text.append('[/spoiler]')
         full_text = '\n'.join(full_text)
         copy_text_to_clipboard(full_text)
         self._showLog(full_text, _('BSA Contents'))

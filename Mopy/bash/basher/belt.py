@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,10 +26,12 @@ from __future__ import annotations
 import os
 import traceback
 
-from .. import ScriptParser, bass, bolt, bosh, bush, load_order
+from .. import ScriptParser, bass, bolt, bush, load_order
 from ..ScriptParser import error, PreParser
 from ..balt import ItemLink
 from ..bolt import FName, FNDict, LooseVersion
+from ..plugin_types import ST_ACTIVE, ST_MERGED, ST_IMPORTED, ST_INACTIVE, \
+    active_keys
 from ..env import get_file_version, to_os_path
 from ..gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
@@ -76,14 +78,14 @@ class InstallerWizard(WizardDialog):
     _def_size = (600, 500)
     _key_prefix = 'bash.wizard'
 
-    def __init__(self, parent, installer, bAuto, progress):
+    def __init__(self, parent, installer, bAuto, progress, mod_infos):
         super().__init__(parent, title=_('Installer Wizard'),
             sizes_dict=bass.settings)
         # get the wizard file - if we are an archive pass a progress to unpack
         self._wizard_dir = installer.get_wizard_file_dir(progress)
         self._wizard_file = self._wizard_dir.join(installer.hasWizard)
         # parser that will spit out the pages
-        self.parser = WryeParser(self, installer, bAuto)
+        self.parser = WryeParser(self, installer, bAuto, mod_infos)
         self.ret = WizInstallInfo()
 
     def disable_wiz_buttons(self):
@@ -327,14 +329,14 @@ class PageFinish(PageInstaller):
         PageInstaller.__init__(self, parent)
         subs = sorted(wrye_parser.sublist)
         #--make the list that will be displayed
-        renames = wrye_parser.plugin_renames
-        displayed_plugins = [f'{x} -> {renames[x]}' if x in renames else x for
-                             x in wrye_parser.plugin_enabled]
-        self._wiz_parent.ret.rename_plugins = renames
+        pl_renames = wrye_parser.plugin_renames
+        displayed_plugins = [f'{x} -> {pl_renames[x]}' if x in pl_renames
+                             else x for x in wrye_parser.plugin_enabled]
+        self._wiz_parent.ret.rename_plugins = pl_renames
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _('The installer script has finished, and '
                                   'will apply the following settings:'))
-        textTitle.wrap(parent.get_page_size()[0] - 10)
+        textTitle.wrap(parent.component_size[0] - 10)
         # Sub-packages
         self.listSubs = CheckListBox(self, choices=subs)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
@@ -411,7 +413,7 @@ class PageVersions(PageInstaller):
     """Page for displaying what versions an installer requires/recommends and
     what you have installed for Game, *SE, *GE, and Wrye Bash."""
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
-                 seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
+                 seNeed, bGEOk, geHave, geNeed, bWBOk, wbNeed):
         PageInstaller.__init__(self, parent)
         bmps = [*map(get_image, ('error_cross.16', 'checkmark.16'))]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
@@ -437,7 +439,7 @@ class PageVersions(PageInstaller):
         # Graphics extender
         _link_row(bush.game.Ge, bush.game.Ge.ge_abbrev, geNeed, geHave, bGEOk)
         # Wrye Bash
-        _link_row(None, '', wbNeed, wbHave, bWBOk, title='Wrye Bash',
+        _link_row(None, '', wbNeed, bass.AppVersion, bWBOk, title='Wrye Bash',
                   url='https://www.nexusmods.com/site/mods/591',
                   tooltip_=_('Wrye Bash Download'))
         versions_box = HBoxedLayout(self, _('Version Requirements'),
@@ -446,7 +448,7 @@ class PageVersions(PageInstaller):
         text_warning = Label(self, _('WARNING: The following version '
                                      'requirements are not met for using '
                                      'this installer.'))
-        text_warning.wrap(parent.get_page_size()[0] - 20)
+        text_warning.wrap(parent.component_size[0] - 20)
         self.checkOk = CheckBox(self, _('Install anyway'))
         self.checkOk.on_checked.subscribe(parent.enable_forward)
         VLayout(items=[
@@ -462,19 +464,13 @@ def _need_have(need, have):
     have_fmt = '.'.join(map(str, have))
     if need == 'None':
         return [1, have_fmt]
-    need_ver = LooseVersion('.'.join(map(str, need)))
-    have_ver = LooseVersion(have_fmt)
-    if have_ver > need_ver:
-        return [1, have_fmt]
-    elif have_ver < need_ver:
-        return [-1, have_fmt]
-    else:
-        return [0, have_fmt]
+    have_ver, need_ver = map(LooseVersion, (have_fmt, '.'.join(map(str,need))))
+    return [bolt.cmp_(have_ver, need_ver), have_fmt]
 
 class WryeParser(PreParser):
     """A derived class of Parser, for handling BAIN install wizards."""
 
-    def __init__(self, wiz_parent, installer, bAuto):
+    def __init__(self, wiz_parent, installer, bAuto, mod_infos):
         super().__init__()
         self._wiz_parent = wiz_parent
         self.installer = installer
@@ -495,6 +491,14 @@ class WryeParser(PreParser):
         self.plugin_enabled = FNDict.fromkeys(  # type:FNDict[(f:=FName),f]
             sorted(fn_ for sub_plugins in installer.espmMap.values() for fn_ in
                    sub_plugins), False)
+        # used in self.fn_get_plugin_status which uses different constants!
+        int_map = {ST_ACTIVE: 2, ST_MERGED: 3, ST_IMPORTED: 1, ST_INACTIVE: 0}
+        self._act_dicts = {int_map[k]: v for k, v in
+                           mod_infos.active_statuses.items()}
+        # file exists but not active/merged/imported - dicts are ordered
+        self._act_dicts[int_map[ST_INACTIVE]] = mod_infos
+        # remember if RequireVersions check has already been run
+        self._reqs_checked = False
 
     def Continue(self):
         self.page = None
@@ -563,7 +567,7 @@ class WryeParser(PreParser):
         if bush.game.Se.se_abbrev:
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs['exe'].join(ver_file)
                 if ver_path.exists(): break
             return self._TestVersion(self._TestVersion_Want(seWant), ver_path)[
                 0]
@@ -579,12 +583,12 @@ class WryeParser(PreParser):
             return 1
 
     def fnCompareWBVersion(self, wbWant):
-        wbHave = bass.AppVersion
-        return bolt.cmp_(LooseVersion(wbHave), LooseVersion(wbWant))
+        return bolt.cmp_(bass.get_version_tuple(), LooseVersion(str(wbWant)))
 
     def fnDataFileExists(self, *rel_paths):
+        all_plugins = self._act_dicts[0] # see __init__ -> int_map
         for rel_path in rel_paths:
-            if rel_path in bosh.modInfos:
+            if rel_path in all_plugins:
                 continue # It's a (potentially ghosted) plugin, check next
             rel_path_os = to_os_path(bass.dirs['mods'].join(rel_path))
             if not rel_path_os or not rel_path_os.exists():
@@ -598,12 +602,7 @@ class WryeParser(PreParser):
             return default_val
 
     def fn_get_plugin_status(self, filename):
-        p_name = FName(filename)
-        if p_name in bosh.modInfos.merged: return 3   # Merged
-        if load_order.cached_is_active(p_name): return 2  # Active
-        if p_name in bosh.modInfos.imported: return 1 # Imported (not active/merged)
-        if p_name in bosh.modInfos: return 0          # Inactive
-        return -1                                   # Not found
+        return active_keys(FName(filename), self._act_dicts, -1) #-1: Not found
 
     _for_syntax_from = '\n ' + '\n '.join([
         'For var_name from value_start to value_end',
@@ -660,7 +659,7 @@ class WryeParser(PreParser):
                     sub = bass.dirs['installers'].join(self._path, subpackage)
                     for root_dir, dirs, files in sub.walk(relative=True):
                         for file_ in files:
-                            rel = root_dir[1:].join(file_) # chop off path sep
+                            rel = root_dir.join(file_)
                             List.append(rel.s)
                 List.sort()
             if not List:
@@ -714,22 +713,20 @@ class WryeParser(PreParser):
             self.reversing -= 1
             self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values = self.choices[self.choiceIdex], hitCase=False)
             return
-        imageJoin = self._wizard_dir.join
-        for i in images_:
+        im_dir_join = get_image_dir().join
+        for im in images_:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from
             # Mopy/bash/images/Wizard Images)
             # Note that these are almost always Windows paths, so we have to
             # convert them if we're on Linux
-            wiz_img_path = to_os_path(imageJoin(i))
+            wiz_img_path = to_os_path(self._wizard_dir.join(im))
             if wiz_img_path and wiz_img_path.is_file():
                 image_paths.append(wiz_img_path)
-            elif i.lower().startswith('wizard images'):
-                std_img_path = to_os_path(os.path.join(get_image_dir(), i))
-                if std_img_path and std_img_path.is_file():
-                    image_paths.append(std_img_path)
-                else:
-                    image_paths.append(None)
+            elif im.lower().startswith('wizard images'):
+                std_img_path = to_os_path(im_dir_join(im))
+                image_paths.append(std_img_path if std_img_path and
+                    std_img_path.is_file() else None)
             else:
                 image_paths.append(None)
         self.page = PageSelect(self._wiz_parent, bMany, main_desc, titles,
@@ -774,14 +771,13 @@ class WryeParser(PreParser):
         geWant = self._TestVersion_Want(ge)
         if geWant == 'None': ge = 'None'
         if not wbWant: wbWant = '0.0'
-        wbHave = bass.AppVersion
         need_have = _need_have(gameWant, bush.game_version())
         bGameOk = need_have[0] >= 0
         gameHave = need_have[1]
         if bush.game.Se.se_abbrev:
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
-                ver_path = bass.dirs['app'].join(ver_file)
+                ver_path = bass.dirs['exe'].join(ver_file)
                 if ver_path.exists(): break
             need_have = self._TestVersion(seWant, ver_path)
             bSEOk = need_have[0] >= 0
@@ -796,11 +792,13 @@ class WryeParser(PreParser):
         else:
             bGEOk = True
             geHave = 'None'
-        bWBOk = LooseVersion(wbHave) >= LooseVersion(wbWant)
-        if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
+        bWBOk = bass.get_version_tuple() >= LooseVersion(wbWant)
+        if ((not bGameOk or not bSEOk or not bGEOk or not bWBOk) and not
+            self._reqs_checked):
+            self._reqs_checked = True
             self.page = PageVersions(self._wiz_parent, bGameOk, gameHave, game,
                                      bSEOk, seHave, se, bGEOk, geHave, ge,
-                                     bWBOk, wbHave, wbWant)
+                                     bWBOk, wbWant)
 
     def _TestVersion_GE(self, want):
         if isinstance(bush.game.Ge.exe, bytes):

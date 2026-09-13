@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -72,8 +72,8 @@ try:
     # to be shown instead of an ImportError
     import ifileoperation
     from ifileoperation import FileOperationFlags, FileOperator
-except ImportError:
-    pass # We'll raise an error in bash.py
+except ImportError: # We'll raise an error in bash.py
+    ifileoperation = FileOperator = FileOperationFlags = None
 from .common import FileOperationType, _StrPath
 
 def file_operation(operation: FileOperationType,
@@ -1034,19 +1034,19 @@ def get_registry_path(subkey, entry, test_path_callback):
             return installPath
     return None
 
-def get_gog_game_paths(submod):
+def get_gog_game_paths(submod, **_kwargs):
     """Check registry for games with GOG keys."""
     return _find_registry_games(submod, submod.gog_registry_keys)
 
-def get_disc_game_paths(submod, found_steam_paths, found_gog_paths):
+def get_disc_game_paths(submod, *, game_stores, __keys=(
+        ' 1. Steam:', ' 2. GOG (via Windows Registry):'), **_kwargs):
     """Check registry for the disc versions of older games."""
     disc_paths = _find_registry_games(submod, submod.disc_registry_keys)
     # The Steam and GOG versions set the same registry key as the disc version,
     # so avoid showing it twice
-    steam_paths_set = set(chain.from_iterable(found_steam_paths))
-    gog_paths_set = set(chain.from_iterable(found_gog_paths))
-    return [p for p in disc_paths
-            if p not in steam_paths_set and p not in gog_paths_set]
+    found_paths = chain(*(game_stores[k].values() for k in __keys))
+    found_paths = set(chain(*found_paths))
+    return [p for p in disc_paths if p not in found_paths]
 
 def get_legacy_ws_game_info(submod):
     """Get all information about a legacy Windows Store application."""
@@ -1054,7 +1054,7 @@ def get_legacy_ws_game_info(submod):
     ws_app_name = submod.Ws.win_store_name
     return _legacy_win_store_finder.get_app_info(ws_app_name, publisher_name)
 
-def get_ws_game_paths(submod):
+def get_ws_game_paths(submod, **_kwargs):
     """Check the .GamingRoot files on each drive to find if the specified game
     is installed via the Windows Store and return its install path."""
     if ws_app_name := submod.Ws.win_store_name:
@@ -1064,7 +1064,7 @@ def get_ws_game_paths(submod):
                 all_ws_games[ws_app_name])
     return []
 
-def get_steam_game_paths(submod):
+def get_steam_game_paths(submod, **_kwargs):
     """Read Steam config information to determine which Steam games are
     installed and return their install paths."""
     return [*map(_GPath_no_norm, _parse_steam_manifests(
@@ -1238,16 +1238,18 @@ def _real_sys_prefix():
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
-    return p.replace(u'/', u'\\')
+    return p.replace('/', '\\')
 
-def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: _Path | str) -> _Path | None:
     """Alter the case of a case-insensitive path to match directories and files
     actually present in the filesystem, if any. This is basically identical to
     what Wine does when emulating case insensitivity. If this returns None, the
     path does not exist. However, if this does not return None then there is no
     guarantee that the path exists, so check using exists()/is_file()/etc."""
-    # Windows is case-insensitive, nothing to do here
-    return _Path(os.fspath(ci_path))
+    # Windows is case-insensitive, nothing to do here - ci_path could either be
+    # a str or a Path, but _GPath_no_norm wants a string, so check first
+    return (ci_path if isinstance(ci_path, _Path) else
+            _GPath_no_norm(ci_path))
 
 def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
     """Mark the file with the specified path as hidden or unhidden, based on
@@ -1689,7 +1691,5 @@ class LnkLauncher(AppLauncher):
 def in_mo2_vfs() -> bool:
     """Test if Wrye Bash appears be running with MO2's virtual filesystem
     hooked in."""
-    for dll in ('hook.dll', 'usvfs_x64.dll'):
-        if ctypes.windll.kernel32.GetModuleHandleW(dll): # dll handle
-            return True
-    return False
+    return any(ctypes.windll.kernel32.GetModuleHandleW( # dll handle
+        dll) for dll in ('hook.dll', 'usvfs_x64.dll'))

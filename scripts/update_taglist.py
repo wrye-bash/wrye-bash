@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -39,15 +39,16 @@ _GAME_DATA = {
     'Fallout3': 'fallout3',
     'FalloutNV': 'falloutnv',
     'Fallout4': 'fallout4',
-    'Fallout4VR': 'fallout4vr',
     'Morrowind': 'morrowind',
     'Oblivion': 'oblivion',
     'Skyrim': 'skyrim',
     'SkyrimSE': 'skyrimse',
-    'SkyrimVR': 'skyrimvr',
     'Starfield': 'starfield',
 }
-MASTERLIST_VERSION = '0.21'
+MASTERLIST_VERSION = '0.29'
+
+TAGLISTS_PATHS = sorted(TAGLISTS_PATH / game_name / 'taglist.yaml' for
+                        game_name in _GAME_DATA)
 
 def _download_masterlist(repository, version, dl_path):
     url = (f'https://raw.githubusercontent.com/loot/{repository}/v{version}/'
@@ -67,11 +68,7 @@ def _setup_masterlist(argparser):
     )
 
 def all_taglists_present():
-    for game_name in _GAME_DATA:
-        taglist_path = TAGLISTS_PATH / game_name / 'taglist.yaml'
-        if not taglist_path.is_file():
-            return False
-    return True
+    return all(p.is_file() for p in TAGLISTS_PATHS)
 
 def main(args):
     setup_log(_LOGGER, args)

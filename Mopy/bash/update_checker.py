@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,6 +28,7 @@ __author__ = 'Infernio'
 import base64
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from threading import Thread
 
@@ -296,7 +297,7 @@ class UCThread(Thread):
     """A threaded version of UpdateChecker. Pass it a custom event sender
     created by _AComponent._make_custom_event, which will be used to send the
     result back to the main thread."""
-    def __init__(self, send_version: callable):
+    def __init__(self, send_version: Callable):
         super().__init__(daemon=True)
         self._send_version = send_version
 

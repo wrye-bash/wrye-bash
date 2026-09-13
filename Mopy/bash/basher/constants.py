@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -117,8 +117,7 @@ if bush.game.Esp.check_master_sizes:
     )
 
 # Does the LO use timestamps? -------------------------------------------------
-##: Is this condition OK? We can't really call load_order to check...
-if not bush.game.using_txt_file:
+if bush.game.mtime_lo:
     colorInfo['mods.bkgd.doubleTime.exists'] = (_('Inactive Time Conflict'),
         _mod_tab + _('This is the background color used for a plugin with an '
             'inactive time conflict. This means that two or more plugins have '

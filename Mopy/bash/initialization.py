@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,18 +29,14 @@ import io
 from configparser import ConfigParser, MissingSectionHeaderError
 
 # Local - make sure that all imports here are carefully done in bash.py first
+from . import bass
 from .bass import dirs, get_path_from_ini
 from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
 from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_personal_path, shellMakeDirs, is_case_sensitive, \
     get_case_sensitivity_advice
-from .exception import BoltError
-##: This pulls in bush long before _import_bush_and_set_game!
-from .loot_parser import LOOTParser
-
-mopy_dirs_initialized = bash_dirs_initialized = False
-#--Config Helper files (LOOT Master List, etc.)
-lootDb: LOOTParser | None = None
+from .exception import BoltError, NonExistentDriveError
+# no other Bash imports!
 
 def _get_ini_option(ini_parser, option_key) -> str | None:
     if not ini_parser:
@@ -77,7 +73,10 @@ def _get_cli_ini_path(my_docs_path, cli_switch, ini_path_key, game_info,
         ]))
     return my_docs_path
 
-def getOblivionModsPath(game_info):
+def getOblivionModsPath(game_info, cli_path_arg):
+    if cli_path_arg:
+        return (cli_path if (cli_path := GPath(cli_path_arg)).is_absolute()
+                else dirs['app'].join(cli_path), 'Command Line Argument')
     ob_mods_path = get_path_from_ini('OblivionMods')
     if ob_mods_path:
         return ob_mods_path, ['[General]', 'sOblivionMods']
@@ -111,11 +110,12 @@ def init_dirs(game_info, opts, init_warnings):
     that need info on Bash / Game dirs should be initialized here and set
     as globals in module scope. It may be called two times if restoring
     settings fails."""
-    if not mopy_dirs_initialized:
-        raise BoltError(u'init_dirs: Mopy dirs uninitialized')
+    if not bass.mopy_dirs_initialized:
+        raise BoltError('init_dirs: Mopy dirs uninitialized')
     personal, localAppData = opts.personalPath, opts.localAppDataPath
     #--Oblivion (Application) Directories
-    dirs[u'app'] = game_info.gamePath
+    dirs['app'] = game_info.gamePath
+    dirs['exe'] = dirs['app'].join(*game_info.executable_dir)
     dirs[u'defaultPatches'] = (
         dirs[u'mopy'].join(u'Bash Patches', game_info.bash_patches_dir)
         if game_info.bash_patches_dir else u'')
@@ -134,10 +134,8 @@ def init_dirs(game_info, opts, init_warnings):
         'PersonalPath', game_info, get_personal_path,
         _('Failed to determine personal folder.'), _(
             'Personal folder does not exist: %(folder)s'))
-    if game_info.uses_personal_folders:
-        dirs[u'saveBase'] = personal.join(u'My Games', game_info.my_games_name)
-    else:
-        dirs[u'saveBase'] = dirs[u'app']
+    dirs['saveBase'] = game_info.Ess.base_saves_path(personal,
+        game_info.my_games_name, dirs) # for Morrowind we will lookup 'app'
     deprint(f'My Games location set to {dirs[u"saveBase"]}')
     # Determine the user's AppData\Local (i.e. %LOCALAPPDATA%) folder. Attempt
     # to pull from, in order:
@@ -153,16 +151,25 @@ def init_dirs(game_info, opts, init_warnings):
         '-l', 'LocalAppDataPath', game_info, get_local_app_data_path,
         _('Failed to determine LocalAppData folder.'),
         _('LocalAppData folder does not exist: %(folder)s'))
-    # AppData for the game, depends on if it's a WS game or not.
-    ws_info = get_legacy_ws_game_info(game_info)
-    if ws_info.installed:
-        version_info = ws_info.get_installed_version()
-        dirs[u'userApp'] = localAppData.join(
-            u'Packages', version_info.full_name, u'LocalCache', u'Local',
-            game_info.appdata_name)
+    if game_info.appdata_name:
+        # AppData for the game, depends on if it's a WS game or not.
+        ws_info = get_legacy_ws_game_info(game_info)
+        if ws_info.installed:
+            version_info = ws_info.get_installed_version()
+            dirs['userApp'] = localAppData.join(
+                'Packages', version_info.full_name, 'LocalCache', 'Local',
+                game_info.appdata_name)
+        else:
+            dirs['userApp'] = localAppData.join(game_info.appdata_name)
+        deprint(f'LocalAppData location set to {dirs["userApp"]}')
     else:
-        dirs[u'userApp'] = localAppData.join(game_info.appdata_name)
-    deprint(f'LocalAppData location set to {dirs[u"userApp"]}')
+        # Let any usage of userApp blow up, such a game needs to override
+        # determine_lo_dir() (and future usages need to account for such games)
+        deprint('No LocalAppData folder set for this game')
+    # The Data folder and the LO path, may be overridden by
+    # bUseMyGamesDirectory (see below)
+    dirs['mods'] = dirs['app'].join(*game_info.mods_dir_path)
+    lo_dir = game_info.get_lo_dir(dirs)
     # Use local copy of the oblivion.ini if present
     # see: http://en.uesp.net/wiki/Oblivion:Ini_Settings
     # Oblivion reads the Oblivion.ini in the directory where it exists
@@ -171,21 +178,24 @@ def init_dirs(game_info, opts, init_warnings):
     # both can exist simultaneously, and only the value of bUseMyGamesDirectory
     # in the Oblivion.ini directory where Oblivion.exe is run from will
     # actually matter.
-    # Utumno: not sure how/if this applies to other games
-    first_ini_name = game_info.Ini.dropdown_inis[0]
-    data_oblivion_ini = dirs[u'app'].join(first_ini_name)
-    game_ini_path = dirs[u'saveBase'].join(first_ini_name)
-    dirs[u'mods'] = dirs[u'app'].join(game_info.mods_dir)
-    if data_oblivion_ini.is_file():
+    # Utumno: not sure how/if this applies to other games - Infernio: should at
+    # least apply to Oblivion Remastered too
+    game_ini_name = game_info.Ini.dropdown_inis[0]
+    parent_data_game_ini = dirs['mods'].head.join(game_ini_name)
+    if game_info.Ini.game_inis_in_my_documents:
+        game_ini_path = dirs['saveBase'].join(game_ini_name)
+    else:
+        game_ini_path = parent_data_game_ini
+    if parent_data_game_ini.is_file():
         ##: use GameIni here
         oblivionIni = ConfigParser(allow_no_value=True, strict=False)
         try:
             try:
                 # Try UTF-8 first, will also work for ASCII-encoded files
-                oblivionIni.read(data_oblivion_ini, encoding='utf8')
+                oblivionIni.read(parent_data_game_ini, encoding='utf8')
             except UnicodeDecodeError:
                 # No good, this is a nonstandard encoding
-                with data_oblivion_ini.open(u'rb') as ins:
+                with parent_data_game_ini.open(u'rb') as ins:
                     ini_contents = ins.read()
                 oblivionIni.read_file(io.StringIO(decoder(ini_contents)))
         except MissingSectionHeaderError:
@@ -195,15 +205,20 @@ def init_dirs(game_info, opts, init_warnings):
                 'does not appear to be a valid game INI. It might come from '
                 'an incorrectly installed third party tool. Consider deleting '
                 'it and validating your game files.') % {
-                'global_ini': data_oblivion_ini})
+                'global_ini': parent_data_game_ini})
         # is bUseMyGamesDirectory set to 0?
         if _get_ini_option(oblivionIni, 'bUseMyGamesDirectory') == '0':
-            game_ini_path = data_oblivion_ini
-            # Set the save game folder to the Oblivion directory
-            dirs[u'saveBase'] = dirs[u'app']
-            # Set the data folder to sLocalMasterPath
-            dirs['mods'] = dirs['app'].join(_get_ini_option(oblivionIni,
-                u'SLocalMasterPath') or game_info.mods_dir)
+            # Avoid the My Games directory for INIs and saves
+            game_ini_path = parent_data_game_ini
+            dirs['saveBase'] = dirs['app']
+            lo_dir = dirs['app']
+            # Set the data folder to sLocalMasterPath if that option is set
+            s_local_mp = _get_ini_option(oblivionIni, 'SLocalMasterPath')
+            if s_local_mp:
+                dirs['mods'] = dirs['app'].join(s_local_mp)
+    deprint(f'{game_info.mods_dir_name} folder set to {dirs["mods"]}')
+    dirs['lo'] = lo_dir
+    deprint(f'Load order folder set to {dirs["lo"]}')
     # Check and warn if the Data folder is case-sensitive
     if is_case_sensitive(dirs['mods']):
         ci_warn = _(
@@ -211,21 +226,22 @@ def init_dirs(game_info, opts, init_warnings):
             'serious problems for Wrye Bash, like BAIN not working if the '
             'case differs between a mod-added file and an existing version of '
             'that file in the Data folder.') % {
-            'data_folder': game_info.mods_dir}
+            'data_folder': game_info.mods_dir_name}
         init_warnings.append(ci_warn + '\n\n' + get_case_sensitivity_advice())
     # these are relative to the mods path so they must be set here
     dirs[u'patches'] = dirs[u'mods'].join(u'Bash Patches')
-    dirs[u'tag_files'] = dirs[u'mods'].join(u'BashTags')
+    dirs['tag_files'] = dirs['mods'].join('BashTags')
     dirs[u'ini_tweaks'] = dirs[u'mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
-    oblivionMods, oblivionModsSrc = getOblivionModsPath(game_info)
+    oblivionMods, oblivionModsSrc = getOblivionModsPath(game_info,
+                                                        opts.oblivionMods)
     dirs[u'bash_root'] = oblivionMods
     deprint(f'Game Mods location set to {oblivionMods}')
     dirs['modsBash'], modsBashSrc = _get_ini_path('BashModData', 'bash_root',
                                                   'Bash Mod Data')
     if game_info.check_legacy_paths:
         mpath = dirs['modsBash']
-        old_path = dirs['app'].join(game_info.mods_dir, 'Bash')
+        old_path = dirs['app'].join(*game_info.mods_dir_path, 'Bash')
         if not mpath.is_dir() and old_path.is_dir():
             dirs['modsBash'], modsBashSrc = old_path, 'Relative path'
     deprint(f'Bash Mod Data location set to {dirs[u"modsBash"]}')
@@ -252,28 +268,15 @@ def init_dirs(game_info, opts, init_warnings):
             wanted_dir = dirs[dir_key]
             deprint(f' - {wanted_dir}')
             shellMakeDirs([wanted_dir])
-    except NotADirectoryError as e:
-        # NotADirectoryError is thrown by shellMakeDirs if any of the
+    except NonExistentDriveError as e:
+        # NonExistentDriveError is thrown by shellMakeDirs if any of the
         # directories cannot be created due to residing on a non-existing
         # drive (in posix if permission is denied). Find which keys are
         # causing the errors
         msg = _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc,
                             oblivionMods, oblivionModsSrc)
         raise BoltError(msg)
-    loot_gname = game_info.loot_dir
-    loot_folder = dirs['local_appdata'].join('LOOT')
-    # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
-    loot_path = loot_folder.join('games', loot_gname)
-    if not loot_path.is_dir():
-        # Fall back to the 'legacy' path (LOOT\<game>)
-        loot_path = loot_folder.join(loot_gname)
-    loot_master_path = loot_path.join('masterlist.yaml')
-    loot_user_path = loot_path.join('userlist.yaml')
-    loot_tag_path = dirs['taglists'].join('taglist.yaml')
-    global lootDb
-    lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
-    global bash_dirs_initialized
-    bash_dirs_initialized = True
+    bass.bash_dirs_initialized = True
     return game_ini_path
 
 def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
@@ -323,7 +326,7 @@ def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
     return msg
 
 def init_dirs_mopy():
-    dirs[u'mopy'] = Path.getcwd()
+    dirs['mopy'] = Path.getcwd()
     dirs[u'bash'] = dirs[u'mopy'].join(u'bash')
     dirs[u'compiled'] = dirs[u'bash'].join(u'compiled')
     dirs[u'l10n'] = dirs[u'bash'].join(u'l10n')
@@ -333,21 +336,20 @@ def init_dirs_mopy():
     from . import archives
     if os_name == u'nt': # don't add local directory to binaries on linux
         archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
-    global mopy_dirs_initialized
-    mopy_dirs_initialized = True
+    bass.mopy_dirs_initialized = True
 
-def getLocalSaveDirs():
+def getLocalSaveDirs(saves_folder: str):
     """Return a list of possible local save directories, NOT including the
     base directory."""
-    baseSaves = dirs[u'saveBase'].join(u'Saves')
+    baseSaves = dirs['saveBase'].join(saves_folder)
     # Path.ilist returns [] for non existent dirs
     localSaveDirs = [x for x in top_level_dirs(baseSaves) if
-                     x not in (u'Bash', u'Mash')]
+                     x not in ('Bash', 'Mash')]
     # Filter out non-encodable names
     bad = set()
     for folder in localSaveDirs:
         try:
-            folder.encode(u'cp1252')
+            folder.encode('cp1252')
         except UnicodeEncodeError:
             bad.add(folder)
     localSaveDirs = sorted(x for x in localSaveDirs if x not in bad)

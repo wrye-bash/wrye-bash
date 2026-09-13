@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -42,7 +42,6 @@ class _AMorrowindGameInfo(PatchGame):
     game_icon = u'morrowind.svg'
     bash_root_prefix = u'Morrowind'
     bak_game_name = u'Morrowind'
-    uses_personal_folders = False
     appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
     game_detect_includes = {'Morrowind.exe'}
@@ -50,7 +49,8 @@ class _AMorrowindGameInfo(PatchGame):
                             WS_COMMON_FILES)
     version_detect_file = u'Morrowind.exe'
     master_file = bolt.FName(u'Morrowind.esm')
-    mods_dir = u'Data Files'
+    mods_dir_name = 'Data Files'
+    mods_dir_path = ['Data Files']
     taglist_dir = u'Morrowind'
     loot_dir = u'Morrowind'
     loot_game_name = 'Morrowind'
@@ -58,10 +58,20 @@ class _AMorrowindGameInfo(PatchGame):
     nexusName = u'Morrowind Nexus'
     nexusKey = u'bash.installers.openMorrowindNexus.continue'
 
-    using_txt_file = False
+    mtime_lo = True
     plugin_name_specific_dirs = [] # Morrowind seems to have no such dirs
 
     allTags = set() # no BP functionality yet
+
+    def force_ext_flags(self, mod_info, pflag):
+        ##: This is wrong, but works for now. We need game-specific
+        # record headers to parse the ESM flag for MW correctly - #480!
+        return pflag is self.master_flag and mod_info.get_extension() == '.esm'
+
+    @staticmethod
+    def get_lo_dir(bass_dirs):
+        # LO file is Morrowind.ini, which is in the game folder
+        return bass_dirs['app']
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
@@ -95,7 +105,15 @@ class _AMorrowindGameInfo(PatchGame):
             if len(bsas) != len(bsalo := {v: k for k, v in bsas.items() if v}):
                 bolt.deprint(f'some BSAs in {mor_ini} are not present: '
                              f'{bsas.keys() - bsalo.values()}')
-            return bsalo, dict.fromkeys(bsalo, mor_ini.fn_key)
+            for b in bsalo:
+                b.lo_src = f'Loaded from: {mor_ini.fn_key}'
+            return bsalo
+
+    class Ess(GameInfo.Ess):
+        @classmethod
+        def base_saves_path(cls, personal: bolt.Path, my_games_name: str,
+                            bass_dirs):
+            return bass_dirs['app']
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
@@ -106,18 +124,20 @@ class _AMorrowindGameInfo(PatchGame):
         })
 
         @classmethod
-        def attached_bsas(cls, bsa_infos, fn_body):
+        def attached_bsas(cls, av_bsas, fn_body):
             """Morrowind does not load attached BSAs at all - they all have
             to be registered via the INI."""
             return []
 
         @classmethod
-        def update_bsa_lo(cls, lo, _av_bsas, bsa_lodex, cause):
+        def update_bsa_lo(cls, lo, _av_bsas, bsa_lodex):
             """Sort Ini loaded bsas by mtime then by name - av_bsas unused."""
             binfs_sorted = sorted([bi for bi in bsa_lodex],
                                   key=lambda x: (x.ftime, x.fn_key))
             # override the FName values with the int load order
-            bsa_lodex.update((bi, i) for i, bi in enumerate(binfs_sorted))
+            for i, bi in enumerate(binfs_sorted):
+                bsa_lodex[bi] = i
+                bi.lo_src += f' (bsa load order {i})'
 
     class Xe(GameInfo.Xe):
         full_name = u'TES3Edit'

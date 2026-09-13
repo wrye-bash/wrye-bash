@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,11 +29,9 @@ from .exception import StateError
 from .wbtemp import TempFile
 
 exe7z = u'7z.exe' if os_name == u'nt' else u'7z'
-defaultExt = u'.7z'
-writeExts = {defaultExt: '7z', '.zip': 'zip'}
-readExts = {u'.rar', u'.001'}
-readExts.update(writeExts)
-omod_exts = {u'.omod', u'.fomod'}
+writeExts = {(defaultExt := '.7z'): '7z', '.zip': 'zip'}
+readExts = frozenset(['.rar', '.001', *writeExts])
+omod_exts = frozenset(['.omod', '.fomod'])
 noSolidExts = {u'.zip'}
 reSolid = re.compile(r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(r'Compressing\s+(.+)', re.U).match

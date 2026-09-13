@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -219,10 +219,13 @@ class Lazy(_AObject):
     # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs):
         """Postpone calling super.__init__ till the widget is accessed."""
-        # passed from native_init for classes that have a parent
-        self._parent = _no_parent
         self._cached_args = args
         self._cached_kwargs = kwargs
+        self.__reset()
+
+    def __reset(self):
+        # passed from native_init for classes that have a parent
+        self._parent = _no_parent
         self._cached_widget = None
         self.__native_init_called = self._bypass_native_init
 
@@ -239,9 +242,7 @@ class Lazy(_AObject):
     def native_destroy(self):
         if self._is_created():
             self._cached_widget.Destroy()
-            self._cached_widget = None
-            self._parent = _no_parent
-            self.__native_init_called = self._bypass_native_init
+            self.__reset()
 
     # Lazy API - probe into the internals of the class - special occasions only
     def _is_created(self):
@@ -432,9 +433,6 @@ class _AComponent(_AEvtHandler):
         input."""
         self._native_widget.SetFocus()
 
-    def wx_id_(self): ##: Avoid, we do not want to program with gui ids
-        return self._native_widget.GetId()
-
     def update_layout(self):
         """Tells the layout applied to this component to update and lay out its
         sub-components again, based on changes that have been made to them
@@ -580,16 +578,16 @@ class WithDragEvents(WithMouseEvents):
     """
     bind_lclick_up = bind_lclick_down = bind_motion = True
 
-    def __init__(self, *args, on_drag_start, on_drag_end, on_drag_end_forced,
-                 on_drag, **kwargs):
+    def __init__(self, *args, on_drag_start=None, on_drag_end=None,
+                 on_drag_end_forced=None, on_drag=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.on_mouse_left_down.subscribe(on_drag_start)
-        self.on_mouse_left_up.subscribe(on_drag_end)
-        if _wx.Platform == '__WXMSW__':
+        if on_drag_start: self.on_mouse_left_down.subscribe(on_drag_start)
+        if on_drag_end: self.on_mouse_left_up.subscribe(on_drag_end)
+        if on_drag_end_forced and _wx.Platform == '__WXMSW__':
             self.on_mouse_capture_lost = self._evt_handler(
                 _wx.EVT_MOUSE_CAPTURE_LOST)
             self.on_mouse_capture_lost.subscribe(on_drag_end_forced)
-        self.on_mouse_motion.subscribe(on_drag)
+        if on_drag: self.on_mouse_motion.subscribe(on_drag)
 
 # Automatic column sizing -----------------------------------------------------
 class AutoSize:

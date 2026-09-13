@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -36,8 +36,8 @@ from .events import *
 from .functions import *
 from .images import *
 from .layouts import *
+from .misc_components import * # this must come before .list_ctrl
 from .list_ctrl import *
-from .misc_components import *
 from .menus import *
 from .multi_choices import *
 from .popups import *

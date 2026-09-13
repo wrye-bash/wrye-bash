@@ -16,19 +16,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 import re
 from collections import defaultdict
 
-from . import SaveDetails
+from . import SaveDetails, MasterList
 from .settings_dialog import SettingsDialog
 from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
     ItemLink, Link, OneItemLink, RadioLink, SeparatorLink
-from ..bolt import GPath, FName
+from ..bolt import GPath, FName, RefrIn
 from ..gui import AutoSize, BusyCursor, ImgFromPath
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
@@ -59,7 +59,6 @@ class Screens_NextScreenShot(EnabledLink):
     def Execute(self):
         base_key = bush.game.Ini.screenshot_base_key
         index_key = bush.game.Ini.screenshot_index_key
-        enabled_key = bush.game.Ini.screenshot_enabled_key
         base = bosh.oblivionIni.getSetting(*base_key)
         index = bosh.oblivionIni.getSetting(*index_key)
         pattern = self._askText(
@@ -74,6 +73,7 @@ class Screens_NextScreenShot(EnabledLink):
         settings_screens = defaultdict(dict)
         settings_screens[base_key[0]][base_key[1]] = new_base
         settings_screens[index_key[0]][index_key[1]] = (new_index or index)
+        enabled_key = bush.game.Ini.screenshot_enabled_key
         settings_screens[enabled_key[0]][enabled_key[1]] = enabled_key[2]
         screens_dir = GPath(new_base).head
         if screens_dir:
@@ -81,8 +81,8 @@ class Screens_NextScreenShot(EnabledLink):
                 screens_dir = bass.dirs[u'app'].join(screens_dir)
             screens_dir.makedirs()
         bosh.oblivionIni.saveSettings(settings_screens)
-        bosh.screen_infos.refresh()
-        self.window.RefreshUI()
+        rdata = bosh.screen_infos.refresh(True)
+        self.window.RefreshUI(rdata)
 
 #------------------------------------------------------------------------------
 class Screen_ConvertTo(EnabledLink):
@@ -98,7 +98,9 @@ class Screen_ConvertTo(EnabledLink):
         self.convertable = [s for s in self.selected if s.fn_ext != self._ext]
         return bool(self.convertable)
 
+    @balt.conversation # needed otherwise RUI might raise KeyError on del_infos
     def Execute(self):
+        converted = {}
         try:
             msg = _('Converting to %(img_ext)s') % {'img_ext': self._ext[1:]}
             with balt.Progress(msg) as progress:
@@ -106,16 +108,20 @@ class Screen_ConvertTo(EnabledLink):
                 for index, fileName in enumerate(self.convertable):
                     progress(index, fileName)
                     srcPath = bosh.screen_infos[fileName].abs_path
-                    destPath = srcPath.root + self._ext
+                    destPath = srcPath.root + self._ext # Path __add__ !
                     if srcPath == destPath or destPath.exists(): continue
                     bmp = ImgFromPath.from_path(srcPath.s,
                         quality=bass.settings['bash.screens.jpgQuality'])
                     result = bmp.save_bmp(destPath.s, self._ext)
                     if not result: continue
                     srcPath.remove()
+                    converted[bosh.screen_infos[fileName]] = FName(
+                        fileName.fn_body + self._ext)
         finally:
-            bosh.screen_infos.refresh()
-            self.window.RefreshUI()
+            if converted:
+                rinf = RefrIn.from_added(converted.values())
+                rinf.del_infos.update(converted)
+                self.window.RefreshUI(bosh.screen_infos.refresh(rinf))
 
 #------------------------------------------------------------------------------
 class Screens_JpgQuality(RadioLink):
@@ -153,10 +159,13 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Master_AllowEdit(CheckLink, EnabledLink):
+class _MasterLinkBase(EnabledLink):
+    window: MasterList
+
+class Master_AllowEdit(CheckLink, _MasterLinkBase):
     _text, _help = _(u'Allow Editing'), _(u'Allow editing the masters list.')
 
-    def _enable(self): return self.window.panel.detailsPanel.allowDetailsEdit
+    def _enable(self): return self.window.parent_details.allowDetailsEdit
     def _check(self): return self.window.allowEdit
     def Execute(self): self.window.allowEdit ^= True
 
@@ -169,7 +178,7 @@ class Master_ClearRenames(ItemLink):
         bass.settings[u'bash.mods.renames'].clear()
         self.window.RefreshUI()
 
-class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
+class _Master_EditList(OneItemLink, _MasterLinkBase): # one item cause _singleSelect = True
 
     def _enable(self): return self.window.allowEdit
 
@@ -191,21 +200,21 @@ class Master_ChangeTo(_Master_EditList):
         masterInfo = self._selected_info
         master_name = masterInfo.curr_name
         #--File Dialog
-        wildcard = bosh.modInfos.plugin_wildcard()
+        mod_infos = bosh.modInfos
+        wildcard = mod_infos.unhide_wildcard()
         newPath = self._askOpen(title=_('Change master name to:'),
-                                defaultDir=bosh.modInfos.store_dir,
+                                defaultDir=mod_infos.store_dir,
                                 defaultFile=master_name, wildcard=wildcard)
         if not newPath: return
         newDir, newName = newPath.headTail
         #--Valid directory?
-        if newDir != bosh.modInfos.store_dir:
-            self._showError(_('File must be selected from %(data_folder)s '
-                              'folder.') % {'data_folder': bush.game.mods_dir})
+        if newDir != mod_infos.store_dir:
+            msg = _('File must be selected from %(data_folder)s folder.')
+            self._showError(msg % {'data_folder': bush.game.mods_dir_name})
             return
-        # Handle ghosts: simply chop off the extension
-        if newName.cext == '.ghost':
-            newName = newName.root
-        if (new_fname := FName(newName.s)) == master_name:
+        # check_filename will lop off the .ghost extension
+        if not (body_ext := mod_infos.check_filename(newName.s)) or (
+                new_fname := FName(''.join(body_ext))) == master_name:
             return
         curr_master_names = {m.curr_name for m in self._data_store.values()}
         parent_mi = masterInfo.parent_mod_info
@@ -244,7 +253,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
         # Only allow doing this for saves and only for games where removing a
         # master from an existing save is safe
         return bush.game.Ess.can_safely_remove_masters and isinstance(
-            window.detailsPanel, SaveDetails)
+            window.parent_details, SaveDetails)
 
     def _enable(self):
         if not super(Master_Disable, self)._enable(): return False
@@ -268,7 +277,7 @@ class Master_JumpTo(OneItemLink):
         return self._sel_master in bosh.modInfos
 
     def Execute(self):
-        balt.Link.Frame.notebook.SelectPage(u'Mods', self._sel_master)
+        balt.Link.Frame.notebook.jump_to('Mods', self._sel_master)
 
 #------------------------------------------------------------------------------
 class _Column(CheckLink, EnabledLink):
@@ -283,7 +292,7 @@ class _Column(CheckLink, EnabledLink):
             u'colname': self._text}
 
     def _enable(self):
-        return self.colName not in self.window.persistent_columns
+        return self.colName != self.window.default_sort_col
 
     def _check(self): return self.colName in self.window.cols
 

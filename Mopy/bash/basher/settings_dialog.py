@@ -16,22 +16,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import io
 import os
 import webbrowser
 from collections import defaultdict
 
-from . import tabInfo
+from . import TabInfo
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
-from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
-    reverse_dict
+from ..bolt import deprint, dict_sort, readme_url, reverse_dict
 from ..env import is_uac, shellDelete, shellMove
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
@@ -283,9 +281,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     def UpdateUIColors():
         """Update the Bash Frame with the new colors"""
         with BusyCursor():
-            for (_className, _title, panel) in tabInfo.values():
-                if panel is not None:
-                    panel.RefreshUIColors()
+            for btab in TabInfo:
+                if (pan := btab.tab_panel) is not None:
+                    pan.RefreshUIColors()
 
     def UpdateUIButtons(self):
         # Apply All and Default All
@@ -430,9 +428,11 @@ class LanguagePage(_AScrollablePage):
     _internal_to_localized = _LangDict({
         'de_DE': f"{_('German')} (Deutsch)",
         'en_US': f"{_('American English')} (American English)",
+        'es_ES': f"{_('Spanish')} (español)",
         'it_IT': f"{_('Italian')} (italiano)",
         'ja_JP': f"{_('Japanese')} (日本語)",
         'pt_BR': f"{_('Brazilian Portuguese')} (português brasileiro)",
+        'pt_PT': f"{_('Portuguese')} (português)",
         'ru_RU': f"{_('Russian')} (Русский язык)",
         'sv_SE': f"{_('Swedish')} (svenska)",
         'ta':    f"{_('Tamil')} (தமிழ்)",
@@ -448,12 +448,12 @@ class LanguagePage(_AScrollablePage):
         # Gather all localizations in the l10n directory. Note that we don't
         # use the 'de_DENEW' thing anymore, but people may still have those
         # files sitting around in their l10n dirs, so keep filtering them
-        all_langs = [f'{b}' for f in bass.dirs['l10n'].ilist()
+        all_langs = {f'{b}' for f in bass.dirs['l10n'].ilist()
                      if f.fn_ext in ('.mo', '.po')
-                     and (b := f.fn_body)[-3:].lower() != 'new']
+                     and (b := f.fn_body)[-3:].lower() != 'new'}
         # Insert English since there's no localization file for that
         if 'en_US' not in all_langs:
-            all_langs.append('en_US')
+            all_langs.add('en_US')
         localized_langs = [self._internal_to_localized[l] for l in all_langs]
         # If the user has an unknown language active
         active_lang = self._internal_to_localized['en_US']
@@ -761,7 +761,7 @@ class BackupsPage(_AFixedPage):
             bkp_setts = barb.BackupSettings(
                 settings_file, bush.game.bak_game_name,
                 bush.game.my_games_name, bush.game.bash_root_prefix,
-                bush.game.mods_dir)
+                bush.game.mods_dir_name, bush.game.Ess.saves_dir)
         try:
             with BusyCursor(): bkp_setts.backup_settings(balt)
         except exception.StateError:
@@ -863,9 +863,8 @@ class ConfirmationsPage(_AFixedPage):
         u'MOVE': _(u'Move'),
     }
     _label_to_action = reverse_dict(_action_to_label)
-    ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
-    # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
-    # sense for non-SSE/FO4 games
+    ##: Maybe hide some of these per game? E.g. Add/Remove ESL Flag makes no
+    # sense for non-SSE/FO4/SF games
     ##: We should also enforce that a key is in here before allowing
     # askContinue to proceed, so that we won't ever forget to add one here (or
     # come up with a better way to store these)
@@ -900,8 +899,6 @@ class ConfirmationsPage(_AFixedPage):
             'bash.flipToEsmp.continue',
         _("[Mods] Adding or removing the ESM flag from a plugin's masters"):
             'bash.flipMasters.continue',
-        _('[Mods] Applying the Nvidia Fog Fix'):
-            'bash.cleanMod.continue',
         _("[Mods] Changing a plugin's version to 0.8"):
             'bash.setModVersion.continue',
         _('[Mods] Exporting load order to a text file: OBMM warning'):
@@ -1155,10 +1152,6 @@ class GeneralPage(_AScrollablePage):
         self._global_menu_dropdown.on_combo_select.subscribe(
             self._on_global_menu)
         global_menu_label = Label(self, _('Global or Column Menu:'))
-        # Hide the whole section on Linux - see refresh_global_menu_visibility
-        if os_name != 'nt':
-            global_menu_label.visible = False
-            self._global_menu_dropdown.visible = False
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
             chkbx_tooltip=_("Remember where you left off last time and "
@@ -1262,7 +1255,7 @@ class GeneralPage(_AScrollablePage):
         with BusyCursor():
             newer_version = UpdateChecker().check_for_updates(force_check=True)
         if newer_version is not None:
-            if newer_version.wb_version > LooseVersion(bass.AppVersion):
+            if newer_version.wb_version > bass.get_version_tuple():
                 UpdateNotification.display_dialog(self, newer_version)
             else:
                 showInfo(self, _('You are already using the newest version of '
@@ -1434,12 +1427,7 @@ class TrustedBinariesPage(_AFixedPage):
                 i = i[:-1]
             return int(i)
         try:
-            with textPath.open(u'rb') as ins:
-                contents = ins.read()
-            # WB versions before 309 wrote a BOM into these files
-            if contents.startswith(b'\xef\xbb\xbf'):
-                contents = contents[3:]
-            with io.StringIO(contents.decode(u'utf-8')) as ins:
+            with textPath.open_bom() as ins:
                 good, bad = {}, {}
                 current, dll = None, None
                 for line in ins:

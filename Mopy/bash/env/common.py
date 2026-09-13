@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -107,7 +107,7 @@ def _parse_vdf(vdf_path: _StrPath, *, vdf_root: str) -> dict | None:
         # library to another location/computer and some games haven't been
         # reinstalled yet
         return None
-    except UnicodeDecodeError:
+    except UnicodeError:
         deprint(f'Failed to parse {vdf_path}: failed to determine its '
                 f'encoding', traceback=True)
         return None
@@ -264,7 +264,7 @@ def get_game_version_fallback(test_path, ws_info):
             'General Readme for more information.'))
         return 0, 0, 0, 0
 
-def get_legacy_ws_game_paths(submod):
+def get_legacy_ws_game_paths(submod, **_kwargs):
     """Check legacy Windows Store-supplied game paths for the game detection
     file(s)."""
     # Delayed import to pull in the right version, and avoid circular imports
@@ -272,13 +272,10 @@ def get_legacy_ws_game_paths(submod):
     app_info = get_legacy_ws_game_info(submod)
     # Select the most recently installed entry
     installed_version = app_info.get_installed_version()
-    if installed_version:
-        return _get_language_paths(submod.Ws.ws_language_dirs,
-            installed_version.mutable_location)
-    else:
-        return []
+    return _get_language_paths(submod.Ws.ws_language_dirs,
+        installed_version.mutable_location) if installed_version else []
 
-def get_egs_game_paths(submod):
+def get_egs_game_paths(submod, **_kwargs):
     """Check the Epic Games Store manifests to find if the specified game is
     installed via the EGS and return its install path."""
     if egs_anames := submod.Eg.egs_app_names:

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2024 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2026 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,6 +25,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from itertools import chain
+from typing import ClassVar
 
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bolt, bosh, bush, load_order
@@ -51,7 +52,7 @@ class _PatcherPanel(object):
     # These are sometimes quite ugly - backwards compat leftover from when
     # those were the class names and got written directly into the configs
     _config_key: str = None
-    patcher_type: APatcher = None
+    patcher_type: ClassVar[type[APatcher]]
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
     selectCommands = True # whether this panel displays De/Select All
@@ -224,7 +225,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         #--Update old configs to use Paths instead of strings.
         # call str twice in case v._s was a str subtype
         self._fn_aliases = forward_compat_path_to_fn(config.get('aliases', {}),
-            value_type=lambda v: FName(str('%s' % v)))
+                                                     fn_value=True)
         return config
 
     def saveConfig(self, configs):
@@ -259,7 +260,7 @@ class _ListPatcherPanel(_PatcherPanel):
     ##: Hack, this should not use display_name
     default_remove_empty_sublists = bush.game.display_name == 'Oblivion'
     gList: ListBox | CheckListBox
-    patcher_type: ListPatcher
+    patcher_type: ClassVar[type[ListPatcher]]
 
     def __init__(self):
         super().__init__()
@@ -274,7 +275,7 @@ class _ListPatcherPanel(_PatcherPanel):
     def _sort_and_update_items(self, unsorted_items):
         """Helper for LO-sorting items and updating the internal caches for
         them."""
-        self.configItems = load_order.get_ordered(unsorted_items)
+        self.configItems = load_order.cached_sort(unsorted_items)
         # Clear the search bar - this will _handle_item_search, which will call
         # _populate_item_list in turn
         self._item_search.text_content = ''
@@ -578,7 +579,7 @@ def _custom_label(label_text, val): # edit label text with value
 
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
-    patcher_type: MultiTweaker
+    patcher_type: ClassVar[type[MultiTweaker]]
 
     def __init__(self):
         super().__init__()
@@ -876,25 +877,32 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         if self.isEnabled:
             configs[u'ImportedMods'].update(
                 [item for item, value in self.configChecks.items() if
-                 value and bosh.ModInfos.rightFileType(item)])
+                 value and bosh.ModInfos.check_filename(item)])
         return config
 
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
+    """Mergers targeting all mods in the LO, with the option to override
+    tags."""
+    patcher_type: ClassVar[type[mergers.AListsMerger]]
     _add_dialog_title: str
     #--Config Phase -----------------------------------------------------------
     forceAuto = False
     # CONFIG DEFAULTS
-    default_isEnabled = True
     selectCommands = False
+
+    def get_patcher_instance(self, patch_file):
+        patcher_sources = self._get_list_patcher_srcs()
+        return self.patcher_type(self.patcher_name, patch_file,
+            patcher_sources, self.remove_empty_sublists,
+            defaultdict(set, self.configChoices))
 
     def _get_set_choice(self, item):
         """Get default config choice."""
         config_choice = self.configChoices.get(item)
         if not isinstance(config_choice,set): config_choice = {u'Auto'}
         if u'Auto' in config_choice:
-            bashTags = self._bp.all_tags.get(item, set())
-            config_choice = {'Auto',
-                             *(self.patcher_type.patcher_tags & bashTags)}
+            tags = self._bp.all_tags.get(item, set())
+            config_choice = {'Auto', *(self.patcher_type.patcher_tags & tags)}
         self.configChoices[item] = config_choice
         return config_choice
 
@@ -925,17 +933,19 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         return super()._get_auto_items()
 
     def OnAdd(self):
-        srcDir = bosh.modInfos.store_dir
-        wildcard = bosh.modInfos.plugin_wildcard()
+        ds = bosh.modInfos
+        srcDir = ds.store_dir
+        wildcard = ds.unhide_wildcard()
         #--File dialog
         srcPaths = FileOpenMultiple.display_dialog(self.gConfigPanel,
             self._add_dialog_title, srcDir, '', wildcard)
         if not srcPaths: return
         #--Get new items
         for srcPath in srcPaths:
-            folder, fname = srcPath.headTail
-            if folder == srcDir and (fn := FName(fname.s)) not in \
-                    self.configItems: self.configItems.append(fn)
+            if srcPath.head == srcDir and (
+                    body_ext := ds.check_filename(srcPath.stail)):
+                if (fn := FName(''.join(body_ext))) not in self.configItems:
+                    self.configItems.append(fn)
         self._sort_and_update_items(self.configItems)
 
     def ShowChoiceMenu(self, itemIndex):
@@ -956,11 +966,11 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             """Handle choice menu selection."""
             item = self._curr_items[itemIndex]
             choice = self.choiceMenu[dex]
-            choiceSet = self.configChoices[item]
-            choiceSet ^= {choice}
+            choice_set = self.configChoices[item]
+            choice_set ^= {choice}
             if choice != u'Auto':
-                choiceSet.discard(u'Auto')
-            elif u'Auto' in self.configChoices[item]:
+                choice_set.discard('Auto')
+            elif 'Auto' in choice_set:
                 self._get_set_choice(item)
             self.gList.lb_set_label_at_index(itemIndex, self.getItemLabel(item))
         links = Links()
@@ -1276,17 +1286,7 @@ class ReplaceFormIDs(_ListPatcherPanel):
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------
-class _AListsMerger(_ListsMergerPanel):
-    """Mergers targeting all mods in the LO, with the option to override
-    tags."""
-    def get_patcher_instance(self, patch_file):
-        patcher_sources = self._get_list_patcher_srcs()
-        return self.patcher_type(self.patcher_name, patch_file,
-                                 patcher_sources,
-                                 self.remove_empty_sublists,
-                                 defaultdict(tuple, self.configChoices))
-
-class LeveledLists(_AListsMerger):
+class LeveledLists(_ListsMergerPanel):
     patcher_name = _('Leveled Lists')
     patcher_desc = '\n\n'.join([
         _('Merges changes to leveled lists from all active and/or merged '
@@ -1300,8 +1300,10 @@ class LeveledLists(_AListsMerger):
     forceItemCheck = True #--Force configChecked to True for all items
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
     show_empty_sublist_checkbox = True
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
-class FormIDLists(_AListsMerger):
+class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
     patcher_name = _('FormID Lists')
     patcher_desc = '\n\n'.join([
         _('Merges changes to FormID lists from all active and/or merged '
@@ -1313,14 +1315,12 @@ class FormIDLists(_AListsMerger):
     listLabel = _('Override Deflst Tag')
     _add_dialog_title = _('Add Deflst Tag to Plugin')
     choiceMenu = ('Auto', '----', 'Deflst')
-    # CONFIG DEFAULTS
-    default_isEnabled = False
 
 # -----------------------------------------------------------------------------
 class ContentsChecker(_PatcherPanel):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
-    patcher_name = _(u'Contents Checker')
+    patcher_name = _('Contents Checker')
     patcher_desc = _(u'Checks contents of leveled lists, inventories and '
                      u'containers for correct types.')
     _config_key = u'ContentsChecker'
