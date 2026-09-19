@@ -21,7 +21,6 @@
 #
 # =============================================================================
 """Patch dialog"""
-import copy
 import re
 import time
 from datetime import timedelta
@@ -39,9 +38,8 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
 from ..patcher.patch_files import PatchFile
 from ..wbtemp import TempDir
 
-# Final lists of gui patcher classes instances, initialized in
-# gui_patchers.InitPatchers() based on game. These must be copied as needed.
-all_gui_patchers = [] #--All gui patchers classes for this game
+# Final list of gui patcher classes, populated in InitPatchers based on game
+gpatcher_types = [] #--All gui patchers classes for this game
 
 def _export_config(patch_name, config, win, outDir):
     outFile = f'{patch_name}_Configuration.dat'
@@ -74,38 +72,31 @@ class PatchDialog(DialogWindow):
         title = _('Update %(bp_name)s') % {'bp_name': f'{self.patchInfo}'}
         super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
             sizes_dict=bass.settings)
-        #--Data
-        self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
-        for g in self._gui_patchers: g._bp = bashed_patch
-        self.currentPatcher = None
-        patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
+        patcherNames = [patcher.patcher_name for patcher in gpatcher_types]
         #--GUI elements
-        self.gExecute = OkButton(self, btn_label=_(u'Build Patch'))
-        self.gExecute.on_clicked.subscribe(self.PatchExecute)
+        self.gExecute = OkButton(self, btn_label=_('Build Patch'),
+                                 on_click=self.PatchExecute)
         # TODO(nycz): somehow move setUAC further into env?
         # Note: for this to work correctly, it needs to be run BEFORE
         # appending a menu item to a menu (and so, needs to be enabled/
         # disabled prior to that as well.
         # TODO(nycz): DEWX - Button.GetHandle
         env.setUAC(self.gExecute._native_widget.GetHandle(), True)
-        self.gSelectAll = SelectAllButton(self)
-        self.gSelectAll.on_clicked.subscribe(
+        self.gSelectAll = SelectAllButton(self, on_click=
             lambda: self._mass_select_recursive(True))
-        self.gDeselectAll = DeselectAllButton(self)
-        self.gDeselectAll.on_clicked.subscribe(
+        self.gDeselectAll = DeselectAllButton(self, on_click=
             lambda: self._mass_select_recursive(False))
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect)
         self.gPatchers.on_box_checked.subscribe(self.OnCheck)
-        self.gExportConfig = SaveAsButton(self, btn_label=_(u'Export'))
-        self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
-        self.gImportConfig = OpenButton(self, btn_label=_(u'Import'))
-        self.gImportConfig.on_clicked.subscribe(self.ImportConfig)
-        self.gRevertConfig = RevertToSavedButton(self)
-        self.gRevertConfig.on_clicked.subscribe(self.RevertConfig)
-        self.gRevertToDefault = RevertButton(self,
-                                             btn_label=_(u'Revert To Default'))
-        self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
+        self.gExportConfig = SaveAsButton(self, btn_label=_('Export'),
+                                          on_click=self.ExportConfig)
+        self.gImportConfig = OpenButton(self, btn_label=_('Import'),
+                                        on_click=self.ImportConfig)
+        self.gRevertConfig = RevertToSavedButton(self,
+                                                 on_click=self.RevertConfig)
+        self.gRevertToDefault = RevertButton(self, btn_label=_(
+            'Revert To Default'), on_click=self.DefaultConfig)
         self.defaultTipText = _(u'Items that are new since the last time this '
                                 u'patch was built are displayed in bold.')
         self.gTipText = Label(self,self.defaultTipText)
@@ -133,14 +124,16 @@ class PatchDialog(DialogWindow):
             ]),
         ]).apply_to(self)
         #--Patcher panels
+        self._gui_patchers = []
         # load the config
         self.patchConfigs = patchConfigs
-        isFirstLoad = 0 == len(patchConfigs)
-        self._load_config(patchConfigs, isFirstLoad, _decouple=True) ##: _decouple == True to short circuit _import_config
         with BusyCursor(): # Constructs all the patcher panels, so takes a bit
-            for patcher in self._gui_patchers:
-                patcher.GetConfigPanel(self, self.config_layout,
-                    self.gTipText).visible = False
+            for dex, ptype in enumerate(gpatcher_types):
+                self._gui_patchers.append(patcher_panel := ptype(bashed_patch))
+                patcher_panel.native_init(self, patch_configs=patchConfigs)
+                self.gPatchers.lb_check_at_index(dex, patcher_panel.isEnabled)
+        self._update_ok_btn()
+        self.currentPatcher = None
         initial_select = min(len(self._gui_patchers) - 1, 1)
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
@@ -155,11 +148,10 @@ class PatchDialog(DialogWindow):
         """Show patcher panel."""
         if patcher == self.currentPatcher: return
         if self.currentPatcher is not None:
-            self.currentPatcher.gConfigPanel.visible = False
-        patcher.GetConfigPanel(self, self.config_layout,
-            self.gTipText).visible = True
+            self.currentPatcher.visible = False
+        patcher.visible = True
         self.update_layout()
-        patcher.Layout()
+        patcher.update_layout()
         self.currentPatcher = patcher
 
     _congrats = _('Congratulations on managing to get a single top group to '
@@ -270,7 +262,7 @@ class PatchDialog(DialogWindow):
                     }
                     env.shellMove(readme_moves, parent=self)
                     readme = bass.dirs['saveBase'].join(readme.stail)
-            readme_html = readme.root + u'.html'
+            readme_html = readme.root + '.html' # Path __add__!
             shown_log = readme_html if balt.web_viewer_available() else readme
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
             balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,
@@ -386,11 +378,9 @@ class PatchDialog(DialogWindow):
             return
         self._load_config(patchConfigs)
 
-    def _load_config(self, patchConfigs, set_first_load=False, default=False,
-                     _decouple=False): ##: hacky param due to SetItems/GetConfigPanel overlap
+    def _load_config(self, patchConfigs, set_first_load=False):
         for index, patcher in enumerate(self._gui_patchers):
-            patcher.import_config(patchConfigs, set_first_load=set_first_load,
-                                  default=default, _decouple=_decouple)
+            patcher.import_config(patchConfigs, set_first_load)
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self._update_ok_btn()
 
@@ -400,7 +390,7 @@ class PatchDialog(DialogWindow):
 
     def DefaultConfig(self):
         """Revert configuration back to default"""
-        self._load_config({}, set_first_load=True, default=True)
+        self._load_config({}, set_first_load=True)
 
     def _mass_select_recursive(self, select=True):
         """Select or deselect all patchers and entries in patchers with child

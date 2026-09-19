@@ -86,7 +86,8 @@ class CheckBox(_ACheckable):
     docstrings."""
     _native_widget: _wx.CheckBox
 
-    def __init__(self, parent, cb_label='', chkbx_tooltip='', checked=False):
+    def __init__(self, parent, cb_label='', chkbx_tooltip='', checked=False,
+                 on_check=None):
         """Creates a new CheckBox with the specified properties.
 
         :param parent: The object that this checkbox belongs to. May be a wx
@@ -94,16 +95,19 @@ class CheckBox(_ACheckable):
         :param cb_label: The text shown on this checkbox.
         :param chkbx_tooltip: A tooltip to show when the user hovers over this
                               checkbox.
-        :param checked: The initial state of the checkbox."""
+        :param checked: The initial state of the checkbox.
+        :param on_check: A function to call when the checkbox is un/checked."""
         super().__init__(parent, label=self._escape(cb_label), checked=checked)
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
-        self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
-                                            lambda event: [event.IsChecked()])
+        self._on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
+                                             lambda event: [event.IsChecked()])
+        if on_check:
+            self._on_checked.subscribe(on_check)
 
     def block_user(self, block_user_func):
         super(CheckBox, self).block_user(block_user_func)
-        self.on_checked.subscribe(self._do_block_user)
+        self._on_checked.subscribe(self._do_block_user)
 
     def _do_block_user(self, checked: bool):
         """Internal event handler to implement the block_user parameter."""

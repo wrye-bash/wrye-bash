@@ -104,14 +104,11 @@ class WebViewer(_AComponent):
         self._native_widget = _wx_html2.WebView.New(
             self._resolve(parent), backend=_browser_backend)
         self._back_button = PureImageButton(buttons_parent, icon_list[0],
-            btn_tooltip=_('Go Back'))
-        self._back_button.on_clicked.subscribe(self.go_back)
+            btn_tooltip=_('Go Back'), on_click=self.go_back)
         self._forward_button = PureImageButton(buttons_parent, icon_list[1],
-            btn_tooltip=_('Go Forwards'))
-        self._forward_button.on_clicked.subscribe(self.go_forward)
+            btn_tooltip=_('Go Forwards'), on_click=self.go_forward)
         self._reload_button = PureImageButton(buttons_parent, icon_list[2],
-            btn_tooltip=_('Reload'))
-        self._reload_button.on_clicked.subscribe(self.reload)
+            btn_tooltip=_('Reload'), on_click=self.reload)
         # Events - internal use only for now, expose if needed
         self._on_new_window = self._evt_handler(
             _wx_html2.EVT_WEBVIEW_NEWWINDOW, lambda event: [event.GetURL()])

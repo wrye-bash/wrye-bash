@@ -56,13 +56,11 @@ class DoubleListBox(PanelWin):
             onSelect=lambda _lb_dex, _item_text: self._handle_list_selected(
                 self._right_list))
         self._move_right_btn = Button(self, u'>>', exact_fit=True,
-            btn_tooltip=right_btn_tooltip)
-        self._move_right_btn.on_clicked.subscribe(
-            lambda: self._handle_move_button(self._move_right_btn))
+            btn_tooltip=right_btn_tooltip,
+            on_click=lambda: self._handle_move_button(self._move_right_btn))
         self._move_left_btn = Button(self, u'<<', exact_fit=True,
-            btn_tooltip=left_btn_tooltip)
-        self._move_left_btn.on_clicked.subscribe(
-            lambda: self._handle_move_button(self._move_left_btn))
+            btn_tooltip=left_btn_tooltip,
+            on_click=lambda: self._handle_move_button(self._move_left_btn))
         # Move buttons start out disabled, they only get enabled once something
         # is selected by the user
         self._disable_move_buttons()

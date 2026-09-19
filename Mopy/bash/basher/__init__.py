@@ -1174,10 +1174,8 @@ class _EditableMixin(_DetailsMixin):
     def __init__(self, buttonsParent, ui_list_panel):
         self.edited = False
         #--Save/Cancel
-        self._save_btn = SaveButton(buttonsParent)
-        self._save_btn.on_clicked.subscribe(self.DoSave)
-        self._cancel_btn = CancelButton(buttonsParent)
-        self._cancel_btn.on_clicked.subscribe(self.SetFile)
+        self._save_btn = SaveButton(buttonsParent, on_click=self.DoSave)
+        self._cancel_btn = CancelButton(buttonsParent, on_click=self.SetFile)
         self._save_btn.enabled = False
         self._cancel_btn.enabled = False
         #--File Name
@@ -1352,8 +1350,8 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
         calendar_button = PureImageButton(top, get_image('calendar.16'),
-            btn_tooltip=_('Change this value using an interactive dialog.'))
-        calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
+            btn_tooltip=_('Change this value using an interactive dialog.'),
+            on_click=self._on_calendar_clicked)
         #--Description
         self._max_desc_len = bush.game.Esp.max_desc_length
         # Same note about max_length applies here too
@@ -1373,8 +1371,8 @@ class ModDetails(_ModsSavesDetails):
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
             get_image('minus.16'),
-            btn_tooltip=_('Remove the selected tags from this plugin.'))
-        self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
+            btn_tooltip=_('Remove the selected tags from this plugin.'),
+            on_click=self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
         self.gTags.on_mouse_right_up.subscribe(self._popup_misc_tags)
@@ -1740,12 +1738,10 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self._ini_panel = ui_list_panel
         left, right = self.left, self.right
         #--Remove from list button
-        self.removeButton = Button(right, _(u'Remove'))
-        self.removeButton.on_clicked.subscribe(self._OnRemove)
+        self.removeButton = Button(right, _('Remove'), on_click=self._OnRemove)
         #--Edit button
-        self.editButton = Button(right, _('Edit…'))
-        self.editButton.on_clicked.subscribe(lambda:
-                                             self.current_ini_path.start())
+        self.editButton = Button(right, _('Edit…'),
+            on_click=lambda: self.current_ini_path.start())
         #--Ini file
         self.iniContents = TargetINILineCtrl(right._native_widget)
         self.lastDir = settings.get(u'bash.ini.lastDir', bass.dirs[u'mods'].s)

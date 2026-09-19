@@ -68,10 +68,9 @@ class ValidatorPopup(DialogWindow):
             title=_('FOMOD Validation Failed - %(fomod_title)s') % {
                 'fomod_title': fm_name},
             sizes_dict=bass.settings)
-        copy_log_btn = Button(self, _('Copy Log'))
+        copy_log_btn = Button(self, _('Copy Log'), on_click=self._handle_copy)
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
                                  'clipboard.')
-        copy_log_btn.on_clicked.subscribe(self._handle_copy)
         self._error_log = TextArea(self,
             self._warning_msg + '\n'.join(error_lines), auto_tooltip=False,
             editable=False)
@@ -341,7 +340,7 @@ class PageSelect(PageInstaller):
                 # options before checking an unusable one. We should find a way
                 # to catch 'valid' user interactions and update the frozen
                 # states at that point. Simply subscribing to all non-blocked
-                # on_clicked events does not work because they fire too early
+                # _on_clicked events does not work because they fire too early
                 # (e.g. radio buttons won't have run their logic for unchecking
                 # the other button yet).
                 block_chk.block_user(self._handle_block_user)
@@ -467,17 +466,15 @@ class PageSelect(PageInstaller):
 class PageFinish(PageInstaller):
     def __init__(self, page_parent, show_install_chkbox):
         super(PageFinish, self).__init__(page_parent)
-        check_install = CheckBox(
-            self, _(u'Install this package'),
-            checked=self._page_parent.fm_ret.should_install)
-        check_install.on_checked.subscribe(self._on_check_install)
+        check_install = CheckBox(self, _('Install this package'),
+            checked=self._page_parent.fm_ret.should_install,
+            on_check=self._on_check_install)
         check_install.visible = show_install_chkbox
         use_table = bass.settings[u'bash.fomod.use_table']
         check_tab_view = CheckBox(
             self, _(u'Use Table View'), checked=use_table,
             chkbx_tooltip=_(u'Switch to a table-based view of the files that '
-                            u'are going to be installed.'))
-        check_tab_view.on_checked.subscribe(self._on_switch_output)
+                'are going to be installed.'), on_check=self._on_switch_output)
         # This can take a bit for very large FOMOD installs
         with BusyCursor():
             installer_output = self._page_parent.fomod_parser.get_fomod_files()
