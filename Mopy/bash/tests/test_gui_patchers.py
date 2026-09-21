@@ -216,6 +216,28 @@ def test_merger_population_has_no_checkboxes(panels):
     panel.gList.lb_check_at_index.assert_not_called()
     panel._enable_self.assert_not_called()
 
+def test_merger_listbox_is_shared(panels):
+    """FormIDLists is paired with _ListsMergerPanel itself (see
+    game_patcher_config_types), so the ListBox overrides have to sit there and
+    not on LeveledLists - the choices are sets, which a CheckListBox chokes
+    on."""
+    assert '_get_glist' in vars(panels._ListsMergerPanel)
+    assert '_check_item' in vars(panels._ListsMergerPanel)
+    assert '_get_glist' not in vars(panels.LeveledLists)
+    assert '_check_item' not in vars(panels.LeveledLists)
+
+def test_restored_source_does_not_enable_panel(panels):
+    """A source checked in the config must not override isEnabled - only one
+    we just discovered and auto-checked may turn the patcher on."""
+    source = FName('Source.esp')
+    panel = _population_panel(panels._ListPatcherPanel, [source])
+    panel._item_config = {source: True}
+    panel._new_items = set()
+    panel._is_first_load = False
+    panel._do_populate_item_list()
+    panel.gList.lb_check_at_index.assert_called_once_with(0, True)
+    panel._enable_self.assert_not_called()
+
 @pytest.mark.parametrize('is_tweak', [False, True])
 def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
     import wx
