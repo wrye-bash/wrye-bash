@@ -210,6 +210,53 @@ def test_restored_source_does_not_enable_panel(panels):
     panel.gList.lb_check_at_index.assert_called_once_with(0, True)
     panel._enable_self.assert_not_called()
 
+def test_merger_sources_need_no_tags(panels):
+    """The mergers apply the tags picked in their list, so any plugin loading
+    before the Bashed Patch may be listed - Automatic still only lists the
+    tagged ones, the importers still want their tags and a list patcher
+    with no tags takes no plugins at all."""
+    from ..exception import BPConfigError
+    from ..patcher.base import ImportPatcher, ListPatcher
+    from ..patcher.patchers.mergers import AListsMerger
+    class _Merger(AListsMerger): patcher_tags = {'Relev', 'Delev'}
+    class _Importer(ImportPatcher): patcher_tags = {'Names'}
+    class _CsvOnly(ListPatcher): _csv_key = 'Names'
+    tagged, untagged, after_bp, csv_src = map(FName, ('Tagged.esp',
+        'Untagged.esp', 'After.esp', 'Some_Names.csv'))
+    p_file = SimpleNamespace(inactive_mm={}, patches_set={csv_src},
+        all_plugins=dict.fromkeys((tagged, untagged)),
+        all_tags={tagged: {'Relev', 'Names'}, untagged: set()})
+    # Automatic only lists the tagged plugins - for either kind
+    for pt in (_Merger, _Importer):
+        assert pt.valid_srcs(p_file) == [tagged]
+    assert _Merger.valid_srcs(p_file, [tagged, untagged, after_bp]) == [
+        tagged, untagged]
+    # this used to fail the build with "not tagged with supported tags"
+    _Merger.valid_srcs(p_file, [untagged], raise_on_errors=True)
+    assert _Importer.valid_srcs(p_file, [tagged, untagged]) == [tagged]
+    with pytest.raises(BPConfigError):
+        _Importer.valid_srcs(p_file, [untagged], raise_on_errors=True)
+    # no sources to validate is not a request to find them
+    assert _Importer.valid_srcs(p_file, [], raise_on_errors=True) == []
+    assert _CsvOnly.valid_srcs(p_file) == [csv_src]
+    with pytest.raises(BPConfigError):
+        _CsvOnly.valid_srcs(p_file, [tagged], raise_on_errors=True)
+
+def test_patchers_pick_their_sources(panels, monkeypatch):
+    """A list patcher builds from the items checked in its list - not from one
+    it never populated - a merger from every plugin in its list, as its
+    values are the tag choices, empty ones included."""
+    from ..patcher.base import ListPatcher
+    picked = []
+    def _capture(self, p_sources, p_file):
+        picked.extend(p_sources)
+    monkeypatch.setattr(ListPatcher, '_process_sources', _capture)
+    on, off, unseen, relev, untagged = map(FName, ('On.esp', 'Off.esp',
+        'Unseen.esp', 'Relev.esp', 'Untagged.esp'))
+    ListPatcher('Patcher', None, {on: True, off: False, unseen: None,
+                                  relev: {'Relev'}, untagged: set()})
+    assert picked == [on, relev, untagged]
+
 @pytest.mark.parametrize('is_tweak', [False, True])
 def test_native_panel_search_and_selection(panels, monkeypatch, is_tweak):
     import wx
