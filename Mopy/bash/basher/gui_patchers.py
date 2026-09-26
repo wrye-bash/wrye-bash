@@ -878,8 +878,9 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         for srcPath in srcPaths:
             if srcPath.head == srcDir and (body_ext := ds.check_filename(
                     srcPath.stail)): # we need check_filename for ghosts!
-                if (fn := FName(''.join(body_ext))) in self._bp.all_plugins \
-                    and self._bp.all_tags[fn] & self.patcher_type.patcher_tags:
+                fn = FName(''.join(body_ext))
+                # only add what the patcher will take at build time
+                if self.patcher_type.valid_srcs(self._bp, [fn]):
                     self._set_choice(fn)
         self._sort_and_update_items(is_auto=False)
 

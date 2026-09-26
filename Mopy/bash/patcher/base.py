@@ -124,10 +124,10 @@ class ListPatcher(APatcher):
                 src_fns.extend(sorted(p_file.patches_set))
         res = []
         for src_fn in src_fns:
-            try:
+            if src_fn in p_file.all_plugins:
                 if cls._validate_mod(p_file, src_fn, raise_on_errors):
                     res.append(src_fn)
-            except KeyError:
+            else:
                 if src_fn[-4:] == '.csv':
                     if cls._csv_key:
                         if src_fn not in p_file.patches_set:
@@ -149,14 +149,13 @@ class ListPatcher(APatcher):
 
     @classmethod
     def _validate_mod(cls, p_file, src_fn, raise_on_errors):
-        """Return True if the src_fn plugin should be part of the sources
-        for this patcher."""
-        # Must have an appropriate tag and no missing masters or a Filter tag
+        """Return True if src_fn, a plugin loading before the BP, should be
+        part of the sources for this patcher."""
+        # Must have no missing masters or a Filter tag
         if src_fn in p_file.inactive_mm: ##fixme or active_mm
             err = f'{cls.__name__}: {src_fn} is inactive'
-        elif not (cls.patcher_tags & p_file.all_tags[src_fn]):
-            err = f'{cls.__name__}: {src_fn} is not tagged with supported ' \
-                  f'tags {cls.patcher_tags}'
+        elif not cls.patcher_tags: # we only read csv files
+            err = f'{cls.__name__}: plugin src passed in: {src_fn}'
         else:
             return True
         if raise_on_errors:
@@ -508,6 +507,16 @@ class ImportPatcher(ListPatcher, ScanPatcher):
     patcher_order = 20
     # Override in subclasses as needed
     logMsg = '\n=== ' + _('Modified Records')
+
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_errors):
+        # We only import from the plugins that carry one of our tags
+        if not (cls.patcher_tags & p_file.all_tags[src_fn]):
+            if raise_on_errors:
+                raise BPConfigError(f'{cls.__name__}: {src_fn} is not tagged '
+                                    f'with supported tags {cls.patcher_tags}')
+            return False
+        return super()._validate_mod(p_file, src_fn, raise_on_errors)
 
     def _update_patcher_factories(self, p_file):
         # most of the import patchers scan their sources' masters

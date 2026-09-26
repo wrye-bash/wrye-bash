@@ -636,6 +636,16 @@ class AListsMerger(ListPatcher):
         self.remove_empty_sublists = remove_empty
         self._tag_choices = defaultdict(set, p_sources)
 
+    @classmethod
+    def valid_srcs(cls, p_file, src_fns=None, raise_on_errors=False):
+        """Automatic lists the plugins that carry our tags, but the user may
+        add any other one - the tags picked in our list override the
+        plugin's own, that's what the list is for."""
+        if src_fns is None:
+            src_fns = [src_fn for src_fn, src_tags in p_file.all_tags.items()
+                       if cls.patcher_tags & src_tags]
+        return super().valid_srcs(p_file, src_fns, raise_on_errors)
+
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
         sc_name = modFile.fileInfo.fn_key
