@@ -613,13 +613,11 @@ class AListsMerger(ListPatcher):
     _de_re_header: str
     OverhaulUOPSkips = ()
 
-    def __init__(self, p_name, p_file, p_sources, remove_empty: bool,
-                 tag_choices: defaultdict[FName, set[str]]):
+    def __init__(self, p_name, p_file, p_sources, remove_empty: bool = False):
         """In addition to default parameters, accepts a boolean remove_empty,
         which determines whether or not the 'empty sublist removal' logic
-        should run, and a defaultdict tag_choices, which maps each tagged
-        plugin (represented as paths) to a set of the applied tags (as unicode
-        strings, e.g. 'Delev'), defaulting to an empty set."""
+        should run. p_sources maps each plugin in our list to the set of
+        tags to apply to it (as unicode strings, e.g. 'Delev')."""
         super().__init__(p_name, p_file, p_sources)
         self.isActive |= bool(p_file.load_dict) # Can do meaningful work even without sources
         self.type_list = {rsig: {} for rsig in self._read_sigs}
@@ -636,7 +634,7 @@ class AListsMerger(ListPatcher):
             self.de_masters.update(p_file.all_plugins[leveler].masterNames)
         self.srcs = {s for s in self.srcs if s in p_file.load_dict}
         self.remove_empty_sublists = remove_empty
-        self._tag_choices = tag_choices
+        self._tag_choices = defaultdict(set, p_sources)
 
     def scanModFile(self, modFile, progress):
         #--Begin regular scan

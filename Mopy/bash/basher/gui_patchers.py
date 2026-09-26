@@ -262,7 +262,7 @@ class ListPatcherConfig(PatcherConfig):
         (conf_items := self.configItems).extend(
             it for it in conf_copy.keys() - {*conf_items})
         #--Verify file existence
-        conf_items = self.patcher_type.get_sources(self._bp, conf_items)
+        conf_items = self.patcher_type.valid_srcs(self._bp, conf_items)
         # Restore the old checked/choices state (if the items in question
         # are actually still present in the Data folder)
         self._item_config = self._merge_configs(conf_copy, set(conf_items))
@@ -285,9 +285,8 @@ class ListPatcherConfig(PatcherConfig):
         return super().saveConfig(configs)
 
     def get_patcher_instance(self, patch_file):
-        patcher_sources = self._get_list_patcher_srcs()
         return self.patcher_type(self.patcher_name, patch_file,
-                                 patcher_sources)
+                                 self._item_config)
 
     def _merge_configs(self, curr_conf, present_config_items):
         checks = {**curr_conf, **self.configChecks} # latter is freshly loaded
@@ -297,10 +296,6 @@ class ListPatcherConfig(PatcherConfig):
     def _mod_label(cls, item: FName, conf_choices):
         """Returns label for item to be used in GUI list and in logging."""
         return item
-
-    def _get_list_patcher_srcs(self):
-        # ListsMerger instances get all the listed sources
-        return [k for k, v in self._item_config.items() if v is not False]
 
 class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
     """Patcher panel with option to select source elements."""
@@ -346,8 +341,7 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
         """Helper for LO-sorting items and updating the internal caches for
         them."""
         if is_auto:
-            for mod in (unsort := self.__class__.patcher_type.get_sources(
-                    self._bp)):
+            for mod in (unsort := self.patcher_type.valid_srcs(self._bp)):
                 self._set_choice(mod)
         else:
             unsort = self._item_config
@@ -799,11 +793,6 @@ class _ListMergerConfig(ListPatcherConfig):
             log(f'. __{item}__')
             clip.write(f'    {item}\n')
 
-    def get_patcher_instance(self, patch_file, rem_emp=False):
-        patcher_sources = self._get_list_patcher_srcs()
-        return self.patcher_type(self.patcher_name, patch_file,
-            patcher_sources, rem_emp, defaultdict(set, self._item_config))
-
     @classmethod
     def _mod_label(cls, item, conf_choices):
         return cls.patcher_type.annotate_plugin(item, conf_choices)
@@ -1245,9 +1234,9 @@ class LeveledListsConfig(_ListMergerConfig):
     patcher_type = mergers.LeveledListsPatcher
     default_isEnabled = True
 
-    def get_patcher_instance(self, patch_file, rem_emp=False):
-        return super().get_patcher_instance(patch_file,
-                                            self.remove_empty_sublists)
+    def get_patcher_instance(self, patch_file):
+        return self.patcher_type(self.patcher_name, patch_file,
+            self._item_config, self.remove_empty_sublists)
 
     @classmethod
     def _config_attrs(cls): ##: Hack, this should not use display_name

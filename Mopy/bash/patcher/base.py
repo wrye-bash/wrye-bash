@@ -107,40 +107,45 @@ class ListPatcher(APatcher):
         """In addition to super implementation this defines the self.srcs
         ListPatcher attribute."""
         super().__init__(p_name, p_file)
+        # p_sources is the patcher's item config - its checked items, or all
+        # the plugins in a merger's list, whose values are its tag choices
+        p_sources = [k for k, v in p_sources.items() if
+                     isinstance(v, set) or v]
         self.isActive = self._process_sources(p_sources, p_file)
 
     @classmethod
-    def get_sources(cls, p_file, p_sources=None, raise_on_errors=False):
-        """Get a list of plugin/csv sources for this patcher. If p_sources are
-        passed in filter/validate them."""
-        if p_sources is None: # getting the sources
-            p_sources = [*p_file.all_plugins]
+    def valid_srcs(cls, p_file, src_fns=None, raise_on_errors=False):
+        """Return the valid sources for this patcher among src_fns - by
+        default among the candidates for auto-configuring it: every plugin
+        loading before the BP, plus our csv files if we read any."""
+        if src_fns is None:
+            src_fns = [*p_file.all_plugins]
             if cls._csv_key:
-                p_sources.extend(sorted(p_file.patches_set))
-        return [src_fn for src_fn in p_sources if
-                cls._validate_src(p_file, src_fn, raise_on_errors)]
-
-    @classmethod
-    def _validate_src(cls, p_file, src_fn, raise_on_errors):
-        try:
-            return cls._validate_mod(p_file, src_fn, raise_on_errors)
-        except KeyError:
-            if src_fn[-4:] == '.csv':
-                if cls._csv_key:
-                    if src_fn not in p_file.patches_set:
-                        err = f'{cls.__name__}: {src_fn} is not present'
-                    elif src_fn.endswith(f'_{cls._csv_key}.csv'):
-                        return True
+                src_fns.extend(sorted(p_file.patches_set))
+        res = []
+        for src_fn in src_fns:
+            try:
+                if cls._validate_mod(p_file, src_fn, raise_on_errors):
+                    res.append(src_fn)
+            except KeyError:
+                if src_fn[-4:] == '.csv':
+                    if cls._csv_key:
+                        if src_fn not in p_file.patches_set:
+                            err = f'{cls.__name__}: {src_fn} is not present'
+                        elif src_fn.endswith(f'_{cls._csv_key}.csv'):
+                            res.append(src_fn)
+                            continue
+                        else:
+                            err = (f'{cls.__name__}: invalid csv type '
+                                   f'{src_fn}')
                     else:
-                        err = f'{cls.__name__}: invalid csv type {src_fn}'
+                        err = f'{cls.__name__}: csv src passed in: {src_fn}'
                 else:
-                    err = f'{cls.__name__}: csv src passed in: {src_fn}'
-            else:
-                err = f'{cls.__name__}: {src_fn} is not loading before the ' \
-                      f'BP or is not a mod'
-        if raise_on_errors:
-            raise BPConfigError(err)
-        return False
+                    err = (f'{cls.__name__}: {src_fn} is not loading before '
+                           f'the BP or is not a mod')
+                if raise_on_errors:
+                    raise BPConfigError(err)
+        return res
 
     @classmethod
     def _validate_mod(cls, p_file, src_fn, raise_on_errors):
@@ -160,7 +165,7 @@ class ListPatcher(APatcher):
 
     def _process_sources(self, p_sources, p_file):
         """Validate srcs and update p_file read factories."""
-        self.get_sources(p_file, p_sources, raise_on_errors=True)
+        self.valid_srcs(p_file, p_sources, raise_on_errors=True)
         self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
         self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
         self._update_patcher_factories(p_file)
