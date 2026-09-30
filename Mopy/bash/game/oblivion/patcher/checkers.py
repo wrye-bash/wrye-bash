@@ -80,9 +80,9 @@ class CoblCatalogsPatcher(ExSpecial):
                 #--Ingredient must have name!
                 ##: Skips OBME records - rework to support them
                 if record.full and record.obme_record_version is None:
-                    effects = record.effect_sig_to_actor_value()
-                    if b'SEFF' not in effects or effects[b'SEFF'] != 0:
-                        self.id_ingred[rid] = (record.eid, record.full, effects)
+                    effs = record.effect_sigs_avs()
+                    if not any(s == b'SEFF' for s, _av in effs):
+                        self.id_ingred[rid] = (record.eid, record.full, effs)
         super().scanModFile(modFile, progress, [b'BOOK'])
 
     def buildPatch(self,log,progress):
@@ -116,10 +116,10 @@ class CoblCatalogsPatcher(ExSpecial):
             book = getBook(objectId, full)
             if book is None: continue
             effs = []
-            for eid, eff_full, eff_sig_av in sorted(
+            for eid, eff_full, eff_sigs_avs in sorted(
                     id_ingred.values(), key=lambda a: a[1].lower()):
                 effs.append(eff_full)
-                for mgef_sig, actorValue in list(eff_sig_av.items())[:num]:
+                for mgef_sig, actorValue in eff_sigs_avs[:num]:
                     effectName = alt_names[mgef_sig]
                     if mgef_sig in actorEffects:
                         effectName += actor_values[actorValue]
@@ -129,8 +129,8 @@ class CoblCatalogsPatcher(ExSpecial):
             book.book_text = re.sub('\r\n', '<br>\r\n', book.book_text)
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
-        for eid, full, eff_sig_av in id_ingred.values():
-            for index, (mgef_sig, actorValue) in enumerate(eff_sig_av.items()):
+        for eid, full, eff_sigs_avs in id_ingred.values():
+            for index, (mgef_sig, actorValue) in enumerate(eff_sigs_avs):
                 effectName = alt_names[mgef_sig]
                 if mgef_sig in actorEffects: effectName += actor_values[actorValue]
                 effect_ingred[effectName].append((index,full))

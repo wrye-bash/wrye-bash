@@ -312,10 +312,10 @@ class _AWeightTweak_SEFF(_AWeightTweak):
     def wants_record(self, record):
         if not super().wants_record(record):
             return False
-        return (self._ignore_effects or
-                ##: Skip OBME records, at least for now
-                (record.obme_record_version is None and
-                 b'SEFF' not in (effs := record.effect_sig_to_actor_value()) or effs[b'SEFF'] != 0))
+        return self._ignore_effects or (
+            ##: Skip OBME records, at least for now
+            record.obme_record_version is None and
+            not any(s == b'SEFF' for s, _av in record.effect_sigs_avs()))
 
 #------------------------------------------------------------------------------
 class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
