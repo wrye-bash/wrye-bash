@@ -613,13 +613,11 @@ class AListsMerger(ListPatcher):
     _de_re_header: str
     OverhaulUOPSkips = ()
 
-    def __init__(self, p_name, p_file, p_sources, remove_empty: bool,
-                 tag_choices: defaultdict[FName, set[str]]):
+    def __init__(self, p_name, p_file, p_sources, remove_empty: bool = False):
         """In addition to default parameters, accepts a boolean remove_empty,
         which determines whether or not the 'empty sublist removal' logic
-        should run, and a defaultdict tag_choices, which maps each tagged
-        plugin (represented as paths) to a set of the applied tags (as unicode
-        strings, e.g. 'Delev'), defaulting to an empty set."""
+        should run. p_sources maps each plugin in our list to the set of
+        tags to apply to it (as unicode strings, e.g. 'Delev')."""
         super().__init__(p_name, p_file, p_sources)
         self.isActive |= bool(p_file.load_dict) # Can do meaningful work even without sources
         self.type_list = {rsig: {} for rsig in self._read_sigs}
@@ -636,17 +634,17 @@ class AListsMerger(ListPatcher):
             self.de_masters.update(p_file.all_plugins[leveler].masterNames)
         self.srcs = {s for s in self.srcs if s in p_file.load_dict}
         self.remove_empty_sublists = remove_empty
-        self._tag_choices = tag_choices
+        self._tag_choices = defaultdict(set, p_sources)
 
-    def annotate_plugin(self, ann_plugin):
-        """Returns the name of the specified plugin, with any Relev/Delev tags
-        appended as [ADR], similar to how the patcher GUI displays it.
-
-        :param ann_plugin: The plugin to return the name for, as a path.
-        :type ann_plugin: bolt.Path"""
-        applied_tags = [t[0] for t in self._tag_choices[ann_plugin]] or ''
-        applied_tags = applied_tags and f' [{"".join(sorted(applied_tags))}]'
-        return f'{ann_plugin}{applied_tags}'
+    @classmethod
+    def valid_srcs(cls, p_file, src_fns=None, raise_on_errors=False):
+        """Automatic lists the plugins that carry our tags, but the user may
+        add any other one - the tags picked in our list override the
+        plugin's own, that's what the list is for."""
+        if src_fns is None:
+            src_fns = [src_fn for src_fn, src_tags in p_file.all_tags.items()
+                       if cls.patcher_tags & src_tags]
+        return super().valid_srcs(p_file, src_fns, raise_on_errors)
 
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
@@ -703,11 +701,12 @@ class AListsMerger(ListPatcher):
 
     def buildPatch(self, log, progress):
         keep = self.patchFile.getKeeper()
+        tags = self._tag_choices
         # Relevs/Delevs List
         log.setHeader(f'= {self._patcher_name}', True)
         log.setHeader(f'=== {self._de_re_header}')
         for leveler in self.levelers:
-            log(u'* ' + self.annotate_plugin(leveler))
+            log(f'* {self.annotate_plugin(leveler, tags)}')
         # Save to patch file
         sig_label = {k: v for k, v in self._sig_to_label.items() if
                      k in self._read_sigs}
@@ -724,7 +723,7 @@ class AListsMerger(ListPatcher):
                         stored_lists[list_fid], do_copy=False)
                     log(f'* {stored_list.eid}')
                     for merge_source in stored_list.mergeSources:
-                        log(f'  * {self.annotate_plugin(merge_source)}')
+                        log(f'  * {self.annotate_plugin(merge_source, tags)}')
                 self._check_list(stored_list, log)
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
@@ -776,6 +775,16 @@ class AListsMerger(ListPatcher):
                 'll_label': sig_label[list_type_sig]})
             for list_eid in sorted(cleaned_lists, key=str.lower):
                 log('* ' + list_eid)
+
+    @staticmethod
+    def annotate_plugin(item, conf_choices) -> str:
+        """Returns the name of the specified plugin, with any Relev/Delev tags
+        appended as [ADR], similar to how the patcher GUI displays it.
+        :param item: The plugin to return the name for.
+        :param conf_choices: dict mapping plugins to their tags or when used
+            from the GUI patchers their configuration choices."""
+        choice = ''.join(sorted(i[0] for i in conf_choices.get(item, ()) if i))
+        return f'{item}{f" [{choice}]" if choice else ""}'
 
     # Methods for patchers to override
     def _check_list(self, record, log):

@@ -1352,29 +1352,41 @@ from other packages previously overridden by the uninstalled package's
 </div>
 <h3 id="patch-configuration">Bash Configuration <a class="back2top" href="#contents">Back to top</a></h3>
 <p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu command <a href="#modsRebuildPatch">Rebuild Patch...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
-<p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
-<p>A short description of each section and some items is displayed near the
-    bottom of the window if the section/item is hovered over.
+<p>The configuration dialog consists of a list of patchers to the left, and the contents of the selected patcher to the right, with the build and save buttons at the bottom. The patchers and their items have checkboxes: checking a patcher will include all its checked items in the Bashed Patch. Unchecked patchers and items will not be included. Some patchers don't have any items, and so just need the patcher checkbox checked.
+<p>A short description of each patcher and some items is displayed near the
+    bottom of the window if the patcher/item is hovered over.
     <span class="bolded">Bolded items</span> are new since the last time the
     Bashed Patch was built, <span class="italicized">italicized items</span>
     will not run because they have no active sources (e.g. no mods to import).
-    Wrye Bash will usually do a good job auto-configuring most sections, but
-    you may want to alter options, especially in the Tweak section.</p>
+    Wrye Bash will usually do a good job auto-configuring most patchers, but
+    you may want to alter options, especially in the Tweak patchers.</p>
 <table>
     <thead>
         <tr><th colspan="2">Bashed Patch Configuration Buttons
         <tr><th>Button<th>Description
     <tbody>
         <tr><td>Build Patch<td>Builds your Bashed Patch with the current configuration.
-        <tr><td>Select All (next to section list)<td>Selects all the options/plugins in a section list. If an option has multiple possible values, the first value in the value list will be chosen.
-        <tr><td>Deselect All (next to section list)<td>Deselects all the options/plugins in a section list.
-        <tr><td>Select All (at bottom of window)<td>Selects all sections, and all the options/plugins in all sections. If an option has multiple possible values, the first value in the value list will be chosen.
-        <tr><td>Deselect All (at bottom of window)<td>Deselects all sections and all the options/plugins in all section list.
-        <tr><td>Revert To Default<td>Reverts your Bashed Patch to its default configuration.
+        <tr><td>Select All (next to a patcher's list)<td>Selects all the options/plugins in the patcher's list. If an option has multiple possible values, the first value in the value list will be chosen.
+        <tr><td>Deselect All (next to a patcher's list)<td>Deselects all the options/plugins in the patcher's list.
+        <tr><td>Select All (at bottom of window)<td>Selects all patchers, and all the options/plugins in all patchers. If an option has multiple possible values, the first value in the value list will be chosen.
+        <tr><td>Deselect All (at bottom of window)<td>Deselects all patchers and all the options/plugins in all patchers.
+        <tr><td>Revert To Default<td>Reverts your Bashed Patch to its default configuration, discarding your patcher and source selections.
         <tr><td id="patchRevertToSaved">Revert To Saved<td>Restores the last saved configuration of your Bashed Patch, undoing any changes since you last built it.
         <tr><td>Export<td>Saves your Bashed Patch's configuration into an external file for backup.
         <tr><td>Import<td>Restores your Bashed Patch's configuration from an exported patch configuration.
 </table>
+<p>Importing a configuration, like reverting to the saved one, only changes
+    what that configuration mentions. Sources it lists are set to the state it
+    records, sources it does not mention keep the state they currently have,
+    and sources whose plugin is no longer in your Data folder are dropped.
+    Neither button re-runs auto-configuration, so a patcher you switched off
+    stays off - use <q>Revert To Default</q> first if you want Wrye Bash to
+    configure everything from scratch, then import on top of that.
+<p>A patcher switches itself on only when it finds a source it has never seen
+    before and checks it for you, which is also when that source is shown
+    <span class="bolded">bolded</span>. Whether new sources are checked
+    automatically is controlled by <code>bAutoItemCheck</code> in
+    <code>bash.ini</code>.
 
 <h3 id="patch-merging">Merging Plugins <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Plugins that contain only certain types of data records can be merged into the Bashed Patch. This then allows these plugins to be deactivated, freeing up space in your load order.
