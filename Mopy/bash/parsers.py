@@ -106,7 +106,7 @@ class PluginParser(_TextParser):
         # May have been retrieved from mod in second pass, or from a CSV file.
         # Need __class__ access to get a function rather than a bound method
         self.id_stored_data = get_type_hints(self.__class__)['id_stored_data'](
-            self._nested_type)
+            self.__class__._nested_type)
 
     def _write_rows(self, out):
         """Writes rows to csv text file."""
@@ -964,12 +964,11 @@ class ScriptText(PluginParser):
      - Internally we store lists of strings, i.e. with the newlines chopped
        off."""
     _parser_sigs = [b'SCPT']
-    id_stored_data: dict
 
     def __init__(self):
-        self.eid_data = {}
-        self._nested_type = {b'SCPT': self.eid_data}
         super().__init__()
+        # The only record type we handle - the scripts, keyed by eid
+        self.eid_data = self.id_stored_data[b'SCPT']
 
     def export_scripts(self, folder, progress, skip, deprefix, skipcomments):
         """Writes scripts to specified folder."""
