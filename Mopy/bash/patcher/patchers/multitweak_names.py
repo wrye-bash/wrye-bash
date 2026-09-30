@@ -32,6 +32,7 @@ from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
     MultiTweakItem
 from ... import bush
 from ...bolt import RecPath, build_esub, setattr_deep
+from ...brec import RecordType
 from ...exception import BPConfigError
 
 _ignored_chars = frozenset(u'+-=.()[]<>')
@@ -152,18 +153,19 @@ class _ANamesTweak(CustomChoiceTweak):
 class _AMgefNamesTweak_Tes4(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs.
     Oblivion-specific."""
-    _prepared = False
-    _look_up_mgef = None
+    _look_up_mgef = None # effect code -> MGEF record of the load order
 
     def prepare_for_tweaking(self, patch_file):
-        super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
-        self._prepared = True
+        super().prepare_for_tweaking(patch_file)
+        # The patch file keeps every MGEF of the load order (readClasses)
+        self._look_up_mgef = RecordType.sig_to_class[b'MGEF'].index_by_code(
+            patch_file.tops[b'MGEF'])
 
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
         # thoroughly (i.e. during the buildPatch/apply phase)
         old_full = record.full
-        return (old_full and (not self._prepared or
+        return (old_full and (not self._look_up_mgef or
                               old_full != self._exec_rename(record)))
 
 class _AEffectsTweak_Tes5(IndexingTweak, _ANamesTweak):
@@ -407,8 +409,9 @@ class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
         if record.flags.alch_is_food:
             return '.' + wip_name
         else:
-            poison_tag = 'X' if record.is_harmful() else ''
-            effect_label = poison_tag + record.get_spell_school()
+            poison_tag = 'X' if record.is_harmful(self._look_up_mgef) else ''
+            effect_label = poison_tag + record.get_spell_school(
+                self._look_up_mgef)
             return self.chosen_format % effect_label + wip_name
 
 class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
@@ -462,7 +465,7 @@ class NamesTweak_NotesScrolls_Tes4(_ANamesTweak_Scrolls, _AMgefNamesTweak_Tes4):
         if is_enchanted and u'%s' in magic_format:
             enchantment = self._look_up_ench[rec_ench]
             if enchantment: ##: true?
-                school = enchantment.get_spell_school()
+                school = enchantment.get_spell_school(self._look_up_mgef)
             else: school = 'U' # U: unknown
             # Remove existing label
             wip_name = _re_old_magic_label.sub(u'', wip_name)

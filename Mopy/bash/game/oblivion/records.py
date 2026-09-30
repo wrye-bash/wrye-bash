@@ -484,21 +484,38 @@ class MreHasEffects(MelRecord):
         return ''.join(output)
 
     # Tweaks APIs -------------------------------------------------------------
-    def is_harmful(self):
+    # look_up_mgef maps effect codes to the MGEF records of the load order
+    # (see MreMgef.index_by_code) - effects whose code is not in it (or all
+    # effects, if it is None/empty) fall back to the vanilla tables of MreMgef
+    def is_harmful(self, look_up_mgef=None):
         """Return True if all the effects on the specified record are
         harmful/hostile."""
         for rec_eff in self.effects:
-            is_effect_hostile = se.flags.hostile if (se := rec_eff.scriptEffect
-                ) else rec_eff.effect_sig in MreMgef.hostile_effects
+            if se := rec_eff.scriptEffect:
+                is_effect_hostile = se.flags.hostile
+            elif look_up_mgef and (
+                    mgef := look_up_mgef.get(rec_eff.effect_sig)):
+                is_effect_hostile = mgef.flags.hostile
+            else:
+                is_effect_hostile = (rec_eff.effect_sig in
+                                     MreMgef.hostile_effects)
             if not is_effect_hostile:
                 return False
         return True
 
-    def get_spell_school(self, tweak_mgef_school=None): # param unused in Oblivion
+    def get_spell_school(self, look_up_mgef=None):
+        """Return the school for this record as a single letter, based on its
+        first effect (e.g. 'D' for a spell where the first effect belongs to
+        the school of Destruction)."""
         if self.effects:
             first_eff = self.effects[0]
-            school = se.school if (se := first_eff.scriptEffect) else \
-                MreMgef.mgef_school.get(first_eff.effect_sig, 6)
+            if se := first_eff.scriptEffect:
+                school = se.school
+            elif look_up_mgef and (
+                    mgef := look_up_mgef.get(first_eff.effect_sig)):
+                school = mgef.school
+            else:
+                school = MreMgef.mgef_school.get(first_eff.effect_sig, 6)
             return 'ACDIMRU'[school]
         return 'U' # default to 'U' (unknown)
 
@@ -1664,6 +1681,18 @@ class MreMgef(MelRecord):
         b'WKPO', #--Weakness to Poison
         b'WKSH', #--Weakness to Shock
     }
+
+    @staticmethod
+    def index_by_code(mgef_block) -> dict:
+        """Map the effect codes of the MGEFs in the specified block (the patch
+        file's, which holds every MGEF of the load order) to the records, for
+        laying their FULL, school and hostile flag over the vanilla tables
+        above. The code is the (bytes) EDID of the MGEF, the effect_sig the
+        effects of spells, potions etc. carry. OBME records are skipped."""
+        ##: Skip OBME records, at least for now
+        return {rec.mgef_edid: rec for _rid, rec in
+                mgef_block.iter_present_records()
+                if rec.obme_record_version is None}
 
     melSet = MelSet(
         if_obre(
