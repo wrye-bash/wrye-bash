@@ -269,7 +269,11 @@ class _AParser(_HandleAliases):
     """Base class for parsers manipulating array record elements (factions and
     relations). Behaves like a merger when reading csvs, keeping all the csv
     entries (last item wins) and exporting to mods additions and changes.
-    When reading from mods behaves like a merger if _is_merger is True XXX fixme test and doc
+    When reading the same record from more than one plugin _is_merger decides
+    if the record data merge (FactionRelations - the last read plugin wins
+    per (main, other) faction pair) or the last read plugin overrides the
+    record (ActorFactions). Writing is always additions and changes, never
+    removals, so _is_merger only matters when reading.
 
     Reading from mods:
      - This is the most complex part of this design - we offer up to two
@@ -286,7 +290,8 @@ class _AParser(_HandleAliases):
     _nested_type = lambda: defaultdict(dict)
     _target_array = None # target record array attribute
     array_item_attrs = None # the attributes this parser needs from array elements
-    # whether to override or merge when reading a record from multiple plugins
+    # Whether to merge (True) or override (False) the data of a record read
+    # from more than one plugin - see the class docstring
     _is_merger = False
 
     def __init__(self, aliases_=None, called_from_patcher=False):
@@ -421,7 +426,7 @@ class _AParser(_HandleAliases):
         """Asks this parser to write its stored information to the specified
         record."""
         cur_data = self._read_record_sp(record)
-        if new_data != cur_data:##: fixme differentiate between _is_merger cases?
+        if new_data != cur_data:
             # It's different, ask the parser to write it out
             added_changed = set(new_data.items()) - set(cur_data.items())
             for faction_fid, item_values in added_changed:
@@ -725,7 +730,7 @@ class FactionRelations(_AParser):
     and CSV, and uses two passes to do so."""
     array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
     _target_array = 'relations'
-    _is_merger = True # the results of _read_record_sp will be merged
+    _is_merger = True # merge per (main, other) faction pair, last read wins
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super().__init__(aliases_, called_from_patcher)
@@ -748,17 +753,19 @@ class FactionRelations(_AParser):
     def _read_record_sp(self, record, *, __attrgetters=tuple(
             attrgetter_cache[a] for a in ('faction', *array_item_attrs))):
         relations = {}
-        # Merge added relations, preserve changed relations
+        # Tuples, so they hash in _write_record and compare with the csv ones
         for relation in record.relations:
             other_fac, *rel_attrs = (a(relation) for a in __attrgetters)
-            relations[other_fac] = rel_attrs
+            relations[other_fac] = tuple(rel_attrs)
         return relations
 
-    def _parse_line(self, csv_fields):
+    def _parse_line(self, csv_fields, *, __deserializers=tuple(
+            attr_csv_struct[a][0] for a in array_item_attrs)):
         _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
         mid = self._coerce_fid(mmod, mobj)
         oid = self._coerce_fid(omod, oobj)
-        self.id_stored_data[b'FACT'][mid][oid] = tuple(csv_fields[6:])
+        self.id_stored_data[b'FACT'][mid][oid] = tuple(
+            des(v) for des, v in zip(__deserializers, csv_fields[6:]))
 
     def _row_out(self, lfid, stored_data, top_grup):
         """Exports faction relations to specified text file."""

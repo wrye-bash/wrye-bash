@@ -58,10 +58,12 @@ class _AMerger(ImportPatcher):
         # Set of record signatures that are actually provided by sources
         self._present_sigs = set()
         self.touched = set()
+        # Maps record sigs to fids to the entries read from our csv sources -
+        # filled by _parse_csv_sources, so it must exist before super().__init__
+        self._csv_ids = {}
         super(_AMerger, self).__init__(p_name, p_file, p_sources)
         self._id_deltas = defaultdict(list)
         self.mod_id_entries = {}
-        self._csv_ids = {}
         self.inventOnlyMods = {x for x in self.srcs if
                                x in p_file.ii_mode} if self.iiMode else set()
 
@@ -221,6 +223,13 @@ class _AMerger(ImportPatcher):
                     record_entries.append(entry)
         return record_entries
 
+    def _csv_delta(self, record, csv_data):
+        """Return the delta the csv rows for the specified record amount to:
+        remove nothing, add and change the same entries - _merge_delta changes
+        the ones present in the record and adds the rest. Only called if we
+        read csv sources, see _parse_csv_sources."""
+        raise NotImplementedError
+
     def buildPatch(self,log,progress):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
@@ -229,21 +238,23 @@ class _AMerger(ImportPatcher):
         en_key = self._entry_key
         for curr_sig, p_block in self.patchFile.iter_tops(self._read_sigs):
             sr_attr = self._wanted_subrecord[curr_sig]
-            csv_ids = self._csv_ids.get(curr_sig) or {}
+            csv_ids = self._csv_ids.get(curr_sig, {})
             for rid, record in p_block.id_records.items():
-                if (deltas := id_deltas.get(rid)) or rid in csv_ids:# fixme can these interact somehow?
-                    wip_entries = getattr(record, sr_attr)
-                    # Use sorted to preserve duplicates, but ignore order. This
-                    # is safe because order does not matter for items.
-                    old_entries = sorted(wip_entries, key=en_key)
-                    for delta in deltas:
-                        wip_entries = self._merge_delta(delta, wip_entries)
-                    if rid in csv_ids: # I inlined _check_write_record here
-                        self._csv_parser._write_record(record, csv_ids[rid], None)
-                    if old_entries != sorted(wip_entries, key=en_key):
-                        setattr(record, sr_attr, wip_entries)
-                        keep(rid, record)
-                        mod_count[rid.mod_fn] += 1
+                deltas = id_deltas.get(rid, ())
+                if csv_data := csv_ids.get(rid):
+                    # The csv rows come last, so they win over the plugins
+                    deltas = [*deltas, self._csv_delta(record, csv_data)]
+                if not deltas: continue
+                wip_entries = getattr(record, sr_attr)
+                # Use sorted to preserve duplicates, but ignore order. This
+                # is safe because order does not matter for items.
+                old_entries = sorted(wip_entries, key=en_key)
+                for delta in deltas:
+                    wip_entries = self._merge_delta(delta, wip_entries)
+                if old_entries != sorted(wip_entries, key=en_key):
+                    setattr(record, sr_attr, wip_entries)
+                    keep(rid, record)
+                    mod_count[rid.mod_fn] += 1
         self._patchLog(log,mod_count)
 
 #------------------------------------------------------------------------------
@@ -307,8 +318,27 @@ class ImportRelationsPatcher(_AMerger):
 
     def _parse_csv_sources(self):
         filtered_dict = super()._parse_csv_sources()
-        self.touched.update(*filtered_dict.values()) # few entries
-        self._csv_ids = filtered_dict
+        # _filter_csv_fids dropped the main factions of plugins not loading
+        # before the BP - drop the relations to such other factions too
+        earlier_loading = self.patchFile.all_plugins
+        self._csv_ids = {sig: fid_rels for sig, d in filtered_dict.items() if (
+            fid_rels := {f: rels for f, r in d.items() if (rels := {
+                o: rel_vals for o, rel_vals in r.items() if
+                o.mod_fn in earlier_loading})})}
+        # The csv factions must reach the patch, and a csv-only configuration
+        # must stay active in initData
+        self.touched.update(*self._csv_ids.values()) # few entries
+        self._present_sigs.update(self._csv_ids)
+
+    def _csv_delta(self, record, csv_data):
+        csv_parser = self._csv_parser
+        csv_entries = []
+        for other_fid, rel_vals in csv_data.items():
+            rel_entry = csv_parser.get_empty_object(record, other_fid)
+            for rel_attr, rel_val in zip(csv_parser.array_item_attrs, rel_vals):
+                setattr(rel_entry, rel_attr, rel_val)
+            csv_entries.append(rel_entry)
+        return self._csv_key, set(), csv_entries, csv_entries
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
