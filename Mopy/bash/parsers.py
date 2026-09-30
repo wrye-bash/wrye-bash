@@ -469,6 +469,8 @@ class ActorFactions(_AParser):
     _target_array = 'factions'
     array_item_attrs = 'rank'
     csv_suffix = '_Factions.csv'
+    # The first pass reads the eids the csv export needs - the patcher skips it
+    _fp_types = (*bush.game.actor_types, b'FACT')
     _sp_types = bush.game.actor_types
 
     def _read_record_fp(self, record):

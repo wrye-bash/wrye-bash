@@ -280,7 +280,7 @@ class ImportActorsFacesPatcher(APreserver):
 
 #------------------------------------------------------------------------------
 class _ActorFactionsParser(ActorFactions):
-    _fp_types = (*ActorFactions._sp_types, b'FACT') # We need the first pass
+    _fp_types = () # We don't need the first pass - only reads csvs
 
     def _read_record_sp(self, record):
         raise NotImplementedError # only used as a csv reader in patcher
