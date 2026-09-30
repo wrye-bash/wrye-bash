@@ -89,13 +89,16 @@ class CoblCatalogsPatcher(ExSpecial):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         #--Setup
-        alt_names = {k: v or '' for k, v in # could this be None?
-                     RecordType.sig_to_class[b'MGEF'].mgef_name.items()}
+        mgef_class = RecordType.sig_to_class[b'MGEF']
+        # The effect names of the load order (the patch file keeps every MGEF)
+        # override the vanilla ones
+        alt_names = {**mgef_class.mgef_name, **{
+            code: mgef.full or '' for code, mgef in # could this be None?
+            mgef_class.index_by_code(self.patchFile.tops[b'MGEF']).items()}}
         attr_or_skill = f"({_('Attribute')}|{_('Skill')})"
-        for mgef_sig_or_int in alt_names:
-            alt_names[mgef_sig_or_int] = re.sub(attr_or_skill, '',
-                                                alt_names[mgef_sig_or_int])
-        actorEffects = RecordType.sig_to_class[b'MGEF'].generic_av_effects
+        for mgef_sig, mgef_name in alt_names.items():
+            alt_names[mgef_sig] = re.sub(attr_or_skill, '', mgef_name)
+        actorEffects = mgef_class.generic_av_effects
         from ..records import actor_values
         keep = self.patchFile.getKeeper()
         patch_books = self.patchFile.tops[b'BOOK']
