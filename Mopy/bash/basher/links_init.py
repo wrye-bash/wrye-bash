@@ -83,7 +83,7 @@ def InitStatusBar():
         game_class.Xe.full_name for game_class in PatchGame.supported_games())
     xe_images = _png_list('tools/tes4edit%s.png')
     def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
-        app_launcher, app_name, path_kwargs, *cli_args = app_path_data
+        app_launcher, appname, path_kwargs, *cli_args = app_path_data
         uid = kwargs.setdefault('uid', app_key)
         if import_launchers and app_key and ( ##:(734:570)
                 ini_path := bass.get_path_from_ini(app_key.lower())):
@@ -102,7 +102,7 @@ def InitStatusBar():
         if cli_args: # for tools defined in constants.py and TES4View/Trans
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_launcher, path_kwargs, list_img,
-                                        app_name, **kwargs)
+                                        appname, **kwargs)
     all_links.append(_tool_args(None, (bush.game.Ck.exe,
             bush.game.Ck.long_name, {'root_dirs': 'app'},
             *bush.game.Ck.se_args), clazz=TESCSButton,

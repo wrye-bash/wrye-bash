@@ -310,7 +310,7 @@ class _LegacyWindowsStoreFinder(object):
     }
 
     def __init__(self):
-        self.info_cache = {} # app_name -> _LegacyWinAppInfo
+        self.info_cache = {} # package_name -> _LegacyWinAppInfo
 
     @staticmethod
     def _read_registry_string(reg_key, string_name):
@@ -398,7 +398,7 @@ class _LegacyWindowsStoreFinder(object):
         return parts[1]
 
     @staticmethod
-    def _get_manifest_info(mutable_location, app_name):
+    def _get_manifest_info(mutable_location, appname):
         version = None
         entry_point = u''
         try:
@@ -412,7 +412,7 @@ class _LegacyWindowsStoreFinder(object):
             entry_template = u'./{%s}Applications/{%s}Application[@Id]' \
                              u'[@EntryPoint][@Executable]'
             # First get the version
-            identity = root.find(version_template % (namespace, app_name))
+            identity = root.find(version_template % (namespace, appname))
             if identity is not None:
                 # NOTE: `if identity` throws a FutureWarning
                 version = identity.get(u'Version')
@@ -425,11 +425,11 @@ class _LegacyWindowsStoreFinder(object):
             pass
         return version, entry_point
 
-    def get_app_info(self, app_name, publisher_name=None):
+    def get_app_info(self, appname, publisher_name=None):
         """Public interface: returns a _LegacyWinAppInfo object with all applicable
         information about the application."""
         publisher_id = self._developer_ids.get(publisher_name)
-        package_name = f'{app_name}_{publisher_id}'
+        package_name = f'{appname}_{publisher_id}'
         try:
             return self.info_cache[package_name]
         except KeyError:
@@ -449,7 +449,7 @@ class _LegacyWindowsStoreFinder(object):
             install_time = self._get_package_install_time(package_name,
                                                           full_name)
             version, entry_point = self._get_manifest_info(mutable_location,
-                                                           app_name)
+                                                           appname)
             if not version:
                 version = self._get_package_version_from_full_name(full_name)
             version = _parse_version_string(version)
