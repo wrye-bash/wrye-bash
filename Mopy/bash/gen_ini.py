@@ -353,14 +353,13 @@ def _generate_default_bash_ini():
 {_wrap_ini_comment(_(
     "All tool launcher paths can be absolute or relative paths from the head "
     "of the game folder (the folder with, e.g., Oblivion.exe or TESV.exe in "
-    "it). A few Java programs also have matching entries for argument options."
+    "it)."
 ))}
 
 
 {_wrap_subsection_header(_('Mod/LOD/NIF Tool Launchers'))}
 
 ;sTes4GeckoPath=Tes4Gecko.jar
-;sTes4GeckoJavaArg=-Xmx1024m
 
 ;sTes4FilesPath=Tools\Tes4Files.exe
 
@@ -500,7 +499,6 @@ def _generate_default_bash_ini():
 ;sMAP=Modding Tools\Interactive Map of Cyrodiil and Shivering Isles 3.52\Mapa v 3.52.exe
 
 ;sOblivionBookCreatorPath=Data\OblivionBookCreator.jar
-;sOblivionBookCreatorJavaArg=-Xmx1024m
 
 ;sOBMLG=Modding Tools\Oblivion Mod List Generator\Oblivion Mod List Generator.exe
 

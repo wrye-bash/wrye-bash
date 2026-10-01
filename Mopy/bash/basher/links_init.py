@@ -24,7 +24,6 @@
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 import os
-import shlex
 from itertools import chain
 
 from . import BSAList, INIList, InstallersList, InstallersPanel, MasterList, \
@@ -48,7 +47,6 @@ from .settings_dialog import launcher_settings
 from .. import bass, bush
 from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
-from ..bolt import os_name
 from ..env import init_app_links
 from ..game.patch_game import PatchGame
 from ..gui import ERROR_ICONS, GuiImage
@@ -92,13 +90,13 @@ def InitStatusBar():
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
                                         list_img, app_name, **kwargs)
     all_links.append(_tool_args(None, (bush.game.Ck.exe,
-            bush.game.Ck.long_name, {'root_dirs': 'app'}), clazz=TESCSButton,
+            bush.game.Ck.long_name, {'root_dirs': 'app'},
+            *bush.game.Ck.se_args), clazz=TESCSButton,
         uid='TESCS', display_launcher=bool(bush.game.Ck.ck_abbrev)))
     # Launchers of tools ------------------------------------------------------
     all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
                      in oblivion_tools.items())
-    all_links.extend(_tool_args(k, (*v, *shlex.split(bass.inisettings[
-        f'{(u := k[:-4])}JavaArg'], posix=os_name != 'nt')), uid=u,
+    all_links.extend(_tool_args(k, v, uid=k[:-4],
         display_launcher=_is_oblivion) for k, v in oblivion_java_tools.items())
     all_links.extend(_tool_args(*tool, display_launcher=_is_skyrim,
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
@@ -150,9 +148,12 @@ def InitStatusBar():
         app_key = pth.stail.lower()
         all_links.append(LnkButton(pth, imgs, shortcut_desc, app_key,
                                    canHide=False))
-    #--Custom Launchers
+    #--Custom Launchers - the uids of the launcher settings that are not
+    # predefined (the ones with no path are leftovers of dropped ones)
+    predefined = {li.uid for li in all_links}
     all_links.extend(AppButton.app_button_factory(uid=launcher_uid) for
-                     launcher_uid in launcher_settings())
+        launcher_uid, launcher_set in launcher_settings().items() if
+        launcher_uid not in predefined and 'path' in launcher_set)
     #--Final couple
     all_links.append(DocBrowserButton('DocBrowser'))
     all_links.append(PluginCheckerButton('ModChecker'))
