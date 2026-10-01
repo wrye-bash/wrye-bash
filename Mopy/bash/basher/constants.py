@@ -453,6 +453,9 @@ settingDefaults = { # keep current naming format till refactored
     #--Launchers: {os_name: {uid: {'path'|'args': value}}}
     # - see launcher_settings in settings_dialog
     'bash.launchers': {},
+    # the types of launchers listed in the Launchers page
+    'bash.launchers.shown': {'predefined': True, 'custom': True,
+                             'hidden': True, 'not_found': False},
     #--Wrye Bash: Saves
     'bash.saves.cols': ['File', 'Modified', 'Size', 'PlayTime', 'Player',
                         'Cell'],
