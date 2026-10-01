@@ -1529,6 +1529,18 @@ class LaunchersPage(_AFixedPage):
         # the launchers, with their icons - the items are keyed by uid
         self._launcher_listbox = ImageListBox(self,
             on_select=self._handle_launcher_selected)
+        shown = bass.settings['bash.launchers.shown']
+        self._filter_checks = {f_key: CheckBox(self, f_label,
+            chkbx_tooltip=f_tooltip, checked=shown[f_key],
+            on_check=lambda checked, k=f_key: self._on_filter(k, checked))
+            for f_key, f_label, f_tooltip in (
+                ('predefined', _('Predefined'),
+                 _('Show the launchers that come with Wrye Bash.')),
+                ('custom', _('Custom'), _('Show the launchers you added.')),
+                ('hidden', _('Hidden'), _('Show the launchers whose button '
+                                          'is hidden on the status bar.')),
+                ('not_found', _('Not Found'), _(
+                    'Show the launchers whose application was not found.')))}
         # Name, path and args
         self._launcher_path = FilePicker(self, hint=_('Path to application'))
         self._launcher_path.button.tooltip = _('Select a file to launch.')
@@ -1554,6 +1566,8 @@ class LaunchersPage(_AFixedPage):
         VLayout(border=6, spacing=4, item_expand=True, items=[
             self._page_desc_label,
             HorizontalLine(self),
+            HLayout(spacing=6, items=[Label(self, _('Show:')),
+                                      *self._filter_checks.values()]),
             (self._launcher_listbox, LayoutOptions(weight=1)),
             HorizontalLine(self),
             GridLayout(h_spacing=4, v_spacing=4, stretch_cols=[1],
@@ -1603,8 +1617,18 @@ class LaunchersPage(_AFixedPage):
         return {'path': launcher.app_path.s,
                 'args': join_launcher_args(launcher.exe_args)} | launcher_set
 
-    def _populate_launcher_listbox(self):
-        """List the predefined launchers, then the custom ones, by name."""
+    def _on_filter(self, filter_key, checked):
+        bass.settings['bash.launchers.shown'][filter_key] = checked
+        self._populate_launcher_listbox(keep_selection=True)
+
+    def _populate_launcher_listbox(self, keep_selection=False):
+        """List the predefined launchers, then the custom ones, by name - the
+        types of launchers the filters exclude are skipped. The hidden ones
+        are in italics, the not found ones greyed out. If keep_selection is
+        True, select the displayed launcher again, if still listed, else
+        return to the normal view."""
+        shown = bass.settings['bash.launchers.shown']
+        hide = bass.settings['bash.statusbar.hide']
         launchers = []
         for launcher_uid, launcher in BashStatusBar.all_sb_links.items():
             if not hasattr(launcher, 'app_cli'): # not an AppButton
@@ -1617,10 +1641,23 @@ class LaunchersPage(_AFixedPage):
                 label = launcher.app_name
             else:
                 continue
+            if not shown['custom' if launcher.is_custom else 'predefined']:
+                continue
+            if (hidden := launcher_uid in hide) and not shown['hidden']:
+                continue
+            if (not_found := not launcher.allow_create()) and not shown[
+                    'not_found']: continue
             launchers.append(((launcher.is_custom, label.lower()), (
-                launcher_uid, label, launcher.images[0]))) # the 16 px icon
+                launcher_uid, label, launcher.images[0], not_found, hidden)))
         launchers.sort(key=lambda x: x[0])
         self._launcher_listbox.set_items(item for _key, item in launchers)
+        if keep_selection and (selected := self._selected_launcher):
+            # quietly - so we keep any edits in the text fields
+            with self._launcher_listbox.on_item_selected.pause_subscription(
+                    self._handle_launcher_selected):
+                if self._launcher_listbox.select_key(selected):
+                    return
+            self._cleanup()
 
     def _handle_launcher_selected(self, selected_str):
         self._selected_launcher = selected_str
@@ -1690,7 +1727,8 @@ class LaunchersPage(_AFixedPage):
         else:
             Link.Frame.statusBar.add_buttons(new_launcher)
         self._cleanup()
-        self._populate_launcher_listbox()
+        self._handle_launcher_selected(new_launcher.uid)
+        self._populate_launcher_listbox(keep_selection=True)
 
     def _remove_or_reset(self):
         selected = self._selected_launcher
@@ -1698,6 +1736,7 @@ class LaunchersPage(_AFixedPage):
             del launcher_settings()[selected] # reset
             Link.Frame.statusBar.replace_button(selected, launcher.recreate())
             self._handle_launcher_selected(selected)
+            self._populate_launcher_listbox(keep_selection=True)
             return
         # remove
         if not popups.askYes(parent=self, message=_('Are you sure?'),
