@@ -376,11 +376,8 @@ def _parse_bash_ini(bash_ini_path):
                 'SkippedBashInstallersDirs', 'SoundError', 'SoundSuccess',
                 'xEditCommandLineArguments'], '')
         },
-        'Tool Options': {
-            'OblivionBookCreatorJavaArg': '-Xmx1024m',
-            'Tes4GeckoJavaArg': '-Xmx1024m', 'ShowTextureToolLaunchers': True,
-            'ShowModelingToolLaunchers': True, 'ShowAudioToolLaunchers': True
-        }
+        'Tool Options': {'ShowTextureToolLaunchers': True,
+            'ShowModelingToolLaunchers': True, 'ShowAudioToolLaunchers': True}
     }
     bass.inisettings.clear() #ini might be reinitialized due to restore failing
     for v in ini_set.values():
