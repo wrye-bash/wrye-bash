@@ -2133,11 +2133,11 @@ class BashStatusBar(DnDStatusBar):
                 sort_buttons = True
         if sort_buttons: self._sort_buttons(order)
         for link_uid in hide_ids:
-            try:
-                self._visible_buttons[link_uid].visible = False
-                del self._visible_buttons[link_uid]
-                hidden_buttons.add(link_uid)
-            except KeyError: pass # should not happen
+            # also for links without a button (allow_create returned False),
+            # so they stay hidden should they get one - see replace_button
+            hidden_buttons.add(link_uid)
+            if button_link := self._visible_buttons.pop(link_uid, None):
+                button_link.visible = False
         self._set_fields_size()
         self._draw_buttons()
 

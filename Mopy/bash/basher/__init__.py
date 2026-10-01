@@ -3593,7 +3593,7 @@ class BashFrame(WindowFrame):
         msg = _('Wrye Bash no longer reads the tool paths in %(bash_ini)s, '
                 'nor the shortcuts in %(apps_dir)s. The ones below have been '
                 'imported into its settings - from now on, manage them in the '
-                'Launchers page of the settings dialog.') % {
+                'Status Bar page of the settings dialog.') % {
             'bash_ini': 'bash.ini', 'apps_dir': bass.dirs['mopy'].join('Apps')}
         showWarning(self, '\n\n'.join([msg, '\n'.join(imported_launchers)]),
                     title=_('Launchers Imported'))
