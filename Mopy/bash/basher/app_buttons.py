@@ -124,6 +124,10 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
             'bash.statusbar.iconSize']
         return get_image(self.imageKey % icon_size_)
 
+    def list_image(self):
+        """Return the 16 px image of this button, as of its current state."""
+        return get_image(self.imageKey % 16)
+
     def DoPopupMenu(self):
         if self.mainMenu:
             self.mainMenu.popup_menu(self, 0)
@@ -186,6 +190,9 @@ class AppButton(AppLauncher, StatusBarButton):
         iconSize = BashStatusBar.icon_size - 8 or bass.settings[ # 16, 24, 32
             'bash.statusbar.iconSize']
         return self.images[(iconSize // 8) - 2]  # 0, 1, 2
+
+    def list_image(self):
+        return self.images[0]
 
     @property
     def sb_button_tip(self):
