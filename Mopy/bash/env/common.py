@@ -198,15 +198,14 @@ class _LegacyWinAppVersionInfo:
 @dataclass
 class _LegacyWinAppInfo:
     # There are three names used for Windows Apps:
-    # app_name: The most human readable form
-    #   ex: `BethesdaSofworks.SkyrimSE-PC`
+    # win_app_name: The human readable form ex: `BethesdaSofworks.SkyrimSE-PC`
     # package_name: The application name along with publisher id
     #   ex: `BethesdaSoftworks.Skyrim_PC_3275kfvn8vcwc`
     # full_name: The unique app name, includes version and platform
     #   ex: `BethesdaSoftworks.TESMorrowind-PC_1.0.0.0_x86__3275kfvn8vcwc`
     legacy_publisher_name : str = ''
     publisher_id : str = ''
-    app_name : str = ''
+    win_app_name : str = ''
     versions: dict[str, _LegacyWinAppVersionInfo] = field(init=False,
                                                     default_factory=dict)
 
@@ -221,11 +220,10 @@ class _LegacyWinAppInfo:
                           key=lambda x: x.install_time)[-1]
         return None
 
-    def __repr__(self):
-        return (f'_LegacyWinAppInfo('
-                f'legacy_publisher_name={self.legacy_publisher_name},'
-                f'publisher_id={self.publisher_id}, app_name={self.app_name}, '
-                f'versions=<{len(self.versions)} version(s)>)')
+    def __repr__(self): return (f'_LegacyWinAppInfo('
+        f'legacy_publisher_name={self.legacy_publisher_name},'
+        f'publisher_id={self.publisher_id}, win_app_name={self.win_app_name}, '
+        f'versions=<{len(self.versions)} version(s)>)')
 
 def _get_language_paths(language_dirs: list[str],
         main_location: _Path) -> list[_Path]:
