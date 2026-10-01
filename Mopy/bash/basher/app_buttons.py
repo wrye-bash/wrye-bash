@@ -31,8 +31,8 @@ from .. import balt, bass, bolt, bosh, bush
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bolt import GPath, deprint, os_name, undefinedPath
 from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
-    ExeLauncher, LnkLauncher, get_app_icon, join_launcher_args, \
-    set_cwd, split_launcher_args
+    ExeLauncher, get_app_icon, join_launcher_args, set_cwd, \
+    split_launcher_args
 from ..gui import ClickableImage, ERROR_ICONS, EventResult, get_key_down, \
     get_shift_down, Lazy, Links, WithDragEvents, get_image, showError, \
     GuiImage
@@ -42,7 +42,7 @@ from ..gui.base_components import _AComponent
 __all__ = ['ObseButton', 'AutoQuitButton', 'GameButton', 'TESCSButton',
            'AppXEdit', 'AppBOSS', 'HelpButton', 'AppLOOT', 'DocBrowserButton',
            'PluginCheckerButton', 'SettingsButton', 'RestartButton',
-           'AppButton', 'LnkButton', 'StatusBarButton']
+           'AppButton', 'StatusBarButton']
 
 #------------------------------------------------------------------------------
 # StatusBar Buttons -----------------------------------------------------------
@@ -223,15 +223,14 @@ class AppButton(AppLauncher, StatusBarButton):
         return self.app_path
 
     @classmethod
-    def app_button_factory(cls, app_key=None, app_launcher=None,
-                           path_kwargs=None, images=None, appname=None,
-                           **kwargs):
+    def app_button_factory(cls, app_launcher=None, path_kwargs=None,
+                           images=None, appname=None, **kwargs):
         """Create a launcher with its launcher settings applied - path_kwargs
         is where to search for app_launcher, or None for a custom launcher,
         whose path is in its settings. images None means the icons of the
         launched file, appname None the uid."""
-        recreate = partial(cls.app_button_factory, app_key, app_launcher,
-                           path_kwargs, images, appname, **kwargs)
+        recreate = partial(cls.app_button_factory, app_launcher, path_kwargs,
+                           images, appname, **kwargs)
         launcher_set = launcher_settings().get(kwargs['uid'], {})
         searched = False
         if path_kwargs is None: # displayed even if missing, with the 'x' icon
@@ -241,7 +240,7 @@ class AppButton(AppLauncher, StatusBarButton):
                 is_present = (exe_path := GPath(user_path)).exists()
             else:
                 exe_path, is_present = cls.find_launcher(app_launcher,
-                    app_key, **path_kwargs)
+                                                         **path_kwargs)
             # App_Button is initialized once on boot, if the path doesn't exist
             # at this time then it will be detected on next launch of Bash
             kwargs['display_launcher'] &= is_present
@@ -293,18 +292,6 @@ class _JavaButton(AppButton):
         # Windows Popen would requote the arguments the user typed
         subprocess.Popen(join_launcher_args(cli) if os_name == 'nt' else cli,
                          executable=self._java.s, close_fds=True)
-
-class LnkButton(LnkLauncher, AppButton):
-    def __init__(self, launcher_path, images, shortcut_desc, *args, **kwargs):
-        super().__init__(launcher_path, images, launcher_path.sbody, *args,
-            **kwargs)
-        self._shortcut_desc = shortcut_desc
-
-    @property
-    def sb_button_tip(self):
-        if self._shortcut_desc is not None:
-            return self._shortcut_desc
-        return super().sb_button_tip
 
 def _launcher_icons(exe_path):
     """Return the icons of a custom launcher - the ones the OS displays for
@@ -399,10 +386,10 @@ class _AAppLOManager(_ExeButton):
     _registry_keys = () # find the path for those in the registry
 
     @classmethod
-    def find_launcher(cls, app_exe, *args, **kwargs):
+    def find_launcher(cls, app_exe, **kwargs):
         # Check game folder for a copy first
         launcher, is_present = super().find_launcher(app_exe, root_dirs='app',
-                                                     *args, **kwargs)
+                                                     **kwargs)
         if not is_present:
             # Detect globally installed program (into Program Files)
             path_in_registry = get_registry_path(*cls._registry_keys,

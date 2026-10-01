@@ -43,7 +43,6 @@ ROOT_PATH = SCRIPTS_PATH.parent # the root of the Wrye Bash repository
 WBSA_PATH = SCRIPTS_PATH / 'build' / 'standalone'
 DIST_PATH = SCRIPTS_PATH / 'dist'
 MOPY_PATH = ROOT_PATH / 'Mopy'
-APPS_PATH = MOPY_PATH / 'Apps'
 NSIS_PATH = SCRIPTS_PATH / 'build' / 'nsis'
 LOG_PATH = SCRIPTS_PATH / 'log'
 L10N_PATH = MOPY_PATH / 'bash' / 'l10n'
