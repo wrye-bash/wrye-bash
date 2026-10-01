@@ -24,6 +24,7 @@ import shlex
 import struct
 import subprocess
 import webbrowser
+from functools import partial
 
 from .frames import DocBrowser, PluginChecker
 from .settings_dialog import SettingsDialog, launcher_settings
@@ -109,7 +110,7 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
 
     def _set_img_and_tip(self):
         # make sure allow_create is True when using this (for instance
-        # _app_path must exist to query version)
+        # app_path must exist to query version)
         self.tooltip = self.sb_button_tip
         self._set_button_image(self._btn_bmp())
 
@@ -164,7 +165,11 @@ class _StatusBar_Hide(ItemLink):
 #------------------------------------------------------------------------------
 class AppButton(AppLauncher, StatusBarButton):
     """Launch an application."""
-    is_custom = False # a launcher the user added - set by app_button_factory
+    # set by app_button_factory - if it did not search for the app (custom
+    # launchers, launchers of other games etc.) the user can't pick its path
+    searched = False
+    is_custom = False # a launcher the user added
+    recreate = None # create this launcher anew - after its settings changed
 
     def __init__(self, launcher_path, images, app_name, uid, cli_args=(),
                  canHide=True, display_launcher=True):
@@ -192,11 +197,11 @@ class AppButton(AppLauncher, StatusBarButton):
 
     @property
     def _app_version(self):
-        return (_read_file_version(self._app_path)
+        return (_read_file_version(self.app_path)
                 if bass.settings['bash.statusbar.showversion'] else '')
 
     def sb_click(self, *, custom_args: tuple[str, ...] = ()):
-        exeargs, exepath = self.app_cli(custom_args), self.app_path
+        exeargs, exepath = self.app_cli(custom_args), self._launch_path
         Link.Frame.set_status_info(join_launcher_args([exepath.s, *exeargs]))
         try:
             self.launch_app(exepath, exeargs)
@@ -214,7 +219,13 @@ class AppButton(AppLauncher, StatusBarButton):
         showError(Link.Frame, msg, title=error_title)
 
     def app_cli(self, custom_args):
-        return [*self._exe_args, *custom_args]
+        return [*self.exe_args, *custom_args]
+
+    @property
+    def _launch_path(self):
+        """The path of the app to launch - not always app_path, see the
+        GameButton, TESCSButton and AppBOSS overrides (avoid adding any)."""
+        return self.app_path
 
     @classmethod
     def app_button_factory(cls, app_key=None, app_launcher=None,
@@ -224,12 +235,18 @@ class AppButton(AppLauncher, StatusBarButton):
         is where to search for app_launcher, or None for a custom launcher,
         whose path is in its settings. images None means the icons of the
         launched file, appname None the uid."""
+        recreate = partial(cls.app_button_factory, app_key, app_launcher,
+                           path_kwargs, images, appname, **kwargs)
         launcher_set = launcher_settings().get(kwargs['uid'], {})
+        searched = False
         if path_kwargs is None: # displayed even if missing, with the 'x' icon
             exe_path = GPath(launcher_set['path']) # the user may type anything
-        elif kwargs.setdefault('display_launcher', True):
-            exe_path, is_present = cls.find_launcher(app_launcher, app_key,
-                                                     **path_kwargs)
+        elif searched := kwargs.setdefault('display_launcher', True):
+            if user_path := launcher_set.get('path'):
+                is_present = (exe_path := GPath(user_path)).exists()
+            else:
+                exe_path, is_present = cls.find_launcher(app_launcher,
+                    app_key, **path_kwargs)
             # App_Button is initialized once on boot, if the path doesn't exist
             # at this time then it will be detected on next launch of Bash
             kwargs['display_launcher'] &= is_present
@@ -246,7 +263,9 @@ class AppButton(AppLauncher, StatusBarButton):
             exe_path.cext, cls) if cls is AppButton else cls
         app_button = button_cls(exe_path, images, appname or kwargs['uid'],
                                 **kwargs)
+        app_button.searched = searched
         app_button.is_custom = path_kwargs is None
+        app_button.recreate = recreate
         return app_button
 
 class _ExeButton(ExeLauncher, AppButton):
@@ -275,8 +294,10 @@ class _JavaButton(AppButton):
 
     @set_cwd
     def launch_app(self, exe_path, exe_args):
-        subprocess.Popen((self._java.stail, '-jar', exe_path.stail,
-            shlex.join(exe_args)), executable=self._java.s, close_fds=True)
+        cli = [self._java.stail, '-jar', exe_path.stail, *exe_args]
+        # Windows Popen would requote the arguments the user typed
+        subprocess.Popen(join_launcher_args(cli) if os_name == 'nt' else cli,
+                         executable=self._java.s, close_fds=True)
 
 class LnkButton(LnkLauncher, AppButton):
     def __init__(self, launcher_path, images, shortcut_desc, *args, **kwargs):
@@ -461,9 +482,9 @@ class AppBOSS(_AAppLOManager):
         return super()._init_menu(bt_links)
 
     @property
-    def app_path(self):
-        return self._app_path.head.join('boss_gui.exe') if bass.settings[
-            'BOSS.UseGUI'] else super().app_path
+    def _launch_path(self):
+        return self.app_path.head.join('boss_gui.exe') if bass.settings[
+            'BOSS.UseGUI'] else super()._launch_path
 
     def app_cli(self, custom_args):
         curr_args = []
@@ -477,7 +498,7 @@ class AppBOSS(_AAppLOManager):
             curr_args.append('-s') # Silent Mode - BOSS version 1.6+
         if get_key_down('C'): # Print crc calculations in BOSS log.
             curr_args.append('-c')
-        if get_file_version(self._app_path.s) >= (2, 0, 0, 0):
+        if get_file_version(self.app_path.s) >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
             curr_args.append(f'-g{bush.game.boss_game_name}')
         return super().app_cli((*curr_args, *custom_args))
@@ -533,10 +554,11 @@ class GameButton(_ExeButton):
             Link.Frame.exit_wb()
 
     @property
-    def app_path(self):
+    def _launch_path(self):
         # Should use the xSE launcher if it's present else the regular launcher
         return exe_xse if BashStatusBar.obseButton.button_state and (
-            exe_xse := bush.game.Se.exe_path_sc(bass.dirs)) else super().app_path
+            exe_xse := bush.game.Se.exe_path_sc(bass.dirs)) else \
+            super()._launch_path
 
     @property
     def _app_version(self):
@@ -551,13 +573,10 @@ class GameButton(_ExeButton):
 class TESCSButton(_ExeButton):
     """CS/CK button. Needs a special tooltip when OBSE is enabled."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, cli_args=bush.game.Ck.se_args, **kwargs)
-
     @property
     def sb_button_tip(self):
         final_tip = super().sb_button_tip
-        if self._exe_args: # + OBSE
+        if bush.game.Ck.se_args: # + OBSE
             final_tip += f' + {bush.game.Se.se_abbrev} {self.obseVersion}'
             # + CSE?
             cse_path = bass.dirs['mods'].join('obse', 'plugins',
@@ -570,15 +589,15 @@ class TESCSButton(_ExeButton):
         return final_tip
 
     @property
-    def app_path(self):
+    def _launch_path(self):
         # If the script extender for this game has CK support, the xSE loader
         # is present and xSE is enabled, use that executable and pass the
         # editor argument to it
         exe_xse = bush.game.Se.exe_path_sc(bass.dirs)
-        is_obse_available = (self._exe_args and
+        is_obse_available = (bush.game.Ck.se_args and
                              BashStatusBar.obseButton.button_state and
                              exe_xse is not None)
-        return exe_xse if is_obse_available else super().app_path
+        return exe_xse if is_obse_available else super()._launch_path
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBarButton):
