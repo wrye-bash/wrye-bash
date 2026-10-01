@@ -553,119 +553,6 @@ class MiscAppearancePage(_AFixedPage):
             self._request_restart(_('Reverse Icon Colors'))
         super().on_apply()
 
-# Status Bar ------------------------------------------------------------------
-class StatusBarPage(_AScrollablePage):
-    """Settings related to the status bar."""
-    _setting_ids = {u'app_ver', u'icon_size', u'hidden_icons'}
-
-    def __init__(self, parent, page_desc):
-        super(StatusBarPage, self).__init__(parent, page_desc)
-        # Used to retrieve the Link object for hiding/unhiding a button
-        self._tip_to_links = {}
-        # GUI/Layout definition
-        self._show_app_ver_chk = CheckBox(self, _(u'Show App Version'),
-            chkbx_tooltip=_(u'Show/hide version numbers for buttons on the '
-                            u'status bar.'),
-            checked=bass.settings['bash.statusbar.showversion'],
-            on_check=self._handle_app_ver)
-        self._icon_size_dropdown = DropDown(self,
-            value=str(bass.settings['bash.statusbar.iconSize']),
-            choices=['16', '24', '32'], dd_tooltip=_(
-                'Sets the status bar icons to the selected size in pixels.'))
-        self._icon_size_dropdown.on_combo_select.subscribe(
-            self._handle_icon_size)
-        ##: Create a variant of DoubleListBox that can actually show the icons
-        self._icon_lists = DoubleListBox(self,
-            left_label=_(u'Visible Buttons'), right_label=_(u'Hidden Buttons'),
-            left_btn_tooltip=_(u'Make the selected button visible again.'),
-            right_btn_tooltip=_(u'Hide the selected button.'))
-        self._icon_lists.move_btn_callback = self._on_move_btn
-        self._populate_icon_lists()
-        VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._page_desc_label,
-            HorizontalLine(self),
-            VBoxedLayout(self, title=_(u'General'), item_border=3, spacing=6,
-                items=[
-                    self._show_app_ver_chk,
-                    HLayout(spacing=6, items=[
-                        Label(self, _(u'Icon Size:')),
-                        self._icon_size_dropdown,
-                    ]),
-            ]),
-            (HBoxedLayout(self, item_expand=True,
-                title=_(u'Manage Hidden Buttons'), items=[self._icon_lists]),
-             LayoutOptions(weight=1)),
-        ]).apply_to(self)
-
-    def _get_chosen_hidden_icons(self):
-        """Returns a set of UIDs that have been chosen for hiding by the
-        user."""
-        return {self._tip_to_links[x].uid
-                for x in self._icon_lists.right_items}
-
-    def _handle_app_ver(self, checked):
-        """Internal callback, called when the version checkbox is changed."""
-        self._mark_setting_changed(u'app_ver',
-            checked != bass.settings[u'bash.statusbar.showversion'])
-
-    def _handle_icon_size(self, new_selection):
-        """Internal callback, called when the icon size dropdown is changed."""
-        self._mark_setting_changed(u'icon_size',
-            int(new_selection) != bass.settings['bash.statusbar.iconSize'])
-
-    def on_apply(self):
-        # Note we skip_refresh all status bar changes in order to do them all
-        # at once at the end
-        # Show App Version
-        if self._is_changed(u'app_ver'):
-            bass.settings[u'bash.statusbar.showversion'] ^= True
-            BashStatusBar.set_tooltips()
-            # Will change tooltips, so need to repopulate these
-            self._populate_icon_lists()
-        # Icon Size
-        icon_size_changed = self._is_changed(u'icon_size')
-        if icon_size_changed:
-            new_icon_size = int(self._icon_size_dropdown.get_value())
-            bass.settings['bash.statusbar.iconSize'] = new_icon_size
-            # hot switch icon sizes crashes for some reason, ask for a restart
-            self._request_restart(_('Icon Size: %(new_icon_size)d') % {
-                'new_icon_size': new_icon_size})
-        # Hidden Icons
-        hidden_icons_changed = self._is_changed('hidden_icons')
-        if hidden_icons_changed:
-            # Compare old and new hidden, then hide the newly hidden buttons
-            # and unhide the newly visible ones
-            old_hidden = bass.settings[u'bash.statusbar.hide']
-            new_hidden = self._get_chosen_hidden_icons()
-            hidden_added = new_hidden - old_hidden
-            hidden_removed = old_hidden - new_hidden
-            if hidden_added or hidden_removed:
-                Link.Frame.statusBar.toggle_buttons_visible(
-                    hide_ids=hidden_added, unhide_ids=hidden_removed)
-        super(StatusBarPage, self).on_apply()
-
-    def _on_move_btn(self):
-        """Mark our setting as changed if the hidden icons list no longer
-        matches the list of icons that are currently hidden."""
-        self._mark_setting_changed(u'hidden_icons',
-             self._get_chosen_hidden_icons() != bass.settings[
-                 u'bash.statusbar.hide'])
-
-    def _populate_icon_lists(self):
-        """Clears and repopulates the two icon lists."""
-        self._tip_to_links.clear()
-        hide = bass.settings[u'bash.statusbar.hide']
-        hidden = []
-        visible = []
-        for link_uid, link in BashStatusBar.all_sb_links.items():
-            if not link.allow_create() or not link.canHide: continue
-            # Get a title for the hidden button
-            target_link_list = hidden if link_uid in hide else visible
-            target_link_list.append(tip_ := link.sb_button_tip)
-            self._tip_to_links[tip_] = link
-        self._icon_lists.left_items = visible
-        self._icon_lists.right_items = hidden
-
 # Backups ---------------------------------------------------------------------
 class BackupsPage(_AFixedPage):
     """Create, manage and restore backups."""
@@ -1510,7 +1397,7 @@ class TrustedBinariesPage(_AFixedPage):
                     bush.game.Se.se_abbrev or
                     bush.game.Sp.sp_abbrev)
 
-# Launchers -------------------------------------------------------------------
+# Status Bar ------------------------------------------------------------------
 def launcher_settings() -> dict[str, dict[str, str]]:
     """Return the launcher settings of this platform, as {uid: {key: value}}
     - the values the user changed for the predefined launchers, any other uid
@@ -1519,8 +1406,12 @@ def launcher_settings() -> dict[str, dict[str, str]]:
     # mutating it is enough for bolt.Settings.save to store it
     return bass.settings['bash.launchers'].setdefault(bolt.os_name, {})
 
-class LaunchersPage(_AFixedPage):
-    """Add, edit and remove the status bar launchers."""
+class StatusBarPage(_AFixedPage):
+    """Add, edit and remove the status bar launchers, hide the status bar
+    buttons and set their icon size and tooltips."""
+    _setting_ids = {'app_ver', 'icon_size'}
+    # the order of the types of buttons in the list
+    _type_order = {'predefined': 0, 'custom': 1, 'other': 2}
 
     def __init__(self, parent, page_desc):
         super().__init__(parent, page_desc)
@@ -1537,8 +1428,10 @@ class LaunchersPage(_AFixedPage):
                 ('predefined', _('Predefined'),
                  _('Show the launchers that come with Wrye Bash.')),
                 ('custom', _('Custom'), _('Show the launchers you added.')),
-                ('hidden', _('Hidden'), _('Show the launchers whose button '
-                                          'is hidden on the status bar.')),
+                ('other', _('Other Buttons'), _('Show the status bar buttons '
+                                                'that are not launchers.')),
+                ('hidden', _('Hidden'),
+                 _('Show the buttons that are hidden on the status bar.')),
                 ('not_found', _('Not Found'), _(
                     'Show the launchers whose application was not found.')))}
         # Name, path and args
@@ -1548,6 +1441,9 @@ class LaunchersPage(_AFixedPage):
         self._launcher_args_txt = TextField(self,
                                             hint=_('Command line arguments'))
         self._launcher_args_txt.tooltip = _('Command line arguments')
+        self._hide_chk = CheckBox(self, _('Hide on the status bar'),
+            chkbx_tooltip=_('Hide the status bar button of the selected '
+                            'launcher.'), on_check=self._on_hide)
         self._launcher_name_txt = TextField(self, hint=_('Shortcut name'))
         self._launcher_name_txt.tooltip = _('Shortcut name')
         self._save_launcher_btn = SaveButton(self, btn_label=_('Save'),
@@ -1559,6 +1455,20 @@ class LaunchersPage(_AFixedPage):
         self._new_launcher_btn = Button(self, btn_label=_('New'),
             btn_tooltip=_('Clear the fields, to add a new launcher.'),
             on_click=self._cleanup)
+        # applied with the OK and Apply buttons, unlike the ones above
+        self._show_app_ver_chk = CheckBox(self, _('Show App Version'),
+            chkbx_tooltip=_('Show/hide version numbers for buttons on the '
+                            'status bar.'),
+            checked=bass.settings['bash.statusbar.showversion'],
+            on_check=lambda checked: self._mark_setting_changed('app_ver',
+                checked != bass.settings['bash.statusbar.showversion']))
+        self._icon_size_dropdown = DropDown(self,
+            value=str(bass.settings['bash.statusbar.iconSize']),
+            choices=['16', '24', '32'], dd_tooltip=_(
+                'Sets the status bar icons to the selected size in pixels.'))
+        self._icon_size_dropdown.on_combo_select.subscribe(
+            lambda new_size: self._mark_setting_changed('icon_size',
+                int(new_size) != bass.settings['bash.statusbar.iconSize']))
         # that's it, time to build the list
         self._cleanup()
         self._populate_launcher_listbox()
@@ -1577,11 +1487,15 @@ class LaunchersPage(_AFixedPage):
                         (_('Application path:'), self._launcher_path),
                         (_('Command line arguments:'),
                          self._launcher_args_txt))]),
+            self._hide_chk,
             HLayout(spacing=4, item_expand=True, items=[
                 self._save_launcher_btn,
                 self._remove_launcher_btn,
-                self._new_launcher_btn
-        ])]).apply_to(self)
+                self._new_launcher_btn]),
+            HorizontalLine(self),
+            HLayout(spacing=6, items=[Label(self, _('Icon Size:')),
+                self._icon_size_dropdown, self._show_app_ver_chk]),
+        ]).apply_to(self)
 
     def _cleanup(self):
         """Select no launcher - the text fields are then for a new one."""
@@ -1589,6 +1503,8 @@ class LaunchersPage(_AFixedPage):
         self._launcher_listbox.select_none()
         self._set_remove_button(False)
         self._set_textfields(edit_name=True, edit_path=True, edit_rest=True)
+        self._hide_chk.is_checked = False
+        self._hide_chk.enabled = False
 
     def _set_remove_button(self, enabled, btn_label=_('Remove'),
             btn_tooltip=_('Remove currently selected launcher')):
@@ -1617,38 +1533,59 @@ class LaunchersPage(_AFixedPage):
         return {'path': launcher.app_path.s,
                 'args': join_launcher_args(launcher.exe_args)} | launcher_set
 
+    def _on_hide(self, checked):
+        Link.Frame.statusBar.toggle_buttons_visible(**{'hide_ids' if checked
+            else 'unhide_ids': [self._selected_launcher]})
+        self._populate_launcher_listbox(keep_selection=True)
+
     def _on_filter(self, filter_key, checked):
         bass.settings['bash.launchers.shown'][filter_key] = checked
         self._populate_launcher_listbox(keep_selection=True)
 
+    def on_apply(self):
+        if self._is_changed('app_ver'):
+            bass.settings['bash.statusbar.showversion'] ^= True
+            BashStatusBar.set_tooltips()
+        if self._is_changed('icon_size'):
+            new_icon_size = int(self._icon_size_dropdown.get_value())
+            bass.settings['bash.statusbar.iconSize'] = new_icon_size
+            # hot switch icon sizes crashes for some reason, ask for a restart
+            self._request_restart(_('Icon Size: %(new_icon_size)d') % {
+                'new_icon_size': new_icon_size})
+        super().on_apply()
+
     def _populate_launcher_listbox(self, keep_selection=False):
-        """List the predefined launchers, then the custom ones, by name - the
-        types of launchers the filters exclude are skipped. The hidden ones
-        are in italics, the not found ones greyed out. If keep_selection is
-        True, select the displayed launcher again, if still listed, else
-        return to the normal view."""
+        """List the predefined launchers, then the custom ones, then the other
+        status bar buttons that can be hidden, by name - the types of buttons
+        the filters exclude are skipped. The hidden ones are in italics, the
+        not found ones greyed out. If keep_selection is True, select the
+        displayed launcher again, if still listed, else return to the normal
+        view."""
         shown = bass.settings['bash.launchers.shown']
         hide = bass.settings['bash.statusbar.hide']
         launchers = []
         for launcher_uid, launcher in BashStatusBar.all_sb_links.items():
             if not hasattr(launcher, 'app_cli'): # not an AppButton
-                continue
-            if launcher.is_custom:
-                label = _('[Custom] %(launcher_name)s') % {
+                if not (launcher.canHide and launcher.allow_create()):
+                    continue
+                button_type, label = 'other', launcher.sb_button_tip
+            elif launcher.is_custom:
+                button_type, label = 'custom', _(
+                    '[Custom] %(launcher_name)s') % {
                     'launcher_name': launcher_uid}
             # skip the launchers that do not apply - see searched
             elif launcher.allow_create() or launcher.searched:
-                label = launcher.app_name
+                button_type, label = 'predefined', launcher.app_name
             else:
                 continue
-            if not shown['custom' if launcher.is_custom else 'predefined']:
-                continue
+            if not shown[button_type]: continue
             if (hidden := launcher_uid in hide) and not shown['hidden']:
                 continue
             if (not_found := not launcher.allow_create()) and not shown[
                     'not_found']: continue
-            launchers.append(((launcher.is_custom, label.lower()), (
-                launcher_uid, label, launcher.images[0], not_found, hidden)))
+            launchers.append(((self._type_order[button_type], label.lower()),
+                (launcher_uid, label, launcher.list_image(), not_found,
+                 hidden)))
         launchers.sort(key=lambda x: x[0])
         self._launcher_listbox.set_items(item for _key, item in launchers)
         if keep_selection and (selected := self._selected_launcher):
@@ -1662,6 +1599,13 @@ class LaunchersPage(_AFixedPage):
     def _handle_launcher_selected(self, selected_str):
         self._selected_launcher = selected_str
         launcher = BashStatusBar.all_sb_links[selected_str]
+        self._hide_chk.enabled = launcher.canHide
+        self._hide_chk.is_checked = selected_str in bass.settings[
+            'bash.statusbar.hide']
+        if not hasattr(launcher, 'app_cli'): # not a launcher, can be hidden
+            self._set_textfields(launcher.sb_button_tip)
+            self._set_remove_button(False)
+            return
         fields = self._launcher_fields(launcher, launcher_set := (
             launcher_settings().get(selected_str, {})))
         # the predefined launchers keep their name, and their path unless we
@@ -1754,12 +1698,11 @@ _settings_pages = {
         _(u'Colors'): ColorsPage,
         _(u'Language'): LanguagePage,
         _('Miscellaneous'): MiscAppearancePage,
-        _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
-    _('Launchers'): LaunchersPage,
     _(u'Confirmations'): ConfirmationsPage,
     _(u'General'): GeneralPage,
+    _('Status Bar'): StatusBarPage,
     _(u'Trusted Binaries'): TrustedBinariesPage,
 }
 
@@ -1773,19 +1716,17 @@ _page_descriptions = {
         _('Change the language that Wrye Bash is displayed in.'),
     _('Appearance') + '/' + _('Miscellaneous'):
         _('Change various miscellaneous appearance settings.'),
-    _(u'Appearance') + u'/' + _(u'Status Bar'):
-        _(u'Change settings related to the status bar at the bottom and '
-          u'manage hidden buttons.'),
     _(u'Backups'):
         _(u'Create, manage and restore backups of Wrye Bash settings and '
           u'other data. Click on a backup to manage it.'),
-    _('Launchers'):
-        _('Manage shortcuts to other applications from within Wrye Bash.'),
     _(u'Confirmations'):
         _(u"Enable or disable popups with a 'Don't show this in the future' "
           u'option.'),
     _(u'General'):
         _(u'Change various general settings.'),
+    _('Status Bar'):
+        _('Manage the applications you can launch from the status bar at the '
+          'bottom, hide its buttons and change how they look.'),
     _(u'Trusted Binaries'):
         _(u'Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
           u'binaries will be skipped by BAIN when installing packages.')
@@ -1796,8 +1737,7 @@ _page_anchors = defaultdict(lambda: u'settings', {
     _(u'Appearance') + u'/' + _(u'Colors'): u'settings-appearance-colors',
     _(u'Appearance') + u'/' + _(u'Language'): u'settings-appearance-language',
     _('Appearance') + '/' + _('Miscellaneous'): 'settings-appearance-misc',
-    _(u'Appearance') + u'/' + _(u'Status Bar'):
-        u'settings-appearance-status-bar',
+    _('Status Bar'): 'settings-appearance-status-bar',
     _(u'Backups'): u'settings-backups',
     _(u'Confirmations'): u'settings-confirmations',
     _(u'General'): u'settings-general',
