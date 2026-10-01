@@ -47,6 +47,7 @@ from .settings_dialog import launcher_settings
 from .. import bass, bush
 from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
+from ..bolt import os_name
 from ..env import init_app_links
 from ..game.patch_game import PatchGame
 from ..gui import GuiImage, error_icons
@@ -54,10 +55,17 @@ from ..gui import GuiImage, error_icons
 _is_oblivion = bush.game.fsName == 'Oblivion'
 _is_skyrim = bush.game.fsName == 'Skyrim'
 _j = os.path.join
+##:(734:570) the tool paths and shortcuts InitStatusBar imported - see
+# BashFrame._warn_imported_launchers
+imported_launchers: list[str] = []
 
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar buttons."""
+    ##:(734:570) on the first boot on this platform import the tool paths of
+    # bash.ini and the shortcuts of Mopy/Apps into the launcher settings
+    import_launchers = os_name not in bass.settings['bash.launchers']
+    launchers = launcher_settings() # creates the platform's settings
     bad_icons = error_icons()
     __fp = GuiImage.from_path
     def _png_list(template):
@@ -77,6 +85,11 @@ def InitStatusBar():
     def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
         app_launcher, app_name, path_kwargs, *cli_args = app_path_data
         uid = kwargs.setdefault('uid', app_key)
+        if import_launchers and app_key and ( ##:(734:570)
+                ini_path := bass.get_path_from_ini(app_key.lower())):
+            # whether it exists or not, as find_launcher used to
+            launchers[uid] = {'path': ini_path.s}
+            imported_launchers.append(f's{app_key}={ini_path}')
         if app_key in {'Steam', 'LOOT'}:
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
         elif uid == 'TESCS':
@@ -88,8 +101,8 @@ def InitStatusBar():
             list_img = _png_list(_j('tools', f'{app_key.lower()}%s.png'))
         if cli_args: # for tools defined in constants.py and TES4View/Trans
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
-        return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
-                                        list_img, app_name, **kwargs)
+        return clazz.app_button_factory(app_launcher, path_kwargs, list_img,
+                                        app_name, **kwargs)
     all_links.append(_tool_args(None, (bush.game.Ck.exe,
             bush.game.Ck.long_name, {'root_dirs': 'app'},
             *bush.game.Ck.se_args), clazz=TESCSButton,
@@ -137,24 +150,25 @@ def InitStatusBar():
     all_links.extend(_tool_args(*at, display_launcher=bass.inisettings[
         'ShowAudioToolLaunchers']) for at in audio_tools.items())
     all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
-    #--Custom Apps
-    for pth, img_path, shortcut_desc in init_app_links(
-            bass.dirs['mopy'].join('Apps')):
-        if img_path is None:
-            imgs = bad_icons # use the 'x' icon
-        else:
-            imgs = [__fp(p, GuiImage.img_types['.ico'], x) for x, p in
-                    zip((16, 24, 32), img_path)]
-        #target.stail would keep the id on renaming the .lnk but this is unique
-        app_key = pth.stail.lower()
-        all_links.append(LnkButton(pth, imgs, shortcut_desc, app_key,
-                                   canHide=False))
     #--Custom Launchers - the uids of the launcher settings that are not
     # predefined (the ones with no path are leftovers of dropped ones)
     predefined = {li.uid for li in all_links}
+    if import_launchers: ##:(734:570) the Apps shortcuts become custom ones
+        order = bass.settings['bash.statusbar.order']
+        for lnk, target, *lnk_data in init_app_links(
+                bass.dirs['mopy'].join('Apps')):
+            if (launcher_name := lnk.sbody) in predefined:
+                launcher_name = f'{launcher_name} ({lnk.stail})'
+            launchers[launcher_name] = {k: v for k, v in zip(('path', 'args'),
+                (target.s, *lnk_data)) if v}
+            # keep the position of the shortcut's button, its uid was the
+            # lowercase file name
+            if (lnk_uid := lnk.stail.lower()) in order:
+                order[order.index(lnk_uid)] = launcher_name
+            imported_launchers.append(lnk.s)
     all_links.extend(AppButton.app_button_factory(uid=launcher_uid) for
-        launcher_uid, launcher_set in launcher_settings().items() if
-        launcher_uid not in predefined and 'path' in launcher_set)
+        launcher_uid, launcher_set in launchers.items() if launcher_uid not in
+        predefined and 'path' in launcher_set)
     #--Final couple
     all_links.append(DocBrowserButton('DocBrowser'))
     all_links.append(PluginCheckerButton('ModChecker'))
