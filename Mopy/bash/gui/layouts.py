@@ -311,7 +311,7 @@ class GridLayout(_ALayout):
         if item is None: return
         self._sizer.Add(item, (row, col), span=(options.row_span,
                                                 options.col_span),
-                        flag=options.layout_flags(),
+                        flag=options.layout_flags(True, True),
                         border=scaled(options.border))
         self._sizer.SetItemMinSize(item, -1, -1)
 
