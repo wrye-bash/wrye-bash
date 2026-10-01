@@ -1513,7 +1513,8 @@ class TrustedBinariesPage(_AFixedPage):
 # Launchers -------------------------------------------------------------------
 def launcher_settings() -> dict[str, dict[str, str]]:
     """Return the launcher settings of this platform, as {uid: {key: value}}
-    - the launchers the user added. The paths picked on Windows make no sense
+    - the values the user changed for the predefined launchers, any other uid
+    is a launcher the user added. The paths picked on Windows make no sense
     on Linux and vice versa, should the two share the settings file."""
     # mutating it is enough for bolt.Settings.save to store it
     return bass.settings['bash.launchers'].setdefault(bolt.os_name, {})
@@ -1542,7 +1543,7 @@ class LaunchersPage(_AFixedPage):
             on_click=self._save_launcher)
         self._remove_launcher_btn = Button(self, btn_label=_('Remove'),
             btn_tooltip=_('Remove currently selected launcher'),
-            on_click=self._remove_launcher)
+            on_click=self._remove_or_reset)
         self._new_launcher_btn = Button(self, btn_label=_('New'),
             btn_tooltip=_('Clear the fields, to add a new launcher.'),
             on_click=self._cleanup)
@@ -1572,19 +1573,35 @@ class LaunchersPage(_AFixedPage):
         """Select no launcher - the text fields are then for a new one."""
         self._selected_launcher = None
         self._launcher_listbox.lb_select_none()
-        self._remove_launcher_btn.enabled = False
-        self._set_textfields(editable=True)
+        self._set_remove_button(False)
+        self._set_textfields(edit_name=True, edit_path=True, edit_rest=True)
 
-    def _set_textfields(self, name='', path='', args='', *, editable=False):
-        """Display the specified launcher details - only editable ones can be
-        saved."""
-        for txt_field, txt in ((self._launcher_name_txt, name),
-                (self._launcher_path.text_field, path),
-                (self._launcher_args_txt, args)):
+    def _set_remove_button(self, enabled, btn_label=_('Remove'),
+            btn_tooltip=_('Remove currently selected launcher')):
+        """Turn the Remove button into a Remove or a Reset button."""
+        self._remove_launcher_btn.button_label = btn_label
+        self._remove_launcher_btn.tooltip = btn_tooltip
+        self._remove_launcher_btn.enabled = enabled
+
+    def _set_textfields(self, name='', path='', args='', *, edit_name=False,
+                        edit_path=False, edit_rest=False):
+        """Display the specified launcher details - a launcher can be saved if
+        any of them is editable."""
+        for txt_field, txt, editable in (
+                (self._launcher_name_txt, name, edit_name),
+                (self._launcher_path.text_field, path, edit_path),
+                (self._launcher_args_txt, args, edit_rest)):
             txt_field.text_content = txt
             txt_field.editable = editable
-        self._launcher_path.button.enabled = editable
-        self._save_launcher_btn.enabled = editable
+        self._launcher_path.button.enabled = edit_path
+        self._save_launcher_btn.enabled = edit_path or edit_rest
+
+    @staticmethod
+    def _launcher_fields(launcher, launcher_set) -> dict[str, str]:
+        """Return the path and arguments of launcher as displayed - the ones
+        in its launcher_set, else its defaults."""
+        return {'path': launcher.app_path.s,
+                'args': join_launcher_args(launcher.exe_args)} | launcher_set
 
     def _populate_launcher_listbox(self):
         self._launcher_listbox.lb_set_items([launcher_uid for launcher_uid,
@@ -1593,14 +1610,21 @@ class LaunchersPage(_AFixedPage):
 
     def _handle_launcher_selected(self, _dex, selected_str):
         self._selected_launcher = selected_str
-        if (launcher := BashStatusBar.all_sb_links[selected_str]).is_custom:
-            launcher_set = launcher_settings()[selected_str]
-            self._set_textfields(selected_str, launcher_set['path'],
-                                 launcher_set.get('args', ''), editable=True)
-        else: # the predefined launchers are read only for now
-            self._set_textfields(selected_str, launcher.app_path.s,
-                                 join_launcher_args(launcher.app_cli(())))
-        self._remove_launcher_btn.enabled = launcher.is_custom
+        launcher = BashStatusBar.all_sb_links[selected_str]
+        fields = self._launcher_fields(launcher, launcher_set := (
+            launcher_settings().get(selected_str, {})))
+        # the predefined launchers keep their name, and their path unless we
+        # search for it - the ones not created by app_button_factory (the
+        # game's) can't be edited at all
+        self._set_textfields(selected_str, fields['path'], fields['args'],
+            edit_name=launcher.is_custom,
+            edit_path=launcher.is_custom or launcher.searched,
+            edit_rest=launcher.recreate is not None)
+        if launcher.is_custom:
+            self._set_remove_button(True)
+        else: # predefined - can be reset once changed
+            self._set_remove_button(bool(launcher_set), _('Reset'),
+                                    _('Use the defaults of this launcher.'))
 
     def _save_launcher(self):
         from .app_buttons import AppButton
@@ -1608,10 +1632,19 @@ class LaunchersPage(_AFixedPage):
         entered = {k: txt.text_content.strip() for k, txt in (
             ('path', self._launcher_path.text_field),
             ('args', self._launcher_args_txt))}
+        launchers = launcher_settings()
+        if (selected := self._selected_launcher) is None: # a new one
+            launcher, shown = None, {}
+        else:
+            launcher = BashStatusBar.all_sb_links[selected]
+            shown = self._launcher_fields(launcher,
+                                          launchers.get(selected, {}))
         if not (launcher_name and entered['path']):
             showError(self, _('Launcher name and path cannot be empty.'))
             return
-        if not pathlib.Path(entered['path']).exists():
+        # an unchanged path may be missing (a not found predefined launcher)
+        if entered['path'] != shown.get('path') and not pathlib.Path(
+                entered['path']).exists():
             showError(self, _('The provided path is invalid.'))
             return
         try:
@@ -1620,30 +1653,44 @@ class LaunchersPage(_AFixedPage):
             showError(self, _('Invalid command line arguments: '
                               '%(args_error)s') % {'args_error': e})
             return
-        selected = self._selected_launcher
-        if launcher_name != selected and (
-                launcher_name in BashStatusBar.all_sb_links):
-            showError(self, _('A launcher named %(launcher_name)s '
-                'already exists.') % {'launcher_name': launcher_name})
-            return
-        launchers = launcher_settings()
-        launchers.pop(selected, None) # it may have been renamed
-        launchers[launcher_name] = {k: v for k, v in entered.items() if v}
-        new_launcher = AppButton.app_button_factory(uid=launcher_name)
-        if selected is None:
-            Link.Frame.statusBar.add_buttons(new_launcher)
+        if launcher and not launcher.is_custom: # store what is not default
+            launchers.pop(selected, None)
+            new_launcher = launcher.recreate() # with its defaults
+            defaults = self._launcher_fields(new_launcher, {})
+            if new_set := {k: v for k, v in entered.items() if
+                           v != defaults[k]}:
+                launchers[selected] = new_set
+                new_launcher = launcher.recreate()
         else:
+            if launcher_name != selected and (
+                    launcher_name in BashStatusBar.all_sb_links):
+                showError(self, _('A launcher named %(launcher_name)s '
+                    'already exists.') % {'launcher_name': launcher_name})
+                return
+            launchers.pop(selected, None) # it may have been renamed
+            launchers[launcher_name] = {k: v for k, v in entered.items() if v}
+            new_launcher = AppButton.app_button_factory(uid=launcher_name)
+        if launcher:
             Link.Frame.statusBar.replace_button(selected, new_launcher)
+        else:
+            Link.Frame.statusBar.add_buttons(new_launcher)
         self._cleanup()
         self._populate_launcher_listbox()
 
-    def _remove_launcher(self):
+    def _remove_or_reset(self):
+        selected = self._selected_launcher
+        if not (launcher := BashStatusBar.all_sb_links[selected]).is_custom:
+            del launcher_settings()[selected] # reset
+            Link.Frame.statusBar.replace_button(selected, launcher.recreate())
+            self._handle_launcher_selected(None, selected)
+            return
+        # remove
         if not popups.askYes(parent=self, message=_('Are you sure?'),
                              title=_('Remove Launcher'), default_is_yes=False):
             # user canceled in confirm dialog
             return
-        del launcher_settings()[self._selected_launcher]
-        Link.Frame.statusBar.remove_buttons(self._selected_launcher)
+        del launcher_settings()[selected]
+        Link.Frame.statusBar.remove_buttons(selected)
         self._cleanup()
         self._populate_launcher_listbox()
 
