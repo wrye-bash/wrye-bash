@@ -92,10 +92,22 @@ reVersion = re.compile(
 
 #--Mod Extensions
 __exts = fr'((\.({"|".join(ext[1:] for ext in archives.readExts)}))|)$'
-reTesNexus = re.compile(r'(.*?)-(\d+)(?:-\w*)*(?:-\d+)?' + __exts, re.I)
+# Nexus download names, in either of two formats. Groups: 1 = mod name,
+# 2 = mod ID (the remaining groups are the extension).
+#  - old: '{name}-{modID}-{version}-{timestamp}.7z'
+#  - new (since ~2026-06): '{name} {modID} {version} {YYYY-MM-DDTHH-MMZ}
+#    {sqid}.7z'
+# A space may only separate the name and mod ID when the rest of the name
+# is in the new format, so old names match exactly as before. In the new
+# format the version is all digits sometimes, hence the mod ID is the
+# token right before the version, not the last number.
+__new_tail = r' \S+ \d{4}-\d\d-\d\dT\d\d-\d\dZ [0-9A-Za-z]+(?:-[\w-]*)?'
+reTesNexus = re.compile(r'(.*?)(?:-|\ (?=\d+' + __new_tail + r'(?:\.\w+)?$))'
+                        r'(\d+)(?:(?:-\w*)*(?:-\d+)?|' + __new_tail + r')' +
+                        __exts, re.I)
 reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
                     re.I)
-del __exts
+del __exts, __new_tail
 # Image extensions for BAIN and for the Screnshots tab
 common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
 _ss_image_exts = frozenset([*common_image_exts, '.tga'])
