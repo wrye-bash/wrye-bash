@@ -41,7 +41,7 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
-    get_image, HyperlinkLabel, FilePicker, popups, GridLayout
+    get_image, HyperlinkLabel, FilePicker, ImageListBox, popups, GridLayout
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -1526,9 +1526,9 @@ class LaunchersPage(_AFixedPage):
         super().__init__(parent, page_desc)
         # the uid of the launcher displayed in the text fields, if any
         self._selected_launcher: str | None = None
-        # the launchers, by uid
-        self._launcher_listbox = ListBox(self, isSort=True, isHScroll=True,
-            onSelect=self._handle_launcher_selected)
+        # the launchers, with their icons - the items are keyed by uid
+        self._launcher_listbox = ImageListBox(self,
+            on_select=self._handle_launcher_selected)
         # Name, path and args
         self._launcher_path = FilePicker(self, hint=_('Path to application'))
         self._launcher_path.button.tooltip = _('Select a file to launch.')
@@ -1572,7 +1572,7 @@ class LaunchersPage(_AFixedPage):
     def _cleanup(self):
         """Select no launcher - the text fields are then for a new one."""
         self._selected_launcher = None
-        self._launcher_listbox.lb_select_none()
+        self._launcher_listbox.select_none()
         self._set_remove_button(False)
         self._set_textfields(edit_name=True, edit_path=True, edit_rest=True)
 
@@ -1604,11 +1604,25 @@ class LaunchersPage(_AFixedPage):
                 'args': join_launcher_args(launcher.exe_args)} | launcher_set
 
     def _populate_launcher_listbox(self):
-        self._launcher_listbox.lb_set_items([launcher_uid for launcher_uid,
-            launcher in BashStatusBar.all_sb_links.items() if hasattr(
-            launcher, 'app_cli')]) # AppButtons
+        """List the predefined launchers, then the custom ones, by name."""
+        launchers = []
+        for launcher_uid, launcher in BashStatusBar.all_sb_links.items():
+            if not hasattr(launcher, 'app_cli'): # not an AppButton
+                continue
+            if launcher.is_custom:
+                label = _('[Custom] %(launcher_name)s') % {
+                    'launcher_name': launcher_uid}
+            # skip the launchers that do not apply - see searched
+            elif launcher.allow_create() or launcher.searched:
+                label = launcher.app_name
+            else:
+                continue
+            launchers.append(((launcher.is_custom, label.lower()), (
+                launcher_uid, label, launcher.images[0]))) # the 16 px icon
+        launchers.sort(key=lambda x: x[0])
+        self._launcher_listbox.set_items(item for _key, item in launchers)
 
-    def _handle_launcher_selected(self, _dex, selected_str):
+    def _handle_launcher_selected(self, selected_str):
         self._selected_launcher = selected_str
         launcher = BashStatusBar.all_sb_links[selected_str]
         fields = self._launcher_fields(launcher, launcher_set := (
@@ -1616,7 +1630,8 @@ class LaunchersPage(_AFixedPage):
         # the predefined launchers keep their name, and their path unless we
         # search for it - the ones not created by app_button_factory (the
         # game's) can't be edited at all
-        self._set_textfields(selected_str, fields['path'], fields['args'],
+        self._set_textfields(selected_str if launcher.is_custom else
+            launcher.app_name, fields['path'], fields['args'],
             edit_name=launcher.is_custom,
             edit_path=launcher.is_custom or launcher.searched,
             edit_rest=launcher.recreate is not None)
@@ -1682,7 +1697,7 @@ class LaunchersPage(_AFixedPage):
         if not (launcher := BashStatusBar.all_sb_links[selected]).is_custom:
             del launcher_settings()[selected] # reset
             Link.Frame.statusBar.replace_button(selected, launcher.recreate())
-            self._handle_launcher_selected(None, selected)
+            self._handle_launcher_selected(selected)
             return
         # remove
         if not popups.askYes(parent=self, message=_('Are you sure?'),
