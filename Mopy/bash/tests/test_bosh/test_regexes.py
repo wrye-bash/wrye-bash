@@ -228,3 +228,48 @@ class TestReTesNexus_FutureMod(_ATestReTesNexus):
     digits for the mod ID and only up to 16 digits for the download ID."""
     _test_str = ['Cool Future Mod-25013821-2-0-1-0-380147987496669221.7z']
     _expected_matches = [('Cool Future Mod', '25013821', '.7z', '.7z', '7z')]
+
+class TestReTesNexus_NewFormat(_ATestReTesNexus):
+    """Tests the download names Nexus uses since mid-2026: '{name} {modID}
+    {version} {YYYY-MM-DDTHH-MMZ} {sqid}.7z'."""
+    _test_str = ['Skyrim Script Extender (SKSE64) Steam 30379 2.3.1 '
+                 '2026-08-27T16-52Z s6Og0dG94.7z']
+    _expected_matches = [('Skyrim Script Extender (SKSE64) Steam', '30379',
+                          '.7z', '.7z', '7z')]
+
+class TestReTesNexus_NewFormatSqidVersion(_ATestReTesNexus):
+    """Tests a new format name whose sqid has the version appended - the old
+    regex took the first number of the version for the mod ID."""
+    _test_str = ['True Storms SE - No Fog Camera Effects 2472 1.0.3 '
+                 '2026-07-05T12-39Z kATsMWuTj-1-0-3.rar']
+    _expected_matches = [('True Storms SE - No Fog Camera Effects', '2472',
+                          '.rar', '.rar', 'rar')]
+
+class TestReTesNexus_NewFormatTextVersion(_ATestReTesNexus):
+    """Tests a new format name with dashes and letters in its version."""
+    _test_str = ['SKSE Menu Framework 120352 3.13-Hotfix2 2026-07-09T16-10Z '
+                 '587RqTYjW-3-13-Hotfix2.7z']
+    _expected_matches = [('SKSE Menu Framework', '120352', '.7z', '.7z',
+                          '7z')]
+
+class TestReTesNexus_NewFormatNumberVersion(_ATestReTesNexus):
+    """Tests a new format name with an all digits version - the mod ID is the
+    number before the version, not the last one before the timestamp."""
+    _test_str = ['Skyland AIO Complex Parallax 34179 2 2026-07-24T11-59Z '
+                 'izKcFpJTq.zip']
+    _expected_matches = [('Skyland AIO Complex Parallax', '34179', '.zip',
+                          '.zip', 'zip')]
+
+class TestReTesNexus_NewFormatNumberInName(_ATestReTesNexus):
+    """Tests a new format name with a number in the mod name."""
+    _test_str = ['Skyrim 2020 Parallax by Pfuscher 31386 1.0 '
+                 '2026-07-24T11-59Z izKcFpJTq.7z']
+    _expected_matches = [('Skyrim 2020 Parallax by Pfuscher', '31386', '.7z',
+                          '.7z', '7z')]
+
+class TestReTesNexus_OldFormatNumberInName(_ATestReTesNexus):
+    """Tests that a space before a number in an old format name does not
+    separate the mod ID."""
+    _test_str = ['Skyrim 2020 Parallax by Pfuscher-31386-1-0-1600000000.7z']
+    _expected_matches = [('Skyrim 2020 Parallax by Pfuscher', '31386', '.7z',
+                          '.7z', '7z')]
