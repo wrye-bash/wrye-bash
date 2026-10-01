@@ -34,7 +34,6 @@ import datetime
 import logging
 import os
 import re
-import shutil
 import sys
 import tempfile
 import textwrap
@@ -54,8 +53,8 @@ from pathlib import Path
 import compile_l10n
 import PyInstaller.__main__
 import update_taglist
-from helpers.utils import APPS_PATH, DIST_PATH, MOPY_PATH, NSIS_PATH, \
-    ROOT_PATH, SCRIPTS_PATH, TAGINFO, WBSA_PATH, edit_bass_version, cp, rm, \
+from helpers.utils import DIST_PATH, MOPY_PATH, NSIS_PATH, ROOT_PATH, \
+    SCRIPTS_PATH, TAGINFO, WBSA_PATH, edit_bass_version, cp, rm, \
     run_script, mk_logfile, run_subprocess, download_file, with_args, \
     setup_log, WBRepo
 
@@ -219,7 +218,7 @@ def _pack_manual(build_vers, mopy_tr, tmpdir):
         for orig, target in files_to_include.items():
             cp(orig, target)
         _pack_7z(f'Wrye Bash {build_vers} - Python Source.7z',
-                 [*mopy_tr, 'Mopy/Apps', *(f'Mopy/{a}' for a in copied), ''],
+                 [*mopy_tr, *(f'Mopy/{a}' for a in copied), ''],
                  tmpdir)
     finally:
         for path in files_to_include.values():
@@ -246,7 +245,7 @@ def _build_executable():
 def _pack_standalone(build_vers, mopy_tr, tmpdir):
     """ Packages the standalone version. """
     _pack_7z(f'Wrye Bash {build_vers} - Standalone Executable.7z',
-             [*mopy_tr, 'Mopy/Apps', 'Mopy/Wrye Bash.exe', ''], tmpdir)
+             [*mopy_tr, 'Mopy/Wrye Bash.exe', ''], tmpdir)
 
 def _pack_installer(nsis_path, build_vers, file_version, mopy_tr, tmpdir):
     """ Packages the installer version. """
@@ -297,7 +296,7 @@ def _write_nsis_macro(files_macro, tracked_files, *, __pys=('.py', '.pyw')):
     # Standalone executable
     macro_lines.extend(['; Install the standalone only files',
         fr'SetOutPath "{var_mopy}"', fr'File "{var_cl_m}\Wrye Bash.exe"',
-        fr'CreateDirectory "{var_mopy}\Apps"', '', '; Write registry key',
+        '', '; Write registry key',
         r'WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"',
         '!macroend'])
     # Uninstall: remove new untracked files
@@ -399,21 +398,6 @@ def _update_file_version(build_vers, tmpdir, do_commit=False):
         if not do_commit:
             cp(bck_path, bass_path)
 
-@contextmanager
-def _handle_apps_folder(tmpdir):
-    if apps_dir := APPS_PATH.is_dir():
-        _LOGGER.debug(f'Moving Apps folder to {tmpdir}')
-        shutil.move(APPS_PATH, tmpdir)
-    APPS_PATH.mkdir(parents=True)
-    try:
-        yield
-    finally:
-        if apps_dir:
-            for lnk in (tmpdir / 'Apps').glob('*'):
-                cp(lnk, APPS_PATH / lnk.name)
-        else:
-            rm(APPS_PATH)
-
 def _check_version(args) -> tuple[str, str]:
     """Generate version strings from the passed parameters. build_vers
     currently is the major version, optionally followed by a minor version
@@ -496,8 +480,8 @@ def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
                           max(args.verbosity, logging.WARNING))
     mo_paths = compile_l10n.main(with_args(args, verbosity=compile_l10n_level),
                                  map(Path, po_files))
-    with tempfile.TemporaryDirectory() as tmpdir, _handle_apps_folder(tmpdir :=
-            Path(tmpdir)), _update_file_version(vers, tmpdir, args.commit):
+    with tempfile.TemporaryDirectory() as tmpdir, _update_file_version(
+            vers, tmpdir := Path(tmpdir), args.commit):
         # create distributable directory
         DIST_PATH.mkdir(parents=True, exist_ok=True)
         # Copy the license so it's included in the built releases

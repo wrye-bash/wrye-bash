@@ -1092,52 +1092,30 @@ def get_app_icon(target: _Path, idex='0') -> _Path | None:
         icon_path, idex = _get_default_app_icon(idex, target)
     return _GPath(f'{icon_path.s};{idex}') if icon_path.exists() else None
 
-def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
-    """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
+def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str]]:
+    """Read the shortcuts (.lnk files) in the Mopy/Apps folder - Windows only!
+    ##:(734:570) Only used to import them as custom launchers once, see
+    InitStatusBar.
 
     :param apps_dir: the absolute Path to Mopy/Apps folder
-    :return: a list of shortcut properties (exe_path, icon_path, descr)."""
-    init_params = []
-    shortcuts = {}
+    :return: a list of (shortcut, target, arguments) tuples, for the shortcuts
+        whose target exists - msi shortcuts target the shortcut itself."""
+    shortcuts = []
     try:
-        try:
-            sh = win32client.Dispatch('WScript.Shell')
-            for lnk in top_level_files(apps_dir):
-                if lnk.fn_ext == '.lnk':
-                    lnk = apps_dir.join(lnk)
-                    shortcut = sh.CreateShortCut(lnk.s)
-                    descr = shortcut.Description
-                    if not descr:
-                        descr = None # means 'use filename'
-                    shortcuts[lnk] = (shortcut.TargetPath,
-                        # shortcut.WorkingDirectory, shortcut.Arguments,
-                        shortcut.IconLocation, descr)
-        except:
-            _deprint('Error initializing shortcuts:', traceback=True)
-    except AttributeError:
-        pass  # win32client is None
-    for path, (target, win_icon_location, shortcut_descr) in shortcuts.items():
-        # msi shortcuts: dc0c8de
-        target = path if target.lower().find(r'installer\{') != -1 else _GPath(
-            target)
-        if not target.exists(): continue
-        # Target exists - extract path, icon and shortcut_descr
-        # First try a custom icon - undocumented! let it stay so as we will
-        # eventually nuke the Apps folder - we can always allow pointing to
-        # a custom icon once we have a "Launchers" page in settings
-        custom_icon_paths = [apps_dir.join(f'{path.sbody}{x}.png') for x in
-                             (16, 24, 32)]
-        if not custom_icon_paths[0].exists(): # try the shortcut specified icon
-            win_icon_path, idex = win_icon_location.split(',')
-            if win_icon_path == '':
-                icon_location = get_app_icon(target, idex)
-            elif (win_icon_path := _GPath(win_icon_path)).exists():
-                icon_location = _GPath(f'{win_icon_path.s};{idex}')
-            else:
-                icon_location = None
-            custom_icon_paths = icon_location and [icon_location] * 3
-        init_params.append((path, custom_icon_paths, shortcut_descr))
-    return init_params
+        sh = win32client.Dispatch('WScript.Shell')
+        for lnk in top_level_files(apps_dir):
+            if lnk.fn_ext != '.lnk': continue
+            lnk = apps_dir.join(lnk)
+            shortcut = sh.CreateShortCut(lnk.s)
+            target, lnk_args = shortcut.TargetPath, shortcut.Arguments
+            if target.lower().find(r'installer\{') != -1: # msi: dc0c8de
+                target, lnk_args = lnk, ''
+            elif not (target := _GPath(target)).exists():
+                continue
+            shortcuts.append((lnk, target, lnk_args))
+    except Exception:
+        _deprint('Error reading the Apps folder shortcuts:', traceback=True)
+    return shortcuts
 
 @functools.cache
 def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
@@ -1701,11 +1679,6 @@ class ExeLauncher(AppLauncher):
     def _run_exe(self, exe_path: _Path, exe_args) -> Popen:
         return Popen(join_launcher_args([exe_path.s, *exe_args]),
                      close_fds=True)
-
-class LnkLauncher(AppLauncher):
-
-    def launch_app(self, exe_path, exe_args):
-        webbrowser.open(exe_path.s)
 
 @functools.cache
 def in_mo2_vfs() -> bool:
