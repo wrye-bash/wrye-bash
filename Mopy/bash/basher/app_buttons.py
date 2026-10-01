@@ -171,14 +171,14 @@ class AppButton(AppLauncher, StatusBarButton):
     is_custom = False # a launcher the user added
     recreate = None # create this launcher anew - after its settings changed
 
-    def __init__(self, launcher_path, images, app_name, uid, cli_args=(),
+    def __init__(self, launcher_path, images, appname, uid, cli_args=(),
                  canHide=True, display_launcher=True):
         """images: [16x16,24x24,32x32] images"""
         app_tooltip = _('Launch %(application_name)s') % {
-            'application_name': app_name}
+            'application_name': appname}
         super().__init__(launcher_path, cli_args, display_launcher, uid,
                          canHide, app_tooltip)
-        self._app_name = app_name
+        self.app_name = appname
         self.images = images
         self.wait = False
 
@@ -191,7 +191,7 @@ class AppButton(AppLauncher, StatusBarButton):
     def sb_button_tip(self):
         app_ver = self._app_version
         return _('Launch %(application_name)s %(application_version)s') % {
-            'application_name': self._app_name,
+            'application_name': self.app_name,
             'application_version': app_ver,
         } if app_ver else super().sb_button_tip
 
@@ -532,7 +532,7 @@ class GameButton(_ExeButton):
         if bush.ws_info.installed:
             version_info = bush.ws_info.get_installed_version()
             # Windows Store apps have to be launched entirely differently
-            gm_cmd = (f'shell:AppsFolder\\{bush.ws_info.app_name}!'
+            gm_cmd = (f'shell:AppsFolder\\{bush.ws_info.win_app_name}!'
                       f'{version_info.entry_point}')
             subprocess.Popen([u'start', gm_cmd], shell=True)
         else:
