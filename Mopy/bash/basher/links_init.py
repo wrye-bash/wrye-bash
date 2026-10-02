@@ -159,8 +159,8 @@ def InitStatusBar():
                 bass.dirs['mopy'].join('Apps')):
             if (launcher_name := lnk.sbody) in predefined:
                 launcher_name = f'{launcher_name} ({lnk.stail})'
-            launchers[launcher_name] = {k: v for k, v in zip(('path', 'args'),
-                (target.s, *lnk_data)) if v}
+            launchers[launcher_name] = {k: v for k, v in zip(('path', 'args',
+                'start_in'), (target.s, *lnk_data)) if v}
             # keep the position of the shortcut's button, its uid was the
             # lowercase file name
             if (lnk_uid := lnk.stail.lower()) in order:
