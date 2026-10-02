@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import os
 import shlex
 import struct
 import subprocess
@@ -263,8 +264,8 @@ class AppButton(AppLauncher, StatusBarButton):
             except ValueError: # the page refuses those, but let's not abort
                 deprint(f'Invalid arguments for launcher {kwargs["uid"]}: '
                         f'{launcher_set["args"]}', traceback=True)
-        if images is None:
-            images = _launcher_icons(exe_path)
+        if images is None or launcher_set.get('icon'):
+            images = _launcher_icons(exe_path, launcher_set.get('icon', ''))
         button_cls = {'.exe': _ExeButton, '.jar': _JavaButton}.get(
             exe_path.cext, cls) if cls is AppButton else cls
         app_button = button_cls(exe_path, images, appname or kwargs['uid'],
@@ -307,10 +308,10 @@ class _JavaButton(AppButton):
         subprocess.Popen(join_launcher_args(cli) if os_name == 'nt' else cli,
                          executable=self._java.s, close_fds=True)
 
-def _pe_icons(pe_path: str) -> dict[int, bytes]:
-    """Return the images of the first icon of a Windows executable or dll - a
-    PE, for Portable Executable - as {width: .ico data}, keeping the one with
-    the most colors for each width."""
+def _pe_icons(pe_path: str, icon_dex: int) -> dict[int, bytes]:
+    """Return the images of the icon_dex-th icon of a Windows executable or
+    dll - a PE, for Portable Executable - as {width: .ico data}, keeping the
+    one with the most colors for each width."""
     pe = pefile.PE(pe_path, fast_load=True) # parse the resources only
     pe.parse_data_directories([pefile.DIRECTORY_ENTRY[
         'IMAGE_DIRECTORY_ENTRY_RESOURCE']])
@@ -319,7 +320,10 @@ def _pe_icons(pe_path: str) -> dict[int, bytes]:
     def _data(res): # of the first language of the resource
         res_data = res.directory.entries[0].data.struct
         return pe.get_data(res_data.OffsetToData, res_data.Size)
-    group = _data(resources[pefile.RESOURCE_TYPE['RT_GROUP_ICON']][0])
+    groups = resources[pefile.RESOURCE_TYPE['RT_GROUP_ICON']]
+    # a negative index is the resource id of the icon, as in shortcuts
+    group = _data(next(g for g in groups if g.id == -icon_dex) if
+                  icon_dex < 0 else groups[icon_dex])
     images = {i.id: i for i in resources[pefile.RESOURCE_TYPE['RT_ICON']]}
     icons = {}
     for off in range(6, 6 + 14 * struct.unpack_from('<H', group, 4)[0], 14):
@@ -332,24 +336,41 @@ def _pe_icons(pe_path: str) -> dict[int, bytes]:
                 off:off + 8] + struct.pack('<2I', len(img), 22) + img
     return {w: ico for w, (_bit_count, ico) in icons.items()}
 
-def _launcher_icons(exe_path):
-    """Return the icons of a custom launcher - the ones the OS displays for
-    its file, or the ones of its executable if we can read them, else the 'x'
-    icon."""
+def _launcher_icons(exe_path, icon):
+    """Return the icons of a custom launcher - the ones of its icon if it
+    exists, else the ones the OS displays for its file, or the ones of its
+    executable if we can read them, else the 'x' icon."""
     if not exe_path.exists():
         return ERROR_ICONS
-    if icon_location := get_app_icon(exe_path): # Windows
+    # exists and is_file resolve relative paths against our working dir,
+    # GuiImage (also via get_app_icon) against bash/images
+    exe_path = GPath(os.path.abspath(exe_path.s))
+    icon_path, icon_dex = split_icon_location(icon)
+    icon_path = icon_path and GPath(os.path.abspath(icon_path))
+    if not (icon_path and icon_path.is_file()):
+        icon_path, icon_dex = exe_path, 0 # no icon, or a missing one
+    elif icon_path.cext in GuiImage.img_types: # an image, not an exe or dll
+        return [GuiImage.from_path(icon_path, iconSize=s) for s in (
+            16, 24, 32)]
+    if icon_location := get_app_icon(icon_path, icon_dex): # Windows
         return [GuiImage.from_path(icon_location, GuiImage.img_types['.ico'],
                                    s) for s in (16, 24, 32)]
-    if pefile is not None and exe_path.is_file():
+    if pefile is not None and icon_path.is_file():
         try:
-            ico_images = _pe_icons(exe_path.s)
+            ico_images = _pe_icons(icon_path.s, icon_dex)
             return [BmpFromIcoData(ico_images, s) for s in (16, 24, 32)]
         except pefile.PEFormatError:
             pass # not a PE
         except Exception: # no icon, or a malformed PE
-            deprint(f'Failed to read the icon of {exe_path}', traceback=True)
+            deprint(f'Failed to read the icon of {icon_path}', traceback=True)
     return ERROR_ICONS
+
+def split_icon_location(icon: str) -> tuple[str, int]:
+    """Split the icon of a custom launcher - a path, or 'path,index' for the
+    icons of an exe or dll, as in Windows shortcuts."""
+    icon_path, sep, icon_dex = icon.rpartition(',')
+    return (icon_path, int(icon_dex)) if sep and icon_dex.lstrip(
+        '-').isdigit() else (icon, 0)
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):

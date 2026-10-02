@@ -450,7 +450,7 @@ settingDefaults = { # keep current naming format till refactored
     'bash.mods.export.skip': '',
     'bash.mods.export.deprefix': '',
     'bash.mods.export.skipcomments': False,
-    #--Launchers: {os_name: {uid: {'path'|'args'|'start_in': value}}}
+    #--Launchers: {os_name: {uid: {'path'|'args'|'start_in'|'icon': value}}}
     # - see launcher_settings in settings_dialog
     'bash.launchers': {},
     # the types of status bar buttons listed in the Status Bar page
