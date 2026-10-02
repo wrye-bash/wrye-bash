@@ -41,7 +41,8 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
-    get_image, HyperlinkLabel, FilePicker, ImageListBox, popups, GridLayout
+    get_image, HyperlinkLabel, FilePicker, ImageListBox, popups, \
+    DirPicker, GridLayout
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -1441,6 +1442,10 @@ class StatusBarPage(_AFixedPage):
         self._launcher_args_txt = TextField(self,
                                             hint=_('Command line arguments'))
         self._launcher_args_txt.tooltip = _('Command line arguments')
+        self._launcher_start_in = DirPicker(self,
+            hint=_('The folder of the application if empty'))
+        self._launcher_start_in.button.tooltip = _(
+            'Select the folder to start the application in.')
         self._hide_chk = CheckBox(self, _('Hide on the status bar'),
             chkbx_tooltip=_('Hide the status bar button of the selected '
                             'launcher.'), on_check=self._on_hide)
@@ -1486,7 +1491,8 @@ class StatusBarPage(_AFixedPage):
                     for label, field in ((_('Name:'), self._launcher_name_txt),
                         (_('Application path:'), self._launcher_path),
                         (_('Command line arguments:'),
-                         self._launcher_args_txt))]),
+                         self._launcher_args_txt),
+                        (_('Start in:'), self._launcher_start_in))]),
             self._hide_chk,
             HLayout(spacing=4, item_expand=True, items=[
                 self._save_launcher_btn,
@@ -1513,24 +1519,26 @@ class StatusBarPage(_AFixedPage):
         self._remove_launcher_btn.tooltip = btn_tooltip
         self._remove_launcher_btn.enabled = enabled
 
-    def _set_textfields(self, name='', path='', args='', *, edit_name=False,
-                        edit_path=False, edit_rest=False):
+    def _set_textfields(self, name='', path='', args='', start_in='', *,
+                        edit_name=False, edit_path=False, edit_rest=False):
         """Display the specified launcher details - a launcher can be saved if
         any of them is editable."""
         for txt_field, txt, editable in (
                 (self._launcher_name_txt, name, edit_name),
                 (self._launcher_path.text_field, path, edit_path),
-                (self._launcher_args_txt, args, edit_rest)):
+                (self._launcher_args_txt, args, edit_rest),
+                (self._launcher_start_in.text_field, start_in, edit_rest)):
             txt_field.text_content = txt
             txt_field.editable = editable
         self._launcher_path.button.enabled = edit_path
+        self._launcher_start_in.button.enabled = edit_rest
         self._save_launcher_btn.enabled = edit_path or edit_rest
 
     @staticmethod
     def _launcher_fields(launcher, launcher_set) -> dict[str, str]:
-        """Return the path and arguments of launcher as displayed - the ones
-        in its launcher_set, else its defaults."""
-        return {'path': launcher.app_path.s,
+        """Return the path, arguments and start in folder of launcher as
+        displayed - the ones in its launcher_set, else its defaults."""
+        return {'path': launcher.app_path.s, 'start_in': '',
                 'args': join_launcher_args(launcher.exe_args)} | launcher_set
 
     def _on_hide(self, checked):
@@ -1613,7 +1621,7 @@ class StatusBarPage(_AFixedPage):
         # game's) can't be edited at all
         self._set_textfields(selected_str if launcher.is_custom else
             launcher.app_name, fields['path'], fields['args'],
-            edit_name=launcher.is_custom,
+            fields['start_in'], edit_name=launcher.is_custom,
             edit_path=launcher.is_custom or launcher.searched,
             edit_rest=launcher.recreate is not None)
         if launcher.is_custom:
@@ -1627,7 +1635,8 @@ class StatusBarPage(_AFixedPage):
         launcher_name = self._launcher_name_txt.text_content.strip()
         entered = {k: txt.text_content.strip() for k, txt in (
             ('path', self._launcher_path.text_field),
-            ('args', self._launcher_args_txt))}
+            ('args', self._launcher_args_txt),
+            ('start_in', self._launcher_start_in.text_field))}
         launchers = launcher_settings()
         if (selected := self._selected_launcher) is None: # a new one
             launcher, shown = None, {}
@@ -1635,14 +1644,18 @@ class StatusBarPage(_AFixedPage):
             launcher = BashStatusBar.all_sb_links[selected]
             shown = self._launcher_fields(launcher,
                                           launchers.get(selected, {}))
-        if not (launcher_name and entered['path']):
-            showError(self, _('Launcher name and path cannot be empty.'))
-            return
-        # an unchanged path may be missing (a not found predefined launcher)
-        if entered['path'] != shown.get('path') and not pathlib.Path(
-                entered['path']).exists():
-            showError(self, _('The provided path is invalid.'))
-            return
+        path, start_in = map(entered.get, ('path', 'start_in'))
+        for invalid, error_msg in (
+                (not (launcher_name and path),
+                 _('Launcher name and path cannot be empty.')),
+                # an unchanged path may be missing (a not found predefined one)
+                (path != shown.get('path') and not pathlib.Path(path).exists(),
+                 _('The provided path is invalid.')),
+                (start_in and not pathlib.Path(start_in).is_dir(),
+                 _('The Start in folder does not exist.'))):
+            if invalid:
+                showError(self, error_msg)
+                return
         try:
             split_launcher_args(entered['args'])
         except ValueError as e: # e.g. No closing quotation
