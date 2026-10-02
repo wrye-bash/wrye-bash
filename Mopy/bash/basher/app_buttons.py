@@ -272,6 +272,8 @@ class AppButton(AppLauncher, StatusBarButton):
         app_button.searched = searched
         app_button.is_custom = path_kwargs is None
         app_button.recreate = recreate
+        if start_in := launcher_set.get('start_in'):
+            app_button.start_in = GPath(start_in)
         return app_button
 
 class _ExeButton(ExeLauncher, AppButton):
