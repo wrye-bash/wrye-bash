@@ -1092,14 +1092,15 @@ def get_app_icon(target: _Path, idex='0') -> _Path | None:
         icon_path, idex = _get_default_app_icon(idex, target)
     return _GPath(f'{icon_path.s};{idex}') if icon_path.exists() else None
 
-def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str]]:
+def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str, str]]:
     """Read the shortcuts (.lnk files) in the Mopy/Apps folder - Windows only!
     ##:(734:570) Only used to import them as custom launchers once, see
     InitStatusBar.
 
     :param apps_dir: the absolute Path to Mopy/Apps folder
-    :return: a list of (shortcut, target, arguments) tuples, for the shortcuts
-        whose target exists - msi shortcuts target the shortcut itself."""
+    :return: a list of (shortcut, target, arguments, working dir) tuples, for
+        the shortcuts whose target exists - msi shortcuts target the shortcut
+        itself."""
     shortcuts = []
     try:
         sh = win32client.Dispatch('WScript.Shell')
@@ -1108,11 +1109,14 @@ def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str]]:
             lnk = apps_dir.join(lnk)
             shortcut = sh.CreateShortCut(lnk.s)
             target, lnk_args = shortcut.TargetPath, shortcut.Arguments
+            # the shell expands and unquotes it, os.chdir won't (set_cwd)
+            start_in = os.path.expandvars(shortcut.WorkingDirectory).strip('"')
+            if not os.path.isdir(start_in): start_in = ''
             if target.lower().find(r'installer\{') != -1: # msi: dc0c8de
-                target, lnk_args = lnk, ''
+                target, lnk_args, start_in = lnk, '', ''
             elif not (target := _GPath(target)).exists():
                 continue
-            shortcuts.append((lnk, target, lnk_args))
+            shortcuts.append((lnk, target, lnk_args, start_in))
     except Exception:
         _deprint('Error reading the Apps folder shortcuts:', traceback=True)
     return shortcuts
@@ -1649,6 +1653,7 @@ def join_launcher_args(launcher_args) -> str:
 
 class AppLauncher(_AppLauncher):
 
+    @set_cwd
     def launch_app(self, exe_path, exe_args):
         args = join_launcher_args(exe_args)
         try:
@@ -1658,11 +1663,7 @@ class AppLauncher(_AppLauncher):
             # Requires elevated permissions
             os.startfile(exe_path.s, 'runas', args)
         except NotImplementedError:
-            self._webbrowser(exe_path)
-
-    @set_cwd
-    def _webbrowser(self, exe_path):
-        webbrowser.open(exe_path.s)
+            webbrowser.open(exe_path.s)
 
 # Exe and shortcut launchers --------------------------------------------------
 class ExeLauncher(AppLauncher):
@@ -1674,7 +1675,7 @@ class ExeLauncher(AppLauncher):
         except WindowsError as werr:
             if werr.winerror != 740: raise
             os.startfile(exe_path.s, 'runas', join_launcher_args(exe_args),
-                         exe_path.head.s, 1)
+                         os.getcwd(), 1) # elevated, it won't inherit our cwd
 
     def _run_exe(self, exe_path: _Path, exe_args) -> Popen:
         return Popen(join_launcher_args([exe_path.s, *exe_args]),

@@ -345,6 +345,7 @@ def split_launcher_args(launcher_args: str) -> list[str]:
 join_launcher_args = shlex.join
 
 class AppLauncher(_AppLauncher):
+    @set_cwd
     def launch_app(self, exe_path, exe_args):
         kw = dict(close_fds=True, env=os.environ.copy())
         if exe_path.is_file() and os.access(exe_path, mode=os.X_OK):

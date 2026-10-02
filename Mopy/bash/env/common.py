@@ -466,11 +466,12 @@ def is_case_sensitive(test_path):
 
 # App launchers ---------------------------------------------------------------
 def set_cwd(func):
-    """Function decorator to switch current working dir."""
+    """Function decorator to switch current working dir - to the launcher's
+    start_in, else to the folder of the launched file."""
     @functools.wraps(func)
     def _switch_dir(self, exe_path: _Path, *args):
         cwd = os.getcwd()
-        os.chdir(exe_path.head.s)
+        os.chdir((self.start_in or exe_path.head).s)
         try:
             return func(self, exe_path, *args)
         finally:
@@ -484,6 +485,7 @@ class _AppLauncher:
     app_path: _Path
     exe_args: tuple # cli for the application
     _display_launcher: bool # whether to display the launcher
+    start_in: _Path | None = None # the working dir picked for custom launchers
 
     def __init__(self, launcher_path: _Path, cli_args=(),
                  display_launcher=True, *args):
