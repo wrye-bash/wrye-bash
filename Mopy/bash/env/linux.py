@@ -211,7 +211,7 @@ def get_local_app_data_path(submod):
             _('Folder path retrieved via $XDG_DATA_HOME (or fallback to '
               '~/.local/share)'))
 
-def get_app_icon(_target, _idex='0'):
+def get_app_icon(_target, _idex=0):
     return None # no native way
 
 def init_app_links(_apps_dir):

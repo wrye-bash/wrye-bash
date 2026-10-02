@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import os
 import shlex
 import subprocess
 import webbrowser
@@ -258,8 +259,8 @@ class AppButton(AppLauncher, StatusBarButton):
             except ValueError: # the page refuses those, but let's not abort
                 deprint(f'Invalid arguments for launcher {kwargs["uid"]}: '
                         f'{launcher_set["args"]}', traceback=True)
-        if images is None:
-            images = _launcher_icons(exe_path)
+        if images is None or launcher_set.get('icon'):
+            images = _launcher_icons(exe_path, launcher_set.get('icon', ''))
         button_cls = {'.exe': _ExeButton, '.jar': _JavaButton}.get(
             exe_path.cext, cls) if cls is AppButton else cls
         app_button = button_cls(exe_path, images, appname or kwargs['uid'],
@@ -302,15 +303,32 @@ class _JavaButton(AppButton):
         subprocess.Popen(join_launcher_args(cli) if os_name == 'nt' else cli,
                          executable=self._java.s, close_fds=True)
 
-def _launcher_icons(exe_path):
-    """Return the icons of a custom launcher - the ones the OS displays for
-    its file, else the 'x' icon."""
+def _launcher_icons(exe_path, icon):
+    """Return the icons of a custom launcher - the ones of its icon if it
+    exists, else the ones the OS displays for its file, else the 'x' icon."""
     if not exe_path.exists():
         return ERROR_ICONS
-    if icon_location := get_app_icon(exe_path): # Windows
+    # exists and is_file resolve relative paths against our working dir,
+    # GuiImage (also via get_app_icon) against bash/images
+    exe_path = GPath(os.path.abspath(exe_path.s))
+    icon_path, icon_dex = split_icon_location(icon)
+    icon_path = icon_path and GPath(os.path.abspath(icon_path))
+    if not (icon_path and icon_path.is_file()):
+        icon_path, icon_dex = exe_path, 0 # no icon, or a missing one
+    elif icon_path.cext in GuiImage.img_types: # an image, not an exe or dll
+        return [GuiImage.from_path(icon_path, iconSize=s) for s in (
+            16, 24, 32)]
+    if icon_location := get_app_icon(icon_path, icon_dex): # Windows
         return [GuiImage.from_path(icon_location, GuiImage.img_types['.ico'],
                                    s) for s in (16, 24, 32)]
     return ERROR_ICONS
+
+def split_icon_location(icon: str) -> tuple[str, int]:
+    """Split the icon of a custom launcher - a path, or 'path,index' for the
+    icons of an exe or dll, as in Windows shortcuts."""
+    icon_path, sep, icon_dex = icon.rpartition(',')
+    return (icon_path, int(icon_dex)) if sep and icon_dex.lstrip(
+        '-').isdigit() else (icon, 0)
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
