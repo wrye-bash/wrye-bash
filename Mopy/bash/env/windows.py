@@ -1077,12 +1077,12 @@ def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def get_app_icon(target: _Path, idex='0') -> _Path | None:
+def get_app_icon(target: _Path, idex=0) -> _Path | None:
     """Return the location of the icon Windows displays for target, as an
     'icon file;index' Path that wx loads as an .ico (see _BmpFromIcoPath), or
-    None if there is no such file."""
-    if target.cext == '.exe':
-        if win32gui and win32gui.ExtractIconEx(target.s, -1):
+    None if there is no such file - for exes and dlls the idex-th icon."""
+    if target.cext in ('.exe', '.dll'):
+        if win32gui and idex < win32gui.ExtractIconEx(target.s, -1):
             # -1 queries num of icons embedded in the exe
             icon_path = target
         else: # generic exe icon, hardcoded and good to go
@@ -1092,15 +1092,15 @@ def get_app_icon(target: _Path, idex='0') -> _Path | None:
         icon_path, idex = _get_default_app_icon(idex, target)
     return _GPath(f'{icon_path.s};{idex}') if icon_path.exists() else None
 
-def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str, str]]:
+def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str, str, str]]:
     """Read the shortcuts (.lnk files) in the Mopy/Apps folder - Windows only!
     ##:(734:570) Only used to import them as custom launchers once, see
     InitStatusBar.
 
     :param apps_dir: the absolute Path to Mopy/Apps folder
-    :return: a list of (shortcut, target, arguments, working dir) tuples, for
-        the shortcuts whose target exists - msi shortcuts target the shortcut
-        itself."""
+    :return: a list of (shortcut, target, arguments, working dir, icon)
+        tuples, for the shortcuts whose target exists - msi shortcuts target
+        the shortcut itself."""
     shortcuts = []
     try:
         sh = win32client.Dispatch('WScript.Shell')
@@ -1116,7 +1116,16 @@ def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str, str]]:
                 target, lnk_args, start_in = lnk, '', ''
             elif not (target := _GPath(target)).exists():
                 continue
-            shortcuts.append((lnk, target, lnk_args, start_in))
+            # 'path,index' - skip the first icon of the target, displayed
+            # anyway
+            icon = os.path.expandvars(shortcut.IconLocation)
+            icon_path, _sep, icon_dex = icon.rpartition(',')
+            if (png := apps_dir.join(f'{lnk.sbody}32.png')).exists():
+                icon = png.s # the undocumented custom icons of the Apps folder
+            elif not icon_path or (_GPath(icon_path) == target and
+                                   icon_dex in ('', '0')):
+                icon = ''
+            shortcuts.append((lnk, target, lnk_args, start_in, icon))
     except Exception:
         _deprint('Error reading the Apps folder shortcuts:', traceback=True)
     return shortcuts
