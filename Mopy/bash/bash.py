@@ -388,8 +388,6 @@ def _parse_bash_ini(bash_ini_path):
                 'SkippedBashInstallersDirs', 'SoundError', 'SoundSuccess',
                 'xEditCommandLineArguments'], '')
         },
-        'Tool Options': {'ShowTextureToolLaunchers': True,
-            'ShowModelingToolLaunchers': True, 'ShowAudioToolLaunchers': True}
     }
     bass.inisettings.clear() #ini might be reinitialized due to restore failing
     for v in ini_set.values():
@@ -422,9 +420,9 @@ def _parse_bash_ini(bash_ini_path):
                     value = value.strip()
                 bass.inisettings[ini_settings_key] = value
             elif ci_section == 'Tool Options':
-                ##:(734:570) only read to import the tool paths into the
-                # launcher settings once, see InitStatusBar - stash them all in
-                # case they match tool path keys, queried in lower case
+                ##:(734:570) only read to import the tool paths and the
+                # bShow*ToolLaunchers switches once, see InitStatusBar - stash
+                # them all, queried in lower case
                 bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------

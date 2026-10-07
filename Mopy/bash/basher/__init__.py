@@ -3590,7 +3590,7 @@ class BashFrame(WindowFrame):
         InitStatusBar imported into the launcher settings."""
         from .links_init import imported_launchers
         if not imported_launchers: return
-        msg = _('Wrye Bash no longer reads the tool paths in %(bash_ini)s, '
+        msg = _('Wrye Bash no longer reads the tool options in %(bash_ini)s, '
                 'nor the shortcuts in %(apps_dir)s. The ones below have been '
                 'imported into its settings - from now on, manage them in the '
                 'Status Bar page of the settings dialog.') % {
