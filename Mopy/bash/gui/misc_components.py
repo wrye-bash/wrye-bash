@@ -428,7 +428,7 @@ class GlobalMenu(_AEvtHandler):
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
     _native_widget: _wx.MenuBar
-    _label_to_menu_pos: dict[str, int]
+    _categories: dict[str, _GMCategory]
 
     class _GMCategory(_wx.Menu):
         """wx-derived class used to differentiate between events on regular
@@ -452,12 +452,12 @@ class GlobalMenu(_AEvtHandler):
             menu_processor)
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
-        self._label_to_menu_pos = {}
+        self._categories = {}
 
     def categories_equal(self, new_categories: list[str]):
         """Checks if the categories currently shown in the GUI match the
         specified ones."""
-        return new_categories == list(self._label_to_menu_pos.keys())
+        return new_categories == [*self._categories]
 
     def register_category_handler(self, cat_label: str, cat_handler):
         """Registers the specified handler for the specified category. The
@@ -475,18 +475,14 @@ class GlobalMenu(_AEvtHandler):
         """Creates dropdowns for all specified categories, discarding existing
         ones in the process. It has to be done like this to avoid changing the
         GUI's layout while categories are added to/removed from it."""
-        self._label_to_menu_pos = {c: i for i, c in enumerate(all_categories)}
-        self._native_widget.SetMenus([(self._GMCategory(c), self._escape(c))
-                                      for c in all_categories])
+        self._categories = {c: self._GMCategory(c) for c in all_categories}
+        self._native_widget.SetMenus([(m, self._escape(c))
+                                      for c, m in self._categories.items()])
 
     def populate_immediately(self, menu_category: str, populate_cb):
         """Immediately populate the menu of the given category using the given
         callback."""
-        wx_menu = self._native_widget.GetMenu(
-            self._label_to_menu_pos[menu_category])
-        if not isinstance(wx_menu, self._GMCategory):
-            raise RuntimeError("Somehow ended up with a non-GM menu in a GM")
-        self._populate_menu(wx_menu, populate_cb)
+        self._populate_menu(self._categories[menu_category], populate_cb)
 
     def _handle_menu_opened(self, wx_menu):
         """Internal callback, does the heavy lifting. Also handles status bar
