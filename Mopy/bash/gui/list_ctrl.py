@@ -94,22 +94,19 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropFiles = fnDropFiles
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
-        self._get_item_rect_offset: int | None = None
+        self._header_offset: int | None = None # see GetItemRect
 
-    def GetItemRect(self, index, code=None):
-        # GetItemRect adds the header's height to the y-coordinate,
-        # but mouse events don't, so we subtract the header's height.
-        # This may be Linux-specific bug, so we first check for it using HitTest.
-        rect = super().GetItemRect(index)
-        vertical_offset = self._get_item_rect_offset
-        if vertical_offset is None:
-            vertical_offset = 0
+    def GetItemRect(self, index, code=_wx.LIST_RECT_BOUNDS):
+        """Unlike HitTest and mouse events, wxGTK counts the header in the y of
+        the item rects - detect it by hit testing the first rect we get that
+        is in view, and take the header out."""
+        rect = super().GetItemRect(index, code)
+        if self._header_offset is None:
             hit_index = self.HitTest((rect.x + 5, rect.y + 5))[0]
-            if index < hit_index:
-                header_height = _wx.RendererNative.Get().GetHeaderButtonHeight(self)
-                vertical_offset = -header_height
-            self._get_item_rect_offset = vertical_offset
-        rect.y += vertical_offset
+            if hit_index == _wx.NOT_FOUND: return rect # out of view, retry
+            self._header_offset = _wx.RendererNative.Get(
+                ).GetHeaderButtonHeight(self) if hit_index > index else 0
+        rect.y -= self._header_offset
         return rect
 
     def OnDragging(self,x,y,dragResult):
