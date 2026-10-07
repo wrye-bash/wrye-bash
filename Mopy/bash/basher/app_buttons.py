@@ -713,10 +713,27 @@ class SettingsButton(StatusBarButton):
         self.sb_click()
 
 #------------------------------------------------------------------------------
+class _Restart_ReimportLaunchers(ItemLink): ##: XXX drop before the release
+    """Drop the launcher settings of this platform and restart, so that
+    InitStatusBar imports bash.ini and the Apps folder again - for testing."""
+    _text = 'Reimport Launchers'
+    _help = ('Drop the launchers added or changed in the Status Bar page on '
+             'this platform, then restart to import the ones of bash.ini and '
+             'the Apps folder again.')
+
+    def Execute(self):
+        if self._askYes(f'{self._help}\n\nRestart now?', default_is_yes=False):
+            bass.settings['bash.launchers'].pop(os_name, None)
+            Link.Frame.Restart()
+
 class RestartButton(StatusBarButton):
     """Restart Wrye Bash"""
     _tip = _(u'Restart')
     imageKey = 'reload.%s'
+
+    def _init_menu(self, bt_links): ##: XXX drop before the release
+        bt_links.append_link(_Restart_ReimportLaunchers())
+        return super()._init_menu(bt_links)
 
     def allow_create(self): return bass.inisettings['ShowDevTools']
 
