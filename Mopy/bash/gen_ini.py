@@ -328,17 +328,6 @@ def _generate_default_bash_ini(ver_tup):
                           'option': 'True', 'default': 'False'})}
 ;bSkipWSDetection=True
 
-
-[Tool Options]
-
-{_gen_section_header('Tool Options')}
-
-{_wrap_ini_comment(_("Whether or not to show the various larger non-core tool "
-    "launcher segments."))}
-;bShowTextureToolLaunchers=True
-;bShowModelingToolLaunchers=True
-;bShowAudioToolLaunchers=True
-
 """
 
     return default_bash_ini, crc32(default_bash_ini.encode())

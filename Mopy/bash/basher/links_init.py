@@ -66,6 +66,18 @@ def InitStatusBar():
     # bash.ini and the shortcuts of Mopy/Apps into the launcher settings
     import_launchers = os_name not in bass.settings['bash.launchers']
     launchers = launcher_settings() # creates the platform's settings
+    if import_launchers: ##:(734:570) and hide the launchers bash.ini hid
+        hide = bass.settings['bash.statusbar.hide']
+        shown = {g: bass.inisettings.get(f'show{g.lower()}toollaunchers',
+            'true').lower() in ('1', 'yes', 'true', 'on') for g in (
+            'Modeling', 'Texture', 'Audio')}
+        for group, tools in (('Modeling', modeling_tools_buttons),
+                ('Texture', texture_tool_buttons), ('Audio', audio_tools)):
+            if not shown[group]:
+                hide.update(tools)
+                imported_launchers.append(f'bShow{group}ToolLaunchers=False')
+        if not (shown['Modeling'] or shown['Texture']):
+            hide.add(nifskope[0])
     bad_icons = error_icons()
     __fp = GuiImage.from_path
     def _png_list(template):
@@ -123,7 +135,8 @@ def InitStatusBar():
         if xe_name == 'TES4Edit':
             # set the paths for TES4Trans/TES4View, supposing they are in the
             # same folder with TES4Edit - these are not specified in the ini
-            tes4_edit_dir = all_links[-1].app_path.head
+            # the game folder if TES4Edit is hidden, so it was not searched
+            tes4_edit_dir = all_links[-1].app_path.head or 'app'
             args = 'TES4View.exe', 'TES4View', {
                 'root_dirs': tes4_edit_dir}, '-TES4', '-view'
             all_links.append(_tool_args('TES4ViewPath', args, uid='TES4View',
@@ -139,17 +152,9 @@ def InitStatusBar():
     all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
         for tool, cls, dipl in zip(loot_bosh.items(), (AppLOOT, AppBOSS), (
             bush.game.loot_game_name, bush.game.boss_game_name)))
-    show_model = bass.inisettings['ShowModelingToolLaunchers']
-    all_links.extend(_tool_args(*mt, display_launcher=show_model) for mt in
-                     modeling_tools_buttons.items())
-    show_texture = bass.inisettings['ShowTextureToolLaunchers']
-    all_links.append(_tool_args(*nifskope, # Nifskope
-                                display_launcher=show_model or show_texture))
-    all_links.extend(_tool_args(*tt, display_launcher=show_texture) for tt in
-                     texture_tool_buttons.items())
-    all_links.extend(_tool_args(*at, display_launcher=bass.inisettings[
-        'ShowAudioToolLaunchers']) for at in audio_tools.items())
-    all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
+    all_links.extend(_tool_args(*tool) for tool in chain(
+        modeling_tools_buttons.items(), [nifskope],
+        texture_tool_buttons.items(), audio_tools.items(), misc_tools.items()))
     #--Custom Launchers - the uids of the launcher settings that are not
     # predefined (the ones with no path are leftovers of dropped ones)
     predefined = {li.uid for li in all_links}
