@@ -286,11 +286,15 @@ class PanelWin(_AComponent):
                         wants_chars and _wx.WANTS_CHARS))
 
 class Splitter(_AComponent):
+    """Two panes and a sash to resize them - we draw a grip on the sash, as
+    users can't find the native one."""
     _native_widget: _wx.SplitterWindow
 
     def __init__(self, parent, allow_split=True, min_pane_size=0,
                  sash_gravity=0):
-        super(Splitter, self).__init__(parent, style=_wx.SP_LIVE_UPDATE)
+        # The unthemed sash is wider (7px instead of 4px) and beveled
+        super(Splitter, self).__init__(parent, style=_wx.SP_LIVE_UPDATE |
+            _wx.SP_NO_XP_THEME | _wx.SP_3DSASH)
         if not allow_split: # Don't allow unsplitting
             self._native_widget.Bind(_wx.EVT_SPLITTER_DCLICK,
                                      lambda event: event.Veto())
@@ -299,6 +303,8 @@ class Splitter(_AComponent):
         if sash_gravity:
             self.set_sash_gravity(sash_gravity)
         self._panes = None
+        self._on_paint = self._evt_handler(_wx.EVT_PAINT)
+        self._on_paint.subscribe(self._paint_sash)
 
     def make_panes(self, sash_position=0, first_pane=None, second_pane=None,
                    vertically=False):
@@ -306,8 +312,47 @@ class Splitter(_AComponent):
                        second_pane or PanelWin(self)]
         split = self._native_widget.SplitVertically if vertically else \
             self._native_widget.SplitHorizontally
-        split(*map(self._resolve, self._panes), sash_position)
+        split(*(panes := [*map(self._resolve, self._panes)]), sash_position)
+        # wx redraws the native sash over our grip when resizing the panes and
+        # on releasing the dragged sash, where the panes keep their size
+        for pane in panes: pane.Bind(_wx.EVT_SIZE, self._refresh_sash)
+        self._native_widget.Bind(_wx.EVT_SPLITTER_SASH_POS_CHANGED,
+                                 self._refresh_sash)
         return self._panes[0], self._panes[1]
+
+    def _sash_rect(self):
+        nw = self._native_widget
+        pos, sash, (w, h) = nw.GetSashPosition(), nw.GetSashSize(), \
+            nw.GetClientSize()
+        if nw.GetSplitMode() == _wx.SPLIT_VERTICAL:
+            return pos, 0, sash, h
+        return 0, pos, w, sash
+
+    def _refresh_sash(self, event):
+        event.Skip()
+        self._native_widget.RefreshRect(_wx.Rect(*self._sash_rect()))
+
+    def _paint_sash(self):
+        """Replaces wx's OnPaint - draw the native sash and a grip of dots in
+        its middle."""
+        nw = self._native_widget
+        dc = _wx.PaintDC(nw)
+        dc.Clear()
+        if nw.IsSplit():
+            vert = nw.GetSplitMode() == _wx.SPLIT_VERTICAL
+            _wx.RendererNative.Get().DrawSplitterSash(nw, dc,
+                nw.GetClientSize(), nw.GetSashPosition(),
+                _wx.VERTICAL if vert else _wx.HORIZONTAL)
+            x, y, w, h = self._sash_rect()
+            dot = scaled(2)
+            x, y = x + (w - dot) // 2, y + (h - dot) // 2
+            dc.SetPen(_wx.TRANSPARENT_PEN)
+            dc.SetBrush(_wx.Brush(_wx.SystemSettings.GetColour(
+                _wx.SYS_COLOUR_GRAYTEXT)))
+            for off in range(-6 * dot, 7 * dot, 2 * dot):
+                dc.DrawRectangle(*((x, y + off) if vert else (x + off, y)),
+                                 dot, dot)
+        return EventResult.FINISH
 
     def get_sash_pos(self): return self._native_widget.GetSashPosition()
 
