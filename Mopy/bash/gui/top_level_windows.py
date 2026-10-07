@@ -279,40 +279,99 @@ class PanelWin(_AComponent):
             style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER) | (
                         wants_chars and _wx.WANTS_CHARS))
 
+class _SplitterWindow(_wx.SplitterWindow):
+    """Remembers the minimum pane size Splitter asked for, as it keeps wx's at
+    1, and the panes' own min sizes, as it raises them."""
+    min_pane = 0
+    own_mins = None
+
+    def panes_room(self, vert):
+        """The room each pane needs along the width if vert else the height,
+        for its contents and the splitters nested in it."""
+        panes = self.GetWindow1(), self.GetWindow2()
+        if self.own_mins is None:
+            self.own_mins = [p.GetMinSize() for p in panes]
+        along = (self.GetSplitMode() == _wx.SPLIT_VERTICAL) == vert
+        return [max(self.min_pane * along, own[not vert], _room(p, vert))
+                for p, own in zip(panes, self.own_mins)]
+
+def _room(win, vert):
+    """The room win needs along the width if vert else the height - for the
+    splitters in it and the items of its sizer."""
+    if isinstance(win, _SplitterWindow) and win.IsSplit():
+        room1, room2 = win.panes_room(vert)
+        if (win.GetSplitMode() == _wx.SPLIT_VERTICAL) == vert:
+            return room1 + win.GetSashSize() + room2
+        return max(room1, room2)
+    if sizer := win.GetSizer():
+        return _sizer_room(sizer, vert)
+    return max((_room(c, vert) for c in win.GetChildren()), default=0)
+
+def _sizer_room(sizer, vert):
+    """The room the items of sizer need - the windows that stretch (lists,
+    text areas) need a few rows, unless they hold splitters."""
+    along = isinstance(sizer, _wx.BoxSizer) and (
+        sizer.GetOrientation() == _wx.HORIZONTAL) == vert
+    rooms = [_sizer_room(i.GetSizer(), vert) if i.IsSizer()
+             else i.GetMinSize()[not vert] if i.IsSpacer()
+             else max(scaled(64), _room(i.GetWindow(), vert))
+             if i.GetProportion()
+             else i.GetWindow().GetEffectiveMinSize()[not vert]
+             for i in sizer.GetChildren() if i.IsShown()]
+    return sum(rooms) if along else max(rooms, default=0)
+
 class Splitter(_AComponent):
     """Two panes and a sash to resize them - we draw a grip on the sash, as
-    users can't find the native one."""
-    _native_widget: _wx.SplitterWindow
+    users can't find the native one, and keep the panes from being squeezed
+    out of view."""
+    _native_widget: _SplitterWindow
 
-    def __init__(self, parent, allow_split=True, min_pane_size=0,
-                 sash_gravity=0):
+    def __init__(self, parent, *, min_pane_size=0, sash_gravity=0):
         # The unthemed sash is wider (7px instead of 4px) and beveled
         super().__init__(parent, style=_wx.SP_LIVE_UPDATE |
             _wx.SP_NO_XP_THEME | _wx.SP_3DSASH)
-        if not allow_split: # Don't allow unsplitting
-            self._native_widget.Bind(_wx.EVT_SPLITTER_DCLICK,
-                                     lambda event: event.Veto())
-        if min_pane_size:
-            self.set_min_pane_size(min_pane_size)
-        if sash_gravity:
-            self.set_sash_gravity(sash_gravity)
-        self._panes = None
+        nw = self._native_widget
+        nw.min_pane = scaled(min_pane_size)
+        # wx unsplits us on dragging the sash to an edge or double clicking it
+        # if its minimum is 0 - _fit_panes sets the panes' min sizes instead
+        nw.SetMinimumPaneSize(1)
+        nw.SetSashGravity(sash_gravity)
+        # The position to go back to - gravity moves the sash on its own
+        self._keep_pos, self._wanted_pos = not sash_gravity, None
         self._on_paint = self._evt_handler(_wx.EVT_PAINT)
         self._on_paint.subscribe(self._paint_sash)
+        self._on_size = self._evt_handler(_wx.EVT_SIZE)
+        self._on_size.subscribe(self._fit_panes)
 
     def make_panes(self, sash_position=0, first_pane=None, second_pane=None,
                    vertically=False):
-        self._panes = [first_pane or PanelWin(self),
-                       second_pane or PanelWin(self)]
-        split = self._native_widget.SplitVertically if vertically else \
-            self._native_widget.SplitHorizontally
-        split(*(panes := [*map(self._resolve, self._panes)]), sash_position)
+        panes = first_pane or PanelWin(self), second_pane or PanelWin(self)
+        nw = self._native_widget
+        split = nw.SplitVertically if vertically else nw.SplitHorizontally
+        split(*(natives := [*map(self._resolve, panes)]), sash_position)
         # wx redraws the native sash over our grip when resizing the panes and
         # on releasing the dragged sash, where the panes keep their size
-        for pane in panes: pane.Bind(_wx.EVT_SIZE, self._refresh_sash)
-        self._native_widget.Bind(_wx.EVT_SPLITTER_SASH_POS_CHANGED,
-                                 self._refresh_sash)
-        return self._panes[0], self._panes[1]
+        for pane in natives: pane.Bind(_wx.EVT_SIZE, self._refresh_sash)
+        # Only our own sash - the events of nested splitters bubble up to us
+        nw.Bind(_wx.EVT_SPLITTER_SASH_POS_CHANGED, self._sash_moved, nw)
+        return panes
+
+    def _fit_panes(self):
+        """Runs before wx moves the sash to fit the panes' min sizes - give
+        each the room it needs, sharing what there is if they don't fit, as
+        wx would squeeze the second pane to nothing."""
+        nw = self._native_widget
+        if not nw.IsSplit(): return
+        vert = nw.GetSplitMode() == _wx.SPLIT_VERTICAL
+        rooms = nw.panes_room(vert)
+        avail = max(nw.GetClientSize()[not vert] - nw.GetSashSize(), 0)
+        if (needed := sum(rooms)) > avail:
+            rooms = [r * avail // needed for r in rooms]
+        for pane, own, room in zip((nw.GetWindow1(), nw.GetWindow2()),
+                                   nw.own_mins, rooms):
+            pane.SetMinSize((room, own.height) if vert else (own.width, room))
+        # wx forgets a position that doesn't fit, unless it's a requested one
+        if self._wanted_pos: nw.SetSashPosition(self._wanted_pos, False)
 
     def _sash_rect(self):
         nw = self._native_widget
@@ -325,6 +384,10 @@ class Splitter(_AComponent):
     def _refresh_sash(self, event):
         event.Skip()
         self._native_widget.RefreshRect(_wx.Rect(*self._sash_rect()))
+
+    def _sash_moved(self, event):
+        self._wanted_pos = self._keep_pos and event.GetSashPosition()
+        self._refresh_sash(event)
 
     def _paint_sash(self):
         """Replaces wx's OnPaint - draw the native sash and a grip in its
@@ -347,16 +410,12 @@ class Splitter(_AComponent):
                                     gh, scaled(1))
         return EventResult.FINISH
 
-    def get_sash_pos(self): return self._native_widget.GetSashPosition()
+    def get_sash_pos(self):
+        return self._wanted_pos or self._native_widget.GetSashPosition()
 
     def set_sash_pos(self, sash_position):
+        self._wanted_pos = self._keep_pos and sash_position
         self._native_widget.SetSashPosition(sash_position)
-
-    def set_min_pane_size(self, min_pane_size):
-        self._native_widget.SetMinimumPaneSize(scaled(min_pane_size))
-
-    def set_sash_gravity(self, sash_gravity):
-        self._native_widget.SetSashGravity(sash_gravity)
 
 class _APageComponent(_AComponent):
     """Abstract base class for 'page' compoenents, i.e. notebooks and
