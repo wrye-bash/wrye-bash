@@ -249,7 +249,11 @@ class AppButton(AppLauncher, StatusBarButton):
         if path_kwargs is None: # displayed even if missing, with the 'x' icon
             exe_path = GPath(launcher_set['path']) # the user may type anything
         elif searched := kwargs.setdefault('display_launcher', True):
-            if user_path := launcher_set.get('path'):
+            if kwargs['uid'] in bass.settings['bash.statusbar.hide']:
+                # not searched for till unhidden - see StatusBarPage._on_hide
+                exe_path, is_present = GPath(launcher_set.get('path') or
+                    app_launcher or undefinedPath), False
+            elif user_path := launcher_set.get('path'):
                 is_present = (exe_path := GPath(user_path)).exists()
             else:
                 exe_path, is_present = cls.find_launcher(app_launcher,
