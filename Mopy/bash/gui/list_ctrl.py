@@ -95,7 +95,6 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
         self._header_offset: int | None = None # see GetItemRect
-        self._scroll_offset: int | None = None
 
     def GetItemRect(self, index, code=_wx.LIST_RECT_BOUNDS):
         """Unlike HitTest and mouse events, wxGTK counts the header in the y of
@@ -110,34 +109,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         rect.y -= self._header_offset
         return rect
 
-    def _get_scroll_offset(self) -> int:
-        offset = self._scroll_offset
-        if (offset is None) and (self.GetItemCount() > 0):
-            offset = self.GetItemRect(0).height
-            self._scroll_offset = offset
-        return offset or 0
-
-    def LineUp(self):
-        # Doesn't work on Linux, as described in https://docs.wxpython.org/wx.Window.html
-        # So use ScrollList instead.
-        # Quote from there:
-        # LineUp
-        # … Same as ScrollLines (-1).
-        # ScrollLines
-        # … This function is currently only implemented under MSW and wx.TextCtrl
-        # under wxGTK (it also works for wx.Scrolled classes under all platforms).
-        return self.ScrollList(0, -self._get_scroll_offset())
-
-    def LineDown(self):
-        # Doesn't work on Linux, as described in https://docs.wxpython.org/wx.Window.html
-        # So use ScrollList instead.
-        # Quote from there:
-        # LineDown
-        # … Same as ScrollLines (1).
-        # ScrollLines
-        # … This function is currently only implemented under MSW and wx.TextCtrl
-        # under wxGTK (it also works for wx.Scrolled classes under all platforms).
-        return self.ScrollList(0, self._get_scroll_offset())
+    def _scroll_rows(self, rows):
+        """ScrollLines - so LineUp and LineDown - only works on Windows."""
+        if self.GetItemCount():
+            self.ScrollList(0, rows * self.GetItemRect(0).height)
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
@@ -146,10 +121,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
                     # Mouse is above the first item
-                    self.LineUp()
+                    self._scroll_rows(-1)
                 elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
                     # Mouse is after the last item
-                    self.LineDown()
+                    self._scroll_rows(1)
         else:
             # Screen position if item hovering over
             pos = index - self.GetScrollPos(_wx.VERTICAL)
@@ -157,10 +132,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                 # Over the first item, see if it's over the top half
                 rect = self.GetItemRect(index)
                 if y < rect.y + rect.height/2:
-                    self.LineUp()
+                    self._scroll_rows(-1)
             elif pos == self.GetCountPerPage():
                 # On last item/one that's not fully visible
-                self.LineDown()
+                self._scroll_rows(1)
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
