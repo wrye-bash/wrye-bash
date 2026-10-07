@@ -1551,8 +1551,14 @@ class StatusBarPage(_AFixedPage):
                 'args': join_launcher_args(launcher.exe_args)} | launcher_set
 
     def _on_hide(self, checked):
-        Link.Frame.statusBar.toggle_buttons_visible(**{'hide_ids' if checked
-            else 'unhide_ids': [self._selected_launcher]})
+        selected, status_bar = self._selected_launcher, Link.Frame.statusBar
+        launcher = BashStatusBar.all_sb_links[selected]
+        if checked or launcher.allow_create():
+            status_bar.toggle_buttons_visible(**{
+                'hide_ids' if checked else 'unhide_ids': [selected]})
+        else: # hidden launchers are not searched for - see app_button_factory
+            bass.settings['bash.statusbar.hide'].discard(selected)
+            status_bar.replace_button(selected, launcher.recreate())
         self._populate_launcher_listbox(keep_selection=True)
 
     def _on_filter(self, filter_key, checked):
@@ -1598,8 +1604,9 @@ class StatusBarPage(_AFixedPage):
             if not shown[button_type]: continue
             if (hidden := launcher_uid in hide) and not shown['hidden']:
                 continue
-            if (not_found := not launcher.allow_create()) and not shown[
-                    'not_found']: continue
+            # hidden launchers are not searched for, so not found either
+            if (not_found := not (hidden or launcher.allow_create())) and not \
+                    shown['not_found']: continue
             launchers.append(((self._type_order[button_type], label.lower()),
                 (launcher_uid, label, launcher.list_image(), not_found,
                  hidden)))
