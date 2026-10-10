@@ -97,13 +97,13 @@ def parse():
         'These arguments build a Bashed Patch without opening the '
         'main Wrye Bash window.')
     h = 'Build a Bashed Patch and exit without opening the main window.'
-    parser.add_argument('--build-bashed-patch', action='store_true',
-                        dest='buildBashedPatch', default=False, help=h)
+    patchGroup.add_argument('--build-bashed-patch', action='store_true',
+                            dest='buildBashedPatch', default=False, help=h)
     h = ('Name of the Bashed Patch plugin to build. Defaults to '
          "'Bashed Patch, 0.esp'.")
-    parser.add_argument('--bashed-patch-name', action='store',
-                        dest='bashedPatchName',
-                        default='Bashed Patch, 0.esp', help=h)
+    patchGroup.add_argument('--bashed-patch-name', action='store',
+                            dest='bashedPatchName',
+                            default='Bashed Patch, 0.esp', help=h)
 
     #### Individual Arguments ####
     parser.add_argument('-d', '--debug',

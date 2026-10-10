@@ -523,6 +523,11 @@ def main(opts: Namespace, help_urls):
         # Early setup is done, delegate to the main init method
         _main(opts, detected, restore_)
     except Exception as e:
+        if opts.buildBashedPatch: # no popups when headless, see below
+            bolt.deprint('Bashed Patch build failed:', traceback=True)
+            print(e)
+            sys.exit(2 if isinstance(e, (exception.BoltError,
+                exception.BootError, OSError, NotImplementedError)) else 1)
         # censored for the popups too, users post them
         caught_exc = bolt.censor_home(traceback.format_exc().rstrip())
         bolt.deprint(caught_exc, trace=False)

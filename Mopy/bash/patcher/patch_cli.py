@@ -23,7 +23,7 @@
 """Command line support for building a Bashed Patch."""
 from __future__ import annotations
 
-from .. import bass, bolt, wrye_text
+from .. import bass, bolt, load_order, wrye_text
 from ..exception import BoltError
 from ..wbtemp import TempDir, TempFile
 
@@ -55,13 +55,36 @@ def _initialize_backend(bush_game):
 
 def _get_target_patch(mod_infos, patch_name):
     if patch_name in mod_infos:
-        return mod_infos[patch_name]
-    created = mod_infos.create_new_mod(patch_name, selected=(),
-        wanted_masters=[], author_str='BASHED PATCH')
+        if not (patch_info := mod_infos[patch_name]).isBP():
+            raise BoltError(_('%(patch_name)s is not a Bashed Patch.') % {
+                'patch_name': patch_name})
+        return patch_info
+    # the refresh in create_new_mod would take a file of any extension
+    created = mod_infos.check_filename(patch_name) and \
+        mod_infos.create_new_mod(patch_name, selected=(),
+            wanted_masters=[], author_str='BASHED PATCH')
     if created is None:
         raise BoltError(_('Failed to create %(patch_name)s.') % {
             'patch_name': patch_name})
     return created
+
+def _check_masters(bashed_patch):
+    """Refuse to build if active plugins have missing or delinquent masters -
+    the GUI shows a MasterErrorsDialog instead."""
+    err_msgs = []
+    for bad_plugins, err_msg in (
+            (bashed_patch.active_mm, _(
+                'The following plugins have missing masters and are active. '
+                'This will cause the game to crash. Please disable them.')),
+            (bashed_patch.delinquent, _(
+                'These mods have delinquent masters, which means they load '
+                'before their masters. This is undefined behavior. Please '
+                'adjust your load order to fix this.'))):
+        if bad_plugins:
+            err_msgs.extend([err_msg, *(f' - {p}: {", ".join(m)}' for p, m
+                                        in bad_plugins.items()), ''])
+    if err_msgs:
+        raise BoltError('\n'.join(err_msgs))
 
 def _save_patch_file(patch_file):
     patch_file.fileInfo.makeBackup()
@@ -99,8 +122,15 @@ def build_bashed_patch_cli(patch_name, bush_game):
     from .patch_builder import build_bashed_patch, finalize_patch_log, \
         load_patcher_configs, prepare_patch_files, refresh_patch_files
     from .patch_files import PatchFile
+    is_new = patch_name not in mod_infos
     patch_info = _get_target_patch(mod_infos, patch_name)
     bashed_patch = PatchFile(patch_info, mod_infos)
+    try:
+        _check_masters(bashed_patch)
+    except BoltError:
+        # don't leave behind the empty patch we just created
+        if is_new: mod_infos.delete_op([patch_name], recycle=False)
+        raise
     patch_configs = patch_info.get_table_prop('bash.patch.configs', {})
     config_patchers = load_patcher_configs(bashed_patch, patch_configs)
     progress = HeadlessProgress(patch_name)
@@ -116,6 +146,13 @@ def build_bashed_patch_cli(patch_name, bush_game):
         _save_patch_file(patch_file)
     log_value = finalize_patch_log(patch_log, build_start)
     readme_html = _write_readme(log_value, patch_name, mod_infos)
-    refresh_patch_files(bashed_patch, patch_files, readme_html)
+    patch_names, _refreshed = refresh_patch_files(bashed_patch, patch_files,
+                                                  readme_html)
     mod_infos.save_pickle()
     bass.settings.save()
+    # Activate the parts of an active patch, as the GUI does
+    if len(patch_names) > 1 and load_order.cached_is_active(patch_name):
+        (_mas, _illegal, act_err), _ldiff = mod_infos.lo_toggle_active(
+            patch_names[1:], save_act=True)
+        if act_err:
+            raise BoltError(_('Unable to activate plugin') + f':\n{act_err}')
