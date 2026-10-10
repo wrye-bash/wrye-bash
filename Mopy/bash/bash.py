@@ -199,8 +199,10 @@ def _import_wx(opts, localize):
 _deps = {'chardet': 'chardet', **( # Only a dependency on Windows
     {'ifileoperation': 'ifileoperation'} if bolt.os_name == 'nt' else {}),
     'lz4': 'python-lz4', 'yaml': 'PyYAML', 'vdf': 'vdf'}
-_opt_deps = {'lxml': 'lxml', 'packaging': 'packaging', 'pyfiglet': 'pyfiglet',
-    'pymupdf': 'PyMuPDF', 'requests': 'requests', 'websocket': 'websocket'}
+_opt_deps = {'lxml': 'lxml', 'packaging': 'packaging', **( # not on Windows
+    {'pefile': 'pefile'} if bolt.os_name != 'nt' else {}), 'pyfiglet':
+    'pyfiglet', 'pymupdf': 'PyMuPDF', 'requests': 'requests',
+    'websocket': 'websocket'}
 # cached dependencies version strings, keyed by the display name
 _dep_versions = {}
 
@@ -374,11 +376,6 @@ def _parse_bash_ini(bash_ini_path):
                 'SkippedBashInstallersDirs', 'SoundError', 'SoundSuccess',
                 'xEditCommandLineArguments'], '')
         },
-        'Tool Options': {
-            'OblivionBookCreatorJavaArg': '-Xmx1024m',
-            'Tes4GeckoJavaArg': '-Xmx1024m', 'ShowTextureToolLaunchers': True,
-            'ShowModelingToolLaunchers': True, 'ShowAudioToolLaunchers': True
-        }
     }
     bass.inisettings.clear() #ini might be reinitialized due to restore failing
     for v in ini_set.values():
@@ -411,10 +408,9 @@ def _parse_bash_ini(bash_ini_path):
                     value = value.strip()
                 bass.inisettings[ini_settings_key] = value
             elif ci_section == 'Tool Options':
-                ##:(570) provisional - we want to stop specifying tool paths
-                # in the ini but we need some UI for that.
-                # Stash all settings in here in case they match tool path keys.
-                # Those are queried in lower case
+                ##:(734:570) only read to import the tool paths and the
+                # bShow*ToolLaunchers switches once, see InitStatusBar - stash
+                # them all, queried in lower case
                 bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------

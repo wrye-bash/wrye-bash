@@ -210,14 +210,11 @@ def get_local_app_data_path(submod):
             _('Folder path retrieved via $XDG_DATA_HOME (or fallback to '
               '~/.local/share)'))
 
+def get_app_icon(_target, _idex=0):
+    return None # no native way, see _launcher_icons in app_buttons
+
 def init_app_links(_apps_dir):
-    ##: Rework launchers so that they can work for Linux too
-    # The 'shortcuts' concept is hard for users to grasp anyways (remember how
-    # many people have trouble setting up a shortcut for QACing using xEdit!),
-    # so a better design would be e.g. using our settings dialog to add new
-    # launchers, similar to how MO2 does it - scratch that, I'm actually
-    # thinking about making this a separate tab to make it *super* easy
-    return []
+    return [] ##:(734:570) the Apps folder shortcuts are a Windows thing
 
 def testUAC(_gameDataPath):
     pass # Noop on Linux
@@ -342,10 +339,11 @@ class TaskDialog(object):
         raise EnvError(u'TaskDialog')
 
 class AppLauncher(_AppLauncher):
+    @set_cwd
     def launch_app(self, exe_path, exe_args):
         kw = dict(close_fds=True, env=os.environ.copy())
-        if os.access(exe_path, mode=os.X_OK):
-            # we could run this if we tried so let's do it
+        if exe_path.is_file() and os.access(exe_path, mode=os.X_OK):
+            # we could run this if we tried so let's do it - not folders
             return subprocess.Popen([exe_path.s, *exe_args], **kw)
         # not executable, calling xdg-open to figure this out (can't pass args)
         return subprocess.Popen([which('xdg-open'), exe_path.s], **kw)
@@ -363,10 +361,6 @@ class ExeLauncher(AppLauncher):
             return subprocess.Popen([_WINEPATH, exe_path.s, *exe_args],
                                     close_fds=True, env=os.environ.copy())
         return super().launch_app(exe_path, exe_args)
-
-class LnkLauncher(AppLauncher):
-    def allow_create(self):
-        return False  # wanting to run a windows .lnk on linux is an overkill
 
 def in_mo2_vfs() -> bool:
     return False # No native MO2 version

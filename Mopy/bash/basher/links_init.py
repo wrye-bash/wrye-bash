@@ -24,7 +24,6 @@
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 import os
-import shlex
 from itertools import chain
 
 from . import BSAList, INIList, InstallersList, InstallersPanel, MasterList, \
@@ -43,6 +42,7 @@ from .misc_links import *
 from .mod_links import *
 from .mods_links import *
 from .saves_links import *
+from .settings_dialog import launcher_settings
 # Rest of internal imports
 from .. import bass, bush
 from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
@@ -55,10 +55,29 @@ from ..gui import GuiImage, error_icons
 _is_oblivion = bush.game.fsName == 'Oblivion'
 _is_skyrim = bush.game.fsName == 'Skyrim'
 _j = os.path.join
+##:(734:570) the tool paths and shortcuts InitStatusBar imported - see
+# BashFrame._warn_imported_launchers
+imported_launchers: list[str] = []
 
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar buttons."""
+    ##:(734:570) on the first boot on this platform import the tool paths of
+    # bash.ini and the shortcuts of Mopy/Apps into the launcher settings
+    import_launchers = os_name not in bass.settings['bash.launchers']
+    launchers = launcher_settings() # creates the platform's settings
+    if import_launchers: ##:(734:570) and hide the launchers bash.ini hid
+        hide = bass.settings['bash.statusbar.hide']
+        shown = {g: bass.inisettings.get(f'show{g.lower()}toollaunchers',
+            'true').lower() in ('1', 'yes', 'true', 'on') for g in (
+            'Modeling', 'Texture', 'Audio')}
+        for group, tools in (('Modeling', modeling_tools_buttons),
+                ('Texture', texture_tool_buttons), ('Audio', audio_tools)):
+            if not shown[group]:
+                hide.update(tools)
+                imported_launchers.append(f'bShow{group}ToolLaunchers=False')
+        if not (shown['Modeling'] or shown['Texture']):
+            hide.add(nifskope[0])
     bad_icons = error_icons()
     __fp = GuiImage.from_path
     def _png_list(template):
@@ -76,8 +95,13 @@ def InitStatusBar():
         game_class.Xe.full_name for game_class in PatchGame.supported_games())
     xe_images = _png_list('tools/tes4edit%s.png')
     def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
-        app_launcher, app_name, path_kwargs, *cli_args = app_path_data
+        app_launcher, appname, path_kwargs, *cli_args = app_path_data
         uid = kwargs.setdefault('uid', app_key)
+        if import_launchers and app_key and ( ##:(734:570)
+                ini_path := bass.get_path_from_ini(app_key.lower())):
+            # whether it exists or not, as find_launcher used to
+            launchers[uid] = {'path': ini_path.s}
+            imported_launchers.append(f's{app_key}={ini_path}')
         if app_key in {'Steam', 'LOOT'}:
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
         elif uid == 'TESCS':
@@ -89,16 +113,16 @@ def InitStatusBar():
             list_img = _png_list(_j('tools', f'{app_key.lower()}%s.png'))
         if cli_args: # for tools defined in constants.py and TES4View/Trans
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
-        return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
-            list_img, app_name, **kwargs)
+        return clazz.app_button_factory(app_launcher, path_kwargs, list_img,
+                                        appname, **kwargs)
     all_links.append(_tool_args(None, (bush.game.Ck.exe,
-            bush.game.Ck.long_name, {'root_dirs': 'app'}), clazz=TESCSButton,
+            bush.game.Ck.long_name, {'root_dirs': 'app'},
+            *bush.game.Ck.se_args), clazz=TESCSButton,
         uid='TESCS', display_launcher=bool(bush.game.Ck.ck_abbrev)))
     # Launchers of tools ------------------------------------------------------
     all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
                      in oblivion_tools.items())
-    all_links.extend(_tool_args(k, (*v, *shlex.split(bass.inisettings[
-        f'{(u := k[:-4])}JavaArg'], posix=os_name != 'nt')), uid=u,
+    all_links.extend(_tool_args(k, v, uid=k[:-4],
         display_launcher=_is_oblivion) for k, v in oblivion_java_tools.items())
     all_links.extend(_tool_args(*tool, display_launcher=_is_skyrim,
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
@@ -111,7 +135,8 @@ def InitStatusBar():
         if xe_name == 'TES4Edit':
             # set the paths for TES4Trans/TES4View, supposing they are in the
             # same folder with TES4Edit - these are not specified in the ini
-            tes4_edit_dir = all_links[-1].app_path.head
+            # the game folder if TES4Edit is hidden, so it was not searched
+            tes4_edit_dir = all_links[-1].app_path.head or 'app'
             args = 'TES4View.exe', 'TES4View', {
                 'root_dirs': tes4_edit_dir}, '-TES4', '-view'
             all_links.append(_tool_args('TES4ViewPath', args, uid='TES4View',
@@ -127,29 +152,28 @@ def InitStatusBar():
     all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
         for tool, cls, dipl in zip(loot_bosh.items(), (AppLOOT, AppBOSS), (
             bush.game.loot_game_name, bush.game.boss_game_name)))
-    show_model = bass.inisettings['ShowModelingToolLaunchers']
-    all_links.extend(_tool_args(*mt, display_launcher=show_model) for mt in
-                     modeling_tools_buttons.items())
-    show_texture = bass.inisettings['ShowTextureToolLaunchers']
-    all_links.append(_tool_args(*nifskope, # Nifskope
-                                display_launcher=show_model or show_texture))
-    all_links.extend(_tool_args(*tt, display_launcher=show_texture) for tt in
-                     texture_tool_buttons.items())
-    all_links.extend(_tool_args(*at, display_launcher=bass.inisettings[
-        'ShowAudioToolLaunchers']) for at in audio_tools.items())
-    all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
-    #--Custom Apps
-    for pth, img_path, shortcut_desc in init_app_links(
-            bass.dirs['mopy'].join('Apps')):
-        if img_path is None:
-            imgs = bad_icons # use the 'x' icon
-        else:
-            imgs = [__fp(p, GuiImage.img_types['.ico'], x) for x, p in
-                    zip((16, 24, 32), img_path)]
-        #target.stail would keep the id on renaming the .lnk but this is unique
-        app_key = pth.stail.lower()
-        all_links.append(LnkButton(pth, imgs, shortcut_desc, app_key,
-                                   canHide=False))
+    all_links.extend(_tool_args(*tool) for tool in chain(
+        modeling_tools_buttons.items(), [nifskope],
+        texture_tool_buttons.items(), audio_tools.items(), misc_tools.items()))
+    #--Custom Launchers - the uids of the launcher settings that are not
+    # predefined (the ones with no path are leftovers of dropped ones)
+    predefined = {li.uid for li in all_links}
+    if import_launchers: ##:(734:570) the Apps shortcuts become custom ones
+        order = bass.settings['bash.statusbar.order']
+        for lnk, target, *lnk_data in init_app_links(
+                bass.dirs['mopy'].join('Apps')):
+            if (launcher_name := lnk.sbody) in predefined:
+                launcher_name = f'{launcher_name} ({lnk.stail})'
+            launchers[launcher_name] = {k: v for k, v in zip(('path', 'args',
+                'start_in', 'icon'), (target.s, *lnk_data)) if v}
+            # keep the position of the shortcut's button, its uid was the
+            # lowercase file name
+            if (lnk_uid := lnk.stail.lower()) in order:
+                order[order.index(lnk_uid)] = launcher_name
+            imported_launchers.append(lnk.s)
+    all_links.extend(AppButton.app_button_factory(uid=launcher_uid) for
+        launcher_uid, launcher_set in launchers.items() if launcher_uid not in
+        predefined and 'path' in launcher_set)
     #--Final couple
     all_links.append(DocBrowserButton('DocBrowser'))
     all_links.append(PluginCheckerButton('ModChecker'))

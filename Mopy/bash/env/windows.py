@@ -310,7 +310,7 @@ class _LegacyWindowsStoreFinder(object):
     }
 
     def __init__(self):
-        self.info_cache = {} # app_name -> _LegacyWinAppInfo
+        self.info_cache = {} # package_name -> _LegacyWinAppInfo
 
     @staticmethod
     def _read_registry_string(reg_key, string_name):
@@ -398,7 +398,7 @@ class _LegacyWindowsStoreFinder(object):
         return parts[1]
 
     @staticmethod
-    def _get_manifest_info(mutable_location, app_name):
+    def _get_manifest_info(mutable_location, appname):
         version = None
         entry_point = u''
         try:
@@ -412,7 +412,7 @@ class _LegacyWindowsStoreFinder(object):
             entry_template = u'./{%s}Applications/{%s}Application[@Id]' \
                              u'[@EntryPoint][@Executable]'
             # First get the version
-            identity = root.find(version_template % (namespace, app_name))
+            identity = root.find(version_template % (namespace, appname))
             if identity is not None:
                 # NOTE: `if identity` throws a FutureWarning
                 version = identity.get(u'Version')
@@ -425,11 +425,11 @@ class _LegacyWindowsStoreFinder(object):
             pass
         return version, entry_point
 
-    def get_app_info(self, app_name, publisher_name=None):
+    def get_app_info(self, appname, publisher_name=None):
         """Public interface: returns a _LegacyWinAppInfo object with all applicable
         information about the application."""
         publisher_id = self._developer_ids.get(publisher_name)
-        package_name = f'{app_name}_{publisher_id}'
+        package_name = f'{appname}_{publisher_id}'
         try:
             return self.info_cache[package_name]
         except KeyError:
@@ -449,7 +449,7 @@ class _LegacyWindowsStoreFinder(object):
             install_time = self._get_package_install_time(package_name,
                                                           full_name)
             version, entry_point = self._get_manifest_info(mutable_location,
-                                                           app_name)
+                                                           appname)
             if not version:
                 version = self._get_package_version_from_full_name(full_name)
             version = _parse_version_string(version)
@@ -1077,62 +1077,54 @@ def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
-    """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
+def get_app_icon(target: _Path, idex=0) -> _Path | None:
+    """Return the location of the icon Windows displays for target, as an
+    'icon file;index' Path that wx loads as an .ico (see _BmpFromIcoPath), or
+    None if there is no such file - for exes and dlls the idex-th icon."""
+    if target.cext in ('.exe', '.dll'):
+        if win32gui and idex < win32gui.ExtractIconEx(target.s, -1):
+            # -1 queries num of icons embedded in the exe
+            icon_path = target
+        else: # generic exe icon, hardcoded and good to go
+            icon_path, idex = _GPath(os.path.expandvars(
+                r'%SystemRoot%\System32\shell32.dll')), '2'
+    else: # the icon of the file type (or of folders)
+        icon_path, idex = _get_default_app_icon(idex, target)
+    return _GPath(f'{icon_path.s};{idex}') if icon_path.exists() else None
+
+def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str, str, str]]:
+    """Read the shortcuts (.lnk files) in the Mopy/Apps folder - Windows only!
+    ##:(734:570) Only used to import them as custom launchers once, see
+    InitStatusBar.
 
     :param apps_dir: the absolute Path to Mopy/Apps folder
-    :return: a list of shortcut properties (exe_path, icon_path, descr)."""
-    init_params = []
-    shortcuts = {}
+    :return: a list of (shortcut, target, arguments, working dir, icon)
+        tuples, for the shortcuts whose target exists - msi shortcuts target
+        the shortcut itself."""
+    shortcuts = []
     try:
-        try:
-            sh = win32client.Dispatch('WScript.Shell')
-            for lnk in top_level_files(apps_dir):
-                if lnk.fn_ext == '.lnk':
-                    lnk = apps_dir.join(lnk)
-                    shortcut = sh.CreateShortCut(lnk.s)
-                    descr = shortcut.Description
-                    if not descr:
-                        descr = None # means 'use filename'
-                    shortcuts[lnk] = (shortcut.TargetPath,
-                        # shortcut.WorkingDirectory, shortcut.Arguments,
-                        shortcut.IconLocation, descr)
-        except:
-            _deprint('Error initializing shortcuts:', traceback=True)
-    except AttributeError:
-        pass  # win32client is None
-    for path, (target, win_icon_location, shortcut_descr) in shortcuts.items():
-        # msi shortcuts: dc0c8de
-        target = path if target.lower().find(r'installer\{') != -1 else _GPath(
-            target)
-        if not target.exists(): continue
-        # Target exists - extract path, icon and shortcut_descr
-        # First try a custom icon - undocumented! let it stay so as we will
-        # eventually nuke the Apps folder - we can always allow pointing to
-        # a custom icon once we have a "Launchers" page in settings
-        custom_icon_paths = [apps_dir.join(f'{path.sbody}{x}.png') for x in
-                             (16, 24, 32)]
-        if not custom_icon_paths[0].exists(): # try the shortcut specified icon
-            win_icon_path, idex = win_icon_location.split(',')
-            if win_icon_path == '':
-                if target.cext == u'.exe':
-                    if win32gui and win32gui.ExtractIconEx(target.s, -1):
-                        # -1 queries num of icons embedded in the exe
-                        win_icon_path = target
-                    else: # generic exe icon, hardcoded and good to go
-                        win_icon_path, idex = _GPath(os.path.expandvars(
-                            r'%SystemRoot%\System32\shell32.dll')), '2'
-                else:
-                    win_icon_path, idex = _get_default_app_icon(idex, target)
-            else:
-                win_icon_path = _GPath(win_icon_path)
-            if win_icon_path.exists():
-                g_path = _GPath(';'.join((win_icon_path.s, idex)))  ##: huh?
-                custom_icon_paths = [g_path] * 3
-            else:
-                custom_icon_paths = None
-        init_params.append((path, custom_icon_paths, shortcut_descr))
-    return init_params
+        sh = win32client.Dispatch('WScript.Shell')
+        for lnk in top_level_files(apps_dir):
+            if lnk.fn_ext != '.lnk': continue
+            lnk = apps_dir.join(lnk)
+            shortcut = sh.CreateShortCut(lnk.s)
+            target, lnk_args = shortcut.TargetPath, shortcut.Arguments
+            start_in = shortcut.WorkingDirectory
+            if target.lower().find(r'installer\{') != -1: # msi: dc0c8de
+                target, lnk_args, start_in = lnk, '', ''
+            elif not (target := _GPath(target)).exists():
+                continue
+            # 'path,index' - skip the icon of the target, displayed anyway
+            icon = os.path.expandvars(shortcut.IconLocation)
+            if (png := apps_dir.join(f'{lnk.sbody}32.png')).exists():
+                icon = png.s # the undocumented custom icons of the Apps folder
+            elif not (icon_path := icon.rpartition(',')[0]) or _GPath(
+                    icon_path) == target:
+                icon = ''
+            shortcuts.append((lnk, target, lnk_args, start_in, icon))
+    except Exception:
+        _deprint('Error reading the Apps folder shortcuts:', traceback=True)
+    return shortcuts
 
 @functools.cache
 def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
@@ -1649,6 +1641,7 @@ class TaskDialog(object):
 
 class AppLauncher(_AppLauncher):
 
+    @set_cwd
     def launch_app(self, exe_path, exe_args):
         args = shlex.join(exe_args)
         try:
@@ -1658,11 +1651,7 @@ class AppLauncher(_AppLauncher):
             # Requires elevated permissions
             os.startfile(exe_path.s, 'runas', args)
         except NotImplementedError:
-            self._webbrowser(exe_path)
-
-    @set_cwd
-    def _webbrowser(self, exe_path):
-        webbrowser.open(exe_path.s)
+            webbrowser.open(exe_path.s)
 
 # Exe and shortcut launchers --------------------------------------------------
 class ExeLauncher(AppLauncher):
@@ -1674,15 +1663,10 @@ class ExeLauncher(AppLauncher):
         except WindowsError as werr:
             if werr.winerror != 740: raise
             os.startfile(exe_path.s, 'runas', shlex.join(exe_args),
-                         exe_path.head.s, 1)
+                         os.getcwd(), 1) # elevated, it won't inherit our cwd
 
     def _run_exe(self, exe_path: _Path, exe_args) -> Popen:
         return Popen([exe_path.s, *exe_args], close_fds=True)
-
-class LnkLauncher(AppLauncher):
-
-    def launch_app(self, exe_path, exe_args):
-        webbrowser.open(exe_path.s)
 
 @functools.cache
 def in_mo2_vfs() -> bool:
