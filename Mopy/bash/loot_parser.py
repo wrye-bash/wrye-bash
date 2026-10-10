@@ -69,17 +69,17 @@ class LOOTParser:
                  '_masterlist', '_userlist', '_taglist', '_tagCache')
 
     def __init__(self, game_info, bass_dirs):
-        """Initialize a LOOTParser instance with the three specified
-        masterlist paths. These will be cached via AFile and updated when
-        refreshBashTags is called. Note that the order in which we read them
-        is masterlist (+ userlist if present), then taglist if masterlist is
-        not present."""
+        """Initialize a LOOTParser instance with the LOOT masterlist and
+        userlist of the specified game and Bash's own taglist. These will be
+        cached via AFile and updated when refreshBashTags is called. Note that
+        the order in which we read them is masterlist (+ userlist if present),
+        then taglist if masterlist is not present."""
         # the path to Bash's own cached masterlists - those must always exist
         taglist_path = bass_dirs['taglists'].join('taglist.yaml')
         # Setup loot_parser, needs to be done after the dirs are initialized
         loot_gname = game_info.loot_dir
         loot_folder = bass_dirs['local_appdata'].join('LOOT')
-        # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
+        # Since LOOT v0.18, games are in LOOT\games\<game>, try that first
         loot_path = loot_folder.join('games', loot_gname)
         if not loot_path.is_dir():
             # Fall back to the 'legacy' path (LOOT\<game>)
