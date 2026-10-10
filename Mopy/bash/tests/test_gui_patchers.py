@@ -155,6 +155,25 @@ def test_tweak_population(panels, first_load):
     # Populating an enabled tweak must not enable a disabled tweak panel.
     panel._enable_self.assert_not_called()
 
+@pytest.mark.parametrize('is_tweak', [False, True])
+def test_list_check_counts_hidden_items(panels, is_tweak):
+    # Unchecking the visible entries must not disable a patcher that still
+    # has checked entries hidden by the search.
+    if is_tweak:
+        visible = SimpleNamespace(isEnabled=True)
+        hidden = SimpleNamespace(isEnabled=True)
+        panel = _population_panel(panels._TweakPatcherPanel, [visible])
+    else:
+        visible, hidden = FName('Visible.esp'), FName('Hidden.esp')
+        panel = _population_panel(panels._ListPatcherPanel, [visible])
+        panel._item_config = {visible: True, hidden: True}
+    panel._all_items = [visible, hidden]
+    panel.gList.lb_is_checked_at_index.return_value = False
+    panel._on_list_check()
+    assert not panel._is_item_checked(visible)
+    assert panel._is_item_checked(hidden)
+    panel._enable_self.assert_called_once_with(True)
+
 @pytest.mark.parametrize('panel_name', ['_ListPatcherPanel',
                                       '_TweakPatcherPanel'])
 def test_empty_population(panels, panel_name):

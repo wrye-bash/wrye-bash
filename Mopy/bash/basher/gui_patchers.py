@@ -156,7 +156,7 @@ class _ListPanel(_PatcherPanel):
         """One of list items was un/checked."""
         for i, item in enumerate(self._curr_items):
             self._set_item_checked(item, self.gList.lb_is_checked_at_index(i))
-        self._enable_self(any(map(self._is_item_checked, self._curr_items)))
+        self._enable_self(any(map(self._is_item_checked, self._all_items)))
 
     def _get_glist(self):
         self.gList = CheckListBox(self)
@@ -298,7 +298,9 @@ class _ChoiceMenuMixin(_ListPanel):
     def _right_mouse_click(self, pos): self.mouse_pos = pos
 
     def _right_mouse_up(self, lb_selection_dex):
-        if self.mouse_pos: self.ShowChoiceMenu(lb_selection_dex)
+        # wx reports -1 for a click below the last item
+        if self.mouse_pos and 0 <= lb_selection_dex < len(self._curr_items):
+            self.ShowChoiceMenu(lb_selection_dex)
         # return
 
     def _handle_mouse_motion(self, wrapped_evt, lb_dex: int):
