@@ -514,6 +514,11 @@ def main(opts: Namespace):
         # Early setup is done, delegate to the main init method
         _main(opts, localize, detected, restore_)
     except Exception as e:
+        if opts.buildBashedPatch: # no popups when headless, see below
+            bolt.deprint('Bashed Patch build failed:', traceback=True)
+            print(e)
+            sys.exit(2 if isinstance(e, (exception.BoltError,
+                exception.BootError, OSError, NotImplementedError)) else 1)
         print(caught_exc := traceback.format_exc()) # into the BashBugDump
         # Only the templates go through %-formatting - the BootError messages
         # and the tracebacks/environment dump may well contain a '%'
