@@ -100,33 +100,41 @@ class GuiImage(Lazy):
         else:
             return _BmpFromPath(img_path, iconSize, img_type, quality)
 
-class _SvgFromPath(GuiImage):
-    """Wrap an svg."""
+class _BitmapBundle(GuiImage):
+    """The image at iconSize and at the DPI scaled size, as a wx.BitmapBundle
+    - wx would upscale a lone bitmap by a whole factor (3x at 250%), which
+    blurs it and makes it too big for its button."""
     _native_widget: _wx.BitmapBundle.FromBitmaps
+
+    @property
+    def _native_widget(self):
+        if not self._is_created():
+            self._cached_args = self._bitmaps(),
+        return super()._native_widget
+
+    def _bitmaps(self) -> list[_wx.Bitmap]:
+        raise NotImplementedError
+
+class _SvgFromPath(_BitmapBundle):
+    """Wrap an svg."""
 
     def __init__(self, *args, **kwargs):
         self._svg_data = None
         self._cached_svg_vars = {}
         super().__init__(*args, **kwargs)
 
-    @property
-    def _native_widget(self):
-        if not self._is_created():
-            if (svg_data := self._svg_data) is None:
-                with open(self._img_path, 'rb') as ins:
-                    svg_data = ins.read()
-            for var_name, var_value in self._svg_vars().items():
-                var_bytes = b'var(--' + var_name + b')'
-                if var_bytes in svg_data:
-                    svg_data = svg_data.replace(var_bytes, var_value)
-            svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
-            # Use a bitmap bundle so we get an actual high-res asset at high
-            # DPIs, rather than wx deciding to scale up the low-res asset
-            wanted_svgs = [svg_img.ConvertToScaledBitmap((s, s))
-                           for s in (self.iconSize, scaled(self.iconSize))]
-            self._cached_args = (wanted_svgs,)
-        return super()._native_widget
-    
+    def _bitmaps(self):
+        if (svg_data := self._svg_data) is None:
+            with open(self._img_path, 'rb') as ins:
+                svg_data = ins.read()
+        for var_name, var_value in self._svg_vars().items():
+            var_bytes = b'var(--' + var_name + b')'
+            if var_bytes in svg_data:
+                svg_data = svg_data.replace(var_bytes, var_value)
+        svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
+        return [svg_img.ConvertToScaledBitmap((s, s)) for s in
+                (self.iconSize, scaled(self.iconSize))]
+
     def composite(self, base_svg, *layer_svgs: str | Path):
         """Create a composite SVG image, by combining elements from the given
         layers, with the first layer being the lowest layer.
@@ -184,45 +192,22 @@ class IcoFromPng(GuiImage):
         native.CopyFromBitmap(native_bmp)
         return native
 
-class _IcoFromPath(GuiImage):
-    """Only used internally in _BmpFromIcoPath."""
-    _native_widget: _wx.Icon
+class _BmpFromIcoPath(_BitmapBundle): ##: .ico only in InitStatusBar (Custom Apps)
+    """An .ico, or the icon of an exe or dll ('path;index')."""
 
-    @property
-    def _native_widget(self):
-        if self._is_created(): return self._cached_widget
-        self._cached_args = self._img_path, self._img_type, self.iconSize, \
-            self.iconSize
-        widget = super()._native_widget
-        # we failed to get the icon? (when display resolution changes)
-        ##: Ut: I (hope I) carried previous logic to new API but is there a
-        # better way (and/or any leaks)?
-        if not all(self.get_img_size()):
-            self._cached_args = self._img_path, _wx.BITMAP_TYPE_ICO
-            self.native_destroy()
-            return super()._native_widget
-        return widget
+    def _bitmaps(self):
+        return [_wx.Bitmap(self._icon_image(s)) for s in
+                (self.iconSize, scaled(self.iconSize))]
 
-class _BmpFromIcoPath(GuiImage): ##: .ico only in InitStatusBar (Custom Apps)
-    _native_widget: _wx.Bitmap
-
-    @property
-    def _native_widget(self):
-        if self._is_created(): return self._cached_widget
-        img_ico = _IcoFromPath(self._img_path, self.iconSize, self._img_type)
-        w, h = img_ico.get_img_size()
-        self._cached_args = w, h
-        native = super()._native_widget
-        native.CopyFromIcon(self._resolve(img_ico))
-        # Hack - when user scales windows display icon may need scaling
-        if (self.iconSize != -1 and w != self.iconSize or
-            h != self.iconSize): # rescale !
-            scaled = native.ConvertToImage().Scale(self.iconSize,
-                self.iconSize, _wx.IMAGE_QUALITY_HIGH)
-            self._cached_args = scaled,
-            self.native_destroy()
-            return super()._native_widget
-        return native
+    def _icon_image(self, size: int) -> _wx.Image:
+        ico = _wx.Icon(self._img_path, self._img_type, size, size)
+        if not ico.IsOk(): # wx loads only the system icon sizes from exes
+            ico = _wx.Icon(self._img_path, self._img_type)
+        bmp = _wx.Bitmap()
+        bmp.CopyFromIcon(ico)
+        img = bmp.ConvertToImage()
+        return img if img.GetSize() == (size, size) else img.Scale(size, size,
+            _wx.IMAGE_QUALITY_HIGH)
 
 class ImgFromPath(GuiImage):
     """Used internally in _BmpFromPath but also used to create a wx.Image
@@ -248,25 +233,18 @@ class ImgFromPath(GuiImage):
     def save_bmp(self, imagePath, exten='.jpg'):
         return self._native_widget.SaveFile(imagePath, self.img_types[exten])
 
-class _BmpFromPath(GuiImage):
-    _native_widget: _wx.BitmapBundle.FromBitmaps
+class _BmpFromPath(_BitmapBundle):
 
-    @property
-    def _native_widget(self):
-        # Pass wx.Image to wx.Bitmap
+    def _bitmaps(self):
         base_img: _wx.Image = self._resolve(ImgFromPath(self._img_path,
             imageType=self._img_type))
         scaled_imgs = [base_img]
         if self.iconSize != -1:
-            # If we can, also add a scaled-up version so wx stops trying to
-            # scale this by itself - using a higher-res image here if we have
-            # one would be better, but that would be very difficult to
-            # implement, something for the (far) future
+            # a higher-res image would be better than scaling up, if we had one
             wanted_size = scaled(self.iconSize)
             scaled_imgs.append(base_img.Scale(wanted_size, wanted_size,
                 quality=_wx.IMAGE_QUALITY_HIGH))
-        self._cached_args = (list(map(_wx.Bitmap, scaled_imgs)),)
-        return super()._native_widget
+        return [*map(_wx.Bitmap, scaled_imgs)]
 
 class BmpFromStream(GuiImage):
     """Call init directly - hmm."""

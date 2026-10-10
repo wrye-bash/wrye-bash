@@ -50,7 +50,7 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
 from ..bolt import os_name
 from ..env import init_app_links
 from ..game.patch_game import PatchGame
-from ..gui import GuiImage, get_image
+from ..gui import GuiImage, error_icons
 
 _is_oblivion = bush.game.fsName == 'Oblivion'
 _is_skyrim = bush.game.fsName == 'Skyrim'
@@ -59,7 +59,7 @@ _j = os.path.join
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar buttons."""
-    badIcons = [get_image('error_cross.16')] * 3 ##: 16, 24, 32?
+    bad_icons = error_icons()
     __fp = GuiImage.from_path
     def _png_list(template):
         return [__fp(template % i, iconSize=i) for i in (16, 24, 32)]
@@ -82,7 +82,7 @@ def InitStatusBar():
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
         elif uid == 'TESCS':
             list_img = _png_list(f'tools/{imn}') if (
-                imn := bush.game.Ck.image_name) else badIcons
+                imn := bush.game.Ck.image_name) else bad_icons
         elif app_key[:-4] in all_xes: # chop off 'Path'
             list_img = xe_images
         else:
@@ -142,7 +142,7 @@ def InitStatusBar():
     for pth, img_path, shortcut_desc in init_app_links(
             bass.dirs['mopy'].join('Apps')):
         if img_path is None:
-            imgs = badIcons # use the 'x' icon
+            imgs = bad_icons # use the 'x' icon
         else:
             imgs = [__fp(p, GuiImage.img_types['.ico'], x) for x, p in
                     zip((16, 24, 32), img_path)]
