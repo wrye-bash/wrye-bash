@@ -39,7 +39,7 @@ from itertools import chain
 
 from . import BashFrame, INIList, Installers_Link, InstallersDetails
 from .belt import InstallerWizard, generateTweakLines
-from .dialogs import SyncFromDataEditor
+from .dialogs import SyncFromDataEditor, SyncFromGameRootEditor
 from .files_links import File_Duplicate
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
@@ -56,6 +56,7 @@ __all__ = ['Installer_Duplicate',
            'Installer_OpenSearch', 'Installer_CaptureFomodOutput',
            'Installer_OpenTESA', 'Installer_Hide',
            u'Installer_Refresh', u'Installer_Move', u'Installer_HasExtraData',
+           'Installer_InstallToGameRoot',
            u'Installer_OverrideSkips', u'Installer_SkipVoices',
            u'Installer_SkipRefresh', u'Installer_Wizard',
            u'Installer_EditWizard', u'Installer_OpenReadme',
@@ -63,7 +64,8 @@ __all__ = ['Installer_Duplicate',
            'Installer_ArchiveMenu', 'InstallerConverter_Create',
            u'InstallerConverter_ConvertMenu', u'InstallerProject_Pack',
            u'InstallerArchive_Unpack', u'InstallerProject_ReleasePack',
-           u'Installer_CopyConflicts', u'Installer_SyncFromData' ,
+           u'Installer_CopyConflicts', u'Installer_SyncFromData',
+           'Installer_SyncFromGameRoot',
            u'InstallerProject_OmodConfig', u'Installer_ListStructure',
            u'Installer_Espm_SelectAll', u'Installer_Espm_DeselectAll',
            u'Installer_Espm_List', u'Installer_Espm_Rename',
@@ -494,6 +496,42 @@ class Installer_HasExtraData(CheckLink, _RefreshingLink):
         """Toggle hasExtraData installer attribute"""
         self._selected_info.hasExtraData ^= True
         super(Installer_HasExtraData, self).Execute()
+
+
+class Installer_InstallToGameRoot(CheckLink, _RefreshingLink):
+    """Toggle install_to_game_root flag on installer (#632)."""
+    _text = _('Install to Game Root')
+    _help = _('Install this package to the game folder (the folder '
+              'containing the game executable) instead of the '
+              '%(data_folder)s folder. Can only be changed while the package '
+              'is not installed.') % {'data_folder': bush.game.mods_dir_name}
+
+    def _enable(self):
+        # The files an installed package installed would be left behind
+        return super()._enable() and not self._selected_info.is_active
+
+    def _check(self):
+        # we want the checkmark for the installed packages too
+        return super()._enable() and self._selected_info.install_to_game_root
+
+    @balt.conversation
+    def Execute(self):
+        inst = self._selected_info
+        inst.install_to_game_root ^= True
+        self.idata.hasChanged = True  # the refresh below might not do it
+        with balt.Progress(title=self._text) as progress:
+            # The structure of the package depends on where it installs to
+            dest_src = inst._reset_cache(inst._stat_tuple(), progress=progress)
+            if inst.overrideSkips:
+                self.idata.update_for_overridden_skips(set(dest_src), progress)
+            if inst.install_to_game_root:
+                # We do not scan the game folder, so check if the files of
+                # the package are already there
+                self.idata.update_data_SizeCrcDate(set(dest_src), progress,
+                                                   game_root=True)
+            self.idata.refresh_ns(progress=progress)
+        self.window.RefreshUI()
+
 
 class Installer_OverrideSkips(CheckLink, _RefreshingLink):
     """Toggle overrideSkips flag on installer."""
@@ -1140,8 +1178,10 @@ class InstallerArchive_Unpack(_ArchiveOnly):
                     SubProgress(progress, 0, 0.8))
                 if not count_unpacked:
                     continue # no files were unpacked - stat would fail below
-                self.idata.new_info(project, SubProgress(progress, 0.8, 0.99),
+                new_proj = self.idata.new_info(
+                    project, SubProgress(progress, 0.8, 0.99),
                     install_order=installer.order + 1, do_refresh=False)
+                new_proj.copy_install_root(installer)
                 projects.append(project)
             if not projects: return
             self.idata.refresh_ns()
@@ -1167,9 +1207,14 @@ class Installer_SyncFromData(_SingleInstallable):
     _help = _('Synchronize a package with files from the %(data_folder)s '
               'folder.') % {'data_folder': bush.game.mods_dir_name}
 
+    _sync_editor = SyncFromDataEditor
+    _from_game_root = False  # sync from the game folder instead of Data
+
     def _enable(self):
-        return super()._enable() and bool(self._selected_info.missingFiles or
-            self._selected_info.mismatchedFiles)
+        sel_inf = self._selected_info
+        return (super()._enable() and
+                sel_inf.install_to_game_root == self._from_game_root and
+                bool(sel_inf.missingFiles or sel_inf.mismatchedFiles))
 
     def Execute(self):
         was_rar = self._selected_item != (
@@ -1183,7 +1228,7 @@ class Installer_SyncFromData(_SingleInstallable):
             return # user clicked 'No'
         missing = sorted(self._selected_info.missingFiles)
         mismatched = sorted(self._selected_info.mismatchedFiles)
-        ed_ok, ed_missing, ed_mismatched = SyncFromDataEditor.display_dialog(
+        ed_ok, ed_missing, ed_mismatched = self._sync_editor.display_dialog(
             self.window, pkg_missing=missing, pkg_mismatched=mismatched,
             pkg_name=self._selected_item)
         if not ed_ok or (not ed_missing and not ed_mismatched):
@@ -1219,8 +1264,20 @@ class Installer_SyncFromData(_SingleInstallable):
                     is_proj=False, do_refresh=False,
                     install_order=self._selected_info.order + 1)
                 created_package.is_active = self._selected_info.is_active
+                created_package.copy_install_root(self._selected_info)
             self.idata.refresh_ns(progress=SubProgress(progress, 0.9, 0.99))
             self.window.RefreshUI()
+
+
+class Installer_SyncFromGameRoot(Installer_SyncFromData):
+    """Synchronize a package that installs to the game root with files from
+    the game folder."""
+    _text = _('Sync From Game Root…')
+    _help = _('Synchronize a package marked "Install to Game Root" with files '
+              'from the game folder (the folder containing the game '
+              'executable).')
+    _sync_editor = SyncFromGameRootEditor
+    _from_game_root = True
 
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(_SingleProject):
@@ -1258,9 +1315,12 @@ class InstallerProject_Pack(_SingleProject):
                                     blockSize, SubProgress(progress, 0, 0.8),
                                     release=self.__class__.release)
             #--Add the new archive to Bash
-            iArchive = self.idata.new_info(archive_name, progress,
-                is_proj=False, install_order=installer.order + 1)
+            iArchive = self.idata.new_info(
+                archive_name, progress, is_proj=False,
+                install_order=installer.order + 1, do_refresh=False)
             iArchive.blockSize = blockSize
+            iArchive.copy_install_root(installer)
+            self.idata.refresh_ns()
         self.window.RefreshUI(detail_item=archive_name)
 
 #------------------------------------------------------------------------------

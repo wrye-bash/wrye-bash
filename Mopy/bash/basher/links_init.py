@@ -289,6 +289,7 @@ def InitInstallerLinks():
     InstallersList.context_links.append_link(Installer_QuickRefresh())
     InstallersList.context_links.append_link(Installer_Move())
     InstallersList.context_links.append_link(Installer_SyncFromData())
+    InstallersList.context_links.append_link(Installer_SyncFromGameRoot())
     InstallersList.context_links.append_link(SeparatorLink())
     InstallersList.context_links.append_link(Installer_InstallSmart())
     if True: #--Advanced Installation
@@ -322,6 +323,7 @@ def InitInstallerLinks():
         package_menu.links.append_link(Installer_ListStructure())
         package_menu.links.append_link(Installer_CopyConflicts())
         package_menu.links.append_link(SeparatorLink())
+        package_menu.links.append_link(Installer_InstallToGameRoot())
         package_menu.links.append_link(Installer_HasExtraData())
         package_menu.links.append_link(Installer_OverrideSkips())
         package_menu.links.append_link(Installer_SkipVoices())

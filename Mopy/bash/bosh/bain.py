@@ -141,7 +141,8 @@ class Installer(ListInfo):
         'fileSizeCrcs', 'bain_type', 'is_active', 'subNames', 'subActives',
         'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
-        'blockSize', 'overrideSkips', '_remaps', 'skipRefresh', 'fileRootIdex')
+        'blockSize', 'overrideSkips', '_remaps', 'skipRefresh', 'fileRootIdex',
+        'install_to_game_root')
     volatile = ( # used when copying the installer do *not* add _file_key here
         'ci_dest_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
         'missingFiles', 'mismatchedFiles', 'project_refreshed', 'unSize',
@@ -190,6 +191,13 @@ class Installer(ListInfo):
         f'(?:{"|".join(map(re.escape, _top_files_extensions))})$', re.I)
     _re_top_plus_docs = re.compile(
         f'(?:{"|".join(map(re.escape, _top_files_plus_docs))})$', re.I)
+    # Same as the two above, plus dlls and exes - for packages that install to
+    # the game root (ENB, ReShade, script extenders etc. come with binaries
+    # that go next to the game exe)
+    _re_top_extensions_game_root = re.compile('(?:%s)$' % '|'.join(map(
+        re.escape, {*_top_files_extensions, '.dll', '.exe'})), re.I)
+    _re_top_plus_docs_game_root = re.compile('(?:%s)$' % '|'.join(map(
+        re.escape, {*_top_files_plus_docs, '.dll', '.exe'})), re.I)
     # Extensions of strings files - automatically built from game constants
     _strings_extensions = {os.path.splitext(x[1])[1].lower()
                            for x in bush.game.Esp.stringsFiles}
@@ -282,6 +290,7 @@ class Installer(ListInfo):
         #--User Only
         self.skipVoices = False
         self.hasExtraData = False
+        self.install_to_game_root = False
         self.overrideSkips = False
         self.skipRefresh = False    # Projects only
         self.comments = u''
@@ -332,6 +341,11 @@ class Installer(ListInfo):
         """Return True if this package has a recognized BAIN type (i.e. is not
         a corrupt or unrecognized package)."""
         return self.bain_type not in (-1, 0)
+
+    def _game_root_loose_layout_ok(self):
+        """Packages that install to the game root need not have a recognized
+        structure - their files are installed the way they are laid out."""
+        return self.install_to_game_root and not self.is_corrupt_package
 
     @property
     def is_corrupt_package(self):
@@ -430,6 +444,8 @@ class Installer(ListInfo):
         self.fn_key = '' # reset self.fn_key to '' to remove self in _load_dat
 
     def __setstate(self,values):
+        # zip stops at the shorter one - persistent attributes that were added
+        # after the pickle was saved (install_to_game_root) keep their defaults
         for a, v in zip(self.persistent, values[1:]):
             setattr(self, a, v)
         rescan = False
@@ -757,8 +773,12 @@ class Installer(ListInfo):
                            __skip_exts: frozenset[str] = skipExts):
         """Update self.ci_dest_sizeCrc and related variables and return
         dest_src map for install operation. ci_dest_sizeCrc is a dict that maps
-        CIstr paths _relative to the Data dir_ (the locations the files will
-        end up to if installed) to (size, crc) tuples.
+        CIstr paths _relative to the install root_ (the locations the files
+        will end up to if installed) to (size, crc) tuples. The install root is
+        the Data dir, unless install_to_game_root is set - then it's the game
+        folder and none of the Data dir rules (skips, remaps, docs handling
+        etc.) apply - the files are installed the way they are laid out in
+        the package.
 
         WIP rewrite
         Used:
@@ -783,7 +803,8 @@ class Installer(ListInfo):
             ##: is the object. necessary?
             object.__getattribute__(self, inst_attr).clear()
         dest_src = bolt.LowerDict()
-        if not self.has_recognized_structure:
+        if not (self.has_recognized_structure or
+                self._game_root_loose_layout_ok()):
             # If an archive became unrecognized, mark everything that was in it
             # as dirty and clear the destination dict
             if self.is_active:
@@ -894,7 +915,8 @@ class Installer(ListInfo):
                             self.hasBCF = full
                             skipDirFilesDiscard(file_relative)
                             continue
-                        elif fileExt in docExts and sub == '':
+                        elif (fileExt in docExts and sub == '' and
+                              not self.install_to_game_root):
                             skipDirFilesDiscard(file_relative)
                             skip = False
                         elif fileLower in bethFiles:
@@ -924,6 +946,17 @@ class Installer(ListInfo):
                     rootLower = ''
                 else:
                     rootLower = rootLower[0]
+                if self.install_to_game_root:
+                    # None of the checks below apply, those are for the Data
+                    # folder - only honor the FOMOD selection
+                    if fm_present or not fm_active:
+                        if fileExt in commonlyEditedExts:
+                            InstallersData.track(
+                                bass.dirs['app'].join(file_relative))
+                        data_sizeCrc[file_relative] = (cached_size, crc)
+                        dest_src[file_relative] = full
+                        unSize += cached_size
+                    continue
                 #--Skips
                 for lam in skips:
                     if lam(fileLower):
@@ -993,6 +1026,16 @@ class Installer(ListInfo):
         #--Done (return dest_src for install operation)
         return dest_src
 
+    @staticmethod
+    def _game_root_dirs():
+        """Return the (lowercased) directories we expect at the top level of
+        a package that installs to the game root - the Data folder and
+        Bain.game_root_layout_dirs, on top of the ones we expect in a Data
+        package. A directory with one of those names is installed as is, it
+        is never taken for a wrapper directory or a sub-package."""
+        return {*Installer.dataDirsPlus, bush.game.mods_dir_path[0].lower(),
+                *bush.game.Bain.game_root_layout_dirs}
+
     def _find_root_index(self, _os_sep=os_sep, skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
         # Sort file names as (dir_path, filename) pairs
@@ -1000,7 +1043,8 @@ class Installer(ListInfo):
         #--Find correct starting point to treat as BAIN package
         self.extras_dict.pop(u'root_path', None)
         self.fileRootIdex = 0
-        dataDirsPlus = Installer.dataDirsPlus
+        dataDirsPlus = self._game_root_dirs() if self.install_to_game_root \
+            else Installer.dataDirsPlus
         layout = _DirFiles()
         for full, _cached_size, crc in self.fileSizeCrcs:
             fileLower = full.lower()
@@ -1102,17 +1146,24 @@ class Installer(ListInfo):
         -20: bad type (grey)
         """
         data_sizeCrc = self.ci_dest_sizeCrc
-        get_cached = installersData.data_sizeCrcDate.get
+        if self.install_to_game_root:
+            get_cached = installersData.game_root_sizeCrcDate.get
+            ci_underrides_sizeCrc = \
+                installersData.ci_underrides_game_root_sizeCrc
+        else:
+            get_cached = installersData.data_sizeCrcDate.get
+            ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
         underrides = set()
         inst_status = 0
         missing.clear()
         mismatched.clear()
-        if not self.has_recognized_structure: # markers also (bain_type = 0)
+        if not (self.has_recognized_structure or
+                self._game_root_loose_layout_ok()):
+            # markers also (bain_type = 0)
             inst_status = -20
         elif data_sizeCrc:
-            ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
             for filename,sizeCrc in data_sizeCrc.items():
                 sizeCrcDate = get_cached(filename)
                 if not sizeCrcDate:
@@ -1141,7 +1192,9 @@ class Installer(ListInfo):
 
     def format_item(self, idata, item_format): ##: add more mouse texts
         #--Text
-        item_format.text_key = ('default.text' if self.has_recognized_structure
+        recognized = self.has_recognized_structure or bool(
+            self._game_root_loose_layout_ok() and self.ci_dest_sizeCrc)
+        item_format.text_key = ('default.text' if recognized
                                 else 'installers.text.invalid')
         if self.is_complex_package and len(self.subNames) != 2:
             # 2 subNames would be a Complex/Simple package
@@ -1218,9 +1271,15 @@ class _InstallerPackage(Installer, AFileInfo):
         #--Type, subNames
         found_bain_type = 0
         low_subname = {'': ''}
-        valid_top_ext = self.__class__._re_top_extensions.search
-        valid_sub_top_ext = self.__class__._re_top_plus_docs.search
-        dataDirsPlus = self.dataDirsPlus
+        if self.install_to_game_root:
+            # also accept what we expect to find in the game folder
+            valid_top_ext = self._re_top_extensions_game_root.search
+            valid_sub_top_ext = self._re_top_plus_docs_game_root.search
+            dataDirsPlus = self._game_root_dirs()
+        else:
+            valid_top_ext = self.__class__._re_top_extensions.search
+            valid_sub_top_ext = self.__class__._re_top_plus_docs.search
+            dataDirsPlus = self.dataDirsPlus
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
         root_path = self.extras_dict.get('root_path', '')
@@ -1271,6 +1330,14 @@ class _InstallerPackage(Installer, AFileInfo):
         #--Data Size Crc
         return self.refreshDataSizeCrc()
 
+    def copy_install_root(self, src_package):
+        """Install to the folder src_package installs to (Data or the game
+        folder) - used when this package was created from src_package. The
+        structure of the package depends on that, so detect it anew."""
+        if self.install_to_game_root != src_package.install_to_game_root:
+            self.install_to_game_root = src_package.install_to_game_root
+            self._reset_cache()
+
     def _fs_refresh(self, progress, stat_tuple, **kwargs):
         """Refresh fileSizeCrcs, fsize, and ftime from source
         archive/directory. Only called in _reset_cache. kwargs:
@@ -1280,7 +1347,8 @@ class _InstallerPackage(Installer, AFileInfo):
 
     #--ABSTRACT ---------------------------------------------------------------
     def install(self, destFiles: set[CIstr], progress, *, rui_data, **kwargs):
-        """Install specified files to Data directory."""
+        """Install specified files to Data directory - or to the game folder,
+        if install_to_game_root is set."""
         dest_src = self.refreshDataSizeCrc(True)
         dest_src = {k: v for k, v in dest_src.items() if k in destFiles}
         if not dest_src:
@@ -1291,9 +1359,11 @@ class _InstallerPackage(Installer, AFileInfo):
         # Filesystem install, unpackDir is not None only for archives
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
-        stores = data_tracking_stores()
+        game_root = self.install_to_game_root
+        # the data stores only track files in the Data folder
+        stores = () if game_root else data_tracking_stores()
         sources_dests = defaultdict(set)
-        join_data_dir = bass.dirs[u'mods'].join
+        join_data_dir = bass.dirs['app' if game_root else 'mods'].join
         dest_to_store = {}
         for dest, src in dest_src.items():
             dest_size, crc = data_sizeCrc[dest]
@@ -1318,7 +1388,8 @@ class _InstallerPackage(Installer, AFileInfo):
             if unpackDir:
                 cleanup_temp_dir(unpackDir)
         #--Update Installers data
-        idata_data_scd = self.instData.data_sizeCrcDate
+        idata_data_scd = self.instData.game_root_sizeCrcDate if game_root \
+            else self.instData.data_sizeCrcDate
         from ..bosh import modInfos
         for dest, (s, c, dest_path) in data_sizeCrcDate_update.items():
             d = dest_path.mtime # update mtime after copy/move ##:(241) needed or use cached value?
@@ -1340,7 +1411,7 @@ class _InstallerPackage(Installer, AFileInfo):
 
     def sync_from_data(self, delta_files: set[CIstr], progress, archive_name):
         """Updates this installer according to the specified files in the Data
-        directory.
+        directory - or in the game folder, if install_to_game_root is set.
 
         :param delta_files: The missing or mismatched files to sync.
         :param progress: A progress dialog to use when syncing.
@@ -1349,17 +1420,22 @@ class _InstallerPackage(Installer, AFileInfo):
 
     def _do_sync_data(self, proj_dir, delta_files: set[CIstr], progress):
         """Performs a Sync From Data on the specified project directory with
-        the specified missing or mismatched files."""
-        data_dir_join = bass.dirs[u'mods'].join
+        the specified missing or mismatched files. Packages that install to
+        the game root are synced from the game folder instead."""
+        if self.install_to_game_root:
+            data_dir_join = bass.dirs['app'].join
+            sync_msg = _('Syncing from game folder…')
+        else:
+            data_dir_join = bass.dirs['mods'].join
+            sync_msg = _('Syncing from %(data_folder)s folder…') % {
+                'data_folder': bush.game.mods_dir_name}
         norm_ghost_get = Installer.getGhosted().get
         upt_numb = del_numb = 0
         proj_dir_join = proj_dir.join
         progress.setFull(len(delta_files))
         for rel_src, rel_dest in self.refreshDataSizeCrc().items():
             if rel_src not in delta_files: continue
-            progress(del_numb + upt_numb,
-                     _('Syncing from %(data_folder)s folder…') % {
-                         'data_folder': bush.game.mods_dir_name} + f'\n{rel_src}')
+            progress(del_numb + upt_numb, f'{sync_msg}\n{rel_src}')
             full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
             full_dest = proj_dir_join(rel_dest)
             if not full_src.exists():
@@ -1461,8 +1537,11 @@ class _InstallerPackage(Installer, AFileInfo):
         conflicts = low if include_lower else [], hi
         if not include_inactive:
             conflicts = ((p for p in li if p[1].is_active) for li in conflicts)
+        src_game_root = self.install_to_game_root
         for li, conflict_type in zip(conflicts, (lower_loose, higher_loose)):
             for inst_sc, inst in li:
+                if inst.install_to_game_root != src_game_root:
+                    continue
                 if confls := {x for x, y in mismatched.items() if
                               inst_sc.get(x, y) != y}:
                     conflict_type.append((inst, confls))
@@ -1972,12 +2051,19 @@ class InstallersData(DataStore):
         #--Persistent data
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
         self.data_sizeCrcDate = bolt.LowerDict()
+        # same as data_sizeCrcDate, but for the files that packages install to
+        # the game folder, keyed by their path relative to it - kept in its own
+        # dat file, so older versions can still load Installers.dat
+        self.rootDictFile = bolt.PickleDict(
+            self.bash_dir.join('RootInstallers.dat'))
+        self.game_root_sizeCrcDate = bolt.LowerDict()
         from . import converters
         self.converters_data = converters.ConvertersData(bass.dirs['bainData'],
             bass.dirs[u'converters'], bass.dirs[u'dupeBCFs'],
             bass.dirs[u'corruptBCFs'], bass.dirs[u'installers'])
         #--Volatile
         self.ci_underrides_sizeCrc = bolt.LowerDict() # underridden files
+        self.ci_underrides_game_root_sizeCrc = bolt.LowerDict()
         self.hasChanged = False
         # Need to delay the main bosh import until here
         from . import InstallerArchive, InstallerProject, InstallerMarker
@@ -2060,8 +2146,8 @@ class InstallersData(DataStore):
             modInfos.refresh_crcs(progress=sub)
         progress = progress or bolt.Progress()
         progress(0, _('Scanning Packages…'))
-        # Refresh from the store dir (possibly loading Installers.dat). This
-        # should not depend on IData caches
+        # Refresh from the store dir (possibly loading Installers.dat /
+        # RootInstallers.dat). This should not depend on IData caches
         refresh_info = super().refresh(refresh_in, progress=progress,
             extract_omods=extract_omods, # rest is kw_do_upd - see super()
             force_update=fullRefresh, recalculate_project_crc=fullRefresh)
@@ -2078,20 +2164,36 @@ class InstallersData(DataStore):
         # and ci_underrides_sizeCrc caches (calculated from ci_dest_sizeCrc)
         if 'N' in what or changes:
             #--dict mapping all should-be-installed files to their attributes
-            norm_sizeCrc = bolt.LowerDict()
+            norm_data_sizeCrc = bolt.LowerDict()
+            norm_game_sizeCrc = bolt.LowerDict()
             for package in (x for x in self.sorted_values() if x.is_active):
-                norm_sizeCrc.update(package.ci_dest_sizeCrc)
+                if package.install_to_game_root:
+                    norm_game_sizeCrc.update(package.ci_dest_sizeCrc)
+                else:
+                    norm_data_sizeCrc.update(package.ci_dest_sizeCrc)
             # Populate self.ci_underrides_sizeCrc with all underridden files -
             # files installed in data dir, but from a lower loading installer
             # (or manually)
             ci_underrides_sizeCrc = bolt.LowerDict()
-            for path, sizeCrc in norm_sizeCrc.items():
+            for path, sizeCrc in norm_data_sizeCrc.items():
                 try:
                     if sizeCrc != (data_sc := self.data_sizeCrcDate[path][:2]):
                         ci_underrides_sizeCrc[path] = data_sc
                 except KeyError: pass # file is not installed in data dir
+            # same for the files installed in the game folder
+            ci_underrides_root_sizeCrc = bolt.LowerDict()
+            for path, sizeCrc in norm_game_sizeCrc.items():
+                try:
+                    if sizeCrc != (root_sc := self.game_root_sizeCrcDate[
+                            path][:2]):
+                        ci_underrides_root_sizeCrc[path] = root_sc
+                except KeyError:
+                    pass  # file is not installed in the game folder
             changes |= self.ci_underrides_sizeCrc != ci_underrides_sizeCrc
             self.ci_underrides_sizeCrc = ci_underrides_sizeCrc
+            changes |= (self.ci_underrides_game_root_sizeCrc !=
+                        ci_underrides_root_sizeCrc)
+            self.ci_underrides_game_root_sizeCrc = ci_underrides_root_sizeCrc
         if 'S' in what or changes: # on boot adds *all* Installers to rdata
             st_changed = {k for k, v in self.items() if v.refreshStatus(self)}
             refresh_info.redraw.update(st_changed)
@@ -2125,6 +2227,10 @@ class InstallersData(DataStore):
         pickle = pickl_data.get(u'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
+        self.rootDictFile.load()
+        pickle = self.rootDictFile.pickled_data.get('sizeCrcDate', {})
+        self.game_root_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
+            pickle, bolt.LowerDict) else pickle
         for fn_inst, inst in list(self.items()):
             if inst.is_marker:
                 # fixup: all markers had their fn_key attribute set to '===='
@@ -2148,6 +2254,10 @@ class InstallersData(DataStore):
             self.dictFile.pickled_data[u'sizeCrcDate'] = self.data_sizeCrcDate
             self.dictFile.vdata[u'version'] = 2
             self.dictFile.save()
+            self.rootDictFile.pickled_data['sizeCrcDate'] = \
+                self.game_root_sizeCrcDate
+            self.rootDictFile.vdata['version'] = 2
+            self.rootDictFile.save()
             self.converters_data.save()
             self.hasChanged = False
 
@@ -2438,8 +2548,20 @@ class InstallersData(DataStore):
                             progress)
         self.data_sizeCrcDate = new_sizeCrcDate
         self.update_for_overridden_skips(progress=progress) #after final_update
+        self._refresh_tracked_game_root(progress)
         #--Done
         return change
+
+    def _refresh_tracked_game_root(self, progress=None):
+        """Refresh game_root_sizeCrcDate - we do not scan the game folder, we
+        only check the files we installed there, plus the ones the active
+        packages would install."""
+        tracked = set(self.game_root_sizeCrcDate)
+        for package in self.values():
+            if package.is_active and package.install_to_game_root:
+                tracked.update(package.ci_dest_sizeCrc)
+        if tracked:
+            self.update_data_SizeCrcDate(tracked, progress, game_root=True)
 
     def reset_refresh_flag_on_projects(self):
         for installer in self.values():
@@ -2480,13 +2602,19 @@ class InstallersData(DataStore):
                     x.lower() not in bush.game.Bain.skip_bain_refresh)
         return {x: sDirs[x] for x in newSDirs}
 
-    def update_data_SizeCrcDate(self, dest_paths: set[str], progress=None):
+    def update_data_SizeCrcDate(self, dest_paths: set[str], progress=None, *,
+                                game_root=False):
         """Update data_SizeCrcDate with info on given paths - paths are given
         by refreshSizeCrcDate, so they should not end in ghost.
         :param progress: must be zeroed - message is used in _process_data_dir
-        :param dest_paths: set of paths relative to Data/ - may not exist."""
+        :param dest_paths: set of paths relative to Data/ - may not exist.
+        :param game_root: if True, update game_root_sizeCrcDate instead - the
+            paths are then relative to the game folder."""
         _pjoin = os.path.join
-        inst_dir = bass.dirs['mods'].s # should be normalized
+        root_dir = bass.dirs['app' if game_root else 'mods']
+        inst_dir = root_dir.s  # should be normalized
+        data_scd = self.game_root_sizeCrcDate if game_root else \
+            self.data_sizeCrcDate
         root_files = []
         for data_dest in dest_paths:
             sp = data_dest.rsplit(os_sep, 1) # split into ['rel_path, 'file']
@@ -2497,10 +2625,12 @@ class InstallersData(DataStore):
                            groupby(root_files, key=itemgetter(0))]
         progress = progress or bolt.Progress()
         from . import modInfos  # to get the crcs for plugins
+        if game_root:
+            modInfos = {}  # the plugins are in the Data folder
         progress.setFull(1 + len(root_dirs_files))
         siz_apath_mtime = bolt.LowerDict()
         new_sizeCrcDate = bolt.LowerDict()
-        oldGet = self.data_sizeCrcDate.get
+        oldGet = data_scd.get
         relPos = len(inst_dir) + 1
         norm_ghost_get = Installer.getGhosted().get
         for index, (asDir, sFiles) in enumerate(root_dirs_files):
@@ -2531,10 +2661,11 @@ class InstallersData(DataStore):
                 else:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate)
         deleted_or_pending = set(dest_paths) - set(new_sizeCrcDate)
-        for d in deleted_or_pending: self.data_sizeCrcDate.pop(d, None)
-        Installer.calc_crcs(siz_apath_mtime, bass.dirs['mods'].stail,
-            new_sizeCrcDate, progress)
-        self.data_sizeCrcDate.update(new_sizeCrcDate)
+        for d in deleted_or_pending:
+            data_scd.pop(d, None)
+        Installer.calc_crcs(siz_apath_mtime, root_dir.stail, new_sizeCrcDate,
+                            progress)
+        data_scd.update(new_sizeCrcDate)
 
     def update_for_overridden_skips(self, dont_skip=None, progress=None):
         data_scd = self.data_sizeCrcDate
@@ -2584,17 +2715,27 @@ class InstallersData(DataStore):
                 InstallersData._miscTrackedFiles.pop(apath, None)
                 del_paths.add(apath)
         do_refresh = bool(altered)
-        def _path_key():
+
+        def _scd_key():
             # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
             relpath = apath.relpath(bass.dirs['mods'])
+            scd = self.data_sizeCrcDate
+            if relpath.s.startswith('..'):
+                # ...unless the file was installed to the game folder
+                root_rel = apath.relpath(bass.dirs['app'])
+                if not root_rel.s.startswith('..'):
+                    relpath, scd = root_rel, self.game_root_sizeCrcDate
             # ghosts...
-            return relpath.root.s if relpath.cs[-6:] == '.ghost' else relpath.s
+            return scd, (relpath.root.s if relpath.cs[-6:] == '.ghost' else
+                         relpath.s)
         for apath in del_paths:
-            do_refresh |= bool(self.data_sizeCrcDate.pop(_path_key(), None))
+            scd, path_key = _scd_key()
+            do_refresh |= bool(scd.pop(path_key, None))
         for apath, siz_tim in altered.items():
             s, m = siz_tim or apath.size_mtime()
-            self.data_sizeCrcDate[_path_key()] = (s, apath.crc, m)
+            scd, path_key = _scd_key()
+            scd[path_key] = (s, apath.crc, m)
         return do_refresh #Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
@@ -2711,16 +2852,18 @@ class InstallersData(DataStore):
         #--Install packages in turn
         progress.setFull(len(to_install))
         index = 0
-        mask = set()
+        mask = set(), set()  # relative to Data, relative to the game folder
         tweaksCreated = set()
         for inst in self.sorted_values(reverse=True): # type: _InstallerPackage
             if inst in to_install:
                 progress(index, inst.fn_key)
-                destFiles = inst.ci_dest_sizeCrc.keys() - mask
+                destFiles = inst.ci_dest_sizeCrc.keys() - mask[
+                    inst.install_to_game_root]
                 if not override:
                     destFiles &= inst.missingFiles
                 if destFiles:
-                    self._createTweaks(destFiles, inst, tweaksCreated)
+                    if not inst.install_to_game_root:  # inis in Data only
+                        self._createTweaks(destFiles, inst, tweaksCreated)
                     sub_progress = SubProgress(progress, index, index + 1)
                     inst.install(destFiles, sub_progress, **kwargs)
                 index += 1 # increment after it's used in installer.install
@@ -2728,7 +2871,8 @@ class InstallersData(DataStore):
                 if inst.order == min_order:
                     break  # we are done
             #prevent lower packages from installing any files of this installer
-            if inst.is_active: mask |= set(inst.ci_dest_sizeCrc)
+            if inst.is_active:
+                mask[inst.install_to_game_root].update(inst.ci_dest_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated, **kwargs)
         return tweaksCreated
@@ -2739,8 +2883,10 @@ class InstallersData(DataStore):
         # Determine which directories will be empty, replacing subsets of
         # allRemoves by their parent dir if the latter will be emptied
         emptyDirs = {p.head for p in allRemoves}
-        # exclude those (Data won't likely be removed, Docs we want it around)
-        excludir = {bass.dirs['mods'], bass.dirs['mods'].join('Docs')}
+        # exclude those (Data won't likely be removed, Docs we want it around,
+        # same for the game folder)
+        excludir = {bass.dirs['mods'], bass.dirs['mods'].join('Docs'),
+                    bass.dirs['app']}
         emptyDirs -= excludir
         while emptyDirs:
             testDirs: set[Path] = set(emptyDirs)
@@ -2765,7 +2911,11 @@ class InstallersData(DataStore):
         'bain_anneal'. In case a mod or ini belongs to another package,
         we must make sure we cede ownership, even if the mod or ini is not
         restored (restore takes care of that). Return *all* the files this
-        installer would install."""
+        installer would install. removes must be relative to the directory
+        the installer installs to (Data or the game folder)."""
+        game_root = installer.install_to_game_root
+        data_scd = self.game_root_sizeCrcDate if game_root else \
+            self.data_sizeCrcDate
         # get all destination files for this installer
         dest_sc = installer.ci_dest_sizeCrc
         # keep those to be removed while not restored by a higher order package
@@ -2775,7 +2925,7 @@ class InstallersData(DataStore):
             # has it either -> that's checked later
             removes.discard(ci_dest)
             try:
-                version_in_data = self.data_sizeCrcDate[ci_dest]
+                version_in_data = data_scd[ci_dest]
             except KeyError:
                 # The file isn't present in the Data folder at all -> missing
                 # file, restore it from this package
@@ -2785,7 +2935,8 @@ class InstallersData(DataStore):
                     # This package has a different version than the one in the
                     # Data folder, restore that one
                     restores[ci_dest] = installer.fn_key
-                else: # don't mind the FName(str()) below - done seldom
+                elif not game_root:  # the data stores only track Data files
+                    # don't mind the FName(str()) below - done seldom
                     # This package has the same version as the one in the Data
                     # folder, so simply take ownership of the existing file
                     cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
@@ -2802,35 +2953,41 @@ class InstallersData(DataStore):
         #  removed.
         unArchives = self.filterInstallables(self) if unArchives is None else {
             self[package] for package in unArchives}
-        masked = set()
-        removes = set()
+        # relative to Data, relative to the game folder
+        masked = set(), set()
+        removes = set(), set()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
         for installer in self.sorted_values(reverse=True):
+            game_root = installer.install_to_game_root
             #--Uninstall archive?
             if installer in unArchives:
                 installer.is_active = False
+                data_scd = self.game_root_sizeCrcDate if game_root else \
+                    self.data_sizeCrcDate
                 for data_sizeCrc in (installer.ci_dest_sizeCrc,installer.dirty_sizeCrc):
                     for ci_file, sizeCrc in data_sizeCrc.items():
                         try:
-                            if ci_file not in masked and self.data_sizeCrcDate[
+                            if ci_file not in masked[game_root] and data_scd[
                                     ci_file][:2] == sizeCrc:
-                                removes.add(ci_file)
+                                removes[game_root].add(ci_file)
                         except KeyError:
                             pass
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.is_active:
-                masked |= self.__restore(installer, removes, restores, **kwargs)
+                masked[game_root].update(self.__restore(
+                    installer, removes[game_root], restores, **kwargs))
         anneal = bass.settings[u'bash.installers.autoAnneal']
-        self._remove_restore(removes, restores, anneal, **kwargs)
+        self._remove_restore(*removes, restores, anneal, **kwargs)
 
-    def _remove_restore(self, removes, restores, anneal=True, *, progress,
+    def _remove_restore(self, removes_data, removes_game, restores,
+                        anneal=True, *, progress,
                         removed_tracked, removed_untracked, **kwargs):
         #--Construct list of files to delete
-        if removes:
+        if removes_data:
             mods_dir_join = bass.dirs['mods'].join
-            for ci_rel_path in removes:
+            for ci_rel_path in removes_data:
                 for store, removed_files in removed_tracked.items():
                     if store_info := store.data_path_to_info(ci_rel_path):
                         removed_files.add(store_info.fn_key)
@@ -2839,6 +2996,14 @@ class InstallersData(DataStore):
                     path = mods_dir_join(ci_rel_path)
                     if path.exists():
                         removed_untracked.add(path)
+        if removes_game:
+            app_join = bass.dirs['app'].join
+            for ci_rel_path in removes_game:
+                # the data stores do not track those, even if a file there
+                # has the same relative path as a file in the Data folder
+                path = app_join(ci_rel_path)
+                if path.exists():
+                    removed_untracked.add(path)
         #--Restore files
         if anneal:
             restores = dict_sort(restores, by_value=True)
@@ -2868,12 +3033,15 @@ class InstallersData(DataStore):
 
     def _anneal_packages(self, to_anneal, **kwargs):
         #--Get remove/refresh files from annealed packages
-        removes = set()
+        # relative to Data, relative to the game folder
+        removes = set(), set()
         for installer in to_anneal:
-            removes |= installer.underrides
+            inst_removes = removes[installer.install_to_game_root]
+            inst_removes.update(installer.underrides)
             if installer.is_active:
-                removes |= installer.missingFiles  # re-added in __restore
-                removes |= set(installer.dirty_sizeCrc)
+                # re-added in __restore
+                inst_removes.update(installer.missingFiles)
+                inst_removes.update(installer.dirty_sizeCrc)
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
@@ -2881,8 +3049,10 @@ class InstallersData(DataStore):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.is_active:
-                self.__restore(installer, removes, restores, **kwargs)
-        self._remove_restore(removes, restores, **kwargs)
+                self.__restore(
+                    installer, removes[installer.install_to_game_root],
+                    restores, **kwargs)
+        self._remove_restore(*removes, restores, **kwargs)
 
     @_bain_op
     def bain_wiz_install(self, packages, *, progress, **kwargs):
@@ -2899,7 +3069,8 @@ class InstallersData(DataStore):
     def get_clean_data_dir_list(self):
         ci_keep_files = set(chain.from_iterable(
             installer.ci_dest_sizeCrc for installer in # relative to Data/
-            self.sorted_values(reverse=True) if installer.is_active))
+            self.sorted_values(reverse=True) if installer.is_active and
+            not installer.install_to_game_root))
         # Collect all files that we definitely want to keep
         bain = bush.game.Bain
         ci_keep_files.update(map(CIstr, chain(bush.game.vanilla_files,
@@ -2973,9 +3144,14 @@ class InstallersData(DataStore):
         """Return a sublist of installerKeys that can be installed -
         installerKeys must be in data or a KeyError is raised.
 
+        Packages that install to the game root need not have a recognized
+        structure, as long as they have files to install.
+
         :return: A list of installable packages/projects"""
         return [k for k in self.ipackages(installerKeys) if
-                self[k].has_recognized_structure]
+                (inst := self[k]).has_recognized_structure or (
+                    inst._game_root_loose_layout_ok() and
+                    inst.ci_dest_sizeCrc)]
 
     def ipackages(self, installerKeys: Iterable[FName]) -> Iterable[FName]:
         """Remove markers from installerKeys."""
