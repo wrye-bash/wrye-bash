@@ -190,9 +190,10 @@ class _ListPanel(_PatcherPanel):
             patcher_bold |= do_bold
         if patcher_on and self._auto_enable_on_populate:
             self._enable_self()
-        # Bold it if it has a new item, italicize it if it has no items.
+        # Bold it if it has a new item, italicize it if it has no items - at
+        # all, not just none matching the search
         self._style_patcher_label(bold=patcher_bold,
-            italics=self.gList.lb_get_items_count() == 0)
+                                  italics=not self._all_items)
 
     def _check_item(self, list_item, index):
         checked = self._is_item_checked(list_item)

@@ -118,7 +118,7 @@ def test_tweak_config_keeps_filtered_out_items(panels):
 
 def _population_panel(panel_type, current_items):
     panel = panel_type.__new__(panel_type)
-    panel._curr_items = current_items
+    panel._all_items = panel._curr_items = current_items
     panel.gList = Mock()
     panel.gList.lb_get_items_count.return_value = len(current_items)
     panel._style_patcher_label = Mock()
@@ -167,6 +167,15 @@ def test_empty_population(panels, panel_name):
     panel._style_patcher_label.assert_called_once_with(bold=False,
                                                       italics=True)
     panel._enable_self.assert_not_called()
+
+def test_no_search_hits_population(panels):
+    # Only a patcher without any items is italicized - not one whose items
+    # the search hides
+    panel = _population_panel(panels._ListPatcherPanel, [])
+    panel._all_items = [FName('Source.esp')]
+    panel._do_populate_item_list()
+    panel._style_patcher_label.assert_called_once_with(bold=False,
+                                                      italics=False)
 
 def test_merger_population_has_no_checkboxes(panels):
     source = FName('Source.esp')
