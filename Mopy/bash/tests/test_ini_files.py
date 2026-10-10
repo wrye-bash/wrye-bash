@@ -23,7 +23,7 @@
 # =============================================================================
 """Tests for the ini_files module - WIP."""
 
-from Mopy.bash.ini_files import IniFileInfo, OBSEIniFile
+from ..ini_files import IniFileInfo, OBSEIniFile
 
 def test_parse_ini_line():
     res = IniFileInfo.parse_ini_line('key=value')
