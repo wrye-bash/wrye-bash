@@ -2494,6 +2494,7 @@ class InstallersList(UIList):
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
+                root_dest = set()  # same, but relative to the game folder
                 for index, installer in enumerate(toRefresh):
                     progress(index,
                              _('Refreshing Packages…') + f'\n{installer}')
@@ -2503,13 +2504,17 @@ class InstallersList(UIList):
                         op = partial(installer._reset_cache,
                             progress=SubProgress(progress, index, index + 1),
                             recalculate_project_crc=calculate_projects_crc)
-                    dest.update(op())
+                    (root_dest if installer.install_to_game_root
+                     else dest).update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _('Refreshing from %(data_folder)s…') % {
                         'data_folder': bush.game.mods_dir_name}
                                 + f'\n{" " * 60}')
                     self.data_store.update_data_SizeCrcDate(dest, progress)
+                    if root_dest:
+                        self.data_store.update_data_SizeCrcDate(
+                            root_dest, progress, game_root=True)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
         self.data_store.refresh_ns()

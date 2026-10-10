@@ -865,6 +865,12 @@ class GameInfo(object):
         wrye_bash_data_files = set()
         # Wrye Bash directories to install and exclude from Clean Data
         wrye_bash_data_dirs = {'bash patches', 'bashtags', 'ini tweaks'}
+        # Directories that tools like ENB and ReShade expect in the game
+        # folder, next to the Data folder (the names are set by those tools,
+        # not by the game). Only used to detect the structure of packages that
+        # install to the game root, never for Data packages - see
+        # Installer._game_root_dirs
+        game_root_layout_dirs = {'enbseries', 'reshade-shaders'}
         achlist_excludes = set() # files to exclude from achlist
 
         @classmethod
