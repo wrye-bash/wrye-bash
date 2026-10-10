@@ -617,7 +617,10 @@ class ListMergerConfig(ListPatcherConfig):
 
     def _merge_configs(self, curr_conf, present_config_items):
         choices = {**curr_conf, **self.configChoices}
-        return {k: v for k, v in choices.items() if k in present_config_items}
+        # copy the sets - the loaded ones belong to the config, which Revert To
+        # Saved reloads, while the choice menu edits ours in place
+        return {k: {*v} for k, v in choices.items() if
+                k in present_config_items}
 
     def _set_choice(self, item):
         if (config_choice := self._item_config.get(item)) is None:
