@@ -557,12 +557,28 @@ class SyncFromDataEditor(_ABainMLE):
             mlel_desc=_('Uncheck files to keep them unchanged in the '
                         'package.'),
             mlel_items=list(map(str, pkg_mismatched)))
-        sync_desc = _('Update %(target_package)s according to '
-                      '%(data_folder)s folder?') % {
-            'target_package': pkg_name, 'data_folder': bush.game.mods_dir_name}
+        sync_desc = self._sync_desc(pkg_name)
         sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
         super().__init__(parent, data_desc=sync_desc,
             list_data=[del_data, upd_data], ok_label=_('Update'))
+
+    @staticmethod
+    def _sync_desc(pkg_name):
+        return _('Update %(target_package)s according to %(data_folder)s '
+                 'folder?') % {'target_package': pkg_name,
+                               'data_folder': bush.game.mods_dir_name}
+
+#------------------------------------------------------------------------------
+class SyncFromGameRootEditor(SyncFromDataEditor):
+    """Same as SyncFromDataEditor, but for packages that install to the game
+    folder."""
+    title = _('Sync From Game Root - Preview')
+
+    @staticmethod
+    def _sync_desc(pkg_name):
+        return _('Update %(target_package)s according to the game folder (the '
+                 'folder containing the game executable)?') % {
+            'target_package': pkg_name}
 
 #------------------------------------------------------------------------------
 class CleanDataEditor(_ABainMLE):
