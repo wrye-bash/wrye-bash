@@ -498,6 +498,11 @@ def main(opts: Namespace):
         # Early setup is done, delegate to the main init method
         _main(opts, localize, game_infos, init_warnings, restore_)
     except Exception as e:
+        if opts.buildBashedPatch: # no popups when headless, see below
+            bolt.deprint('Bashed Patch build failed:', traceback=True)
+            print(e)
+            sys.exit(2 if isinstance(e, (exception.BoltError,
+                exception.BootError, OSError, NotImplementedError)) else 1)
         caught_exc = traceback.format_exc()
         if isinstance(e, exception.BootError):
             err_msg = f'{e}'

@@ -258,6 +258,13 @@ class MergePatches(ListPatcherConfig):
 # Patchers 20 -----------------------------------------------------------------
 class ImporterPatcherConfig(ListPatcherConfig):
 
+    def _set_choice(self, item):
+        """A source checked for a brand new patch enables the importer, as
+        the GUI does when listing it - not so Merge Patches, the CLI does not
+        deactivate the plugins it would merge."""
+        super()._set_choice(item)
+        self.isEnabled |= self._is_first_load and self._item_config[item]
+
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
         config = super().saveConfig(configs)
