@@ -50,6 +50,7 @@ class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
         # Used to keep track of the state of the patcher label
         self._is_bolded = False
         self._is_italicized = False
+        self._config_loaded = False # bold new patchers on dialog load only
 
     @on_create
     def native_init(self, *args, **kwargs):
@@ -64,9 +65,12 @@ class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
     # Config phase - runs after native_init, see PatchDialog#__init__
     def get_config(self, configs):
         config = super().get_config(configs)
-        # Bold the patcher if it's new, but the patch itself isn't new
-        if not self._was_present and not self._is_first_load:
-            self._style_patcher_label(bold=True)
+        # Bold the patcher if it's new, but the patch itself isn't new - for
+        # the config the dialog opens with, not on import/revert
+        if not self._config_loaded:
+            self._config_loaded = True
+            if not self._was_present and not self._is_first_load:
+                self._style_patcher_label(bold=True)
         return config
 
     def _style_patcher_label(self, bold=False, italics=False):
