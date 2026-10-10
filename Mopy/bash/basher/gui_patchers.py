@@ -153,28 +153,6 @@ class _ListPatcherPanel(_ListPanel, ListPatcherConfig):
         # Set of items that are new and hence need to remain bolded
         self._new_items: set[FName] = set()
 
-    def native_init(self, *args, **kwargs):
-        if freshly_created := super().native_init(*args, **kwargs):
-            self._get_glist()
-            self._item_search = SearchBar(self, hint=_('Search Sources'))
-            self._item_search.on_text_changed.subscribe(
-                self._handle_item_search)
-            #--Manual controls
-            side_button_layout = self._auto_layout()
-            list_label = self._list_label or (_('Source Plugins/Files') if
-                self.patcher_type._csv_key else _('Source Plugins'))
-            self.main_layout.add(
-                (HBoxedLayout(self, title=list_label,
-                              item_expand=True, spacing=4, items=[
-                        (VLayout(spacing=4, item_expand=True, items=[
-                            self._item_search,
-                            (self.gList, LayoutOptions(weight=1)),
-                        ]), LayoutOptions(weight=1)),
-                        (side_button_layout, LayoutOptions(v_align=TOP)),
-                        self._get_select_layout(),
-                    ]), LayoutOptions(expand=True, weight=1)))
-        return freshly_created
-
     def mass_select(self, select=True):
         try:
             self.gList.set_all_checkmarks(checked=select)
