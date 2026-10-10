@@ -48,13 +48,14 @@ from .bolt import GPath, GPath_no_norm, deprint, top_level_files, empty_path
 from .exception import BoltError, StateError
 from .wbtemp import TempDir
 
-def _init_settings_files(mg_name, bush_game):
+def _init_settings_files(bush_game):
     """Construct a dict mapping directory paths to setting files. Keys are
     tuples of absolute paths to directories, paired with the relative paths
     in the backup file. Values are sets of setting files in those paths,
     or empty, meaning we have to list those paths and backup everything."""
-    bak_name, root_prefix, mods_folder_name = bush_game.bak_game_name, \
-        bush_game.bash_root_prefix, bush_game.mods_dir_name
+    bak_name, mg_name, root_prefix, mods_folder_name = (
+        bush_game.bak_game_name, bush_game.my_games_name,
+        bush_game.bash_root_prefix, bush_game.mods_dir_name)
     if not bass.bash_dirs_initialized:
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
@@ -102,7 +103,7 @@ class BackupSettings(object):
         self._backup_dest_file = GPath(settings_file) # absolute path to dest 7z file
         self.files = {}
         saves_dir, mg_name = bush_game.Ess.saves_dir, bush_game.my_games_name
-        for (bash_dir, tmpdir), setting_files in _init_settings_files(mg_name,
+        for (bash_dir, tmpdir), setting_files in _init_settings_files(
                 bush_game).items():
             tjoin = GPath(tmpdir).join
             if not setting_files: # we have to backup everything in there
@@ -268,7 +269,7 @@ class RestoreSettings(object):
             dest = dest_dir_.join(*end_path)
             deprint(f'{back_path_.join(*end_path)} --> {dest}')
             full_back_path.join(*end_path).copyTo(dest)
-        for destdir, back_path in _init_settings_files(mg_name, bush_game):
+        for destdir, back_path in _init_settings_files(bush_game):
             full_back_path = self._extract_dir.join(back_path)
             for fname in top_level_files(full_back_path):
                 _restore_file(destdir, GPath(back_path), fname)
