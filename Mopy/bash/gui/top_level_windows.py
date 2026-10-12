@@ -286,9 +286,8 @@ class PanelWin(_AComponent):
                         wants_chars and _wx.WANTS_CHARS))
 
 class _SplitterWindow(_wx.SplitterWindow):
-    """Remembers the minimum pane size Splitter asked for, as it lowers wx's
-    when the panes don't fit, and the panes' own min sizes, as it raises
-    them."""
+    """Remembers the minimum pane size Splitter asked for, as it keeps wx's at
+    1, and the panes' own min sizes, as it raises them."""
     min_pane = 0
     own_mins = None
 
@@ -364,7 +363,6 @@ class Splitter(_AComponent):
         for pane, own, room in zip((nw.GetWindow1(), nw.GetWindow2()),
                                    nw.own_mins, rooms):
             pane.SetMinSize((room, own.height) if vert else (own.width, room))
-        nw.SetMinimumPaneSize(min(nw.min_pane, *rooms))
 
     def _sash_rect(self):
         nw = self._native_widget
@@ -408,7 +406,10 @@ class Splitter(_AComponent):
     def set_min_pane_size(self, min_pane_size):
         nw = self._native_widget
         nw.min_pane = scaled(min_pane_size)
-        nw.SetMinimumPaneSize(nw.min_pane)
+        # wx's minimum applies to both panes and setting it lays them out again
+        # - _fit_panes sets their min sizes instead, and 1 still keeps the sash
+        # from unsplitting us when dragged to an edge
+        nw.SetMinimumPaneSize(min(nw.min_pane, 1))
 
     def set_sash_gravity(self, sash_gravity):
         self._native_widget.SetSashGravity(sash_gravity)
