@@ -101,9 +101,9 @@ class _SaveCompressionType(Enum):
                                              decompressed_size)
         except (zlib.error, lz4.block.LZ4BlockError) as e:
             raise SaveHeaderError(f'{self.name} error while '
-                f'decompressing {self.name.lower}-compressed header: {e!r}')
+                f'decompressing {self.name.lower()}-compressed header: {e!r}')
         if not light_decompression and len(decompressed_data) != decompressed_size:
-            raise SaveHeaderError(f'{self.name.lower}-decompressed header '
+            raise SaveHeaderError(f'{self.name.lower()}-decompressed header '
                 f'size incorrect - expected {decompressed_size}, but got '
                 f'{len(decompressed_data)}.')
         # Wrap the decompressed data in a file-like object and return it
