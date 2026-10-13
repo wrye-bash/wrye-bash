@@ -1,9 +1,5 @@
-# svn
-.svn/
-
 # binaries
 *.pyc
-*.pyo
 __pycache__/
 *.exe
 
@@ -24,6 +20,7 @@ Mopy/Apps/*.lnk
 
 # Windows etc
 desktop.ini
+Thumbs.db
 .dropbox
 .DS_Store
 
@@ -46,19 +43,19 @@ Mopy/redist/
 Mopy/bash/l10n/*.mo
 Mopy/bash/l10n/*NEW.po
 
-# IDE files
-.idea/
-.vscode/
-# if a symlink
+# IDE files - no trailing slash, so they also match if they are symlinks
 .idea
 .vscode
 
-# Common virtual environments
+# Common virtual environments - env/ and ENV/ anchored to the repo root,
+# else they would also match our Mopy/bash/env package (ENV/ on
+# case-insensitive Windows filesystems), silently ignoring any new file
+# added there
 .env
 .venv
-env/
+/env/
 venv/
-ENV/
+/ENV/
 env.bak/
 venv.bak/
 
