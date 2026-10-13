@@ -29,6 +29,7 @@ import pytest
 
 from ... import plugin_types
 from ...bosh.save_headers import StarfieldSaveHeader
+from ...exception import SaveHeaderError
 from ...game import _SFPluginFlag
 
 # Helpers ---------------------------------------------------------------------
@@ -127,3 +128,35 @@ def test_sf_v140_creation_flag():
     medium = [(b'Medium.esm', _creation)]
     header = _check_masters(140, regular, light, medium)
     assert header.pcName == 'Barrett'
+
+# BCPS chunks -----------------------------------------------------------------
+_regular = [(b'Starfield.esm', None),
+            *((b'Mod%02d.esm' % i, _creation) for i in range(20))]
+_light = [(b'Light.esm', _creation)]
+_medium = [(b'Medium.esm', _no_creation)]
+
+@pytest.mark.parametrize('chunk_size', [64, 1 << 18])
+def test_bcps_chunks(chunk_size):
+    """The header and plugin table may span several chunks - or the whole
+    save may be smaller than one chunk."""
+    _check_masters(140, _regular, _light, _medium, chunk_size=chunk_size)
+
+def test_bcps_inflates_needed_chunks_only():
+    """Reading the header must not inflate the rest of the save - here the
+    chunks past the first one are garbage."""
+    sf_save = _sf_save(140, _regular, _light, _medium,
+                       tail=bytes(range(256)) * 64)
+    container = _bcps(sf_save, chunk_size=4096)
+    comp_location, = struct.unpack_from('<Q', container, 24)
+    first_comp_size, = struct.unpack_from('<I', container, 72)
+    first_end = comp_location + first_comp_size
+    container = container[:first_end] + b'\xff' * (len(container) - first_end)
+    header = _read_header(container)
+    assert header.masters_regular == [n.decode() for n, _c in _regular]
+
+def test_bcps_broken_chunk():
+    """A chunk the header needs that does not inflate fails the read."""
+    container = _bcps(_sf_save(140, _regular, _light, _medium),
+                      chunk_size=64)
+    with pytest.raises(SaveHeaderError):
+        _read_header(container[:len(container) // 2])
