@@ -22,8 +22,11 @@
 #
 # =============================================================================
 import os
+from types import SimpleNamespace
 
-from ...bosh.bain import InstallerProject, _remove_empty_dirs
+from ... import bosh
+from ...bolt import LowerDict
+from ...bosh.bain import InstallerProject, InstallersData, _remove_empty_dirs
 from ...wbtemp import TempDir
 
 def test__remove_empty_dirs():
@@ -97,3 +100,48 @@ def test_game_root_package_structure():
                'Extras/Nested/enbseries/effect.fx']
     assert _structure(options, False) == ('', 0, [])
     assert _structure(options, True) == ('', 2, ['00 Main', '01 Extra'])
+
+
+class _CleanData:
+    """Stand in for InstallersData - made up packages and Data folder
+    contents, we only care for what Clean Data would remove."""
+    def __init__(self, packages, data_files):
+        self._packages = packages
+        self.data_sizeCrcDate = LowerDict((os.path.join(*f.split('/')), (
+            0, 0, 0)) for f in data_files)
+
+    def values(self): return self._packages
+    def sorted_values(self, reverse=False): return self._packages
+
+
+def _clean_data_package(dest_files, install_to_game_root, is_active=True):
+    return SimpleNamespace(is_active=is_active,
+        install_to_game_root=install_to_game_root, ci_dest_sizeCrc=LowerDict(
+            (os.path.join(*f.split('/')), (0, 0)) for f in dest_files))
+
+
+def test_clean_data_keeps_game_root_package_files(monkeypatch):
+    """The files a package installs to the game folder may end up in the Data
+    folder - Clean Data must not remove those."""
+    monkeypatch.setattr(bosh, 'modInfos', SimpleNamespace(bashed_patches=()))
+    data_files = ['Scripts/a.pex', 'scripts/B.pex', 'Textures/c.dds',
+                  'Textures/d.dds', 'Data/e.dds']
+    def _removes(*packages):
+        return {f.lower() for f in InstallersData.get_clean_data_dir_list(
+            _CleanData(packages, data_files))}
+    def _expected(*removed):
+        return {os.path.join(*f.split('/')).lower() for f in removed}
+    data_pkg = _clean_data_package(['Textures/c.dds'], False)
+    root_pkg = _clean_data_package(
+        ['binary.dll', 'data/Scripts/a.pex', 'Data/Scripts/b.pex'], True)
+    assert _removes(data_pkg, root_pkg) == _expected(
+        'Textures/d.dds', 'Data/e.dds')
+    # the paths of a package that installs to the game folder are relative
+    # to that folder, so those are not in the Data folder
+    root_pkg = _clean_data_package(['Textures/d.dds', 'Scripts/a.pex'], True)
+    assert _removes(data_pkg, root_pkg) == _expected(
+        'Scripts/a.pex', 'scripts/B.pex', 'Textures/d.dds', 'Data/e.dds')
+    # an inactive package does not keep its files
+    root_pkg = _clean_data_package(['Data/Scripts/a.pex'], True, False)
+    assert _removes(data_pkg, root_pkg) == _expected(
+        'Scripts/a.pex', 'scripts/B.pex', 'Textures/d.dds', 'Data/e.dds')
