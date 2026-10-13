@@ -152,7 +152,7 @@ class _AStarfieldGameInfo(PatchGame):
 
     class Ess(GameInfo.Ess):
         ext = '.sfs'
-        has_screenshots = False # TODO(SF) verify
+        has_screenshots = False
 
     class Bsa(GameInfo.Bsa):
         bsa_extension = '.ba2'
