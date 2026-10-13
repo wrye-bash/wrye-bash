@@ -156,6 +156,18 @@ def _setup_build_parser(parser):
         help='Specify a custom path to the NSIS root folder.',
     )
     parser.add_argument(
+        '-o',
+        '--output',
+        default=DIST_PATH,
+        type=Path,
+        dest='dist_path',
+        metavar='FOLDER',
+        help=f'Folder to place the distributables in. Only the default folder '
+             f'is emptied before building - a custom folder just has any '
+             f'distributables with the same names replaced. '
+             f'[default: {DIST_PATH.relative_to(ROOT_PATH)}]',
+    )
+    parser.add_argument(
         '-u',
         '--update-taglists',
         action='store_true',
@@ -178,7 +190,8 @@ def _pack_7z(dest_7z, keep, tmpdir):
     include_file = tmpdir / 'files_to_include.txt'
     with include_file.open('w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(keep))
-    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', DIST_PATH / dest_7z,
+    rm(dest_7z) # 7z would add to an existing archive instead of replacing it
+    cmd_7z = [_EXE_7Z, 'a', '-m0=lzma2', '-mx9', dest_7z,
               f'-i@{include_file}']
     run_subprocess(cmd_7z, _LOGGER, cwd=ROOT_PATH)
 
@@ -209,7 +222,7 @@ def _get_nsis_root(cmd_arg, dl_dir):
         os.rename(local_build_path / f'nsis-{_NSIS_VERSION}', NSIS_PATH)
     return NSIS_PATH
 
-def _pack_manual(build_vers, mopy_tr, tmpdir):
+def _pack_manual(build_vers, mopy_tr, tmpdir, dist_path):
     """ Packages the manual (python source) version. """
     copied = {'Readme.md': ROOT_PATH, 'requirements.txt': ROOT_PATH,
               'bash.ico': WBSA_PATH}
@@ -217,7 +230,7 @@ def _pack_manual(build_vers, mopy_tr, tmpdir):
     try:
         for orig, target in files_to_include.items():
             cp(orig, target)
-        _pack_7z(f'Wrye Bash {build_vers} - Python Source.7z',
+        _pack_7z(dist_path / f'Wrye Bash {build_vers} - Python Source.7z',
                  [*mopy_tr, *(f'Mopy/{a}' for a in copied), ''],
                  tmpdir)
     finally:
@@ -242,12 +255,13 @@ def _build_executable():
     finally:
         rm(dest_exe)
 
-def _pack_standalone(build_vers, mopy_tr, tmpdir):
+def _pack_standalone(build_vers, mopy_tr, tmpdir, dist_path):
     """ Packages the standalone version. """
-    _pack_7z(f'Wrye Bash {build_vers} - Standalone Executable.7z',
+    _pack_7z(dist_path / f'Wrye Bash {build_vers} - Standalone Executable.7z',
              [*mopy_tr, 'Mopy/Wrye Bash.exe', ''], tmpdir)
 
-def _pack_installer(nsis_path, build_vers, file_version, mopy_tr, tmpdir):
+def _pack_installer(nsis_path, build_vers, file_version, mopy_tr, tmpdir,
+                    dist_path):
     """ Packages the installer version. """
     script_path = SCRIPTS_PATH / 'build' / 'installer' / 'main.nsi'
     if not script_path.is_file():
@@ -263,7 +277,7 @@ def _pack_installer(nsis_path, build_vers, file_version, mopy_tr, tmpdir):
         _write_nsis_macro(files_macro, mopy_tr)
          # Run the NSIS script to build the installer
         run_subprocess([nsis_path, '/NOCD', f'/DWB_NAME=Wrye Bash {build_vers}',
-                        f'/DWB_OUTPUT={DIST_PATH}',
+                        f'/DWB_OUTPUT={dist_path}',
                         f'/DWB_FILEVERSION={file_version}',
                         f'/DWB_CLEAN_MOPY={MOPY_PATH}', script_path], _LOGGER)
     finally:
@@ -398,7 +412,7 @@ def _update_file_version(build_vers, tmpdir, do_commit=False):
         if not do_commit:
             cp(bck_path, bass_path)
 
-def _check_version(args) -> tuple[str, str]:
+def _check_version(args, dist_path) -> tuple[str, str]:
     """Generate version strings from the passed parameters. build_vers
     currently is the major version, optionally followed by a minor version
     (either one digit or a twelve digits timestamp, dot separated). For
@@ -426,21 +440,22 @@ def _check_version(args) -> tuple[str, str]:
     elif is_sha := vers_tag:
         is_sha = re.fullmatch(f'[0-9a-f]{{{len_sha},40}}', vers_tag)
     bass.version_tag = vers_tag
-    try:
-        ask = '' # check whether the previous build is also a nightly/tagged
-        if is_sha:
-            if vers_tag in (prev_build := str(next(DIST_PATH.iterdir()))):
-                ask = f'{vers_tag} in build: {prev_build}. Continue? [y/N]\n> '
-        # check if the current nightly timestamp is the same as in the previous
-        # nightly build. Happens when a build is triggered too quickly after
-        # the previous one.
-        if is_nightly and build_vers in str(next(DIST_PATH.iterdir())):
-            ask = 'Current timestamp is equal to the previous build. '\
-                  'Continue? [y/N]\n> '
-        if ask and (input(ask) or 'n').lower()[0] != 'y':
-            raise ValueError(f'{ask.split(" Continue?")[0]} Aborting.')
-    except (OSError, StopIteration): # if dist folder doesn't exist or is empty
-        pass
+    try: # a custom dist folder may hold several builds, check them all
+        prev_builds = list(dist_path.iterdir())
+    except OSError: # if dist folder doesn't exist
+        prev_builds = []
+    ask = '' # check whether a previous build is also a nightly/tagged
+    if is_sha and (prev_build := next(
+            (b for b in prev_builds if vers_tag in b.name), None)):
+        ask = f'{vers_tag} in build: {prev_build}. Continue? [y/N]\n> '
+    # check if the current nightly timestamp is the same as in a previous
+    # nightly build. Happens when a build is triggered too quickly after the
+    # previous one.
+    if is_nightly and any(build_vers in b.name for b in prev_builds):
+        ask = 'Current timestamp is equal to the previous build. '\
+              'Continue? [y/N]\n> '
+    if ask and (input(ask) or 'n').lower()[0] != 'y':
+        raise ValueError(f'{ask.split(" Continue?")[0]} Aborting.')
     return f'{build_vers}-{vers_tag}' if vers_tag else build_vers, file_version
 
 def _taglists_need_update():
@@ -470,9 +485,13 @@ def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
     setup_log(_LOGGER, args)
     _setup_pyinstaller_logger(args.logfile)
     _LOGGER.info(f'Building on Python {sys.version}')
+    # absolute, as 7z runs from the repo root and NSIS with /NOCD
+    dist_path = Path(os.path.abspath(args.dist_path))
+    _LOGGER.info(f'Distributables will be placed in {dist_path}')
     # check nightly timestamp is different from previous, get version strings
-    vers, file_version = _check_version(args)
-    rm(DIST_PATH)
+    vers, file_version = _check_version(args, dist_path)
+    if args.dist_path == DIST_PATH: # never wipe a folder the user passed us
+        rm(dist_path)
     head_tr = _WB_REPO.get_tracked_paths(1)
     po_files = [t for t in head_tr if t.endswith('.po')] # tracked .po files
     _LOGGER.info('Compiling localizations...') # compile .po files to .mo files
@@ -483,7 +502,7 @@ def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
     with tempfile.TemporaryDirectory() as tmpdir, _update_file_version(
             vers, tmpdir := Path(tmpdir), args.commit):
         # create distributable directory
-        DIST_PATH.mkdir(parents=True, exist_ok=True)
+        dist_path.mkdir(parents=True, exist_ok=True)
         # Copy the license so it's included in the built releases
         license_real = ROOT_PATH / 'LICENSE.md'
         license_temp = MOPY_PATH / 'LICENSE.md'
@@ -505,7 +524,7 @@ def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
             to_install = [*sorted(mopy_tr), *yamls_mos, 'Mopy/LICENSE.md']
             if args.manual:
                 _LOGGER.info('Creating python source distributable...')
-                _pack_manual(vers, to_install, tmpdir)
+                _pack_manual(vers, to_install, tmpdir, dist_path)
             if not args.standalone and not args.installer:
                 return
             if _NOT_WINDOWS:
@@ -516,11 +535,11 @@ def main(args, *, __pys=('.py', '.pyw'), __pos=('.po', '.pot')):
             with _build_executable():
                 if args.standalone:
                     _LOGGER.info('Creating standalone distributable...')
-                    _pack_standalone(vers, no_source, tmpdir)
+                    _pack_standalone(vers, no_source, tmpdir, dist_path)
                 if args.installer:
                     _LOGGER.info('Creating installer distributable...')
                     _pack_installer(args.nsis, vers, file_version, no_source,
-                                    tmpdir)
+                                    tmpdir, dist_path)
         finally:
             # Clean up the temp copy of the license
             rm(license_temp)
