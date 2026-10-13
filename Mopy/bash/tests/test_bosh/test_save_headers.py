@@ -158,5 +158,6 @@ def test_bcps_broken_chunk():
     """A chunk the header needs that does not inflate fails the read."""
     container = _bcps(_sf_save(140, _regular, _light, _medium),
                       chunk_size=64)
-    with pytest.raises(SaveHeaderError):
+    with pytest.raises(SaveHeaderError, match='ZLIB error while '
+                       'decompressing zlib-compressed header'):
         _read_header(container[:len(container) // 2])
