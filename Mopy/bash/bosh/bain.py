@@ -3071,6 +3071,14 @@ class InstallersData(DataStore):
             installer.ci_dest_sizeCrc for installer in # relative to Data/
             self.sorted_values(reverse=True) if installer.is_active and
             not installer.install_to_game_root))
+        # The packages that install to the game folder may also install files
+        # in the Data folder - those are relative to the game folder
+        data_start = f'{bush.game.mods_dir_name}{os_sep}'.lower()
+        ci_keep_files.update(
+            CIstr(ci_dest[len(data_start):]) for installer in self.values() if
+            installer.is_active and installer.install_to_game_root
+            for ci_dest in installer.ci_dest_sizeCrc if
+            ci_dest.lower().startswith(data_start))
         # Collect all files that we definitely want to keep
         bain = bush.game.Bain
         ci_keep_files.update(map(CIstr, chain(bush.game.vanilla_files,
