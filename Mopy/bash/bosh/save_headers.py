@@ -42,7 +42,7 @@ from typing import final
 
 import lz4.block
 
-from .. import bolt, load_order, plugin_types
+from .. import bolt, plugin_types
 from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
     pack_bzstr8, pack_float, pack_int, pack_short, pack_str8, \
     remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
@@ -725,6 +725,13 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         'plugin_info_unknown2':  (00, unpack_byte),
     }
     _masters_offset = 2
+    # Lowercased plugins that 122 <= formVersion < 140 saves store without
+    # creation metadata - these saves have no flag for it, the game exe had
+    # this list hardcoded (same as MO2 and Nexus-Mods/StarfieldSaveTool). Not
+    # our pinned plugins, those depend on what's installed and grew since
+    _v122_core_plugins = frozenset([b'starfield.esm', b'constellation.esm',
+        b'oldmars.esm', b'blueprintships-starfield.esm', b'sfbgs003.esm',
+        b'sfbgs006.esm', b'sfbgs007.esm', b'sfbgs008.esm'])
 
     def __init__(self, save_inf, **kwargs):
         self._master_info_block_size = {}
@@ -738,9 +745,9 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         if self._formVersion >= 140:
             has_extra_data = unpack_byte(ins)
             self._master_info_block_size[mas] += 1
-        else:
-            has_extra_data = not (load_order.must_be_active({mas}))
-        if has_extra_data: # 122 <= formVersion < 140
+        else: # 122 <= formVersion < 140
+            has_extra_data = mas.lower() not in self._v122_core_plugins
+        if has_extra_data:
             for __ in range(3): # creationName, creationId, flags
                 self._master_info_block_size[mas] += len(unpack_str16(ins))
             unpack_byte(ins) # achievementCompatible
