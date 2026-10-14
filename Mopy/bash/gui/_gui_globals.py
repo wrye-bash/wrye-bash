@@ -117,9 +117,10 @@ def init_image_resources(images_dir: _Path):
     # DocumentViewer, Restart and help
     for fname, pix in product(('reload', 'help'), pixs):
         _gui_images[f'{fname}.{pix}'] = _icc(f'{fname}.svg', pix)
-    # Checkmark/Cross
+    # Checkmark/Cross - the cross in the status bar icon sizes, see error_icons
     _gui_images['checkmark.16'] = _icc('checkmark.svg')
-    _gui_images['error_cross.16'] = _icc('error_cross.svg')
+    for pix in pixs:
+        _gui_images[f'error_cross.{pix}'] = _icc('error_cross.svg', pix)
     # Minus/Plus for the Bash Tags popup
     _gui_images['minus.16'] = _icc('minus.svg')
     _gui_images['plus.16'] = _icc('plus.svg')
@@ -154,3 +155,7 @@ def get_color_checks():
 
 def get_installer_color_checks():
     return _installer_icons
+
+def error_icons():
+    """Return the 'x' icon, in the status bar icon sizes."""
+    return [get_image(f'error_cross.{pix}') for pix in (16, 24, 32)]
