@@ -240,28 +240,44 @@ class PatchDialog(DialogWindow):
             data_docs_dir = minfos.store_dir.join('Docs')
             readme = data_docs_dir.join(patch_name.fn_body + '.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
-            with TempDir(temp_prefix='Docs', bolt_path=True) as tmp_readme_dir:
-                temp_readme = tmp_readme_dir.join(patch_name.fn_body + '.txt')
-                #--Write log/readme to temp dir first
-                with temp_readme.open_bom('w') as file:
+            def _write_readme(readme_path):
+                #--Write log/readme
+                with readme_path.open_bom('w') as file:
                     file.write(logValue)
                 #--Convert log/readme to wtxt
-                wrye_text.genHtml(temp_readme, None, docsDir)
-                #--Try moving temp log/readme to Docs dir
-                try:
-                    env.shellMove({tmp_readme_dir: data_docs_dir},
-                        parent=self)
-                except (CancelError, SkipError):
-                    # User didn't allow UAC, move to My Games directory instead
-                    temp_readme_html = temp_readme.root + '.html'
-                    readme_moves = {
-                        temp_readme: bass.dirs['saveBase'].join(
-                            temp_readme.stail),
-                        temp_readme_html: bass.dirs['saveBase'].join(
-                            temp_readme_html.stail)
-                    }
-                    env.shellMove(readme_moves, parent=self)
-                    readme = bass.dirs['saveBase'].join(readme.stail)
+                wrye_text.genHtml(readme_path, None, docsDir)
+            try:
+                # Write the log/readme straight to the Docs dir if we can -
+                # moving it there via shellMove can leave it without any
+                # permissions when running through MO2 (see #759). Delete the
+                # old ones first, they may be broken in that way
+                data_docs_dir.makedirs()
+                readme.remove()
+                (readme.root + '.html').remove()
+                _write_readme(readme)
+            except PermissionError:
+                # Probably UAC, write to a temp dir and move it from there
+                with TempDir(temp_prefix='Docs',
+                             bolt_path=True) as tmp_readme_dir:
+                    temp_readme = tmp_readme_dir.join(
+                        patch_name.fn_body + '.txt')
+                    _write_readme(temp_readme)
+                    #--Try moving temp log/readme to Docs dir
+                    try:
+                        env.shellMove({tmp_readme_dir: data_docs_dir},
+                            parent=self)
+                    except (CancelError, SkipError):
+                        # User didn't allow UAC, move to My Games directory
+                        # instead
+                        temp_readme_html = temp_readme.root + '.html'
+                        readme_moves = {
+                            temp_readme: bass.dirs['saveBase'].join(
+                                temp_readme.stail),
+                            temp_readme_html: bass.dirs['saveBase'].join(
+                                temp_readme_html.stail)
+                        }
+                        env.shellMove(readme_moves, parent=self)
+                        readme = bass.dirs['saveBase'].join(readme.stail)
             readme_html = readme.root + '.html' # Path __add__!
             shown_log = readme_html if balt.web_viewer_available() else readme
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
