@@ -33,7 +33,7 @@ from ..base import ImportPatcher, ListPatcher
 from ... import bush, load_order
 from ...bolt import FName
 from ...exception import ModSigMismatchError, BPConfigError
-from ...parsers import FactionRelations
+from ...parsers import ActorFactions, FactionRelations
 
 #------------------------------------------------------------------------------
 ##: additions are appended - ordered subrecords need them inserted in place
@@ -219,11 +219,30 @@ class _AMerger(ImportPatcher):
                 key_counts[k] += 1
         return entries
 
+    def _parse_csv_sources(self):
+        filtered_dict = super()._parse_csv_sources()
+        # _filter_csv_fids dropped the records of plugins not loading before
+        # the BP - drop the rows keyed by the fids of such plugins too
+        earlier_loading = self.patchFile.all_plugins
+        self._csv_ids = {sig: fid_rows for sig, d in filtered_dict.items() if (
+            fid_rows := {f: rows for f, r in d.items() if (rows := {
+                k: v for k, v in r.items() if k.mod_fn in earlier_loading})})}
+        # The csv records must reach the patch, and a csv-only configuration
+        # must stay active in initData
+        self.touched.update(*self._csv_ids.values()) # few entries
+        self._present_sigs.update(self._csv_ids)
+
     def _csv_delta(self, record, csv_data):
         """Return the delta the csv rows for the specified record amount to:
-        remove nothing, add and change the same entries - _merge_delta changes
-        the ones present in the record and adds the rest. Only called if we
+        a row changes the entry with its key, else adds it. Only called if we
         read csv sources, see _parse_csv_sources."""
+        csv_entries = [self._csv_entry(record, *row) for row in
+                       csv_data.items()]
+        return self._csv_key, [], [(e, 1) for e in csv_entries], [
+            (e, e) for e in csv_entries]
+
+    def _csv_entry(self, record, entry_key, csv_values):
+        """Return the entry of the specified record a csv row amounts to."""
         raise NotImplementedError
 
     def buildPatch(self,log,progress):
@@ -298,6 +317,33 @@ class ImportRacesRelationsPatcher(_AMerger):
         return subrecord_entry.faction
 
 #------------------------------------------------------------------------------
+class _ActorFactionsParser(ActorFactions):
+    _fp_types = () # We don't need the first pass - only reads csvs
+
+    def _read_record_sp(self, record):
+        raise NotImplementedError # only used as a csv reader in patcher
+
+class ImportActorsFactionsPatcher(_AMerger):
+    logMsg = '\n=== ' + _('Refactioned Actors')
+    srcsHeader = '=== ' + _('Source Mods/Files')
+    _add_tag = 'Actors.Factions.Add'
+    _change_tag = 'Actors.Factions.Change'
+    _remove_tag = 'Actors.Factions.Remove'
+    _wanted_subrecord = {x: 'factions' for x in bush.game.actor_types}
+    patcher_tags = {'Actors.Factions.Add', 'Actors.Factions.Change',
+                    'Actors.Factions.Remove'}
+    _csv_key = 'Factions'
+    _csv_parser = _ActorFactionsParser
+
+    def _csv_entry(self, record, faction_fid, rank):
+        fact_entry = self._csv_parser.get_empty_object(record, faction_fid)
+        fact_entry.rank = rank
+        return fact_entry
+
+    def _entry_key(self, subrecord_entry):
+        return subrecord_entry.faction
+
+#------------------------------------------------------------------------------
 class _FactionRelationsParser(FactionRelations):
     _fp_types = ()
 
@@ -311,31 +357,12 @@ class ImportRelationsPatcher(_AMerger):
     _csv_key = 'Relations'
     _csv_parser = _FactionRelationsParser
 
-    def _parse_csv_sources(self):
-        filtered_dict = super()._parse_csv_sources()
-        # _filter_csv_fids dropped the main factions of plugins not loading
-        # before the BP - drop the relations to such other factions too
-        earlier_loading = self.patchFile.all_plugins
-        self._csv_ids = {sig: fid_rels for sig, d in filtered_dict.items() if (
-            fid_rels := {f: rels for f, r in d.items() if (rels := {
-                o: rel_vals for o, rel_vals in r.items() if
-                o.mod_fn in earlier_loading})})}
-        # The csv factions must reach the patch, and a csv-only configuration
-        # must stay active in initData
-        self.touched.update(*self._csv_ids.values()) # few entries
-        self._present_sigs.update(self._csv_ids)
-
-    def _csv_delta(self, record, csv_data):
+    def _csv_entry(self, record, other_fid, rel_vals):
         csv_parser = self._csv_parser
-        csv_entries = []
-        for other_fid, rel_vals in csv_data.items():
-            rel_entry = csv_parser.get_empty_object(record, other_fid)
-            for rel_attr, rel_val in zip(csv_parser.array_item_attrs, rel_vals):
-                setattr(rel_entry, rel_attr, rel_val)
-            csv_entries.append(rel_entry)
-        # a row changes the relation with its faction, else adds it
-        return self._csv_key, [], [(e, 1) for e in csv_entries], [
-            (e, e) for e in csv_entries]
+        rel_entry = csv_parser.get_empty_object(record, other_fid)
+        for rel_attr, rel_val in zip(csv_parser.array_item_attrs, rel_vals):
+            setattr(rel_entry, rel_attr, rel_val)
+        return rel_entry
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
