@@ -34,7 +34,7 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from . import EventHandler, Font
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
-    _auto_size_to_wx
+    _AComponent, _auto_size_to_wx, scaled
 from .. import bolt
 
 class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
@@ -462,3 +462,76 @@ class ListItemFormat:
     def text_key(self, val: str):
         self._text_key = max(val, self._text_key,
                              key=self._parent_lc.text_key_priority.__getitem__)
+
+#------------------------------------------------------------------------------
+class _AutoWidthListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
+    """A list control whose last column fills the available width."""
+    def __init__(self, parent, style=0):
+        _wx.ListCtrl.__init__(self, parent, style=style)
+        ListCtrlAutoWidthMixin.__init__(self)
+
+class ImageListBox(_AComponent):
+    """A single selection list of labels with a small image on their left -
+    a header-less report list control with a single column. The items are
+    identified by keys, so their labels need not be unique.
+
+    Events:
+      - on_item_selected(item_key: str): Posted when the user selects an
+        item."""
+    _native_widget: _AutoWidthListCtrl
+
+    def __init__(self, parent, *, image_size=16, on_select=None):
+        super().__init__(parent, style=_wx.LC_REPORT | _wx.LC_NO_HEADER |
+                                       _wx.LC_SINGLE_SEL)
+        self._image_size = image_size
+        self._native_widget.InsertColumn(0, '')
+        self._item_keys: list[str] = []
+        self._image_list = None # see set_items
+        self.on_item_selected = self._evt_handler(_wx.EVT_LIST_ITEM_SELECTED,
+            lambda event: [self._item_keys[event.GetIndex()]])
+        if on_select:
+            self.on_item_selected.subscribe(on_select)
+
+    def set_items(self, items):
+        """Replace the items with the specified (key, label, image, greyed,
+        italics) ones - image is a GuiImage of a wx.BitmapBundle, greyed items
+        use the system's color for disabled text. This clears the
+        selection."""
+        native = self._native_widget
+        native.DeleteAllItems()
+        img_size = scaled(self._image_size)
+        # SetImageList does not take ownership of the image list (unlike
+        # AssignImageList), so keep a reference to it
+        self._image_list = _wx.ImageList(img_size, img_size)
+        native.SetImageList(self._image_list, _wx.IMAGE_LIST_SMALL)
+        grey = _wx.SystemSettings.GetColour(_wx.SYS_COLOUR_GRAYTEXT)
+        self._item_keys = []
+        for item_dex, (item_key, item_label, item_image, greyed,
+                       italics) in enumerate(items):
+            # all the images of a wx.ImageList must have its size
+            native.InsertItem(item_dex, item_label, self._image_list.Add(
+                self._resolve(item_image).GetBitmap((img_size, img_size))))
+            if greyed:
+                native.SetItemTextColour(item_dex, grey)
+            if italics: # Style modifies the font GetFont returned, a copy
+                native.SetItemFont(item_dex,
+                                   Font.Style(native.GetFont(), slant=True))
+            self._item_keys.append(item_key)
+
+    def select_key(self, item_key) -> bool:
+        """Select the item with the specified key and scroll to it, if it is
+        listed - return whether it was. Selecting an item programmatically
+        may post an on_item_selected event, depending on the platform."""
+        try:
+            item_dex = self._item_keys.index(item_key)
+        except ValueError:
+            return False
+        self._native_widget.Select(item_dex)
+        self._native_widget.EnsureVisible(item_dex)
+        return True
+
+    def select_none(self):
+        """Clear the selection - posts no on_item_selected event."""
+        native = self._native_widget
+        if (sel_dex := native.GetFirstSelected()) != -1:
+            native.Select(sel_dex, on=False)
