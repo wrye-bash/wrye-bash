@@ -28,7 +28,6 @@ import threading
 import time
 from collections import defaultdict
 from functools import partial, wraps
-from itertools import islice
 from typing import final
 
 import wx
@@ -1931,7 +1930,10 @@ class BashStatusBar(DnDStatusBar):
         # +8 as each button has 4 px border on left and right
         self.__class__.icon_size = _settings['bash.statusbar.iconSize'] + 8
         self._native_widget.SetFieldsCount(3)
-        self.buttons = {}  # populated with SBLinks whose gButtons is not None
+        self._visible_buttons = {} # SBButtons that are not hidden/disabled
+        self._drag_handlers = {'on_drag_start': self._on_drag_start,
+            'on_drag': self._on_drag, 'on_drag_end': self._on_drag_end,
+            'on_drag_end_forced': self._on_drag_end_forced}
         # when bash is run for the first time those are empty - set here
         order = _settings['bash.statusbar.order']
         hide = _settings['bash.statusbar.hide']
@@ -1941,27 +1943,62 @@ class BashStatusBar(DnDStatusBar):
         hide.update(hidden)
         saved_order = {lid: li for lid in order if
                        (li := self.all_sb_links.get(lid))}
-        # append new buttons and reorder BashStatusBar.all_sb_links
-        self.all_sb_links = saved_order | self.all_sb_links
+        # append new buttons and reorder all_sb_links - on the class, which the
+        # settings dialog reads, as links now get added and removed later
+        self.__class__.all_sb_links = saved_order | self.all_sb_links
         order[:] = list(self.all_sb_links)  # set bash.statusbar.order
-        # Add buttons in order that is saved
-        for link_uid, link in self.all_sb_links.items():
-            # Hidden?
-            if link_uid in hide: continue
-            # Add it, if allow_create allows it
-            if link.native_init(self, on_drag_start=self._on_drag_start,
-                on_drag_end=self._on_drag_end, on_drag=self._on_drag,
-                on_drag_end_forced=self._on_drag_end_forced):
-                self.buttons[link.uid] = link
-        self._set_fields_size()
         ##: Why - 10? I just tried values until it looked good, why does
         # this one work best?
         self._native_widget.SetMinHeight(self._native_widget.FromDIP(
             self.icon_size - 10))
-        self._draw_buttons()
+        # Add _visible_buttons in order that is saved
+        self.add_buttons(*self.all_sb_links.values())
         #--Setup Drag-n-Drop reordering
         self._reset_drag(False)
         self.moved = False
+
+    def add_buttons(self, *links):
+        """Add the specified links to all_sb_links and, if missing, to the
+        saved order, and create their buttons unless they are hidden."""
+        order = _settings['bash.statusbar.order']
+        for link in links:
+            self.all_sb_links[link.uid] = link
+            if link.uid not in order: # _sort_buttons sorts by the order
+                order.append(link.uid)
+            if link.uid in _settings['bash.statusbar.hide']: # Hidden?
+                continue
+            # Add it, if allow_create allows it
+            if link.native_init(self, **self._drag_handlers):
+                self._visible_buttons[link.uid] = link
+        self._sort_buttons(order)
+        self._set_fields_size()
+        self._draw_buttons()
+
+    def remove_buttons(self, *uids):
+        """Remove the links with the specified uids from all_sb_links and the
+        settings, destroying their buttons."""
+        order = _settings['bash.statusbar.order']
+        for uid in uids:
+            self._visible_buttons.pop(uid, None)
+            self.all_sb_links.pop(uid).native_destroy()
+            if uid in order:
+                order.remove(uid)
+            _settings['bash.statusbar.hide'].discard(uid)
+        self._set_fields_size()
+        self._draw_buttons()
+
+    def replace_button(self, old_uid, link):
+        """Replace the link with the specified uid with link, keeping its
+        position and whether it is hidden."""
+        order = _settings['bash.statusbar.order']
+        hide = _settings['bash.statusbar.hide']
+        dex = order.index(old_uid)
+        was_hidden = old_uid in hide
+        self.remove_buttons(old_uid)
+        order.insert(dex, link.uid)
+        if was_hidden:
+            hide.add(link.uid)
+        self.add_buttons(link)
 
     def set_sb_text(self, status_text, field_dex, *, show_panel=False):
         super().set_sb_text(status_text, field_dex)
@@ -1971,7 +2008,7 @@ class BashStatusBar(DnDStatusBar):
     # Buttons drag and drop ---------------------------------------------------
     def _getButtonIndex(self, mouseEvent):
         native_button = mouseEvent.event_object_
-        for i, button_link in enumerate(self.buttons.values()):
+        for i, button_link in enumerate(self._visible_buttons.values()):
             if button_link._native_widget == native_button:
                 x = mouseEvent.evt_pos[0]
                 # position is 0 at the beginning of the button's _icon_
@@ -1979,7 +2016,7 @@ class BashStatusBar(DnDStatusBar):
                 if x < -4:
                     return max(i - 1, 0), button_link
                 elif x > self.icon_size - 4:
-                    return min(i + 1, len(self.buttons) - 1), button_link
+                    return min(i + 1, len(self._visible_buttons) - 1), button_link
                 return i, button_link
         return wx.NOT_FOUND, None
 
@@ -2018,17 +2055,15 @@ class BashStatusBar(DnDStatusBar):
                 self.moved = True # just lost your chance to click the button
                 self.set_cursor(hand=True)
             over, _ = self._getButtonIndex(mouse_evnt)
-            button_link = next(islice(self.buttons.values(), self.dragging, None), None)
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
-                # update settings
-                uid = button_link.uid
-                overUid = self.buttons[[*self.buttons][over]].uid
+                # update settings - _visible_buttons is keyed by uid
+                but_uids = [*self._visible_buttons]
                 uid_order = _settings['bash.statusbar.order']
-                overIndex = uid_order.index(overUid)
-                uid_order.remove(uid)
-                uid_order.insert(overIndex, uid)
-                # resort self.buttons
+                overIndex = uid_order.index(but_uids[over])
+                uid_order.remove(but_uids[self.dragging])
+                uid_order.insert(overIndex, but_uids[self.dragging])
+                # resort self._visible_buttons
                 self._sort_buttons(uid_order)
                 self.dragging = over
                 # Refresh button positions
@@ -2036,14 +2071,14 @@ class BashStatusBar(DnDStatusBar):
 
     def _sort_buttons(self, uid_order):
         uid_order = {k: j for j, k in enumerate(uid_order)}
-        self.buttons = {k: self.buttons[k] for k in
-                        sorted(self.buttons, key=uid_order.get)}
+        self._visible_buttons = dict(bolt.dict_sort(self._visible_buttons,
+                                                    key_f=uid_order.get))
 
     def _draw_buttons(self):
         rect = self._native_widget.GetFieldRect(0)
         xPos, yPos = rect.x + self._native_widget.FromDIP(4), rect.y
         button_spacing = self._native_widget.FromDIP(self.icon_size)
-        for button_link in self.buttons.values():
+        for button_link in self._visible_buttons.values():
             button_link.component_position = (xPos, yPos)
             xPos += button_spacing
 
@@ -2056,14 +2091,12 @@ class BashStatusBar(DnDStatusBar):
             hidden_buttons.discard(link_uid)
             link = self.all_sb_links[link_uid]
             if not link.native_init(self, recreate=False,
-                    on_drag_start=self._on_drag_start,
-                    on_drag_end=self._on_drag_end, on_drag=self._on_drag,
-                    on_drag_end_forced=self._on_drag_end_forced):
+                                    **self._drag_handlers):
                 if not link.allow_create():
                     deprint(f'requested to create non existent button {link}')
                     continue
                 link.visible = True  # button was already created and hidden
-            self.buttons[link_uid] = link
+            self._visible_buttons[link_uid] = link
             # Find the position to insert it at
             if link_uid not in order:
                 # Not specified, put it at the end
@@ -2072,11 +2105,11 @@ class BashStatusBar(DnDStatusBar):
                 sort_buttons = True
         if sort_buttons: self._sort_buttons(order)
         for link_uid in hide_ids:
-            try:
-                self.buttons[link_uid].visible = False
-                del self.buttons[link_uid]
-                hidden_buttons.add(link_uid)
-            except KeyError: pass # should not happen
+            # also for links without a button (allow_create returned False),
+            # so they stay hidden should they get one - see replace_button
+            hidden_buttons.add(link_uid)
+            if button_link := self._visible_buttons.pop(link_uid, None):
+                button_link.visible = False
         self._set_fields_size()
         self._draw_buttons()
 
@@ -2088,7 +2121,7 @@ class BashStatusBar(DnDStatusBar):
         if wx.Platform != '__WXMSW__':
             text_length_px += 10
         self._native_widget.SetStatusWidths(
-            [self._native_widget.FromDIP(self.icon_size) * len(self.buttons),
+            [self._native_widget.FromDIP(self.icon_size) * len(self._visible_buttons),
              -1, text_length_px])
 
     @classmethod
