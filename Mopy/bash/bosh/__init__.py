@@ -217,6 +217,8 @@ class MasterInfo:
 _removed_tags = {'Merge', 'ScriptContents'}
 #734: Indefinite backwards-compatibility aliases for deprecated tags
 _tag_aliases = {
+    'Actors.Factions': {'Actors.Factions.Add', 'Actors.Factions.Change',
+                        'Actors.Factions.Remove'},
     'Actors.Perks.Add': {'NPC.Perks.Add'},
     'Actors.Perks.Change': {'NPC.Perks.Change'},
     'Actors.Perks.Remove': {'NPC.Perks.Remove'},
@@ -230,7 +232,8 @@ _tag_aliases = {
     'Eyes-D': {'R.Eyes'},
     'Eyes-E': {'R.Eyes'},
     'Eyes-R': {'R.Eyes'},
-    'Factions': {'Actors.Factions'},
+    'Factions': {'Actors.Factions.Add', 'Actors.Factions.Change',
+                 'Actors.Factions.Remove'},
     'Hair': {'R.Hair'},
     'Invent': {'Invent.Add', 'Invent.Remove'},
     'InventOnly': {'IIM', 'Invent.Add', 'Invent.Remove'},

@@ -33,9 +33,8 @@ from itertools import chain
 from ..base import ImportPatcher
 from ... import bush
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
-from ...brec import RecordType
 from ...exception import ModSigMismatchError
-from ...parsers import ActorFactions, FullNames, ItemStats, SpellRecords
+from ...parsers import FullNames, ItemStats, SpellRecords
 
 #------------------------------------------------------------------------------
 class APreserver(ImportPatcher):
@@ -277,43 +276,6 @@ class ImportActorsFacesPatcher(APreserver):
         if __auto_re.match(src_fn) and src_fn in p_file.all_plugins:
             return True
         return super()._validate_mod(p_file, src_fn, raise_on_errors)
-
-#------------------------------------------------------------------------------
-class _ActorFactionsParser(ActorFactions):
-    _fp_types = () # We don't need the first pass - only reads csvs
-
-    def _read_record_sp(self, record):
-        raise NotImplementedError # only used as a csv reader in patcher
-
-class ImportActorsFactionsPatcher(APreserver):
-    logMsg = '\n=== ' + _('Refactioned Actors')
-    srcsHeader = '=== ' + _('Source Mods/Files')
-    # Has FormIDs, but will be filtered in AMreActor.keep_fids
-    rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
-    _csv_parser = _ActorFactionsParser
-    patcher_tags = {'Actors.Factions'}
-    _csv_key = 'Factions'
-
-    def _filter_csv_fids(self, parser_instance, loaded_csvs):
-        """Transform the parser structure to the one used by the patcher."""
-        filtered_dict = super()._filter_csv_fids(parser_instance, loaded_csvs)
-        # filter existing factions and convert to the patcher representation
-        earlier_loading = self.patchFile.all_plugins
-        patcher_dict = {}
-        for sig, d in filtered_dict.items():
-            rec_type = RecordType.sig_to_class[sig]
-            patcher_dict_sig = {}
-            for f, facts in d.items():
-                fact_obj = []
-                for fact_fid, rank in facts.items():
-                    if fact_fid.mod_fn not in earlier_loading: continue
-                    ret_obj = parser_instance.get_empty_object(rec_type,
-                                                               fact_fid)
-                    ret_obj.rank = rank
-                    fact_obj.append(ret_obj)
-                if fact_obj: patcher_dict_sig[f] = {'factions': fact_obj}
-            if patcher_dict_sig: patcher_dict[sig] = patcher_dict_sig
-        return patcher_dict
 
 #------------------------------------------------------------------------------
 class ImportDestructiblePatcher(APreserver):
