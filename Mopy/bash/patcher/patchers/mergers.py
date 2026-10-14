@@ -36,7 +36,7 @@ from ...exception import ModSigMismatchError, BPConfigError
 from ...parsers import FactionRelations
 
 #------------------------------------------------------------------------------
-##: currently relies on the merged subrecord being sorted - fix that
+##: additions are appended - ordered subrecords need them inserted in place
 ##: add ForceAdd support
 ##: once the two tasks above are done, absorb all other mergers
 ##: a lot of code still shared with APreserver - move to ImportPatcher
@@ -131,7 +131,6 @@ class _AMerger(ImportPatcher):
             can_change = self._change_tag in applied_tags
             can_remove = self._remove_tag in applied_tags
             master_id_entries = {}
-            en_key = self._entry_key # ex. attrgetter('faction')
             # Determine the effective master entries. First, find the winning
             # master entries (as determined by rule of one)
             for master in modFile.tes4.masters:
@@ -149,31 +148,19 @@ class _AMerger(ImportPatcher):
                         # this source
                         if delta[0] in src_masters_set:
                             new_entries = self._merge_delta(
-                                delta, curr_entries)
+                                delta, new_entries)
                     if new_entries != curr_entries:
                         master_id_entries[m_fid] = new_entries
             for rid, entries in mod_id_entries[modName].items():
                 if (masterEntries := master_id_entries.get(rid)) is None:
                     continue # new record defined in modName - no deltas
-                master_keys = {en_key(x) for x in masterEntries}
-                modkeys = {en_key(x) for x in entries}
-                remove_keys = master_keys - modkeys if can_remove else set()
-                # Note that we need to calculate these whether or not we're
-                # Add-tagged, because Change needs them as well.
-                addItems = modkeys - master_keys
-                addEntries = [x for x in entries if en_key(x) in addItems]
-                # Changed entries are those entries that haven't been newly
-                # added but also differ from the master entries
-                if can_change:
-                    changed_entries = [x for x in entries
-                                       if x not in masterEntries
-                                       and x not in addEntries]
-                else:
-                    changed_entries = []
-                final_add_entries = addEntries if can_add else []
-                if remove_keys or final_add_entries or changed_entries:
-                    id_deltas[rid].append((modName, remove_keys,
-                                           final_add_entries, changed_entries))
+                removed, added, changed = self._entries_diff(masterEntries,
+                                                             entries)
+                delta = (modName, removed if can_remove else [],
+                         added if can_add else [],
+                         changed if can_change else [])
+                if any(delta[1:]):
+                    id_deltas[rid].append(delta)
         # Copy the new records we want to keep, unless we're an IIM merger and
         # the mod is IIM-tagged
         if modFile.fileInfo.fn_key not in self.inventOnlyMods:
@@ -185,43 +172,52 @@ class _AMerger(ImportPatcher):
         # handled by mergeModFile/update_patch_records_from_mod
         return self.touched
 
-    def _merge_delta(self, delta, record_entries):
-        """Perform one set of removals, additions and changes on the specified
-        record's entries and return the new entries."""
+    def _entries_diff(self, master_entries, mod_entries):
+        """Return the master entries mod_entries remove, the entries they add -
+        each with the number of entries of its key in mod_entries - and the
+        (master entry, entry) pairs they change. Equal entries are matched
+        first, then the rest pair up by key in order, so duplicates work."""
         en_key = self._entry_key
-        _modName, remove_keys, add_entries, change_entries = delta
-        # First execute removals, don't want to change something
-        # we're going to remove
-        if remove_keys:
-            record_entries = [x for x in record_entries if
-                              en_key(x) not in remove_keys]
-        # Then execute changes, don't want to modify our own
-        # additions
-        if change_entries:
-            # In order to not modify the list while iterating
-            final_remove = []
-            final_add = []
-            for change_entry in change_entries:
-                # Look for one with the same item - can't just use
-                # a dict or change the items directly because we
-                # have to respect duplicates
-                for curr_entry in record_entries:
-                    if en_key(change_entry) == en_key(curr_entry):
-                        # Remove the old entry, add the changed one
-                        final_remove.append(curr_entry)
-                        final_add.append(change_entry)
-                        break
-            # No need to check both, see add/append above
-            if final_remove:
-                record_entries = [x for x in record_entries if
-                                  x not in final_remove] + final_add
-        # Finally, execute additions - fairly straightforward
-        if add_entries:
-            current_keys = {en_key(x) for x in record_entries}
-            for entry in add_entries:
-                if en_key(entry) not in current_keys:
-                    record_entries.append(entry)
-        return record_entries
+        removed, new_entries = master_entries[:], []
+        for entry in mod_entries:
+            if entry in removed: removed.remove(entry)
+            else: new_entries.append(entry)
+        key_counts = Counter(map(en_key, mod_entries))
+        added, changed = [], []
+        for entry in new_entries:
+            if same_key := [x for x in removed if en_key(x) == en_key(entry)]:
+                removed.remove(same_key[0])
+                changed.append((same_key[0], entry))
+            else:
+                added.append((entry, key_counts[en_key(entry)]))
+        return removed, added, changed
+
+    def _merge_delta(self, delta, record_entries):
+        """Perform one set of removals, changes and additions on a copy of the
+        specified record's entries and return it."""
+        en_key = self._entry_key
+        _modName, removed, added, changed = delta
+        entries = record_entries[:]
+        def find(entry): # an equal entry, else the first one with its key -
+            # another plugin may have changed it
+            if entry in entries: return entries.index(entry)
+            return next((i for i, x in enumerate(entries) if
+                         en_key(x) == en_key(entry)), None)
+        # First execute removals, don't want to change something we're going
+        # to remove
+        for old in removed:
+            if (i := find(old)) is not None: del entries[i]
+        # Then execute changes in place, don't want to modify our own additions
+        for old, new in changed:
+            if (i := find(old)) is not None: entries[i] = new
+        # Finally execute additions, up to the number of entries of their key
+        # in the plugin - another plugin may have added them already
+        key_counts = Counter(map(en_key, entries))
+        for new, wanted in added:
+            if key_counts[k := en_key(new)] < wanted:
+                entries.append(new)
+                key_counts[k] += 1
+        return entries
 
     def _csv_delta(self, record, csv_data):
         """Return the delta the csv rows for the specified record amount to:
@@ -235,7 +231,6 @@ class _AMerger(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_deltas = self._id_deltas
         mod_count = Counter()
-        en_key = self._entry_key
         for curr_sig, p_block in self.patchFile.iter_tops(self._read_sigs):
             sr_attr = self._wanted_subrecord[curr_sig]
             csv_ids = self._csv_ids.get(curr_sig, {})
@@ -245,13 +240,10 @@ class _AMerger(ImportPatcher):
                     # The csv rows come last, so they win over the plugins
                     deltas = [*deltas, self._csv_delta(record, csv_data)]
                 if not deltas: continue
-                wip_entries = getattr(record, sr_attr)
-                # Use sorted to preserve duplicates, but ignore order. This
-                # is safe because order does not matter for items.
-                old_entries = sorted(wip_entries, key=en_key)
+                wip_entries = old_entries = getattr(record, sr_attr)
                 for delta in deltas:
                     wip_entries = self._merge_delta(delta, wip_entries)
-                if old_entries != sorted(wip_entries, key=en_key):
+                if wip_entries != old_entries:
                     setattr(record, sr_attr, wip_entries)
                     keep(rid, record)
                     mod_count[rid.mod_fn] += 1
@@ -341,7 +333,9 @@ class ImportRelationsPatcher(_AMerger):
             for rel_attr, rel_val in zip(csv_parser.array_item_attrs, rel_vals):
                 setattr(rel_entry, rel_attr, rel_val)
             csv_entries.append(rel_entry)
-        return self._csv_key, set(), csv_entries, csv_entries
+        # a row changes the relation with its faction, else adds it
+        return self._csv_key, [], [(e, 1) for e in csv_entries], [
+            (e, e) for e in csv_entries]
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
