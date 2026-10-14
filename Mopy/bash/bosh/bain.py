@@ -836,7 +836,8 @@ class Installer(ListInfo):
         return self.refresh_dest_srcs(checkOBSE)[0]
 
     def refresh_dest_srcs(self, checkOBSE=False, *, splitExt=os.path.splitext,
-                          __skip_exts: frozenset[str] = skipExts):
+                          __skip_exts: frozenset[str] = skipExts,
+                          __fomod_start=f'fomod{os_sep}'):
         """Update self.ci_dest_sizeCrc, self.ci_root_sizeCrc and related
         variables and return the dest_src maps for both. If this package
         installs to the game root, the files in the Data folder of the
@@ -1017,6 +1018,10 @@ class Installer(ListInfo):
                         fileLower = fileLower[len_data_start:]
                     elif fileLower == 'wizard.txt':
                         self.hasWizard = full
+                        continue
+                    elif fileLower.startswith(__fomod_start):
+                        # Installer data, not meant for the game folder
+                        skipDirFilesAdd(full)
                         continue
                     else:
                         # Installed to the game folder the way it is laid out

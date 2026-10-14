@@ -179,6 +179,21 @@ def test_game_root_package_destinations(monkeypatch):
     assert not package.ci_root_sizeCrc
 
 
+def test_game_root_package_fomod_dir(monkeypatch):
+    """The fomod folder of a package that installs to the game root is not
+    installed to the game folder."""
+    _init_bain(monkeypatch)
+    package = _package(dict.fromkeys([
+        'binary.dll', 'fomod/info.xml', 'fomod/images/a.png',
+        'fomod/ModuleConfig.xml'], 0), True)
+    assert _lower(package.ci_root_sizeCrc) == _paths('binary.dll')
+    # the same in a sub-package
+    package = _package(dict.fromkeys([
+        '00 Core/binary.dll', '00 Core/fomod/info.xml',
+        '01 Extra/enbseries/effect.fx'], 0), True, sub_actives=[True, False])
+    assert _lower(package.ci_root_sizeCrc) == _paths('binary.dll')
+
+
 def test_game_root_package_conflicts(monkeypatch):
     """The files in the Data folder of packages that install to the game
     root conflict with the files of any other package, the files in the game
