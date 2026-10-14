@@ -22,11 +22,13 @@
 #
 # =============================================================================
 import os
+from collections import defaultdict
 from types import SimpleNamespace
 
-from ... import bosh
-from ...bolt import LowerDict
-from ...bosh.bain import InstallerProject, InstallersData, _remove_empty_dirs
+from ... import bass, bush
+from ...bolt import DataDict, FName, LowerDict
+from ...bosh.bain import Installer, InstallerProject, InstallersData, \
+    _remove_empty_dirs
 from ...wbtemp import TempDir
 
 def test__remove_empty_dirs():
@@ -102,46 +104,134 @@ def test_game_root_package_structure():
     assert _structure(options, True) == ('', 2, ['00 Main', '01 Extra'])
 
 
-class _CleanData:
-    """Stand in for InstallersData - made up packages and Data folder
-    contents, we only care for what Clean Data would remove."""
-    def __init__(self, packages, data_files):
-        self._packages = packages
-        self.data_sizeCrcDate = LowerDict((os.path.join(*f.split('/')), (
-            0, 0, 0)) for f in data_files)
-
-    def values(self): return self._packages
-    def sorted_values(self, reverse=False): return self._packages
+def _init_bain(monkeypatch):
+    """All BAIN settings off, except for showing lower conflicts, and the
+    directories of the game's Data folder known."""
+    monkeypatch.setattr(bass, 'settings', defaultdict(
+        bool, {'bash.installers.conflictsReport.showLower': True}))
+    monkeypatch.setattr(Installer, 'dataDirsPlus',
+                        Installer.dataDirsPlus | bush.game.Bain.data_dirs)
+    Installer.init_attributes_process()
 
 
-def _clean_data_package(dest_files, install_to_game_root, is_active=True):
-    return SimpleNamespace(is_active=is_active,
-        install_to_game_root=install_to_game_root, ci_dest_sizeCrc=LowerDict(
-            (os.path.join(*f.split('/')), (0, 0)) for f in dest_files))
+def _package(package_files, install_to_game_root, order=0, sub_actives=None):
+    """Return an active package with its destinations - package_files maps
+    the paths of the files in the package to their CRCs."""
+    package = _Package(package_files, install_to_game_root)
+    package.fileSizeCrcs = [(os.path.join(*f.split('/')), 1, crc) for f, crc
+                            in package_files.items()]
+    package.fn_key = FName(f'Package {order}')
+    package.order = order
+    if sub_actives is not None:
+        package.subActives = [True, *sub_actives]
+    package.is_active = True
+    package.refresh_dest_srcs()
+    return package
 
 
-def test_clean_data_keeps_game_root_package_files(monkeypatch):
-    """The files a package installs to the game folder may end up in the Data
-    folder - Clean Data must not remove those."""
-    monkeypatch.setattr(bosh, 'modInfos', SimpleNamespace(bashed_patches=()))
-    data_files = ['Scripts/a.pex', 'scripts/B.pex', 'Textures/c.dds',
-                  'Textures/d.dds', 'Data/e.dds']
-    def _removes(*packages):
-        return {f.lower() for f in InstallersData.get_clean_data_dir_list(
-            _CleanData(packages, data_files))}
-    def _expected(*removed):
-        return {os.path.join(*f.split('/')).lower() for f in removed}
-    data_pkg = _clean_data_package(['Textures/c.dds'], False)
-    root_pkg = _clean_data_package(
-        ['binary.dll', 'data/Scripts/a.pex', 'Data/Scripts/b.pex'], True)
-    assert _removes(data_pkg, root_pkg) == _expected(
-        'Textures/d.dds', 'Data/e.dds')
-    # the paths of a package that installs to the game folder are relative
-    # to that folder, so those are not in the Data folder
-    root_pkg = _clean_data_package(['Textures/d.dds', 'Scripts/a.pex'], True)
-    assert _removes(data_pkg, root_pkg) == _expected(
-        'Scripts/a.pex', 'scripts/B.pex', 'Textures/d.dds', 'Data/e.dds')
-    # an inactive package does not keep its files
-    root_pkg = _clean_data_package(['Data/Scripts/a.pex'], True, False)
-    assert _removes(data_pkg, root_pkg) == _expected(
-        'Scripts/a.pex', 'scripts/B.pex', 'Textures/d.dds', 'Data/e.dds')
+def _paths(*files):
+    return {os.path.join(*f.split('/')).lower() for f in files}
+
+
+def _lower(paths):
+    return {p.lower() for p in paths}
+
+
+def test_game_root_package_destinations(monkeypatch):
+    """The files in the Data folder of a package that installs to the game
+    root go through the same rules as the files of any other package,
+    relative to the Data folder - the rest go to the game folder the way
+    they are laid out in the package."""
+    _init_bain(monkeypatch)
+    vanilla_master = min(f for f in bush.game.bethDataFiles if
+                         f.endswith('.esm'))
+    package = _package(dict.fromkeys([
+        'binary.dll', 'Plugin.esp', 'enbseries/effect.fx', 'wizard.txt',
+        'Data/Plugin.esp', 'Data/Textures/a.dds', f'Data/{vanilla_master}',
+        'Data/Unknown/b.nif'], 0), True)
+    # the vanilla master and the unknown directory are skipped
+    assert _lower(package.ci_dest_sizeCrc) == _paths('Plugin.esp',
+                                                    'Textures/a.dds')
+    # a file outside the Data folder may have the same path as one in it -
+    # and the wizard is not installed
+    assert _lower(package.ci_root_sizeCrc) == _paths(
+        'binary.dll', 'Plugin.esp', 'enbseries/effect.fx')
+    assert package.hasWizard
+    # both are mapped to their path in the package for installing them
+    dest_src, root_dest_src = package.refresh_dest_srcs()
+    assert dest_src['Plugin.esp'] == os.path.join('Data', 'Plugin.esp')
+    assert root_dest_src['Plugin.esp'] == 'Plugin.esp'
+    # shown relative to the game folder
+    assert _lower(package.to_install_root(
+        package.ci_dest_sizeCrc, package.ci_root_sizeCrc)) == _paths(
+        'binary.dll', 'Plugin.esp', 'enbseries/effect.fx', 'Data/Plugin.esp',
+        'Data/Textures/a.dds')
+    # the Data folder of a sub-package
+    package = _package(dict.fromkeys([
+        '00 Core/binary.dll', '00 Core/Data/Plugin.esp',
+        '01 Extra/enbseries/effect.fx', '01 Extra/Data/Textures/a.dds'], 0),
+        True, sub_actives=[True, False])
+    assert _lower(package.ci_dest_sizeCrc) == _paths('Plugin.esp')
+    assert _lower(package.ci_root_sizeCrc) == _paths('binary.dll')
+    # a package that installs to Data has no files for the game folder
+    package = _package(dict.fromkeys(['Plugin.esp', 'Data/a.dds'], 0), False)
+    assert _lower(package.ci_dest_sizeCrc) == _paths('Plugin.esp')
+    assert not package.ci_root_sizeCrc
+
+
+def test_game_root_package_conflicts(monkeypatch):
+    """The files in the Data folder of packages that install to the game
+    root conflict with the files of any other package, the files in the game
+    folder only with the ones other packages install there."""
+    _init_bain(monkeypatch)
+    low = _package({'enbseries/a.fx': 1, 'Data/Scripts/a.pex': 1}, True, 0)
+    src = _package({'enbseries/a.fx': 2, 'Data/Scripts/a.pex': 2,
+                    'Scripts/c.pex': 2, 'binary.dll': 2}, True, 1)
+    high = _package({'Scripts/a.pex': 3, 'Scripts/c.pex': 3}, False, 2)
+    monkeypatch.setattr(Installer, 'instData', SimpleNamespace(
+        sorted_values=lambda: [low, src, high]))
+    lower, higher, *_bsas = src._InstallerPackage__find_conflicts(True, None)
+    assert [(i, _lower(c)) for i, c in lower] == [
+        (low, _paths('enbseries/a.fx', 'Data/Scripts/a.pex'))]
+    # Scripts/c.pex of src goes to the game folder, not to Data
+    assert [(i, _lower(c)) for i, c in higher] == [
+        (high, _paths('Data/Scripts/a.pex'))]
+    # the other way round
+    lower, higher, *_bsas = high._InstallerPackage__find_conflicts(True, None)
+    assert [(i, _lower(c)) for i, c in lower] == [
+        (low, _paths('Scripts/a.pex')), (src, _paths('Scripts/a.pex'))]
+    assert not higher
+
+
+def test_game_root_package_uninstall(monkeypatch):
+    """Uninstalling a package that installs to the game root removes its
+    files from the game folder and from Data - and restores the ones lower
+    packages install."""
+    _init_bain(monkeypatch)
+    low = _package({'enbseries/a.fx': 1, 'Data/Scripts/a.pex': 1}, True, 0)
+    src = _package({'enbseries/a.fx': 2, 'Data/Scripts/a.pex': 2,
+                    'Data/Scripts/b.pex': 2, 'binary.dll': 2}, True, 1)
+    high = _package({'Scripts/b.pex': 3}, False, 2)
+    idata = InstallersData.__new__(InstallersData) # skip the init
+    DataDict.__init__(idata, {p.fn_key: p for p in (low, src, high)})
+    # what is on disk - src overwrote the files of low, high those of src
+    idata.data_sizeCrcDate = LowerDict({
+        os.path.join('Scripts', 'a.pex'): (1, 2, 0),
+        os.path.join('Scripts', 'b.pex'): (1, 3, 0)})
+    idata.game_root_sizeCrcDate = LowerDict({
+        os.path.join('enbseries', 'a.fx'): (1, 2, 0),
+        'binary.dll': (1, 2, 0)})
+    removed_restored = []
+    monkeypatch.setattr(idata, '_remove_restore',
+                        lambda *args, **kwargs: removed_restored.extend(args))
+    InstallersData.bain_uninstall.__wrapped__(
+        idata, [src.fn_key], cede_ownership=defaultdict(set))
+    (removes, root_removes), (restores, root_restores) = removed_restored[:2]
+    assert not src.is_active
+    # Scripts/a.pex is restored from low, Scripts/b.pex belongs to high
+    assert not removes
+    assert _lower(root_removes) == _paths('binary.dll')
+    assert {k.lower(): v for k, v in restores.items()} == {
+        os.path.join('scripts', 'a.pex'): low.fn_key}
+    assert {k.lower(): v for k, v in root_restores.items()} == {
+        os.path.join('enbseries', 'a.fx'): low.fn_key}

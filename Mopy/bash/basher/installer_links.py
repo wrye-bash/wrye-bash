@@ -260,8 +260,11 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
             # to the final project, so clean it up
             cleanup_temp_dir(src_folder)
         with balt.Progress(_('Creating Project…')) as prog:
-            self.idata.new_info(pr_path, prog,
-                                install_order=sel_package.order + 1)
+            new_proj = self.idata.new_info(pr_path, prog,
+                install_order=sel_package.order + 1, do_refresh=False)
+            # The FOMOD output is laid out for where sel_package installs to
+            new_proj.copy_install_root(sel_package)
+            self.idata.refresh_ns()
 
 class Installer_EditWizard(_Installer_AViewOrEditFile):
     """View or edit the wizard.txt associated with this package."""
@@ -519,16 +522,22 @@ class Installer_InstallToGameRoot(CheckLink, _RefreshingLink):
         inst = self._selected_info
         inst.install_to_game_root ^= True
         self.idata.hasChanged = True  # the refresh below might not do it
+        if inst.extras_dict.pop('fomod_dict_v2', None) is not None:
+            # The FOMOD output depends on where the package installs to, so
+            # the FOMOD must be run again
+            if inst.extras_dict.get('fomod_active', False):
+                self.window.SelectItem(inst.fn_key)
+                self.iPanel.detailsPanel.set_fomod_mode(fomod_enabled=False)
         with balt.Progress(title=self._text) as progress:
             # The structure of the package depends on where it installs to
             dest_src = inst._reset_cache(inst._stat_tuple(), progress=progress)
             if inst.overrideSkips:
                 self.idata.update_for_overridden_skips(set(dest_src), progress)
-            if inst.install_to_game_root:
+            if inst.ci_root_sizeCrc:
                 # We do not scan the game folder, so check if the files of
                 # the package are already there
-                self.idata.update_data_SizeCrcDate(set(dest_src), progress,
-                                                   game_root=True)
+                self.idata.update_data_SizeCrcDate(set(inst.ci_root_sizeCrc),
+                                                   progress, game_root=True)
             self.idata.refresh_ns(progress=progress)
         self.window.RefreshUI()
 
@@ -1214,7 +1223,9 @@ class Installer_SyncFromData(_SingleInstallable):
         sel_inf = self._selected_info
         return (super()._enable() and
                 sel_inf.install_to_game_root == self._from_game_root and
-                bool(sel_inf.missingFiles or sel_inf.mismatchedFiles))
+                bool(sel_inf.missingFiles or sel_inf.mismatchedFiles or
+                     sel_inf.root_missing_files or
+                     sel_inf.root_mismatched_files))
 
     def Execute(self):
         was_rar = self._selected_item != (
@@ -1226,8 +1237,12 @@ class Installer_SyncFromData(_SingleInstallable):
                   'so you may want to manually delete it afterwards.'),
                 _("Click 'Yes' to repack, or 'No' to abort the sync.")])):
             return # user clicked 'No'
-        missing = sorted(self._selected_info.missingFiles)
-        mismatched = sorted(self._selected_info.mismatchedFiles)
+        sel_inf = self._selected_info
+        # relative to the folder the package installs to
+        missing = sorted(sel_inf.to_install_root(sel_inf.missingFiles,
+                                                 sel_inf.root_missing_files))
+        mismatched = sorted(sel_inf.to_install_root(
+            sel_inf.mismatchedFiles, sel_inf.root_mismatched_files))
         ed_ok, ed_missing, ed_mismatched = self._sync_editor.display_dialog(
             self.window, pkg_missing=missing, pkg_mismatched=mismatched,
             pkg_name=self._selected_item)

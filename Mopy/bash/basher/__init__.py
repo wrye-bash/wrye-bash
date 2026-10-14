@@ -2504,8 +2504,8 @@ class InstallersList(UIList):
                         op = partial(installer._reset_cache,
                             progress=SubProgress(progress, index, index + 1),
                             recalculate_project_crc=calculate_projects_crc)
-                    (root_dest if installer.install_to_game_root
-                     else dest).update(op())
+                    dest.update(op())
+                    root_dest.update(installer.ci_root_sizeCrc)
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _('Refreshing from %(data_folder)s…') % {
@@ -2729,9 +2729,14 @@ class InstallersDetails(_SashDetailsPanel):
             inf_ = ['== ' + _('Overview'), _('Type: %(package_type)s') % {
                 'package_type': installer.type_string},
                     installer.structure_string(), installer.size_info_str()]
-            nConfigured = len(installer.ci_dest_sizeCrc)
-            nMissing = len(installer.missingFiles)
-            nMismatched = len(installer.mismatchedFiles)
+            # relative to the folder the package installs to
+            configured = installer.to_install_root(
+                installer.ci_dest_sizeCrc, installer.ci_root_sizeCrc)
+            nConfigured = len(configured)
+            nMissing = len(installer.missingFiles) + len(
+                installer.root_missing_files)
+            nMismatched = len(installer.mismatchedFiles) + len(
+                installer.root_mismatched_files)
             ismark = installer.is_marker
             numstr = partial(installer.number_string, marker_string='N/A')
             inf_.extend([
@@ -2752,22 +2757,27 @@ class InstallersDetails(_SashDetailsPanel):
                 '  ' + _('Conflicts: %(num_files)s') % {
                     'num_files': numstr(nMismatched)},
                 '', # One newline in between the main info and the file list
-                _dumpFiles(installer.ci_dest_sizeCrc,
-                           '== ' + _('Configured Files'))])
+                _dumpFiles(configured, '== ' + _('Configured Files'))])
             gPage.text_content = u'\n'.join(inf_)
         elif pageName == u'gMatched':
-            gPage.text_content = _dumpFiles(installer.ci_dest_sizeCrc.keys() -
-                installer.missingFiles - installer.mismatchedFiles)
+            gPage.text_content = _dumpFiles(installer.to_install_root(
+                installer.ci_dest_sizeCrc.keys() - installer.missingFiles -
+                installer.mismatchedFiles, installer.ci_root_sizeCrc.keys() -
+                installer.root_missing_files -
+                installer.root_mismatched_files))
         elif pageName == u'gMissing':
-            gPage.text_content = _dumpFiles(installer.missingFiles)
+            gPage.text_content = _dumpFiles(installer.to_install_root(
+                installer.missingFiles, installer.root_missing_files))
         elif pageName == u'gMismatched':
-            gPage.text_content = _dumpFiles(installer.mismatchedFiles)
+            gPage.text_content = _dumpFiles(installer.to_install_root(
+                installer.mismatchedFiles, installer.root_mismatched_files))
         elif pageName == u'gConflicts':
             gPage.text_content = installer.get_conflict_report(True, act_bsas)
         elif pageName == u'gUnderrides':
             gPage.text_content = installer.get_conflict_report(False, act_bsas)
         elif pageName == u'gDirty':
-            gPage.text_content = _dumpFiles(installer.dirty_sizeCrc)
+            gPage.text_content = _dumpFiles(installer.to_install_root(
+                installer.dirty_sizeCrc, installer.dirty_root_sizeCrc))
         elif pageName == u'gSkipped':
             gPage.text_content = u'\n'.join((_dumpFiles(
                 installer.skipExtFiles, u'== ' + _(u'Skipped (Extension)')),
