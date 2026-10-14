@@ -279,10 +279,6 @@ class PatchDialog(DialogWindow):
                         env.shellMove(readme_moves, parent=self)
                         readme = bass.dirs['saveBase'].join(readme.stail)
             readme_html = readme.root + '.html' # Path __add__!
-            shown_log = readme_html if balt.web_viewer_available() else readme
-            balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
-            balt.show_log(self.parent, shown_log, patch_name, wrye_log=True,
-                          asDialog=True)
             # We have to parse the new infos first, since the masters may
             # differ. Most people probably don't keep BAIN packages of BPs,
             # but *I* do, so...
@@ -300,6 +296,20 @@ class PatchDialog(DialogWindow):
             # We have to parse the new infos first since the masters may differ
             # note this won't activate the new masters, the caller has to do it
             self._bp_rdata |= minfos.refresh(rinf, force_update=True)
+            #--Show the log last - the BP is built and saved, so failing to
+            # read the log (see #759) must not skip the refresh above or
+            # make the build look like it failed
+            shown_log = readme_html if balt.web_viewer_available() else readme
+            balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
+            try:
+                balt.show_log(self.parent, shown_log, patch_name,
+                              wrye_log=True, asDialog=True)
+            except OSError as e:
+                bolt.deprint(f'Failed to show the log of {patch_name}:',
+                             traceback=True)
+                msg = _('%(patch_name)s was built successfully, but its log '
+                        'could not be shown.') % {'patch_name': patch_name}
+                showError(self, f'{msg}\n\n{e}', _('Bashed Patch Error'))
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
