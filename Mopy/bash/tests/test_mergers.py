@@ -25,15 +25,25 @@ from collections import namedtuple
 
 import pytest
 
-from ..patcher.patchers.mergers import ImportInventoryPatcher
+from ..patcher.patchers.mergers import ImportActorsFactionsPatcher, \
+    ImportInventoryPatcher
 
 _Entry = namedtuple('_Entry', ['item', 'count'])
+_Faction = namedtuple('_Faction', ['faction', 'rank'])
 # _entries_diff and _merge_delta only need _entry_key, so skip __init__
 _merger = object.__new__(ImportInventoryPatcher)
 
-def _ents(spec):
+def _ents(spec, entry_type=_Entry):
     """'A1 A5' -> [_Entry('A', 1), _Entry('A', 5)]"""
-    return [_Entry(s[0], int(s[1:])) for s in spec.split()]
+    return [entry_type(s[0], int(s[1:])) for s in spec.split()]
+
+def _merge(merger, master, plugins):
+    """Merge the changes plugins with the same master make to it."""
+    entries = master
+    for plugin in plugins:
+        delta = ('Mod.esp', *merger._entries_diff(master, plugin))
+        entries = merger._merge_delta(delta, entries)
+    return entries
 
 @pytest.mark.parametrize('master, plugins, merged', [
     # duplicates
@@ -48,12 +58,15 @@ def _ents(spec):
     ('A1', ['A2', ''], ''), # remove what another plugin changed
 ])
 def test_merge(master, plugins, merged):
-    entries = _ents(master)
-    for plugin in plugins:
-        delta = ('Mod.esp', *_merger._entries_diff(_ents(master),
-                                                   _ents(plugin)))
-        entries = _merger._merge_delta(delta, entries)
-    assert entries == _ents(merged)
+    assert _merge(_merger, _ents(master), map(_ents, plugins)) == _ents(
+        merged)
+
+def test_merge_factions():
+    """Both plugins' factions make it, not just the last plugin's ones."""
+    merger = object.__new__(ImportActorsFactionsPatcher)
+    plugins = [_ents(p, _Faction) for p in ('A0 B1', 'A2 C0')]
+    assert _merge(merger, _ents('A0', _Faction), plugins) == _ents(
+        'A2 B1 C0', _Faction)
 
 def test_merge_delta_copies():
     entries = _ents('A1')
