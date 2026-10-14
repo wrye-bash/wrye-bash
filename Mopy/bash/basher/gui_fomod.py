@@ -123,7 +123,7 @@ class InstallerFomod(WizardDialog):
         version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, files_list, self.installer_root, bass.dirs[u'mods'],
-            version_string)
+            version_string, target_installer.install_to_game_root)
         super().__init__(parent_window, sizes_dict=bass.settings,
             title=_('FOMOD Installer - %(fomod_title)s') % {
                 'fomod_title': self.fomod_parser.fomod_name})

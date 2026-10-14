@@ -246,7 +246,8 @@ class _FomodFileInfo(object):
                f'{self.file_destination} with priority {self.file_priority}>'
 
     @classmethod
-    def process_files(cls, files_elem, file_list, inst_root, is_usable):
+    def process_files(cls, files_elem, file_list, inst_root, is_usable,
+                      game_root=False):
         """Processes the elements in files_elem into two lists of
         _FomodFileInfo instances. The first one contains the regular, processed
         files, the second contains processed files that *must* be installed due
@@ -266,10 +267,15 @@ class _FomodFileInfo(object):
         :param file_list: A list of all files in the parent package.
         :param inst_root: The root path to retrieve sources relative to.
         :param is_usable: True if the type of the option/plugin that this file
-            list belongs to is anything but NotUsable."""
+            list belongs to is anything but NotUsable.
+        :param game_root: True if the package installs to the game root - the
+            destinations are then relative to the game folder, so we keep the
+            Data folder path in them."""
         fm_infos_con = []
         fm_infos_req = []
-        md_lower = [c.lower() for c in bush.game.mods_dir_path]
+        # nothing to strip from the destinations of game root packages
+        md_lower = [] if game_root else [c.lower() for c in
+                                         bush.game.mods_dir_path]
         md_lower_reverse = reversed(md_lower)
         md_lower_components = [(c + '/', c + '\\') for c in md_lower]
         for file_object in files_elem.findall(u'*'):
@@ -361,9 +367,11 @@ class FomodInstaller(object):
     provide any way to do so, leaving that at your discretion."""
     __slots__ = ('fomod_tree', 'fomod_name', 'file_list', 'dst_dir',
                  'game_version', '_current_page', '_all_pages',
-                 '_previous_pages', '_has_finished', 'installer_root')
+                 '_previous_pages', '_has_finished', 'installer_root',
+                 'game_root')
 
-    def __init__(self, mc_path, file_list, inst_root, dst_dir, game_version):
+    def __init__(self, mc_path, file_list, inst_root, dst_dir, game_version,
+                 game_root=False):
         """Creates a new FomodInstaller with the specified properties.
 
         :param mc_path: string path to 'ModuleConfig.xml'
@@ -372,7 +380,9 @@ class FomodInstaller(object):
         :param inst_root: The root path of the installer. All files are
             specified relative to this by the FOMOD config.
         :param dst_dir: the destination directory - <Game>/Data
-        :param game_version: version of the game launch exe"""
+        :param game_version: version of the game launch exe
+        :param game_root: True if the package installs to the game root - see
+            _FomodFileInfo.process_files"""
         try:
             self.fomod_tree = etree.parse(mc_path)
         except etree.ParseError as e:
@@ -383,6 +393,7 @@ class FomodInstaller(object):
         self.installer_root = inst_root
         self.dst_dir = dst_dir
         self.game_version = game_version
+        self.game_root = game_root
         self._current_page = None
         self._all_pages: dict[int, InstallerPage] = {}
         self._previous_pages: dict[InstallerPage, list[InstallerOption]] = {}
@@ -466,7 +477,7 @@ class FomodInstaller(object):
             # requiredInstallFiles section, so all files are required
             con_files, req_files = _FomodFileInfo.process_files(
                 required_files_elem, self.file_list, self.installer_root,
-                is_usable=True)
+                is_usable=True, game_root=self.game_root)
             collected_files.extend(con_files)
             collected_files.extend(req_files)
         for pre_page in self._all_pages.values():
@@ -483,7 +494,7 @@ class FomodInstaller(object):
                     op_usable = option.option_type is not OptionType.NOT_USABLE
                     con_files, req_files = _FomodFileInfo.process_files(
                         option_files, self.file_list, self.installer_root,
-                        is_usable=op_usable)
+                        is_usable=op_usable, game_root=self.game_root)
                     collected_files.extend(req_files)
                     # Only include the conditional files if the option was
                     # actually selected
@@ -501,7 +512,7 @@ class FomodInstaller(object):
             cond_files = cond_pattern.find('files')
             con_files, req_files = _FomodFileInfo.process_files(
                 cond_files, self.file_list, self.installer_root,
-                is_usable=True)
+                is_usable=True, game_root=self.game_root)
             collected_files.extend(req_files)
             collected_files.extend(con_files)
         file_dict = {} # dst -> src
