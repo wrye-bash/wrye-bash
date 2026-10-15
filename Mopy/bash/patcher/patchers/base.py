@@ -208,8 +208,8 @@ class _PatchFidReplacer(FidReplacer):
         # RecordType.simpleTypes is only set once the game imports its records
         # - this module may well be imported before that (the game specific
         # patcher configs import it in _dynamic_import_modules)
-        return super()._parser_sigs() | {b'CELL', b'WRLD', b'REFR', b'ACHR',
-                                         b'ACRE'}
+        return super()._parser_sigs | {b'CELL', b'WRLD', b'REFR', b'ACHR',
+                                       b'ACRE'}
 
     def _parse_line(self, csv_fields):
         oldId = self._coerce_fid(csv_fields[1], csv_fields[2]) # oldMod, oldObj
