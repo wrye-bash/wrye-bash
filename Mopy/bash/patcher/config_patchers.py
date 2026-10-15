@@ -294,7 +294,7 @@ class ImportActorsFactions(ImporterPatcherConfig):
     patcher_name = _('Import Actors: Factions')
     patcher_desc = _('Import actor factions from source plugins/files.')
     _config_key = 'ImportFactions'
-    patcher_type = preservers.ImportActorsFactionsPatcher
+    patcher_type = mergers.ImportActorsFactionsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportRelations(ImporterPatcherConfig):
