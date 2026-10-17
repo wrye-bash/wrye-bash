@@ -22,8 +22,12 @@
 #
 # =============================================================================
 import os
+from collections import defaultdict
 
-from ...bosh.bain import _remove_empty_dirs
+from ... import bass, bolt, bush
+from ...bolt import DataDict, FName, LowerDict
+from ...bosh.bain import Installer, InstallerProject, InstallersData, \
+    _remove_empty_dirs
 from ...wbtemp import TempDir
 
 def test__remove_empty_dirs():
@@ -33,3 +37,36 @@ def test__remove_empty_dirs():
         os.mkdir(os.path.join(cl, 'farmclothes02'))
         _remove_empty_dirs(tex)
         assert not os.path.exists(cl)
+
+
+class _Package(InstallerProject):
+    """A project whose files we need not create - we set its file list."""
+    def __init__(self, name, order, package_files):
+        self._set_defaults() # skip the init, that needs the directories
+        self.fileSizeCrcs = [(os.path.join(*f.split('/')), 1, 0) for f in
+                             package_files]
+        self._reset_cache() # detect the structure
+        self.fn_key = FName(name)
+        self.order = order
+        self.is_active = True
+
+    def _stat_tuple(self, cached_stat=None): return ()
+    def _fs_refresh(self, progress, stat_tuple, **kwargs): pass
+    def refreshDataSizeCrc(self, *args, **kwargs): return {}
+
+
+def test_uninstall_all(monkeypatch):
+    """Uninstall All (bain_uninstall(None)) uninstalls every package - it
+    used to compare the packages with their names and raise (#761)."""
+    monkeypatch.setattr(bass, 'settings', defaultdict(bool))
+    monkeypatch.setattr(Installer, 'dataDirsPlus',
+                        Installer.dataDirsPlus | bush.game.Bain.data_dirs)
+    packages = [_Package(f'Package {i}', i, ['Textures/a.dds'])
+                for i in range(2)]
+    idata = InstallersData.__new__(InstallersData) # skip the init
+    DataDict.__init__(idata, {p.fn_key: p for p in packages})
+    idata.data_sizeCrcDate = LowerDict()
+    InstallersData.bain_uninstall.__wrapped__(idata, None,
+        cede_ownership=defaultdict(set), removed_tracked={},
+        removed_untracked=set(), progress=bolt.Progress(), rui_data={})
+    assert not any(p.is_active for p in packages)

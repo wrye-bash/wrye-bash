@@ -2800,8 +2800,9 @@ class InstallersData(DataStore):
         #  that should be restored to make up for previous files. However,
         #  restore can be skipped, if existing files matches the file being
         #  removed.
-        unArchives = self.filterInstallables(self) if unArchives is None else {
-            self[package] for package in unArchives}
+        if unArchives is None: # uninstall all
+            unArchives = self.filterInstallables(self)
+        unArchives = {self[package] for package in unArchives}
         masked = set()
         removes = set()
         #--March through packages in reverse order...
