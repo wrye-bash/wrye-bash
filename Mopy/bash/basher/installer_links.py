@@ -561,8 +561,8 @@ class Installer_Install(Installer_Op, _NoMarkerLink):
         last = (self.mode == 'LAST')
         override = (self.mode != 'MISSING')
         try:
-            return self.idata.bain_install(self._installables, last, override,
-                                           **kwargs)
+            return self.idata.bain_install(self._installables, last=last,
+                                           override=override, **kwargs)
         except (CancelError, SkipError):
             return
         except StateError as e:
@@ -576,14 +576,13 @@ class Installer_Install(Installer_Op, _NoMarkerLink):
             self._showInfo(msg, title=_('INI Tweaks'))
 
     def _warn_nothing_installed(self):
-        inst_packages = [self.idata[i] for i in self._installables]
         # See set_subpackage_checkmarks for the off-by-one explanation
         # Note also we have to skip active FOMODs, otherwise install commands
         # will break on them since they often have sub-packages but will pretty
         # much never have any active ones.
-        unconf_packages = [p for p in inst_packages if p.is_complex_package and
-                           not any(p.subActives[1:]) and
-                           not p.extras_dict.get('fomod_active', False)]
+        unconf_packages = [p for p in self._installables if
+            p.is_complex_package and not any(p.subActives[1:]) and
+            not p.extras_dict.get('fomod_active', False)]
         if unconf_packages:
             up_title = _('Installed unconfigured packages')
             up_msg2 = _(
@@ -592,7 +591,7 @@ class Installer_Install(Installer_Op, _NoMarkerLink):
                 'affected packages, then use "Anneal" to update the '
                 'installation. You can also identify this problem by the '
                 'white package checkbox.')
-            if len(unconf_packages) == len(inst_packages):
+            if len(unconf_packages) == len(self._installables):
                 if len(unconf_packages) == 1:
                     up_msg1 = _(
                         'The package you installed (%(sel_pkg)s) is complex, '

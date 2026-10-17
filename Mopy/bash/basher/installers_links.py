@@ -28,7 +28,7 @@ from itertools import chain
 from . import Installers_Link
 from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
     MonitorExternalInstallationEditor, AImportOrderParser
-from .. import balt, bass, bosh, bush
+from .. import balt, bass, bolt, bosh, bush
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink, Installer_Op
 from ..gui import copy_text_to_clipboard, askYes
@@ -129,17 +129,18 @@ class Installers_MonitorExternalInstallation(Installer_Op, Installers_Link):
             check_exists=False) # we will use unique_name
         if not projectName:
             return
-        self.__pr_path = bosh.InstallerProject.unique_name(projectName)
+        pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
         with balt.Progress(_('Creating Project…')) as prog: # will order last
-            self.idata.createFromData(self.__pr_path, include, prog, bosh.modInfos)
+            self.__project = self.idata.createFromData(pr_path, include, prog,
+                                                       bosh.modInfos)
         # createFromData placed the new project last in install order - install
         super().Execute(rd_refresh=rd_refresh)
         # Select new installer
         self.window.SelectLast()
 
     def _perform_action(self, **kwargs):
-        self.idata.bain_install([self.__pr_path], override=False, **kwargs)
+        self.idata.bain_install([self.__project], override=False, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_ListPackages(Installers_Link):
@@ -154,8 +155,11 @@ class Installers_ListPackages(Installers_Link):
         message = _(u'Only show Installed Packages?') + u'\n' + _(
             u'(Else shows all packages)')
         installed_only = self._askYes(message, _(u'Only Show Installed?'))
-        package_list = self.idata.getPackageList(
-            showInactive=not installed_only)
+        log = bolt.LogFile()
+        log.setHeader(_('BAIN Packages:'))
+        for inst in self.idata.sorted_values():
+            inst.log_package(log, not installed_only)
+        package_list = log.out.getvalue()
         copy_text_to_clipboard(package_list)
         self._showLog(package_list, title=_('BAIN Packages'))
 
@@ -266,7 +270,7 @@ class Installers_CleanData(Installer_Op, Installers_Link):
 
     def _perform_action(self, **kwargs):
         """Clean the data directory."""
-        self.idata.bain_clean_data_dir(self.__ed_unknown, **kwargs)
+        self.idata.bain_clean_data_dir(ci_removes=self.__ed_unknown, **kwargs)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):

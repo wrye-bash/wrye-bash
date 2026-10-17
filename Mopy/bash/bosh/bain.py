@@ -1890,6 +1890,8 @@ def _bain_op(func):
     operations."""
     @wraps(func)
     def _modify_data_dir(self: InstallersData, *args, **kwargs):
+        if args and args[0] is None:
+            args = [self.filterInstallables(self)]
         rui_data = kwargs['rui_data']
         kwargs['cede_ownership'] = cede_ownership = defaultdict(set)
         kwargs['removed_tracked'] = removed_tracked = {s: set() for s in
@@ -2697,12 +2699,11 @@ class InstallersData(DataStore):
         tweaksCreated -= removed
 
     @_bain_op
-    def bain_install(self, packages, last=False, override=True, **kwargs):
+    def bain_install(self, to_install, *, last=False, override=True, **kwargs):
         """Install selected packages. If override is False install only
         missing files. Otherwise, all (unmasked) files."""
         if last:
-            self.moveArchives(packages, len(self))
-        to_install = {self[x] for x in packages}
+            self.moveArchives([k.fn_key for k in to_install], len(self))
         return self._install_packages(to_install, override, **kwargs)
 
     def _install_packages(self, to_install, override=True, *, progress,
@@ -2800,8 +2801,6 @@ class InstallersData(DataStore):
         #  that should be restored to make up for previous files. However,
         #  restore can be skipped, if existing files matches the file being
         #  removed.
-        unArchives = self.filterInstallables(self) if unArchives is None else {
-            self[package] for package in unArchives}
         masked = set()
         removes = set()
         #--March through packages in reverse order...
@@ -2855,15 +2854,11 @@ class InstallersData(DataStore):
                         self[fn_inst].install(destFiles, subprogress, **kwargs)
 
     @_bain_op
-    def bain_anneal(self, annealed_package_fnames: Iterable[FName] | None,
-                    **kwargs):
+    def bain_anneal(self, to_anneal, **kwargs):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
-        if annealed_package_fnames is None:
-            annealed_package_fnames = self.filterInstallables(self)
-        to_anneal = (self[p] for p in annealed_package_fnames)
         self._anneal_packages(to_anneal, **kwargs)
 
     def _anneal_packages(self, to_anneal, **kwargs):
@@ -2927,7 +2922,7 @@ class InstallersData(DataStore):
         return [f for f in ci_removes if not f.lower().startswith(skip_start)]
 
     @_bain_op
-    def bain_clean_data_dir(self, ci_removes, *, rui_data, removed_tracked,
+    def bain_clean_data_dir(self, *, ci_removes, rui_data, removed_tracked,
                             **kwargs):
         destDir = bass.dirs['bainData'].join(
             f'{bush.game.mods_dir_name} Folder Contents ({bolt.timestamp()})')
@@ -2959,23 +2954,11 @@ class InstallersData(DataStore):
                 emptyDir.removedirs()
 
     #--Utils
-    def getPackageList(self,showInactive=True):
-        """Returns package list as text."""
-        #--Setup
-        log = bolt.LogFile()
-        log.setHeader(_('BAIN Packages:'))
-        #--List
-        for inst in self.sorted_values():
-            inst.log_package(log, showInactive)
-        return log.out.getvalue()
-
     def filterInstallables(self, installerKeys: Iterable[FName]):
-        """Return a sublist of installerKeys that can be installed -
-        installerKeys must be in data or a KeyError is raised.
-
-        :return: A list of installable packages/projects"""
-        return [k for k in self.ipackages(installerKeys) if
-                self[k].has_recognized_structure]
+        """Return the set of installable packages/projects in installerKeys -
+        installerKeys must be in data or a KeyError is raised."""
+        return {inst for k in self.ipackages(installerKeys) if
+                (inst := self[k]).has_recognized_structure}
 
     def ipackages(self, installerKeys: Iterable[FName]) -> Iterable[FName]:
         """Remove markers from installerKeys."""
@@ -2997,8 +2980,8 @@ class InstallersData(DataStore):
                     minf.fs_copy(dstJoin(ci_rel_path))
                 else: raise
         # Refresh, so we can manipulate the InstallerProject item
-        self.new_info(projectPath, progress,
-                      install_order=len(self)) # install last
+        return self.new_info(projectPath, progress,
+                             install_order=len(self))  # install last
 
 def _parse_error(bsa_inf, inst: str | _InstallerPackage = ''):
     ins = inst and f' from {inst} (install order {inst.order})'
