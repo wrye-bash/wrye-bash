@@ -30,7 +30,7 @@ from typing import BinaryIO
 from . import utils_constants
 from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
     int_unpacker, null1, GetAttrer, SlottedType
-from .. import bolt, bush, exception
+from .. import bolt, exception
 from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
     struct_calcsize, struct_error, structs_cache
 
@@ -88,7 +88,7 @@ class MelObject(GetAttrer, metaclass=_MelObjectType):
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""
         to_show = [f'{obj_attr}: {obj_val!r}' for obj_attr in self.__slots__ if
-                   (obj_val := getattr(self, obj_attr)) is not None]
+                   (obj_val := getattr(self, obj_attr, None)) is not None]
         return f'<{", ".join(to_show)}>'
 
 class AttrsCompare(MelObject):

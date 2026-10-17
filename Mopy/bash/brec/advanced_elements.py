@@ -916,13 +916,11 @@ class MelUnion(MelBase):
         if self.fid_elements: formElements.add(self)
 
     def getDefaulters(self, mel_set_instance):
-        # Ask each element - but we *don't* want to set our _union_type
-        # attributes here! If we did, then we'd have no way to distinguish
-        # between a loaded and a freshly constructed record.
-        # default makes no sense for decider_result_attr but needs be added
-        # (for slots of MelObject if we are in a MelGroup)
+        # Ask each element - our _union_type attribute defaults to None, that
+        # is how _get_element_from_record tells a loaded from a freshly
+        # constructed record
         defaultrs = mel_set_instance.defaulters
-        if (dra := self.decider_result_attr) in defaultrs: # and defaultrs[self.decider_result_attr] is not None:
+        if (dra := self.decider_result_attr) in defaultrs:
             raise SyntaxError(f'{self} duplicate attr {dra}')
         defaultrs[dra] = None
         for element in self._mel_parts():
