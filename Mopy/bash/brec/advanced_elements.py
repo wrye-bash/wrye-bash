@@ -373,7 +373,6 @@ class MelArray(MelBase):
         mel_set_instance.listers.add(self.attr)
         if self._prelude:
             self._prelude.getDefaulters(mel_set_instance)
-        # self._element.getDefaulters(mel_set_instance, mel_key)
         mel_set_instance.mel_providers_dict[self.attr] = self._mel_object_type
 
     def mapFids(self, record, function, save_fids=False):
@@ -678,9 +677,9 @@ class FlagDecider(ACommonDecider):
         self._required_flags = required_flags
 
     def _decide_common(self, record):
-        flags_val = getattr(record, self._flags_attr)
-        return all(getattr(flags_val, flag_name)
-                   for flag_name in self._required_flags)
+        flags_val = getattr(record, self._flags_attr) # None if not loaded
+        return flags_val is not None and all(getattr(flags_val, flag_name)
+            for flag_name in self._required_flags)
 
 class FormVersionDecider(ACommonDecider):
     """Decider that checks a record's form version."""
