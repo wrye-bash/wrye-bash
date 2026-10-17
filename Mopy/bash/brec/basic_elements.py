@@ -74,16 +74,15 @@ class MelObject(GetAttrer, metaclass=_MelObjectType):
     def __bool__(self):
         """The code used to check if hasattr(record, mel_obj_attr) - since
         the MelObject instance will be created in GetAttrer.__getattr__,
-        hasattr will return True. This is a hacky way to check if the MelObject
-        instance is an empty instance just created."""
-        # fixme check also the mel_providers_dict?
-        bolt.deprint(f'__bool__ called on {self!r}')
-        for a in self.__class__.melSet.defaulters:
-            if getattr(self, a) is not None:
-                return True
-        for a in self.__class__.melSet.listers:
-            if getattr(self, a): # != []
-                return True
+        hasattr will return True. So check if any of our attributes was loaded
+        or set - reading one won't do, GetAttrer does not store defaults."""
+        for a in self.__slots__:
+            try:
+                v = object.__getattribute__(self, a) # bypass GetAttrer
+            except AttributeError:
+                continue
+            if v is not None and (v or not isinstance(v, (list, MelObject))):
+                return True # empty lists and MelObjects don't count
         return False
 
     def __repr__(self):
@@ -477,7 +476,7 @@ class MelGroup(MelSequential):
 
     def sort_subrecord(self, record):
         target = getattr(record, self.attr)
-        if not target: return ##: todo drop - avoid checking a MelObject truth value
+        if not target: return
         super().sort_subrecord(target)
 
 #------------------------------------------------------------------------------

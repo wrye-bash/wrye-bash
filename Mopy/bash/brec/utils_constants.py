@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from contextlib import suppress
+from copy import copy
 from itertools import chain
 
 from .. import bolt, bush
@@ -41,8 +42,6 @@ class SlottedType(type):
 
     def __new__(cls, name, bases, classdict):
         slots = classdict.get('__slots__', ())
-        if slots: # fixme remove - tracks which classes use slots
-            bolt.deprint(f'__slots__={slots} in {name}({bases=}, {classdict=}')
         ms_slots = melSet.getSlotsUsed() if (
                 melSet := classdict.get('melSet')) else ()
         if ms_slots and slots:
@@ -628,20 +627,23 @@ class GetAttrer(metaclass=SlottedType):
     attributes in MelRecord and MelObject subclasses. We used to setDefault
     values for those in MelRecord so the code might expect to be able to do
     record.attr without an attribute error. However, the goal is to obsolete
-    this behavior - so add debug code here to track these uses and replace
-    them - as it makes little sense to ask for an attribute to a record
-    that misses it. This is meant especially for defaulters, as the
+    this behavior - as it makes little sense to ask for an attribute to a
+    record that misses it. This is meant especially for defaulters, as the
     mel_providers_dict will be difficult to uproot and listers is somewhat
-    convenient."""
+    convenient. Defaulters are not stored, so MelObject.__bool__ can tell
+    the attributes that were loaded or set from the ones just read."""
 
     def __getattr__(self, missing_attr):
         if missing_attr in self.__class__.melSet.defaulters:
             target = self.__class__.melSet.defaulters[missing_attr]
+            if not isinstance(target, (Flags, list)):
+                return target # not stored - see MelObject.__bool__
+            target = copy(target) # don't share mutable defaults
         elif missing_attr in self.__class__.melSet.listers:
             target = []
         elif missing_attr in self.__class__.melSet.mel_providers_dict:
             target = self.__class__.melSet.mel_providers_dict[missing_attr]()
-        else: # todo add support for slots only specified attrs?
+        else:
             raise AttributeError(missing_attr)
         setattr(self, missing_attr, target)
         return target
