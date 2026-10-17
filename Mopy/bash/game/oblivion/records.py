@@ -1815,7 +1815,6 @@ class MreNpc_(AMreActor):
             self.model.modPath = r'Characters\_Male\SkeletonBeast.NIF'
         else:
             self.model.modPath = r'Characters\_Male\skeleton.nif'
-        self.model.modb = 0.0 ##: Correct? # TODO NEEDED?
         fnams = {
             0x23fe9: b'\xdc<',    # Argonian
             0x224fc: b'H\x1d',    # Breton
@@ -1941,11 +1940,12 @@ class MreQust(_ObIcon):
     @classmethod
     def get_mel_object_for_group(cls, att):
         mel_obj = super().get_mel_object_for_group(att)
-        # Gentile or Jew, remember this, and *forget about* using
-        # get_mel_object_for_group
-        mel_struct = cls.melSet.elements[5].elements[0].element_mapping[
-            b'CTDA']._ctda_mel
-        mel_struct.set_mel_struct_defaults(mel_obj)
+        if att == 'conditions':
+            # Gentile or Jew, remember this, and *forget about* using
+            # get_mel_object_for_group
+            mel_struct = cls.melSet.elements[5].elements[0].element_mapping[
+                b'CTDA']._ctda_mel
+            mel_struct.set_mel_struct_defaults(mel_obj)
         return mel_obj
 
 #------------------------------------------------------------------------------

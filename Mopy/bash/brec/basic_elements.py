@@ -218,7 +218,6 @@ class MelBase(Subrecord):
         except AttributeError:
             """Mel does not have a self.attr attribute so we won't be needing a
             default value for it."""
-            print(type(self)) # MelNull
 
     def getLoaders(self,loaders):
         """Adds self as loader for type."""

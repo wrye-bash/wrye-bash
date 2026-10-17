@@ -42,7 +42,7 @@ from ...brec import MelModelCompare, FID, AMelItems, AMelLLItems, AMreActor, AMr
     MelIpctSounds, MelIpctTextureSets, MelLandShared, MelLighFade, AMelLists, \
     MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrLocations, MelNoteType, \
     MelLtexGrasses, MelLtexSnam, MelMapMarker, MelMODS, MelNodeIndex, \
-    MelNull, MelObject, MelOwnership, MelPartialCounter, MelMesgSharedFo3, \
+    MelNull, MelOwnership, MelPartialCounter, MelMesgSharedFo3, \
     MelPerkData, MelPerkParamsGroups, MelPostMastSA, MelPostMast, MelRace, MelRaceData, MelRaceParts, \
     MelRaceVoices, MelReadOnly, MelRef3D, MelReferences, MelMgefEsce, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
@@ -3323,9 +3323,6 @@ class MelWthrColorsFnv(MelArray):
         self._element_old = MelTruncatedStruct(
             wthr_sub_sig, *struct_definition,
             old_versions={u'3Bs3Bs3Bs3Bs'})
-        class _MelObject(MelObject):
-            __slots__ = self._element_old.attrs
-        self._mel_object_type = _MelObject
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         if size_ == self._new_sizes[sub_type]:

@@ -837,9 +837,10 @@ class MelEffectsTes4(MelSequential):
         super().__init__(*self._vanilla_elements, *self._obme_elements)
 
     # Note that we only support creating vanilla effects, as our records system
-    # isn't expressive enough to pass more info along here
+    # isn't expressive enough to pass more info along here - so vanilla goes
+    # last to register its effects MelObject types
     def getDefaulters(self, mel_set_instance):
-        for element in self._vanilla_elements:
+        for element in (*self._obme_elements, *self._vanilla_elements):
             element.getDefaulters(mel_set_instance)
 
     def getLoaders(self, loaders):

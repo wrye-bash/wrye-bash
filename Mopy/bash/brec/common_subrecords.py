@@ -1769,7 +1769,7 @@ class MelRaceParts(MelBase):
     def dumpData(self, record, out):
         # Note that we have to dump out the attributes sorted by the INDX value
         for part_indx, part_attr in dict_sort(self._indx_to_attr):
-            if getattr(record, part_attr) is not None: #only dump present parts
+            if getattr(record, part_attr): # only dump present parts
                 MelUInt32(b'INDX', 'UNUSED').packSub(out,
                     struct_pack('=I', part_indx))
                 self._indx_to_loader[part_indx].dumpData(record, out)
