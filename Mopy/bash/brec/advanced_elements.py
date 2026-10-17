@@ -334,8 +334,9 @@ class MelArray(MelBase):
         # Underscore means internal usage only - e.g. distributor state
         self.array_element_attrs = tuple(
             s for s in element.getSlotsUsed() if not s.startswith('_'))
+        from .record_structs import MelSet
         class _MelObject(MelObject): ##: hit quite often - cache per array_element_attrs?
-            __slots__ = self.array_element_attrs
+            melSet = MelSet(element)
         self._mel_object_type = _MelObject
         # Validate that the prelude is valid if it's present (i.e. it must have
         # only one signature and it must match the element's signature)

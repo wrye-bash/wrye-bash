@@ -76,13 +76,13 @@ class MelObject(GetAttrer, metaclass=_MelObjectType):
         the MelObject instance will be created in GetAttrer.__getattr__,
         hasattr will return True. This is a hacky way to check if the MelObject
         instance is an empty instance just created."""
-        # fixme check also the mel_providers_dict?
-        bolt.deprint(f'__bool__ called on {self!r}')
-        for a in self.__class__.melSet.defaulters:
+        mel_set = self.__class__.melSet
+        for a in mel_set.defaulters:
             if getattr(self, a) is not None:
                 return True
-        for a in self.__class__.melSet.listers:
-            if getattr(self, a): # != []
+        # lists and nested MelGroups - the dotted keys are nested in those
+        for a in {*mel_set.listers, *mel_set.mel_providers_dict}:
+            if '.' not in a and getattr(self, a): # != [] or a non empty group
                 return True
         return False
 
