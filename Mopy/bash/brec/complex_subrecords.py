@@ -294,8 +294,8 @@ class _MelCtda(MelUnion):
 
     def _mel_parts(self, with_decider=True):
         # all structs are equivalent with respect to getSlotsUsed/Defaulters
-        return self._ctda_mel, self.decider._loader if with_decider else \
-            self._ctda_mel, # no fallback
+        return (self._ctda_mel, self.decider._loader) if with_decider else (
+            self._ctda_mel,) # no fallback
 
 class _MelCtdaFo3(_MelCtda):
     """Version of _MelCtda that handles the additional complexities that were
