@@ -324,6 +324,33 @@ class _MelLeftovers(MelGroup):
     """Leftovers from earlier CK versions."""
     def __init__(self, att):
         super().__init__(att, *_leftovers)
+_leftover_sigs = b'|'.join(l.mel_sig for l in _leftovers)
+
+#------------------------------------------------------------------------------
+class _MelScenGroups(MelGroups):
+    """Scene phases and actions repeat signatures - a repeated signature
+    goes to the first element with it until the attribute it is mapped to in
+    dup_sigs is loaded, then to the second one. The first signature both
+    starts and ends a group, so it maps to the end marker."""
+    def __init__(self, attr, *elements, dup_sigs: dict[bytes, str]):
+        super().__init__(attr, *elements)
+        self._dup_sigs = dup_sigs
+        self._dup_loaders = {s: [e for e in self.elements if s in e.signatures]
+                             for s in dup_sigs}
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        if (switch_attr := self._dup_sigs.get(sub_type)) is None:
+            super().load_mel(record, ins, sub_type, size_, *debug_strs)
+            return
+        first, second = self._dup_loaders[sub_type]
+        groups = getattr(record, self.attr)
+        before = groups and getattr(groups[-1], switch_attr) is None
+        if sub_type in self._init_sigs: # starts a group or ends the open one
+            target, loader = (groups[-1], second) if before else (
+                self._new_object(record), first)
+        else:
+            target, loader = groups[-1], first if before else second
+        loader.load_mel(target, ins, sub_type, size_, *debug_strs)
 
 #------------------------------------------------------------------------------
 class MelLinkedReferences(MelSorted):
@@ -3130,26 +3157,31 @@ class MreScen(MelRecord):
         MelEdid(),
         MelVmad(),
         MelUInt32Flags(b'FNAM', u'flags', ScenFlags1),
-        MelGroups('phases',
-            MelNull(b'HNAM'),
+        _MelScenGroups('phases',
+            MelBase(b'HNAM', 'start_marker'),
             # Phase description. Always present, even if just a null-terminator
             MelString(b'NAM0', u'phase_desc',),
             MelConditionList('startConditions',),
-            MelNull(b'NEXT'),
+            MelBase(b'NEXT', 'next_marker_1'),
             MelConditionList('completionConditions',),
             # The next three are all leftovers
             _MelLeftovers('unused1'),
-            MelNull(b'NEXT'),
+            MelBase(b'NEXT', 'next_marker_2'),
             _MelLeftovers('unused2'),
             MelUInt32(b'WNAM', 'editorWidth'),
-            MelNull(b'HNAM'),
+            MelBase(b'HNAM', 'end_marker'),
+            dup_sigs={b'HNAM': 'end_marker', b'NEXT': 'next_marker_1',
+                      **dict.fromkeys((b'CTDA', b'CIS1', b'CIS2'),
+                                      'next_marker_1'),
+                      **dict.fromkeys(_leftover_sigs.split(b'|'),
+                                      'next_marker_2')},
         ),
         MelGroups('actors',
             MelUInt32(b'ALID', 'actorID'),
             MelUInt32Flags(b'LNAM', u'scenFlags2', ScenFlags2),
             MelUInt32Flags(b'DNAM', u'flags3', ScenFlags3),
         ),
-        MelGroups('actions',
+        _MelScenGroups('actions',
             MelUInt16(b'ANAM', 'actionType'),
             MelString(b'NAM0', u'action_desc',),
             MelUInt32(b'ALID', 'actorID',),
@@ -3167,17 +3199,40 @@ class MreScen(MelRecord):
             MelUInt32(b'DEMO', 'emotionType'),
             MelUInt32(b'DEVA', 'emotionValue'),
             _MelLeftovers('unused'),
-            MelNull(b'ANAM'),
+            MelBase(b'ANAM', 'end_marker'),
+            dup_sigs={b'ANAM': 'end_marker', b'SNAM': 'endPhase'},
         ),
         # The next three are all leftovers
         _MelLeftovers('unused1'),
-        MelNull(b'NEXT'),
+        MelBase(b'NEXT', 'next_marker'),
         _MelLeftovers('unused2'),
         MelFid(b'PNAM','quest',),
         MelUInt32(b'INAM', 'lastActionIndex'),
         MelBase(b'VNAM','vnam_p'),
         MelConditionList(),
-    )
+    ).with_distributor({
+        b'FNAM': 'flags',
+        b'HNAM': ('phases', {
+            b'NAM0|CTDA|CIS1|CIS2|NEXT|' + _leftover_sigs: 'phases',
+        }),
+        b'ALID': ('actors', {
+            b'LNAM': 'actors',
+        }),
+        # The ANAM ending the last action takes us back here, so PNAM and INAM
+        # go to quest and lastActionIndex - NAM0 is always present though
+        b'ANAM': ('actions', {
+            b'NAM0|ALID|LNAM|FNAM': ('actions', {
+                b'NAM0|ALID|LNAM|INAM|FNAM|PNAM|' + _leftover_sigs: 'actions',
+            }),
+        }),
+        _leftover_sigs: 'unused1',
+        b'NEXT': {
+            _leftover_sigs: 'unused2',
+        },
+        b'PNAM': 'quest',
+        b'INAM': 'lastActionIndex',
+        b'CTDA|CIS1|CIS2': 'conditions',
+    })
 
 #------------------------------------------------------------------------------
 class MreScrl(MreHasEffects, AMreWithKeywords):
