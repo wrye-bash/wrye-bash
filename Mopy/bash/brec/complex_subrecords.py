@@ -1136,7 +1136,7 @@ class _NvnmTriangles(_AMelNvnmListComponent):
                 self.vertex_2, self.edge_0_1, self.edge_1_2, self.edge_2_0)
             if nvnm_ctx.form_ver > 57:
                 _nvnm_pack_tri_extra(out, self.tri_height, self.tri_unknown)
-            _pack_2shorts_signed(self.tri_flags, self.tri_cover_flags)
+            _pack_2shorts_signed(out, self.tri_flags, self.tri_cover_flags)
 
     _child_class = _NvnmTriangle
 
@@ -1310,6 +1310,7 @@ class AMelNvnm(MelBase):
         out = BytesIO()
         nvnm_ctx = self._nvnm_context_class(
             self._nvnm_context_class.max_nvnm_ver, record.header.form_version)
+        pack_int(out, nvnm_ctx.nvnm_ver) # load_mel reads it before load_comp
         record.navmesh_geometry.dump_comp(out, nvnm_ctx)
         return out.getvalue()
 
