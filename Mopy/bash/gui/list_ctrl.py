@@ -35,9 +35,19 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from . import EventHandler, Font
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
     _AComponent, _auto_size_to_wx, scaled
-from .. import bolt
+from .. import bolt, env
 
-class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
+class _ListCtrl(_wx.ListCtrl):
+    """wx double buffers report list controls and stops erasing their
+    background, which the native control paints along with its rows - but
+    Wine's only does if the background still needs erasing, else it keeps
+    what was on screen below the rows (removed rows, other tabs): so erase
+    it on Wine."""
+    def __init__(self, parent, style=0):
+        super().__init__(parent, style=style)
+        if env.on_wine(): self.SetBackgroundStyle(_wx.BG_STYLE_ERASE)
+
+class _DragListCtrl(_ListCtrl, ListCtrlAutoWidthMixin):
     """List control extended with the wxPython auto-width mixin class.
 
     Also extended to support drag-and-drop.  To define custom drag-and-drop
@@ -84,7 +94,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
     def __init__(self, parent, fnDndAllow, style=0, dndFiles=False,
                  dndList=False, fnDropFiles=None, fnDropIndexes=None,
                  dndOnlyMoveContinuousGroup=True):
-        _wx.ListCtrl.__init__(self, parent, style=style)
+        _ListCtrl.__init__(self, parent, style=style)
         ListCtrlAutoWidthMixin.__init__(self)
         if dndFiles or dndList:
             self.SetDropTarget(_DragListCtrl.DropFileOrList(self, dndFiles, dndList))
@@ -464,10 +474,10 @@ class ListItemFormat:
                              key=self._parent_lc.text_key_priority.__getitem__)
 
 #------------------------------------------------------------------------------
-class _AutoWidthListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
+class _AutoWidthListCtrl(_ListCtrl, ListCtrlAutoWidthMixin):
     """A list control whose last column fills the available width."""
     def __init__(self, parent, style=0):
-        _wx.ListCtrl.__init__(self, parent, style=style)
+        _ListCtrl.__init__(self, parent, style=style)
         ListCtrlAutoWidthMixin.__init__(self)
 
 class ImageListBox(_AComponent):

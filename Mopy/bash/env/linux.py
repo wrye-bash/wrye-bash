@@ -370,3 +370,6 @@ class ExeLauncher(AppLauncher):
 
 def in_mo2_vfs() -> bool:
     return False # No native MO2 version
+
+def on_wine() -> bool:
+    return False # We are running natively

@@ -559,6 +559,8 @@ def _main(opts, localize):
         from . import env
         if env.in_mo2_vfs():
             bolt.deprint('Wrye Bash appears to be running through MO2')
+        if env.on_wine():
+            bolt.deprint('Wrye Bash appears to be running on Wine')
         env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
         global basher # share this instance with _close_dialog_windows
         from . import basher

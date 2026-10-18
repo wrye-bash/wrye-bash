@@ -1696,3 +1696,8 @@ def in_mo2_vfs() -> bool:
     hooked in."""
     return any(ctypes.windll.kernel32.GetModuleHandleW( # dll handle
         dll) for dll in ('hook.dll', 'usvfs_x64.dll'))
+
+@functools.cache
+def on_wine() -> bool:
+    """Test if Wrye Bash is running on Wine - Proton included."""
+    return hasattr(windll.ntdll, 'wine_get_version')
