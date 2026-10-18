@@ -278,11 +278,13 @@ class _MelCtda(MelUnion):
         # See _build_struct comments above for an explanation of this
         if isinstance(record.operFlag, int):
             record.operFlag = self._CtdaTypeFlags(record.operFlag)
-        if record.operFlag.use_global:
-            record.compValue = record.compValue.dump()
+        comp_val = record.compValue
         record.compValue = struct_pack('fI'[record.operFlag.use_global],
-            record.compValue)
-        super().dumpData(record, out)
+            comp_val.dump() if record.operFlag.use_global else comp_val)
+        try:
+            super().dumpData(record, out)
+        finally: # restore it, we may get dumped again
+            record.compValue = comp_val
 
     # Some small speed hacks --------------------------------------------------
     # To avoid having to ask 100s of unions to each set their defaults,
@@ -351,14 +353,18 @@ class _MelCtdaFo3(_MelCtda):
             if save_fids: record.param2 = new_param2
 
     def dumpData(self, record, out):
+        reference, param2 = record.reference, record.param2
         if record.runOn == 2 and record.ifunc not in self._ignore_ifuncs:
-            record.reference = record.reference.dump()
+            record.reference = reference.dump()
         if record.ifunc == self._getvatsvalue_ifunc:
             if record.param1 in self._vats_param2_fid:
-                record.param2 = record.param2.dump()
+                param2 = param2.dump()
             record.param2 = struct_pack(
-                self._vats_param2_fmt[record.param1], record.param2)
-        super().dumpData(record, out)
+                self._vats_param2_fmt[record.param1], param2)
+        try:
+            super().dumpData(record, out)
+        finally: # restore them, we may get dumped again
+            record.reference, record.param2 = reference, param2
 
 # API - TES4 ------------------------------------------------------------------
 class _CtdaDecider(SignatureDecider):
