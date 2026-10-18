@@ -35,9 +35,17 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from . import EventHandler, Font
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
     _auto_size_to_wx
-from .. import bolt
+from .. import bolt, env
 
-class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
+class ListCtrl(_wx.ListCtrl):
+    """wx gives report list controls wxBG_STYLE_PAINT, leaving their
+    background to the native control - which Wine's fills only if
+    WM_ERASEBKGND was not handled: so erase it on Wine."""
+    def __init__(self, parent, style=0):
+        super().__init__(parent, style=style)
+        if env.on_wine(): self.SetBackgroundStyle(_wx.BG_STYLE_ERASE)
+
+class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
     """List control extended with the wxPython auto-width mixin class.
 
     Also extended to support drag-and-drop.  To define custom drag-and-drop
@@ -84,7 +92,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
     def __init__(self, parent, fnDndAllow, style=0, dndFiles=False,
                  dndList=False, fnDropFiles=None, fnDropIndexes=None,
                  dndOnlyMoveContinuousGroup=True):
-        _wx.ListCtrl.__init__(self, parent, style=style)
+        ListCtrl.__init__(self, parent, style=style)
         ListCtrlAutoWidthMixin.__init__(self)
         if dndFiles or dndList:
             self.SetDropTarget(_DragListCtrl.DropFileOrList(self, dndFiles, dndList))

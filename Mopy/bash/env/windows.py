@@ -1690,3 +1690,14 @@ def in_mo2_vfs() -> bool:
     hooked in."""
     return any(ctypes.windll.kernel32.GetModuleHandleW( # dll handle
         dll) for dll in ('hook.dll', 'usvfs_x64.dll'))
+
+@functools.cache
+def on_wine() -> bool:
+    """Test if Wrye Bash is running on Wine - Proton included. wine-staging
+    can hide wine_get_version, so also look for the registry keys of Wine."""
+    if hasattr(windll.ntdll, 'wine_get_version'): return True
+    for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+        try:
+            with winreg.OpenKey(hkey, r'Software\Wine'): return True
+        except OSError: pass
+    return False

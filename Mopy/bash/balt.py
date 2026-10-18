@@ -48,7 +48,7 @@ from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     askNumber, askYes, askWarning, showOk, showError, showWarning, showInfo, \
     TreeNodeFormat, DnDStatusBar, get_image, get_color_checks, ImageList
 from .gui.base_components import _AComponent
-from .gui.list_ctrl import ListItemFormat
+from .gui.list_ctrl import ListCtrl, ListItemFormat
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -1881,10 +1881,10 @@ def ask_uac_restart(message, mopy):
     return askYes(None, message, title=_('UAC Protection'),
         vista_buttons=btns, expander=ex)
 
-class INIListCtrl(wx.ListCtrl):
+class INIListCtrl(ListCtrl):
 
     def __init__(self, parent):
-        wx.ListCtrl.__init__(self, parent,
+        super().__init__(parent,
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0, u'')
