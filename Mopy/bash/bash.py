@@ -33,6 +33,7 @@ import shutil
 import sys
 import traceback
 from argparse import Namespace
+from collections import defaultdict
 
 # These local imports have to be carefully checked to make sure they don't pull
 # in anything unexpected, plus there has to be a good reason for them to be up
@@ -278,23 +279,17 @@ def assure_single_instance(instance):
 def exit_cleanup():
     # The _()s are safe because the exit_cleanup is only registered in _main,
     # at which point locale has already been set up
-    bs_comments = {
-        'Boot': {
-            'locale': _('The locale to set when launching Wrye Bash.'),
-            'last_game': _("The display name of the last game that was "
-                           "launched through Wrye Bash's 'Select Game' "
-                           "dialog."),
-        },
-    }
-    bs_defaults = bass.boot_settings_defaults
+    bs_comments = defaultdict(dict, {'Boot': {
+        'locale': _('The locale to set when launching Wrye Bash.'),
+        'last_game': _("The display name of the last game that was launched "
+                       "through Wrye Bash's 'Select Game' dialog.")}})
+    bs_dict, bs_defaults = bass.boot_settings, bass.boot_settings_defaults
     # Write out only the boot settings that have been changed from their
     # defaults - add in comments as well
-    changed_settings = {
-        bs_sect: {bs_key: (bs_val, bs_comments.get(bs_sect, {}).get(bs_key))
-                  for bs_key, bs_val in bass.boot_settings[bs_sect].items()
-                  if bs_val != bs_defaults[bs_sect][bs_key]}
-        for bs_sect in bass.boot_settings if bs_sect in bs_defaults
-    }
+    changed_settings = {bs_sect: {
+        bs_key: (bs_val, bs_comments[bs_sect].get(bs_key)) for bs_key, bs_val
+        in bs_setts.items() if bs_val != bs_defaults[bs_sect][bs_key]
+    } for bs_sect, bs_setts in bs_dict.items() if bs_sect in bs_defaults}
     # Don't create the folder or file if no settings have been changed yet
     if changed_settings and any(map(bool, changed_settings.values())):
         _boot_settings.abs_path.head.makedirs()
@@ -303,24 +298,18 @@ def exit_cleanup():
     # wbtemp for the atomic write
     wbtemp.cleanup_temp()
     if bass.is_restarting:
-        cli = cmd_line = bass.sys_argv # list of cli args
+        cli = bass.sys_argv # list of cli args
+        cmd_line = cli if bass.is_standalone else [sys.executable, *cli]
         try:
-            if u'--uac' in bass.sys_argv: ##: mostly untested - needs revamp
+            if '--uac' in cli: ##: mostly untested - needs revamp
                 import win32api
-                if bass.is_standalone:
-                    exe = cli[0]
-                    cli = cli[1:]
-                else:
-                    exe = sys.executable
-                exe = [f'{exe}', f'"{exe}"'][' ' in exe]
-                cli = ' '.join([f'{x}', f'"{x}"'][' ' in x] for x in cli)
-                cmd_line = f'{exe} {cli}'
-                win32api.ShellExecute(0, u'runas', exe, cli, None, True)
+                cli = ([f'{x}', f'"{x}"'][' ' in x] for x in cmd_line) # escape
+                exe, *cli = cli
+                cmd_line = f'{exe} {cli}' if (cli := " ".join(cli)) else exe
+                win32api.ShellExecute(0, 'runas', exe, cli, '', True)
                 return
             else:
                 import subprocess
-                cmd_line = ((bass.is_standalone and cli)
-                            or [sys.executable] + cli)
                 subprocess.Popen(cmd_line, # a list, no need to escape spaces
                                  close_fds=True)
         except Exception as error:

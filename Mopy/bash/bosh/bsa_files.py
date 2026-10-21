@@ -380,7 +380,8 @@ class BSAFileRecord(_BsaHashedRecord):
     __slots__ = (u'file_size_flags', u'raw_file_data_offset')
     formats = [(f, struct_calcsize(f)) for f in (u'I', u'I')]
 
-    def compression_toggle(self): return self.file_size_flags & 0x40000000
+    def compression_toggle(self):
+        return bool(self.file_size_flags & 0x40000000)
 
     def raw_data_size(self):
         if self.compression_toggle():

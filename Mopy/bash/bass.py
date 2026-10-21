@@ -74,15 +74,16 @@ sys_argv = [] # set to the sys.argv used to start bash - modify when restarting
 
 def update_sys_argv(arg):
     """Replace existing option with new one, option must be in *long* format"""
+    sysargv = sys_argv
     if len(arg) == 2:
         try:
-            option_index = sys_argv.index(arg[0])
-            sys_argv[option_index + 1] = arg[1]
+            option_index = sysargv.index(arg[0])
+            sysargv[option_index + 1] = arg[1]
         except ValueError:
-            sys_argv.extend(arg)
+            sysargv.extend(arg)
     else: # boolean switches like '--uac'
-        if not arg[0] in sys_argv:
-            sys_argv.append(arg[0])
+        if not arg[0] in sysargv:
+            sysargv.append(arg[0])
 
 def get_path_from_ini(option_key, dir_key='app'):
     if not (get_value := inisettings.get(option_key)):

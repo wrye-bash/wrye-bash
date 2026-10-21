@@ -51,8 +51,7 @@ _game_stores: dict[str, dict[str, list[Path]]] = defaultdict(dict)
 def reset_bush_globals():
     global game
     global ws_info
-    game = None
-    ws_info = None
+    game = ws_info = None
     for d in (_allGames, _game_stores):
         d.clear()
 
@@ -141,7 +140,7 @@ _succ_err = {
                'Mopy: ',
                'No known game in parent directory of Mopy: %(path)s')}
 
-def _detectGames(cli_path_arg: str = '') -> tuple[
+def _detectGames(cli_path_arg: str) -> tuple[
         dict[str, list[Path]], str | None, Path | None]:
     """Detect which supported games are installed.
 
