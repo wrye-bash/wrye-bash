@@ -37,7 +37,6 @@ from operator import itemgetter
 from typing import get_type_hints
 
 from . import bush, load_order
-from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
     int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
@@ -960,9 +959,8 @@ class ScriptText(_TextParser):
             if skipcomments:
                 scpt_lines =  self._filter_comments(scpt_lines)
                 if not scpt_lines: continue
-            progress((0.5 + (0.5 / y) * z),
-                _('Exporting script %(script_fname)s.') % {
-                         'script_fname': eid})
+            progress(z / y, _('Exporting script %(script_fname)s.') % {
+                'script_fname': eid})
             if x == 0 or skip != eid[:x].lower():
                 fileName = eid
                 if r and deprefix == fileName[:r].lower():
@@ -998,18 +996,16 @@ class ScriptText(_TextParser):
         scpt_lines, _longid, _eid = self._writing_state
         out.write('\n'.join(scpt_lines) + '\n')
 
-    def readFromMod(self, mod_inf):
+    def read_scripts(self, mod_inf, progress):
         """Reads scripts from specified mod."""
         eid_data = self.eid_data
         modFile = self._load_plugin(mod_inf)
-        with Progress(_('Export Scripts')) as progress:
-            present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
-            y = len(present_recs)
-            for z, (rfid, record) in enumerate(present_recs):
-                progress((0.5 / y) * z,
-                         _('Reading scripts in %(source_plugin)s.') % {
-                        'source_plugin': mod_inf})
-                eid_data[record.eid] = record.script_source.splitlines(), rfid
+        present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
+        y = len(present_recs)
+        for z, (rfid, record) in enumerate(present_recs):
+            progress(z / y, _('Reading scripts in %(source_plugin)s.') % {
+                'source_plugin': mod_inf})
+            eid_data[record.eid] = record.script_source.splitlines(), rfid
 
     _changed_type = list
     def writeToMod(self, mod_inf, makeNew=False):

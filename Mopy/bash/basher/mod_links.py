@@ -1881,9 +1881,10 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
         #--Export
         #try:
         scriptText = self._parser()
-        scriptText.readFromMod(fileInfo)
-        with balt.Progress(_(u'Export Scripts')) as progress:
-            exportedScripts = scriptText.export_scripts(textDir, progress,
+        with balt.Progress(_('Export Scripts')) as progress:
+            scriptText.read_scripts(fileInfo, SubProgress(progress, 0, 0.5))
+            exportedScripts = scriptText.export_scripts(textDir,
+                SubProgress(progress, 0.5, 1),
                 bass.settings[u'bash.mods.export.skip'],
                 bass.settings[u'bash.mods.export.deprefix'],
                 bass.settings[u'bash.mods.export.skipcomments'])
