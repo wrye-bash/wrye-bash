@@ -261,21 +261,45 @@ def _warn_missing_bash_dir():
         raise exception.BootError(msg)
 
 #------------------------------------------------------------------------------
-def assure_single_instance(instance):
-    """Ascertain that only one instance of Wrye Bash is running. Must only be
-    called after setup_locale and balt is imported.
+# the mutex handle (Windows) or the lock file path
+_instance_lock = None
+def _another_instance_running():
+    """Return True if another instance of Wrye Bash is running - using the
+    mutex of wx.SingleInstanceChecker (Windows), so other versions see us and
+    we see them, or a lock file holding its PID (elsewhere). Else keep the
+    mutex or lock file till we exit or restart."""
+    global _instance_lock
+    if bolt.os_name == 'nt':
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        _instance_lock = kernel32.CreateMutexW(None, False, 'Wrye Bash')
+        # ERROR_ALREADY_EXISTS, or ERROR_ACCESS_DENIED if the other is elevated
+        return ctypes.get_last_error() in (183, 5)
+    lock_path = os.path.join(os.path.expanduser('~'), 'Wrye Bash')
+    try:
+        with open(lock_path, encoding='utf-8') as ins:
+            os.kill(int(ins.read()), 0) # signal 0 probes, Windows kills!
+        return True
+    except (OSError, ValueError): # no lock file, or a stale or bad one
+        try:
+            with open(lock_path, 'w', encoding='utf-8') as out:
+                out.write(f'{os.getpid()}')
+            _instance_lock = lock_path
+            atexit.register(_release_instance_lock)
+        except OSError: # e.g. a folder of that name - not worth stopping boot
+            bolt.deprint(f'Could not write {lock_path}', traceback=True)
+        return False
 
-    If this is the second instance running, then display an error message and
-    exit. 'instance' must stay alive for the whole execution of the program.
-    See: https://wxpython.org/Phoenix/docs/html/wx.SingleInstanceChecker.html
-
-    :type instance: wx.SingleInstanceChecker"""
-    if instance.IsAnotherRunning():
-        bolt.deprint(u'Only one instance of Wrye Bash can run. Exiting.')
-        from . import gui
-        gui.showOk(None, _('Only one instance of Wrye Bash can run.'),
-                   title='Wrye Bash')
-        sys.exit(1)
+def _release_instance_lock():
+    """Let another instance start - when we exit or before we restart."""
+    global _instance_lock
+    if _instance_lock is None: return
+    if bolt.os_name == 'nt':
+        import ctypes
+        ctypes.WinDLL('kernel32').CloseHandle(_instance_lock)
+    else:
+        os.remove(_instance_lock)
+    _instance_lock = None
 
 def exit_cleanup():
     # The _()s are safe because the exit_cleanup is only registered in _main,
@@ -299,6 +323,8 @@ def exit_cleanup():
     # wbtemp for the atomic write
     wbtemp.cleanup_temp()
     if bass.is_restarting:
+        # the new instance may check for us before we are done exiting
+        _release_instance_lock()
         cli = bass.sys_argv # list of cli args
         cmd_line = cli if bass.is_standalone else [sys.executable, *cli]
         try:
@@ -432,10 +458,20 @@ def main(opts: Namespace):
         os.chdir(pathToProg)
     from . import localize # sets up NullTranslations, so that _() works
     try:
-        # setup logging - Mopy may not be writable, e.g. under Program Files
-        _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'),
-                               'w', buffering=1, encoding='utf-8')
-        _install_bugdump() # install the BashBugDump hooks
+        # HTML file generation needs none of the below - just do it and quit
+        if opts.genHtml is not None:
+            print(f"Generating HTML file from '{opts.genHtml}'")
+            from . import wrye_text
+            wrye_text.genHtml(opts.genHtml)
+            print('Done')
+            return
+        # before opening the BashBugDump, so a second instance does not
+        # truncate the running one's - it exits once it can tell why, below
+        if not (other_instance := _another_instance_running()):
+            # setup logging - Mopy may not be writable, e.g. Program Files
+            _bugdump_handle = open(os.path.join(os.getcwd(),
+                'BashBugDump.log'), 'w', buffering=1, encoding='utf-8')
+            _install_bugdump() # install the BashBugDump hooks
         if (curr_os := platform.system()) not in ('Linux', 'Windows') and \
                 not opts.unsupported:
             raise exception.BootError(f'Wrye Bash only partially supports '
@@ -458,6 +494,9 @@ def main(opts: Namespace):
         # its locale once its App is created
         target_lang = opts.language or bass.boot_settings['Boot']['locale']
         bass.active_locale = localize.setup_locale(target_lang)
+        if other_instance: # its message can be translated now
+            bolt.deprint('Only one instance of Wrye Bash can run. Exiting.')
+            _show_boot_popup(_('Only one instance of Wrye Bash can run.'))
         try: # after setup_locale, as its comments are translated
             gen_ini.write_default_bash_ini()
         except OSError: # Mopy may be read-only, e.g. a package (#758)
@@ -472,20 +511,12 @@ def main(opts: Namespace):
         initialization.init_dirs_mopy(os.getcwd())
         # Make sure we actually have a functional 'bash' folder to work with
         _warn_missing_bash_dir()
-        # if HTML file generation was requested, just do it and quit
-        if opts.genHtml is not None:
-            print(f"Generating HTML file from '{opts.genHtml}'")
-            from . import wrye_text
-            wrye_text.genHtml(opts.genHtml)
-            print('Done')
-            return
         from . import barg # long options needed in _set_game_ask
         bass.sys_argv = barg.convert_to_long_options(sys.argv)
-        # A restore needs the game of the backup's bash.ini, which _main
-        # extracts once it knows that no other instance is running
-        detected = None if opts.restore else _bush_detect(opts, 'bash.ini')
+        bash_ini_path, restore_ = _init_restore(opts)
+        detected = _bush_detect(opts, bash_ini_path)
         # Early setup is done, delegate to the main init method
-        _main(opts, detected)
+        _main(opts, detected, restore_)
     except Exception as e:
         caught_exc = traceback.format_exc()
         if isinstance(e, exception.BootError):
@@ -522,25 +553,18 @@ def main(opts: Namespace):
         # messages and the tracebacks/environment dump may well contain a '%'
         _show_boot_popup(err_msg)
 
-def _main(opts, detected):
+def _main(opts, detected, restore_):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
     block. Call main() from the outside.
 
     :param opts: command line arguments
-    :param detected: what _bush_detect returned, None if restoring"""
+    :param detected: what _bush_detect returned
+    :param restore_: the RestoreSettings to restore, if any"""
     gui, balt = _import_wx()
     dump_environment()
-    # Check if there are other instances of Wrye Bash running
-    instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
-    assure_single_instance(instance)
-    # import barb, which does not import from bosh/bush
-    from . import barb, bush
-    bash_ini_path, restore_ = _init_restore(opts, barb)
-    if detected is None: # main left detecting the game to us
-        detected = _bush_detect(opts, bash_ini_path)
-    if not (bush_game := _set_game_ask(opts, bush, *detected)):
+    if not (bush_game := _set_game_ask(opts, *detected)):
         return
     if restore_:
         try:
@@ -549,11 +573,9 @@ def _main(opts, detected):
             if opts.quietquit: return
         except (exception.BoltError, OSError, NotImplementedError):
             bolt.deprint('Failed to restore backup', traceback=True)
-            # reset the game and ini
+            # reset the ini - detecting the game resets the bush globals
             restore_.restore_ini()
-            bush.reset_bush_globals()
-            bush_game = _set_game_ask(opts, bush,
-                                      *_bush_detect(opts, 'bash.ini'))
+            bush_game = _set_game_ask(opts, *_bush_detect(opts, 'bash.ini'))
             if not bush_game: return # no game chosen
     from . import bosh
     bosh.initBosh(bush_game)
@@ -597,6 +619,7 @@ def _main(opts, detected):
     # backup higher up in the boot sequence.
     previous_bash_version = bass.settings[u'bash.version']
     # backup settings if app version has changed or on user request
+    from . import barb
     if opts.backup or barb.BackupSettings.new_bash_version_prompt_backup(
             balt, previous_bash_version):
         frame = None # balt.Link.Frame, not defined yet, no harm done
@@ -640,10 +663,11 @@ def _main(opts, detected):
     frame.start_update_check()
     bash_app.MainLoop()
 
-def _init_restore(opts, barb):
+def _init_restore(opts):
     # We need the Mopy dirs to initialize restore settings instance
     bash_ini_path, restore_ = 'bash.ini', None
     if opts.restore:
+        from . import barb # does not import from bosh/bush
         try:
             restore_ = barb.RestoreSettings(opts.filename)
             restore_.extract_backup()
@@ -671,7 +695,8 @@ def _bush_detect(opts, bash_ini_path):
     game_infos = bush.detect_and_set_game(opts, init_warnings := [])
     return game_infos, init_warnings
 
-def _set_game_ask(opts, bush, game_infos, init_warnings):
+def _set_game_ask(opts, game_infos, init_warnings):
+    from . import bush # already imported in _bush_detect
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             raise exception.BootError('\n\n'.join([_(
