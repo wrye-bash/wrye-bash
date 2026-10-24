@@ -145,8 +145,8 @@ def _import_wx(localize):
         import wx as _wx
     except Exception as e: # not in main, earlier errors are not wx's
         _dep_versions['wxPython'] = 'not found'
-        raise exception.BootError('\n'.join([dump_environment(), '',
-            'Unable to load wx:', traceback.format_exc(), 'Exiting.'])) from e
+        dump_environment() # into the BashBugDump, as main prints the traceback
+        raise exception.BootError(f'Unable to load wx: {e!r}') from e
     # Hacky fix for loading older settings that pickled classes from
     # moved/deleted wx modules
     from wx import _core
@@ -191,7 +191,7 @@ def _import_wx(localize):
                  'version. Do you still want to run Wrye Bash?')
         if not gui.askYes(None, warn % {'curr_wx_ver': wxver,
                 'supported_wx_series': '4.2.x'}, title=titl):
-            raise exception.BootError(titl)
+            sys.exit() # the user chose not to run Wrye Bash
     # load the window icon resources now that we have an app instance
     balt.load_app_icons()
     return wx_locale, gui, balt
@@ -502,8 +502,17 @@ def main(opts: Namespace):
         # Early setup is done, delegate to the main init method
         _main(opts, localize, detected, restore_)
     except Exception as e:
-        caught_exc = traceback.format_exc()
-        if isinstance(e, exception.BootError):
+        print(caught_exc := traceback.format_exc()) # into the BashBugDump
+        # Only the templates go through %-formatting - the BootError messages
+        # and the tracebacks/environment dump may well contain a '%'
+        err_tail = _('Should the error persist, please post your '
+                     'BashBugDump to the official thread at '
+                     '%(thread_url)s or to the Wrye Bash Discord '
+                     'at %(discord_url)s') % _help_urls
+        if problems := _detect_known_boot_problems(e):
+            err_msg = '\n'.join([_('The following problems were found during '
+                'boot:'), '', *(f'- {p}' for p in problems)])
+        elif isinstance(e, exception.BootError):
             err_msg = f'{e}'
         # No period at the end of URLs, that could cause copy-paste errors when
         # people go to copy them
@@ -515,28 +524,21 @@ def main(opts: Namespace):
                         'caused by OneDrive backing up the Documents folder. '
                         'Please follow the directions in the following link '
                         'under "Change PC folder backup settings", removing '
-                        'your Documents folder from backup: %(ms_docs_url)s')
-            err_msg += '\n\n' + _('Should the error persist, please post your '
-                                  'BashBugDump to the official thread at '
-                                  '%(thread_url)s or to the Wrye Bash Discord '
-                                  'at %(discord_url)s')
-            err_msg %= _help_urls
-            print(caught_exc) # Print the real error only into the debug dump
-        elif isinstance(e, (exception.BoltError, ImportError, OSError,
-                            NotImplementedError)):
+                        'your Documents folder from backup: %(ms_docs_url)s'
+                        ) % _help_urls
+        elif isinstance(e, ImportError): # e.g. a file is missing or broken
             err_msg = '\n'.join([_('Error! Unable to start Wrye Bash.'), '\n',
                 _('Please ensure Wrye Bash is correctly installed.'), '\n',
                 caught_exc])
-        else:
+        else: # already asks for the BashBugDump - show the traceback instead
             err_msg = _('Wrye Bash encountered an error. Please post the '
                         'information below as well as your BashBugDump to the '
                         'official thread at %(thread_url)s or to the Wrye '
                         'Bash Discord at %(discord_url)s') % _help_urls
-            err_msg += '\n\n' + caught_exc
-        # Only the templates above go through %-formatting - the BootError
-        # messages and the tracebacks/environment dump may well contain a '%'
-        _show_boot_popup(err_msg)
+            err_tail = caught_exc
+        _show_boot_popup(f'{err_msg}\n\n{err_tail}')
 
+_boot_excs = (exception.BoltError, OSError, NotImplementedError)
 def _main(opts, localize, detected, restore_):
     """Run the Wrye Bash main loop.
 
@@ -561,7 +563,7 @@ def _main(opts, localize, detected, restore_):
             restore_.restore_settings(bush_game)
             # we currently disallow backup and restore on the same boot
             if opts.quietquit: return
-        except (exception.BoltError, OSError, NotImplementedError):
+        except _boot_excs:
             bolt.deprint('Failed to restore backup', traceback=True)
             # reset the game and ini
             restore_.restore_ini()
@@ -642,13 +644,7 @@ def _main(opts, localize, detected, restore_):
                               title=_('Unable to create backup!')):
                     return  # Quit
     #--Start application
-    try:
-        frame = basher.Init(bash_app)  # Link.Frame is set here !
-    except Exception as e:
-        if problems := _detect_known_boot_problems(e):
-            m = _('The following problems were found during boot:')
-            _show_boot_popup('\n'.join([m, '', *(f'- {p}' for p in problems)]))
-        raise e
+    frame = basher.Init(bash_app)  # Link.Frame is set here !
     frame.ensureDisplayed()
     frame.bind_refresh()
     # Start the update check in the background and pass control to wx's event
@@ -665,7 +661,7 @@ def _init_restore(opts, barb):
             restore_.extract_backup()
             # get the bash.ini from the backup, or None
             bash_ini_path = restore_.backup_ini_path()
-        except (exception.BoltError, OSError, NotImplementedError):
+        except _boot_excs:
             bolt.deprint('Failed to restore backup', traceback=True)
             restore_ = None
     return bash_ini_path, restore_
@@ -791,11 +787,11 @@ def _close_dialog_windows():
                 window.Close()
 
 def _detect_known_boot_problems(e: Exception) -> list[str]:
-    """Inspect the given exception and determine if we know its cause. This
-    means it's a special kind of exception designed to communicate to this
-    method that something in particular went wrong during boot and we should
-    show a user-readable message because the user may be able to fix the
-    problem."""
+    """Inspect the given exception and determine if we know its cause - a
+    special kind of exception designed to communicate that something in
+    particular went wrong during boot, or one whose cause we can tell - and
+    we should show a user-readable message because the user may be able to
+    fix the problem."""
     problems = []
     if isinstance(e, exception.LoadOrderBootError):
         problems.append(_(
@@ -803,6 +799,12 @@ def _detect_known_boot_problems(e: Exception) -> list[str]:
             'and Wrye Bash was instructed to exit rather than fix them via '
             '%(lo_exit_setting)s:') % {'lo_exit_setting': 'bExitOnLOBootError'}
         + f'\n\n- {e}')
+    elif isinstance(e, PermissionError):
+        problems.append(_(
+            'Wrye Bash was denied access to %(denied_path)s. Make sure that '
+            'Wrye Bash is not installed in a protected folder like Program '
+            'Files and that the file is not read-only or in use by another '
+            'program.') % {'denied_path': e.filename or e})
     return problems
 
 class _AppReturnCode(object):
