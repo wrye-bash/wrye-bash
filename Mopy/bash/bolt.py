@@ -2340,6 +2340,12 @@ def text_wrap(text_to_wrap, width=60):
 _USER_DIR = os.path.expanduser('~')
 _CENSORED_DIR = os.path.join(os.path.split(_USER_DIR)[0], '*****')
 
+def censor_home(msg: str) -> str:
+    """Hide the user name in the paths in msg - also in their reprs (e.g. in
+    OSErrors), which double the backslashes on Windows."""
+    return msg.replace(_USER_DIR, _CENSORED_DIR).replace(
+        *(d.replace('\\', '\\\\') for d in (_USER_DIR, _CENSORED_DIR)))
+
 def deprint(*args, traceback=False, trace=True, frame=1):
     """Prints message along with file and line location.
        Available keyword arguments:
@@ -2379,8 +2385,7 @@ def deprint(*args, traceback=False, trace=True, frame=1):
     # Censor the user's home directory - we're on py3 now so no more need to
     # worry about unicode weirdness, this is now just a way for people to
     # unknowingly doxx themselves
-    msg = msg.replace(_USER_DIR, _CENSORED_DIR)
-    print(msg, flush=True, file=target_stream)
+    print(censor_home(msg), flush=True, file=target_stream)
 
 @contextmanager
 def redirect_stdout_to_deprint(use_bytes=False):
