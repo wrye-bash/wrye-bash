@@ -268,21 +268,32 @@ def _warn_missing_bash_dir():
         raise exception.BootError(msg)
 
 #------------------------------------------------------------------------------
-def assure_single_instance(instance):
-    """Ascertain that only one instance of Wrye Bash is running. Must only be
-    called after setup_locale and balt is imported.
-
-    If this is the second instance running, then display an error message and
-    exit. 'instance' must stay alive for the whole execution of the program.
-    See: https://wxpython.org/Phoenix/docs/html/wx.SingleInstanceChecker.html
-
-    :type instance: wx.SingleInstanceChecker"""
-    if instance.IsAnotherRunning():
-        bolt.deprint(u'Only one instance of Wrye Bash can run. Exiting.')
-        from . import gui
-        gui.showOk(None, _('Only one instance of Wrye Bash can run.'),
-                   title='Wrye Bash')
-        sys.exit(1)
+_instance_lock = None # the mutex handle on Windows - must stay alive !
+def _assure_single_instance():
+    """Exit if another instance of Wrye Bash is running - using the mutex
+    (Windows) or the lock file holding its PID (elsewhere) that
+    wx.SingleInstanceChecker uses, so other versions see us and we see
+    them."""
+    global _instance_lock
+    if bolt.os_name == 'nt':
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        _instance_lock = kernel32.CreateMutexW(None, False, 'Wrye Bash')
+        is_running = ctypes.get_last_error() == 183 # ERROR_ALREADY_EXISTS
+    else:
+        lock_path = os.path.join(os.path.expanduser('~'), 'Wrye Bash')
+        try:
+            with open(lock_path, encoding='utf-8') as ins:
+                os.kill(int(ins.read()), 0) # signal 0 probes, Windows kills!
+            is_running = True
+        except (OSError, ValueError): # no lock file, or a stale or bad one
+            with open(lock_path, 'w', encoding='utf-8') as out:
+                out.write(f'{os.getpid()}')
+            atexit.register(os.remove, lock_path)
+            is_running = False
+    if is_running:
+        bolt.deprint('Only one instance of Wrye Bash can run. Exiting.')
+        _show_boot_popup(_('Only one instance of Wrye Bash can run.'))
 
 def exit_cleanup():
     # The _()s are safe because the exit_cleanup is only registered in _main,
@@ -465,6 +476,8 @@ def main(opts: Namespace):
         # its locale once its App is created
         target_lang = opts.language or bass.boot_settings['Boot']['locale']
         bass.active_locale = localize.setup_locale(target_lang)
+        # Check if there are other instances of Wrye Bash running
+        _assure_single_instance()
         # Check our dependencies before anything imports them - env imports
         # pywin32 when initializing the Mopy dirs, game detection needs vdf
         _import_deps()
@@ -482,11 +495,12 @@ def main(opts: Namespace):
             return
         from . import barg # long options needed in _set_game_ask
         bass.sys_argv = barg.convert_to_long_options(sys.argv)
-        # A restore needs the game of the backup's bash.ini, which _main
-        # extracts once it knows that no other instance is running
-        detected = None if opts.restore else _bush_detect(opts, 'bash.ini')
+        # import barb, which does not import from bosh/bush
+        from . import barb
+        bash_ini_path, restore_ = _init_restore(opts, barb)
+        detected = _bush_detect(opts, bash_ini_path)
         # Early setup is done, delegate to the main init method
-        _main(opts, localize, detected)
+        _main(opts, localize, detected, restore_)
     except Exception as e:
         caught_exc = traceback.format_exc()
         if isinstance(e, exception.BootError):
@@ -523,7 +537,7 @@ def main(opts: Namespace):
         # messages and the tracebacks/environment dump may well contain a '%'
         _show_boot_popup(err_msg)
 
-def _main(opts, localize, detected):
+def _main(opts, localize, detected, restore_):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
@@ -539,14 +553,7 @@ def _main(opts, localize, detected):
     # this must come after setup_locale
     gen_ini.write_default_bash_ini(bass.get_version_tuple())
     dump_environment()
-    # Check if there are other instances of Wrye Bash running
-    instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
-    assure_single_instance(instance)
-    # import barb, which does not import from bosh/bush
-    from . import barb, bush
-    bash_ini_path, restore_ = _init_restore(opts, barb)
-    if detected is None: # main left detecting the game to us
-        detected = _bush_detect(opts, bash_ini_path)
+    from . import barb, bush # already imported in main
     if not (bush_game := _set_game_ask(opts, bush, *detected)):
         return
     if restore_:
