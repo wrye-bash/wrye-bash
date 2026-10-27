@@ -29,7 +29,7 @@ import time
 
 import wx as _wx
 
-from ..localize import setup_locale
+from ..localize import set_wx_locale, setup_locale
 
 _pj = os.path.join
 _img_folder = _pj(os.path.dirname(__file__), '..', 'images')
@@ -40,7 +40,7 @@ class TestLocalize:
         with capsys.disabled():
             print(f'\n\n******* Testing {loc=} *******')
             print(f'getlocale: {locale.getlocale()}')
-            wx_locale, loc_name = setup_locale(_wx, loc)
+            wx_locale = set_wx_locale(_wx, setup_locale(loc))
             # getlocale = locale.getlocale()
             # print(getlocale)
             # assert getlocale
@@ -77,3 +77,7 @@ class TestLocalize:
         """Test setting locale to fr_CM - failure on wx.ArtProvider not
         reproducible in the CI environment."""
         self._test_locale('fr_CM', capsys)
+
+    def test_setlocale_headless(self):
+        """Test setting a command line locale without wx."""
+        assert setup_locale('en-US') == 'en_US'

@@ -23,123 +23,28 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
-from functools import partial
-from itertools import chain
 from typing import ClassVar
 
 from .patcher_dialog import gpatcher_types
-from .. import bass, bolt, bosh, bush, load_order
+from .. import bass, bolt, bosh, load_order
 from ..balt import CheckLink, SeparatorLink
-from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, text_wrap
-from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
-    EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, Lazy, \
-    ListBox, Links, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, \
-    VLayout, askText, showError, askNumber
-from ..patcher.base import APatcher, MultiTweakItem, ListPatcher
-from ..patcher.patchers import checkers, mergers, multitweak_actors, \
-    multitweak_assorted, multitweak_clothes, multitweak_names, \
-    multitweak_races, multitweak_settings, preservers
-from ..patcher.patchers.base import AliasPluginNamesPatcher, \
-    MergePatchesPatcher, MultiTweaker, ReplaceFormIDsPatcher
-from ..plugin_types import MergeabilityCheck
+from ..bolt import FName, dict_sort, text_wrap
+from ..gui import TOP, AObject, Button, CheckBox, CheckListBox, \
+    DeselectAllButton, EventResult, FileOpenMultiple, HBoxedLayout, Label, \
+    LayoutOptions, Lazy, ListBox, Links, PanelWin, SearchBar, \
+    SelectAllButton, Spacer, TextArea, VLayout, askText, showError, askNumber
+from ..patcher.base import MultiTweakItem
+from ..patcher.config_patchers import all_patcher_types, \
+    game_patcher_config_types, ListMergerConfig, ListPatcherConfig, \
+    PatcherConfig, TweakPatcherConfig, AliasPluginNames as _APConfig, \
+    LeveledLists as _LLConfig
 
-class PatcherConfig:
-    """Mixin to add configuration API to the patchers."""
-    patcher_name: ClassVar[str]
-    # The key that will be used to read and write entries for BP configs
-    # These are sometimes quite ugly - backwards compat leftover from when
-    # those were the class names and got written directly into the configs
-    _config_key: ClassVar[str]
-    patcher_type: ClassVar[type[APatcher]]
-    # CONFIG DEFAULTS
-    default_isEnabled = False # is the patcher enabled on a new bashed patch ?
-    _override = ('patcher_name', '_config_key', 'patcher_type')
-
-    def __init__(self, bp_file, *args, **kwargs):
-        c = self.__class__
-        if xxx := [x for x in c._override if not hasattr(c, x)]:
-            raise SyntaxError(f'{c.__name__}: missing class variable(s) {xxx}')
-        super().__init__(*args, **kwargs)
-        # executing bashed patch file, use only for info on active mod arrays
-        self._bp = bp_file
-
-    def _getConfig(self, configs):
-        """Get config from configs dictionary and/or set to default.
-
-        Called in basher.patcher_dialog.PatchDialog#__init__, before the
-        dialog is shown, to update the patch options based on the previous
-        config for this patch loaded via get_table_prop('bash.patch.configs').
-        Fallback to default_XXX class vars for missing config entries."""
-        # Remember whether we were present in the config for bolding later
-        self._was_present = (cls := self.__class__)._config_key in configs
-        config = configs[cls._config_key] if self._was_present else {}
-        for att, def_val, *funct in cls._config_attrs():
-            val = config.get(att, def_val)
-            setattr(self, att, funct[0](val) if funct else val)
-        # return the config dict for this patcher to read additional values
-        return config
-
-    @classmethod
-    def _config_attrs(cls):
-        return ('isEnabled', cls.default_isEnabled),
-
-    def saveConfig(self, configs):
-        """Save config to configs dictionary.
-
-        Most patchers just save their enabled state, except the
-        _ListPatcherPanel subclasses - which save their choices - and the
-        AliasPluginNames that saves the aliases."""
-        config = configs[self.__class__._config_key] = {}
-        for att, *_rest in self._config_attrs():
-            config[att] = getattr(self, att)
-        return config # return the config dict for this patcher to further edit
-
-    @classmethod
-    def log_config(cls, config, clip, log):
-        ckey = cls._config_key
-        # Check if the patcher is in the config and was enabled
-        if ckey not in config or not (conf := config[ckey]).get('isEnabled'):
-            return
-        humanName = cls.patcher_name
-        log.setHeader(f'== {humanName}')
-        clip.write('\n')
-        clip.write(f'== {humanName}\n')
-        cls._log_config(conf, config, clip, log)
-
-    @classmethod
-    def _log_config(cls, conf, config, clip, log):
-        items = conf.get(u'configItems', [])
-        if not items:
-            log(u' ')
-            return
-        checks = conf.get(u'configChecks', {})
-        for item in items:
-            checked = checks.get(item, False)
-            if checked:
-                log(f'* __{item}__')
-                clip.write(f' ** {item}\n')
-            else:
-                log(f'. ~~{item}~~')
-                clip.write(f'    {item}\n')
-
-    def import_config(self, patchConfigs, set_first_load):
-        self._is_first_load = set_first_load
-        self._getConfig(patchConfigs) # set isEnabled and load additional config
-
-    def get_patcher_instance(self, patch_file):
-        """Instantiate and return an instance of self.__class__.patcher_type,
-        initialized with the config options from the Gui"""
-        return self.patcher_type(self.patcher_name, patch_file)
-
-class _PatcherPanel(Lazy, PanelWin):
+class _PatcherPanel(Lazy, PanelWin, PatcherConfig):
     """Basic patcher panel with no options."""
-    patcher_desc: ClassVar[str]
     selectCommands = True # whether this panel displays De/Select All
-    _override = *PatcherConfig._override, 'patcher_desc'
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(AObject, self).__init__(*args, **kwargs)
         super().__init__(no_border=False)
         # Used to keep track of the state of the patcher label
         self._is_bolded = False
@@ -183,33 +88,7 @@ class _PatcherPanel(Lazy, PanelWin):
         self._parent.check_patcher(self, self_enabled)
 
 #------------------------------------------------------------------------------
-class AliasesPatcherConfig(PatcherConfig):
-    """Patcher config for AliasPluginNamesPatcher."""
-    patcher_name = _('Alias Plugin Names')
-    patcher_desc = _('Specify plugin aliases for reading CSV source files.')
-    _config_key = 'AliasesPatcher'
-    patcher_type = AliasPluginNamesPatcher
-
-    @classmethod
-    def _config_attrs(cls):
-        return *super()._config_attrs(), ('aliases', {}, partial(
-            # call str twice in case v._s was a str subtype
-            forward_compat_path_to_fn, fn_value=True))
-
-    @classmethod
-    def _log_config(cls, conf, config, clip, log):
-        fn_aliases = conf.get('aliases', {})
-        for mod, alias in fn_aliases.items():
-            log(f'* __{mod}__ >> {alias}')
-            clip.write(f'  {mod} >> {alias}\n')
-
-    def get_patcher_instance(self, patch_file):
-        """Set patch_file aliases dict"""
-        if self.isEnabled:
-            patch_file.pfile_aliases = self.aliases
-        return self.patcher_type(self.patcher_name, patch_file)
-
-class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
+class AliasPluginNames(_PatcherPanel, _APConfig):
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -239,69 +118,9 @@ class _AliasesPatcherPanel(AliasesPatcherConfig, _PatcherPanel):
         self._set_alias_text()
 
 #------------------------------------------------------------------------------
-class ListPatcherConfig(PatcherConfig):
-    """Patcher config for ListPatcherConfig."""
-    patcher_type: ClassVar[type[ListPatcher]]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.configItems: list[FName] = []
-        self.configChecks: dict[FName, bool] = {}
-        self.configChoices: dict[FName, set[str]] = {}
-        self._item_config: dict[FName, bool] = {}
-
-    def _getConfig(self, configs):
-        """Merge entries from the config with existing ones - if we're loading
-        the first config, the existing ones will be empty. Otherwise, we're
-        restoring a config into an existing state, so don't delete the already
-        present items and keep the checked/choices state for those."""
-        # Revert To Default (or a brand new patch) passes an empty config -
-        # start over instead of keeping the state that is on screen
-        conf_copy = dict(self._item_config) if configs else {}
-        config = super()._getConfig(configs) # loads self.configItems and co
-        (conf_items := self.configItems).extend(
-            it for it in conf_copy.keys() - {*conf_items})
-        #--Verify file existence
-        conf_items = self.patcher_type.valid_srcs(self._bp, conf_items)
-        # Restore the old checked/choices state (if the items in question
-        # are actually still present in the Data folder)
-        self._item_config = self._merge_configs(conf_copy, set(conf_items))
-        return config
-
-    @classmethod
-    def _config_attrs(cls):
-        return (*super()._config_attrs(),
-                ('configItems', [], forward_compat_path_to_fn_list),
-                ('configChecks', {}, forward_compat_path_to_fn),
-                ('configChoices', {}, forward_compat_path_to_fn))
-
-    def saveConfig(self, configs):
-        """Save config to configs dictionary."""
-        ic = self._item_config
-        self.configChecks = {k: isinstance(v, set) or v for k, v in ic.items()}
-        self.configChoices = {k: v if isinstance(v, set) else set() for k, v in
-                              ic.items()}
-        self.configItems = [*ic]
-        return super().saveConfig(configs)
-
-    def get_patcher_instance(self, patch_file):
-        return self.patcher_type(self.patcher_name, patch_file,
-                                 self._item_config)
-
-    def _merge_configs(self, curr_conf, present_config_items):
-        checks = {**curr_conf, **self.configChecks} # latter is freshly loaded
-        return {k: v for k, v in checks.items() if k in present_config_items}
-
-    @classmethod
-    def _mod_label(cls, item: FName, conf_choices):
-        """Returns label for item to be used in GUI list and in logging."""
-        return item
-
-class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
+class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
     """Patcher panel with option to select source elements."""
-    _autocheck_new = True #--GUI: Whether new items are checked by default
-    gList: ListBox | CheckListBox
-    _list_label = ''
+    gList: CheckListBox
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -333,6 +152,15 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
                     ]), LayoutOptions(expand=True, weight=1)))
         return freshly_created
 
+    def mass_select(self, select=True):
+        try:
+            self.gList.set_all_checkmarks(checked=select)
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        super().mass_select(select)
+
+    # List Panel implementation -----------------------------------------------
     def _auto_layout(self, right_side_components=None):
         self._sort_and_update_items()
         return None
@@ -415,14 +243,6 @@ class _ListPatcherPanel(ListPatcherConfig, _PatcherPanel):
             self._item_config[item] = self.gList.lb_is_checked_at_index(i)
         self._enable_self(any(self._item_config.values()))
 
-    def mass_select(self, select=True):
-        try:
-            self.gList.set_all_checkmarks(checked=select)
-            self.OnListCheck()
-        except AttributeError:
-            pass #ListBox instead of CheckListBox
-        super().mass_select(select)
-
     # Config Phase Overrides
     def import_config(self, patchConfigs, set_first_load):
         super().import_config(patchConfigs, set_first_load)
@@ -452,7 +272,7 @@ class _ChoiceMenuMixin(object):
         if self.mouse_pos: self.ShowChoiceMenu(lb_selection_dex)
         # return
 
-    def _handle_mouse_motion(self, wrapped_evt, lb_dex):
+    def _handle_mouse_motion(self, wrapped_evt, lb_dex: int):
         """Check mouse motion to detect right click event."""
         if wrapped_evt.is_dragging: # cancel right up if user drags mouse away of the item
             if self.mouse_pos:
@@ -464,56 +284,13 @@ class _ChoiceMenuMixin(object):
         else:
             self.mouse_pos = None
 
-    def ShowChoiceMenu(self, lb_selection_dex): raise NotImplementedError
+    def ShowChoiceMenu(self, lb_index: int): raise NotImplementedError
 
 _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
 def _custom_label(label_text, val): # edit label text with value
     return f'{label_text}: {_label_formats[type(val)] % val}'
 
-class TweakPatcherConfig(PatcherConfig):
-    patcher_type: ClassVar[type[MultiTweaker]]
-
-    def _getConfig(self, configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super()._getConfig(configs)
-        self._all_tweaks = self._curr_tweaks = self._tweaks_config(config,
-                                                                   self._bp)
-        return config
-
-    def saveConfig(self, configs):
-        """Save config to configs dictionary."""
-        config = super().saveConfig(configs)
-        for tweak in self._all_tweaks:
-            tweak.save_tweak_config(config)
-        return config
-
-    @classmethod
-    def _log_config(cls, conf, config, clip, log):
-        all_tweaks = cls._tweaks_config(conf) # load tweaks config
-        for tweak in all_tweaks:
-            if tweak.tweak_key in conf:
-                enabled, value = conf.get(tweak.tweak_key, (False, u''))
-                list_label = tweak.getListLabel().replace('[[', '[').replace(
-                    ']]', ']')
-                if enabled:
-                    log(f'* __{list_label}__')
-                    clip.write(f' ** {list_label}\n')
-                else:
-                    log(f'. ~~{list_label}~~')
-                    clip.write(f'    {list_label}\n')
-
-    def get_patcher_instance(self, patch_file):
-        enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]
-        return self.patcher_type(self.patcher_name, patch_file, enabledTweaks)
-
-    @classmethod
-    def _tweaks_config(cls, config, bashed_patch=None):
-        all_tweaks = cls.patcher_type.tweak_instances(bashed_patch)
-        for tweak in all_tweaks:
-            tweak.init_tweak_config(config)
-        return all_tweaks
-
-class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
+class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
     """Patcher panel with list of checkable, configurable tweaks."""
 
     def __init__(self, *args, **kwargs):
@@ -596,7 +373,7 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
         self._parent.gTipText.label_text = ''
         self.mouse_pos = None
 
-    def _handle_mouse_motion(self, wrapped_evt, lb_dex):
+    def _handle_mouse_motion(self, wrapped_evt, lb_dex: int):
         """Check mouse motion to detect right click event. If any mouse button
          is held pressed, is_moving is False and is_dragging is True."""
         if wrapped_evt.is_moving:
@@ -620,25 +397,25 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
                              or lower_search_str in t.tweak_tip.lower()]
         self._populate_tweak_list()
 
-    def ShowChoiceMenu(self, tweakIndex):
+    def ShowChoiceMenu(self, lb_index: int):
         """Displays a popup choice menu if applicable."""
-        if tweakIndex >= len(self._curr_tweaks): return
-        tweak = self._curr_tweaks[tweakIndex]
+        if lb_index >= len(self._curr_tweaks): return
+        tweak = self._curr_tweaks[lb_index]
         choiceLabels = tweak.choiceLabels
         if len(choiceLabels) <= 1: return
-        self.gTweakList.lb_select_index(tweakIndex)
+        self.gTweakList.lb_select_index(lb_index)
         #--Build Menu
         links = Links()
         _self = self # ugly, tweak_custom_choice is too big to make it local though
         class _ValueLink(CheckLink):
-            def __init__(self, _text, index):
+            def __init__(self, _text, dex):
                 super(_ValueLink, self).__init__(_text)
-                self.index = index
+                self.index = dex
             def _check(self): return self.index == tweak.chosen
-            def Execute(self): _self.tweak_choice(self.index, tweakIndex)
+            def Execute(self): _self.tweak_choice(self.index, lb_index)
         class _ValueLinkCustom(_ValueLink):
             def Execute(self):
-                _self.tweak_custom_choice(self.index, tweakIndex)
+                _self.tweak_custom_choice(self.index, lb_index)
         for index, itm_txt in enumerate(choiceLabels):
             if itm_txt == '----':
                 links.append_link(SeparatorLink())
@@ -650,7 +427,7 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
         #--Show/Destroy Menu
         links.popup_menu(self.gTweakList, None)
 
-    def tweak_choice(self, index, tweakIndex):
+    def tweak_choice(self, index: int, tweakIndex: int):
         """Handle choice menu selection."""
         self._curr_tweaks[tweakIndex].chosen = index
         self.gTweakList.lb_set_label_at_index(
@@ -659,7 +436,7 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
         # wx.EVT_CHECKLISTBOX is NOT fired so this line is needed (?)
         self.TweakOnListCheck()
 
-    def tweak_custom_choice(self, index, tweakIndex):
+    def tweak_custom_choice(self, index: int, tweakIndex: int):
         """Handle choice menu selection."""
         tweak = self._curr_tweaks[tweakIndex]
         values = []
@@ -764,46 +541,14 @@ class _TweakPatcherPanel(TweakPatcherConfig, _ChoiceMenuMixin, _PatcherPanel):
                                  f'Item {tweakie} skipped.', traceback=True)
 
 #------------------------------------------------------------------------------
-class _ImporterPatcherConfig(ListPatcherConfig):
-
-    def saveConfig(self, configs):
-        """Save config to configs dictionary."""
-        config = super().saveConfig(configs)
-        if self.isEnabled:
-            configs[u'ImportedMods'].update(
-                [item for item, value in self._item_config.items() if
-                 value and bosh.ModInfos.check_filename(item)])
-        return config
-
-class _ImporterPatcherPanel(_ImporterPatcherConfig, _ListPatcherPanel): pass
-
-class _ListMergerConfig(ListPatcherConfig):
-    patcher_type: ClassVar[type[mergers.AListsMerger]]
-    _item_config: dict[FName, set[str]]
-
-    def _merge_configs(self, curr_conf, present_config_items):
-        choices = {**curr_conf, **self.configChoices}
-        return {k: v for k, v in choices.items() if k in present_config_items}
-
-    @classmethod
-    def _log_config(cls, conf, config, clip, log):
-        conf_choices = conf.get('configChoices', {})
-        for item in (cls._mod_label(i, conf_choices) for i in conf.get(
-                'configItems', [])):
-            log(f'. __{item}__')
-            clip.write(f'    {item}\n')
-
-    @classmethod
-    def _mod_label(cls, item, conf_choices):
-        return cls.patcher_type.annotate_plugin(item, conf_choices)
-
-class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
+class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
     """Mergers targeting all mods in the LO, with the option to override
     tags."""
     choiceMenu: ClassVar[tuple[str, ...]]
     _add_dialog_title: str
     # CONFIG DEFAULTS
     selectCommands = False
+    gList: ListBox
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
@@ -891,13 +636,13 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
             self._item_config.items()) if index not in selections)
         self._sort_and_update_items(is_auto=False, do_sort=False)
 
-    def ShowChoiceMenu(self, itemIndex):
+    def ShowChoiceMenu(self, lb_index: int):
         """Displays a popup choice menu if applicable.
         NOTE: Assume that configChoice returns a set of chosen items."""
         #--Item Index
-        if itemIndex < 0: return
-        (gui_li := self.gList).lb_select_index(itemIndex)
-        choiceSet = self._item_config[(curr := self._curr_items)[itemIndex]]
+        if lb_index < 0: return
+        (gui_li := self.gList).lb_select_index(lb_index)
+        choiceSet = self._item_config[(curr := self._curr_items)[lb_index]]
         #--Build Menu
         choices, choice_menu, _self = self._item_config, self.choiceMenu, self
         class _OnItemChoice(CheckLink):
@@ -906,14 +651,14 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
                 self._index = dex
             def _check(self): return self._text in choiceSet
             def Execute(self):
-                item = curr[itemIndex]
+                item = curr[lb_index]
                 choice_set = choices[item]
                 choice_set ^= {choice := choice_menu[self._index]}
                 if choice != 'Auto':
                     choice_set.discard('Auto')
                 elif 'Auto' in choice_set:
                     _self._set_choice(item)
-                gui_li.lb_set_label_at_index(itemIndex, _self._mod_label(
+                gui_li.lb_set_label_at_index(lb_index, _self._mod_label(
                     item, choices))
         links = Links()
         for index, item_label in enumerate(choice_menu):
@@ -940,311 +685,7 @@ class _ListsMergerPanel(_ListMergerConfig,_ChoiceMenuMixin, _ListPatcherPanel):
         self._on_auto_check(self.autoIsChecked)
 
 #------------------------------------------------------------------------------
-# GUI Patcher classes
-# Do _not_ change the _config_key attr or you will break existing BP configs
-#------------------------------------------------------------------------------
-# Patchers 10 -----------------------------------------------------------------
-class AliasPluginNames(_AliasesPatcherPanel): pass
-
-class MergePatches(_ListPatcherPanel):
-    """Merges specified patches into Bashed Patch."""
-    _list_label = _('Mergeable Plugins')
-    patcher_name = _(u'Merge Patches')
-    patcher_desc = _('Merge patch plugins into the Bashed Patch.')
-    _config_key = u'PatchMerger'
-    patcher_type = MergePatchesPatcher
-
-# Patchers 20 -----------------------------------------------------------------
-class ImportGraphics(_ImporterPatcherPanel):
-    """Merges changes to graphics (models and icons)."""
-    patcher_name = _(u'Import Graphics')
-    patcher_desc = _('Import graphics (models, icons, etc.) from source '
-                     'plugins.')
-    _config_key = u'GraphicsPatcher'
-    patcher_type = preservers.ImportGraphicsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsAIPackages(_ImporterPatcherPanel):
-    """Merges changes to the AI Packages of Actors."""
-    patcher_name = _(u'Import Actors: AI Packages')
-    patcher_desc = _('Import actor AI Package links from source plugins.')
-    _config_key = u'NPCAIPackagePatcher'
-    patcher_type = mergers.ImportActorsAIPackagesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActors(_ImporterPatcherPanel):
-    """Merges changes to actors."""
-    patcher_name = _(u'Import Actors')
-    patcher_desc = _('Import various actor attributes from source plugins.')
-    _config_key = u'ActorImporter'
-    patcher_type = preservers.ImportActorsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsPerks(_ImporterPatcherPanel):
-    """Merges changes to actor perks."""
-    patcher_name = _(u'Import Actors: Perks')
-    patcher_desc = _('Import actor perks from source plugins.')
-    _config_key = u'ImportActorsPerks'
-    patcher_type = mergers.ImportActorsPerksPatcher
-
-# -----------------------------------------------------------------------------
-class ImportCells(_ImporterPatcherPanel):
-    """Merges changes to cells (climate, lighting, and water.)"""
-    patcher_name = _(u'Import Cells')
-    patcher_desc = _('Import cells (climate, lighting, and water) from '
-                     'source plugins.')
-    _config_key = u'CellImporter'
-    patcher_type = preservers.ImportCellsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsFactions(_ImporterPatcherPanel):
-    """Import factions to creatures and NPCs."""
-    patcher_name = _(u'Import Actors: Factions')
-    patcher_desc = _('Import actor factions from source plugins/files.')
-    _config_key = u'ImportFactions'
-    patcher_type = preservers.ImportActorsFactionsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRelations(_ImporterPatcherPanel):
-    """Import faction relations to factions."""
-    patcher_name = _(u'Import Relations')
-    patcher_desc = _('Import relations from source plugins/files.')
-    _config_key = u'ImportRelations'
-    patcher_type = mergers.ImportRelationsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportInventory(_ImporterPatcherPanel):
-    """Merge changes to actor inventories."""
-    patcher_name = _('Import Inventory')
-    patcher_desc = _('Merges changes to items in various inventories.')
-    _config_key = 'ImportInventory'
-    patcher_type = mergers.ImportInventoryPatcher
-
-# -----------------------------------------------------------------------------
-class ImportOutfits(_ImporterPatcherPanel):
-    """Merge changes to outfits."""
-    patcher_name = _(u'Import Outfits')
-    patcher_desc = _(u'Merges changes to NPC outfits.')
-    _config_key = u'ImportOutfits'
-    patcher_type = mergers.ImportOutfitsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsSpells(_ImporterPatcherPanel):
-    """Merges changes to the spells lists of Actors."""
-    patcher_name = _(u'Import Actors: Spells')
-    patcher_desc = _(u'Merges changes to actor spell / effect lists.')
-    _config_key = u'ImportActorsSpells'
-    patcher_type = mergers.ImportActorsSpellsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportNames(_ImporterPatcherPanel):
-    """Import names from sources."""
-    patcher_name = _(u'Import Names')
-    patcher_desc = _('Import names from source plugins/files.')
-    _config_key = u'NamesPatcher'
-    patcher_type = preservers.ImportNamesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsFaces(_ImporterPatcherPanel):
-    """NPC Faces patcher, for use with TNR or similar plugins."""
-    patcher_name = _(u'Import Actors: Faces')
-    patcher_desc = _('Import NPC face/eyes/hair from source plugins. For use '
-                     'with TNR and similar mods.')
-    _config_key = u'NpcFacePatcher'
-    patcher_type = preservers.ImportActorsFacesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportSounds(_ImporterPatcherPanel):
-    """Imports sounds from source plugins into patch."""
-    patcher_name = _(u'Import Sounds')
-    patcher_desc = _('Import sounds (from Magic Effects, Containers, '
-                     'Activators, Lights, Weathers and Doors) from source '
-                     'plugins.')
-    _config_key = u'SoundPatcher'
-    patcher_type = preservers.ImportSoundsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportStats(_ImporterPatcherPanel):
-    """Import stats from mod file."""
-    patcher_name = _(u'Import Stats')
-    patcher_desc = _('Import stats from any pickupable items from source '
-                     'plugins/files.')
-    _config_key = u'StatsPatcher'
-    patcher_type = preservers.ImportStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportScripts(_ImporterPatcherPanel):
-    """Imports attached scripts on objects."""
-    patcher_name = _(u'Import Scripts')
-    patcher_desc = _('Import scripts on various objects (e.g. containers, '
-                     'weapons, etc.) from source plugins.')
-    _config_key = u'ImportScripts'
-    patcher_type = preservers.ImportScriptsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRaces(_ImporterPatcherPanel):
-    """Imports race-related data."""
-    patcher_name = _(u'Import Races')
-    patcher_desc = _('Import race eyes, hair, body, voice, etc. from source '
-                     'plugins.')
-    _config_key = u'ImportRaces'
-    patcher_type = preservers.ImportRacesPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRacesRelations(_ImporterPatcherPanel):
-    """Imports race-faction relations."""
-    patcher_name = _(u'Import Races: Relations')
-    patcher_desc = _('Import race-faction relations from source plugins.')
-    _config_key = u'ImportRacesRelations'
-    patcher_type = mergers.ImportRacesRelationsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportRacesSpells(_ImporterPatcherPanel):
-    """Imports race spells/abilities."""
-    patcher_name = _(u'Import Races: Spells')
-    patcher_desc = _('Import race abilities and spells from source plugins.')
-    _config_key = u'ImportRacesSpells'
-    patcher_type = mergers.ImportRacesSpellsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportSpellStats(_ImporterPatcherPanel):
-    """Import spell changes from mod files."""
-    patcher_name = _(u'Import Spell Stats')
-    patcher_desc = _('Import stats from spells from source plugins/files.')
-    _config_key = u'SpellsPatcher'
-    patcher_type = preservers.ImportSpellStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportDestructible(_ImporterPatcherPanel):
-    patcher_name = _('Import Destructible')
-    patcher_desc = _('Preserves changes to destructible records.')
-    _config_key = 'DestructiblePatcher'
-    patcher_type = preservers.ImportDestructiblePatcher
-
-# -----------------------------------------------------------------------------
-class ImportKeywords(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Keywords')
-    patcher_desc = _('Import keyword changes from source plugins.')
-    _config_key = u'KeywordsImporter'
-    patcher_type = preservers.ImportKeywordsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportText(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Text')
-    patcher_desc = _('Import various types of long-form text like book '
-                     'texts, effect descriptions, etc. from source plugins.')
-    _config_key = u'TextImporter'
-    patcher_type = preservers.ImportTextPatcher
-
-# -----------------------------------------------------------------------------
-class ImportObjectBounds(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Object Bounds')
-    patcher_desc = _(u'Import object bounds for various actors, items and '
-                     u'objects.')
-    _config_key = u'ObjectBoundsImporter'
-    patcher_type = preservers.ImportObjectBoundsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportEnchantmentStats(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Enchantment Stats')
-    patcher_desc = _('Import stats from enchantments from source plugins.')
-    _config_key = u'ImportEnchantmentStats'
-    patcher_type = preservers.ImportEnchantmentStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportEffectStats(_ImporterPatcherPanel):
-    patcher_name = _('Import Effect Stats')
-    patcher_desc = _('Import stats from magic/base effects from source '
-                     'plugins.')
-    _config_key = 'ImportEffectsStats'
-    patcher_type = preservers.ImportEffectStatsPatcher
-
-# -----------------------------------------------------------------------------
-class ImportEnchantments(_ImporterPatcherPanel):
-    patcher_name = _('Import Enchantments')
-    patcher_desc = _('Import enchantments from armor, weapons, etc. from '
-                     'source plugins.')
-    _config_key = 'ImportEnchantments'
-    patcher_type = preservers.ImportEnchantmentsPatcher
-
-# Patchers 30 -----------------------------------------------------------------
-class TweakAssorted(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Assorted')
-    patcher_desc = _(u'Tweak various records in miscellaneous ways.')
-    _config_key = u'AssortedTweaker'
-    patcher_type = multitweak_assorted.TweakAssortedPatcher
-    default_isEnabled = True
-
-# -----------------------------------------------------------------------------
-class TweakClothes(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Clothes')
-    patcher_desc = _(u'Tweak clothing weight and blocking.')
-    _config_key = u'ClothesTweaker'
-    patcher_type = multitweak_clothes.TweakClothesPatcher
-
-# -----------------------------------------------------------------------------
-class TweakSettings(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Settings')
-    patcher_desc = _(u'Tweak game settings.')
-    _config_key = u'GmstTweaker'
-    patcher_type = multitweak_settings.TweakSettingsPatcher
-    # CONFIG DEFAULTS
-    default_isEnabled = True
-
-# -----------------------------------------------------------------------------
-class TweakNames(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Names')
-    patcher_desc = _(u'Tweak object names to sort them by type/stats or to '
-                     u'improve things like lore friendliness.')
-    _config_key = u'NamesTweaker'
-    patcher_type = multitweak_names.TweakNamesPatcher
-
-# -----------------------------------------------------------------------------
-class TweakActors(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Actors')
-    patcher_desc = _(u'Tweak NPC and Creatures records in specified ways.')
-    _config_key = u'TweakActors'
-    patcher_type = multitweak_actors.TweakActorsPatcher
-
-# -----------------------------------------------------------------------------
-class TweakRaces(_TweakPatcherPanel):
-    patcher_name = _(u'Tweak Races')
-    patcher_desc = _(u'Tweak race records in specified ways.')
-    _config_key = u'TweakRaces'
-    patcher_type = multitweak_races.TweakRacesPatcher
-
-# Patchers 40 -----------------------------------------------------------------
-class ReplaceFormIDs(_ListPatcherPanel):
-    """Imports Form Id replacers into the Bashed Patch."""
-    patcher_name = _(u'Replace Form IDs')
-    patcher_desc = _(u'Imports Form Id replacers from csv files into the '
-                     u'Bashed Patch.')
-    _config_key = u'UpdateReferences'
-    patcher_type = ReplaceFormIDsPatcher
-    _autocheck_new = False #--GUI: Whether new items are checked by default.
-
-# -----------------------------------------------------------------------------
-class LeveledListsConfig(_ListMergerConfig):
-    patcher_name = _('Leveled Lists')
-    patcher_desc = '\n\n'.join([
-        _('Merges changes to leveled lists from all active and/or merged '
-          'plugins.'),
-        _('Advanced users may override Relev/Delev tags for any mod (active '
-          'or inactive) using the list below.')])
-    _config_key = 'ListsMerger'
-    patcher_type = mergers.LeveledListsPatcher
-    default_isEnabled = True
-
-    def get_patcher_instance(self, patch_file):
-        return self.patcher_type(self.patcher_name, patch_file,
-            self._item_config, self.remove_empty_sublists)
-
-    @classmethod
-    def _config_attrs(cls): ##: Hack, this should not use display_name
-        return *super()._config_attrs(), ('remove_empty_sublists',
-                                          bush.game.display_name == 'Oblivion')
-
-class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
+class LeveledLists(_ListsMergerPanel, _LLConfig):
     _list_label = _('Override Delev/Relev Tags')
     _add_dialog_title = _('Add Delev/Relev Tags to Plugin')
     choiceMenu = ('Auto', '----', 'Delev', 'Relev')
@@ -1262,97 +703,20 @@ class LeveledLists(LeveledListsConfig, _ListsMergerPanel):
     def _on_remove_empty_checked(self, is_checked):
         self.remove_empty_sublists = is_checked
 
-class FormIDLists(_ListsMergerPanel): # Fallout3/FalloutNV only
-    patcher_name = _('FormID Lists')
-    patcher_desc = '\n\n'.join([
-        _('Merges changes to FormID lists from all active and/or merged '
-          'plugins.'),
-        _('Advanced users may override Deflst tags for any mod (active or '
-          'inactive) using the list below.')])
-    _config_key = 'FidListsMerger'
-    patcher_type = mergers.FormIDListsPatcher
-    _list_label = _('Override Deflst Tag')
-    _add_dialog_title = _('Add Deflst Tag to Plugin')
-    choiceMenu = ('Auto', '----', 'Deflst')
-
-# -----------------------------------------------------------------------------
-class ContentsChecker(PatcherConfig, _PatcherPanel):
-    """Checks contents of leveled lists, inventories and containers for
-    correct content types."""
-    patcher_name = _('Contents Checker')
-    patcher_desc = _(u'Checks contents of leveled lists, inventories and '
-                     u'containers for correct types.')
-    _config_key = u'ContentsChecker'
-    patcher_type = checkers.ContentsCheckerPatcher
-    default_isEnabled = True
-
-# -----------------------------------------------------------------------------
-class RaceChecker(PatcherConfig, _PatcherPanel):
-    """Sorts hairs and eyes."""
-    patcher_name = _(u'Race Checker')
-    patcher_desc = _(u'Sorts race hairs and eyes.')
-    _config_key = u'RaceChecker'
-    patcher_type = checkers.RaceCheckerPatcher
-    default_isEnabled = True
-
-#------------------------------------------------------------------------------
-class NpcChecker(PatcherConfig, _PatcherPanel):
-    """Assigns missing hair and eyes."""
-    patcher_name = _(u'NPC Checker')
-    patcher_desc = _(u'This will randomly assign hairs and eyes to NPCs that '
-                     u'are otherwise missing them.')
-    _config_key = u'NpcChecker'
-    patcher_type = checkers.NpcCheckerPatcher
-    default_isEnabled = True
-
-#------------------------------------------------------------------------------
-class TimescaleChecker(PatcherConfig, _PatcherPanel):
-    """Adjusts the wave period of grass match changes in the timescale."""
-    patcher_name = _(u'Timescale Checker')
-    patcher_desc = u'\n'.join([
-        _(u'Adjusts the wave period of grasses to match changes in the '
-          u'timescale.'),
-        _(u'Does nothing if you are not using a nonstandard timescale.'),
-        u'',
-        _(u'Incompatible with plugins that change grass wave periods to match '
-          u'a different timescale. Uninstall such plugins before using this.'),
-    ])
-    _config_key = u'TimescaleChecker'
-    patcher_type = checkers.TimescaleCheckerPatcher
-    default_isEnabled = True
-
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
 #------------------------------------------------------------------------------
-# Patchers with no options
-for gsp_name, gsp_class in bush.game.gameSpecificPatchers.items():
-    globals()[gsp_name] = type(gsp_name, (PatcherConfig, _PatcherPanel,),
-        gsp_class.gui_cls_vars())
-# Simple list patchers
-for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.items():
-    gsp_bases = (_ListPatcherPanel,)
-    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_class.gui_cls_vars())
-# Import patchers
-for gsp_name, gsp_class in bush.game.game_specific_import_patchers.items():
-    gsp_bases = (_ImporterPatcherPanel,)
-    globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_class.gui_cls_vars())
-
-def initPatchers():
-    group_order = {p_grp: i for i, p_grp in enumerate(
-        ('General', 'Importers', 'Tweakers', 'Special'))}
-    # If we want to merge patches into the BP, we need the patch merger
-    final_patchers = bush.game.patchers.copy()
-    if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
-        final_patchers.add('MergePatches')
-        # And the NoMerge tag needs to get added too
-        bush.game.allTags.add('NoMerge')
-    patcher_classes = [globals()[p] for p in final_patchers]
-    # Sort alphabetically first for aesthetic reasons
-    patcher_classes.sort(key=lambda a: a.patcher_name)
-    # After that, sort by group to make patchers instantiate in the right order
-    patcher_classes.sort(
-        key=lambda a: group_order[a.patcher_type.patcher_group])
-    gpatcher_types.extend(patcher_classes)
-    # Update the set of all tags for this game based on the available patchers
-    bush.game.allTags.update(chain.from_iterable(
-        getattr(p.patcher_type, 'patcher_tags', ()) for p in gpatcher_types))
+def init_gui_patchers():
+    """Mix the PatcherConfig subtypes init_patcher_types selected into
+    their panels, unless a panel already is one, and sort them as
+    all_patcher_types."""
+    gpatcher_types.clear()
+    skey = {p: j for j, p in enumerate(all_patcher_types)}
+    for k, v in game_patcher_config_types.items():
+        pan = globals()[k]
+        for cls_name, conf_cls in v.items():
+            pconf_type = pan if conf_cls in pan.__mro__ else type(
+                cls_name, (pan, conf_cls,), {})
+            gpatcher_types.append(pconf_type)
+            skey[pconf_type] = skey[conf_cls]
+    gpatcher_types.sort(key=skey.__getitem__)
