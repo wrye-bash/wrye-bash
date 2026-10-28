@@ -327,8 +327,8 @@ class Splitter(_AComponent):
         self._native_widget.RefreshRect(_wx.Rect(*self._sash_rect()))
 
     def _paint_sash(self):
-        """Replaces wx's OnPaint - draw the native sash and a grip of dots in
-        its middle."""
+        """Replaces wx's OnPaint - draw the native sash and a grip in its
+        middle, a short bar like Tk's."""
         nw = self._native_widget
         dc = _wx.PaintDC(nw)
         dc.Clear()
@@ -338,14 +338,13 @@ class Splitter(_AComponent):
                 nw.GetClientSize(), nw.GetSashPosition(),
                 _wx.VERTICAL if vert else _wx.HORIZONTAL)
             x, y, w, h = self._sash_rect()
-            dot = scaled(2)
-            x, y = x + (w - dot) // 2, y + (h - dot) // 2
+            grip = scaled(16), scaled(2) # along and across the sash
+            gw, gh = grip[::-1] if vert else grip
             dc.SetPen(_wx.TRANSPARENT_PEN)
             dc.SetBrush(_wx.Brush(_wx.SystemSettings.GetColour(
-                _wx.SYS_COLOUR_GRAYTEXT)))
-            for off in range(-6 * dot, 7 * dot, 2 * dot):
-                dc.DrawRectangle(*((x, y + off) if vert else (x + off, y)),
-                                 dot, dot)
+                _wx.SYS_COLOUR_BTNSHADOW)))
+            dc.DrawRoundedRectangle(x + (w - gw) // 2, y + (h - gh) // 2, gw,
+                                    gh, scaled(1))
         return EventResult.FINISH
 
     def get_sash_pos(self): return self._native_widget.GetSashPosition()
