@@ -46,8 +46,6 @@ from collections import defaultdict
 #  - gen_ini: needed to generate bash_default.ini without adding hundreds of
 #             lines to bash
 from . import bass, bolt, exception, gen_ini, wbtemp
-# define accepted python versions
-_MIN_PYTHON, _MAX_PYTHON = (3, 11), (4,)
 
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
@@ -130,7 +128,7 @@ def _install_bugdump():
 bash_app = None  ##:(700) typing
 _wx = None # the one and only wx - keep uses outside _import_wx low!
 def _import_wx():
-    """Import wxpython or show a tkinter error and exit if unsuccessful."""
+    """Import wxpython or raise a BootError if unsuccessful."""
     global _wx
     try:
         import wx as _wx
@@ -432,15 +430,11 @@ def _parse_bash_ini(bash_ini_path):
                 bass.inisettings[ini_dict_key_lo] = value
 
 # Main ------------------------------------------------------------------------
-_help_urls = {
- 'thread_url': 'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games',
- 'discord_url': 'https://discord.gg/NwWvAFR',
- 'ms_docs_url': 'https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057',
-}
-def main(opts: Namespace):
+def main(opts: Namespace, help_urls):
     """Run the Wrye Bash main loop.
 
-    :param opts: command line arguments."""
+    :param opts: command line arguments.
+    :param help_urls: the links the boot error messages point to."""
     global _bugdump_handle
     # Install a hook to handle unraisable error messages (at least when a tty
     # is attached)
@@ -474,15 +468,6 @@ def main(opts: Namespace):
         # Parsing the boot settings needs logging to be available and, in
         # turn, is needed for initializing locale
         _parse_boot_settings(curr_os)
-        # check if the correct Python version is installed on a Python install
-        if not bass.is_standalone and not (
-                _MIN_PYTHON <= (sysver := sys.version_info[:3]) < _MAX_PYTHON):
-            min_py_ver, curr_py_ver, max_py_ver = ('.'.join(map(str, v)) for v
-                in [_MIN_PYTHON, sysver, _MAX_PYTHON])
-            msg = (f"Only Python {min_py_ver} and newer up to {max_py_ver} is "
-                f"supported ({curr_py_ver} detected). If you know what you're "
-                f"doing, edit this warning out. Wrye Bash will now exit.")
-            raise exception.BootError(msg)
         # Setting the game imports modules with translated class attributes
         # (e.g. the patcher names), so install the translations now - wx gets
         # its locale once its App is created
@@ -522,11 +507,11 @@ def main(opts: Namespace):
             err_tail = _('Should the error persist, please post the '
                 'information below to the official thread at %(thread_url)s '
                 'or to the Wrye Bash Discord at %(discord_url)s'
-                ) % _help_urls + f'\n\n{caught_exc}'
+                ) % help_urls + f'\n\n{caught_exc}'
         else:
             err_tail = _('Should the error persist, please post your '
                 'BashBugDump to the official thread at %(thread_url)s or to '
-                'the Wrye Bash Discord at %(discord_url)s') % _help_urls
+                'the Wrye Bash Discord at %(discord_url)s') % help_urls
         if problems := _detect_known_boot_problems(e):
             err_msg = '\n'.join([_('The following problems were found during '
                 'boot:'), '', *(f'- {p}' for p in problems)])
@@ -543,7 +528,7 @@ def main(opts: Namespace):
                         'Please follow the directions in the following link '
                         'under "Change PC folder backup settings", removing '
                         'your Documents folder from backup: %(ms_docs_url)s'
-                        ) % _help_urls
+                        ) % help_urls
         elif isinstance(e, ImportError): # e.g. a file is missing or broken
             err_msg = '\n'.join([_('Error! Unable to start Wrye Bash.'), '\n',
                 _('Please ensure Wrye Bash is correctly installed.'), '\n',
@@ -552,7 +537,7 @@ def main(opts: Namespace):
             err_msg = _('Wrye Bash encountered an error. Please post the '
                         'information below as well as your BashBugDump to the '
                         'official thread at %(thread_url)s or to the Wrye '
-                        'Bash Discord at %(discord_url)s') % _help_urls
+                        'Bash Discord at %(discord_url)s') % help_urls
             err_tail = caught_exc
         if bugdump := _bugdump_handle and _bugdump_handle.name:
             # users have a hard time finding it
@@ -720,82 +705,34 @@ def _set_game_ask(opts, game_infos, init_warnings):
         bass.boot_settings['Boot']['last_game'] = gname
         # init_warnings is empty - it is only filled once the game is set
         bush.detect_and_set_game(opts, init_warnings, gname, gm_path)
-    if init_warnings:
-        warning_msg = [
-            _('The following (non-critical) warnings were found during '
-              'initialization:'), '', *(f'- {w}' for w in init_warnings)]
-        _show_boot_popup('\n'.join(warning_msg), is_critical=False)
+    if init_warnings: # into the BashBugDump too, censored
+        bolt.deprint(msg := '\n'.join([_('The following (non-fatal) '
+            'warnings were found during initialization:'), '',
+            *(f'- {w}' for w in init_warnings)]))
+        from .balt import StartupDialogWindow
+        if not StartupDialogWindow.display_dialog(msg, is_warning=True):
+            sys.exit(1) # the user aborted
     return bush.game
 
-def _show_boot_popup(msg, is_critical=True, *, bugdump=None):
-    """Shows an error message in a popup window. If is_critical, exit the
-    application afterwards. Falls back to tkinter before _import_wx. Offers
-    to open the folder of the BashBugDump at bugdump, if given."""
-    open_dir = lambda: bolt.GPath(os.path.dirname(bugdump)).start()
-    open_lbl = _('Open BashBugDump Folder')
+def _show_boot_popup(msg, *, bugdump=None):
+    """Shows an error message in a popup window and exits. Offers to open
+    the folder of the BashBugDump at bugdump, if given. Without wx - before
+    _import_wx or if the popup fails - exit with msg, for the launcher to
+    show it."""
     # noinspection PyBroadException
-    try: # we want to catch any exception here and fallback to tkinter
-        bolt.deprint(msg, trace=False) # into the error log, censored
-        if is_critical:
-            _close_dialog_windows() # will raise AttributeError if _wx is None
-        from .balt import Resources
-        from .gui import CENTER, Button, CancelButton, Color, \
-            LayoutOptions, StartupDialogWindow, TextArea, VLayout, HLayout, \
-            OkButton
-        class MessageBox(StartupDialogWindow):
-            def __init__(self, init_txt):
-                popup_title = (_('Wrye Bash Error') if is_critical else
-                               _('Wrye Bash Warning'))
-                ##: Resizing is just discarded, maybe we could save it in
-                # an early-boot file (see also #26)
-                # Using Resources.bashRed here is fine - at worst it's None,
-                # which will fall back to the default icon
-                super().__init__(title=popup_title, sizes_dict={},
-                                 icon_bundle=Resources.bashRed)
-                self.component_size = (400, 300)
-                msg_text = TextArea(self, editable=False, init_text=init_txt,
-                                    auto_tooltip=False)
-                if is_critical:
-                    bottom_btns = [CancelButton(self, btn_label=_('Quit'))]
-                else:
-                    bottom_btns = [OkButton(self, btn_label=_('Continue')),
-                                   CancelButton(self, btn_label=_('Abort'))]
-                if bugdump:
-                    bottom_btns.insert(0, Button(self, btn_label=open_lbl,
-                                                 on_click=open_dir))
-                VLayout(item_border=5, items=[
-                    (msg_text, LayoutOptions(expand=True, weight=1)),
-                    (HLayout(spacing=4, items=bottom_btns),
-                     LayoutOptions(h_align=CENTER))]).apply_to(self)
-        msg_choice = MessageBox.display_dialog(msg)
-        if is_critical or not msg_choice:
-            sys.exit(1)  # Critical error or user aborted
-        return
+    try: # we want to catch any exception here and exit with msg
+        _close_dialog_windows() # will raise AttributeError if _wx is None
+        from .balt import StartupDialogWindow
+        StartupDialogWindow.display_dialog(msg, bugdump)
+        sys.exit(1)
     except Exception:
         if _wx is not None: # log why the wx popup failed
             bolt.deprint('Showing the boot popup with wx failed',
                          traceback=True)
-    # Instantiating wx.App failed, fallback to tkinter.
-    import tkinter
-    root_widget = tkinter.Tk() ##: on macos this crashes
-    frame = tkinter.Frame(root_widget)
-    frame.pack()
-    button = tkinter.Button(frame, command=root_widget.destroy, pady=15,
-        borderwidth=5, relief=tkinter.GROOVE, text='QUIT', fg='red')
-    button.pack(fill=tkinter.BOTH, expand=1, side=tkinter.BOTTOM)
-    if bugdump:
-        tkinter.Button(frame, command=open_dir, text=open_lbl).pack(
-            fill=tkinter.BOTH, expand=1, side=tkinter.BOTTOM)
-    w = tkinter.Text(frame)
-    w.insert(tkinter.END, msg)
-    w.config(state=tkinter.DISABLED)
-    w.pack()
-    root_widget.mainloop()
-    sys.exit(1)
+    sys.exit(msg) # the launcher shows it
 
 def _close_dialog_windows():
     """Close any additional windows opened by wrye bash (e.g Splash, Dialogs).
-    Must only be called after _import_wx.
 
     This will not close the main bash window (BashFrame) because closing that
     results in virtual function call exceptions."""

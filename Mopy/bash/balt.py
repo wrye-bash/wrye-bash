@@ -40,8 +40,9 @@ from .bolt import FName, Path, RefrIn, deprint, readme_url, \
     fast_cached_property, RefrData
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
-from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
-    DirOpen, EventResult, FileOpen, FileSave, GlobalMenu, HLayout, \
+from .gui import BusyCursor, Button, CancelButton, CENTER, CheckListBox, \
+    Color, DialogWindow, DirOpen, EventResult, FileOpen, FileSave, \
+    GlobalMenu, HLayout, OkButton, \
     LayoutOptions, ListBox, Links, LogDialog, LogFrame, PanelWin, TextArea, \
     UIListCtrl, VLayout, bell, copy_files_to_clipboard, DeletionDialog, \
     web_viewer_available, AutoSize, get_shift_down, ContinueDialog, askText, \
@@ -69,6 +70,33 @@ def load_app_icons():
         return bundle
     Resources.bashRed = _get_bundle('bash_icons_red.ico')
     Resources.bashBlue = _get_bundle('bash_icons_blue.ico')
+
+class StartupDialogWindow(DialogWindow):
+    """Dialog shown during early boot: a critical error, with a Quit button
+    - and one opening the folder of bugdump (the BashBugDump), if given - or,
+    if is_warning, warnings to Continue or Abort on."""
+    def __init__(self, msg, bugdump=None, *, is_warning=False):
+        ##: Resizing is just discarded, maybe we could save it in an
+        # early-boot file (see also #26)
+        # Using Resources.bashRed here is fine - at worst it's None, which
+        # will fall back to the default icon
+        super().__init__(title=_('Wrye Bash Warning') if is_warning else
+            _('Wrye Bash Error'), sizes_dict={},
+            icon_bundle=Resources.bashRed,
+            style=wx.STAY_ON_TOP | wx.DIALOG_NO_PARENT)
+        self.component_size = (400, 300)
+        msg_text = TextArea(self, editable=False, init_text=msg,
+                            auto_tooltip=False)
+        btns = [OkButton(self, btn_label=_('Continue')), CancelButton(self,
+            btn_label=_('Abort'))] if is_warning else [CancelButton(self,
+            btn_label=_('Quit'))]
+        if bugdump:
+            btns.insert(0, Button(self, btn_label=_('Open BashBugDump Folder'),
+                                  on_click=bolt.GPath(bugdump).head.start))
+        VLayout(item_border=5, items=[
+            (msg_text, LayoutOptions(expand=True, weight=1)),
+            (HLayout(spacing=4, items=btns), LayoutOptions(h_align=CENTER))
+        ]).apply_to(self)
 
 # Settings --------------------------------------------------------------------
 _settings: bolt.Settings = None # must be bound to bass.settings - smelly, #178
