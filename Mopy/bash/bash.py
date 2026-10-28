@@ -485,7 +485,9 @@ def main(opts: Namespace, help_urls):
         bass.active_locale = localize.setup_locale(target_lang)
         if other_instance: # its message can be translated now
             bolt.deprint('Only one instance of Wrye Bash can run. Exiting.')
-            _show_boot_popup(_('Only one instance of Wrye Bash can run.'))
+            msg = _('Only one instance of Wrye Bash can run.')
+            if opts.buildBashedPatch: raise exception.BootError(msg) # status 2
+            _show_boot_popup(msg)
         dump_environment() # into the BashBugDump for any error below
         try: # after setup_locale, as its comments are translated
             gen_ini.write_default_bash_ini()
