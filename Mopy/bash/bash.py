@@ -271,11 +271,11 @@ def _warn_missing_bash_dir():
 
 #------------------------------------------------------------------------------
 _instance_lock = None # the mutex handle on Windows - must stay alive !
-def _assure_single_instance():
+def _assure_single_instance(headless):
     """Exit if another instance of Wrye Bash is running - using the mutex
     (Windows) or the lock file holding its PID (elsewhere) that
     wx.SingleInstanceChecker uses, so other versions see us and we see
-    them."""
+    them. Headless, raise a BootError instead of showing a popup."""
     global _instance_lock
     if bolt.os_name == 'nt':
         import ctypes
@@ -295,7 +295,9 @@ def _assure_single_instance():
             is_running = False
     if is_running:
         bolt.deprint('Only one instance of Wrye Bash can run. Exiting.')
-        _show_boot_popup(_('Only one instance of Wrye Bash can run.'))
+        msg = _('Only one instance of Wrye Bash can run.')
+        if headless: raise exception.BootError(msg) # exits with status 2
+        _show_boot_popup(msg)
 
 def exit_cleanup():
     # The _()s are safe because the exit_cleanup is only registered in _main,
@@ -473,7 +475,7 @@ def main(opts: Namespace):
         target_lang = opts.language or bass.boot_settings['Boot']['locale']
         bass.active_locale = localize.setup_locale(target_lang)
         # Check if there are other instances of Wrye Bash running
-        _assure_single_instance()
+        _assure_single_instance(opts.buildBashedPatch)
         # Check our dependencies before anything imports them - env imports
         # pywin32 when initializing the Mopy dirs, game detection needs vdf
         _import_deps()
