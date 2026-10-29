@@ -973,9 +973,10 @@ class ModInfo(_WithMastersInfo):
             to all strings files. They must match the format returned by
             _string_files_paths (i.e. starting with 'strings/')."""
         if not getattr(self.header.flags1, 'localized', False): return False
-        # put plugin loaded bsas first - for master esm these should be empty
+        # put plugin loaded bsas first (in undefined order) - for master esm
+        # these should be empty
         self.str_bsas_sorted = *bush.game.Bsa.attached_bsas(available_bsas,
-            self.fn_key), *bsa_lo_inis # pl_bsas order is undefined
+            self.fn_key, for_strings=True), *bsa_lo_inis
         for assetPath in self._string_files_paths(i_lang):
             # Check loose files first
             if assetPath.lower() in ci_cached_strings_paths:
