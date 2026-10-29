@@ -194,14 +194,15 @@ class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel. Overrides
     ShowPanel to do some first show initialization."""
     defaultSashPos = minimumSize = 256
+    _sash_gravity = 0
     _ui_settings = {'.sashPos': _UIsetting(lambda self: self.defaultSashPos,
         lambda self: self.splitter.get_sash_pos(),
         lambda self, sashPos: self.splitter.set_sash_pos(sashPos))}
 
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
-        self.splitter = Splitter(self, allow_split=False,
-                                 min_pane_size=self.__class__.minimumSize)
+        self.splitter = Splitter(self, min_pane_size=self.minimumSize,
+                                 sash_gravity=self._sash_gravity)
         self.left, self.right = self.splitter.make_panes(vertically=isVertical)
         self.isVertical = isVertical
         VLayout(item_weight=1, item_expand=True,
@@ -1281,15 +1282,13 @@ class _SashDetailsPanel(_DetailsMixin, SashPanel):
         lambda self: self.subSplitter.get_sash_pos(),
         lambda self, sashPos: self.subSplitter.set_sash_pos(sashPos))
     }
-    _min_subpane_size = 80 # self.subSplitter min_pane_size
 
     def __init__(self, parent):
         super().__init__(parent, isVertical=False)
-        # needed so subpanels do not collapse
         self.subSplitter = self._get_sub_splitter()
 
     def _get_sub_splitter(self):
-        return Splitter(self.right, min_pane_size=self._min_subpane_size)
+        return Splitter(self.right)
 
 class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
     """Mod and Saves details panel, feature a master's list.
@@ -1301,7 +1300,7 @@ class _ModsSavesDetails(_EditableMixin, _SashDetailsPanel):
 
     def __init__(self, parent, ui_list_panel, split_vertically=False):
         _SashDetailsPanel.__init__(self, parent)
-        # min_pane_size split the bottom panel into the master uilist and mod tags/save notes
+        # split the bottom panel into the master uilist and mod tags/save notes
         self.masterPanel, self._bottom_low_panel = \
             self.subSplitter.make_panes(vertically=split_vertically)
         _EditableMixin.__init__(self, self.masterPanel, ui_list_panel)
@@ -1326,7 +1325,6 @@ class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
     keyPrefix = u'bash.mods.details' # used in sash/scroll position, sorting
     _master_list_type = MasterList
-    _min_subpane_size = 128
 
     @property
     def file_infos(self): return bosh.modInfos
@@ -2520,12 +2518,12 @@ class InstallersDetails(_SashDetailsPanel):
     keyPrefix = u'bash.installers.details'
     defaultSashPos = - 32 # negative so it sets bottom panel's (comments) size
     minimumSize = 32 # so comments don't take too much space
+    _sash_gravity = 1.0 # so comments keep their size on resizing
     _ui_settings = {**_SashDetailsPanel._ui_settings,
         '.checkListSplitterSashPos' : _UIsetting(lambda self: 0,
         lambda self: self.checkListSplitter.get_sash_pos(),
         lambda self, sashPos: self.checkListSplitter.set_sash_pos(sashPos))
     }
-    _min_subpane_size = 50
 
     @property
     def file_infos(self): return self.installersPanel.listData
@@ -2537,16 +2535,14 @@ class InstallersDetails(_SashDetailsPanel):
         super().__init__(parent)
         self.installersPanel = ui_list_panel
         top, bottom = self.left, self.right
-        commentsSplitter = self.splitter
-        self.subSplitter, commentsPanel = commentsSplitter.make_panes(
+        self.subSplitter, commentsPanel = self.splitter.make_panes(
             first_pane=self.subSplitter, second_pane=PanelWin(bottom))
         #--Package
         self.gPackage = TextArea(top, editable=False, no_border=True)
         #--Info Tabs
         self.gNotebook, self.checkListSplitter = self.subSplitter.make_panes(
             first_pane=TabbedPanel(self.subSplitter, multiline=True),
-            second_pane=Splitter(self.subSplitter, min_pane_size=50,
-                                 sash_gravity=0.5))
+            second_pane=Splitter(self.subSplitter, sash_gravity=0.5))
         self.gNotebook.set_min_size(100, 100)
         infoTitles = (
             (u'gGeneral', _(u'General')),
@@ -2593,9 +2589,6 @@ class InstallersDetails(_SashDetailsPanel):
         self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
         #--Comments
         self.gComments = TextArea(commentsPanel, auto_tooltip=False)
-        #--Splitter settings
-        commentsSplitter.set_min_pane_size(-self.__class__.defaultSashPos)
-        commentsSplitter.set_sash_gravity(1.0)
         #--Layout
         VLayout(items=[
             self.fomod_btn, self.sp_btn, self.sp_label,
@@ -2617,8 +2610,7 @@ class InstallersDetails(_SashDetailsPanel):
         ]).apply_to(bottom)
 
     def _get_sub_splitter(self):
-        return Splitter(self.left, min_pane_size=self._min_subpane_size,
-                        sash_gravity=0.5)
+        return Splitter(self.left, sash_gravity=0.5)
 
     def OnShowInfoPage(self, event_id, selected_index):
         """A specific info page has been selected."""
