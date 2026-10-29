@@ -124,7 +124,7 @@ class _AMorrowindGameInfo(PatchGame):
         })
 
         @classmethod
-        def attached_bsas(cls, av_bsas, fn_body):
+        def attached_bsas(cls, av_bsas, fn_body, *, for_strings=False):
             """Morrowind does not load attached BSAs at all - they all have
             to be registered via the INI."""
             return []

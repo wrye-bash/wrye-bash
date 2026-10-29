@@ -784,9 +784,11 @@ class GameInfo(object):
             return len(cls._str_heuristics), ini_lo
 
         @classmethod
-        def attached_bsas(cls, av_bsas, plugin_fn):
+        def attached_bsas(cls, av_bsas, plugin_fn, *, for_strings=False):
             """Return a list of all BSAs that the game will attach to
-            plugin_fn."""
+            plugin_fn. If for_strings is True, return the BSAs apart from the
+            INI-loaded ones that may contain the strings files of plugin_fn
+            instead - by default the same ones."""
             bsa_pattern = (re.escape(plugin_fn.fn_body) +
                            fr'{cls.attachment_regex}\{cls.bsa_extension}')
             is_attached = re.compile(bsa_pattern, re.I).match
