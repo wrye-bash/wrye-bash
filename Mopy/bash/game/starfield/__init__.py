@@ -141,9 +141,9 @@ class _AStarfieldGameInfo(PatchGame):
     class Ini(GameInfo.Ini):
         default_ini_file = 'Starfield.ini' # TODO(SF) verify
         default_game_lang = 'en'
-        # TODO(SF) there is no Starfield.ini in My Games, so INI tweaks edit
-        #  the one in the game folder - should they go to StarfieldCustom.ini?
-        dropdown_inis = ['Starfield.ini', 'StarfieldPrefs.ini']
+        # We edit StarfieldCustom.ini - it overrides the Starfield.ini in the
+        # game folder, the default INI, which game updates replace
+        dropdown_inis = ['StarfieldCustom.ini', 'StarfieldPrefs.ini']
         start_dex_keys = {GameInfo.Ini.BSA_MIN: (
             'sResourceIndexFileList', 'sResourceStartUpArchiveList',
             'sResourceArchiveList', 'sResourceArchiveList2',

@@ -53,19 +53,22 @@ def test_parse_ini_line():
     res = OBSEIniFile.parse_ini_line('  setGS setting value   ')
     assert res == ('setGS setting value', 'setting', 'value', ']setGS[', False)
 
-def _game_ini(ini_dir, **ini_contents):
+def _game_ini(ini_dir, *, edit_custom=False, **ini_contents):
     """Write the INIs in ini_contents (name -> str or raw bytes content) to
-    ini_dir and return the GameIni for main.ini, with custom.ini as its
-    Custom INI."""
+    ini_dir and return the GameIni we edit: main.ini, with custom.ini as its
+    Custom INI - or, if edit_custom, custom.ini, overriding main.ini, as for
+    Starfield."""
     ini_dir.mkdir()
     for ini_name, content in ini_contents.items():
         if isinstance(content, str):
             content = content.encode('cp1252')
         (ini_dir / f'{ini_name}.ini').write_bytes(content)
-    def _ini(ini_name, custom_ini=None):
+    def _ini(ini_name, **kwargs):
         return GameIni(GPath(os.fspath(ini_dir / f'{ini_name}.ini')),
-                       'cp1252', custom_ini)
-    return _ini('main', _ini('custom'))
+                       'cp1252', **kwargs)
+    if edit_custom:
+        return _ini('custom', base_ini=_ini('main'))
+    return _ini('main', custom_ini=_ini('custom'))
 
 def test_game_ini_language(tmp_path):
     """The Custom INI overrides the main INI - neither has to exist."""
@@ -75,6 +78,12 @@ def test_game_ini_language(tmp_path):
     assert _lang('none') == 'en' # the default
     assert _lang('main', main='[General]\nsLanguage=es\n') == 'es'
     assert _lang('custom', main='[General]\nsLanguage=es\n',
+                 custom='[General]\nsLanguage=de\n') == 'de'
+    # Starfield - we edit its Custom INI, overriding its default INI
+    assert _lang('sf', edit_custom=True,
+                 main='[General]\nsLanguage=es\n') == 'es'
+    assert _lang('sf_custom', edit_custom=True,
+                 main='[General]\nsLanguage=es\n',
                  custom='[General]\nsLanguage=de\n') == 'de'
 
 def test_game_ini_encodings(tmp_path):
@@ -99,9 +108,9 @@ def test_game_ini_encodings(tmp_path):
     assert stray_ini.get_ini_language(SteamStarfieldGameInfo) == 'it'
 
 def test_sf_bsas_from_inis(tmp_path):
-    """Starfield's vanilla archive lists are in its main INI, Starfield.ini,
-    StarfieldCustom.ini overrides them key by key."""
-    game_ini = _game_ini(tmp_path / 'inis',
+    """Starfield's vanilla archive lists are in its default Starfield.ini,
+    StarfieldCustom.ini, which we edit, overrides them key by key."""
+    game_ini = _game_ini(tmp_path / 'inis', edit_custom=True,
         main='[Archive]\nsResourceStartUpArchiveList=Starfield - '
              'Localization.ba2, BlueprintShips-Starfield - Localization.ba2'
              '\nsResourceArchiveList=Starfield - Misc.ba2, Old.ba2\n'

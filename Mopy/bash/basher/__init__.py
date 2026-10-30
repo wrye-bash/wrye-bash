@@ -759,10 +759,14 @@ class INIList(UIList):
     def ask_create_target_ini(target_ini_file, msg):
         """Check if target ini for operation exists - if not, and the target is
         the game ini, ask if the user wants to create it by copying the default
-        ini."""
+        ini, unless it is a Custom INI, which writing to it creates."""
         if (ini_exists := target_ini_file.abs_path.is_file()) or (
                 target_ini_file is not bosh.oblivionIni):
             return ini_exists
+        if target_ini_file.setting_inis[0] is target_ini_file:
+            # A Custom INI, which writing creates - copying the default INI
+            # into it would freeze the vanilla settings there
+            return True
         # Game ini does not exist - try copying the default game ini
         msg = _('%(ini_full_path)s does not exist.') % {
             'ini_full_path': target_ini_file.abs_path} + f'\n\n{msg}\n\n'
