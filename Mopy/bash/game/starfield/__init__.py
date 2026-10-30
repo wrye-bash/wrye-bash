@@ -141,15 +141,9 @@ class _AStarfieldGameInfo(PatchGame):
     class Ini(GameInfo.Ini):
         default_ini_file = 'Starfield.ini' # TODO(SF) verify
         default_game_lang = 'en'
-        # TODO(SF) there is no Starfield.ini in My Games, should we somehow
-        #  generate a StarfieldCustom.ini instead? Or will our copying of
-        #  Starfield.ini work?
-        dropdown_inis = ['StarfieldPrefs.ini']
-        # The vanilla archive lists are in the Starfield.ini of the game
-        # folder, StarfieldCustom.ini overrides them key by key
-        custom_inis = ['StarfieldCustom.ini']
-        game_folder_inis = ['Starfield.ini']
-        main_ini_is_prefs = True
+        # TODO(SF) there is no Starfield.ini in My Games, so INI tweaks edit
+        #  the one in the game folder - should they go to StarfieldCustom.ini?
+        dropdown_inis = ['Starfield.ini', 'StarfieldPrefs.ini']
         start_dex_keys = {GameInfo.Ini.BSA_MIN: (
             'sResourceIndexFileList', 'sResourceStartUpArchiveList',
             'sResourceArchiveList', 'sResourceArchiveList2',

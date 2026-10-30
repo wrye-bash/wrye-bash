@@ -53,7 +53,7 @@ from ..exception import BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
-    SettingsIni, get_ini_type_and_encoding
+    get_ini_type_and_encoding
 from ..load_order import LordDiff, LoadOrder
 from ..loot_parser import LOOTParser
 from ..mod_files import ModFile, ModHeaderReader
@@ -2524,9 +2524,8 @@ class ModInfos(_AFileInfos):
         for binf in av_bsas.values():
             if hasattr(binf, 'lo_src'): del binf.lo_src
         # Determine BSA LO from INIs once, this gets expensive very quickly
-        ##: What about SkyrimCustom.ini etc? Only Starfield sets custom_inis
         self.__bsa_lo = bush.game.Ini.get_bsas_from_inis(
-            av_bsas, *self.plugin_inis.values(), *oblivionIni.setting_inis())
+            av_bsas, *self.plugin_inis.values(), *oblivionIni.setting_inis)
         if not bush.game.Esp.stringsFiles:
             return set()
         # refresh which mods are supposed to have strings files, but are
@@ -3512,15 +3511,10 @@ def initBosh(game_info):
     loot_user_path = loot_path.join('userlist.yaml')
     loot_tag_path = dirs['taglists'].join('taglist.yaml')
     lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
-    def _inis(dir_key, ini_names, ini_type=IniFileInfo):
-        return [ini_type(dirs[dir_key].join(x), 'cp1252') for x in ini_names]
-    oblivionIni = GameIni(ip, 'cp1252',
-        custom_inis=_inis('saveBase', game_info.Ini.custom_inis, SettingsIni),
-        game_folder_inis=_inis('app', game_info.Ini.game_folder_inis,
-                               SettingsIni),
-        is_prefs=game_info.Ini.main_ini_is_prefs)
-    gameInis = [oblivionIni,
-                *_inis('saveBase', game_info.Ini.dropdown_inis[1:])]
+    oblivionIni = GameIni(ip, 'cp1252', GameIni(
+        dirs['saveBase'].join(f'{ip.sbody}Custom.ini'), 'cp1252'))
+    gameInis = [oblivionIni, *(GameIni(dirs['saveBase'].join(x), 'cp1252')
+                               for x in game_info.Ini.dropdown_inis[1:])]
     load_order.initialize_load_order_files(dirs)
     if os_name != 'nt':
         archives.exe7z = bass.inisettings['Command7z']
