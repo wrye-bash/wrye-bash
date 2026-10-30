@@ -1994,14 +1994,11 @@ class INIInfos(_AFileInfos):
                 del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
-        try:
-            csChoices = {x.lower() for x in _target_inis}
-        except AttributeError: # 'Path' object has no attribute 'lower'
-            deprint(f'_target_inis contain a Path {list(_target_inis)}')
-            csChoices = {f'{x}'.lower() for x in _target_inis}
-        for iFile in gameInis: # add the game inis even if missing
-            if iFile.fn_key not in csChoices:
-                _target_inis[iFile.abs_path.stail] = iFile.abs_path
+        # add the game inis even if missing, at their current paths
+        ci_keys = {f'{k}'.lower(): k for k in _target_inis}
+        for iFile in gameInis:
+            _target_inis[ci_keys.get(iFile.fn_key.lower(),
+                                     iFile.abs_path.stail)] = iFile.abs_path
         if _('Browse…') not in _target_inis:
             _target_inis[_('Browse…')] = None
         self.__sort_target_inis()

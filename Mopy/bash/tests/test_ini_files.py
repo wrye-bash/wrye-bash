@@ -79,15 +79,24 @@ def test_game_ini_language(tmp_path):
 
 def test_game_ini_encodings(tmp_path):
     """Users may save game INIs as UTF-8, with a BOM even - we read their
-    settings, but flag those that are not cp1252 as corrupted."""
+    settings, but flag those that are not cp1252 as corrupted, and keep the
+    bytes we cannot decode as they are when writing them back."""
     bom_ini = _game_ini(tmp_path / 'bom',
                         main=codecs.BOM_UTF8 + b'[General]\nsLanguage=fr\n')
     assert bom_ini.get_ini_language(SteamStarfieldGameInfo) == 'fr'
     assert not bom_ini.isCorrupted
-    utf8_ini = _game_ini(tmp_path / 'utf8', main=(
-        '[General]\n; Отключаем вступление\nsLanguage=pl\n').encode('utf-8'))
+    comment = '; Отключаем вступление'.encode('utf-8') # has an 0x81 byte
+    utf8_ini = _game_ini(tmp_path / 'utf8',
+                         main=b'[General]\n%s\nsLanguage=pl\n' % comment)
     assert utf8_ini.get_ini_language(SteamStarfieldGameInfo) == 'pl'
     assert utf8_ini.isCorrupted
+    utf8_ini.saveSetting('General', 'sIntroSequence', '')
+    assert {comment, b'sLanguage=pl', b'sIntroSequence='} <= {*map(bytes.strip,
+        (tmp_path / 'utf8' / 'main.ini').read_bytes().splitlines())}
+    # a cp1252 INI with a stray undefined byte
+    stray_ini = _game_ini(tmp_path / 'stray',
+                          main=b'[General]\n; caf\xe9 \x81\nsLanguage=it\n')
+    assert stray_ini.get_ini_language(SteamStarfieldGameInfo) == 'it'
 
 def test_sf_bsas_from_inis(tmp_path):
     """Starfield's vanilla archive lists are in its main INI, Starfield.ini,

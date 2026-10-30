@@ -313,7 +313,8 @@ class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target 
             # Note content to be writen (if coming from ini tweaks) must be
             # encodable to out_encoding. temp_path must point to some temporary
             # file created via TempFile or similar API.
-            with open(tmp_inipath, 'w', encoding=self.out_encoding) as tmp_ini:
+            with open(tmp_inipath, 'w', encoding=self.out_encoding,
+                      errors='surrogateescape') as tmp_ini:
                 def _add_remaining_new_items(section_setts=None):
                     section_setts = ini_settings.pop(section, {}) \
                         if section_setts is None else section_setts
@@ -487,7 +488,8 @@ class GameIni(IniFileInfo):
     """A game INI. The settings of the main one (bosh.oblivionIni) are
     overridden by those of the Custom INI the game reads after it. Users edit
     game INIs in any encoding, BOM and all: we read their (ASCII) settings
-    anyway, but flag those not in ini_encoding as corrupted."""
+    anyway, keeping the bytes we cannot decode as they are when writing them
+    back, but flag those not in ini_encoding as corrupted."""
     _ini_language: str | None = None
 
     def __init__(self, fullpath, ini_encoding, custom_ini=None, **kwargs):
@@ -507,7 +509,7 @@ class GameIni(IniFileInfo):
             deprint(f'Failed to decode {self.abs_path} using '
                     f'{self.ini_encoding} - reading its settings anyway')
             self.isCorrupted = {'ini_full_path': self.abs_path, 'exc': str(e)}
-            content = decoder(content, self.ini_encoding)
+            content = str(content, self.ini_encoding, 'surrogateescape')
         return content.splitlines(False)
 
     def saveSetting(self,section,key,value):

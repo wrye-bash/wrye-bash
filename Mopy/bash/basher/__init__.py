@@ -871,7 +871,6 @@ class TargetINILineCtrl(INIListCtrl):
     def refresh_ini_contents(self):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
         target_ini = bosh.iniInfos.ini
-        if target_ini.isCorrupted: return
         self.Freeze()
         try:
             # Clear the list, then populate it with the new lines

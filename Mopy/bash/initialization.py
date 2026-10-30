@@ -197,7 +197,7 @@ def init_dirs(game_info, opts, init_warnings):
         try:
             try:
                 # Try UTF-8 first, will also work for ASCII-encoded files
-                oblivionIni.read(parent_data_game_ini, encoding='utf8')
+                oblivionIni.read(parent_data_game_ini, encoding='utf-8-sig')
             except UnicodeDecodeError:
                 # No good, this is a nonstandard encoding
                 with parent_data_game_ini.open(u'rb') as ins:
