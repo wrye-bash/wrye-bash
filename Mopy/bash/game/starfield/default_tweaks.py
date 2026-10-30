@@ -21,10 +21,10 @@
 #
 # =============================================================================
 default_tweaks = {
-    'Invalidate, Allow loose files [Starfield].ini': {
+    'Invalidate, Allow loose files [StarfieldCustom].ini': {
         'Archive': {'bInvalidateOlderFiles': '1',
                     'sResourceDataDirsFinal': ''}},
-    'Invalidate, Disallow loose files ~Default [Starfield].ini': {
+    'Invalidate, Disallow loose files ~Default [StarfieldCustom].ini': {
         'Archive': {'bInvalidateOlderFiles': '0',
                     'sResourceDataDirsFinal': 'STRINGS\\'}},
 }

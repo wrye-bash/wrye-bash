@@ -96,7 +96,7 @@ class _AMorrowindGameInfo(PatchGame):
             The keys follow the format Archive X (note the space) where X is a
             number used to make the keys unique. Load order is set by ftime. We
             do not edit av_bsas - cf _AMorrowindGameInfo.Bsa.update_bsa_lo."""
-            mor_ini = ini_files_cached[0] # no plugin inis
+            mor_ini = ini_files_cached[-1] # no plugin inis, nor Custom INI
             ci_section = mor_ini.get_setting_values('Archives', {})
             # keep only the (CIstr) keys that match the format Archive X
             bsas = {bolt.FName(v): av_bsas.get(v) #ci_section values are tuples

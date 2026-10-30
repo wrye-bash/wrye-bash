@@ -1994,14 +1994,11 @@ class INIInfos(_AFileInfos):
                 del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
-        try:
-            csChoices = {x.lower() for x in _target_inis}
-        except AttributeError: # 'Path' object has no attribute 'lower'
-            deprint(f'_target_inis contain a Path {list(_target_inis)}')
-            csChoices = {f'{x}'.lower() for x in _target_inis}
-        for iFile in gameInis: # add the game inis even if missing
-            if iFile.fn_key not in csChoices:
-                _target_inis[iFile.abs_path.stail] = iFile.abs_path
+        # add the game inis even if missing, at their current paths
+        ci_keys = {f'{k}'.lower(): k for k in _target_inis}
+        for iFile in gameInis:
+            _target_inis[ci_keys.get(iFile.fn_key.lower(),
+                                     iFile.abs_path.stail)] = iFile.abs_path
         if _('Browse…') not in _target_inis:
             _target_inis[_('Browse…')] = None
         self.__sort_target_inis()
@@ -2524,9 +2521,8 @@ class ModInfos(_AFileInfos):
         for binf in av_bsas.values():
             if hasattr(binf, 'lo_src'): del binf.lo_src
         # Determine BSA LO from INIs once, this gets expensive very quickly
-        ##: What about SkyrimCustom.ini etc?
         self.__bsa_lo = bush.game.Ini.get_bsas_from_inis(
-            av_bsas, *self.plugin_inis.values(), oblivionIni)
+            av_bsas, *self.plugin_inis.values(), *oblivionIni.setting_inis)
         if not bush.game.Esp.stringsFiles:
             return set()
         # refresh which mods are supposed to have strings files, but are
@@ -3512,8 +3508,15 @@ def initBosh(game_info):
     loot_user_path = loot_path.join('userlist.yaml')
     loot_tag_path = dirs['taglists'].join('taglist.yaml')
     lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
-    oblivionIni = GameIni(ip, 'cp1252')
-    gameInis = [oblivionIni, *(IniFileInfo(dirs['saveBase'].join(x), 'cp1252')
+    # The main INI is <Game>.ini, which <Game>Custom.ini overrides - except
+    # for Starfield, where it is StarfieldCustom.ini, overriding the default
+    if (ini_body := ip.sbody).endswith('Custom'):
+        oblivionIni = GameIni(ip, 'cp1252', base_ini=GameIni(
+            dirs['app'].join(game_info.Ini.default_ini_file), 'cp1252'))
+    else:
+        oblivionIni = GameIni(ip, 'cp1252', GameIni(
+            dirs['saveBase'].join(f'{ini_body}Custom.ini'), 'cp1252'))
+    gameInis = [oblivionIni, *(GameIni(dirs['saveBase'].join(x), 'cp1252')
                                for x in game_info.Ini.dropdown_inis[1:])]
     load_order.initialize_load_order_files(dirs)
     if os_name != 'nt':

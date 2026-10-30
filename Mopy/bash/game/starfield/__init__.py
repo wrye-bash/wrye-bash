@@ -139,15 +139,15 @@ class _AStarfieldGameInfo(PatchGame):
         url_tip = 'https://sfse.silverlock.org/'
 
     class Ini(GameInfo.Ini):
-        default_ini_file = 'Starfield.ini' # TODO(SF) verify
+        default_ini_file = 'Starfield.ini'
         default_game_lang = 'en'
-        # TODO(SF) there is no Starfield.ini in My Games, should we somehow
-        #  generate a StarfieldCustom.ini instead? Or will our copying of
-        #  Starfield.ini work?
-        dropdown_inis = ['StarfieldPrefs.ini']
+        # We edit StarfieldCustom.ini - it overrides the Starfield.ini in the
+        # game folder, the default INI, which game updates replace
+        dropdown_inis = ['StarfieldCustom.ini', 'StarfieldPrefs.ini']
         start_dex_keys = {GameInfo.Ini.BSA_MIN: (
             'sResourceIndexFileList', 'sResourceStartUpArchiveList',
-            'sResourceArchiveList',
+            'sResourceArchiveList', 'sResourceArchiveList2',
+            'sResourceEnglishVoiceList', # where this one loads is a guess
         )}
 
     class Ess(GameInfo.Ess):
@@ -157,6 +157,9 @@ class _AStarfieldGameInfo(PatchGame):
     class Bsa(GameInfo.Bsa):
         bsa_extension = '.ba2'
         valid_versions = {0x02, 0x03}
+        # The strings of the vanilla plugins are in their Localization BA2s
+        _str_heuristics = tuple(enumerate(('localization', 'main',
+                                           'interface')))
 
     class Psc(GameInfo.Psc):
         source_extensions = {'.psc'}
