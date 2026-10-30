@@ -24,6 +24,7 @@
 related formats (e.g. simple TOML files)."""
 from __future__ import annotations
 
+import codecs
 import os
 import re
 from collections import Counter
@@ -485,9 +486,41 @@ class OBSEIniFile(IniFileInfo):
             line = cls._xse_regexes[section][1] % (setting, value)
         return line
 
+class SettingsIni(IniFileInfo):
+    """An INI the game reads settings from, which we only read - see
+    GameInfo.Ini.custom_inis. Users edit those in any encoding, BOM and all,
+    while the settings we read are ASCII, so decode them leniently."""
+
+    def read_ini_content(self, as_unicode=True, missing_ok=False):
+        content = super().read_ini_content(False, missing_ok)
+        if not as_unicode or not isinstance(content, bytes):
+            return content # the raw bytes, or [] if we failed to read them
+        content = content.removeprefix(codecs.BOM_UTF8)
+        try:
+            return str(content, 'utf-8').splitlines(False)
+        except UnicodeDecodeError:
+            return str(content, self.ini_encoding, 'replace').splitlines(
+                False)
+
 class GameIni(IniFileInfo):
     """Main game ini file. Only use to instantiate bosh.oblivionIni"""
     _ini_language: str | None = None
+
+    def __init__(self, fullpath, ini_encoding, *, custom_inis=(),
+                 game_folder_inis=(), is_prefs=False, **kwargs):
+        super().__init__(fullpath, ini_encoding, **kwargs)
+        # The other INIs the game reads settings from - see GameInfo.Ini
+        self._custom_inis = custom_inis
+        self._game_folder_inis = game_folder_inis
+        self._is_prefs = is_prefs
+
+    def setting_inis(self) -> list[IniFileInfo]:
+        """Return the INIs the game reads its settings from, the ones that
+        override the others first: self, unless it only holds preferences,
+        and those of the others that exist."""
+        main_ini = () if self._is_prefs else (self,)
+        return [i for i in (*self._custom_inis, *main_ini,
+            *self._game_folder_inis) if i is self or i.abs_path.is_file()]
 
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
@@ -496,8 +529,13 @@ class GameIni(IniFileInfo):
 
     def get_ini_language(self, game_handle_, cached=True) -> str:
         if not cached or self._ini_language is None:
-            self._ini_language = self.getSetting('General', 'sLanguage',
-                game_handle_.Ini.default_game_lang)
+            for ini in self.setting_inis():
+                if (lang := ini.getSetting('General', 'sLanguage',
+                                           None)) is not None:
+                    break
+            else:
+                lang = game_handle_.Ini.default_game_lang
+            self._ini_language = lang
         return self._ini_language
 
     def target_ini_exists(self, msg):
