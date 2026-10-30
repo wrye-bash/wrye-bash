@@ -961,7 +961,8 @@ class ModInfo(_WithMastersInfo):
         return paths
 
     def isMissingStrings(self, available_bsas, bsa_lo_inis,
-                         ci_cached_strings_paths, i_lang):
+                         ci_cached_strings_paths, i_lang, *,
+                         __known_missing=set()):
         """True if the mod says it has .STRINGS files, but the files are
         missing. Sets the str_bsas_sorted attribute to the list of BSAs that
         may contain the strings files for this plugin. We assume some games
@@ -977,6 +978,7 @@ class ModInfo(_WithMastersInfo):
         # these should be empty
         self.str_bsas_sorted = *bush.game.Bsa.attached_bsas(available_bsas,
             self.fn_key, for_strings=True), *bsa_lo_inis
+        missing = []
         for assetPath in self._string_files_paths(i_lang):
             # Check loose files first
             if assetPath.lower() in ci_cached_strings_paths:
@@ -990,7 +992,15 @@ class ModInfo(_WithMastersInfo):
                     deprint(f'Failed to parse {bsa_info}', traceback=True)
                     continue
             else: # not found
-                return True
+                missing.append(assetPath)
+        if missing:
+            # log each combination once, not on every refresh
+            scanned = ', '.join(b.fn_key for b in self.str_bsas_sorted)
+            if (k := (self.fn_key, *missing, scanned)) not in __known_missing:
+                __known_missing.add(k)
+                deprint(f'{self.fn_key}: {", ".join(missing)} found neither '
+                        f'loose nor in the BSAs scanned: {scanned or "none"}')
+            return True
         return False
 
     def hasResources(self):
