@@ -485,17 +485,19 @@ class OBSEIniFile(IniFileInfo):
         return line
 
 class GameIni(IniFileInfo):
-    """A game INI. The settings of the main one (bosh.oblivionIni) are
-    overridden by those of the Custom INI the game reads after it. Users edit
-    game INIs in any encoding, BOM and all: we read their (ASCII) settings
-    anyway, keeping the bytes we cannot decode as they are when writing them
-    back, but flag those not in ini_encoding as corrupted."""
+    """A game INI. The game reads its settings from <Game>Custom.ini, then
+    from <Game>.ini, the first INI with a setting winning - the main INI
+    (bosh.oblivionIni), which we edit, is the latter, except for Starfield.
+    Users edit game INIs in any encoding, BOM and all: we read their (ASCII)
+    settings anyway, keeping the bytes we cannot decode as they are when
+    writing them back, but flag those not in ini_encoding as corrupted."""
     _ini_language: str | None = None
 
-    def __init__(self, fullpath, ini_encoding, custom_ini=None, **kwargs):
+    def __init__(self, fullpath, ini_encoding, custom_ini=None, base_ini=None,
+                 **kwargs):
         super().__init__(fullpath, ini_encoding, **kwargs)
         # The INIs the game reads its settings from, the overriding one first
-        self.setting_inis = [custom_ini, self] if custom_ini else [self]
+        self.setting_inis = [*filter(None, (custom_ini, self, base_ini))]
 
     def read_ini_content(self, as_unicode=True, missing_ok=False):
         # Custom INIs may well not exist, so we ignore missing_ok
