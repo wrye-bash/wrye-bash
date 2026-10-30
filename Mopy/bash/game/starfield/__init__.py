@@ -145,9 +145,15 @@ class _AStarfieldGameInfo(PatchGame):
         #  generate a StarfieldCustom.ini instead? Or will our copying of
         #  Starfield.ini work?
         dropdown_inis = ['StarfieldPrefs.ini']
+        # The vanilla archive lists are in the Starfield.ini of the game
+        # folder, StarfieldCustom.ini overrides them key by key
+        custom_inis = ['StarfieldCustom.ini']
+        game_folder_inis = ['Starfield.ini']
+        main_ini_is_prefs = True
         start_dex_keys = {GameInfo.Ini.BSA_MIN: (
             'sResourceIndexFileList', 'sResourceStartUpArchiveList',
-            'sResourceArchiveList',
+            'sResourceArchiveList', 'sResourceArchiveList2',
+            'sResourceEnglishVoiceList', # where this one loads is a guess
         )}
 
     class Ess(GameInfo.Ess):
@@ -157,6 +163,9 @@ class _AStarfieldGameInfo(PatchGame):
     class Bsa(GameInfo.Bsa):
         bsa_extension = '.ba2'
         valid_versions = {0x02, 0x03}
+        # The strings of the vanilla plugins are in their Localization BA2s
+        _str_heuristics = tuple(enumerate(('localization', 'main',
+                                           'interface')))
 
     class Psc(GameInfo.Psc):
         source_extensions = {'.psc'}

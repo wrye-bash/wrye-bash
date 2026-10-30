@@ -646,6 +646,15 @@ class GameInfo(object):
         # Whether the INIs sit in My Documents (=> True) or above the Data
         # folder (=> False)
         game_inis_in_my_documents = True
+        # INIs the game also reads settings from (like the archive lists and
+        # the language), not offered for editing. Those next to the
+        # dropdown_inis override the main INI, those in the game folder are
+        # overridden by it - in both, the earlier ones override the later ones
+        custom_inis = []
+        game_folder_inis = []
+        # Whether the main INI is a Prefs INI - the game reads only its
+        # preferences from those, not settings like the above
+        main_ini_is_prefs = False
         # Whether or not this game supports the OBSE INI format
         has_obse_inis = False
         # INI setting used to setup Save Profiles
