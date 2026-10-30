@@ -184,6 +184,11 @@ def init_dirs(game_info, opts, init_warnings):
     parent_data_game_ini = dirs['mods'].head.join(game_ini_name)
     if game_info.Ini.game_inis_in_my_documents:
         game_ini_path = dirs['saveBase'].join(game_ini_name)
+        # Games whose default INI is their main INI use the one in the game
+        # folder if there is none in My Games
+        if game_info.Ini.default_ini_file == game_ini_name and not \
+                game_ini_path.is_file():
+            game_ini_path = parent_data_game_ini
     else:
         game_ini_path = parent_data_game_ini
     if parent_data_game_ini.is_file():

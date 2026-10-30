@@ -27,7 +27,7 @@ import os
 
 from ..bolt import FName, FNDict, GPath
 from ..game.starfield import SteamStarfieldGameInfo
-from ..ini_files import GameIni, IniFileInfo, OBSEIniFile, SettingsIni
+from ..ini_files import GameIni, IniFileInfo, OBSEIniFile
 
 def test_parse_ini_line():
     res = IniFileInfo.parse_ini_line('key=value')
@@ -53,51 +53,50 @@ def test_parse_ini_line():
     res = OBSEIniFile.parse_ini_line('  setGS setting value   ')
     assert res == ('setGS setting value', 'setting', 'value', ']setGS[', False)
 
-def _game_ini(ini_dir, *, is_prefs=False, **ini_contents):
+def _game_ini(ini_dir, **ini_contents):
     """Write the INIs in ini_contents (name -> str or raw bytes content) to
-    ini_dir and return a GameIni for main.ini with custom.ini and folder.ini
-    as its custom and game folder INIs."""
+    ini_dir and return the GameIni for main.ini, with custom.ini as its
+    Custom INI."""
     ini_dir.mkdir()
     for ini_name, content in ini_contents.items():
         if isinstance(content, str):
             content = content.encode('cp1252')
         (ini_dir / f'{ini_name}.ini').write_bytes(content)
-    def _ini_path(ini_name):
-        return GPath(os.fspath(ini_dir / f'{ini_name}.ini'))
-    return GameIni(_ini_path('main'), 'cp1252',
-        custom_inis=[SettingsIni(_ini_path('custom'), 'cp1252')],
-        game_folder_inis=[SettingsIni(_ini_path('folder'), 'cp1252')],
-        is_prefs=is_prefs)
+    def _ini(ini_name, custom_ini=None):
+        return GameIni(GPath(os.fspath(ini_dir / f'{ini_name}.ini')),
+                       'cp1252', custom_ini)
+    return _ini('main', _ini('custom'))
 
 def test_game_ini_language(tmp_path):
-    """The custom INIs override the main INI, which overrides the game
-    folder ones - unless it is a Prefs INI."""
+    """The Custom INI overrides the main INI - neither has to exist."""
     def _lang(case_dir, **ini_contents):
         return _game_ini(tmp_path / case_dir, **ini_contents).get_ini_language(
             SteamStarfieldGameInfo)
-    assert _lang('none', main='[Display]\n') == 'en' # the default
-    assert _lang('folder', main='[Display]\n',
-                 folder='[General]\nsLanguage=fr\n') == 'fr'
-    assert _lang('main', main='[General]\nsLanguage=es\n',
-                 folder='[General]\nsLanguage=fr\n') == 'es'
+    assert _lang('none') == 'en' # the default
+    assert _lang('main', main='[General]\nsLanguage=es\n') == 'es'
     assert _lang('custom', main='[General]\nsLanguage=es\n',
-                 folder='[General]\nsLanguage=fr\n',
                  custom='[General]\nsLanguage=de\n') == 'de'
-    assert _lang('prefs', main='[General]\nsLanguage=es\n',
-                 folder='[General]\nsLanguage=fr\n', is_prefs=True) == 'fr'
-    # Users may save their custom INI as UTF-8, with a BOM even
-    assert _lang('utf8', main='[Display]\n', custom=codecs.BOM_UTF8 + (
-        '[General]\n; Язык игры\nsLanguage=pl\n').encode('utf-8')) == 'pl'
+
+def test_game_ini_encodings(tmp_path):
+    """Users may save game INIs as UTF-8, with a BOM even - we read their
+    settings, but flag those that are not cp1252 as corrupted."""
+    bom_ini = _game_ini(tmp_path / 'bom',
+                        main=codecs.BOM_UTF8 + b'[General]\nsLanguage=fr\n')
+    assert bom_ini.get_ini_language(SteamStarfieldGameInfo) == 'fr'
+    assert not bom_ini.isCorrupted
+    utf8_ini = _game_ini(tmp_path / 'utf8', main=(
+        '[General]\n; Отключаем вступление\nsLanguage=pl\n').encode('utf-8'))
+    assert utf8_ini.get_ini_language(SteamStarfieldGameInfo) == 'pl'
+    assert utf8_ini.isCorrupted
 
 def test_sf_bsas_from_inis(tmp_path):
-    """Starfield's vanilla archive lists are in the game folder Starfield.ini,
+    """Starfield's vanilla archive lists are in its main INI, Starfield.ini,
     StarfieldCustom.ini overrides them key by key."""
-    game_ini = _game_ini(tmp_path / 'inis', is_prefs=True,
-        main='[Archive]\nsResourceArchiveList2=Prefs.ba2\n',
-        folder='[Archive]\nsResourceStartUpArchiveList=Starfield - '
-               'Localization.ba2, BlueprintShips-Starfield - Localization.ba2'
-               '\nsResourceArchiveList=Starfield - Misc.ba2, Old.ba2\n'
-               'sResourceEnglishVoiceList=Starfield - Voices01.ba2\n',
+    game_ini = _game_ini(tmp_path / 'inis',
+        main='[Archive]\nsResourceStartUpArchiveList=Starfield - '
+             'Localization.ba2, BlueprintShips-Starfield - Localization.ba2'
+             '\nsResourceArchiveList=Starfield - Misc.ba2, Old.ba2\n'
+             'sResourceEnglishVoiceList=Starfield - Voices01.ba2\n',
         custom='[Archive]\nsResourceArchiveList=Starfield - Misc.ba2\n'
                'sResourceArchiveList2=Mod - Main.ba2\n')
     class _Bsa:
@@ -105,22 +104,21 @@ def test_sf_bsas_from_inis(tmp_path):
     av_bsas = FNDict((b, _Bsa(b)) for b in ('Starfield - Localization.ba2',
         'BlueprintShips-Starfield - Localization.ba2', 'Starfield - Misc.ba2',
         'Old.ba2', 'Mod - Main.ba2', 'Starfield - Voices01.ba2',
-        'Prefs.ba2', 'Unlisted.ba2'))
+        'Unlisted.ba2'))
     bsa_lo = SteamStarfieldGameInfo.Ini.get_bsas_from_inis(av_bsas,
-        *game_ini.setting_inis())
+        *game_ini.setting_inis)
     assert {str(b.fn_key): b.lo_src for b in bsa_lo} == {
         'Starfield - Localization.ba2':
-            'Loaded from: folder.ini (sResourceStartUpArchiveList)',
+            'Loaded from: main.ini (sResourceStartUpArchiveList)',
         'BlueprintShips-Starfield - Localization.ba2':
-            'Loaded from: folder.ini (sResourceStartUpArchiveList)',
+            'Loaded from: main.ini (sResourceStartUpArchiveList)',
         'Starfield - Misc.ba2':
             'Loaded from: custom.ini (sResourceArchiveList)',
         'Mod - Main.ba2': 'Loaded from: custom.ini (sResourceArchiveList2)',
         'Starfield - Voices01.ba2':
-            'Loaded from: folder.ini (sResourceEnglishVoiceList)'}
-    # The INI-loaded BSAs are taken out of the available ones - the game
-    # does not read the archive lists in StarfieldPrefs.ini
-    assert [*av_bsas] == ['Old.ba2', 'Prefs.ba2', 'Unlisted.ba2']
+            'Loaded from: main.ini (sResourceEnglishVoiceList)'}
+    # The INI-loaded BSAs are taken out of the available ones
+    assert [*av_bsas] == ['Old.ba2', 'Unlisted.ba2']
     # The missing strings check looks in the Localization BA2s first
     sf_bsa = SteamStarfieldGameInfo.Bsa
     hi_to_lo = sorted(bsa_lo, key=lambda b: sf_bsa.heuristic_sort_key(b,
