@@ -1,15 +1,44 @@
+# Store every text file with LF in the repository and let Git detect what is
+# text. On checkout text files get the platform's native line endings (CRLF on
+# Windows - including the windows-latest CI runner that builds releases), no
+# matter what core.autocrlf each contributor picked when installing Git.
+# If a file ever shows up with CRLF in the index (check with
+# `git ls-files --eol`), fix it with `git add --renormalize .` and commit.
 * text=auto
 
+# Better hunk headers in diffs
 *.py text diff=python
-*.html text
-.project text
+*.pyw text diff=python
+*.html text diff=html
+*.css text diff=css
+*.md text diff=markdown
 
-# M$ files
+# Windows scripts - CRLF on every platform
 *.bat text eol=crlf
+*.cmd text eol=crlf
 
-# UNIX files
-**/generate_second_post text eol=lf
+# Unix scripts - LF on every platform
+*.sh text eol=lf
 
-# git files - have them with LF, as I edit them via the shell (echo etc)
-*.gitignore text eol=lf
-*.gitattributes text eol=lf
+# Git files - always LF, as I edit them via the shell (echo etc)
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.gitmodules text eol=lf
+
+# Binaries - never convert, never try to show a textual diff. Git's own
+# detection gets these right too, this just makes it explicit.
+*.png binary
+*.jpg binary
+*.gif binary
+*.bmp binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.pyd binary
+*.7z binary
+*.zip binary
+*.bsa binary
+*.ba2 binary
+*.esp binary
+*.esm binary
+*.esl binary
