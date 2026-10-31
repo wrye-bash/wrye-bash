@@ -28,7 +28,7 @@ from collections.abc import Iterable
 from zlib import decompress as zlib_decompress
 from zlib import error as zlib_error
 
-from . import bolt, bush, env
+from . import bolt, bush
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
     struct_error, FName, unpack_int
 # first import of brec for games with patchers - _dynamic_import_modules
@@ -246,16 +246,14 @@ class ModFile(object):
         return SubProgress(progress, 0.1, 1.0)
 
     def safeSave(self):
-        """Save data to file safely.  Works under UAC."""
+        """Save data to file safely."""
         self.fileInfo.makeBackup()
         with TempFile(bolt_path=True) as tmp_plugin:
             self.save(tmp_plugin)
             # fileInfo created before the file
             if self.fileInfo.ftime is not None:
                 tmp_plugin.mtime = self.fileInfo.ftime
-            # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
-            #  permissions dialog is displayed (should display file in use)
-            env.shellMove({tmp_plugin: self.fileInfo.abs_path})
+            self.fileInfo.abs_path.replace_with_temp(tmp_plugin)
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):

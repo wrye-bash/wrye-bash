@@ -300,30 +300,22 @@ class PatchDialog(DialogWindow):
     def _save_pbash(self, patchFile, patch_name):
         while True:
             try:
-                # FIXME will keep displaying a bogus UAC prompt if file is
-                # locked - aborting bogus UAC dialog raises SkipError() in
-                # shellMove, not sure if ever a Windows or Cancel are raised
                 patchFile.safeSave()
                 return
-            except (CancelError, SkipError, PermissionError):
-                ##: Ugly warts below (see also FIXME above)
-                m = [_('Wrye Bash encountered an error when saving '
-                       '%(patch_name)s.'),
-                     '', '',
-                     _('Either Wrye Bash needs Administrator Privileges to '
-                       'save the file, or the file is in use by another '
-                       'process such as %(xedit_name)s.'),
-                     '',
-                     _('Please close any program that is accessing '
-                       '%(patch_name)s, and provide Administrator Privileges '
-                       'if prompted to do so.'),
-                     '', '',
-                     _('Try again?')]
-                msg = '\n'.join(m) % {'patch_name': patch_name,
-                                      'xedit_name': bush.game.Xe.full_name}
-                if askYes(self, msg, _('Bashed Patch - Save Error')):
+            except PermissionError as e:
+                msg = _('Wrye Bash could not save %(patch_name)s. Either it '
+                        'is in use by another program, such as '
+                        '%(xedit_name)s, or Wrye Bash is not allowed to '
+                        'write to the %(data_folder)s folder.') % {
+                    'patch_name': patch_name,
+                    'xedit_name': bush.game.Xe.full_name,
+                    'data_folder': bush.game.mods_dir_name}
+                retry = _('Close any program that is using %(patch_name)s '
+                          'and try again?') % {'patch_name': patch_name}
+                if askYes(self, f'{msg}\n\n{e}\n\n{retry}',
+                          _('Bashed Patch - Save Error')):
                     continue
-                raise # will raise the SkipError which is correctly processed
+                raise CancelError() from e # abort the build
 
     def __config(self):
         config = {u'ImportedMods': set()}
