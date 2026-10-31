@@ -198,15 +198,14 @@ class _LegacyWinAppVersionInfo:
 @dataclass
 class _LegacyWinAppInfo:
     # There are three names used for Windows Apps:
-    # app_name: The most human readable form
-    #   ex: `BethesdaSofworks.SkyrimSE-PC`
+    # win_app_name: The human readable form ex: `BethesdaSofworks.SkyrimSE-PC`
     # package_name: The application name along with publisher id
     #   ex: `BethesdaSoftworks.Skyrim_PC_3275kfvn8vcwc`
     # full_name: The unique app name, includes version and platform
     #   ex: `BethesdaSoftworks.TESMorrowind-PC_1.0.0.0_x86__3275kfvn8vcwc`
     legacy_publisher_name : str = ''
     publisher_id : str = ''
-    app_name : str = ''
+    win_app_name : str = ''
     versions: dict[str, _LegacyWinAppVersionInfo] = field(init=False,
                                                     default_factory=dict)
 
@@ -221,11 +220,10 @@ class _LegacyWinAppInfo:
                           key=lambda x: x.install_time)[-1]
         return None
 
-    def __repr__(self):
-        return (f'_LegacyWinAppInfo('
-                f'legacy_publisher_name={self.legacy_publisher_name},'
-                f'publisher_id={self.publisher_id}, app_name={self.app_name}, '
-                f'versions=<{len(self.versions)} version(s)>)')
+    def __repr__(self): return (f'_LegacyWinAppInfo('
+        f'legacy_publisher_name={self.legacy_publisher_name},'
+        f'publisher_id={self.publisher_id}, win_app_name={self.win_app_name}, '
+        f'versions=<{len(self.versions)} version(s)>)')
 
 def _get_language_paths(language_dirs: list[str],
         main_location: _Path) -> list[_Path]:
@@ -468,11 +466,12 @@ def is_case_sensitive(test_path):
 
 # App launchers ---------------------------------------------------------------
 def set_cwd(func):
-    """Function decorator to switch current working dir."""
+    """Function decorator to switch current working dir - to the launcher's
+    start_in, else to the folder of the launched file."""
     @functools.wraps(func)
     def _switch_dir(self, exe_path: _Path, *args):
         cwd = os.getcwd()
-        os.chdir(exe_path.head.s)
+        os.chdir((self.start_in or exe_path.head).s)
         try:
             return func(self, exe_path, *args)
         finally:
@@ -483,41 +482,31 @@ class _AppLauncher:
     """Info on launching an App - currently windows/linux only."""
     # the initial path to the app launcher (checked for existence on
     # initialization)
-    _app_path: _Path
-    _exe_args: tuple # cli for the application
+    app_path: _Path
+    exe_args: tuple # cli for the application
     _display_launcher: bool # whether to display the launcher
+    start_in: _Path | None = None # the working dir picked for custom launchers
 
     def __init__(self, launcher_path: _Path, cli_args=(),
                  display_launcher=True, *args):
         super().__init__(*args)
-        self._app_path = launcher_path
+        self.app_path = launcher_path
         self._display_launcher = display_launcher
-        self._exe_args = cli_args
+        self.exe_args = cli_args
 
-    @property
-    def app_path(self):
-        """The path to the app to launch which is not always the _app_path
-        (see GameButton/TESCSButton/AppBOSS overrides and avoid adding any)."""
-        return self._app_path
-
-    def allow_create(self): #if self._app_path doesn't exist this must be False
+    def allow_create(self): # if self.app_path doesn't exist this must be False
         return self._display_launcher
 
     @classmethod
-    def find_launcher(cls, app_exe, app_key, *, root_dirs: tuple | str = tuple(
+    def find_launcher(cls, app_exe, *, root_dirs: tuple | str = tuple(
             map(_GPath, (r'C:\Program Files', r'C:\Program Files (x86)'))),
             subfolders=()):
         """Check a list of paths to locate the app launcher - syscalls, so
         avoid.
         :param app_exe: the (currently exe) app launcher
-        :param app_key: the ini key whose value is the path to the exe
         :param root_dirs: the root directories of the exe path
         :param subfolders: subdirs of root_dirs where app is located
         :return: a path to the exe and whether it exists."""
-        if app_key is not None and (
-                ini_tool_path := bass.get_path_from_ini(app_key.lower())):
-            # override with the ini path *even* if it does not exist
-            return ini_tool_path, ini_tool_path.exists()
         if app_exe is None:
             return undefinedPath, False
         if isinstance(root_dirs, str):
