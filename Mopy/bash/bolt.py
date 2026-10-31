@@ -25,6 +25,7 @@ from __future__ import annotations
 import collections
 import copy
 import datetime
+import errno
 import io
 import os
 import pickle
@@ -1043,11 +1044,24 @@ class Path(os.PathLike):
 
         This also does not remove the temporary file from the internal caches
         so as to work with TempFile."""
+        def _replace():
+            try:
+                os.replace(temp_path, self._s)
+            except OSError as e:
+                # os.replace is an atomic rename, but can't cross drives. The
+                # global temp dir sits on the Data folder's drive by default,
+                # but e.g. saves may be elsewhere - fall back to a copy. Not
+                # always shutil.move, it copies whenever the file exists on
+                # Windows, as os.rename refuses to replace files there
+                if e.errno != errno.EXDEV: raise
+                shutil.move(temp_path, self._s)
         try:
-            shutil.move(temp_path, self._s)
+            _replace()
         except PermissionError:
+            # A new file can't be read-only - clearRO would hide the error
+            if not self.exists(): raise
             self.clearRO()
-            shutil.move(temp_path, self._s)
+            _replace()
         # Do *not* call cleanup_temp_file here! This method needs to work with
         # TempFile, which will already call cleanup_temp_file for us
 
