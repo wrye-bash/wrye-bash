@@ -112,7 +112,7 @@ class _TopLevelWin(_AComponent):
 
     def on_closing(self, destroy=True):
         """Invoked right before this window is destroyed."""
-        if self._sizes_dict and not self.is_iconized and not self.is_maximized:
+        if not self.is_iconized and not self.is_maximized:
             if self._pos_key: self._sizes_dict[self._pos_key] = self.component_position
             if self._size_key: self._sizes_dict[self._size_key] = self.component_size
         if destroy: self.native_destroy()
@@ -177,8 +177,7 @@ class DialogWindow(_TopLevelWin):
         self._on_size_changed.subscribe(self.save_size) # save dialog size
 
     def save_size(self):
-        if self._sizes_dict is not None and self._size_key:
-            self._sizes_dict[self._size_key] = self.component_size
+        self._sizes_dict[self._size_key] = self.component_size
 
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_val, exc_tb):
