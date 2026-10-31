@@ -379,7 +379,7 @@
     cannot support Windows Store games) or prefer to manually install Wrye Bash
     for any other reason, read the instructions below.</p>
 <p><strong>Note:</strong> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people.
-<p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
+<p><strong>Windows users:</strong> Wrye Bash needs to be able to change files in your game folder, which Windows does not allow for games installed in <q>Program Files</q>. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Installation:
 <ol>
     <li>Download and install the <a href="https://aka.ms/vs/17/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
@@ -2490,48 +2490,21 @@ from other packages previously overridden by the uninstalled package's
     Wrye Bash thread for support.</p>
 
 <h3 id="trouble-permissions">File Permissions <a class="back2top" href="#contents">Back to top</a></h3>
-<p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  For Windows Store games, there are no workarounds to this, if you receive errors you must launch as as Administrator (workaround 4). There are four common workarounds to this problem:
+<p>Wrye Bash needs to be able to create and change files in your game's Data folder, as well as in the <code>Bash Installers</code> and <code>Bash Mod Data</code> folders, which it puts next to the game folder by default. Windows does not let programs change the <q>Program Files</q> and <q>Program Files (x86)</q> folders unless they run as Administrator, so if your game is installed there, Wrye Bash will refuse to start and tell you that it cannot create files in the Data folder. There are two ways to fix this:
 <ol>
-    <li>Install the game outside <q>Program Files</q> or <q>Program Files (x86)</q>. UAC prevents unauthorised edits to these folders, so by installing the game outside of them, you remove it from UAC's reach, allowing you to use mods more easily. Steam users can move their Steam installation and games using <a href="https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129">these instructions</a>.
-    <li>Deactivate UAC. This can be done from the Control Panel, and will turn UAC off across the whole of your computer. It is up to you whether you feel that you have adequate security measures in place to do this without risk.
-    <li>Give yourself <q>Full Control</q> permissions over your game install folder. This will allow you to make any edits you desire while keeping UAC active and on guard for any edits made by programs you do not run, and also means that you do not need to reinstall your game to a new location.
-    <li>Do nothing.  Wrye Bash will detect if it needs to run as Administrator, and give you a dialog with a few options:
-        <ol>
-            <li>Start Wrye Bash as Administrator:  This will give Wrye Bash full Administrator Rights, allowing it to function fully with no further action, with one exception:
-                <ul>
-                    <li>You will not be able to drag and drop archives into the Installers window to move or copy those archives into BAIN.  This is because non-Admin processes (explorer.exe) are not allowed to communicate with Admin processes (Wrye Bash) in this manner.
-                </ul>
-            <li>Start normally.  This will start Wrye Bash without Administrator Rights.
-                <ul>
-                    <li>Many actions that require Administrator Privileges will cause a UAC prompt to be shown.  Commonly, these are:
-                        <ul>
-                            <li>The first time Wrye Bash is started, approximately 4-6 times, depending on the number of directories Wrye Bash needs to create.
-                            <li>When the Bashed Patch is rebuilt, 2 times, once for the Bashed Patch itself, once for the associated readme.
-                            <li>Installing, Uninstalling, Annealing, and other operations in the Installers Tab that require modification of the game's Data folder.
-                            <li>On shutdown, you may be prompted multiple times when saving various .dat files to the Bash Installers and Bash Mod Data folders, if these folders are under UAC protection.
-                        </ul>
-                    <li>A few actions are restricted:
-                        <ul>
-                            <li>Saving files into the UAC protected area: Windows does not allow the Save File dialog to select a target within a UAC protected folder.
-                            <li>Ghosting: Wrye Bash will not be able to un-ghost already ghosted mods.  Wrye Bash will not ghost mods.  Both of these require renaming mod files.
-                            <li>Other actions that require Administrator Privileges may not have workarounds coded.  Be warned, any errors you encounter while running as a non-Admin under a UAC protected directory will most likely not be fixed.  Follow one of the alternate solutions to solve these errors.
-                        </ul>
-                </ul>
-        </ol>
-        Launching Wrye Bash with some command line switches can avoid this dialog:
-        <ul>
-            <li>--no-uac: Always start normally, without Administrator Privileges
-            <li>--uac: Always start as Administrator (if required)
-        </ul>
+    <li>Install the game outside <q>Program Files</q> and <q>Program Files (x86)</q>, for example in <code>C:\Games</code>. This is the recommended solution. Steam users can create a new Steam Library folder elsewhere and move their games to it from the <q>Storage</q> page of Steam's settings.
+    <li>Give your user account permission to modify the game folder, as described below. This keeps the game where it is.
 </ol>
-<p>For those that wish to take the third option and give themselves <q>Full Control</q> permissions, here is a guide:
+<p>To give your user account permission to modify a folder:
 <ol>
-    <li>Right-click the folder you wish to change the permissions for, and select <q>Properties</q>.
-    <li>In <q>Properties</q>, select the <q>Security</q> tab, and click the <q>Edit...</q> button. A UAC prompt may appear, simply allow yourself to continue.
-    <li>In the <q>Group or user names</q> box, select the <q>Users</q> option.
-    <li>In the lower box, check the box opposite <q>Full Control</q> in the <q>Allow</q> column. Press OK to exit. If a UAC prompt appears, allow the change.
-    <li>In the <q>Properties</q> window, select OK to exit. You should now have Full Control permissions over your chosen folder.
+    <li>Right-click the folder and select <q>Properties</q>.
+    <li>In <q>Properties</q>, select the <q>Security</q> tab, and click the <q>Edit...</q> button. Windows may ask for administrator permission, allow it.
+    <li>In the <q>Group or user names</q> box, select the <q>Users</q> group (or your own user account).
+    <li>In the lower box, check the box opposite <q>Modify</q> in the <q>Allow</q> column. Press OK to exit. If Windows asks for administrator permission, allow it.
+    <li>In the <q>Properties</q> window, select OK to exit.
 </ol>
+<p>Wrye Bash no longer offers to restart itself as Administrator, and the <code>--uac</code> and <code>--no-uac</code> command line switches do nothing anymore. You can still run Wrye Bash as Administrator yourself, but we do not recommend it: you will not be able to drag and drop files from Windows Explorer into Wrye Bash, it will not see network drives that you mapped as your normal user and, if you launch it through Mod Organizer 2, it will not see MO2's virtual Data folder. On Windows 11 with <q>Administrator protection</q> turned on, programs running as Administrator use a separate user profile, so Wrye Bash would not see your load order or your game's INIs and saves either.
+<p>If <q>Controlled folder access</q> is turned on in Windows Security, Windows blocks programs it does not know from changing files in your Documents folder - which contains the <code>My Games</code> folder where most games keep their INIs and saves. If Wrye Bash fails to save those, allow it through Controlled folder access in Windows Security.
 <p>If your game is a Windows Store game (Installed via the Windows Store or
     Xbox App), then there are additional permissions to deal with:</p>
 <ol>
@@ -2602,7 +2575,7 @@ from other packages previously overridden by the uninstalled package's
     <li>Your Wrye Bash version. This includes whether it's the Python or Standalone install, the version number and the SVN number (the latter only if using the SVN).
     <li>The symptoms. Provide a step-by-step description of what you did, what you expected and what happened.
     <li>What you see. Error messages are very helpful.
-    <li>Your version of Windows. If you're using Windows with UAC enabled and you have your game in the default install directory, please resolve any permissions issues using one of the methods in the <a href="#trouble-permissions">File Permissions</a> section before reporting any bugs.
+    <li>Your version of Windows. If your game is installed in <q>Program Files</q>, please resolve any permissions issues using one of the methods in the <a href="#trouble-permissions">File Permissions</a> section before reporting any bugs.
     <li>Any modifications you have made to your bash.ini, if you are using one.
     <li>If you're having an issue with the Standalone version, make sure to uninstall any Python components on your computer and try again, as they can sometimes interfere.
     <li>If the issue is related to the <a href="#patch">Bashed Patch</a>, please include the following:
