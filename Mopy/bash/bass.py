@@ -81,7 +81,7 @@ def update_sys_argv(arg):
             sysargv[option_index + 1] = arg[1]
         except ValueError:
             sysargv.extend(arg)
-    else: # boolean switches like '--uac'
+    else: # boolean switches like '--backup'
         if not arg[0] in sysargv:
             sysargv.append(arg[0])
 

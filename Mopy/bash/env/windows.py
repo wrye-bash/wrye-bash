@@ -167,8 +167,6 @@ def file_operation(operation: FileOperationType,
     }
 
 # API - Constants =============================================================
-_isUAC = False
-
 try:
     _indirect = windll.comctl32.TaskDialogIndirect
     _indirect.restype = c_void_p
@@ -1159,17 +1157,6 @@ def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
         return curr_ver
     return _query_string_field_version(filename, u'FileVersion')
 
-def testUAC(gameDataPath):
-    _deprint('Testing if game folder is UAC-protected')
-    if not os.access(gameDataPath, os.R_OK | os.W_OK):
-        global _isUAC
-        _isUAC = True
-
-def setUAC(handle, uac=True):
-    """Calls the Windows API to set a button as UAC"""
-    if _isUAC and win32gui:
-        win32gui.SendMessage(handle, 0x0000160C, None, uac)
-
 @functools.cache
 def getJava():
     """Locate javaw.exe to launch jars from Bash."""
@@ -1197,10 +1184,6 @@ def getJava():
         # So javaw.exe would actually be in Windows\SysWOW64
         java_bin_path = sys_root.join(u'syswow64', u'javaw.exe')
     return java_bin_path
-
-def is_uac():
-    """Returns True if the game is under UAC protection."""
-    return _isUAC
 
 def fixup_taskbar_icon():
     """On Windows 7+, if taskbar settings for taskbar buttons is set to 'Always

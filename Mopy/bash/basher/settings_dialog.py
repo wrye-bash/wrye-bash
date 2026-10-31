@@ -31,7 +31,7 @@ from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
 from ..bolt import deprint, dict_sort, readme_url, reverse_dict
-from ..env import is_uac, join_launcher_args, shellDelete, shellMove, \
+from ..env import join_launcher_args, shellDelete, shellMove, \
     split_launcher_args
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
@@ -986,7 +986,7 @@ class GeneralPage(_AScrollablePage):
     _gm_reverse = reverse_dict(_global_menu_options)
     _setting_ids = {'global_menu_state', 'res_scroll_on', 'managed_game',
                     'plugin_encoding', 'update_check_enabled',
-                    'update_check_cooldown', 'uac_restart', 'wb_temp_dir'}
+                    'update_check_cooldown', 'wb_temp_dir'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1046,11 +1046,6 @@ class GeneralPage(_AScrollablePage):
                             "large number of plugins/saves/etc."),
             checked=bass.settings['bash.restore_scroll_positions'],
             on_check=self._on_res_scroll)
-        ##: Doesn't really belong here, but couldn't think of a better place
-        self._uac_restart_checkbox = CheckBox(self, _(u'Administrator Mode'),
-            chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
-                            'privileges.'), on_check=self._on_uac_restart)
-        self._uac_restart_checkbox.visible = is_uac()
         ##: This should be on its own page for configuring all kinds of paths,
         # see #572
         self._temp_folder_path = TextField(self,
@@ -1097,7 +1092,6 @@ class GeneralPage(_AScrollablePage):
                     self._global_menu_dropdown,
                 ]),
                 self._restore_scroll_checkbox,
-                self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
 
@@ -1164,9 +1158,6 @@ class GeneralPage(_AScrollablePage):
     def _on_temp_folder_reset(self):
         self._temp_folder_path.text_content = default_global_temp_dir()
 
-    def _on_uac_restart(self, checked: bool):
-        self._mark_setting_changed(u'uac_restart', checked)
-
     def on_apply(self):
         # Managed Game
         if self._is_changed('managed_game') and balt.askContinue(self,
@@ -1214,9 +1205,6 @@ class GeneralPage(_AScrollablePage):
         if self._is_changed(u'res_scroll_on'):
             new_res_scroll = self._restore_scroll_checkbox.is_checked
             bass.settings[u'bash.restore_scroll_positions'] = new_res_scroll
-        # Administrator Mode
-        if self._is_changed(u'uac_restart'):
-            self._request_restart(_(u'Administrator Mode'), [u'--uac'])
         super(GeneralPage, self).on_apply()
 
 # Trusted Binaries ------------------------------------------------------------

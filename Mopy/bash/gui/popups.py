@@ -581,7 +581,7 @@ def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
             dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
     button, radio, checkbox = dialog.show(commandLinks)
     for id_, title in vista_buttons:
-        if title.startswith('+'): title = title[1:] # used in ask_uac_restart
+        if title.startswith('+'): title = title[1:] # elevation shield
         if title == button:
             if checkBoxTxt:
                 return id_ in GOOD_EXITS, checkbox

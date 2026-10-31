@@ -76,12 +76,6 @@ class PatchDialog(DialogWindow):
         #--GUI elements
         self.gExecute = OkButton(self, btn_label=_('Build Patch'),
                                  on_click=self.PatchExecute)
-        # TODO(nycz): somehow move setUAC further into env?
-        # Note: for this to work correctly, it needs to be run BEFORE
-        # appending a menu item to a menu (and so, needs to be enabled/
-        # disabled prior to that as well.
-        # TODO(nycz): DEWX - Button.GetHandle
-        env.setUAC(self.gExecute._native_widget.GetHandle(), True)
         self.gSelectAll = SelectAllButton(self, on_click=
             lambda: self._mass_select_recursive(True))
         self.gDeselectAll = DeselectAllButton(self, on_click=

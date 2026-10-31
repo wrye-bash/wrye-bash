@@ -35,9 +35,8 @@ import wx.adv
 
 from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
-from .bolt import FName, Path, RefrIn, deprint, readme_url, \
-    fast_cached_property, RefrData
-from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
+from .bolt import FName, Path, RefrIn, deprint, fast_cached_property, \
+    RefrData
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CancelButton, CENTER, CheckListBox, \
     Color, DialogWindow, DirOpen, EventResult, FileOpen, FileSave, \
@@ -1896,26 +1895,6 @@ wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
 wxArrows = _wx_arrow_up | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
 _wx_delete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
-
-# Some UAC stuff --------------------------------------------------------------
-def ask_uac_restart(message, mopy):
-    if not TASK_DIALOG_AVAILABLE:
-        message += '\n\n' + _('Start Wrye Bash with Administrator Privileges?')
-        btns = ex = None
-    else:
-        admin = _('Run with Administrator Privileges')
-        readme = readme_url(mopy) + '#trouble-permissions'
-        btns = [(BTN_YES, f'+{admin}'), (BTN_NO, _('Run normally'))]
-        switches = [_('Use one of the following command line switches:'), '',
-                    _('%(cli_no_uac)s: always run normally'),
-                    _('%(cli_uac)s: always run with Admin Privileges'), '',
-                    _('See the %(readme)s for more information.')]
-        ex = [_('How to avoid this message in the future'),
-              _('Less information'), '\n'.join(switches) % {
-                'cli_no_uac': '--no-uac', 'cli_uac': '--uac',
-                'readme': f'<A href="{readme}">readme</A>'}]
-    return askYes(None, message, title=_('UAC Protection'),
-        vista_buttons=btns, expander=ex)
 
 class INIListCtrl(ListCtrl):
 

@@ -217,15 +217,6 @@ def get_app_icon(_target, _idex=0):
 def init_app_links(_apps_dir):
     return [] ##:(734:570) the Apps folder shortcuts are a Windows thing
 
-def testUAC(_gameDataPath):
-    pass # Noop on Linux
-
-def setUAC(_handle, _uac=True):
-    pass # Noop on Linux
-
-def is_uac():
-    return False # Not a thing on Linux
-
 @functools.cache
 def getJava():
     # Prefer the version indicated by JAVA_HOME

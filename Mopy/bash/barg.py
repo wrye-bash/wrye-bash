@@ -106,13 +106,15 @@ def parse():
     parser.add_argument('--no-uac',
                         action='store_true',
                         dest='noUac',
-                        help='suppress the prompt to restart in admin mode '
-                             'when UAC is detected.')
+                        help='DEPRECATED. This does nothing anymore. Wrye '
+                             'Bash no longer offers to restart itself with '
+                             'administrator privileges.')
     parser.add_argument('--uac',
                         action='store_true',
                         dest='uac',
-                        help='always start in admin mode if UAC protection is '
-                             'detected.')
+                        help='DEPRECATED. This does nothing anymore. Wrye '
+                             'Bash no longer offers to restart itself with '
+                             'administrator privileges.')
     parser.add_argument('--genHtml', default=None, help=argparse.SUPPRESS)
     parser.add_argument('-L', '--Language',
                         action='store',

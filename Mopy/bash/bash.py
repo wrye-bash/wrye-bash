@@ -326,17 +326,9 @@ def exit_cleanup():
         cli = bass.sys_argv # list of cli args
         cmd_line = cli if bass.is_standalone else [sys.executable, *cli]
         try:
-            if '--uac' in cli: ##: mostly untested - needs revamp
-                import win32api
-                cli = ([f'{x}', f'"{x}"'][' ' in x] for x in cmd_line) # escape
-                exe, *cli = cli
-                cmd_line = f'{exe} {cli}' if (cli := " ".join(cli)) else exe
-                win32api.ShellExecute(0, 'runas', exe, cli, '', True)
-                return
-            else:
-                import subprocess
-                subprocess.Popen(cmd_line, # a list, no need to escape spaces
-                                 close_fds=True)
+            import subprocess
+            subprocess.Popen(cmd_line, # a list, no need to escape spaces
+                             close_fds=True)
         except Exception as error:
             # Use __stdout__ here, stdout/bugdump might have been closed
             print(error, file=sys.__stdout__)
@@ -574,7 +566,6 @@ def _main(opts, detected, restore_):
         bolt.deprint('Wrye Bash appears to be running through MO2')
     if env.on_wine():
         bolt.deprint('Wrye Bash appears to be running on Wine')
-    env.testUAC(bush_game.gamePath.join(*bush_game.mods_dir_path))
     global basher # share this instance with _close_dialog_windows
     from . import basher
     atexit.register(exit_cleanup)
@@ -585,21 +576,6 @@ def _main(opts, detected, restore_):
     basher.InitLinks()
     # Set the window title for stdout/stderr messages
     bash_app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
-    if env.is_uac():
-        uacRestart = opts.uac
-        if not opts.noUac and not uacRestart:
-            # Show a prompt asking if we should restart in Admin Mode
-            message = _(
-                'Wrye Bash needs administrator privileges to make changes to '
-                'the %(gameName)s directory. If you do not start Wrye Bash '
-                'with elevated privileges, you will be prompted at each '
-                'operation that requires elevated privileges.') % {
-                    'gameName': bush_game.display_name}
-            uacRestart = balt.ask_uac_restart(message, mopy=bass.dirs['mopy'])
-        if uacRestart:
-            bass.update_sys_argv(['--uac'])
-            bass.is_restarting = True
-            return
     # Backup the Bash settings - we need settings being initialized to get
     # the previous version - we should read this from a file so we can move
     # backup higher up in the boot sequence.

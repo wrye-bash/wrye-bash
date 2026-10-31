@@ -3504,8 +3504,6 @@ class BashFrame(WindowFrame):
         """
         for arg in args:
             bass.update_sys_argv(arg)
-        #--Restarting, assume users don't want to be prompted again about UAC
-        bass.update_sys_argv([u'--no-uac'])
         # restart
         bass.is_restarting = True
         self.exit_wb()
