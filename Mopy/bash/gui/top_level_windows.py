@@ -313,7 +313,7 @@ def _sizer_room(sizer, vert):
     along = isinstance(sizer, _wx.BoxSizer) and (
         sizer.GetOrientation() == _wx.HORIZONTAL) == vert
     rooms = [_sizer_room(i.GetSizer(), vert) if i.IsSizer()
-             else i.GetSpacer()[not vert] if i.IsSpacer()
+             else i.GetMinSize()[not vert] if i.IsSpacer()
              else max(scaled(64), _room(i.GetWindow(), vert))
              if i.GetProportion()
              else i.GetWindow().GetEffectiveMinSize()[not vert]
@@ -336,7 +336,8 @@ class Splitter(_AComponent):
         # if its minimum is 0 - _fit_panes sets the panes' min sizes instead
         nw.SetMinimumPaneSize(1)
         nw.SetSashGravity(sash_gravity)
-        self._panes = None
+        # The position to go back to - gravity moves the sash on its own
+        self._keep_pos, self._wanted_pos = not sash_gravity, None
         self._on_paint = self._evt_handler(_wx.EVT_PAINT)
         self._on_paint.subscribe(self._paint_sash)
         self._on_size = self._evt_handler(_wx.EVT_SIZE)
@@ -344,20 +345,19 @@ class Splitter(_AComponent):
 
     def make_panes(self, sash_position=0, first_pane=None, second_pane=None,
                    vertically=False):
-        self._panes = [first_pane or PanelWin(self),
-                       second_pane or PanelWin(self)]
-        split = self._native_widget.SplitVertically if vertically else \
-            self._native_widget.SplitHorizontally
-        split(*(panes := [*map(self._resolve, self._panes)]), sash_position)
+        panes = first_pane or PanelWin(self), second_pane or PanelWin(self)
+        nw = self._native_widget
+        split = nw.SplitVertically if vertically else nw.SplitHorizontally
+        split(*(natives := [*map(self._resolve, panes)]), sash_position)
         # wx redraws the native sash over our grip when resizing the panes and
         # on releasing the dragged sash, where the panes keep their size
-        for pane in panes: pane.Bind(_wx.EVT_SIZE, self._refresh_sash)
-        self._native_widget.Bind(_wx.EVT_SPLITTER_SASH_POS_CHANGED,
-                                 self._refresh_sash)
-        return self._panes[0], self._panes[1]
+        for pane in natives: pane.Bind(_wx.EVT_SIZE, self._refresh_sash)
+        # Only our own sash - the events of nested splitters bubble up to us
+        nw.Bind(_wx.EVT_SPLITTER_SASH_POS_CHANGED, self._sash_moved, nw)
+        return panes
 
     def _fit_panes(self):
-        """Runs before wx clamps the sash to the min sizes of the panes - give
+        """Runs before wx moves the sash to fit the panes' min sizes - give
         each the room it needs, sharing what there is if they don't fit, as
         wx would squeeze the second pane to nothing."""
         nw = self._native_widget
@@ -370,6 +370,8 @@ class Splitter(_AComponent):
         for pane, own, room in zip((nw.GetWindow1(), nw.GetWindow2()),
                                    nw.own_mins, rooms):
             pane.SetMinSize((room, own.height) if vert else (own.width, room))
+        # wx forgets a position that doesn't fit, unless it's a requested one
+        if self._wanted_pos: nw.SetSashPosition(self._wanted_pos, False)
 
     def _sash_rect(self):
         nw = self._native_widget
@@ -382,6 +384,10 @@ class Splitter(_AComponent):
     def _refresh_sash(self, event):
         event.Skip()
         self._native_widget.RefreshRect(_wx.Rect(*self._sash_rect()))
+
+    def _sash_moved(self, event):
+        self._wanted_pos = self._keep_pos and event.GetSashPosition()
+        self._refresh_sash(event)
 
     def _paint_sash(self):
         """Replaces wx's OnPaint - draw the native sash and a grip in its
@@ -404,9 +410,11 @@ class Splitter(_AComponent):
                                     gh, scaled(1))
         return EventResult.FINISH
 
-    def get_sash_pos(self): return self._native_widget.GetSashPosition()
+    def get_sash_pos(self):
+        return self._wanted_pos or self._native_widget.GetSashPosition()
 
     def set_sash_pos(self, sash_position):
+        self._wanted_pos = self._keep_pos and sash_position
         self._native_widget.SetSashPosition(sash_position)
 
 class _APageComponent(_AComponent):

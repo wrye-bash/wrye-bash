@@ -2535,8 +2535,7 @@ class InstallersDetails(_SashDetailsPanel):
         super().__init__(parent)
         self.installersPanel = ui_list_panel
         top, bottom = self.left, self.right
-        self.subSplitter, commentsPanel = self.splitter.make_panes(
-            first_pane=self.subSplitter, second_pane=PanelWin(bottom))
+        commentsPanel = PanelWin(bottom)
         #--Package
         self.gPackage = TextArea(top, editable=False, no_border=True)
         #--Info Tabs
