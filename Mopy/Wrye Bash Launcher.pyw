@@ -38,6 +38,9 @@ _MIN_PYTHON, _MAX_PYTHON = (3, 11), (4,)
 def _boot_failed(msg):
     """Show msg in a popup, then exit - for the errors that bash could not
     show with wx, or importing bash itself."""
+    if '--build-bashed-patch' in sys.argv: # nobody to click on a popup
+        print(msg)
+        sys.exit(1)
     # not stderr, which tees into the BashBugDump, uncensored - and
     # __stderr__ is None under pythonw
     if sys.__stderr__: sys.__stderr__.write(msg + '\n')
