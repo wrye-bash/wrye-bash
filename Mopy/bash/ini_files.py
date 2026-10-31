@@ -500,7 +500,8 @@ class GameIni(IniFileInfo):
         self.setting_inis = [*filter(None, (custom_ini, self, base_ini))]
 
     def read_ini_content(self, as_unicode=True, missing_ok=False):
-        # Custom INIs may well not exist, so we ignore missing_ok
+        # We decode the raw bytes ourselves, below - and Custom INIs may well
+        # not exist, so we ignore missing_ok
         content = super().read_ini_content(False, True)
         if not as_unicode: return content
         if not content: return [] # empty, missing or unreadable
