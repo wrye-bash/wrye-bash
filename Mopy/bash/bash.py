@@ -527,7 +527,7 @@ def main(opts: Namespace, help_urls):
     except Exception as e:
         if opts.buildBashedPatch: # no popups when headless, see below
             bolt.deprint('Bashed Patch build failed:', traceback=True)
-            print(e)
+            bolt.deprint(e, trace=False)
             sys.exit(2 if isinstance(e, (exception.BoltError,
                 exception.BootError, OSError, NotImplementedError)) else 1)
         # censored for the popups too, users post them
@@ -585,21 +585,21 @@ def _run_bashed_patch_cli(opts, bush_game):
         build_bashed_patch_cli(bolt.FName(opts.bashedPatchName), bush_game)
     except exception.BPConfigError as e:
         bolt.deprint('Bashed Patch configuration error:', traceback=True)
-        print(_('The configuration of the Bashed Patch is incorrect.') +
-              f'\n\n{e}')
+        bolt.deprint(_('The configuration of the Bashed Patch is incorrect.') +
+                     f'\n\n{e}', trace=False)
         exit_code = 3
     except PermissionError as e:
         bolt.deprint('Bashed Patch save error:', traceback=True)
-        print(e)
+        bolt.deprint(e, trace=False)
         exit_code = 4
     except (exception.BoltError, exception.BootError, OSError,
             NotImplementedError) as e:
         bolt.deprint('Bashed Patch build failed:', traceback=True)
-        print(e)
+        bolt.deprint(e, trace=False)
         exit_code = 2
     except Exception as e:
         bolt.deprint('Unexpected Bashed Patch build error:', traceback=True)
-        print(e)
+        bolt.deprint(e, trace=False)
         exit_code = 1
     else:
         exit_code = 0
