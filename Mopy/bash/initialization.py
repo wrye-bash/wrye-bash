@@ -35,7 +35,7 @@ from .bolt import GPath, decoder, deprint, os_name, top_level_dirs
 from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_personal_path, make_dirs, is_case_sensitive, \
     get_case_sensitivity_advice
-from .exception import BoltError, NonExistentDriveError
+from .exception import BoltError, BootError, NonExistentDriveError
 # no other Bash imports!
 
 def _get_ini_option(ini_parser, option_key) -> str | None:
@@ -224,8 +224,22 @@ def init_dirs(game_info, opts, init_warnings):
     deprint(f'{game_info.mods_dir_name} folder set to {dirs["mods"]}')
     dirs['lo'] = lo_dir
     deprint(f'Load order folder set to {dirs["lo"]}')
-    # Check and warn if the Data folder is case-sensitive
-    if is_case_sensitive(dirs['mods']):
+    # Check and warn if the Data folder is case-sensitive - this creates
+    # files in it, so it also tells us if we can write to it at all
+    try:
+        data_is_cs = is_case_sensitive(dirs['mods'])
+    except PermissionError as e:
+        raise BootError(_(
+            'Wrye Bash cannot create files in the %(data_folder)s folder '
+            '(%(data_path)s), so it could not install mods, change the load '
+            'order or build the Bashed Patch. This usually means the game is '
+            'installed in a protected folder like Program Files. Install the '
+            'game somewhere else, or give your user account permission to '
+            'modify the game folder - see the File Permissions section of '
+            'the General Readme.') % {
+            'data_folder': game_info.mods_dir_name,
+            'data_path': dirs['mods']}) from e
+    if data_is_cs:
         ci_warn = _(
             'The %(data_folder)s folder is case sensitive. This will cause '
             'serious problems for Wrye Bash, like BAIN not working if the '
