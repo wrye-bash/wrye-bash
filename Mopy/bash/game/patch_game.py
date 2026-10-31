@@ -46,21 +46,19 @@ class PatchGame(GameInfo):
 
     # Bash Tags supported by this game. List *only* tags that aren't used by
     # patchers here (e.g. Deactivate, Filter, etc.), patcher-based tags get
-    # dynamically added in gui_patchers. Similary, NoMerge should *not* be
-    # included here, it is dynamically added in gui_patchers based on the
+    # dynamically added in init_patcher_types. NoMerge should *not* be included
+    # here, it is dynamically added in init_patcher_types based on the
     # mergeability_checks for the game.
     allTags = {'Deactivate', 'Filter', 'MustBeActiveIfImported'}
 
-    # Patchers available when building a Bashed Patch (referenced by GUI class
-    # name, see gui_patchers.py for their definitions). Note that MergePatches
-    # should *not* be included here, it is dynamically included in gui_patchers
-    # based on the mergeability_checks for the game.
+    # Patchers available when building a Bashed Patch (referenced by Config
+    # class name, see config_patchers.py for their definitions). Note that
+    # MergePatches should *not* be included here, it is dynamically included in
+    # init_patcher_types based on the mergeability_checks for the game.
     patchers = set()
 
-    # Set in _dynamic_import_modules used in Mopy/bash/basher/gui_patchers.py
-    gameSpecificPatchers = {}
-    gameSpecificListPatchers = {}
-    game_specific_import_patchers = {}
+    # Set in _dynamic_import_modules used in patcher/config_patchers.py
+    game_specific_patchers = {}
 
     # Record information - set in cls.init ------------------------------------
     top_groups = [] # list of the top groups ordered as in the main esm

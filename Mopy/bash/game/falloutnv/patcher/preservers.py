@@ -20,14 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from ....patcher.config_patchers import ImporterPatcherConfig
 from ....patcher.patchers.preservers import APreserver
 
-class ImportWeaponModificationsPatcher(APreserver):
-    """Merge changes to weapon modifications for FalloutNV."""
-    patcher_name = _(u'Import Weapon Modifications')
-    patcher_desc = _(u'Merges changes to weapon modifications.')
+class _ImportWeaponModificationsPatcher(APreserver):
     patcher_tags = {'WeaponMods'}
-    _config_key = u'WeaponModsPatcher'
     patcher_order = 27 ##: This seems unneeded + no reason given
     rec_attrs = {b'WEAP': (
         'modelWithMods', 'firstPersonModelWithMods', 'weaponMods',
@@ -37,8 +34,9 @@ class ImportWeaponModificationsPatcher(APreserver):
     _fid_rec_attrs = {b'WEAP': ('sound_mod1_shoot_3d', 'sound_mod1_shoot_dist',
                                 'sound_mod1_shoot_2d')}
 
-    @classmethod
-    def gui_cls_vars(cls):
-        """Class variables for gui patcher classes created dynamically."""
-        return {u'patcher_type': cls, u'patcher_desc': cls.patcher_desc,
-            'patcher_name': cls.patcher_name, '_config_key': cls._config_key}
+class ImportWeaponModificationsPatcher(ImporterPatcherConfig):
+    """Merge changes to weapon modifications for FalloutNV."""
+    patcher_name = _('Import Weapon Modifications')
+    patcher_desc = _('Merges changes to weapon modifications.')
+    _config_key = 'WeaponModsPatcher'
+    patcher_type = _ImportWeaponModificationsPatcher

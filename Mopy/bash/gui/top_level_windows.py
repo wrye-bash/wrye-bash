@@ -214,12 +214,6 @@ class DialogWindow(_TopLevelWin):
         clicking the Cancel button."""
         self._native_widget.EndModal(_wx.ID_CANCEL)
 
-class StartupDialogWindow(DialogWindow):
-    """Dialog shown during early boot, generally due to errors."""
-    def __init__(self, *args, **kwargs):
-        sd_style = _wx.STAY_ON_TOP | _wx.DIALOG_NO_PARENT
-        super().__init__(*args, style=sd_style, **kwargs)
-
 class MaybeModalDialogWindow(DialogWindow):
     """Dialog that may be modal or modeless."""
     def show_modeless(self):

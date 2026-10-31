@@ -52,8 +52,9 @@ def reset_bush_globals():
     global game
     global ws_info
     game = ws_info = None
-    for d in (_allGames, _game_stores):
+    for d in (_allGames, _game_stores, foundGames):
         d.clear()
+    bass.bash_dirs_initialized = False # it is set in GameInfo.__init__
 
 def _print_found_games(skip_ws_games, msg):
     """Formats and prints the specified dictionary of game detections in a

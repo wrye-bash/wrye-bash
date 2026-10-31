@@ -195,7 +195,7 @@ class ListPatcher(APatcher):
         loaded_csvs = []
         for src_path in self.csv_srcs:
             try:
-                try: ##: the correct path must be passed from gui_patchers.py
+                try: ##: the correct path must come from config_patchers.py
                     csv_path = bass.dirs['patches'].join(src_path)
                     parser_instance.read_csv(csv_path)
                 except OSError:

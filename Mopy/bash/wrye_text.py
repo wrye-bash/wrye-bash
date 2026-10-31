@@ -29,6 +29,7 @@ import re
 import string
 from urllib.parse import quote
 
+# no other Bash imports! called in early boot before setting game/import wx
 from . import exception
 from .bolt import Path, GPath, to_unix_newlines
 
