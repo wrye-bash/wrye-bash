@@ -3511,7 +3511,8 @@ class BashFrame(WindowFrame):
         pressed. That means it includes saving settings etc."""
         ##: This breaks on py3 + wx4.2, use sys.exit + manual save for now
         #self.close_win(True)
-        self.SaveSettings()
+        super().on_closing(destroy=False)
+        self.SaveSettings(destroy=True)
         sys.exit(0)
 
     def set_bash_frame_title(self):
