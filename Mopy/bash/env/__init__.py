@@ -32,9 +32,8 @@ from typing import Any
 # First import the shared API
 from .common import *
 from .common import file_operation as _default_file_operation
-from ..bolt import os_name, Path, deprint, empty_path
+from ..bolt import Path, deprint, empty_path
 from ..exception import NonExistentDriveError
-from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
 _ConfirmationPrompt = Callable[[Any, str, str], bool] | None
@@ -140,8 +139,9 @@ def shellCopy(sources_dests: dict[Path, Path | Iterable[Path]],
         allow_undo=allow_undo, ask_confirm=ask_confirm,
         rename_on_collision=auto_rename, silent=False, parent=_resolve(parent))
 
-def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
-    if not dirs: return
+def make_dirs(dirs: Iterable[Path]):
+    """Create the specified directories and any missing parents. Raises a
+    NonExistentDriveError for the ones on drives that do not exist."""
     #--Skip dirs that already exist
     dirs = [x for x in dirs if not x.exists()]
     #--Check for dirs that are impossible to create (the drive they are
@@ -149,35 +149,5 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
     errorPaths = [d for d in dirs if not drive_exists(d)]
     if errorPaths:
         raise NonExistentDriveError(errorPaths)
-    if os_name == 'posix':
-        return # drive_exists creates the directories on posix
-    #--Checks complete, start working
-    move_dirs: dict[Path, Path] = {}
-    tempDirs: list[Path] = []
-    try:
-        for folder in dirs:
-            # Attempt creating the directory via normal methods, only fall back
-            # to shellMove if UAC or something else stopped it
-            try:
-                folder.makedirs()
-            except: ##: tighten
-                # Failed, try the UAC workaround
-                tmpDir = new_temp_dir(bolt_path=True)
-                tempDirs.append(tmpDir)
-                toMake = []
-                while not folder.exists() and folder != folder.head:
-                    # Need to test against dir == dir.head to prevent
-                    # infinite recursion if the final bit doesn't exist
-                    toMake.append(folder.tail)
-                    folder = folder.head
-                if not toMake:
-                    continue
-                toMake.reverse()
-                move_dirs[toMake[0]] = folder.join(toMake[0])
-                tmpDir.join(*toMake).makedirs()
-        if move_dirs:
-            # fromDirs will only get filled if folder.makedirs() failed
-            shellMove(move_dirs, parent=parent)
-    finally:
-        for tmpDir in tempDirs:
-            cleanup_temp_dir(tmpDir)
+    for folder in dirs:
+        folder.makedirs() # no-op on posix, drive_exists created them

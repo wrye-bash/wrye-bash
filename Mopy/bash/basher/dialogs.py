@@ -24,7 +24,7 @@ import webbrowser
 from dataclasses import dataclass
 from typing import Iterable
 
-from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
+from .. import balt, bass, bolt, bosh, bush, exception, load_order, \
     wrye_text
 from ..balt import DecoratedTreeDict, colors, Link
 from ..bolt import CIstr, FName, GPath, RefrData, text_wrap, \
@@ -41,7 +41,7 @@ from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     showError, showOk, ImageList
 from ..parsers import CsvParser
 from ..update_checker import LatestVersion
-from ..wbtemp import TempDir, cleanup_temp_file, new_temp_file
+from ..wbtemp import cleanup_temp_file, new_temp_file
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -226,19 +226,17 @@ class CreateNewProject(DialogWindow):
                 'There is already a project with that name!') + '\n' + _(
                 'Pick a different name for the project and try again.'))
             return
-        # Create project in temp directory, so we can move it via
-        # Shell commands (UAC workaround) ##: TODO(ut) needed?
-        with TempDir(bolt_path=True) as tmp_dir:
-            tmp_project = tmp_dir.join(projectName)
+        # Create the project in place - don't leave a half-made one behind
+        try:
             # Create the directory first, otherwise some of the file creation
             # calls below may race and cause undebuggable issues otherwise
-            tmp_project.makedirs()
+            projectDir.makedirs()
             for no_ma, (blank, checkbox) in enumerate(self._chck_mods.items()):
                 if checkbox.is_checked:
-                    bosh.modInfos.create_new_mod(blank, dir_path=tmp_project,
+                    bosh.modInfos.create_new_mod(blank, dir_path=projectDir,
                         wanted_masters=[] if no_ma else None)
             if self._check_wizard.is_checked:
-                wizardPath = tmp_project.join('wizard.txt')
+                wizardPath = projectDir.join('wizard.txt')
                 with wizardPath.open('w', encoding='utf-8') as out:
                     out.write(f'; {projectName} BAIN Wizard Installation '
                               f'Script\n')
@@ -248,7 +246,7 @@ class CreateNewProject(DialogWindow):
                         if checkbox.is_checked:
                             out.write(f'SelectPlugin "{blank}"\n')
             if self._check_fomod.is_checked:
-                fomod_path = tmp_project.join('fomod')
+                fomod_path = projectDir.join('fomod')
                 fomod_path.makedirs()
                 module_config_path = fomod_path.join('ModuleConfig.xml')
                 with module_config_path.open('w', encoding='utf-8') as out:
@@ -256,19 +254,12 @@ class CreateNewProject(DialogWindow):
                         'fomod_proj': projectName, 'wb_ver': bass.AppVersion,
                     })
             if self._check_wizard_images.is_checked:
-                tmp_project.join('Wizard Images').makedirs()
+                projectDir.join('Wizard Images').makedirs()
             if self._check_docs.is_checked:
-                tmp_project.join('Docs').makedirs()
-            # HACK: shellMove fails unless it has at least one file - means
-            # creating an empty project fails silently unless we make one
-            # TODO(lo): See if this is still necessary with IFileOperation
-            has_files = bool([*tmp_project.ilist()])
-            if not has_files:
-                tmp_project.join('temp_hack').makedirs()
-            # Move into the target location
-            env.shellMove({tmp_project: projectDir}, parent=self)
-        if not has_files:
-            projectDir.join('temp_hack').rmtree(safety='temp_hack')
+                projectDir.join('Docs').makedirs()
+        except Exception:
+            projectDir.rmtree(safety=projectName)
+            raise
         fn_result_proj = FName(projectDir.stail)
         new_installer_order = 0
         sel_installers = self._parent.GetSelectedInfos()

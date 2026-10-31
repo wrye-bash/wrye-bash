@@ -51,7 +51,7 @@ from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
 from ..exception import BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
-    SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError
+    SaveFileError, SaveHeaderError, SkippedMergeablePluginsError
 from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
     get_ini_type_and_encoding
 from ..load_order import LordDiff, LoadOrder
@@ -3414,11 +3414,9 @@ class BSAInfos(_AFileInfos):
                 bush.game.template_dir, self._aii_name)
             target = self.store_dir.join(self._aii_name)
             try:
-                env.shellCopy({source: target},
-                    allow_undo=True, auto_rename=True)
-            except (PermissionError, CancelError, SkipError):
+                source.copyTo(target, set_time=aiBsaMTime)
+            except PermissionError:
                 return
-            target.mtime = aiBsaMTime
         # Strip any existing redirectors out, then add our own
         bsa_archs = [x_s for x in sArchives.split(',') if
                      (x_s := x.strip()).lower() not in self._bsa_redirectors]

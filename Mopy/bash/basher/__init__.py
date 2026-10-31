@@ -3032,7 +3032,7 @@ class InstallersPanel(BashTab):
                     'Bash', 'Failed OMODs', omod.tail) for omod in failed},
                     parent=self)
             try:
-                env.shellMakeDirs([dirInstallersJoin('Bash', 'Failed OMODs')])
+                env.make_dirs([dirInstallersJoin('Bash', 'Failed OMODs')])
                 _move_omods(omodMoves)
             except (CancelError, SkipError):
                 while askYes(self, _(
