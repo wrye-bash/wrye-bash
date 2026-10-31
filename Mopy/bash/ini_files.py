@@ -24,6 +24,7 @@
 related formats (e.g. simple TOML files)."""
 from __future__ import annotations
 
+import codecs
 import os
 import re
 from collections import Counter
@@ -295,9 +296,6 @@ class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target 
         return self._ci_settings_cache_linenum
 
     # Modify ini file ---------------------------------------------------------
-    def target_ini_exists(self, msg):
-        return self.abs_path.is_file()
-
     @final
     def saveSettings(self, ini_settings, deleted_settings=None, *,
                      skip_sections=frozenset(), line_fmt=False):
@@ -315,7 +313,8 @@ class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target 
             # Note content to be writen (if coming from ini tweaks) must be
             # encodable to out_encoding. temp_path must point to some temporary
             # file created via TempFile or similar API.
-            with open(tmp_inipath, 'w', encoding=self.out_encoding) as tmp_ini:
+            with open(tmp_inipath, 'w', encoding=self.out_encoding,
+                      errors='surrogateescape') as tmp_ini:
                 def _add_remaining_new_items(section_setts=None):
                     section_setts = ini_settings.pop(section, {}) \
                         if section_setts is None else section_setts
@@ -486,8 +485,34 @@ class OBSEIniFile(IniFileInfo):
         return line
 
 class GameIni(IniFileInfo):
-    """Main game ini file. Only use to instantiate bosh.oblivionIni"""
+    """A game INI. The game reads its settings from <Game>Custom.ini, then
+    from <Game>.ini, the first INI with a setting winning - the main INI
+    (bosh.oblivionIni), which we edit, is the latter, except for Starfield.
+    Users edit game INIs in any encoding, BOM and all: we read their (ASCII)
+    settings anyway, keeping the bytes we cannot decode as they are when
+    writing them back, but flag those not in ini_encoding as corrupted."""
     _ini_language: str | None = None
+
+    def __init__(self, fullpath, ini_encoding, custom_ini=None, base_ini=None,
+                 **kwargs):
+        super().__init__(fullpath, ini_encoding, **kwargs)
+        # The INIs the game reads its settings from, the overriding one first
+        self.setting_inis = [*filter(None, (custom_ini, self, base_ini))]
+
+    def read_ini_content(self, as_unicode=True, missing_ok=False):
+        # Custom INIs may well not exist, so we ignore missing_ok
+        content = super().read_ini_content(False, True)
+        if not as_unicode: return content
+        if not content: return [] # empty, missing or unreadable
+        content = content.removeprefix(codecs.BOM_UTF8)
+        try:
+            content = str(content, self.ini_encoding)
+        except UnicodeDecodeError as e:
+            deprint(f'Failed to decode {self.abs_path} using '
+                    f'{self.ini_encoding} - reading its settings anyway')
+            self.isCorrupted = {'ini_full_path': self.abs_path, 'exc': str(e)}
+            content = str(content, self.ini_encoding, 'surrogateescape')
+        return content.splitlines(False)
 
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
@@ -496,10 +521,8 @@ class GameIni(IniFileInfo):
 
     def get_ini_language(self, game_handle_, cached=True) -> str:
         if not cached or self._ini_language is None:
-            self._ini_language = self.getSetting('General', 'sLanguage',
-                game_handle_.Ini.default_game_lang)
+            lang = game_handle_.Ini.default_game_lang
+            for ini in reversed(self.setting_inis): # the first one wins
+                lang = ini.getSetting('General', 'sLanguage', lang)
+            self._ini_language = lang
         return self._ini_language
-
-    def target_ini_exists(self, msg):
-        """Attempt to create the game ini in some scenarios"""
-        return True if super().target_ini_exists(msg) else msg
