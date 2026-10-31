@@ -34,7 +34,7 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from . import EventHandler, Font
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
-    _auto_size_to_wx
+    _auto_size_to_wx, scaled
 from .. import bolt, env
 
 class ListCtrl(_wx.ListCtrl):
@@ -103,6 +103,11 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
         self._header_offset: int | None = None # see GetItemRect
+
+    def _doResize(self):
+        # The mixin guards against its endless update bug by a height in px,
+        # which a scaled scrollbar exceeds - it's the empty lists that spin
+        if self and self.GetSize().height >= scaled(32): super()._doResize()
 
     def GetItemRect(self, index, code=_wx.LIST_RECT_BOUNDS):
         """Unlike HitTest and mouse events, wxGTK counts the header in the y of
