@@ -45,8 +45,7 @@ from .text_components import Label, SearchBar, TextAlignment, TextField, \
 from .top_level_windows import DialogWindow, _TopLevelWin
 ##: Remove GPath, it's for file dialogs
 from ..bolt import GPath, dict_sort, Path, FName
-from ..env import TASK_DIALOG_AVAILABLE, BTN_OK, BTN_CANCEL, TaskDialog, \
-    GOOD_EXITS, BTN_YES, BTN_NO
+from ..env import BTN_OK, BTN_CANCEL, TaskDialog, GOOD_EXITS, BTN_YES, BTN_NO
 from ..exception import ArgumentError
 
 class CopyOrMovePopup(DialogWindow):
@@ -560,7 +559,7 @@ class AMultiListEditor(DialogWindow):
 def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
                   icon_='warning', commandLinks=True, footer='', expander=None,
                   heading=''):
-    """Always guard with TASK_DIALOG_AVAILABLE == True."""
+    """Always guard with TaskDialog is not None."""
     vista_buttons = ((BTN_OK, 'ok'), (BTN_CANCEL, 'cancel')) \
         if vista_buttons is None else vista_buttons
     heading = heading if heading is not None else title
@@ -618,7 +617,7 @@ class AskDialog(DialogWindow):
                 _wx.ICON_ERROR) | (info_ico and _wx.ICON_INFORMATION)
         if do_center:
             style |= _wx.CENTER
-        if TASK_DIALOG_AVAILABLE:
+        if TaskDialog is not None:
             if vista_buttons is None:
                 vista_buttons = []
                 if yes_no:
@@ -680,7 +679,7 @@ class ContinueDialog(DialogWindow):
     @classmethod
     def display_dialog(cls, *args, **kwargs):
         #--Get continue key setting and return
-        if TASK_DIALOG_AVAILABLE:
+        if TaskDialog is not None:
             parent, *args = args
             if not kwargs.pop('show_cancel', False):
                 kwargs['vista_buttons'] = ((BTN_OK, 'ok'),)

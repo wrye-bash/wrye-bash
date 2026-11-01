@@ -25,19 +25,16 @@
 # 64bit/python3.
 """Wrapper for the Win32 task dialog (TaskDialogIndirect), vendored from
 Curtains' taskdialog.py. Windows only - imported by env/windows.py, which
-exports TaskDialog and TASK_DIALOG_AVAILABLE as part of the env API."""
+exports TaskDialog as part of the env API. Raises an AttributeError on import
+if TaskDialogIndirect is not available (before Vista)."""
 
 from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, c_int, \
     c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
     c_wchar_p, sizeof, windll, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
 
-try:
-    _indirect = windll.comctl32.TaskDialogIndirect
-    _indirect.restype = c_void_p
-    TASK_DIALOG_AVAILABLE = True
-except AttributeError:
-    TASK_DIALOG_AVAILABLE = False
+_indirect = windll.comctl32.TaskDialogIndirect
+_indirect.restype = c_void_p
 
 _BUTTONID_OFFSET                 = 1000
 

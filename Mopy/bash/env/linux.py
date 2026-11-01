@@ -37,7 +37,6 @@ from ..bolt import GPath as _GPath
 from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
-from ..exception import EnvError
 
 # API - Constants =============================================================
 FO_MOVE = 1
@@ -55,9 +54,8 @@ if not _STRINGS:
     _deprint('strings not found, EXE version reading will not work. Try '
              'installing binutils')
 
-# TaskDialog is Windows-specific, so stub all this out (and raise if TaskDialog
-# is used, see below)
-TASK_DIALOG_AVAILABLE = False
+# TaskDialog is Windows-specific, so stub all this out
+TaskDialog = None
 
 BTN_OK = BTN_CANCEL = BTN_YES = BTN_NO = None
 GOOD_EXITS = (BTN_OK, BTN_YES)
@@ -325,11 +323,6 @@ def get_case_sensitivity_advice():
               "those utilities are outdated and have known issues."))
 
 # API - Classes ===============================================================
-class TaskDialog(object):
-    def __init__(self, title, heading, content, tsk_buttons=(),
-                 main_icon=None, parenthwnd=None, footer=None):
-        raise EnvError(u'TaskDialog')
-
 def split_launcher_args(launcher_args: str) -> list[str]:
     return shlex.split(launcher_args) # raises a ValueError on unclosed quotes
 

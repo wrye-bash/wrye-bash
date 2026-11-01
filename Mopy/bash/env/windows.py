@@ -54,7 +54,10 @@ from .common import _find_legendary_games, _get_language_paths, \
     _AppLauncher, set_cwd, _parse_version_string
 from .common import file_operation as _default_file_operation
 from ._known_folders import _FOLDERID, _get_known_path
-from ._task_dialog import TASK_DIALOG_AVAILABLE, TaskDialog # re-exported
+try: # re-exported - None if there is no TaskDialogIndirect (before Vista)
+    from ._task_dialog import TaskDialog
+except AttributeError:
+    TaskDialog = None
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath, top_level_files, undefinedPath
 from ..bolt import GPath_no_norm as _GPath_no_norm

@@ -22,8 +22,6 @@
 # =============================================================================
 """This module contains all custom exceptions for Wrye Bash."""
 
-import platform
-
 # NO LOCAL IMPORTS! This has to be importable from any module/package.
 
 class BoltError(Exception):
@@ -263,13 +261,6 @@ class MasterMapError(BoltError):
 class SaveHeaderError(Exception): pass
 
 class InstallerArchiveError(BoltError): pass
-
-class EnvError(Exception):
-    """Attempt to use a feature that is not available on this operating
-    system."""
-    def __init__(self, env_feature):
-        super(EnvError, self).__init__(
-            f"'{env_feature}' is not available on {platform.system()}")
 
 class BPConfigError(Exception):
     """The configuration of the Bashed Patch is invalid in some way. Note that
