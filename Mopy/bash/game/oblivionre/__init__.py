@@ -42,6 +42,9 @@ class _AOblivionReGameInfo(AOblivionGameInfo):
     game_detect_includes = {'OblivionRemastered'} # it's a folder for ORE
     game_detect_excludes = set()
     version_detect_file = 'OblivionRemastered-Win64-Shipping.exe'
+    taglist_dir = 'OblivionRE'
+    loot_dir = loot_game_name = 'Oblivion Remastered'
+    boss_game_name = '' # BOSS does not support Oblivion Remastered
     mods_dir_path = ['OblivionRemastered', 'Content', 'Dev', 'ObvData', 'Data']
     nexusUrl = 'https://www.nexusmods.com/oblivionremastered/'
     nexusName = 'Oblivion Remastered Nexus'

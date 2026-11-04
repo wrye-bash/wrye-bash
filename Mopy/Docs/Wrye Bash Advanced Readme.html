@@ -3283,10 +3283,13 @@ tab. The directories skipped are:
 </ol>
 
 <p>Wrye Bash includes a LOOT masterlist parser. It will try and parse the
-    masterlist and userlist files, if it finds them in the
-    <code>%LOCALAPPDATA%\LOOT\[GAME]</code> directory. If that fails (e.g. if the
-    files are not there) it will fall back to a
-    <code>Mopy\taglists\[GAME]\taglist.yaml</code> file bundled with Wrye Bash.
+    masterlist and userlist files, if it finds them in LOOT's
+    <code>%LOCALAPPDATA%\LOOT\games\[GAME]</code> directory, where [GAME] is
+    the game's LOOT folder name (e.g. <code>Oblivion Remastered</code>) - or
+    in <code>%LOCALAPPDATA%\LOOT\[GAME]</code>, for LOOT versions before
+    0.18. If that fails (e.g. if the files are not there) it will fall back
+    to a <code>Mopy\taglists\[GAME]\taglist.yaml</code> file bundled with
+    Wrye Bash.
     For more information on userlists, masterlists, their syntax, etc., please
     see <a href="https://loot.readthedocs.io/en/stable/app/introduction.html">LOOT's own documentation</a>.</p>
 

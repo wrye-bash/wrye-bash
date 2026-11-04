@@ -372,10 +372,10 @@ class MelConditionsTes4(MelGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
     will be upgraded on dump."""
     def __init__(self):
+        # Either format may lack unused3 (length 20), as xEdit allows
         super().__init__('conditions', MelUnion({
             b'CTDA': _MelCtda(suffix_fmt=['4s'],
-                suffix_elements=['unused3']),
-            # The old (CTDT) format is length 20 and has no suffix
+                suffix_elements=['unused3'], old_suffix_fmts={''}),
             b'CTDT': MelReadOnly(_MelCtda(b'CTDT', suffix_fmt=['4s'],
                 suffix_elements=['unused3'], old_suffix_fmts={''})),
             }, decider=_CtdaDecider()),
