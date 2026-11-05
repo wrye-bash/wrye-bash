@@ -36,6 +36,7 @@ import json
 import os
 import shutil
 import stat
+import uuid
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -47,7 +48,6 @@ from .. import bolt, bass # bass for _AppLauncher.find_launcher
 from ..bolt import deprint, undefinedPath
 from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
-from ..wbtemp import TempDir
 
 try:
     from send2trash import send2trash, TrashPermissionError
@@ -457,12 +457,21 @@ def file_operation(operation: FileOperationType,
                           move=(operation is FileOperationType.MOVE))
 
 def is_case_sensitive(test_path):
-    """Check if the specified path is case-sensitive."""
-    with TempDir(base_dir=test_path) as temp_ci_test:
-        ci_test_path = PPath(temp_ci_test)
+    """Check if the specified path is case-sensitive. This creates a folder
+    in test_path, so it raises if we can't write there."""
+    # Not a TempDir: on Windows, Python < 3.13.13 retries a PermissionError in
+    # mkdtemp os.TMP_MAX (INT_MAX) times, i.e. hangs - see CPython gh-66305
+    ci_test_path = PPath(test_path, f'.wb_case_test_{uuid.uuid4().hex}')
+    ci_test_path.mkdir()
+    try:
         (ci_test_path / '.wb_case_test').touch()
         (ci_test_path / '.Wb_CaSe_TeSt').touch()
         return len(list(ci_test_path.iterdir())) == 2
+    finally:
+        try:
+            shutil.rmtree(ci_test_path)
+        except OSError:
+            deprint(f'Failed to remove {ci_test_path}', traceback=True)
 
 # App launchers ---------------------------------------------------------------
 def set_cwd(func):

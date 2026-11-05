@@ -25,6 +25,7 @@ functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
 from __future__ import annotations
 
+import errno
 import io
 from configparser import ConfigParser, MissingSectionHeaderError
 
@@ -228,7 +229,9 @@ def init_dirs(game_info, opts, init_warnings):
     # files in it, so it also tells us if we can write to it at all
     try:
         data_is_cs = is_case_sensitive(dirs['mods'])
-    except PermissionError as e:
+    except OSError as e:
+        if not isinstance(e, PermissionError) and e.errno != errno.EROFS:
+            raise
         raise BootError(_(
             'Wrye Bash cannot create files in the %(data_folder)s folder '
             '(%(data_path)s), so it could not install mods, change the load '
