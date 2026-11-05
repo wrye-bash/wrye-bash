@@ -25,6 +25,7 @@ are the DataStore singletons and bolt.AFile subclasses populating the data
 stores. bush.game must be set, to properly instantiate the data stores."""
 from __future__ import annotations
 
+import errno
 import os
 import pickle
 import re
@@ -1544,17 +1545,27 @@ def _remove_copy(new: Path):
 
 def _move_aside(paths_per_inf):
     """Rename the existing paths of each info in paths_per_inf to a unique
-    name in their folder and return the (path, aside) pairs per info. If one
-    can't be moved, move back the ones already moved and raise."""
+    name in their folder and return the (path, aside) pairs per info - or
+    remove the ones that can't be renamed, as before. If one can't be moved
+    nor removed, move back the ones already moved and raise."""
     moved_per_inf = {}
     try:
         for inf, paths in paths_per_inf.items():
             moved_per_inf[inf] = moved = []
             for p in paths:
-                if os.path.lexists(p):
-                    aside = p + f'.{os.urandom(4).hex()}.wbtmp' # Path.__add__
+                if not os.path.lexists(p): continue
+                aside = p + f'.{os.urandom(2).hex()}.wbtmp' # Path.__add__
+                try:
                     os.replace(p, aside)
-                    moved.append((p, aside))
+                except OSError as e:
+                    # MO2's USVFS fails renames across volumes (EXDEV), and
+                    # the longer name may not fit in MAX_PATH (winerror 206
+                    # is an ENOENT)
+                    if e.errno not in (errno.EXDEV, errno.ENOENT,
+                                       errno.ENAMETOOLONG): raise
+                    p.remove()
+                    continue
+                moved.append((p, aside))
     except OSError:
         for moved in moved_per_inf.values():
             _move_back(moved)
