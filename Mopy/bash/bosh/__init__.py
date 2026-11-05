@@ -1652,30 +1652,29 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
              rename_paths]
     did_run = {p: ran.get(p[0]) == p[1] for p in pairs}
     # decide for every pair before reverting any of them
-    moved = {} if copy else {p: did_run[p] and _moved(*p, pre_ids, chained)
-                             for p in pairs}
+    done = {p: did_run[p] and (_copied(*p, pre_ids) if copy else _moved(
+        *p, pre_ids, chained)) for p in pairs}
     # a chained batch is all or nothing - else Data could end up without
     # Oblivion.esm
-    keep = keep and (not chained or all(moved.values()))
+    keep = keep and (not chained or all(done.values()))
+    kept = set() # the copies of the infos that made it - twins share cosaves
+    for rename_paths, *_ in paths_per_file.values():
+        if copy and keep and all(done[p] for p in rename_paths):
+            kept.update(new for _old, new in rename_paths)
     # later infos may have moved into the sources of earlier ones
     for inf, (rename_paths, new_name, *_inf_dir) in reversed(
             [*paths_per_file.items()]):
-        if keep:
-            if not copy:
-                if all(moved[p] for p in rename_paths):
-                    continue
-            elif all(did_run[p] and _copied(*p, pre_ids) for p in
-                     rename_paths):
-                continue # e.g. the user pressed Skip for another file
+        if keep and all(done[p] for p in rename_paths):
+            continue # e.g. the user pressed Skip for another file
         deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
         del paths_per_file[inf]
         if copy:
             # A copy that may not have made it - and destinations that
             # existed before may or may not have been replaced. Remove the
             # ones we created - never the sources, those are the user's files
-            # (and backups)
+            # (and backups) - nor the copies of the infos that made it
             for p in rename_paths:
-                if did_run[p] and p[1] not in pre_ids:
+                if did_run[p] and p[1] not in pre_ids and p[1] not in kept:
                     _remove_copy(p[1])
             continue
         # When using moveTo I would get "WindowsError:[Error 32]The process
@@ -1685,12 +1684,12 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
         # renamed! Error handling is still a WIP
         for p in rename_paths:
             old, new = p
-            if moved[p]:
+            if done[p]:
                 if old.exists(): continue # another pair moved into it
                 new.moveTo(old, check_exist=False) # some cosave move failed
                 # for the infos sharing the pair - like a save and its
                 # disabled twin their cosaves
-                moved[p] = False
+                done[p] = False
             elif did_run[p] and new not in pre_ids and new.exists() and \
                     _same_file(old, pre_ids):
                 # a failed move across volumes may have left a copy
