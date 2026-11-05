@@ -1551,11 +1551,13 @@ def _move_aside(paths_per_inf):
     be moved, put back the ones already moved and raise."""
     moved_per_inf = {}
     to_remove = []
+    seen = set() # a save and its disabled twin share their cosaves
     try:
         for inf, paths in paths_per_inf.items():
             moved_per_inf[inf] = moved = []
             for p in paths:
-                if not os.path.lexists(p): continue
+                if p in seen or not os.path.lexists(p): continue
+                seen.add(p)
                 aside = p + f'.{os.urandom(2).hex()}.wbtmp' # Path.__add__
                 try:
                     os.replace(p, aside)
