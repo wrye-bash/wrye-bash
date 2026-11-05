@@ -1763,8 +1763,12 @@ class DataStore(DataDict):
                     stale_path.remove()
                 except OSError:
                     deprint(f'Failed to remove {stale_path}', traceback=True)
+        made = {new_name for _rp, new_name, _d in paths_per_file.values()}
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
         inst_dupl = isinstance(insert_after, int) ##: moveArchives must be moved
+        if insert_after and not inst_dupl: # not for the copies that failed
+            insert_after = FNDict((k, v) for k, v in insert_after.items()
+                                  if k in made)
         for inf, (rename_paths, new_name, infdir) in paths_per_file.items():
             set_ghost = (ap := getattr(inf, 'abs_path', None)) and \
                         all_rename_paths[ap].cext == '.ghost'
@@ -1783,10 +1787,12 @@ class DataStore(DataDict):
                 if set_ghost: # do this after set_path_keys (restore backup)
                     inf.is_ghost = True # we need to mirror get_rename_paths
         for new, flgs in (force_flags or {}).items():
-            self[new].set_plugin_flags(flgs)
+            if new in made: # else self[new] may be the file we copied onto
+                self[new].set_plugin_flags(flgs)
         if set_mtime: # only set in self.try_set_version/restore backup
             for k, v in set_mtime.items():
-                self[k].setmtime(v)
+                if k in made:
+                    self[k].setmtime(v)
             if not copy_inf and len(renames_di := rd_ren.renames) == 2:
                 move_to = renames_di.pop(bush.game.master_file)
                 renames_di[next(iter(renames_di))] = move_to
