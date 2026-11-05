@@ -1621,19 +1621,23 @@ def _moved(old: Path, new: Path, pre_ids) -> bool:
     return new.exists() and (new not in pre_ids or not (
         _same_file(new, pre_ids) or _same_file(old, pre_ids)))
 
-def _check_renamed(paths_per_file, pre_ids, chained, *, copy=False,
+def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
                    keep=True):
     """The file operation of rename_operation failed: keep the infos that
-    made it - unless keep is False - and revert the rest. pre_ids holds the
-    paths of the batch that existed before the file operation: copies may
-    not remove them, and a move into them only went through if they are
-    another file now (see _moved). chained are the _chained_paths of the
-    whole batch - not of what is left of it in paths_per_file, if we were
-    called before."""
+    made it - unless keep is False - and revert the rest. ran is what the
+    file operation got: twins renumbered apart share the source of their
+    cosaves, so it got only one of their pairs - the others never ran.
+    pre_ids holds the paths in ran that existed before the file operation:
+    copies may not remove them, and a move into them only went through if
+    they are another file now (see _moved). chained are the _chained_paths
+    of the whole batch - not of what is left of it in paths_per_file, if we
+    were called before."""
     pairs = [p for rename_paths, *_ in paths_per_file.values() for p in
              rename_paths]
+    did_run = {p: ran.get(p[0]) == p[1] for p in pairs}
     # decide for every pair before reverting any of them
-    moved = {} if copy else {p: _moved(*p, pre_ids) for p in pairs}
+    moved = {} if copy else {p: did_run[p] and _moved(*p, pre_ids) for p in
+                             pairs}
     # a chained batch is all or nothing - else Data could end up without
     # Oblivion.esm
     keep = keep and (not chained or all(moved.values()))
@@ -1647,7 +1651,8 @@ def _check_renamed(paths_per_file, pre_ids, chained, *, copy=False,
                         if old not in chained: # another pair moved into it
                             old.remove() #(241) clear paths left behind
                     continue
-            elif all(_copied(*p, pre_ids) for p in rename_paths):
+            elif all(did_run[p] and _copied(*p, pre_ids) for p in
+                     rename_paths):
                 continue # e.g. the user pressed Skip for another file
         deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
         del paths_per_file[inf]
@@ -1656,9 +1661,9 @@ def _check_renamed(paths_per_file, pre_ids, chained, *, copy=False,
             # existed before may or may not have been replaced. Remove the
             # ones we created - never the sources, those are the user's files
             # (and backups)
-            for _old, new in rename_paths:
-                if new not in pre_ids:
-                    _remove_copy(new)
+            for p in rename_paths:
+                if did_run[p] and p[1] not in pre_ids:
+                    _remove_copy(p[1])
             continue
         # When using moveTo I would get "WindowsError:[Error 32]The process
         # cannot access ..." -  the code below was reverting the changes.
@@ -1911,20 +1916,21 @@ class DataStore(DataDict):
                                 if todo: continue
                                 checked = True
                                 break
-                            _check_renamed(paths_per_file, pre_ids, chained,
-                                           copy=copy_inf)
+                            _check_renamed(paths_per_file,
+                                all_rename_paths, pre_ids, chained,
+                                copy=copy_inf)
                             checked = True
                             raise
-                        _check_renamed(paths_per_file, pre_ids, chained,
-                                       copy=copy_inf)
+                        _check_renamed(paths_per_file, all_rename_paths,
+                                       pre_ids, chained, copy=copy_inf)
                     checked = True
                     break
             except BaseException: # e.g. ifileoperation's FileOperatorError,
                 # or from the File in Use dialog: we can't tell what it means,
                 # so we undo it all
                 if not checked:
-                    _check_renamed(paths_per_file, pre_ids, chained,
-                                   copy=copy_inf, keep=False)
+                    _check_renamed(paths_per_file, all_rename_paths,
+                                   pre_ids, chained, copy=copy_inf, keep=False)
                     checked = True
                 raise
             finally:
