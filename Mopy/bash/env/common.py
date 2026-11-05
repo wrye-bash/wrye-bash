@@ -463,8 +463,9 @@ def is_case_sensitive(test_path):
     """Check if the specified path is case-sensitive. This creates a folder
     in test_path, so it raises if we can't write there."""
     # Not a TempDir: on Windows, Python < 3.13.13 retries a PermissionError in
-    # mkdtemp os.TMP_MAX (INT_MAX) times, i.e. hangs - see CPython gh-66305
-    ci_test_path = PPath(test_path, f'.wb_case_test_{uuid.uuid4().hex}')
+    # mkdtemp os.TMP_MAX (INT_MAX) times, i.e. hangs - see CPython gh-66305.
+    # Keep the name short, as the probe paths must fit in MAX_PATH
+    ci_test_path = PPath(test_path, f'.wb_case_{uuid.uuid4().hex[:8]}')
     ci_test_path.mkdir()
     try:
         (ci_test_path / '.wb_case_test').touch()
