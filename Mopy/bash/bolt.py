@@ -1439,21 +1439,27 @@ def popen_common(popen_cmd, **kwargs):
 def clearReadOnly(dirPath):
     """Recursively clear the read-only flag of the contents of dirPath: the
     read-only attribute on Windows (/S: recursively, /D: folders too), the
-    missing owner write permission on POSIX - e.g. read-only folders an
-    archive came with, whose files we could not delete otherwise."""
+    missing owner permissions on POSIX - read and write, plus execute for
+    folders - e.g. read-only folders an archive came with, whose files we
+    could not delete otherwise, or files we could not read."""
     if os_name == 'nt':
         cmd = fr'attrib -R "{dirPath}\*" /S /D'
         subprocess.call(cmd, startupinfo=startupinfo)
         return
+    # top-down, so folders are fixed before os.walk lists their contents
     for root, dirs, files in os.walk(dirPath):
         for entry in (*dirs, *files):
             entry = os.path.join(root, entry)
             try: # don't chmod what symlinks point to
-                if not os.path.islink(entry) and not (
-                        (st_mode := os.stat(entry).st_mode) & stat.S_IWUSR):
-                    os.chmod(entry, stat.S_IMODE(st_mode) | stat.S_IWUSR)
+                if os.path.islink(entry): continue
+                st_mode = os.stat(entry).st_mode
+                need = stat.S_IRWXU if stat.S_ISDIR(st_mode) else (
+                    stat.S_IRUSR | stat.S_IWUSR)
+                if st_mode & need != need:
+                    os.chmod(entry, stat.S_IMODE(st_mode) | need)
             except OSError:
-                deprint(f'Failed to make {entry} writable', traceback=True)
+                deprint(f'Failed to fix the permissions of {entry}',
+                        traceback=True)
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
