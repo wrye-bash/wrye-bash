@@ -1058,8 +1058,10 @@ class Path(os.PathLike):
         try:
             _replace()
         except PermissionError:
-            # A new file can't be read-only - clearRO would hide the error
-            if not self.exists(): raise
+            # Only a read-only file can be cleared and retried - on Windows. A
+            # new file can't be read-only, and on POSIX replacing a file is up
+            # to its folder's permissions
+            if os_name != 'nt' or not self.exists(): raise
             self.clearRO()
             _replace()
         # Do *not* call cleanup_temp_file here! This method needs to work with
