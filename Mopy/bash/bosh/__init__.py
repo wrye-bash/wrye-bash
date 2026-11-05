@@ -28,6 +28,7 @@ from __future__ import annotations
 import os
 import pickle
 import re
+import stat
 import sys
 import time
 from collections import defaultdict, deque, OrderedDict
@@ -1510,25 +1511,59 @@ class ScreenInfo(AFileInfo):
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
 #------------------------------------------------------------------------------
+def _copied(src: Path, dst: Path, new_dsts) -> bool:
+    """Whether copying src to dst went through, as far as we can tell: dst
+    did not exist before and is now a file with the size and modification
+    time of src - both file operation backends keep it. We can't tell for
+    folders, nor for files that the copy may or may not have replaced."""
+    if dst not in new_dsts: return False
+    try:
+        src_stat, dst_stat = os.stat(src), os.stat(dst)
+    except OSError:
+        return False
+    return stat.S_ISREG(dst_stat.st_mode) and (
+        dst_stat.st_size == src_stat.st_size) and abs( # FAT: two seconds
+        dst_stat.st_mtime - src_stat.st_mtime) <= 2
+
+def _remove_copy(new: Path):
+    """Remove a destination that a failed copy created - best effort."""
+    try:
+        if not new.is_dir():
+            new.remove()
+            return
+        try:
+            new.rmtree(safety=new.stail)
+        except OSError: # copies keep folder permissions, e.g. r-x on POSIX
+            if os_name != 'nt': # clearReadOnly only does the contents
+                os.chmod(new, stat.S_IMODE(os.stat(new).st_mode) |
+                         stat.S_IRWXU)
+            bolt.clearReadOnly(new)
+            new.rmtree(safety=new.stail)
+    except OSError:
+        deprint(f'Failed to remove {new}', traceback=True)
+
 def _check_renamed(paths_per_file, new_dsts=None):
     """The file operation of rename_operation failed: keep the infos that
     made it and revert the rest. For copies new_dsts holds the destinations
     that did not exist before the copy - the only files we may remove."""
     for inf, (rename_paths, new_name, *_inf_dir) in [*paths_per_file.items()]:
-        if new_dsts is None and all(p[1].exists() for p in rename_paths):
-            for p in rename_paths:
-                p[0].remove() #(241) clear paths left behind (needed?)
-            continue
+        if new_dsts is None: # a move
+            if all(p[1].exists() for p in rename_paths):
+                for p in rename_paths:
+                    p[0].remove() #(241) clear paths left behind (needed?)
+                continue
+        elif all(_copied(*p, new_dsts) for p in rename_paths):
+            continue # e.g. the user pressed Skip for another file
         deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
         del paths_per_file[inf]
         if new_dsts is not None:
-            # A copy: we can't tell which ones made it, as destinations may
-            # have existed before. Remove the ones we created - never the
-            # sources, those are the user's files (and backups)
+            # A copy that may not have made it - and destinations that
+            # existed before may or may not have been replaced. Remove the
+            # ones we created - never the sources, those are the user's files
+            # (and backups)
             for _old, new in rename_paths:
                 if new in new_dsts:
-                    if new.is_dir(): new.rmtree(safety=new.stail)
-                    else: new.remove()
+                    _remove_copy(new)
             continue
         # When using moveTo I would get "WindowsError:[Error 32]The process
         # cannot access ..." -  the code below was reverting the changes.
@@ -1756,6 +1791,10 @@ class DataStore(DataDict):
                         _check_renamed(paths_per_file, new_dsts)
                         raise
                     _check_renamed(paths_per_file, new_dsts)
+                except Exception: # e.g. ifileoperation's FileOperatorError
+                    if copy_inf: # roll back the copies
+                        _check_renamed(paths_per_file, new_dsts)
+                    raise
                 break
         for inf in paths_per_file: # the infos that made it
             for stale_path in del_after_copy[inf]:
