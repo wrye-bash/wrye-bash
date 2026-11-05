@@ -1800,8 +1800,12 @@ class DataStore(DataDict):
             new_dsts = {d for d in all_rename_paths.values() if not d.exists()
                         } if copy_inf else None
             # move the satellites to delete aside, so that a failed copy can
-            # put them back - raises if one can't be moved, like removing it
-            stale_aside = _move_aside(del_after_copy)
+            # put them back - raises if one can't be moved, like removing it.
+            # Not the ones another info copies: tags files are per body, so
+            # A.esp's 'A Copy.txt' may be the tags file of 'A Copy.esm'
+            stale_aside = _move_aside({inf: [p for p in stale if
+                p not in all_rename_paths] for inf, stale in
+                del_after_copy.items()})
             try:
                 while try_once:
                     try:
