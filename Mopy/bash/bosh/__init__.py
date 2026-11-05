@@ -1579,18 +1579,40 @@ def _move_back(moved):
         except OSError:
             deprint(f'Failed to move {aside} back to {p}', traceback=True)
 
+def _chained_paths(paths_per_file):
+    """The paths that are both a source and a destination of the batch, like
+    Oblivion.esm (and its backups) in the esm swap."""
+    pairs = [p for rename_paths, *_ in paths_per_file.values() for p in
+             rename_paths]
+    return {old for old, _new in pairs} & {new for _old, new in pairs}
+
+def _moved(old: Path, new: Path, chained) -> bool:
+    """Whether moving old to new went through, as far as we can tell: new
+    exists - but a chained destination existed before the move, so for those
+    old must be gone too."""
+    return new.exists() and (new not in chained or not old.exists())
+
 def _check_renamed(paths_per_file, new_dsts=None):
     """The file operation of rename_operation failed: keep the infos that
     made it and revert the rest. For copies new_dsts holds the destinations
     that did not exist before the copy - the only files we may remove."""
-    for inf, (rename_paths, new_name, *_inf_dir) in [*paths_per_file.items()]:
-        if new_dsts is None: # a move
-            if all(p[1].exists() for p in rename_paths):
-                for p in rename_paths:
-                    p[0].remove() #(241) clear paths left behind (needed?)
-                continue
-        elif all(_copied(*p, new_dsts) for p in rename_paths):
-            continue # e.g. the user pressed Skip for another file
+    chained = _chained_paths(paths_per_file) if new_dsts is None else set()
+    # a chained batch is all or nothing - else Data could end up without
+    # Oblivion.esm
+    keep = not chained or all(_moved(*p, chained) for rename_paths, *_ in
+                              paths_per_file.values() for p in rename_paths)
+    # later infos may have moved into the sources of earlier ones
+    for inf, (rename_paths, new_name, *_inf_dir) in reversed(
+            [*paths_per_file.items()]):
+        if keep:
+            if new_dsts is None: # a move
+                if all(_moved(*p, chained) for p in rename_paths):
+                    for old, _new in rename_paths:
+                        if old not in chained: # another pair moved into it
+                            old.remove() #(241) clear paths left behind
+                    continue
+            elif all(_copied(*p, new_dsts) for p in rename_paths):
+                continue # e.g. the user pressed Skip for another file
         deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
         del paths_per_file[inf]
         if new_dsts is not None:
@@ -1608,10 +1630,10 @@ def _check_renamed(paths_per_file, new_dsts=None):
         # except if a save is locked and user presses Skip - so cosaves are
         # renamed! Error handling is still a WIP
         for old, new in rename_paths:
-            if (nex := new.exists()) and not (oex := old.exists()):
-                # some cosave move failed, restore files
+            if not _moved(old, new, chained): continue
+            if not old.exists(): # some cosave move failed, restore files
                 new.moveTo(old, check_exist=False)  # just checked
-            elif nex and oex:
+            elif old not in chained: # else another pair moved into it
                 # move copies then deletes, so the delete part failed
                 new.remove()
 
@@ -1818,23 +1840,29 @@ class DataStore(DataDict):
                 p not in all_rename_paths] for inf, stale in
                 del_after_copy.items()})
             try:
+                todo = all_rename_paths
                 while try_once:
                     try:
                         (env.shellCopy if copy_inf else env.shellMove)(
-                            all_rename_paths, ren_parent)
+                            todo, ren_parent)
                     except (CancelError, OSError) as e:
                         ##:(#241)  only for swapping Oblivion esm, duh - was
                         # PermissionError, occurred if SHFileOperation isn't
                         # called (now we use IFileOperation anyway) -
                         # CancelError? Test!
                         if try_once is not True:
-                            old, new = next(iter(all_rename_paths.items()))
+                            old, new = next(iter(todo.items()))
                             msg = '\n'.join(self._retry_msg) % {'old': old,
                                 'new': new,
                                 'xedit_name': bush.game.Xe.full_name}
                             if isinstance(e, OSError) and try_once(
                                     msg, title=_('File in Use')):
-                                continue
+                                if not copy_inf: # retry what did not move
+                                    chained = _chained_paths(paths_per_file)
+                                    todo = {o: n for o, n in todo.items() if
+                                            not _moved(o, n, chained)}
+                                if todo: continue
+                                break
                             _check_renamed(paths_per_file, new_dsts)
                             raise
                         _check_renamed(paths_per_file, new_dsts)
