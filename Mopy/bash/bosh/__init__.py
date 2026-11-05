@@ -1542,6 +1542,32 @@ def _remove_copy(new: Path):
     except OSError:
         deprint(f'Failed to remove {new}', traceback=True)
 
+def _move_aside(paths_per_inf):
+    """Rename the existing paths of each info in paths_per_inf to a unique
+    name in their folder and return the (path, aside) pairs per info. If one
+    can't be moved, move back the ones already moved and raise."""
+    moved_per_inf = {}
+    try:
+        for inf, paths in paths_per_inf.items():
+            moved_per_inf[inf] = moved = []
+            for p in paths:
+                if os.path.lexists(p):
+                    aside = p + f'.{os.urandom(4).hex()}.wbtmp' # Path.__add__
+                    os.replace(p, aside)
+                    moved.append((p, aside))
+    except OSError:
+        for moved in moved_per_inf.values():
+            _move_back(moved)
+        raise
+    return moved_per_inf
+
+def _move_back(moved):
+    for p, aside in moved:
+        try:
+            os.replace(aside, p)
+        except OSError:
+            deprint(f'Failed to move {aside} back to {p}', traceback=True)
+
 def _check_renamed(paths_per_file, new_dsts=None):
     """The file operation of rename_operation failed: keep the infos that
     made it and revert the rest. For copies new_dsts holds the destinations
@@ -1773,35 +1799,46 @@ class DataStore(DataDict):
         if all_rename_paths:
             new_dsts = {d for d in all_rename_paths.values() if not d.exists()
                         } if copy_inf else None
-            while try_once:
-                try:
-                    (env.shellCopy if copy_inf else env.shellMove)(
-                        all_rename_paths, ren_parent)
-                except (CancelError, OSError) as e:
-                    ##:(#241)  only for swapping Oblivion esm, duh - was
-                    # PermissionError, occurred if SHFileOperation isn't called
-                    # (now we use IFileOperation anyway) - CancelError? Test!
-                    if try_once is not True:
-                        old, new = next(iter(all_rename_paths.items()))
-                        msg = '\n'.join(self._retry_msg) % {'old': old,
-                            'new': new, 'xedit_name': bush.game.Xe.full_name}
-                        if isinstance(e, OSError) and try_once(
-                                msg, title=_('File in Use')):
-                            continue
+            # move the satellites to delete aside, so that a failed copy can
+            # put them back - raises if one can't be moved, like removing it
+            stale_aside = _move_aside(del_after_copy)
+            try:
+                while try_once:
+                    try:
+                        (env.shellCopy if copy_inf else env.shellMove)(
+                            all_rename_paths, ren_parent)
+                    except (CancelError, OSError) as e:
+                        ##:(#241)  only for swapping Oblivion esm, duh - was
+                        # PermissionError, occurred if SHFileOperation isn't
+                        # called (now we use IFileOperation anyway) -
+                        # CancelError? Test!
+                        if try_once is not True:
+                            old, new = next(iter(all_rename_paths.items()))
+                            msg = '\n'.join(self._retry_msg) % {'old': old,
+                                'new': new,
+                                'xedit_name': bush.game.Xe.full_name}
+                            if isinstance(e, OSError) and try_once(
+                                    msg, title=_('File in Use')):
+                                continue
+                            _check_renamed(paths_per_file, new_dsts)
+                            raise
                         _check_renamed(paths_per_file, new_dsts)
+                    except Exception: # e.g. ifileoperation's FileOperatorError
+                        if copy_inf: # roll back the copies
+                            _check_renamed(paths_per_file, new_dsts)
                         raise
-                    _check_renamed(paths_per_file, new_dsts)
-                except Exception: # e.g. ifileoperation's FileOperatorError
-                    if copy_inf: # roll back the copies
-                        _check_renamed(paths_per_file, new_dsts)
-                    raise
-                break
-        for inf in paths_per_file: # the infos that made it
-            for stale_path in del_after_copy[inf]:
-                try:
-                    stale_path.remove()
-                except OSError:
-                    deprint(f'Failed to remove {stale_path}', traceback=True)
+                    break
+            finally: # the infos left in paths_per_file made it
+                for inf, moved in stale_aside.items():
+                    if inf not in paths_per_file:
+                        _move_back(moved)
+                        continue
+                    for _p, aside in moved:
+                        try:
+                            aside.remove()
+                        except OSError:
+                            deprint(f'Failed to remove {aside}',
+                                    traceback=True)
         made = {new_name for _rp, new_name, _d in paths_per_file.values()}
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
         inst_dupl = isinstance(insert_after, int) ##: moveArchives must be moved
