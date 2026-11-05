@@ -1614,12 +1614,28 @@ def _same_file(p, pre_ids) -> bool:
     except OSError:
         return False
 
-def _moved(old: Path, new: Path, pre_ids) -> bool:
+def _holds(p, fid) -> bool:
+    """Whether p has the size and modification time of the file fid is the
+    _file_id of - moves keep them, give or take FAT's two seconds."""
+    try:
+        _dev, _ino, size, mtime_ns = _file_id(p)
+    except OSError:
+        return False
+    return fid is not None and size == fid[2] and abs(
+        mtime_ns - fid[3]) <= 2_000_000_000
+
+def _moved(old: Path, new: Path, pre_ids, chained) -> bool:
     """Whether moving old to new went through, as far as we can tell: new
-    exists - and if it existed before the move, it is another file now, and
-    so is old, if not gone: a later pair may have moved into it."""
-    return new.exists() and (new not in pre_ids or not (
-        _same_file(new, pre_ids) or _same_file(old, pre_ids)))
+    exists and old is gone - its file can only have gone to new. A move
+    across volumes copies then deletes, so a failed one may leave both, the
+    copy maybe partial: not done - unless a later pair of the batch moved
+    into old (chained). Then new must hold old's file: be another file than
+    before, as must old, with the size and mtime old had. File IDs and
+    devices alone can change (FAT, network drives, remounts)."""
+    if not new.exists(): return False
+    if not old.exists(): return True
+    return old in chained and not (_same_file(new, pre_ids) or _same_file(
+        old, pre_ids)) and _holds(new, pre_ids.get(old))
 
 def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
                    keep=True):
@@ -1627,17 +1643,17 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
     made it - unless keep is False - and revert the rest. ran is what the
     file operation got: twins renumbered apart share the source of their
     cosaves, so it got only one of their pairs - the others never ran.
-    pre_ids holds the paths in ran that existed before the file operation:
-    copies may not remove them, and a move into them only went through if
-    they are another file now (see _moved). chained are the _chained_paths
-    of the whole batch - not of what is left of it in paths_per_file, if we
-    were called before."""
+    pre_ids holds the paths in ran that existed before the file operation
+    and their _file_id: copies may not remove them, nor the moves that
+    failed (see _moved). chained are the _chained_paths of the whole batch -
+    not of what is left of it in paths_per_file, if we were called
+    before."""
     pairs = [p for rename_paths, *_ in paths_per_file.values() for p in
              rename_paths]
     did_run = {p: ran.get(p[0]) == p[1] for p in pairs}
     # decide for every pair before reverting any of them
-    moved = {} if copy else {p: did_run[p] and _moved(*p, pre_ids) for p in
-                             pairs}
+    moved = {} if copy else {p: did_run[p] and _moved(*p, pre_ids, chained)
+                             for p in pairs}
     # a chained batch is all or nothing - else Data could end up without
     # Oblivion.esm
     keep = keep and (not chained or all(moved.values()))
@@ -1647,9 +1663,6 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
         if keep:
             if not copy:
                 if all(moved[p] for p in rename_paths):
-                    for old, _new in rename_paths:
-                        if old not in chained: # another pair moved into it
-                            old.remove() #(241) clear paths left behind
                     continue
             elif all(did_run[p] and _copied(*p, pre_ids) for p in
                      rename_paths):
@@ -1670,17 +1683,18 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
         # With shellMove I mostly get CancelError so below not needed -
         # except if a save is locked and user presses Skip - so cosaves are
         # renamed! Error handling is still a WIP
-        for old, new in rename_paths:
-            if not moved[(old, new)]: continue
-            if not old.exists(): # some cosave move failed, restore files
-                new.moveTo(old, check_exist=False)  # just checked
-            elif old not in chained: # else another pair moved into it
-                # move copies then deletes, so the delete part failed
-                new.remove()
-            else: continue
-            # for the infos sharing the pair - like a save and its disabled
-            # twin their cosaves
-            moved[(old, new)] = False
+        for p in rename_paths:
+            old, new = p
+            if moved[p]:
+                if old.exists(): continue # another pair moved into it
+                new.moveTo(old, check_exist=False) # some cosave move failed
+                # for the infos sharing the pair - like a save and its
+                # disabled twin their cosaves
+                moved[p] = False
+            elif did_run[p] and new not in pre_ids and new.exists() and \
+                    _same_file(old, pre_ids):
+                # a failed move across volumes may have left a copy
+                _remove_copy(new)
 
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
@@ -1912,7 +1926,7 @@ class DataStore(DataDict):
                                     msg, title=_('File in Use')):
                                 if not copy_inf: # retry what did not move
                                     todo = {o: n for o, n in todo.items() if
-                                            not _moved(o, n, pre_ids)}
+                                        not _moved(o, n, pre_ids, chained)}
                                 if todo: continue
                                 checked = True
                                 break
