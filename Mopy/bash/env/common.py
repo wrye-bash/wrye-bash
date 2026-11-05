@@ -239,7 +239,10 @@ def _get_language_paths(language_dirs: list[str],
 
 # API - Functions =============================================================
 def clear_read_only(filepath): # copied from bolt
-    os.chmod(f'{filepath}', stat.S_IWUSR | stat.S_IWOTH)
+    """Clear the read-only attribute of filepath - Windows only, see
+    bolt.Path.clearRO."""
+    if os.name == 'nt':
+        os.chmod(f'{filepath}', stat.S_IWUSR | stat.S_IWOTH)
 
 def get_game_version_fallback(test_path, ws_info):
     """A fallback method of determining the game version for Windows Store

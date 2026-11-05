@@ -127,7 +127,10 @@ class LoFile(AFile):
                 bolt.deprint(f'Failed to back up {apath}', traceback=True)
         try:
             self.__write_plugins(*args)
-        except OSError:
+        except PermissionError:
+            # a read-only file: clear its attribute and try again - a missing
+            # file can't be read-only, chmod'ing it would hide the error
+            if not apath.exists(): raise
             env.clear_read_only(apath)
             self.__write_plugins(*args)
         if mark_unchanged:

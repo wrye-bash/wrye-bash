@@ -1171,15 +1171,19 @@ class Path(os.PathLike):
     #--File system manipulation
     @staticmethod
     def _onerror(func,path,exc_info):
-        """shutil error handler: remove RO flag"""
-        if not os.access(path,os.W_OK):
+        """shutil error handler: remove RO flag (Windows - see clearRO)."""
+        if os_name == 'nt' and not os.access(path,os.W_OK):
             os.chmod(path,stat.S_IWUSR|stat.S_IWOTH)
             func(path)
         else:
             raise
 
     def clearRO(self): ##: we need an (env) decorator for this one
-        """Clears RO flag on self"""
+        """Clears the read-only attribute of self (and its contents) - on
+        Windows only: on POSIX deleting, renaming and replacing a file are up
+        to its folder's permissions, while S_IWUSR | S_IWOTH as a mode would
+        just make it unreadable."""
+        if os_name != 'nt': return
         if not self.is_dir():
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
@@ -1433,18 +1437,23 @@ def popen_common(popen_cmd, **kwargs):
                             startupinfo=startupinfo, **kwargs)
 
 def clearReadOnly(dirPath):
-    """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
+    """Recursively clear the read-only flag of the contents of dirPath: the
+    read-only attribute on Windows (/S: recursively, /D: folders too), the
+    missing owner write permission on POSIX - e.g. read-only folders an
+    archive came with, whose files we could not delete otherwise."""
     if os_name == 'nt':
         cmd = fr'attrib -R "{dirPath}\*" /S /D'
         subprocess.call(cmd, startupinfo=startupinfo)
         return
-    # elif platform.system() == u'Darwin':
-    #     cmd = f'chflags -R nouchg {dirPath}'
-    else: # https://stackoverflow.com/a/36285142/281545 - last & needed on mac
-        cmds = (
-            fr'find "{dirPath}" -not -executable -exec chmod a=rw {{}} \; &',
-            fr'find "{dirPath}" -executable -exec chmod a=rwx {{}} \; &')
-    for cmd in cmds: os.system(cmd) # returns 0 with the final &, 256 otherwise
+    for root, dirs, files in os.walk(dirPath):
+        for entry in (*dirs, *files):
+            entry = os.path.join(root, entry)
+            try: # don't chmod what symlinks point to
+                if not os.path.islink(entry) and not (
+                        (st_mode := os.stat(entry).st_mode) & stat.S_IWUSR):
+                    os.chmod(entry, stat.S_IMODE(st_mode) | stat.S_IWUSR)
+            except OSError:
+                deprint(f'Failed to make {entry} writable', traceback=True)
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
