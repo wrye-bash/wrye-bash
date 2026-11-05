@@ -1656,6 +1656,10 @@ def _check_renamed(paths_per_file, pre_dsts, chained, *, copy=False,
             elif old not in chained: # else another pair moved into it
                 # move copies then deletes, so the delete part failed
                 new.remove()
+            else: continue
+            # for the infos sharing the pair - like a save and its disabled
+            # twin their cosaves
+            moved[(old, new)] = False
 
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
