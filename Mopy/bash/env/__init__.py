@@ -33,7 +33,7 @@ from typing import Any
 from .common import *
 from .common import file_operation as _default_file_operation
 from ..bolt import Path, deprint, empty_path
-from ..exception import NonExistentDriveError
+from ..exception import CancelError, NonExistentDriveError
 
 _TShellWindow = '_AComponent | _Window | None'
 _ConfirmationPrompt = Callable[[Any, str, str], bool] | None
