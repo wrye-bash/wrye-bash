@@ -464,12 +464,13 @@ def is_case_sensitive(test_path):
     in test_path, so it raises if we can't write there."""
     # Not a TempDir: on Windows, Python < 3.13.13 retries a PermissionError in
     # mkdtemp os.TMP_MAX (INT_MAX) times, i.e. hangs - see CPython gh-66305.
-    # Keep the name short, as the probe paths must fit in MAX_PATH
-    ci_test_path = PPath(test_path, f'.wb_case_{uuid.uuid4().hex[:8]}')
+    # Keep the names short, as the probe paths must fit in MAX_PATH: these
+    # leave Data as many characters as TempDir did
+    ci_test_path = PPath(test_path, f'.wbci{uuid.uuid4().hex[:5]}')
     ci_test_path.mkdir()
     try:
-        (ci_test_path / '.wb_case_test').touch()
-        (ci_test_path / '.Wb_CaSe_TeSt').touch()
+        (ci_test_path / 'ci').touch()
+        (ci_test_path / 'CI').touch()
         return len(list(ci_test_path.iterdir())) == 2
     finally:
         try:
