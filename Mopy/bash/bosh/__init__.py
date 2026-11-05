@@ -1876,15 +1876,16 @@ class DataStore(DataDict):
                             raise
                         _check_renamed(paths_per_file, pre_dsts,
                                        copy=copy_inf)
-                    except BaseException: # e.g. ifileoperation's
-                        # FileOperatorError: we can't tell what it means, so
-                        # we undo it all
-                        _check_renamed(paths_per_file, pre_dsts,
-                                       copy=copy_inf, keep=False)
-                        checked = True
-                        raise
                     checked = True
                     break
+            except BaseException: # e.g. ifileoperation's FileOperatorError,
+                # or from the File in Use dialog: we can't tell what it means,
+                # so we undo it all
+                if not checked:
+                    _check_renamed(paths_per_file, pre_dsts, copy=copy_inf,
+                                   keep=False)
+                    checked = True
+                raise
             finally:
                 for inf, moved in stale_aside.items():
                     if not checked or inf not in paths_per_file:
