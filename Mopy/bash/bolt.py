@@ -1219,6 +1219,7 @@ class Path(os.PathLike):
         except FileNotFoundError:
             pass # does not exist
         except OSError:
+            if os_name != 'nt': raise # nothing to clear, see clearRO
             self.clearRO()
             os.remove(self._s)
     def removedirs(self, raise_error=True):
@@ -1228,6 +1229,7 @@ class Path(os.PathLike):
             pass # does not exist
         except OSError:
             try:
+                if os_name != 'nt': raise # nothing to clear, see clearRO
                 self.clearRO()
                 os.removedirs(self._s)
             except OSError:
@@ -1285,6 +1287,9 @@ class Path(os.PathLike):
             os.makedirs(dest_par)
             shutil.move(self._s,destPath._s)
         except OSError:
+            # retrying on POSIX would even move a folder into the partial copy
+            # that a failed cross-device move left behind
+            if os_name != 'nt': raise # nothing to clear, see clearRO
             self.clearRO()
             shutil.move(self._s,destPath._s)
 

@@ -129,8 +129,9 @@ class LoFile(AFile):
             self.__write_plugins(*args)
         except PermissionError:
             # a read-only file: clear its attribute and try again - a missing
-            # file can't be read-only, chmod'ing it would hide the error
-            if not apath.exists(): raise
+            # file can't be read-only, chmod'ing it would hide the error, and
+            # on POSIX we don't touch modes (see env.clear_read_only)
+            if bolt.os_name != 'nt' or not apath.exists(): raise
             env.clear_read_only(apath)
             self.__write_plugins(*args)
         if mark_unchanged:
