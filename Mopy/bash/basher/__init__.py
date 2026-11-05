@@ -3318,6 +3318,10 @@ class BashNotebook(DnDNotebook):
                 deprint(f"Error constructing '{title}' panel.",
                         traceback=True)
                 settings['bash.tabs.order'][page] = False
+                # The panel that raised is left at our top left - destroy it
+                nb = self._native_widget
+                for w in [w for w in nb.GetChildren() if nb.FindPage(w) < 0]:
+                    w.Destroy()
         #--Selection
         pageIndex = max(min(settings['bash.page'], dex - 1), 0)
         if settings[u'bash.installers.fastStart'] and pageIndex == iInstallers:
