@@ -1592,15 +1592,16 @@ def _moved(old: Path, new: Path, chained) -> bool:
     old must be gone too."""
     return new.exists() and (new not in chained or not old.exists())
 
-def _check_renamed(paths_per_file, new_dsts=None):
+def _check_renamed(paths_per_file, new_dsts=None, *, keep=True):
     """The file operation of rename_operation failed: keep the infos that
-    made it and revert the rest. For copies new_dsts holds the destinations
-    that did not exist before the copy - the only files we may remove."""
+    made it - unless keep is False - and revert the rest. For copies
+    new_dsts holds the destinations that did not exist before the copy -
+    the only files we may remove."""
     chained = _chained_paths(paths_per_file) if new_dsts is None else set()
     # a chained batch is all or nothing - else Data could end up without
     # Oblivion.esm
-    keep = not chained or all(_moved(*p, chained) for rename_paths, *_ in
-                              paths_per_file.values() for p in rename_paths)
+    keep = keep and (not chained or all(_moved(*p, chained) for rename_paths,
+        *_ in paths_per_file.values() for p in rename_paths))
     # later infos may have moved into the sources of earlier ones
     for inf, (rename_paths, new_name, *_inf_dir) in reversed(
             [*paths_per_file.items()]):
@@ -1839,6 +1840,7 @@ class DataStore(DataDict):
             stale_aside = _move_aside({inf: [p for p in stale if
                 p not in all_rename_paths] for inf, stale in
                 del_after_copy.items()})
+            checked = False # then paths_per_file holds what made it
             try:
                 todo = all_rename_paths
                 while try_once:
@@ -1862,18 +1864,23 @@ class DataStore(DataDict):
                                     todo = {o: n for o, n in todo.items() if
                                             not _moved(o, n, chained)}
                                 if todo: continue
+                                checked = True
                                 break
                             _check_renamed(paths_per_file, new_dsts)
+                            checked = True
                             raise
                         _check_renamed(paths_per_file, new_dsts)
-                    except Exception: # e.g. ifileoperation's FileOperatorError
-                        if copy_inf: # roll back the copies
-                            _check_renamed(paths_per_file, new_dsts)
+                    except BaseException: # e.g. ifileoperation's
+                        # FileOperatorError: we can't tell what it means, so
+                        # we undo it all
+                        _check_renamed(paths_per_file, new_dsts, keep=False)
+                        checked = True
                         raise
+                    checked = True
                     break
-            finally: # the infos left in paths_per_file made it
+            finally:
                 for inf, moved in stale_aside.items():
-                    if inf not in paths_per_file:
+                    if not checked or inf not in paths_per_file:
                         _move_back(moved)
                         continue
                     for _p, aside in moved:
