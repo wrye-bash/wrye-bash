@@ -1545,10 +1545,12 @@ def _remove_copy(new: Path):
 
 def _move_aside(paths_per_inf):
     """Rename the existing paths of each info in paths_per_inf to a unique
-    name in their folder and return the (path, aside) pairs per info - or
-    remove the ones that can't be renamed, as before. If one can't be moved
-    nor removed, move back the ones already moved and raise."""
+    name in their folder and return the (path, aside) pairs per info. The
+    ones that can't be renamed are removed once the rest went through, their
+    aside being their contents and stat, to write them back. If one can't
+    be moved, put back the ones already moved and raise."""
     moved_per_inf = {}
+    to_remove = []
     try:
         for inf, paths in paths_per_inf.items():
             moved_per_inf[inf] = moved = []
@@ -1563,9 +1565,14 @@ def _move_aside(paths_per_inf):
                     # is an ENOENT)
                     if e.errno not in (errno.EXDEV, errno.ENOENT,
                                        errno.ENAMETOOLONG): raise
-                    p.remove()
+                    to_remove.append((moved, p))
                     continue
                 moved.append((p, aside))
+        for moved, p in to_remove: # cosaves and tags files - small enough
+            with open(p, 'rb') as ins:
+                kept = ins.read(), os.stat(p)
+            p.remove()
+            moved.append((p, kept))
     except OSError:
         for moved in moved_per_inf.values():
             _move_back(moved)
@@ -1575,9 +1582,15 @@ def _move_aside(paths_per_inf):
 def _move_back(moved):
     for p, aside in moved:
         try:
-            os.replace(aside, p)
+            if isinstance(aside, tuple): # we had to remove it, write it back
+                content, st = aside
+                with open(p, 'xb') as out:
+                    out.write(content)
+                os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
+            else:
+                os.replace(aside, p)
         except OSError:
-            deprint(f'Failed to move {aside} back to {p}', traceback=True)
+            deprint(f'Failed to put {p} back', traceback=True)
 
 def _chained_paths(pairs):
     """The paths that are both a source and a destination of the batch, like
@@ -1892,6 +1905,7 @@ class DataStore(DataDict):
                         _move_back(moved)
                         continue
                     for _p, aside in moved:
+                        if isinstance(aside, tuple): continue # removed
                         try:
                             aside.remove()
                         except OSError:
